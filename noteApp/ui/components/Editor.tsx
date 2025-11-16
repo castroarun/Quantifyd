@@ -35,6 +35,7 @@ export function Editor({ noteId, userId }: EditorProps) {
    * Initialize Tiptap editor with extensions
    */
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Link.configure({
