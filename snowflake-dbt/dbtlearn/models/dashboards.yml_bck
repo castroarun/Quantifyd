@@ -1,0 +1,17 @@
+version: 2
+
+exposures:
+  - name: Executive Dashboard
+    type: dashboard
+    maturity: low
+    url: https://1e4d2626.us2a.app.preset.io/superset/dashboard/8/?edit=true&native_filters_key=dZpKyENZc2xByDTIw9nyUXNtEZLVSbHHIjbwAcPw0m1-0hk8n5SQAEe9Rz__dzl2
+    description: Executive Dashboard about Airbnb listings and hosts
+
+
+    depends_on:
+      - ref('dim_lists_w_hostings')
+      - ref('mart_full_moon_reviews')
+
+    owner:
+      name: Arun Castro
+      email: dbtstudent@gmail.com
