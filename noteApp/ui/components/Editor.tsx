@@ -69,7 +69,7 @@ export function Editor({ noteId, userId }: EditorProps) {
     content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-full p-8',
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-full p-8 font-light',
       },
     },
     onUpdate: ({ editor }) => {
