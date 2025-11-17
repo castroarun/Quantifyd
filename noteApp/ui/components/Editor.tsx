@@ -212,6 +212,10 @@ export function Editor({ noteId, userId }: EditorProps) {
       editor?.commands.setContent('')
       setNote(null)
       setEditableTitle('Untitled')
+      // Focus editor even when no note is selected
+      setTimeout(() => {
+        editor?.commands.focus()
+      }, 100)
       return
     }
 
@@ -230,6 +234,11 @@ export function Editor({ noteId, userId }: EditorProps) {
       setNote(data)
       setEditableTitle(data.title || 'Untitled')
       editor?.commands.setContent(data.content || '')
+
+      // Auto-focus editor so user can immediately start typing
+      setTimeout(() => {
+        editor?.commands.focus()
+      }, 100)
     }
 
     loadNote()
@@ -277,7 +286,7 @@ export function Editor({ noteId, userId }: EditorProps) {
                 handleAutoSave(editor.getHTML(), editor.getText())
               }
             }}
-            className="w-full text-2xl font-bold text-text-primary bg-transparent border-none outline-none focus:ring-0 placeholder-text-muted"
+            className="w-full text-xl font-light text-text-primary bg-transparent border-none outline-none focus:ring-0 placeholder-text-muted"
             placeholder="Untitled Note"
           />
         </div>
