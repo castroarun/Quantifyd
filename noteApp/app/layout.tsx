@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import '@/ui/styles/globals.css'
+import { ThemeProvider } from '@/ui/contexts/ThemeContext'
 
 export const metadata: Metadata = {
   title: 'NoteApp - Clean & Simple Note Taking',
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
  * Output: HTML structure with global styles and metadata
  *
  * Called by: Next.js app router
- * Calls: None
+ * Calls: ThemeProvider
  */
 export default function RootLayout({
   children,
@@ -22,8 +23,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className="h-full m-0 p-0 overflow-hidden">
-        {children}
+      <body className="h-full m-0 p-0 overflow-hidden" suppressHydrationWarning>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

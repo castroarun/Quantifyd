@@ -17,6 +17,14 @@ export interface User {
   updated_at: string
 }
 
+export interface UserProfile {
+  id: string
+  user_id: string
+  theme_preference: 'light' | 'dark'
+  created_at: string
+  updated_at: string
+}
+
 export interface AuthSession {
   user: User
   access_token: string
@@ -36,6 +44,8 @@ export interface Note {
   plain_text: string // For search
   is_deleted: boolean
   deleted_at?: string
+  is_pinned: boolean
+  pinned_at?: string
   created_at: string
   updated_at: string
   tags: Tag[]

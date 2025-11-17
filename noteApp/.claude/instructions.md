@@ -63,6 +63,77 @@ Write clear and simple comments on:
 ```
 ## Prototyping Requirements
 - I want to be able to vew the prototypes of the UI and navigations before proceeding to the full fledged development
+
+---
+
+## Editor Requirements
+
+### Text Formatting
+The editor should have **simple keyboard shortcuts only** - no toolbar icons for formatting:
+
+- **Ctrl+B** - Make selected text **Bold**
+- **Ctrl+H** - Make selected text a **Header**
+- **Ctrl+I** - Make selected text *Italic*
+- **Ctrl+U** - Make selected text <u>Underlined</u>
+- **Ctrl+Z** - Undo changes
+- **Tab** - Make selected text bulleted
+- **Tab (again)** - Make sub-bullet under the bulleted line
+
+**Important:** If these shortcuts are pressed without any text selected, perform default Windows operations (don't interfere).
+
+### Auto-Generated Note Headlines
+- When user finishes typing (switches to another note or creates new note), automatically derive a suitable headline from the note content
+- The auto-generated headline should be **editable** by the user
+- Headline should be generated intelligently from the first line or key content
+- **Important:** Auto-titling should NOT remove or modify the note content - title is separate from content
+
+---
+
+## Right Panel (Utility Panel) Requirements
+
+The right side of the app should have a **collapsible vertical panel** with utility icons:
+
+### Panel Icons & Features
+
+1. **Web Browser Icon**
+   - Opens an embedded web browser panel
+   - Allows users to browse websites, search, and copy content
+   - Easy copy-paste into notes without leaving the app
+
+2. **Calculator Icon**
+   - Opens a simple calculator panel
+   - Quick calculations while taking notes
+
+3. **Shortcuts Reference Icon**
+   - Shows all keyboard shortcuts including:
+     - Text formatting shortcuts (Ctrl+B, Ctrl+I, etc.)
+     - New note creation
+     - Panel toggle shortcuts
+     - Navigation shortcuts
+
+### Panel Behavior
+- Panel should be collapsible/expandable
+- Icons should be vertically aligned on the right edge
+- Clicking an icon expands the panel with that tool
+- Panel should not interfere with the main editor area
+
+---
+
+## Additional Core Capabilities
+
+### Pin Important Notes
+- Users should be able to **pin** frequently accessed notes
+- Pinned notes stay at the top of the notes list
+- Visual indicator (pin icon) to show pinned status
+- Easy toggle on/off for pinning
+
+### Dark Mode
+- **Essential** for long writing sessions
+- Toggle between light and dark themes
+- Smooth transition between themes
+- Save user's theme preference
+- Dark mode should use eye-friendly colors
+
 ---
 
 ## Documentation Requirements

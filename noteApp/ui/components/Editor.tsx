@@ -14,10 +14,10 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
+import Underline from '@tiptap/extension-underline'
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import type { Note } from '@/types'
-import { JiraDetectionPanel } from './JiraDetectionPanel'
 
 interface EditorProps {
   noteId: string | null
@@ -29,18 +29,24 @@ export function Editor({ noteId, userId }: EditorProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [editableTitle, setEditableTitle] = useState<string>('Untitled')
   const supabase = createClient()
 
   /**
-   * Initialize Tiptap editor with extensions
+   * Initialize Tiptap editor with extensions and keyboard shortcuts
    */
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
       Link.configure({
         openOnClick: false,
       }),
+      Underline,
       Placeholder.configure({
         placeholder: 'Start typing your note...',
       }),
@@ -50,12 +56,110 @@ export function Editor({ noteId, userId }: EditorProps) {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-full p-8',
       },
+      handleKeyDown: (view, event) => {
+        const { state } = view
+        const { from, to } = state.selection
+        const hasSelection = from !== to
+
+        // Ctrl+B - Bold
+        if (event.ctrlKey && event.key === 'b') {
+          if (hasSelection) {
+            event.preventDefault()
+            editor?.chain().focus().toggleBold().run()
+            return true
+          }
+          return false // Allow default Windows behavior
+        }
+
+        // Ctrl+I - Italic
+        if (event.ctrlKey && event.key === 'i') {
+          if (hasSelection) {
+            event.preventDefault()
+            editor?.chain().focus().toggleItalic().run()
+            return true
+          }
+          return false
+        }
+
+        // Ctrl+U - Underline
+        if (event.ctrlKey && event.key === 'u') {
+          if (hasSelection) {
+            event.preventDefault()
+            editor?.chain().focus().toggleUnderline().run()
+            return true
+          }
+          return false
+        }
+
+        // Ctrl+H - Header
+        if (event.ctrlKey && event.key === 'h') {
+          if (hasSelection) {
+            event.preventDefault()
+            editor?.chain().focus().toggleHeading({ level: 2 }).run()
+            return true
+          }
+          return false
+        }
+
+        // Tab - Toggle bullet list or sink list item (nest)
+        if (event.key === 'Tab' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+          event.preventDefault()
+
+          // If already in a list item
+          if (editor?.isActive('listItem')) {
+            if (event.shiftKey) {
+              // Shift+Tab - lift (un-nest) or exit list if at top level
+              const lifted = editor?.chain().focus().liftListItem('listItem').run()
+              if (!lifted) {
+                // If can't lift, toggle off the list
+                editor?.chain().focus().toggleBulletList().run()
+              }
+            } else {
+              // Tab - sink (nest deeper)
+              editor?.chain().focus().sinkListItem('listItem').run()
+            }
+            return true
+          }
+
+          // Not in a list - create a bullet list
+          editor?.chain().focus().toggleBulletList().run()
+          return true
+        }
+
+        return false
+      },
     },
     onUpdate: ({ editor }) => {
       // Trigger auto-save on content change
       handleAutoSave(editor.getHTML(), editor.getText())
     },
   })
+
+  /**
+   * Generate a smart title from note content
+   *
+   * Input: plainText of the note
+   * Output: Generated title string (does NOT modify note content)
+   *
+   * Called by: saveNote when title is empty
+   * Calls: None
+   */
+  const generateTitle = (plainText: string): string => {
+    if (!plainText || plainText.trim() === '') {
+      return 'Untitled'
+    }
+
+    // Extract first meaningful line (up to 100 chars) without removing it from content
+    const lines = plainText.split('\n')
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.length > 0) {
+        return trimmed.substring(0, 100)
+      }
+    }
+
+    return 'Untitled'
+  }
 
   /**
    * Auto-save logic with 2-second debounce
@@ -88,17 +192,24 @@ export function Editor({ noteId, userId }: EditorProps) {
    * Output: Updates or creates note in Supabase
    *
    * Called by: Auto-save timeout
-   * Calls: supabase.from('notes').upsert
+   * Calls: supabase.from('notes').upsert, generateTitle
    */
   const saveNote = async (content: string, plainText: string) => {
     setIsSaving(true)
 
     try {
+      // Only auto-generate title if user hasn't set one or it's still "Untitled"
+      let finalTitle = editableTitle
+      if (!finalTitle || finalTitle.trim() === '' || finalTitle === 'Untitled') {
+        // Auto-generate from content for convenience, but keep content intact
+        finalTitle = generateTitle(plainText)
+      }
+
       const noteData = {
         id: noteId || undefined,
         user_id: userId,
-        title: plainText.substring(0, 100) || 'Untitled',
-        content,
+        title: finalTitle,
+        content, // Content is NEVER modified
         plain_text: plainText,
         updated_at: new Date().toISOString(),
       }
@@ -112,6 +223,10 @@ export function Editor({ noteId, userId }: EditorProps) {
       if (error) throw error
 
       setNote(data)
+      // Update editable title with saved value
+      if (editableTitle !== data.title) {
+        setEditableTitle(data.title)
+      }
       setLastSaved(new Date().toLocaleTimeString())
     } catch (error) {
       console.error('Error saving note:', error)
@@ -127,6 +242,7 @@ export function Editor({ noteId, userId }: EditorProps) {
     if (!noteId) {
       editor?.commands.setContent('')
       setNote(null)
+      setEditableTitle('Untitled')
       return
     }
 
@@ -143,7 +259,8 @@ export function Editor({ noteId, userId }: EditorProps) {
       }
 
       setNote(data)
-      editor?.commands.setContent(data.content)
+      setEditableTitle(data.title || 'Untitled')
+      editor?.commands.setContent(data.content || '')
     }
 
     loadNote()
@@ -155,74 +272,9 @@ export function Editor({ noteId, userId }: EditorProps) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Editor Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-background">
-        <button
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`p-2 rounded hover:bg-border-light transition-colors ${
-            editor.isActive('bold') ? 'bg-border-light' : ''
-          }`}
-          title="Bold (Ctrl+B)"
-        >
-          <strong className="text-text-primary">B</strong>
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`p-2 rounded hover:bg-border-light transition-colors ${
-            editor.isActive('italic') ? 'bg-border-light' : ''
-          }`}
-          title="Italic (Ctrl+I)"
-        >
-          <em className="text-text-primary">I</em>
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={`p-2 rounded hover:bg-border-light transition-colors ${
-            editor.isActive('heading', { level: 1 }) ? 'bg-border-light' : ''
-          }`}
-          title="Heading 1"
-        >
-          <span className="text-text-primary font-bold">H1</span>
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`p-2 rounded hover:bg-border-light transition-colors ${
-            editor.isActive('heading', { level: 2 }) ? 'bg-border-light' : ''
-          }`}
-          title="Heading 2"
-        >
-          <span className="text-text-primary font-bold">H2</span>
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`p-2 rounded hover:bg-border-light transition-colors ${
-            editor.isActive('bulletList') ? 'bg-border-light' : ''
-          }`}
-          title="Bullet List"
-        >
-          <span className="text-text-primary">•</span>
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`p-2 rounded hover:bg-border-light transition-colors ${
-            editor.isActive('orderedList') ? 'bg-border-light' : ''
-          }`}
-          title="Numbered List"
-        >
-          <span className="text-text-primary">1.</span>
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={`p-2 rounded hover:bg-border-light transition-colors ${
-            editor.isActive('codeBlock') ? 'bg-border-light' : ''
-          }`}
-          title="Code Block"
-        >
-          <span className="text-text-primary font-mono">{'<>'}</span>
-        </button>
-
-        {/* Save status indicator */}
-        <div className="ml-auto flex items-center gap-2 text-sm text-text-muted">
+      {/* Save status indicator - minimal top bar */}
+      <div className="flex items-center justify-end px-4 py-2 border-b border-border bg-background">
+        <div className="flex items-center gap-2 text-sm text-text-muted">
           {isSaving ? (
             <>
               <div className="w-4 h-4 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
@@ -243,13 +295,29 @@ export function Editor({ noteId, userId }: EditorProps) {
         </div>
       </div>
 
+      {/* Editable Note Title */}
+      {noteId && (
+        <div className="px-8 pt-6 pb-2 bg-background">
+          <input
+            type="text"
+            value={editableTitle}
+            onChange={(e) => setEditableTitle(e.target.value)}
+            onBlur={() => {
+              // Trigger save when title is edited
+              if (editor) {
+                handleAutoSave(editor.getHTML(), editor.getText())
+              }
+            }}
+            className="w-full text-2xl font-bold text-text-primary bg-transparent border-none outline-none focus:ring-0 placeholder-text-muted"
+            placeholder="Untitled Note"
+          />
+        </div>
+      )}
+
       {/* Editor Content */}
       <div className="flex-1 overflow-y-auto scrollbar-thin bg-background">
         <EditorContent editor={editor} className="h-full" />
       </div>
-
-      {/* Jira Detection Panel (appears when Jira task is detected) */}
-      {editor && <JiraDetectionPanel editor={editor} noteId={noteId} />}
     </div>
   )
 }

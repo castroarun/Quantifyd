@@ -7,14 +7,15 @@
  * Output: Complete note-taking interface
  *
  * Called by: app/page.tsx when user is authenticated
- * Calls: Editor, NotesPanel, ActionsPanel, UserMenu
+ * Calls: Editor, NotesPanel, RightPanel, UserMenu
  */
 
 import { useState } from 'react'
 import { Editor } from './Editor'
 import { NotesPanel } from './NotesPanel'
-import { ActionsPanel } from './ActionsPanel'
+import { RightPanel } from './RightPanel'
 import { UserMenu } from './Auth'
+import { useTheme } from '@/ui/contexts/ThemeContext'
 import type { PanelState } from '@/types'
 
 interface MainAppProps {
@@ -27,6 +28,7 @@ export function MainApp({ user }: MainAppProps) {
     right: true,
   })
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null)
+  const { theme, toggleTheme } = useTheme()
 
   /**
    * Toggle panel visibility
@@ -47,11 +49,31 @@ export function MainApp({ user }: MainAppProps) {
   return (
     <div className="h-full w-full flex flex-col bg-background">
       {/* Top header bar */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-background">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-light text-text-primary">NoteApp</h1>
         </div>
-        <UserMenu user={user} />
+        <div className="flex items-center gap-3">
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-border-light transition-colors"
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? (
+              /* Sun icon for light mode */
+              <svg className="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ) : (
+              /* Moon icon for dark mode */
+              <svg className="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
+          <UserMenu user={user} />
+        </div>
       </header>
 
       {/* Main content area with 3 sections */}
@@ -93,38 +115,10 @@ export function MainApp({ user }: MainAppProps) {
 
           <Editor noteId={currentNoteId} userId={user.id} />
 
-          {!panels.right && (
-            <button
-              onClick={() => togglePanel('right')}
-              className="absolute top-16 right-2 p-2 bg-background border border-border rounded hover:bg-border-light transition-colors z-10"
-              title="Show actions panel"
-            >
-              <svg
-                className="w-4 h-4 text-text-secondary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-          )}
         </div>
 
-        {/* Right Panel - Tags & Actions */}
-        {panels.right && (
-          <div className="w-[280px] bg-border-light border-l border-border flex flex-col">
-            <ActionsPanel
-              noteId={currentNoteId}
-              onClose={() => togglePanel('right')}
-            />
-          </div>
-        )}
+        {/* Right Panel - Utilities */}
+        <RightPanel />
       </main>
     </div>
   )

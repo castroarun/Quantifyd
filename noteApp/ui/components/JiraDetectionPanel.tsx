@@ -69,45 +69,23 @@ export function JiraDetectionPanel({ editor, noteId }: JiraDetectionPanelProps) 
   const parseJiraTask = (content: string): JiraTask | null => {
     const lines = content.split('\n').filter(line => line.trim())
 
-    if (lines.length < 2) return null
+    if (lines.length < 3) return null // Need at least 3 lines for a task
 
-    // Method 1: Explicit keywords
-    const hasExplicitKeywords = content.match(/TASK:|DESC:|AC:|COMMENT:/i)
-    if (hasExplicitKeywords) {
-      const summary = content.match(/TASK:\s*(.+)/i)?.[1]?.trim() || ''
-      const description = content.match(/DESC:\s*(.+)/i)?.[1]?.trim() || ''
-      const acMatch = content.match(/AC:\s*(.+)/i)
-      const acceptanceCriteria = acMatch ? [acMatch[1].trim()] : []
-
-      if (summary || description) {
-        return {
-          summary: summary || 'Untitled Task',
-          description: description || '',
-          acceptanceCriteria,
-        }
-      }
+    // ONLY detect with explicit keywords - be very strict
+    const hasExplicitKeywords = content.match(/TASK:|JIRA:|DESC:|AC:/i)
+    if (!hasExplicitKeywords) {
+      return null // Don't detect without explicit keywords
     }
 
-    // Method 2: Smart detection
-    // First line as summary, subsequent lines as description
-    // Lines starting with "Must", "Should", "Need to" as ACs
-    const summary = lines[0]
-    const descriptionLines: string[] = []
-    const acceptanceCriteria: string[] = []
+    const summary = content.match(/(?:TASK:|JIRA:)\s*(.+)/i)?.[1]?.trim() || ''
+    const description = content.match(/DESC:\s*(.+)/i)?.[1]?.trim() || ''
+    const acMatch = content.match(/AC:\s*(.+)/i)
+    const acceptanceCriteria = acMatch ? [acMatch[1].trim()] : []
 
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]
-      if (line.match(/^(Must|Should|Need to|Required|Acceptance)/i)) {
-        acceptanceCriteria.push(line)
-      } else {
-        descriptionLines.push(line)
-      }
-    }
-
-    if (summary && summary.length > 5) {
+    if (summary && description) {
       return {
         summary,
-        description: descriptionLines.join('\n'),
+        description,
         acceptanceCriteria,
       }
     }

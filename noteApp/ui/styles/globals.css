@@ -6,6 +6,7 @@
   :root {
     /* Light Mode Colors */
     --color-background: #FFFFFF;
+    --color-background-secondary: #F9FAFB;
     --color-text-primary: #1F2937;
     --color-text-secondary: #6B7280;
     --color-text-muted: #9CA3AF;
@@ -18,12 +19,16 @@
 
   .dark {
     /* Dark Mode Colors */
-    --color-background: #1F2937;
-    --color-surface: #374151;
+    --color-background: #111827;
+    --color-background-secondary: #1F2937;
     --color-text-primary: #F9FAFB;
     --color-text-secondary: #D1D5DB;
     --color-text-muted: #9CA3AF;
-    --color-border: #4B5563;
+    --color-accent-blue: #3B82F6;
+    --color-accent-green: #10B981;
+    --color-accent-amber: #F59E0B;
+    --color-border: #374151;
+    --color-border-light: #1F2937;
   }
 
   body {
