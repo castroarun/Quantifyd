@@ -15,6 +15,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import Underline from '@tiptap/extension-underline'
+import { Extension } from '@tiptap/core'
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import type { Note } from '@/types'
@@ -31,6 +32,19 @@ export function Editor({ noteId, userId }: EditorProps) {
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null)
   const [editableTitle, setEditableTitle] = useState<string>('Untitled')
   const supabase = createClient()
+
+  /**
+   * Custom keyboard shortcuts extension
+   */
+  const CustomKeyboardShortcuts = Extension.create({
+    name: 'customKeyboardShortcuts',
+
+    addKeyboardShortcuts() {
+      return {
+        'Mod-h': () => this.editor.commands.toggleHeading({ level: 2 }),
+      }
+    },
+  })
 
   /**
    * Initialize Tiptap editor with extensions and keyboard shortcuts
@@ -50,83 +64,12 @@ export function Editor({ noteId, userId }: EditorProps) {
       Placeholder.configure({
         placeholder: 'Start typing your note...',
       }),
+      CustomKeyboardShortcuts,
     ],
     content: '',
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-full p-8',
-      },
-      handleKeyDown: (view, event) => {
-        const { state } = view
-        const { from, to } = state.selection
-        const hasSelection = from !== to
-
-        // Ctrl+B - Bold
-        if (event.ctrlKey && event.key === 'b') {
-          if (hasSelection) {
-            event.preventDefault()
-            editor?.chain().focus().toggleBold().run()
-            return true
-          }
-          return false // Allow default Windows behavior
-        }
-
-        // Ctrl+I - Italic
-        if (event.ctrlKey && event.key === 'i') {
-          if (hasSelection) {
-            event.preventDefault()
-            editor?.chain().focus().toggleItalic().run()
-            return true
-          }
-          return false
-        }
-
-        // Ctrl+U - Underline
-        if (event.ctrlKey && event.key === 'u') {
-          if (hasSelection) {
-            event.preventDefault()
-            editor?.chain().focus().toggleUnderline().run()
-            return true
-          }
-          return false
-        }
-
-        // Ctrl+H - Header
-        if (event.ctrlKey && event.key === 'h') {
-          if (hasSelection) {
-            event.preventDefault()
-            editor?.chain().focus().toggleHeading({ level: 2 }).run()
-            return true
-          }
-          return false
-        }
-
-        // Tab - Toggle bullet list or sink list item (nest)
-        if (event.key === 'Tab' && !event.ctrlKey && !event.altKey && !event.metaKey) {
-          event.preventDefault()
-
-          // If already in a list item
-          if (editor?.isActive('listItem')) {
-            if (event.shiftKey) {
-              // Shift+Tab - lift (un-nest) or exit list if at top level
-              const lifted = editor?.chain().focus().liftListItem('listItem').run()
-              if (!lifted) {
-                // If can't lift, toggle off the list
-                editor?.chain().focus().toggleBulletList().run()
-              }
-            } else {
-              // Tab - sink (nest deeper)
-              editor?.chain().focus().sinkListItem('listItem').run()
-            }
-            return true
-          }
-
-          // Not in a list - create a bullet list
-          editor?.chain().focus().toggleBulletList().run()
-          return true
-        }
-
-        return false
       },
     },
     onUpdate: ({ editor }) => {
@@ -195,6 +138,17 @@ export function Editor({ noteId, userId }: EditorProps) {
    * Calls: supabase.from('notes').upsert, generateTitle
    */
   const saveNote = async (content: string, plainText: string) => {
+    // Don't save if there's no noteId (new unsaved note)
+    if (!noteId) {
+      return
+    }
+
+    // Don't save if content is empty or only whitespace
+    const trimmedText = plainText.trim()
+    if (!trimmedText || trimmedText === '') {
+      return
+    }
+
     setIsSaving(true)
 
     try {
@@ -206,7 +160,7 @@ export function Editor({ noteId, userId }: EditorProps) {
       }
 
       const noteData = {
-        id: noteId || undefined,
+        id: noteId,
         user_id: userId,
         title: finalTitle,
         content, // Content is NEVER modified
