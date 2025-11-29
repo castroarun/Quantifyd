@@ -209,13 +209,13 @@ export function Editor({ noteId, userId }: EditorProps) {
         .from('notes')
         .upsert(noteData as any)
         .select()
-        .single()
+        .single() as { data: any; error: any }
 
       if (error) throw error
 
       setNote(data)
       // Update editable title with saved value
-      if (editableTitle !== data.title) {
+      if (data && editableTitle !== data.title) {
         setEditableTitle(data.title)
       }
       setLastSaved(new Date().toLocaleTimeString())
