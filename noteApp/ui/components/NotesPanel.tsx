@@ -40,12 +40,12 @@ export function NotesPanel({ onSelectNote, currentNoteId, onClose }: NotesPanelP
         .from('notes')
         .select('*')
         .eq('is_deleted', false)
-        .order('updated_at', { ascending: false })
+        .order('updated_at', { ascending: false }) as { data: any[]; error: any }
 
       if (error) throw error
 
       // Sort: pinned notes first (by pinned_at desc), then by updated_at desc
-      const sorted = (data || []).sort((a, b) => {
+      const sorted = (data || []).sort((a: any, b: any) => {
         if (a.is_pinned && !b.is_pinned) return -1
         if (!a.is_pinned && b.is_pinned) return 1
         if (a.is_pinned && b.is_pinned) {
@@ -81,7 +81,7 @@ export function NotesPanel({ onSelectNote, currentNoteId, onClose }: NotesPanelP
           title: 'Untitled',
           content: '',
           plain_text: '',
-        })
+        } as any)
         .select()
         .single() as { data: any; error: any }
 
@@ -101,11 +101,11 @@ export function NotesPanel({ onSelectNote, currentNoteId, onClose }: NotesPanelP
 
     try {
       const newPinState = !currentPinState
-      const { error } = await supabase
-        .from('notes')
+      const { error } = await (supabase
+        .from('notes') as any)
         .update({
           is_pinned: newPinState,
-          pinned_at: newPinState ? new Date().toISOString() : null
+          pinned_at: newPinState ? new Date().toISOString() : undefined
         })
         .eq('id', noteId)
 
@@ -115,7 +115,7 @@ export function NotesPanel({ onSelectNote, currentNoteId, onClose }: NotesPanelP
       setNotes(prev => {
         const updated = prev.map(note =>
           note.id === noteId
-            ? { ...note, is_pinned: newPinState, pinned_at: newPinState ? new Date().toISOString() : null }
+            ? { ...note, is_pinned: newPinState, pinned_at: newPinState ? new Date().toISOString() : undefined }
             : note
         )
         // Sort: pinned notes first (by pinned_at desc), then by updated_at desc
@@ -145,8 +145,8 @@ export function NotesPanel({ onSelectNote, currentNoteId, onClose }: NotesPanelP
     if (!confirmed) return
 
     try {
-      const { error } = await supabase
-        .from('notes')
+      const { error } = await (supabase
+        .from('notes') as any)
         .update({ is_deleted: true })
         .eq('id', noteId)
 

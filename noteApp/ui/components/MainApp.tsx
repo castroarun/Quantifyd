@@ -45,7 +45,7 @@ export function MainApp({ user }: MainAppProps) {
           title,
           content,
           plain_text: plainText,
-        })
+        } as any)
         .select()
         .single() as { data: any; error: any }
 

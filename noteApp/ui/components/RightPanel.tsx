@@ -10,13 +10,13 @@
  * Calls: onCreateFromTemplate when a template is clicked
  */
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 interface Template {
   id: string
   name: string
   description: string
-  icon: JSX.Element
+  icon: React.ReactNode
   title: string
   content: string
   plainText: string
