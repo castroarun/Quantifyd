@@ -97,7 +97,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             user_id: user.id,
             theme_preference: newTheme,
             updated_at: new Date().toISOString(),
-          })
+          } as any)
       }
     } catch (error) {
       console.error('Error saving theme preference:', error)

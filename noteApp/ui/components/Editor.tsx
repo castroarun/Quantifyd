@@ -207,7 +207,7 @@ export function Editor({ noteId, userId }: EditorProps) {
 
       const { data, error } = await supabase
         .from('notes')
-        .upsert(noteData)
+        .upsert(noteData as any)
         .select()
         .single()
 
