@@ -53,7 +53,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             .from('profiles')
             .select('theme_preference')
             .eq('user_id', user.id)
-            .single()
+            .single() as { data: any; error: any }
 
           if (!error && data?.theme_preference) {
             const dbTheme = data.theme_preference as Theme

@@ -83,11 +83,11 @@ export function NotesPanel({ onSelectNote, currentNoteId, onClose }: NotesPanelP
           plain_text: '',
         })
         .select()
-        .single()
+        .single() as { data: any; error: any }
 
       if (error) throw error
       setNotes(prev => [data, ...prev])
-      onSelectNote(data.id)
+      onSelectNote(data?.id)
     } catch (error) {
       console.error('Error creating note:', error)
     }

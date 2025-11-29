@@ -246,7 +246,7 @@ export function Editor({ noteId, userId }: EditorProps) {
         .from('notes')
         .select('*')
         .eq('id', noteId)
-        .single()
+        .single() as { data: any; error: any }
 
       if (error) {
         console.error('Error loading note:', error)
@@ -254,8 +254,8 @@ export function Editor({ noteId, userId }: EditorProps) {
       }
 
       setNote(data)
-      setEditableTitle(data.title || 'Untitled')
-      editor?.commands.setContent(data.content || '')
+      setEditableTitle(data?.title || 'Untitled')
+      editor?.commands.setContent(data?.content || '')
 
       // Auto-focus editor so user can immediately start typing
       setTimeout(() => {

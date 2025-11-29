@@ -47,12 +47,12 @@ export function MainApp({ user }: MainAppProps) {
           plain_text: plainText,
         })
         .select()
-        .single()
+        .single() as { data: any; error: any }
 
       if (error) throw error
 
       // Select the new note
-      setCurrentNoteId(data.id)
+      setCurrentNoteId(data?.id)
       // Refresh the notes panel
       setNotesPanelKey(prev => prev + 1)
     } catch (error) {
