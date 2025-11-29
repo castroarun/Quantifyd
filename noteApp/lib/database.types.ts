@@ -54,7 +54,8 @@ export interface Database {
           plain_text: string
           is_deleted: boolean
           deleted_at: string | null
-          jira_issue_key: string | null
+          is_pinned: boolean
+          pinned_at: string | null
           created_at: string
           updated_at: string
         }
@@ -66,7 +67,8 @@ export interface Database {
           plain_text?: string
           is_deleted?: boolean
           deleted_at?: string | null
-          jira_issue_key?: string | null
+          is_pinned?: boolean
+          pinned_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -78,7 +80,8 @@ export interface Database {
           plain_text?: string
           is_deleted?: boolean
           deleted_at?: string | null
-          jira_issue_key?: string | null
+          is_pinned?: boolean
+          pinned_at?: string | null
           created_at?: string
           updated_at?: string
         }
