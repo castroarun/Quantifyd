@@ -1,7 +1,7 @@
 {
   "name": "noteapp",
   "version": "1.0.0",
-  "description": "Clean, simple, fast note-taking app with Jira and Gmail integration",
+  "description": "Clean, simple, fast note-taking app with rich text editing and templates",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
