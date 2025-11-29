@@ -237,24 +237,24 @@ export function NotesPanel({ onSelectNote, currentNoteId, onClose }: NotesPanelP
                   </div>
                 </button>
 
-                {/* Pin button - top right corner */}
+                {/* Favorite button - top right corner */}
                 <button
                   onClick={(e) => handlePinNote(note.id, note.is_pinned, e)}
                   className={`absolute top-1.5 right-1.5 p-1 rounded transition-all ${
                     note.is_pinned
                       ? 'opacity-100'
                       : 'opacity-0 group-hover:opacity-100'
-                  } ${
-                    currentNoteId === note.id
-                      ? 'text-white/70 hover:text-white'
-                      : note.is_pinned
-                        ? 'text-text-secondary'
-                        : 'text-text-muted hover:text-text-secondary'
                   }`}
-                  title={note.is_pinned ? 'Unpin note' : 'Pin note'}
+                  title={note.is_pinned ? 'Remove from favorites' : 'Add to favorites'}
                 >
-                  <svg className="w-3 h-3" fill={note.is_pinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={note.is_pinned ? 0 : 1.5} viewBox="0 0 16 16">
-                    <path d="M4.146.146A.5.5 0 0 1 4.5 0h7a.5.5 0 0 1 .5.5c0 .68-.342 1.174-.646 1.479-.126.125-.25.224-.354.298v4.431l.078.048c.203.127.476.314.751.555C12.36 7.775 13 8.527 13 9.5a.5.5 0 0 1-.5.5h-4v4.5c0 .276-.224 1.5-.5 1.5s-.5-1.224-.5-1.5V10h-4a.5.5 0 0 1-.5-.5c0-.973.64-1.725 1.17-2.189A5.921 5.921 0 0 1 5 6.708V2.277a2.77 2.77 0 0 1-.354-.298C4.342 1.674 4 1.179 4 .5a.5.5 0 0 1 .146-.354z"/>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                      fill={note.is_pinned ? '#FBBF24' : 'none'}
+                      stroke={note.is_pinned ? '#F59E0B' : '#9CA3AF'}
+                      strokeWidth={1.5}
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </button>
 

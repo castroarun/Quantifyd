@@ -19,7 +19,7 @@ import { Extension } from '@tiptap/core'
 import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import type { Note } from '@/types'
 
@@ -52,6 +52,7 @@ export function Editor({ noteId, userId }: EditorProps) {
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null)
   const [editableTitle, setEditableTitle] = useState<string>('Untitled')
+  const editableTitleRef = useRef<string>('Untitled') // Ref to track latest title
   const [wordCount, setWordCount] = useState(0)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const supabase = createClient()
@@ -114,6 +115,10 @@ export function Editor({ noteId, userId }: EditorProps) {
     },
   })
 
+  // Keep the ref in sync with the state to avoid stale closures
+  useEffect(() => {
+    editableTitleRef.current = editableTitle
+  }, [editableTitle])
 
   /**
    * Generate a smart title from note content
@@ -189,8 +194,9 @@ export function Editor({ noteId, userId }: EditorProps) {
     setIsSaving(true)
 
     try {
-      // Only auto-generate title if user hasn't set one or it's still "Untitled"
-      let finalTitle = editableTitle
+      // Use ref to get latest title value (avoids stale closure)
+      const currentTitle = editableTitleRef.current
+      let finalTitle = currentTitle
       if (!finalTitle || finalTitle.trim() === '' || finalTitle === 'Untitled') {
         // Auto-generate from content for convenience, but keep content intact
         finalTitle = generateTitle(plainText)
@@ -214,10 +220,6 @@ export function Editor({ noteId, userId }: EditorProps) {
       if (error) throw error
 
       setNote(data)
-      // Update editable title with saved value
-      if (data && editableTitle !== data.title) {
-        setEditableTitle(data.title)
-      }
       setLastSaved(new Date().toLocaleTimeString())
     } catch (error) {
       console.error('Error saving note:', error)
