@@ -54,7 +54,7 @@ export function AuthSignIn() {
             Clean, simple, fast note-taking
           </p>
           <p className="text-sm text-text-muted">
-            with Jira and Gmail integration
+            Auto-titles • Templates • Simple formatting
           </p>
         </div>
 

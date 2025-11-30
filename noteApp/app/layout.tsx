@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/ui/contexts/ThemeContext'
 
 export const metadata: Metadata = {
   title: 'NoteApp - Clean & Simple Note Taking',
-  description: 'Fast, clean note-taking app with Jira and Gmail integration',
+  description: 'Fast, clean note-taking app with auto-titles, templates, and simple formatting',
   icons: {
     icon: '/icon.svg',
   },
