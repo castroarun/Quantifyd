@@ -1,6 +1,6 @@
-import { Profile, ExerciseLevels, VALIDATION } from '@/types'
+import { Profile, Exercise, Level, ExerciseRatings, VALIDATION } from '@/types'
 
-const STORAGE_KEY = 'strength_profiles'
+const STORAGE_KEY = 'strength_profiles_v2'
 
 /**
  * Generate a unique ID for profiles
@@ -50,7 +50,7 @@ function saveProfiles(profiles: Profile[]): void {
  * @throws Error if max profiles reached or validation fails
  */
 export function createProfile(
-  data: Omit<Profile, 'id' | 'currentLevels' | 'createdAt' | 'updatedAt'>
+  data: Omit<Profile, 'id' | 'exerciseRatings' | 'createdAt' | 'updatedAt'>
 ): Profile {
   const profiles = getProfiles()
 
@@ -63,12 +63,6 @@ export function createProfile(
   validateProfileData(data)
 
   const now = new Date().toISOString()
-  const defaultLevels: ExerciseLevels = {
-    benchPress: 'beginner',
-    squat: 'beginner',
-    deadlift: 'beginner',
-    shoulderPress: 'beginner'
-  }
 
   const newProfile: Profile = {
     id: generateId(),
@@ -76,7 +70,7 @@ export function createProfile(
     age: data.age,
     height: data.height,
     weight: data.weight,
-    currentLevels: defaultLevels,
+    exerciseRatings: {},  // Start with no ratings
     createdAt: now,
     updatedAt: now
   }
@@ -117,12 +111,12 @@ export function updateProfile(
 }
 
 /**
- * Update exercise level for a profile
+ * Update exercise rating for a profile
  */
-export function updateProfileLevel(
+export function updateExerciseRating(
   profileId: string,
-  exercise: keyof ExerciseLevels,
-  level: ExerciseLevels[keyof ExerciseLevels]
+  exercise: Exercise,
+  level: Level
 ): Profile {
   const profiles = getProfiles()
   const index = profiles.findIndex(p => p.id === profileId)
@@ -131,7 +125,29 @@ export function updateProfileLevel(
     throw new Error('Profile not found')
   }
 
-  profiles[index].currentLevels[exercise] = level
+  profiles[index].exerciseRatings[exercise] = level
+  profiles[index].updatedAt = new Date().toISOString()
+
+  saveProfiles(profiles)
+
+  return profiles[index]
+}
+
+/**
+ * Remove exercise rating from a profile
+ */
+export function removeExerciseRating(
+  profileId: string,
+  exercise: Exercise
+): Profile {
+  const profiles = getProfiles()
+  const index = profiles.findIndex(p => p.id === profileId)
+
+  if (index === -1) {
+    throw new Error('Profile not found')
+  }
+
+  delete profiles[index].exerciseRatings[exercise]
   profiles[index].updatedAt = new Date().toISOString()
 
   saveProfiles(profiles)

@@ -1,19 +1,34 @@
 'use client'
 
-import { Level, LEVEL_COLORS, LEVEL_NAMES, CalculatedStrength } from '@/types'
+import { Level, LEVEL_COLORS, LEVEL_NAMES, BODY_PART_NAMES, CalculatedStrength } from '@/types'
 import { Card } from '@/components/ui'
 
 interface StrengthCardProps {
   strength: CalculatedStrength
   onLevelSelect: (level: Level) => void
+  showBodyPart?: boolean
 }
 
-export default function StrengthCard({ strength, onLevelSelect }: StrengthCardProps) {
+export default function StrengthCard({ strength, onLevelSelect, showBodyPart = false }: StrengthCardProps) {
+  const isRated = strength.levels.some(l => l.isSelected)
+
   return (
     <Card padding="sm" className="mb-3">
-      <h3 className="font-semibold text-[#2C3E50] text-sm mb-3">
-        {strength.exerciseName}
-      </h3>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-[#2C3E50] text-sm">
+            {strength.exerciseName}
+          </h3>
+          {strength.isDumbbell && (
+            <span className="text-xs text-gray-400">(per hand)</span>
+          )}
+        </div>
+        {showBodyPart && (
+          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded">
+            {BODY_PART_NAMES[strength.bodyPart]}
+          </span>
+        )}
+      </div>
 
       <div className="grid grid-cols-4 gap-2">
         {strength.levels.map(({ level, weight, isSelected }) => (

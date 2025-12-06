@@ -3,11 +3,17 @@
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Profile, Exercise, Level } from '@/types'
-import { getProfileById, updateProfileLevel, deleteProfile } from '@/lib/storage/profiles'
-import { calculateAllStrengths } from '@/lib/calculations/strength'
+import { Profile, Exercise, Level, BodyPart } from '@/types'
+import { getProfileById, updateExerciseRating, deleteProfile } from '@/lib/storage/profiles'
+import {
+  getRatedExercises,
+  getUnratedExercises,
+  calculateOverallLevel,
+  getRatedCount,
+  getTotalExercisesCount
+} from '@/lib/calculations/strength'
 import { Button } from '@/components/ui'
-import { StrengthCard, LevelLegend } from '@/components/strength'
+import { StrengthCard, LevelLegend, BodyPartFilter, OverallLevel } from '@/components/strength'
 
 interface ProfileDetailPageProps {
   params: Promise<{ id: string }>
@@ -19,6 +25,7 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [bodyPartFilter, setBodyPartFilter] = useState<BodyPart | 'all'>('all')
 
   useEffect(() => {
     const loadedProfile = getProfileById(id)
@@ -29,7 +36,7 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
   const handleLevelSelect = (exercise: Exercise, level: Level) => {
     if (!profile) return
 
-    const updatedProfile = updateProfileLevel(profile.id, exercise, level)
+    const updatedProfile = updateExerciseRating(profile.id, exercise, level)
     setProfile(updatedProfile)
   }
 
@@ -64,7 +71,11 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
     )
   }
 
-  const strengths = calculateAllStrengths(profile.weight, profile.currentLevels)
+  const ratedExercises = getRatedExercises(profile.weight, profile.exerciseRatings, bodyPartFilter)
+  const unratedExercises = getUnratedExercises(profile.weight, profile.exerciseRatings, bodyPartFilter)
+  const overallLevel = calculateOverallLevel(profile.exerciseRatings)
+  const ratedCount = getRatedCount(profile.exerciseRatings)
+  const totalCount = getTotalExercisesCount()
 
   return (
     <div className="min-h-screen pb-20">
@@ -123,21 +134,62 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
           </div>
         </div>
 
-        {/* Strength Standards */}
-        <h3 className="font-semibold text-[#2C3E50] text-sm mb-3">
-          Your Strength Standards
-        </h3>
-        <p className="text-xs text-gray-500 mb-3">
-          Tap a level to mark it as your current performance.
-        </p>
-
-        {strengths.map(strength => (
-          <StrengthCard
-            key={strength.exercise}
-            strength={strength}
-            onLevelSelect={(level) => handleLevelSelect(strength.exercise, level)}
+        {/* Overall Level */}
+        <div className="mb-4">
+          <OverallLevel
+            level={overallLevel}
+            ratedCount={ratedCount}
+            totalCount={totalCount}
           />
-        ))}
+        </div>
+
+        {/* Body Part Filter */}
+        <div className="mb-4">
+          <p className="text-xs text-gray-500 mb-2">Filter by body part:</p>
+          <BodyPartFilter
+            selected={bodyPartFilter}
+            onChange={setBodyPartFilter}
+          />
+        </div>
+
+        {/* Rated Exercises */}
+        {ratedExercises.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-semibold text-[#2C3E50] text-sm mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#27AE60] rounded-full"></span>
+              Your Rated Exercises ({ratedExercises.length})
+            </h3>
+            {ratedExercises.map(strength => (
+              <StrengthCard
+                key={strength.exercise}
+                strength={strength}
+                onLevelSelect={(level) => handleLevelSelect(strength.exercise, level)}
+                showBodyPart={bodyPartFilter === 'all'}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Unrated Exercises */}
+        {unratedExercises.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-semibold text-[#2C3E50] text-sm mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+              Not Yet Rated ({unratedExercises.length})
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Tap a level to rate your current performance.
+            </p>
+            {unratedExercises.map(strength => (
+              <StrengthCard
+                key={strength.exercise}
+                strength={strength}
+                onLevelSelect={(level) => handleLevelSelect(strength.exercise, level)}
+                showBodyPart={bodyPartFilter === 'all'}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Level Legend */}
         <div className="mt-4">
