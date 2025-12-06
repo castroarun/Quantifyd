@@ -1,0 +1,59 @@
+Test ID,Category,Test Case,Steps,Expected Result,Priority,Status
+TC-001,Profile Management,Create first profile,1. Open app 2. Tap 'Add Profile' 3. Enter valid data (Name: John Age: 25 Height: 175 Weight: 70) 4. Tap Save,Profile created and appears in list with correct data,P0,Not Tested
+TC-002,Profile Management,Create profile with all valid boundary values,1. Create profile with Age: 13 Height: 100 Weight: 30 2. Save,Profile saves successfully with minimum values,P0,Not Tested
+TC-003,Profile Management,Create profile with maximum boundary values,1. Create profile with Age: 100 Height: 250 Weight: 300 2. Save,Profile saves successfully with maximum values,P0,Not Tested
+TC-004,Profile Management,Create 5 profiles (maximum),1. Create 5 different profiles sequentially,All 5 profiles created and displayed. Counter shows '5 of 5 profiles',P0,Not Tested
+TC-005,Profile Management,Attempt to create 6th profile,1. With 5 profiles existing 2. Attempt to add another,System prevents creation. Shows appropriate message or disables add button,P0,Not Tested
+TC-006,Profile Management,View profile list,1. With multiple profiles created 2. Open home screen,All profiles displayed as cards showing Name Age Height Weight,P0,Not Tested
+TC-007,Profile Management,View empty profile slots,1. With fewer than 5 profiles 2. View home screen,Empty slots visually indicated. Counter shows 'X of 5 profiles',P1,Not Tested
+TC-008,Profile Management,Delete a profile,1. Select existing profile 2. Delete profile 3. Confirm deletion,Profile removed from list. Counter updates. Slot becomes available,P0,Not Tested
+TC-009,Profile Management,View single profile details,1. Tap on profile card,Profile detail screen shows all info plus strength standards,P0,Not Tested
+TC-010,Validation,Reject empty name,1. Leave name field empty 2. Try to save,Validation error shown. Profile not saved,P0,Not Tested
+TC-011,Validation,Reject name over 50 characters,1. Enter name with 51+ characters 2. Try to save,Validation error or input truncated to 50 chars,P1,Not Tested
+TC-012,Validation,Reject age below 13,1. Enter age: 12 2. Try to save,Validation error shown. Profile not saved,P0,Not Tested
+TC-013,Validation,Reject age above 100,1. Enter age: 101 2. Try to save,Validation error shown. Profile not saved,P0,Not Tested
+TC-014,Validation,Reject height below 100cm,1. Enter height: 99 2. Try to save,Validation error shown. Profile not saved,P0,Not Tested
+TC-015,Validation,Reject height above 250cm,1. Enter height: 251 2. Try to save,Validation error shown. Profile not saved,P0,Not Tested
+TC-016,Validation,Reject weight below 30kg,1. Enter weight: 29 2. Try to save,Validation error shown. Profile not saved,P0,Not Tested
+TC-017,Validation,Reject weight above 300kg,1. Enter weight: 301 2. Try to save,Validation error shown. Profile not saved,P0,Not Tested
+TC-018,Validation,Reject non-numeric age,1. Enter age: 'abc' 2. Try to save,Input rejected or validation error shown,P1,Not Tested
+TC-019,Validation,Reject non-numeric height,1. Enter height: 'abc' 2. Try to save,Input rejected or validation error shown,P1,Not Tested
+TC-020,Validation,Reject non-numeric weight,1. Enter weight: 'abc' 2. Try to save,Input rejected or validation error shown,P1,Not Tested
+TC-021,Strength Calculation,Bench Press - Beginner calculation,1. Create profile with weight: 80kg 2. View strength standards,Beginner Bench Press = 80 × 0.59 = 47kg (rounded),P0,Not Tested
+TC-022,Strength Calculation,Bench Press - Novice calculation,1. Profile weight: 80kg 2. View standards,Novice Bench Press = 80 × 0.82 = 66kg,P0,Not Tested
+TC-023,Strength Calculation,Bench Press - Intermediate calculation,1. Profile weight: 80kg 2. View standards,Intermediate Bench Press = 80 × 1.06 = 85kg,P0,Not Tested
+TC-024,Strength Calculation,Bench Press - Advanced calculation,1. Profile weight: 80kg 2. View standards,Advanced Bench Press = 80 × 1.29 = 103kg,P0,Not Tested
+TC-025,Strength Calculation,Squat - Beginner calculation,1. Profile weight: 80kg 2. View standards,Beginner Squat = 80 × 0.76 = 61kg,P0,Not Tested
+TC-026,Strength Calculation,Squat - Novice calculation,1. Profile weight: 80kg 2. View standards,Novice Squat = 80 × 1.12 = 90kg,P0,Not Tested
+TC-027,Strength Calculation,Squat - Intermediate calculation,1. Profile weight: 80kg 2. View standards,Intermediate Squat = 80 × 1.47 = 118kg,P0,Not Tested
+TC-028,Strength Calculation,Squat - Advanced calculation,1. Profile weight: 80kg 2. View standards,Advanced Squat = 80 × 1.88 = 150kg,P0,Not Tested
+TC-029,Strength Calculation,Deadlift - Beginner calculation,1. Profile weight: 80kg 2. View standards,Beginner Deadlift = 80 × 0.94 = 75kg,P0,Not Tested
+TC-030,Strength Calculation,Deadlift - Novice calculation,1. Profile weight: 80kg 2. View standards,Novice Deadlift = 80 × 1.29 = 103kg,P0,Not Tested
+TC-031,Strength Calculation,Deadlift - Intermediate calculation,1. Profile weight: 80kg 2. View standards,Intermediate Deadlift = 80 × 1.71 = 137kg,P0,Not Tested
+TC-032,Strength Calculation,Deadlift - Advanced calculation,1. Profile weight: 80kg 2. View standards,Advanced Deadlift = 80 × 2.18 = 174kg,P0,Not Tested
+TC-033,Strength Calculation,Shoulder Press - Beginner calculation,1. Profile weight: 80kg 2. View standards,Beginner Shoulder Press = 80 × 0.41 = 33kg,P0,Not Tested
+TC-034,Strength Calculation,Shoulder Press - Novice calculation,1. Profile weight: 80kg 2. View standards,Novice Shoulder Press = 80 × 0.59 = 47kg,P0,Not Tested
+TC-035,Strength Calculation,Shoulder Press - Intermediate calculation,1. Profile weight: 80kg 2. View standards,Intermediate Shoulder Press = 80 × 0.76 = 61kg,P0,Not Tested
+TC-036,Strength Calculation,Shoulder Press - Advanced calculation,1. Profile weight: 80kg 2. View standards,Advanced Shoulder Press = 80 × 1.00 = 80kg,P0,Not Tested
+TC-037,Strength Calculation,Verify all 4 exercises displayed,1. View profile detail,All 4 exercises shown: Bench Press Squat Deadlift Shoulder Press,P0,Not Tested
+TC-038,Strength Calculation,Verify all 4 levels per exercise,1. View profile detail,Each exercise shows 4 levels: Beginner Novice Intermediate Advanced,P0,Not Tested
+TC-039,Level Selection,Select Beginner level for Bench Press,1. View profile 2. Tap Beginner box for Bench Press,Beginner highlighted with checkmark. Selection saved,P0,Not Tested
+TC-040,Level Selection,Select different levels for different exercises,1. Select Beginner for Bench 2. Select Novice for Squat 3. Select Intermediate for Deadlift,Each exercise can have independent level selection,P0,Not Tested
+TC-041,Level Selection,Change selected level,1. Select Beginner for Bench 2. Change to Novice,Previous selection removed. New selection highlighted with checkmark,P0,Not Tested
+TC-042,Level Selection,Visual feedback on selection,1. Select any level,Selected level has highlighted border and checkmark,P1,Not Tested
+TC-043,Data Persistence,Profile persists after app restart,1. Create profile 2. Close app completely 3. Reopen app,Profile data intact with all information,P0,Not Tested
+TC-044,Data Persistence,Level selections persist after app restart,1. Select levels for exercises 2. Close app 3. Reopen app,All level selections preserved,P0,Not Tested
+TC-045,Data Persistence,Multiple profiles persist,1. Create 3 profiles with different data 2. Close app 3. Reopen,All 3 profiles present with correct data,P0,Not Tested
+TC-046,Data Persistence,Works offline,1. Enable airplane mode 2. Create profile 3. Select levels,All functionality works without internet,P0,Not Tested
+TC-047,UI Components,Profile card displays correctly,1. View profile list,Card shows: avatar/icon name age height weight. White background 8pt radius,P1,Not Tested
+TC-048,UI Components,Level colors display correctly,1. View strength standards,Beginner=#2ECC71 Novice=#3498DB Intermediate=#F39C12 Advanced=#E74C3C,P1,Not Tested
+TC-049,UI Components,Buttons are touch-friendly,1. Interact with all buttons,All buttons at least 44pt height. Easy to tap,P1,Not Tested
+TC-050,UI Components,Header styling correct,1. View any screen with header,Header uses #2C3E50 color,P2,Not Tested
+TC-051,UI Components,Mobile viewport responsive,1. View app on various mobile screen sizes,UI adapts properly. No horizontal scroll. All content accessible,P0,Not Tested
+TC-052,Edge Cases,Handle special characters in name,1. Enter name with special chars: 'John O''Brien' 2. Save,Name saved and displayed correctly,P1,Not Tested
+TC-053,Edge Cases,Handle decimal weight,1. Enter weight: 70.5 2. Save,Weight handled (rounded or accepted as decimal),P1,Not Tested
+TC-054,Edge Cases,Handle decimal height,1. Enter height: 175.5 2. Save,Height handled (rounded or accepted as decimal),P1,Not Tested
+TC-055,Edge Cases,Rapid profile creation,1. Quickly create multiple profiles in succession,All profiles saved correctly without data corruption,P2,Not Tested
+TC-056,Edge Cases,Delete and recreate profile,1. Create profile 2. Delete it 3. Create new profile with same name,New profile created successfully. No conflicts,P1,Not Tested
+TC-057,Edge Cases,Minimum weight calculation accuracy,1. Create profile with weight: 30kg 2. Verify calculations,All calculations accurate for minimum weight (e.g. Bench Beg = 18kg),P1,Not Tested
+TC-058,Edge Cases,Maximum weight calculation accuracy,1. Create profile with weight: 300kg 2. Verify calculations,All calculations accurate for maximum weight (e.g. Bench Adv = 387kg),P1,Not Tested

@@ -36,8 +36,8 @@ Time tracker for development phases. Baked in measurement from the start.
 - [x] .claude/instructions.md created
 - [x] .claude/coding-standards.md created
 - [x] DEV-CLOCK.md created
-- [ ] DESIGN.md (pending)
-- [ ] TEST-PLAN.csv (pending)
+- [x] DESIGN.md (embedded in PRD - approved)
+- [x] TEST-PLAN.csv created (58 test cases)
 
 **Time Logged:** -
 
