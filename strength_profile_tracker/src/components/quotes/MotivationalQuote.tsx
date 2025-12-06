@@ -26,51 +26,24 @@ export default function MotivationalQuote({ variant = 'daily' }: MotivationalQuo
 
   if (!quote) return null
 
-  const categoryColors = {
-    motivation: 'bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800',
-    science: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
-    benefit: 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800'
-  }
-
-  const categoryIcons = {
-    motivation: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
-    science: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-      </svg>
-    ),
-    benefit: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-      </svg>
-    )
-  }
-
-  const categoryLabels = {
-    motivation: 'Motivation',
-    science: 'Science',
-    benefit: 'Health Benefit'
-  }
-
   return (
-    <div className={`rounded-lg border p-4 ${categoryColors[quote.category]} transition-all duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          {categoryIcons[quote.category]}
-          <span>{categoryLabels[quote.category]}</span>
-        </div>
+    <div className={`text-center py-4 transition-all duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
+      <blockquote className="text-sm text-gray-500 dark:text-gray-400 italic leading-relaxed">
+        "{quote.text}"
+      </blockquote>
+
+      <div className="flex items-center justify-center gap-3 mt-2">
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          — {quote.author}
+        </p>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="p-1.5 rounded-full hover:bg-white/50 transition-colors"
+          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Get new quote"
         >
           <svg
-            className={`w-4 h-4 text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`}
+            className={`w-3.5 h-3.5 text-gray-400 dark:text-gray-500 ${isRefreshing ? 'animate-spin' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -84,14 +57,6 @@ export default function MotivationalQuote({ variant = 'daily' }: MotivationalQuo
           </svg>
         </button>
       </div>
-
-      <blockquote className="text-sm text-gray-700 dark:text-gray-300 italic leading-relaxed">
-        "{quote.text}"
-      </blockquote>
-
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right">
-        — {quote.author}
-      </p>
     </div>
   )
 }
