@@ -1,8 +1,18 @@
 # APP PRD: Strength Profile Tracker
 
-**Version:** 2.0
-**Date:** 2025-12-02
-**Status:** Draft
+**Version:** 3.0
+**Date:** 2025-12-06
+**Status:** In Development
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-12-01 | Initial PRD with profile management and 4 core exercises |
+| 2.0 | 2025-12-02 | Expanded to 25 exercises, body part filtering, motivational quotes |
+| 3.0 | 2025-12-06 | Added dark mode, Workout Logger, Achievements, Strength Score, AI Coach Tips |
 
 ---
 
@@ -219,6 +229,278 @@ interface Quote {
 
 ---
 
+### 2.4 Workout Logger
+
+#### Requirements
+- Log workout sets for any exercise
+- Display last 3 sessions for reference
+- Pre-filled rep suggestions (12, 10, 8)
+- Smart tips based on logged data
+- Number of exercises doesn't affect scoring - quality over quantity
+
+#### Design
+
+```typescript
+interface WorkoutSet {
+  weight: number      // kg
+  reps: number
+}
+
+interface WorkoutSession {
+  id: string
+  date: string        // ISO date
+  exerciseId: string
+  sets: WorkoutSet[]  // Always 3 sets
+}
+
+interface WorkoutLog {
+  [profileId: string]: WorkoutSession[]
+}
+
+// Storage
+const WORKOUT_KEY = 'spt_workouts'
+localStorage.setItem(WORKOUT_KEY, JSON.stringify(workoutLog))
+```
+
+#### UI Mockup - Expanded Exercise Card
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Bench Press                                    [Chest] │
+├─────────────────────────────────────────────────────────┤
+│  Level:  [BEG]  [NOV]  [INT✓]  [ADV]                    │
+│           59kg   82kg   106kg   129kg                   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  WORKOUT LOG                                            │
+│  ─────────────────────────────────────────────────────  │
+│           Nov 28    Dec 2     Dec 4      TODAY          │
+│  ┌────────┬─────────┬─────────┬─────────┬─────────────┐ │
+│  │ Set 1  │ 70×12   │ 75×12   │ 80×10   │ [    ] ×12  │ │
+│  ├────────┼─────────┼─────────┼─────────┼─────────────┤ │
+│  │ Set 2  │ 75×10   │ 80×10   │ 85×8    │ [    ] ×10  │ │
+│  ├────────┼─────────┼─────────┼─────────┼─────────────┤ │
+│  │ Set 3  │ 80×8    │ 85×8    │ 87.5×6  │ [    ] ×8   │ │
+│  └────────┴─────────┴─────────┴─────────┴─────────────┘ │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│  💡 You lifted 87.5kg last time - try 90kg today!      │
+│  🏆 PR: 87.5kg × 6 (Dec 4)                              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Empty State (No History)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Squat                                          [Legs]  │
+├─────────────────────────────────────────────────────────┤
+│  Level:  [BEG]  [NOV]  [INT]  [ADV]    (not rated)      │
+│           89kg  123kg  160kg  194kg                     │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  WORKOUT LOG                                            │
+│  ─────────────────────────────────────────────────────  │
+│                                            TODAY        │
+│  ┌────────┬─────────┬─────────┬─────────┬─────────────┐ │
+│  │ Set 1  │         │         │         │ [    ] ×12  │ │
+│  ├────────┼─────────┼─────────┼─────────┼─────────────┤ │
+│  │ Set 2  │         │         │         │ [    ] ×10  │ │
+│  ├────────┼─────────┼─────────┼─────────┼─────────────┤ │
+│  │ Set 3  │         │         │         │ [    ] ×8   │ │
+│  └────────┴─────────┴─────────┴─────────┴─────────────┘ │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│  💡 Log your first workout to start tracking progress!  │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Mobile Collapsed vs Expanded
+
+**Collapsed (default):**
+```
+┌─────────────────────────────────────┐
+│  Bench Press              [Chest] ▼ │
+│  [BEG] [NOV] [INT✓] [ADV]           │
+└─────────────────────────────────────┘
+```
+
+**Expanded (tap to open):**
+```
+┌─────────────────────────────────────┐
+│  Bench Press              [Chest] ▲ │
+│  [BEG] [NOV] [INT✓] [ADV]           │
+│─────────────────────────────────────│
+│  Nov28  Dec2  Dec4   TODAY          │
+│  70×12  75×12 80×10  [  ]×12        │
+│  75×10  80×10 85×8   [  ]×10        │
+│  80×8   85×8  87×6   [  ]×8         │
+│─────────────────────────────────────│
+│  💡 Try 90kg today!  🏆 PR: 87.5kg  │
+└─────────────────────────────────────┘
+```
+
+#### Interaction Flow
+| Action | Result |
+|--------|--------|
+| Tap exercise card | Expands to show workout log |
+| Enter weight in TODAY column | Auto-saves, reps pre-filled (12/10/8) |
+| Tap reps number | Can edit reps if different |
+| After logging | Smart tip updates based on new data |
+
+#### Test Cases
+- [ ] Exercise card expands on tap
+- [ ] Last 3 sessions display correctly
+- [ ] Empty state shows placeholder reps (12, 10, 8)
+- [ ] Weight entry auto-saves
+- [ ] Reps are editable
+- [ ] PR detection works
+- [ ] Smart tips update after logging
+
+---
+
+### 2.5 Achievements/Badges
+
+#### Requirements
+- Reward quality over quantity
+- Number of exercises rated doesn't matter
+- Based on level achieved, not exercise count
+
+#### Badge Definitions
+
+| Badge | Name | Condition |
+|-------|------|-----------|
+| 🏋️ | First Steps | Rate your first exercise |
+| 🔥 | On Fire | Reach Intermediate on any exercise |
+| 👑 | Elite Lifter | Reach Advanced on any exercise |
+| 📈 | Level Up | Improve any exercise by one level |
+| 💪 | Double Advanced | Have 2 exercises at Advanced |
+| ⚖️ | Balanced | All your rated exercises at same level |
+| 🎯 | Focused | All rated exercises in same body part |
+| 🌟 | Peak Performance | Average level is Advanced |
+
+#### Design
+
+```typescript
+interface Badge {
+  id: string
+  name: string
+  icon: string
+  description: string
+  unlockedAt?: string  // ISO date when earned
+}
+
+interface ProfileBadges {
+  [profileId: string]: Badge[]
+}
+```
+
+#### Test Cases
+- [ ] Badge unlocks when condition met
+- [ ] Badge shows unlock date
+- [ ] Locked badges appear grayed out
+- [ ] No badge requires minimum exercise count
+
+---
+
+### 2.6 Strength Score
+
+#### Requirements
+- Pure average of rated exercises
+- 4 exercises or 25 - same formula
+- Score reflects quality, not quantity
+- Scale: 0-100
+
+#### Formula
+
+```
+Score = Average Level × 25
+
+Level values:
+- Beginner = 1 → Score 25
+- Novice = 2 → Score 50
+- Intermediate = 3 → Score 75
+- Advanced = 4 → Score 100
+
+Example:
+• 4 exercises, all Advanced → avg 4.0 → Score: 100
+• 5 exercises, all Intermediate → avg 3.0 → Score: 75
+• 3 exercises (1 Beg, 1 Nov, 1 Int) → avg 2.0 → Score: 50
+```
+
+#### Design
+
+```typescript
+function calculateStrengthScore(ratings: ExerciseRatings): number {
+  const levels = Object.values(ratings).filter(Boolean)
+  if (levels.length === 0) return 0
+
+  const levelValues = { beginner: 1, novice: 2, intermediate: 3, advanced: 4 }
+  const sum = levels.reduce((acc, level) => acc + levelValues[level], 0)
+  const average = sum / levels.length
+
+  return Math.round(average * 25)
+}
+```
+
+#### UI Display
+- Large circular gauge showing score (0-100)
+- Color gradient: red (0-25) → yellow (26-50) → green (51-75) → gold (76-100)
+- Label showing level name (e.g., "Intermediate Level")
+- No mention of exercise count
+
+#### Test Cases
+- [ ] Score calculates correctly with any number of exercises
+- [ ] Empty profile shows 0
+- [ ] All Advanced = 100
+- [ ] All Beginner = 25
+- [ ] Mixed levels average correctly
+
+---
+
+### 2.7 AI Coach Tips
+
+#### Requirements
+- Contextual tips based on profile data
+- Focus on quality, not quantity
+- Never suggest "add more exercises"
+- Encouraging and actionable
+
+#### Tip Scenarios
+
+| Scenario | Tip |
+|----------|-----|
+| All Beginner | "Everyone starts somewhere! Focus on form before adding weight." |
+| Mix of levels | "Your Bench Press is stronger than your Squat - that's common! Work on what feels right." |
+| All same level | "Solid consistency across your lifts. You're ready to push for the next level!" |
+| One Advanced, rest lower | "Your Deadlift is elite! The other lifts will catch up with time." |
+| All Advanced | "You're in the top tier. Time to set new PRs or try new variations!" |
+| No exercises rated | "Tap any exercise and select your level to get started!" |
+| Close to PR | "You lifted 87.5kg last time - try 90kg today!" |
+
+#### Design
+
+```typescript
+interface CoachTip {
+  id: string
+  message: string
+  type: 'encouragement' | 'suggestion' | 'achievement'
+  priority: number
+}
+
+function generateCoachTips(profile: Profile, workoutLog: WorkoutSession[]): CoachTip[]
+```
+
+#### Test Cases
+- [ ] Tip displays based on current profile state
+- [ ] Tips update after changes
+- [ ] No tips about exercise count
+- [ ] Workout-specific tips show when relevant
+
+---
+
 ## 3. UI Specifications
 
 ### 3.1 Color Palette
@@ -309,23 +591,32 @@ src/
 
 ## 5. Development Phases
 
-### Phase 1: MVP
-- [ ] Profile CRUD (create, read, update, delete)
-- [ ] 4 core exercises (Bench, Squat, Deadlift, Shoulder Press)
-- [ ] Level selection and persistence
-- [ ] Basic UI
+### Phase 1: MVP ✅
+- [x] Profile CRUD (create, read, update, delete)
+- [x] 4 core exercises (Bench, Squat, Deadlift, Shoulder Press)
+- [x] Level selection and persistence
+- [x] Basic UI
 
-### Phase 2: Enhancement
-- [ ] Expand to 20+ exercises
-- [ ] Body part filtering
-- [ ] Motivational quotes
+### Phase 2: Enhancement ✅
+- [x] Expand to 25 exercises
+- [x] Body part filtering
+- [x] Rated/Unrated exercise sections
+- [x] Overall profile level calculation
+- [x] Motivational quotes (110 quotes)
+- [x] Dark mode toggle
 - [ ] Units toggle (kg/lbs)
 
-### Phase 3: Polish
-- [ ] Dark mode
-- [ ] Animations
-- [ ] PWA support
+### Phase 3: Fun Features (Current)
+- [ ] Workout Logger (expandable exercise cards)
+- [ ] Achievements/Badges system
+- [ ] Strength Score (0-100)
+- [ ] AI Coach Tips
+
+### Phase 4: Polish
+- [ ] Animations & transitions
+- [ ] PWA support (offline, installable)
 - [ ] Performance optimization
+- [ ] Share profile feature
 
 ---
 
@@ -347,5 +638,6 @@ src/
 
 ---
 
-**Document Status:** Ready for Review
-**Next:** Approval, then build
+**Document Status:** Active Development
+**Current Phase:** Phase 3 - Fun Features
+**Next:** Implement Workout Logger, Achievements, Strength Score, AI Coach Tips
