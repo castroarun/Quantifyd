@@ -7,6 +7,7 @@ import { Profile, BodyPart, Exercise } from '@/types'
 import { getProfileById } from '@/lib/storage/profiles'
 import { calculateStrengthScore, EXERCISES } from '@/lib/calculations/strength'
 import { getAllWorkouts, formatSessionDate } from '@/lib/storage/workouts'
+import { getScoreHistory, ScoreHistoryEntry } from '@/lib/storage/seedData'
 
 interface ProgressPageProps {
   params: Promise<{ id: string }>
@@ -36,6 +37,7 @@ export default function ProgressPage({ params }: ProgressPageProps) {
   const [prs, setPrs] = useState<PRData[]>([])
   const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>([])
   const [currentScore, setCurrentScore] = useState(0)
+  const [scoreHistory, setScoreHistory] = useState<ScoreHistoryEntry[]>([])
   const [exerciseProgress, setExerciseProgress] = useState<{exercise: string, data: {date: string, weight: number}[]}[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -47,7 +49,12 @@ export default function ProgressPage({ params }: ProgressPageProps) {
     }
 
     setProfile(loadedProfile)
-    setCurrentScore(calculateStrengthScore(loadedProfile.exerciseRatings))
+    const score = calculateStrengthScore(loadedProfile.exerciseRatings)
+    setCurrentScore(score)
+
+    // Load score history
+    const history = getScoreHistory(id)
+    setScoreHistory(history)
 
     // Calculate body part balance from ratings
     const bodyPartLevels: Record<BodyPart, number[]> = {
@@ -179,8 +186,8 @@ export default function ProgressPage({ params }: ProgressPageProps) {
       </header>
 
       <main className="p-4 max-w-lg mx-auto space-y-4">
-        {/* 1. Current Score Display */}
-        <ScoreDisplay score={currentScore} />
+        {/* 1. Score History Chart */}
+        <ScoreHistoryChart history={scoreHistory} currentScore={currentScore} />
 
         {/* 2. Personal Records */}
         <PersonalRecords prs={prs} />
@@ -210,9 +217,9 @@ function avg(arr: number[]): number {
   return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
 }
 
-// 1. Score Display
-function ScoreDisplay({ score }: { score: number }) {
-  const getLabel = () => {
+// 1. Score History Chart
+function ScoreHistoryChart({ history, currentScore }: { history: ScoreHistoryEntry[], currentScore: number }) {
+  const getLabel = (score: number) => {
     if (score >= 88) return 'Elite'
     if (score >= 63) return 'Strong'
     if (score >= 38) return 'Building'
@@ -220,20 +227,168 @@ function ScoreDisplay({ score }: { score: number }) {
     return 'Unrated'
   }
 
+  // If no history, show just current score
+  if (history.length < 2) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
+          Strength Score History
+        </h3>
+        <div className="text-center py-4">
+          <p className="text-5xl font-bold text-blue-600 dark:text-blue-400">{currentScore}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{getLabel(currentScore)}</p>
+        </div>
+        <div className="mt-3 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 transition-all"
+            style={{ width: `${currentScore}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-400 text-center mt-3">
+          Keep training to see your score progression!
+        </p>
+      </div>
+    )
+  }
+
+  // Chart dimensions
+  const chartWidth = 300
+  const chartHeight = 140
+  const paddingLeft = 35
+  const paddingRight = 15
+  const paddingTop = 20
+  const paddingBottom = 30
+
+  const plotWidth = chartWidth - paddingLeft - paddingRight
+  const plotHeight = chartHeight - paddingTop - paddingBottom
+
+  const scores = history.map(h => h.score)
+  const minScore = Math.min(...scores) - 5
+  const maxScore = Math.max(...scores) + 5
+  const scoreRange = maxScore - minScore
+
+  const points = history.map((entry, i) => ({
+    x: paddingLeft + (i / (history.length - 1)) * plotWidth,
+    y: paddingTop + plotHeight - ((entry.score - minScore) / scoreRange) * plotHeight,
+    score: entry.score,
+    date: formatSessionDate(entry.date)
+  }))
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${paddingTop + plotHeight} L ${points[0].x} ${paddingTop + plotHeight} Z`
+
+  const firstScore = history[0].score
+  const lastScore = history[history.length - 1].score
+  const improvement = lastScore - firstScore
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 text-center">
-        Current Strength Score
-      </h3>
-      <div className="text-center">
-        <p className="text-5xl font-bold text-blue-600 dark:text-blue-400">{score}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{getLabel()}</p>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          Strength Score History
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{currentScore}</span>
+          <span className="text-xs text-gray-400">{getLabel(currentScore)}</span>
+        </div>
       </div>
-      <div className="mt-3 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 transition-all"
-          style={{ width: `${score}%` }}
+
+      <svg width="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="overflow-visible">
+        <defs>
+          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+
+        {/* Grid lines */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = paddingTop + plotHeight * (1 - ratio)
+          const value = Math.round(minScore + scoreRange * ratio)
+          return (
+            <g key={i}>
+              <line
+                x1={paddingLeft}
+                y1={y}
+                x2={chartWidth - paddingRight}
+                y2={y}
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeDasharray="3,3"
+                className="text-gray-200 dark:text-gray-700"
+              />
+              <text
+                x={paddingLeft - 5}
+                y={y}
+                textAnchor="end"
+                dominantBaseline="middle"
+                className="text-[9px] fill-gray-400"
+              >
+                {value}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Area fill */}
+        <path d={areaPath} fill="url(#scoreGradient)" />
+
+        {/* Line */}
+        <path
+          d={linePath}
+          fill="none"
+          stroke="#3B82F6"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
+
+        {/* Points */}
+        {points.map((p, i) => {
+          const isLast = i === points.length - 1
+          return (
+            <g key={i}>
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={isLast ? 5 : 3}
+                fill={isLast ? '#22C55E' : '#3B82F6'}
+                stroke="white"
+                strokeWidth="2"
+              />
+              {/* Show score on first and last points */}
+              {(i === 0 || isLast) && (
+                <text
+                  x={p.x}
+                  y={p.y - 10}
+                  textAnchor="middle"
+                  className={`text-[9px] font-medium ${isLast ? 'fill-green-600 dark:fill-green-400' : 'fill-gray-500 dark:fill-gray-400'}`}
+                >
+                  {p.score}
+                </text>
+              )}
+              {/* Date labels */}
+              {(i === 0 || isLast || i === Math.floor(points.length / 2)) && (
+                <text
+                  x={p.x}
+                  y={chartHeight - 5}
+                  textAnchor="middle"
+                  className="text-[9px] fill-gray-400"
+                >
+                  {p.date}
+                </text>
+              )}
+            </g>
+          )
+        })}
+      </svg>
+
+      {/* Progress indicator */}
+      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-center gap-2">
+        <span className={`text-sm font-medium ${improvement >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          {improvement >= 0 ? '↑' : '↓'} {improvement >= 0 ? '+' : ''}{improvement} pts
+        </span>
+        <span className="text-xs text-gray-400">since tracking started</span>
       </div>
     </div>
   )

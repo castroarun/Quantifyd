@@ -2,6 +2,12 @@ import { Profile, WorkoutSession } from '@/types'
 
 const PROFILES_KEY = 'strength_profiles_v2'
 const WORKOUTS_KEY = 'strength_profile_workouts'
+const SCORE_HISTORY_KEY = 'strength_score_history'
+
+export interface ScoreHistoryEntry {
+  date: string
+  score: number
+}
 
 /**
  * Sample profiles with exercise ratings
@@ -181,6 +187,82 @@ function generateSampleWorkouts(): WorkoutSession[] {
 }
 
 /**
+ * Generate sample score history for profiles
+ */
+function generateSampleScoreHistory(): Record<string, ScoreHistoryEntry[]> {
+  const today = new Date()
+  const history: Record<string, ScoreHistoryEntry[]> = {}
+
+  // Alex's score history - steady improvement
+  const alexScores = [42, 44, 45, 48, 50, 52, 55, 57]
+  history['sample_alex_001'] = alexScores.map((score, i) => {
+    const date = new Date(today)
+    date.setDate(date.getDate() - (alexScores.length - 1 - i) * 3)
+    return {
+      date: date.toISOString().split('T')[0],
+      score
+    }
+  })
+
+  // Jordan's score history - strong start, consistent gains
+  const jordanScores = [58, 60, 61, 63, 65, 67]
+  history['sample_jordan_002'] = jordanScores.map((score, i) => {
+    const date = new Date(today)
+    date.setDate(date.getDate() - (jordanScores.length - 1 - i) * 4)
+    return {
+      date: date.toISOString().split('T')[0],
+      score
+    }
+  })
+
+  return history
+}
+
+/**
+ * Get score history for a profile
+ */
+export function getScoreHistory(profileId: string): ScoreHistoryEntry[] {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const data = localStorage.getItem(SCORE_HISTORY_KEY)
+    if (!data) return []
+    const history = JSON.parse(data)
+    return history[profileId] || []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Add a score entry to history
+ */
+export function addScoreToHistory(profileId: string, score: number): void {
+  if (typeof window === 'undefined') return
+
+  const today = new Date().toISOString().split('T')[0]
+  const allHistory: Record<string, ScoreHistoryEntry[]> = JSON.parse(
+    localStorage.getItem(SCORE_HISTORY_KEY) || '{}'
+  )
+
+  if (!allHistory[profileId]) {
+    allHistory[profileId] = []
+  }
+
+  // Only add if it's a new day or score changed
+  const lastEntry = allHistory[profileId][allHistory[profileId].length - 1]
+  if (!lastEntry || lastEntry.date !== today || lastEntry.score !== score) {
+    // Update today's entry or add new
+    if (lastEntry && lastEntry.date === today) {
+      lastEntry.score = score
+    } else {
+      allHistory[profileId].push({ date: today, score })
+    }
+    localStorage.setItem(SCORE_HISTORY_KEY, JSON.stringify(allHistory))
+  }
+}
+
+/**
  * Check if sample data already exists
  */
 export function hasSampleData(): boolean {
@@ -206,18 +288,29 @@ export function loadSampleData(): void {
   // Get existing data
   const existingProfiles: Profile[] = JSON.parse(localStorage.getItem(PROFILES_KEY) || '[]')
   const existingWorkouts: WorkoutSession[] = JSON.parse(localStorage.getItem(WORKOUTS_KEY) || '[]')
+  const existingScoreHistory: Record<string, ScoreHistoryEntry[]> = JSON.parse(
+    localStorage.getItem(SCORE_HISTORY_KEY) || '{}'
+  )
 
   // Remove any existing sample data first
   const filteredProfiles = existingProfiles.filter(p => !p.id.startsWith('sample_'))
   const filteredWorkouts = existingWorkouts.filter(w => !w.profileId.startsWith('sample_'))
+  const filteredScoreHistory: Record<string, ScoreHistoryEntry[]> = {}
+  Object.keys(existingScoreHistory).forEach(key => {
+    if (!key.startsWith('sample_')) {
+      filteredScoreHistory[key] = existingScoreHistory[key]
+    }
+  })
 
   // Add sample data
   const newProfiles = [...filteredProfiles, ...sampleProfiles]
   const newWorkouts = [...filteredWorkouts, ...generateSampleWorkouts()]
+  const newScoreHistory = { ...filteredScoreHistory, ...generateSampleScoreHistory() }
 
   // Save to localStorage
   localStorage.setItem(PROFILES_KEY, JSON.stringify(newProfiles))
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(newWorkouts))
+  localStorage.setItem(SCORE_HISTORY_KEY, JSON.stringify(newScoreHistory))
 }
 
 /**
@@ -228,10 +321,20 @@ export function removeSampleData(): void {
 
   const existingProfiles: Profile[] = JSON.parse(localStorage.getItem(PROFILES_KEY) || '[]')
   const existingWorkouts: WorkoutSession[] = JSON.parse(localStorage.getItem(WORKOUTS_KEY) || '[]')
+  const existingScoreHistory: Record<string, ScoreHistoryEntry[]> = JSON.parse(
+    localStorage.getItem(SCORE_HISTORY_KEY) || '{}'
+  )
 
   const filteredProfiles = existingProfiles.filter(p => !p.id.startsWith('sample_'))
   const filteredWorkouts = existingWorkouts.filter(w => !w.profileId.startsWith('sample_'))
+  const filteredScoreHistory: Record<string, ScoreHistoryEntry[]> = {}
+  Object.keys(existingScoreHistory).forEach(key => {
+    if (!key.startsWith('sample_')) {
+      filteredScoreHistory[key] = existingScoreHistory[key]
+    }
+  })
 
   localStorage.setItem(PROFILES_KEY, JSON.stringify(filteredProfiles))
   localStorage.setItem(WORKOUTS_KEY, JSON.stringify(filteredWorkouts))
+  localStorage.setItem(SCORE_HISTORY_KEY, JSON.stringify(filteredScoreHistory))
 }
