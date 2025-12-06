@@ -7,21 +7,23 @@
 
 ## Summary of What's Done
 
-| Item | Status |
-|------|--------|
-| PRD Document (APP_PRD.md) | Done |
-| UI Prototype (ui-prototype.html) | Done |
-| Interactive Mockup Features | Done |
-| - 23 Exercises (5 body parts) | Done |
-| - Dark Mode Toggle | Done |
-| - 50 Motivational Quotes | Done |
-| - 4 User Difficulty Levels | Done |
-| - Exercise Filtering by Body Part | Done |
-| - Rated Exercises Sort to Top | Done |
-| Jira Backlog Setup | Done |
-| GitHub Repository | Done |
-| Test Cases | Pending |
-| Actual Code Implementation | Not Started |
+| Phase | Item | Status |
+|-------|------|--------|
+| Design | PRD Document (APP_PRD.md) | Done |
+| Design | UI Prototype (ui-prototype.html) | Done |
+| Design | - 23 Exercises (5 body parts) | Done |
+| Design | - Dark Mode Toggle | Done |
+| Design | - 50 Motivational Quotes | Done |
+| Design | - 4 User Difficulty Levels | Done |
+| Design | - Exercise Filtering by Body Part | Done |
+| Design | - Rated Exercises Sort to Top | Done |
+| Design | Test Cases | Pending |
+| Setup | Jira Backlog | Done |
+| Setup | GitHub Repository | Done |
+| Build | Profile Management | Not Started |
+| Build | Exercise Tracking | Not Started |
+| Build | Standards Calculator | Not Started |
+| Build | Data Persistence | Not Started |
 
 ---
 
