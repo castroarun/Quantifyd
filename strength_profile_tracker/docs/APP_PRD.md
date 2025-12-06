@@ -1,6 +1,6 @@
 # APP PRD: Strength Profile Tracker
 
-**Version:** 3.0
+**Version:** 3.1
 **Date:** 2025-12-06
 **Status:** In Development
 
@@ -13,6 +13,7 @@
 | 1.0 | 2025-12-01 | Initial PRD with profile management and 4 core exercises |
 | 2.0 | 2025-12-02 | Expanded to 25 exercises, body part filtering, motivational quotes |
 | 3.0 | 2025-12-06 | Added dark mode, Workout Logger, Achievements, Strength Score, AI Coach Tips |
+| 3.1 | 2025-12-06 | Added Progress Visualizations (5 chart types) |
 
 ---
 
@@ -501,6 +502,157 @@ function generateCoachTips(profile: Profile, workoutLog: WorkoutSession[]): Coac
 
 ---
 
+### 2.8 Progress Visualizations
+
+#### Requirements
+- Dedicated progress page accessible from profile
+- Visual representation of strength journey
+- Uses data from workout logger and exercise ratings
+- Works with any number of exercises (quality over quantity)
+
+#### Chart Types
+
+**1. Strength Score History (Line Chart)**
+- Tracks score changes over time
+- Shows start → current comparison
+- Point-based progression
+
+**2. Personal Records**
+- Top 3 PRs with medal styling (🥇🥈🥉)
+- Shows exercise, weight, date, improvement amount
+- Celebrates achievements
+
+**3. Body Part Balance (Radar Chart)**
+- Spider/pentagon chart
+- Shows strength across Chest, Back, Shoulders, Legs, Arms
+- Color-coded by percentage
+
+**4. Workout Frequency (Calendar Heatmap)**
+- GitHub-style activity grid
+- Shows workout intensity by day
+- Tracks streaks and totals
+
+**5. Exercise Progression (Line Chart)**
+- Per-exercise weight progression
+- Gradient fill under line
+- Date labels on x-axis, weight on y-axis
+
+#### UI Mockup - Strength Score History
+
+```
+┌─────────────────────────────────────────────┐
+│  Strength Score History                      │
+├─────────────────────────────────────────────┤
+│  100 ─┬──────────────────────────────────   │
+│       │                              ●63    │
+│   75 ─┤                        ●55          │
+│       │                  ●42                │
+│   50 ─┤            ●35                      │
+│       │                                     │
+│   25 ─┤                                     │
+│       │                                     │
+│    0 ─┴────────────────────────────────────  │
+│       Nov 1   Nov 15   Dec 1    Dec 6       │
+├─────────────────────────────────────────────┤
+│   Started: 35  →  Current: 63    [+28 pts]  │
+└─────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Personal Records
+
+```
+┌─────────────────────────────────────────────┐
+│  🏆 Personal Records                         │
+├─────────────────────────────────────────────┤
+│  🥇 Bench Press       80kg    Dec 5   +5kg  │
+│  🥈 Squat            100kg    Dec 3  +10kg  │
+│  🥉 Deadlift         120kg   Nov 28  +7.5kg │
+└─────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Body Part Balance (Radar)
+
+```
+┌─────────────────────────────────────────────┐
+│  Body Part Balance                           │
+├─────────────────────────────────────────────┤
+│              Chest                           │
+│                ▲                             │
+│          Arms / \ Back                       │
+│              /   \                           │
+│             /     \                          │
+│   Shoulders ─── ─── Legs                     │
+│                                              │
+│  ● Chest: 75%  ● Back: 60%  ● Arms: 85%     │
+│  ● Shoulders: 50%  ● Legs: 40%              │
+└─────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Workout Frequency (Heatmap)
+
+```
+┌─────────────────────────────────────────────┐
+│  Workout Frequency                           │
+├─────────────────────────────────────────────┤
+│       S  M  T  W  T  F  S                    │
+│  W1  ░░ ▓▓ ░░ ██ ░░ ██ ░░                   │
+│  W2  ▓▓ ░░ ██ ░░ ▓▓ ░░ ░░                   │
+│  W3  ░░ ██ ░░ ██ ░░ ██ ▓▓                   │
+│  W4  ██ ░░ ▓▓ ░░ ██ ░░ ░░                   │
+│                                              │
+│  Less ░░▓▓██ More                           │
+├─────────────────────────────────────────────┤
+│  Total: 12    This Week: 3    Streak: 5     │
+└─────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Exercise Progression (Line)
+
+```
+┌─────────────────────────────────────────────┐
+│  Exercise Progression          [Bench Press] │
+├─────────────────────────────────────────────┤
+│  75kg ─┬──────────────────────────────●     │
+│        │                         ●          │
+│  70kg ─┤                    ●               │
+│        │               ●                    │
+│  65kg ─┤          ●                         │
+│        │                                    │
+│  60kg ─┴────────────────────────────────    │
+│        Nov20  Nov25  Nov30  Dec3   Dec6     │
+├─────────────────────────────────────────────┤
+│              ↑ +10kg in last 3 weeks        │
+└─────────────────────────────────────────────┘
+```
+
+#### Design
+
+```typescript
+// Route: /profile/[id]/progress
+
+interface ProgressPageProps {
+  profileId: string
+}
+
+// Data sources
+- Strength Score: calculateStrengthScore(ratings) over time
+- Personal Records: Max weight from WorkoutSession[]
+- Body Part Balance: Average level per body part from ratings
+- Workout Frequency: Count sessions by date
+- Exercise Progression: Weight from WorkoutSession[] for exercise
+```
+
+#### Test Cases
+- [ ] Score history line chart renders with data points
+- [ ] PRs display correctly with medals
+- [ ] Radar chart shows all 5 body parts
+- [ ] Heatmap shows correct intensity colors
+- [ ] Exercise progression line connects all points
+- [ ] Empty states handled gracefully
+- [ ] Dark mode works for all charts
+
+---
+
 ## 3. UI Specifications
 
 ### 3.1 Color Palette
@@ -606,17 +758,27 @@ src/
 - [x] Dark mode toggle
 - [ ] Units toggle (kg/lbs)
 
-### Phase 3: Fun Features (Current)
-- [ ] Workout Logger (expandable exercise cards)
-- [ ] Achievements/Badges system
-- [ ] Strength Score (0-100)
-- [ ] AI Coach Tips
+### Phase 3: Fun Features ✅
+- [x] Workout Logger (expandable exercise cards)
+- [x] Achievements/Badges system (8 badges)
+- [x] Strength Score (0-100 with circular gauge)
+- [x] AI Coach Tips (contextual tips)
+- [x] Progress Visualizations (mockup with 5 chart types)
 
-### Phase 4: Polish
+### Phase 4: Progress Visualizations (Current)
+- [ ] Connect Score History to real data
+- [ ] Connect Personal Records to workout data
+- [ ] Connect Body Part Balance to ratings
+- [ ] Connect Workout Frequency to session data
+- [ ] Connect Exercise Progression to workout data
+- [ ] Add link to progress page from profile
+
+### Phase 5: Polish
 - [ ] Animations & transitions
 - [ ] PWA support (offline, installable)
 - [ ] Performance optimization
 - [ ] Share profile feature
+- [ ] Units toggle (kg/lbs)
 
 ---
 
@@ -639,5 +801,5 @@ src/
 ---
 
 **Document Status:** Active Development
-**Current Phase:** Phase 3 - Fun Features
-**Next:** Implement Workout Logger, Achievements, Strength Score, AI Coach Tips
+**Current Phase:** Phase 4 - Progress Visualizations
+**Next:** Connect progress charts to real data, add navigation link
