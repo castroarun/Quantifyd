@@ -4,6 +4,11 @@ export type Level = 'beginner' | 'novice' | 'intermediate' | 'advanced'
 
 export type BodyPart = 'chest' | 'back' | 'shoulders' | 'legs' | 'arms' | 'core'
 
+// Phase 4: New profile fields
+export type Sex = 'male' | 'female'
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
+export type Goal = 'lose' | 'maintain' | 'gain'
+
 // All exercises from DEVELOPMENT-PLAN v2.0
 export type Exercise =
   // Chest
@@ -42,7 +47,8 @@ export interface ExerciseInfo {
   id: Exercise
   name: string
   bodyPart: BodyPart
-  multipliers: StrengthMultipliers
+  multipliers: StrengthMultipliers           // Male multipliers (default)
+  femaleMultipliers?: StrengthMultipliers    // Female multipliers (Phase 4)
   isDumbbell?: boolean  // Per-hand weight
 }
 
@@ -62,6 +68,10 @@ export interface Profile {
   age: number                   // 13-100
   height: number                // 100-250 cm
   weight: number                // 30-300 kg
+  sex?: Sex                     // For gender-specific standards & BMR (Phase 4)
+  dailySteps?: number           // Average daily steps, 0-50000 (Phase 4)
+  activityLevel?: ActivityLevel // General activity level (Phase 4)
+  goal?: Goal                   // Fitness/nutrition goal (Phase 4)
   exerciseRatings: ExerciseRatings  // Only rated exercises stored
   createdAt: string
   updatedAt: string
@@ -86,6 +96,7 @@ export const VALIDATION = {
   age: { min: 13, max: 100 },
   height: { min: 100, max: 250 },
   weight: { min: 30, max: 300 },
+  dailySteps: { min: 0, max: 50000 },
   maxProfiles: 5
 } as const
 
@@ -182,3 +193,31 @@ export interface WorkoutSession {
 
 // Suggested rep scheme for each set
 export const SUGGESTED_REPS = [12, 10, 8] as const
+
+// Phase 4: Activity level display names and multipliers
+export const ACTIVITY_LEVEL_INFO: Record<ActivityLevel, { name: string; description: string; multiplier: number }> = {
+  sedentary: { name: 'Sedentary', description: 'Little to no exercise, desk job', multiplier: 1.2 },
+  light: { name: 'Light', description: 'Light exercise 1-3 days/week', multiplier: 1.375 },
+  moderate: { name: 'Moderate', description: 'Moderate exercise 3-5 days/week', multiplier: 1.55 },
+  active: { name: 'Active', description: 'Hard exercise 6-7 days/week', multiplier: 1.725 },
+  very_active: { name: 'Very Active', description: 'Very hard exercise, physical job', multiplier: 1.9 }
+} as const
+
+// Phase 4: Goal display names
+export const GOAL_INFO: Record<Goal, { name: string; calorieAdjustment: number; description: string }> = {
+  lose: { name: 'Lose Weight', calorieAdjustment: -500, description: 'Moderate calorie deficit' },
+  maintain: { name: 'Maintain', calorieAdjustment: 0, description: 'Maintain current weight' },
+  gain: { name: 'Gain Muscle', calorieAdjustment: 300, description: 'Lean bulk surplus' }
+} as const
+
+// Phase 4: Sex display
+export const SEX_INFO: Record<Sex, { name: string; icon: string }> = {
+  male: { name: 'Male', icon: '♂' },
+  female: { name: 'Female', icon: '♀' }
+} as const
+
+// All activity levels
+export const ALL_ACTIVITY_LEVELS: ActivityLevel[] = ['sedentary', 'light', 'moderate', 'active', 'very_active']
+
+// All goals
+export const ALL_GOALS: Goal[] = ['lose', 'maintain', 'gain']

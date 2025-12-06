@@ -1,4 +1,4 @@
-import { Profile, Exercise, Level, ExerciseRatings, VALIDATION } from '@/types'
+import { Profile, Exercise, Level, ExerciseRatings, VALIDATION, Sex, ActivityLevel, Goal } from '@/types'
 
 const STORAGE_KEY = 'strength_profiles_v2'
 
@@ -70,6 +70,10 @@ export function createProfile(
     age: data.age,
     height: data.height,
     weight: data.weight,
+    sex: data.sex,
+    dailySteps: data.dailySteps,
+    activityLevel: data.activityLevel,
+    goal: data.goal,
     exerciseRatings: {},  // Start with no ratings
     createdAt: now,
     updatedAt: now
@@ -190,7 +194,7 @@ export function canCreateProfile(): boolean {
  * @throws Error if validation fails
  */
 function validateProfileData(
-  data: Partial<Pick<Profile, 'name' | 'age' | 'height' | 'weight'>>
+  data: Partial<Pick<Profile, 'name' | 'age' | 'height' | 'weight' | 'dailySteps'>>
 ): void {
   if (data.name !== undefined) {
     const name = data.name.trim()
@@ -217,6 +221,12 @@ function validateProfileData(
   if (data.weight !== undefined) {
     if (data.weight < VALIDATION.weight.min || data.weight > VALIDATION.weight.max) {
       throw new Error(`Weight must be between ${VALIDATION.weight.min} and ${VALIDATION.weight.max} kg`)
+    }
+  }
+
+  if (data.dailySteps !== undefined) {
+    if (data.dailySteps < VALIDATION.dailySteps.min || data.dailySteps > VALIDATION.dailySteps.max) {
+      throw new Error(`Daily steps must be between ${VALIDATION.dailySteps.min} and ${VALIDATION.dailySteps.max}`)
     }
   }
 }

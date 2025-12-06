@@ -2,7 +2,17 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Profile, VALIDATION } from '@/types'
+import {
+  Profile,
+  VALIDATION,
+  Sex,
+  ActivityLevel,
+  Goal,
+  ACTIVITY_LEVEL_INFO,
+  GOAL_INFO,
+  ALL_ACTIVITY_LEVELS,
+  ALL_GOALS
+} from '@/types'
 import { Button, Input } from '@/components/ui'
 import { createProfile, updateProfile } from '@/lib/storage/profiles'
 
@@ -16,6 +26,10 @@ interface FormData {
   age: string
   height: string
   weight: string
+  sex: Sex | ''
+  dailySteps: string
+  activityLevel: ActivityLevel | ''
+  goal: Goal | ''
 }
 
 interface FormErrors {
@@ -23,6 +37,7 @@ interface FormErrors {
   age?: string
   height?: string
   weight?: string
+  dailySteps?: string
   general?: string
 }
 
@@ -34,7 +49,11 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
     name: profile?.name || '',
     age: profile?.age?.toString() || '',
     height: profile?.height?.toString() || '',
-    weight: profile?.weight?.toString() || ''
+    weight: profile?.weight?.toString() || '',
+    sex: profile?.sex || '',
+    dailySteps: profile?.dailySteps?.toString() || '',
+    activityLevel: profile?.activityLevel || '',
+    goal: profile?.goal || ''
   })
 
   const [errors, setErrors] = useState<FormErrors>({})
@@ -75,6 +94,14 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
       newErrors.weight = `Weight must be between ${VALIDATION.weight.min} and ${VALIDATION.weight.max} kg`
     }
 
+    // Validate daily steps (optional but must be valid if provided)
+    if (formData.dailySteps) {
+      const steps = parseInt(formData.dailySteps, 10)
+      if (isNaN(steps) || steps < VALIDATION.dailySteps.min || steps > VALIDATION.dailySteps.max) {
+        newErrors.dailySteps = `Steps must be between ${VALIDATION.dailySteps.min} and ${VALIDATION.dailySteps.max}`
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -87,11 +114,34 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
     setIsSubmitting(true)
 
     try {
-      const data = {
+      const data: {
+        name: string
+        age: number
+        height: number
+        weight: number
+        sex?: Sex
+        dailySteps?: number
+        activityLevel?: ActivityLevel
+        goal?: Goal
+      } = {
         name: formData.name.trim(),
         age: parseInt(formData.age, 10),
         height: parseInt(formData.height, 10),
         weight: parseInt(formData.weight, 10)
+      }
+
+      // Add optional fields if provided
+      if (formData.sex) {
+        data.sex = formData.sex as Sex
+      }
+      if (formData.dailySteps) {
+        data.dailySteps = parseInt(formData.dailySteps, 10)
+      }
+      if (formData.activityLevel) {
+        data.activityLevel = formData.activityLevel as ActivityLevel
+      }
+      if (formData.goal) {
+        data.goal = formData.goal as Goal
       }
 
       if (isEditing && profile) {
@@ -170,6 +220,105 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
         max={VALIDATION.weight.max}
         hint={`${VALIDATION.weight.min}-${VALIDATION.weight.max} kg`}
       />
+
+      {/* Sex Selection */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Sex <span className="text-gray-400 text-xs">(for accurate calculations)</span>
+        </label>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, sex: 'male' })}
+            className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
+              formData.sex === 'male'
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            <span className="text-lg">♂</span>
+            <span className="ml-2 font-medium">Male</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, sex: 'female' })}
+            className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
+              formData.sex === 'female'
+                ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            <span className="text-lg">♀</span>
+            <span className="ml-2 font-medium">Female</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Daily Steps */}
+      <Input
+        label="Daily Steps (average)"
+        type="number"
+        placeholder="e.g., 8000"
+        value={formData.dailySteps}
+        onChange={e => setFormData({ ...formData, dailySteps: e.target.value })}
+        error={errors.dailySteps}
+        min={VALIDATION.dailySteps.min}
+        max={VALIDATION.dailySteps.max}
+        hint="Check your phone's health app"
+      />
+
+      {/* Activity Level */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Activity Level
+        </label>
+        <div className="space-y-2">
+          {ALL_ACTIVITY_LEVELS.map(level => (
+            <button
+              key={level}
+              type="button"
+              onClick={() => setFormData({ ...formData, activityLevel: level })}
+              className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                formData.activityLevel === level
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <div className="font-medium text-gray-900 dark:text-gray-100">
+                {ACTIVITY_LEVEL_INFO[level].name}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {ACTIVITY_LEVEL_INFO[level].description}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Goal */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Goal
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {ALL_GOALS.map(goal => (
+            <button
+              key={goal}
+              type="button"
+              onClick={() => setFormData({ ...formData, goal })}
+              className={`py-3 px-2 rounded-lg border-2 transition-all text-center ${
+                formData.goal === goal
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {GOAL_INFO[goal].name}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex gap-3 pt-4">
         <Button

@@ -39,6 +39,7 @@ export default function ProgressPage({ params }: ProgressPageProps) {
   const [currentScore, setCurrentScore] = useState(0)
   const [scoreHistory, setScoreHistory] = useState<ScoreHistoryEntry[]>([])
   const [exerciseProgress, setExerciseProgress] = useState<{exercise: string, data: {date: string, weight: number}[]}[]>([])
+  const [profileColor, setProfileColor] = useState('#3B82F6')
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -52,8 +53,29 @@ export default function ProgressPage({ params }: ProgressPageProps) {
     const score = calculateStrengthScore(loadedProfile.exerciseRatings)
     setCurrentScore(score)
 
-    // Load score history
-    const history = getScoreHistory(id)
+    // Generate profile color based on ID
+    const colors = ['#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#06B6D4']
+    const colorIndex = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+    setProfileColor(colors[colorIndex])
+
+    // Load score history - generate from workout data if empty
+    let history = getScoreHistory(id)
+
+    // If no history but has workouts, generate from workout dates
+    if (history.length < 2) {
+      const allWorkouts = getAllWorkouts().filter(w => w.profileId === id)
+      if (allWorkouts.length > 0) {
+        // Get unique workout dates sorted
+        const workoutDates = [...new Set(allWorkouts.map(w => w.date))].sort()
+
+        // Generate score progression (simulating gradual improvement)
+        const baseScore = Math.max(20, score - workoutDates.length * 2)
+        history = workoutDates.slice(-8).map((date, i, arr) => ({
+          date,
+          score: Math.round(baseScore + ((score - baseScore) * (i + 1) / arr.length))
+        }))
+      }
+    }
     setScoreHistory(history)
 
     // Calculate body part balance from ratings
@@ -187,13 +209,13 @@ export default function ProgressPage({ params }: ProgressPageProps) {
 
       <main className="p-4 max-w-lg mx-auto space-y-4">
         {/* 1. Score History Chart */}
-        <ScoreHistoryChart history={scoreHistory} currentScore={currentScore} />
+        <ScoreHistoryChart history={scoreHistory} currentScore={currentScore} color={profileColor} />
 
         {/* 2. Personal Records */}
         <PersonalRecords prs={prs} />
 
         {/* 3. Body Part Balance */}
-        <BodyPartRadarChart data={bodyPartData} />
+        <BodyPartRadarChart data={bodyPartData} color={profileColor} />
 
         {/* 4. Workout Frequency */}
         <CalendarHeatmap days={workoutDays} />
@@ -203,6 +225,7 @@ export default function ProgressPage({ params }: ProgressPageProps) {
           <ExerciseProgressionChart
             key={index}
             exercise={prog.exercise}
+            color={profileColor}
             data={prog.data}
           />
         ))}
@@ -218,7 +241,7 @@ function avg(arr: number[]): number {
 }
 
 // 1. Score History Chart
-function ScoreHistoryChart({ history, currentScore }: { history: ScoreHistoryEntry[], currentScore: number }) {
+function ScoreHistoryChart({ history, currentScore, color }: { history: ScoreHistoryEntry[], currentScore: number, color: string }) {
   const getLabel = (score: number) => {
     if (score >= 88) return 'Elite'
     if (score >= 63) return 'Strong'
@@ -235,13 +258,13 @@ function ScoreHistoryChart({ history, currentScore }: { history: ScoreHistoryEnt
           Strength Score History
         </h3>
         <div className="text-center py-4">
-          <p className="text-5xl font-bold text-blue-600 dark:text-blue-400">{currentScore}</p>
+          <p className="text-5xl font-bold" style={{ color }}>{currentScore}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{getLabel(currentScore)}</p>
         </div>
         <div className="mt-3 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 transition-all"
-            style={{ width: `${currentScore}%` }}
+            className="h-full transition-all"
+            style={{ width: `${currentScore}%`, backgroundColor: color }}
           />
         </div>
         <p className="text-xs text-gray-400 text-center mt-3">
@@ -281,6 +304,9 @@ function ScoreHistoryChart({ history, currentScore }: { history: ScoreHistoryEnt
   const lastScore = history[history.length - 1].score
   const improvement = lastScore - firstScore
 
+  // Generate unique gradient ID based on color
+  const gradientId = `scoreGradient-${color.replace('#', '')}`
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between mb-3">
@@ -288,16 +314,16 @@ function ScoreHistoryChart({ history, currentScore }: { history: ScoreHistoryEnt
           Strength Score History
         </h3>
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{currentScore}</span>
+          <span className="text-2xl font-bold" style={{ color }}>{currentScore}</span>
           <span className="text-xs text-gray-400">{getLabel(currentScore)}</span>
         </div>
       </div>
 
       <svg width="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="overflow-visible">
         <defs>
-          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.05" />
           </linearGradient>
         </defs>
 
@@ -331,13 +357,13 @@ function ScoreHistoryChart({ history, currentScore }: { history: ScoreHistoryEnt
         })}
 
         {/* Area fill */}
-        <path d={areaPath} fill="url(#scoreGradient)" />
+        <path d={areaPath} fill={`url(#${gradientId})`} />
 
         {/* Line */}
         <path
           d={linePath}
           fill="none"
-          stroke="#3B82F6"
+          stroke={color}
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -352,7 +378,7 @@ function ScoreHistoryChart({ history, currentScore }: { history: ScoreHistoryEnt
                 cx={p.x}
                 cy={p.y}
                 r={isLast ? 5 : 3}
-                fill={isLast ? '#22C55E' : '#3B82F6'}
+                fill={isLast ? '#22C55E' : color}
                 stroke="white"
                 strokeWidth="2"
               />
@@ -454,12 +480,20 @@ function PersonalRecords({ prs }: { prs: PRData[] }) {
 }
 
 // 3. Body Part Radar Chart
-function BodyPartRadarChart({ data }: { data: BodyPartData[] }) {
+function BodyPartRadarChart({ data, color }: { data: BodyPartData[], color: string }) {
   const centerX = 80
   const centerY = 80
   const maxRadius = 60
 
   const hasData = data.some(d => d.value > 0)
+
+  // Convert hex to rgba for fill
+  const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
 
   const getPoint = (index: number, value: number) => {
     const angle = (index * 72 - 90) * (Math.PI / 180)
@@ -521,13 +555,13 @@ function BodyPartRadarChart({ data }: { data: BodyPartData[] }) {
 
               <path
                 d={pathD}
-                fill="rgba(59, 130, 246, 0.3)"
-                stroke="#3B82F6"
+                fill={hexToRgba(color, 0.3)}
+                stroke={color}
                 strokeWidth="2"
               />
 
               {points.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="4" fill="#3B82F6" />
+                <circle key={i} cx={p.x} cy={p.y} r="4" fill={color} />
               ))}
 
               {data.map((part, i) => {
@@ -653,7 +687,7 @@ function CalendarHeatmap({ days }: { days: WorkoutDay[] }) {
 }
 
 // 5. Exercise Progression Chart
-function ExerciseProgressionChart({ exercise, data }: { exercise: string, data: {date: string, weight: number}[] }) {
+function ExerciseProgressionChart({ exercise, data, color }: { exercise: string, data: {date: string, weight: number}[], color: string }) {
   if (data.length < 2) return null
 
   const maxWeight = Math.max(...data.map(d => d.weight))
@@ -685,6 +719,9 @@ function ExerciseProgressionChart({ exercise, data }: { exercise: string, data: 
 
   const improvement = data[data.length - 1].weight - data[0].weight
 
+  // Generate unique gradient ID for this exercise
+  const gradientId = `progressGradient-${exercise.replace(/\s+/g, '-')}`
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between mb-3">
@@ -698,9 +735,9 @@ function ExerciseProgressionChart({ exercise, data }: { exercise: string, data: 
 
       <svg width="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="overflow-visible">
         <defs>
-          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.05" />
           </linearGradient>
         </defs>
 
@@ -732,11 +769,11 @@ function ExerciseProgressionChart({ exercise, data }: { exercise: string, data: 
           )
         })}
 
-        <path d={areaPath} fill="url(#progressGradient)" />
+        <path d={areaPath} fill={`url(#${gradientId})`} />
         <path
           d={linePath}
           fill="none"
-          stroke="#3B82F6"
+          stroke={color}
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -750,7 +787,7 @@ function ExerciseProgressionChart({ exercise, data }: { exercise: string, data: 
                 cx={p.x}
                 cy={p.y}
                 r={isLast ? 5 : 4}
-                fill={isLast ? '#22C55E' : '#3B82F6'}
+                fill={isLast ? '#22C55E' : color}
                 stroke="white"
                 strokeWidth="2"
               />

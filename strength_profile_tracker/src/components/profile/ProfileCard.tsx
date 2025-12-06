@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Profile } from '@/types'
+import { Profile, SEX_INFO } from '@/types'
 import { Card } from '@/components/ui'
 
 interface ProfileCardProps {
@@ -21,9 +21,16 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
     <Link href={`/profile/${profile.id}`}>
       <Card className="hover:border-[#3498DB] transition-colors cursor-pointer">
         <div className="flex items-center gap-4">
-          {/* Avatar */}
-          <div className="w-12 h-12 rounded-full bg-[#3498DB] flex items-center justify-center text-white font-semibold text-lg">
+          {/* Avatar with Sex indicator */}
+          <div className="w-12 h-12 rounded-full bg-[#3498DB] flex items-center justify-center text-white font-semibold text-lg relative">
             {initials}
+            {profile.sex && (
+              <span className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                profile.sex === 'male' ? 'bg-blue-500' : 'bg-pink-500'
+              } text-white border-2 border-white dark:border-gray-800`}>
+                {SEX_INFO[profile.sex].icon}
+              </span>
+            )}
           </div>
 
           {/* Profile Info */}

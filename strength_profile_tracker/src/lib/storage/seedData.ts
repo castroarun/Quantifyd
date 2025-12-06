@@ -19,6 +19,10 @@ const sampleProfiles: Profile[] = [
     age: 28,
     height: 178,
     weight: 82,
+    sex: 'male',
+    dailySteps: 8000,
+    activityLevel: 'moderate',
+    goal: 'maintain',
     exerciseRatings: {
       benchPress: 'intermediate',
       inclineBench: 'novice',
@@ -41,6 +45,10 @@ const sampleProfiles: Profile[] = [
     age: 32,
     height: 165,
     weight: 68,
+    sex: 'female',
+    dailySteps: 6000,
+    activityLevel: 'active',
+    goal: 'lose',
     exerciseRatings: {
       benchPress: 'novice',
       deadlift: 'advanced',
