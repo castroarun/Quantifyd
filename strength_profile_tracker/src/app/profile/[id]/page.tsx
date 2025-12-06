@@ -9,11 +9,14 @@ import {
   getRatedExercises,
   getUnratedExercises,
   calculateOverallLevel,
+  calculateStrengthScore,
+  calculateBadges,
+  generateCoachTips,
   getRatedCount,
   getTotalExercisesCount
 } from '@/lib/calculations/strength'
 import { Button, ThemeToggle } from '@/components/ui'
-import { StrengthCard, LevelLegend, BodyPartFilter, OverallLevel } from '@/components/strength'
+import { StrengthCard, LevelLegend, BodyPartFilter, OverallLevel, StrengthScore, Badges, CoachTips } from '@/components/strength'
 
 interface ProfileDetailPageProps {
   params: Promise<{ id: string }>
@@ -74,6 +77,9 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
   const ratedExercises = getRatedExercises(profile.weight, profile.exerciseRatings, bodyPartFilter)
   const unratedExercises = getUnratedExercises(profile.weight, profile.exerciseRatings, bodyPartFilter)
   const overallLevel = calculateOverallLevel(profile.exerciseRatings)
+  const strengthScore = calculateStrengthScore(profile.exerciseRatings)
+  const badges = calculateBadges(profile.exerciseRatings)
+  const coachTips = generateCoachTips(profile.exerciseRatings)
   const ratedCount = getRatedCount(profile.exerciseRatings)
   const totalCount = getTotalExercisesCount()
 
@@ -137,13 +143,24 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
           </div>
         </div>
 
-        {/* Overall Level */}
-        <div className="mb-4">
+        {/* Strength Score and Overall Level */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <StrengthScore score={strengthScore} />
           <OverallLevel
             level={overallLevel}
             ratedCount={ratedCount}
             totalCount={totalCount}
           />
+        </div>
+
+        {/* Achievements/Badges */}
+        <div className="mb-4">
+          <Badges badges={badges} />
+        </div>
+
+        {/* AI Coach Tips */}
+        <div className="mb-4">
+          <CoachTips tips={coachTips} />
         </div>
 
         {/* Body Part Filter */}
@@ -168,6 +185,7 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
                 strength={strength}
                 onLevelSelect={(level) => handleLevelSelect(strength.exercise, level)}
                 showBodyPart={bodyPartFilter === 'all'}
+                profileId={profile.id}
               />
             ))}
           </div>
@@ -189,6 +207,7 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
                 strength={strength}
                 onLevelSelect={(level) => handleLevelSelect(strength.exercise, level)}
                 showBodyPart={bodyPartFilter === 'all'}
+                profileId={profile.id}
               />
             ))}
           </div>

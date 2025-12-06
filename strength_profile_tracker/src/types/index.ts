@@ -146,3 +146,39 @@ export interface Quote {
   author: string
   category: QuoteCategory
 }
+
+// Badge types
+export type BadgeId =
+  | 'firstStep'
+  | 'gettingStarted'
+  | 'dedicatedTrainer'
+  | 'fullAssessment'
+  | 'noviceMilestone'
+  | 'breakingIntermediate'
+  | 'advancedLifter'
+  | 'eliteStatus'
+
+export interface Badge {
+  id: BadgeId
+  name: string
+  description: string
+  icon: string
+  earned: boolean
+}
+
+// Workout Logger types
+export interface WorkoutSet {
+  weight: number | null  // kg, null if not logged
+  reps: number | null    // null if not logged
+}
+
+export interface WorkoutSession {
+  id: string
+  date: string           // ISO date string (YYYY-MM-DD)
+  exerciseId: Exercise
+  profileId: string
+  sets: WorkoutSet[]     // Always 3 sets
+}
+
+// Suggested rep scheme for each set
+export const SUGGESTED_REPS = [12, 10, 8] as const
