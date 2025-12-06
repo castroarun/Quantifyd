@@ -117,8 +117,9 @@ export default function ProgressPage({ params }: ProgressPageProps) {
     // Calculate exercise progression (group by exercise, sort by date)
     const progressMap: Record<string, {date: string, weight: number}[]> = {}
     allWorkouts.forEach(session => {
-      const maxWeight = Math.max(...session.sets.filter(s => s.weight).map(s => s.weight!))
-      if (maxWeight > 0) {
+      const weightsWithValues = session.sets.filter(s => s.weight && s.weight > 0).map(s => s.weight!)
+      if (weightsWithValues.length > 0) {
+        const maxWeight = Math.max(...weightsWithValues)
         if (!progressMap[session.exerciseId]) {
           progressMap[session.exerciseId] = []
         }
@@ -138,7 +139,6 @@ export default function ProgressPage({ params }: ProgressPageProps) {
         }
       })
       .filter(p => p.data.length >= 2)
-      .slice(0, 1) // Show first exercise with enough data
 
     setExerciseProgress(progress)
     setIsLoading(false)
@@ -192,12 +192,13 @@ export default function ProgressPage({ params }: ProgressPageProps) {
         <CalendarHeatmap days={workoutDays} />
 
         {/* 5. Exercise Progression */}
-        {exerciseProgress.length > 0 && (
+        {exerciseProgress.map((prog, index) => (
           <ExerciseProgressionChart
-            exercise={exerciseProgress[0].exercise}
-            data={exerciseProgress[0].data}
+            key={index}
+            exercise={prog.exercise}
+            data={prog.data}
           />
-        )}
+        ))}
       </main>
     </div>
   )
