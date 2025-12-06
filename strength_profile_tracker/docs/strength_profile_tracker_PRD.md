@@ -281,22 +281,22 @@ interface ExerciseInfo {
 ### Phase 1: MVP (4-6 weeks)
 
 **Scope:**
-- [ ] Create, view, delete profiles (max 5)
-- [ ] Calculate strength standards for 4 exercises
-- [ ] Display 4 difficulty levels per exercise
-- [ ] Select and save current performance levels
-- [ ] Local data persistence
-- [ ] Basic UI implementation
+- [x] Create, view, delete profiles (max 5)
+- [x] Calculate strength standards for 4 exercises
+- [x] Display 4 difficulty levels per exercise
+- [x] Select and save current performance levels
+- [x] Local data persistence
+- [x] Basic UI implementation
 
 ### Phase 2: Enhancement (2-3 weeks)
 
 **Scope:**
-- [ ] Edit existing profiles
-- [ ] Add 2-3 more exercises
-- [ ] Improved animations and transitions
-- [ ] Gender-specific calculations
+- [x] Edit existing profiles
+- [x] Add 2-3 more exercises
+- [x] Improved animations and transitions
+- [x] Gender-specific calculations
 - [ ] Units toggle (kg/lbs)
-- [ ] Dark mode support
+- [x] Dark mode support
 
 ### Phase 3: Polish & Launch (2 weeks)
 
@@ -307,29 +307,29 @@ interface ExerciseInfo {
 - [x] Dark mode support
 - [x] Progress visualizations (charts)
 
-### Phase 4: Nutrition & Gender Features (New)
+### Phase 4: Nutrition & Gender Features (Completed)
 
 **Scope:**
 
 #### 4.1 Profile Schema Updates
-- [ ] Add `sex` field to profile (male/female)
-- [ ] Add `dailySteps` field (average daily steps)
-- [ ] Add `activityLevel` field (sedentary/light/moderate/active/very active)
-- [ ] Add `goal` field (maintain/lose/gain)
+- [x] Add `sex` field to profile (male/female)
+- [x] Add `dailySteps` field (average daily steps)
+- [x] Add `activityLevel` field (sedentary/light/moderate/active/very active)
+- [x] Add `goal` field (maintain/lose/gain)
 
 #### 4.2 Profile Editing
-- [ ] Create Edit Profile page
-- [ ] Allow updating all profile fields (name, age, height, weight, sex, dailySteps)
-- [ ] Validate all fields before saving
-- [ ] Navigation from profile detail page to edit
+- [x] Create Edit Profile page
+- [x] Allow updating all profile fields (name, age, height, weight, sex, dailySteps)
+- [x] Validate all fields before saving
+- [x] Navigation from profile detail page to edit
 
 #### 4.3 Gender-Specific Strength Standards
-- [ ] Add female multipliers to exercise definitions
-- [ ] Update `calculateStrength()` to accept sex parameter
-- [ ] Recalculate all strength standards based on profile sex
-- [ ] Female multipliers typically ~65-70% of male standards
+- [x] Add female multipliers to exercise definitions
+- [x] Update `calculateStrength()` to accept sex parameter
+- [x] Recalculate all strength standards based on profile sex
+- [x] Female multipliers typically ~65-70% of male standards
 
-**Female Strength Multipliers (Proposed):**
+**Female Strength Multipliers (Implemented):**
 
 | Exercise | BEG (F) | NOV (F) | INT (F) | ADV (F) |
 |----------|---------|---------|---------|---------|
@@ -411,10 +411,10 @@ If goal = Lose Weight:
 ```
 
 #### 4.5 Nutrition Display UI
-- [ ] Show maintenance calories on profile page
-- [ ] Display recommended intake based on goal
-- [ ] Show BMI category with health indicator
-- [ ] Provide simple nutrition guidance
+- [x] Show maintenance calories on profile page
+- [x] Display recommended intake based on goal
+- [x] Show BMI category with health indicator
+- [x] Provide simple nutrition guidance
 
 **UI Mockup:**
 ```
