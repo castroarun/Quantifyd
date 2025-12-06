@@ -236,17 +236,42 @@ interface Profile {
   age: number                   // 13-100
   height: number                // 100-250 cm
   weight: number                // 30-300 kg
-  currentLevels: {
-    benchPress: Level
-    squat: Level
-    deadlift: Level
-    shoulderPress: Level
-  }
+  sex?: 'male' | 'female'       // For gender-specific standards & BMR (Phase 4)
+  dailySteps?: number           // Average daily steps, 0-50000 (Phase 4)
+  activityLevel?: ActivityLevel // General activity level (Phase 4)
+  goal?: Goal                   // Fitness/nutrition goal (Phase 4)
+  exerciseRatings: ExerciseRatings  // User's level per exercise
   createdAt: Date
   updatedAt: Date
 }
 
 type Level = 'beginner' | 'novice' | 'intermediate' | 'advanced'
+type Sex = 'male' | 'female'
+type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
+type Goal = 'lose' | 'maintain' | 'gain'
+```
+
+**Exercise Schema (with Gender-Specific Multipliers - Phase 4):**
+
+```typescript
+interface ExerciseInfo {
+  id: Exercise
+  name: string
+  bodyPart: BodyPart
+  multipliers: {              // Male multipliers (default)
+    beginner: number
+    novice: number
+    intermediate: number
+    advanced: number
+  }
+  femaleMultipliers?: {       // Female multipliers (Phase 4)
+    beginner: number
+    novice: number
+    intermediate: number
+    advanced: number
+  }
+  isDumbbell?: boolean        // Per-hand weight indicator
+}
 ```
 
 ---
@@ -276,11 +301,134 @@ type Level = 'beginner' | 'novice' | 'intermediate' | 'advanced'
 ### Phase 3: Polish & Launch (2 weeks)
 
 **Scope:**
-- [ ] Comprehensive testing
-- [ ] Performance optimization
-- [ ] Accessibility improvements
-- [ ] App store preparation
-- [ ] User documentation
+- [x] Comprehensive testing
+- [x] Performance optimization
+- [x] Accessibility improvements
+- [x] Dark mode support
+- [x] Progress visualizations (charts)
+
+### Phase 4: Nutrition & Gender Features (New)
+
+**Scope:**
+
+#### 4.1 Profile Schema Updates
+- [ ] Add `sex` field to profile (male/female)
+- [ ] Add `dailySteps` field (average daily steps)
+- [ ] Add `activityLevel` field (sedentary/light/moderate/active/very active)
+- [ ] Add `goal` field (maintain/lose/gain)
+
+#### 4.2 Profile Editing
+- [ ] Create Edit Profile page
+- [ ] Allow updating all profile fields (name, age, height, weight, sex, dailySteps)
+- [ ] Validate all fields before saving
+- [ ] Navigation from profile detail page to edit
+
+#### 4.3 Gender-Specific Strength Standards
+- [ ] Add female multipliers to exercise definitions
+- [ ] Update `calculateStrength()` to accept sex parameter
+- [ ] Recalculate all strength standards based on profile sex
+- [ ] Female multipliers typically ~65-70% of male standards
+
+**Female Strength Multipliers (Proposed):**
+
+| Exercise | BEG (F) | NOV (F) | INT (F) | ADV (F) |
+|----------|---------|---------|---------|---------|
+| Bench Press | 0.35 | 0.50 | 0.65 | 0.85 |
+| Squat | 0.53 | 0.78 | 1.03 | 1.32 |
+| Deadlift | 0.66 | 0.90 | 1.20 | 1.53 |
+| Shoulder Press | 0.29 | 0.41 | 0.53 | 0.70 |
+
+> **Note:** Female multipliers are approximately 60-70% of male multipliers, based on physiological differences and strength standards from StrengthLevel.com
+
+#### 4.4 Calorie Calculations (Detailed)
+
+**Step 1: Calculate BMR (Basal Metabolic Rate)**
+
+Using the Mifflin-St Jeor Equation (most accurate):
+
+```
+Male:   BMR = (10 × weight in kg) + (6.25 × height in cm) - (5 × age) + 5
+Female: BMR = (10 × weight in kg) + (6.25 × height in cm) - (5 × age) - 161
+```
+
+**Step 2: Calculate Activity Factor**
+
+| Activity Level | Description | Multiplier |
+|----------------|-------------|------------|
+| Sedentary | Little to no exercise, desk job | 1.2 |
+| Light | Light exercise 1-3 days/week | 1.375 |
+| Moderate | Moderate exercise 3-5 days/week | 1.55 |
+| Active | Hard exercise 6-7 days/week | 1.725 |
+| Very Active | Very hard exercise, physical job | 1.9 |
+
+**Step 3: Daily Steps Adjustment**
+
+Additional calories burned from walking:
+```
+Steps Calories = (steps × 0.04)  // Approx 40 calories per 1000 steps
+```
+
+**Step 4: Calculate TDEE (Total Daily Energy Expenditure)**
+
+```
+TDEE = (BMR × Activity Multiplier) + Steps Calories
+```
+
+**Step 5: Goal-Based Recommendations**
+
+| Goal | Calorie Adjustment |
+|------|-------------------|
+| Lose Weight | TDEE - 500 (moderate deficit) |
+| Maintain | TDEE |
+| Gain Weight | TDEE + 300 (lean bulk) |
+
+**Step 6: Body Composition Analysis**
+
+```typescript
+// BMI Categories
+const BMI = weight / (height/100)²
+
+Underweight: BMI < 18.5  → Recommend: Gain weight, calorie surplus
+Normal:      BMI 18.5-24.9 → Recommend: Based on goal
+Overweight:  BMI 25-29.9 → Suggest: Moderate deficit possible
+Obese:       BMI ≥ 30    → Suggest: Calorie deficit recommended
+```
+
+**Example Calculation:**
+```
+Profile: Male, 28 years, 178cm, 82kg, Moderate activity, 8000 steps/day
+
+BMR = (10 × 82) + (6.25 × 178) - (5 × 28) + 5
+    = 820 + 1112.5 - 140 + 5
+    = 1797.5 kcal
+
+TDEE = (1797.5 × 1.55) + (8000 × 0.04)
+     = 2786 + 320
+     = 3106 kcal/day (maintenance)
+
+If goal = Lose Weight:
+    Target = 3106 - 500 = 2606 kcal/day
+```
+
+#### 4.5 Nutrition Display UI
+- [ ] Show maintenance calories on profile page
+- [ ] Display recommended intake based on goal
+- [ ] Show BMI category with health indicator
+- [ ] Provide simple nutrition guidance
+
+**UI Mockup:**
+```
+┌─────────────────────────────────────────┐
+│  📊 Nutrition Summary                    │
+├─────────────────────────────────────────┤
+│  Maintenance: 3,106 kcal/day            │
+│  Your Goal: Lose Weight                  │
+│  Target: 2,606 kcal/day                  │
+│                                          │
+│  BMI: 25.9 (Slightly overweight)        │
+│  💡 A 500 calorie deficit = ~0.5kg/week │
+└─────────────────────────────────────────┘
+```
 
 ---
 
