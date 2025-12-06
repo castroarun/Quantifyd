@@ -96,11 +96,38 @@ export default function ProgressPage({ params }: ProgressPageProps) {
   )
 }
 
-// 1. Weight Progression Chart
+// 1. Weight Progression Chart (Line Chart)
 function WeightProgressionChart() {
   const maxWeight = Math.max(...MOCK_WEIGHT_PROGRESS.map(d => d.weight))
   const minWeight = Math.min(...MOCK_WEIGHT_PROGRESS.map(d => d.weight))
-  const range = maxWeight - minWeight || 1
+  const padding = (maxWeight - minWeight) * 0.1 // 10% padding
+  const yMin = minWeight - padding
+  const yMax = maxWeight + padding
+  const yRange = yMax - yMin
+
+  const chartWidth = 280
+  const chartHeight = 120
+  const paddingLeft = 35
+  const paddingRight = 10
+  const paddingTop = 10
+  const paddingBottom = 25
+
+  const plotWidth = chartWidth - paddingLeft - paddingRight
+  const plotHeight = chartHeight - paddingTop - paddingBottom
+
+  // Calculate points
+  const points = MOCK_WEIGHT_PROGRESS.map((point, i) => ({
+    x: paddingLeft + (i / (MOCK_WEIGHT_PROGRESS.length - 1)) * plotWidth,
+    y: paddingTop + plotHeight - ((point.weight - yMin) / yRange) * plotHeight,
+    weight: point.weight,
+    date: point.date
+  }))
+
+  // Create line path
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+
+  // Create area path (for gradient fill under line)
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${paddingTop + plotHeight} L ${points[0].x} ${paddingTop + plotHeight} Z`
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -113,36 +140,93 @@ function WeightProgressionChart() {
         </span>
       </div>
 
-      {/* Chart */}
-      <div className="h-32 flex items-end justify-between gap-1 mb-2">
-        {MOCK_WEIGHT_PROGRESS.map((point, i) => {
-          const height = ((point.weight - minWeight) / range) * 100
-          const isLast = i === MOCK_WEIGHT_PROGRESS.length - 1
+      {/* SVG Line Chart */}
+      <svg width="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="overflow-visible">
+        <defs>
+          <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
 
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+          const y = paddingTop + plotHeight * (1 - ratio)
+          const value = Math.round(yMin + yRange * ratio)
           return (
-            <div key={i} className="flex-1 flex flex-col items-center">
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">
-                {point.weight}kg
-              </span>
-              <div
-                className={`w-full rounded-t transition-all ${
-                  isLast ? 'bg-green-500' : 'bg-blue-400 dark:bg-blue-500'
-                }`}
-                style={{ height: `${Math.max(height, 10)}%` }}
+            <g key={i}>
+              <line
+                x1={paddingLeft}
+                y1={y}
+                x2={chartWidth - paddingRight}
+                y2={y}
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeDasharray={i === 0 ? "0" : "3,3"}
+                className="text-gray-200 dark:text-gray-700"
               />
-            </div>
+              <text
+                x={paddingLeft - 5}
+                y={y}
+                textAnchor="end"
+                dominantBaseline="middle"
+                className="text-[9px] fill-gray-400"
+              >
+                {value}
+              </text>
+            </g>
           )
         })}
-      </div>
 
-      {/* X-axis labels */}
-      <div className="flex justify-between">
-        {MOCK_WEIGHT_PROGRESS.map((point, i) => (
-          <span key={i} className="text-[10px] text-gray-400 flex-1 text-center">
-            {point.date}
-          </span>
-        ))}
-      </div>
+        {/* Area under line */}
+        <path d={areaPath} fill="url(#areaGradient)" />
+
+        {/* Line */}
+        <path
+          d={linePath}
+          fill="none"
+          stroke="#3B82F6"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Data points */}
+        {points.map((p, i) => {
+          const isLast = i === points.length - 1
+          return (
+            <g key={i}>
+              {/* Point */}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={isLast ? 5 : 4}
+                fill={isLast ? '#22C55E' : '#3B82F6'}
+                stroke="white"
+                strokeWidth="2"
+              />
+              {/* Weight label on top */}
+              <text
+                x={p.x}
+                y={p.y - 10}
+                textAnchor="middle"
+                className={`text-[9px] font-medium ${isLast ? 'fill-green-600 dark:fill-green-400' : 'fill-gray-500 dark:fill-gray-400'}`}
+              >
+                {p.weight}kg
+              </text>
+              {/* Date label on bottom */}
+              <text
+                x={p.x}
+                y={chartHeight - 5}
+                textAnchor="middle"
+                className="text-[9px] fill-gray-400"
+              >
+                {p.date}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
 
       {/* Trend indicator */}
       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-center gap-2">
