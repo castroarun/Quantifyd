@@ -161,7 +161,7 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
         {/* Progress Link */}
         <Link
           href={`/profile/${profile.id}/progress`}
-          className="block mb-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg p-3 text-center hover:from-indigo-600 hover:to-purple-600 transition-all"
+          className="block mb-4 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg p-3 text-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
         >
           <div className="flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
