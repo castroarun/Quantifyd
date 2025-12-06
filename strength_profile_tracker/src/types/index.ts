@@ -136,3 +136,13 @@ export const LEVEL_VALUES: Record<Level, number> = {
   intermediate: 3,
   advanced: 4
 } as const
+
+// Motivational quotes types
+export type QuoteCategory = 'motivation' | 'science' | 'benefit'
+
+export interface Quote {
+  id: number
+  text: string
+  author: string
+  category: QuoteCategory
+}

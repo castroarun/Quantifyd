@@ -28,10 +28,10 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
 
           {/* Profile Info */}
           <div className="flex-1">
-            <h3 className="font-semibold text-[#2C3E50] text-base">
+            <h3 className="font-semibold text-[#2C3E50] dark:text-gray-100 text-base">
               {profile.name}
             </h3>
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               <span>{profile.age} yrs</span>
               <span className="mx-2">•</span>
               <span>{profile.height} cm</span>
@@ -42,7 +42,7 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
 
           {/* Arrow */}
           <svg
-            className="w-5 h-5 text-gray-400"
+            className="w-5 h-5 text-gray-400 dark:text-gray-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

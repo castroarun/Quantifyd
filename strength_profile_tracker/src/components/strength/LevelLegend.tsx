@@ -13,8 +13,8 @@ export default function LevelLegend() {
   const levels: Level[] = ['beginner', 'novice', 'intermediate', 'advanced']
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4">
-      <h4 className="text-sm font-semibold text-[#2C3E50] mb-3">Level Guide</h4>
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+      <h4 className="text-sm font-semibold text-[#2C3E50] dark:text-gray-100 mb-3">Level Guide</h4>
       <div className="space-y-2">
         {levels.map(level => (
           <div key={level} className="flex items-center gap-2">
@@ -28,7 +28,7 @@ export default function LevelLegend() {
             >
               {LEVEL_NAMES[level]}
             </span>
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-gray-600 dark:text-gray-400">
               {LEVEL_DESCRIPTIONS[level]}
             </span>
           </div>

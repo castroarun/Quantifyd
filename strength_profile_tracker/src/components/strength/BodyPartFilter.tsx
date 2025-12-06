@@ -44,7 +44,7 @@ function FilterButton({ label, isSelected, onClick }: FilterButtonProps) {
         whitespace-nowrap min-h-[36px]
         ${isSelected
           ? 'bg-[#3498DB] text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
         }
       `}
     >

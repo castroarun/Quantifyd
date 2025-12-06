@@ -16,15 +16,15 @@ export default function StrengthCard({ strength, onLevelSelect, showBodyPart = f
     <Card padding="sm" className="mb-3">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-[#2C3E50] text-sm">
+          <h3 className="font-semibold text-[#2C3E50] dark:text-gray-100 text-sm">
             {strength.exerciseName}
           </h3>
           {strength.isDumbbell && (
-            <span className="text-xs text-gray-400">(per hand)</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">(per hand)</span>
           )}
         </div>
         {showBodyPart && (
-          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded">
+          <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">
             {BODY_PART_NAMES[strength.bodyPart]}
           </span>
         )}
@@ -40,8 +40,8 @@ export default function StrengthCard({ strength, onLevelSelect, showBodyPart = f
               flex flex-col items-center justify-center
               min-h-[70px]
               ${isSelected
-                ? 'border-[#2C3E50] bg-gray-50'
-                : 'border-transparent bg-gray-50 hover:border-gray-300'
+                ? 'border-[#2C3E50] dark:border-gray-400 bg-gray-50 dark:bg-gray-700'
+                : 'border-transparent bg-gray-50 dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
               }
             `}
             style={{
@@ -77,7 +77,7 @@ export default function StrengthCard({ strength, onLevelSelect, showBodyPart = f
             >
               {weight}
             </span>
-            <span className="text-xs text-gray-500">kg</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">kg</span>
 
             {/* Level label */}
             <span

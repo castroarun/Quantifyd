@@ -12,9 +12,9 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     const baseStyles = 'rounded-lg'
 
     const variants = {
-      default: 'bg-white border border-[#E0E0E0]',
-      outlined: 'bg-transparent border-2 border-[#E0E0E0]',
-      elevated: 'bg-white shadow-md'
+      default: 'bg-white dark:bg-gray-800 border border-[#E0E0E0] dark:border-gray-700',
+      outlined: 'bg-transparent border-2 border-[#E0E0E0] dark:border-gray-600',
+      elevated: 'bg-white dark:bg-gray-800 shadow-md'
     }
 
     const paddings = {

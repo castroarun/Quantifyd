@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { Profile, VALIDATION } from '@/types'
 import { getProfiles } from '@/lib/storage/profiles'
 import { ProfileCard, EmptyProfileSlot } from '@/components/profile'
+import { MotivationalQuote } from '@/components/quotes'
+import { ThemeToggle } from '@/components/ui'
 
 export default function HomePage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -28,10 +30,15 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="bg-[#2C3E50] text-white px-4 py-4">
-        <h1 className="text-lg font-semibold">Strength Profiles</h1>
-        <p className="text-sm text-gray-300 mt-1">
-          {profiles.length} of {VALIDATION.maxProfiles} profiles
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold">Strength Profiles</h1>
+            <p className="text-sm text-gray-300 mt-1">
+              {profiles.length} of {VALIDATION.maxProfiles} profiles
+            </p>
+          </div>
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Content */}
@@ -54,7 +61,7 @@ export default function HomePage() {
         {/* Empty State */}
         {profiles.length === 0 && (
           <div className="text-center py-8">
-            <div className="text-gray-400 mb-2">
+            <div className="text-gray-400 dark:text-gray-500 mb-2">
               <svg
                 className="w-16 h-16 mx-auto"
                 fill="none"
@@ -69,14 +76,19 @@ export default function HomePage() {
                 />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-[#2C3E50] mb-1">
+            <h2 className="text-lg font-semibold text-[#2C3E50] dark:text-gray-100 mb-1">
               No profiles yet
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Create your first profile to get started tracking your strength standards.
             </p>
           </div>
         )}
+
+        {/* Motivational Quote */}
+        <div className="mt-6">
+          <MotivationalQuote />
+        </div>
       </main>
     </div>
   )
