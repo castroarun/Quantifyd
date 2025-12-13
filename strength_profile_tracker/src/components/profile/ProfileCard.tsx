@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Profile, SEX_INFO } from '@/types'
 import { Card } from '@/components/ui'
 import { useUnit } from '@/contexts'
-import { formatWeightValue } from '@/lib/utils/units'
+import { formatWeightValue, getProfileColor } from '@/lib/utils/units'
 
 interface ProfileCardProps {
   profile: Profile
@@ -26,7 +26,10 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
       <Card className="hover:border-[#3498DB] transition-colors cursor-pointer">
         <div className="flex items-center gap-4">
           {/* Avatar with Sex indicator */}
-          <div className="w-12 h-12 rounded-full bg-[#3498DB] flex items-center justify-center text-white font-semibold text-lg relative">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg relative"
+            style={{ backgroundColor: getProfileColor(profile.id) }}
+          >
             {initials}
             {profile.sex && (
               <span className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs ${

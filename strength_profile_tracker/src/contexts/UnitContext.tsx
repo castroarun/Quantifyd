@@ -14,11 +14,9 @@ const UnitContext = createContext<UnitContextType | undefined>(undefined)
 
 export function UnitProvider({ children }: { children: ReactNode }) {
   const [unit, setUnitState] = useState<WeightUnit>('kg')
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setUnitState(getUnitPreference())
-    setMounted(true)
   }, [])
 
   const toggleUnit = () => {
@@ -32,11 +30,7 @@ export function UnitProvider({ children }: { children: ReactNode }) {
     setUnitPreference(newUnit)
   }
 
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return <>{children}</>
-  }
-
+  // Always provide context, even before mounted (use default 'kg')
   return (
     <UnitContext.Provider value={{ unit, toggleUnit, setUnit }}>
       {children}

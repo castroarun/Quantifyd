@@ -3,12 +3,19 @@
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui'
-import { Profile, BodyPart, Exercise, ALL_BODY_PARTS } from '@/types'
+import { Profile, BodyPart, Exercise, ALL_BODY_PARTS, WorkoutSession } from '@/types'
 import { getProfileById } from '@/lib/storage/profiles'
 import { calculateStrengthScore, EXERCISES } from '@/lib/calculations/strength'
 import { getAllWorkouts, formatSessionDate } from '@/lib/storage/workouts'
 import { getScoreHistory, ScoreHistoryEntry } from '@/lib/storage/seedData'
+import { Badges } from '@/components/strength'
 import { MuscleHeatmap } from '@/components/progress'
+import { getNutritionInfo, BMI_CATEGORIES, formatCalories, isBelowMinimum, TARGET_BMI, isNearTargetBMI } from '@/lib/calculations/nutrition'
+import { GOAL_INFO } from '@/types'
+import { formatWeightValue, getProfileColor } from '@/lib/utils/units'
+import { useUnit } from '@/contexts'
+import { UnitToggle } from '@/components/ui'
+import { calculateBadges } from '@/lib/calculations/strength'
 
 interface ProgressPageProps {
   params: Promise<{ id: string }>
@@ -31,14 +38,10 @@ interface WorkoutDay {
   count: number
 }
 
-interface MuscleIntensity {
-  bodyPart: BodyPart
-  intensity: number
-  workoutCount: number
-}
 
 export default function ProgressPage({ params }: ProgressPageProps) {
   const { id } = use(params)
+  const { unit } = useUnit()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [bodyPartData, setBodyPartData] = useState<BodyPartData[]>([])
   const [prs, setPrs] = useState<PRData[]>([])
@@ -46,9 +49,10 @@ export default function ProgressPage({ params }: ProgressPageProps) {
   const [currentScore, setCurrentScore] = useState(0)
   const [scoreHistory, setScoreHistory] = useState<ScoreHistoryEntry[]>([])
   const [exerciseProgress, setExerciseProgress] = useState<{exercise: string, data: {date: string, weight: number}[]}[]>([])
-  const [muscleIntensity, setMuscleIntensity] = useState<MuscleIntensity[]>([])
+  const [badges, setBadges] = useState<ReturnType<typeof calculateBadges>>([])
   const [profileColor, setProfileColor] = useState('#3B82F6')
   const [isLoading, setIsLoading] = useState(true)
+  const [workoutsByExercise, setWorkoutsByExercise] = useState<Record<Exercise, WorkoutSession[]>>({} as Record<Exercise, WorkoutSession[]>)
 
   useEffect(() => {
     const loadedProfile = getProfileById(id)
@@ -60,11 +64,8 @@ export default function ProgressPage({ params }: ProgressPageProps) {
     setProfile(loadedProfile)
     const score = calculateStrengthScore(loadedProfile.exerciseRatings)
     setCurrentScore(score)
-
-    // Generate profile color based on ID
-    const colors = ['#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#06B6D4']
-    const colorIndex = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
-    setProfileColor(colors[colorIndex])
+    setBadges(calculateBadges(loadedProfile.exerciseRatings))
+    setProfileColor(getProfileColor(id))
 
     // Load score history - generate from workout data if empty
     let history = getScoreHistory(id)
@@ -112,6 +113,16 @@ export default function ProgressPage({ params }: ProgressPageProps) {
 
     // Load workout data
     const allWorkouts = getAllWorkouts().filter(w => w.profileId === id)
+
+    // Group workouts by exercise for muscle heatmap
+    const workoutMap: Record<Exercise, WorkoutSession[]> = {} as Record<Exercise, WorkoutSession[]>
+    allWorkouts.forEach(session => {
+      if (!workoutMap[session.exerciseId]) {
+        workoutMap[session.exerciseId] = []
+      }
+      workoutMap[session.exerciseId].push(session)
+    })
+    setWorkoutsByExercise(workoutMap)
 
     // Calculate PRs (max weight per exercise)
     const prMap: Record<string, PRData> = {}
@@ -179,28 +190,6 @@ export default function ProgressPage({ params }: ProgressPageProps) {
 
     setExerciseProgress(progress)
 
-    // Calculate muscle intensity from workout data
-    const workoutsByBodyPart: Record<BodyPart, number> = {
-      chest: 0, back: 0, shoulders: 0, legs: 0, arms: 0, core: 0
-    }
-
-    allWorkouts.forEach(session => {
-      const exercise = EXERCISES.find(e => e.id === session.exerciseId)
-      if (exercise) {
-        workoutsByBodyPart[exercise.bodyPart] += 1
-      }
-    })
-
-    // Find max to normalize intensity (0-100)
-    const maxWorkouts = Math.max(...Object.values(workoutsByBodyPart), 1)
-
-    const intensityData: MuscleIntensity[] = ALL_BODY_PARTS.map(bodyPart => ({
-      bodyPart,
-      workoutCount: workoutsByBodyPart[bodyPart],
-      intensity: Math.round((workoutsByBodyPart[bodyPart] / maxWorkouts) * 100)
-    }))
-
-    setMuscleIntensity(intensityData)
     setIsLoading(false)
   }, [id])
 
@@ -242,16 +231,19 @@ export default function ProgressPage({ params }: ProgressPageProps) {
         {/* 1. Score History Chart */}
         <ScoreHistoryChart history={scoreHistory} currentScore={currentScore} color={profileColor} />
 
+        {/* Daily Nutrition */}
+        <NutritionSection profile={profile} unit={unit} />
+
         {/* 2. Personal Records */}
         <PersonalRecords prs={prs} />
 
         {/* 3. Body Part Balance */}
         <BodyPartRadarChart data={bodyPartData} color={profileColor} />
 
-        {/* 4. Muscle Heatmap */}
-        <MuscleHeatmap data={muscleIntensity} />
+        {/* Muscle Distribution Heatmap */}
+        <MuscleHeatmap workoutSessions={workoutsByExercise} profile={profile} />
 
-        {/* 5. Workout Frequency */}
+        {/* 4. Workout Frequency */}
         <CalendarHeatmap days={workoutDays} />
 
         {/* 5. Exercise Progression */}
@@ -261,8 +253,12 @@ export default function ProgressPage({ params }: ProgressPageProps) {
             exercise={prog.exercise}
             color={profileColor}
             data={prog.data}
+            index={index}
           />
         ))}
+
+        {/* 6. Achievements (Bottom) */}
+        <Badges badges={badges} />
       </main>
     </div>
   )
@@ -721,7 +717,7 @@ function CalendarHeatmap({ days }: { days: WorkoutDay[] }) {
 }
 
 // 5. Exercise Progression Chart
-function ExerciseProgressionChart({ exercise, data, color }: { exercise: string, data: {date: string, weight: number}[], color: string }) {
+function ExerciseProgressionChart({ exercise, data, color, index }: { exercise: string, data: {date: string, weight: number}[], color: string, index?: number }) {
   if (data.length < 2) return null
 
   const maxWeight = Math.max(...data.map(d => d.weight))
@@ -753,8 +749,8 @@ function ExerciseProgressionChart({ exercise, data, color }: { exercise: string,
 
   const improvement = data[data.length - 1].weight - data[0].weight
 
-  // Generate unique gradient ID for this exercise
-  const gradientId = `progressGradient-${exercise.replace(/\s+/g, '-')}`
+  // Generate unique gradient ID - remove all non-alphanumeric chars and add index for uniqueness
+  const gradientId = `progressGradient-${exercise.replace(/[^a-zA-Z0-9]/g, '')}-${index ?? 0}`
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -851,6 +847,152 @@ function ExerciseProgressionChart({ exercise, data, color }: { exercise: string,
           {improvement >= 0 ? '↑' : '↓'} {improvement >= 0 ? '+' : ''}{improvement}kg
         </span>
         <span className="text-xs text-gray-400">progress</span>
+      </div>
+    </div>
+  )
+}
+
+// 6. Nutrition Section
+function NutritionSection({ profile, unit }: { profile: Profile, unit: 'kg' | 'lbs' }) {
+  const nutritionInfo = getNutritionInfo(profile)
+
+  if (!nutritionInfo) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl">🔥</div>
+          <div>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
+              Unlock Nutrition Insights
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Add your sex and activity level to see personalized calorie recommendations.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const bmiInfo = BMI_CATEGORIES[nutritionInfo.bmiCategory]
+  const goalName = profile.goal ? GOAL_INFO[profile.goal].name : 'Maintain'
+  const belowMin = profile.sex ? isBelowMinimum(nutritionInfo.targetCalories, profile.sex) : false
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <h3 className="font-semibold text-gray-700 dark:text-gray-200 text-sm mb-3 flex items-center gap-2">
+        <span className="text-lg">🔥</span>
+        Daily Nutrition
+      </h3>
+
+      <div className="space-y-3">
+        {/* Maintenance & Target */}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Maintenance</span>
+          <span className="font-semibold text-gray-800 dark:text-gray-100">
+            {formatCalories(nutritionInfo.tdee)} kcal
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Goal: {goalName}</span>
+          <span className={`font-semibold ${
+            nutritionInfo.targetCalories < nutritionInfo.tdee
+              ? 'text-orange-500'
+              : nutritionInfo.targetCalories > nutritionInfo.tdee
+              ? 'text-green-500'
+              : 'text-gray-800 dark:text-gray-100'
+          }`}>
+            {formatCalories(nutritionInfo.targetCalories)} kcal
+          </span>
+        </div>
+
+        {/* Calorie bar */}
+        <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all ${
+              nutritionInfo.targetCalories < nutritionInfo.tdee
+                ? 'bg-orange-500'
+                : nutritionInfo.targetCalories > nutritionInfo.tdee
+                ? 'bg-green-500'
+                : 'bg-blue-500'
+            }`}
+            style={{ width: `${Math.min(100, (nutritionInfo.targetCalories / nutritionInfo.tdee) * 100)}%` }}
+          />
+        </div>
+
+        {/* BMI */}
+        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500 dark:text-gray-400">BMI</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-800 dark:text-gray-100">
+                {nutritionInfo.bmi}
+              </span>
+              {!isNearTargetBMI(nutritionInfo.bmi) && (
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  → {TARGET_BMI}
+                </span>
+              )}
+              <span
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: `${bmiInfo.color}20`, color: bmiInfo.color }}
+              >
+                {bmiInfo.name}
+              </span>
+            </div>
+          </div>
+          {/* BMI bar with target indicator */}
+          {!isNearTargetBMI(nutritionInfo.bmi) && (
+            <div className="mt-2 relative">
+              <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="absolute h-1.5 rounded-full transition-all"
+                  style={{
+                    backgroundColor: bmiInfo.color,
+                    width: '4px',
+                    left: `${Math.min(100, Math.max(0, ((nutritionInfo.bmi - 15) / 20) * 100))}%`,
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+                <div
+                  className="absolute h-1.5 rounded-full bg-green-400/50 dark:bg-green-500/50"
+                  style={{
+                    width: '4px',
+                    left: `${((TARGET_BMI - 15) / 20) * 100}%`,
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+                <div
+                  className="absolute h-1.5 bg-green-200/30 dark:bg-green-500/20"
+                  style={{
+                    left: `${((18.5 - 15) / 20) * 100}%`,
+                    width: `${((24.9 - 18.5) / 20) * 100}%`
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                <span>15</span>
+                <span className="text-green-500">Target: {TARGET_BMI}</span>
+                <span>35</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Weekly projection */}
+        {nutritionInfo.weeklyChange !== 0 && (
+          <div className="text-xs text-center text-gray-500 dark:text-gray-400 pt-1">
+            {nutritionInfo.weeklyChange > 0 ? '↑' : '↓'} ~{formatWeightValue(Math.abs(nutritionInfo.weeklyChange), unit)} {unit}/week
+          </div>
+        )}
+
+        {/* Warning if below minimum */}
+        {belowMin && (
+          <div className="text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded">
+            ⚠️ Target is below recommended minimum. Consider a smaller deficit.
+          </div>
+        )}
       </div>
     </div>
   )

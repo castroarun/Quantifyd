@@ -10,12 +10,12 @@ export interface ScoreHistoryEntry {
 }
 
 /**
- * Sample profiles with exercise ratings
+ * Sample profiles with exercise ratings - All with Asian names
  */
 const sampleProfiles: Profile[] = [
   {
-    id: 'sample_alex_001',
-    name: 'Alex',
+    id: 'sample_weiliang_001',
+    name: 'Wei Liang',
     age: 28,
     height: 178,
     weight: 82,
@@ -36,12 +36,12 @@ const sampleProfiles: Profile[] = [
       bicepCurlBarbell: 'intermediate',
       tricepPushdown: 'novice',
     },
-    createdAt: '2024-11-01T10:00:00Z',
+    createdAt: '2024-10-01T10:00:00Z',
     updatedAt: new Date().toISOString()
   },
   {
-    id: 'sample_jordan_002',
-    name: 'Jordan',
+    id: 'sample_huimin_002',
+    name: 'Hui Min',
     age: 32,
     height: 165,
     weight: 68,
@@ -59,134 +59,527 @@ const sampleProfiles: Profile[] = [
       barbellRow: 'intermediate',
       legCurl: 'advanced',
     },
-    createdAt: '2024-10-15T08:00:00Z',
+    createdAt: '2024-09-15T08:00:00Z',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sample_viraj_003',
+    name: 'Viraj',
+    age: 25,
+    height: 175,
+    weight: 78,
+    sex: 'male',
+    dailySteps: 10000,
+    activityLevel: 'active',
+    goal: 'gain',
+    exerciseRatings: {
+      benchPress: 'novice',
+      inclineBench: 'beginner',
+      dumbbellPress: 'novice',
+      deadlift: 'novice',
+      barbellRow: 'beginner',
+      latPulldown: 'novice',
+      squat: 'novice',
+      legPress: 'novice',
+      romanianDeadlift: 'beginner',
+      shoulderPressDumbbell: 'beginner',
+      bicepCurlDumbbell: 'novice',
+      tricepPushdown: 'beginner',
+    },
+    createdAt: '2024-10-15T09:00:00Z',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sample_tanvi_004',
+    name: 'Tanvi',
+    age: 29,
+    height: 162,
+    weight: 58,
+    sex: 'female',
+    dailySteps: 7500,
+    activityLevel: 'moderate',
+    goal: 'maintain',
+    exerciseRatings: {
+      benchPress: 'intermediate',
+      dumbbellPress: 'intermediate',
+      deadlift: 'intermediate',
+      barbellRow: 'novice',
+      latPulldown: 'intermediate',
+      pullUps: 'novice',
+      squat: 'intermediate',
+      legPress: 'intermediate',
+      legCurl: 'intermediate',
+      shoulderPressMachine: 'novice',
+      sideLateralCable: 'intermediate',
+      bicepCurlBarbell: 'novice',
+      tricepPushdown: 'intermediate',
+    },
+    createdAt: '2024-09-20T11:00:00Z',
     updatedAt: new Date().toISOString()
   }
 ]
 
 /**
- * Generate workout sessions for the past few weeks
+ * Helper to generate dates for workout sessions (8 weeks back)
+ */
+function getWorkoutDate(daysAgo: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() + daysAgo)
+  return date.toISOString().split('T')[0]
+}
+
+/**
+ * Generate workout sessions for the past 6-8 weeks for all profiles
  */
 function generateSampleWorkouts(): WorkoutSession[] {
   const workouts: WorkoutSession[] = []
-  const today = new Date()
 
-  // Alex's workout history - bench press progression
-  const alexBenchDates = [-21, -17, -14, -10, -7, -3, 0]
-  const alexBenchWeights = [70, 72.5, 72.5, 75, 75, 77.5, 80]
+  // ========== WEI LIANG (sample_weiliang_001) - Intermediate lifter, 8 weeks ==========
 
-  alexBenchDates.forEach((daysAgo, i) => {
-    const date = new Date(today)
-    date.setDate(date.getDate() + daysAgo)
+  // Wei Liang's bench press - twice per week for 8 weeks
+  const weiliangBenchDates = [-56, -52, -49, -45, -42, -38, -35, -31, -28, -24, -21, -17, -14, -10, -7, -3]
+  const weiliangBenchWeights = [65, 67.5, 67.5, 70, 70, 72.5, 72.5, 75, 75, 77.5, 77.5, 80, 80, 82.5, 82.5, 85]
+  weiliangBenchDates.forEach((daysAgo, i) => {
     workouts.push({
-      id: `workout_alex_bench_${i}`,
-      date: date.toISOString().split('T')[0],
+      id: `workout_weiliang_bench_${i}`,
+      date: getWorkoutDate(daysAgo),
       exerciseId: 'benchPress',
-      profileId: 'sample_alex_001',
+      profileId: 'sample_weiliang_001',
       sets: [
-        { weight: alexBenchWeights[i], reps: 8 },
-        { weight: alexBenchWeights[i], reps: 7 },
-        { weight: alexBenchWeights[i] - 5, reps: 10 }
+        { weight: weiliangBenchWeights[i], reps: 8 },
+        { weight: weiliangBenchWeights[i], reps: 7 },
+        { weight: weiliangBenchWeights[i] - 5, reps: 10 }
       ]
     })
   })
 
-  // Alex's squat progression
-  const alexSquatDates = [-20, -15, -11, -6, -2]
-  const alexSquatWeights = [90, 95, 97.5, 100, 105]
-
-  alexSquatDates.forEach((daysAgo, i) => {
-    const date = new Date(today)
-    date.setDate(date.getDate() + daysAgo)
+  // Wei Liang's squat - twice per week
+  const weiliangSquatDates = [-55, -51, -48, -44, -41, -37, -34, -30, -27, -23, -20, -16, -13, -9, -6, -2]
+  const weiliangSquatWeights = [80, 82.5, 85, 87.5, 90, 92.5, 95, 97.5, 100, 100, 102.5, 105, 105, 107.5, 110, 112.5]
+  weiliangSquatDates.forEach((daysAgo, i) => {
     workouts.push({
-      id: `workout_alex_squat_${i}`,
-      date: date.toISOString().split('T')[0],
+      id: `workout_weiliang_squat_${i}`,
+      date: getWorkoutDate(daysAgo),
       exerciseId: 'squat',
-      profileId: 'sample_alex_001',
+      profileId: 'sample_weiliang_001',
       sets: [
-        { weight: alexSquatWeights[i], reps: 6 },
-        { weight: alexSquatWeights[i], reps: 5 },
-        { weight: alexSquatWeights[i] - 10, reps: 8 }
+        { weight: weiliangSquatWeights[i], reps: 6 },
+        { weight: weiliangSquatWeights[i], reps: 5 },
+        { weight: weiliangSquatWeights[i] - 10, reps: 8 }
       ]
     })
   })
 
-  // Alex's deadlift
-  const alexDeadliftDates = [-19, -12, -5]
-  const alexDeadliftWeights = [120, 125, 130]
-
-  alexDeadliftDates.forEach((daysAgo, i) => {
-    const date = new Date(today)
-    date.setDate(date.getDate() + daysAgo)
+  // Wei Liang's deadlift - once per week
+  const weiliangDeadliftDates = [-54, -47, -40, -33, -26, -19, -12, -5]
+  const weiliangDeadliftWeights = [100, 105, 110, 115, 120, 125, 130, 135]
+  weiliangDeadliftDates.forEach((daysAgo, i) => {
     workouts.push({
-      id: `workout_alex_deadlift_${i}`,
-      date: date.toISOString().split('T')[0],
+      id: `workout_weiliang_deadlift_${i}`,
+      date: getWorkoutDate(daysAgo),
       exerciseId: 'deadlift',
-      profileId: 'sample_alex_001',
+      profileId: 'sample_weiliang_001',
       sets: [
-        { weight: alexDeadliftWeights[i], reps: 5 },
-        { weight: alexDeadliftWeights[i], reps: 4 },
-        { weight: alexDeadliftWeights[i] - 10, reps: 6 }
+        { weight: weiliangDeadliftWeights[i], reps: 5 },
+        { weight: weiliangDeadliftWeights[i], reps: 4 },
+        { weight: weiliangDeadliftWeights[i] - 10, reps: 6 }
       ]
     })
   })
 
-  // Jordan's workout history - squat progression (strong legs)
-  const jordanSquatDates = [-18, -14, -10, -7, -3, -1]
-  const jordanSquatWeights = [100, 105, 107.5, 110, 112.5, 115]
-
-  jordanSquatDates.forEach((daysAgo, i) => {
-    const date = new Date(today)
-    date.setDate(date.getDate() + daysAgo)
+  // Wei Liang's overhead press
+  const weiliangOHPDates = [-53, -46, -39, -32, -25, -18, -11, -4]
+  const weiliangOHPWeights = [40, 42.5, 45, 45, 47.5, 50, 50, 52.5]
+  weiliangOHPDates.forEach((daysAgo, i) => {
     workouts.push({
-      id: `workout_jordan_squat_${i}`,
-      date: date.toISOString().split('T')[0],
+      id: `workout_weiliang_ohp_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'shoulderPressBarbell',
+      profileId: 'sample_weiliang_001',
+      sets: [
+        { weight: weiliangOHPWeights[i], reps: 8 },
+        { weight: weiliangOHPWeights[i], reps: 7 },
+        { weight: weiliangOHPWeights[i], reps: 6 }
+      ]
+    })
+  })
+
+  // Wei Liang's barbell row
+  const weiliangRowDates = [-52, -45, -38, -31, -24, -17, -10, -3]
+  const weiliangRowWeights = [55, 57.5, 60, 62.5, 65, 67.5, 70, 72.5]
+  weiliangRowDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_weiliang_row_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'barbellRow',
+      profileId: 'sample_weiliang_001',
+      sets: [
+        { weight: weiliangRowWeights[i], reps: 10 },
+        { weight: weiliangRowWeights[i], reps: 8 },
+        { weight: weiliangRowWeights[i], reps: 8 }
+      ]
+    })
+  })
+
+  // ========== HUI MIN (sample_huimin_002) - Advanced lower body, 8 weeks ==========
+
+  // Hui Min's squat - strong progression
+  const huiminSquatDates = [-56, -52, -49, -45, -42, -38, -35, -31, -28, -24, -21, -17, -14, -10, -7, -3]
+  const huiminSquatWeights = [85, 87.5, 90, 92.5, 95, 97.5, 100, 102.5, 105, 107.5, 110, 112.5, 115, 117.5, 120, 122.5]
+  huiminSquatDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_huimin_squat_${i}`,
+      date: getWorkoutDate(daysAgo),
       exerciseId: 'squat',
-      profileId: 'sample_jordan_002',
+      profileId: 'sample_huimin_002',
       sets: [
-        { weight: jordanSquatWeights[i], reps: 6 },
-        { weight: jordanSquatWeights[i], reps: 5 },
-        { weight: jordanSquatWeights[i], reps: 5 }
+        { weight: huiminSquatWeights[i], reps: 6 },
+        { weight: huiminSquatWeights[i], reps: 5 },
+        { weight: huiminSquatWeights[i], reps: 5 }
       ]
     })
   })
 
-  // Jordan's deadlift progression
-  const jordanDeadliftDates = [-16, -12, -8, -4, 0]
-  const jordanDeadliftWeights = [130, 135, 140, 142.5, 145]
-
-  jordanDeadliftDates.forEach((daysAgo, i) => {
-    const date = new Date(today)
-    date.setDate(date.getDate() + daysAgo)
+  // Hui Min's deadlift - very strong
+  const huiminDeadliftDates = [-55, -48, -41, -34, -27, -20, -13, -6]
+  const huiminDeadliftWeights = [115, 120, 125, 130, 135, 140, 145, 150]
+  huiminDeadliftDates.forEach((daysAgo, i) => {
     workouts.push({
-      id: `workout_jordan_deadlift_${i}`,
-      date: date.toISOString().split('T')[0],
+      id: `workout_huimin_deadlift_${i}`,
+      date: getWorkoutDate(daysAgo),
       exerciseId: 'deadlift',
-      profileId: 'sample_jordan_002',
+      profileId: 'sample_huimin_002',
       sets: [
-        { weight: jordanDeadliftWeights[i], reps: 5 },
-        { weight: jordanDeadliftWeights[i], reps: 4 },
-        { weight: jordanDeadliftWeights[i] - 10, reps: 6 }
+        { weight: huiminDeadliftWeights[i], reps: 5 },
+        { weight: huiminDeadliftWeights[i], reps: 4 },
+        { weight: huiminDeadliftWeights[i] - 10, reps: 6 }
       ]
     })
   })
 
-  // Jordan's leg press
-  const jordanLegPressDates = [-15, -11, -6, -2]
-  const jordanLegPressWeights = [180, 190, 200, 210]
-
-  jordanLegPressDates.forEach((daysAgo, i) => {
-    const date = new Date(today)
-    date.setDate(date.getDate() + daysAgo)
+  // Hui Min's leg press
+  const huiminLegPressDates = [-54, -47, -40, -33, -26, -19, -12, -5]
+  const huiminLegPressWeights = [160, 170, 180, 190, 200, 210, 220, 230]
+  huiminLegPressDates.forEach((daysAgo, i) => {
     workouts.push({
-      id: `workout_jordan_legpress_${i}`,
-      date: date.toISOString().split('T')[0],
+      id: `workout_huimin_legpress_${i}`,
+      date: getWorkoutDate(daysAgo),
       exerciseId: 'legPress',
-      profileId: 'sample_jordan_002',
+      profileId: 'sample_huimin_002',
       sets: [
-        { weight: jordanLegPressWeights[i], reps: 10 },
-        { weight: jordanLegPressWeights[i], reps: 8 },
-        { weight: jordanLegPressWeights[i], reps: 8 }
+        { weight: huiminLegPressWeights[i], reps: 10 },
+        { weight: huiminLegPressWeights[i], reps: 8 },
+        { weight: huiminLegPressWeights[i], reps: 8 }
+      ]
+    })
+  })
+
+  // Hui Min's Romanian deadlift
+  const huiminRDLDates = [-53, -46, -39, -32, -25, -18, -11, -4]
+  const huiminRDLWeights = [70, 72.5, 75, 77.5, 80, 82.5, 85, 87.5]
+  huiminRDLDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_huimin_rdl_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'romanianDeadlift',
+      profileId: 'sample_huimin_002',
+      sets: [
+        { weight: huiminRDLWeights[i], reps: 10 },
+        { weight: huiminRDLWeights[i], reps: 10 },
+        { weight: huiminRDLWeights[i], reps: 8 }
+      ]
+    })
+  })
+
+  // Hui Min's barbell row
+  const huiminRowDates = [-51, -44, -37, -30, -23, -16, -9, -2]
+  const huiminRowWeights = [45, 47.5, 50, 52.5, 55, 57.5, 60, 62.5]
+  huiminRowDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_huimin_row_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'barbellRow',
+      profileId: 'sample_huimin_002',
+      sets: [
+        { weight: huiminRowWeights[i], reps: 10 },
+        { weight: huiminRowWeights[i], reps: 8 },
+        { weight: huiminRowWeights[i], reps: 8 }
+      ]
+    })
+  })
+
+  // ========== VIRAJ (sample_viraj_003) - Beginner-Novice, building foundation, 6 weeks ==========
+
+  // Viraj's bench press - learning form, steady progress
+  const virajBenchDates = [-42, -38, -35, -31, -28, -24, -21, -17, -14, -10, -7, -3]
+  const virajBenchWeights = [40, 42.5, 45, 47.5, 50, 50, 52.5, 55, 55, 57.5, 60, 60]
+  virajBenchDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_viraj_bench_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'benchPress',
+      profileId: 'sample_viraj_003',
+      sets: [
+        { weight: virajBenchWeights[i], reps: 10 },
+        { weight: virajBenchWeights[i], reps: 8 },
+        { weight: virajBenchWeights[i], reps: 8 }
+      ]
+    })
+  })
+
+  // Viraj's squat - beginner gains
+  const virajSquatDates = [-41, -37, -34, -30, -27, -23, -20, -16, -13, -9, -6, -2]
+  const virajSquatWeights = [50, 55, 57.5, 60, 62.5, 65, 67.5, 70, 72.5, 75, 77.5, 80]
+  virajSquatDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_viraj_squat_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'squat',
+      profileId: 'sample_viraj_003',
+      sets: [
+        { weight: virajSquatWeights[i], reps: 8 },
+        { weight: virajSquatWeights[i], reps: 6 },
+        { weight: virajSquatWeights[i] - 5, reps: 8 }
+      ]
+    })
+  })
+
+  // Viraj's deadlift
+  const virajDeadliftDates = [-40, -33, -26, -19, -12, -5]
+  const virajDeadliftWeights = [60, 70, 80, 85, 90, 95]
+  virajDeadliftDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_viraj_deadlift_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'deadlift',
+      profileId: 'sample_viraj_003',
+      sets: [
+        { weight: virajDeadliftWeights[i], reps: 5 },
+        { weight: virajDeadliftWeights[i], reps: 5 },
+        { weight: virajDeadliftWeights[i], reps: 5 }
+      ]
+    })
+  })
+
+  // Viraj's lat pulldown
+  const virajLatDates = [-39, -32, -25, -18, -11, -4]
+  const virajLatWeights = [35, 40, 42.5, 45, 47.5, 50]
+  virajLatDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_viraj_lat_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'latPulldown',
+      profileId: 'sample_viraj_003',
+      sets: [
+        { weight: virajLatWeights[i], reps: 12 },
+        { weight: virajLatWeights[i], reps: 10 },
+        { weight: virajLatWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Viraj's dumbbell press
+  const virajDBPressDates = [-38, -31, -24, -17, -10, -3]
+  const virajDBPressWeights = [12, 14, 14, 16, 16, 18]
+  virajDBPressDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_viraj_dbpress_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'dumbbellPress',
+      profileId: 'sample_viraj_003',
+      sets: [
+        { weight: virajDBPressWeights[i], reps: 12 },
+        { weight: virajDBPressWeights[i], reps: 10 },
+        { weight: virajDBPressWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Viraj's leg press
+  const virajLegPressDates = [-36, -29, -22, -15, -8, -1]
+  const virajLegPressWeights = [80, 90, 100, 110, 120, 130]
+  virajLegPressDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_viraj_legpress_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'legPress',
+      profileId: 'sample_viraj_003',
+      sets: [
+        { weight: virajLegPressWeights[i], reps: 12 },
+        { weight: virajLegPressWeights[i], reps: 10 },
+        { weight: virajLegPressWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Viraj's bicep curls
+  const virajCurlDates = [-35, -28, -21, -14, -7, 0]
+  const virajCurlWeights = [8, 10, 10, 12, 12, 14]
+  virajCurlDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_viraj_curl_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'bicepCurlDumbbell',
+      profileId: 'sample_viraj_003',
+      sets: [
+        { weight: virajCurlWeights[i], reps: 12 },
+        { weight: virajCurlWeights[i], reps: 10 },
+        { weight: virajCurlWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // ========== TANVI (sample_tanvi_004) - Intermediate all-around, 7 weeks ==========
+
+  // Tanvi's bench press
+  const tanviBenchDates = [-49, -45, -42, -38, -35, -31, -28, -24, -21, -17, -14, -10, -7, -3]
+  const tanviBenchWeights = [32.5, 35, 35, 37.5, 37.5, 40, 40, 42.5, 42.5, 45, 45, 47.5, 47.5, 50]
+  tanviBenchDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_bench_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'benchPress',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviBenchWeights[i], reps: 10 },
+        { weight: tanviBenchWeights[i], reps: 8 },
+        { weight: tanviBenchWeights[i], reps: 8 }
+      ]
+    })
+  })
+
+  // Tanvi's squat
+  const tanviSquatDates = [-48, -44, -41, -37, -34, -30, -27, -23, -20, -16, -13, -9, -6, -2]
+  const tanviSquatWeights = [50, 52.5, 55, 57.5, 60, 62.5, 65, 67.5, 70, 72.5, 75, 77.5, 80, 82.5]
+  tanviSquatDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_squat_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'squat',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviSquatWeights[i], reps: 8 },
+        { weight: tanviSquatWeights[i], reps: 6 },
+        { weight: tanviSquatWeights[i], reps: 6 }
+      ]
+    })
+  })
+
+  // Tanvi's deadlift
+  const tanviDeadliftDates = [-47, -40, -33, -26, -19, -12, -5]
+  const tanviDeadliftWeights = [60, 65, 70, 75, 80, 85, 90]
+  tanviDeadliftDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_deadlift_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'deadlift',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviDeadliftWeights[i], reps: 5 },
+        { weight: tanviDeadliftWeights[i], reps: 5 },
+        { weight: tanviDeadliftWeights[i] - 5, reps: 6 }
+      ]
+    })
+  })
+
+  // Tanvi's lat pulldown
+  const tanviLatDates = [-46, -39, -32, -25, -18, -11, -4]
+  const tanviLatWeights = [35, 37.5, 40, 42.5, 45, 47.5, 50]
+  tanviLatDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_lat_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'latPulldown',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviLatWeights[i], reps: 12 },
+        { weight: tanviLatWeights[i], reps: 10 },
+        { weight: tanviLatWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Tanvi's dumbbell press
+  const tanviDBPressDates = [-45, -38, -31, -24, -17, -10, -3]
+  const tanviDBPressWeights = [10, 12, 12, 14, 14, 16, 16]
+  tanviDBPressDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_dbpress_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'dumbbellPress',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviDBPressWeights[i], reps: 12 },
+        { weight: tanviDBPressWeights[i], reps: 10 },
+        { weight: tanviDBPressWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Tanvi's leg press
+  const tanviLegPressDates = [-43, -36, -29, -22, -15, -8, -1]
+  const tanviLegPressWeights = [100, 110, 120, 130, 140, 150, 160]
+  tanviLegPressDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_legpress_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'legPress',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviLegPressWeights[i], reps: 12 },
+        { weight: tanviLegPressWeights[i], reps: 10 },
+        { weight: tanviLegPressWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Tanvi's leg curl
+  const tanviLegCurlDates = [-42, -35, -28, -21, -14, -7, 0]
+  const tanviLegCurlWeights = [25, 27.5, 30, 32.5, 35, 37.5, 40]
+  tanviLegCurlDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_legcurl_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'legCurl',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviLegCurlWeights[i], reps: 12 },
+        { weight: tanviLegCurlWeights[i], reps: 10 },
+        { weight: tanviLegCurlWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Tanvi's tricep pushdown
+  const tanviTricepDates = [-41, -34, -27, -20, -13, -6]
+  const tanviTricepWeights = [20, 22.5, 25, 27.5, 30, 32.5]
+  tanviTricepDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_tricep_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'tricepPushdown',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviTricepWeights[i], reps: 12 },
+        { weight: tanviTricepWeights[i], reps: 10 },
+        { weight: tanviTricepWeights[i], reps: 10 }
+      ]
+    })
+  })
+
+  // Tanvi's side lateral cable
+  const tanviLateralDates = [-40, -33, -26, -19, -12, -5]
+  const tanviLateralWeights = [5, 5, 7.5, 7.5, 10, 10]
+  tanviLateralDates.forEach((daysAgo, i) => {
+    workouts.push({
+      id: `workout_tanvi_lateral_${i}`,
+      date: getWorkoutDate(daysAgo),
+      exerciseId: 'sideLateralCable',
+      profileId: 'sample_tanvi_004',
+      sets: [
+        { weight: tanviLateralWeights[i], reps: 15 },
+        { weight: tanviLateralWeights[i], reps: 12 },
+        { weight: tanviLateralWeights[i], reps: 12 }
       ]
     })
   })
@@ -195,28 +588,50 @@ function generateSampleWorkouts(): WorkoutSession[] {
 }
 
 /**
- * Generate sample score history for profiles
+ * Generate sample score history for profiles (8 weeks of weekly entries)
  */
 function generateSampleScoreHistory(): Record<string, ScoreHistoryEntry[]> {
   const today = new Date()
   const history: Record<string, ScoreHistoryEntry[]> = {}
 
-  // Alex's score history - steady improvement
-  const alexScores = [42, 44, 45, 48, 50, 52, 55, 57]
-  history['sample_alex_001'] = alexScores.map((score, i) => {
+  // Wei Liang's score history - steady improvement over 8 weeks
+  const weiliangScores = [42, 44, 46, 48, 50, 52, 55, 57]
+  history['sample_weiliang_001'] = weiliangScores.map((score, i) => {
     const date = new Date(today)
-    date.setDate(date.getDate() - (alexScores.length - 1 - i) * 3)
+    date.setDate(date.getDate() - (weiliangScores.length - 1 - i) * 7)
     return {
       date: date.toISOString().split('T')[0],
       score
     }
   })
 
-  // Jordan's score history - strong start, consistent gains
-  const jordanScores = [58, 60, 61, 63, 65, 67]
-  history['sample_jordan_002'] = jordanScores.map((score, i) => {
+  // Hui Min's score history - strong start, consistent gains over 8 weeks
+  const huiminScores = [55, 57, 59, 61, 63, 65, 67, 69]
+  history['sample_huimin_002'] = huiminScores.map((score, i) => {
     const date = new Date(today)
-    date.setDate(date.getDate() - (jordanScores.length - 1 - i) * 4)
+    date.setDate(date.getDate() - (huiminScores.length - 1 - i) * 7)
+    return {
+      date: date.toISOString().split('T')[0],
+      score
+    }
+  })
+
+  // Viraj's score history - beginner making quick gains over 6 weeks
+  const virajScores = [22, 26, 30, 34, 38, 42]
+  history['sample_viraj_003'] = virajScores.map((score, i) => {
+    const date = new Date(today)
+    date.setDate(date.getDate() - (virajScores.length - 1 - i) * 7)
+    return {
+      date: date.toISOString().split('T')[0],
+      score
+    }
+  })
+
+  // Tanvi's score history - intermediate, steady progress over 7 weeks
+  const tanviScores = [45, 47, 49, 51, 53, 55, 57]
+  history['sample_tanvi_004'] = tanviScores.map((score, i) => {
+    const date = new Date(today)
+    date.setDate(date.getDate() - (tanviScores.length - 1 - i) * 7)
     return {
       date: date.toISOString().split('T')[0],
       score

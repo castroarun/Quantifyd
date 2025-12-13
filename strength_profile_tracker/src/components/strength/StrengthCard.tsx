@@ -122,6 +122,7 @@ export default function StrengthCard({ strength, onLevelSelect, showBodyPart = f
         <WorkoutLogger
           profileId={profileId}
           exerciseId={strength.exercise}
+          onLevelUp={onLevelSelect}
         />
       )}
     </Card>

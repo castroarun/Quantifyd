@@ -3,23 +3,21 @@
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Profile, Exercise, Level, BodyPart, SEX_INFO, GOAL_INFO } from '@/types'
+import { Profile, Exercise, Level, BodyPart, SEX_INFO } from '@/types'
 import { getProfileById, updateExerciseRating, deleteProfile } from '@/lib/storage/profiles'
 import {
   getRatedExercises,
   getUnratedExercises,
   calculateOverallLevel,
   calculateStrengthScore,
-  calculateBadges,
   generateCoachTips,
   getRatedCount,
   getTotalExercisesCount
 } from '@/lib/calculations/strength'
-import { getNutritionInfo, BMI_CATEGORIES, formatCalories, isBelowMinimum, TARGET_BMI, isNearTargetBMI, calculateTargetWeight } from '@/lib/calculations/nutrition'
-import { formatWeightValue } from '@/lib/utils/units'
+import { formatWeightValue, getProfileColor } from '@/lib/utils/units'
 import { useUnit } from '@/contexts'
 import { Button, ThemeToggle, UnitToggle } from '@/components/ui'
-import { StrengthCard, LevelLegend, BodyPartFilter, OverallLevel, StrengthScore, Badges, CoachTips } from '@/components/strength'
+import { StrengthCard, LevelLegend, BodyPartFilter, OverallLevel, StrengthScore, CoachTips } from '@/components/strength'
 
 interface ProfileDetailPageProps {
   params: Promise<{ id: string }>
@@ -82,7 +80,6 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
   const unratedExercises = getUnratedExercises(profile.weight, profile.exerciseRatings, bodyPartFilter, profile.sex)
   const overallLevel = calculateOverallLevel(profile.exerciseRatings)
   const strengthScore = calculateStrengthScore(profile.exerciseRatings)
-  const badges = calculateBadges(profile.exerciseRatings)
   const coachTips = generateCoachTips(profile.exerciseRatings)
   const ratedCount = getRatedCount(profile.exerciseRatings)
   const totalCount = getTotalExercisesCount()
@@ -123,7 +120,10 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-[#E0E0E0] dark:border-gray-700 p-4 mb-4">
           <div className="flex items-center gap-4">
             {/* Avatar */}
-            <div className="w-16 h-16 rounded-full bg-[#3498DB] flex items-center justify-center text-white font-semibold text-xl relative">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-xl relative"
+              style={{ backgroundColor: getProfileColor(profile.id) }}
+            >
               {profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
               {profile.sex && (
                 <span className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-sm ${
@@ -176,166 +176,6 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
             totalCount={totalCount}
           />
         </div>
-
-        {/* Achievements/Badges */}
-        <div className="mb-4">
-          <Badges badges={badges} />
-        </div>
-
-        {/* Nutrition Summary */}
-        {(() => {
-          const nutritionInfo = getNutritionInfo(profile)
-          if (!nutritionInfo) {
-            // Show prompt to complete profile
-            return (
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">🔥</div>
-                  <div>
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-                      Unlock Nutrition Insights
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Add your sex and activity level to see personalized calorie recommendations.
-                    </p>
-                    <Link
-                      href={`/profile/${profile.id}/edit`}
-                      className="text-xs text-blue-500 hover:text-blue-600 mt-2 inline-block"
-                    >
-                      Complete Profile →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          const bmiInfo = BMI_CATEGORIES[nutritionInfo.bmiCategory]
-          const goalName = profile.goal ? GOAL_INFO[profile.goal].name : 'Maintain'
-          const belowMin = profile.sex ? isBelowMinimum(nutritionInfo.targetCalories, profile.sex) : false
-
-          return (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-              <h3 className="font-semibold text-gray-700 dark:text-gray-200 text-sm mb-3 flex items-center gap-2">
-                <span className="text-lg">🔥</span>
-                Daily Nutrition
-              </h3>
-
-              <div className="space-y-3">
-                {/* Maintenance & Target */}
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Maintenance</span>
-                  <span className="font-semibold text-gray-800 dark:text-gray-100">
-                    {formatCalories(nutritionInfo.tdee)} kcal
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Goal: {goalName}</span>
-                  <span className={`font-semibold ${
-                    nutritionInfo.targetCalories < nutritionInfo.tdee
-                      ? 'text-orange-500'
-                      : nutritionInfo.targetCalories > nutritionInfo.tdee
-                      ? 'text-green-500'
-                      : 'text-gray-800 dark:text-gray-100'
-                  }`}>
-                    {formatCalories(nutritionInfo.targetCalories)} kcal
-                  </span>
-                </div>
-
-                {/* Calorie bar */}
-                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all ${
-                      nutritionInfo.targetCalories < nutritionInfo.tdee
-                        ? 'bg-orange-500'
-                        : nutritionInfo.targetCalories > nutritionInfo.tdee
-                        ? 'bg-green-500'
-                        : 'bg-blue-500'
-                    }`}
-                    style={{ width: `${Math.min(100, (nutritionInfo.targetCalories / nutritionInfo.tdee) * 100)}%` }}
-                  />
-                </div>
-
-                {/* BMI */}
-                <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">BMI</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-800 dark:text-gray-100">
-                        {nutritionInfo.bmi}
-                      </span>
-                      {!isNearTargetBMI(nutritionInfo.bmi) && (
-                        <span className="text-xs text-gray-400 dark:text-gray-500">
-                          → {TARGET_BMI}
-                        </span>
-                      )}
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: `${bmiInfo.color}20`, color: bmiInfo.color }}
-                      >
-                        {bmiInfo.name}
-                      </span>
-                    </div>
-                  </div>
-                  {/* BMI bar with target indicator */}
-                  {!isNearTargetBMI(nutritionInfo.bmi) && (
-                    <div className="mt-2 relative">
-                      <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                        {/* Current BMI position - scale: 15 to 35 BMI range */}
-                        <div
-                          className="absolute h-1.5 rounded-full transition-all"
-                          style={{
-                            backgroundColor: bmiInfo.color,
-                            width: '4px',
-                            left: `${Math.min(100, Math.max(0, ((nutritionInfo.bmi - 15) / 20) * 100))}%`,
-                            transform: 'translateX(-50%)'
-                          }}
-                        />
-                        {/* Target BMI marker */}
-                        <div
-                          className="absolute h-1.5 rounded-full bg-green-400/50 dark:bg-green-500/50"
-                          style={{
-                            width: '4px',
-                            left: `${((TARGET_BMI - 15) / 20) * 100}%`,
-                            transform: 'translateX(-50%)'
-                          }}
-                        />
-                        {/* Healthy range background (18.5-24.9) */}
-                        <div
-                          className="absolute h-1.5 bg-green-200/30 dark:bg-green-500/20"
-                          style={{
-                            left: `${((18.5 - 15) / 20) * 100}%`,
-                            width: `${((24.9 - 18.5) / 20) * 100}%`
-                          }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-                        <span>15</span>
-                        <span className="text-green-500">Target: {TARGET_BMI}</span>
-                        <span>35</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Weekly projection */}
-                {nutritionInfo.weeklyChange !== 0 && (
-                  <div className="text-xs text-center text-gray-500 dark:text-gray-400 pt-1">
-                    {nutritionInfo.weeklyChange > 0 ? '↑' : '↓'} ~{formatWeightValue(Math.abs(nutritionInfo.weeklyChange), unit)} {unit}/week
-                  </div>
-                )}
-
-                {/* Warning if below minimum */}
-                {belowMin && (
-                  <div className="text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded">
-                    ⚠️ Target is below recommended minimum. Consider a smaller deficit.
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })()}
 
         {/* Progress Link */}
         <Link

@@ -1,6 +1,108 @@
-import { Exercise, WorkoutSession, WorkoutSet } from '@/types'
+import { Exercise, WorkoutSession, WorkoutSet, Level, ExerciseInfo, Sex } from '@/types'
+import { getExerciseById, calculateStrength } from '@/lib/calculations/strength'
 
 const WORKOUTS_KEY = 'strength_profile_workouts'
+
+/**
+ * PR Celebration Messages - 10 excited variations
+ */
+export const PR_CELEBRATIONS = [
+  "🎉 NEW PR! {exercise}! You're crushing it!",
+  "🔥 BOOM! New {exercise} record! Way to go!",
+  "💪 YES! That's a new {exercise} PR! Beast mode!",
+  "🏆 NEW PERSONAL BEST! {exercise}! You're unstoppable!",
+  "⚡ INCREDIBLE! New {exercise} PR! Keep that energy!",
+  "🚀 LIFT OFF! You just hit a new {exercise} record!",
+  "👑 KING/QUEEN of {exercise}! New PR achieved!",
+  "🌟 STELLAR! New {exercise} PR! The gains are real!",
+  "💥 SMASHED IT! New {exercise} record! Legendary!",
+  "🎊 CELEBRATION TIME! New {exercise} PR! You're on fire!"
+]
+
+/**
+ * Get a random celebration message for a PR
+ */
+export function getCelebrationMessage(exerciseName: string): string {
+  const index = Math.floor(Math.random() * PR_CELEBRATIONS.length)
+  return PR_CELEBRATIONS[index].replace('{exercise}', exerciseName)
+}
+
+/**
+ * Check if workout PR triggers a level upgrade
+ * Returns new level if upgrade, null if no change
+ * Levels can only increase, never decrease
+ */
+export function checkLevelUpgrade(
+  exerciseId: Exercise,
+  userWeight: number,
+  newPR: number,
+  currentLevel: Level | null,
+  sex?: Sex
+): Level | null {
+  const exercise = getExerciseById(exerciseId)
+  if (!exercise) return null
+
+  // Calculate thresholds for each level
+  const thresholds = {
+    beginner: calculateStrength(userWeight, exercise, 'beginner', sex),
+    novice: calculateStrength(userWeight, exercise, 'novice', sex),
+    intermediate: calculateStrength(userWeight, exercise, 'intermediate', sex),
+    advanced: calculateStrength(userWeight, exercise, 'advanced', sex)
+  }
+
+  // Find highest level achieved
+  let achievedLevel: Level = 'beginner'
+  if (newPR >= thresholds.advanced) achievedLevel = 'advanced'
+  else if (newPR >= thresholds.intermediate) achievedLevel = 'intermediate'
+  else if (newPR >= thresholds.novice) achievedLevel = 'novice'
+
+  // Only upgrade, never downgrade
+  const levelOrder: Level[] = ['beginner', 'novice', 'intermediate', 'advanced']
+  const currentIndex = currentLevel ? levelOrder.indexOf(currentLevel) : -1
+  const achievedIndex = levelOrder.indexOf(achievedLevel)
+
+  return achievedIndex > currentIndex ? achievedLevel : null
+}
+
+/**
+ * Get PR (max weight) from workout history for an exercise
+ */
+export function getExercisePR(profileId: string, exerciseId: Exercise): number {
+  const sessions = getExerciseSessions(profileId, exerciseId, 100)
+  let maxWeight = 0
+
+  sessions.forEach(session => {
+    session.sets.forEach(set => {
+      if (set.weight && set.weight > maxWeight) {
+        maxWeight = set.weight
+      }
+    })
+  })
+
+  return maxWeight
+}
+
+/**
+ * Check if this is a new PR compared to history
+ */
+export function isNewPR(profileId: string, exerciseId: Exercise, newWeight: number): boolean {
+  const allWorkouts = getAllWorkouts()
+  const today = getTodayDate()
+
+  // Get max weight from sessions excluding today
+  let previousMax = 0
+  allWorkouts
+    .filter(w => w.profileId === profileId && w.exerciseId === exerciseId && w.date !== today)
+    .forEach(session => {
+      session.sets.forEach(set => {
+        if (set.weight && set.weight > previousMax) {
+          previousMax = set.weight
+        }
+      })
+    })
+
+  return newWeight > previousMax && previousMax > 0
+}
 
 /**
  * Get all workout sessions from localStorage

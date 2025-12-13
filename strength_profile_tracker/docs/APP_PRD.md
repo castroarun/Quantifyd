@@ -1,7 +1,7 @@
 # APP PRD: Strength Profile Tracker
 
-**Version:** 3.1
-**Date:** 2025-12-06
+**Version:** 3.2
+**Date:** 2025-12-09
 **Status:** In Development
 
 ---
@@ -14,6 +14,7 @@
 | 2.0 | 2025-12-02 | Expanded to 25 exercises, body part filtering, motivational quotes |
 | 3.0 | 2025-12-06 | Added dark mode, Workout Logger, Achievements, Strength Score, AI Coach Tips |
 | 3.1 | 2025-12-06 | Added Progress Visualizations (5 chart types) |
+| 3.2 | 2025-12-09 | Added Phase 5 enhancements: Auto-level updates, PR celebrations, scrollable history |
 
 ---
 
@@ -773,12 +774,169 @@ src/
 - [ ] Connect Exercise Progression to workout data
 - [ ] Add link to progress page from profile
 
-### Phase 5: Polish
+### Phase 5: Enhanced UX (Current)
+- [ ] Auto-update exercise levels based on workout PRs
+- [ ] PR celebration messages (8-10 variations)
+- [ ] Horizontally scrollable workout log history
+
+### Phase 6: Polish
 - [ ] Animations & transitions
 - [ ] PWA support (offline, installable)
 - [ ] Performance optimization
 - [ ] Share profile feature
 - [ ] Units toggle (kg/lbs)
+
+---
+
+## 7. Upcoming Enhancements
+
+### 7.1 Auto-Update Exercise Levels
+
+#### Requirements
+- When user logs a new PR, automatically update their exercise level if it exceeds the threshold
+- Levels should only increase, never decrease (progress protection)
+- Show notification when level increases
+
+#### Logic
+
+```typescript
+// On workout save, check if PR triggers level upgrade
+function checkLevelUpgrade(
+  exercise: Exercise,
+  userWeight: number,
+  newPR: number,
+  currentLevel: Level | null
+): Level | null {
+  // Calculate thresholds for each level
+  const thresholds = {
+    beginner: userWeight * exercise.multipliers.beginner,
+    novice: userWeight * exercise.multipliers.novice,
+    intermediate: userWeight * exercise.multipliers.intermediate,
+    advanced: userWeight * exercise.multipliers.advanced
+  }
+
+  // Find highest level achieved
+  let achievedLevel: Level = 'beginner'
+  if (newPR >= thresholds.advanced) achievedLevel = 'advanced'
+  else if (newPR >= thresholds.intermediate) achievedLevel = 'intermediate'
+  else if (newPR >= thresholds.novice) achievedLevel = 'novice'
+
+  // Only upgrade, never downgrade
+  const levelOrder = ['beginner', 'novice', 'intermediate', 'advanced']
+  const currentIndex = currentLevel ? levelOrder.indexOf(currentLevel) : -1
+  const achievedIndex = levelOrder.indexOf(achievedLevel)
+
+  return achievedIndex > currentIndex ? achievedLevel : null
+}
+```
+
+#### Test Cases
+- [ ] Level upgrades when PR exceeds threshold
+- [ ] Level never downgrades
+- [ ] Notification displays on level up
+- [ ] Works for all exercises
+
+---
+
+### 7.2 PR Celebration Messages
+
+#### Requirements
+- Display congratulatory message when user achieves new PR
+- 8-10 different message variations
+- Exciting tone with emojis
+- Shows exercise name in message
+
+#### Celebration Messages
+
+```typescript
+const PR_CELEBRATIONS = [
+  "🎉 NEW PR! {exercise}! You're crushing it!",
+  "🔥 BOOM! New {exercise} record! Way to go!",
+  "💪 YES! That's a new {exercise} PR! Beast mode!",
+  "🏆 NEW PERSONAL BEST! {exercise}! You're unstoppable!",
+  "⚡ INCREDIBLE! New {exercise} PR! Keep that energy!",
+  "🚀 LIFT OFF! You just hit a new {exercise} record!",
+  "👑 KING/QUEEN of {exercise}! New PR achieved!",
+  "🌟 STELLAR! New {exercise} PR! The gains are real!",
+  "💥 SMASHED IT! New {exercise} record! Legendary!",
+  "🎊 CELEBRATION TIME! New {exercise} PR! You're on fire!"
+]
+
+function getCelebrationMessage(exercise: string): string {
+  const index = Math.floor(Math.random() * PR_CELEBRATIONS.length)
+  return PR_CELEBRATIONS[index].replace('{exercise}', exercise)
+}
+```
+
+#### UI Display
+- Modal/toast notification
+- Large emoji animation
+- Fade out after 3 seconds
+- Optional confetti effect
+
+#### Test Cases
+- [ ] Message displays on new PR
+- [ ] Different messages each time (random)
+- [ ] Exercise name appears in message
+- [ ] Auto-dismisses after delay
+
+---
+
+### 7.3 Scrollable Workout History
+
+#### Requirements
+- Workout log shows all previous sessions, not just last 3
+- Horizontal scroll (swipe left/right) on mobile
+- Most recent session on right
+- Visual scroll indicators
+
+#### UI Mockup
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  WORKOUT LOG                              ← scroll →            │
+│  ─────────────────────────────────────────────────────────────  │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Nov20  Nov22  Nov25  Nov28  Dec2   Dec4   Dec6   TODAY  │→│ │
+│  │──────────────────────────────────────────────────────────│  │
+│  │ 60×12  65×12  65×10  70×12  75×12  80×10  82×8   [  ]×12│  │
+│  │ 65×10  65×10  70×10  75×10  80×10  85×8   85×6   [  ]×10│  │
+│  │ 70×8   70×8   70×8   80×8   85×8   87×6   88×5   [  ]×8 │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                           ────●●●○○───         │
+│                                          (scroll indicator)    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Implementation
+
+```typescript
+// Horizontal scroll container
+<div className="overflow-x-auto scrollbar-hide">
+  <div className="flex gap-2 min-w-max">
+    {sessions.map(session => (
+      <SessionColumn key={session.id} data={session} />
+    ))}
+    <TodayColumn onSave={handleSave} />
+  </div>
+</div>
+
+// CSS
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+```
+
+#### Test Cases
+- [ ] All sessions visible via scroll
+- [ ] Smooth horizontal scroll on mobile
+- [ ] Most recent on right side
+- [ ] Auto-scroll to today on load
+- [ ] Scroll indicators show position
 
 ---
 
@@ -801,5 +959,5 @@ src/
 ---
 
 **Document Status:** Active Development
-**Current Phase:** Phase 4 - Progress Visualizations
-**Next:** Connect progress charts to real data, add navigation link
+**Current Phase:** Phase 5 - Enhanced UX
+**Next:** Implement auto-level updates, PR celebrations, scrollable workout history

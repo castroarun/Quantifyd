@@ -53,3 +53,26 @@ export function setUnitPreference(unit: WeightUnit): void {
   if (typeof window === 'undefined') return
   localStorage.setItem(STORAGE_KEY, unit)
 }
+
+/**
+ * Muted, professional colors for profile avatars
+ * Not too bright, suitable for both light and dark modes
+ */
+const PROFILE_COLORS = [
+  '#5B7B9D', // Steel blue
+  '#7B6B8D', // Muted purple
+  '#6B8E7B', // Sage green
+  '#9D7B6B', // Warm taupe
+  '#6B8D9D', // Ocean teal
+  '#8D7B6B', // Mocha
+  '#7B8D6B', // Olive
+  '#6B7B8D', // Slate
+]
+
+/**
+ * Generate a consistent color for a profile based on its ID
+ */
+export function getProfileColor(profileId: string): string {
+  const hash = profileId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  return PROFILE_COLORS[hash % PROFILE_COLORS.length]
+}

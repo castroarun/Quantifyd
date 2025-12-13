@@ -73,6 +73,33 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Custom scrollbar for horizontal scroll areas */
+.scrollbar-visible {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.scrollbar-visible::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 3px;
+}
+
+.dark .scrollbar-visible {
+  scrollbar-color: #4b5563 transparent;
+}
+
+.dark .scrollbar-visible::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+
 /* Safe area insets for mobile */
 @supports (padding: max(0px)) {
   body {
