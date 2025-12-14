@@ -1,6 +1,8 @@
-import { Profile, Exercise, Level, ExerciseRatings, VALIDATION, Sex, ActivityLevel, Goal } from '@/types'
+import { Profile, Exercise, Level, VALIDATION } from '@/types'
+import { addToSyncQueue, pullFromCloud } from './sync'
 
 const STORAGE_KEY = 'strength_profiles_v2'
+const LAST_SYNC_KEY = 'profiles_last_sync'
 
 /**
  * Generate a unique ID for profiles
@@ -82,6 +84,9 @@ export function createProfile(
   profiles.push(newProfile)
   saveProfiles(profiles)
 
+  // Queue for cloud sync
+  addToSyncQueue('profile', 'create', newProfile)
+
   return newProfile
 }
 
@@ -111,6 +116,9 @@ export function updateProfile(
 
   saveProfiles(profiles)
 
+  // Queue for cloud sync
+  addToSyncQueue('profile', 'update', profiles[index])
+
   return profiles[index]
 }
 
@@ -134,6 +142,9 @@ export function updateExerciseRating(
 
   saveProfiles(profiles)
 
+  // Queue for cloud sync
+  addToSyncQueue('profile', 'update', profiles[index])
+
   return profiles[index]
 }
 
@@ -156,6 +167,9 @@ export function removeExerciseRating(
 
   saveProfiles(profiles)
 
+  // Queue for cloud sync
+  addToSyncQueue('profile', 'update', profiles[index])
+
   return profiles[index]
 }
 
@@ -173,6 +187,9 @@ export function deleteProfile(id: string): void {
 
   profiles.splice(index, 1)
   saveProfiles(profiles)
+
+  // Queue for cloud sync
+  addToSyncQueue('profile', 'delete', { id })
 }
 
 /**
@@ -187,6 +204,68 @@ export function getProfileCount(): number {
  */
 export function canCreateProfile(): boolean {
   return getProfileCount() < VALIDATION.maxProfiles
+}
+
+/**
+ * Sync profiles from cloud (pull)
+ * Merges cloud data with local data using last-write-wins
+ */
+export async function syncProfilesFromCloud(): Promise<boolean> {
+  try {
+    const cloudData = await pullFromCloud()
+    if (!cloudData) return false
+
+    const localProfiles = getProfiles()
+    const mergedProfiles = mergeProfiles(localProfiles, cloudData.profiles)
+
+    saveProfiles(mergedProfiles)
+    localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString())
+
+    return true
+  } catch (error) {
+    console.error('Failed to sync profiles from cloud:', error)
+    return false
+  }
+}
+
+/**
+ * Merge local and cloud profiles using last-write-wins strategy
+ */
+function mergeProfiles(local: Profile[], cloud: Profile[]): Profile[] {
+  const merged = new Map<string, Profile>()
+
+  // Add all local profiles
+  for (const profile of local) {
+    merged.set(profile.id, profile)
+  }
+
+  // Merge cloud profiles
+  for (const cloudProfile of cloud) {
+    const existing = merged.get(cloudProfile.id)
+
+    if (!existing) {
+      // New profile from cloud
+      merged.set(cloudProfile.id, cloudProfile)
+    } else {
+      // Compare timestamps - cloud wins if newer
+      const localTime = new Date(existing.updatedAt).getTime()
+      const cloudTime = new Date(cloudProfile.updatedAt).getTime()
+
+      if (cloudTime > localTime) {
+        merged.set(cloudProfile.id, cloudProfile)
+      }
+    }
+  }
+
+  return Array.from(merged.values())
+}
+
+/**
+ * Get last sync timestamp
+ */
+export function getLastSyncTime(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(LAST_SYNC_KEY)
 }
 
 /**

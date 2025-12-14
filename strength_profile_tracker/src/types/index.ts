@@ -69,6 +69,7 @@ export interface Profile {
   height: number                // 100-250 cm
   weight: number                // 30-300 kg
   sex?: Sex                     // For gender-specific standards & BMR (Phase 4)
+  avatarUrl?: string            // Profile picture URL (optional)
   dailySteps?: number           // Average daily steps, 0-50000 (Phase 4)
   activityLevel?: ActivityLevel // General activity level (Phase 4)
   goal?: Goal                   // Fitness/nutrition goal (Phase 4)

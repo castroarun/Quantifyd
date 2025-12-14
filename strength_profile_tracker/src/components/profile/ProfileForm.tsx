@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Profile,
@@ -27,6 +27,7 @@ interface FormData {
   height: string
   weight: string
   sex: Sex | ''
+  avatarUrl: string
   dailySteps: string
   activityLevel: ActivityLevel | ''
   goal: Goal | ''
@@ -51,6 +52,7 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
     height: profile?.height?.toString() || '',
     weight: profile?.weight?.toString() || '',
     sex: profile?.sex || '',
+    avatarUrl: profile?.avatarUrl || '',
     dailySteps: profile?.dailySteps?.toString() || '',
     activityLevel: profile?.activityLevel || '',
     goal: profile?.goal || ''
@@ -58,6 +60,40 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Handle file upload and convert to base64
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setErrors({ ...errors, general: 'Please select an image file' })
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setErrors({ ...errors, general: 'Image must be less than 2MB' })
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      // Use functional update to avoid stale closure
+      setFormData(prev => ({ ...prev, avatarUrl: base64 }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveAvatar = () => {
+    setFormData({ ...formData, avatarUrl: '' })
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -120,6 +156,7 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
         height: number
         weight: number
         sex?: Sex
+        avatarUrl?: string
         dailySteps?: number
         activityLevel?: ActivityLevel
         goal?: Goal
@@ -133,6 +170,9 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
       // Add optional fields if provided
       if (formData.sex) {
         data.sex = formData.sex as Sex
+      }
+      if (formData.avatarUrl.trim()) {
+        data.avatarUrl = formData.avatarUrl.trim()
       }
       if (formData.dailySteps) {
         data.dailySteps = parseInt(formData.dailySteps, 10)
@@ -220,6 +260,62 @@ export default function ProfileForm({ profile, onCancel }: ProfileFormProps) {
         max={VALIDATION.weight.max}
         hint={`${VALIDATION.weight.min}-${VALIDATION.weight.max} kg`}
       />
+
+      {/* Profile Picture */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Profile Picture
+        </label>
+
+        {/* Preview */}
+        {formData.avatarUrl && (
+          <div className="flex items-center gap-3">
+            <img
+              src={formData.avatarUrl}
+              alt="Preview"
+              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+            />
+            <button
+              type="button"
+              onClick={handleRemoveAvatar}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+
+        {/* Upload & URL options */}
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="avatar-upload"
+          />
+          <label
+            htmlFor="avatar-upload"
+            className="flex-1 py-2 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+          >
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              📷 Upload from device
+            </span>
+          </label>
+        </div>
+
+        {/* URL input */}
+        <Input
+          placeholder="Or paste image URL..."
+          type="url"
+          value={formData.avatarUrl.startsWith('data:') ? '' : formData.avatarUrl}
+          onChange={e => setFormData({ ...formData, avatarUrl: e.target.value })}
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Max 2MB for uploaded images
+        </p>
+      </div>
 
       {/* Sex Selection */}
       <div className="space-y-1">
