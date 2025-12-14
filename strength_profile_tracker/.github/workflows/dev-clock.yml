@@ -2,7 +2,9 @@ name: Dev Clock - Auto Time Tracking
 
 on:
   push:
-    branches: ['*']
+    branches: ['main']
+    paths:
+      - 'strength_profile_tracker/**'  # Only trigger for this project
   workflow_dispatch: # Allow manual trigger
 
 jobs:

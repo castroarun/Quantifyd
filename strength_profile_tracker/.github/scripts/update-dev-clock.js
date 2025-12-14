@@ -18,7 +18,11 @@ const CONFIG = {
   maxSessionMinutes: 480, // Cap single session at 8hrs
   minSessionMinutes: 5,   // Ignore sessions < 5min
   firstCommitBufferMinutes: 30, // Assume work started 30min before first commit
-  devClockPath: 'docs/DEV-CLOCK.md',
+  devClockPath: 'strength_profile_tracker/docs/DEV-CLOCK.md',
+
+  // Project path filter - only count commits touching files in this path
+  // Set to null or '' to count all commits in repo
+  projectPath: 'strength_profile_tracker',
 
   // Phase detection from commit prefixes
   phases: {
@@ -33,8 +37,10 @@ const CONFIG = {
 
 function getCommitHistory() {
   try {
+    // If projectPath is set, only get commits that touched files in that path
+    const pathFilter = CONFIG.projectPath ? ` -- "${CONFIG.projectPath}"` : '';
     const log = execSync(
-      'git log --format="%H|%aI|%s" --reverse',
+      `git log --format="%H|%aI|%s" --reverse${pathFilter}`,
       { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }
     );
 
@@ -237,9 +243,14 @@ function generateMarkdown(sessions, phaseStats, dailyStats) {
     'Shipping': 1.5
   };
 
-  let md = `# Strength Profile Tracker - DEV-CLOCK
+  const projectName = CONFIG.projectPath
+    ? CONFIG.projectPath.split('/').pop().replace(/-|_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : 'Project';
+
+  let md = `# ${projectName} - DEV-CLOCK
 
 Time tracker for development phases. **Auto-updated from git commits.**
+${CONFIG.projectPath ? `\n> Project: \`${CONFIG.projectPath}\`` : ''}
 
 > Last updated: ${new Date().toISOString().split('T')[0]} | Total: **${Math.round(totalHours * 10) / 10} hours** | ${totalCommits} commits
 
@@ -284,7 +295,7 @@ Time tracker for development phases. **Auto-updated from git commits.**
 
 \`\`\`json
 ${JSON.stringify({
-  project: "Strength Profile Tracker",
+  project: projectName,
   totalHours: Math.round(totalHours * 100) / 100,
   totalCommits,
   startDate,
@@ -319,8 +330,12 @@ ${JSON.stringify({
 function main() {
   console.log('📊 Dev Clock - Calculating development time...\n');
 
+  if (CONFIG.projectPath) {
+    console.log(`Project filter: ${CONFIG.projectPath}`);
+  }
+
   const commits = getCommitHistory();
-  console.log(`Found ${commits.length} commits`);
+  console.log(`Found ${commits.length} commits${CONFIG.projectPath ? ` touching ${CONFIG.projectPath}` : ''}`);
 
   if (commits.length === 0) {
     console.log('No commits found. Skipping update.');
