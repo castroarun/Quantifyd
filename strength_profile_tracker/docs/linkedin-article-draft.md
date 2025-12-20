@@ -6,6 +6,8 @@ Requirements gathering. Architecture design. Test planning. Documentation. All b
 
 I spent months building an AI-powered development system that handles 80% of my workflow. Here's exactly how it works.
 
+[SCREENSHOT: ecosystem-diagram.png - The complete Claude Code agent ecosystem showing inputs, agents, commands, and outputs]
+
 ---
 
 ## The Problem: Solo Development is Broken
@@ -42,6 +44,8 @@ The output? A structured requirements document covering:
 
 **Key insight:** The designer agent uses the Opus model for complex reasoning. It doesn't assume - it asks until requirements are complete.
 
+[SCREENSHOT: designer-questions.png - Terminal showing @designer asking methodical questions about project requirements]
+
 ### Agent 2: @architect (System Designer)
 
 With requirements captured, the architect takes over with a two-phase approach:
@@ -60,6 +64,10 @@ With requirements captured, the architect takes over with a two-phase approach:
 
 The PRD includes database schemas, API structures, component hierarchies, state management strategy, and a task breakdown with complexity estimates.
 
+[SCREENSHOT: architect-prd-snippet.png - Section of APP_PRD.md showing database schema and component breakdown]
+
+[SCREENSHOT: html-mockup-browser.png - HTML mockup rendered in browser showing the actual UI design]
+
 ### Agent 3: @qa (Test Plan Creator)
 
 Here's the counterintuitive part: test cases come BEFORE development.
@@ -72,6 +80,8 @@ The QA agent reads the approved PRD and generates comprehensive test cases:
 Each test case includes specific steps, expected behavior, test data, and priority level. The output is a CSV file that tracks execution during manual testing.
 
 **Why test before code?** It validates understanding. Forces clarity on requirements. Catches gaps before I write a single line of code.
+
+[SCREENSHOT: test-plan-csv.png - TEST-PLAN.csv showing actual test cases with IDs, steps, and expected results]
 
 ---
 
@@ -118,6 +128,8 @@ When approved:
 - Architect automatically creates Epic, Stories, and Tasks
 - Development begins with full traceability
 
+[SCREENSHOT: jira-prd-review.png - Jira task "Review PRD: [Feature]" with attached documents and review comments]
+
 ---
 
 ## Real Example: Strength Profile Tracker
@@ -133,6 +145,10 @@ I built a fitness tracking PWA using this workflow.
 **Step 5:** Executed test plan. Found 3 edge cases. Logged as Jira bugs linked to specific test case IDs.
 
 **Result:** Shipped a fully-tested PWA with comprehensive documentation. Every requirement traced from initial capture through deployment.
+
+[SCREENSHOT: spt-app-running.png - Strength Profile Tracker PWA running on mobile showing the actual interface]
+
+[SCREENSHOT: docs-folder-structure.png - docs/ folder showing APP_PRD.md, TEST-PLAN.csv, WALKTHROUGH.md, and mockups/]
 
 ---
 
