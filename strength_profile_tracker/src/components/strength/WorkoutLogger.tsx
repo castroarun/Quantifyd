@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Exercise, WorkoutSession, WorkoutSet, SUGGESTED_REPS, Level } from '@/types'
 import {
   getExerciseSessions,
@@ -42,43 +42,95 @@ interface Suggestion {
 }
 
 /**
- * Calculate smart progression suggestions based on previous session
+ * Calculate smart progression suggestions based on previous sessions
  *
  * Logic:
+ * - If most recent session is incomplete (1-2 sets), look at earlier sessions too
+ * - For each set, use the HIGHER suggestion between recent incomplete + earlier complete data
  * - If S1 reps >= 10: PROGRESS (add 5kg, adjust reps)
  * - If S1 reps < 10: MAINTAIN (same weights, try to beat reps)
  */
-function calculateSuggestions(prevSets: WorkoutSet[]): Suggestion[] | null {
-  // Need at least some data from previous session
-  const s1 = prevSets[0]
-  const s2 = prevSets[1]
-  const s3 = prevSets[2]
+function calculateSuggestions(sessions: WorkoutSession[]): Suggestion[] | null {
+  if (sessions.length === 0) return null
 
-  if (!s1?.weight || !s1?.reps) return null
+  const mostRecent = sessions[0]
+  if (!mostRecent?.sets[0]?.weight || !mostRecent?.sets[0]?.reps) return null
 
-  const s1Reps = s1.reps
-  const s1Weight = s1.weight
-  const s2Weight = s2?.weight || s1Weight + 5
-  const s2Reps = s2?.reps || 10
-  const s3Weight = s3?.weight || s2Weight + 5
-  const s3Reps = s3?.reps || 8
-
-  // Decide: PROGRESS or MAINTAIN
-  if (s1Reps >= 10) {
-    // PROGRESS: Add 5kg to all sets
-    return [
-      { weight: s1Weight + 5, reps: 12 },
-      { weight: s2Weight + 5, reps: 10 },
-      { weight: s3Weight + 5, reps: Math.max(5, s3Reps - 1) }
-    ]
-  } else {
-    // MAINTAIN: Same weights, try to increase reps
-    return [
-      { weight: s1Weight, reps: Math.min(12, s1Reps + 1) },
-      { weight: s2Weight, reps: Math.min(10, s2Reps + 1) },
-      { weight: s3Weight, reps: Math.min(8, s3Reps + 1) }
-    ]
+  // Find the best available data for each set
+  // For sets missing in recent session, look at earlier sessions
+  const getBestSetData = (setIndex: number): WorkoutSet | null => {
+    for (const session of sessions) {
+      const set = session.sets[setIndex]
+      if (set?.weight && set?.reps) {
+        return set
+      }
+    }
+    return null
   }
+
+  // Calculate suggestion from a single set's data
+  const calculateFromSet = (set: WorkoutSet, setIndex: number): Suggestion => {
+    const targetReps = [12, 10, 8]
+    const setReps = set.reps ?? 0
+    const setWeight = set.weight ?? 0
+    if (setReps >= 10) {
+      // PROGRESS
+      return { weight: setWeight + 5, reps: targetReps[setIndex] }
+    } else {
+      // MAINTAIN
+      return { weight: setWeight, reps: Math.min(targetReps[setIndex], setReps + 1) }
+    }
+  }
+
+  // Get the most recent S1 for base progression decision
+  const s1 = mostRecent.sets[0]
+  const shouldProgress = s1.reps! >= 10
+
+  // Calculate suggestions for each set
+  const suggestions: Suggestion[] = []
+
+  for (let i = 0; i < 3; i++) {
+    const recentSet = mostRecent.sets[i]
+    const hasRecentData = recentSet?.weight && recentSet?.reps
+
+    if (hasRecentData) {
+      // Use the most recent data directly
+      suggestions.push(calculateFromSet(recentSet, i))
+    } else {
+      // Recent session is incomplete for this set - look for earlier data
+      const earlierSet = getBestSetData(i)
+
+      if (earlierSet) {
+        // Calculate suggestion from earlier session
+        const earlierSuggestion = calculateFromSet(earlierSet, i)
+
+        // Also calculate a suggestion based on the recent S1 progression
+        const baseWeight = s1.weight!
+        const setOffset = i * 5 // S2 is +5kg, S3 is +10kg from S1 base
+        const progressionSuggestion: Suggestion = shouldProgress
+          ? { weight: baseWeight + 5 + setOffset, reps: [12, 10, 8][i] }
+          : { weight: baseWeight + setOffset, reps: [12, 10, 8][i] }
+
+        // Use the HIGHER weight suggestion
+        if (earlierSuggestion.weight >= progressionSuggestion.weight) {
+          suggestions.push(earlierSuggestion)
+        } else {
+          suggestions.push(progressionSuggestion)
+        }
+      } else {
+        // No earlier data either - derive from S1
+        const baseWeight = s1.weight!
+        const setOffset = i * 5
+        suggestions.push(
+          shouldProgress
+            ? { weight: baseWeight + 5 + setOffset, reps: [12, 10, 8][i] }
+            : { weight: baseWeight + setOffset, reps: [12, 10, 8][i] }
+        )
+      }
+    }
+  }
+
+  return suggestions
 }
 
 export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: WorkoutLoggerProps) {
@@ -99,6 +151,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
   const [timerSetInfo, setTimerSetInfo] = useState<{ setNumber: number; weight: number; reps: number | null } | null>(null)
   const [minimizedTimerState, setMinimizedTimerState] = useState<{ timeLeft: number; duration: number; isRunning: boolean } | null>(null)
   const [completedSets, setCompletedSets] = useState<Set<number>>(new Set()) // Track sets marked done by user
+
+  // Ref for scroll container to auto-scroll to show Target column
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   // Coaching state - subtle, user-initiated
   const [showFormTip, setShowFormTip] = useState(false)
@@ -164,13 +219,23 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     setIsLoaded(true)
   }, [profileId, exerciseId, onLevelUp])
 
-  // Calculate smart suggestions based on most recent session
+  // Auto-scroll to show Target column on load
+  useEffect(() => {
+    if (isLoaded && scrollContainerRef.current) {
+      // Small delay to ensure DOM is rendered
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth
+        }
+      }, 50)
+    }
+  }, [isLoaded])
+
+  // Calculate smart suggestions based on past sessions
+  // Handles incomplete sessions by looking at earlier complete data
   const suggestions = useMemo(() => {
     if (pastSessions.length === 0) return null
-    // Most recent session (after reverse, it's the last one, but we have them sorted newest first)
-    const mostRecent = pastSessions[0]
-    if (!mostRecent) return null
-    return calculateSuggestions(mostRecent.sets)
+    return calculateSuggestions(pastSessions)
   }, [pastSessions])
 
   // Check if suggested S3 weight would be a new PR
@@ -306,6 +371,13 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     // Mark this set as completed by user
     setCompletedSets(prev => new Set(prev).add(setIndex))
 
+    // Check global timer settings - only trigger timer if auto-start is enabled
+    const timerSettings = getTimerSettings()
+    if (!timerSettings.autoStart) {
+      // Auto-start disabled - just mark set complete, no timer
+      return
+    }
+
     // Set timer info for this set
     setTimerSetInfo({
       setNumber: setIndex + 1,
@@ -316,16 +388,11 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     // Clear any minimized state - we're starting fresh
     setMinimizedTimerState(null)
 
-    // Increment trigger to reset/restart the timer (this pauses any running timer)
+    // Increment trigger to reset/restart the timer
     setTimerTrigger(prev => prev + 1)
 
-    // Check global timer settings for auto-start
-    const timerSettings = getTimerSettings()
-
-    // Open full-screen timer if timer is enabled AND auto-start is enabled
-    if (showTimer && timerSettings.autoStart) {
-      setShowFullScreenTimer(true)
-    }
+    // Open full-screen timer
+    setShowFullScreenTimer(true)
   }
 
   // Handle timer minimize (double-tap on full-screen)
@@ -536,12 +603,16 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       )}
 
       {/* Main Workout Entry - Horizontal scroll: History (left) → Today → Target (right) */}
-      <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-visible -mx-4 px-4" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y pan-x' }}>
+      <div
+        ref={scrollContainerRef}
+        className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-visible -mx-4 px-4"
+        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y pan-x' }}
+      >
         {/* Past Sessions columns (LEFT side - history first) */}
         {pastSessions.slice().reverse().map((session, idx) => (
-          <div key={idx} className="flex flex-col gap-2 flex-shrink-0 min-w-[80px]">
-            <div className="text-center py-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+          <div key={idx} className="flex flex-col gap-1.5 flex-shrink-0 min-w-[70px]">
+            <div className="text-center py-1.5">
+              <span className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
                 {formatSessionDate(session.date)}
               </span>
             </div>
@@ -551,7 +622,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
               return (
                 <div
                   key={setIndex}
-                  className="h-14 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50 px-2"
+                  className="h-11 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50 px-1.5"
                 >
                   {hasData ? (
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
@@ -567,18 +638,24 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
         ))}
 
         {/* TODAY column - inputs in the middle */}
-        <div className="flex flex-col gap-2 flex-shrink-0 min-w-[140px] flex-1">
-          <div className="text-center py-2">
-            <span className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Today</span>
+        <div className="flex flex-col gap-1.5 flex-shrink-0 min-w-[145px] flex-1">
+          <div className="text-center py-1.5">
+            <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Today</span>
           </div>
           {[0, 1, 2].map(setIndex => {
             const todaySet = todaySets[setIndex]
             const suggestion = suggestions?.[setIndex]
+            const isCompleted = completedSets.has(setIndex)
+            const hasWeight = todaySet.weight !== null && todaySet.weight > 0
 
             return (
               <div
                 key={setIndex}
-                className="h-14 flex items-center gap-1 px-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                className={`h-11 flex items-center gap-0.5 px-1.5 rounded-lg border transition-colors ${
+                  isCompleted
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                }`}
               >
                 {/* Weight */}
                 <input
@@ -587,9 +664,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   placeholder={suggestion ? String(suggestion.weight) : '-'}
                   value={todaySet.weight ?? ''}
                   onChange={(e) => handleSetChange(setIndex, 'weight', e.target.value)}
-                  className="w-14 text-center text-lg font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
+                  className="w-11 text-center text-base font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
                 />
-                <span className="text-gray-400 dark:text-gray-500">×</span>
+                <span className="text-gray-400 dark:text-gray-500 text-sm">×</span>
                 {/* Reps */}
                 <input
                   type="number"
@@ -597,8 +674,25 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   placeholder={suggestion ? String(suggestion.reps) : SUGGESTED_REPS[setIndex].toString()}
                   value={todaySet.reps ?? ''}
                   onChange={(e) => handleSetChange(setIndex, 'reps', e.target.value)}
-                  className="w-10 text-center text-lg font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
+                  className="w-8 text-center text-base font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
                 />
+                {/* Done checkmark button */}
+                <button
+                  onClick={() => handleSetDone(setIndex)}
+                  disabled={!hasWeight}
+                  className={`ml-0.5 w-7 h-7 flex-shrink-0 rounded-full flex items-center justify-center transition-all ${
+                    isCompleted
+                      ? 'bg-green-500 text-white'
+                      : hasWeight
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400'
+                        : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  }`}
+                  title={isCompleted ? 'Set completed' : 'Mark set as done'}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
               </div>
             )
           })}
@@ -606,16 +700,17 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
 
         {/* Chevron buttons column - copy from target */}
         {suggestions && (
-          <div className="flex flex-col gap-2 flex-shrink-0">
-            <div className="py-2 h-6" /> {/* Spacer for header alignment */}
+          <div className="flex flex-col gap-1.5 flex-shrink-0">
+            {/* Header placeholder to align with other columns */}
+            <div className="py-1.5 h-[27px]" />
             {[0, 1, 2].map(setIndex => (
               <button
                 key={setIndex}
                 onClick={() => copyToToday(setIndex)}
-                className="h-14 px-2 flex items-center justify-center text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+                className="h-11 px-1 flex items-center justify-center text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
                 title="Copy to today"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
                 </svg>
               </button>
@@ -625,9 +720,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
 
         {/* TARGET column (RIGHT side) */}
         {suggestions && (
-          <div className="flex flex-col gap-2 flex-shrink-0 min-w-[90px]">
-            <div className="text-center py-2">
-              <span className="text-xs text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">🎯 Target</span>
+          <div className="flex flex-col gap-1.5 flex-shrink-0 min-w-[75px]">
+            <div className="text-center py-1.5">
+              <span className="text-[11px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">🎯 Target</span>
             </div>
             {[0, 1, 2].map(setIndex => {
               const suggestion = suggestions[setIndex]
@@ -635,7 +730,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                 <button
                   key={setIndex}
                   onClick={() => copyToToday(setIndex)}
-                  className="h-14 px-3 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 flex items-center justify-center hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
+                  className="h-11 px-2 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 flex items-center justify-center hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
                 >
                   <span className="text-sm font-bold text-green-700 dark:text-green-400">
                     {suggestion?.weight ?? '-'}×{suggestion?.reps ?? '-'}

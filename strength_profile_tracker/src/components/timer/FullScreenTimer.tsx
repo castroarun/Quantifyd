@@ -257,7 +257,8 @@ export default function FullScreenTimer({
       {/* Close button */}
       <button
         onClick={(e) => { e.stopPropagation(); skipRest() }}
-        className="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl transition-colors"
+        onDoubleClick={(e) => e.stopPropagation()}
+        className="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl transition-colors p-2"
         aria-label="Close timer"
       >
         ×
@@ -273,7 +274,8 @@ export default function FullScreenTimer({
       {/* Mode toggle */}
       <button
         onClick={(e) => { e.stopPropagation(); toggleMode() }}
-        className="absolute top-8 left-6 text-gray-500 hover:text-white flex items-center gap-2 text-xs transition-colors uppercase tracking-wider"
+        onDoubleClick={(e) => e.stopPropagation()}
+        className="absolute top-8 left-6 text-gray-500 hover:text-white flex items-center gap-2 text-xs transition-colors uppercase tracking-wider p-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -281,8 +283,8 @@ export default function FullScreenTimer({
         {mode === 'countdown' ? 'Timer' : 'Stopwatch'}
       </button>
 
-      {/* Main timer */}
-      <div className="flex flex-col items-center">
+      {/* Main timer - double-click on timer text should not minimize */}
+      <div className="flex flex-col items-center" onDoubleClick={(e) => e.stopPropagation()}>
         {/* Time display */}
         <div className={`font-mono-timer font-bold ${getTimerColor()} breathe`} style={{ fontSize: 'clamp(5rem, 20vw, 10rem)', lineHeight: 1 }}>
           {formatTime(timeLeft)}
@@ -313,7 +315,7 @@ export default function FullScreenTimer({
 
       {/* Stats row */}
       {(setNumber || weight || reps) && (
-        <div className="flex gap-12 mt-10">
+        <div className="flex gap-12 mt-10" onDoubleClick={(e) => e.stopPropagation()}>
           {setNumber && (
             <div className="text-center">
               <p className="text-3xl font-bold text-white">S{setNumber}</p>
@@ -337,7 +339,7 @@ export default function FullScreenTimer({
 
       {/* Preset buttons */}
       {mode === 'countdown' && (
-        <div className="flex gap-3 mt-10" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-3 mt-10" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
           {TIMER_PRESETS.map(preset => (
             <button
               key={preset}
@@ -355,7 +357,7 @@ export default function FullScreenTimer({
       )}
 
       {/* Control buttons */}
-      <div className="flex items-center gap-8 mt-8" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-8 mt-8" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
         {/* -15s */}
         {mode === 'countdown' && (
           <button
@@ -408,6 +410,7 @@ export default function FullScreenTimer({
       {/* End Timer / Skip Rest button */}
       <button
         onClick={(e) => { e.stopPropagation(); skipRest() }}
+        onDoubleClick={(e) => e.stopPropagation()}
         className="mt-6 px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-white rounded-lg transition-all text-sm font-medium uppercase tracking-wider flex items-center gap-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,17 +420,18 @@ export default function FullScreenTimer({
         End Timer
       </button>
 
-      {/* Wake lock indicator */}
-      {wakeLockActive && (
-        <div className="absolute bottom-6 left-6 flex items-center gap-2 text-gray-600 text-xs">
-          <div className="w-2 h-2 rounded-full bg-green-500" />
-          Screen kept on
-        </div>
-      )}
-
-      {/* Double-click hint */}
-      <p className="absolute bottom-6 right-0 left-0 text-center text-gray-700 text-xs">
-        Double-tap anywhere to minimize
+      {/* Bottom hints - combined to avoid overlap */}
+      <p className="absolute bottom-6 right-0 left-0 text-center text-gray-600 text-xs flex items-center justify-center gap-2">
+        {wakeLockActive && (
+          <>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              Screen kept on
+            </span>
+            <span className="text-gray-700">|</span>
+          </>
+        )}
+        <span className="text-gray-700">Double-tap to minimize</span>
       </p>
     </div>
   )
