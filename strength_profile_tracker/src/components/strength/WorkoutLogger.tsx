@@ -98,6 +98,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
   const [timerTrigger, setTimerTrigger] = useState(0) // Increments to trigger auto-start
   const [timerSetInfo, setTimerSetInfo] = useState<{ setNumber: number; weight: number; reps: number | null } | null>(null)
   const [minimizedTimerState, setMinimizedTimerState] = useState<{ timeLeft: number; duration: number; isRunning: boolean } | null>(null)
+  const [completedSets, setCompletedSets] = useState<Set<number>>(new Set()) // Track sets marked done by user
 
   // Coaching state - subtle, user-initiated
   const [showFormTip, setShowFormTip] = useState(false)
@@ -288,10 +289,13 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     saveWorkoutSession(profileId, exerciseId, newSets)
   }
 
-  // Handle "Done" button - marks set complete and starts timer
+  // Handle "Done" button - marks set complete and optionally starts timer based on settings
   const handleSetDone = (setIndex: number) => {
     const currentSet = todaySets[setIndex]
     if (!currentSet.weight || currentSet.weight <= 0) return
+
+    // Mark this set as completed by user
+    setCompletedSets(prev => new Set(prev).add(setIndex))
 
     // Set timer info for this set
     setTimerSetInfo({
@@ -306,8 +310,11 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     // Increment trigger to reset/restart the timer (this pauses any running timer)
     setTimerTrigger(prev => prev + 1)
 
-    // Open full-screen timer if enabled
-    if (showTimer) {
+    // Check global timer settings for auto-start
+    const timerSettings = getTimerSettings()
+
+    // Open full-screen timer if timer is enabled AND auto-start is enabled
+    if (showTimer && timerSettings.autoStart) {
       setShowFullScreenTimer(true)
     }
   }
@@ -460,7 +467,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
           reps={timerSetInfo?.reps ?? undefined}
           onClose={handleTimerClose}
           onMinimize={handleTimerMinimize}
-          autoStart={!minimizedTimerState}
+          autoStart={!minimizedTimerState && getTimerSettings().autoStart}
           initialTimeLeft={minimizedTimerState?.timeLeft}
           initialDuration={minimizedTimerState?.duration}
           initialIsRunning={minimizedTimerState?.isRunning}
@@ -519,163 +526,149 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
         </div>
       )}
 
-      {/* Main Workout Entry - TARGET and TODAY visible by default */}
-      <div className="space-y-3">
-        {/* Set rows - each row is a full-width card */}
-        {[0, 1, 2].map(setIndex => {
-          const suggestion = suggestions?.[setIndex]
-          const todaySet = todaySets[setIndex]
-          const hasWeight = todaySet.weight !== null && todaySet.weight > 0
-          const hasReps = todaySet.reps !== null && todaySet.reps > 0
-          const isComplete = hasWeight && hasReps
-
-          return (
+      {/* Main Workout Entry - Horizontal scroll with large inputs */}
+      <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-visible -mx-4 px-4" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y pan-x' }}>
+        {/* Set labels column */}
+        <div className="flex flex-col gap-2 flex-shrink-0 pt-[72px]">
+          {[0, 1, 2].map(setIndex => (
             <div
               key={setIndex}
-              className={`rounded-xl p-4 border-2 transition-all ${
-                isComplete
-                  ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-              }`}
+              className="h-[72px] text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center font-bold"
             >
-              {/* Set header with TARGET */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className={`text-lg font-bold ${
-                    isComplete ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
-                  }`}>
-                    Set {setIndex + 1}
+              S{setIndex + 1}
+            </div>
+          ))}
+        </div>
+
+        {/* TARGET column - large tappable buttons */}
+        {suggestions && (
+          <div className="flex flex-col gap-2 flex-shrink-0 min-w-[140px]">
+            <div className="text-center py-2 h-[72px] flex flex-col items-center justify-center">
+              <span className="text-xs text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">🎯 Target</span>
+              <span className="text-[10px] text-gray-400">tap to fill</span>
+            </div>
+            {[0, 1, 2].map(setIndex => {
+              const suggestion = suggestions[setIndex]
+              return (
+                <button
+                  key={setIndex}
+                  onClick={() => copyToToday(setIndex)}
+                  className="h-[72px] px-4 py-3 rounded-xl bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800/60 transition-colors border-2 border-green-200 dark:border-green-800 flex flex-col items-center justify-center"
+                >
+                  <span className="text-xl font-bold text-green-700 dark:text-green-300">
+                    {suggestion?.weight ?? '-'}{unit}
                   </span>
-                  {isComplete && (
-                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
-                {/* TARGET badge */}
-                {suggestion && (
-                  <button
-                    onClick={() => copyToToday(setIndex)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800/60 transition-colors"
-                    title="Tap to auto-fill"
-                  >
-                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">🎯 TARGET</span>
-                    <span className="text-sm font-bold text-green-700 dark:text-green-300">
-                      {suggestion.weight}{unit} × {suggestion.reps}
-                    </span>
-                  </button>
-                )}
-              </div>
+                  <span className="text-sm text-green-600 dark:text-green-400">
+                    × {suggestion?.reps ?? '-'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
 
-              {/* Input row - large touch targets */}
-              <div className="flex items-center gap-3">
-                {/* Weight input */}
-                <div className="flex-1">
-                  <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Weight ({unit})</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder={suggestion ? String(suggestion.weight) : '-'}
-                    value={todaySet.weight ?? ''}
-                    onChange={(e) => handleSetChange(setIndex, 'weight', e.target.value)}
-                    className="w-full text-center text-2xl font-bold bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-500 border-2 border-gray-200 dark:border-gray-600 rounded-xl py-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                  />
-                </div>
+        {/* TODAY column - large inputs */}
+        <div className="flex flex-col gap-2 flex-shrink-0 min-w-[180px] flex-1">
+          <div className="text-center py-2 h-[72px] flex flex-col items-center justify-center">
+            <span className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">📝 Today</span>
+            <span className="text-[10px] text-gray-400">enter weight × reps</span>
+          </div>
+          {[0, 1, 2].map(setIndex => {
+            const todaySet = todaySets[setIndex]
+            const suggestion = suggestions?.[setIndex]
+            const hasWeight = todaySet.weight !== null && todaySet.weight > 0
+            const isMarkedDone = completedSets.has(setIndex)
 
-                {/* Separator */}
-                <span className="text-2xl text-gray-300 dark:text-gray-600 font-bold mt-5">×</span>
-
-                {/* Reps input */}
-                <div className="flex-1">
-                  <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Reps</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder={suggestion ? String(suggestion.reps) : SUGGESTED_REPS[setIndex].toString()}
-                    value={todaySet.reps ?? ''}
-                    onChange={(e) => handleSetChange(setIndex, 'reps', e.target.value)}
-                    className="w-full text-center text-2xl font-bold bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-500 border-2 border-gray-200 dark:border-gray-600 rounded-xl py-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                  />
-                </div>
-
-                {/* Done button - triggers timer */}
+            return (
+              <div
+                key={setIndex}
+                className={`h-[72px] flex items-center gap-2 px-3 rounded-xl border-2 transition-all ${
+                  isMarkedDone
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                {/* Weight */}
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder={suggestion ? String(suggestion.weight) : '-'}
+                  value={todaySet.weight ?? ''}
+                  onChange={(e) => handleSetChange(setIndex, 'weight', e.target.value)}
+                  className="w-20 text-center text-xl font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
+                />
+                <span className="text-xl text-gray-300 dark:text-gray-600 font-bold">×</span>
+                {/* Reps */}
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder={suggestion ? String(suggestion.reps) : SUGGESTED_REPS[setIndex].toString()}
+                  value={todaySet.reps ?? ''}
+                  onChange={(e) => handleSetChange(setIndex, 'reps', e.target.value)}
+                  className="w-14 text-center text-xl font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
+                />
+                {/* Done button */}
                 <button
                   onClick={() => handleSetDone(setIndex)}
                   disabled={!hasWeight}
-                  className={`mt-5 p-4 rounded-xl transition-all ${
-                    isComplete
+                  className={`ml-auto p-3 rounded-xl transition-all flex-shrink-0 ${
+                    isMarkedDone
                       ? 'bg-green-500 text-white'
                       : hasWeight
                         ? 'bg-blue-500 hover:bg-blue-600 text-white'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                   }`}
-                  title={isComplete ? 'Set complete!' : 'Mark set done & start timer'}
+                  title={isMarkedDone ? 'Set complete!' : 'Mark done'}
                 >
-                  {isComplete ? (
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  {isMarkedDone ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   ) : (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </button>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
 
-      {/* Past Sessions - collapsible */}
-      {pastSessions.length > 0 && (
-        <details className="mt-4">
-          <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 py-2">
-            📊 Past Sessions ({pastSessions.length})
-          </summary>
-          <div className="flex gap-2 overflow-x-auto pb-2 mt-2 scrollbar-visible" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y pan-x' }}>
-            {/* Set labels column */}
-            <div className="flex flex-col gap-1 flex-shrink-0">
-              <div className="h-6"></div>
-              {[0, 1, 2].map(setIndex => (
+        {/* Past Sessions columns */}
+        {pastSessions.slice().reverse().map((session, idx) => (
+          <div key={idx} className="flex flex-col gap-2 flex-shrink-0 min-w-[90px]">
+            <div className="text-center py-2 h-[72px] flex flex-col items-center justify-center">
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                {formatSessionDate(session.date)}
+              </span>
+            </div>
+            {[0, 1, 2].map(setIndex => {
+              const set = session.sets[setIndex]
+              const hasData = set?.weight !== null && set?.reps !== null
+              return (
                 <div
                   key={setIndex}
-                  className="w-6 h-8 text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center font-medium"
+                  className="h-[72px] flex flex-col items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700/50"
                 >
-                  S{setIndex + 1}
+                  {hasData ? (
+                    <>
+                      <span className="text-lg font-bold text-gray-700 dark:text-gray-200">
+                        {formatWeightValue(set.weight!, unit)}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        × {set.reps}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-gray-300 dark:text-gray-600">-</span>
+                  )}
                 </div>
-              ))}
-            </div>
-
-            {/* Past session columns */}
-            {pastSessions.slice().reverse().map((session, idx) => (
-              <div key={idx} className="flex flex-col gap-1 flex-shrink-0 min-w-[70px]">
-                <div className="text-center text-[10px] font-medium py-1 px-1 rounded h-6 flex items-center justify-center text-gray-400 dark:text-gray-500">
-                  {formatSessionDate(session.date)}
-                </div>
-                {[0, 1, 2].map(setIndex => {
-                  const set = session.sets[setIndex]
-                  const hasData = set?.weight !== null && set?.reps !== null
-                  return (
-                    <div
-                      key={setIndex}
-                      className="text-center text-xs py-1.5 rounded bg-gray-100 dark:bg-gray-700/50 h-8 flex items-center justify-center"
-                    >
-                      {hasData ? (
-                        <span className="text-gray-600 dark:text-gray-300">
-                          {formatWeightValue(set.weight!, unit)}×{set.reps}
-                        </span>
-                      ) : (
-                        <span className="text-gray-300 dark:text-gray-600">-</span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </details>
-      )}
+        ))}
+      </div>
 
       {/* Rep scheme suggestion */}
       <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">
