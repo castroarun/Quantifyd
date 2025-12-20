@@ -30,8 +30,8 @@ The approach: a team of specialized AI agents - each with a defined role, specif
 ### Agent 1: @designer (Requirements Analyst)
 
 Before any design work begins, this agent conducts deep research:
-- Searches for similar apps and analyzes competitors
-- Researches best practices for the project type
+- Researches similar projects, GitHub repos, and existing implementations
+- Identifies best practices and common patterns for the project type
 - Asks methodical questions to capture complete requirements
 
 The output? A structured requirements document covering:
