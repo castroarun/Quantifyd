@@ -1,10 +1,10 @@
-# How I Built a 9-Step Development Workflow Using AI Agents
+# A 9-Step Development Workflow Using AI Agents
 
 **Most solo developers are still doing everything manually.**
 
 Requirements gathering. Architecture design. Test planning. Documentation. All bottlenecks that slow down what should be fast: shipping working software.
 
-I spent a few weeks building an AI-powered development system that handles 80% of my workflow. Here's exactly how it works.
+This article breaks down an AI-powered development system that handles 80% of the typical workflow. Here's exactly how it works.
 
 [SCREENSHOT: ecosystem-diagram.png - The complete Claude Code agent ecosystem showing inputs, agents, commands, and outputs]
 
@@ -12,20 +12,20 @@ I spent a few weeks building an AI-powered development system that handles 80% o
 
 ## The Problem: The Default Way Doesn't Scale
 
-When I started building side projects, I quickly spotted the patterns that slow developers down:
+The patterns that slow developers down are well-known:
 
 - **Vague requirements** lead to rework
 - **No design docs** mean inconsistent architecture
 - **Test cases written after bugs** appear
 - **Zero documentation** for future maintenance
 
-I wanted to design and ship real products - not get stuck in endless refactoring cycles. So I built a system to prevent these problems before they start.
+The goal: a system that prevents these problems before they start.
 
 ---
 
 ## The Solution: Specialized AI Agents
 
-I built a team of specialized AI agents - each with a defined role, specific deliverables, and clear handover points between them. Think TOGAF principles applied to AI: structured phases, defined outputs, and explicit "Definition of Done" before moving to the next stage.
+The approach: a team of specialized AI agents - each with a defined role, specific deliverables, and clear handover points between them. Think TOGAF principles applied to AI: structured phases, defined outputs, and explicit "Definition of Done" before moving to the next stage.
 
 ### Agent 1: @designer (Requirements Analyst)
 
@@ -53,7 +53,7 @@ With requirements captured, the architect takes over with a two-phase approach:
 - Reviews requirements
 - Proposes 2-3 implementation approaches
 - Presents trade-offs for each option
-- Waits for my approval before proceeding
+- Waits for human approval before proceeding
 
 **Phase 2: PRD Creation**
 - Creates detailed Product Requirements Document
@@ -78,7 +78,7 @@ The QA agent reads the approved PRD and generates comprehensive test cases:
 
 Each test case includes specific steps, expected behavior, test data, and priority level. The output is a CSV file that tracks execution during manual testing.
 
-**Why test before code?** It validates understanding. Forces clarity on requirements. Catches gaps before I write a single line of code.
+**Why test before code?** It validates understanding. Forces clarity on requirements. Catches gaps before any code is written.
 
 [SCREENSHOT: test-plan-csv.png - TEST-PLAN.csv showing actual test cases with IDs, steps, and expected results]
 
@@ -108,19 +108,19 @@ Human approval gates at Steps 2, 3, and 8 ensure AI proposals get validated befo
 
 ## The Review Loop: Jira Integration
 
-Here's where it gets interesting. The workflow integrates with Jira for structured reviews.
+The workflow integrates with Jira for structured reviews.
 
 When @architect completes a PRD:
 1. Creates a Jira task: "Review PRD: [Feature]"
 2. Attaches PRD document, workflow diagram, and mockups
-3. Assigns to me for review
+3. Assigns to the reviewer
 
-I review in Jira. If I have feedback:
+The review process:
 - Add comments describing changes needed
 - Keep status as "In Review"
 - Run `/checkprd` command
 
-The architect reads my feedback, revises the PRD, and resubmits. This loop continues until I approve.
+The architect reads feedback, revises the PRD, and resubmits. This loop continues until approval.
 
 When approved:
 - Move Jira task to "Done"
@@ -133,7 +133,7 @@ When approved:
 
 ## Real Example: Strength Profile Tracker
 
-I built a fitness tracking PWA using this workflow.
+A fitness tracking PWA built using this workflow.
 
 **Step 2 output:** PRD covering profile management, exercise tracking, strength calculations, and progress visualization. Architect created HTML mockups for each screen.
 
@@ -143,7 +143,7 @@ I built a fitness tracking PWA using this workflow.
 
 **Step 5:** Executed test plan. Found 3 edge cases. Logged as Jira bugs linked to specific test case IDs.
 
-**Result:** Shipped a fully-tested PWA with comprehensive documentation. Every requirement traced from initial capture through deployment.
+**Result:** A fully-tested PWA with comprehensive documentation. Every requirement traced from initial capture through deployment.
 
 [SCREENSHOT: spt-app-running.png - Strength Profile Tracker PWA running on mobile showing the actual interface]
 
@@ -151,7 +151,7 @@ I built a fitness tracking PWA using this workflow.
 
 ---
 
-## Key Learnings
+## Key Takeaways
 
 ### 1. Specialization beats generalization
 
@@ -163,15 +163,15 @@ AI proposes, human approves. The review loops aren't overhead - they're quality 
 
 ### 3. Documentation is a product
 
-The PRD, test plan, and walkthrough aren't bureaucracy. They're deliverables that make the codebase maintainable. Future me thanks past me.
+The PRD, test plan, and walkthrough aren't bureaucracy. They're deliverables that make the codebase maintainable.
 
 ### 4. Front-loaded effort saves time
 
-Spending time on requirements and design feels slow. But it's faster than refactoring half-built features because you missed something obvious.
+Spending time on requirements and design feels slow. But it's faster than refactoring half-built features because something obvious was missed.
 
 ---
 
-## Try It Yourself
+## Implementation Details
 
 This system runs on Claude Code with custom agents and slash commands. The core components:
 
@@ -190,13 +190,13 @@ This system runs on Claude Code with custom agents and slash commands. The core 
 - MCP server for Jira (mcp-atlassian)
 - Git for version control (including agent configs)
 
-Start simple: Create one specialized agent for your biggest bottleneck. Document its responsibilities, inputs, and expected outputs. Iterate from there.
+Start simple: Create one specialized agent for the biggest bottleneck. Document its responsibilities, inputs, and expected outputs. Iterate from there.
 
 ---
 
 **What's your biggest bottleneck in solo development?**
 
-I'd love to hear how others are using AI to streamline their workflows. Drop a comment with your approach - or the problem you're still trying to solve.
+Drop a comment with your approach - or the problem you're still trying to solve.
 
 ---
 
