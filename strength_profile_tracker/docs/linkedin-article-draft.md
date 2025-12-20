@@ -30,9 +30,10 @@ The approach: a team of specialized AI agents - each with a defined role, specif
 ### Agent 1: @designer (Requirements Analyst)
 
 Before any design work begins, this agent conducts deep research:
-- Researches similar projects, GitHub repos, and existing implementations
+- Performs fitment study to validate project scope and feasibility
 - Identifies best practices and common patterns for the project type
 - Asks methodical questions to capture complete requirements
+- Researches similar projects, GitHub repos, and existing implementations
 
 **Output:** A structured requirements document covering:
 - Project type, purpose, and target users
