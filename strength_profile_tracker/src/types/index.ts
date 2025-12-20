@@ -234,3 +234,33 @@ export const WEIGHT_UNIT_INFO: Record<WeightUnit, { name: string; shortName: str
 // Conversion constants
 export const KG_TO_LBS = 2.20462
 export const LBS_TO_KG = 0.453592
+
+// Rest Timer types (Phase 6)
+export type TimerMode = 'countdown' | 'countup'
+
+export interface TimerSettings {
+  defaultDuration: number      // Default rest time in seconds (default: 90)
+  soundEnabled: boolean        // Play sound when timer ends
+  vibrationEnabled: boolean    // Vibrate when timer ends
+  autoStart: boolean           // Auto-start timer after logging a set
+}
+
+export interface ExerciseTimerHistory {
+  exerciseId: Exercise
+  lastDuration: number         // Last used duration for this exercise in seconds
+}
+
+// Timer presets in seconds
+export const TIMER_PRESETS = [30, 60, 90, 120, 180] as const
+export type TimerPreset = typeof TIMER_PRESETS[number]
+
+// Timer increment for extend/reduce buttons
+export const TIMER_INCREMENT = 15 // seconds
+
+// Default timer settings
+export const DEFAULT_TIMER_SETTINGS: TimerSettings = {
+  defaultDuration: 90,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  autoStart: true
+}

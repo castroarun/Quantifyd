@@ -29,9 +29,45 @@ export function getCelebrationMessage(exerciseName: string): string {
 }
 
 /**
+ * Get level thresholds for an exercise based on user weight
+ */
+export function getLevelThresholds(
+  exerciseId: Exercise,
+  userWeight: number,
+  sex?: Sex
+): Record<Level, number> | null {
+  const exercise = getExerciseById(exerciseId)
+  if (!exercise) return null
+
+  return {
+    beginner: calculateStrength(userWeight, exercise, 'beginner', sex),
+    novice: calculateStrength(userWeight, exercise, 'novice', sex),
+    intermediate: calculateStrength(userWeight, exercise, 'intermediate', sex),
+    advanced: calculateStrength(userWeight, exercise, 'advanced', sex)
+  }
+}
+
+/**
+ * Calculate what level a weight corresponds to
+ */
+export function getLevelForWeight(
+  exerciseId: Exercise,
+  userWeight: number,
+  liftedWeight: number,
+  sex?: Sex
+): Level {
+  const thresholds = getLevelThresholds(exerciseId, userWeight, sex)
+  if (!thresholds) return 'beginner'
+
+  if (liftedWeight >= thresholds.advanced) return 'advanced'
+  if (liftedWeight >= thresholds.intermediate) return 'intermediate'
+  if (liftedWeight >= thresholds.novice) return 'novice'
+  return 'beginner'
+}
+
+/**
  * Check if workout PR triggers a level upgrade
  * Returns new level if upgrade, null if no change
- * Levels can only increase, never decrease
  */
 export function checkLevelUpgrade(
   exerciseId: Exercise,
@@ -40,29 +76,80 @@ export function checkLevelUpgrade(
   currentLevel: Level | null,
   sex?: Sex
 ): Level | null {
-  const exercise = getExerciseById(exerciseId)
-  if (!exercise) return null
+  const achievedLevel = getLevelForWeight(exerciseId, userWeight, newPR, sex)
 
-  // Calculate thresholds for each level
-  const thresholds = {
-    beginner: calculateStrength(userWeight, exercise, 'beginner', sex),
-    novice: calculateStrength(userWeight, exercise, 'novice', sex),
-    intermediate: calculateStrength(userWeight, exercise, 'intermediate', sex),
-    advanced: calculateStrength(userWeight, exercise, 'advanced', sex)
-  }
-
-  // Find highest level achieved
-  let achievedLevel: Level = 'beginner'
-  if (newPR >= thresholds.advanced) achievedLevel = 'advanced'
-  else if (newPR >= thresholds.intermediate) achievedLevel = 'intermediate'
-  else if (newPR >= thresholds.novice) achievedLevel = 'novice'
-
-  // Only upgrade, never downgrade
   const levelOrder: Level[] = ['beginner', 'novice', 'intermediate', 'advanced']
   const currentIndex = currentLevel ? levelOrder.indexOf(currentLevel) : -1
   const achievedIndex = levelOrder.indexOf(achievedLevel)
 
   return achievedIndex > currentIndex ? achievedLevel : null
+}
+
+/**
+ * Check if user should be downgraded based on last N workouts
+ * Returns new (lower) level if downgrade needed, null if no change
+ *
+ * Logic: If user hasn't hit their current level threshold in the last 4 workouts,
+ * downgrade to the highest level they've actually achieved in those workouts.
+ */
+export function checkLevelDowngrade(
+  profileId: string,
+  exerciseId: Exercise,
+  userWeight: number,
+  currentLevel: Level | null,
+  sex?: Sex,
+  lookbackWorkouts: number = 4
+): Level | null {
+  if (!currentLevel || currentLevel === 'beginner') return null
+
+  const thresholds = getLevelThresholds(exerciseId, userWeight, sex)
+  if (!thresholds) return null
+
+  // Get last N workout sessions for this exercise
+  const sessions = getExerciseSessions(profileId, exerciseId, lookbackWorkouts)
+
+  // Need at least 4 workouts to consider downgrade
+  if (sessions.length < lookbackWorkouts) return null
+
+  // Get max weight from each of the last N sessions
+  const sessionMaxes = sessions.map(session => {
+    return Math.max(...session.sets.map(set => set.weight || 0))
+  })
+
+  // Check if any session hit the current level threshold
+  const currentThreshold = thresholds[currentLevel]
+  const hitCurrentLevel = sessionMaxes.some(max => max >= currentThreshold)
+
+  if (hitCurrentLevel) {
+    // User maintained their level
+    return null
+  }
+
+  // User didn't hit their level in last N workouts - find what level they actually achieved
+  const overallMax = Math.max(...sessionMaxes)
+  const achievedLevel = getLevelForWeight(exerciseId, userWeight, overallMax, sex)
+
+  const levelOrder: Level[] = ['beginner', 'novice', 'intermediate', 'advanced']
+  const currentIndex = levelOrder.indexOf(currentLevel)
+  const achievedIndex = levelOrder.indexOf(achievedLevel)
+
+  // Only return if it's actually a downgrade
+  return achievedIndex < currentIndex ? achievedLevel : null
+}
+
+/**
+ * Downgrade messages
+ */
+export const DOWNGRADE_MESSAGES = [
+  "Level adjusted to {level}. Keep pushing to get back up!",
+  "Dropped to {level}. You've got this - time to rebuild!",
+  "Now at {level}. Every champion has setbacks. Come back stronger!",
+  "Reset to {level}. Focus on form and the gains will follow!"
+]
+
+export function getDowngradeMessage(level: string): string {
+  const index = Math.floor(Math.random() * DOWNGRADE_MESSAGES.length)
+  return DOWNGRADE_MESSAGES[index].replace('{level}', level.charAt(0).toUpperCase() + level.slice(1))
 }
 
 /**

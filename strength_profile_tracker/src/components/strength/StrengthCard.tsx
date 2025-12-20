@@ -57,25 +57,25 @@ export default function StrengthCard({ strength, onLevelSelect, showBodyPart = f
         </div>
       </button>
 
+      {/* Level standards - display only (determined by workout performance) */}
       <div className="grid grid-cols-4 gap-2">
         {strength.levels.map(({ level, weight, isSelected }) => (
-          <button
+          <div
             key={level}
-            onClick={() => onLevelSelect(level)}
             className={`
               relative p-2 rounded-lg border-2 transition-all
               flex flex-col items-center justify-center
               min-h-[70px]
               ${isSelected
-                ? 'border-[#2C3E50] dark:border-gray-400 bg-gray-50 dark:bg-gray-700'
-                : 'border-transparent bg-gray-50 dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
+                ? 'border-[#2C3E50] dark:border-gray-400'
+                : 'border-transparent bg-gray-50 dark:bg-gray-700'
               }
             `}
             style={{
               backgroundColor: isSelected ? `${LEVEL_COLORS[level]}15` : undefined
             }}
           >
-            {/* Checkmark for selected */}
+            {/* Checkmark for current level */}
             {isSelected && (
               <div
                 className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center"
@@ -113,9 +113,16 @@ export default function StrengthCard({ strength, onLevelSelect, showBodyPart = f
             >
               {LEVEL_NAMES[level]}
             </span>
-          </button>
+          </div>
         ))}
       </div>
+
+      {/* Info text about auto-leveling */}
+      {!isRated && (
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">
+          Log a workout to set your level
+        </p>
+      )}
 
       {/* Workout Logger - shown when expanded */}
       {isExpanded && profileId && (

@@ -296,6 +296,29 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Dev: Timer UI Options */}
+        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-semibold text-[#2C3E50] dark:text-gray-100">Developer</h2>
+          </div>
+          <div className="p-4">
+            <a
+              href="/mockups/timer-options.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 -mx-4 px-4 py-3 transition-colors"
+            >
+              <div>
+                <p className="font-medium text-gray-700 dark:text-gray-200">Timer UI Options</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Preview different timer designs</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </div>
+        </section>
+
         {/* Danger Zone */}
         {user && (
           <section className="bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-900 overflow-hidden">

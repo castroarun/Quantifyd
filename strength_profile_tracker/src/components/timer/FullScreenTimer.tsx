@@ -1,0 +1,399 @@
+'use client'
+
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Exercise, TIMER_PRESETS, TIMER_INCREMENT, TimerMode } from '@/types'
+import {
+  getTimerSettings,
+  getExerciseTimerDuration,
+  saveExerciseTimerDuration,
+  formatTime
+} from '@/lib/storage/timer'
+import { useWakeLock } from '@/hooks/useWakeLock'
+import { useUnit } from '@/contexts'
+
+interface FullScreenTimerProps {
+  exerciseId?: Exercise
+  exerciseName?: string
+  setNumber?: number
+  weight?: number
+  reps?: number
+  onTimerEnd?: () => void
+  onClose: () => void
+  autoStart?: boolean
+}
+
+export default function FullScreenTimer({
+  exerciseId,
+  exerciseName,
+  setNumber,
+  weight,
+  reps,
+  onTimerEnd,
+  onClose,
+  autoStart = true
+}: FullScreenTimerProps) {
+  const { unit } = useUnit()
+  const [duration, setDuration] = useState(90)
+  const [timeLeft, setTimeLeft] = useState(90)
+  const [isRunning, setIsRunning] = useState(false)
+  const [mode, setMode] = useState<TimerMode>('countdown')
+  const [hasEnded, setHasEnded] = useState(false)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const { requestWakeLock, releaseWakeLock, isActive: wakeLockActive } = useWakeLock()
+
+  // Load settings on mount
+  useEffect(() => {
+    const settings = getTimerSettings()
+    let initialDuration = settings.defaultDuration
+
+    if (exerciseId) {
+      initialDuration = getExerciseTimerDuration(exerciseId)
+    }
+
+    setDuration(initialDuration)
+    setTimeLeft(initialDuration)
+
+    if (autoStart) {
+      setIsRunning(true)
+    }
+  }, [exerciseId, autoStart])
+
+  // Manage wake lock based on timer state
+  useEffect(() => {
+    if (isRunning && !wakeLockActive) {
+      requestWakeLock()
+    } else if (!isRunning && wakeLockActive) {
+      releaseWakeLock()
+    }
+  }, [isRunning, wakeLockActive, requestWakeLock, releaseWakeLock])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+      releaseWakeLock()
+    }
+  }, [releaseWakeLock])
+
+  // Play alert
+  const playAlert = useCallback(() => {
+    const settings = getTimerSettings()
+
+    if (settings.vibrationEnabled && 'vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200, 100, 200])
+    }
+
+    if (settings.soundEnabled) {
+      try {
+        const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+
+        oscillator.frequency.value = 800
+        oscillator.type = 'sine'
+        gainNode.gain.value = 0.3
+
+        oscillator.start()
+
+        setTimeout(() => { oscillator.frequency.value = 1000 }, 200)
+        setTimeout(() => { oscillator.frequency.value = 1200 }, 400)
+        setTimeout(() => {
+          oscillator.stop()
+          audioContext.close()
+        }, 600)
+      } catch (e) {
+        console.log('Audio not supported')
+      }
+    }
+  }, [])
+
+  // Timer logic
+  useEffect(() => {
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (mode === 'countdown') {
+            const newTime = prev - 1
+            if (newTime <= 0 && !hasEnded) {
+              setHasEnded(true)
+              playAlert()
+              onTimerEnd?.()
+            }
+            return newTime
+          } else {
+            return prev + 1
+          }
+        })
+      }, 1000)
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
+  }, [isRunning, mode, hasEnded, playAlert, onTimerEnd])
+
+  const start = () => {
+    setIsRunning(true)
+    setHasEnded(false)
+  }
+
+  const pause = () => {
+    setIsRunning(false)
+  }
+
+  const reset = () => {
+    setIsRunning(false)
+    setTimeLeft(duration)
+    setHasEnded(false)
+  }
+
+  const setPreset = (seconds: number) => {
+    setDuration(seconds)
+    setTimeLeft(seconds)
+    setIsRunning(false)
+    setHasEnded(false)
+
+    if (exerciseId) {
+      saveExerciseTimerDuration(exerciseId, seconds)
+    }
+  }
+
+  const adjustTime = (seconds: number) => {
+    const newDuration = Math.max(15, duration + seconds)
+    setDuration(newDuration)
+    setTimeLeft(prev => Math.max(0, prev + seconds))
+
+    if (exerciseId) {
+      saveExerciseTimerDuration(exerciseId, newDuration)
+    }
+  }
+
+  const toggleMode = () => {
+    if (mode === 'countdown') {
+      setMode('countup')
+      setTimeLeft(0)
+      setDuration(0)
+    } else {
+      setMode('countdown')
+      const settings = getTimerSettings()
+      setTimeLeft(settings.defaultDuration)
+      setDuration(settings.defaultDuration)
+    }
+    setIsRunning(false)
+    setHasEnded(false)
+  }
+
+  const skipRest = () => {
+    releaseWakeLock()
+    onClose()
+  }
+
+  // Calculate progress
+  const progress = mode === 'countdown' && duration > 0
+    ? Math.max(0, timeLeft / duration)
+    : 0
+
+  // Format weight with unit
+  const formatWeight = (w: number) => {
+    return unit === 'kg' ? `${w}kg` : `${Math.round(w * 2.205)}lb`
+  }
+
+  // Colors based on state
+  const getTimerColor = () => {
+    if (hasEnded || timeLeft < 0) return 'text-red-400'
+    if (timeLeft <= 10 && mode === 'countdown') return 'text-yellow-400'
+    return 'text-white'
+  }
+
+  const getProgressGradient = () => {
+    if (hasEnded || timeLeft < 0) return 'from-red-500 to-orange-400'
+    if (timeLeft <= 10 && mode === 'countdown') return 'from-yellow-500 to-amber-400'
+    return 'from-blue-500 to-cyan-400'
+  }
+
+  const getButtonGradient = () => {
+    if (hasEnded || timeLeft < 0) return 'from-red-500 to-orange-500'
+    return 'from-blue-500 to-cyan-500'
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black">
+      {/* Close button */}
+      <button
+        onClick={skipRest}
+        className="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl transition-colors"
+        aria-label="Close timer"
+      >
+        ×
+      </button>
+
+      {/* Exercise name at top */}
+      {exerciseName && (
+        <p className="absolute top-8 left-0 right-0 text-center text-blue-400 text-lg uppercase tracking-[0.3em] font-medium">
+          {exerciseName}
+        </p>
+      )}
+
+      {/* Mode toggle */}
+      <button
+        onClick={toggleMode}
+        className="absolute top-8 left-6 text-gray-500 hover:text-white flex items-center gap-2 text-xs transition-colors uppercase tracking-wider"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        {mode === 'countdown' ? 'Timer' : 'Stopwatch'}
+      </button>
+
+      {/* Main timer */}
+      <div className="flex flex-col items-center">
+        {/* Time display */}
+        <div className={`font-mono-timer font-bold ${getTimerColor()} breathe`} style={{ fontSize: 'clamp(5rem, 20vw, 10rem)', lineHeight: 1 }}>
+          {formatTime(timeLeft)}
+        </div>
+
+        {/* Rest complete message */}
+        {hasEnded && mode === 'countdown' && (
+          <span className="text-red-400 text-xl font-semibold animate-pulse mt-4">
+            REST COMPLETE!
+          </span>
+        )}
+        {mode === 'countup' && (
+          <span className="text-gray-500 text-sm mt-2 uppercase tracking-wider">elapsed</span>
+        )}
+      </div>
+
+      {/* Progress bar with glow effect when running */}
+      {mode === 'countdown' && (
+        <div className="w-80 max-w-[80vw] mt-6">
+          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full bg-gradient-to-r ${getProgressGradient()} rounded-full transition-all duration-1000 ${isRunning ? 'glow-pulse' : ''}`}
+              style={{ width: `${progress * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Stats row */}
+      {(setNumber || weight || reps) && (
+        <div className="flex gap-12 mt-10">
+          {setNumber && (
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white">S{setNumber}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">Set</p>
+            </div>
+          )}
+          {weight !== undefined && weight > 0 && (
+            <div className="text-center">
+              <p className="text-3xl font-bold text-green-400">{formatWeight(weight)}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">Weight</p>
+            </div>
+          )}
+          {reps !== undefined && reps > 0 && (
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white">{reps}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">Reps</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Preset buttons */}
+      {mode === 'countdown' && (
+        <div className="flex gap-3 mt-10">
+          {TIMER_PRESETS.map(preset => (
+            <button
+              key={preset}
+              onClick={() => setPreset(preset)}
+              className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                duration === preset
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              {formatTime(preset)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Control buttons */}
+      <div className="flex items-center gap-8 mt-8">
+        {/* -15s */}
+        {mode === 'countdown' && (
+          <button
+            onClick={() => adjustTime(-TIMER_INCREMENT)}
+            className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
+          >
+            -15
+          </button>
+        )}
+
+        {/* Start/Pause */}
+        <button
+          onClick={isRunning ? pause : start}
+          className={`w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-105 bg-gradient-to-r ${
+            isRunning ? 'from-orange-500 to-amber-500 shadow-orange-500/30' : `${getButtonGradient()} shadow-blue-500/30`
+          }`}
+        >
+          {isRunning ? (
+            <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
+            </svg>
+          ) : (
+            <svg className="w-12 h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {/* Reset / +15s */}
+        {mode === 'countdown' ? (
+          <button
+            onClick={() => adjustTime(TIMER_INCREMENT)}
+            className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
+          >
+            +15
+          </button>
+        ) : (
+          <button
+            onClick={reset}
+            className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 hover:border-blue-500 hover:text-blue-400 flex items-center justify-center transition-all"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Skip button */}
+      <button
+        onClick={skipRest}
+        className="mt-10 px-8 py-3 text-gray-600 hover:text-white transition-colors text-sm uppercase tracking-wider"
+      >
+        Skip Rest
+      </button>
+
+      {/* Wake lock indicator */}
+      {wakeLockActive && (
+        <div className="absolute bottom-6 left-6 flex items-center gap-2 text-gray-600 text-xs">
+          <div className="w-2 h-2 rounded-full bg-green-500" />
+          Screen kept on
+        </div>
+      )}
+    </div>
+  )
+}

@@ -121,7 +121,7 @@ export default function HomePage() {
       <header className="bg-[#2C3E50] text-white px-4 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <Logo size="md" />
+            <Logo size="lg" showRings={true} />
             <p className="text-sm text-gray-300 mt-1">
               {profiles.length} of {VALIDATION.maxProfiles} profiles
               {isSyncing && <span className="ml-2">• Syncing...</span>}
