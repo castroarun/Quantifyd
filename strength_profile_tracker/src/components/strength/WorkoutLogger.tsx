@@ -208,6 +208,15 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     // Auto-save
     saveWorkoutSession(profileId, exerciseId, newSets)
 
+    // Remove from completed sets if user edits a completed record
+    if (completedSets.has(setIndex)) {
+      setCompletedSets(prev => {
+        const next = new Set(prev)
+        next.delete(setIndex)
+        return next
+      })
+    }
+
     // NOTE: Timer is now triggered by the Done button, not on input change
 
     // Check for new PR and level upgrade when weight is entered
