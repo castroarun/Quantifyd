@@ -17,7 +17,7 @@ interface RestTimerProps {
   weight?: number
   reps?: number
   onTimerEnd?: () => void
-  onExpand?: () => void
+  onExpand?: (state: { timeLeft: number; duration: number; isRunning: boolean }) => void
   autoStart?: boolean
   compact?: boolean
   initialTimeLeft?: number
@@ -174,13 +174,10 @@ export default function RestTimer({
   }
 
   const adjustTime = (seconds: number) => {
+    // Temporary adjustment - does NOT save to exercise memory
     const newDuration = Math.max(15, duration + seconds)
     setDuration(newDuration)
     setTimeLeft(prev => Math.max(0, prev + seconds))
-
-    if (exerciseId) {
-      saveExerciseTimerDuration(exerciseId, newDuration)
-    }
   }
 
   const toggleMode = () => {
@@ -198,10 +195,10 @@ export default function RestTimer({
     setHasEnded(false)
   }
 
-  // Handle double-click to expand
+  // Handle double-click to expand - pass current state for sync
   const handleDoubleClick = () => {
     if (onExpand) {
-      onExpand()
+      onExpand({ timeLeft, duration, isRunning })
     }
   }
 

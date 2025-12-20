@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Profile, VALIDATION } from '@/types'
 import { getProfiles, getProfileById, syncProfilesFromCloud } from '@/lib/storage/profiles'
-import { loadSampleData, hasSampleData, removeSampleData } from '@/lib/storage/seedData'
 import { setupSyncListeners, hasPendingSync, processSyncQueue } from '@/lib/storage/sync'
 import { ProfileCard, EmptyProfileSlot } from '@/components/profile'
 import { ThemeToggle, UnitToggle, Logo } from '@/components/ui'
@@ -17,7 +16,6 @@ export default function HomePage() {
   const { user, isLoading: authLoading, isConfigured } = useAuth()
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [hasSamples, setHasSamples] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
 
@@ -60,7 +58,6 @@ export default function HomePage() {
     }
 
     setProfiles(getProfiles())
-    setHasSamples(hasSampleData())
     setIsLoading(false)
   }, [router, authLoading, user, isConfigured])
 
@@ -85,19 +82,6 @@ export default function HomePage() {
     localStorage.setItem('skippedLogin', 'true')
     setShowLogin(false)
     setProfiles(getProfiles())
-    setHasSamples(hasSampleData())
-  }
-
-  const handleLoadSampleData = () => {
-    loadSampleData()
-    setProfiles(getProfiles())
-    setHasSamples(true)
-  }
-
-  const handleRemoveSampleData = () => {
-    removeSampleData()
-    setProfiles(getProfiles())
-    setHasSamples(false)
   }
 
   const emptySlots = VALIDATION.maxProfiles - profiles.length
@@ -122,6 +106,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between">
           <div>
             <Logo size="lg" />
+            <p className="text-xs text-gray-400 mt-0.5">Personal strength logger app</p>
             <p className="text-sm text-gray-300 mt-1">
               {profiles.length} of {VALIDATION.maxProfiles} profiles
               {isSyncing && <span className="ml-2">• Syncing...</span>}
@@ -200,24 +185,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Sample Data Button */}
-        <div className="mt-8 text-center">
-          {!hasSamples ? (
-            <button
-              onClick={handleLoadSampleData}
-              className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline"
-            >
-              Load sample profiles with workout data
-            </button>
-          ) : (
-            <button
-              onClick={handleRemoveSampleData}
-              className="text-sm text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 underline"
-            >
-              Remove sample profiles
-            </button>
-          )}
-        </div>
       </main>
     </div>
   )

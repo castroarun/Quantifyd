@@ -192,13 +192,10 @@ export default function FullScreenTimer({
   }
 
   const adjustTime = (seconds: number) => {
+    // Temporary adjustment - does NOT save to exercise memory
     const newDuration = Math.max(15, duration + seconds)
     setDuration(newDuration)
     setTimeLeft(prev => Math.max(0, prev + seconds))
-
-    if (exerciseId) {
-      saveExerciseTimerDuration(exerciseId, newDuration)
-    }
   }
 
   const toggleMode = () => {
@@ -258,10 +255,12 @@ export default function FullScreenTimer({
       <button
         onClick={(e) => { e.stopPropagation(); skipRest() }}
         onDoubleClick={(e) => e.stopPropagation()}
-        className="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl transition-colors p-2"
+        className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 text-2xl transition-colors"
         aria-label="Close timer"
       >
-        ×
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
 
       {/* Exercise name at top */}
@@ -339,12 +338,12 @@ export default function FullScreenTimer({
 
       {/* Preset buttons */}
       {mode === 'countdown' && (
-        <div className="flex gap-3 mt-10" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2 mt-10 px-4" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
           {TIMER_PRESETS.map(preset => (
             <button
               key={preset}
               onClick={() => setPreset(preset)}
-              className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                 duration === preset
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'

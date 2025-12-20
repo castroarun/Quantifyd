@@ -243,6 +243,7 @@ export interface TimerSettings {
   soundEnabled: boolean        // Play sound when timer ends
   vibrationEnabled: boolean    // Vibrate when timer ends
   autoStart: boolean           // Auto-start timer after logging a set
+  keepAwakeDuringWorkout: boolean  // Keep screen awake during workout session
 }
 
 export interface ExerciseTimerHistory {
@@ -250,8 +251,8 @@ export interface ExerciseTimerHistory {
   lastDuration: number         // Last used duration for this exercise in seconds
 }
 
-// Timer presets in seconds
-export const TIMER_PRESETS = [30, 60, 90, 120, 180] as const
+// Timer presets in seconds (2:30 to 5:00 in 30s increments)
+export const TIMER_PRESETS = [150, 180, 210, 240, 270, 300] as const
 export type TimerPreset = typeof TIMER_PRESETS[number]
 
 // Timer increment for extend/reduce buttons
@@ -259,8 +260,9 @@ export const TIMER_INCREMENT = 15 // seconds
 
 // Default timer settings
 export const DEFAULT_TIMER_SETTINGS: TimerSettings = {
-  defaultDuration: 90,
+  defaultDuration: 180,
   soundEnabled: true,
   vibrationEnabled: true,
-  autoStart: true
+  autoStart: true,
+  keepAwakeDuringWorkout: true  // Default to keeping screen awake
 }

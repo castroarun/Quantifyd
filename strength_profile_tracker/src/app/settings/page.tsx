@@ -12,6 +12,7 @@ import {
   getNotificationPermission,
   notificationsSupported
 } from '@/lib/pwa/notifications'
+import { loadSampleData, hasSampleData, removeSampleData } from '@/lib/storage/seedData'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -24,9 +25,11 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [notificationStatus, setNotificationStatus] = useState<NotificationPermission | 'unsupported'>('default')
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false)
+  const [hasSamples, setHasSamples] = useState(false)
 
   useEffect(() => {
     setNotificationStatus(getNotificationPermission())
+    setHasSamples(hasSampleData())
   }, [])
 
   const handleEnableNotifications = async () => {
@@ -78,6 +81,16 @@ export default function SettingsPage() {
       console.error('Sync failed:', err)
     }
     setIsSyncing(false)
+  }
+
+  const handleLoadSampleData = () => {
+    loadSampleData()
+    setHasSamples(true)
+  }
+
+  const handleRemoveSampleData = () => {
+    removeSampleData()
+    setHasSamples(false)
   }
 
   const formatLastSync = (timestamp: string | null) => {
@@ -293,29 +306,66 @@ export default function SettingsPage() {
               <span className="text-gray-500 dark:text-gray-400">Build</span>
               <span className="text-gray-700 dark:text-gray-200">2025.01</span>
             </div>
+            <div className="border-t border-gray-100 dark:border-gray-700 mt-3 pt-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Developed by</span>
+                <span className="text-gray-700 dark:text-gray-200">Castro</span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
+                Made with care for strength enthusiasts
+              </p>
+            </div>
           </div>
         </section>
 
-        {/* Dev: Timer UI Options */}
+        {/* Developer Section */}
         <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h2 className="font-semibold text-[#2C3E50] dark:text-gray-100">Developer</h2>
           </div>
-          <div className="p-4">
-            <a
-              href="/mockups/timer-options.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 -mx-4 px-4 py-3 transition-colors"
-            >
+          <div className="p-4 space-y-3">
+            {/* Sample Data */}
+            <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-700 dark:text-gray-200">Timer UI Options</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Preview different timer designs</p>
+                <p className="font-medium text-gray-700 dark:text-gray-200">Sample Profiles</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {hasSamples ? 'Sample profiles with workout data loaded' : 'Load demo profiles to explore the app'}
+                </p>
               </div>
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
+              {!hasSamples ? (
+                <button
+                  onClick={handleLoadSampleData}
+                  className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Load
+                </button>
+              ) : (
+                <button
+                  onClick={handleRemoveSampleData}
+                  className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+
+            {/* Timer UI Options */}
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+              <a
+                href="/mockups/timer-options.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 -mx-4 px-4 py-2 transition-colors"
+              >
+                <div>
+                  <p className="font-medium text-gray-700 dark:text-gray-200">Timer UI Options</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Preview different timer designs</p>
+                </div>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
           </div>
         </section>
 
