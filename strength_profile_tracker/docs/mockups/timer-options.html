@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timer UI Options - REPPIT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    body { font-family: 'Inter', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Glow effects */
+    .glow-blue { box-shadow: 0 0 60px rgba(59, 130, 246, 0.5); }
+    .glow-red { box-shadow: 0 0 60px rgba(239, 68, 68, 0.5); }
+    .glow-green { box-shadow: 0 0 60px rgba(34, 197, 94, 0.5); }
+    .glow-orange { box-shadow: 0 0 60px rgba(249, 115, 22, 0.5); }
+
+    .text-glow-blue { text-shadow: 0 0 40px rgba(59, 130, 246, 0.8); }
+    .text-glow-red { text-shadow: 0 0 40px rgba(239, 68, 68, 0.8); }
+    .text-glow-cyan { text-shadow: 0 0 40px rgba(6, 182, 212, 0.8); }
+
+    /* Glassmorphism */
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Pulse animation */
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pulse-ring { animation: pulse-ring 2s ease-in-out infinite; }
+
+    /* Breathing animation */
+    @keyframes breathe {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .breathe { animation: breathe 3s ease-in-out infinite; }
+
+    /* Ring progress */
+    .ring-progress {
+      stroke-dasharray: 283;
+      stroke-dashoffset: 70;
+      transition: stroke-dashoffset 1s ease;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-4">
+
+  <h1 class="text-2xl font-bold text-center mb-2">Timer UI Options</h1>
+  <p class="text-gray-400 text-center mb-8 text-sm">Click any option to see it full-screen</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+
+    <!-- Option 1: Minimal Dark -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('minimal')">
+      <h3 class="text-lg font-semibold mb-4 text-center">1. Minimal Dark</h3>
+      <div class="bg-gradient-to-b from-gray-900 to-black rounded-xl p-8 flex flex-col items-center">
+        <div class="relative w-40 h-40">
+          <svg class="w-full h-full transform -rotate-90">
+            <circle cx="80" cy="80" r="70" fill="none" stroke="#1f2937" stroke-width="8"/>
+            <circle cx="80" cy="80" r="70" fill="none" stroke="#3b82f6" stroke-width="8"
+                    stroke-linecap="round" class="ring-progress"/>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="mono text-4xl font-bold text-white">1:45</span>
+          </div>
+        </div>
+        <p class="text-gray-500 text-sm mt-4">Clean, distraction-free</p>
+      </div>
+    </div>
+
+    <!-- Option 2: Neon Glow -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('neon')">
+      <h3 class="text-lg font-semibold mb-4 text-center">2. Neon Glow</h3>
+      <div class="bg-black rounded-xl p-8 flex flex-col items-center">
+        <div class="relative w-40 h-40">
+          <div class="absolute inset-0 rounded-full glow-blue opacity-50"></div>
+          <svg class="w-full h-full transform -rotate-90 relative z-10">
+            <circle cx="80" cy="80" r="70" fill="none" stroke="#1e3a5f" stroke-width="6"/>
+            <circle cx="80" cy="80" r="70" fill="none" stroke="#06b6d4" stroke-width="6"
+                    stroke-linecap="round" class="ring-progress" style="filter: drop-shadow(0 0 10px #06b6d4);"/>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="mono text-4xl font-bold text-cyan-400 text-glow-cyan">1:45</span>
+          </div>
+        </div>
+        <p class="text-gray-500 text-sm mt-4">Gaming/cyberpunk vibe</p>
+      </div>
+    </div>
+
+    <!-- Option 3: Apple Fitness Style -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('apple')">
+      <h3 class="text-lg font-semibold mb-4 text-center">3. Apple Fitness</h3>
+      <div class="bg-black rounded-xl p-8 flex flex-col items-center">
+        <div class="relative w-40 h-40">
+          <!-- Outer ring (total time) -->
+          <svg class="w-full h-full transform -rotate-90 absolute">
+            <circle cx="80" cy="80" r="70" fill="none" stroke="#1f2937" stroke-width="12"/>
+            <circle cx="80" cy="80" r="70" fill="none" stroke="#ef4444" stroke-width="12"
+                    stroke-linecap="round" class="ring-progress"/>
+          </svg>
+          <!-- Inner ring (sets done) -->
+          <svg class="w-full h-full transform -rotate-90 absolute">
+            <circle cx="80" cy="80" r="55" fill="none" stroke="#1f2937" stroke-width="8"/>
+            <circle cx="80" cy="80" r="55" fill="none" stroke="#22c55e" stroke-width="8"
+                    stroke-linecap="round" stroke-dasharray="345" stroke-dashoffset="172"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="mono text-3xl font-bold text-white">1:45</span>
+            <span class="text-xs text-gray-400 mt-1">SET 2/3</span>
+          </div>
+        </div>
+        <p class="text-gray-500 text-sm mt-4">Activity rings aesthetic</p>
+      </div>
+    </div>
+
+    <!-- Option 4: Bold Gym -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('bold')">
+      <h3 class="text-lg font-semibold mb-4 text-center">4. Bold Gym</h3>
+      <div class="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-xl p-8 flex flex-col items-center">
+        <div class="text-center">
+          <p class="text-orange-500 text-sm font-bold uppercase tracking-widest mb-2">REST TIME</p>
+          <div class="mono text-7xl font-black text-white tracking-tight" style="line-height: 1;">
+            1:45
+          </div>
+          <div class="flex gap-2 mt-4 justify-center">
+            <span class="px-3 py-1 bg-zinc-700 rounded-full text-sm">90s</span>
+            <span class="px-3 py-1 bg-orange-500 rounded-full text-sm font-bold">120s</span>
+            <span class="px-3 py-1 bg-zinc-700 rounded-full text-sm">180s</span>
+          </div>
+        </div>
+        <p class="text-gray-500 text-sm mt-4">Maximum visibility</p>
+      </div>
+    </div>
+
+    <!-- Option 5: Glassmorphism -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('glass')">
+      <h3 class="text-lg font-semibold mb-4 text-center">5. Glassmorphism</h3>
+      <div class="bg-gradient-to-br from-purple-900 via-blue-900 to-cyan-900 rounded-xl p-8 flex flex-col items-center relative overflow-hidden">
+        <!-- Blurred circles background -->
+        <div class="absolute -top-10 -left-10 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-30"></div>
+        <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-cyan-500 rounded-full blur-3xl opacity-30"></div>
+
+        <div class="glass rounded-3xl p-8 relative z-10">
+          <div class="relative w-36 h-36">
+            <svg class="w-full h-full transform -rotate-90">
+              <circle cx="72" cy="72" r="65" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+              <circle cx="72" cy="72" r="65" fill="none" stroke="white" stroke-width="8"
+                      stroke-linecap="round" class="ring-progress" style="stroke-dasharray: 408; stroke-dashoffset: 100;"/>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <span class="mono text-4xl font-bold text-white">1:45</span>
+            </div>
+          </div>
+        </div>
+        <p class="text-gray-400 text-sm mt-4 relative z-10">Premium feel</p>
+      </div>
+    </div>
+
+    <!-- Option 6: Countdown Focus -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('focus')">
+      <h3 class="text-lg font-semibold mb-4 text-center">6. Countdown Focus</h3>
+      <div class="bg-black rounded-xl p-8 flex flex-col items-center">
+        <div class="relative">
+          <div class="mono text-8xl font-bold text-white breathe" style="line-height: 1;">
+            1:45
+          </div>
+          <div class="absolute -bottom-2 left-0 right-0 h-1 bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-500 w-3/4 rounded-full"></div>
+          </div>
+        </div>
+        <p class="text-blue-400 text-sm mt-6 uppercase tracking-widest font-medium">Bench Press</p>
+        <p class="text-gray-500 text-sm mt-4">Ultra minimal, time-only</p>
+      </div>
+    </div>
+
+    <!-- Option 7: Circular Progress with Stats -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('stats')">
+      <h3 class="text-lg font-semibold mb-4 text-center">7. Progress + Stats</h3>
+      <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-xl p-6 flex flex-col items-center">
+        <div class="relative w-36 h-36">
+          <svg class="w-full h-full transform -rotate-90">
+            <circle cx="72" cy="72" r="65" fill="none" stroke="#1e293b" stroke-width="10"/>
+            <circle cx="72" cy="72" r="65" fill="none" stroke="url(#gradient)" stroke-width="10"
+                    stroke-linecap="round" class="ring-progress pulse-ring"/>
+          </svg>
+          <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#3b82f6"/>
+              <stop offset="100%" style="stop-color:#8b5cf6"/>
+            </linearGradient>
+          </defs>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="mono text-3xl font-bold text-white">1:45</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4 mt-4 text-center w-full">
+          <div>
+            <p class="text-lg font-bold text-white">2</p>
+            <p class="text-xs text-gray-500">SETS</p>
+          </div>
+          <div>
+            <p class="text-lg font-bold text-green-400">60kg</p>
+            <p class="text-xs text-gray-500">WEIGHT</p>
+          </div>
+          <div>
+            <p class="text-lg font-bold text-white">10</p>
+            <p class="text-xs text-gray-500">REPS</p>
+          </div>
+        </div>
+        <p class="text-gray-500 text-sm mt-4">Context-aware</p>
+      </div>
+    </div>
+
+    <!-- Option 8: Animated Ring -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('animated')">
+      <h3 class="text-lg font-semibold mb-4 text-center">8. Animated Pulse</h3>
+      <div class="bg-black rounded-xl p-8 flex flex-col items-center">
+        <div class="relative w-40 h-40">
+          <!-- Pulsing outer ring -->
+          <div class="absolute inset-0 rounded-full border-4 border-blue-500/30 pulse-ring"></div>
+          <div class="absolute inset-2 rounded-full border-4 border-blue-500/50 pulse-ring" style="animation-delay: 0.5s;"></div>
+
+          <svg class="w-full h-full transform -rotate-90 relative z-10">
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#1f2937" stroke-width="8"/>
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#3b82f6" stroke-width="8"
+                    stroke-linecap="round" class="ring-progress" style="stroke-dasharray: 377; stroke-dashoffset: 94;"/>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="mono text-4xl font-bold text-white">1:45</span>
+          </div>
+        </div>
+        <p class="text-gray-500 text-sm mt-4">Draws attention</p>
+      </div>
+    </div>
+
+    <!-- Option 9: Countdown with Arc -->
+    <div class="bg-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showFullScreen('arc')">
+      <h3 class="text-lg font-semibold mb-4 text-center">9. Arc Timer</h3>
+      <div class="bg-gradient-to-b from-gray-900 to-black rounded-xl p-8 flex flex-col items-center">
+        <div class="relative w-48 h-24 overflow-hidden">
+          <svg class="w-48 h-48 transform" style="margin-top: -48px;">
+            <circle cx="96" cy="96" r="80" fill="none" stroke="#1f2937" stroke-width="12"/>
+            <circle cx="96" cy="96" r="80" fill="none" stroke="#f97316" stroke-width="12"
+                    stroke-linecap="round" stroke-dasharray="502" stroke-dashoffset="125"
+                    transform="rotate(-90 96 96)"/>
+          </svg>
+        </div>
+        <div class="mono text-5xl font-bold text-white -mt-4">1:45</div>
+        <p class="text-orange-400 text-sm mt-2 uppercase tracking-widest">Rest</p>
+        <p class="text-gray-500 text-sm mt-4">Compact, visible</p>
+      </div>
+    </div>
+
+    <!-- Option 10: HYBRID - Minimal Focus + Pulse + Stats (RECOMMENDED) -->
+    <div class="bg-gradient-to-br from-blue-900 to-gray-800 rounded-2xl p-6 cursor-pointer hover:scale-105 transition-transform ring-2 ring-blue-500" onclick="showFullScreen('hybrid')">
+      <h3 class="text-lg font-semibold mb-4 text-center flex items-center justify-center gap-2">
+        <span class="px-2 py-0.5 bg-blue-500 text-xs rounded-full">NEW</span>
+        10. Hybrid Focus
+      </h3>
+      <div class="bg-black rounded-xl p-6 flex flex-col items-center">
+        <!-- Pulsing rings around time -->
+        <div class="relative">
+          <div class="absolute -inset-8 rounded-full border-2 border-blue-500/20 pulse-ring"></div>
+          <div class="absolute -inset-4 rounded-full border-2 border-blue-500/40 pulse-ring" style="animation-delay: 0.5s;"></div>
+
+          <div class="mono text-6xl font-bold text-white breathe" style="line-height: 1;">
+            1:45
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-6">
+          <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 w-3/4 rounded-full"></div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="flex justify-between w-full mt-4 text-center">
+          <div>
+            <p class="text-lg font-bold text-white">S2</p>
+            <p class="text-[10px] text-gray-500 uppercase">Set</p>
+          </div>
+          <div>
+            <p class="text-lg font-bold text-green-400">60kg</p>
+            <p class="text-[10px] text-gray-500 uppercase">Weight</p>
+          </div>
+          <div>
+            <p class="text-lg font-bold text-white">10</p>
+            <p class="text-[10px] text-gray-500 uppercase">Reps</p>
+          </div>
+        </div>
+
+        <p class="text-blue-400 text-xs mt-3 uppercase tracking-widest">Bench Press</p>
+      </div>
+      <p class="text-blue-300 text-sm mt-3 text-center font-medium">Minimal + Pulse + Stats</p>
+    </div>
+
+  </div>
+
+  <!-- Full Screen Previews -->
+  <div id="fullscreen-minimal" class="hidden fixed inset-0 bg-gradient-to-b from-gray-900 to-black z-50 flex flex-col items-center justify-center" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl">&times;</button>
+    <p class="text-gray-500 text-sm uppercase tracking-widest mb-2">Rest After</p>
+    <p class="text-white text-xl font-semibold mb-8">Bench Press</p>
+    <div class="relative" style="width: 300px; height: 300px;">
+      <svg class="w-full h-full transform -rotate-90">
+        <circle cx="150" cy="150" r="130" fill="none" stroke="#1f2937" stroke-width="12"/>
+        <circle cx="150" cy="150" r="130" fill="none" stroke="#3b82f6" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="817" stroke-dashoffset="200"/>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <span class="mono text-7xl font-bold text-white">1:45</span>
+      </div>
+    </div>
+    <div class="flex gap-4 mt-8">
+      <button class="px-6 py-3 bg-gray-800 rounded-xl text-gray-300">90s</button>
+      <button class="px-6 py-3 bg-blue-500 rounded-xl text-white font-bold">120s</button>
+      <button class="px-6 py-3 bg-gray-800 rounded-xl text-gray-300">180s</button>
+    </div>
+    <div class="flex items-center gap-6 mt-8">
+      <button class="w-16 h-16 rounded-full bg-gray-800 text-gray-300 text-lg font-bold">-15</button>
+      <button class="w-24 h-24 rounded-full bg-orange-500 flex items-center justify-center">
+        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+      <button class="w-16 h-16 rounded-full bg-gray-800 text-gray-300 text-lg font-bold">+15</button>
+    </div>
+    <button class="mt-10 px-8 py-3 text-gray-500 hover:text-white transition">Skip Rest</button>
+  </div>
+
+  <div id="fullscreen-neon" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl">&times;</button>
+    <p class="text-cyan-400 text-sm uppercase tracking-widest mb-2 text-glow-cyan">Rest After</p>
+    <p class="text-white text-xl font-semibold mb-8">Bench Press</p>
+    <div class="relative" style="width: 320px; height: 320px;">
+      <div class="absolute inset-0 rounded-full glow-blue opacity-60"></div>
+      <svg class="w-full h-full transform -rotate-90 relative z-10">
+        <circle cx="160" cy="160" r="140" fill="none" stroke="#0c4a6e" stroke-width="8"/>
+        <circle cx="160" cy="160" r="140" fill="none" stroke="#06b6d4" stroke-width="8"
+                stroke-linecap="round" stroke-dasharray="880" stroke-dashoffset="220" style="filter: drop-shadow(0 0 15px #06b6d4);"/>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center z-20">
+        <span class="mono text-8xl font-bold text-cyan-400 text-glow-cyan">1:45</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-6 mt-10">
+      <button class="w-16 h-16 rounded-full bg-cyan-900/50 border border-cyan-500/50 text-cyan-400 text-lg font-bold">-15</button>
+      <button class="w-24 h-24 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center glow-blue">
+        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+      <button class="w-16 h-16 rounded-full bg-cyan-900/50 border border-cyan-500/50 text-cyan-400 text-lg font-bold">+15</button>
+    </div>
+  </div>
+
+  <div id="fullscreen-bold" class="hidden fixed inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 z-50 flex flex-col items-center justify-center" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl">&times;</button>
+    <p class="text-orange-500 text-2xl font-black uppercase tracking-[0.3em] mb-4">REST TIME</p>
+    <div class="mono font-black text-white tracking-tight" style="font-size: 12rem; line-height: 1;">
+      1:45
+    </div>
+    <p class="text-gray-400 text-xl mt-4">Bench Press</p>
+    <div class="flex gap-4 mt-8">
+      <button class="px-8 py-4 bg-zinc-700 rounded-xl text-xl text-gray-300 hover:bg-zinc-600">90s</button>
+      <button class="px-8 py-4 bg-orange-500 rounded-xl text-xl font-bold text-white">120s</button>
+      <button class="px-8 py-4 bg-zinc-700 rounded-xl text-xl text-gray-300 hover:bg-zinc-600">180s</button>
+    </div>
+    <div class="flex items-center gap-8 mt-10">
+      <button class="w-20 h-20 rounded-full bg-zinc-700 text-2xl font-bold text-gray-300">-15</button>
+      <button class="w-28 h-28 rounded-full bg-orange-500 flex items-center justify-center shadow-2xl shadow-orange-500/50">
+        <svg class="w-14 h-14 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+      <button class="w-20 h-20 rounded-full bg-zinc-700 text-2xl font-bold text-gray-300">+15</button>
+    </div>
+  </div>
+
+  <div id="fullscreen-focus" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl">&times;</button>
+    <div class="mono font-bold text-white breathe" style="font-size: 14rem; line-height: 1;">
+      1:45
+    </div>
+    <div class="w-80 h-2 bg-gray-800 rounded-full overflow-hidden mt-8">
+      <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 w-3/4 rounded-full"></div>
+    </div>
+    <p class="text-blue-400 text-xl mt-8 uppercase tracking-[0.5em]">Bench Press</p>
+    <div class="flex items-center gap-8 mt-12">
+      <button class="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-gray-500">-15</button>
+      <button class="w-24 h-24 rounded-full bg-blue-500 flex items-center justify-center">
+        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+      <button class="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-gray-500">+15</button>
+    </div>
+  </div>
+
+  <!-- Full Screen: Hybrid Focus (#10) -->
+  <div id="fullscreen-hybrid" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center" onclick="this.classList.add('hidden')">
+    <button class="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl">&times;</button>
+
+    <!-- Exercise name at top -->
+    <p class="absolute top-8 left-0 right-0 text-center text-blue-400 text-lg uppercase tracking-[0.3em] font-medium">Bench Press</p>
+
+    <!-- Main timer with pulsing rings -->
+    <div class="relative flex flex-col items-center">
+      <!-- Pulsing outer rings -->
+      <div class="absolute rounded-full border-2 border-blue-500/10 pulse-ring" style="inset: -80px;"></div>
+      <div class="absolute rounded-full border-2 border-blue-500/20 pulse-ring" style="inset: -50px; animation-delay: 0.3s;"></div>
+      <div class="absolute rounded-full border-2 border-blue-500/30 pulse-ring" style="inset: -20px; animation-delay: 0.6s;"></div>
+
+      <!-- Time display -->
+      <div class="mono font-bold text-white breathe" style="font-size: 10rem; line-height: 1;">
+        1:45
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="w-80 h-2 bg-gray-800 rounded-full overflow-hidden mt-8">
+      <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 w-3/4 rounded-full transition-all duration-1000"></div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="flex gap-12 mt-10">
+      <div class="text-center">
+        <p class="text-3xl font-bold text-white">S2</p>
+        <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">Set</p>
+      </div>
+      <div class="text-center">
+        <p class="text-3xl font-bold text-green-400">60kg</p>
+        <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">Weight</p>
+      </div>
+      <div class="text-center">
+        <p class="text-3xl font-bold text-white">10</p>
+        <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">Reps</p>
+      </div>
+    </div>
+
+    <!-- Preset buttons -->
+    <div class="flex gap-3 mt-10">
+      <button class="px-5 py-2.5 bg-gray-800 rounded-xl text-gray-400 hover:bg-gray-700 transition">90s</button>
+      <button class="px-5 py-2.5 bg-blue-500 rounded-xl text-white font-bold">120s</button>
+      <button class="px-5 py-2.5 bg-gray-800 rounded-xl text-gray-400 hover:bg-gray-700 transition">180s</button>
+    </div>
+
+    <!-- Control buttons -->
+    <div class="flex items-center gap-8 mt-8">
+      <button class="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition">-15</button>
+      <button class="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 hover:scale-105 transition">
+        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+      <button class="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition">+15</button>
+    </div>
+
+    <!-- Skip button -->
+    <button class="mt-10 px-8 py-3 text-gray-600 hover:text-white transition text-sm uppercase tracking-wider">Skip Rest</button>
+
+    <!-- Wake lock indicator -->
+    <div class="absolute bottom-6 left-6 flex items-center gap-2 text-gray-600 text-xs">
+      <div class="w-2 h-2 rounded-full bg-green-500"></div>
+      Screen kept on
+    </div>
+  </div>
+
+  <script>
+    function showFullScreen(id) {
+      document.getElementById('fullscreen-' + id)?.classList.remove('hidden');
+    }
+  </script>
+
+  <div class="text-center mt-12 text-gray-500 text-sm">
+    <p>Click any option to see full-screen preview</p>
+    <p class="mt-2">Click anywhere on full-screen to close</p>
+  </div>
+
+</body>
+</html>

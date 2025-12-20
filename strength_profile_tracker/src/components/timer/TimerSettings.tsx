@@ -18,6 +18,7 @@ export default function TimerSettings({ onClose }: TimerSettingsProps) {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [vibrationEnabled, setVibrationEnabled] = useState(true)
   const [autoStart, setAutoStart] = useState(true)
+  const [keepAwakeDuringWorkout, setKeepAwakeDuringWorkout] = useState(true)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   // Load settings on mount
@@ -27,6 +28,7 @@ export default function TimerSettings({ onClose }: TimerSettingsProps) {
     setSoundEnabled(settings.soundEnabled)
     setVibrationEnabled(settings.vibrationEnabled)
     setAutoStart(settings.autoStart)
+    setKeepAwakeDuringWorkout(settings.keepAwakeDuringWorkout)
   }, [])
 
   // Save settings whenever they change
@@ -57,6 +59,12 @@ export default function TimerSettings({ onClose }: TimerSettingsProps) {
     updateSettings({ autoStart: newValue })
   }
 
+  const handleKeepAwakeToggle = () => {
+    const newValue = !keepAwakeDuringWorkout
+    setKeepAwakeDuringWorkout(newValue)
+    updateSettings({ keepAwakeDuringWorkout: newValue })
+  }
+
   const handleResetAll = () => {
     resetTimerSettings()
     const settings = getTimerSettings()
@@ -64,6 +72,7 @@ export default function TimerSettings({ onClose }: TimerSettingsProps) {
     setSoundEnabled(settings.soundEnabled)
     setVibrationEnabled(settings.vibrationEnabled)
     setAutoStart(settings.autoStart)
+    setKeepAwakeDuringWorkout(settings.keepAwakeDuringWorkout)
     setShowResetConfirm(false)
   }
 
@@ -176,6 +185,30 @@ export default function TimerSettings({ onClose }: TimerSettingsProps) {
               <span
                 className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
                   autoStart ? 'left-7' : 'left-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Keep Awake Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Keep Screen Awake
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Prevent screen from sleeping during workout
+              </p>
+            </div>
+            <button
+              onClick={handleKeepAwakeToggle}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                keepAwakeDuringWorkout ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                  keepAwakeDuringWorkout ? 'left-7' : 'left-1'
                 }`}
               />
             </button>

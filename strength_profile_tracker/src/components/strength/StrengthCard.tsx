@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Level, LEVEL_COLORS, LEVEL_NAMES, BODY_PART_NAMES, CalculatedStrength } from '@/types'
 import { Card } from '@/components/ui'
 import { useUnit } from '@/contexts'
 import { formatWeightValue } from '@/lib/utils/units'
+import { getTimerSettings } from '@/lib/storage/timer'
+import { useWakeLock } from '@/hooks/useWakeLock'
 import WorkoutLogger from './WorkoutLogger'
 
 interface StrengthCardProps {
@@ -18,6 +20,27 @@ export default function StrengthCard({ strength, onLevelSelect, showBodyPart = f
   const [isExpanded, setIsExpanded] = useState(false)
   const { unit } = useUnit()
   const isRated = strength.levels.some(l => l.isSelected)
+  const { requestWakeLock, releaseWakeLock, isActive: isWakeLockActive } = useWakeLock()
+
+  // Manage wake lock when workout logger is expanded
+  useEffect(() => {
+    const settings = getTimerSettings()
+
+    if (isExpanded && settings.keepAwakeDuringWorkout) {
+      // Request wake lock when expanded and setting is enabled
+      requestWakeLock()
+    } else if (!isExpanded && isWakeLockActive) {
+      // Release wake lock when collapsed
+      releaseWakeLock()
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (isWakeLockActive) {
+        releaseWakeLock()
+      }
+    }
+  }, [isExpanded, requestWakeLock, releaseWakeLock, isWakeLockActive])
 
   return (
     <Card padding="sm" className="mb-3">

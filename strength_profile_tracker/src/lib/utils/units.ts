@@ -37,6 +37,16 @@ export function formatWeightValue(weightKg: number, unit: WeightUnit): number {
 }
 
 /**
+ * Convert weight from display unit to storage unit (kg)
+ */
+export function convertToKg(value: number, unit: WeightUnit): number {
+  if (unit === 'lbs') {
+    return lbsToKg(value)
+  }
+  return value
+}
+
+/**
  * Get unit preference from localStorage
  */
 export function getUnitPreference(): WeightUnit {

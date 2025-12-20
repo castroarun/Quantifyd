@@ -15,6 +15,7 @@
 | 3.0 | 2025-12-06 | Added dark mode, Workout Logger, Achievements, Strength Score, AI Coach Tips |
 | 3.1 | 2025-12-06 | Added Progress Visualizations (5 chart types) |
 | 3.2 | 2025-12-09 | Added Phase 5 enhancements: Auto-level updates, PR celebrations, scrollable history |
+| 4.0 | 2025-12-20 | Added Rest Timer (2.9) and Transformation Tracker (2.10) features |
 
 ---
 
@@ -654,6 +655,347 @@ interface ProgressPageProps {
 
 ---
 
+### 2.9 Rest Timer
+
+#### Requirements
+- Countdown timer integrated with workout logging
+- Configurable default rest time (30s - 5min)
+- Quick adjustment buttons (+15s / -15s)
+- Preset buttons for common rest times
+- Optional auto-start after logging a set
+- Sound and vibration alerts when timer ends
+- Per-exercise timer memory (remembers last used time)
+
+#### Research (Hevy & Strong Apps)
+| App | Approach | Key Features |
+|-----|----------|--------------|
+| Hevy | Auto-start after set | 15s increments, per-exercise defaults, vibration/sound |
+| Strong | Configurable per set type | Full-screen countdown, background continue, +30s extend |
+
+#### Design
+
+```typescript
+interface TimerSettings {
+  defaultRestTime: number        // seconds (30-300), default: 90
+  autoStartAfterSet: boolean     // default: false
+  soundEnabled: boolean          // default: true
+  vibrationEnabled: boolean      // default: true
+}
+
+interface ExerciseTimerHistory {
+  [exerciseId: string]: number   // last used time per exercise
+}
+
+// Storage
+const TIMER_SETTINGS_KEY = 'spt_timer_settings'
+const TIMER_HISTORY_KEY = 'spt_timer_history'
+```
+
+#### UI Mockup - Timer Below Workout Log
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  WORKOUT LOG                                            │
+│  ─────────────────────────────────────────────────────  │
+│     Dec4   TODAY   TARGET                               │
+│   ┌───────┬────────┬────────┐                           │
+│   │ 80×10 │ [82]×12│ 85×12  │                           │
+│   │ 85×8  │ [  ]×10│ 87×10  │                           │
+│   │ 87×6  │ [  ]×8 │ 90×8   │                           │
+│   └───────┴────────┴────────┘                           │
+│  ─────────────────────────────────────────────────────  │
+│                                                         │
+│   ⏱️ REST TIMER                                         │
+│   ┌─────────────────────────────────────────────────┐   │
+│   │              01:30                              │   │
+│   │         [-15s]  [▶ START]  [+15s]               │   │
+│   │                                                 │   │
+│   │  Quick: [30s] [1:00] [1:30] [2:00] [3:00]      │   │
+│   └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Timer Running
+
+```
+┌─────────────────────────────────────────────────────────┐
+│   ⏱️ REST TIMER                                         │
+│   ┌─────────────────────────────────────────────────┐   │
+│   │              00:47                              │   │
+│   │           ████████████░░░░░░░░                  │   │
+│   │                                                 │   │
+│   │         [+15s]   [⏸ PAUSE]   [RESET]           │   │
+│   └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `RestTimer.tsx` | `src/components/timer/` | Main timer UI with controls |
+| `TimerSettings.tsx` | `src/components/settings/` | Timer configuration panel |
+| `useTimer.ts` | `src/hooks/` | Timer state, countdown logic |
+| `useTimerSettings.ts` | `src/hooks/` | Settings persistence |
+
+#### Timer Settings UI
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ⚙️ Timer Settings                                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Default Rest Time                                      │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  [-]  ████████████░░░░░░  1:30  [+]             │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  Auto-start after logging set    [  OFF  |  ON  ]      │
+│                                                         │
+│  Sound alert                     [  OFF  |  ON  ]      │
+│                                                         │
+│  Vibration                       [  OFF  |  ON  ]      │
+│                                                         │
+│  Reset All Exercise Timers       [ RESET ]             │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Test Cases
+- [ ] Timer displays in expanded exercise card
+- [ ] Countdown works correctly (1s intervals)
+- [ ] +15s/-15s buttons adjust time
+- [ ] Quick preset buttons set correct time
+- [ ] Start/Pause/Reset controls work
+- [ ] Sound plays when timer reaches 0
+- [ ] Vibration triggers on complete
+- [ ] Timer persists when scrolling (doesn't reset)
+- [ ] Per-exercise time memory saves/loads
+- [ ] Settings persist across sessions
+- [ ] Auto-start triggers after set logged (when enabled)
+
+---
+
+### 2.10 Transformation Tracker
+
+#### Requirements
+- Capture progress photos via phone camera (PWA)
+- Store photos locally using IndexedDB (supports large blobs)
+- Gallery view with date-organized photos
+- Three pose types: Front, Side, Back
+- Ghost overlay of previous photo for consistent positioning
+- Before/after comparison with slider
+- Photo tips for consistency (lighting, timing, pose)
+- Delete photos with confirmation
+
+#### Research (Body Journey, Shapez, SnapTrack)
+| App | Key Feature | User Benefit |
+|-----|-------------|--------------|
+| Body Journey | Ghost overlay of previous photo | Consistent pose alignment |
+| Shapez | In-app camera with countdown timer | Hands-free capture |
+| SnapTrack | Side-by-side comparison slider | Easy before/after view |
+
+#### Design
+
+```typescript
+interface ProgressPhoto {
+  id: string
+  profileId: string
+  date: string              // YYYY-MM-DD
+  pose: 'front' | 'side' | 'back'
+  imageBlob: Blob           // Full size (compressed ~1MB)
+  thumbnailBlob: Blob       // Small for gallery (~50KB)
+  createdAt: string
+}
+
+// IndexedDB schema (not localStorage - blobs too large)
+const DB_NAME = 'spt_photos'
+const DB_VERSION = 1
+const STORE_NAME = 'progress_photos'
+
+// IndexedDB operations
+async function savePhoto(photo: ProgressPhoto): Promise<void>
+async function getPhotosByProfile(profileId: string): Promise<ProgressPhoto[]>
+async function getPhotosByDate(profileId: string, date: string): Promise<ProgressPhoto[]>
+async function deletePhoto(photoId: string): Promise<void>
+async function getStorageUsage(): Promise<{ used: number; available: number }>
+```
+
+#### PWA Camera Access
+
+```typescript
+// Request camera permission
+const stream = await navigator.mediaDevices.getUserMedia({
+  video: {
+    facingMode: 'user',  // or 'environment' for back camera
+    width: { ideal: 1920 },
+    height: { ideal: 1080 }
+  }
+})
+
+// Capture frame from video to canvas
+const canvas = document.createElement('canvas')
+const ctx = canvas.getContext('2d')
+ctx.drawImage(videoElement, 0, 0)
+
+// Compress and convert to blob
+canvas.toBlob(blob => savePhoto(blob), 'image/jpeg', 0.8)
+```
+
+#### UI Mockup - Photo Gallery Page
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ← Transformation Tracker              📷 [Take Photo]  │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  📸 Your Progress Journey                               │
+│                                                         │
+│  December 2024                                          │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Dec 1      Dec 7      Dec 14     Dec 20        │   │
+│  │  ┌─────┐   ┌─────┐   ┌─────┐   ┌─────┐         │   │
+│  │  │ 📷  │   │ 📷  │   │ 📷  │   │  +  │         │   │
+│  │  │Front│   │Front│   │Front│   │     │         │   │
+│  │  └─────┘   └─────┘   └─────┘   └─────┘         │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  November 2024                                          │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Nov 15     Nov 22     Nov 29                   │   │
+│  │  ┌─────┐   ┌─────┐   ┌─────┐                    │   │
+│  │  │ 📷  │   │ 📷  │   │ 📷  │                    │   │
+│  │  │Front│   │Front│   │Front│   │               │   │
+│  │  └─────┘   └─────┘   └─────┘                    │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ─────────────────────────────────────────────────────  │
+│  [🔄 Compare Mode]                                      │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Camera Capture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ← Take Photo                         [🔄 Switch Cam]   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │                                                 │   │
+│  │            [CAMERA VIEWFINDER]                  │   │
+│  │                                                 │   │
+│  │     ╭─────────────────────────────╮             │   │
+│  │     │                             │   Ghost    │   │
+│  │     │    👤 Pose Silhouette       │   overlay  │   │
+│  │     │       (alignment guide)     │   (40%)    │   │
+│  │     │                             │             │   │
+│  │     ╰─────────────────────────────╯             │   │
+│  │                                                 │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  Pose: [● Front] [ Side ] [ Back ]                     │
+│                                                         │
+│  Ghost Overlay: [OFF] [Previous] [First]               │
+│                                                         │
+│        [⏱️ 3s Timer]        [📷 Capture]               │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### UI Mockup - Before/After Comparison
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ← Compare                                    [Share]   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │                    │                            │   │
+│  │      BEFORE        │         AFTER              │   │
+│  │      Dec 1         │         Dec 20             │   │
+│  │                    │                            │   │
+│  │     ┌──────┐       │       ┌──────┐            │   │
+│  │     │      │       │       │      │            │   │
+│  │     │  📷  │◄──────┼──────►│  📷  │            │   │
+│  │     │      │    ◄──┼───    │      │            │   │
+│  │     │      │   DRAG│SLIDER │      │            │   │
+│  │     └──────┘       │       └──────┘            │   │
+│  │                    │                            │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  Select dates:                                          │
+│  Before: [Dec 1 ▼]     After: [Dec 20 ▼]               │
+│                                                         │
+│  Journey: 19 days  |  Photos: 4                        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `PhotoGallery.tsx` | `src/components/photos/` | Grid view of all photos |
+| `CameraCapture.tsx` | `src/components/photos/` | Camera interface with controls |
+| `PhotoCompare.tsx` | `src/components/photos/` | Side-by-side slider comparison |
+| `PoseGuide.tsx` | `src/components/photos/` | Silhouette overlay for alignment |
+| `PhotoTips.tsx` | `src/components/photos/` | First-use tips modal |
+| `useCamera.ts` | `src/hooks/` | Camera access and capture |
+| `useIndexedDB.ts` | `src/hooks/` | IndexedDB CRUD operations |
+
+#### Photo Tips (shown on first use)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  📸 Tips for Great Progress Photos                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ☀️  Same lighting each time (natural light best)       │
+│                                                         │
+│  🕐  Same time of day (morning recommended)             │
+│                                                         │
+│  📏  Same distance from camera                          │
+│                                                         │
+│  👕  Same or minimal clothing                           │
+│                                                         │
+│  🧍  Relaxed pose, arms at sides                        │
+│                                                         │
+│  📅  Weekly photos recommended                          │
+│                                                         │
+│                    [Got it!]                            │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Route Structure
+
+```
+/profile/[id]/photos          - Gallery page
+/profile/[id]/photos/capture  - Camera capture
+/profile/[id]/photos/compare  - Before/after comparison
+```
+
+#### Test Cases
+- [ ] Camera permission requested on first use
+- [ ] Front/back camera switch works
+- [ ] Photo captures and saves to IndexedDB
+- [ ] Thumbnail generated for gallery
+- [ ] Gallery displays photos by month
+- [ ] Pose filter works (Front/Side/Back)
+- [ ] Ghost overlay shows previous photo
+- [ ] 3-second timer countdown works
+- [ ] Compare mode slider drags correctly
+- [ ] Date selectors in compare mode work
+- [ ] Delete photo with confirmation
+- [ ] Storage usage displayed
+- [ ] Works offline after first load
+- [ ] Photos persist after app restart
+
+---
+
 ## 3. UI Specifications
 
 ### 3.1 Color Palette
@@ -774,17 +1116,35 @@ src/
 - [ ] Connect Exercise Progression to workout data
 - [ ] Add link to progress page from profile
 
-### Phase 5: Enhanced UX (Current)
-- [ ] Auto-update exercise levels based on workout PRs
-- [ ] PR celebration messages (8-10 variations)
-- [ ] Horizontally scrollable workout log history
+### Phase 5: Enhanced UX ✅
+- [x] Auto-update exercise levels based on workout PRs
+- [x] PR celebration messages (10 variations)
+- [x] Horizontally scrollable workout log history
 
-### Phase 6: Polish
+### Phase 6: Rest Timer
+- [ ] Timer component with countdown display
+- [ ] Start/Pause/Reset controls
+- [ ] +15s/-15s adjustment buttons
+- [ ] Quick preset buttons (30s, 1:00, 1:30, 2:00, 3:00)
+- [ ] Sound and vibration alerts
+- [ ] Per-exercise timer memory
+- [ ] Timer settings page
+- [ ] Auto-start after set option
+
+### Phase 7: Transformation Tracker (Future)
+- [ ] IndexedDB storage layer for photos
+- [ ] Camera capture with PWA getUserMedia
+- [ ] Photo gallery by month
+- [ ] Pose selection (Front/Side/Back)
+- [ ] Ghost overlay for alignment
+- [ ] Before/after comparison slider
+- [ ] Photo tips modal
+- [ ] Storage usage display
+
+### Phase 8: Polish
 - [ ] Animations & transitions
-- [ ] PWA support (offline, installable)
 - [ ] Performance optimization
 - [ ] Share profile feature
-- [ ] Units toggle (kg/lbs)
 
 ---
 
@@ -959,5 +1319,5 @@ function getCelebrationMessage(exercise: string): string {
 ---
 
 **Document Status:** Active Development
-**Current Phase:** Phase 5 - Enhanced UX
-**Next:** Implement auto-level updates, PR celebrations, scrollable workout history
+**Current Phase:** Phase 6 - Rest Timer
+**Next:** Implement rest timer with settings, then Transformation Tracker (Phase 7)

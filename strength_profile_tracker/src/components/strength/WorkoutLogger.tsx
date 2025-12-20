@@ -19,7 +19,7 @@ import {
 import { getExerciseById } from '@/lib/calculations/strength'
 import { getProfileById, updateExerciseRating } from '@/lib/storage/profiles'
 import { useUnit } from '@/contexts'
-import { formatWeightValue } from '@/lib/utils/units'
+import { formatWeightValue, convertToKg } from '@/lib/utils/units'
 import { RestTimer, TimerSettings, FullScreenTimer } from '@/components/timer'
 import { getTimerSettings, saveExerciseTimerDuration } from '@/lib/storage/timer'
 import { getFormTip } from '@/data/formTips'
@@ -243,11 +243,12 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     if (!suggestions) return null
     const suggestedMax = Math.max(...suggestions.map(s => s.weight))
     const currentPR = getExercisePR(profileId, exerciseId)
+    const displayMax = formatWeightValue(suggestedMax, unit)
     if (suggestedMax > currentPR && currentPR > 0) {
-      return `💪 Go for ${suggestedMax}${unit}! That's a new PR!`
+      return `💪 Go for ${displayMax}${unit}! That's a new PR!`
     }
     if (suggestedMax > currentPR && currentPR === 0 && pastSessions.length > 0) {
-      return `🔥 Time to progress! Aim for ${suggestedMax}${unit}!`
+      return `🔥 Time to progress! Aim for ${displayMax}${unit}!`
     }
     return null
   }, [suggestions, profileId, exerciseId, unit, pastSessions.length])
@@ -260,13 +261,18 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
   }, [suggestions])
 
   const handleSetChange = (setIndex: number, field: 'weight' | 'reps', value: string) => {
-    const numValue = value === '' ? null : parseInt(value, 10)
+    const numValue = value === '' ? null : parseFloat(value)
     if (value !== '' && (isNaN(numValue!) || numValue! < 0)) return
+
+    // Convert weight from display unit to storage unit (kg)
+    const storageValue = field === 'weight' && numValue !== null
+      ? Math.round(convertToKg(numValue, unit))
+      : numValue
 
     const newSets = [...todaySets]
     newSets[setIndex] = {
       ...newSets[setIndex],
-      [field]: numValue
+      [field]: storageValue
     }
     setTodaySets(newSets)
 
@@ -378,10 +384,10 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       return
     }
 
-    // Set timer info for this set
+    // Set timer info for this set (convert weight to display unit)
     setTimerSetInfo({
       setNumber: setIndex + 1,
-      weight: currentSet.weight,
+      weight: formatWeightValue(currentSet.weight, unit),
       reps: currentSet.reps
     })
 
@@ -410,8 +416,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     setTimerSetInfo(null)
   }
 
-  // Handle expanding RestTimer back to full-screen
-  const handleTimerExpand = () => {
+  // Handle expanding RestTimer back to full-screen - receive current state for sync
+  const handleTimerExpand = (state: { timeLeft: number; duration: number; isRunning: boolean }) => {
+    setMinimizedTimerState(state)
     setShowFullScreenTimer(true)
   }
 
@@ -502,37 +509,6 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
         </div>
       )}
 
-      {/* Rest Timer Preview - Double-click to open full-screen */}
-      {showTimer && (
-        <div className="mb-3">
-          <div className="flex justify-end mb-1">
-            <button
-              onClick={() => setShowTimerSettings(true)}
-              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Settings
-            </button>
-          </div>
-          <RestTimer
-            key={minimizedTimerState ? `minimized-${timerTrigger}` : `fresh-${timerTrigger}`}
-            exerciseId={exerciseId}
-            exerciseName={exercise?.name}
-            setNumber={timerSetInfo?.setNumber}
-            weight={timerSetInfo?.weight}
-            reps={timerSetInfo?.reps ?? undefined}
-            onExpand={handleTimerExpand}
-            autoStart={false}
-            initialTimeLeft={minimizedTimerState?.timeLeft}
-            initialDuration={minimizedTimerState?.duration}
-            initialIsRunning={minimizedTimerState?.isRunning}
-          />
-        </div>
-      )}
-
       {/* Full Screen Timer Modal */}
       {showFullScreenTimer && (
         <FullScreenTimer
@@ -588,7 +564,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                     key={i}
                     className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded px-2 py-1 text-xs"
                   >
-                    <span className="text-orange-500 font-medium">{set.weight}{unit}</span>
+                    <span className="text-orange-500 font-medium">{formatWeightValue(set.weight, unit)}{unit}</span>
                     <span className="text-gray-400">×</span>
                     <span className="text-gray-600 dark:text-gray-300">{set.reps}</span>
                   </div>
@@ -661,8 +637,8 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                 <input
                   type="number"
                   inputMode="numeric"
-                  placeholder={suggestion ? String(suggestion.weight) : '-'}
-                  value={todaySet.weight ?? ''}
+                  placeholder={suggestion ? String(formatWeightValue(suggestion.weight, unit)) : '-'}
+                  value={todaySet.weight !== null ? formatWeightValue(todaySet.weight, unit) : ''}
                   onChange={(e) => handleSetChange(setIndex, 'weight', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   className="w-11 text-center text-base font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
@@ -703,8 +679,10 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
         {/* Chevron buttons column - copy from target */}
         {suggestions && (
           <div className="flex flex-col gap-1.5 flex-shrink-0">
-            {/* Header placeholder to align with other columns */}
-            <div className="py-1.5 h-[27px]" />
+            {/* Header placeholder - matches other column headers exactly */}
+            <div className="text-center py-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider invisible">—</span>
+            </div>
             {[0, 1, 2].map(setIndex => (
               <button
                 key={setIndex}
@@ -735,7 +713,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   className="h-11 px-2 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 flex items-center justify-center hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
                 >
                   <span className="text-sm font-bold text-green-700 dark:text-green-400">
-                    {suggestion?.weight ?? '-'}×{suggestion?.reps ?? '-'}
+                    {suggestion?.weight ? formatWeightValue(suggestion.weight, unit) : '-'}×{suggestion?.reps ?? '-'}
                   </span>
                 </button>
               )
@@ -748,6 +726,37 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">
         Suggested reps: 12 / 10 / 8
       </p>
+
+      {/* Rest Timer Preview - Double-click to open full-screen */}
+      {showTimer && (
+        <div className="mt-4">
+          <div className="flex justify-end mb-1">
+            <button
+              onClick={() => setShowTimerSettings(true)}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Settings
+            </button>
+          </div>
+          <RestTimer
+            key={minimizedTimerState ? `minimized-${timerTrigger}` : `fresh-${timerTrigger}`}
+            exerciseId={exerciseId}
+            exerciseName={exercise?.name}
+            setNumber={timerSetInfo?.setNumber}
+            weight={timerSetInfo?.weight}
+            reps={timerSetInfo?.reps ?? undefined}
+            onExpand={handleTimerExpand}
+            autoStart={false}
+            initialTimeLeft={minimizedTimerState?.timeLeft}
+            initialDuration={minimizedTimerState?.duration}
+            initialIsRunning={minimizedTimerState?.isRunning}
+          />
+        </div>
+      )}
     </div>
   )
 }
