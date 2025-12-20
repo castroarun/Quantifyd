@@ -536,23 +536,11 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       )}
 
       {/* Main Workout Entry - Horizontal scroll: History (left) → Today → Target (right) */}
-      <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-visible -mx-4 px-4" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y pan-x' }}>
-        {/* Set labels column */}
-        <div className="flex flex-col gap-2 flex-shrink-0 pt-[72px]">
-          {[0, 1, 2].map(setIndex => (
-            <div
-              key={setIndex}
-              className="h-[72px] text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center font-bold"
-            >
-              S{setIndex + 1}
-            </div>
-          ))}
-        </div>
-
+      <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-visible -mx-4 px-4" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y pan-x' }}>
         {/* Past Sessions columns (LEFT side - history first) */}
         {pastSessions.slice().reverse().map((session, idx) => (
-          <div key={idx} className="flex flex-col gap-2 flex-shrink-0 min-w-[90px]">
-            <div className="text-center py-2 h-[72px] flex flex-col items-center justify-center">
+          <div key={idx} className="flex flex-col gap-2 flex-shrink-0 min-w-[80px]">
+            <div className="text-center py-2">
               <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                 {formatSessionDate(session.date)}
               </span>
@@ -563,17 +551,12 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
               return (
                 <div
                   key={setIndex}
-                  className="h-[72px] flex flex-col items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700/50"
+                  className="h-14 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50 px-2"
                 >
                   {hasData ? (
-                    <>
-                      <span className="text-lg font-bold text-gray-700 dark:text-gray-200">
-                        {formatWeightValue(set.weight!, unit)}
-                      </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        × {set.reps}
-                      </span>
-                    </>
+                    <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
+                      {formatWeightValue(set.weight!, unit)}×{set.reps}
+                    </span>
                   ) : (
                     <span className="text-gray-300 dark:text-gray-600">-</span>
                   )}
@@ -584,25 +567,18 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
         ))}
 
         {/* TODAY column - inputs in the middle */}
-        <div className="flex flex-col gap-2 flex-shrink-0 min-w-[180px] flex-1">
-          <div className="text-center py-2 h-[72px] flex flex-col items-center justify-center">
-            <span className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">📝 Today</span>
-            <span className="text-[10px] text-gray-400">enter weight × reps</span>
+        <div className="flex flex-col gap-2 flex-shrink-0 min-w-[140px] flex-1">
+          <div className="text-center py-2">
+            <span className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Today</span>
           </div>
           {[0, 1, 2].map(setIndex => {
             const todaySet = todaySets[setIndex]
             const suggestion = suggestions?.[setIndex]
-            const hasWeight = todaySet.weight !== null && todaySet.weight > 0
-            const isMarkedDone = completedSets.has(setIndex)
 
             return (
               <div
                 key={setIndex}
-                className={`h-[72px] flex items-center gap-2 px-3 rounded-xl border-2 transition-all ${
-                  isMarkedDone
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
-                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                }`}
+                className="h-14 flex items-center gap-1 px-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
               >
                 {/* Weight */}
                 <input
@@ -611,9 +587,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   placeholder={suggestion ? String(suggestion.weight) : '-'}
                   value={todaySet.weight ?? ''}
                   onChange={(e) => handleSetChange(setIndex, 'weight', e.target.value)}
-                  className="w-20 text-center text-xl font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
+                  className="w-14 text-center text-lg font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
                 />
-                <span className="text-xl text-gray-300 dark:text-gray-600 font-bold">×</span>
+                <span className="text-gray-400 dark:text-gray-500">×</span>
                 {/* Reps */}
                 <input
                   type="number"
@@ -621,42 +597,37 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   placeholder={suggestion ? String(suggestion.reps) : SUGGESTED_REPS[setIndex].toString()}
                   value={todaySet.reps ?? ''}
                   onChange={(e) => handleSetChange(setIndex, 'reps', e.target.value)}
-                  className="w-14 text-center text-xl font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
+                  className="w-10 text-center text-lg font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
                 />
-                {/* Done button */}
-                <button
-                  onClick={() => handleSetDone(setIndex)}
-                  disabled={!hasWeight}
-                  className={`ml-auto p-3 rounded-xl transition-all flex-shrink-0 ${
-                    isMarkedDone
-                      ? 'bg-green-500 text-white'
-                      : hasWeight
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                  }`}
-                  title={isMarkedDone ? 'Set complete!' : 'Mark done'}
-                >
-                  {isMarkedDone ? (
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
               </div>
             )
           })}
         </div>
 
-        {/* TARGET column (RIGHT side) - tappable buttons */}
+        {/* Chevron buttons column - copy from target */}
         {suggestions && (
-          <div className="flex flex-col gap-2 flex-shrink-0 min-w-[140px]">
-            <div className="text-center py-2 h-[72px] flex flex-col items-center justify-center">
+          <div className="flex flex-col gap-2 flex-shrink-0">
+            <div className="py-2 h-6" /> {/* Spacer for header alignment */}
+            {[0, 1, 2].map(setIndex => (
+              <button
+                key={setIndex}
+                onClick={() => copyToToday(setIndex)}
+                className="h-14 px-2 flex items-center justify-center text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+                title="Copy to today"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* TARGET column (RIGHT side) */}
+        {suggestions && (
+          <div className="flex flex-col gap-2 flex-shrink-0 min-w-[90px]">
+            <div className="text-center py-2">
               <span className="text-xs text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">🎯 Target</span>
-              <span className="text-[10px] text-gray-400">tap to fill</span>
             </div>
             {[0, 1, 2].map(setIndex => {
               const suggestion = suggestions[setIndex]
@@ -664,13 +635,10 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                 <button
                   key={setIndex}
                   onClick={() => copyToToday(setIndex)}
-                  className="h-[72px] px-4 py-3 rounded-xl bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800/60 transition-colors border-2 border-green-200 dark:border-green-800 flex flex-col items-center justify-center"
+                  className="h-14 px-3 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 flex items-center justify-center hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
                 >
-                  <span className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {suggestion?.weight ?? '-'}{unit}
-                  </span>
-                  <span className="text-sm text-green-600 dark:text-green-400">
-                    × {suggestion?.reps ?? '-'}
+                  <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                    {suggestion?.weight ?? '-'}×{suggestion?.reps ?? '-'}
                   </span>
                 </button>
               )
