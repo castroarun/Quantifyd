@@ -152,6 +152,22 @@ A fitness tracking PWA built using this workflow.
 
 ---
 
+## Why This System Exists: Retrospective Learnings
+
+The DEV-CLOCK tracks time across phases. The retrospective (Step 9) analyzes where time actually went. These insights from earlier projects shaped the current workflow:
+
+| Pain Point | Root Cause | Solution Built |
+|------------|------------|----------------|
+| 70% of time spent firefighting bugs during build | Jumped to code without validated requirements | **@designer + @architect agents** - front-load design phase with structured outputs |
+| Couldn't recall where execution halted or what decisions were made | Context scattered across chat history | **`/jirastatus` command** - structured project summary showing current phase and blockers |
+| Repeatedly asking "which file?" and scrolling through documents | Reviews mixed with development workflow | **Jira integration** - externalize review, decision-making, and approvals outside the build context |
+
+**The pattern:** Every agent and command exists because a previous project revealed a friction point. The retrospective phase turns those learnings into system improvements.
+
+[SCREENSHOT: dev-clock-retro.png - DEV-CLOCK showing time distribution across phases with retrospective notes]
+
+---
+
 ## Key Takeaways
 
 ### 1. Specialization beats generalization
