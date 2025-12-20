@@ -361,7 +361,8 @@ export default function FullScreenTimer({
         {/* -15s */}
         {mode === 'countdown' && (
           <button
-            onClick={() => adjustTime(-TIMER_INCREMENT)}
+            onClick={(e) => { e.stopPropagation(); adjustTime(-TIMER_INCREMENT) }}
+            onDoubleClick={(e) => e.stopPropagation()}
             className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
           >
             -15
@@ -370,7 +371,8 @@ export default function FullScreenTimer({
 
         {/* Start/Pause */}
         <button
-          onClick={isRunning ? pause : start}
+          onClick={(e) => { e.stopPropagation(); isRunning ? pause() : start() }}
+          onDoubleClick={(e) => e.stopPropagation()}
           className={`w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-105 bg-gradient-to-r ${
             isRunning ? 'from-orange-500 to-amber-500 shadow-orange-500/30' : `${getButtonGradient()} shadow-blue-500/30`
           }`}
@@ -390,14 +392,16 @@ export default function FullScreenTimer({
         {/* Reset / +15s */}
         {mode === 'countdown' ? (
           <button
-            onClick={() => adjustTime(TIMER_INCREMENT)}
+            onClick={(e) => { e.stopPropagation(); adjustTime(TIMER_INCREMENT) }}
+            onDoubleClick={(e) => e.stopPropagation()}
             className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
           >
             +15
           </button>
         ) : (
           <button
-            onClick={reset}
+            onClick={(e) => { e.stopPropagation(); reset() }}
+            onDoubleClick={(e) => e.stopPropagation()}
             className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 hover:border-blue-500 hover:text-blue-400 flex items-center justify-center transition-all"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

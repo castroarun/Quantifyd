@@ -664,6 +664,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   placeholder={suggestion ? String(suggestion.weight) : '-'}
                   value={todaySet.weight ?? ''}
                   onChange={(e) => handleSetChange(setIndex, 'weight', e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="w-11 text-center text-base font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
                 />
                 <span className="text-gray-400 dark:text-gray-500 text-sm">×</span>
@@ -674,6 +675,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   placeholder={suggestion ? String(suggestion.reps) : SUGGESTED_REPS[setIndex].toString()}
                   value={todaySet.reps ?? ''}
                   onChange={(e) => handleSetChange(setIndex, 'reps', e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="w-8 text-center text-base font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
                 />
                 {/* Done checkmark button */}
