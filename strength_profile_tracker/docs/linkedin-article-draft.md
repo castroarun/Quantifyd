@@ -10,17 +10,16 @@ I spent a few weeks building an AI-powered development system that handles 80% o
 
 ---
 
-## The Problem: Solo Development is Broken
+## The Problem: The Default Way Doesn't Scale
 
-As a solo developer, I wore too many hats. Product manager. Architect. QA engineer. Technical writer. The cognitive load was crushing.
+When I started building side projects, I quickly spotted the patterns that slow developers down:
 
-Every project had the same issues:
-- **Vague requirements** led to rework
-- **No design docs** meant inconsistent architecture
-- **Test cases written after bugs** appeared
+- **Vague requirements** lead to rework
+- **No design docs** mean inconsistent architecture
+- **Test cases written after bugs** appear
 - **Zero documentation** for future maintenance
 
-I'd jump straight into code, realize I missed something critical, then refactor everything. Repeat. The "move fast" approach was actually slowing me down.
+I wanted to design and ship real products - not get stuck in endless refactoring cycles. So I built a system to prevent these problems before they start.
 
 ---
 
