@@ -26,11 +26,28 @@ export default function SettingsPage() {
   const [notificationStatus, setNotificationStatus] = useState<NotificationPermission | 'unsupported'>('default')
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false)
   const [hasSamples, setHasSamples] = useState(false)
+  const [devTapCount, setDevTapCount] = useState(0)
+  const [showDevMode, setShowDevMode] = useState(false)
 
   useEffect(() => {
     setNotificationStatus(getNotificationPermission())
     setHasSamples(hasSampleData())
+    // Check if dev mode was previously unlocked
+    const devModeUnlocked = localStorage.getItem('devModeUnlocked') === 'true'
+    setShowDevMode(devModeUnlocked)
   }, [])
+
+  // Handle secret tap on version to unlock developer mode
+  const handleVersionTap = () => {
+    const newCount = devTapCount + 1
+    setDevTapCount(newCount)
+
+    if (newCount >= 10) {
+      setShowDevMode(true)
+      localStorage.setItem('devModeUnlocked', 'true')
+      setDevTapCount(0)
+    }
+  }
 
   const handleEnableNotifications = async () => {
     setIsRequestingNotifications(true)
@@ -300,7 +317,12 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Version</span>
-              <span className="text-gray-700 dark:text-gray-200">1.0.0</span>
+              <button
+                onClick={handleVersionTap}
+                className="text-gray-700 dark:text-gray-200 cursor-default select-none"
+              >
+                1.0.1{devTapCount > 0 && devTapCount < 10 && ` (${10 - devTapCount})`}
+              </button>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Build</span>
@@ -318,56 +340,71 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Developer Section */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="font-semibold text-[#2C3E50] dark:text-gray-100">Developer</h2>
-          </div>
-          <div className="p-4 space-y-3">
-            {/* Sample Data */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-700 dark:text-gray-200">Sample Profiles</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {hasSamples ? 'Sample profiles with workout data loaded' : 'Load demo profiles to explore the app'}
-                </p>
-              </div>
-              {!hasSamples ? (
-                <button
-                  onClick={handleLoadSampleData}
-                  className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Load
-                </button>
-              ) : (
-                <button
-                  onClick={handleRemoveSampleData}
-                  className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Remove
-                </button>
-              )}
+        {/* Developer Section - Hidden by default, unlock by tapping version 10 times */}
+        {showDevMode && (
+          <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="font-semibold text-[#2C3E50] dark:text-gray-100">Developer</h2>
             </div>
-
-            {/* Timer UI Options */}
-            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
-              <a
-                href="/mockups/timer-options.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 -mx-4 px-4 py-2 transition-colors"
-              >
+            <div className="p-4 space-y-3">
+              {/* Sample Data */}
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-700 dark:text-gray-200">Timer UI Options</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Preview different timer designs</p>
+                  <p className="font-medium text-gray-700 dark:text-gray-200">Sample Profiles</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {hasSamples ? 'Sample profiles with workout data loaded' : 'Load demo profiles to explore the app'}
+                  </p>
                 </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+                {!hasSamples ? (
+                  <button
+                    onClick={handleLoadSampleData}
+                    className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    Load
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRemoveSampleData}
+                    className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              {/* Timer UI Options */}
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+                <a
+                  href="/mockups/timer-options.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 -mx-4 px-4 py-2 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium text-gray-700 dark:text-gray-200">Timer UI Options</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Preview different timer designs</p>
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+
+              {/* Hide Developer Mode */}
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+                <button
+                  onClick={() => {
+                    setShowDevMode(false)
+                    localStorage.removeItem('devModeUnlocked')
+                  }}
+                  className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  Hide Developer Options
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Danger Zone */}
         {user && (

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Profile, Exercise, Level, BodyPart, SEX_INFO, LEVEL_COLORS } from '@/types'
 import { getProfileById, updateExerciseRating, deleteProfile } from '@/lib/storage/profiles'
+import { getExercisesWithHistory } from '@/lib/storage/workouts'
 import {
   getRatedExercises,
   getUnratedExercises,
@@ -14,6 +15,7 @@ import {
   getRatedCount,
   getTotalExercisesCount
 } from '@/lib/calculations/strength'
+import { ExerciseRatings } from '@/types'
 import { formatWeightValue, getProfileColor } from '@/lib/utils/units'
 import { useUnit } from '@/contexts'
 import { Button, ThemeToggle, UnitToggle, Logo } from '@/components/ui'
@@ -82,12 +84,22 @@ export default function ProfileDetailPage({ params }: ProfileDetailPageProps) {
     )
   }
 
-  const ratedExercises = getRatedExercises(profile.weight, profile.exerciseRatings, bodyPartFilter, profile.sex)
-  const unratedExercises = getUnratedExercises(profile.weight, profile.exerciseRatings, bodyPartFilter, profile.sex)
-  const overallLevel = calculateOverallLevel(profile.exerciseRatings)
-  const strengthScore = calculateStrengthScore(profile.exerciseRatings)
-  const coachTips = generateCoachTips(profile.exerciseRatings)
-  const ratedCount = getRatedCount(profile.exerciseRatings)
+  // Filter ratings to only include exercises with actual workout history
+  // This prevents showing levels for exercises that were pre-set but never logged
+  const exercisesWithHistory = getExercisesWithHistory(profile.id)
+  const validatedRatings: ExerciseRatings = {}
+  Object.entries(profile.exerciseRatings).forEach(([exercise, level]) => {
+    if (exercisesWithHistory.has(exercise as Exercise)) {
+      validatedRatings[exercise as Exercise] = level
+    }
+  })
+
+  const ratedExercises = getRatedExercises(profile.weight, validatedRatings, bodyPartFilter, profile.sex)
+  const unratedExercises = getUnratedExercises(profile.weight, validatedRatings, bodyPartFilter, profile.sex)
+  const overallLevel = calculateOverallLevel(validatedRatings)
+  const strengthScore = calculateStrengthScore(validatedRatings)
+  const coachTips = generateCoachTips(validatedRatings)
+  const ratedCount = getRatedCount(validatedRatings)
   const totalCount = getTotalExercisesCount()
 
   return (

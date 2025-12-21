@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd inits_n_info folder with PRD workflow and ecosystem diagram\n\n- ecosystem.drawio: Visual workflow showing all agents, commands, MCP servers\n- jira-prd-workflow.md: Jira PRD review workflow documentation\n- requirements.md: Placeholder for Designer agent requirements\n- pdf-export-workflow.drawio: Example feature workflow diagram\n\nUpdated workflow includes:\n- @designer agent with deep research (opus model)\n- @architect with two-phase approach (Discovery → PRD)\n- /checkprd command for Jira PRD review loop\n- HTML mockups as part of design outputs\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "Bash(git push:*)",
+      "Bash(git -C:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(find:*)",
+      "Bash(npm run build:*)",
+      "Bash(start \"\" \"c:\\Users\\Castro\\Documents\\Projects\\strength_profile_tracker\\docs\\mockups\\timer-options.html\")",
+      "Bash(npx vercel:*)",
+      "Bash(git checkout:*)",
+      "Bash(ls:*)",
+      "Bash(.gradlew.bat bundleRelease)",
+      "Bash(copy androidappbuildoutputsbundlereleaseapp-release.aab shippingapp-release.aab /Y)",
+      "Bash(start \"\" \"c:\\Users\\Castro\\Documents\\Projects\\strength_profile_tracker\\docs\\images\\feature-graphic.html\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

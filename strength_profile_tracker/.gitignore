@@ -40,3 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# shipping folder (contains sensitive credentials)
+/shipping/
+
+# keystores
+*.jks
+
+# android bundles
+*.aab

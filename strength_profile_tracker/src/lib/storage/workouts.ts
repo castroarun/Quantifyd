@@ -318,3 +318,24 @@ export function createEmptySets(): WorkoutSet[] {
     { weight: null, reps: null }
   ]
 }
+
+/**
+ * Get set of exercises that have actual workout history for a profile
+ * Only includes exercises where at least one set has a weight logged
+ */
+export function getExercisesWithHistory(profileId: string): Set<Exercise> {
+  const allWorkouts = getAllWorkouts()
+  const exercisesWithHistory = new Set<Exercise>()
+
+  allWorkouts
+    .filter(w => w.profileId === profileId)
+    .forEach(workout => {
+      // Only count if at least one set has a weight logged
+      const hasWeight = workout.sets.some(set => set.weight !== null && set.weight > 0)
+      if (hasWeight) {
+        exercisesWithHistory.add(workout.exerciseId)
+      }
+    })
+
+  return exercisesWithHistory
+}

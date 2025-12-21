@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     // Production: Load from Vercel
-    url: 'https://strengthprofiletracker-l5ybveppi-castroaruns-projects.vercel.app',
+    url: 'https://reppit-fitness.vercel.app',
     androidScheme: 'https'
   },
   plugins: {
