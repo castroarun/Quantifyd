@@ -159,6 +159,10 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
   const [showFormTip, setShowFormTip] = useState(false)
   const [showWarmup, setShowWarmup] = useState(false)
 
+  // Ref to store pending level notification - deferred until component unmounts
+  // This prevents the exercise card from repositioning while user is still entering sets
+  const pendingLevelRef = useRef<Level | null>(null)
+
   // Get exercise name for display
   const exercise = getExerciseById(exerciseId)
 
@@ -197,17 +201,16 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       )
 
       if (downgradeLevel) {
-        // Apply the downgrade
+        // Apply the downgrade in storage
         updateExerciseRating(profileId, exerciseId, downgradeLevel)
 
         // Show notification
         const message = getDowngradeMessage(downgradeLevel)
         setLevelDownMessage(message)
 
-        // Notify parent
-        if (onLevelUp) {
-          onLevelUp(downgradeLevel)
-        }
+        // Store pending level for deferred parent notification
+        // The card will reposition only when user collapses this workout logger
+        pendingLevelRef.current = downgradeLevel
 
         // Hide after 6 seconds
         setTimeout(() => {
@@ -230,6 +233,16 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       }, 50)
     }
   }, [isLoaded])
+
+  // Notify parent of level change when component unmounts (user collapses the card)
+  // This defers the card repositioning until the user is done with this exercise
+  useEffect(() => {
+    return () => {
+      if (pendingLevelRef.current && onLevelUp) {
+        onLevelUp(pendingLevelRef.current)
+      }
+    }
+  }, [onLevelUp])
 
   // Calculate smart suggestions based on past sessions
   // Handles incomplete sessions by looking at earlier complete data
@@ -364,14 +377,13 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
         // Mark as tracked to avoid duplicate notifications
         setTrackedPRs(prev => new Set([...prev, weightValue]))
 
-        // Auto-update the level
+        // Auto-update the level in storage
         updateExerciseRating(profileId, exerciseId, newLevel)
         setLevelUpMessage(`Level up! You're now ${newLevel.charAt(0).toUpperCase() + newLevel.slice(1)}!`)
 
-        // Notify parent component
-        if (onLevelUp) {
-          onLevelUp(newLevel)
-        }
+        // Store pending level for deferred parent notification
+        // The card will reposition only when user collapses this workout logger
+        pendingLevelRef.current = newLevel
 
         // Hide level up message after 5 seconds
         setTimeout(() => {
