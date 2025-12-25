@@ -133,10 +133,17 @@ function calculateSuggestions(sessions: WorkoutSession[]): Suggestion[] | null {
   return suggestions
 }
 
+// Maximum number of sets allowed
+const MAX_SETS = 10
+
 export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: WorkoutLoggerProps) {
   const { unit } = useUnit()
   const [pastSessions, setPastSessions] = useState<WorkoutSession[]>([])
-  const [todaySets, setTodaySets] = useState<WorkoutSet[]>(createEmptySets())
+  const [todaySets, setTodaySets] = useState<WorkoutSet[]>(() => {
+    // Initialize with default sets from settings
+    const settings = getTimerSettings()
+    return createEmptySets(settings.defaultSets)
+  })
   const [isLoaded, setIsLoaded] = useState(false)
   const [celebration, setCelebration] = useState<CelebrationState>({ show: false, message: '' })
   const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null)
@@ -182,10 +189,14 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       .slice(0, 2)
     setPastSessions(sessions)
 
-    // Load today's session if exists
+    // Load today's session if exists, otherwise use default sets from settings
     const today = getTodaySession(profileId, exerciseId)
-    if (today) {
+    if (today && today.sets.length > 0) {
       setTodaySets(today.sets)
+    } else {
+      // No existing session - use default sets from settings
+      const settings = getTimerSettings()
+      setTodaySets(createEmptySets(settings.defaultSets))
     }
 
     // Check for level downgrade on mount (based on last 4 workouts)
@@ -437,6 +448,42 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     setShowFullScreenTimer(true)
   }
 
+  // Add a new set
+  const handleAddSet = () => {
+    if (todaySets.length >= MAX_SETS) return
+
+    const newSets = [...todaySets, { weight: null, reps: null }]
+    setTodaySets(newSets)
+    saveWorkoutSession(profileId, exerciseId, newSets)
+  }
+
+  // Remove the last set (only if it's empty and there are more than 1 set)
+  const handleRemoveSet = () => {
+    if (todaySets.length <= 1) return
+
+    const lastSet = todaySets[todaySets.length - 1]
+    // Only allow removing if the last set is empty (no data entered)
+    if (lastSet.weight !== null || lastSet.reps !== null) return
+
+    const newSets = todaySets.slice(0, -1)
+    setTodaySets(newSets)
+    saveWorkoutSession(profileId, exerciseId, newSets)
+
+    // Also remove from completed sets if it was there
+    if (completedSets.has(todaySets.length - 1)) {
+      setCompletedSets(prev => {
+        const next = new Set(prev)
+        next.delete(todaySets.length - 1)
+        return next
+      })
+    }
+  }
+
+  // Check if we can remove a set (last set must be empty)
+  const canRemoveSet = todaySets.length > 1 &&
+    todaySets[todaySets.length - 1].weight === null &&
+    todaySets[todaySets.length - 1].reps === null
+
   return (
     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 relative">
       {/* PR Celebration Toast */}
@@ -607,7 +654,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                 {formatSessionDate(session.date)}
               </span>
             </div>
-            {[0, 1, 2].map(setIndex => {
+            {todaySets.map((_, setIndex) => {
               const set = session.sets[setIndex]
               const hasData = set?.weight !== null && set?.reps !== null
               return (
@@ -633,14 +680,15 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
           <div className="text-center py-1.5">
             <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Today</span>
           </div>
-          {[0, 1, 2].map(setIndex => {
-            const todaySet = todaySets[setIndex]
+          {todaySets.map((todaySet, setIndex) => {
             const suggestion = suggestions?.[setIndex]
             const isCompleted = completedSets.has(setIndex)
             // Require BOTH weight AND reps for the Done button to be enabled
             const hasWeight = todaySet.weight !== null && todaySet.weight > 0
             const hasReps = todaySet.reps !== null && todaySet.reps > 0
             const canComplete = hasWeight && hasReps
+            // Get suggested reps (default pattern: 12, 10, 8, then 8 for additional sets)
+            const suggestedReps = SUGGESTED_REPS[setIndex] ?? 8
 
             return (
               <div
@@ -666,7 +714,7 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                 <input
                   type="number"
                   inputMode="numeric"
-                  placeholder={suggestion ? String(suggestion.reps) : SUGGESTED_REPS[setIndex].toString()}
+                  placeholder={suggestion ? String(suggestion.reps) : suggestedReps.toString()}
                   value={todaySet.reps ?? ''}
                   onChange={(e) => handleSetChange(setIndex, 'reps', e.target.value)}
                   onFocus={(e) => e.target.select()}
@@ -692,38 +740,79 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
               </div>
             )
           })}
+          {/* Add/Remove set buttons */}
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <button
+              onClick={handleRemoveSet}
+              disabled={!canRemoveSet}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                canRemoveSet
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30 dark:hover:text-red-400'
+                  : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+              }`}
+              title={canRemoveSet ? 'Remove last set' : 'Cannot remove set with data'}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
+              </svg>
+            </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{todaySets.length} sets</span>
+            <button
+              onClick={handleAddSet}
+              disabled={todaySets.length >= MAX_SETS}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                todaySets.length < MAX_SETS
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-900/30 dark:hover:text-blue-400'
+                  : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+              }`}
+              title={todaySets.length < MAX_SETS ? 'Add another set' : `Maximum ${MAX_SETS} sets`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Chevron buttons column - copy from target */}
+        {/* Chevron buttons column - copy from target (only for sets with suggestions) */}
         {suggestions && (
           <div className="flex flex-col gap-1.5 flex-shrink-0">
             {/* Header placeholder - matches other column headers exactly */}
             <div className="text-center py-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider invisible">—</span>
             </div>
-            {[0, 1, 2].map(setIndex => (
-              <button
-                key={setIndex}
-                onClick={() => copyToToday(setIndex)}
-                className="h-11 px-1 flex items-center justify-center text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
-                title="Copy to today"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                </svg>
-              </button>
-            ))}
+            {todaySets.map((_, setIndex) => {
+              const suggestion = suggestions[setIndex]
+              if (!suggestion) {
+                return <div key={setIndex} className="h-11" /> // Empty placeholder
+              }
+              return (
+                <button
+                  key={setIndex}
+                  onClick={() => copyToToday(setIndex)}
+                  className="h-11 px-1 flex items-center justify-center text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+                  title="Copy to today"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  </svg>
+                </button>
+              )
+            })}
           </div>
         )}
 
-        {/* TARGET column (RIGHT side) */}
+        {/* TARGET column (RIGHT side - only for sets with suggestions) */}
         {suggestions && (
           <div className="flex flex-col gap-1.5 flex-shrink-0 min-w-[75px]">
             <div className="text-center py-1.5">
               <span className="text-[11px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">🎯 Target</span>
             </div>
-            {[0, 1, 2].map(setIndex => {
+            {todaySets.map((_, setIndex) => {
               const suggestion = suggestions[setIndex]
+              if (!suggestion) {
+                return <div key={setIndex} className="h-11" /> // Empty placeholder for extra sets
+              }
               return (
                 <button
                   key={setIndex}

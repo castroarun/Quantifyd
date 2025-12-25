@@ -319,14 +319,11 @@ export function formatSessionDate(dateStr: string): string {
 }
 
 /**
- * Create empty sets array (3 sets)
+ * Create empty sets array
+ * @param count Number of sets to create (default: 3)
  */
-export function createEmptySets(): WorkoutSet[] {
-  return [
-    { weight: null, reps: null },
-    { weight: null, reps: null },
-    { weight: null, reps: null }
-  ]
+export function createEmptySets(count: number = 3): WorkoutSet[] {
+  return Array.from({ length: count }, () => ({ weight: null, reps: null }))
 }
 
 /**

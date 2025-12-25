@@ -13,6 +13,8 @@ import {
   notificationsSupported
 } from '@/lib/pwa/notifications'
 import { loadSampleData, hasSampleData, removeSampleData } from '@/lib/storage/seedData'
+import { getTimerSettings, saveTimerSettings } from '@/lib/storage/timer'
+import { DEFAULT_TIMER_SETTINGS } from '@/types'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -28,6 +30,7 @@ export default function SettingsPage() {
   const [hasSamples, setHasSamples] = useState(false)
   const [devTapCount, setDevTapCount] = useState(0)
   const [showDevMode, setShowDevMode] = useState(false)
+  const [defaultSets, setDefaultSets] = useState(DEFAULT_TIMER_SETTINGS.defaultSets)
 
   useEffect(() => {
     setNotificationStatus(getNotificationPermission())
@@ -35,6 +38,9 @@ export default function SettingsPage() {
     // Check if dev mode was previously unlocked
     const devModeUnlocked = localStorage.getItem('devModeUnlocked') === 'true'
     setShowDevMode(devModeUnlocked)
+    // Load timer/workout settings
+    const timerSettings = getTimerSettings()
+    setDefaultSets(timerSettings.defaultSets)
   }, [])
 
   // Handle secret tap on version to unlock developer mode
@@ -108,6 +114,12 @@ export default function SettingsPage() {
   const handleRemoveSampleData = () => {
     removeSampleData()
     setHasSamples(false)
+  }
+
+  const handleDefaultSetsChange = (newValue: number) => {
+    const clampedValue = Math.max(1, Math.min(10, newValue))
+    setDefaultSets(clampedValue)
+    saveTimerSettings({ defaultSets: clampedValue })
   }
 
   const formatLastSync = (timestamp: string | null) => {
@@ -302,6 +314,51 @@ export default function SettingsPage() {
                 )}
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Workout Section */}
+        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-semibold text-[#2C3E50] dark:text-gray-100">Workout</h2>
+          </div>
+          <div className="p-4 space-y-4">
+            {/* Default Sets */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-700 dark:text-gray-200">Default Sets</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Number of sets when starting a new exercise</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDefaultSetsChange(defaultSets - 1)}
+                  disabled={defaultSets <= 1}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    defaultSets > 1
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
+                  </svg>
+                </button>
+                <span className="w-8 text-center font-bold text-gray-900 dark:text-gray-100">{defaultSets}</span>
+                <button
+                  onClick={() => handleDefaultSetsChange(defaultSets + 1)}
+                  disabled={defaultSets >= 10}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    defaultSets < 10
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 

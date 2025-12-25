@@ -244,6 +244,7 @@ export interface TimerSettings {
   vibrationEnabled: boolean    // Vibrate when timer ends
   autoStart: boolean           // Auto-start timer after logging a set
   keepAwakeDuringWorkout: boolean  // Keep screen awake during workout session
+  defaultSets: number          // Default number of sets per exercise (default: 3)
 }
 
 export interface ExerciseTimerHistory {
@@ -264,5 +265,6 @@ export const DEFAULT_TIMER_SETTINGS: TimerSettings = {
   soundEnabled: true,
   vibrationEnabled: true,
   autoStart: true,
-  keepAwakeDuringWorkout: true  // Default to keeping screen awake
+  keepAwakeDuringWorkout: true,  // Default to keeping screen awake
+  defaultSets: 3                 // Default 3 sets per exercise
 }
