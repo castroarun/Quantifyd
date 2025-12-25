@@ -1,4 +1,5 @@
 import { Profile, WorkoutSession } from '@/types'
+import { formatLocalDate } from './workouts'
 
 const PROFILES_KEY = 'strength_profiles_v2'
 const WORKOUTS_KEY = 'strength_profile_workouts'
@@ -129,7 +130,7 @@ const sampleProfiles: Profile[] = [
 function getWorkoutDate(daysAgo: number): string {
   const date = new Date()
   date.setDate(date.getDate() + daysAgo)
-  return date.toISOString().split('T')[0]
+  return formatLocalDate(date)
 }
 
 /**
@@ -663,7 +664,7 @@ function generateSampleScoreHistory(): Record<string, ScoreHistoryEntry[]> {
     const date = new Date(today)
     date.setDate(date.getDate() - (arunScores.length - 1 - i) * 7)
     return {
-      date: date.toISOString().split('T')[0],
+      date: formatLocalDate(date),
       score
     }
   })
@@ -674,7 +675,7 @@ function generateSampleScoreHistory(): Record<string, ScoreHistoryEntry[]> {
     const date = new Date(today)
     date.setDate(date.getDate() - (huiminScores.length - 1 - i) * 7)
     return {
-      date: date.toISOString().split('T')[0],
+      date: formatLocalDate(date),
       score
     }
   })
@@ -685,7 +686,7 @@ function generateSampleScoreHistory(): Record<string, ScoreHistoryEntry[]> {
     const date = new Date(today)
     date.setDate(date.getDate() - (virajScores.length - 1 - i) * 7)
     return {
-      date: date.toISOString().split('T')[0],
+      date: formatLocalDate(date),
       score
     }
   })
@@ -696,7 +697,7 @@ function generateSampleScoreHistory(): Record<string, ScoreHistoryEntry[]> {
     const date = new Date(today)
     date.setDate(date.getDate() - (tanviScores.length - 1 - i) * 7)
     return {
-      date: date.toISOString().split('T')[0],
+      date: formatLocalDate(date),
       score
     }
   })
@@ -726,7 +727,7 @@ export function getScoreHistory(profileId: string): ScoreHistoryEntry[] {
 export function addScoreToHistory(profileId: string, score: number): void {
   if (typeof window === 'undefined') return
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = formatLocalDate(new Date())
   const allHistory: Record<string, ScoreHistoryEntry[]> = JSON.parse(
     localStorage.getItem(SCORE_HISTORY_KEY) || '{}'
   )

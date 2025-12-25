@@ -20,6 +20,8 @@ export function useWakeLock() {
   })
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+  // Track if we should have a wake lock (for re-acquisition on visibility change)
+  const shouldHaveWakeLockRef = useRef(false)
 
   // Check support on mount
   useEffect(() => {
@@ -29,8 +31,16 @@ export function useWakeLock() {
 
   // Request wake lock
   const requestWakeLock = useCallback(async () => {
+    // Track that we want a wake lock (for re-acquisition on visibility change)
+    shouldHaveWakeLockRef.current = true
+
     if (!('wakeLock' in navigator)) {
       setState(prev => ({ ...prev, error: 'Wake Lock not supported' }))
+      return false
+    }
+
+    // Don't request if page is not visible
+    if (document.visibilityState !== 'visible') {
       return false
     }
 
@@ -39,6 +49,7 @@ export function useWakeLock() {
 
       // Handle release event (e.g., when tab becomes inactive)
       wakeLockRef.current.addEventListener('release', () => {
+        wakeLockRef.current = null
         setState(prev => ({ ...prev, isActive: false }))
       })
 
@@ -53,6 +64,9 @@ export function useWakeLock() {
 
   // Release wake lock
   const releaseWakeLock = useCallback(async () => {
+    // Clear the intent to have a wake lock
+    shouldHaveWakeLockRef.current = false
+
     if (wakeLockRef.current) {
       try {
         await wakeLockRef.current.release()
@@ -70,7 +84,10 @@ export function useWakeLock() {
   // Re-acquire wake lock when page becomes visible again
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && state.isActive && !wakeLockRef.current) {
+      // Use shouldHaveWakeLockRef instead of state.isActive because
+      // when the browser releases the wake lock on background, isActive becomes false
+      // but we still want to re-acquire when coming back to foreground
+      if (document.visibilityState === 'visible' && shouldHaveWakeLockRef.current && !wakeLockRef.current) {
         await requestWakeLock()
       }
     }
@@ -79,7 +96,7 @@ export function useWakeLock() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [state.isActive, requestWakeLock])
+  }, [requestWakeLock])
 
   // Cleanup on unmount
   useEffect(() => {

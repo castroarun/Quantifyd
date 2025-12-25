@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/ui'
 import { Profile, BodyPart, Exercise, ALL_BODY_PARTS, WorkoutSession } from '@/types'
 import { getProfileById } from '@/lib/storage/profiles'
 import { calculateStrengthScore, EXERCISES } from '@/lib/calculations/strength'
-import { getAllWorkouts, formatSessionDate } from '@/lib/storage/workouts'
+import { getAllWorkouts, formatSessionDate, formatLocalDate } from '@/lib/storage/workouts'
 import { getScoreHistory, ScoreHistoryEntry } from '@/lib/storage/seedData'
 import { Badges } from '@/components/strength'
 import { MuscleHeatmap } from '@/components/progress'
@@ -637,14 +637,19 @@ function BodyPartRadarChart({ data, color }: { data: BodyPartData[], color: stri
 function CalendarHeatmap({ days }: { days: WorkoutDay[] }) {
   // Build 4 weeks of data
   const today = new Date()
+  const todayDayOfWeek = today.getDay() // 0 = Sunday, 6 = Saturday
   const weeks: number[][] = []
 
   for (let w = 3; w >= 0; w--) {
     const week: number[] = []
     for (let d = 0; d < 7; d++) {
       const date = new Date(today)
-      date.setDate(date.getDate() - (w * 7 + (6 - d)))
-      const dateStr = date.toISOString().split('T')[0]
+      // Calculate days ago: today should appear in column matching its day of week
+      // d=0 is Sunday, d=6 is Saturday
+      const daysAgo = w * 7 + (todayDayOfWeek - d)
+      date.setDate(date.getDate() - daysAgo)
+      // Use local date format to match stored workout dates
+      const dateStr = formatLocalDate(date)
       const dayData = days.find(day => day.date === dateStr)
       week.push(dayData?.count || 0)
     }

@@ -288,67 +288,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       })
     }
 
-    // NOTE: Timer is now triggered by the Done button, not on input change
-
-    // Check for new PR and level upgrade when weight is entered
-    if (field === 'weight' && numValue && numValue > 0) {
-      const exercise = getExerciseById(exerciseId)
-      const profile = getProfileById(profileId)
-
-      if (exercise && profile && !trackedPRs.has(numValue)) {
-        // Check if this is a new PR (compare against history OR today's other sets)
-        const isPRvsHistory = isNewPR(profileId, exerciseId, numValue)
-
-        // Also check if this is higher than other sets entered today
-        const todayMax = Math.max(...newSets.filter((_, i) => i !== setIndex).map(s => s.weight || 0))
-        const isPRvsToday = todayMax > 0 && numValue > todayMax
-
-        const isPR = isPRvsHistory || isPRvsToday
-
-        if (isPR) {
-          // Mark this weight as celebrated
-          setTrackedPRs(prev => new Set([...prev, numValue]))
-
-          // Show PR celebration
-          const message = getCelebrationMessage(exercise.name)
-          setCelebration({ show: true, message })
-
-          // Auto-hide after 4 seconds
-          setTimeout(() => {
-            setCelebration({ show: false, message: '' })
-          }, 4000)
-        }
-
-        // Check for level upgrade (independent of PR - works on first workout too)
-        const currentLevel = profile.exerciseRatings[exerciseId] || null
-        const newLevel = checkLevelUpgrade(
-          exerciseId,
-          profile.weight,
-          numValue,
-          currentLevel,
-          profile.sex
-        )
-
-        if (newLevel) {
-          // Mark as tracked to avoid duplicate notifications
-          setTrackedPRs(prev => new Set([...prev, numValue]))
-
-          // Auto-update the level
-          updateExerciseRating(profileId, exerciseId, newLevel)
-          setLevelUpMessage(`Level up! You're now ${newLevel.charAt(0).toUpperCase() + newLevel.slice(1)}!`)
-
-          // Notify parent component
-          if (onLevelUp) {
-            onLevelUp(newLevel)
-          }
-
-          // Hide level up message after 5 seconds
-          setTimeout(() => {
-            setLevelUpMessage(null)
-          }, 5000)
-        }
-      }
-    }
+    // NOTE: PR check and level upgrade are now triggered by the Done button,
+    // not on input change. This prevents the exercise card from moving
+    // before the user finishes entering their set.
   }
 
   if (!isLoaded) {
@@ -369,13 +311,74 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     saveWorkoutSession(profileId, exerciseId, newSets)
   }
 
-  // Handle "Done" button - marks set complete and optionally starts timer based on settings
+  // Handle "Done" button - marks set complete, checks PR/level, and optionally starts timer
   const handleSetDone = (setIndex: number) => {
     const currentSet = todaySets[setIndex]
+    // Require BOTH weight AND reps before marking as complete
     if (!currentSet.weight || currentSet.weight <= 0) return
+    if (!currentSet.reps || currentSet.reps <= 0) return
 
     // Mark this set as completed by user
     setCompletedSets(prev => new Set(prev).add(setIndex))
+
+    // Check for PR and level upgrade NOW (when user explicitly marks set as done)
+    const exercise = getExerciseById(exerciseId)
+    const profile = getProfileById(profileId)
+    const weightValue = currentSet.weight
+
+    if (exercise && profile && !trackedPRs.has(weightValue)) {
+      // Check if this is a new PR (compare against history OR today's other sets)
+      const isPRvsHistory = isNewPR(profileId, exerciseId, weightValue)
+
+      // Also check if this is higher than other sets entered today
+      const todayMax = Math.max(...todaySets.filter((_, i) => i !== setIndex).map(s => s.weight || 0))
+      const isPRvsToday = todayMax > 0 && weightValue > todayMax
+
+      const isPR = isPRvsHistory || isPRvsToday
+
+      if (isPR) {
+        // Mark this weight as celebrated
+        setTrackedPRs(prev => new Set([...prev, weightValue]))
+
+        // Show PR celebration
+        const message = getCelebrationMessage(exercise.name)
+        setCelebration({ show: true, message })
+
+        // Auto-hide after 4 seconds
+        setTimeout(() => {
+          setCelebration({ show: false, message: '' })
+        }, 4000)
+      }
+
+      // Check for level upgrade (independent of PR - works on first workout too)
+      const currentLevel = profile.exerciseRatings[exerciseId] || null
+      const newLevel = checkLevelUpgrade(
+        exerciseId,
+        profile.weight,
+        weightValue,
+        currentLevel,
+        profile.sex
+      )
+
+      if (newLevel) {
+        // Mark as tracked to avoid duplicate notifications
+        setTrackedPRs(prev => new Set([...prev, weightValue]))
+
+        // Auto-update the level
+        updateExerciseRating(profileId, exerciseId, newLevel)
+        setLevelUpMessage(`Level up! You're now ${newLevel.charAt(0).toUpperCase() + newLevel.slice(1)}!`)
+
+        // Notify parent component
+        if (onLevelUp) {
+          onLevelUp(newLevel)
+        }
+
+        // Hide level up message after 5 seconds
+        setTimeout(() => {
+          setLevelUpMessage(null)
+        }, 5000)
+      }
+    }
 
     // Check global timer settings - only trigger timer if auto-start is enabled
     const timerSettings = getTimerSettings()
@@ -622,7 +625,10 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
             const todaySet = todaySets[setIndex]
             const suggestion = suggestions?.[setIndex]
             const isCompleted = completedSets.has(setIndex)
+            // Require BOTH weight AND reps for the Done button to be enabled
             const hasWeight = todaySet.weight !== null && todaySet.weight > 0
+            const hasReps = todaySet.reps !== null && todaySet.reps > 0
+            const canComplete = hasWeight && hasReps
 
             return (
               <div
@@ -654,18 +660,18 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
                   onFocus={(e) => e.target.select()}
                   className="w-8 text-center text-base font-bold bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-0"
                 />
-                {/* Done checkmark button */}
+                {/* Done checkmark button - requires both weight AND reps */}
                 <button
                   onClick={() => handleSetDone(setIndex)}
-                  disabled={!hasWeight}
+                  disabled={!canComplete}
                   className={`ml-0.5 w-7 h-7 flex-shrink-0 rounded-full flex items-center justify-center transition-all ${
                     isCompleted
                       ? 'bg-green-500 text-white'
-                      : hasWeight
+                      : canComplete
                         ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400'
                         : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
                   }`}
-                  title={isCompleted ? 'Set completed' : 'Mark set as done'}
+                  title={isCompleted ? 'Set completed' : canComplete ? 'Mark set as done' : 'Enter weight and reps first'}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
