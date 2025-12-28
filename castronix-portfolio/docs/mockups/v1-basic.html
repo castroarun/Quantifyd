@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Castronix | Digital Products & Engineering</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       CASTRONIX PORTFOLIO - Augen UI Design System
+       ============================================ */
+
+    :root {
+      /* Foundation - Near-black base */
+      --bg-primary: #0F1012;
+      --bg-secondary: #141517;
+      --bg-elevated: #1A1B1E;
+      --bg-hover: #202124;
+
+      /* Typography hierarchy */
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-tertiary: rgba(255, 255, 255, 0.4);
+      --text-muted: rgba(255, 255, 255, 0.25);
+
+      /* Accent - Use sparingly */
+      --accent-blue: #0071E3;
+      --accent-blue-hover: #0077ED;
+      --accent-subtle: rgba(0, 113, 227, 0.15);
+      --accent-green: #30D158;
+      --accent-orange: #FF9F0A;
+      --accent-purple: #BF5AF2;
+
+      /* Borders & Dividers */
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-medium: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.2);
+
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+      --space-24: 6rem;
+      --space-32: 8rem;
+
+      /* Transitions */
+      --transition-fast: 150ms ease;
+      --transition-base: 200ms ease;
+      --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+
+      /* Fonts */
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 1rem;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Typography */
+    .text-display {
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.0;
+    }
+
+    .text-headline {
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+    }
+
+    .text-title {
+      font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      line-height: 1.3;
+    }
+
+    .text-body {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .text-caption {
+      font-size: 0.8125rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+    }
+
+    .text-micro {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 clamp(1.5rem, 5vw, 4rem);
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-6) clamp(1.5rem, 5vw, 4rem);
+      background: rgba(15, 16, 18, 0.8);
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-logo {
+      font-weight: 600;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-8);
+    }
+
+    .nav-link {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color var(--transition-base);
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--space-32) 0;
+      position: relative;
+    }
+
+    .hero-content {
+      max-width: 900px;
+    }
+
+    .hero-label {
+      display: inline-block;
+      margin-bottom: var(--space-6);
+    }
+
+    .hero-title {
+      margin-bottom: var(--space-8);
+    }
+
+    .hero-subtitle {
+      max-width: 600px;
+      margin-bottom: var(--space-12);
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: gap var(--transition-base);
+    }
+
+    .hero-cta:hover {
+      gap: var(--space-3);
+    }
+
+    .hero-cta .arrow {
+      transition: transform var(--transition-base);
+    }
+
+    .hero-cta:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    /* Scroll indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: var(--space-8);
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text-tertiary);
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--text-tertiary), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    /* Section Styles */
+    .section {
+      padding: var(--space-32) 0;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-6);
+      margin-bottom: var(--space-16);
+    }
+
+    .section-index {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.05em;
+    }
+
+    .section-title {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    /* Projects Grid */
+    .projects-grid {
+      display: grid;
+      gap: var(--space-8);
+    }
+
+    .project-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color var(--transition-base), transform var(--transition-slow);
+    }
+
+    .project-card:hover {
+      border-color: var(--border-medium);
+      transform: translateY(-4px);
+    }
+
+    .project-preview {
+      aspect-ratio: 16/9;
+      background: var(--bg-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-4);
+      color: var(--text-tertiary);
+    }
+
+    .project-preview-icon {
+      font-size: 3rem;
+      opacity: 0.5;
+    }
+
+    .project-content {
+      padding: var(--space-8);
+    }
+
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-4);
+    }
+
+    .project-name {
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .project-status {
+      padding: var(--space-1) var(--space-3);
+      border-radius: 100px;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .status-live {
+      background: rgba(48, 209, 88, 0.15);
+      color: var(--accent-green);
+    }
+
+    .status-development {
+      background: rgba(255, 159, 10, 0.15);
+      color: var(--accent-orange);
+    }
+
+    .status-planned {
+      background: rgba(191, 90, 242, 0.15);
+      color: var(--accent-purple);
+    }
+
+    .project-tagline {
+      color: var(--text-secondary);
+      margin-bottom: var(--space-6);
+    }
+
+    .project-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-6);
+    }
+
+    .feature-tag {
+      padding: var(--space-1) var(--space-3);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .project-tech {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .tech-item {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+    }
+
+    .project-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-6);
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+
+    .project-link:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    .project-link .arrow {
+      transition: transform var(--transition-base);
+    }
+
+    /* Workflow Section */
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-6);
+    }
+
+    .workflow-step {
+      padding: var(--space-6);
+      border-left: 1px solid var(--border-subtle);
+      transition: border-color var(--transition-base);
+    }
+
+    .workflow-step:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .workflow-number {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-blue);
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-3);
+    }
+
+    .workflow-name {
+      font-weight: 500;
+      margin-bottom: var(--space-2);
+    }
+
+    .workflow-desc {
+      font-size: 0.875rem;
+      color: var(--text-tertiary);
+    }
+
+    /* Practices Section */
+    .practices-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-8);
+    }
+
+    .practice-card {
+      padding: var(--space-8);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+    }
+
+    .practice-icon {
+      font-size: 1.5rem;
+      margin-bottom: var(--space-4);
+      opacity: 0.8;
+    }
+
+    .practice-title {
+      font-weight: 500;
+      margin-bottom: var(--space-2);
+    }
+
+    .practice-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Stats Section */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-8);
+      padding: var(--space-12) 0;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-tertiary);
+      margin-top: var(--space-2);
+    }
+
+    /* Footer */
+    .footer {
+      padding: var(--space-16) 0;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-8);
+    }
+
+    .footer-brand {
+      font-weight: 600;
+      font-size: 1.125rem;
+    }
+
+    .footer-tagline {
+      color: var(--text-tertiary);
+      font-size: 0.875rem;
+      margin-top: var(--space-2);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: var(--space-8);
+    }
+
+    .footer-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color var(--transition-base);
+    }
+
+    .footer-link:hover {
+      color: var(--text-primary);
+    }
+
+    .footer-bottom {
+      margin-top: var(--space-12);
+      padding-top: var(--space-8);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .footer-copy {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .footer-built {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .section-header {
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      .project-header {
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .footer-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    /* Fade-in animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in:nth-child(1) { animation-delay: 0.1s; }
+    .fade-in:nth-child(2) { animation-delay: 0.2s; }
+    .fade-in:nth-child(3) { animation-delay: 0.3s; }
+    .fade-in:nth-child(4) { animation-delay: 0.4s; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <a href="#" class="nav-logo">Castronix</a>
+    <div class="nav-links">
+      <a href="#work" class="nav-link">Work</a>
+      <a href="#process" class="nav-link">Process</a>
+      <a href="#practices" class="nav-link">Practices</a>
+      <a href="#contact" class="nav-link">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <span class="text-micro hero-label">Digital Products & Engineering</span>
+        <h1 class="text-display hero-title">Building tools<br>that matter.</h1>
+        <p class="text-body hero-subtitle">
+          Crafting purposeful digital products with obsessive attention to detail.
+          From concept to production, every line of code serves a purpose.
+        </p>
+        <a href="#work" class="hero-cta">
+          View work <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      <span class="text-micro">Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- Work Section -->
+  <section id="work" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-index">0.1</span>
+        <h2 class="section-title">Selected Work</h2>
+      </div>
+
+      <div class="projects-grid">
+        <!-- REPPIT -->
+        <article class="project-card fade-in">
+          <div class="project-preview">
+            <div class="project-preview-placeholder">
+              <div class="project-preview-icon">💪</div>
+              <span class="text-micro">Screenshot Preview</span>
+            </div>
+          </div>
+          <div class="project-content">
+            <div class="project-header">
+              <h3 class="project-name">REPPIT</h3>
+              <span class="project-status status-live">Live</span>
+            </div>
+            <p class="project-tagline">Track your reps. Build your strength.</p>
+            <div class="project-features">
+              <span class="feature-tag">Profile Management</span>
+              <span class="feature-tag">23 Exercises</span>
+              <span class="feature-tag">PR Detection</span>
+              <span class="feature-tag">Smart Suggestions</span>
+              <span class="feature-tag">Muscle Heatmap</span>
+              <span class="feature-tag">Auto Level-Up</span>
+            </div>
+            <div class="project-tech">
+              <span class="tech-item">Next.js</span>
+              <span class="tech-item">TypeScript</span>
+              <span class="tech-item">Tailwind CSS</span>
+              <span class="tech-item">PWA</span>
+            </div>
+            <a href="#" class="project-link">
+              View details <span class="arrow">→</span>
+            </a>
+          </div>
+        </article>
+
+        <!-- NoteApp -->
+        <article class="project-card fade-in">
+          <div class="project-preview">
+            <div class="project-preview-placeholder">
+              <div class="project-preview-icon">📝</div>
+              <span class="text-micro">Screenshot Preview</span>
+            </div>
+          </div>
+          <div class="project-content">
+            <div class="project-header">
+              <h3 class="project-name">NoteApp</h3>
+              <span class="project-status status-live">Live</span>
+            </div>
+            <p class="project-tagline">Simple, fast note-taking that stays out of your way.</p>
+            <div class="project-features">
+              <span class="feature-tag">Markdown Support</span>
+              <span class="feature-tag">Offline-First</span>
+              <span class="feature-tag">Quick Capture</span>
+              <span class="feature-tag">Search</span>
+            </div>
+            <div class="project-tech">
+              <span class="tech-item">Next.js</span>
+              <span class="tech-item">TypeScript</span>
+              <span class="tech-item">Supabase</span>
+            </div>
+            <a href="#" class="project-link">
+              View details <span class="arrow">→</span>
+            </a>
+          </div>
+        </article>
+
+        <!-- PRIMMO -->
+        <article class="project-card fade-in">
+          <div class="project-preview">
+            <div class="project-preview-placeholder">
+              <div class="project-preview-icon">🏠</div>
+              <span class="text-micro">Coming Soon</span>
+            </div>
+          </div>
+          <div class="project-content">
+            <div class="project-header">
+              <h3 class="project-name">PRIMMO</h3>
+              <span class="project-status status-planned">Planned</span>
+            </div>
+            <p class="project-tagline">Real estate investment analysis made intelligent.</p>
+            <div class="project-features">
+              <span class="feature-tag">Property Analysis</span>
+              <span class="feature-tag">ROI Calculator</span>
+              <span class="feature-tag">Market Trends</span>
+              <span class="feature-tag">Portfolio Tracking</span>
+            </div>
+            <div class="project-tech">
+              <span class="tech-item">Next.js</span>
+              <span class="tech-item">TypeScript</span>
+              <span class="tech-item">Supabase</span>
+              <span class="tech-item">AI/ML</span>
+            </div>
+            <a href="#" class="project-link">
+              Notify me <span class="arrow">→</span>
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Process Section -->
+  <section id="process" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-index">0.2</span>
+        <h2 class="section-title">The 9-Step Workflow</h2>
+      </div>
+
+      <p class="text-body" style="max-width: 600px; margin-bottom: var(--space-12);">
+        Every project follows a structured methodology that ensures quality,
+        maintainability, and deliberate progress from concept to production.
+      </p>
+
+      <div class="workflow-grid">
+        <div class="workflow-step">
+          <div class="workflow-number">01</div>
+          <div class="workflow-name">DEV-CLOCK</div>
+          <div class="workflow-desc">Track time from day one. Every commit, every session logged.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">02</div>
+          <div class="workflow-name">PRD & Design</div>
+          <div class="workflow-desc">Document requirements. Prototype the interface. Validate before building.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">03</div>
+          <div class="workflow-name">Test Cases</div>
+          <div class="workflow-desc">Define what success looks like. Write tests before code.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">04</div>
+          <div class="workflow-name">Build</div>
+          <div class="workflow-desc">Implement with type safety. No shortcuts, no any types.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">05</div>
+          <div class="workflow-name">Manual Testing</div>
+          <div class="workflow-desc">Touch every feature. Break things before users do.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">06</div>
+          <div class="workflow-name">Debug & Feedback</div>
+          <div class="workflow-desc">Fix issues. Iterate based on real usage patterns.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">07</div>
+          <div class="workflow-name">Code Walkthrough</div>
+          <div class="workflow-desc">Review architecture. Ensure maintainability for future self.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">08</div>
+          <div class="workflow-name">Ship</div>
+          <div class="workflow-desc">Deploy to production. Monitor performance and errors.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-number">09</div>
+          <div class="workflow-name">Retrospective</div>
+          <div class="workflow-desc">Analyze time spent. Document learnings for next project.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Practices Section -->
+  <section id="practices" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-index">0.3</span>
+        <h2 class="section-title">Engineering Practices</h2>
+      </div>
+
+      <div class="practices-grid">
+        <div class="practice-card">
+          <div class="practice-icon">TS</div>
+          <h3 class="practice-title">Type Safety First</h3>
+          <p class="practice-desc">No any types. Full TypeScript coverage ensures reliability and enables confident refactoring.</p>
+        </div>
+        <div class="practice-card">
+          <div class="practice-icon">M1</div>
+          <h3 class="practice-title">Mobile-First Design</h3>
+          <p class="practice-desc">Start with the smallest viewport. Scale up. Touch targets and gestures considered from day one.</p>
+        </div>
+        <div class="practice-card">
+          <div class="practice-icon">🔒</div>
+          <h3 class="practice-title">Security Conscious</h3>
+          <p class="practice-desc">Validate inputs at boundaries. Protect sensitive data. Never trust the client.</p>
+        </div>
+        <div class="practice-card">
+          <div class="practice-icon">🔄</div>
+          <h3 class="practice-title">Jira Integration</h3>
+          <p class="practice-desc">Every task tracked. Clear workflow from To Do through Testing to Done. No work left behind.</p>
+        </div>
+        <div class="practice-card">
+          <div class="practice-icon">📐</div>
+          <h3 class="practice-title">Design System</h3>
+          <p class="practice-desc">Consistent patterns. Reusable components. Dark mode by default. Accessibility built-in.</p>
+        </div>
+        <div class="practice-card">
+          <div class="practice-icon">⏱</div>
+          <h3 class="practice-title">Time Tracking</h3>
+          <p class="practice-desc">DEV-CLOCK from commit one. Know where time goes. Improve estimation accuracy over time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="section">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value">3+</div>
+          <div class="stat-label">Projects Shipped</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">9</div>
+          <div class="stat-label">Step Workflow</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">100%</div>
+          <div class="stat-label">TypeScript</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">0</div>
+          <div class="stat-label">Any Types</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Footer -->
+  <footer id="contact" class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand-section">
+          <div class="footer-brand">Castronix</div>
+          <p class="footer-tagline">Building tools that matter.</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/castroarun" class="footer-link" target="_blank">GitHub</a>
+          <a href="https://linkedin.com/in/aruncastro" class="footer-link" target="_blank">LinkedIn</a>
+          <a href="mailto:arun@castronix.dev" class="footer-link">Email</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-copy">2025 Castronix. All rights reserved.</span>
+        <span class="footer-built">Built with Next.js + Tailwind + Obsessive Attention</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

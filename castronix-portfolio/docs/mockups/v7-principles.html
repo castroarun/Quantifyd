@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Principles Showcase | Castronix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ============ CSS Variables ============ */
+    :root {
+      /* Colors */
+      --bg-base: #0A0A0F;
+      --bg-surface: #0F1117;
+      --bg-elevated: #161920;
+      --bg-card: rgba(22, 25, 32, 0.7);
+      --bg-hover: #1C1F28;
+
+      --text-primary: #FAFAFA;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-tertiary: rgba(255, 255, 255, 0.5);
+      --text-muted: rgba(255, 255, 255, 0.3);
+
+      --accent: #22D3EE;
+      --accent-glow: rgba(34, 211, 238, 0.3);
+      --accent-subtle: rgba(34, 211, 238, 0.08);
+
+      --success: #22C55E;
+      --success-subtle: rgba(34, 197, 94, 0.1);
+      --error: #EF4444;
+      --error-subtle: rgba(239, 68, 68, 0.1);
+
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-medium: rgba(255, 255, 255, 0.1);
+      --border-accent: rgba(34, 211, 238, 0.3);
+
+      /* Typography */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --text-xs: 0.75rem;
+      --text-sm: 0.875rem;
+      --text-base: 1rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.25rem;
+      --text-2xl: 1.5rem;
+      --text-3xl: 2rem;
+      --text-4xl: 2.5rem;
+
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+      --space-20: 5rem;
+      --space-24: 6rem;
+
+      /* Animation */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ============ Reset & Base ============ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ============ Layout ============ */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+
+    /* ============ Back Link ============ */
+    .back-link {
+      position: fixed;
+      top: var(--space-6);
+      left: var(--space-6);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-5);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: var(--text-sm);
+      transition: all 0.2s ease;
+      z-index: 100;
+    }
+
+    .back-link:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-medium);
+    }
+
+    .back-link svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ============ Page Header ============ */
+    .page-header {
+      padding: var(--space-24) 0 var(--space-16);
+      text-align: center;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .page-title {
+      font-size: var(--text-4xl);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-4);
+    }
+
+    .page-subtitle {
+      font-size: var(--text-lg);
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ============ Section Styles ============ */
+    .section {
+      padding: var(--space-20) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-header {
+      margin-bottom: var(--space-12);
+    }
+
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .section-number {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--accent);
+      background: var(--accent-subtle);
+      padding: var(--space-1) var(--space-3);
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .section-badge {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .section-title {
+      font-size: var(--text-3xl);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-3);
+    }
+
+    .section-desc {
+      font-size: var(--text-base);
+      color: var(--text-secondary);
+      max-width: 600px;
+    }
+
+    /* ============================================ */
+    /* APPROACH 1: Contrast Cards ("Instead of / We do") */
+    /* ============================================ */
+
+    .contrast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: var(--space-6);
+    }
+
+    .contrast-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .contrast-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-4px);
+    }
+
+    .contrast-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-6);
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .contrast-principle {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+
+    .contrast-full {
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+    }
+
+    .contrast-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .contrast-side {
+      padding: var(--space-6);
+    }
+
+    .contrast-side.bad {
+      background: var(--error-subtle);
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    .contrast-side.good {
+      background: var(--success-subtle);
+    }
+
+    .contrast-label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: var(--space-3);
+    }
+
+    .contrast-side.bad .contrast-label {
+      color: var(--error);
+    }
+
+    .contrast-side.good .contrast-label {
+      color: var(--success);
+    }
+
+    .contrast-text {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .contrast-code {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      background: rgba(0, 0, 0, 0.3);
+      padding: var(--space-1) var(--space-2);
+      border-radius: 4px;
+      color: var(--text-tertiary);
+    }
+
+    /* ============================================ */
+    /* APPROACH 2: Visual Equations */
+    /* ============================================ */
+
+    .equations-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .equation-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-6);
+      padding: var(--space-8);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      flex-wrap: wrap;
+      transition: all 0.3s ease;
+    }
+
+    .equation-row:hover {
+      border-color: var(--border-accent);
+    }
+
+    .equation-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      min-width: 120px;
+    }
+
+    .equation-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .equation-label {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .equation-operator {
+      font-size: var(--text-3xl);
+      font-weight: 300;
+      color: var(--text-muted);
+    }
+
+    .equation-principle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-6);
+      background: var(--accent-subtle);
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+    }
+
+    .equation-principle-name {
+      font-family: var(--font-mono);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+
+    .equation-result {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-6);
+      background: var(--success-subtle);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 12px;
+    }
+
+    .equation-result-icon {
+      font-size: 2rem;
+    }
+
+    .equation-result-text {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--success);
+      text-align: center;
+    }
+
+    /* ============================================ */
+    /* APPROACH 3: Real Project Examples */
+    /* ============================================ */
+
+    .examples-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .example-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-6);
+      padding: var(--space-8);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .example-card:hover {
+      border-color: var(--border-accent);
+    }
+
+    @media (max-width: 640px) {
+      .example-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .example-sidebar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-4);
+      padding-right: var(--space-6);
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    @media (max-width: 640px) {
+      .example-sidebar {
+        flex-direction: row;
+        padding-right: 0;
+        padding-bottom: var(--space-4);
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+    }
+
+    .example-project-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-subtle);
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: var(--text-lg);
+      color: var(--accent);
+    }
+
+    .example-principle-badge {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-subtle);
+      padding: var(--space-1) var(--space-3);
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .example-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .example-project-name {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .example-quote {
+      font-size: var(--text-lg);
+      color: var(--text-primary);
+      line-height: 1.7;
+      font-style: italic;
+    }
+
+    .example-quote::before {
+      content: '"';
+      color: var(--accent);
+      font-size: var(--text-2xl);
+    }
+
+    .example-quote::after {
+      content: '"';
+      color: var(--accent);
+      font-size: var(--text-2xl);
+    }
+
+    .example-outcome {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--success-subtle);
+      border-radius: 8px;
+      width: fit-content;
+    }
+
+    .example-outcome-icon {
+      color: var(--success);
+    }
+
+    .example-outcome-text {
+      font-size: var(--text-sm);
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    /* ============================================ */
+    /* APPROACH 4: Interactive Flip Cards */
+    /* ============================================ */
+
+    .flip-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-6);
+    }
+
+    .flip-card {
+      height: 280px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s var(--ease-out);
+      transform-style: preserve-3d;
+    }
+
+    .flip-card:hover .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 16px;
+      padding: var(--space-8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .flip-card-front {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(10px);
+    }
+
+    .flip-card-back {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-accent);
+      transform: rotateY(180deg);
+    }
+
+    .flip-principle {
+      font-family: var(--font-mono);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-4);
+    }
+
+    .flip-name {
+      font-size: var(--text-lg);
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .flip-desc {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+    }
+
+    .flip-hint {
+      position: absolute;
+      bottom: var(--space-4);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+
+    .flip-back-title {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: var(--space-4);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .flip-code {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      background: rgba(0, 0, 0, 0.4);
+      padding: var(--space-4);
+      border-radius: 8px;
+      text-align: left;
+      color: var(--text-secondary);
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .flip-code .comment {
+      color: var(--text-muted);
+    }
+
+    .flip-code .keyword {
+      color: var(--accent);
+    }
+
+    /* Flip card contrast back (combined approach 1+4) */
+    .flip-contrast {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      width: 100%;
+      text-align: left;
+    }
+
+    .flip-contrast-row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border-radius: 8px;
+    }
+
+    .flip-contrast-row.bad {
+      background: var(--error-subtle);
+    }
+
+    .flip-contrast-row.good {
+      background: var(--success-subtle);
+    }
+
+    .flip-contrast-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .flip-contrast-row.bad .flip-contrast-icon {
+      background: var(--error);
+      color: white;
+    }
+
+    .flip-contrast-row.good .flip-contrast-icon {
+      background: var(--success);
+      color: white;
+    }
+
+    .flip-contrast-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .flip-contrast-label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-1);
+    }
+
+    .flip-contrast-row.bad .flip-contrast-label {
+      color: var(--error);
+    }
+
+    .flip-contrast-row.good .flip-contrast-label {
+      color: var(--success);
+    }
+
+    .flip-contrast-text {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* ============================================ */
+    /* APPROACH 5: One Metric Cards */
+    /* ============================================ */
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-6);
+    }
+
+    .metric-card {
+      padding: var(--space-8);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-4px);
+    }
+
+    .metric-principle {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      margin-bottom: var(--space-6);
+    }
+
+    .metric-value {
+      font-size: var(--text-4xl);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-2);
+    }
+
+    .metric-label {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+    }
+
+    .metric-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--accent-subtle);
+      border-radius: 10px;
+      margin-bottom: var(--space-4);
+      font-size: 1.25rem;
+    }
+
+    /* ============================================ */
+    /* Navigation between approaches */
+    /* ============================================ */
+
+    .approach-nav {
+      position: sticky;
+      top: 0;
+      background: rgba(10, 10, 15, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 50;
+      padding: var(--space-4) 0;
+    }
+
+    .approach-nav-inner {
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+      padding-bottom: var(--space-2);
+      scrollbar-width: none;
+    }
+
+    .approach-nav-inner::-webkit-scrollbar {
+      display: none;
+    }
+
+    .approach-link {
+      flex: 0 0 auto;
+      padding: var(--space-2) var(--space-4);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 100px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .approach-link:hover,
+    .approach-link.active {
+      background: var(--accent-subtle);
+      border-color: var(--border-accent);
+      color: var(--accent);
+    }
+
+    /* ============ Footer ============ */
+    .page-footer {
+      padding: var(--space-12) 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+
+    .page-footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .page-footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Back to V6 -->
+  <a href="v6-combined.html" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Back to V6
+  </a>
+
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="container">
+      <h1 class="page-title">Design Principles Showcase</h1>
+      <p class="page-subtitle">
+        Five creative approaches to present engineering principles.
+        Exploring how to make abstract concepts tangible and memorable.
+      </p>
+    </div>
+  </header>
+
+  <!-- Sticky Navigation -->
+  <nav class="approach-nav">
+    <div class="container">
+      <div class="approach-nav-inner">
+        <a href="#contrast" class="approach-link active">1. Contrast Cards</a>
+        <a href="#equations" class="approach-link">2. Visual Equations</a>
+        <a href="#examples" class="approach-link">3. Real Examples</a>
+        <a href="#flip" class="approach-link">4. Flip + Contrast (Combined)</a>
+        <a href="#metrics" class="approach-link">5. One Metric</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================ -->
+  <!-- APPROACH 1: Contrast Cards -->
+  <!-- ============================================ -->
+  <section id="contrast" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="section-number">01</span>
+          <span class="section-badge">Approach</span>
+        </div>
+        <h2 class="section-title">Instead of / We do</h2>
+        <p class="section-desc">
+          Show the anti-pattern alongside the principle in action.
+          Immediate clarity through contrast.
+        </p>
+      </div>
+
+      <div class="contrast-grid">
+        <!-- DRY -->
+        <div class="contrast-card">
+          <div class="contrast-header">
+            <span class="contrast-principle">DRY</span>
+            <span class="contrast-full">Don't Repeat Yourself</span>
+          </div>
+          <div class="contrast-body">
+            <div class="contrast-side bad">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+                Instead of
+              </div>
+              <p class="contrast-text">
+                Copy-paste this validation logic to all 12 forms
+              </p>
+            </div>
+            <div class="contrast-side good">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                We do
+              </div>
+              <p class="contrast-text">
+                One <span class="contrast-code">useValidation</span> hook, 12 forms, 0 duplicates
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- KISS -->
+        <div class="contrast-card">
+          <div class="contrast-header">
+            <span class="contrast-principle">KISS</span>
+            <span class="contrast-full">Keep It Simple</span>
+          </div>
+          <div class="contrast-body">
+            <div class="contrast-side bad">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+                Instead of
+              </div>
+              <p class="contrast-text">
+                Build a state machine with 47 transitions for workout tracking
+              </p>
+            </div>
+            <div class="contrast-side good">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                We do
+              </div>
+              <p class="contrast-text">
+                Simple array of sets with timestamps. Done.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- YAGNI -->
+        <div class="contrast-card">
+          <div class="contrast-header">
+            <span class="contrast-principle">YAGNI</span>
+            <span class="contrast-full">You Aren't Gonna Need It</span>
+          </div>
+          <div class="contrast-body">
+            <div class="contrast-side bad">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+                Instead of
+              </div>
+              <p class="contrast-text">
+                Add multi-tenancy support "in case we need it later"
+              </p>
+            </div>
+            <div class="contrast-side good">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                We do
+              </div>
+              <p class="contrast-text">
+                Ship single-tenant MVP. Iterate when needed.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TDD -->
+        <div class="contrast-card">
+          <div class="contrast-header">
+            <span class="contrast-principle">TDD</span>
+            <span class="contrast-full">Test-Driven Development</span>
+          </div>
+          <div class="contrast-body">
+            <div class="contrast-side bad">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+                Instead of
+              </div>
+              <p class="contrast-text">
+                Write tests after shipping, "when we have time"
+              </p>
+            </div>
+            <div class="contrast-side good">
+              <div class="contrast-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                We do
+              </div>
+              <p class="contrast-text">
+                Test first. Red, green, refactor. Always.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- APPROACH 2: Visual Equations -->
+  <!-- ============================================ -->
+  <section id="equations" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="section-number">02</span>
+          <span class="section-badge">Approach</span>
+        </div>
+        <h2 class="section-title">Visual Equations</h2>
+        <p class="section-desc">
+          Simple icon math that instantly communicates the transformation.
+          Problem + Principle = Solution.
+        </p>
+      </div>
+
+      <div class="equations-grid">
+        <!-- DRY Equation -->
+        <div class="equation-row">
+          <div class="equation-item">
+            <span class="equation-icon">&#128260;</span>
+            <span class="equation-label">Repetition</span>
+          </div>
+          <span class="equation-operator">+</span>
+          <div class="equation-principle">
+            <span class="equation-principle-name">DRY</span>
+          </div>
+          <span class="equation-operator">=</span>
+          <div class="equation-result">
+            <span class="equation-result-icon">&#128230;</span>
+            <span class="equation-result-text">Single Source of Truth</span>
+          </div>
+        </div>
+
+        <!-- KISS Equation -->
+        <div class="equation-row">
+          <div class="equation-item">
+            <span class="equation-icon">&#127959;</span>
+            <span class="equation-label">Complexity</span>
+          </div>
+          <span class="equation-operator">+</span>
+          <div class="equation-principle">
+            <span class="equation-principle-name">KISS</span>
+          </div>
+          <span class="equation-operator">=</span>
+          <div class="equation-result">
+            <span class="equation-result-icon">&#10024;</span>
+            <span class="equation-result-text">Elegant Simplicity</span>
+          </div>
+        </div>
+
+        <!-- YAGNI Equation -->
+        <div class="equation-row">
+          <div class="equation-item">
+            <span class="equation-icon">&#128302;</span>
+            <span class="equation-label">"Maybe later"</span>
+          </div>
+          <span class="equation-operator">+</span>
+          <div class="equation-principle">
+            <span class="equation-principle-name">YAGNI</span>
+          </div>
+          <span class="equation-operator">=</span>
+          <div class="equation-result">
+            <span class="equation-result-icon">&#127919;</span>
+            <span class="equation-result-text">Ship Today</span>
+          </div>
+        </div>
+
+        <!-- TDD Equation -->
+        <div class="equation-row">
+          <div class="equation-item">
+            <span class="equation-icon">&#128027;</span>
+            <span class="equation-label">Bugs in Prod</span>
+          </div>
+          <span class="equation-operator">+</span>
+          <div class="equation-principle">
+            <span class="equation-principle-name">TDD</span>
+          </div>
+          <span class="equation-operator">=</span>
+          <div class="equation-result">
+            <span class="equation-result-icon">&#128737;</span>
+            <span class="equation-result-text">Confidence to Deploy</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- APPROACH 3: Real Project Examples -->
+  <!-- ============================================ -->
+  <section id="examples" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="section-number">03</span>
+          <span class="section-badge">Approach</span>
+        </div>
+        <h2 class="section-title">Real Project Examples</h2>
+        <p class="section-desc">
+          Ground each principle in actual decisions from the portfolio.
+          Show, don't tell.
+        </p>
+      </div>
+
+      <div class="examples-list">
+        <!-- REPPIT + KISS -->
+        <div class="example-card">
+          <div class="example-sidebar">
+            <div class="example-project-icon">R</div>
+            <span class="example-principle-badge">KISS</span>
+          </div>
+          <div class="example-content">
+            <span class="example-project-name">REPPIT</span>
+            <p class="example-quote">
+              We could have built a complex state machine for workout tracking. Instead, we used a simple array of sets with timestamps. 47 lines vs 3.
+            </p>
+            <div class="example-outcome">
+              <svg class="example-outcome-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              <span class="example-outcome-text">Zero bugs in workout logging since launch</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NoteApp + DRY -->
+        <div class="example-card">
+          <div class="example-sidebar">
+            <div class="example-project-icon">N</div>
+            <span class="example-principle-badge">DRY</span>
+          </div>
+          <div class="example-content">
+            <span class="example-project-name">NoteApp</span>
+            <p class="example-quote">
+              Authentication logic was scattered across 8 components. One useAuth hook later: consistent behavior, single update point, 60% less code.
+            </p>
+            <div class="example-outcome">
+              <svg class="example-outcome-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              <span class="example-outcome-text">Auth changes now take minutes, not hours</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRIMMO + YAGNI -->
+        <div class="example-card">
+          <div class="example-sidebar">
+            <div class="example-project-icon">P</div>
+            <span class="example-principle-badge">YAGNI</span>
+          </div>
+          <div class="example-content">
+            <span class="example-project-name">PRIMMO</span>
+            <p class="example-quote">
+              Multi-property comparison was on the roadmap. We shipped single-property analysis first. Users loved it. Multi-property is now V2.
+            </p>
+            <div class="example-outcome">
+              <svg class="example-outcome-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              <span class="example-outcome-text">Shipped 3 weeks earlier with validated core</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- APPROACH 4: Interactive Flip Cards -->
+  <!-- ============================================ -->
+  <section id="flip" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="section-number">04</span>
+          <span class="section-badge">Approach</span>
+        </div>
+        <h2 class="section-title">Flip + Contrast Cards</h2>
+        <p class="section-desc">
+          Combined approach: flip cards with contrast reveal.
+          Front: principle concept. Back: "Instead of / We do" comparison.
+        </p>
+      </div>
+
+      <div class="flip-grid">
+        <!-- DRY Flip Card -->
+        <div class="flip-card">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <span class="flip-principle">DRY</span>
+              <span class="flip-name">Don't Repeat Yourself</span>
+              <span class="flip-desc">Every piece of knowledge has a single, authoritative representation.</span>
+              <span class="flip-hint">Hover to reveal</span>
+            </div>
+            <div class="flip-card-back">
+              <div class="flip-contrast">
+                <div class="flip-contrast-row bad">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">Instead of</div>
+                    <div class="flip-contrast-text">Copy-paste validation logic to all 12 forms</div>
+                  </div>
+                </div>
+                <div class="flip-contrast-row good">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">We do</div>
+                    <div class="flip-contrast-text">One useValidation hook, 12 forms, 0 duplicates</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KISS Flip Card -->
+        <div class="flip-card">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <span class="flip-principle">KISS</span>
+              <span class="flip-name">Keep It Simple</span>
+              <span class="flip-desc">Simplicity is prerequisite for reliability.</span>
+              <span class="flip-hint">Hover to reveal</span>
+            </div>
+            <div class="flip-card-back">
+              <div class="flip-contrast">
+                <div class="flip-contrast-row bad">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">Instead of</div>
+                    <div class="flip-contrast-text">Build a state machine with 47 transitions</div>
+                  </div>
+                </div>
+                <div class="flip-contrast-row good">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">We do</div>
+                    <div class="flip-contrast-text">Simple array of sets with timestamps. Done.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- YAGNI Flip Card -->
+        <div class="flip-card">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <span class="flip-principle">YAGNI</span>
+              <span class="flip-name">You Aren't Gonna Need It</span>
+              <span class="flip-desc">Build what's needed now, not what might be.</span>
+              <span class="flip-hint">Hover to reveal</span>
+            </div>
+            <div class="flip-card-back">
+              <div class="flip-contrast">
+                <div class="flip-contrast-row bad">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">Instead of</div>
+                    <div class="flip-contrast-text">Add multi-tenancy "in case we need it later"</div>
+                  </div>
+                </div>
+                <div class="flip-contrast-row good">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">We do</div>
+                    <div class="flip-contrast-text">Ship single-tenant MVP. Iterate when needed.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TDD Flip Card -->
+        <div class="flip-card">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <span class="flip-principle">TDD</span>
+              <span class="flip-name">Test-Driven Development</span>
+              <span class="flip-desc">Write tests first. Code follows specification.</span>
+              <span class="flip-hint">Hover to reveal</span>
+            </div>
+            <div class="flip-card-back">
+              <div class="flip-contrast">
+                <div class="flip-contrast-row bad">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">Instead of</div>
+                    <div class="flip-contrast-text">Write tests after shipping, "when we have time"</div>
+                  </div>
+                </div>
+                <div class="flip-contrast-row good">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">We do</div>
+                    <div class="flip-contrast-text">Test first. Red, green, refactor. Always.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CI/CD Flip Card -->
+        <div class="flip-card">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <span class="flip-principle">CI/CD</span>
+              <span class="flip-name">Continuous Integration</span>
+              <span class="flip-desc">Automate builds, tests, and deployments.</span>
+              <span class="flip-hint">Hover to reveal</span>
+            </div>
+            <div class="flip-card-back">
+              <div class="flip-contrast">
+                <div class="flip-contrast-row bad">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">Instead of</div>
+                    <div class="flip-contrast-text">Manual deploy every Friday at 5pm</div>
+                  </div>
+                </div>
+                <div class="flip-contrast-row good">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">We do</div>
+                    <div class="flip-contrast-text">Push to main, tests run, auto-deploy in 4 min</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOLID Flip Card -->
+        <div class="flip-card">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <span class="flip-principle">SOLID</span>
+              <span class="flip-name">Single Responsibility</span>
+              <span class="flip-desc">A class should have only one reason to change.</span>
+              <span class="flip-hint">Hover to reveal</span>
+            </div>
+            <div class="flip-card-back">
+              <div class="flip-contrast">
+                <div class="flip-contrast-row bad">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">Instead of</div>
+                    <div class="flip-contrast-text">UserService handles auth, email, and logging</div>
+                  </div>
+                </div>
+                <div class="flip-contrast-row good">
+                  <div class="flip-contrast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <div>
+                    <div class="flip-contrast-label">We do</div>
+                    <div class="flip-contrast-text">UserService, AuthService, EmailService - each one job</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- APPROACH 5: One Metric Cards -->
+  <!-- ============================================ -->
+  <section id="metrics" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="section-number">05</span>
+          <span class="section-badge">Approach</span>
+        </div>
+        <h2 class="section-title">The One Metric</h2>
+        <p class="section-desc">
+          Each principle gets one impactful number.
+          Results speak louder than theory.
+        </p>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon">&#128260;</div>
+          <span class="metric-principle">DRY</span>
+          <div class="metric-value">87%</div>
+          <span class="metric-label">less code duplication</span>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">&#128196;</div>
+          <span class="metric-principle">KISS</span>
+          <div class="metric-value">3</div>
+          <span class="metric-label">files, not 30</span>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">&#128737;</div>
+          <span class="metric-principle">TDD</span>
+          <div class="metric-value">0</div>
+          <span class="metric-label">prod bugs in 6 months</span>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">&#128640;</div>
+          <span class="metric-principle">YAGNI</span>
+          <div class="metric-value">3wk</div>
+          <span class="metric-label">faster to ship</span>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">&#128295;</div>
+          <span class="metric-principle">CI/CD</span>
+          <div class="metric-value">4min</div>
+          <span class="metric-label">commit to production</span>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">&#127760;</div>
+          <span class="metric-principle">A11Y</span>
+          <div class="metric-value">100</div>
+          <span class="metric-label">Lighthouse score</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <div class="container">
+      <p>
+        Principles Showcase Mockup |
+        <a href="v6-combined.html">Back to V6</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Highlight active nav link on scroll
+    const sections = document.querySelectorAll('.section');
+    const navLinks = document.querySelectorAll('.approach-link');
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+          });
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach(section => observer.observe(section));
+  </script>
+</body>
+</html>

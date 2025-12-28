@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arun Castromin Lawrance - Resume</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============ CSS Variables - Dark Theme (Default) ============ */
+    :root,
+    [data-theme="dark"] {
+      --bg-base: #0A0A0F;
+      --bg-surface: #111118;
+      --bg-elevated: #1A1A24;
+      --text-primary: #E4E4E7;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --accent: #22D3EE;
+      --accent-dim: rgba(34, 211, 238, 0.15);
+      --accent-hover: #06B6D4;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-medium: rgba(255, 255, 255, 0.12);
+      --toggle-bg: #1A1A24;
+      --toggle-icon: #FBBF24;
+    }
+
+    /* ============ Light Theme ============ */
+    [data-theme="light"] {
+      --bg-base: #FFFFFF;
+      --bg-surface: #F9FAFB;
+      --bg-elevated: #F3F4F6;
+      --text-primary: #111827;
+      --text-secondary: #4B5563;
+      --text-muted: #9CA3AF;
+      --accent: #0E7490;
+      --accent-dim: rgba(14, 116, 144, 0.12);
+      --accent-hover: #155E75;
+      --border-subtle: rgba(0, 0, 0, 0.06);
+      --border-medium: rgba(0, 0, 0, 0.1);
+      --toggle-bg: #E5E7EB;
+      --toggle-icon: #6366F1;
+    }
+
+    /* ============ Reset & Base ============ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 10px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background: var(--bg-base);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    a:hover {
+      opacity: 0.8;
+    }
+
+    /* ============ Print Styles ============ */
+    @media print {
+      :root,
+      [data-theme="dark"],
+      [data-theme="light"] {
+        --bg-base: #ffffff;
+        --bg-surface: #ffffff;
+        --bg-elevated: #f4f4f5;
+        --text-primary: #18181b;
+        --text-secondary: #52525b;
+        --text-muted: #71717a;
+        --accent: #0891b2;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --border-medium: rgba(0, 0, 0, 0.12);
+      }
+
+      html {
+        font-size: 9px;
+      }
+
+      body {
+        background: white;
+      }
+
+      .resume {
+        box-shadow: none;
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* ============ Resume Container ============ */
+    .resume {
+      max-width: 850px;
+      margin: 0 auto;
+      padding: 4rem 5rem;
+      background: var(--bg-base);
+      min-height: 100vh;
+      transition: background 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+      .resume {
+        padding: 2rem 1.5rem;
+      }
+    }
+
+    /* ============ Header ============ */
+    .header {
+      margin-bottom: 3rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .name {
+      font-size: 3.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem 2.5rem;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .contact-icon {
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+    }
+
+    /* ============ Sections ============ */
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* ============ Summary ============ */
+    .summary {
+      font-size: 1.2rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .summary strong {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ============ Skills ============ */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .skills-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .skill-category {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .skill-list {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ============ Experience ============ */
+    .experience-item {
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .experience-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .experience-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .experience-company {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .experience-period {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .experience-role {
+      font-size: 1.15rem;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+    }
+
+    .experience-client {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-bottom: 0.8rem;
+    }
+
+    .experience-bullets {
+      list-style: none;
+    }
+
+    .experience-bullets li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .experience-bullets li::before {
+      content: '▹';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+
+    /* ============ Certifications ============ */
+    .cert-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .cert-item {
+      padding: 0.4rem 0.8rem;
+      background: var(--accent-dim);
+      border: 1px solid rgba(34, 211, 238, 0.2);
+      border-radius: 4px;
+      font-size: 1rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+
+    [data-theme="light"] .cert-item {
+      border-color: rgba(8, 145, 178, 0.3);
+    }
+
+    /* ============ Education ============ */
+    .education-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .education-degree {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .education-school {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    .education-year {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ============ Action Buttons ============ */
+    .action-buttons {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .action-btn {
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .action-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Print Button */
+    .print-btn {
+      background: var(--accent);
+      color: var(--bg-base);
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+    }
+
+    .print-btn:hover {
+      box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4);
+    }
+
+    [data-theme="light"] .print-btn {
+      box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    }
+
+    [data-theme="light"] .print-btn:hover {
+      box-shadow: 0 6px 20px rgba(8, 145, 178, 0.4);
+    }
+
+    /* Theme Toggle Button */
+    .theme-toggle {
+      background: var(--toggle-bg);
+      color: var(--toggle-icon);
+      border: 1px solid var(--border-medium);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .theme-toggle:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .theme-toggle .icon-sun,
+    .theme-toggle .icon-moon {
+      display: none;
+    }
+
+    [data-theme="dark"] .theme-toggle .icon-sun {
+      display: block;
+    }
+
+    [data-theme="light"] .theme-toggle .icon-moon {
+      display: block;
+    }
+
+    /* Back Button */
+    .back-btn {
+      position: fixed;
+      top: 2rem;
+      left: 2rem;
+      padding: 0.8rem 1.2rem;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      transform: translateX(-2px);
+    }
+
+    .back-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Back to Portfolio -->
+  <a href="v8-brittany.html" class="back-btn no-print">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Portfolio
+  </a>
+
+  <div class="resume">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="name">Arun Castromin Lawrance</h1>
+      <p class="title">Solutions Architect | Enterprise Architect | Technology Consulting</p>
+      <div class="contact">
+        <span class="contact-item">
+          <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+          </svg>
+          +65 91806569
+        </span>
+        <a href="mailto:arun.castromin@gmail.com" class="contact-item">
+          <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+          </svg>
+          arun.castromin@gmail.com
+        </a>
+        <a href="https://linkedin.com/in/aruncastromin" class="contact-item" target="_blank">
+          <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+          </svg>
+          linkedin.com/in/aruncastromin
+        </a>
+      </div>
+    </header>
+
+    <!-- Summary -->
+    <section class="section">
+      <h2 class="section-title">Summary</h2>
+      <p class="summary">
+        <strong>Sr. Solution Architect</strong> with 20+ years delivering technology-enabled solutions in
+        <strong>core banking, payments, and digital transformation</strong>. Expert in driving NFR implementation
+        end-to-end for global commercial banks. Proven track record in stakeholder management, leading cross-functional
+        teams, and achieving <strong>100% on-time deliverables</strong> across 5000+ man-days of execution.
+      </p>
+    </section>
+
+    <!-- Skills -->
+    <section class="section">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-grid">
+        <div>
+          <p class="skill-category">Architecture & Domain</p>
+          <p class="skill-list">Solution Architecture, Core Banking, Payments, NFR Management, Data Governance, Regulatory Reporting, Release Management</p>
+        </div>
+        <div>
+          <p class="skill-category">Technical</p>
+          <p class="skill-list">Python, Java, PL/SQL, JavaScript, JSP, Unix/C | Tableau, MicroStrategy, Splunk, IBM Cognos | Agile, JIRA, PMP</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Certifications -->
+    <section class="section">
+      <h2 class="section-title">Certifications</h2>
+      <div class="cert-grid">
+        <span class="cert-item">TOGAF Enterprise Architecture</span>
+        <span class="cert-item">Certified Scrum Product Owner</span>
+        <span class="cert-item">ISO 31000 Risk Management</span>
+        <span class="cert-item">IBM Data Science</span>
+        <span class="cert-item">Databricks Lakehouse</span>
+        <span class="cert-item">MicroStrategy Architect</span>
+      </div>
+    </section>
+
+    <!-- Experience -->
+    <section class="section">
+      <h2 class="section-title">Experience</h2>
+
+      <!-- Infosys -->
+      <div class="experience-item">
+        <div class="experience-header">
+          <span class="experience-company">Infosys Ltd., Singapore</span>
+          <span class="experience-period">Jun 2019 – Present</span>
+        </div>
+        <p class="experience-role">Sr. Technology Architect</p>
+        <p class="experience-client">Client: Bank of America (Singapore, Jakarta, Indonesia, India)</p>
+        <ul class="experience-bullets">
+          <li>Lead NFR implementation for APAC region, driving digital transformation for one of the largest Global Commercial Banks</li>
+          <li>Architected micro services-based Banking solution (Finacle) ensuring 60-minute recovery persistence for production incidents</li>
+          <li>Drove IPDL (Payments Data Localization) engagement from start to finish, managing cross-functional squads across APAC and EMEA</li>
+          <li>Designed strategic automation tools for data governance, BPD management, and machine learning application log analysis</li>
+          <li>Pivotal in 80% reduction of daily job execution times through performance improvement initiatives</li>
+        </ul>
+      </div>
+
+      <!-- Latitude Fintech -->
+      <div class="experience-item">
+        <div class="experience-header">
+          <span class="experience-company">Latitude Fintech, Bangalore</span>
+          <span class="experience-period">Feb 2019 – Apr 2019</span>
+        </div>
+        <p class="experience-role">Project Manager</p>
+        <p class="experience-client">Client: Cholamandalam Investment and Finance Company Limited</p>
+        <ul class="experience-bullets">
+          <li>Orchestrated implementation of Fintech Latitude's LOS (Loan Origination System) across all regions in India</li>
+          <li>Achieved two-thirds reduction in client onboarding processes through go-live transformations</li>
+        </ul>
+      </div>
+
+      <!-- EdgeVerve -->
+      <div class="experience-item">
+        <div class="experience-header">
+          <span class="experience-company">EdgeVerve Systems Ltd., Chennai</span>
+          <span class="experience-period">Aug 2015 – Sep 2016</span>
+        </div>
+        <p class="experience-role">Technology Architect</p>
+        <p class="experience-client">Client: Standard Bank (South Africa & Nigeria)</p>
+        <ul class="experience-bullets">
+          <li>Led implementation of large-scale solutions as QA Lead, achieving unrivalled record of 100% on-time deliverables over 3000+ man-days</li>
+          <li>Oversaw Design and Build team of 3-18 members; earned recognition as Client's most preferred Project Manager</li>
+          <li>Spearheaded CMMI Maturity Level 4 assessment with minimal Defect Injection Rate of less than 2.5%</li>
+        </ul>
+      </div>
+
+      <!-- Infosys India -->
+      <div class="experience-item">
+        <div class="experience-header">
+          <span class="experience-company">Infosys Ltd., India</span>
+          <span class="experience-period">Sep 2004 – Aug 2015</span>
+        </div>
+        <p class="experience-role">Technology Architect / Team Lead / Software Engineer</p>
+        <p class="experience-client">Clients: Emirates NBD (Dubai), Bank Sohar, State Bank of India, Bank of Alexandria (Egypt)</p>
+        <ul class="experience-bullets">
+          <li>Led cross-functional teams; achieved 100% on-time deliverables across 5000+ man-days</li>
+          <li>Architected reusable module components including cash denomination, teller reports, and EOD batch jobs</li>
+          <li>Achieved 100% elimination of non-infra deployment issues through automation techniques</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Education -->
+    <section class="section">
+      <h2 class="section-title">Education</h2>
+      <div class="education-item">
+        <div>
+          <p class="education-degree">B.E. Electronics & Communication</p>
+          <p class="education-school">Sathyabama College of Engineering, Madras University</p>
+        </div>
+        <span class="education-year">2004</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons no-print">
+    <!-- Theme Toggle -->
+    <button class="action-btn theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <!-- Sun icon (shown in dark mode) -->
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <!-- Moon icon (shown in light mode) -->
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </svg>
+      Theme
+    </button>
+
+    <!-- Print Button -->
+    <button class="action-btn print-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Print / PDF
+    </button>
+  </div>
+
+  <script>
+    // Theme toggle functionality
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('resume-theme', newTheme);
+    }
+
+    // Load saved theme preference
+    (function() {
+      const savedTheme = localStorage.getItem('resume-theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    })();
+  </script>
+</body>
+</html>

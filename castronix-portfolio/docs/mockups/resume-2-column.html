@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arun Castromin Lawrance - Resume (2-Column)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============ CSS Variables - Dark Theme (Default) ============ */
+    :root,
+    [data-theme="dark"] {
+      --bg-base: #0A0A0F;
+      --bg-sidebar: #0E0E14;
+      --bg-elevated: #1A1A24;
+      --text-primary: #E4E4E7;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --accent: #22D3EE;
+      --accent-dim: rgba(34, 211, 238, 0.15);
+      --accent-hover: #06B6D4;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-medium: rgba(255, 255, 255, 0.12);
+      --toggle-bg: #1A1A24;
+      --toggle-icon: #FBBF24;
+    }
+
+    /* ============ Light Theme ============ */
+    [data-theme="light"] {
+      --bg-base: #FFFFFF;
+      --bg-sidebar: #FAFAFA;
+      --bg-elevated: #E5E7EB;
+      --text-primary: #111827;
+      --text-secondary: #4B5563;
+      --text-muted: #9CA3AF;
+      --accent: #0E7490;
+      --accent-dim: rgba(14, 116, 144, 0.12);
+      --accent-hover: #155E75;
+      --border-subtle: rgba(0, 0, 0, 0.06);
+      --border-medium: rgba(0, 0, 0, 0.1);
+      --toggle-bg: #E5E7EB;
+      --toggle-icon: #6366F1;
+    }
+
+    /* ============ Reset & Base ============ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 11px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background: var(--bg-base);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    a:hover {
+      opacity: 0.8;
+    }
+
+    /* ============ Print Styles ============ */
+    @media print {
+      :root,
+      [data-theme="dark"],
+      [data-theme="light"] {
+        --bg-base: #ffffff;
+        --bg-sidebar: #fafafa;
+        --bg-elevated: #e4e4e7;
+        --text-primary: #18181b;
+        --text-secondary: #52525b;
+        --text-muted: #71717a;
+        --accent: #0891b2;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --border-medium: rgba(0, 0, 0, 0.12);
+      }
+
+      html {
+        font-size: 9px;
+      }
+
+      body {
+        background: white;
+      }
+
+      .resume {
+        box-shadow: none;
+        max-width: 100%;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* ============ 2-Column Layout - Main Left, Sidebar Right ============ */
+    .resume {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      max-width: 1000px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg-base);
+      transition: background 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+      .resume {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ============ Main Content (Left - Wider) ============ */
+    .main-content {
+      padding: 3rem;
+      order: 1;
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 2rem 1.5rem;
+        order: 1;
+      }
+    }
+
+    /* ============ Header ============ */
+    .header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .name {
+      font-size: 2.9rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+      line-height: 1.1;
+    }
+
+    .title {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+    }
+
+    .contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 2rem;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .contact-icon {
+      width: 14px;
+      height: 14px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ============ Main Sections ============ */
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* ============ About/Summary ============ */
+    .about-text {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .about-text strong {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ============ Experience ============ */
+    .experience-item {
+      margin-bottom: 1.8rem;
+      padding-bottom: 1.8rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .experience-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .experience-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.2rem;
+      flex-wrap: wrap;
+    }
+
+    .experience-company {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.005em;
+    }
+
+    .experience-period {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .experience-role {
+      font-size: 1rem;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 0.2rem;
+    }
+
+    .experience-client {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-bottom: 0.6rem;
+    }
+
+    .experience-bullets {
+      list-style: none;
+    }
+
+    .experience-bullets li {
+      position: relative;
+      padding-left: 1.3rem;
+      margin-bottom: 0.3rem;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .experience-bullets li::before {
+      content: '▹';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 0.85rem;
+    }
+
+    /* ============ Right Sidebar ============ */
+    .sidebar {
+      background: var(--bg-sidebar);
+      padding: 3rem 2rem;
+      padding-top: 12rem; /* Align with Summary section (after header) */
+      border-left: 1px solid var(--border-subtle);
+      order: 2;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        border-left: none;
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 2rem;
+        order: 2;
+      }
+    }
+
+    /* ============ Sidebar Sections ============ */
+    .sidebar-section {
+      margin-bottom: 2rem;
+    }
+
+    .sidebar-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .sidebar-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 0.8rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Skills (2-column grid for main content) */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.2rem;
+    }
+
+    @media (max-width: 600px) {
+      .skills-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .skill-category {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .skill-list {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Certifications (tag style) */
+    .cert-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .cert-item {
+      padding: 0.35rem 0.7rem;
+      background: var(--accent-dim);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    [data-theme="light"] .cert-item {
+      border-color: rgba(8, 145, 178, 0.3);
+    }
+
+    /* Education */
+    .edu-degree {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .edu-school {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .edu-year {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ============ Side Projects (in sidebar) ============ */
+    .project-item {
+      margin-bottom: 1.2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .project-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .project-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.15rem;
+    }
+
+    .project-tech {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+    }
+
+    .project-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.15rem 0.4rem;
+      background: var(--accent-dim);
+      border-radius: 3px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+
+    .github-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.45rem;
+      background: transparent;
+      border: 1px solid var(--border-medium);
+      border-radius: 3px;
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+      vertical-align: middle;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .github-link:hover {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+      opacity: 1;
+    }
+
+    .github-link svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    /* Interests */
+    .interest-list {
+      list-style: none;
+    }
+
+    .interest-list li {
+      position: relative;
+      padding-left: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .interest-list li::before {
+      content: '▹';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 0.75rem;
+    }
+
+    .interest-list .highlight {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ============ Action Buttons ============ */
+    .action-buttons {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .action-btn {
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .action-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Print Button */
+    .print-btn {
+      background: var(--accent);
+      color: var(--bg-base);
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+    }
+
+    .print-btn:hover {
+      box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4);
+    }
+
+    [data-theme="light"] .print-btn {
+      box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    }
+
+    [data-theme="light"] .print-btn:hover {
+      box-shadow: 0 6px 20px rgba(8, 145, 178, 0.4);
+    }
+
+    /* Theme Toggle Button */
+    .theme-toggle {
+      background: var(--toggle-bg);
+      color: var(--toggle-icon);
+      border: 1px solid var(--border-medium);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .theme-toggle:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .theme-toggle .icon-sun,
+    .theme-toggle .icon-moon {
+      display: none;
+    }
+
+    [data-theme="dark"] .theme-toggle .icon-sun {
+      display: block;
+    }
+
+    [data-theme="light"] .theme-toggle .icon-moon {
+      display: block;
+    }
+
+    /* Back Button */
+    .back-btn {
+      position: fixed;
+      top: 2rem;
+      left: 2rem;
+      padding: 0.8rem 1.2rem;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      z-index: 10;
+    }
+
+    .back-btn:hover {
+      background: var(--bg-sidebar);
+      color: var(--text-primary);
+      transform: translateX(-2px);
+    }
+
+    .back-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ============ Font Version Badge ============ */
+    .font-badge {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent-dim);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <!-- Font Version Badge -->
+  <div class="font-badge no-print">2-Column Layout</div>
+
+  <!-- Back to Portfolio -->
+  <a href="v8-brittany.html" class="back-btn no-print">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Portfolio
+  </a>
+
+  <div class="resume">
+    <!-- ============ MAIN CONTENT (Left - Wider) ============ -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="header">
+        <h1 class="name">Arun Castromin Lawrance</h1>
+        <p class="title">Solutions Architect | Enterprise Architect | Technology Consulting</p>
+        <div class="contact">
+          <span class="contact-item">
+            <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+            +65 91806569
+          </span>
+          <a href="mailto:arun.castromin@gmail.com" class="contact-item">
+            <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+            arun.castromin@gmail.com
+          </a>
+          <a href="https://linkedin.com/in/aruncastromin" class="contact-item" target="_blank">
+            <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+            </svg>
+            linkedin.com/in/aruncastromin
+          </a>
+        </div>
+      </header>
+
+      <!-- Summary -->
+      <section class="section">
+        <h2 class="section-title">Summary</h2>
+        <p class="about-text">
+          <strong>Sr. Solution Architect</strong> with 20+ years delivering technology-enabled solutions in
+          <strong>core banking, payments, and digital transformation</strong>. Expert in driving NFR implementation
+          end-to-end for global commercial banks. Proven track record in stakeholder management, leading cross-functional
+          teams, and achieving <strong>100% on-time deliverables</strong> across 5000+ man-days.
+        </p>
+      </section>
+
+      <!-- Skills -->
+      <section class="section">
+        <h2 class="section-title">Skills</h2>
+        <div class="skills-grid">
+          <div>
+            <p class="skill-category">Architecture & Domain</p>
+            <p class="skill-list">Solution Architecture, Core Banking, Payments, NFR Management, Data Governance, Regulatory Reporting, Release Management</p>
+          </div>
+          <div>
+            <p class="skill-category">Technical</p>
+            <p class="skill-list">Python, Java, PL/SQL, JavaScript, JSP, Unix/C | Tableau, MicroStrategy, Splunk, IBM Cognos</p>
+          </div>
+          <div>
+            <p class="skill-category">Methodology</p>
+            <p class="skill-list">Agile, JIRA, PMP, TOGAF</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Certifications -->
+      <section class="section">
+        <h2 class="section-title">Certifications</h2>
+        <div class="cert-grid">
+          <span class="cert-item">TOGAF Enterprise Architecture</span>
+          <span class="cert-item">Certified Scrum Product Owner</span>
+          <span class="cert-item">ISO 31000 Risk Management</span>
+          <span class="cert-item">IBM Data Science</span>
+          <span class="cert-item">Databricks Lakehouse</span>
+          <span class="cert-item">MicroStrategy Architect</span>
+        </div>
+      </section>
+
+      <!-- Experience -->
+      <section class="section">
+        <h2 class="section-title">Experience</h2>
+
+        <!-- Infosys Singapore -->
+        <div class="experience-item">
+          <div class="experience-header">
+            <span class="experience-company">Infosys Ltd., Singapore</span>
+            <span class="experience-period">2019 – Present</span>
+          </div>
+          <p class="experience-role">Sr. Technology Architect</p>
+          <p class="experience-client">Bank of America (Singapore, Jakarta, Indonesia, India)</p>
+          <ul class="experience-bullets">
+            <li>Lead NFR implementation for APAC region, driving digital transformation for Global Commercial Bank</li>
+            <li>Architected micro services-based Banking solution with 60-minute recovery persistence</li>
+            <li>Drove IPDL engagement managing cross-functional squads across APAC and EMEA</li>
+            <li>Achieved 80% reduction in daily job execution times</li>
+          </ul>
+        </div>
+
+        <!-- EdgeVerve -->
+        <div class="experience-item">
+          <div class="experience-header">
+            <span class="experience-company">EdgeVerve Systems Ltd., Chennai</span>
+            <span class="experience-period">2015 – 2016</span>
+          </div>
+          <p class="experience-role">Technology Architect</p>
+          <p class="experience-client">Standard Bank (South Africa & Nigeria)</p>
+          <ul class="experience-bullets">
+            <li>100% on-time deliverables over 3000+ man-days as QA Lead</li>
+            <li>Client's most preferred Project Manager, leading team of 3-18 members</li>
+            <li>CMMI Level 4 assessment with &lt;2.5% Defect Injection Rate</li>
+          </ul>
+        </div>
+
+        <!-- Infosys India -->
+        <div class="experience-item">
+          <div class="experience-header">
+            <span class="experience-company">Infosys Ltd., India</span>
+            <span class="experience-period">2004 – 2015</span>
+          </div>
+          <p class="experience-role">Technology Architect / Team Lead</p>
+          <p class="experience-client">Emirates NBD, Bank Sohar, SBI, Bank of Alexandria</p>
+          <ul class="experience-bullets">
+            <li>Led cross-functional teams; 100% on-time deliverables across 5000+ man-days</li>
+            <li>100% elimination of non-infra deployment issues through automation</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ RIGHT SIDEBAR ============ -->
+    <aside class="sidebar">
+      <!-- Side Projects -->
+      <section class="sidebar-section">
+        <h2 class="sidebar-title">Side Projects <span class="ai-badge">AI-Assisted</span></h2>
+
+        <!-- NoteApp -->
+        <div class="project-item">
+          <p class="project-name">NoteApp <a href="https://github.com/castroarun/buildfolio/tree/main/noteApp" target="_blank" class="github-link"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>GitHub</a></p>
+          <p class="project-tech">React Native, Supabase</p>
+          <p class="project-desc">Privacy-first note-taking app with offline sync, voice-to-text, and 200+ test cases.</p>
+        </div>
+
+        <!-- REPPIT -->
+        <div class="project-item">
+          <p class="project-name">REPPIT <a href="https://github.com/castroarun/buildfolio/tree/main/strength_profile_tracker" target="_blank" class="github-link"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>GitHub</a></p>
+          <p class="project-tech">React Native, TypeScript</p>
+          <p class="project-desc">Fitness strength tracking with workout timer and progressive overload tracking.</p>
+        </div>
+
+        <!-- PRIMMO -->
+        <div class="project-item">
+          <p class="project-name">PRIMMO</p>
+          <p class="project-tech">Next.js, Supabase</p>
+          <p class="project-desc">Real estate investment platform with rental yield and portfolio management.</p>
+        </div>
+      </section>
+
+      <!-- Education -->
+      <section class="sidebar-section">
+        <h2 class="sidebar-title">Education</h2>
+        <p class="edu-degree">B.E. Electronics & Communication</p>
+        <p class="edu-school">Sathyabama College, Madras University</p>
+        <p class="edu-year">2004</p>
+      </section>
+
+      <!-- Interests -->
+      <section class="sidebar-section">
+        <h2 class="sidebar-title">Interests</h2>
+        <ul class="interest-list">
+          <li>Learning emerging technologies through <span class="highlight">AI-assisted workflows</span></li>
+          <li><span class="highlight">Strength training</span> with structured fitness regimes, self-applied</li>
+          <li><span class="highlight">Creative arts</span> including filmmaking, music production, and photography</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons no-print">
+    <!-- Theme Toggle -->
+    <button class="action-btn theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <!-- Sun icon (shown in dark mode) -->
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <!-- Moon icon (shown in light mode) -->
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </svg>
+      Theme
+    </button>
+
+    <!-- Print Button -->
+    <button class="action-btn print-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Print / PDF
+    </button>
+  </div>
+
+  <script>
+    // Theme toggle functionality
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('resume-theme', newTheme);
+    }
+
+    // Load saved theme preference
+    (function() {
+      const savedTheme = localStorage.getItem('resume-theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    })();
+  </script>
+</body>
+</html>
