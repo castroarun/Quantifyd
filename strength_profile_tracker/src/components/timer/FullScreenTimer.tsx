@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Exercise, TIMER_PRESETS, TIMER_INCREMENT, TimerMode } from '@/types'
+import { Exercise, TIMER_INCREMENT, TimerMode, getDynamicTimerPresets } from '@/types'
 import {
   getTimerSettings,
   getExerciseTimerDuration,
@@ -10,6 +10,7 @@ import {
 } from '@/lib/storage/timer'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { useUnit } from '@/contexts'
+import { ContextualTip } from '@/components/onboarding'
 
 interface FullScreenTimerProps {
   exerciseId?: Exercise
@@ -46,11 +47,16 @@ export default function FullScreenTimer({
   const [isRunning, setIsRunning] = useState(initialIsRunning ?? false)
   const [mode, setMode] = useState<TimerMode>('countdown')
   const [hasEnded, setHasEnded] = useState(false)
+  const [showWarningFlash, setShowWarningFlash] = useState(false)
+  const [warningTime, setWarningTime] = useState(30)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const { requestWakeLock, releaseWakeLock, isActive: wakeLockActive } = useWakeLock()
 
   // Load settings on mount (only if not resuming from minimize)
   useEffect(() => {
+    const settings = getTimerSettings()
+    setWarningTime(settings.warningTime ?? 30)
+
     // If we have initial values from minimize, don't override them
     if (initialTimeLeft !== undefined && initialDuration !== undefined) {
       if (initialIsRunning) {
@@ -59,7 +65,6 @@ export default function FullScreenTimer({
       return
     }
 
-    const settings = getTimerSettings()
     let loadedDuration = settings.defaultDuration
 
     if (exerciseId) {
@@ -100,12 +105,12 @@ export default function FullScreenTimer({
     }
   }, [releaseWakeLock])
 
-  // Play alert
+  // Play alert sound - longer duration for timer completion
   const playAlert = useCallback(() => {
     const settings = getTimerSettings()
 
     if (settings.vibrationEnabled && 'vibrate' in navigator) {
-      navigator.vibrate([200, 100, 200, 100, 200])
+      navigator.vibrate([200, 100, 200, 100, 200, 100, 300, 100, 400])
     }
 
     if (settings.soundEnabled) {
@@ -119,21 +124,73 @@ export default function FullScreenTimer({
 
         oscillator.frequency.value = 800
         oscillator.type = 'sine'
-        gainNode.gain.value = 0.3
+        gainNode.gain.value = 0.4
 
         oscillator.start()
 
+        // Extended melody pattern for timer end - total ~2 seconds
         setTimeout(() => { oscillator.frequency.value = 1000 }, 200)
         setTimeout(() => { oscillator.frequency.value = 1200 }, 400)
+        setTimeout(() => { oscillator.frequency.value = 800 }, 600)
+        setTimeout(() => { oscillator.frequency.value = 1000 }, 800)
+        setTimeout(() => { oscillator.frequency.value = 1200 }, 1000)
+        setTimeout(() => { oscillator.frequency.value = 1400 }, 1200)
+        setTimeout(() => { oscillator.frequency.value = 1600 }, 1400)
+        setTimeout(() => {
+          // Fade out
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+        }, 1700)
         setTimeout(() => {
           oscillator.stop()
           audioContext.close()
-        }, 600)
+        }, 2000)
       } catch (e) {
         console.log('Audio not supported')
       }
     }
   }, [])
+
+  // Play warning blip at 30 seconds remaining
+  const playWarningBlip = useCallback(() => {
+    const settings = getTimerSettings()
+
+    if (settings.vibrationEnabled && 'vibrate' in navigator) {
+      navigator.vibrate([100, 50, 100])
+    }
+
+    if (settings.soundEnabled) {
+      try {
+        const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+
+        oscillator.frequency.value = 600
+        oscillator.type = 'sine'
+        gainNode.gain.value = 0.2
+
+        oscillator.start()
+
+        // Two quick blips
+        setTimeout(() => { oscillator.frequency.value = 800 }, 100)
+        setTimeout(() => { gainNode.gain.value = 0 }, 200)
+        setTimeout(() => { gainNode.gain.value = 0.2 }, 300)
+        setTimeout(() => { oscillator.frequency.value = 600 }, 300)
+        setTimeout(() => { oscillator.frequency.value = 800 }, 400)
+        setTimeout(() => {
+          oscillator.stop()
+          audioContext.close()
+        }, 500)
+      } catch (e) {
+        console.log('Audio not supported')
+      }
+    }
+  }, [])
+
+  // Track if warning has been played
+  const hasPlayedWarningRef = useRef(false)
 
   // Timer logic
   useEffect(() => {
@@ -142,6 +199,16 @@ export default function FullScreenTimer({
         setTimeLeft(prev => {
           if (mode === 'countdown') {
             const newTime = prev - 1
+
+            // Play warning at configured time (only once, and only if duration > warningTime)
+            if (warningTime > 0 && newTime === warningTime && !hasPlayedWarningRef.current && duration > warningTime) {
+              hasPlayedWarningRef.current = true
+              playWarningBlip()
+              // Show visual flash
+              setShowWarningFlash(true)
+              setTimeout(() => setShowWarningFlash(false), 1000)
+            }
+
             if (newTime <= 0 && !hasEnded) {
               setHasEnded(true)
               playAlert()
@@ -163,7 +230,7 @@ export default function FullScreenTimer({
         clearInterval(intervalRef.current)
       }
     }
-  }, [isRunning, mode, hasEnded, playAlert, onTimerEnd])
+  }, [isRunning, mode, hasEnded, playAlert, playWarningBlip, duration, warningTime, onTimerEnd])
 
   const start = () => {
     setIsRunning(true)
@@ -178,6 +245,7 @@ export default function FullScreenTimer({
     setIsRunning(false)
     setTimeLeft(duration)
     setHasEnded(false)
+    hasPlayedWarningRef.current = false
   }
 
   const setPreset = (seconds: number) => {
@@ -185,6 +253,7 @@ export default function FullScreenTimer({
     setTimeLeft(seconds)
     setIsRunning(false)
     setHasEnded(false)
+    hasPlayedWarningRef.current = false
 
     if (exerciseId) {
       saveExerciseTimerDuration(exerciseId, seconds)
@@ -251,6 +320,14 @@ export default function FullScreenTimer({
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black"
       onDoubleClick={handleMinimize}
     >
+      {/* 30-second warning flash overlay */}
+      {showWarningFlash && (
+        <div className="absolute inset-0 z-10 pointer-events-none animate-pulse">
+          <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/40 via-orange-500/30 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-yellow-400/60 to-transparent" />
+        </div>
+      )}
+
       {/* Close button */}
       <button
         onClick={(e) => { e.stopPropagation(); skipRest() }}
@@ -336,10 +413,10 @@ export default function FullScreenTimer({
         </div>
       )}
 
-      {/* Preset buttons */}
+      {/* Preset buttons - show 5 options around current duration */}
       {mode === 'countdown' && (
         <div className="flex gap-2 mt-10 px-4" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-          {TIMER_PRESETS.map(preset => (
+          {getDynamicTimerPresets(duration).map(preset => (
             <button
               key={preset}
               onClick={() => setPreset(preset)}
@@ -436,6 +513,15 @@ export default function FullScreenTimer({
         )}
         <span className="text-gray-700">Double-tap to minimize</span>
       </p>
+
+      {/* Contextual Tip - Timer settings */}
+      <ContextualTip
+        tipId="timer_settings"
+        title="Timer Adjusts Per Exercise"
+        message="Use +/- buttons or tap presets to change rest time. Each exercise remembers its own timer. Default can be set in Settings."
+        icon="⏱️"
+        position="top"
+      />
     </div>
   )
 }

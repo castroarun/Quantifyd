@@ -8,6 +8,9 @@ export type TipId =
   | 'profile_gestures'
   | 'progress_calendar'
   | 'workout_log'
+  | 'profile_settings'
+  | 'workout_timer_settings'
+  | 'timer_settings'
 
 interface ContextualTipProps {
   tipId: TipId
