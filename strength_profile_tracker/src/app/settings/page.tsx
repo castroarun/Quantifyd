@@ -15,7 +15,8 @@ import {
 import { loadSampleData, hasSampleData, removeSampleData } from '@/lib/storage/seedData'
 import { getTimerSettings, saveTimerSettings } from '@/lib/storage/timer'
 import { DEFAULT_TIMER_SETTINGS } from '@/types'
-import { GesturesOnboarding } from '@/components/onboarding'
+import { GesturesOnboarding, resetAllTips } from '@/components/onboarding'
+import { areTipsEnabled, enableTips, disableTips, resetOnboarding } from '@/lib/storage/onboarding'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -34,6 +35,7 @@ export default function SettingsPage() {
   const [defaultSets, setDefaultSets] = useState(DEFAULT_TIMER_SETTINGS.defaultSets)
   const [showGesturesGuide, setShowGesturesGuide] = useState(false)
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null)
+  const [tipsEnabled, setTipsEnabled] = useState(true)
 
   useEffect(() => {
     setNotificationStatus(getNotificationPermission())
@@ -47,7 +49,21 @@ export default function SettingsPage() {
     // Get last visited profile for linking to Training Program
     const lastProfileId = localStorage.getItem('lastVisitedProfile')
     setCurrentProfileId(lastProfileId)
+    // Load tips setting
+    setTipsEnabled(areTipsEnabled())
   }, [])
+
+  const handleToggleTips = () => {
+    if (tipsEnabled) {
+      disableTips()
+      setTipsEnabled(false)
+    } else {
+      enableTips()
+      resetOnboarding() // Reset so tips can show again
+      resetAllTips() // Reset contextual tips
+      setTipsEnabled(true)
+    }
+  }
 
   // Handle secret tap on version to unlock developer mode
   const handleVersionTap = () => {
@@ -382,6 +398,28 @@ export default function SettingsPage() {
               ) : (
                 <span className="text-xs text-gray-400">Select a profile first</span>
               )}
+            </div>
+
+            {/* Tips & Tutorials Toggle */}
+            <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-4">
+              <div>
+                <p className="font-medium text-gray-700 dark:text-gray-200">Tips & Tutorials</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {tipsEnabled ? 'Show helpful tips on first visit' : 'Tips are disabled'}
+                </p>
+              </div>
+              <button
+                onClick={handleToggleTips}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  tipsEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    tipsEnabled ? 'translate-x-6' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
             </div>
 
             {/* Gestures Guide */}

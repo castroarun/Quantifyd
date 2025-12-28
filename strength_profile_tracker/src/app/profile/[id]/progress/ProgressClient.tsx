@@ -16,6 +16,7 @@ import { formatWeightValue, getProfileColor } from '@/lib/utils/units'
 import { useUnit } from '@/contexts'
 import { UnitToggle } from '@/components/ui'
 import { calculateBadges } from '@/lib/calculations/strength'
+import { ContextualTip } from '@/components/onboarding'
 
 interface ProgressPageProps {
   params: Promise<{ id: string }>
@@ -260,6 +261,15 @@ export default function ProgressPage({ params }: ProgressPageProps) {
         {/* 6. Achievements (Bottom) */}
         <Badges badges={badges} />
       </main>
+
+      {/* Contextual Tip */}
+      <ContextualTip
+        tipId="progress_calendar"
+        title="Track Your Progress"
+        message="Scroll down to see your workout calendar, PRs, body balance, and achievements. Log workouts regularly to watch your stats grow!"
+        icon="📈"
+        position="bottom"
+      />
     </div>
   )
 }

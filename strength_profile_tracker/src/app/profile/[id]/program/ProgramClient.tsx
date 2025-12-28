@@ -18,6 +18,7 @@ import {
 import { Exercise } from '@/types'
 import { EXERCISES } from '@/lib/calculations/strength'
 import { ThemeToggle, UnitToggle, Logo } from '@/components/ui'
+import { ContextualTip } from '@/components/onboarding'
 
 interface ProgramClientProps {
   params: Promise<{ id: string }>
@@ -283,6 +284,15 @@ export default function ProgramClient({ params }: ProgramClientProps) {
           </div>
         </div>
       </main>
+
+      {/* Contextual Tip */}
+      <ContextualTip
+        tipId="program_intro"
+        title="Choose Your Training Split"
+        message="Select a program and tap the exercises to customize which ones you want to track. Green = selected, grey = skipped."
+        icon="🏋️"
+        position="bottom"
+      />
     </div>
   )
 }
