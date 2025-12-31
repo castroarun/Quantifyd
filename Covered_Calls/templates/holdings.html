@@ -799,9 +799,20 @@
     let expOpmInstance = null;
     let sparklineCharts = {};
 
-    // Cache configuration
-    const CACHE_KEY_PREFIX = 'cc_holdings_';
+    // Cache configuration - increment version to force refresh
+    const CACHE_VERSION = 'v2';  // Increment when data structure changes
+    const CACHE_KEY_PREFIX = `cc_holdings_${CACHE_VERSION}_`;
     const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+    // Clear old version caches on load
+    (function clearOldVersionCaches() {
+        const allKeys = Object.keys(localStorage);
+        allKeys.forEach(k => {
+            if (k.startsWith('cc_holdings_') && !k.startsWith(CACHE_KEY_PREFIX)) {
+                localStorage.removeItem(k);
+            }
+        });
+    })();
 
     // LocalStorage cache helpers
     function getCachedData(key) {

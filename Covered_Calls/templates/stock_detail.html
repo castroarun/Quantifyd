@@ -1250,7 +1250,7 @@
         });
     }
 
-    // Render dividend chart
+    // Render dividend chart with trend line
     function renderDividendChart(f) {
         if (dividendChartInstance) dividendChartInstance.destroy();
 
@@ -1263,9 +1263,21 @@
             data: {
                 labels: labels,
                 datasets: [{
+                    type: 'bar',
                     data: dividends,
                     backgroundColor: '#ec489990',
-                    borderRadius: 6
+                    borderRadius: 6,
+                    order: 2
+                }, {
+                    type: 'line',
+                    data: dividends,
+                    borderColor: '#fbbf24',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fbbf24',
+                    tension: 0.3,
+                    fill: false,
+                    order: 1
                 }]
             },
             options: {
