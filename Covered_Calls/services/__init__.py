@@ -61,6 +61,7 @@ from .holdings_service import (
     STOCK_SECTORS,
     STOCK_DESCRIPTIONS,
     STOCK_LOGOS,
+    STOCK_NAMES,
     INDUSTRY_PE,
 )
 
@@ -113,5 +114,6 @@ __all__ = [
     "STOCK_SECTORS",
     "STOCK_DESCRIPTIONS",
     "STOCK_LOGOS",
+    "STOCK_NAMES",
     "INDUSTRY_PE",
 ]
