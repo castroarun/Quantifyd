@@ -262,6 +262,17 @@ def holdings_page():
     )
 
 
+@app.route('/holdings/detail/<symbol>')
+@login_required
+def stock_detail_page(symbol: str):
+    """Full-screen detailed stock view with comprehensive data"""
+    return render_template(
+        'stock_detail.html',
+        symbol=symbol,
+        user_name=session.get('user_name', 'User')
+    )
+
+
 # =============================================================================
 # API Routes - Holdings
 # =============================================================================

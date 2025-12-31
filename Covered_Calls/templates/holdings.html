@@ -316,6 +316,178 @@
     }
     .close-btn:hover { color: var(--text-primary); }
 
+    /* Navigation arrows */
+    .nav-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 10;
+    }
+    .nav-arrow:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        transform: translateY(-50%) scale(1.1);
+    }
+    .nav-arrow.prev { left: -70px; }
+    .nav-arrow.next { right: -70px; }
+    @media (max-width: 1100px) {
+        .nav-arrow.prev { left: 10px; }
+        .nav-arrow.next { right: 10px; }
+        .nav-arrow { background: rgba(30, 41, 59, 0.95); }
+    }
+
+    /* Action buttons in header */
+    .header-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-right: 1rem;
+    }
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .action-btn:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+    }
+    .action-btn.share:hover { background: #25d366; border-color: #25d366; }
+    .action-btn.fullscreen:hover { background: #8b5cf6; border-color: #8b5cf6; }
+
+    /* Share modal */
+    .share-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    .share-modal.active { display: flex; }
+    .share-content {
+        background: var(--card-bg);
+        border-radius: 16px;
+        max-width: 500px;
+        width: 100%;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+    .share-preview {
+        background: #0d1117;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        max-height: 300px;
+        overflow: hidden;
+    }
+    .share-preview img {
+        width: 100%;
+        border-radius: 6px;
+    }
+    .share-textarea {
+        width: 100%;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.75rem;
+        color: var(--text-primary);
+        resize: none;
+        margin-bottom: 1rem;
+    }
+    .share-textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+    }
+    .share-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+    .share-btn {
+        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+    .share-btn.cancel {
+        background: rgba(30, 41, 59, 0.8);
+        color: var(--text-secondary);
+    }
+    .share-btn.whatsapp {
+        background: #25d366;
+        color: white;
+    }
+    .share-btn:hover { transform: scale(1.02); }
+
+    /* Stock counter */
+    .stock-counter {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-left: 0.5rem;
+    }
+
+    /* Portfolio bar in expanded view */
+    .exp-portfolio-bar-container {
+        margin-bottom: 1.5rem;
+    }
+    .exp-portfolio-bar {
+        height: 8px;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+    }
+    .exp-portfolio-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: var(--invest-pct, 0%);
+        background: linear-gradient(90deg, #22c55e, #4ade80);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+    .exp-portfolio-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.4rem;
+    }
+    .exp-portfolio-label .value {
+        color: #22c55e;
+        font-weight: 600;
+    }
+
     .expanded-metrics {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -531,12 +703,16 @@
 
 <!-- Expanded View Overlay -->
 <div class="expanded-overlay" id="expandedOverlay" onclick="closeExpanded(event)">
-    <div class="expanded-card" onclick="event.stopPropagation()">
+    <!-- Navigation Arrows -->
+    <button class="nav-arrow prev" onclick="navigateStock(-1)" title="Previous (←)"><i class="bi bi-chevron-left"></i></button>
+    <button class="nav-arrow next" onclick="navigateStock(1)" title="Next (→)"><i class="bi bi-chevron-right"></i></button>
+
+    <div class="expanded-card" id="expandedCard" onclick="event.stopPropagation()">
         <div class="expanded-header">
             <div class="header-left">
                 <div class="stock-logo" id="exp-logo">RIL</div>
                 <div>
-                    <div class="stock-name" id="exp-name">Loading...</div>
+                    <div class="stock-name" id="exp-name">Loading...<span class="stock-counter" id="exp-counter"></span></div>
                     <div class="stock-symbol" id="exp-symbol">-</div>
                 </div>
             </div>
@@ -549,6 +725,10 @@
                     <span class="div-val" id="exp-div-date">-</span>
                     <span class="div-lbl">Next Div</span>
                 </div>
+                <div class="header-actions">
+                    <button class="action-btn share" onclick="openShareModal()" title="Share on WhatsApp"><i class="bi bi-whatsapp"></i></button>
+                    <button class="action-btn fullscreen" onclick="openFullScreen()" title="Full Screen Details"><i class="bi bi-arrows-fullscreen"></i></button>
+                </div>
                 <button class="close-btn" onclick="closeExpanded(event)">&times;</button>
             </div>
         </div>
@@ -559,6 +739,16 @@
                 <div class="exp-metric"><div class="value" id="exp-pnl">-</div><div class="label">P&L</div></div>
                 <div class="exp-metric"><div class="value" id="exp-pnl-pct">-</div><div class="label">Returns</div></div>
             </div>
+
+            <!-- Portfolio Weight Bar -->
+            <div class="exp-portfolio-bar-container">
+                <div class="exp-portfolio-bar" id="exp-portfolio-bar" style="--invest-pct: 0%;"></div>
+                <div class="exp-portfolio-label">
+                    <span>Portfolio Weight</span>
+                    <span class="value" id="exp-portfolio-pct">0% of portfolio</span>
+                </div>
+            </div>
+
             <p class="text-secondary small mb-3" id="exp-overview">Loading...</p>
 
             <div class="expanded-fundamentals">
@@ -575,12 +765,30 @@
         </div>
     </div>
 </div>
+<!-- Share Modal -->
+<div class="share-modal" id="shareModal" onclick="closeShareModal(event)">
+    <div class="share-content" onclick="event.stopPropagation()">
+        <h5 class="mb-3"><i class="bi bi-share me-2"></i>Share on WhatsApp</h5>
+        <div class="share-preview" id="sharePreview">
+            <p class="text-secondary text-center py-4">Generating preview...</p>
+        </div>
+        <textarea class="share-textarea" id="shareCommentary" rows="3" placeholder="Add your commentary (optional)..."></textarea>
+        <div class="share-actions">
+            <button class="share-btn cancel" onclick="closeShareModal(event)">Cancel</button>
+            <button class="share-btn whatsapp" onclick="shareToWhatsApp()"><i class="bi bi-whatsapp me-2"></i>Share</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<!-- html2canvas for screenshots -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <script>
     // Global state
     let holdingsData = [];
+    let currentExpandedIndex = -1;  // Track current stock index in expanded view
     let currentSort = 'pnl_pct';
     let sortAscending = false;
 
@@ -711,7 +919,7 @@
                     <div class="flip-card-inner">
                         <!-- Front -->
                         <div class="flip-card-front">
-                            <div class="invest-bar" style="--invest-pct: ${h.portfolio_pct}%;"></div>
+                            <div class="invest-bar" style="--invest-pct: ${h.current_pct || h.portfolio_pct}%;"></div>
                             <div class="card-header-row">
                                 <div class="stock-info">
                                     <div class="stock-logo" onclick="expandCard('${h.symbol}', event)" title="Click to expand">${h.logo}</div>
@@ -739,7 +947,7 @@
                         </div>
                         <!-- Back -->
                         <div class="flip-card-back">
-                            <div class="invest-bar" style="--invest-pct: ${h.portfolio_pct}%;"></div>
+                            <div class="invest-bar" style="--invest-pct: ${h.current_pct || h.portfolio_pct}%;"></div>
                             <div class="back-header">
                                 <span class="back-title">${h.symbol} Fundamentals</span>
                                 <span class="back-close"><i class="bi bi-arrow-repeat"></i></span>
@@ -864,18 +1072,33 @@
         card.classList.toggle('flipped');
     }
 
+    // Get sorted holdings list (same order as displayed)
+    function getSortedHoldings() {
+        return [...holdingsData].sort((a, b) => {
+            const aVal = a[currentSort] || 0;
+            const bVal = b[currentSort] || 0;
+            return sortAscending ? aVal - bVal : bVal - aVal;
+        });
+    }
+
     // Expand card to modal
     async function expandCard(symbol, event) {
         event.stopPropagation();
         document.getElementById('expandedOverlay').classList.add('active');
 
-        // Find holding data
-        const holding = holdingsData.find(h => h.symbol === symbol);
+        // Find holding data and index in sorted list
+        const sortedHoldings = getSortedHoldings();
+        currentExpandedIndex = sortedHoldings.findIndex(h => h.symbol === symbol);
+        const holding = sortedHoldings[currentExpandedIndex];
         if (!holding) return;
+
+        // Update counter
+        document.getElementById('exp-counter').textContent = ` (${currentExpandedIndex + 1}/${sortedHoldings.length})`;
 
         // Update basic info
         document.getElementById('exp-logo').textContent = holding.logo;
-        document.getElementById('exp-name').textContent = holding.name || symbol;
+        const nameEl = document.getElementById('exp-name');
+        nameEl.innerHTML = `${holding.name || symbol}<span class="stock-counter" id="exp-counter"> (${currentExpandedIndex + 1}/${sortedHoldings.length})</span>`;
         document.getElementById('exp-symbol').textContent = symbol;
         document.getElementById('exp-invested').textContent = formatCurrency(holding.invested);
         document.getElementById('exp-current').textContent = formatCurrency(holding.current);
@@ -885,6 +1108,11 @@
         document.getElementById('exp-pnl').className = `value ${holding.is_profit ? 'text-success' : 'text-danger'}`;
         document.getElementById('exp-pnl-pct').textContent = pnlSign + holding.pnl_pct + '%';
         document.getElementById('exp-pnl-pct').className = `value ${holding.is_profit ? 'text-success' : 'text-danger'}`;
+
+        // Update portfolio bar
+        const currentPct = holding.current_pct || holding.portfolio_pct || 0;
+        document.getElementById('exp-portfolio-bar').style.setProperty('--invest-pct', currentPct + '%');
+        document.getElementById('exp-portfolio-pct').textContent = currentPct + '% of portfolio';
 
         // Load fundamentals and price data (with caching)
         try {
@@ -941,6 +1169,147 @@
             }
         }
         console.log('Pre-fetch complete');
+    }
+
+    // Navigate to previous/next stock in expanded view
+    function navigateStock(direction) {
+        const sortedHoldings = getSortedHoldings();
+        if (sortedHoldings.length === 0) return;
+
+        // Calculate new index with wrapping
+        currentExpandedIndex = (currentExpandedIndex + direction + sortedHoldings.length) % sortedHoldings.length;
+        const newHolding = sortedHoldings[currentExpandedIndex];
+
+        // Load the new stock
+        loadExpandedStock(newHolding, currentExpandedIndex, sortedHoldings.length);
+    }
+
+    // Load a specific stock into expanded view
+    async function loadExpandedStock(holding, index, total) {
+        const symbol = holding.symbol;
+
+        // Update basic info
+        document.getElementById('exp-logo').textContent = holding.logo;
+        const nameEl = document.getElementById('exp-name');
+        nameEl.innerHTML = `${holding.name || symbol}<span class="stock-counter"> (${index + 1}/${total})</span>`;
+        document.getElementById('exp-symbol').textContent = symbol;
+        document.getElementById('exp-invested').textContent = formatCurrency(holding.invested);
+        document.getElementById('exp-current').textContent = formatCurrency(holding.current);
+
+        const pnlSign = holding.is_profit ? '+' : '';
+        document.getElementById('exp-pnl').textContent = pnlSign + formatCurrency(holding.pnl);
+        document.getElementById('exp-pnl').className = `value ${holding.is_profit ? 'text-success' : 'text-danger'}`;
+        document.getElementById('exp-pnl-pct').textContent = pnlSign + holding.pnl_pct + '%';
+        document.getElementById('exp-pnl-pct').className = `value ${holding.is_profit ? 'text-success' : 'text-danger'}`;
+
+        // Update portfolio bar
+        const currentPct = holding.current_pct || holding.portfolio_pct || 0;
+        document.getElementById('exp-portfolio-bar').style.setProperty('--invest-pct', currentPct + '%');
+        document.getElementById('exp-portfolio-pct').textContent = currentPct + '% of portfolio';
+
+        // Load fundamentals and price data (with caching)
+        try {
+            let fundData = getCachedData(`fund_${symbol}`);
+            let prices = getCachedData(`hist_${symbol}`);
+
+            const promises = [];
+            if (!fundData) {
+                promises.push(fetch(`/api/fundamentals/${symbol}`).then(r => r.json()).then(d => { fundData = d; setCachedData(`fund_${symbol}`, d); }));
+            }
+            if (!prices) {
+                promises.push(fetch(`/api/historical/${symbol}?period=1y`).then(r => r.json()).then(d => { prices = d.prices || []; setCachedData(`hist_${symbol}`, prices); }));
+            }
+
+            if (promises.length > 0) {
+                await Promise.all(promises);
+            }
+
+            populateExpandedView(holding, fundData, prices || []);
+        } catch (error) {
+            console.error(`Error loading expanded view for ${symbol}:`, error);
+        }
+    }
+
+    // Open share modal with screenshot
+    async function openShareModal() {
+        const shareModal = document.getElementById('shareModal');
+        const sharePreview = document.getElementById('sharePreview');
+        const expandedCard = document.getElementById('expandedCard');
+
+        shareModal.classList.add('active');
+        sharePreview.innerHTML = '<p class="text-secondary text-center py-4"><i class="bi bi-hourglass-split"></i> Generating preview...</p>';
+
+        try {
+            // Generate screenshot
+            const canvas = await html2canvas(expandedCard, {
+                backgroundColor: '#1e293b',
+                scale: 2,
+                logging: false
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            sharePreview.innerHTML = `<img src="${imgData}" alt="Stock preview" id="shareImage">`;
+
+            // Pre-fill commentary with stock info
+            const sortedHoldings = getSortedHoldings();
+            const holding = sortedHoldings[currentExpandedIndex];
+            if (holding) {
+                const sign = holding.is_profit ? '+' : '';
+                document.getElementById('shareCommentary').value =
+                    `${holding.name} (${holding.symbol})\n` +
+                    `Returns: ${sign}${holding.pnl_pct}%\n` +
+                    `P&L: ${sign}${formatCurrency(holding.pnl)}`;
+            }
+        } catch (error) {
+            console.error('Error generating screenshot:', error);
+            sharePreview.innerHTML = '<p class="text-danger text-center py-4">Failed to generate preview</p>';
+        }
+    }
+
+    // Close share modal
+    function closeShareModal(event) {
+        if (event.target === document.getElementById('shareModal') || event.target.closest('.cancel')) {
+            document.getElementById('shareModal').classList.remove('active');
+        }
+    }
+
+    // Share to WhatsApp
+    function shareToWhatsApp() {
+        const commentary = document.getElementById('shareCommentary').value;
+        const shareImage = document.getElementById('shareImage');
+
+        // WhatsApp doesn't support direct image sharing via URL, so we share text with link
+        const sortedHoldings = getSortedHoldings();
+        const holding = sortedHoldings[currentExpandedIndex];
+
+        let message = commentary || '';
+        if (holding) {
+            message = message || `Check out my ${holding.symbol} position!\nReturns: ${holding.is_profit ? '+' : ''}${holding.pnl_pct}%`;
+        }
+
+        // Encode and open WhatsApp
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+
+        // If we have an image, also trigger download so user can attach
+        if (shareImage) {
+            const link = document.createElement('a');
+            link.download = `${holding ? holding.symbol : 'stock'}_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = shareImage.src;
+            link.click();
+        }
+
+        closeShareModal({ target: document.getElementById('shareModal') });
+    }
+
+    // Open full screen detailed view
+    function openFullScreen() {
+        const sortedHoldings = getSortedHoldings();
+        const holding = sortedHoldings[currentExpandedIndex];
+        if (!holding) return;
+
+        // Open in new tab with symbol parameter
+        window.open(`/holdings/detail/${holding.symbol}`, '_blank');
     }
 
     // Populate expanded view with data
@@ -1250,9 +1619,28 @@
         });
     });
 
-    // Keyboard escape to close expanded
+    // Keyboard navigation
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeExpanded({ target: document.getElementById('expandedOverlay') });
+        const expandedOverlay = document.getElementById('expandedOverlay');
+        const shareModal = document.getElementById('shareModal');
+
+        // Only handle keys when expanded view is open and share modal is not
+        if (!expandedOverlay.classList.contains('active')) return;
+        if (shareModal.classList.contains('active')) return;
+
+        switch(e.key) {
+            case 'Escape':
+                closeExpanded({ target: expandedOverlay });
+                break;
+            case 'ArrowLeft':
+                navigateStock(-1);
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+                navigateStock(1);
+                e.preventDefault();
+                break;
+        }
     });
 
     // Initialize on page load

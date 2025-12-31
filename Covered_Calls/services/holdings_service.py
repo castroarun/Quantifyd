@@ -76,6 +76,35 @@ NSE_TO_YAHOO: Dict[str, str] = {
     "HDFCLIFE": "HDFCLIFE.NS",
     "UPL": "UPL.NS",
     "SHREECEM": "SHREECEM.NS",
+    "HAL": "HAL.NS",
+    "BEL": "BEL.NS",
+    "BHEL": "BHEL.NS",
+    "GAIL": "GAIL.NS",
+    "SAIL": "SAIL.NS",
+    "VEDL": "VEDL.NS",
+    "HINDALCO": "HINDALCO.NS",
+    "JINDALSTEL": "JINDALSTEL.NS",
+    "GODREJCP": "GODREJCP.NS",
+    "DABUR": "DABUR.NS",
+    "COLPAL": "COLPAL.NS",
+    "MARICO": "MARICO.NS",
+    "PIDILITIND": "PIDILITIND.NS",
+    "BERGEPAINT": "BERGEPAINT.NS",
+    "HAVELLS": "HAVELLS.NS",
+    "VOLTAS": "VOLTAS.NS",
+    "SIEMENS": "SIEMENS.NS",
+    "ABB": "ABB.NS",
+    "CUMMINSIND": "CUMMINSIND.NS",
+    "TRENT": "TRENT.NS",
+    "ZOMATO": "ZOMATO.NS",
+    "PAYTM": "PAYTM.NS",
+    "NYKAA": "NYKAA.NS",
+    "DMART": "DMART.NS",
+    "POLYCAB": "POLYCAB.NS",
+    "PERSISTENT": "PERSISTENT.NS",
+    "LTIM": "LTIM.NS",
+    "MPHASIS": "MPHASIS.NS",
+    "COFORGE": "COFORGE.NS",
 }
 
 # Sector mapping for stocks
@@ -130,6 +159,35 @@ STOCK_SECTORS: Dict[str, str] = {
     "HDFCLIFE": "Insurance",
     "UPL": "Chemicals",
     "SHREECEM": "Cement",
+    "HAL": "Defence",
+    "BEL": "Defence",
+    "BHEL": "Capital Goods",
+    "GAIL": "Energy",
+    "SAIL": "Metals",
+    "VEDL": "Metals",
+    "HINDALCO": "Metals",
+    "JINDALSTEL": "Metals",
+    "GODREJCP": "FMCG",
+    "DABUR": "FMCG",
+    "COLPAL": "FMCG",
+    "MARICO": "FMCG",
+    "PIDILITIND": "Chemicals",
+    "BERGEPAINT": "Consumer Durables",
+    "HAVELLS": "Consumer Durables",
+    "VOLTAS": "Consumer Durables",
+    "SIEMENS": "Capital Goods",
+    "ABB": "Capital Goods",
+    "CUMMINSIND": "Capital Goods",
+    "TRENT": "Retail",
+    "ZOMATO": "Internet",
+    "PAYTM": "Fintech",
+    "NYKAA": "Internet",
+    "DMART": "Retail",
+    "POLYCAB": "Capital Goods",
+    "PERSISTENT": "IT",
+    "LTIM": "IT",
+    "MPHASIS": "IT",
+    "COFORGE": "IT",
 }
 
 # Industry P/E benchmarks (approximate)
@@ -153,6 +211,10 @@ INDUSTRY_PE: Dict[str, float] = {
     "Chemicals": 25.0,
     "Diversified": 20.0,
     "Mining": 8.0,
+    "Defence": 35.0,
+    "Retail": 60.0,
+    "Internet": 100.0,
+    "Fintech": 50.0,
 }
 
 # Stock logo abbreviations
@@ -270,6 +332,17 @@ STOCK_DESCRIPTIONS: Dict[str, str] = {
     "BHARTIARTL": "India's 2nd largest telecom operator with strong 5G rollout and Africa presence.",
     "ITC": "Diversified conglomerate in FMCG, hotels, paperboards. Known for high dividend yield.",
     "AXISBANK": "3rd largest private sector bank in India with growing digital presence.",
+    "HAL": "India's largest aerospace and defence company. Manufactures fighter jets, helicopters, and UAVs.",
+    "BEL": "Leading defence electronics company. Key player in radar, sonar, and communication systems.",
+    "LT": "India's largest engineering company. Diversified in infrastructure, technology, and defence.",
+    "TITAN": "Leading lifestyle company. Dominant in watches, jewellery (Tanishq), and eyewear.",
+    "BAJFINANCE": "India's largest non-banking lender. Leader in consumer finance and digital lending.",
+    "SUNPHARMA": "India's largest pharma company globally. Strong specialty portfolio.",
+    "MARUTI": "India's largest passenger vehicle manufacturer with 40%+ market share.",
+    "TATAMOTORS": "Global automaker. Owns Jaguar Land Rover. Leader in EVs in India.",
+    "TATASTEEL": "India's largest private steel producer. Strong European presence via Tata Steel Europe.",
+    "NTPC": "India's largest power generator with 70+ GW capacity. Transitioning to renewables.",
+    "COALINDIA": "World's largest coal producer. Supplies 80%+ of India's coal requirement.",
 }
 
 
@@ -316,9 +389,11 @@ def get_holdings() -> List[Dict[str, Any]]:
                 "description": STOCK_DESCRIPTIONS.get(symbol, ""),
             })
 
-        # Calculate portfolio percentage for each holding
+        # Calculate portfolio percentages for each holding
+        total_current = sum(h["current"] for h in processed)
         for h in processed:
             h["portfolio_pct"] = round(h["invested"] / total_invested * 100, 1) if total_invested > 0 else 0
+            h["current_pct"] = round(h["current"] / total_current * 100, 1) if total_current > 0 else 0
 
         return processed
 
@@ -414,11 +489,47 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
         sector = STOCK_SECTORS.get(symbol, "Other")
         industry_pe = INDUSTRY_PE.get(sector, 20.0)
 
+        # Additional ratios
+        current_ratio = info.get("currentRatio", 0) or 0
+        quick_ratio = info.get("quickRatio", 0) or 0
+        pb_ratio = info.get("priceToBook", 0) or 0
+        ps_ratio = info.get("priceToSalesTrailing12Months", 0) or 0
+        ev_ebitda = info.get("enterpriseToEbitda", 0) or 0
+        enterprise_value = info.get("enterpriseValue", 0) or 0
+        payout_ratio = info.get("payoutRatio", 0) or 0
+        if payout_ratio:
+            payout_ratio = round(payout_ratio * 100, 1)
+
+        # Additional stats
+        high_52w = info.get("fiftyTwoWeekHigh", 0) or 0
+        low_52w = info.get("fiftyTwoWeekLow", 0) or 0
+        avg_volume = info.get("averageVolume", 0) or 0
+        beta = info.get("beta", 0) or 0
+        eps = info.get("trailingEps", 0) or info.get("forwardEps", 0) or 0
+        employees = info.get("fullTimeEmployees", 0) or 0
+        website = info.get("website", "") or ""
+        industry = info.get("industry", "") or ""
+
+        # Dividend history (5 years) - try to get from dividends
+        dividend_5y = [0, 0, 0, 0, 0]
+        try:
+            dividends = ticker.dividends
+            if dividends is not None and len(dividends) > 0:
+                # Group by year and sum
+                div_by_year = dividends.groupby(dividends.index.year).sum()
+                years = sorted(div_by_year.index)[-5:]
+                dividend_5y = [round(div_by_year.get(y, 0), 2) for y in years]
+                # Pad to 5 years if needed
+                while len(dividend_5y) < 5:
+                    dividend_5y.insert(0, 0)
+        except Exception:
+            pass
+
         # Build result
         result = {
             "symbol": symbol,
             "name": info.get("longName") or info.get("shortName") or symbol,
-            "description": STOCK_DESCRIPTIONS.get(symbol, info.get("longBusinessSummary", "")[:200] if info.get("longBusinessSummary") else ""),
+            "description": STOCK_DESCRIPTIONS.get(symbol, info.get("longBusinessSummary", "")[:500] if info.get("longBusinessSummary") else ""),
             "sector": sector,
             "logo": STOCK_LOGOS.get(symbol, symbol[:3].upper()),
 
@@ -426,6 +537,7 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "revenue_5y": revenue_5y if revenue_5y else [0, 0, 0, 0, 0],
             "profit_5y": profit_5y if profit_5y else [0, 0, 0, 0, 0],
             "opm_5y": opm_5y if opm_5y else [0, 0, 0, 0, 0],
+            "dividend_5y": dividend_5y,
 
             # Key Ratios
             "pe_ratio": round(pe_ratio, 1) if pe_ratio else 0,
@@ -433,14 +545,31 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "de_ratio": de_ratio,
             "roe": roe,
             "roce": roce,
+            "current_ratio": round(current_ratio, 2) if current_ratio else 0,
+            "quick_ratio": round(quick_ratio, 2) if quick_ratio else 0,
+            "pb_ratio": round(pb_ratio, 2) if pb_ratio else 0,
+            "ps_ratio": round(ps_ratio, 2) if ps_ratio else 0,
+            "ev_ebitda": round(ev_ebitda, 2) if ev_ebitda else 0,
 
             # Dividend
             "div_yield": div_yield_pct,
+            "payout_ratio": payout_ratio,
             "next_div_date": ex_div_date or "TBA",
 
-            # Other info
+            # Key stats
             "market_cap": info.get("marketCap", 0),
+            "enterprise_value": enterprise_value,
             "book_value": info.get("bookValue", 0),
+            "high_52w": high_52w,
+            "low_52w": low_52w,
+            "avg_volume": avg_volume,
+            "beta": round(beta, 2) if beta else 0,
+            "eps": round(eps, 2) if eps else 0,
+
+            # Company profile
+            "industry": industry,
+            "employees": employees,
+            "website": website,
         }
 
         # Cache the result
@@ -461,22 +590,38 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
         # Return default values
         return {
             "symbol": symbol,
-            "name": symbol,
+            "name": STOCK_NAMES.get(symbol, symbol),
             "description": STOCK_DESCRIPTIONS.get(symbol, ""),
             "sector": STOCK_SECTORS.get(symbol, "Other"),
             "logo": STOCK_LOGOS.get(symbol, symbol[:3].upper()),
             "revenue_5y": [0, 0, 0, 0, 0],
             "profit_5y": [0, 0, 0, 0, 0],
             "opm_5y": [0, 0, 0, 0, 0],
+            "dividend_5y": [0, 0, 0, 0, 0],
             "pe_ratio": 0,
             "industry_pe": INDUSTRY_PE.get(STOCK_SECTORS.get(symbol, "Other"), 20.0),
             "de_ratio": 0,
             "roe": 0,
             "roce": 0,
+            "current_ratio": 0,
+            "quick_ratio": 0,
+            "pb_ratio": 0,
+            "ps_ratio": 0,
+            "ev_ebitda": 0,
             "div_yield": 0,
+            "payout_ratio": 0,
             "next_div_date": "TBA",
             "market_cap": 0,
+            "enterprise_value": 0,
             "book_value": 0,
+            "high_52w": 0,
+            "low_52w": 0,
+            "avg_volume": 0,
+            "beta": 0,
+            "eps": 0,
+            "industry": "",
+            "employees": 0,
+            "website": "",
         }
 
 
