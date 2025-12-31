@@ -583,6 +583,76 @@
         </div>
     </div>
 
+    <!-- Analyst Recommendations -->
+    <div class="ratios-section" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border-color: rgba(59, 130, 246, 0.3);">
+        <div class="section-title"><i class="bi bi-graph-up-arrow"></i> Analyst Recommendations</div>
+        <div class="ratios-grid" style="grid-template-columns: repeat(5, 1fr);">
+            <div class="ratio-card" id="analystRating">
+                <div class="value" style="color: #22c55e;">-</div>
+                <div class="label">Rating</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="analystCount">-</div>
+                <div class="label">Analysts</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="targetMean">-</div>
+                <div class="label">Target Price</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="targetUpside">-</div>
+                <div class="label">Upside</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="targetRange">-</div>
+                <div class="label">Target Range</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Growth & Margins -->
+    <div class="insights-section">
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(74, 222, 128, 0.05) 100%); border-color: rgba(34, 197, 94, 0.3);">
+            <div class="section-title"><i class="bi bi-graph-up"></i> Growth Metrics</div>
+            <div class="insight-item">
+                <span class="insight-label">Revenue Growth (YoY)</span>
+                <span class="insight-value" id="revenueGrowth">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Earnings Growth (YoY)</span>
+                <span class="insight-value" id="earningsGrowth">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Operating Cash Flow</span>
+                <span class="insight-value" id="opCashflow">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Free Cash Flow</span>
+                <span class="insight-value" id="freeCashflow">-</span>
+            </div>
+        </div>
+
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(253, 224, 71, 0.05) 100%); border-color: rgba(251, 191, 36, 0.3);">
+            <div class="section-title"><i class="bi bi-pie-chart"></i> Margin Analysis</div>
+            <div class="insight-item">
+                <span class="insight-label">Gross Margin</span>
+                <span class="insight-value" id="grossMargin">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Operating Margin</span>
+                <span class="insight-value" id="opMargin">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Profit Margin</span>
+                <span class="insight-value" id="profitMargin">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">ROE</span>
+                <span class="insight-value" id="roeMargin">-</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Additional Insights -->
     <div class="insights-section">
         <div class="insight-card">
@@ -751,6 +821,47 @@
         document.getElementById('valEVEBITDA').textContent = f.ev_ebitda ? f.ev_ebitda.toFixed(2) : '-';
         document.getElementById('valPB').textContent = f.pb_ratio ? f.pb_ratio.toFixed(2) : '-';
         document.getElementById('valPS').textContent = f.ps_ratio ? f.ps_ratio.toFixed(2) : '-';
+
+        // Analyst Recommendations
+        const ratingColors = {
+            'buy': '#22c55e', 'strong_buy': '#22c55e', 'strongbuy': '#22c55e',
+            'hold': '#fbbf24',
+            'sell': '#ef4444', 'strong_sell': '#ef4444'
+        };
+        const ratingText = f.analyst_rating ? f.analyst_rating.replace('_', ' ').toUpperCase() : '-';
+        const ratingColor = ratingColors[f.analyst_rating?.toLowerCase()] || '#94a3b8';
+        document.querySelector('#analystRating .value').textContent = ratingText;
+        document.querySelector('#analystRating .value').style.color = ratingColor;
+        document.getElementById('analystCount').textContent = f.analyst_count || '-';
+        document.getElementById('targetMean').textContent = f.target_mean_price ? '₹' + f.target_mean_price.toFixed(0) : '-';
+
+        // Calculate upside
+        const currentPrice = holdingData?.last_price || 0;
+        if (f.target_mean_price && currentPrice) {
+            const upside = ((f.target_mean_price - currentPrice) / currentPrice * 100).toFixed(1);
+            const upsideEl = document.getElementById('targetUpside');
+            upsideEl.textContent = (upside > 0 ? '+' : '') + upside + '%';
+            upsideEl.style.color = upside > 0 ? '#22c55e' : '#ef4444';
+        }
+        document.getElementById('targetRange').textContent =
+            f.target_low_price && f.target_high_price ?
+            '₹' + f.target_low_price.toFixed(0) + ' - ₹' + f.target_high_price.toFixed(0) : '-';
+
+        // Growth & Margins
+        const growthColor = (val) => val > 0 ? '#22c55e' : (val < 0 ? '#ef4444' : '#94a3b8');
+        document.getElementById('revenueGrowth').textContent = f.revenue_growth ? (f.revenue_growth > 0 ? '+' : '') + f.revenue_growth + '%' : '-';
+        document.getElementById('revenueGrowth').style.color = growthColor(f.revenue_growth);
+        document.getElementById('earningsGrowth').textContent = f.earnings_growth ? (f.earnings_growth > 0 ? '+' : '') + f.earnings_growth + '%' : '-';
+        document.getElementById('earningsGrowth').style.color = growthColor(f.earnings_growth);
+        document.getElementById('opCashflow').textContent = formatLargeNumber(f.operating_cashflow);
+        document.getElementById('opCashflow').style.color = growthColor(f.operating_cashflow);
+        document.getElementById('freeCashflow').textContent = formatLargeNumber(f.free_cashflow);
+        document.getElementById('freeCashflow').style.color = growthColor(f.free_cashflow);
+
+        document.getElementById('grossMargin').textContent = f.gross_margins ? f.gross_margins + '%' : '-';
+        document.getElementById('opMargin').textContent = f.operating_margins ? f.operating_margins + '%' : '-';
+        document.getElementById('profitMargin').textContent = f.profit_margins ? f.profit_margins + '%' : '-';
+        document.getElementById('roeMargin').textContent = f.roe ? f.roe + '%' : '-';
 
         // Render financial charts
         renderFinancialCharts(f);

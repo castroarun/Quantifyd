@@ -462,9 +462,27 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
                 opm_5y = [round(op / rev * 100, 1) if rev > 0 else 0
                           for op, rev in zip(reversed(op_income.tolist()), reversed(revenue.tolist()))]
 
-        # Get dividend info
+        # Get dividend info - handle Yahoo Finance inconsistency
+        # Some stocks return dividendYield as decimal (0.0092 = 0.92%)
+        # Others seem to return it already multiplied (0.92 = 0.92%)
         div_yield = info.get("dividendYield", 0) or 0
-        div_yield_pct = round(div_yield * 100, 2)
+
+        # Sanity check: if div_yield > 0.5 (50%), use alternative calculation
+        if div_yield > 0.5:
+            # Try trailingAnnualDividendYield or calculate from rate/price
+            trailing_yield = info.get("trailingAnnualDividendYield", 0) or 0
+            if trailing_yield and trailing_yield < 0.5:
+                div_yield_pct = round(trailing_yield * 100, 2)
+            else:
+                # Calculate from dividend rate and current price
+                div_rate = info.get("dividendRate", 0) or 0
+                current_price = info.get("currentPrice", 0) or info.get("regularMarketPrice", 0) or 0
+                if div_rate and current_price:
+                    div_yield_pct = round((div_rate / current_price) * 100, 2)
+                else:
+                    div_yield_pct = 0
+        else:
+            div_yield_pct = round(div_yield * 100, 2)
 
         ex_div_date = info.get("exDividendDate")
         if ex_div_date:
@@ -525,6 +543,17 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
         except Exception:
             pass
 
+        # Pad arrays to ensure 5 elements
+        def pad_array(arr, size=5):
+            while len(arr) < size:
+                arr.insert(0, 0)
+            return arr[:size]
+
+        revenue_5y = pad_array(revenue_5y if revenue_5y else [])
+        profit_5y = pad_array(profit_5y if profit_5y else [])
+        opm_5y = pad_array(opm_5y if opm_5y else [])
+        dividend_5y = pad_array(dividend_5y if dividend_5y else [])
+
         # Build result
         result = {
             "symbol": symbol,
@@ -534,9 +563,9 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "logo": STOCK_LOGOS.get(symbol, symbol[:3].upper()),
 
             # Financials (5-year trends)
-            "revenue_5y": revenue_5y if revenue_5y else [0, 0, 0, 0, 0],
-            "profit_5y": profit_5y if profit_5y else [0, 0, 0, 0, 0],
-            "opm_5y": opm_5y if opm_5y else [0, 0, 0, 0, 0],
+            "revenue_5y": revenue_5y,
+            "profit_5y": profit_5y,
+            "opm_5y": opm_5y,
             "dividend_5y": dividend_5y,
 
             # Key Ratios
@@ -570,6 +599,20 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "industry": industry,
             "employees": employees,
             "website": website,
+
+            # Additional insights
+            "analyst_rating": info.get("recommendationKey", ""),
+            "analyst_count": info.get("numberOfAnalystOpinions", 0),
+            "target_mean_price": info.get("targetMeanPrice", 0),
+            "target_high_price": info.get("targetHighPrice", 0),
+            "target_low_price": info.get("targetLowPrice", 0),
+            "earnings_growth": round((info.get("earningsGrowth", 0) or 0) * 100, 1),
+            "revenue_growth": round((info.get("revenueGrowth", 0) or 0) * 100, 1),
+            "profit_margins": round((info.get("profitMargins", 0) or 0) * 100, 1),
+            "gross_margins": round((info.get("grossMargins", 0) or 0) * 100, 1),
+            "operating_margins": round((info.get("operatingMargins", 0) or 0) * 100, 1),
+            "free_cashflow": info.get("freeCashflow", 0) or 0,
+            "operating_cashflow": info.get("operatingCashflow", 0) or 0,
         }
 
         # Cache the result
@@ -622,6 +665,18 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "industry": "",
             "employees": 0,
             "website": "",
+            "analyst_rating": "",
+            "analyst_count": 0,
+            "target_mean_price": 0,
+            "target_high_price": 0,
+            "target_low_price": 0,
+            "earnings_growth": 0,
+            "revenue_growth": 0,
+            "profit_margins": 0,
+            "gross_margins": 0,
+            "operating_margins": 0,
+            "free_cashflow": 0,
+            "operating_cashflow": 0,
         }
 
 
