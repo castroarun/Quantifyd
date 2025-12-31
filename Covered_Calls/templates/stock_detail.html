@@ -232,12 +232,18 @@
         width: 100% !important;
     }
 
-    /* Financials Grid */
+    /* Financials Grid - 4 charts in a row */
     .financials-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 1rem;
         margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 1200px) {
+        .financials-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 
     .financial-card {
@@ -535,51 +541,64 @@
         </div>
     </div>
 
-    <!-- Financials Grid -->
+    <!-- Financials Grid - 4 charts side by side -->
     <div class="financials-grid">
         <div class="financial-card revenue">
-            <div class="title">Revenue (5 Years, Cr)</div>
+            <div class="title">Revenue (5Y, ₹Cr)</div>
             <canvas id="revenueChart"></canvas>
         </div>
         <div class="financial-card profit">
-            <div class="title">Net Profit (5 Years, Cr)</div>
+            <div class="title">Net Profit (5Y, ₹Cr)</div>
             <canvas id="profitChart"></canvas>
         </div>
         <div class="financial-card opm">
-            <div class="title">Operating Margin % (5 Years)</div>
+            <div class="title">Operating Margin %</div>
             <canvas id="opmChart"></canvas>
         </div>
-    </div>
-
-    <!-- Financial Ratios -->
-    <div class="ratios-section">
-        <div class="section-title"><i class="bi bi-calculator"></i> Financial Ratios</div>
-        <div class="ratios-grid" id="ratiosGrid">
-            <!-- Populated by JS -->
-        </div>
-    </div>
-
-    <!-- Dividend Section -->
-    <div class="dividend-section">
-        <div class="dividend-header">
-            <div class="section-title"><i class="bi bi-coin"></i> Dividend Information</div>
-            <div class="dividend-stats">
-                <div class="dividend-stat">
-                    <div class="value" id="divYield">-</div>
-                    <div class="label">Div Yield</div>
-                </div>
-                <div class="dividend-stat">
-                    <div class="value" id="divPayout">-</div>
-                    <div class="label">Payout Ratio</div>
-                </div>
-                <div class="dividend-stat">
-                    <div class="value" id="divExDate">-</div>
-                    <div class="label">Next Ex-Date</div>
-                </div>
-            </div>
-        </div>
-        <div class="dividend-chart">
+        <div class="financial-card dividend">
+            <div class="title">Dividends (5Y, ₹)</div>
             <canvas id="dividendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Financial Ratios + Dividend Stats Combined -->
+    <div class="ratios-section">
+        <div class="section-title"><i class="bi bi-calculator"></i> Key Ratios & Dividends</div>
+        <div class="ratios-grid" style="grid-template-columns: repeat(8, 1fr);">
+            <div class="ratio-card" id="peRatioCard">
+                <div class="value" id="peRatio">-</div>
+                <div class="industry" id="peIndustry">Ind: -</div>
+                <div class="label">P/E Ratio</div>
+            </div>
+            <div class="ratio-card" id="deRatioCard">
+                <div class="value" id="deRatio">-</div>
+                <div class="label">Debt/Equity</div>
+            </div>
+            <div class="ratio-card" id="roeCard">
+                <div class="value" id="roeValue">-</div>
+                <div class="label">ROE</div>
+            </div>
+            <div class="ratio-card" id="roceCard">
+                <div class="value" id="roceValue">-</div>
+                <div class="label">ROCE</div>
+            </div>
+            <div class="ratio-card" id="currentRatioCard">
+                <div class="value" id="currentRatio">-</div>
+                <div class="label">Current Ratio</div>
+            </div>
+            <!-- Dividend Stats inline -->
+            <div class="ratio-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(251, 113, 133, 0.1) 100%);">
+                <div class="value" id="divYield" style="color: #ec4899;">-</div>
+                <div class="label">Div Yield</div>
+            </div>
+            <div class="ratio-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(251, 113, 133, 0.1) 100%);">
+                <div class="value" id="divPayout" style="color: #ec4899;">-</div>
+                <div class="label">Payout Ratio</div>
+            </div>
+            <div class="ratio-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(251, 113, 133, 0.1) 100%);">
+                <div class="value" id="divExDate" style="color: #ec4899; font-size: 1rem;">-</div>
+                <div class="label">Next Ex-Date</div>
+            </div>
         </div>
     </div>
 
@@ -610,10 +629,10 @@
         </div>
     </div>
 
-    <!-- Growth & Margins -->
-    <div class="insights-section">
+    <!-- Growth, Cash Flow & Balance Sheet -->
+    <div class="insights-section" style="grid-template-columns: repeat(3, 1fr);">
         <div class="insight-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(74, 222, 128, 0.05) 100%); border-color: rgba(34, 197, 94, 0.3);">
-            <div class="section-title"><i class="bi bi-graph-up"></i> Growth Metrics</div>
+            <div class="section-title"><i class="bi bi-graph-up"></i> Growth & Cash Flow</div>
             <div class="insight-item">
                 <span class="insight-label">Revenue Growth (YoY)</span>
                 <span class="insight-value" id="revenueGrowth">-</span>
@@ -630,10 +649,14 @@
                 <span class="insight-label">Free Cash Flow</span>
                 <span class="insight-value" id="freeCashflow">-</span>
             </div>
+            <div class="insight-item">
+                <span class="insight-label"><strong>Capex (TTM)</strong></span>
+                <span class="insight-value" id="capexValue" style="color: #f59e0b;">-</span>
+            </div>
         </div>
 
         <div class="insight-card" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(253, 224, 71, 0.05) 100%); border-color: rgba(251, 191, 36, 0.3);">
-            <div class="section-title"><i class="bi bi-pie-chart"></i> Margin Analysis</div>
+            <div class="section-title"><i class="bi bi-pie-chart"></i> Margins & Returns</div>
             <div class="insight-item">
                 <span class="insight-label">Gross Margin</span>
                 <span class="insight-value" id="grossMargin">-</span>
@@ -649,6 +672,30 @@
             <div class="insight-item">
                 <span class="insight-label">ROE</span>
                 <span class="insight-value" id="roeMargin">-</span>
+            </div>
+        </div>
+
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.05) 100%); border-color: rgba(139, 92, 246, 0.3);">
+            <div class="section-title"><i class="bi bi-bank"></i> Balance Sheet</div>
+            <div class="insight-item">
+                <span class="insight-label">Total Debt</span>
+                <span class="insight-value" id="totalDebt">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Total Cash</span>
+                <span class="insight-value" id="totalCash">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Debt/Cash Ratio</span>
+                <span class="insight-value" id="debtToCash">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Price vs 52W High</span>
+                <span class="insight-value" id="priceVs52H">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Price vs 52W Low</span>
+                <span class="insight-value" id="priceVs52L">-</span>
             </div>
         </div>
     </div>
@@ -676,7 +723,7 @@
         </div>
 
         <div class="insight-card">
-            <div class="section-title"><i class="bi bi-cash-stack"></i> Valuation Metrics</div>
+            <div class="section-title"><i class="bi bi-cash-stack"></i> Valuation & Forward Metrics</div>
             <div class="insight-item">
                 <span class="insight-label">Enterprise Value</span>
                 <span class="insight-value" id="valEV">-</span>
@@ -693,6 +740,98 @@
                 <span class="insight-label">Price/Sales</span>
                 <span class="insight-value" id="valPS">-</span>
             </div>
+            <div class="insight-item" style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 0.75rem; margin-top: 0.5rem;">
+                <span class="insight-label">Forward P/E</span>
+                <span class="insight-value" id="forwardPE">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Forward EPS</span>
+                <span class="insight-value" id="forwardEPS">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">PEG Ratio</span>
+                <span class="insight-value" id="pegRatio">-</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Summary -->
+    <div class="stock-description" id="businessSummarySection" style="display: none;">
+        <div class="section-title"><i class="bi bi-file-text"></i> Business Overview</div>
+        <p class="description-text" id="businessSummary" style="max-height: 200px; overflow-y: auto;"></p>
+    </div>
+
+    <!-- Management Commentary & Key Highlights (Premium Data) -->
+    <div class="insights-section" style="grid-template-columns: 1fr 1fr;">
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.05) 100%); border-color: rgba(99, 102, 241, 0.3);">
+            <div class="section-title"><i class="bi bi-chat-quote"></i> Management Commentary</div>
+            <div style="padding: 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <i class="bi bi-lock" style="color: #818cf8;"></i>
+                    <span><strong>Premium Data Required</strong></span>
+                </div>
+                <p style="margin: 0.5rem 0;">This section would include:</p>
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem; list-style: disc;">
+                    <li>CEO/CFO statements from earnings calls</li>
+                    <li>Quarterly guidance commentary</li>
+                    <li>Strategic outlook and vision</li>
+                    <li>Risk factors mentioned by management</li>
+                </ul>
+                <p style="margin: 0.75rem 0 0; font-size: 0.8rem; color: #94a3b8;">
+                    <i class="bi bi-info-circle"></i> Available via: Bloomberg, Refinitiv, FactSet, S&P Capital IQ
+                </p>
+            </div>
+        </div>
+
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(244, 114, 182, 0.05) 100%); border-color: rgba(236, 72, 153, 0.3);">
+            <div class="section-title"><i class="bi bi-stars"></i> Key Highlights & Capex Plans</div>
+            <div style="padding: 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <i class="bi bi-lock" style="color: #f472b6;"></i>
+                    <span><strong>Premium Data Required</strong></span>
+                </div>
+                <p style="margin: 0.5rem 0;">This section would include:</p>
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem; list-style: disc;">
+                    <li>Capex expansion plans & timelines</li>
+                    <li>New product launches / R&D pipeline</li>
+                    <li>M&A activity and strategic investments</li>
+                    <li>Key contract wins and partnerships</li>
+                    <li>Regulatory approvals and milestones</li>
+                </ul>
+                <p style="margin: 0.75rem 0 0; font-size: 0.8rem; color: #94a3b8;">
+                    <i class="bi bi-info-circle"></i> Available via: Annual Reports, BSE/NSE Filings, Screener.in Pro
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capex Metrics (What we CAN calculate) -->
+    <div class="ratios-section" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%); border-color: rgba(245, 158, 11, 0.3);">
+        <div class="section-title"><i class="bi bi-building-gear"></i> Capex Analysis (Calculated)</div>
+        <div class="ratios-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="ratio-card">
+                <div class="value" id="capexTTM" style="color: #f59e0b;">-</div>
+                <div class="label">Capex (TTM)</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="capexToRevenue" style="color: #f59e0b;">-</div>
+                <div class="label">Capex/Revenue</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="capexToOCF" style="color: #f59e0b;">-</div>
+                <div class="label">Capex/Op. CF</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="fcfYield" style="color: #22c55e;">-</div>
+                <div class="label">FCF Yield</div>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: #94a3b8; font-size: 0.85rem; margin: 0;">
+                <i class="bi bi-calculator" style="margin-right: 0.5rem;"></i>
+                <strong>Capex</strong> = Operating Cash Flow − Free Cash Flow |
+                <strong>FCF Yield</strong> = Free Cash Flow / Market Cap × 100
+            </p>
         </div>
     </div>
 </div>
@@ -801,9 +940,6 @@
         document.getElementById('statBeta').textContent = f.beta ? f.beta.toFixed(2) : '-';
         document.getElementById('statEps').textContent = f.eps ? '₹' + f.eps.toFixed(2) : '-';
 
-        // Ratios
-        renderRatios(f);
-
         // Dividend
         document.getElementById('divYield').textContent = f.div_yield ? f.div_yield + '%' : '-';
         document.getElementById('divPayout').textContent = f.payout_ratio ? f.payout_ratio.toFixed(1) + '%' : '-';
@@ -863,37 +999,102 @@
         document.getElementById('profitMargin').textContent = f.profit_margins ? f.profit_margins + '%' : '-';
         document.getElementById('roeMargin').textContent = f.roe ? f.roe + '%' : '-';
 
+        // Capex
+        document.getElementById('capexValue').textContent = f.capex ? formatLargeNumber(f.capex) : '-';
+
+        // Balance Sheet
+        document.getElementById('totalDebt').textContent = f.total_debt ? formatLargeNumber(f.total_debt) : '-';
+        document.getElementById('totalCash').textContent = f.total_cash ? formatLargeNumber(f.total_cash) : '-';
+
+        const debtToCash = f.debt_to_cash || 0;
+        const debtToCashEl = document.getElementById('debtToCash');
+        debtToCashEl.textContent = debtToCash ? debtToCash.toFixed(2) : '-';
+        debtToCashEl.style.color = debtToCash > 2 ? '#ef4444' : (debtToCash < 1 ? '#22c55e' : '#fbbf24');
+
+        // Price vs 52W position
+        const priceVs52H = document.getElementById('priceVs52H');
+        if (f.price_vs_52w_high) {
+            priceVs52H.textContent = f.price_vs_52w_high.toFixed(1) + '%';
+            priceVs52H.style.color = f.price_vs_52w_high > 90 ? '#22c55e' : (f.price_vs_52w_high < 70 ? '#ef4444' : '#fbbf24');
+        }
+
+        const priceVs52L = document.getElementById('priceVs52L');
+        if (f.price_vs_52w_low) {
+            priceVs52L.textContent = '+' + (f.price_vs_52w_low - 100).toFixed(1) + '%';
+            priceVs52L.style.color = f.price_vs_52w_low > 150 ? '#22c55e' : '#94a3b8';
+        }
+
+        // Forward Metrics
+        document.getElementById('forwardPE').textContent = f.forward_pe ? f.forward_pe.toFixed(1) : '-';
+        document.getElementById('forwardEPS').textContent = f.forward_eps ? '₹' + f.forward_eps.toFixed(2) : '-';
+
+        const pegEl = document.getElementById('pegRatio');
+        pegEl.textContent = f.peg_ratio ? f.peg_ratio.toFixed(2) : '-';
+        if (f.peg_ratio) {
+            pegEl.style.color = f.peg_ratio < 1 ? '#22c55e' : (f.peg_ratio > 2 ? '#ef4444' : '#fbbf24');
+        }
+
+        // Business Summary
+        if (f.business_summary) {
+            document.getElementById('businessSummary').textContent = f.business_summary;
+            document.getElementById('businessSummarySection').style.display = 'block';
+        }
+
+        // Capex Analysis
+        document.getElementById('capexTTM').textContent = f.capex ? formatLargeNumber(f.capex) : '-';
+
+        // Capex/Revenue (using latest year revenue)
+        if (f.capex && f.revenue_5y && f.revenue_5y.length > 0) {
+            const latestRevenue = f.revenue_5y[f.revenue_5y.length - 1] * 1e9; // Convert from Cr to actual
+            if (latestRevenue > 0) {
+                const capexToRev = ((f.capex / latestRevenue) * 100).toFixed(1);
+                document.getElementById('capexToRevenue').textContent = capexToRev + '%';
+            }
+        }
+
+        // Capex/Operating Cash Flow
+        if (f.capex && f.operating_cashflow && f.operating_cashflow > 0) {
+            const capexToOCF = ((f.capex / f.operating_cashflow) * 100).toFixed(1);
+            const capexOCFEl = document.getElementById('capexToOCF');
+            capexOCFEl.textContent = capexToOCF + '%';
+            capexOCFEl.style.color = capexToOCF > 100 ? '#ef4444' : (capexToOCF < 50 ? '#22c55e' : '#fbbf24');
+        }
+
+        // FCF Yield (FCF / Market Cap * 100)
+        if (f.free_cashflow && f.market_cap && f.market_cap > 0) {
+            const fcfYield = ((f.free_cashflow / f.market_cap) * 100).toFixed(2);
+            const fcfEl = document.getElementById('fcfYield');
+            fcfEl.textContent = fcfYield + '%';
+            fcfEl.style.color = fcfYield > 5 ? '#22c55e' : (fcfYield < 2 ? '#fbbf24' : '#94a3b8');
+        }
+
+        // Populate inline ratios
+        document.getElementById('peRatio').textContent = f.pe_ratio ? f.pe_ratio.toFixed(1) : '-';
+        document.getElementById('peIndustry').textContent = f.industry_pe ? 'Ind: ' + f.industry_pe.toFixed(1) : '';
+        const peCard = document.getElementById('peRatioCard');
+        if (f.pe_ratio && f.industry_pe) {
+            peCard.className = 'ratio-card ' + (f.pe_ratio < f.industry_pe ? 'good' : (f.pe_ratio > f.industry_pe * 1.5 ? 'bad' : ''));
+        }
+
+        document.getElementById('deRatio').textContent = f.de_ratio ? f.de_ratio.toFixed(2) : '-';
+        const deCard = document.getElementById('deRatioCard');
+        deCard.className = 'ratio-card ' + (f.de_ratio < 1 ? 'good' : (f.de_ratio > 2 ? 'bad' : ''));
+
+        document.getElementById('roeValue').textContent = f.roe ? f.roe + '%' : '-';
+        const roeCard = document.getElementById('roeCard');
+        roeCard.className = 'ratio-card ' + (f.roe > 15 ? 'good' : (f.roe < 10 ? 'bad' : ''));
+
+        document.getElementById('roceValue').textContent = f.roce ? f.roce + '%' : '-';
+        const roceCard = document.getElementById('roceCard');
+        roceCard.className = 'ratio-card ' + (f.roce > 15 ? 'good' : (f.roce < 10 ? 'bad' : ''));
+
+        document.getElementById('currentRatio').textContent = f.current_ratio ? f.current_ratio.toFixed(2) : '-';
+        const crCard = document.getElementById('currentRatioCard');
+        crCard.className = 'ratio-card ' + (f.current_ratio > 1.5 ? 'good' : (f.current_ratio < 1 ? 'bad' : ''));
+
         // Render financial charts
         renderFinancialCharts(f);
         renderDividendChart(f);
-    }
-
-    // Render ratios
-    function renderRatios(f) {
-        const ratios = [
-            { label: 'P/E Ratio', value: f.pe_ratio, industry: f.industry_pe, good: f.pe_ratio < f.industry_pe },
-            { label: 'D/E Ratio', value: f.de_ratio, good: f.de_ratio < 1, bad: f.de_ratio > 2 },
-            { label: 'ROE', value: f.roe, suffix: '%', good: f.roe > 15 },
-            { label: 'ROCE', value: f.roce, suffix: '%', good: f.roce > 15 },
-            { label: 'Current Ratio', value: f.current_ratio, good: f.current_ratio > 1.5, bad: f.current_ratio < 1 },
-            { label: 'Quick Ratio', value: f.quick_ratio, good: f.quick_ratio > 1 }
-        ];
-
-        const html = ratios.map(r => {
-            const classType = r.good ? 'good' : (r.bad ? 'bad' : '');
-            const valueStr = r.value !== undefined && r.value !== null ?
-                (r.value.toFixed(2) + (r.suffix || '')) : '-';
-            const industryStr = r.industry ? `<span class="industry">/ ${r.industry.toFixed(1)}</span>` : '';
-
-            return `
-                <div class="ratio-card ${classType}">
-                    <div class="value">${valueStr} ${industryStr}</div>
-                    <div class="label">${r.label}</div>
-                </div>
-            `;
-        }).join('');
-
-        document.getElementById('ratiosGrid').innerHTML = html;
     }
 
     // Render price chart

@@ -613,6 +613,30 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "operating_margins": round((info.get("operatingMargins", 0) or 0) * 100, 1),
             "free_cashflow": info.get("freeCashflow", 0) or 0,
             "operating_cashflow": info.get("operatingCashflow", 0) or 0,
+
+            # Capex (calculated: Operating CF - Free CF)
+            "capex": (info.get("operatingCashflow", 0) or 0) - (info.get("freeCashflow", 0) or 0),
+
+            # Earnings & Calendar
+            "next_earnings_date": "",  # Will be set below
+            "last_earnings_date": "",
+
+            # Balance Sheet highlights
+            "total_debt": info.get("totalDebt", 0) or 0,
+            "total_cash": info.get("totalCash", 0) or 0,
+            "debt_to_cash": round((info.get("totalDebt", 0) or 0) / (info.get("totalCash", 1) or 1), 2),
+
+            # Price position
+            "price_vs_52w_high": round(((info.get("currentPrice", 0) or info.get("regularMarketPrice", 0) or 0) / high_52w * 100), 1) if high_52w else 0,
+            "price_vs_52w_low": round(((info.get("currentPrice", 0) or info.get("regularMarketPrice", 0) or 0) / low_52w * 100), 1) if low_52w else 0,
+
+            # Forward metrics
+            "forward_pe": round(info.get("forwardPE", 0) or 0, 1),
+            "forward_eps": round(info.get("forwardEps", 0) or 0, 2),
+            "peg_ratio": round(info.get("pegRatio", 0) or 0, 2),
+
+            # Business summary (full)
+            "business_summary": info.get("longBusinessSummary", "") or "",
         }
 
         # Cache the result
@@ -677,6 +701,18 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "operating_margins": 0,
             "free_cashflow": 0,
             "operating_cashflow": 0,
+            "capex": 0,
+            "next_earnings_date": "",
+            "last_earnings_date": "",
+            "total_debt": 0,
+            "total_cash": 0,
+            "debt_to_cash": 0,
+            "price_vs_52w_high": 0,
+            "price_vs_52w_low": 0,
+            "forward_pe": 0,
+            "forward_eps": 0,
+            "peg_ratio": 0,
+            "business_summary": "",
         }
 
 
