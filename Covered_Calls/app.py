@@ -39,8 +39,11 @@ from services import (
     CoveredCallEngine, BacktestConfig, StrikeMethod, ExitStrategy,
     NIFTY_50, TOP_10_LIQUID, FNO_LOT_SIZES,
     get_holdings, get_fundamentals, get_historical_prices,
-    get_portfolio_summary, format_currency
+    get_portfolio_summary, format_currency,
+    portfolio_chat, clear_chat_history, get_suggested_questions,
 )
+from services.cpr_covered_call_service import CPRCoveredCallEngine, CPRBacktestConfig
+from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE
@@ -316,6 +319,87 @@ def api_get_historical(symbol: str):
         return jsonify({'symbol': symbol, 'prices': prices})
     except Exception as e:
         logger.error(f"Error fetching historical prices for {symbol}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/trading-data', methods=['POST'])
+@login_required
+def api_get_trading_data():
+    """Get trading data (CPR, EMA, today's %) for multiple symbols"""
+    try:
+        from services.holdings_service import get_trading_data
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        if not symbols:
+            return jsonify({'trading_data': {}})
+
+        trading_data = get_trading_data(symbols)
+        return jsonify({'trading_data': trading_data})
+    except Exception as e:
+        logger.error(f"Error fetching trading data: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# API Routes - Claude Chat (Portfolio Research)
+# =============================================================================
+
+@app.route('/api/chat', methods=['POST'])
+@login_required
+def api_chat():
+    """Send a message to Claude for portfolio research"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+
+        # Use user_id as session identifier for conversation history
+        session_id = session.get('user_id', 'default')
+
+        # Get response from Claude with portfolio tools
+        response = portfolio_chat(session_id, message)
+
+        return jsonify({
+            'response': response,
+            'session_id': session_id
+        })
+
+    except ValueError as e:
+        # API key not configured
+        logger.error(f"Chat configuration error: {e}")
+        return jsonify({
+            'error': 'Claude API not configured. Please set ANTHROPIC_API_KEY environment variable.'
+        }), 503
+
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/chat/suggestions')
+@login_required
+def api_chat_suggestions():
+    """Get suggested questions for the chat interface"""
+    try:
+        suggestions = get_suggested_questions()
+        return jsonify({'suggestions': suggestions})
+    except Exception as e:
+        logger.error(f"Error getting chat suggestions: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/chat/clear', methods=['POST'])
+@login_required
+def api_chat_clear():
+    """Clear chat history for current session"""
+    try:
+        session_id = session.get('user_id', 'default')
+        clear_chat_history(session_id)
+        return jsonify({'status': 'ok', 'message': 'Chat history cleared'})
+    except Exception as e:
+        logger.error(f"Error clearing chat history: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -775,6 +859,292 @@ def api_available_symbols():
     dm = get_data_manager()
     symbols = dm.get_available_symbols('day')
     return jsonify({'symbols': symbols})
+
+
+# =============================================================================
+# CPR Strategy Backtest Routes
+# =============================================================================
+
+@app.route('/backtest/cpr')
+@login_required
+def cpr_backtest_page():
+    """CPR-based covered call backtest configuration page"""
+    return render_template(
+        'cpr_backtest.html',
+        symbols=NIFTY_50,
+        top_10=TOP_10_LIQUID,
+        lot_sizes=FNO_LOT_SIZES,
+        user_name=session.get('user_name', 'User')
+    )
+
+
+@app.route('/api/cpr-backtest/run', methods=['POST'])
+@login_required
+def api_run_cpr_backtest():
+    """Start a CPR-based covered call backtest"""
+    try:
+        data = request.get_json()
+
+        # Validate required fields
+        symbols = data.get('symbols', [])
+        if not symbols:
+            return jsonify({'error': 'No symbols selected'}), 400
+
+        start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d')
+        end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d')
+
+        if end_date <= start_date:
+            return jsonify({'error': 'End date must be after start date'}), 400
+
+        # CPR-specific parameters
+        narrow_cpr_threshold = float(data.get('narrow_cpr_threshold', 0.5))
+        otm_strike_pct = float(data.get('otm_strike_pct', 5.0))
+        dte_min = int(data.get('dte_min', 30))
+        dte_max = int(data.get('dte_max', 35))
+        enable_premium_rollout = data.get('enable_premium_rollout', True)
+        premium_double_threshold = float(data.get('premium_double_threshold', 2.0))
+        premium_erosion_target = float(data.get('premium_erosion_target', 75.0))
+        dte_exit_threshold = int(data.get('dte_exit_threshold', 10))
+        enable_r1_exit = data.get('enable_r1_exit', True)
+        use_closer_r1 = data.get('use_closer_r1', True)
+        initial_capital = float(data.get('initial_capital', 1000000))
+
+        # Create task ID
+        task_id = f"cpr_backtest_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        # Initialize task status
+        task_status[task_id] = {
+            'status': 'running',
+            'progress': 0,
+            'message': 'Initializing CPR backtest...',
+            'result': None
+        }
+
+        # Schedule backtest execution
+        scheduler.add_job(
+            _execute_cpr_backtest,
+            args=[task_id, symbols, start_date, end_date,
+                  narrow_cpr_threshold, otm_strike_pct, dte_min, dte_max,
+                  enable_premium_rollout, premium_double_threshold,
+                  premium_erosion_target, dte_exit_threshold,
+                  enable_r1_exit, use_closer_r1, initial_capital],
+            id=task_id
+        )
+
+        return jsonify({
+            'task_id': task_id,
+            'status': 'started',
+            'message': 'CPR Backtest started'
+        })
+
+    except Exception as e:
+        logger.error(f"Error starting CPR backtest: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def _execute_cpr_backtest(
+    task_id: str,
+    symbols: list,
+    start_date: datetime,
+    end_date: datetime,
+    narrow_cpr_threshold: float,
+    otm_strike_pct: float,
+    dte_min: int,
+    dte_max: int,
+    enable_premium_rollout: bool,
+    premium_double_threshold: float,
+    premium_erosion_target: float,
+    dte_exit_threshold: int,
+    enable_r1_exit: bool,
+    use_closer_r1: bool,
+    initial_capital: float
+):
+    """Execute CPR backtest in background"""
+    try:
+        def progress_callback(pct, msg):
+            task_status[task_id]['progress'] = pct
+            task_status[task_id]['message'] = msg
+
+        task_status[task_id]['message'] = 'Loading market data...'
+
+        # Load daily market data
+        dm = get_data_manager()
+        stock_data = {}
+
+        for symbol in symbols:
+            try:
+                df = dm.load_data(symbol, 'day', start_date, end_date)
+                if df is not None and not df.empty:
+                    stock_data[symbol] = df
+            except Exception as e:
+                logger.warning(f"Could not load data for {symbol}: {e}")
+
+        if not stock_data:
+            raise ValueError("No market data available for selected symbols")
+
+        task_status[task_id]['message'] = 'Loading intraday data...'
+
+        # Load intraday data from bridge
+        intraday_bridge = get_intraday_bridge()
+        intraday_data = {}
+
+        for symbol in stock_data.keys():
+            try:
+                df = intraday_bridge.load_30min_data(
+                    symbol,
+                    start_date - timedelta(days=14),
+                    end_date
+                )
+                if df is not None and not df.empty:
+                    intraday_data[symbol] = df
+            except Exception as e:
+                logger.warning(f"Could not load intraday data for {symbol}: {e}")
+
+        task_status[task_id]['message'] = 'Running CPR backtest...'
+
+        # Create config
+        config = CPRBacktestConfig(
+            symbols=list(stock_data.keys()),
+            start_date=start_date,
+            end_date=end_date,
+            initial_capital=initial_capital,
+            narrow_cpr_threshold=narrow_cpr_threshold,
+            otm_strike_pct=otm_strike_pct,
+            dte_min=dte_min,
+            dte_max=dte_max,
+            enable_premium_rollout=enable_premium_rollout,
+            premium_double_threshold=premium_double_threshold,
+            premium_erosion_target=premium_erosion_target,
+            dte_exit_threshold=dte_exit_threshold,
+            enable_r1_exit=enable_r1_exit,
+            use_closer_r1=use_closer_r1
+        )
+
+        # Run backtest
+        engine = CPRCoveredCallEngine(config)
+        results = engine.run_backtest(stock_data, intraday_data, progress_callback)
+
+        task_status[task_id]['status'] = 'completed'
+        task_status[task_id]['progress'] = 100
+        task_status[task_id]['message'] = 'CPR Backtest completed!'
+        task_status[task_id]['result'] = results
+
+    except Exception as e:
+        logger.error(f"CPR Backtest execution error: {e}")
+        import traceback
+        traceback.print_exc()
+        task_status[task_id]['status'] = 'error'
+        task_status[task_id]['message'] = str(e)
+        task_status[task_id]['error'] = str(e)
+
+
+@app.route('/api/cpr-backtest/status/<task_id>')
+@login_required
+def api_cpr_backtest_status(task_id: str):
+    """Get status of a running CPR backtest"""
+    if task_id not in task_status:
+        return jsonify({'error': 'Task not found'}), 404
+
+    return jsonify(task_status[task_id])
+
+
+@app.route('/api/cpr-backtest/optimize', methods=['POST'])
+@login_required
+def api_run_cpr_optimization():
+    """Start CPR strategy optimization in background"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+
+        if not symbols:
+            return jsonify({'error': 'No symbols selected'}), 400
+
+        start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d')
+        end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d')
+
+        task_id = f"cpr_optimize_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        task_status[task_id] = {
+            'status': 'running',
+            'progress': 0,
+            'message': 'Initializing optimization...',
+            'result': None
+        }
+
+        scheduler.add_job(
+            _execute_cpr_optimization,
+            args=[task_id, symbols, start_date, end_date],
+            id=task_id
+        )
+
+        return jsonify({'task_id': task_id, 'status': 'started'})
+
+    except Exception as e:
+        logger.error(f"Error starting CPR optimization: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def _execute_cpr_optimization(task_id: str, symbols: list, start_date: datetime, end_date: datetime):
+    """Execute CPR optimization in background"""
+    try:
+        from services.cpr_strategy_optimizer import CPRStrategyOptimizer
+
+        def progress_callback(pct, msg):
+            task_status[task_id]['progress'] = pct
+            task_status[task_id]['message'] = msg
+
+        # Load data
+        dm = get_data_manager()
+        stock_data = {}
+        for symbol in symbols:
+            try:
+                df = dm.load_data(symbol, 'day', start_date, end_date)
+                if df is not None and not df.empty:
+                    stock_data[symbol] = df
+            except:
+                pass
+
+        intraday_bridge = get_intraday_bridge()
+        intraday_data = {}
+        for symbol in stock_data.keys():
+            try:
+                df = intraday_bridge.load_30min_data(symbol, start_date - timedelta(days=14), end_date)
+                if df is not None and not df.empty:
+                    intraday_data[symbol] = df
+            except:
+                pass
+
+        # Run optimization
+        optimizer = CPRStrategyOptimizer(
+            symbols=list(stock_data.keys()),
+            start_date=start_date,
+            end_date=end_date,
+            stock_data=stock_data,
+            intraday_data=intraday_data
+        )
+
+        results = optimizer.run_optimization(progress_callback=progress_callback)
+
+        task_status[task_id]['status'] = 'completed'
+        task_status[task_id]['progress'] = 100
+        task_status[task_id]['message'] = 'Optimization completed!'
+        task_status[task_id]['result'] = results
+        task_status[task_id]['best_sharpe'] = results.get('best_sharpe', 0)
+
+    except Exception as e:
+        logger.error(f"CPR optimization error: {e}")
+        task_status[task_id]['status'] = 'error'
+        task_status[task_id]['message'] = str(e)
+
+
+@app.route('/api/cpr-backtest/optimization-results/<task_id>')
+@login_required
+def api_get_cpr_optimization_results(task_id: str):
+    """Get CPR optimization results"""
+    if task_id not in task_status:
+        return jsonify({'error': 'Task not found'}), 404
+
+    return jsonify(task_status[task_id])
 
 
 # =============================================================================

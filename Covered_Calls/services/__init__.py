@@ -57,12 +57,18 @@ from .holdings_service import (
     get_fundamentals,
     get_historical_prices,
     get_portfolio_summary,
+    get_trading_data,
     format_currency,
     STOCK_SECTORS,
     STOCK_DESCRIPTIONS,
     STOCK_LOGOS,
     STOCK_NAMES,
     INDUSTRY_PE,
+)
+from .claude_chat_service import (
+    chat_sync as portfolio_chat,
+    clear_history as clear_chat_history,
+    get_suggested_questions,
 )
 
 __all__ = [
@@ -110,10 +116,15 @@ __all__ = [
     "get_fundamentals",
     "get_historical_prices",
     "get_portfolio_summary",
+    "get_trading_data",
     "format_currency",
     "STOCK_SECTORS",
     "STOCK_DESCRIPTIONS",
     "STOCK_LOGOS",
     "STOCK_NAMES",
     "INDUSTRY_PE",
+    # Claude Chat Service
+    "portfolio_chat",
+    "clear_chat_history",
+    "get_suggested_questions",
 ]

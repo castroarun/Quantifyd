@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <style>
+    /* Dark Mode (Default) */
     :root {
         --profit-green: #22c55e;
         --loss-red: #ef4444;
@@ -12,6 +13,277 @@
         --text-primary: #f8fafc;
         --text-secondary: #94a3b8;
         --border-color: #475569;
+        --body-bg: #0f172a;
+        --input-bg: #1e293b;
+    }
+
+    /* Light Mode - Clean Professional Theme */
+    [data-theme="light"] {
+        --profit-green: #059669;
+        --loss-red: #dc2626;
+        --card-bg: #ffffff;
+        --card-hover: #f8fafc;
+        --text-primary: #111827;
+        --text-secondary: #4b5563;
+        --border-color: #d1d5db;
+        --body-bg: #f3f4f6;
+        --input-bg: #ffffff;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    [data-theme="light"] body,
+    [data-theme="light"] .container-fluid,
+    [data-theme="light"] .container {
+        background: var(--body-bg) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="light"] .portfolio-summary {
+        background: #ffffff !important;
+        box-shadow: var(--shadow-sm);
+    }
+
+    [data-theme="light"] .sort-btn {
+        background: #ffffff !important;
+        color: #374151 !important;
+        border-color: #d1d5db !important;
+    }
+    [data-theme="light"] .sort-btn:hover,
+    [data-theme="light"] .sort-btn.active {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+    }
+
+    [data-theme="light"] .view-toggle button,
+    [data-theme="light"] .mode-toggle button {
+        background: #ffffff !important;
+        color: #374151 !important;
+    }
+    [data-theme="light"] .view-toggle button.active,
+    [data-theme="light"] .mode-toggle button.active {
+        background: #2563eb !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="light"] .flip-card-front,
+    [data-theme="light"] .flip-card-back {
+        background: #ffffff !important;
+        color: #111827 !important;
+        box-shadow: var(--shadow-md);
+        border-color: #e5e7eb !important;
+    }
+
+    [data-theme="light"] .flip-card-back {
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%) !important;
+    }
+
+    [data-theme="light"] .flip-card:hover .flip-card-front,
+    [data-theme="light"] .flip-card:hover .flip-card-back {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15) !important;
+    }
+
+    [data-theme="light"] .list-row {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #e5e7eb !important;
+    }
+    [data-theme="light"] .list-row:hover {
+        background: #f9fafb !important;
+    }
+
+    [data-theme="light"] .sector-group-header {
+        background: #f9fafb !important;
+        color: #111827 !important;
+    }
+
+    [data-theme="light"] .list-view-container,
+    [data-theme="light"] .sector-stocks {
+        background: #ffffff !important;
+        box-shadow: var(--shadow-sm);
+    }
+
+    [data-theme="light"] .chat-panel {
+        background: #ffffff !important;
+        color: #111827 !important;
+        box-shadow: var(--shadow-md);
+    }
+
+    [data-theme="light"] .chat-input {
+        background: #f9fafb !important;
+        color: #111827 !important;
+        border-color: #d1d5db !important;
+    }
+
+    [data-theme="light"] .summary-stat .value {
+        color: #111827 !important;
+    }
+    [data-theme="light"] .summary-stat .label {
+        color: #6b7280 !important;
+    }
+
+    [data-theme="light"] .text-secondary,
+    [data-theme="light"] .list-stock-symbol,
+    [data-theme="light"] .list-metric .label {
+        color: #6b7280 !important;
+    }
+
+    [data-theme="light"] .expanded-overlay .modal-content {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+
+    [data-theme="light"] .theme-toggle {
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+        color: #374151 !important;
+    }
+
+    /* Light Mode - Navbar */
+    [data-theme="light"] .navbar {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%) !important;
+        border-bottom: 2px solid #1e3a8a !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Light Mode - Metric items (card grids) */
+    [data-theme="light"] .metric-item {
+        background: #f8fafc !important;
+        border: 1px solid #e5e7eb;
+    }
+    [data-theme="light"] .metric-item .value {
+        color: #111827 !important;
+    }
+    [data-theme="light"] .metric-item .label {
+        color: #6b7280 !important;
+    }
+
+    /* Light Mode - Fund boxes */
+    [data-theme="light"] .fund-box,
+    [data-theme="light"] .exp-fund-box {
+        background: #f8fafc !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    [data-theme="light"] .fund-box .title,
+    [data-theme="light"] .exp-fund-box .title {
+        color: #374151 !important;
+    }
+
+    /* Light Mode - Ratio chips */
+    [data-theme="light"] .ratio-chip,
+    [data-theme="light"] .exp-ratio {
+        background: #f8fafc !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    [data-theme="light"] .ratio-chip .value,
+    [data-theme="light"] .exp-ratio .value {
+        color: #111827 !important;
+    }
+    [data-theme="light"] .ratio-chip.good .value {
+        color: #059669 !important;
+    }
+    [data-theme="light"] .ratio-chip.warning .value {
+        color: #d97706 !important;
+    }
+
+    /* Light Mode - P&L Badges */
+    [data-theme="light"] .pnl-badge.profit,
+    [data-theme="light"] .list-pnl-badge.profit {
+        background: rgba(5, 150, 105, 0.15) !important;
+        color: #059669 !important;
+    }
+    [data-theme="light"] .pnl-badge.loss,
+    [data-theme="light"] .list-pnl-badge.loss {
+        background: rgba(220, 38, 38, 0.15) !important;
+        color: #dc2626 !important;
+    }
+
+    /* Light Mode - Section headers */
+    [data-theme="light"] .list-section-header {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(99, 102, 241, 0.08)) !important;
+        border-color: rgba(37, 99, 235, 0.25) !important;
+        color: #2563eb !important;
+    }
+
+    /* Light Mode - Sector headers */
+    [data-theme="light"] .sector-header {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    [data-theme="light"] .sector-name {
+        color: #111827 !important;
+    }
+
+    /* Light Mode - Expanded card */
+    [data-theme="light"] .expanded-card {
+        background: #ffffff !important;
+        border-color: #e5e7eb !important;
+    }
+    [data-theme="light"] .expanded-header {
+        background: #ffffff !important;
+        border-bottom-color: #e5e7eb !important;
+    }
+
+    /* Light Mode - Action buttons */
+    [data-theme="light"] .action-btn,
+    [data-theme="light"] .list-action-btn {
+        background: #f8fafc !important;
+        border-color: #d1d5db !important;
+        color: #6b7280 !important;
+    }
+    [data-theme="light"] .action-btn:hover,
+    [data-theme="light"] .list-action-btn:hover {
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+    }
+
+    /* Light Mode - Nav arrows */
+    [data-theme="light"] .nav-arrow {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border-color: #d1d5db !important;
+        color: #374151 !important;
+    }
+    [data-theme="light"] .nav-arrow:hover {
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+    }
+
+    /* Light Mode - LTP/Avg container */
+    [data-theme="light"] .ltp-divider {
+        background: #d1d5db !important;
+    }
+    [data-theme="light"] .avg-value {
+        color: #6b7280 !important;
+    }
+
+    /* Light Mode - Text colors */
+    [data-theme="light"] .text-success {
+        color: #059669 !important;
+    }
+    [data-theme="light"] .text-danger {
+        color: #dc2626 !important;
+    }
+
+    /* Theme Toggle Button */
+    .theme-toggle {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .theme-toggle:hover {
+        background: var(--card-hover);
+        color: var(--text-primary);
     }
 
     .page-header { padding: 1.5rem 0 1rem; }
@@ -114,7 +386,7 @@
         width: 32px;
         height: 32px;
         border-radius: 8px;
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        background: var(--logo-gradient, linear-gradient(135deg, #3b82f6, #8b5cf6));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -125,7 +397,7 @@
     }
     .stock-logo:hover {
         transform: scale(1.1);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 4px 12px var(--logo-shadow, rgba(59, 130, 246, 0.4));
     }
 
     .stock-name { font-weight: 600; font-size: 1rem; line-height: 1.3; }
@@ -449,9 +721,10 @@
 
     /* Stock counter */
     .stock-counter {
-        font-size: 0.75rem;
+        font-size: 0.9rem;
         color: var(--text-secondary);
         margin-left: 0.5rem;
+        font-weight: 600;
     }
 
     /* Portfolio bar in expanded view */
@@ -557,6 +830,408 @@
     .view-toggle button { background: none; border: none; color: var(--text-secondary); padding: 0.4rem; border-radius: 4px; cursor: pointer; }
     .view-toggle button.active { background: #3b82f6; color: white; }
 
+    /* Mode toggle (Holdings vs Trading) */
+    .mode-toggle {
+        display: flex;
+        gap: 0.25rem;
+        background: var(--card-bg);
+        border-radius: 6px;
+        padding: 0.2rem;
+        margin-right: 0.5rem;
+    }
+    .mode-toggle button {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        padding: 0.4rem 0.75rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.2s;
+    }
+    .mode-toggle button.active { background: #22c55e; color: white; }
+    .mode-toggle button.active.trading { background: #f59e0b; }
+    .mode-toggle .loading-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #fbbf24;
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 1; }
+    }
+
+    /* List View Styles - Enhanced */
+    .holdings-list {
+        display: none;
+        flex-direction: column;
+        gap: 0;
+    }
+    .holdings-list.active { display: flex; }
+
+    .list-section {
+        margin-bottom: 1.5rem;
+    }
+    .list-section-header {
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1));
+        border-radius: 8px 8px 0 0;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-bottom: none;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #60a5fa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .list-items {
+        border: 1px solid var(--border-color);
+        border-radius: 0 0 8px 8px;
+        overflow: hidden;
+    }
+
+    .list-row {
+        display: grid;
+        grid-template-columns: 180px 1fr 36px;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: all 0.2s;
+        gap: 0.75rem;
+        min-height: 80px;
+        max-height: 90px;
+        overflow: hidden;
+    }
+    .list-row:last-child { border-bottom: none; }
+    .list-row:hover { background: var(--card-hover); }
+
+    .list-stock-info {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .list-stock-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.6rem;
+        flex-shrink: 0;
+    }
+    .list-stock-name { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+    .list-stock-symbol { font-size: 0.65rem; color: var(--text-secondary); }
+    .list-stock-sector { font-size: 0.55rem; color: #8b5cf6; background: rgba(139, 92, 246, 0.15); padding: 0.1rem 0.3rem; border-radius: 3px; display: inline-block; margin-top: 2px; }
+
+    .list-metrics {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        overflow: hidden;
+    }
+    .list-metric {
+        text-align: center;
+        padding: 0.15rem 0.2rem;
+        flex: 1 1 auto;
+        min-width: 65px;
+        max-width: 120px;
+        max-height: 60px;
+        overflow: hidden;
+    }
+    .list-metric .value {
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+    .list-metric .value.large {
+        font-size: 1.1rem;
+    }
+    .pnl-pct-inline {
+        font-size: 0.85rem;
+        font-weight: 600;
+        opacity: 0.9;
+    }
+    .list-metric .label {
+        font-size: 0.55rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .list-metric .sub-value {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+    }
+
+    .list-pnl-badge {
+        padding: 0.4rem 0.5rem;
+        border-radius: 6px;
+        font-weight: 800;
+        font-size: 1rem;
+        text-align: center;
+    }
+    .list-pnl-badge.profit { background: rgba(34, 197, 94, 0.2); color: var(--profit-green); }
+    .list-pnl-badge.loss { background: rgba(239, 68, 68, 0.2); color: var(--loss-red); }
+
+    .list-pnl-amount {
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .list-sparkline {
+        width: 80px;
+        height: 32px;
+        flex-shrink: 0;
+    }
+
+    .list-action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .list-action-btn:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+    }
+
+    /* LTP/Avg Price Format */
+    .ltp-avg-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    .ltp-value {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    .ltp-divider {
+        width: 30px;
+        height: 1px;
+        background: var(--border-color);
+    }
+    .avg-value {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    /* Mini Ticker Charts */
+    .mini-ticker {
+        width: 70px !important;
+        height: 40px !important;
+        max-width: 70px;
+        max-height: 40px;
+    }
+    .mini-ticker-label {
+        font-size: 0.5rem;
+        color: var(--text-secondary);
+        text-align: center;
+        margin-top: 2px;
+    }
+    .ticker-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 70px;
+        height: 52px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    /* Trading Mode Card Styles */
+    .trading-mode .pnl-label { display: none; }
+    .trading-mode .metric-item.trading-metric { display: block; }
+    .trading-mode .metric-item.default-metric { display: none; }
+    .metric-item.trading-metric { display: none; }
+
+    /* CPR/EMA Indicators */
+    .cpr-badge {
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 600;
+    }
+    .cpr-badge.above { background: rgba(34, 197, 94, 0.2); color: var(--profit-green); }
+    .cpr-badge.below { background: rgba(239, 68, 68, 0.2); color: var(--loss-red); }
+
+    .ema-badge {
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 600;
+    }
+    .ema-badge.bullish { background: rgba(34, 197, 94, 0.2); color: var(--profit-green); }
+    .ema-badge.bearish { background: rgba(239, 68, 68, 0.2); color: var(--loss-red); }
+    .ema-badge.neutral { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
+
+    /* Responsive list view */
+    @media (max-width: 768px) {
+        .list-row { grid-template-columns: 140px 1fr 32px; }
+        .list-stock-info { min-width: 140px; }
+        .list-metrics { flex-wrap: wrap; }
+        .list-metric { min-width: 60px; }
+        .ticker-container { display: none; }
+    }
+
+    /* Sector View - Collapsible */
+    .sector-group {
+        margin-bottom: 1rem;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+    .sector-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(30, 41, 59, 0.8));
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .sector-header:hover { background: rgba(59, 130, 246, 0.1); }
+    .sector-header.collapsed .sector-toggle { transform: rotate(-90deg); }
+    .sector-name {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .sector-toggle {
+        transition: transform 0.2s;
+        color: #60a5fa;
+    }
+    .sector-count {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        font-weight: 400;
+        background: rgba(59, 130, 246, 0.2);
+        padding: 0.15rem 0.5rem;
+        border-radius: 10px;
+        margin-left: 0.5rem;
+    }
+    .sector-stats {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+    .sector-stat {
+        text-align: right;
+    }
+    .sector-stat .value {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .sector-stat .label {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+    .sector-content {
+        max-height: 2000px;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .sector-content.collapsed {
+        max-height: 0;
+    }
+    .sector-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.5);
+    }
+
+    /* Portfolio Chart Modal */
+    .portfolio-chart-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    .portfolio-chart-modal.active { display: flex; }
+    .portfolio-chart-container {
+        width: 100%;
+        max-width: 1400px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+    }
+    .portfolio-chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .portfolio-chart-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .portfolio-chart-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.2);
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    .portfolio-chart-wrapper {
+        height: 500px;
+        position: relative;
+    }
+    .portfolio-chart-legend {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        margin-top: 1rem;
+        font-size: 0.8rem;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .legend-dot.portfolio { background: #3b82f6; }
+    .legend-dot.nifty { background: #f59e0b; }
+
     /* Investment Size Bar */
     .invest-bar {
         position: absolute;
@@ -649,6 +1324,244 @@
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
+
+    /* ========================================
+       AI Chat Interface
+       NOTE: Chat is hidden by default. To enable:
+       1. Set ANTHROPIC_API_KEY environment variable
+       2. Remove "display: none" from .chat-fab and .chat-panel
+       Or use Claude Code with MCP server (no API cost) - see docs
+    ======================================== */
+    .chat-fab {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        display: flex; /* Enabled for API-based chat */
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        z-index: 1000;
+    }
+    .chat-fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5);
+    }
+    .chat-fab.active {
+        transform: rotate(45deg);
+    }
+
+    .chat-panel {
+        position: fixed;
+        bottom: 6rem;
+        right: 2rem;
+        width: 400px;
+        max-width: calc(100vw - 2rem);
+        height: 500px;
+        max-height: calc(100vh - 8rem);
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.3s ease;
+    }
+    .chat-panel.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+
+    .chat-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .chat-header h5 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+    }
+    .chat-header h5 i {
+        color: #8b5cf6;
+    }
+    .chat-clear-btn {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .chat-clear-btn:hover {
+        background: var(--card-hover);
+        color: var(--text-primary);
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .chat-message {
+        max-width: 90%;
+        padding: 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+    .chat-message.user {
+        align-self: flex-end;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+    .chat-message.assistant {
+        align-self: flex-start;
+        background: var(--card-hover);
+        color: var(--text-primary);
+    }
+    .chat-message.assistant pre {
+        background: rgba(0,0,0,0.2);
+        padding: 0.5rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-size: 0.75rem;
+        margin: 0.5rem 0;
+    }
+    .chat-message.assistant code {
+        font-size: 0.75rem;
+        background: rgba(0,0,0,0.2);
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+    }
+    .chat-message.error {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+
+    .chat-suggestions {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .suggestion-chip {
+        background: var(--card-hover);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.35rem 0.65rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .suggestion-chip:hover {
+        background: #8b5cf6;
+        border-color: #8b5cf6;
+        color: white;
+    }
+
+    .chat-input-area {
+        padding: 1rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 0.5rem;
+    }
+    .chat-input {
+        flex: 1;
+        background: var(--card-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        outline: none;
+        resize: none;
+        min-height: 40px;
+        max-height: 100px;
+    }
+    .chat-input:focus {
+        border-color: #8b5cf6;
+    }
+    .chat-input::placeholder {
+        color: var(--text-secondary);
+    }
+    .chat-send-btn {
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .chat-send-btn:hover {
+        transform: scale(1.05);
+    }
+    .chat-send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .chat-typing {
+        display: flex;
+        gap: 0.25rem;
+        padding: 0.5rem;
+    }
+    .chat-typing span {
+        width: 8px;
+        height: 8px;
+        background: #8b5cf6;
+        border-radius: 50%;
+        animation: typing 1.4s infinite ease-in-out;
+    }
+    .chat-typing span:nth-child(1) { animation-delay: -0.32s; }
+    .chat-typing span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
+
+    @media (max-width: 500px) {
+        .chat-panel {
+            width: calc(100vw - 2rem);
+            right: 1rem;
+            bottom: 5rem;
+        }
+        .chat-fab {
+            right: 1rem;
+            bottom: 1rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -661,20 +1574,42 @@
                 <h5 class="mb-1">My Holdings</h5>
                 <p class="text-secondary mb-0 small" id="stockCount">Loading...</p>
             </div>
-            <div class="view-toggle">
-                <button class="active" data-view="grid" title="Grid View" onclick="switchView('grid')"><i class="bi bi-grid-3x3-gap"></i></button>
-                <button data-view="sector" title="Sector View" onclick="switchView('sector')"><i class="bi bi-collection"></i></button>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Mode toggle: Holdings vs Trading -->
+                <div class="mode-toggle">
+                    <button class="active" data-mode="holdings" onclick="switchMode('holdings')" title="Holdings View">
+                        <i class="bi bi-wallet2"></i> Holdings
+                    </button>
+                    <button data-mode="trading" onclick="switchMode('trading')" title="Trading View (Today's Data)">
+                        <i class="bi bi-graph-up-arrow"></i> Trading
+                        <span class="loading-dot" id="tradingLoadingDot" style="display: none;"></span>
+                    </button>
+                </div>
+                <!-- View toggle: Grid, List, Sector -->
+                <div class="view-toggle">
+                    <button class="active" data-view="grid" title="Grid View" onclick="switchView('grid')"><i class="bi bi-grid-3x3-gap"></i></button>
+                    <button data-view="list" title="List View" onclick="switchView('list')"><i class="bi bi-list-ul"></i></button>
+                    <button data-view="sector" title="Sector View" onclick="switchView('sector')"><i class="bi bi-collection"></i></button>
+                </div>
+                <!-- Theme toggle -->
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+                    <i class="bi bi-sun-fill" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Portfolio Summary -->
     <div class="portfolio-summary">
-        <div class="row">
-            <div class="col-3"><div class="summary-stat"><div class="value" id="totalInvested">-</div><div class="label">Invested</div></div></div>
-            <div class="col-3"><div class="summary-stat"><div class="value" id="totalCurrent">-</div><div class="label">Current</div></div></div>
-            <div class="col-3"><div class="summary-stat"><div class="value" id="totalPnl">-</div><div class="label">P&L</div></div></div>
-            <div class="col-3"><div class="summary-stat"><div class="value" id="totalReturns">-</div><div class="label">Returns</div></div></div>
+        <div class="row align-items-center">
+            <div class="col"><div class="summary-stat"><div class="value" id="totalInvested">-</div><div class="label">Invested</div></div></div>
+            <div class="col"><div class="summary-stat"><div class="value" id="totalCurrent">-</div><div class="label">Current</div></div></div>
+            <div class="col"><div class="summary-stat"><div class="value" id="totalPnl">-</div><div class="label">P&L</div></div></div>
+            <div class="col"><div class="summary-stat"><div class="value" id="totalReturns">-</div><div class="label">Returns</div></div></div>
+            <div class="col-auto px-2"><div style="width: 1px; height: 40px; background: var(--border-color);"></div></div>
+            <div class="col"><div class="summary-stat"><div class="value text-success" id="count100Plus">0</div><div class="label">100%+</div></div></div>
+            <div class="col"><div class="summary-stat"><div class="value text-success" id="count200Plus">0</div><div class="label">200%+</div></div></div>
+            <div class="col"><div class="summary-stat"><div class="value text-success" id="count300Plus">0</div><div class="label">300%+</div></div></div>
         </div>
     </div>
 
@@ -685,8 +1620,13 @@
             <button class="sort-btn" data-sort="invested">Invested</button>
             <button class="sort-btn" data-sort="current">Current</button>
             <button class="sort-btn" data-sort="pnl">P/L</button>
+            <button class="sort-btn" data-sort="alpha">A-Z</button>
+            <button class="sort-btn" data-sort="div_yield">Div Yield</button>
         </div>
-        <button class="sort-btn" id="sortOrder" onclick="toggleSortOrder()"><i class="bi bi-sort-down"></i></button>
+        <div class="d-flex gap-2">
+            <button class="sort-btn" id="sortOrder" onclick="toggleSortOrder()"><i class="bi bi-sort-down"></i></button>
+            <button class="sort-btn" onclick="showPortfolioChart()" title="Portfolio vs Nifty 50"><i class="bi bi-bar-chart-line"></i></button>
+        </div>
     </div>
 
     <!-- Holdings Grid -->
@@ -697,8 +1637,28 @@
         </div>
     </div>
 
+    <!-- List View Container (hidden by default) -->
+    <div class="holdings-list" id="listView"></div>
+
     <!-- Sector View Container (hidden by default) -->
     <div id="sector-view" style="display: none;"></div>
+</div>
+
+<!-- Portfolio Chart Modal -->
+<div class="portfolio-chart-modal" id="portfolioChartModal" onclick="closePortfolioChart(event)">
+    <div class="portfolio-chart-container" onclick="event.stopPropagation()">
+        <div class="portfolio-chart-header">
+            <div class="portfolio-chart-title"><i class="bi bi-bar-chart-line me-2"></i>Portfolio Performance vs Nifty 50</div>
+            <button class="portfolio-chart-close" onclick="closePortfolioChart()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="portfolio-chart-wrapper">
+            <canvas id="portfolioCompareChart"></canvas>
+        </div>
+        <div class="portfolio-chart-legend">
+            <div class="legend-item"><span class="legend-dot portfolio"></span> Portfolio</div>
+            <div class="legend-item"><span class="legend-dot nifty"></span> Nifty 50</div>
+        </div>
+    </div>
 </div>
 
 <!-- Expanded View Overlay -->
@@ -779,6 +1739,33 @@
         </div>
     </div>
 </div>
+
+<!-- AI Chat Floating Button -->
+<button class="chat-fab" id="chatFab" onclick="toggleChat()" title="Ask Claude about your portfolio">
+    <i class="bi bi-chat-dots"></i>
+</button>
+
+<!-- AI Chat Panel -->
+<div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+        <h5><i class="bi bi-robot"></i> Portfolio Research</h5>
+        <button class="chat-clear-btn" onclick="clearChatHistory()">Clear Chat</button>
+    </div>
+    <div class="chat-suggestions" id="chatSuggestions">
+        <!-- Suggestions populated by JS -->
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <div class="chat-message assistant">
+            Hi! I'm your portfolio research assistant. Ask me about your holdings, fundamentals, or trading signals.
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <textarea class="chat-input" id="chatInput" placeholder="Ask about your portfolio..." rows="1" onkeydown="handleChatKeydown(event)"></textarea>
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">
+            <i class="bi bi-send"></i>
+        </button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -786,11 +1773,42 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
+    // Theme toggle function
+    function toggleTheme() {
+        const html = document.documentElement;
+        const icon = document.getElementById('themeIcon');
+        const currentTheme = html.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('holdingsTheme', newTheme);
+
+        // Update icon
+        icon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+
+    // Initialize theme from localStorage
+    function initTheme() {
+        const savedTheme = localStorage.getItem('holdingsTheme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const icon = document.getElementById('themeIcon');
+        if (icon) {
+            icon.className = savedTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+        }
+    }
+
+    // Initialize theme immediately
+    initTheme();
+
     // Global state
     let holdingsData = [];
     let currentExpandedIndex = -1;  // Track current stock index in expanded view
     let currentSort = 'pnl_pct';
     let sortAscending = false;
+    let currentMode = 'holdings';  // 'holdings' or 'trading'
+    let currentView = 'grid';  // 'grid', 'list', or 'sector'
+    let tradingDataLoaded = false;
+    let tradingData = {};  // Store trading data (CPR, EMA, today's %) per symbol
 
     // Store chart instances for cleanup
     let expChartInstance = null;
@@ -798,9 +1816,11 @@
     let expProfitInstance = null;
     let expOpmInstance = null;
     let sparklineCharts = {};
+    let listDayCharts = {};  // Track day ticker charts in list view
+    let list1YCharts = {};   // Track 1Y ticker charts in list view
 
     // Cache configuration - increment version to force refresh
-    const CACHE_VERSION = 'v2';  // Increment when data structure changes
+    const CACHE_VERSION = 'v3';  // Increment when data structure changes (v3: dynamic labels, unique colors)
     const CACHE_KEY_PREFIX = `cc_holdings_${CACHE_VERSION}_`;
     const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -846,6 +1866,33 @@
     function clearOldCache() {
         const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_KEY_PREFIX));
         keys.forEach(k => localStorage.removeItem(k));
+    }
+
+    // Stock color palette - consistent colors per stock
+    const STOCK_COLORS = [
+        { gradient: 'linear-gradient(135deg, #3b82f6, #60a5fa)', shadow: 'rgba(59, 130, 246, 0.4)' },   // Blue
+        { gradient: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', shadow: 'rgba(139, 92, 246, 0.4)' },   // Purple
+        { gradient: 'linear-gradient(135deg, #ec4899, #f472b6)', shadow: 'rgba(236, 72, 153, 0.4)' },   // Pink
+        { gradient: 'linear-gradient(135deg, #22c55e, #4ade80)', shadow: 'rgba(34, 197, 94, 0.4)' },    // Green
+        { gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)', shadow: 'rgba(245, 158, 11, 0.4)' },   // Amber
+        { gradient: 'linear-gradient(135deg, #ef4444, #f87171)', shadow: 'rgba(239, 68, 68, 0.4)' },    // Red
+        { gradient: 'linear-gradient(135deg, #14b8a6, #2dd4bf)', shadow: 'rgba(20, 184, 166, 0.4)' },   // Teal
+        { gradient: 'linear-gradient(135deg, #6366f1, #818cf8)', shadow: 'rgba(99, 102, 241, 0.4)' },   // Indigo
+        { gradient: 'linear-gradient(135deg, #f97316, #fb923c)', shadow: 'rgba(249, 115, 22, 0.4)' },   // Orange
+        { gradient: 'linear-gradient(135deg, #84cc16, #a3e635)', shadow: 'rgba(132, 204, 22, 0.4)' },   // Lime
+        { gradient: 'linear-gradient(135deg, #0ea5e9, #38bdf8)', shadow: 'rgba(14, 165, 233, 0.4)' },   // Sky
+        { gradient: 'linear-gradient(135deg, #d946ef, #e879f9)', shadow: 'rgba(217, 70, 239, 0.4)' },   // Fuchsia
+    ];
+
+    // Get consistent color for a stock symbol (hash-based)
+    function getStockColor(symbol) {
+        let hash = 0;
+        for (let i = 0; i < symbol.length; i++) {
+            hash = ((hash << 5) - hash) + symbol.charCodeAt(i);
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        const index = Math.abs(hash) % STOCK_COLORS.length;
+        return STOCK_COLORS[index];
     }
 
     // Format currency in Indian style
@@ -906,48 +1953,112 @@
 
         pnlPctEl.textContent = (summary.is_profit ? '+' : '') + summary.total_pnl_pct + '%';
         pnlPctEl.className = `value ${summary.is_profit ? 'text-success' : 'text-danger'}`;
+
+        // Calculate return milestone counts from holdingsData
+        const count100Plus = holdingsData.filter(h => parseFloat(h.pnl_pct) >= 100).length;
+        const count200Plus = holdingsData.filter(h => parseFloat(h.pnl_pct) >= 200).length;
+        const count300Plus = holdingsData.filter(h => parseFloat(h.pnl_pct) >= 300).length;
+
+        document.getElementById('count100Plus').textContent = count100Plus;
+        document.getElementById('count200Plus').textContent = count200Plus;
+        document.getElementById('count300Plus').textContent = count300Plus;
+    }
+
+    // Sort helper function
+    function sortHoldings(data) {
+        return [...data].sort((a, b) => {
+            if (currentSort === 'alpha') {
+                const aName = (a.name || a.symbol).toLowerCase();
+                const bName = (b.name || b.symbol).toLowerCase();
+                return sortAscending ? bName.localeCompare(aName) : aName.localeCompare(bName);
+            }
+            // Handle div_yield sorting from cached fundamentals
+            if (currentSort === 'div_yield') {
+                const aFund = getCachedData(`fund_${a.symbol}`) || {};
+                const bFund = getCachedData(`fund_${b.symbol}`) || {};
+                const aVal = aFund.div_yield || 0;
+                const bVal = bFund.div_yield || 0;
+                return sortAscending ? aVal - bVal : bVal - aVal;
+            }
+            const aVal = a[currentSort] || 0;
+            const bVal = b[currentSort] || 0;
+            return sortAscending ? aVal - bVal : bVal - aVal;
+        });
     }
 
     // Render holding cards
     function renderHoldingCards() {
         const grid = document.getElementById('holdingsGrid');
+        const isTrading = currentMode === 'trading';
 
         // Sort data
-        const sorted = [...holdingsData].sort((a, b) => {
-            const aVal = a[currentSort] || 0;
-            const bVal = b[currentSort] || 0;
-            return sortAscending ? aVal - bVal : bVal - aVal;
-        });
+        const sorted = sortHoldings(holdingsData);
+
+        // Find max current value for relative bar calculation
+        const maxCurrent = Math.max(...holdingsData.map(h => h.current || 0));
 
         // Build HTML
         let html = '';
         sorted.forEach((h, idx) => {
             const pnlClass = h.is_profit ? 'profit' : 'loss';
             const pnlSign = h.is_profit ? '+' : '';
+            const stockColor = getStockColor(h.symbol);
+            // Bar width as percentage of max current value
+            const barPct = maxCurrent > 0 ? ((h.current / maxCurrent) * 100).toFixed(1) : 0;
+
+            // Trading data for this stock
+            const td = tradingData[h.symbol] || {};
+            const todayPct = td.today_pct || 0;
+            const todayClass = todayPct >= 0 ? 'profit' : 'loss';
+            const todaySign = todayPct >= 0 ? '+' : '';
+            const cprStatus = td.cpr_status || 'N/A';
+            const cprClass = cprStatus === 'Above CPR' ? 'above' : cprStatus === 'Below CPR' ? 'below' : '';
+            const emaStatus = td.ema_status || 'N/A';
+            const emaClass = emaStatus === 'Bullish' ? 'bullish' : emaStatus === 'Bearish' ? 'bearish' : 'neutral';
 
             html += `
                 <div class="flip-card" data-symbol="${h.symbol}" data-sector="${h.sector}" onclick="flipCard(this)">
                     <div class="flip-card-inner">
                         <!-- Front -->
                         <div class="flip-card-front">
-                            <div class="invest-bar" style="--invest-pct: ${h.current_pct || h.portfolio_pct}%;"></div>
+                            <div class="invest-bar" style="--invest-pct: ${barPct}%;"></div>
                             <div class="card-header-row">
                                 <div class="stock-info">
-                                    <div class="stock-logo" onclick="expandCard('${h.symbol}', event)" title="Click to expand">${h.logo}</div>
+                                    <div class="stock-logo" onclick="expandCard('${h.symbol}', event)" title="Click to expand" style="--logo-gradient: ${stockColor.gradient}; --logo-shadow: ${stockColor.shadow};">${h.logo}</div>
                                     <div>
                                         <div class="stock-name">${h.name || h.symbol}</div>
                                         <div class="stock-symbol">${h.symbol}</div>
                                     </div>
                                 </div>
                                 <div class="pnl-wrapper">
-                                    <span class="pnl-label">P/L %</span>
-                                    <div class="pnl-badge ${pnlClass}">${pnlSign}${h.pnl_pct}%</div>
+                                    ${isTrading ? `
+                                        <span class="pnl-label">Today</span>
+                                        <div class="pnl-badge ${todayClass}">${todaySign}${todayPct.toFixed(2)}%</div>
+                                    ` : `
+                                        <span class="pnl-label">P/L %</span>
+                                        <div class="pnl-badge ${pnlClass}">${pnlSign}${h.pnl_pct}%</div>
+                                    `}
                                 </div>
                             </div>
                             <div class="metrics-row">
-                                <div class="metric-item"><div class="value">${formatCurrency(h.invested)}</div><div class="label">Invested</div></div>
-                                <div class="metric-item"><div class="value">${formatCurrency(h.current)}</div><div class="label">Current</div></div>
-                                <div class="metric-item"><div class="value ${h.is_profit ? 'text-success' : 'text-danger'}">${pnlSign}${formatCurrency(h.pnl)}</div><div class="label">P&L</div></div>
+                                ${isTrading ? `
+                                    <div class="metric-item">
+                                        <span class="cpr-badge ${cprClass}">${cprStatus}</span>
+                                        <div class="label">W.CPR</div>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="ema-badge ${emaClass}">${emaStatus}</span>
+                                        <div class="label">20/50 EMA</div>
+                                    </div>
+                                    <div class="metric-item">
+                                        <div class="value">₹${(td.ltp || h.last_price || 0).toFixed(0)}</div>
+                                        <div class="label">Price</div>
+                                    </div>
+                                ` : `
+                                    <div class="metric-item"><div class="value">${formatCurrency(h.invested)}</div><div class="label">Invested</div></div>
+                                    <div class="metric-item"><div class="value">${formatCurrency(h.current)}</div><div class="label">Current</div></div>
+                                    <div class="metric-item"><div class="value ${h.is_profit ? 'text-success' : 'text-danger'}">${pnlSign}${formatCurrency(h.pnl)}</div><div class="label">P&L</div></div>
+                                `}
                             </div>
                             <div class="chart-container"><canvas id="chart-${h.symbol}"></canvas></div>
                             <div class="extra-info-row">
@@ -958,7 +2069,7 @@
                         </div>
                         <!-- Back -->
                         <div class="flip-card-back">
-                            <div class="invest-bar" style="--invest-pct: ${h.current_pct || h.portfolio_pct}%;"></div>
+                            <div class="invest-bar" style="--invest-pct: ${barPct}%;"></div>
                             <div class="back-header">
                                 <span class="back-title">${h.symbol} Fundamentals</span>
                                 <span class="back-close"><i class="bi bi-arrow-repeat"></i></span>
@@ -1106,8 +2217,12 @@
         // Update counter
         document.getElementById('exp-counter').textContent = ` (${currentExpandedIndex + 1}/${sortedHoldings.length})`;
 
-        // Update basic info
-        document.getElementById('exp-logo').textContent = holding.logo;
+        // Update basic info with consistent color
+        const stockColor = getStockColor(symbol);
+        const logoEl = document.getElementById('exp-logo');
+        logoEl.textContent = holding.logo;
+        logoEl.style.setProperty('--logo-gradient', stockColor.gradient);
+        logoEl.style.setProperty('--logo-shadow', stockColor.shadow);
         const nameEl = document.getElementById('exp-name');
         nameEl.innerHTML = `${holding.name || symbol}<span class="stock-counter" id="exp-counter"> (${currentExpandedIndex + 1}/${sortedHoldings.length})</span>`;
         document.getElementById('exp-symbol').textContent = symbol;
@@ -1199,8 +2314,12 @@
     async function loadExpandedStock(holding, index, total) {
         const symbol = holding.symbol;
 
-        // Update basic info
-        document.getElementById('exp-logo').textContent = holding.logo;
+        // Update basic info with consistent color
+        const stockColor = getStockColor(symbol);
+        const logoEl = document.getElementById('exp-logo');
+        logoEl.textContent = holding.logo;
+        logoEl.style.setProperty('--logo-gradient', stockColor.gradient);
+        logoEl.style.setProperty('--logo-shadow', stockColor.shadow);
         const nameEl = document.getElementById('exp-name');
         nameEl.innerHTML = `${holding.name || symbol}<span class="stock-counter"> (${index + 1}/${total})</span>`;
         document.getElementById('exp-symbol').textContent = symbol;
@@ -1381,113 +2500,141 @@
             });
         }
 
-        // Chart labels
-        const chartLabels = ['FY20', 'FY21', 'FY22', 'FY23', 'FY24'];
+        // Generate dynamic chart labels based on data length
+        function getChartLabels(dataArray) {
+            const currentYear = new Date().getFullYear();
+            const len = dataArray.length || 0;
+            const labels = [];
+            for (let i = len - 1; i >= 0; i--) {
+                labels.unshift(`FY${(currentYear - i).toString().slice(-2)}`);
+            }
+            return labels;
+        }
+        const chartLabels = getChartLabels(fundData.revenue_5y || []);
 
-        // Revenue chart
+        // Revenue chart - only create if we have valid data
+        const revenueData = fundData.revenue_5y || [];
         const revCtx = document.getElementById('exp-revenue');
-        expRevenueInstance = new Chart(revCtx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    type: 'bar',
-                    data: fundData.revenue_5y,
-                    backgroundColor: '#3b82f690',
-                    borderRadius: 6,
-                    order: 2
-                }, {
-                    type: 'line',
-                    data: fundData.revenue_5y,
-                    borderColor: '#fbbf24',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#fbbf24',
-                    pointRadius: 3,
-                    tension: 0.3,
-                    fill: false,
-                    order: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { display: true, grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 8 } } },
-                    y: { display: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4 } }
+        if (revenueData.length > 0 && revenueData.some(v => v > 0)) {
+            const revLabels = getChartLabels(revenueData);
+            expRevenueInstance = new Chart(revCtx, {
+                type: 'bar',
+                data: {
+                    labels: revLabels,
+                    datasets: [{
+                        type: 'bar',
+                        data: revenueData,
+                        backgroundColor: '#3b82f690',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: revenueData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fbbf24',
+                        pointRadius: 3,
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: true, grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 8 } } },
+                        y: { display: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4 } }
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            // Show "No data" message
+            revCtx.parentElement.innerHTML = '<div class="title">Revenue (Cr)</div><div class="text-secondary text-center py-4" style="font-size: 0.7rem;">Data not available</div>';
+        }
 
-        // Profit chart
+        // Profit chart - only create if we have valid data
+        const profitData = fundData.profit_5y || [];
         const profitCtx = document.getElementById('exp-profit');
-        expProfitInstance = new Chart(profitCtx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    type: 'bar',
-                    data: fundData.profit_5y,
-                    backgroundColor: fundData.profit_5y.map(v => v >= 0 ? '#22c55e90' : '#ef444490'),
-                    borderRadius: 6,
-                    order: 2
-                }, {
-                    type: 'line',
-                    data: fundData.profit_5y,
-                    borderColor: '#fbbf24',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#fbbf24',
-                    pointRadius: 3,
-                    tension: 0.3,
-                    fill: false,
-                    order: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { display: true, grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 8 } } },
-                    y: { display: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4 } }
+        if (profitData.length > 0 && profitData.some(v => v !== 0)) {
+            const profitLabels = getChartLabels(profitData);
+            expProfitInstance = new Chart(profitCtx, {
+                type: 'bar',
+                data: {
+                    labels: profitLabels,
+                    datasets: [{
+                        type: 'bar',
+                        data: profitData,
+                        backgroundColor: profitData.map(v => v >= 0 ? '#22c55e90' : '#ef444490'),
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: profitData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fbbf24',
+                        pointRadius: 3,
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: true, grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 8 } } },
+                        y: { display: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4 } }
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            profitCtx.parentElement.innerHTML = '<div class="title">Net Profit (Cr)</div><div class="text-secondary text-center py-4" style="font-size: 0.7rem;">Data not available</div>';
+        }
 
-        // OPM chart
+        // OPM chart - only create if we have valid data
+        const opmData = fundData.opm_5y || [];
         const opmCtx = document.getElementById('exp-opm');
-        expOpmInstance = new Chart(opmCtx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    type: 'bar',
-                    data: fundData.opm_5y,
-                    backgroundColor: '#f59e0b90',
-                    borderRadius: 6,
-                    order: 2
-                }, {
-                    type: 'line',
-                    data: fundData.opm_5y,
-                    borderColor: '#a78bfa',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#a78bfa',
-                    pointRadius: 3,
-                    tension: 0.3,
-                    fill: false,
-                    order: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { display: true, grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 8 } } },
-                    y: { display: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4, callback: v => v + '%' } }
+        if (opmData.length > 0 && opmData.some(v => v > 0)) {
+            const opmLabels = getChartLabels(opmData);
+            expOpmInstance = new Chart(opmCtx, {
+                type: 'bar',
+                data: {
+                    labels: opmLabels,
+                    datasets: [{
+                        type: 'bar',
+                        data: opmData,
+                        backgroundColor: '#f59e0b90',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: opmData,
+                        borderColor: '#a78bfa',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#a78bfa',
+                        pointRadius: 3,
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: true, grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 8 } } },
+                        y: { display: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4, callback: v => v + '%' } }
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            opmCtx.parentElement.innerHTML = '<div class="title">OPM %</div><div class="text-secondary text-center py-4" style="font-size: 0.7rem;">Data not available</div>';
+        }
     }
 
     // Close expanded view
@@ -1497,34 +2644,447 @@
         }
     }
 
-    // Switch view (grid/sector)
+    // Switch mode (holdings/trading)
+    function switchMode(mode) {
+        currentMode = mode;
+
+        // Update button states
+        document.querySelectorAll('.mode-toggle button').forEach(btn => {
+            const isActive = btn.dataset.mode === mode;
+            btn.classList.toggle('active', isActive);
+            if (mode === 'trading' && isActive) {
+                btn.classList.add('trading');
+            } else {
+                btn.classList.remove('trading');
+            }
+        });
+
+        // Apply trading mode class to grid/list
+        document.getElementById('holdingsGrid').classList.toggle('trading-mode', mode === 'trading');
+        document.getElementById('listView').classList.toggle('trading-mode', mode === 'trading');
+
+        // If trading mode and data not loaded, start loading
+        if (mode === 'trading' && !tradingDataLoaded) {
+            loadTradingDataInBackground();
+        }
+
+        // Re-render current view
+        if (currentView === 'grid') {
+            renderHoldingCards();
+        } else if (currentView === 'list') {
+            renderListView();
+        } else if (currentView === 'sector') {
+            renderSectorView();
+        }
+    }
+
+    // Load trading data in background (CPR, EMA, today's %)
+    async function loadTradingDataInBackground() {
+        if (tradingDataLoaded) return;
+
+        const loadingDot = document.getElementById('tradingLoadingDot');
+        loadingDot.style.display = 'inline-block';
+
+        try {
+            const symbols = holdingsData.map(h => h.symbol);
+            const response = await fetch('/api/trading-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbols })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                tradingData = data.trading_data || {};
+                tradingDataLoaded = true;
+
+                // Re-render if still in trading mode
+                if (currentMode === 'trading') {
+                    if (currentView === 'grid') {
+                        renderHoldingCards();
+                    } else if (currentView === 'list') {
+                        renderListView();
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading trading data:', error);
+        } finally {
+            loadingDot.style.display = 'none';
+        }
+    }
+
+    // Switch view (grid/list/sector)
     function switchView(viewType) {
+        currentView = viewType;
+
         document.querySelectorAll('.view-toggle button').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.view === viewType);
         });
 
         const gridView = document.getElementById('holdingsGrid');
+        const listView = document.getElementById('listView');
         const sectorView = document.getElementById('sector-view');
+
+        gridView.style.display = 'none';
+        listView.style.display = 'none';
+        sectorView.style.display = 'none';
 
         if (viewType === 'grid') {
             gridView.style.display = 'grid';
-            sectorView.style.display = 'none';
+        } else if (viewType === 'list') {
+            listView.style.display = 'flex';
+            renderListView();
         } else if (viewType === 'sector') {
-            gridView.style.display = 'none';
             sectorView.style.display = 'block';
             renderSectorView();
+        }
+    }
+
+    // Render list view
+    function renderListView() {
+        // Clean up existing list charts before re-rendering
+        Object.keys(listDayCharts).forEach(sym => {
+            if (listDayCharts[sym]) {
+                listDayCharts[sym].destroy();
+            }
+        });
+        Object.keys(list1YCharts).forEach(sym => {
+            if (list1YCharts[sym]) {
+                list1YCharts[sym].destroy();
+            }
+        });
+        listDayCharts = {};
+        list1YCharts = {};
+
+        const listView = document.getElementById('listView');
+        const isTrading = currentMode === 'trading';
+
+        // Sort data
+        const sorted = sortHoldings(holdingsData);
+
+        // Group by profit/loss for partition
+        const profitable = sorted.filter(h => h.is_profit);
+        const losing = sorted.filter(h => !h.is_profit);
+
+        let html = '';
+
+        // Profitable section
+        if (profitable.length > 0) {
+            html += `
+                <div class="list-section">
+                    <div class="list-section-header">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        Profitable (${profitable.length}) — Total: ${formatCurrency(profitable.reduce((sum, h) => sum + h.pnl, 0))}
+                    </div>
+                    <div class="list-items">
+                        ${profitable.map(h => createListRowHtml(h, isTrading)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Loss section
+        if (losing.length > 0) {
+            html += `
+                <div class="list-section">
+                    <div class="list-section-header" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.1)); border-color: rgba(239, 68, 68, 0.3);">
+                        <i class="bi bi-graph-down-arrow me-2" style="color: #ef4444;"></i>
+                        <span style="color: #f87171;">In Loss (${losing.length}) — Total: ${formatCurrency(losing.reduce((sum, h) => sum + h.pnl, 0))}</span>
+                    </div>
+                    <div class="list-items">
+                        ${losing.map(h => createListRowHtml(h, isTrading)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        listView.innerHTML = html;
+
+        // Render mini charts and load div yields for list view
+        sorted.forEach(h => {
+            loadListDivYield(h.symbol);
+            loadDayTicker(h.symbol);
+            load1YTicker(h.symbol, h.is_profit);
+        });
+    }
+
+    // Load dividend yield from cached fundamentals for list view
+    function loadListDivYield(symbol) {
+        const el = document.getElementById(`list-div-${symbol}`);
+        if (!el) return;
+
+        // Try to get from cached fundamentals
+        const cached = getCachedData(`fund_${symbol}`);
+        if (cached && cached.div_yield) {
+            el.textContent = cached.div_yield.toFixed(2) + '%';
+        } else {
+            // Load fundamentals if not cached
+            fetch(`/api/fundamentals/${symbol}`)
+                .then(r => r.json())
+                .then(data => {
+                    setCachedData(`fund_${symbol}`, data);
+                    if (data.div_yield) {
+                        el.textContent = data.div_yield.toFixed(2) + '%';
+                    }
+                })
+                .catch(() => {});
+        }
+    }
+
+    // Create list row HTML
+    function createListRowHtml(h, isTrading) {
+        const pnlClass = h.is_profit ? 'profit' : 'loss';
+        const pnlSign = h.is_profit ? '+' : '';
+        const stockColor = getStockColor(h.symbol);
+        const td = tradingData[h.symbol] || {};
+
+        if (isTrading) {
+            // Trading mode: Today's %, CPR, EMA, Price
+            const todayPct = td.today_pct || 0;
+            const todayClass = todayPct >= 0 ? 'profit' : 'loss';
+            const todaySign = todayPct >= 0 ? '+' : '';
+            const cprStatus = td.cpr_status || 'N/A';
+            const cprClass = cprStatus === 'Above CPR' ? 'above' : cprStatus === 'Below CPR' ? 'below' : '';
+            const emaStatus = td.ema_status || 'N/A';
+            const emaClass = emaStatus === 'Bullish' ? 'bullish' : emaStatus === 'Bearish' ? 'bearish' : 'neutral';
+
+            return `
+                <div class="list-row" onclick="expandCard('${h.symbol}', event)">
+                    <div class="list-stock-info">
+                        <div class="list-stock-logo" style="background: ${stockColor.gradient};">${h.logo}</div>
+                        <div>
+                            <div class="list-stock-name">${h.name || h.symbol}</div>
+                            <div class="list-stock-symbol">${h.symbol}</div>
+                        </div>
+                    </div>
+                    <div class="list-metrics">
+                        <div class="list-metric">
+                            <div class="value">₹${(td.ltp || h.last_price || 0).toFixed(2)}</div>
+                            <div class="label">Price</div>
+                        </div>
+                        <div class="list-metric">
+                            <span class="cpr-badge ${cprClass}">${cprStatus}</span>
+                            <div class="label">W.CPR</div>
+                        </div>
+                        <div class="list-metric">
+                            <span class="ema-badge ${emaClass}">${emaStatus}</span>
+                            <div class="label">20/50 EMA</div>
+                        </div>
+                    </div>
+                    <div class="list-pnl-badge ${todayClass}">${todaySign}${todayPct.toFixed(2)}%</div>
+                    <div class="list-sparkline"><canvas id="list-chart-${h.symbol}"></canvas></div>
+                    <div class="list-actions">
+                        <button class="list-action-btn" onclick="expandCard('${h.symbol}', event)" title="View Details"><i class="bi bi-arrows-fullscreen"></i></button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Holdings mode: Invested, Current, P&L + LTP/Avg with day ticker + Div Yield + 1Y ticker
+            // Get today's change data
+            const todayPct = td.today_pct || 0;
+            const ltpClass = todayPct >= 0 ? 'text-success' : 'text-danger';
+            const ltpSign = todayPct >= 0 ? '+' : '';
+
+            return `
+                <div class="list-row" onclick="expandCard('${h.symbol}', event)">
+                    <div class="list-stock-info">
+                        <div class="list-stock-logo" style="background: ${stockColor.gradient};">${h.logo}</div>
+                        <div>
+                            <div class="list-stock-name">${h.name || h.symbol}</div>
+                            <div class="list-stock-symbol">${h.symbol}</div>
+                            <div class="list-stock-sector">${h.sector}</div>
+                        </div>
+                    </div>
+                    <div class="list-metrics">
+                        <div class="list-metric">
+                            <div class="value large">${formatCurrency(h.invested)}</div>
+                            <div class="label">Invested</div>
+                            <div class="sub-value">${h.quantity} shares</div>
+                        </div>
+                        <div class="list-metric">
+                            <div class="value large">${formatCurrency(h.current)}</div>
+                            <div class="label">Current</div>
+                            <div class="sub-value">${h.portfolio_pct || 0}% of portfolio</div>
+                        </div>
+                        <div class="list-metric">
+                            <div class="value large ${h.is_profit ? 'text-success' : 'text-danger'}">${pnlSign}${formatCurrency(h.pnl)} <span class="pnl-pct-inline">(${pnlSign}${h.pnl_pct}%)</span></div>
+                            <div class="label">P&L</div>
+                        </div>
+                        <div class="list-metric">
+                            <div class="ltp-avg-container">
+                                <div class="ltp-value ${ltpClass}">₹${h.last_price ? h.last_price.toFixed(0) : '-'}</div>
+                                <div class="ltp-divider"></div>
+                                <div class="avg-value">₹${h.average_price ? h.average_price.toFixed(0) : '-'}</div>
+                            </div>
+                            <div class="label">LTP / Avg</div>
+                        </div>
+                        <div class="list-metric">
+                            <div class="ticker-container">
+                                <canvas id="list-day-chart-${h.symbol}" class="mini-ticker"></canvas>
+                                <div class="mini-ticker-label">Day</div>
+                            </div>
+                        </div>
+                        <div class="list-metric">
+                            <div class="value" id="list-div-${h.symbol}">-</div>
+                            <div class="label">Div Yield</div>
+                        </div>
+                        <div class="list-metric">
+                            <div class="ticker-container">
+                                <canvas id="list-1y-chart-${h.symbol}" class="mini-ticker"></canvas>
+                                <div class="mini-ticker-label">1Y</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="list-action-btn" onclick="expandCard('${h.symbol}', event)" title="View Details"><i class="bi bi-arrows-fullscreen"></i></button>
+                </div>
+            `;
+        }
+    }
+
+    // Load sparkline for list view
+    async function loadListSparkline(symbol, isProfit) {
+        try {
+            let prices = getCachedData(`hist_${symbol}`);
+            if (!prices) return;  // Only use cached data for list sparklines
+
+            const ctx = document.getElementById(`list-chart-${symbol}`);
+            if (!ctx) return;
+
+            const color = isProfit ? '#22c55e' : '#ef4444';
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: prices.slice(-30).map((_, i) => i),  // Last 30 days
+                    datasets: [{
+                        data: prices.slice(-30),
+                        borderColor: color,
+                        borderWidth: 1,
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        } catch (error) {
+            console.error(`Error loading list sparkline for ${symbol}:`, error);
+        }
+    }
+
+    // Load day ticker chart for list view
+    async function loadDayTicker(symbol) {
+        try {
+            // Get intraday data from trading data or fetch it
+            const td = tradingData[symbol];
+            const todayPct = td?.today_pct || 0;
+            const color = todayPct >= 0 ? '#22c55e' : '#ef4444';
+
+            const ctx = document.getElementById(`list-day-chart-${symbol}`);
+            if (!ctx) return;
+
+            // Destroy existing chart if any
+            if (listDayCharts[symbol]) {
+                listDayCharts[symbol].destroy();
+                listDayCharts[symbol] = null;
+            }
+
+            // Use cached 1Y data and take last day's hourly approximation
+            // Or generate simple trend line based on today's movement
+            let prices = getCachedData(`hist_${symbol}`);
+            if (prices && prices.length > 1) {
+                // Use last 5 data points as proxy for day movement
+                const dayData = prices.slice(-5);
+                listDayCharts[symbol] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dayData.map((_, i) => i),
+                        datasets: [{
+                            data: dayData,
+                            borderColor: color,
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { display: false }, y: { display: false } }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error(`Error loading day ticker for ${symbol}:`, error);
+        }
+    }
+
+    // Load 1Y ticker chart for list view
+    async function load1YTicker(symbol, isProfit) {
+        try {
+            let prices = getCachedData(`hist_${symbol}`);
+            if (!prices || prices.length < 10) return;
+
+            const ctx = document.getElementById(`list-1y-chart-${symbol}`);
+            if (!ctx) return;
+
+            // Destroy existing chart if any
+            if (list1YCharts[symbol]) {
+                list1YCharts[symbol].destroy();
+                list1YCharts[symbol] = null;
+            }
+
+            const color = isProfit ? '#22c55e' : '#ef4444';
+
+            // Sample data for smoother chart (every 5th point for 1Y)
+            const sampledPrices = prices.filter((_, i) => i % 5 === 0 || i === prices.length - 1);
+
+            list1YCharts[symbol] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sampledPrices.map((_, i) => i),
+                    datasets: [{
+                        data: sampledPrices,
+                        borderColor: color,
+                        borderWidth: 1.5,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        } catch (error) {
+            console.error(`Error loading 1Y ticker for ${symbol}:`, error);
         }
     }
 
     // Render sector view
     function renderSectorView() {
         const sectorView = document.getElementById('sector-view');
+        const isTrading = currentMode === 'trading';
+
+        // Find max current value for relative bar calculation
+        const maxCurrent = Math.max(...holdingsData.map(h => h.current || 0));
 
         // Group by sector
         const sectors = {};
         holdingsData.forEach(h => {
             if (!sectors[h.sector]) {
-                sectors[h.sector] = { stocks: [], invested: 0, current: 0, pnl: 0 };
+                sectors[h.sector] = { name: h.sector, stocks: [], invested: 0, current: 0, pnl: 0 };
             }
             sectors[h.sector].stocks.push(h);
             sectors[h.sector].invested += h.invested;
@@ -1532,17 +3092,43 @@
             sectors[h.sector].pnl += h.pnl;
         });
 
+        // Calculate pnl_pct for each sector
+        Object.values(sectors).forEach(s => {
+            s.pnl_pct = s.invested > 0 ? (s.pnl / s.invested * 100) : 0;
+        });
+
+        // Sort sectors: by selected metric, with "Other" always last
+        let sortedSectors = Object.values(sectors).sort((a, b) => {
+            // "Other" always last
+            if (a.name === 'Other') return 1;
+            if (b.name === 'Other') return -1;
+
+            // Alphabetical sort
+            if (currentSort === 'alpha') {
+                return sortAscending ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+            }
+
+            // Sort by sector totals
+            const aVal = a[currentSort] || 0;
+            const bVal = b[currentSort] || 0;
+            return sortAscending ? aVal - bVal : bVal - aVal;
+        });
+
         // Build HTML
         let html = '';
-        for (const [sector, data] of Object.entries(sectors)) {
-            const pnlPct = data.invested > 0 ? (data.pnl / data.invested * 100).toFixed(1) : 0;
+        sortedSectors.forEach(data => {
+            const sector = data.name;
+            const pnlPct = data.pnl_pct.toFixed(1);
             const isProfit = data.pnl >= 0;
+
+            // Sort stocks within sector
+            const sortedStocks = sortHoldings(data.stocks);
 
             html += `
                 <div class="sector-group">
                     <div class="sector-header" onclick="toggleSector(this)">
                         <div class="sector-name">
-                            <i class="bi bi-collection sector-toggle"></i>
+                            <i class="bi bi-chevron-down sector-toggle"></i>
                             ${sector} <span class="sector-count">${data.stocks.length} stock${data.stocks.length > 1 ? 's' : ''}</span>
                         </div>
                         <div class="sector-stats">
@@ -1554,48 +3140,84 @@
                     </div>
                     <div class="sector-content">
                         <div class="sector-grid">
-                            ${data.stocks.map(h => createCardHtml(h)).join('')}
+                            ${sortedStocks.map(h => createSectorCardHtml(h, maxCurrent, isTrading)).join('')}
                         </div>
                     </div>
                 </div>
             `;
-        }
+        });
 
         sectorView.innerHTML = html;
+
+        // Load sparklines for all sector cards
+        holdingsData.forEach(h => {
+            loadSectorSparkline(h.symbol, h.is_profit);
+        });
     }
 
-    // Create card HTML (for sector view)
-    function createCardHtml(h) {
+    // Create card HTML (for sector view with charts)
+    function createSectorCardHtml(h, maxCurrent, isTrading) {
         const pnlClass = h.is_profit ? 'profit' : 'loss';
         const pnlSign = h.is_profit ? '+' : '';
+        const stockColor = getStockColor(h.symbol);
+        const barPct = maxCurrent > 0 ? ((h.current / maxCurrent) * 100).toFixed(1) : 0;
+        const td = tradingData[h.symbol] || {};
+        const todayPct = td.today_pct || 0;
+        const todayClass = todayPct >= 0 ? 'profit' : 'loss';
+        const todaySign = todayPct >= 0 ? '+' : '';
+        const cprStatus = td.cpr_status || 'N/A';
+        const cprClass = cprStatus === 'Above CPR' ? 'above' : cprStatus === 'Below CPR' ? 'below' : '';
+        const emaStatus = td.ema_status || 'N/A';
+        const emaClass = emaStatus === 'Bullish' ? 'bullish' : emaStatus === 'Bearish' ? 'bearish' : 'neutral';
 
         return `
             <div class="flip-card" data-symbol="${h.symbol}" onclick="flipCard(this)">
                 <div class="flip-card-inner">
                     <div class="flip-card-front">
-                        <div class="invest-bar" style="--invest-pct: ${h.portfolio_pct}%;"></div>
+                        <div class="invest-bar" style="--invest-pct: ${barPct}%;"></div>
                         <div class="card-header-row">
                             <div class="stock-info">
-                                <div class="stock-logo" onclick="expandCard('${h.symbol}', event)">${h.logo}</div>
+                                <div class="stock-logo" onclick="expandCard('${h.symbol}', event)" style="--logo-gradient: ${stockColor.gradient}; --logo-shadow: ${stockColor.shadow};">${h.logo}</div>
                                 <div>
                                     <div class="stock-name">${h.name || h.symbol}</div>
                                     <div class="stock-symbol">${h.symbol}</div>
                                 </div>
                             </div>
                             <div class="pnl-wrapper">
-                                <span class="pnl-label">P/L %</span>
-                                <div class="pnl-badge ${pnlClass}">${pnlSign}${h.pnl_pct}%</div>
+                                ${isTrading ? `
+                                    <span class="pnl-label">Today</span>
+                                    <div class="pnl-badge ${todayClass}">${todaySign}${todayPct.toFixed(2)}%</div>
+                                ` : `
+                                    <span class="pnl-label">P/L %</span>
+                                    <div class="pnl-badge ${pnlClass}">${pnlSign}${h.pnl_pct}%</div>
+                                `}
                             </div>
                         </div>
                         <div class="metrics-row">
-                            <div class="metric-item"><div class="value">${formatCurrency(h.invested)}</div><div class="label">Invested</div></div>
-                            <div class="metric-item"><div class="value">${formatCurrency(h.current)}</div><div class="label">Current</div></div>
-                            <div class="metric-item"><div class="value ${h.is_profit ? 'text-success' : 'text-danger'}">${pnlSign}${formatCurrency(h.pnl)}</div><div class="label">P&L</div></div>
+                            ${isTrading ? `
+                                <div class="metric-item">
+                                    <span class="cpr-badge ${cprClass}">${cprStatus}</span>
+                                    <div class="label">W.CPR</div>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="ema-badge ${emaClass}">${emaStatus}</span>
+                                    <div class="label">20/50 EMA</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="value">₹${(td.ltp || h.last_price || 0).toFixed(0)}</div>
+                                    <div class="label">Price</div>
+                                </div>
+                            ` : `
+                                <div class="metric-item"><div class="value">${formatCurrency(h.invested)}</div><div class="label">Invested</div></div>
+                                <div class="metric-item"><div class="value">${formatCurrency(h.current)}</div><div class="label">Current</div></div>
+                                <div class="metric-item"><div class="value ${h.is_profit ? 'text-success' : 'text-danger'}">${pnlSign}${formatCurrency(h.pnl)}</div><div class="label">P&L</div></div>
+                            `}
                         </div>
+                        <div class="chart-container"><canvas id="sector-chart-${h.symbol}"></canvas></div>
                         <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
                     </div>
                     <div class="flip-card-back">
-                        <div class="invest-bar" style="--invest-pct: ${h.portfolio_pct}%;"></div>
+                        <div class="invest-bar" style="--invest-pct: ${barPct}%;"></div>
                         <div class="back-header">
                             <span class="back-title">${h.symbol}</span>
                             <span class="back-close"><i class="bi bi-arrow-repeat"></i></span>
@@ -1607,17 +3229,59 @@
         `;
     }
 
+    // Load sparkline for sector view cards
+    async function loadSectorSparkline(symbol, isProfit) {
+        try {
+            let prices = getCachedData(`hist_${symbol}`);
+            if (!prices) {
+                // Try to fetch if not cached
+                const response = await fetch(`/api/historical/${symbol}?period=1y`);
+                if (response.ok) {
+                    const data = await response.json();
+                    prices = data.prices || [];
+                    if (prices.length > 0) {
+                        setCachedData(`hist_${symbol}`, prices);
+                    }
+                }
+            }
+
+            if (!prices || prices.length === 0) return;
+
+            const ctx = document.getElementById(`sector-chart-${symbol}`);
+            if (!ctx) return;
+
+            const color = isProfit ? '#22c55e' : '#ef4444';
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: prices.map((_, i) => i),
+                    datasets: [{
+                        data: prices,
+                        borderColor: color,
+                        borderWidth: 1.5,
+                        fill: true,
+                        backgroundColor: isProfit ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.3,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        } catch (error) {
+            // Silent fail for charts
+        }
+    }
+
     // Toggle sector collapse
     function toggleSector(header) {
         header.classList.toggle('collapsed');
         header.nextElementSibling.classList.toggle('collapsed');
-    }
-
-    // Toggle sort order
-    function toggleSortOrder() {
-        sortAscending = !sortAscending;
-        document.getElementById('sortOrder').innerHTML = `<i class="bi bi-sort-${sortAscending ? 'up' : 'down'}"></i>`;
-        renderHoldingCards();
     }
 
     // Sort button handlers
@@ -1626,9 +3290,167 @@
             document.querySelectorAll('.sort-btn[data-sort]').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentSort = this.dataset.sort;
-            renderHoldingCards();
+            // Re-render current view
+            if (currentView === 'grid') {
+                renderHoldingCards();
+            } else if (currentView === 'list') {
+                renderListView();
+            } else if (currentView === 'sector') {
+                renderSectorView();
+            }
         });
     });
+
+    // Toggle sort order - update for all views
+    function toggleSortOrder() {
+        sortAscending = !sortAscending;
+        document.getElementById('sortOrder').innerHTML = `<i class="bi bi-sort-${sortAscending ? 'up' : 'down'}"></i>`;
+        if (currentView === 'grid') {
+            renderHoldingCards();
+        } else if (currentView === 'list') {
+            renderListView();
+        } else if (currentView === 'sector') {
+            renderSectorView();
+        }
+    }
+
+    // Portfolio chart instance
+    let portfolioChartInstance = null;
+
+    // Show portfolio chart modal
+    async function showPortfolioChart() {
+        document.getElementById('portfolioChartModal').classList.add('active');
+        await loadPortfolioChart();
+    }
+
+    // Close portfolio chart modal
+    function closePortfolioChart(event) {
+        if (!event || event.target === document.getElementById('portfolioChartModal')) {
+            document.getElementById('portfolioChartModal').classList.remove('active');
+        }
+    }
+
+    // Load portfolio comparison chart
+    async function loadPortfolioChart() {
+        try {
+            // Fetch Nifty 50 data
+            const niftyResponse = await fetch('/api/historical/NIFTY50?period=1y');
+            let niftyData = [];
+            if (niftyResponse.ok) {
+                const data = await niftyResponse.json();
+                niftyData = data.prices || [];
+            }
+
+            // Calculate portfolio returns using cached price data
+            // Normalize both to percentage change from start
+            let portfolioReturns = [];
+            let niftyReturns = [];
+
+            if (niftyData.length > 0) {
+                const niftyBase = niftyData[0];
+                niftyReturns = niftyData.map(p => ((p - niftyBase) / niftyBase * 100).toFixed(2));
+            }
+
+            // Get weighted portfolio returns based on holdings
+            const totalInvested = holdingsData.reduce((sum, h) => sum + h.invested, 0);
+            if (holdingsData.length > 0 && totalInvested > 0) {
+                // Use first stock's historical data length as reference
+                const refSymbol = holdingsData[0].symbol;
+                let refPrices = getCachedData(`hist_${refSymbol}`) || [];
+
+                for (let i = 0; i < refPrices.length; i++) {
+                    let dayReturn = 0;
+                    holdingsData.forEach(h => {
+                        const prices = getCachedData(`hist_${h.symbol}`) || [];
+                        if (prices.length > i && prices[0] > 0) {
+                            const weight = h.invested / totalInvested;
+                            const stockReturn = ((prices[i] - prices[0]) / prices[0]) * 100;
+                            dayReturn += stockReturn * weight;
+                        }
+                    });
+                    portfolioReturns.push(dayReturn.toFixed(2));
+                }
+            }
+
+            // Create chart
+            const ctx = document.getElementById('portfolioCompareChart');
+            if (portfolioChartInstance) portfolioChartInstance.destroy();
+
+            const labels = portfolioReturns.map((_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (portfolioReturns.length - i));
+                return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+            });
+
+            portfolioChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portfolio',
+                        data: portfolioReturns,
+                        borderColor: '#3b82f6',
+                        borderWidth: 2.5,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }, {
+                        label: 'Nifty 50',
+                        data: niftyReturns.slice(0, portfolioReturns.length),
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    const sign = context.raw >= 0 ? '+' : '';
+                                    return `${context.dataset.label}: ${sign}${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#64748b', maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: '#64748b',
+                                callback: v => (v >= 0 ? '+' : '') + v + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading portfolio chart:', error);
+        }
+    }
 
     // Keyboard navigation
     document.addEventListener('keydown', (e) => {
@@ -1656,5 +3478,165 @@
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', loadHoldings);
+
+    // =========================================================================
+    // AI Chat Functions
+    // =========================================================================
+
+    let chatOpen = false;
+    let chatLoading = false;
+
+    function toggleChat() {
+        const panel = document.getElementById('chatPanel');
+        const fab = document.getElementById('chatFab');
+
+        chatOpen = !chatOpen;
+
+        if (chatOpen) {
+            panel.classList.add('open');
+            fab.classList.add('active');
+            fab.innerHTML = '<i class="bi bi-x"></i>';
+            loadChatSuggestions();
+            document.getElementById('chatInput').focus();
+        } else {
+            panel.classList.remove('open');
+            fab.classList.remove('active');
+            fab.innerHTML = '<i class="bi bi-chat-dots"></i>';
+        }
+    }
+
+    async function loadChatSuggestions() {
+        try {
+            const response = await fetch('/api/chat/suggestions');
+            const data = await response.json();
+
+            if (data.suggestions) {
+                const container = document.getElementById('chatSuggestions');
+                container.innerHTML = data.suggestions.slice(0, 4).map(s =>
+                    `<button class="suggestion-chip" onclick="sendSuggestion('${s.replace(/'/g, "\\'")}')">${s}</button>`
+                ).join('');
+            }
+        } catch (error) {
+            console.error('Error loading suggestions:', error);
+        }
+    }
+
+    function sendSuggestion(text) {
+        document.getElementById('chatInput').value = text;
+        sendChatMessage();
+    }
+
+    function handleChatKeydown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendChatMessage();
+        }
+    }
+
+    async function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+
+        if (!message || chatLoading) return;
+
+        // Add user message to chat
+        addChatMessage(message, 'user');
+        input.value = '';
+
+        // Show typing indicator
+        chatLoading = true;
+        document.getElementById('chatSendBtn').disabled = true;
+        const typingEl = addTypingIndicator();
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+
+            const data = await response.json();
+
+            // Remove typing indicator
+            typingEl.remove();
+
+            if (data.error) {
+                addChatMessage(data.error, 'error');
+            } else {
+                addChatMessage(data.response, 'assistant');
+            }
+        } catch (error) {
+            typingEl.remove();
+            addChatMessage('Failed to connect to AI service. Please try again.', 'error');
+        } finally {
+            chatLoading = false;
+            document.getElementById('chatSendBtn').disabled = false;
+        }
+    }
+
+    function addChatMessage(text, type) {
+        const container = document.getElementById('chatMessages');
+
+        const messageEl = document.createElement('div');
+        messageEl.className = `chat-message ${type}`;
+
+        // Format markdown-like content for assistant messages
+        if (type === 'assistant') {
+            messageEl.innerHTML = formatChatResponse(text);
+        } else {
+            messageEl.textContent = text;
+        }
+
+        container.appendChild(messageEl);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+        const container = document.getElementById('chatMessages');
+
+        const typingEl = document.createElement('div');
+        typingEl.className = 'chat-message assistant';
+        typingEl.innerHTML = '<div class="chat-typing"><span></span><span></span><span></span></div>';
+
+        container.appendChild(typingEl);
+        container.scrollTop = container.scrollHeight;
+
+        return typingEl;
+    }
+
+    function formatChatResponse(text) {
+        // Convert markdown-like formatting
+        let html = text
+            // Code blocks
+            .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+            // Inline code
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            // Bold
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            // Line breaks
+            .replace(/\n/g, '<br>')
+            // Lists
+            .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+            // Currency formatting
+            .replace(/₹([\d,]+\.?\d*)/g, '<span style="color:#22c55e;">₹$1</span>');
+
+        return html;
+    }
+
+    async function clearChatHistory() {
+        try {
+            await fetch('/api/chat/clear', { method: 'POST' });
+
+            // Clear messages in UI
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = `
+                <div class="chat-message assistant">
+                    Chat history cleared. How can I help you?
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error clearing chat:', error);
+        }
+    }
 </script>
 {% endblock %}

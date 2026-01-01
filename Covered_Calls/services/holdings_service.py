@@ -98,6 +98,10 @@ NSE_TO_YAHOO: Dict[str, str] = {
     "TRENT": "TRENT.NS",
     "ZOMATO": "ZOMATO.NS",
     "PAYTM": "PAYTM.NS",
+    # Index
+    "NIFTY50": "^NSEI",
+    "NIFTY": "^NSEI",
+    "BANKNIFTY": "^NSEBANK",
     "NYKAA": "NYKAA.NS",
     "DMART": "DMART.NS",
     "POLYCAB": "POLYCAB.NS",
@@ -351,6 +355,41 @@ def get_yahoo_symbol(nse_symbol: str) -> str:
     return NSE_TO_YAHOO.get(nse_symbol, f"{nse_symbol}.NS")
 
 
+def _get_market_rank(market_cap: int) -> Optional[int]:
+    """
+    Get approximate market rank in Nifty 500 based on market cap tiers.
+    This is an approximation - for exact ranking, all 500 stocks would need to be compared.
+
+    Market Cap Tiers (approx. as of 2024):
+    - Top 10: > 10L Cr (₹10,00,000 Cr)
+    - Top 20: > 5L Cr
+    - Top 50: > 1.5L Cr
+    - Top 100: > 50,000 Cr
+    - Top 200: > 20,000 Cr
+    - Top 500: > 5,000 Cr
+    """
+    if not market_cap:
+        return None
+
+    # Convert to Crores (1 Cr = 10 million = 1e7)
+    mcap_cr = market_cap / 1e7
+
+    if mcap_cr >= 1000000:  # > 10L Cr
+        return 5  # Top 10 approx
+    elif mcap_cr >= 500000:  # > 5L Cr
+        return 15  # Top 20 approx
+    elif mcap_cr >= 150000:  # > 1.5L Cr
+        return 35  # Top 50 approx
+    elif mcap_cr >= 50000:  # > 50K Cr
+        return 75  # Top 100 approx
+    elif mcap_cr >= 20000:  # > 20K Cr
+        return 150  # Top 200 approx
+    elif mcap_cr >= 5000:  # > 5K Cr
+        return 350  # Top 500 approx
+    else:
+        return None  # Below Nifty 500
+
+
 def get_holdings() -> List[Dict[str, Any]]:
     """
     Get holdings from Zerodha Kite API.
@@ -543,16 +582,128 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
         except Exception:
             pass
 
-        # Pad arrays to ensure 5 elements
+        # Helper to find field by multiple possible names
+        def find_field(df, names):
+            """Find first matching field name from list of alternatives"""
+            if df is None:
+                return None
+            for name in names:
+                if name in df.index:
+                    return name
+            return None
+
+        # Get balance sheet and cash flow
+        balance_sheet = None
+        cashflow = None
+        try:
+            balance_sheet = ticker.balance_sheet
+            cashflow = ticker.cashflow
+            logger.debug(f"{symbol}: Balance sheet fields: {list(balance_sheet.index) if balance_sheet is not None else 'None'}")
+            logger.debug(f"{symbol}: Cash flow fields: {list(cashflow.index) if cashflow is not None else 'None'}")
+        except Exception as e:
+            logger.warning(f"{symbol}: Error fetching balance sheet/cashflow: {e}")
+
+        # 5-year ROE (calculated from Net Income / Stockholders Equity)
+        roe_5y = []
+        try:
+            if financials is not None and balance_sheet is not None:
+                ni_key = find_field(financials, ["Net Income", "Net Income Common Stockholders", "NetIncome"])
+                eq_key = find_field(balance_sheet, ["Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity", "Total Equity Gross Minority Interest", "StockholdersEquity"])
+                if ni_key and eq_key:
+                    ni_series = financials.loc[ni_key].dropna().head(5)
+                    eq_series = balance_sheet.loc[eq_key].dropna().head(5)
+                    for ni, eq in zip(ni_series, eq_series):
+                        if eq and eq > 0:
+                            roe_5y.append(round(ni / eq * 100, 1))
+                    roe_5y = list(reversed(roe_5y))
+                else:
+                    logger.debug(f"{symbol}: ROE calc missing - NI key: {ni_key}, Equity key: {eq_key}")
+        except Exception as e:
+            logger.warning(f"{symbol}: ROE calculation error: {e}")
+
+        # 5-year ROCE (Return on Capital Employed = EBIT / Capital Employed)
+        roce_5y = []
+        try:
+            if balance_sheet is not None and financials is not None:
+                ebit_key = find_field(financials, ["EBIT", "Operating Income", "Ebit", "OperatingIncome"])
+                assets_key = find_field(balance_sheet, ["Total Assets", "TotalAssets"])
+                liab_key = find_field(balance_sheet, ["Current Liabilities", "Total Current Liabilities", "CurrentLiabilities"])
+                if ebit_key and assets_key and liab_key:
+                    ebit_series = financials.loc[ebit_key].dropna().head(5)
+                    assets_series = balance_sheet.loc[assets_key].dropna().head(5)
+                    liab_series = balance_sheet.loc[liab_key].dropna().head(5)
+                    for ebit, assets, liab in zip(ebit_series, assets_series, liab_series):
+                        cap_employed = assets - liab
+                        if cap_employed and cap_employed > 0:
+                            roce_5y.append(round(ebit / cap_employed * 100, 1))
+                    roce_5y = list(reversed(roce_5y))
+                else:
+                    logger.debug(f"{symbol}: ROCE calc missing - EBIT: {ebit_key}, Assets: {assets_key}, Liab: {liab_key}")
+        except Exception as e:
+            logger.warning(f"{symbol}: ROCE calculation error: {e}")
+
+        # 5-year Total Debt from balance sheet
+        debt_5y = []
+        try:
+            if balance_sheet is not None:
+                debt_key = find_field(balance_sheet, ["Total Debt", "TotalDebt", "Long Term Debt", "Total Non Current Liabilities Net Minority Interest"])
+                if debt_key:
+                    debt_series = balance_sheet.loc[debt_key].dropna().head(5)
+                    debt_5y = [round(v / 1e9, 2) for v in reversed(debt_series.tolist())]
+                else:
+                    logger.debug(f"{symbol}: Debt calc missing - no debt field found in balance sheet")
+        except Exception as e:
+            logger.warning(f"{symbol}: Debt calculation error: {e}")
+
+        # 5-year FCF and Capex from cash flow
+        fcf_5y = []
+        capex_5y = []
+        try:
+            if cashflow is not None:
+                fcf_key = find_field(cashflow, ["Free Cash Flow", "FreeCashFlow"])
+                capex_key = find_field(cashflow, ["Capital Expenditure", "CapitalExpenditure", "Capital Expenditures"])
+                if fcf_key:
+                    fcf_series = cashflow.loc[fcf_key].dropna().head(5)
+                    fcf_5y = [round(v / 1e9, 2) for v in reversed(fcf_series.tolist())]
+                else:
+                    logger.debug(f"{symbol}: FCF calc missing - no FCF field found")
+                if capex_key:
+                    capex_series = cashflow.loc[capex_key].dropna().head(5)
+                    capex_5y = [round(abs(v) / 1e9, 2) for v in reversed(capex_series.tolist())]
+        except Exception as e:
+            logger.warning(f"{symbol}: FCF/Capex calculation error: {e}")
+
+        # Pad arrays - only pad if there's at least 1 real value, otherwise leave empty
         def pad_array(arr, size=5):
+            if not arr or all(v == 0 for v in arr):
+                return arr  # Return as-is if empty or all zeros
+            # Only pad front with zeros if we have some real data
             while len(arr) < size:
                 arr.insert(0, 0)
             return arr[:size]
+
+        # Helper to calculate YoY and 5Y growth
+        def calc_growth(arr):
+            if len(arr) < 2:
+                return 0, 0
+            yoy = round((arr[-1] - arr[-2]) / abs(arr[-2]) * 100, 1) if arr[-2] != 0 else 0
+            five_y = round((arr[-1] - arr[0]) / abs(arr[0]) * 100, 1) if arr[0] != 0 else 0
+            return yoy, five_y
 
         revenue_5y = pad_array(revenue_5y if revenue_5y else [])
         profit_5y = pad_array(profit_5y if profit_5y else [])
         opm_5y = pad_array(opm_5y if opm_5y else [])
         dividend_5y = pad_array(dividend_5y if dividend_5y else [])
+        roe_5y = pad_array(roe_5y if roe_5y else [])
+        roce_5y = pad_array(roce_5y if roce_5y else [])
+        debt_5y = pad_array(debt_5y if debt_5y else [])
+        fcf_5y = pad_array(fcf_5y if fcf_5y else [])
+        capex_5y = pad_array(capex_5y if capex_5y else [])
+
+        # Calculate growth metrics for chart labels
+        revenue_yoy, revenue_5y_growth = calc_growth(revenue_5y)
+        profit_yoy, profit_5y_growth = calc_growth(profit_5y)
+        fcf_yoy, fcf_5y_growth = calc_growth(fcf_5y)
 
         # Build result
         result = {
@@ -567,6 +718,19 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "profit_5y": profit_5y,
             "opm_5y": opm_5y,
             "dividend_5y": dividend_5y,
+            "roe_5y": roe_5y,
+            "roce_5y": roce_5y,
+            "debt_5y": debt_5y,
+            "fcf_5y": fcf_5y,
+            "capex_5y": capex_5y,
+
+            # Growth metrics for chart labels
+            "revenue_yoy": revenue_yoy,
+            "revenue_5y_growth": revenue_5y_growth,
+            "profit_yoy": profit_yoy,
+            "profit_5y_growth": profit_5y_growth,
+            "fcf_yoy": fcf_yoy,
+            "fcf_5y_growth": fcf_5y_growth,
 
             # Key Ratios
             "pe_ratio": round(pe_ratio, 1) if pe_ratio else 0,
@@ -630,6 +794,13 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "price_vs_52w_high": round(((info.get("currentPrice", 0) or info.get("regularMarketPrice", 0) or 0) / high_52w * 100), 1) if high_52w else 0,
             "price_vs_52w_low": round(((info.get("currentPrice", 0) or info.get("regularMarketPrice", 0) or 0) / low_52w * 100), 1) if low_52w else 0,
 
+            # All Time High (will be calculated below)
+            "all_time_high": 0,
+            "pct_from_ath": None,
+
+            # Market rank (approximate based on market cap tiers)
+            "market_rank": _get_market_rank(info.get("marketCap", 0)),
+
             # Forward metrics
             "forward_pe": round(info.get("forwardPE", 0) or 0, 1),
             "forward_eps": round(info.get("forwardEps", 0) or 0, 2),
@@ -638,6 +809,18 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             # Business summary (full)
             "business_summary": info.get("longBusinessSummary", "") or "",
         }
+
+        # Calculate All-Time High (5-year max as proxy to avoid slow full history fetch)
+        try:
+            hist_5y = ticker.history(period="5y")
+            if hist_5y is not None and not hist_5y.empty and "High" in hist_5y.columns:
+                ath = hist_5y["High"].max()
+                current_price = info.get("currentPrice", 0) or info.get("regularMarketPrice", 0) or 0
+                if ath and current_price:
+                    result["all_time_high"] = round(ath, 2)
+                    result["pct_from_ath"] = round((1 - current_price / ath) * 100, 1)
+        except Exception as e:
+            logger.warning(f"Could not calculate ATH for {symbol}: {e}")
 
         # Cache the result
         try:
@@ -709,6 +892,9 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
             "debt_to_cash": 0,
             "price_vs_52w_high": 0,
             "price_vs_52w_low": 0,
+            "all_time_high": 0,
+            "pct_from_ath": None,
+            "market_rank": None,
             "forward_pe": 0,
             "forward_eps": 0,
             "peg_ratio": 0,
@@ -793,3 +979,123 @@ def format_currency(amount: float, prefix: str = "₹") -> str:
         return f"{prefix}{amount/1e3:.1f}K"
     else:
         return f"{prefix}{amount:.0f}"
+
+
+def get_trading_data(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
+    """
+    Get trading data for multiple symbols including:
+    - Today's % change
+    - Weekly CPR (Central Pivot Range) status
+    - 20/50 EMA bullish/bearish status
+    - Current LTP
+
+    Args:
+        symbols: List of NSE stock symbols
+
+    Returns:
+        Dictionary mapping symbol to trading data
+    """
+    result = {}
+
+    for symbol in symbols:
+        try:
+            yahoo_symbol = get_yahoo_symbol(symbol)
+            ticker = yf.Ticker(yahoo_symbol)
+
+            # Get recent history for calculations (2 months for EMA)
+            hist = ticker.history(period="3mo")
+
+            if hist.empty or len(hist) < 2:
+                result[symbol] = _default_trading_data(symbol)
+                continue
+
+            # Today's data
+            current_price = hist["Close"].iloc[-1]
+            prev_close = hist["Close"].iloc[-2]
+            today_pct = ((current_price - prev_close) / prev_close) * 100 if prev_close else 0
+
+            # Calculate Weekly CPR (Central Pivot Range)
+            # Use last week's high, low, close for weekly pivot
+            cpr_status = "N/A"
+            try:
+                # Get last 5-7 trading days for weekly data
+                weekly_data = hist.tail(7)
+                if len(weekly_data) >= 5:
+                    weekly_high = weekly_data["High"].max()
+                    weekly_low = weekly_data["Low"].min()
+                    weekly_close = weekly_data["Close"].iloc[-1]
+
+                    # Calculate CPR
+                    pivot = (weekly_high + weekly_low + weekly_close) / 3
+                    bc = (weekly_high + weekly_low) / 2  # Bottom Central
+                    tc = pivot + (pivot - bc)  # Top Central
+
+                    # CPR range
+                    cpr_top = max(bc, tc)
+                    cpr_bottom = min(bc, tc)
+
+                    if current_price > cpr_top:
+                        cpr_status = "Above CPR"
+                    elif current_price < cpr_bottom:
+                        cpr_status = "Below CPR"
+                    else:
+                        cpr_status = "In CPR"
+            except Exception as e:
+                logger.warning(f"CPR calculation failed for {symbol}: {e}")
+
+            # Calculate 20/50 EMA status
+            ema_status = "N/A"
+            try:
+                if len(hist) >= 50:
+                    ema_20 = hist["Close"].ewm(span=20, adjust=False).mean()
+                    ema_50 = hist["Close"].ewm(span=50, adjust=False).mean()
+
+                    current_ema_20 = ema_20.iloc[-1]
+                    current_ema_50 = ema_50.iloc[-1]
+
+                    # Check if price is above both EMAs and EMA20 > EMA50
+                    if current_price > current_ema_20 and current_price > current_ema_50:
+                        if current_ema_20 > current_ema_50:
+                            ema_status = "Bullish"
+                        else:
+                            ema_status = "Neutral"
+                    elif current_price < current_ema_20 and current_price < current_ema_50:
+                        if current_ema_20 < current_ema_50:
+                            ema_status = "Bearish"
+                        else:
+                            ema_status = "Neutral"
+                    else:
+                        ema_status = "Neutral"
+                elif len(hist) >= 20:
+                    # Only have EMA20
+                    ema_20 = hist["Close"].ewm(span=20, adjust=False).mean()
+                    current_ema_20 = ema_20.iloc[-1]
+                    if current_price > current_ema_20:
+                        ema_status = "Bullish"
+                    else:
+                        ema_status = "Bearish"
+            except Exception as e:
+                logger.warning(f"EMA calculation failed for {symbol}: {e}")
+
+            result[symbol] = {
+                "ltp": round(current_price, 2),
+                "today_pct": round(today_pct, 2),
+                "cpr_status": cpr_status,
+                "ema_status": ema_status,
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting trading data for {symbol}: {e}")
+            result[symbol] = _default_trading_data(symbol)
+
+    return result
+
+
+def _default_trading_data(symbol: str) -> Dict[str, Any]:
+    """Return default trading data when calculation fails"""
+    return {
+        "ltp": 0,
+        "today_pct": 0,
+        "cpr_status": "N/A",
+        "ema_status": "N/A",
+    }

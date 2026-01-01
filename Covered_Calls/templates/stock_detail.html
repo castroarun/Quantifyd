@@ -48,7 +48,7 @@
         width: 64px;
         height: 64px;
         border-radius: 16px;
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        background: var(--logo-gradient, linear-gradient(135deg, #3b82f6, #8b5cf6));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -209,6 +209,21 @@
         line-height: 1.6;
     }
 
+    .highlight-tag {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+        color: #a5b4fc;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .highlight-tag i {
+        margin-right: 0.4rem;
+        font-size: 0.75rem;
+    }
+
     /* Charts Grid */
     .charts-grid {
         display: grid;
@@ -272,6 +287,10 @@
 
     .financial-card.revenue .title::before { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
     .financial-card.profit .title::before { background: linear-gradient(180deg, #22c55e, #4ade80); }
+    .financial-card.roe .title::before { background: linear-gradient(180deg, #8b5cf6, #a78bfa); }
+    .financial-card.roce .title::before { background: linear-gradient(180deg, #ec4899, #f472b6); }
+    .financial-card.debt .title::before { background: linear-gradient(180deg, #ef4444, #f87171); }
+    .financial-card.fcf .title::before { background: linear-gradient(180deg, #14b8a6, #2dd4bf); }
     .financial-card.opm .title::before { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
     .financial-card.dividend .title::before { background: linear-gradient(180deg, #ec4899, #f472b6); }
 
@@ -500,7 +519,17 @@
     <!-- Description / About -->
     <div class="stock-description">
         <div class="section-title"><i class="bi bi-info-circle"></i> About</div>
-        <p class="description-text" id="stockDescription">Loading company information...</p>
+        <div id="aboutContent">
+            <p class="description-text" id="stockDescription">Loading company information...</p>
+            <div id="businessHighlights" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span class="highlight-tag" id="highlightSector" style="display: none;"></span>
+                    <span class="highlight-tag" id="highlightIndustry" style="display: none;"></span>
+                    <span class="highlight-tag" id="highlightEmployees" style="display: none;"></span>
+                </div>
+                <p class="description-text" id="businessSummaryText" style="max-height: 150px; overflow-y: auto; color: #94a3b8; font-size: 0.9rem;"></p>
+            </div>
+        </div>
     </div>
 
     <!-- Charts Section -->
@@ -515,8 +544,8 @@
         <div class="insight-card">
             <div class="section-title"><i class="bi bi-clipboard-data"></i> Key Statistics</div>
             <div class="insight-item">
-                <span class="insight-label">Market Cap</span>
-                <span class="insight-value" id="statMarketCap">-</span>
+                <span class="insight-label">Market Rank</span>
+                <span class="insight-value" id="statMarketRank">-</span>
             </div>
             <div class="insight-item">
                 <span class="insight-label">52W High</span>
@@ -527,16 +556,16 @@
                 <span class="insight-value" id="stat52Low">-</span>
             </div>
             <div class="insight-item">
-                <span class="insight-label">Average Volume</span>
-                <span class="insight-value" id="statVolume">-</span>
+                <span class="insight-label">% from 52W High</span>
+                <span class="insight-value" id="statPctTo52H">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">% from ATH</span>
+                <span class="insight-value" id="statPctToATH">-</span>
             </div>
             <div class="insight-item">
                 <span class="insight-label">Beta</span>
                 <span class="insight-value" id="statBeta">-</span>
-            </div>
-            <div class="insight-item">
-                <span class="insight-label">EPS (TTM)</span>
-                <span class="insight-value" id="statEps">-</span>
             </div>
         </div>
     </div>
@@ -558,6 +587,26 @@
         <div class="financial-card dividend">
             <div class="title">Dividends (5Y, ₹)</div>
             <canvas id="dividendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ROE/ROCE/Debt/FCF Charts - Second Row -->
+    <div class="financials-grid">
+        <div class="financial-card roe">
+            <div class="title">ROE % (5Y)</div>
+            <canvas id="roeChart"></canvas>
+        </div>
+        <div class="financial-card roce">
+            <div class="title">ROCE % (5Y)</div>
+            <canvas id="roceChart"></canvas>
+        </div>
+        <div class="financial-card debt">
+            <div class="title">Total Debt (5Y, ₹Bn)</div>
+            <canvas id="debtChart"></canvas>
+        </div>
+        <div class="financial-card fcf">
+            <div class="title">Free Cash Flow (5Y, ₹Bn)</div>
+            <canvas id="fcfChart"></canvas>
         </div>
     </div>
 
@@ -755,11 +804,7 @@
         </div>
     </div>
 
-    <!-- Business Summary -->
-    <div class="stock-description" id="businessSummarySection" style="display: none;">
-        <div class="section-title"><i class="bi bi-file-text"></i> Business Overview</div>
-        <p class="description-text" id="businessSummary" style="max-height: 200px; overflow-y: auto;"></p>
-    </div>
+    <!-- Business Summary section moved to combined About section above -->
 
     <!-- Management Commentary & Key Highlights (Premium Data) -->
     <div class="insights-section" style="grid-template-columns: 1fr 1fr;">
@@ -843,12 +888,51 @@
     let holdingData = null;
     let fundamentalsData = null;
 
+    // Stock color palette - consistent colors per stock
+    const STOCK_COLORS = [
+        { gradient: 'linear-gradient(135deg, #3b82f6, #60a5fa)', shadow: 'rgba(59, 130, 246, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', shadow: 'rgba(139, 92, 246, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #ec4899, #f472b6)', shadow: 'rgba(236, 72, 153, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #22c55e, #4ade80)', shadow: 'rgba(34, 197, 94, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)', shadow: 'rgba(245, 158, 11, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #ef4444, #f87171)', shadow: 'rgba(239, 68, 68, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #14b8a6, #2dd4bf)', shadow: 'rgba(20, 184, 166, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #6366f1, #818cf8)', shadow: 'rgba(99, 102, 241, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #f97316, #fb923c)', shadow: 'rgba(249, 115, 22, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #84cc16, #a3e635)', shadow: 'rgba(132, 204, 22, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #0ea5e9, #38bdf8)', shadow: 'rgba(14, 165, 233, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #d946ef, #e879f9)', shadow: 'rgba(217, 70, 239, 0.4)' },
+    ];
+
+    function getStockColor(sym) {
+        let hash = 0;
+        for (let i = 0; i < sym.length; i++) {
+            hash = ((hash << 5) - hash) + sym.charCodeAt(i);
+            hash = hash & hash;
+        }
+        return STOCK_COLORS[Math.abs(hash) % STOCK_COLORS.length];
+    }
+
     // Chart instances
     let priceChartInstance = null;
     let revenueChartInstance = null;
     let profitChartInstance = null;
     let opmChartInstance = null;
     let dividendChartInstance = null;
+    let roeChartInstance = null;
+    let roceChartInstance = null;
+    let debtChartInstance = null;
+    let fcfChartInstance = null;
+
+    // Generate dynamic chart labels based on data length
+    function getLabels(length) {
+        const currentYear = new Date().getFullYear();
+        const labels = [];
+        for (let i = length - 1; i >= 0; i--) {
+            labels.unshift(`FY${(currentYear - i).toString().slice(-2)}`);
+        }
+        return labels;
+    }
 
     // Format currency in Indian style
     function formatCurrency(amount, prefix = '₹') {
@@ -904,7 +988,11 @@
     // Populate holding data
     function populateHoldingData(h) {
         document.getElementById('stockName').textContent = h.name || h.symbol;
-        document.getElementById('stockLogo').textContent = h.logo || h.symbol.substring(0, 3);
+        const logoEl = document.getElementById('stockLogo');
+        logoEl.textContent = h.logo || h.symbol.substring(0, 3);
+        // Apply consistent stock color
+        const stockColor = getStockColor(h.symbol);
+        logoEl.style.setProperty('--logo-gradient', stockColor.gradient);
         document.getElementById('stockSector').textContent = h.sector || '-';
 
         document.getElementById('metricInvested').textContent = formatCurrency(h.invested);
@@ -929,16 +1017,75 @@
 
     // Populate fundamentals
     function populateFundamentals(f) {
-        // Description
-        document.getElementById('stockDescription').textContent = f.description || 'No company information available.';
+        // Description - Combined About section with highlights
+        const descEl = document.getElementById('stockDescription');
+        const highlightsDiv = document.getElementById('businessHighlights');
+        const summaryTextEl = document.getElementById('businessSummaryText');
 
-        // Key stats
-        document.getElementById('statMarketCap').textContent = formatLargeNumber(f.market_cap);
+        // Short description (always shown)
+        descEl.textContent = f.description || 'No company information available.';
+
+        // Show business highlights with tags + full summary
+        if (f.business_summary || f.sector || f.industry) {
+            highlightsDiv.style.display = 'block';
+
+            // Sector tag
+            const sectorTag = document.getElementById('highlightSector');
+            if (f.sector) {
+                sectorTag.innerHTML = '<i class="bi bi-pie-chart"></i>' + f.sector;
+                sectorTag.style.display = 'inline-block';
+            }
+
+            // Industry tag
+            const industryTag = document.getElementById('highlightIndustry');
+            if (f.industry) {
+                industryTag.innerHTML = '<i class="bi bi-building"></i>' + f.industry;
+                industryTag.style.display = 'inline-block';
+            }
+
+            // Employees tag
+            const employeesTag = document.getElementById('highlightEmployees');
+            if (f.employees && f.employees > 0) {
+                employeesTag.innerHTML = '<i class="bi bi-people"></i>' + f.employees.toLocaleString() + ' employees';
+                employeesTag.style.display = 'inline-block';
+            }
+
+            // Full business summary
+            if (f.business_summary) {
+                summaryTextEl.textContent = f.business_summary;
+            }
+        }
+
+        // Key stats - Market Rank (show "-" if not available, not market cap)
+        document.getElementById('statMarketRank').textContent = f.market_rank ? '#' + f.market_rank : '-';
         document.getElementById('stat52High').textContent = f.high_52w ? '₹' + f.high_52w.toFixed(2) : '-';
         document.getElementById('stat52Low').textContent = f.low_52w ? '₹' + f.low_52w.toFixed(2) : '-';
-        document.getElementById('statVolume').textContent = f.avg_volume ? formatLargeNumber(f.avg_volume) : '-';
+
+        // % from 52W High (how far below the high)
+        const pctTo52H = document.getElementById('statPctTo52H');
+        if (f.price_vs_52w_high && f.price_vs_52w_high > 0) {
+            const pctFromHigh = (100 - f.price_vs_52w_high).toFixed(1);
+            pctTo52H.textContent = pctFromHigh == 0 ? 'At High' : '-' + pctFromHigh + '%';
+            pctTo52H.style.color = pctFromHigh < 10 ? '#22c55e' : (pctFromHigh > 30 ? '#ef4444' : '#fbbf24');
+        } else {
+            pctTo52H.textContent = '-';
+        }
+
+        // % from ATH (All Time High) - improved handling
+        const pctToATH = document.getElementById('statPctToATH');
+        if (f.pct_from_ath !== undefined && f.pct_from_ath !== null && !isNaN(f.pct_from_ath)) {
+            pctToATH.textContent = f.pct_from_ath === 0 ? 'At ATH' : '-' + f.pct_from_ath.toFixed(1) + '%';
+            pctToATH.style.color = f.pct_from_ath < 10 ? '#22c55e' : (f.pct_from_ath > 30 ? '#ef4444' : '#fbbf24');
+        } else if (f.all_time_high && f.all_time_high > 0 && holdingData && holdingData.last_price) {
+            // Calculate from ATH if available but pct_from_ath wasn't calculated
+            const calcPctFromATH = ((1 - holdingData.last_price / f.all_time_high) * 100).toFixed(1);
+            pctToATH.textContent = calcPctFromATH == 0 ? 'At ATH' : '-' + calcPctFromATH + '%';
+            pctToATH.style.color = calcPctFromATH < 10 ? '#22c55e' : (calcPctFromATH > 30 ? '#ef4444' : '#fbbf24');
+        } else {
+            pctToATH.textContent = '-';
+        }
+
         document.getElementById('statBeta').textContent = f.beta ? f.beta.toFixed(2) : '-';
-        document.getElementById('statEps').textContent = f.eps ? '₹' + f.eps.toFixed(2) : '-';
 
         // Dividend
         document.getElementById('divYield').textContent = f.div_yield ? f.div_yield + '%' : '-';
@@ -1034,11 +1181,7 @@
             pegEl.style.color = f.peg_ratio < 1 ? '#22c55e' : (f.peg_ratio > 2 ? '#ef4444' : '#fbbf24');
         }
 
-        // Business Summary
-        if (f.business_summary) {
-            document.getElementById('businessSummary').textContent = f.business_summary;
-            document.getElementById('businessSummarySection').style.display = 'block';
-        }
+        // Business Summary moved to combined About section above
 
         // Capex Analysis
         document.getElementById('capexTTM').textContent = f.capex ? formatLargeNumber(f.capex) : '-';
@@ -1290,6 +1433,166 @@
                 }
             }
         });
+
+        // ROE Chart
+        if (roeChartInstance) roeChartInstance.destroy();
+        const roeData = f.roe_5y || [];
+        if (roeData.length > 0 && roeData.some(v => v > 0)) {
+            roeChartInstance = new Chart(document.getElementById('roeChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(roeData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: roeData,
+                        backgroundColor: '#8b5cf690',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: roeData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => v + '%' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('roeChart').parentElement.innerHTML = '<div class="title">ROE % (5Y)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
+
+        // ROCE Chart
+        if (roceChartInstance) roceChartInstance.destroy();
+        const roceData = f.roce_5y || [];
+        if (roceData.length > 0 && roceData.some(v => v > 0)) {
+            roceChartInstance = new Chart(document.getElementById('roceChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(roceData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: roceData,
+                        backgroundColor: '#ec489990',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: roceData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => v + '%' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('roceChart').parentElement.innerHTML = '<div class="title">ROCE % (5Y)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
+
+        // Total Debt Chart
+        if (debtChartInstance) debtChartInstance.destroy();
+        const debtData = f.debt_5y || [];
+        if (debtData.length > 0 && debtData.some(v => v > 0)) {
+            debtChartInstance = new Chart(document.getElementById('debtChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(debtData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: debtData,
+                        backgroundColor: '#ef444490',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: debtData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => '₹' + v + 'Bn' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('debtChart').parentElement.innerHTML = '<div class="title">Total Debt (5Y, ₹Bn)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
+
+        // Free Cash Flow Chart
+        if (fcfChartInstance) fcfChartInstance.destroy();
+        const fcfData = f.fcf_5y || [];
+        if (fcfData.length > 0 && fcfData.some(v => v !== 0)) {
+            fcfChartInstance = new Chart(document.getElementById('fcfChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(fcfData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: fcfData,
+                        backgroundColor: fcfData.map(v => v >= 0 ? '#14b8a690' : '#ef444490'),
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: fcfData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => '₹' + v + 'Bn' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('fcfChart').parentElement.innerHTML = '<div class="title">Free Cash Flow (5Y, ₹Bn)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
     }
 
     // Refresh data

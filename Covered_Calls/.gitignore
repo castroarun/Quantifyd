@@ -79,3 +79,5 @@ logs/
 *.key
 credentials.json
 secrets.json
+
+.vercel
