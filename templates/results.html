@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Results - Covered Calls{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/backtest">Backtest</a></li>
+                <li class="breadcrumb-item active">Results #{{ backtest.id }}</li>
+            </ol>
+        </nav>
+        <h4>
+            {{ backtest.name }}
+            <span class="badge bg-{{ 'success' if backtest.status == 'completed' else 'warning' }}">
+                {{ backtest.status }}
+            </span>
+        </h4>
+        <p class="text-muted">
+            {{ backtest.start_date }} to {{ backtest.end_date }} |
+            {{ backtest.strike_method }} | {{ backtest.exit_strategy }}
+        </p>
+    </div>
+</div>
+
+<!-- Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="metric-card">
+            <div class="metric-value {{ 'positive' if backtest.total_return >= 0 else 'negative' }}">
+                {{ "%.2f"|format(backtest.total_return or 0) }}%
+            </div>
+            <div class="metric-label">Total Return</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card">
+            <div class="metric-value">{{ "%.2f"|format(backtest.sharpe_ratio or 0) }}</div>
+            <div class="metric-label">Sharpe Ratio</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card">
+            <div class="metric-value negative">{{ "%.2f"|format(backtest.max_drawdown or 0) }}%</div>
+            <div class="metric-label">Max Drawdown</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card">
+            <div class="metric-value">{{ "%.1f"|format(backtest.win_rate or 0) }}%</div>
+            <div class="metric-label">Win Rate</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card">
+            <div class="metric-value">{{ "%.1f"|format(backtest.assignment_rate or 0) }}%</div>
+            <div class="metric-label">Assignment Rate</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card">
+            <div class="metric-value">{{ backtest.total_trades or 0 }}</div>
+            <div class="metric-label">Total Trades</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="mb-0">Equity Curve</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="equity-chart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="mb-0">Exit Reasons</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="exit-chart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trade Log -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Trade Log</h6>
+        <div>
+            <button class="btn btn-sm btn-outline-primary" onclick="exportCSV()">
+                <i class="bi bi-download me-1"></i> Export CSV
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="sticky-top bg-dark">
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Entry Date</th>
+                        <th>Entry Price</th>
+                        <th>Strike</th>
+                        <th>Premium</th>
+                        <th>Exit Date</th>
+                        <th>Exit Price</th>
+                        <th>Stock P&L</th>
+                        <th>Option P&L</th>
+                        <th>Total P&L</th>
+                        <th>Return %</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                    <tr>
+                        <td>{{ trade.symbol }}</td>
+                        <td>{{ trade.entry_date }}</td>
+                        <td>{{ "%.2f"|format(trade.stock_entry_price or 0) }}</td>
+                        <td>{{ "%.0f"|format(trade.strike_price or 0) }}</td>
+                        <td>{{ "%.2f"|format(trade.premium_received or 0) }}</td>
+                        <td>{{ trade.exit_date or '-' }}</td>
+                        <td>{{ "%.2f"|format(trade.stock_exit_price or 0) }}</td>
+                        <td class="{{ 'positive' if (trade.stock_pnl or 0) >= 0 else 'negative' }}">
+                            {{ "%.2f"|format(trade.stock_pnl or 0) }}
+                        </td>
+                        <td class="{{ 'positive' if (trade.option_pnl or 0) >= 0 else 'negative' }}">
+                            {{ "%.2f"|format(trade.option_pnl or 0) }}
+                        </td>
+                        <td class="{{ 'positive' if (trade.total_pnl or 0) >= 0 else 'negative' }}">
+                            {{ "%.2f"|format(trade.total_pnl or 0) }}
+                        </td>
+                        <td class="{{ 'positive' if (trade.return_pct or 0) >= 0 else 'negative' }}">
+                            {{ "%.2f"|format(trade.return_pct or 0) }}%
+                        </td>
+                        <td><span class="badge bg-secondary">{{ trade.exit_reason or '-' }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="12" class="text-muted text-center py-4">No trades</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const equityData = {{ equity | tojson }};
+    const tradesData = {{ trades | tojson }};
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Equity Chart
+        const eqCtx = document.getElementById('equity-chart').getContext('2d');
+        new Chart(eqCtx, {
+            type: 'line',
+            data: {
+                labels: equityData.map(d => d.date),
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: equityData.map(d => d.portfolio_value),
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                    fill: true,
+                    tension: 0.1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: true, grid: { color: '#30363d' } },
+                    y: { display: true, grid: { color: '#30363d' } }
+                }
+            }
+        });
+
+        // Exit Reasons Pie Chart
+        const exitReasons = {};
+        tradesData.forEach(t => {
+            const reason = t.exit_reason || 'Unknown';
+            exitReasons[reason] = (exitReasons[reason] || 0) + 1;
+        });
+
+        const exitCtx = document.getElementById('exit-chart').getContext('2d');
+        new Chart(exitCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(exitReasons),
+                datasets: [{
+                    data: Object.values(exitReasons),
+                    backgroundColor: ['#58a6ff', '#3fb950', '#f85149', '#f0883e', '#a371f7']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#c9d1d9' }
+                    }
+                }
+            }
+        });
+    });
+
+    function exportCSV() {
+        let csv = 'Symbol,Entry Date,Entry Price,Strike,Premium,Exit Date,Exit Price,Stock PnL,Option PnL,Total PnL,Return %,Reason\n';
+
+        tradesData.forEach(t => {
+            csv += `${t.symbol},${t.entry_date},${t.stock_entry_price},${t.strike_price},${t.premium_received},`;
+            csv += `${t.exit_date},${t.stock_exit_price},${t.stock_pnl},${t.option_pnl},${t.total_pnl},${t.return_pct},${t.exit_reason}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'trades_{{ backtest.id }}.csv';
+        a.click();
+    }
+</script>
+{% endblock %}

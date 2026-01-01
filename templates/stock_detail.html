@@ -1,0 +1,1616 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ symbol }} - Stock Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --profit-green: #22c55e;
+        --loss-red: #ef4444;
+        --card-bg: #1e293b;
+        --card-hover: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --border-color: #475569;
+    }
+
+    body { background: #0f172a; }
+
+    .detail-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    /* Header Section */
+    .stock-header {
+        background: linear-gradient(135deg, var(--card-bg) 0%, #334155 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .stock-identity {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stock-logo-large {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: var(--logo-gradient, linear-gradient(135deg, #3b82f6, #8b5cf6));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .stock-title h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+    }
+
+    .stock-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .stock-symbol-badge {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .stock-sector {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+    }
+
+    /* Metrics Row */
+    .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+    }
+
+    .metric-box {
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .metric-box .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .metric-box .label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        margin-top: 0.25rem;
+    }
+
+    /* Portfolio Weight Bar */
+    .portfolio-weight {
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .weight-bar-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .weight-bar {
+        flex: 1;
+        height: 12px;
+        background: rgba(51, 65, 85, 0.5);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .weight-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #22c55e, #4ade80);
+        border-radius: 6px;
+        transition: width 0.5s ease;
+    }
+
+    .weight-label {
+        min-width: 120px;
+        text-align: right;
+    }
+
+    .weight-label .value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #22c55e;
+    }
+
+    .weight-label .text {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    /* Description */
+    .stock-description {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .section-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: #3b82f6;
+    }
+
+    .description-text {
+        color: var(--text-primary);
+        line-height: 1.6;
+    }
+
+    .highlight-tag {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+        color: #a5b4fc;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .highlight-tag i {
+        margin-right: 0.4rem;
+        font-size: 0.75rem;
+    }
+
+    /* Charts Grid */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .chart-card.price-chart {
+        height: 350px;
+    }
+
+    .chart-card canvas {
+        width: 100% !important;
+    }
+
+    /* Financials Grid - 4 charts in a row */
+    .financials-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 1200px) {
+        .financials-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .financial-card {
+        background: linear-gradient(135deg, var(--card-bg) 0%, rgba(51, 65, 85, 0.5) 100%);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .financial-card .title {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .financial-card .title::before {
+        content: '';
+        width: 4px;
+        height: 12px;
+        border-radius: 2px;
+    }
+
+    .financial-card.revenue .title::before { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+    .financial-card.profit .title::before { background: linear-gradient(180deg, #22c55e, #4ade80); }
+    .financial-card.roe .title::before { background: linear-gradient(180deg, #8b5cf6, #a78bfa); }
+    .financial-card.roce .title::before { background: linear-gradient(180deg, #ec4899, #f472b6); }
+    .financial-card.debt .title::before { background: linear-gradient(180deg, #ef4444, #f87171); }
+    .financial-card.fcf .title::before { background: linear-gradient(180deg, #14b8a6, #2dd4bf); }
+    .financial-card.opm .title::before { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
+    .financial-card.dividend .title::before { background: linear-gradient(180deg, #ec4899, #f472b6); }
+
+    .financial-card canvas {
+        height: 150px !important;
+    }
+
+    /* Ratios Section */
+    .ratios-section {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .ratios-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1rem;
+    }
+
+    .ratio-card {
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .ratio-card .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .ratio-card .industry {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .ratio-card .label {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        margin-top: 0.5rem;
+    }
+
+    .ratio-card.good .value { color: var(--profit-green); }
+    .ratio-card.warning .value { color: #fbbf24; }
+    .ratio-card.bad .value { color: var(--loss-red); }
+
+    /* Key Insights */
+    .insights-section {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .insight-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .insight-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .insight-item:last-child {
+        border-bottom: none;
+    }
+
+    .insight-label {
+        color: var(--text-secondary);
+    }
+
+    .insight-value {
+        font-weight: 600;
+    }
+
+    /* Dividend Section */
+    .dividend-section {
+        background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(251, 113, 133, 0.05) 100%);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+
+    .dividend-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .dividend-stats {
+        display: flex;
+        gap: 2rem;
+    }
+
+    .dividend-stat {
+        text-align: center;
+    }
+
+    .dividend-stat .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #ec4899;
+    }
+
+    .dividend-stat .label {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+
+    .dividend-chart {
+        height: 150px;
+    }
+
+    /* Loading State */
+    .loading-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        color: var(--text-secondary);
+    }
+
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border-color);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 0.75rem;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .charts-grid { grid-template-columns: 1fr; }
+        .financials-grid { grid-template-columns: repeat(2, 1fr); }
+        .ratios-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+        .metrics-row { grid-template-columns: repeat(2, 1fr); }
+        .financials-grid { grid-template-columns: 1fr; }
+        .ratios-grid { grid-template-columns: repeat(2, 1fr); }
+        .insights-section { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <!-- Stock Header -->
+    <div class="stock-header">
+        <div class="header-top">
+            <div class="stock-identity">
+                <div class="stock-logo-large" id="stockLogo">{{ symbol[:3] }}</div>
+                <div class="stock-title">
+                    <h1 id="stockName">Loading...</h1>
+                    <div class="stock-meta">
+                        <span class="stock-symbol-badge">{{ symbol }}</span>
+                        <span class="stock-sector" id="stockSector">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/holdings" class="action-btn" title="Back to Holdings"><i class="bi bi-arrow-left"></i></a>
+                <button class="action-btn" onclick="refreshData()" title="Refresh Data"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="action-btn" onclick="shareStock()" title="Share"><i class="bi bi-share"></i></button>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-row">
+            <div class="metric-box">
+                <div class="value" id="metricInvested">-</div>
+                <div class="label">Invested</div>
+            </div>
+            <div class="metric-box">
+                <div class="value" id="metricCurrent">-</div>
+                <div class="label">Current Value</div>
+            </div>
+            <div class="metric-box">
+                <div class="value" id="metricPnl">-</div>
+                <div class="label">Profit / Loss</div>
+            </div>
+            <div class="metric-box">
+                <div class="value" id="metricReturns">-</div>
+                <div class="label">Returns</div>
+            </div>
+            <div class="metric-box">
+                <div class="value" id="metricQuantity">-</div>
+                <div class="label">Shares Held</div>
+            </div>
+        </div>
+
+        <!-- Portfolio Weight -->
+        <div class="portfolio-weight">
+            <div class="weight-bar-container">
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">Portfolio Weight</span>
+                <div class="weight-bar">
+                    <div class="weight-bar-fill" id="weightBarFill" style="width: 0%;"></div>
+                </div>
+                <div class="weight-label">
+                    <span class="value" id="weightValue">0%</span>
+                    <span class="text">of portfolio</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description / About -->
+    <div class="stock-description">
+        <div class="section-title"><i class="bi bi-info-circle"></i> About</div>
+        <div id="aboutContent">
+            <p class="description-text" id="stockDescription">Loading company information...</p>
+            <div id="businessHighlights" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span class="highlight-tag" id="highlightSector" style="display: none;"></span>
+                    <span class="highlight-tag" id="highlightIndustry" style="display: none;"></span>
+                    <span class="highlight-tag" id="highlightEmployees" style="display: none;"></span>
+                </div>
+                <p class="description-text" id="businessSummaryText" style="max-height: 150px; overflow-y: auto; color: #94a3b8; font-size: 0.9rem;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+        <!-- Price Chart -->
+        <div class="chart-card price-chart">
+            <div class="section-title"><i class="bi bi-graph-up"></i> Price History (1 Year)</div>
+            <canvas id="priceChart"></canvas>
+        </div>
+
+        <!-- Key Stats -->
+        <div class="insight-card">
+            <div class="section-title"><i class="bi bi-clipboard-data"></i> Key Statistics</div>
+            <div class="insight-item">
+                <span class="insight-label">Market Rank</span>
+                <span class="insight-value" id="statMarketRank">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">52W High</span>
+                <span class="insight-value" id="stat52High">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">52W Low</span>
+                <span class="insight-value" id="stat52Low">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">% from 52W High</span>
+                <span class="insight-value" id="statPctTo52H">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">% from ATH</span>
+                <span class="insight-value" id="statPctToATH">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Beta</span>
+                <span class="insight-value" id="statBeta">-</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financials Grid - 4 charts side by side -->
+    <div class="financials-grid">
+        <div class="financial-card revenue">
+            <div class="title">Revenue (5Y, ₹Cr)</div>
+            <canvas id="revenueChart"></canvas>
+        </div>
+        <div class="financial-card profit">
+            <div class="title">Net Profit (5Y, ₹Cr)</div>
+            <canvas id="profitChart"></canvas>
+        </div>
+        <div class="financial-card opm">
+            <div class="title">Operating Margin %</div>
+            <canvas id="opmChart"></canvas>
+        </div>
+        <div class="financial-card dividend">
+            <div class="title">Dividends (5Y, ₹)</div>
+            <canvas id="dividendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ROE/ROCE/Debt/FCF Charts - Second Row -->
+    <div class="financials-grid">
+        <div class="financial-card roe">
+            <div class="title">ROE % (5Y)</div>
+            <canvas id="roeChart"></canvas>
+        </div>
+        <div class="financial-card roce">
+            <div class="title">ROCE % (5Y)</div>
+            <canvas id="roceChart"></canvas>
+        </div>
+        <div class="financial-card debt">
+            <div class="title">Total Debt (5Y, ₹Bn)</div>
+            <canvas id="debtChart"></canvas>
+        </div>
+        <div class="financial-card fcf">
+            <div class="title">Free Cash Flow (5Y, ₹Bn)</div>
+            <canvas id="fcfChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Financial Ratios + Dividend Stats Combined -->
+    <div class="ratios-section">
+        <div class="section-title"><i class="bi bi-calculator"></i> Key Ratios & Dividends</div>
+        <div class="ratios-grid" style="grid-template-columns: repeat(8, 1fr);">
+            <div class="ratio-card" id="peRatioCard">
+                <div class="value" id="peRatio">-</div>
+                <div class="industry" id="peIndustry">Ind: -</div>
+                <div class="label">P/E Ratio</div>
+            </div>
+            <div class="ratio-card" id="deRatioCard">
+                <div class="value" id="deRatio">-</div>
+                <div class="label">Debt/Equity</div>
+            </div>
+            <div class="ratio-card" id="roeCard">
+                <div class="value" id="roeValue">-</div>
+                <div class="label">ROE</div>
+            </div>
+            <div class="ratio-card" id="roceCard">
+                <div class="value" id="roceValue">-</div>
+                <div class="label">ROCE</div>
+            </div>
+            <div class="ratio-card" id="currentRatioCard">
+                <div class="value" id="currentRatio">-</div>
+                <div class="label">Current Ratio</div>
+            </div>
+            <!-- Dividend Stats inline -->
+            <div class="ratio-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(251, 113, 133, 0.1) 100%);">
+                <div class="value" id="divYield" style="color: #ec4899;">-</div>
+                <div class="label">Div Yield</div>
+            </div>
+            <div class="ratio-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(251, 113, 133, 0.1) 100%);">
+                <div class="value" id="divPayout" style="color: #ec4899;">-</div>
+                <div class="label">Payout Ratio</div>
+            </div>
+            <div class="ratio-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(251, 113, 133, 0.1) 100%);">
+                <div class="value" id="divExDate" style="color: #ec4899; font-size: 1rem;">-</div>
+                <div class="label">Next Ex-Date</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analyst Recommendations -->
+    <div class="ratios-section" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border-color: rgba(59, 130, 246, 0.3);">
+        <div class="section-title"><i class="bi bi-graph-up-arrow"></i> Analyst Recommendations</div>
+        <div class="ratios-grid" style="grid-template-columns: repeat(5, 1fr);">
+            <div class="ratio-card" id="analystRating">
+                <div class="value" style="color: #22c55e;">-</div>
+                <div class="label">Rating</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="analystCount">-</div>
+                <div class="label">Analysts</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="targetMean">-</div>
+                <div class="label">Target Price</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="targetUpside">-</div>
+                <div class="label">Upside</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="targetRange">-</div>
+                <div class="label">Target Range</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Growth, Cash Flow & Balance Sheet -->
+    <div class="insights-section" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(74, 222, 128, 0.05) 100%); border-color: rgba(34, 197, 94, 0.3);">
+            <div class="section-title"><i class="bi bi-graph-up"></i> Growth & Cash Flow</div>
+            <div class="insight-item">
+                <span class="insight-label">Revenue Growth (YoY)</span>
+                <span class="insight-value" id="revenueGrowth">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Earnings Growth (YoY)</span>
+                <span class="insight-value" id="earningsGrowth">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Operating Cash Flow</span>
+                <span class="insight-value" id="opCashflow">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Free Cash Flow</span>
+                <span class="insight-value" id="freeCashflow">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label"><strong>Capex (TTM)</strong></span>
+                <span class="insight-value" id="capexValue" style="color: #f59e0b;">-</span>
+            </div>
+        </div>
+
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(253, 224, 71, 0.05) 100%); border-color: rgba(251, 191, 36, 0.3);">
+            <div class="section-title"><i class="bi bi-pie-chart"></i> Margins & Returns</div>
+            <div class="insight-item">
+                <span class="insight-label">Gross Margin</span>
+                <span class="insight-value" id="grossMargin">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Operating Margin</span>
+                <span class="insight-value" id="opMargin">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Profit Margin</span>
+                <span class="insight-value" id="profitMargin">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">ROE</span>
+                <span class="insight-value" id="roeMargin">-</span>
+            </div>
+        </div>
+
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.05) 100%); border-color: rgba(139, 92, 246, 0.3);">
+            <div class="section-title"><i class="bi bi-bank"></i> Balance Sheet</div>
+            <div class="insight-item">
+                <span class="insight-label">Total Debt</span>
+                <span class="insight-value" id="totalDebt">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Total Cash</span>
+                <span class="insight-value" id="totalCash">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Debt/Cash Ratio</span>
+                <span class="insight-value" id="debtToCash">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Price vs 52W High</span>
+                <span class="insight-value" id="priceVs52H">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Price vs 52W Low</span>
+                <span class="insight-value" id="priceVs52L">-</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Insights -->
+    <div class="insights-section">
+        <div class="insight-card">
+            <div class="section-title"><i class="bi bi-building"></i> Company Profile</div>
+            <div class="insight-item">
+                <span class="insight-label">Industry</span>
+                <span class="insight-value" id="profileIndustry">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Sector</span>
+                <span class="insight-value" id="profileSector">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Employees</span>
+                <span class="insight-value" id="profileEmployees">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Website</span>
+                <span class="insight-value" id="profileWebsite">-</span>
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="section-title"><i class="bi bi-cash-stack"></i> Valuation & Forward Metrics</div>
+            <div class="insight-item">
+                <span class="insight-label">Enterprise Value</span>
+                <span class="insight-value" id="valEV">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">EV/EBITDA</span>
+                <span class="insight-value" id="valEVEBITDA">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Price/Book</span>
+                <span class="insight-value" id="valPB">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Price/Sales</span>
+                <span class="insight-value" id="valPS">-</span>
+            </div>
+            <div class="insight-item" style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 0.75rem; margin-top: 0.5rem;">
+                <span class="insight-label">Forward P/E</span>
+                <span class="insight-value" id="forwardPE">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Forward EPS</span>
+                <span class="insight-value" id="forwardEPS">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">PEG Ratio</span>
+                <span class="insight-value" id="pegRatio">-</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Summary section moved to combined About section above -->
+
+    <!-- Management Commentary & Key Highlights (Premium Data) -->
+    <div class="insights-section" style="grid-template-columns: 1fr 1fr;">
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.05) 100%); border-color: rgba(99, 102, 241, 0.3);">
+            <div class="section-title"><i class="bi bi-chat-quote"></i> Management Commentary</div>
+            <div style="padding: 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <i class="bi bi-lock" style="color: #818cf8;"></i>
+                    <span><strong>Premium Data Required</strong></span>
+                </div>
+                <p style="margin: 0.5rem 0;">This section would include:</p>
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem; list-style: disc;">
+                    <li>CEO/CFO statements from earnings calls</li>
+                    <li>Quarterly guidance commentary</li>
+                    <li>Strategic outlook and vision</li>
+                    <li>Risk factors mentioned by management</li>
+                </ul>
+                <p style="margin: 0.75rem 0 0; font-size: 0.8rem; color: #94a3b8;">
+                    <i class="bi bi-info-circle"></i> Available via: Bloomberg, Refinitiv, FactSet, S&P Capital IQ
+                </p>
+            </div>
+        </div>
+
+        <div class="insight-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(244, 114, 182, 0.05) 100%); border-color: rgba(236, 72, 153, 0.3);">
+            <div class="section-title"><i class="bi bi-stars"></i> Key Highlights & Capex Plans</div>
+            <div style="padding: 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <i class="bi bi-lock" style="color: #f472b6;"></i>
+                    <span><strong>Premium Data Required</strong></span>
+                </div>
+                <p style="margin: 0.5rem 0;">This section would include:</p>
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem; list-style: disc;">
+                    <li>Capex expansion plans & timelines</li>
+                    <li>New product launches / R&D pipeline</li>
+                    <li>M&A activity and strategic investments</li>
+                    <li>Key contract wins and partnerships</li>
+                    <li>Regulatory approvals and milestones</li>
+                </ul>
+                <p style="margin: 0.75rem 0 0; font-size: 0.8rem; color: #94a3b8;">
+                    <i class="bi bi-info-circle"></i> Available via: Annual Reports, BSE/NSE Filings, Screener.in Pro
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capex Metrics (What we CAN calculate) -->
+    <div class="ratios-section" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%); border-color: rgba(245, 158, 11, 0.3);">
+        <div class="section-title"><i class="bi bi-building-gear"></i> Capex Analysis (Calculated)</div>
+        <div class="ratios-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="ratio-card">
+                <div class="value" id="capexTTM" style="color: #f59e0b;">-</div>
+                <div class="label">Capex (TTM)</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="capexToRevenue" style="color: #f59e0b;">-</div>
+                <div class="label">Capex/Revenue</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="capexToOCF" style="color: #f59e0b;">-</div>
+                <div class="label">Capex/Op. CF</div>
+            </div>
+            <div class="ratio-card">
+                <div class="value" id="fcfYield" style="color: #22c55e;">-</div>
+                <div class="label">FCF Yield</div>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: #94a3b8; font-size: 0.85rem; margin: 0;">
+                <i class="bi bi-calculator" style="margin-right: 0.5rem;"></i>
+                <strong>Capex</strong> = Operating Cash Flow − Free Cash Flow |
+                <strong>FCF Yield</strong> = Free Cash Flow / Market Cap × 100
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const symbol = '{{ symbol }}';
+    let holdingData = null;
+    let fundamentalsData = null;
+
+    // Stock color palette - consistent colors per stock
+    const STOCK_COLORS = [
+        { gradient: 'linear-gradient(135deg, #3b82f6, #60a5fa)', shadow: 'rgba(59, 130, 246, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', shadow: 'rgba(139, 92, 246, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #ec4899, #f472b6)', shadow: 'rgba(236, 72, 153, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #22c55e, #4ade80)', shadow: 'rgba(34, 197, 94, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)', shadow: 'rgba(245, 158, 11, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #ef4444, #f87171)', shadow: 'rgba(239, 68, 68, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #14b8a6, #2dd4bf)', shadow: 'rgba(20, 184, 166, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #6366f1, #818cf8)', shadow: 'rgba(99, 102, 241, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #f97316, #fb923c)', shadow: 'rgba(249, 115, 22, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #84cc16, #a3e635)', shadow: 'rgba(132, 204, 22, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #0ea5e9, #38bdf8)', shadow: 'rgba(14, 165, 233, 0.4)' },
+        { gradient: 'linear-gradient(135deg, #d946ef, #e879f9)', shadow: 'rgba(217, 70, 239, 0.4)' },
+    ];
+
+    function getStockColor(sym) {
+        let hash = 0;
+        for (let i = 0; i < sym.length; i++) {
+            hash = ((hash << 5) - hash) + sym.charCodeAt(i);
+            hash = hash & hash;
+        }
+        return STOCK_COLORS[Math.abs(hash) % STOCK_COLORS.length];
+    }
+
+    // Chart instances
+    let priceChartInstance = null;
+    let revenueChartInstance = null;
+    let profitChartInstance = null;
+    let opmChartInstance = null;
+    let dividendChartInstance = null;
+    let roeChartInstance = null;
+    let roceChartInstance = null;
+    let debtChartInstance = null;
+    let fcfChartInstance = null;
+
+    // Generate dynamic chart labels based on data length
+    function getLabels(length) {
+        const currentYear = new Date().getFullYear();
+        const labels = [];
+        for (let i = length - 1; i >= 0; i--) {
+            labels.unshift(`FY${(currentYear - i).toString().slice(-2)}`);
+        }
+        return labels;
+    }
+
+    // Format currency in Indian style
+    function formatCurrency(amount, prefix = '₹') {
+        const absAmount = Math.abs(amount);
+        if (absAmount >= 1e7) {
+            return `${prefix}${(amount/1e7).toFixed(2)}Cr`;
+        } else if (absAmount >= 1e5) {
+            return `${prefix}${(amount/1e5).toFixed(2)}L`;
+        } else if (absAmount >= 1e3) {
+            return `${prefix}${(amount/1e3).toFixed(1)}K`;
+        }
+        return `${prefix}${amount.toFixed(0)}`;
+    }
+
+    // Format large numbers
+    function formatLargeNumber(num) {
+        if (!num) return '-';
+        const absNum = Math.abs(num);
+        if (absNum >= 1e12) return (num/1e12).toFixed(2) + 'T';
+        if (absNum >= 1e9) return (num/1e9).toFixed(2) + 'B';
+        if (absNum >= 1e7) return (num/1e7).toFixed(2) + 'Cr';
+        if (absNum >= 1e5) return (num/1e5).toFixed(2) + 'L';
+        return num.toLocaleString();
+    }
+
+    // Load all data
+    async function loadData() {
+        try {
+            // Fetch holdings to find this stock
+            const holdingsResp = await fetch('/api/holdings');
+            const holdingsData = await holdingsResp.json();
+            holdingData = holdingsData.holdings.find(h => h.symbol === symbol);
+
+            if (holdingData) {
+                populateHoldingData(holdingData);
+            }
+
+            // Fetch fundamentals
+            const fundResp = await fetch(`/api/fundamentals/${symbol}`);
+            fundamentalsData = await fundResp.json();
+            populateFundamentals(fundamentalsData);
+
+            // Fetch price history
+            const priceResp = await fetch(`/api/historical/${symbol}?period=1y`);
+            const priceData = await priceResp.json();
+            renderPriceChart(priceData.prices || []);
+
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
+    // Populate holding data
+    function populateHoldingData(h) {
+        document.getElementById('stockName').textContent = h.name || h.symbol;
+        const logoEl = document.getElementById('stockLogo');
+        logoEl.textContent = h.logo || h.symbol.substring(0, 3);
+        // Apply consistent stock color
+        const stockColor = getStockColor(h.symbol);
+        logoEl.style.setProperty('--logo-gradient', stockColor.gradient);
+        document.getElementById('stockSector').textContent = h.sector || '-';
+
+        document.getElementById('metricInvested').textContent = formatCurrency(h.invested);
+        document.getElementById('metricCurrent').textContent = formatCurrency(h.current);
+
+        const pnlSign = h.is_profit ? '+' : '';
+        const pnlEl = document.getElementById('metricPnl');
+        pnlEl.textContent = pnlSign + formatCurrency(h.pnl);
+        pnlEl.className = `value ${h.is_profit ? 'text-success' : 'text-danger'}`;
+
+        const returnsEl = document.getElementById('metricReturns');
+        returnsEl.textContent = pnlSign + h.pnl_pct + '%';
+        returnsEl.className = `value ${h.is_profit ? 'text-success' : 'text-danger'}`;
+
+        document.getElementById('metricQuantity').textContent = h.quantity.toLocaleString();
+
+        // Portfolio weight
+        const currentPct = h.current_pct || h.portfolio_pct || 0;
+        document.getElementById('weightBarFill').style.width = currentPct + '%';
+        document.getElementById('weightValue').textContent = currentPct + '%';
+    }
+
+    // Populate fundamentals
+    function populateFundamentals(f) {
+        // Description - Combined About section with highlights
+        const descEl = document.getElementById('stockDescription');
+        const highlightsDiv = document.getElementById('businessHighlights');
+        const summaryTextEl = document.getElementById('businessSummaryText');
+
+        // Short description (always shown)
+        descEl.textContent = f.description || 'No company information available.';
+
+        // Show business highlights with tags + full summary
+        if (f.business_summary || f.sector || f.industry) {
+            highlightsDiv.style.display = 'block';
+
+            // Sector tag
+            const sectorTag = document.getElementById('highlightSector');
+            if (f.sector) {
+                sectorTag.innerHTML = '<i class="bi bi-pie-chart"></i>' + f.sector;
+                sectorTag.style.display = 'inline-block';
+            }
+
+            // Industry tag
+            const industryTag = document.getElementById('highlightIndustry');
+            if (f.industry) {
+                industryTag.innerHTML = '<i class="bi bi-building"></i>' + f.industry;
+                industryTag.style.display = 'inline-block';
+            }
+
+            // Employees tag
+            const employeesTag = document.getElementById('highlightEmployees');
+            if (f.employees && f.employees > 0) {
+                employeesTag.innerHTML = '<i class="bi bi-people"></i>' + f.employees.toLocaleString() + ' employees';
+                employeesTag.style.display = 'inline-block';
+            }
+
+            // Full business summary
+            if (f.business_summary) {
+                summaryTextEl.textContent = f.business_summary;
+            }
+        }
+
+        // Key stats - Market Rank (show "-" if not available, not market cap)
+        document.getElementById('statMarketRank').textContent = f.market_rank ? '#' + f.market_rank : '-';
+        document.getElementById('stat52High').textContent = f.high_52w ? '₹' + f.high_52w.toFixed(2) : '-';
+        document.getElementById('stat52Low').textContent = f.low_52w ? '₹' + f.low_52w.toFixed(2) : '-';
+
+        // % from 52W High (how far below the high)
+        const pctTo52H = document.getElementById('statPctTo52H');
+        if (f.price_vs_52w_high && f.price_vs_52w_high > 0) {
+            const pctFromHigh = (100 - f.price_vs_52w_high).toFixed(1);
+            pctTo52H.textContent = pctFromHigh == 0 ? 'At High' : '-' + pctFromHigh + '%';
+            pctTo52H.style.color = pctFromHigh < 10 ? '#22c55e' : (pctFromHigh > 30 ? '#ef4444' : '#fbbf24');
+        } else {
+            pctTo52H.textContent = '-';
+        }
+
+        // % from ATH (All Time High) - improved handling
+        const pctToATH = document.getElementById('statPctToATH');
+        if (f.pct_from_ath !== undefined && f.pct_from_ath !== null && !isNaN(f.pct_from_ath)) {
+            pctToATH.textContent = f.pct_from_ath === 0 ? 'At ATH' : '-' + f.pct_from_ath.toFixed(1) + '%';
+            pctToATH.style.color = f.pct_from_ath < 10 ? '#22c55e' : (f.pct_from_ath > 30 ? '#ef4444' : '#fbbf24');
+        } else if (f.all_time_high && f.all_time_high > 0 && holdingData && holdingData.last_price) {
+            // Calculate from ATH if available but pct_from_ath wasn't calculated
+            const calcPctFromATH = ((1 - holdingData.last_price / f.all_time_high) * 100).toFixed(1);
+            pctToATH.textContent = calcPctFromATH == 0 ? 'At ATH' : '-' + calcPctFromATH + '%';
+            pctToATH.style.color = calcPctFromATH < 10 ? '#22c55e' : (calcPctFromATH > 30 ? '#ef4444' : '#fbbf24');
+        } else {
+            pctToATH.textContent = '-';
+        }
+
+        document.getElementById('statBeta').textContent = f.beta ? f.beta.toFixed(2) : '-';
+
+        // Dividend
+        document.getElementById('divYield').textContent = f.div_yield ? f.div_yield + '%' : '-';
+        document.getElementById('divPayout').textContent = f.payout_ratio ? f.payout_ratio.toFixed(1) + '%' : '-';
+        document.getElementById('divExDate').textContent = f.next_div_date || 'TBA';
+
+        // Profile
+        document.getElementById('profileIndustry').textContent = f.industry || '-';
+        document.getElementById('profileSector').textContent = f.sector || '-';
+        document.getElementById('profileEmployees').textContent = f.employees ? f.employees.toLocaleString() : '-';
+        document.getElementById('profileWebsite').innerHTML = f.website ?
+            `<a href="${f.website}" target="_blank" style="color: #60a5fa;">${f.website.replace('https://', '').replace('http://', '')}</a>` : '-';
+
+        // Valuation
+        document.getElementById('valEV').textContent = formatLargeNumber(f.enterprise_value);
+        document.getElementById('valEVEBITDA').textContent = f.ev_ebitda ? f.ev_ebitda.toFixed(2) : '-';
+        document.getElementById('valPB').textContent = f.pb_ratio ? f.pb_ratio.toFixed(2) : '-';
+        document.getElementById('valPS').textContent = f.ps_ratio ? f.ps_ratio.toFixed(2) : '-';
+
+        // Analyst Recommendations
+        const ratingColors = {
+            'buy': '#22c55e', 'strong_buy': '#22c55e', 'strongbuy': '#22c55e',
+            'hold': '#fbbf24',
+            'sell': '#ef4444', 'strong_sell': '#ef4444'
+        };
+        const ratingText = f.analyst_rating ? f.analyst_rating.replace('_', ' ').toUpperCase() : '-';
+        const ratingColor = ratingColors[f.analyst_rating?.toLowerCase()] || '#94a3b8';
+        document.querySelector('#analystRating .value').textContent = ratingText;
+        document.querySelector('#analystRating .value').style.color = ratingColor;
+        document.getElementById('analystCount').textContent = f.analyst_count || '-';
+        document.getElementById('targetMean').textContent = f.target_mean_price ? '₹' + f.target_mean_price.toFixed(0) : '-';
+
+        // Calculate upside
+        const currentPrice = holdingData?.last_price || 0;
+        if (f.target_mean_price && currentPrice) {
+            const upside = ((f.target_mean_price - currentPrice) / currentPrice * 100).toFixed(1);
+            const upsideEl = document.getElementById('targetUpside');
+            upsideEl.textContent = (upside > 0 ? '+' : '') + upside + '%';
+            upsideEl.style.color = upside > 0 ? '#22c55e' : '#ef4444';
+        }
+        document.getElementById('targetRange').textContent =
+            f.target_low_price && f.target_high_price ?
+            '₹' + f.target_low_price.toFixed(0) + ' - ₹' + f.target_high_price.toFixed(0) : '-';
+
+        // Growth & Margins
+        const growthColor = (val) => val > 0 ? '#22c55e' : (val < 0 ? '#ef4444' : '#94a3b8');
+        document.getElementById('revenueGrowth').textContent = f.revenue_growth ? (f.revenue_growth > 0 ? '+' : '') + f.revenue_growth + '%' : '-';
+        document.getElementById('revenueGrowth').style.color = growthColor(f.revenue_growth);
+        document.getElementById('earningsGrowth').textContent = f.earnings_growth ? (f.earnings_growth > 0 ? '+' : '') + f.earnings_growth + '%' : '-';
+        document.getElementById('earningsGrowth').style.color = growthColor(f.earnings_growth);
+        document.getElementById('opCashflow').textContent = formatLargeNumber(f.operating_cashflow);
+        document.getElementById('opCashflow').style.color = growthColor(f.operating_cashflow);
+        document.getElementById('freeCashflow').textContent = formatLargeNumber(f.free_cashflow);
+        document.getElementById('freeCashflow').style.color = growthColor(f.free_cashflow);
+
+        document.getElementById('grossMargin').textContent = f.gross_margins ? f.gross_margins + '%' : '-';
+        document.getElementById('opMargin').textContent = f.operating_margins ? f.operating_margins + '%' : '-';
+        document.getElementById('profitMargin').textContent = f.profit_margins ? f.profit_margins + '%' : '-';
+        document.getElementById('roeMargin').textContent = f.roe ? f.roe + '%' : '-';
+
+        // Capex
+        document.getElementById('capexValue').textContent = f.capex ? formatLargeNumber(f.capex) : '-';
+
+        // Balance Sheet
+        document.getElementById('totalDebt').textContent = f.total_debt ? formatLargeNumber(f.total_debt) : '-';
+        document.getElementById('totalCash').textContent = f.total_cash ? formatLargeNumber(f.total_cash) : '-';
+
+        const debtToCash = f.debt_to_cash || 0;
+        const debtToCashEl = document.getElementById('debtToCash');
+        debtToCashEl.textContent = debtToCash ? debtToCash.toFixed(2) : '-';
+        debtToCashEl.style.color = debtToCash > 2 ? '#ef4444' : (debtToCash < 1 ? '#22c55e' : '#fbbf24');
+
+        // Price vs 52W position
+        const priceVs52H = document.getElementById('priceVs52H');
+        if (f.price_vs_52w_high) {
+            priceVs52H.textContent = f.price_vs_52w_high.toFixed(1) + '%';
+            priceVs52H.style.color = f.price_vs_52w_high > 90 ? '#22c55e' : (f.price_vs_52w_high < 70 ? '#ef4444' : '#fbbf24');
+        }
+
+        const priceVs52L = document.getElementById('priceVs52L');
+        if (f.price_vs_52w_low) {
+            priceVs52L.textContent = '+' + (f.price_vs_52w_low - 100).toFixed(1) + '%';
+            priceVs52L.style.color = f.price_vs_52w_low > 150 ? '#22c55e' : '#94a3b8';
+        }
+
+        // Forward Metrics
+        document.getElementById('forwardPE').textContent = f.forward_pe ? f.forward_pe.toFixed(1) : '-';
+        document.getElementById('forwardEPS').textContent = f.forward_eps ? '₹' + f.forward_eps.toFixed(2) : '-';
+
+        const pegEl = document.getElementById('pegRatio');
+        pegEl.textContent = f.peg_ratio ? f.peg_ratio.toFixed(2) : '-';
+        if (f.peg_ratio) {
+            pegEl.style.color = f.peg_ratio < 1 ? '#22c55e' : (f.peg_ratio > 2 ? '#ef4444' : '#fbbf24');
+        }
+
+        // Business Summary moved to combined About section above
+
+        // Capex Analysis
+        document.getElementById('capexTTM').textContent = f.capex ? formatLargeNumber(f.capex) : '-';
+
+        // Capex/Revenue (using latest year revenue)
+        if (f.capex && f.revenue_5y && f.revenue_5y.length > 0) {
+            const latestRevenue = f.revenue_5y[f.revenue_5y.length - 1] * 1e9; // Convert from Cr to actual
+            if (latestRevenue > 0) {
+                const capexToRev = ((f.capex / latestRevenue) * 100).toFixed(1);
+                document.getElementById('capexToRevenue').textContent = capexToRev + '%';
+            }
+        }
+
+        // Capex/Operating Cash Flow
+        if (f.capex && f.operating_cashflow && f.operating_cashflow > 0) {
+            const capexToOCF = ((f.capex / f.operating_cashflow) * 100).toFixed(1);
+            const capexOCFEl = document.getElementById('capexToOCF');
+            capexOCFEl.textContent = capexToOCF + '%';
+            capexOCFEl.style.color = capexToOCF > 100 ? '#ef4444' : (capexToOCF < 50 ? '#22c55e' : '#fbbf24');
+        }
+
+        // FCF Yield (FCF / Market Cap * 100)
+        if (f.free_cashflow && f.market_cap && f.market_cap > 0) {
+            const fcfYield = ((f.free_cashflow / f.market_cap) * 100).toFixed(2);
+            const fcfEl = document.getElementById('fcfYield');
+            fcfEl.textContent = fcfYield + '%';
+            fcfEl.style.color = fcfYield > 5 ? '#22c55e' : (fcfYield < 2 ? '#fbbf24' : '#94a3b8');
+        }
+
+        // Populate inline ratios
+        document.getElementById('peRatio').textContent = f.pe_ratio ? f.pe_ratio.toFixed(1) : '-';
+        document.getElementById('peIndustry').textContent = f.industry_pe ? 'Ind: ' + f.industry_pe.toFixed(1) : '';
+        const peCard = document.getElementById('peRatioCard');
+        if (f.pe_ratio && f.industry_pe) {
+            peCard.className = 'ratio-card ' + (f.pe_ratio < f.industry_pe ? 'good' : (f.pe_ratio > f.industry_pe * 1.5 ? 'bad' : ''));
+        }
+
+        document.getElementById('deRatio').textContent = f.de_ratio ? f.de_ratio.toFixed(2) : '-';
+        const deCard = document.getElementById('deRatioCard');
+        deCard.className = 'ratio-card ' + (f.de_ratio < 1 ? 'good' : (f.de_ratio > 2 ? 'bad' : ''));
+
+        document.getElementById('roeValue').textContent = f.roe ? f.roe + '%' : '-';
+        const roeCard = document.getElementById('roeCard');
+        roeCard.className = 'ratio-card ' + (f.roe > 15 ? 'good' : (f.roe < 10 ? 'bad' : ''));
+
+        document.getElementById('roceValue').textContent = f.roce ? f.roce + '%' : '-';
+        const roceCard = document.getElementById('roceCard');
+        roceCard.className = 'ratio-card ' + (f.roce > 15 ? 'good' : (f.roce < 10 ? 'bad' : ''));
+
+        document.getElementById('currentRatio').textContent = f.current_ratio ? f.current_ratio.toFixed(2) : '-';
+        const crCard = document.getElementById('currentRatioCard');
+        crCard.className = 'ratio-card ' + (f.current_ratio > 1.5 ? 'good' : (f.current_ratio < 1 ? 'bad' : ''));
+
+        // Render financial charts
+        renderFinancialCharts(f);
+        renderDividendChart(f);
+    }
+
+    // Render price chart
+    function renderPriceChart(prices) {
+        if (priceChartInstance) priceChartInstance.destroy();
+        if (!prices.length) return;
+
+        const ctx = document.getElementById('priceChart');
+        const isProfit = holdingData ? holdingData.is_profit : prices[prices.length - 1] > prices[0];
+        const color = isProfit ? '#22c55e' : '#ef4444';
+
+        priceChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: prices.map((_, i) => i),
+                datasets: [{
+                    data: prices,
+                    borderColor: color,
+                    borderWidth: 2,
+                    fill: true,
+                    backgroundColor: color + '20',
+                    tension: 0.1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: true,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#94a3b8', font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // Render financial charts
+    function renderFinancialCharts(f) {
+        const labels = ['FY20', 'FY21', 'FY22', 'FY23', 'FY24'];
+
+        // Revenue chart
+        if (revenueChartInstance) revenueChartInstance.destroy();
+        const revCtx = document.getElementById('revenueChart');
+        revenueChartInstance = new Chart(revCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    type: 'bar',
+                    data: f.revenue_5y || [0,0,0,0,0],
+                    backgroundColor: '#3b82f690',
+                    borderRadius: 6,
+                    order: 2
+                }, {
+                    type: 'line',
+                    data: f.revenue_5y || [0,0,0,0,0],
+                    borderColor: '#fbbf24',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fbbf24',
+                    tension: 0.3,
+                    fill: false,
+                    order: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4 } }
+                }
+            }
+        });
+
+        // Profit chart
+        if (profitChartInstance) profitChartInstance.destroy();
+        const profitCtx = document.getElementById('profitChart');
+        const profitData = f.profit_5y || [0,0,0,0,0];
+        profitChartInstance = new Chart(profitCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    type: 'bar',
+                    data: profitData,
+                    backgroundColor: profitData.map(v => v >= 0 ? '#22c55e90' : '#ef444490'),
+                    borderRadius: 6,
+                    order: 2
+                }, {
+                    type: 'line',
+                    data: profitData,
+                    borderColor: '#fbbf24',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fbbf24',
+                    tension: 0.3,
+                    fill: false,
+                    order: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4 } }
+                }
+            }
+        });
+
+        // OPM chart
+        if (opmChartInstance) opmChartInstance.destroy();
+        const opmCtx = document.getElementById('opmChart');
+        opmChartInstance = new Chart(opmCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    type: 'bar',
+                    data: f.opm_5y || [0,0,0,0,0],
+                    backgroundColor: '#f59e0b90',
+                    borderRadius: 6,
+                    order: 2
+                }, {
+                    type: 'line',
+                    data: f.opm_5y || [0,0,0,0,0],
+                    borderColor: '#a78bfa',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#a78bfa',
+                    tension: 0.3,
+                    fill: false,
+                    order: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => v + '%' } }
+                }
+            }
+        });
+    }
+
+    // Render dividend chart with trend line
+    function renderDividendChart(f) {
+        if (dividendChartInstance) dividendChartInstance.destroy();
+
+        const ctx = document.getElementById('dividendChart');
+        const labels = ['FY20', 'FY21', 'FY22', 'FY23', 'FY24'];
+        const dividends = f.dividend_5y || [0, 0, 0, 0, 0];
+
+        dividendChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    type: 'bar',
+                    data: dividends,
+                    backgroundColor: '#ec489990',
+                    borderRadius: 6,
+                    order: 2
+                }, {
+                    type: 'line',
+                    data: dividends,
+                    borderColor: '#fbbf24',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fbbf24',
+                    tension: 0.3,
+                    fill: false,
+                    order: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => '₹' + v } }
+                }
+            }
+        });
+
+        // ROE Chart
+        if (roeChartInstance) roeChartInstance.destroy();
+        const roeData = f.roe_5y || [];
+        if (roeData.length > 0 && roeData.some(v => v > 0)) {
+            roeChartInstance = new Chart(document.getElementById('roeChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(roeData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: roeData,
+                        backgroundColor: '#8b5cf690',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: roeData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => v + '%' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('roeChart').parentElement.innerHTML = '<div class="title">ROE % (5Y)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
+
+        // ROCE Chart
+        if (roceChartInstance) roceChartInstance.destroy();
+        const roceData = f.roce_5y || [];
+        if (roceData.length > 0 && roceData.some(v => v > 0)) {
+            roceChartInstance = new Chart(document.getElementById('roceChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(roceData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: roceData,
+                        backgroundColor: '#ec489990',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: roceData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => v + '%' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('roceChart').parentElement.innerHTML = '<div class="title">ROCE % (5Y)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
+
+        // Total Debt Chart
+        if (debtChartInstance) debtChartInstance.destroy();
+        const debtData = f.debt_5y || [];
+        if (debtData.length > 0 && debtData.some(v => v > 0)) {
+            debtChartInstance = new Chart(document.getElementById('debtChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(debtData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: debtData,
+                        backgroundColor: '#ef444490',
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: debtData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => '₹' + v + 'Bn' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('debtChart').parentElement.innerHTML = '<div class="title">Total Debt (5Y, ₹Bn)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
+
+        // Free Cash Flow Chart
+        if (fcfChartInstance) fcfChartInstance.destroy();
+        const fcfData = f.fcf_5y || [];
+        if (fcfData.length > 0 && fcfData.some(v => v !== 0)) {
+            fcfChartInstance = new Chart(document.getElementById('fcfChart'), {
+                type: 'bar',
+                data: {
+                    labels: getLabels(fcfData.length),
+                    datasets: [{
+                        type: 'bar',
+                        data: fcfData,
+                        backgroundColor: fcfData.map(v => v >= 0 ? '#14b8a690' : '#ef444490'),
+                        borderRadius: 6,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: fcfData,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fbbf24',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#64748b', maxTicksLimit: 4, callback: v => '₹' + v + 'Bn' } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('fcfChart').parentElement.innerHTML = '<div class="title">Free Cash Flow (5Y, ₹Bn)</div><div class="text-secondary text-center py-4" style="font-size: 0.75rem;">Data not available</div>';
+        }
+    }
+
+    // Refresh data
+    function refreshData() {
+        loadData();
+    }
+
+    // Share stock
+    function shareStock() {
+        const text = holdingData ?
+            `Check out ${holdingData.name} (${symbol})!\nReturns: ${holdingData.is_profit ? '+' : ''}${holdingData.pnl_pct}%\nP&L: ${holdingData.is_profit ? '+' : ''}${formatCurrency(holdingData.pnl)}` :
+            `Check out ${symbol}!`;
+
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadData);
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+//@version=5
+strategy("CC - Hold Call on Reversal [VARIANT]",
+         overlay=true,
+         initial_capital=1000000,
+         default_qty_type=strategy.fixed,
+         default_qty_value=1,
+         commission_type=strategy.commission.percent,
+         commission_value=0.03,
+         slippage=0,
+         calc_on_every_tick=false)
+
+// ============================================
+// VARIANT STRATEGY: Exit Stock on Reversal, Hold Short Call
+// WARNING: Creates NAKED CALL position - HIGH RISK!
+// Compare this vs standard covered call exit
+// ============================================
+
+// === INPUTS ===
+grp1 = "Supertrend"
+atrPeriod = input.int(10, "ATR Period", minval=1, group=grp1)
+factor = input.float(3.0, "Factor", minval=0.1, step=0.1, group=grp1)
+
+grp2 = "ADX"
+adxLength = input.int(14, "ADX Length", minval=1, group=grp2)
+adxThreshold = input.float(25.0, "ADX Threshold", minval=10, group=grp2)
+
+grp3 = "Covered Call"
+otmPercent = input.float(5.0, "OTM %", minval=1, maxval=15, group=grp3)
+premiumPct = input.float(2.0, "Premium % (of stock)", minval=0.5, maxval=5.0, group=grp3)
+
+grp4 = "Exit Rules"
+stopLossPct = input.float(3.0, "Stop Loss % (stock drop)", minval=1, maxval=10, group=grp4)
+maxDays = input.int(30, "Max Holding Days", minval=7, maxval=60, group=grp4)
+nakedCallSL = input.float(5.0, "Naked Call SL % (after stock exit)", minval=2, maxval=15, group=grp4)
+
+// === CALCULATIONS ===
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+bullish = direction < 0
+bearish = direction > 0
+
+[diPlus, diMinus, adx] = ta.dmi(adxLength, adxLength)
+adxOk = adx > adxThreshold
+diBullish = diPlus > diMinus
+
+// === STATE MACHINE ===
+// States: 0=Flat, 1=Covered Call (stock+call), 2=Naked Call (call only)
+var int state = 0
+var float entryPrice = na
+var float strikePrice = na
+var float premium = na
+var float stopLoss = na
+var int entryBar = na
+var float nakedCallSLPrice = na
+var float stockExitPrice = na
+
+// === ENTRY (Covered Call) ===
+canEnter = bullish and adxOk and diBullish
+enterCoveredCall = canEnter and state == 0
+
+if enterCoveredCall
+    entryPrice := close
+    strikePrice := close * (1 + otmPercent / 100)
+    premium := close * premiumPct / 100
+    stopLoss := close * (1 - stopLossPct / 100)
+    entryBar := bar_index
+    state := 1
+    strategy.entry("CoveredCall", strategy.long)
+
+// === POSITION TRACKING ===
+inCoveredCall = state == 1
+inNakedCall = state == 2
+barsHeld = bar_index - entryBar
+
+// === EXIT CONDITIONS ===
+// For Covered Call state
+stockHitSL = inCoveredCall and close < stopLoss
+trendReversal = inCoveredCall and bearish
+timeExit = inCoveredCall and barsHeld >= maxDays
+stockAboveStrike = inCoveredCall and close >= strikePrice
+
+// For Naked Call state
+nakedCallHitSL = inNakedCall and close >= nakedCallSLPrice
+nakedCallExpired = inNakedCall and barsHeld >= maxDays
+nakedCallAboveStrike = inNakedCall and close >= strikePrice
+
+// === STATE TRANSITIONS ===
+
+// COVERED CALL -> EXIT EVERYTHING (Normal exits)
+if stockHitSL or timeExit or stockAboveStrike
+    strategy.close("CoveredCall", comment=
+        stockHitSL ? "SL" :
+        stockAboveStrike ? "ASSIGNED" : "DTE")
+    state := 0
+
+// COVERED CALL -> NAKED CALL (Reversal: exit stock, hold call)
+if trendReversal and not stockHitSL and not timeExit and not stockAboveStrike
+    stockExitPrice := close
+    nakedCallSLPrice := strikePrice * (1 + nakedCallSL / 100)  // SL above strike
+    strategy.close("CoveredCall", comment="REVERSAL-HOLD_CALL")
+    state := 2  // Now in naked call state
+
+// NAKED CALL -> EXIT (SL or expired)
+if nakedCallHitSL or nakedCallExpired or nakedCallAboveStrike
+    // Calculate naked call P&L
+    // If stock rallied above strike: loss = (close - strike)
+    // If stock stayed below strike: profit = premium (already collected)
+    state := 0
+
+// === P&L CALCULATION ===
+var float runningPnL = 0.0
+
+// Covered Call P&L (stock + short call)
+coveredCallPnL = inCoveredCall ? (close - entryPrice) + premium - math.max(0, close - strikePrice) : 0
+
+// Naked Call P&L (short call only, stock already sold)
+nakedCallPnL = inNakedCall ?
+    (stockExitPrice - entryPrice) +  // Stock P&L (locked in)
+    premium -                         // Premium received
+    math.max(0, close - strikePrice)  // Call liability
+    : 0
+
+displayPnL = inCoveredCall ? coveredCallPnL : inNakedCall ? nakedCallPnL : 0
+
+// === VISUALIZATION ===
+plot(supertrend, "Supertrend", color=bullish ? color.green : color.red, linewidth=2)
+
+// Strike and stops
+plot(state > 0 ? strikePrice : na, "Strike", color.blue, 2, plot.style_circles)
+plot(inCoveredCall ? stopLoss : na, "Stock SL", color.red, 1, plot.style_linebr)
+plot(inNakedCall ? nakedCallSLPrice : na, "Naked Call SL", color.fuchsia, 1, plot.style_linebr)
+plot(state > 0 ? entryPrice : na, "Entry", color.yellow, 1, plot.style_linebr)
+
+// Entry markers
+plotshape(enterCoveredCall, "ENTRY", shape.triangleup, location.belowbar, color.green, size=size.small, text="CC")
+
+// Covered call exits
+plotshape(stockHitSL, "SL EXIT", shape.triangledown, location.abovebar, color.red, size=size.small, text="SL")
+plotshape(stockAboveStrike, "ASSIGNED", shape.flag, location.abovebar, color.blue, size=size.small, text="ASN")
+plotshape(timeExit and not stockHitSL and not stockAboveStrike, "DTE", shape.diamond, location.abovebar, color.orange, size=size.small, text="DTE")
+
+// Reversal -> hold call
+plotshape(trendReversal and not stockHitSL and not timeExit and not stockAboveStrike,
+          "HOLD CALL", shape.xcross, location.abovebar, color.purple, size=size.normal, text="HOLD\nCALL")
+
+// Naked call exits
+plotshape(nakedCallHitSL, "NAKED SL", shape.triangledown, location.abovebar, color.fuchsia, size=size.small, text="NK_SL")
+plotshape(nakedCallExpired, "NAKED DTE", shape.diamond, location.abovebar, color.orange, size=size.small, text="NK_DTE")
+
+// Background colors
+bgcolor(inCoveredCall ? color.new(color.green, 95) : na, title="Covered Call")
+bgcolor(inNakedCall ? color.new(color.purple, 90) : na, title="Naked Call (RISKY)")
+bgcolor(canEnter and state == 0 ? color.new(color.blue, 95) : na, title="Signal Ready")
+
+// === WARNING LABEL FOR NAKED CALL ===
+var label warningLabel = na
+if inNakedCall
+    label.delete(warningLabel)
+    warningLabel := label.new(bar_index, high, "NAKED CALL\nHIGH RISK!",
+        color=color.fuchsia, style=label.style_label_down, textcolor=color.white)
+
+// === INFO TABLE ===
+var table t = table.new(position.top_right, 2, 8, bgcolor=color.new(#1e1e1e, 20), frame_color=color.gray)
+if barstate.islast
+    stateStr = state == 0 ? "FLAT" : state == 1 ? "COVERED" : "NAKED!"
+    stateCol = state == 0 ? color.gray : state == 1 ? color.green : color.fuchsia
+
+    table.cell(t, 0, 0, "STATE", text_color=color.white)
+    table.cell(t, 1, 0, stateStr, text_color=stateCol, bgcolor=state == 2 ? color.new(color.fuchsia, 70) : na)
+    table.cell(t, 0, 1, "Supertrend", text_color=color.white)
+    table.cell(t, 1, 1, bullish ? "BULL" : "BEAR", text_color=bullish ? color.green : color.red)
+    table.cell(t, 0, 2, "ADX", text_color=color.white)
+    table.cell(t, 1, 2, str.tostring(adx, "#.#"), text_color=adxOk ? color.green : color.gray)
+    table.cell(t, 0, 3, "Strike", text_color=color.white)
+    table.cell(t, 1, 3, state > 0 ? str.tostring(strikePrice, "#") : "-", text_color=color.blue)
+    table.cell(t, 0, 4, "P&L", text_color=color.white)
+    table.cell(t, 1, 4, state > 0 ? str.tostring(displayPnL, "#.##") : "-",
+               text_color=displayPnL > 0 ? color.green : color.red)
+    table.cell(t, 0, 5, "Days", text_color=color.white)
+    table.cell(t, 1, 5, state > 0 ? str.tostring(barsHeld) : "-", text_color=color.white)
+    table.cell(t, 0, 6, "Entry", text_color=color.white)
+    table.cell(t, 1, 6, state > 0 ? str.tostring(entryPrice, "#") : "-", text_color=color.yellow)
+    table.cell(t, 0, 7, "Risk", text_color=color.white)
+    table.cell(t, 1, 7, state == 2 ? "UNLIMITED!" : "LIMITED",
+               text_color=state == 2 ? color.red : color.green)

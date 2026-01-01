@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holdings Dashboard - Treemap & Heatmap Views</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --profit-green: #22c55e;
+            --loss-red: #ef4444;
+            --card-bg: #1e293b;
+            --card-hover: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #475569;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(15, 23, 42, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-header {
+            padding: 1.5rem 0 1rem;
+        }
+
+        .portfolio-summary {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .summary-stat .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .summary-stat .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* View Tabs */
+        .view-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .view-tab {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .view-tab:hover, .view-tab.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        /* ==================== TREEMAP VIEW ==================== */
+        .treemap-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 4px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            min-height: 500px;
+        }
+
+        .treemap-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .treemap-card:hover {
+            transform: scale(1.02);
+            z-index: 10;
+            border-color: #60a5fa;
+        }
+
+        .treemap-card.profit {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, var(--card-bg) 100%);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .treemap-card.loss {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, var(--card-bg) 100%);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .treemap-symbol {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .treemap-name {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .treemap-invested {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: auto;
+        }
+
+        .treemap-pnl {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .treemap-pnl.profit { color: var(--profit-green); }
+        .treemap-pnl.loss { color: var(--loss-red); }
+
+        /* Size classes for treemap - based on investment proportion */
+        .treemap-xl { flex: 0 0 calc(33.33% - 4px); height: 180px; }
+        .treemap-lg { flex: 0 0 calc(25% - 4px); height: 150px; }
+        .treemap-md { flex: 0 0 calc(20% - 4px); height: 120px; }
+        .treemap-sm { flex: 0 0 calc(16.66% - 4px); height: 100px; }
+        .treemap-xs { flex: 0 0 calc(12.5% - 4px); height: 80px; }
+
+        @media (max-width: 768px) {
+            .treemap-xl { flex: 0 0 calc(50% - 4px); height: 140px; }
+            .treemap-lg { flex: 0 0 calc(50% - 4px); height: 120px; }
+            .treemap-md { flex: 0 0 calc(50% - 4px); height: 100px; }
+            .treemap-sm { flex: 0 0 calc(50% - 4px); height: 90px; }
+            .treemap-xs { flex: 0 0 calc(50% - 4px); height: 80px; }
+        }
+
+        /* ==================== HEATMAP V1 - P/L GRADIENT ==================== */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            padding: 4px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .heatmap-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1.5;
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .heatmap-cell .symbol {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .heatmap-cell .pnl-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .heatmap-cell .invested {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        /* P/L color gradients */
+        .heat-super-profit { background: linear-gradient(135deg, #15803d, #22c55e); color: white; }
+        .heat-high-profit { background: linear-gradient(135deg, #16a34a, #4ade80); color: white; }
+        .heat-medium-profit { background: linear-gradient(135deg, #22c55e, #86efac); color: #0f172a; }
+        .heat-low-profit { background: linear-gradient(135deg, #86efac, #bbf7d0); color: #0f172a; }
+        .heat-neutral { background: linear-gradient(135deg, #64748b, #94a3b8); color: white; }
+        .heat-low-loss { background: linear-gradient(135deg, #fecaca, #fca5a5); color: #0f172a; }
+        .heat-medium-loss { background: linear-gradient(135deg, #f87171, #ef4444); color: white; }
+        .heat-high-loss { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
+
+        /* ==================== HEATMAP V2 - SECTOR BASED ==================== */
+        .sector-heatmap {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sector-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sector-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .sector-header.it { border-color: #3b82f6; }
+        .sector-header.banking { border-color: #f59e0b; }
+        .sector-header.energy { border-color: #8b5cf6; }
+        .sector-header.fmcg { border-color: #10b981; }
+        .sector-header.telecom { border-color: #ec4899; }
+
+        .sector-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .sector-stats {
+            margin-left: auto;
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.8rem;
+        }
+
+        .sector-stocks {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .sector-stock {
+            flex: 1;
+            min-width: 120px;
+            max-width: 200px;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sector-stock:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .sector-stock .symbol {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .sector-stock .pnl {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* ==================== HEATMAP V3 - BUBBLE CHART ==================== */
+        .bubble-container {
+            position: relative;
+            height: 450px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .bubble-chart {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .bubble:hover {
+            transform: scale(1.1);
+            z-index: 100;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+        }
+
+        .bubble .symbol {
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        .bubble .pnl {
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+
+        .bubble-legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .bubble-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* ==================== HEATMAP V4 - CALENDAR STYLE ==================== */
+        .calendar-heatmap {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-heatmap {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .calendar-cell {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-cell:hover {
+            transform: scale(1.08);
+            z-index: 10;
+        }
+
+        .calendar-cell .symbol {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .calendar-cell .pnl-pct {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .calendar-cell .pnl-abs {
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+
+        .calendar-cell .invested {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        /* Intensity ring for additional dimension */
+        .calendar-cell::before {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        /* Color scale legend */
+        .color-scale {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+        }
+
+        .scale-gradient {
+            width: 200px;
+            height: 16px;
+            background: linear-gradient(to right, #b91c1c, #ef4444, #fca5a5, #94a3b8, #86efac, #22c55e, #15803d);
+            border-radius: 4px;
+        }
+
+        .scale-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-graph-up-arrow me-2"></i>
+                Covered Calls
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="/backtest" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-bar-chart-line me-1"></i> Backtest
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-3">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h5 class="mb-1">My Holdings</h5>
+            <p class="text-secondary mb-0 small">12 stocks | ₹24.85L invested</p>
+        </div>
+
+        <!-- Portfolio Summary -->
+        <div class="portfolio-summary">
+            <div class="row">
+                <div class="col-3">
+                    <div class="summary-stat">
+                        <div class="value">₹24.85L</div>
+                        <div class="label">Invested</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="summary-stat">
+                        <div class="value">₹28.42L</div>
+                        <div class="label">Current</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="summary-stat">
+                        <div class="value text-success">+₹3.57L</div>
+                        <div class="label">P&L</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="summary-stat">
+                        <div class="value text-success">+14.4%</div>
+                        <div class="label">Returns</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Tabs -->
+        <div class="view-tabs">
+            <button class="view-tab active" onclick="switchView('treemap')">
+                <i class="bi bi-grid-fill me-1"></i> Treemap
+            </button>
+            <button class="view-tab" onclick="switchView('heatmap-pnl')">
+                <i class="bi bi-thermometer-half me-1"></i> Heatmap (P/L)
+            </button>
+            <button class="view-tab" onclick="switchView('heatmap-sector')">
+                <i class="bi bi-diagram-3 me-1"></i> Sector View
+            </button>
+            <button class="view-tab" onclick="switchView('heatmap-bubble')">
+                <i class="bi bi-bullseye me-1"></i> Bubble Chart
+            </button>
+            <button class="view-tab" onclick="switchView('heatmap-calendar')">
+                <i class="bi bi-calendar3 me-1"></i> Grid Heatmap
+            </button>
+        </div>
+
+        <!-- ==================== VIEW 1: TREEMAP (Proportional Size) ==================== -->
+        <div id="view-treemap" class="view-section active">
+            <p class="text-secondary small mb-2">
+                <i class="bi bi-info-circle me-1"></i> Card size proportional to invested amount
+            </p>
+            <div class="treemap-container">
+                <!-- Largest investments first -->
+                <div class="treemap-card treemap-xl profit">
+                    <div>
+                        <div class="treemap-symbol">RELIANCE</div>
+                        <div class="treemap-name">Reliance Industries</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹4.25L invested</div>
+                        <div class="treemap-pnl profit">+18.5% (+₹78.6K)</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-lg profit">
+                    <div>
+                        <div class="treemap-symbol">TCS</div>
+                        <div class="treemap-name">Tata Consultancy Services</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹3.80L invested</div>
+                        <div class="treemap-pnl profit">+12.3% (+₹46.7K)</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-lg profit">
+                    <div>
+                        <div class="treemap-symbol">ICICIBANK</div>
+                        <div class="treemap-name">ICICI Bank</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹3.20L invested</div>
+                        <div class="treemap-pnl profit">+15.6% (+₹49.9K)</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-md loss">
+                    <div>
+                        <div class="treemap-symbol">HDFCBANK</div>
+                        <div class="treemap-name">HDFC Bank</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹2.75L invested</div>
+                        <div class="treemap-pnl loss">-3.2% (-₹8.8K)</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-md profit">
+                    <div>
+                        <div class="treemap-symbol">INFY</div>
+                        <div class="treemap-name">Infosys</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹2.40L invested</div>
+                        <div class="treemap-pnl profit">+8.7% (+₹20.9K)</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-md profit">
+                    <div>
+                        <div class="treemap-symbol">SBIN</div>
+                        <div class="treemap-name">State Bank of India</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹2.10L invested</div>
+                        <div class="treemap-pnl profit">+22.4% (+₹47.0K)</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-sm profit">
+                    <div>
+                        <div class="treemap-symbol">BHARTIARTL</div>
+                        <div class="treemap-name">Bharti Airtel</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹1.95L</div>
+                        <div class="treemap-pnl profit">+31.2%</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-sm loss">
+                    <div>
+                        <div class="treemap-symbol">ITC</div>
+                        <div class="treemap-name">ITC Limited</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹1.85L</div>
+                        <div class="treemap-pnl loss">-7.8%</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-xs profit">
+                    <div>
+                        <div class="treemap-symbol">KOTAKBANK</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹1.20L</div>
+                        <div class="treemap-pnl profit">+5.2%</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-xs profit">
+                    <div>
+                        <div class="treemap-symbol">AXISBANK</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹0.85L</div>
+                        <div class="treemap-pnl profit">+9.8%</div>
+                    </div>
+                </div>
+
+                <div class="treemap-card treemap-xs loss">
+                    <div>
+                        <div class="treemap-symbol">WIPRO</div>
+                    </div>
+                    <div>
+                        <div class="treemap-invested">₹0.50L</div>
+                        <div class="treemap-pnl loss">-4.5%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW 2: HEATMAP P/L GRADIENT ==================== -->
+        <div id="view-heatmap-pnl" class="view-section">
+            <p class="text-secondary small mb-2">
+                <i class="bi bi-info-circle me-1"></i> Color intensity shows P/L performance
+            </p>
+            <div class="heatmap-grid">
+                <div class="heatmap-cell heat-super-profit">
+                    <div class="symbol">BHARTIARTL</div>
+                    <div class="pnl-value">+31.2%</div>
+                    <div class="invested">₹1.95L</div>
+                </div>
+                <div class="heatmap-cell heat-high-profit">
+                    <div class="symbol">SBIN</div>
+                    <div class="pnl-value">+22.4%</div>
+                    <div class="invested">₹2.10L</div>
+                </div>
+                <div class="heatmap-cell heat-high-profit">
+                    <div class="symbol">RELIANCE</div>
+                    <div class="pnl-value">+18.5%</div>
+                    <div class="invested">₹4.25L</div>
+                </div>
+                <div class="heatmap-cell heat-medium-profit">
+                    <div class="symbol">ICICIBANK</div>
+                    <div class="pnl-value">+15.6%</div>
+                    <div class="invested">₹3.20L</div>
+                </div>
+                <div class="heatmap-cell heat-medium-profit">
+                    <div class="symbol">TCS</div>
+                    <div class="pnl-value">+12.3%</div>
+                    <div class="invested">₹3.80L</div>
+                </div>
+                <div class="heatmap-cell heat-low-profit">
+                    <div class="symbol">AXISBANK</div>
+                    <div class="pnl-value">+9.8%</div>
+                    <div class="invested">₹0.85L</div>
+                </div>
+                <div class="heatmap-cell heat-low-profit">
+                    <div class="symbol">INFY</div>
+                    <div class="pnl-value">+8.7%</div>
+                    <div class="invested">₹2.40L</div>
+                </div>
+                <div class="heatmap-cell heat-low-profit">
+                    <div class="symbol">KOTAKBANK</div>
+                    <div class="pnl-value">+5.2%</div>
+                    <div class="invested">₹1.20L</div>
+                </div>
+                <div class="heatmap-cell heat-low-loss">
+                    <div class="symbol">HDFCBANK</div>
+                    <div class="pnl-value">-3.2%</div>
+                    <div class="invested">₹2.75L</div>
+                </div>
+                <div class="heatmap-cell heat-medium-loss">
+                    <div class="symbol">WIPRO</div>
+                    <div class="pnl-value">-4.5%</div>
+                    <div class="invested">₹0.50L</div>
+                </div>
+                <div class="heatmap-cell heat-medium-loss">
+                    <div class="symbol">ITC</div>
+                    <div class="pnl-value">-7.8%</div>
+                    <div class="invested">₹1.85L</div>
+                </div>
+                <div class="heatmap-cell heat-neutral">
+                    <div class="symbol">TATAMOTORS</div>
+                    <div class="pnl-value">+0.5%</div>
+                    <div class="invested">₹1.00L</div>
+                </div>
+            </div>
+
+            <div class="color-scale">
+                <span class="scale-label">-10%</span>
+                <div class="scale-gradient"></div>
+                <span class="scale-label">+30%</span>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW 3: SECTOR BASED HEATMAP ==================== -->
+        <div id="view-heatmap-sector" class="view-section">
+            <p class="text-secondary small mb-2">
+                <i class="bi bi-info-circle me-1"></i> Holdings grouped by sector with performance
+            </p>
+            <div class="sector-heatmap">
+                <!-- IT Sector -->
+                <div class="sector-row">
+                    <div class="sector-header it">
+                        <i class="bi bi-cpu"></i>
+                        <span class="sector-name">Information Technology</span>
+                        <div class="sector-stats">
+                            <span>₹6.70L invested</span>
+                            <span class="text-success">+₹70.1K (+10.5%)</span>
+                        </div>
+                    </div>
+                    <div class="sector-stocks">
+                        <div class="sector-stock heat-medium-profit">
+                            <div class="symbol">TCS</div>
+                            <div class="pnl">+12.3%</div>
+                        </div>
+                        <div class="sector-stock heat-low-profit">
+                            <div class="symbol">INFY</div>
+                            <div class="pnl">+8.7%</div>
+                        </div>
+                        <div class="sector-stock heat-medium-loss">
+                            <div class="symbol">WIPRO</div>
+                            <div class="pnl">-4.5%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banking Sector -->
+                <div class="sector-row">
+                    <div class="sector-header banking">
+                        <i class="bi bi-bank"></i>
+                        <span class="sector-name">Banking & Finance</span>
+                        <div class="sector-stats">
+                            <span>₹8.10L invested</span>
+                            <span class="text-success">+₹94.3K (+11.6%)</span>
+                        </div>
+                    </div>
+                    <div class="sector-stocks">
+                        <div class="sector-stock heat-high-profit">
+                            <div class="symbol">SBIN</div>
+                            <div class="pnl">+22.4%</div>
+                        </div>
+                        <div class="sector-stock heat-medium-profit">
+                            <div class="symbol">ICICIBANK</div>
+                            <div class="pnl">+15.6%</div>
+                        </div>
+                        <div class="sector-stock heat-low-profit">
+                            <div class="symbol">AXISBANK</div>
+                            <div class="pnl">+9.8%</div>
+                        </div>
+                        <div class="sector-stock heat-low-profit">
+                            <div class="symbol">KOTAKBANK</div>
+                            <div class="pnl">+5.2%</div>
+                        </div>
+                        <div class="sector-stock heat-low-loss">
+                            <div class="symbol">HDFCBANK</div>
+                            <div class="pnl">-3.2%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Sector -->
+                <div class="sector-row">
+                    <div class="sector-header energy">
+                        <i class="bi bi-lightning"></i>
+                        <span class="sector-name">Energy & Oil</span>
+                        <div class="sector-stats">
+                            <span>₹4.25L invested</span>
+                            <span class="text-success">+₹78.6K (+18.5%)</span>
+                        </div>
+                    </div>
+                    <div class="sector-stocks">
+                        <div class="sector-stock heat-high-profit">
+                            <div class="symbol">RELIANCE</div>
+                            <div class="pnl">+18.5%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telecom Sector -->
+                <div class="sector-row">
+                    <div class="sector-header telecom">
+                        <i class="bi bi-broadcast"></i>
+                        <span class="sector-name">Telecom</span>
+                        <div class="sector-stats">
+                            <span>₹1.95L invested</span>
+                            <span class="text-success">+₹60.8K (+31.2%)</span>
+                        </div>
+                    </div>
+                    <div class="sector-stocks">
+                        <div class="sector-stock heat-super-profit">
+                            <div class="symbol">BHARTIARTL</div>
+                            <div class="pnl">+31.2%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FMCG Sector -->
+                <div class="sector-row">
+                    <div class="sector-header fmcg">
+                        <i class="bi bi-basket"></i>
+                        <span class="sector-name">FMCG</span>
+                        <div class="sector-stats">
+                            <span>₹1.85L invested</span>
+                            <span class="text-danger">-₹14.4K (-7.8%)</span>
+                        </div>
+                    </div>
+                    <div class="sector-stocks">
+                        <div class="sector-stock heat-medium-loss">
+                            <div class="symbol">ITC</div>
+                            <div class="pnl">-7.8%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW 4: BUBBLE CHART ==================== -->
+        <div id="view-heatmap-bubble" class="view-section">
+            <p class="text-secondary small mb-2">
+                <i class="bi bi-info-circle me-1"></i> Bubble size = Investment | Color = P/L | Position = Returns vs Risk
+            </p>
+            <div class="bubble-container">
+                <div class="bubble-chart" id="bubbleChart">
+                    <!-- Bubbles positioned dynamically -->
+                </div>
+            </div>
+            <div class="bubble-legend">
+                <div class="bubble-legend-item">
+                    <div class="legend-circle" style="background: #22c55e;"></div>
+                    <span>Profit</span>
+                </div>
+                <div class="bubble-legend-item">
+                    <div class="legend-circle" style="background: #ef4444;"></div>
+                    <span>Loss</span>
+                </div>
+                <div class="bubble-legend-item">
+                    <span>Size = Investment Amount</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW 5: CALENDAR GRID HEATMAP ==================== -->
+        <div id="view-heatmap-calendar" class="view-section">
+            <p class="text-secondary small mb-2">
+                <i class="bi bi-info-circle me-1"></i> Square grid with color intensity by performance
+            </p>
+            <div class="calendar-heatmap">
+                <div class="calendar-cell heat-super-profit">
+                    <div class="symbol">ARTL</div>
+                    <div class="pnl-pct">+31.2%</div>
+                    <div class="pnl-abs">+₹60.8K</div>
+                    <div class="invested">₹1.95L</div>
+                </div>
+                <div class="calendar-cell heat-high-profit">
+                    <div class="symbol">SBIN</div>
+                    <div class="pnl-pct">+22.4%</div>
+                    <div class="pnl-abs">+₹47.0K</div>
+                    <div class="invested">₹2.10L</div>
+                </div>
+                <div class="calendar-cell heat-high-profit">
+                    <div class="symbol">RIL</div>
+                    <div class="pnl-pct">+18.5%</div>
+                    <div class="pnl-abs">+₹78.6K</div>
+                    <div class="invested">₹4.25L</div>
+                </div>
+                <div class="calendar-cell heat-medium-profit">
+                    <div class="symbol">ICICI</div>
+                    <div class="pnl-pct">+15.6%</div>
+                    <div class="pnl-abs">+₹49.9K</div>
+                    <div class="invested">₹3.20L</div>
+                </div>
+                <div class="calendar-cell heat-medium-profit">
+                    <div class="symbol">TCS</div>
+                    <div class="pnl-pct">+12.3%</div>
+                    <div class="pnl-abs">+₹46.7K</div>
+                    <div class="invested">₹3.80L</div>
+                </div>
+                <div class="calendar-cell heat-low-profit">
+                    <div class="symbol">AXIS</div>
+                    <div class="pnl-pct">+9.8%</div>
+                    <div class="pnl-abs">+₹8.3K</div>
+                    <div class="invested">₹0.85L</div>
+                </div>
+                <div class="calendar-cell heat-low-profit">
+                    <div class="symbol">INFY</div>
+                    <div class="pnl-pct">+8.7%</div>
+                    <div class="pnl-abs">+₹20.9K</div>
+                    <div class="invested">₹2.40L</div>
+                </div>
+                <div class="calendar-cell heat-low-profit">
+                    <div class="symbol">KOTAK</div>
+                    <div class="pnl-pct">+5.2%</div>
+                    <div class="pnl-abs">+₹6.2K</div>
+                    <div class="invested">₹1.20L</div>
+                </div>
+                <div class="calendar-cell heat-neutral">
+                    <div class="symbol">TATA</div>
+                    <div class="pnl-pct">+0.5%</div>
+                    <div class="pnl-abs">+₹0.5K</div>
+                    <div class="invested">₹1.00L</div>
+                </div>
+                <div class="calendar-cell heat-low-loss">
+                    <div class="symbol">HDFC</div>
+                    <div class="pnl-pct">-3.2%</div>
+                    <div class="pnl-abs">-₹8.8K</div>
+                    <div class="invested">₹2.75L</div>
+                </div>
+                <div class="calendar-cell heat-medium-loss">
+                    <div class="symbol">WIPRO</div>
+                    <div class="pnl-pct">-4.5%</div>
+                    <div class="pnl-abs">-₹2.3K</div>
+                    <div class="invested">₹0.50L</div>
+                </div>
+                <div class="calendar-cell heat-medium-loss">
+                    <div class="symbol">ITC</div>
+                    <div class="pnl-pct">-7.8%</div>
+                    <div class="pnl-abs">-₹14.4K</div>
+                    <div class="invested">₹1.85L</div>
+                </div>
+            </div>
+
+            <div class="color-scale">
+                <span class="scale-label">Loss</span>
+                <div class="scale-gradient"></div>
+                <span class="scale-label">Profit</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // View switching
+        function switchView(viewId) {
+            // Update tabs
+            document.querySelectorAll('.view-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.closest('.view-tab').classList.add('active');
+
+            // Update sections
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+
+            // Initialize bubble chart when switching to it
+            if (viewId === 'heatmap-bubble') {
+                initBubbleChart();
+            }
+        }
+
+        // Bubble chart initialization
+        function initBubbleChart() {
+            const container = document.getElementById('bubbleChart');
+            if (container.children.length > 0) return; // Already initialized
+
+            const holdings = [
+                { symbol: 'RIL', invested: 425000, pnl: 18.5 },
+                { symbol: 'TCS', invested: 380000, pnl: 12.3 },
+                { symbol: 'ICICI', invested: 320000, pnl: 15.6 },
+                { symbol: 'HDFC', invested: 275000, pnl: -3.2 },
+                { symbol: 'INFY', invested: 240000, pnl: 8.7 },
+                { symbol: 'SBIN', invested: 210000, pnl: 22.4 },
+                { symbol: 'ARTL', invested: 195000, pnl: 31.2 },
+                { symbol: 'ITC', invested: 185000, pnl: -7.8 },
+                { symbol: 'KOTAK', invested: 120000, pnl: 5.2 },
+                { symbol: 'AXIS', invested: 85000, pnl: 9.8 },
+                { symbol: 'WIPRO', invested: 50000, pnl: -4.5 },
+            ];
+
+            const maxInvested = Math.max(...holdings.map(h => h.invested));
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            holdings.forEach((h, i) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+
+                // Size based on investment (min 50px, max 120px)
+                const size = 50 + (h.invested / maxInvested) * 70;
+                bubble.style.width = size + 'px';
+                bubble.style.height = size + 'px';
+
+                // Color based on P/L
+                if (h.pnl > 20) {
+                    bubble.style.background = 'linear-gradient(135deg, #15803d, #22c55e)';
+                } else if (h.pnl > 10) {
+                    bubble.style.background = 'linear-gradient(135deg, #22c55e, #4ade80)';
+                } else if (h.pnl > 0) {
+                    bubble.style.background = 'linear-gradient(135deg, #86efac, #bbf7d0)';
+                    bubble.style.color = '#0f172a';
+                } else if (h.pnl > -5) {
+                    bubble.style.background = 'linear-gradient(135deg, #fca5a5, #fecaca)';
+                    bubble.style.color = '#0f172a';
+                } else {
+                    bubble.style.background = 'linear-gradient(135deg, #dc2626, #ef4444)';
+                }
+
+                // Position based on P/L (Y axis) and spread horizontally
+                const x = (i / holdings.length) * (containerWidth - size) + Math.random() * 30;
+                const y = containerHeight - ((h.pnl + 10) / 45) * containerHeight - size/2;
+
+                bubble.style.left = Math.max(10, Math.min(containerWidth - size - 10, x)) + 'px';
+                bubble.style.top = Math.max(10, Math.min(containerHeight - size - 10, y)) + 'px';
+
+                bubble.innerHTML = `
+                    <div class="symbol">${h.symbol}</div>
+                    <div class="pnl">${h.pnl > 0 ? '+' : ''}${h.pnl}%</div>
+                `;
+
+                container.appendChild(bubble);
+            });
+        }
+
+        // Initialize bubble chart on load if visible
+        document.addEventListener('DOMContentLoaded', () => {
+            // Auto-init if bubble view is active
+            if (document.getElementById('view-heatmap-bubble').classList.contains('active')) {
+                initBubbleChart();
+            }
+        });
+    </script>
+</body>
+</html>

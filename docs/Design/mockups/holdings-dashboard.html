@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holdings Dashboard - Mockup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --profit-green: #22c55e;
+            --loss-red: #ef4444;
+            --card-bg: #1e293b;
+            --card-hover: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #475569;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(15, 23, 42, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-header {
+            padding: 2rem 0 1rem;
+        }
+
+        .portfolio-summary {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .summary-stat .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .summary-stat .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .sort-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sort-btn:hover, .sort-btn.active {
+            background: var(--card-hover);
+            color: var(--text-primary);
+            border-color: #60a5fa;
+        }
+
+        .sort-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        /* Holdings Card */
+        .holding-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .holding-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-color: #60a5fa;
+        }
+
+        .holding-card.expanded {
+            border-color: #3b82f6;
+        }
+
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .stock-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .stock-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .stock-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .stock-symbol {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .pnl-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .pnl-badge.profit {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--profit-green);
+        }
+
+        .pnl-badge.loss {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--loss-red);
+        }
+
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric .value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .metric .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .chart-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .mini-chart {
+            flex: 1;
+            height: 50px;
+        }
+
+        .extra-info {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+        }
+
+        .extra-info .item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--text-secondary);
+        }
+
+        .extra-info .item i {
+            font-size: 0.875rem;
+        }
+
+        .dividend-badge {
+            color: #fbbf24 !important;
+        }
+
+        .result-badge {
+            color: #a78bfa !important;
+        }
+
+        /* Expanded Details Panel */
+        .expanded-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+            padding: 0;
+        }
+
+        .holding-card.expanded .expanded-details {
+            max-height: 600px;
+            padding-top: 1rem;
+        }
+
+        .company-overview {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .fundamentals-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .fundamental-chart {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .fundamental-chart .title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .fundamental-chart canvas {
+            height: 100px !important;
+        }
+
+        .ratio-cards {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .ratio-card {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .ratio-card .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .ratio-card .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .ratio-card.good .value { color: var(--profit-green); }
+        .ratio-card.warning .value { color: #fbbf24; }
+        .ratio-card.bad .value { color: var(--loss-red); }
+
+        /* Swipe hint */
+        .swipe-hint {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .holding-card:hover .swipe-hint {
+            opacity: 1;
+        }
+
+        /* Touch feedback */
+        .holding-card.touch-active {
+            transform: scale(0.98);
+            background: var(--card-hover);
+        }
+
+        /* View toggle */
+        .view-toggle {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 0.25rem;
+        }
+
+        .view-toggle button {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .view-toggle button.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-row {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+            }
+
+            .metric .value {
+                font-size: 0.875rem;
+            }
+
+            .fundamentals-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-graph-up-arrow me-2"></i>
+                Covered Calls
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="/backtest" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-bar-chart-line me-1"></i> Backtest
+                </a>
+                <span class="text-light">
+                    <i class="bi bi-person-circle me-1"></i> User
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-1">My Holdings</h4>
+                    <p class="text-secondary mb-0">12 stocks in portfolio</p>
+                </div>
+                <div class="view-toggle">
+                    <button class="active" title="Card View"><i class="bi bi-grid-3x3-gap"></i></button>
+                    <button title="List View"><i class="bi bi-list-ul"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Summary -->
+        <div class="portfolio-summary">
+            <div class="row">
+                <div class="col-6 col-md-3">
+                    <div class="summary-stat">
+                        <div class="value">₹24,85,000</div>
+                        <div class="label">Invested</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="summary-stat">
+                        <div class="value">₹28,42,350</div>
+                        <div class="label">Current Value</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="summary-stat">
+                        <div class="value text-success">+₹3,57,350</div>
+                        <div class="label">Total P&L</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="summary-stat">
+                        <div class="value text-success">+14.37%</div>
+                        <div class="label">Overall Returns</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sort Controls -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="sort-controls">
+                <button class="sort-btn active" data-sort="pnl-pct">
+                    <i class="bi bi-percent me-1"></i>P/L %
+                </button>
+                <button class="sort-btn" data-sort="invested">
+                    <i class="bi bi-cash me-1"></i>Invested
+                </button>
+                <button class="sort-btn" data-sort="current">
+                    <i class="bi bi-wallet2 me-1"></i>Current Value
+                </button>
+                <button class="sort-btn" data-sort="pnl-abs">
+                    <i class="bi bi-graph-up me-1"></i>P/L ₹
+                </button>
+                <button class="sort-btn" data-sort="dividend">
+                    <i class="bi bi-currency-rupee me-1"></i>Div Yield
+                </button>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="sort-btn" id="sort-order">
+                    <i class="bi bi-sort-down"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Holdings Cards -->
+        <div class="holdings-container">
+
+            <!-- Card 1 - RELIANCE (Profit) -->
+            <div class="holding-card" onclick="toggleExpand(this)">
+                <div class="swipe-hint">
+                    <i class="bi bi-hand-index"></i> Tap for details
+                </div>
+
+                <div class="card-header-row">
+                    <div class="stock-info">
+                        <div class="stock-logo">RIL</div>
+                        <div>
+                            <div class="stock-name">Reliance Industries</div>
+                            <div class="stock-symbol">NSE: RELIANCE</div>
+                        </div>
+                    </div>
+                    <div class="pnl-badge profit">
+                        <i class="bi bi-arrow-up-short"></i>+18.5%
+                    </div>
+                </div>
+
+                <div class="metrics-row">
+                    <div class="metric">
+                        <div class="value">₹4,25,000</div>
+                        <div class="label">Invested</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">₹5,03,625</div>
+                        <div class="label">Current</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value text-success">+₹78,625</div>
+                        <div class="label">P&L</div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="mini-chart">
+                        <canvas id="chart-reliance"></canvas>
+                    </div>
+                    <div class="extra-info">
+                        <div class="item dividend-badge">
+                            <i class="bi bi-coin"></i>
+                            <span>0.32%</span>
+                        </div>
+                        <div class="item result-badge">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Jan 17</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expanded Details -->
+                <div class="expanded-details">
+                    <div class="company-overview">
+                        <strong>Reliance Industries Ltd</strong> is India's largest private sector company. Diversified conglomerate with interests in petrochemicals, refining, oil & gas, telecom (Jio), and retail.
+                    </div>
+
+                    <div class="fundamentals-grid">
+                        <div class="fundamental-chart">
+                            <div class="title">Revenue (5Y) - in ₹ Cr</div>
+                            <canvas id="revenue-reliance"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">Net Profit (5Y) - in ₹ Cr</div>
+                            <canvas id="profit-reliance"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">OPM % (5Y)</div>
+                            <canvas id="opm-reliance"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">EPS (5Y) - in ₹</div>
+                            <canvas id="eps-reliance"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="ratio-cards">
+                        <div class="ratio-card good">
+                            <div class="value">0.42</div>
+                            <div class="label">D/E Ratio</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">28.5</div>
+                            <div class="label">P/E Ratio</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="value">12.8%</div>
+                            <div class="label">ROE</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="value">8.2%</div>
+                            <div class="label">ROCE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 - TCS (Profit) -->
+            <div class="holding-card" onclick="toggleExpand(this)">
+                <div class="swipe-hint">
+                    <i class="bi bi-hand-index"></i> Tap for details
+                </div>
+
+                <div class="card-header-row">
+                    <div class="stock-info">
+                        <div class="stock-logo" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);">TCS</div>
+                        <div>
+                            <div class="stock-name">Tata Consultancy Services</div>
+                            <div class="stock-symbol">NSE: TCS</div>
+                        </div>
+                    </div>
+                    <div class="pnl-badge profit">
+                        <i class="bi bi-arrow-up-short"></i>+12.3%
+                    </div>
+                </div>
+
+                <div class="metrics-row">
+                    <div class="metric">
+                        <div class="value">₹3,80,000</div>
+                        <div class="label">Invested</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">₹4,26,740</div>
+                        <div class="label">Current</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value text-success">+₹46,740</div>
+                        <div class="label">P&L</div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="mini-chart">
+                        <canvas id="chart-tcs"></canvas>
+                    </div>
+                    <div class="extra-info">
+                        <div class="item dividend-badge">
+                            <i class="bi bi-coin"></i>
+                            <span>1.24%</span>
+                        </div>
+                        <div class="item result-badge">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Jan 09</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="expanded-details">
+                    <div class="company-overview">
+                        <strong>TCS</strong> is India's largest IT services company and a Tata Group company. Global leader in IT services, consulting, and business solutions with operations in 150+ locations.
+                    </div>
+
+                    <div class="fundamentals-grid">
+                        <div class="fundamental-chart">
+                            <div class="title">Revenue (5Y) - in ₹ Cr</div>
+                            <canvas id="revenue-tcs"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">Net Profit (5Y) - in ₹ Cr</div>
+                            <canvas id="profit-tcs"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">OPM % (5Y)</div>
+                            <canvas id="opm-tcs"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">EPS (5Y) - in ₹</div>
+                            <canvas id="eps-tcs"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="ratio-cards">
+                        <div class="ratio-card good">
+                            <div class="value">0.05</div>
+                            <div class="label">D/E Ratio</div>
+                        </div>
+                        <div class="ratio-card warning">
+                            <div class="value">32.1</div>
+                            <div class="label">P/E Ratio</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">48.2%</div>
+                            <div class="label">ROE</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">62.5%</div>
+                            <div class="label">ROCE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 - HDFC Bank (Small Loss) -->
+            <div class="holding-card" onclick="toggleExpand(this)">
+                <div class="swipe-hint">
+                    <i class="bi bi-hand-index"></i> Tap for details
+                </div>
+
+                <div class="card-header-row">
+                    <div class="stock-info">
+                        <div class="stock-logo" style="background: linear-gradient(135deg, #ef4444, #f97316);">HDFC</div>
+                        <div>
+                            <div class="stock-name">HDFC Bank</div>
+                            <div class="stock-symbol">NSE: HDFCBANK</div>
+                        </div>
+                    </div>
+                    <div class="pnl-badge loss">
+                        <i class="bi bi-arrow-down-short"></i>-3.2%
+                    </div>
+                </div>
+
+                <div class="metrics-row">
+                    <div class="metric">
+                        <div class="value">₹2,75,000</div>
+                        <div class="label">Invested</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">₹2,66,200</div>
+                        <div class="label">Current</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value text-danger">-₹8,800</div>
+                        <div class="label">P&L</div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="mini-chart">
+                        <canvas id="chart-hdfc"></canvas>
+                    </div>
+                    <div class="extra-info">
+                        <div class="item dividend-badge">
+                            <i class="bi bi-coin"></i>
+                            <span>1.12%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="expanded-details">
+                    <div class="company-overview">
+                        <strong>HDFC Bank</strong> is India's largest private sector bank by assets and market cap. Known for strong asset quality, digital banking leadership, and consistent growth.
+                    </div>
+
+                    <div class="fundamentals-grid">
+                        <div class="fundamental-chart">
+                            <div class="title">Net Interest Income (5Y)</div>
+                            <canvas id="revenue-hdfc"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">Net Profit (5Y) - in ₹ Cr</div>
+                            <canvas id="profit-hdfc"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">NIM % (5Y)</div>
+                            <canvas id="opm-hdfc"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">EPS (5Y) - in ₹</div>
+                            <canvas id="eps-hdfc"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="ratio-cards">
+                        <div class="ratio-card good">
+                            <div class="value">0.89</div>
+                            <div class="label">GNPA %</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="value">18.2</div>
+                            <div class="label">P/E Ratio</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">16.8%</div>
+                            <div class="label">ROE</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">19.2%</div>
+                            <div class="label">CAR</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4 - Infosys (Profit) -->
+            <div class="holding-card" onclick="toggleExpand(this)">
+                <div class="swipe-hint">
+                    <i class="bi bi-hand-index"></i> Tap for details
+                </div>
+
+                <div class="card-header-row">
+                    <div class="stock-info">
+                        <div class="stock-logo" style="background: linear-gradient(135deg, #10b981, #06b6d4);">INFY</div>
+                        <div>
+                            <div class="stock-name">Infosys</div>
+                            <div class="stock-symbol">NSE: INFY</div>
+                        </div>
+                    </div>
+                    <div class="pnl-badge profit">
+                        <i class="bi bi-arrow-up-short"></i>+8.7%
+                    </div>
+                </div>
+
+                <div class="metrics-row">
+                    <div class="metric">
+                        <div class="value">₹2,40,000</div>
+                        <div class="label">Invested</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">₹2,60,880</div>
+                        <div class="label">Current</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value text-success">+₹20,880</div>
+                        <div class="label">P&L</div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="mini-chart">
+                        <canvas id="chart-infy"></canvas>
+                    </div>
+                    <div class="extra-info">
+                        <div class="item dividend-badge">
+                            <i class="bi bi-coin"></i>
+                            <span>2.45%</span>
+                        </div>
+                        <div class="item result-badge">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Jan 16</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="expanded-details">
+                    <div class="company-overview">
+                        <strong>Infosys</strong> is India's second-largest IT services company. Pioneer in Indian IT industry, known for digital transformation services, AI/ML capabilities, and strong governance.
+                    </div>
+
+                    <div class="fundamentals-grid">
+                        <div class="fundamental-chart">
+                            <div class="title">Revenue (5Y) - in ₹ Cr</div>
+                            <canvas id="revenue-infy"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">Net Profit (5Y) - in ₹ Cr</div>
+                            <canvas id="profit-infy"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">OPM % (5Y)</div>
+                            <canvas id="opm-infy"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">EPS (5Y) - in ₹</div>
+                            <canvas id="eps-infy"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="ratio-cards">
+                        <div class="ratio-card good">
+                            <div class="value">0.08</div>
+                            <div class="label">D/E Ratio</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="value">26.4</div>
+                            <div class="label">P/E Ratio</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">31.5%</div>
+                            <div class="label">ROE</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">42.1%</div>
+                            <div class="label">ROCE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5 - ITC (Big Loss) -->
+            <div class="holding-card" onclick="toggleExpand(this)">
+                <div class="swipe-hint">
+                    <i class="bi bi-hand-index"></i> Tap for details
+                </div>
+
+                <div class="card-header-row">
+                    <div class="stock-info">
+                        <div class="stock-logo" style="background: linear-gradient(135deg, #f59e0b, #eab308);">ITC</div>
+                        <div>
+                            <div class="stock-name">ITC Limited</div>
+                            <div class="stock-symbol">NSE: ITC</div>
+                        </div>
+                    </div>
+                    <div class="pnl-badge loss">
+                        <i class="bi bi-arrow-down-short"></i>-7.8%
+                    </div>
+                </div>
+
+                <div class="metrics-row">
+                    <div class="metric">
+                        <div class="value">₹1,85,000</div>
+                        <div class="label">Invested</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">₹1,70,570</div>
+                        <div class="label">Current</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value text-danger">-₹14,430</div>
+                        <div class="label">P&L</div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="mini-chart">
+                        <canvas id="chart-itc"></canvas>
+                    </div>
+                    <div class="extra-info">
+                        <div class="item dividend-badge">
+                            <i class="bi bi-coin"></i>
+                            <span>3.15%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="expanded-details">
+                    <div class="company-overview">
+                        <strong>ITC</strong> is a diversified conglomerate with businesses in FMCG, hotels, paperboards, packaging, agri-business, and IT. Known for high dividend yield and strong cash generation.
+                    </div>
+
+                    <div class="fundamentals-grid">
+                        <div class="fundamental-chart">
+                            <div class="title">Revenue (5Y) - in ₹ Cr</div>
+                            <canvas id="revenue-itc"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">Net Profit (5Y) - in ₹ Cr</div>
+                            <canvas id="profit-itc"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">OPM % (5Y)</div>
+                            <canvas id="opm-itc"></canvas>
+                        </div>
+                        <div class="fundamental-chart">
+                            <div class="title">EPS (5Y) - in ₹</div>
+                            <canvas id="eps-itc"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="ratio-cards">
+                        <div class="ratio-card good">
+                            <div class="value">0.00</div>
+                            <div class="label">D/E Ratio</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="value">24.8</div>
+                            <div class="label">P/E Ratio</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">28.4%</div>
+                            <div class="label">ROE</div>
+                        </div>
+                        <div class="ratio-card good">
+                            <div class="value">36.2%</div>
+                            <div class="label">ROCE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Toggle card expansion
+        function toggleExpand(card) {
+            const wasExpanded = card.classList.contains('expanded');
+
+            // Close all other cards
+            document.querySelectorAll('.holding-card.expanded').forEach(c => {
+                c.classList.remove('expanded');
+            });
+
+            // Toggle this card
+            if (!wasExpanded) {
+                card.classList.add('expanded');
+                // Initialize charts for this card when expanded
+                setTimeout(() => initExpandedCharts(card), 100);
+            }
+        }
+
+        // Sort functionality
+        document.querySelectorAll('.sort-btn[data-sort]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.sort-btn[data-sort]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                // Add actual sorting logic here
+            });
+        });
+
+        // Create mini sparkline charts
+        function createSparkline(canvasId, data, color) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map((_, i) => i),
+                    datasets: [{
+                        data: data,
+                        borderColor: color,
+                        borderWidth: 1.5,
+                        fill: true,
+                        backgroundColor: color + '20',
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    },
+                    elements: {
+                        line: { borderJoinStyle: 'round' }
+                    }
+                }
+            });
+        }
+
+        // Create bar charts for fundamentals
+        function createBarChart(canvasId, labels, data, color) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: color + '80',
+                        borderColor: color,
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize sparklines
+        const profitColor = '#22c55e';
+        const lossColor = '#ef4444';
+
+        // Sample 1-year data (252 trading days approximated)
+        const relianceData = Array.from({length: 50}, (_, i) => 2400 + Math.sin(i * 0.3) * 200 + i * 8);
+        const tcsData = Array.from({length: 50}, (_, i) => 3200 + Math.cos(i * 0.2) * 150 + i * 5);
+        const hdfcData = Array.from({length: 50}, (_, i) => 1650 - Math.sin(i * 0.15) * 100 - i * 2);
+        const infyData = Array.from({length: 50}, (_, i) => 1400 + Math.sin(i * 0.25) * 80 + i * 3);
+        const itcData = Array.from({length: 50}, (_, i) => 480 - Math.cos(i * 0.2) * 30 - i * 1.5);
+
+        createSparkline('chart-reliance', relianceData, profitColor);
+        createSparkline('chart-tcs', tcsData, profitColor);
+        createSparkline('chart-hdfc', hdfcData, lossColor);
+        createSparkline('chart-infy', infyData, profitColor);
+        createSparkline('chart-itc', itcData, lossColor);
+
+        // Initialize expanded chart data
+        function initExpandedCharts(card) {
+            const years = ['FY20', 'FY21', 'FY22', 'FY23', 'FY24'];
+
+            // Check which card is expanded and create appropriate charts
+            const stockLogo = card.querySelector('.stock-logo').textContent;
+
+            if (stockLogo === 'RIL') {
+                createBarChart('revenue-reliance', years, [611076, 486326, 721634, 875342, 954670], '#3b82f6');
+                createBarChart('profit-reliance', years, [39880, 49128, 60705, 73670, 79020], '#22c55e');
+                createBarChart('opm-reliance', years, [14.2, 15.8, 16.4, 17.1, 16.8], '#8b5cf6');
+                createBarChart('eps-reliance', years, [59.1, 72.7, 89.7, 108.9, 116.8], '#f59e0b');
+            } else if (stockLogo === 'TCS') {
+                createBarChart('revenue-tcs', years, [156949, 164177, 191754, 225458, 240893], '#3b82f6');
+                createBarChart('profit-tcs', years, [32430, 32562, 38449, 42303, 45908], '#22c55e');
+                createBarChart('opm-tcs', years, [25.1, 26.8, 27.2, 26.4, 26.1], '#8b5cf6');
+                createBarChart('eps-tcs', years, [88.6, 89.0, 105.2, 115.7, 125.5], '#f59e0b');
+            } else if (stockLogo === 'HDFC') {
+                createBarChart('revenue-hdfc', years, [56186, 63843, 75328, 89342, 104850], '#3b82f6');
+                createBarChart('profit-hdfc', years, [26257, 31116, 36961, 44108, 51834], '#22c55e');
+                createBarChart('opm-hdfc', years, [4.1, 4.0, 4.1, 4.0, 3.9], '#8b5cf6');
+                createBarChart('eps-hdfc', years, [47.6, 56.4, 67.0, 79.9, 93.2], '#f59e0b');
+            } else if (stockLogo === 'INFY') {
+                createBarChart('revenue-infy', years, [90791, 100472, 121641, 146767, 153670], '#3b82f6');
+                createBarChart('profit-infy', years, [16639, 19423, 22110, 24108, 26248], '#22c55e');
+                createBarChart('opm-infy', years, [23.5, 25.4, 23.1, 21.3, 21.0], '#8b5cf6');
+                createBarChart('eps-infy', years, [39.4, 46.0, 52.5, 57.2, 62.4], '#f59e0b');
+            } else if (stockLogo === 'ITC') {
+                createBarChart('revenue-itc', years, [49388, 48151, 60645, 69481, 70919], '#3b82f6');
+                createBarChart('profit-itc', years, [15136, 13031, 15503, 18753, 20457], '#22c55e');
+                createBarChart('opm-itc', years, [38.2, 33.4, 34.8, 36.2, 37.5], '#8b5cf6');
+                createBarChart('eps-itc', years, [12.3, 10.6, 12.6, 15.2, 16.6], '#f59e0b');
+            }
+        }
+
+        // Touch handling for mobile
+        let touchStartTime;
+        document.querySelectorAll('.holding-card').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                touchStartTime = Date.now();
+                card.classList.add('touch-active');
+            });
+
+            card.addEventListener('touchend', () => {
+                card.classList.remove('touch-active');
+                const touchDuration = Date.now() - touchStartTime;
+
+                if (touchDuration > 500) {
+                    // Long press - expand details
+                    toggleExpand(card);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

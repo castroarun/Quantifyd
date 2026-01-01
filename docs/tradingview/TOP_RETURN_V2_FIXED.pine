@@ -1,0 +1,128 @@
+//@version=5
+strategy("CC - OTM5% + Supertrend + ADX [FIXED v2]",
+         overlay=true,
+         initial_capital=1000000,
+         default_qty_type=strategy.fixed,
+         default_qty_value=1,
+         commission_type=strategy.commission.percent,
+         commission_value=0.03,
+         slippage=0,
+         calc_on_every_tick=false)
+
+// ============================================
+// STRATEGY: OTM_5PCT + Supertrend + ADX
+// VERSION 2: Fixed entry/exit logic
+// ============================================
+
+// === INPUTS ===
+grp1 = "Supertrend"
+atrPeriod = input.int(10, "ATR Period", minval=1, group=grp1)
+factor = input.float(3.0, "Factor", minval=0.1, step=0.1, group=grp1)
+
+grp2 = "ADX"
+adxLength = input.int(14, "ADX Length", minval=1, group=grp2)
+adxThreshold = input.float(25.0, "ADX Threshold", minval=10, group=grp2)
+
+grp3 = "Covered Call"
+otmPercent = input.float(5.0, "OTM %", minval=1, maxval=15, group=grp3)
+premiumPct = input.float(2.0, "Premium % (of stock)", minval=0.5, maxval=5.0, group=grp3)
+
+grp4 = "Exit Rules"
+profitTargetPct = input.float(50.0, "Profit Target %", minval=10, maxval=90, group=grp4)
+stopLossPct = input.float(3.0, "Stop Loss % (stock drop)", minval=1, maxval=10, group=grp4)
+maxDays = input.int(30, "Max Holding Days", minval=7, maxval=60, group=grp4)
+
+// === CALCULATIONS ===
+// Supertrend
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+bullish = direction < 0
+bearish = direction > 0
+
+// ADX/DMI
+[diPlus, diMinus, adx] = ta.dmi(adxLength, adxLength)
+adxOk = adx > adxThreshold
+diBullish = diPlus > diMinus
+
+// === ENTRY CONDITION ===
+// All must be true: Supertrend bullish + ADX strong + +DI > -DI
+canEnter = bullish and adxOk and diBullish
+enterLong = canEnter and strategy.position_size == 0
+
+// === POSITION TRACKING ===
+var float entryPrice = na
+var float strikePrice = na
+var float premium = na
+var float stopLoss = na
+var int entryBar = na
+
+if enterLong
+    entryPrice := close
+    strikePrice := close * (1 + otmPercent / 100)
+    premium := close * premiumPct / 100
+    stopLoss := close * (1 - stopLossPct / 100)
+    entryBar := bar_index
+    strategy.entry("Buy", strategy.long)
+
+// === EXIT CONDITIONS ===
+inPosition = strategy.position_size > 0
+barsHeld = bar_index - entryBar
+
+// Calculate P&L
+stockPnL = inPosition ? (close - entryPrice) : 0
+// For covered call: profit = premium - max(0, close - strike) + stock P&L
+// Simplified: if close < strike, profit = premium + stockPnL
+// if close >= strike, profit = premium + (strike - entry) = capped
+callPayoff = inPosition ? (close >= strikePrice ? -(close - strikePrice) : 0) : 0
+totalPnL = stockPnL + premium + callPayoff
+
+// Exit conditions
+profitTarget = inPosition and totalPnL >= (premium * profitTargetPct / 100)
+hitStopLoss = inPosition and close < stopLoss
+timeExit = inPosition and barsHeld >= maxDays
+trendExit = inPosition and bearish
+
+exitLong = profitTarget or hitStopLoss or timeExit or trendExit
+
+if exitLong
+    strategy.close("Buy", comment=
+        profitTarget ? "PT" :
+        hitStopLoss ? "SL" :
+        timeExit ? "TIME" : "TREND")
+
+// === VISUALIZATION ===
+// Supertrend
+plot(supertrend, "Supertrend", color=bullish ? color.green : color.red, linewidth=2)
+
+// Position levels (only when in position)
+plot(inPosition ? strikePrice : na, "Strike", color.blue, 2, plot.style_circles)
+plot(inPosition ? stopLoss : na, "Stop Loss", color.red, 1, plot.style_linebr)
+plot(inPosition ? entryPrice : na, "Entry", color.yellow, 1, plot.style_linebr)
+
+// Entry/Exit markers
+plotshape(enterLong, "ENTRY", shape.triangleup, location.belowbar, color.green, size=size.small, text="BUY")
+plotshape(profitTarget, "PT EXIT", shape.flag, location.abovebar, color.lime, size=size.small, text="PT")
+plotshape(hitStopLoss, "SL EXIT", shape.triangledown, location.abovebar, color.red, size=size.small, text="SL")
+plotshape(timeExit and not profitTarget and not hitStopLoss, "TIME EXIT", shape.diamond, location.abovebar, color.orange, size=size.small, text="DTE")
+plotshape(trendExit and not profitTarget and not hitStopLoss and not timeExit, "TREND EXIT", shape.xcross, location.abovebar, color.purple, size=size.small, text="REV")
+
+// Background
+bgcolor(inPosition ? color.new(color.green, 95) : na)
+bgcolor(canEnter and not inPosition ? color.new(color.blue, 95) : na)
+
+// === INFO TABLE ===
+var table t = table.new(position.top_right, 2, 7, bgcolor=color.new(#1e1e1e, 20), frame_color=color.gray)
+if barstate.islast
+    table.cell(t, 0, 0, "Supertrend", text_color=color.white)
+    table.cell(t, 1, 0, bullish ? "BULL" : "BEAR", text_color=bullish ? color.green : color.red)
+    table.cell(t, 0, 1, "ADX", text_color=color.white)
+    table.cell(t, 1, 1, str.tostring(adx, "#.#"), text_color=adxOk ? color.green : color.gray)
+    table.cell(t, 0, 2, "DI", text_color=color.white)
+    table.cell(t, 1, 2, diBullish ? "+DI>-DI" : "-DI>+DI", text_color=diBullish ? color.green : color.red)
+    table.cell(t, 0, 3, "Signal", text_color=color.white)
+    table.cell(t, 1, 3, canEnter ? "READY" : "WAIT", text_color=canEnter ? color.lime : color.gray)
+    table.cell(t, 0, 4, "Strike", text_color=color.white)
+    table.cell(t, 1, 4, inPosition ? str.tostring(strikePrice, "#") : "-", text_color=color.blue)
+    table.cell(t, 0, 5, "P&L", text_color=color.white)
+    table.cell(t, 1, 5, inPosition ? str.tostring(totalPnL, "#.##") : "-", text_color=totalPnL > 0 ? color.green : color.red)
+    table.cell(t, 0, 6, "Days", text_color=color.white)
+    table.cell(t, 1, 6, inPosition ? str.tostring(barsHeld) : "-", text_color=color.white)

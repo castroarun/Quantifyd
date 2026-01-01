@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Covered Calls Backtester - Dashboard Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              bg: '#0f1419',
+              card: '#1a1f2e',
+              border: '#2d3748',
+              hover: '#252d3d'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar - Dark */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #1a1f2e; }
+    ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+    /* Tab styling */
+    .tab-active { border-bottom: 2px solid #60a5fa; color: #60a5fa; }
+
+    /* Metric card hover */
+    .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+
+    /* Strategy comparison grid */
+    .strategy-grid { display: grid; gap: 1rem; }
+    @media (min-width: 768px) { .strategy-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1280px) { .strategy-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    /* Chart container */
+    .chart-container { position: relative; height: 300px; }
+    @media (max-width: 768px) { .chart-container { height: 250px; } }
+
+    /* Glow effects */
+    .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.2); }
+    .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+  </style>
+</head>
+<body class="bg-[#0f1419] min-h-screen text-gray-100">
+
+  <!-- Navigation -->
+  <nav class="bg-[#1a1f2e] border-b border-gray-700/50 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <a href="#" class="flex items-center space-x-2">
+            <i class="fas fa-chart-line text-blue-400 text-xl"></i>
+            <span class="font-bold text-xl text-white">Covered Calls</span>
+          </a>
+          <!-- Desktop Navigation -->
+          <div class="hidden md:flex ml-10 space-x-4">
+            <a href="#" class="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Dashboard</a>
+            <a href="#" class="px-3 py-2 text-sm font-medium text-blue-400 border-b-2 border-blue-400">Backtest</a>
+            <a href="#" class="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Data Management</a>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span class="hidden sm:inline text-sm text-gray-400">
+            <i class="fas fa-clock mr-1"></i>
+            Last backtest: 2 hours ago
+          </span>
+          <button class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <i class="fas fa-user mr-1"></i>
+            Logged In
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="md:hidden bg-[#1a1f2e] border-b border-gray-700/50">
+    <div class="flex overflow-x-auto">
+      <a href="#" class="flex-shrink-0 px-4 py-3 text-sm font-medium text-gray-400">Dashboard</a>
+      <a href="#" class="flex-shrink-0 px-4 py-3 text-sm font-medium text-blue-400 border-b-2 border-blue-400">Backtest</a>
+      <a href="#" class="flex-shrink-0 px-4 py-3 text-sm font-medium text-gray-400">Data</a>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Page Title -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-white">Covered Call Strategy Backtester</h1>
+      <p class="text-gray-400 mt-1">Compare strike selection methods and exit strategies across multiple stocks</p>
+    </div>
+
+    <!-- Configuration Panel -->
+    <div class="bg-[#1a1f2e] rounded-xl border border-gray-700/50 mb-6">
+      <div class="px-6 py-4 border-b border-gray-700/50">
+        <h2 class="text-lg font-semibold text-white">
+          <i class="fas fa-cog mr-2 text-blue-400"></i>
+          Backtest Configuration
+        </h2>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          <!-- Stock Selection -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Stocks</label>
+            <select multiple class="w-full bg-[#0f1419] border border-gray-600 rounded-lg p-2 h-32 text-sm text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+              <option selected class="py-1">RELIANCE</option>
+              <option selected class="py-1">TCS</option>
+              <option selected class="py-1">HDFCBANK</option>
+              <option class="py-1">INFY</option>
+              <option class="py-1">ICICIBANK</option>
+              <option class="py-1">KOTAKBANK</option>
+              <option class="py-1">SBIN</option>
+              <option class="py-1">BHARTIARTL</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+          </div>
+
+          <!-- Date Range -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Date Range</label>
+            <div class="space-y-2">
+              <div>
+                <label class="text-xs text-gray-500">Start Date</label>
+                <input type="date" value="2020-01-01" class="w-full bg-[#0f1419] border border-gray-600 rounded-lg p-2 text-sm text-gray-200">
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">End Date</label>
+                <input type="date" value="2024-12-31" class="w-full bg-[#0f1419] border border-gray-600 rounded-lg p-2 text-sm text-gray-200">
+              </div>
+            </div>
+          </div>
+
+          <!-- Strike Selection Methods -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Strike Selection</label>
+            <div class="space-y-2">
+              <label class="flex items-center">
+                <input type="checkbox" checked class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">Delta 0.30</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" checked class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">Delta 0.40</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" checked class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">2% OTM</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">5% OTM</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">ATM</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Exit Rules -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Exit Rules</label>
+            <div class="space-y-2">
+              <label class="flex items-center">
+                <input type="checkbox" checked class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">Hold to Expiry</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" checked class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">50% Profit Target</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" class="rounded bg-gray-700 border-gray-600 text-blue-500 mr-2">
+                <span class="text-sm text-gray-300">2x Stop Loss</span>
+              </label>
+            </div>
+            <div class="mt-4">
+              <label class="block text-xs text-gray-500 mb-1">DTE Range</label>
+              <div class="flex items-center space-x-2">
+                <input type="number" value="30" class="w-16 bg-[#0f1419] border border-gray-600 rounded p-1 text-sm text-gray-200">
+                <span class="text-gray-500">-</span>
+                <input type="number" value="45" class="w-16 bg-[#0f1419] border border-gray-600 rounded p-1 text-sm text-gray-200">
+                <span class="text-xs text-gray-500">days</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Run Button -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center gap-4">
+          <button id="runBacktest" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center transition-colors glow-blue">
+            <i class="fas fa-play mr-2"></i>
+            Run Backtest
+          </button>
+          <div id="progressContainer" class="hidden w-full sm:w-96">
+            <div class="flex items-center space-x-3">
+              <div class="flex-1 bg-gray-700 rounded-full h-3">
+                <div id="progressBar" class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: 45%"></div>
+              </div>
+              <span id="progressText" class="text-sm text-gray-300">45%</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Processing HDFCBANK (3/3 stocks)...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection">
+
+      <!-- Key Metrics -->
+      <div class="bg-[#1a1f2e] rounded-xl border border-gray-700/50 mb-6">
+        <div class="px-6 py-4 border-b border-gray-700/50 flex justify-between items-center">
+          <h2 class="text-lg font-semibold text-white">
+            <i class="fas fa-chart-bar mr-2 text-emerald-400"></i>
+            Key Metrics
+          </h2>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-400">Best Strategy:</span>
+            <span class="text-sm font-medium text-emerald-400">Delta 0.30 + Profit Target 50%</span>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+
+            <!-- Total Return -->
+            <div class="metric-card bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border border-emerald-700/30 rounded-xl p-4 transition-all cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-400 uppercase">Total Return</span>
+                <i class="fas fa-percentage text-emerald-400"></i>
+              </div>
+              <p class="text-2xl font-bold text-emerald-400 mt-2">+24.5%</p>
+              <p class="text-xs text-gray-500 mt-1">vs Buy-Hold: +5.2%</p>
+            </div>
+
+            <!-- Premium Yield -->
+            <div class="metric-card bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/30 rounded-xl p-4 transition-all cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-400 uppercase">Premium Yield</span>
+                <i class="fas fa-coins text-blue-400"></i>
+              </div>
+              <p class="text-2xl font-bold text-blue-400 mt-2">8.2%</p>
+              <p class="text-xs text-gray-500 mt-1">Annualized income</p>
+            </div>
+
+            <!-- Win Rate -->
+            <div class="metric-card bg-gradient-to-br from-teal-900/40 to-teal-800/20 border border-teal-700/30 rounded-xl p-4 transition-all cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-400 uppercase">Win Rate</span>
+                <i class="fas fa-trophy text-teal-400"></i>
+              </div>
+              <p class="text-2xl font-bold text-teal-400 mt-2">72.3%</p>
+              <p class="text-xs text-gray-500 mt-1">112/155 trades</p>
+            </div>
+
+            <!-- Max Drawdown -->
+            <div class="metric-card bg-gradient-to-br from-red-900/40 to-red-800/20 border border-red-700/30 rounded-xl p-4 transition-all cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-400 uppercase">Max Drawdown</span>
+                <i class="fas fa-arrow-trend-down text-red-400"></i>
+              </div>
+              <p class="text-2xl font-bold text-red-400 mt-2">-12.4%</p>
+              <p class="text-xs text-gray-500 mt-1">Mar 2020</p>
+            </div>
+
+            <!-- Sharpe Ratio -->
+            <div class="metric-card bg-gradient-to-br from-purple-900/40 to-purple-800/20 border border-purple-700/30 rounded-xl p-4 transition-all cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-400 uppercase">Sharpe Ratio</span>
+                <i class="fas fa-scale-balanced text-purple-400"></i>
+              </div>
+              <p class="text-2xl font-bold text-purple-400 mt-2">1.45</p>
+              <p class="text-xs text-gray-500 mt-1">Risk-adjusted</p>
+            </div>
+
+            <!-- Assignment Rate -->
+            <div class="metric-card bg-gradient-to-br from-amber-900/40 to-amber-800/20 border border-amber-700/30 rounded-xl p-4 transition-all cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-400 uppercase">Assignment</span>
+                <i class="fas fa-exchange-alt text-amber-400"></i>
+              </div>
+              <p class="text-2xl font-bold text-amber-400 mt-2">28.5%</p>
+              <p class="text-xs text-gray-500 mt-1">44/155 calls</p>
+            </div>
+
+            <!-- Total Trades -->
+            <div class="metric-card bg-gradient-to-br from-slate-800/40 to-slate-700/20 border border-slate-600/30 rounded-xl p-4 transition-all cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-400 uppercase">Total Trades</span>
+                <i class="fas fa-list-ol text-slate-400"></i>
+              </div>
+              <p class="text-2xl font-bold text-slate-300 mt-2">155</p>
+              <p class="text-xs text-gray-500 mt-1">5 years period</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strategy Comparison -->
+      <div class="bg-[#1a1f2e] rounded-xl border border-gray-700/50 mb-6">
+        <div class="px-6 py-4 border-b border-gray-700/50">
+          <h2 class="text-lg font-semibold text-white">
+            <i class="fas fa-code-compare mr-2 text-indigo-400"></i>
+            Strategy Comparison
+          </h2>
+        </div>
+        <div class="p-6">
+          <div class="strategy-grid">
+
+            <!-- Strategy Card 1 - Best Performer -->
+            <div class="border border-emerald-600/50 bg-emerald-900/20 rounded-xl p-4 glow-green">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h3 class="font-semibold text-white">Delta 0.30 + Profit Target 50%</h3>
+                  <span class="inline-block px-2 py-1 bg-emerald-600 text-white text-xs rounded mt-1">Best Performer</span>
+                </div>
+                <span class="text-2xl font-bold text-emerald-400">+26.8%</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div><span class="text-gray-500">Sharpe:</span> <span class="font-medium text-gray-300">1.58</span></div>
+                <div><span class="text-gray-500">Win:</span> <span class="font-medium text-gray-300">78%</span></div>
+                <div><span class="text-gray-500">DD:</span> <span class="font-medium text-red-400">-10.2%</span></div>
+              </div>
+            </div>
+
+            <!-- Strategy Card 2 -->
+            <div class="border border-gray-700/50 bg-[#0f1419] rounded-xl p-4 hover:border-gray-600 transition-colors">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h3 class="font-semibold text-white">Delta 0.30 + Hold to Expiry</h3>
+                </div>
+                <span class="text-2xl font-bold text-blue-400">+22.1%</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div><span class="text-gray-500">Sharpe:</span> <span class="font-medium text-gray-300">1.32</span></div>
+                <div><span class="text-gray-500">Win:</span> <span class="font-medium text-gray-300">71%</span></div>
+                <div><span class="text-gray-500">DD:</span> <span class="font-medium text-red-400">-14.5%</span></div>
+              </div>
+            </div>
+
+            <!-- Strategy Card 3 -->
+            <div class="border border-gray-700/50 bg-[#0f1419] rounded-xl p-4 hover:border-gray-600 transition-colors">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h3 class="font-semibold text-white">2% OTM + Profit Target 50%</h3>
+                </div>
+                <span class="text-2xl font-bold text-blue-400">+21.3%</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div><span class="text-gray-500">Sharpe:</span> <span class="font-medium text-gray-300">1.28</span></div>
+                <div><span class="text-gray-500">Win:</span> <span class="font-medium text-gray-300">75%</span></div>
+                <div><span class="text-gray-500">DD:</span> <span class="font-medium text-red-400">-11.8%</span></div>
+              </div>
+            </div>
+
+            <!-- Strategy Card 4 -->
+            <div class="border border-gray-700/50 bg-[#0f1419] rounded-xl p-4 hover:border-gray-600 transition-colors">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h3 class="font-semibold text-white">Delta 0.40 + Hold to Expiry</h3>
+                </div>
+                <span class="text-2xl font-bold text-blue-400">+19.5%</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div><span class="text-gray-500">Sharpe:</span> <span class="font-medium text-gray-300">1.15</span></div>
+                <div><span class="text-gray-500">Win:</span> <span class="font-medium text-gray-300">65%</span></div>
+                <div><span class="text-gray-500">DD:</span> <span class="font-medium text-red-400">-16.2%</span></div>
+              </div>
+            </div>
+
+            <!-- Strategy Card 5 -->
+            <div class="border border-gray-700/50 bg-[#0f1419] rounded-xl p-4 hover:border-gray-600 transition-colors">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h3 class="font-semibold text-white">2% OTM + Hold to Expiry</h3>
+                </div>
+                <span class="text-2xl font-bold text-blue-400">+18.2%</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div><span class="text-gray-500">Sharpe:</span> <span class="font-medium text-gray-300">1.08</span></div>
+                <div><span class="text-gray-500">Win:</span> <span class="font-medium text-gray-300">68%</span></div>
+                <div><span class="text-gray-500">DD:</span> <span class="font-medium text-red-400">-15.1%</span></div>
+              </div>
+            </div>
+
+            <!-- Buy and Hold Benchmark -->
+            <div class="border border-gray-600/50 bg-gray-800/30 rounded-xl p-4">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h3 class="font-semibold text-white">Buy and Hold (Benchmark)</h3>
+                  <span class="inline-block px-2 py-1 bg-gray-600 text-gray-300 text-xs rounded mt-1">Baseline</span>
+                </div>
+                <span class="text-2xl font-bold text-gray-400">+19.3%</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div><span class="text-gray-500">Sharpe:</span> <span class="font-medium text-gray-400">0.92</span></div>
+                <div><span class="text-gray-500">Win:</span> <span class="font-medium text-gray-400">-</span></div>
+                <div><span class="text-gray-500">DD:</span> <span class="font-medium text-red-400">-35.2%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="bg-[#1a1f2e] rounded-xl border border-gray-700/50 mb-6">
+        <div class="px-6 py-4 border-b border-gray-700/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 class="text-lg font-semibold text-white">
+            <i class="fas fa-chart-area mr-2 text-cyan-400"></i>
+            Visualizations
+          </h2>
+          <div class="flex flex-wrap gap-2">
+            <button class="tab-active px-3 py-1 text-sm font-medium rounded hover:bg-gray-700/50 transition-colors">Equity Curve</button>
+            <button class="px-3 py-1 text-sm font-medium text-gray-400 rounded hover:bg-gray-700/50 transition-colors">Monthly Returns</button>
+            <button class="px-3 py-1 text-sm font-medium text-gray-400 rounded hover:bg-gray-700/50 transition-colors">Drawdown</button>
+            <button class="px-3 py-1 text-sm font-medium text-gray-400 rounded hover:bg-gray-700/50 transition-colors">Distribution</button>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Chart 1: Equity Curve -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">1. Equity Curve (Strategy vs Buy-Hold)</h3>
+              <div class="chart-container">
+                <canvas id="equityCurveChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 2: Returns Distribution -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">2. Returns Distribution</h3>
+              <div class="chart-container">
+                <canvas id="returnsDistChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 3: Monthly Returns Heatmap (Simplified) -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">3. Monthly Returns Heatmap</h3>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-xs">
+                  <thead>
+                    <tr class="text-gray-500">
+                      <th class="px-2 py-1"></th>
+                      <th class="px-2 py-1">Jan</th>
+                      <th class="px-2 py-1">Feb</th>
+                      <th class="px-2 py-1">Mar</th>
+                      <th class="px-2 py-1">Apr</th>
+                      <th class="px-2 py-1">May</th>
+                      <th class="px-2 py-1">Jun</th>
+                      <th class="px-2 py-1">Jul</th>
+                      <th class="px-2 py-1">Aug</th>
+                      <th class="px-2 py-1">Sep</th>
+                      <th class="px-2 py-1">Oct</th>
+                      <th class="px-2 py-1">Nov</th>
+                      <th class="px-2 py-1">Dec</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="px-2 py-1 font-medium text-gray-300">2024</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.1</td>
+                      <td class="px-2 py-1 bg-emerald-700/60 text-emerald-200 text-center rounded">3.2</td>
+                      <td class="px-2 py-1 bg-red-800/60 text-red-300 text-center rounded">-1.5</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.2</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.8</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">0.9</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">1.8</td>
+                      <td class="px-2 py-1 bg-red-900/60 text-red-400 text-center rounded">-0.5</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.3</td>
+                      <td class="px-2 py-1 bg-emerald-700/60 text-emerald-200 text-center rounded">3.5</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.1</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.0</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2 py-1 font-medium text-gray-300">2023</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.5</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.1</td>
+                      <td class="px-2 py-1 bg-red-700/60 text-red-300 text-center rounded">-2.8</td>
+                      <td class="px-2 py-1 bg-emerald-700/60 text-emerald-200 text-center rounded">3.1</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">0.8</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.2</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.4</td>
+                      <td class="px-2 py-1 bg-red-800/60 text-red-300 text-center rounded">-1.2</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.0</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.5</td>
+                      <td class="px-2 py-1 bg-emerald-700/60 text-emerald-200 text-center rounded">3.0</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.8</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2 py-1 font-medium text-gray-300">2022</td>
+                      <td class="px-2 py-1 bg-red-800/60 text-red-300 text-center rounded">-1.8</td>
+                      <td class="px-2 py-1 bg-red-700/60 text-red-300 text-center rounded">-2.5</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">0.5</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">1.9</td>
+                      <td class="px-2 py-1 bg-red-900/60 text-red-400 text-center rounded">-0.8</td>
+                      <td class="px-2 py-1 bg-red-800/60 text-red-300 text-center rounded">-1.5</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.3</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.2</td>
+                      <td class="px-2 py-1 bg-red-900/60 text-red-400 text-center rounded">-0.3</td>
+                      <td class="px-2 py-1 bg-emerald-700/60 text-emerald-200 text-center rounded">3.8</td>
+                      <td class="px-2 py-1 bg-emerald-800/60 text-emerald-300 text-center rounded">2.1</td>
+                      <td class="px-2 py-1 bg-emerald-900/60 text-emerald-400 text-center rounded">1.5</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Chart 4: Drawdown -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">4. Drawdown Over Time</h3>
+              <div class="chart-container">
+                <canvas id="drawdownChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 5: Premium Collected -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">5. Premium Collected Over Time</h3>
+              <div class="chart-container">
+                <canvas id="premiumChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 6: Strike Selection Impact -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">6. Strike Selection Impact</h3>
+              <div class="chart-container">
+                <canvas id="strikeImpactChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 7: Win/Loss Distribution -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">7. Win/Loss Distribution</h3>
+              <div class="chart-container">
+                <canvas id="winLossChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 8: P&L by Market Condition -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">8. P&L by Market Condition</h3>
+              <div class="chart-container">
+                <canvas id="marketConditionChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 9: DTE Impact -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">9. DTE Impact Analysis</h3>
+              <div class="chart-container">
+                <canvas id="dteImpactChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 10: Rolling Sharpe -->
+            <div class="border border-gray-700/50 rounded-xl p-4 bg-[#0f1419]">
+              <h3 class="text-sm font-semibold text-gray-300 mb-4">10. Rolling Sharpe Ratio (12-Month)</h3>
+              <div class="chart-container">
+                <canvas id="rollingSharpeChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trade Log -->
+      <div class="bg-[#1a1f2e] rounded-xl border border-gray-700/50 mb-6">
+        <div class="px-6 py-4 border-b border-gray-700/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 class="text-lg font-semibold text-white">
+            <i class="fas fa-list-alt mr-2 text-orange-400"></i>
+            Trade Log
+          </h2>
+          <div class="flex gap-2">
+            <button class="bg-emerald-900/50 text-emerald-400 border border-emerald-700/50 px-3 py-1 rounded-lg text-sm hover:bg-emerald-800/50 transition-colors">
+              <i class="fas fa-file-csv mr-1"></i>CSV
+            </button>
+            <button class="bg-red-900/50 text-red-400 border border-red-700/50 px-3 py-1 rounded-lg text-sm hover:bg-red-800/50 transition-colors">
+              <i class="fas fa-file-pdf mr-1"></i>PDF
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-700/50">
+            <thead class="bg-[#0f1419]">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Date</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Stock</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Strike</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Premium</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">DTE</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Exit</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">P&L</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Return</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700/50">
+              <tr class="hover:bg-gray-800/30 transition-colors">
+                <td class="px-4 py-3 text-sm text-gray-300">2024-12-02</td>
+                <td class="px-4 py-3 text-sm font-medium text-white">RELIANCE</td>
+                <td class="px-4 py-3 text-sm text-gray-400">2950 CE</td>
+                <td class="px-4 py-3 text-sm text-gray-400">45.50</td>
+                <td class="px-4 py-3 text-sm text-gray-400">32</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-xs bg-emerald-900/50 text-emerald-400 border border-emerald-700/50 rounded">Profit Target</span></td>
+                <td class="px-4 py-3 text-sm font-medium text-emerald-400">+5,680</td>
+                <td class="px-4 py-3 text-sm text-emerald-400">+2.1%</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition-colors">
+                <td class="px-4 py-3 text-sm text-gray-300">2024-11-28</td>
+                <td class="px-4 py-3 text-sm font-medium text-white">TCS</td>
+                <td class="px-4 py-3 text-sm text-gray-400">4200 CE</td>
+                <td class="px-4 py-3 text-sm text-gray-400">62.30</td>
+                <td class="px-4 py-3 text-sm text-gray-400">35</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-xs bg-blue-900/50 text-blue-400 border border-blue-700/50 rounded">Expiry</span></td>
+                <td class="px-4 py-3 text-sm font-medium text-emerald-400">+9,345</td>
+                <td class="px-4 py-3 text-sm text-emerald-400">+1.5%</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition-colors">
+                <td class="px-4 py-3 text-sm text-gray-300">2024-11-25</td>
+                <td class="px-4 py-3 text-sm font-medium text-white">HDFCBANK</td>
+                <td class="px-4 py-3 text-sm text-gray-400">1750 CE</td>
+                <td class="px-4 py-3 text-sm text-gray-400">28.75</td>
+                <td class="px-4 py-3 text-sm text-gray-400">38</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-xs bg-amber-900/50 text-amber-400 border border-amber-700/50 rounded">Assigned</span></td>
+                <td class="px-4 py-3 text-sm font-medium text-red-400">-3,850</td>
+                <td class="px-4 py-3 text-sm text-red-400">-0.4%</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition-colors">
+                <td class="px-4 py-3 text-sm text-gray-300">2024-11-04</td>
+                <td class="px-4 py-3 text-sm font-medium text-white">RELIANCE</td>
+                <td class="px-4 py-3 text-sm text-gray-400">2900 CE</td>
+                <td class="px-4 py-3 text-sm text-gray-400">52.25</td>
+                <td class="px-4 py-3 text-sm text-gray-400">30</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-xs bg-emerald-900/50 text-emerald-400 border border-emerald-700/50 rounded">Profit Target</span></td>
+                <td class="px-4 py-3 text-sm font-medium text-emerald-400">+6,530</td>
+                <td class="px-4 py-3 text-sm text-emerald-400">+2.4%</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition-colors">
+                <td class="px-4 py-3 text-sm text-gray-300">2024-10-28</td>
+                <td class="px-4 py-3 text-sm font-medium text-white">TCS</td>
+                <td class="px-4 py-3 text-sm text-gray-400">4150 CE</td>
+                <td class="px-4 py-3 text-sm text-gray-400">55.80</td>
+                <td class="px-4 py-3 text-sm text-gray-400">42</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-xs bg-blue-900/50 text-blue-400 border border-blue-700/50 rounded">Expiry</span></td>
+                <td class="px-4 py-3 text-sm font-medium text-emerald-400">+8,370</td>
+                <td class="px-4 py-3 text-sm text-emerald-400">+1.3%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-700/50 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Showing 5 of 155 trades</span>
+          <div class="flex gap-2">
+            <button class="px-3 py-1 border border-gray-600 rounded-lg text-sm text-gray-400 hover:bg-gray-700/50 transition-colors">Previous</button>
+            <button class="px-3 py-1 border border-blue-600 rounded-lg text-sm bg-blue-600 text-white">1</button>
+            <button class="px-3 py-1 border border-gray-600 rounded-lg text-sm text-gray-400 hover:bg-gray-700/50 transition-colors">2</button>
+            <button class="px-3 py-1 border border-gray-600 rounded-lg text-sm text-gray-400 hover:bg-gray-700/50 transition-colors">3</button>
+            <button class="px-3 py-1 border border-gray-600 rounded-lg text-sm text-gray-400 hover:bg-gray-700/50 transition-colors">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-[#1a1f2e] border-t border-gray-700/50 mt-8">
+    <div class="max-w-7xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
+      Covered Calls Backtester - Built with Flask + Chart.js | Data from Zerodha Kite
+    </div>
+  </footer>
+
+  <script>
+    // Chart.js dark theme defaults
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.borderColor = '#374151';
+    Chart.defaults.plugins.legend.labels.color = '#d1d5db';
+
+    // Sample data for charts
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const years = ['2020', '2021', '2022', '2023', '2024'];
+
+    // Generate mock equity curve data
+    function generateEquityCurve() {
+      let strategy = 100000;
+      let buyHold = 100000;
+      const strategyData = [strategy];
+      const buyHoldData = [buyHold];
+      const labels = ['Jan 2020'];
+
+      for (let y = 0; y < 5; y++) {
+        for (let m = 0; m < 12; m++) {
+          if (y === 0 && m === 0) continue;
+          strategy *= (1 + (Math.random() * 0.04 - 0.01));
+          buyHold *= (1 + (Math.random() * 0.06 - 0.025));
+          strategyData.push(Math.round(strategy));
+          buyHoldData.push(Math.round(buyHold));
+          labels.push(`${months[m]} ${2020 + y}`);
+        }
+      }
+      return { labels, strategyData, buyHoldData };
+    }
+
+    const equityData = generateEquityCurve();
+
+    // Chart 1: Equity Curve
+    new Chart(document.getElementById('equityCurveChart'), {
+      type: 'line',
+      data: {
+        labels: equityData.labels.filter((_, i) => i % 6 === 0),
+        datasets: [
+          {
+            label: 'Covered Call Strategy',
+            data: equityData.strategyData.filter((_, i) => i % 6 === 0),
+            borderColor: '#60a5fa',
+            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: 'Buy & Hold',
+            data: equityData.buyHoldData.filter((_, i) => i % 6 === 0),
+            borderColor: '#6b7280',
+            borderDash: [5, 5],
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' },
+            grid: { color: '#374151' }
+          },
+          x: {
+            grid: { color: '#374151' }
+          }
+        }
+      }
+    });
+
+    // Chart 2: Returns Distribution
+    new Chart(document.getElementById('returnsDistChart'), {
+      type: 'bar',
+      data: {
+        labels: ['-6%', '-4%', '-2%', '0%', '2%', '4%', '6%', '8%'],
+        datasets: [{
+          label: 'Trade Count',
+          data: [3, 8, 15, 25, 42, 35, 18, 9],
+          backgroundColor: [
+            '#ef4444', '#ef4444', '#f59e0b', '#f59e0b',
+            '#10b981', '#10b981', '#10b981', '#10b981'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: '#374151' } },
+          x: { grid: { color: '#374151' } }
+        }
+      }
+    });
+
+    // Chart 4: Drawdown
+    new Chart(document.getElementById('drawdownChart'), {
+      type: 'line',
+      data: {
+        labels: equityData.labels.filter((_, i) => i % 6 === 0),
+        datasets: [{
+          label: 'Drawdown %',
+          data: equityData.strategyData.filter((_, i) => i % 6 === 0).map((v, i, arr) => {
+            const peak = Math.max(...arr.slice(0, i + 1));
+            return ((v - peak) / peak * 100).toFixed(2);
+          }),
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.2)',
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { max: 0, grid: { color: '#374151' } },
+          x: { grid: { color: '#374151' } }
+        }
+      }
+    });
+
+    // Chart 5: Premium Collected
+    new Chart(document.getElementById('premiumChart'), {
+      type: 'bar',
+      data: {
+        labels: years,
+        datasets: [{
+          label: 'Premium (₹)',
+          data: [45000, 62000, 48000, 71000, 58000],
+          backgroundColor: '#3b82f6'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { grid: { color: '#374151' } },
+          x: { grid: { color: '#374151' } }
+        }
+      }
+    });
+
+    // Chart 6: Strike Selection Impact
+    new Chart(document.getElementById('strikeImpactChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Delta 0.30', 'Delta 0.40', '2% OTM', '5% OTM', 'ATM'],
+        datasets: [{
+          label: 'Return %',
+          data: [24.5, 19.8, 21.3, 15.2, 12.8],
+          backgroundColor: ['#10b981', '#3b82f6', '#3b82f6', '#6b7280', '#6b7280']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: {
+          y: { grid: { color: '#374151' } },
+          x: { grid: { color: '#374151' } }
+        }
+      }
+    });
+
+    // Chart 7: Win/Loss Distribution
+    new Chart(document.getElementById('winLossChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Winning Trades', 'Losing Trades'],
+        datasets: [{
+          data: [112, 43],
+          backgroundColor: ['#10b981', '#ef4444'],
+          borderColor: '#1a1f2e',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    // Chart 8: Market Condition P&L
+    new Chart(document.getElementById('marketConditionChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Bull Market', 'Sideways', 'Bear Market'],
+        datasets: [
+          {
+            label: 'Covered Call',
+            data: [18, 22, -5],
+            backgroundColor: '#3b82f6'
+          },
+          {
+            label: 'Buy & Hold',
+            data: [35, 5, -25],
+            backgroundColor: '#6b7280'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { grid: { color: '#374151' } },
+          x: { grid: { color: '#374151' } }
+        }
+      }
+    });
+
+    // Chart 9: DTE Impact
+    new Chart(document.getElementById('dteImpactChart'), {
+      type: 'line',
+      data: {
+        labels: ['25-30', '30-35', '35-40', '40-45', '45-50'],
+        datasets: [{
+          label: 'Win Rate %',
+          data: [68, 72, 75, 71, 65],
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 60, max: 80, grid: { color: '#374151' } },
+          x: { grid: { color: '#374151' } }
+        }
+      }
+    });
+
+    // Chart 10: Rolling Sharpe
+    new Chart(document.getElementById('rollingSharpeChart'), {
+      type: 'line',
+      data: {
+        labels: ['Q1 21', 'Q2 21', 'Q3 21', 'Q4 21', 'Q1 22', 'Q2 22', 'Q3 22', 'Q4 22', 'Q1 23', 'Q2 23', 'Q3 23', 'Q4 23', 'Q1 24', 'Q2 24', 'Q3 24', 'Q4 24'],
+        datasets: [{
+          label: 'Rolling Sharpe (12M)',
+          data: [1.2, 1.4, 1.6, 1.5, 0.8, 0.6, 0.9, 1.1, 1.3, 1.5, 1.7, 1.6, 1.4, 1.5, 1.6, 1.45],
+          borderColor: '#a855f7',
+          backgroundColor: 'rgba(168, 85, 247, 0.1)',
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 2, grid: { color: '#374151' } },
+          x: { grid: { color: '#374151' } }
+        }
+      }
+    });
+
+    // Toggle progress bar demo
+    document.getElementById('runBacktest').addEventListener('click', function() {
+      const btn = this;
+      const progress = document.getElementById('progressContainer');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Running...';
+      progress.classList.remove('hidden');
+
+      // Simulate progress
+      let pct = 0;
+      const interval = setInterval(() => {
+        pct += Math.random() * 15;
+        if (pct >= 100) {
+          pct = 100;
+          clearInterval(interval);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-play mr-2"></i>Run Backtest';
+          progress.classList.add('hidden');
+        }
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressText').textContent = Math.round(pct) + '%';
+      }, 500);
+    });
+  </script>
+</body>
+</html>

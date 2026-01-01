@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holdings Dashboard - Grid Layout with Flip Cards</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --profit-green: #22c55e;
+            --loss-red: #ef4444;
+            --card-bg: #1e293b;
+            --card-hover: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #475569;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(15, 23, 42, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-header { padding: 1.5rem 0 1rem; }
+
+        .portfolio-summary {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-stat { text-align: center; padding: 0.5rem; }
+        .summary-stat .value { font-size: 1.25rem; font-weight: 700; }
+        .summary-stat .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; }
+
+        .sort-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .sort-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sort-btn:hover, .sort-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        /* Grid Layout */
+        .holdings-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        @media (max-width: 1200px) { .holdings-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 992px) { .holdings-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 576px) { .holdings-grid { grid-template-columns: 1fr; } }
+
+        /* Flip Card Container */
+        .flip-card {
+            perspective: 1000px;
+            aspect-ratio: 5 / 4;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+
+        .flip-card:hover .flip-card-front,
+        .flip-card:hover .flip-card-back {
+            border-color: #60a5fa;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        /* Card Header */
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .stock-info { display: flex; align-items: center; gap: 0.5rem; }
+
+        .stock-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stock-logo:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .stock-name { font-weight: 600; font-size: 0.85rem; line-height: 1.2; }
+        .stock-symbol { font-size: 0.65rem; color: var(--text-secondary); }
+
+        .pnl-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .pnl-wrapper .pnl-label {
+            font-size: 0.55rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            text-transform: uppercase;
+        }
+        .pnl-badge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .pnl-badge.profit { background: rgba(34, 197, 94, 0.2); color: var(--profit-green); }
+        .pnl-badge.loss { background: rgba(239, 68, 68, 0.2); color: var(--loss-red); }
+
+        /* Metrics Row - 3 items inline */
+        .metrics-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 0.3rem 0.4rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 6px;
+            flex: 1;
+        }
+        .metric-item .value { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+        .metric-item .label { font-size: 0.58rem; color: var(--text-secondary); text-transform: uppercase; }
+
+        /* Chart Container */
+        .chart-container {
+            flex: 1;
+            min-height: 50px;
+            position: relative;
+        }
+
+        /* Extra Info */
+        .extra-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 0.4rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+        }
+        .info-badge { display: flex; align-items: center; gap: 0.2rem; font-size: 0.6rem; color: var(--text-secondary); }
+        .info-badge.dividend { color: #fbbf24; }
+        .info-badge.result { color: #a78bfa; }
+
+        /* Flip hint */
+        .flip-hint {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            opacity: 0.7;
+        }
+
+        /* Back of card */
+        .back-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .back-title { font-weight: 600; font-size: 0.9rem; }
+        .back-close { font-size: 0.7rem; color: var(--text-secondary); }
+
+        /* Hover Tooltip for Company Description */
+        .company-tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.7rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            width: 280px;
+            max-width: 90vw;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .company-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #3b82f6;
+        }
+        .flip-card:hover .company-tooltip { opacity: 1; visibility: visible; }
+        .company-tooltip strong { color: var(--text-primary); }
+
+        .fundamentals-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            flex: 1;
+        }
+        .fund-box {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 6px;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .fund-box .title { font-size: 0.55rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem; }
+        .fund-box canvas { height: 45px !important; }
+
+        .ratios-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: auto; }
+        .ratio-chip {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 4px;
+            padding: 0.2rem 0.4rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            flex: 1;
+            min-width: 45px;
+        }
+        .ratio-chip .value { font-size: 0.7rem; font-weight: 600; }
+        .ratio-chip .label { font-size: 0.5rem; color: var(--text-secondary); }
+        .ratio-chip.good .value { color: var(--profit-green); }
+        .ratio-chip.warning .value { color: #fbbf24; }
+
+        /* Expanded View Modal */
+        .expanded-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .expanded-overlay.active { display: flex; }
+
+        .expanded-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 720px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            animation: expandIn 0.3s ease;
+        }
+
+        @keyframes expandIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .expanded-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background: var(--card-bg);
+        }
+        .header-left { display: flex; align-items: center; gap: 0.75rem; }
+        .header-right { display: flex; align-items: center; gap: 1.5rem; }
+        .div-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .div-indicator .div-val {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fbbf24;
+        }
+        .div-indicator .div-lbl {
+            font-size: 0.55rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .expanded-body { padding: 1.25rem; }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .close-btn:hover { color: var(--text-primary); }
+
+        .expanded-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .exp-metric { text-align: center; }
+        .exp-metric .value { font-size: 1.25rem; font-weight: 700; }
+        .exp-metric .label { font-size: 0.7rem; color: var(--text-secondary); }
+
+        .expanded-chart { height: 200px; margin-bottom: 1.5rem; }
+
+        .expanded-fundamentals {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .exp-fund-box {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.5));
+            border-radius: 10px;
+            padding: 0.75rem;
+            border: none;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .exp-fund-box .title {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .exp-fund-box .title::before {
+            content: '';
+            width: 3px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        .exp-fund-box.revenue .title::before { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+        .exp-fund-box.profit .title::before { background: linear-gradient(180deg, #22c55e, #4ade80); }
+        .exp-fund-box.opm .title::before { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
+        .exp-fund-box canvas { height: 100px !important; }
+
+        .expanded-ratios {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .exp-ratio {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+        .exp-ratio .value { font-size: 1.1rem; font-weight: 700; }
+        .exp-ratio .value .industry-pe { font-weight: 500; color: #94a3b8; font-size: 0.9rem; }
+        .exp-ratio .label { font-size: 0.65rem; color: var(--text-secondary); }
+
+        /* View toggle */
+        .view-toggle { display: flex; gap: 0.25rem; background: var(--card-bg); border-radius: 6px; padding: 0.2rem; }
+        .view-toggle button { background: none; border: none; color: var(--text-secondary); padding: 0.4rem; border-radius: 4px; cursor: pointer; }
+        .view-toggle button.active { background: #3b82f6; color: white; }
+
+        /* Investment Size Bar - bottom edge indicator */
+        .invest-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            width: var(--invest-pct, 50%);
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+            border-radius: 0 0 0 12px;
+            z-index: 5;
+            opacity: 0.9;
+        }
+        .flip-card-front .invest-bar,
+        .flip-card-back .invest-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        /* Sector View Styles */
+        .sector-group {
+            margin-bottom: 1.5rem;
+        }
+        .sector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1));
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            cursor: pointer;
+        }
+        .sector-header:hover { background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.15)); }
+        .sector-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .sector-name i { color: #3b82f6; }
+        .sector-count {
+            background: rgba(59, 130, 246, 0.2);
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            color: #60a5fa;
+        }
+        .sector-stats {
+            display: flex;
+            gap: 1.5rem;
+        }
+        .sector-stat {
+            text-align: right;
+        }
+        .sector-stat .value { font-size: 0.85rem; font-weight: 600; }
+        .sector-stat .label { font-size: 0.6rem; color: var(--text-secondary); }
+        .sector-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        @media (max-width: 1200px) { .sector-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 992px) { .sector-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 576px) { .sector-grid { grid-template-columns: 1fr; } }
+        .sector-content { display: block; }
+        .sector-content.collapsed { display: none; }
+        .sector-toggle { transition: transform 0.3s; }
+        .sector-header.collapsed .sector-toggle { transform: rotate(-90deg); }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-graph-up-arrow me-2"></i>Covered Calls</a>
+            <a href="/backtest" class="btn btn-outline-light btn-sm"><i class="bi bi-bar-chart-line me-1"></i> Backtest</a>
+        </div>
+    </nav>
+
+    <div class="container py-3">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">My Holdings</h5>
+                    <p class="text-secondary mb-0 small">12 stocks in portfolio</p>
+                </div>
+                <div class="view-toggle">
+                    <button class="active" data-view="grid" title="Grid View" onclick="switchView('grid')"><i class="bi bi-grid-3x3-gap"></i></button>
+                    <button data-view="sector" title="Sector View" onclick="switchView('sector')"><i class="bi bi-collection"></i></button>
+                    <button data-view="list" title="List View" onclick="switchView('list')"><i class="bi bi-list-ul"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Summary -->
+        <div class="portfolio-summary">
+            <div class="row">
+                <div class="col-3"><div class="summary-stat"><div class="value">₹24.85L</div><div class="label">Invested</div></div></div>
+                <div class="col-3"><div class="summary-stat"><div class="value">₹28.42L</div><div class="label">Current</div></div></div>
+                <div class="col-3"><div class="summary-stat"><div class="value text-success">+₹3.57L</div><div class="label">P&L</div></div></div>
+                <div class="col-3"><div class="summary-stat"><div class="value text-success">+14.4%</div><div class="label">Returns</div></div></div>
+            </div>
+        </div>
+
+        <!-- Sort Controls -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="sort-controls">
+                <button class="sort-btn active">P/L %</button>
+                <button class="sort-btn">Invested</button>
+                <button class="sort-btn">Current</button>
+                <button class="sort-btn">P/L ₹</button>
+                <button class="sort-btn">Div Yield</button>
+            </div>
+            <button class="sort-btn"><i class="bi bi-sort-down"></i></button>
+        </div>
+
+        <!-- Holdings Grid -->
+        <div class="holdings-grid">
+
+            <!-- Card 1 - RELIANCE -->
+            <div class="flip-card" data-stock="RELIANCE" data-invested="425000" data-sector="Energy" onclick="flipCard(this)">
+                <!-- Hover Tooltip -->
+                <div class="company-tooltip">
+                    <strong>Reliance Industries</strong> - India's largest private sector company. Diversified in petrochemicals, refining, telecom (Jio), and retail.
+                </div>
+                <div class="flip-card-inner">
+                    <!-- Front -->
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 100%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">RIL</div>
+                                <div>
+                                    <div class="stock-name">Reliance Ind</div>
+                                    <div class="stock-symbol">RELIANCE</div>
+                                </div>
+                            </div>
+                            <div class="pnl-wrapper">
+                                <span class="pnl-label">P/L %</span>
+                                <div class="pnl-badge profit">+18.5%</div>
+                            </div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹4.25L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹5.04L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-success">+₹78.6K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-reliance"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 0.32%</div>
+                            <div class="info-badge result"><i class="bi bi-calendar"></i> Jan 17</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <!-- Back -->
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 100%;"></div>
+                        <div class="back-header">
+                            <span class="back-title">RELIANCE Fundamentals</span>
+                            <span class="back-close"><i class="bi bi-arrow-repeat"></i></span>
+                        </div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">Revenue 5Y (₹K Cr)</div><canvas id="rev-reliance"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-reliance"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip good"><div class="value">0.42</div><div class="label">D/E</div></div>
+                            <div class="ratio-chip"><div class="value">28.5</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip"><div class="value">12.8%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip"><div class="value">8.2%</div><div class="label">ROCE</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 - TCS -->
+            <div class="flip-card" data-stock="TCS" data-invested="380000" data-sector="IT" onclick="flipCard(this)">
+                <div class="company-tooltip"><strong>TCS</strong> - India's largest IT services company. Global leader in consulting with 150+ locations worldwide.</div>
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 89%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">TCS</div>
+                                <div><div class="stock-name">TCS</div><div class="stock-symbol">TCS</div></div>
+                            </div>
+                            <div class="pnl-wrapper"><span class="pnl-label">P/L %</span><div class="pnl-badge profit">+12.3%</div></div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹3.80L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹4.27L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-success">+₹46.7K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-tcs"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 1.24%</div>
+                            <div class="info-badge result"><i class="bi bi-calendar"></i> Jan 09</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 89%;"></div>
+                        <div class="back-header"><span class="back-title">TCS Fundamentals</span><span class="back-close"><i class="bi bi-arrow-repeat"></i></span></div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">Revenue 5Y (₹K Cr)</div><canvas id="rev-tcs"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-tcs"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip good"><div class="value">0.05</div><div class="label">D/E</div></div>
+                            <div class="ratio-chip warning"><div class="value">32.1</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip good"><div class="value">48.2%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip good"><div class="value">62.5%</div><div class="label">ROCE</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 - HDFC Bank -->
+            <div class="flip-card" data-stock="HDFCBANK" data-invested="275000" data-sector="Banking" onclick="flipCard(this)">
+                <div class="company-tooltip"><strong>HDFC Bank</strong> - India's largest private sector bank by assets. Known for strong asset quality and digital leadership.</div>
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 65%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" style="background: linear-gradient(135deg, #ef4444, #f97316);" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">HDFC</div>
+                                <div><div class="stock-name">HDFC Bank</div><div class="stock-symbol">HDFCBANK</div></div>
+                            </div>
+                            <div class="pnl-wrapper"><span class="pnl-label">P/L %</span><div class="pnl-badge loss">-3.2%</div></div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹2.75L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹2.66L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-danger">-₹8.8K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-hdfc"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 1.12%</div>
+                            <div class="info-badge"><i class="bi bi-calendar"></i> --</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 65%;"></div>
+                        <div class="back-header"><span class="back-title">HDFC Bank Fundamentals</span><span class="back-close"><i class="bi bi-arrow-repeat"></i></span></div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">NII 5Y (₹K Cr)</div><canvas id="rev-hdfc"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-hdfc"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip good"><div class="value">0.89%</div><div class="label">GNPA</div></div>
+                            <div class="ratio-chip"><div class="value">18.2</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip good"><div class="value">16.8%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip good"><div class="value">19.2%</div><div class="label">CAR</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4 - INFY -->
+            <div class="flip-card" data-stock="INFY" data-invested="240000" data-sector="IT" onclick="flipCard(this)">
+                <div class="company-tooltip"><strong>Infosys</strong> - India's 2nd largest IT company. Pioneer in digital transformation and AI/ML services.</div>
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 56%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" style="background: linear-gradient(135deg, #10b981, #06b6d4);" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">INFY</div>
+                                <div><div class="stock-name">Infosys</div><div class="stock-symbol">INFY</div></div>
+                            </div>
+                            <div class="pnl-wrapper"><span class="pnl-label">P/L %</span><div class="pnl-badge profit">+8.7%</div></div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹2.40L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹2.61L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-success">+₹20.9K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-infy"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 2.45%</div>
+                            <div class="info-badge result"><i class="bi bi-calendar"></i> Jan 16</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 56%;"></div>
+                        <div class="back-header"><span class="back-title">Infosys Fundamentals</span><span class="back-close"><i class="bi bi-arrow-repeat"></i></span></div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">Revenue 5Y (₹K Cr)</div><canvas id="rev-infy"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-infy"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip good"><div class="value">0.08</div><div class="label">D/E</div></div>
+                            <div class="ratio-chip"><div class="value">26.4</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip good"><div class="value">31.5%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip good"><div class="value">42.1%</div><div class="label">ROCE</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5 - ITC -->
+            <div class="flip-card" data-stock="ITC" data-invested="185000" data-sector="FMCG" onclick="flipCard(this)">
+                <div class="company-tooltip"><strong>ITC</strong> - Diversified conglomerate in FMCG, hotels, paperboards. Known for high dividend yield.</div>
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 44%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" style="background: linear-gradient(135deg, #f59e0b, #eab308);" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">ITC</div>
+                                <div><div class="stock-name">ITC Limited</div><div class="stock-symbol">ITC</div></div>
+                            </div>
+                            <div class="pnl-wrapper"><span class="pnl-label">P/L %</span><div class="pnl-badge loss">-7.8%</div></div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹1.85L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹1.71L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-danger">-₹14.4K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-itc"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 3.15%</div>
+                            <div class="info-badge"><i class="bi bi-calendar"></i> --</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 44%;"></div>
+                        <div class="back-header"><span class="back-title">ITC Fundamentals</span><span class="back-close"><i class="bi bi-arrow-repeat"></i></span></div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">Revenue 5Y (₹K Cr)</div><canvas id="rev-itc"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-itc"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip good"><div class="value">0.00</div><div class="label">D/E</div></div>
+                            <div class="ratio-chip"><div class="value">24.8</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip good"><div class="value">28.4%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip good"><div class="value">36.2%</div><div class="label">ROCE</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6 - SBIN -->
+            <div class="flip-card" data-stock="SBIN" data-invested="210000" data-sector="Banking" onclick="flipCard(this)">
+                <div class="company-tooltip"><strong>SBI</strong> - India's largest public sector bank with dominant market share in deposits and loans.</div>
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 49%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" style="background: linear-gradient(135deg, #2563eb, #7c3aed);" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">SBI</div>
+                                <div><div class="stock-name">State Bank</div><div class="stock-symbol">SBIN</div></div>
+                            </div>
+                            <div class="pnl-wrapper"><span class="pnl-label">P/L %</span><div class="pnl-badge profit">+22.4%</div></div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹2.10L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹2.57L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-success">+₹47.0K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-sbin"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 1.82%</div>
+                            <div class="info-badge result"><i class="bi bi-calendar"></i> Feb 02</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 49%;"></div>
+                        <div class="back-header"><span class="back-title">SBI Fundamentals</span><span class="back-close"><i class="bi bi-arrow-repeat"></i></span></div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">NII 5Y (₹K Cr)</div><canvas id="rev-sbin"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-sbin"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip good"><div class="value">1.12%</div><div class="label">GNPA</div></div>
+                            <div class="ratio-chip good"><div class="value">9.8</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip good"><div class="value">18.2%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip good"><div class="value">14.5%</div><div class="label">CAR</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 7 - ICICIBANK -->
+            <div class="flip-card" data-stock="ICICIBANK" data-invested="320000" data-sector="Banking" onclick="flipCard(this)">
+                <div class="company-tooltip"><strong>ICICI Bank</strong> - India's 2nd largest private bank with strong retail and digital banking presence.</div>
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 75%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" style="background: linear-gradient(135deg, #f97316, #dc2626);" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">ICICI</div>
+                                <div><div class="stock-name">ICICI Bank</div><div class="stock-symbol">ICICIBANK</div></div>
+                            </div>
+                            <div class="pnl-wrapper"><span class="pnl-label">P/L %</span><div class="pnl-badge profit">+15.6%</div></div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹3.20L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹3.70L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-success">+₹49.9K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-icici"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 0.85%</div>
+                            <div class="info-badge result"><i class="bi bi-calendar"></i> Jan 25</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 75%;"></div>
+                        <div class="back-header"><span class="back-title">ICICI Bank Fundamentals</span><span class="back-close"><i class="bi bi-arrow-repeat"></i></span></div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">NII 5Y (₹K Cr)</div><canvas id="rev-icici"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-icici"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip good"><div class="value">0.78%</div><div class="label">GNPA</div></div>
+                            <div class="ratio-chip"><div class="value">19.5</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip good"><div class="value">18.9%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip good"><div class="value">17.8%</div><div class="label">CAR</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 8 - BHARTIARTL -->
+            <div class="flip-card" data-stock="BHARTIARTL" data-invested="195000" data-sector="Telecom" onclick="flipCard(this)">
+                <div class="company-tooltip"><strong>Bharti Airtel</strong> - India's 2nd largest telecom operator with strong 5G rollout and Africa presence.</div>
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="invest-bar" style="--invest-pct: 46%;"></div>
+                        <div class="card-header-row">
+                            <div class="stock-info">
+                                <div class="stock-logo" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);" onclick="expandCard(this.closest('.flip-card'), event)" title="Click to expand">ARTL</div>
+                                <div><div class="stock-name">Bharti Airtel</div><div class="stock-symbol">BHARTIARTL</div></div>
+                            </div>
+                            <div class="pnl-wrapper"><span class="pnl-label">P/L %</span><div class="pnl-badge profit">+31.2%</div></div>
+                        </div>
+                        <div class="metrics-row">
+                            <div class="metric-item"><div class="value">₹1.95L</div><div class="label">Invested</div></div>
+                            <div class="metric-item"><div class="value">₹2.56L</div><div class="label">Current</div></div>
+                            <div class="metric-item"><div class="value text-success">+₹60.8K</div><div class="label">P&L</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-bharti"></canvas></div>
+                        <div class="extra-info-row">
+                            <div class="info-badge dividend"><i class="bi bi-coin"></i> 0.45%</div>
+                            <div class="info-badge result"><i class="bi bi-calendar"></i> Feb 05</div>
+                        </div>
+                        <div class="flip-hint"><i class="bi bi-arrow-repeat"></i> Tap to flip</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <div class="invest-bar" style="--invest-pct: 46%;"></div>
+                        <div class="back-header"><span class="back-title">Bharti Airtel Fundamentals</span><span class="back-close"><i class="bi bi-arrow-repeat"></i></span></div>
+                        <div class="fundamentals-row">
+                            <div class="fund-box"><div class="title">Revenue 5Y (₹K Cr)</div><canvas id="rev-bharti"></canvas></div>
+                            <div class="fund-box"><div class="title">Net Profit 5Y (₹K Cr)</div><canvas id="profit-bharti"></canvas></div>
+                        </div>
+                        <div class="ratios-row">
+                            <div class="ratio-chip warning"><div class="value">1.85</div><div class="label">D/E</div></div>
+                            <div class="ratio-chip warning"><div class="value">72.3</div><div class="label">P/E</div></div>
+                            <div class="ratio-chip"><div class="value">14.2%</div><div class="label">ROE</div></div>
+                            <div class="ratio-chip"><div class="value">11.8%</div><div class="label">ROCE</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sector View Container (hidden by default) -->
+        <div id="sector-view" style="display: none;">
+            <!-- Banking Sector -->
+            <div class="sector-group">
+                <div class="sector-header" onclick="toggleSector(this)">
+                    <div class="sector-name">
+                        <i class="bi bi-bank sector-toggle"></i>
+                        Banking <span class="sector-count">3 stocks</span>
+                    </div>
+                    <div class="sector-stats">
+                        <div class="sector-stat"><div class="value">₹8.05L</div><div class="label">Invested</div></div>
+                        <div class="sector-stat"><div class="value">₹8.93L</div><div class="label">Current</div></div>
+                        <div class="sector-stat"><div class="value text-success">+₹88.1K</div><div class="label">P&L</div></div>
+                        <div class="sector-stat"><div class="value text-success">+10.9%</div><div class="label">Returns</div></div>
+                    </div>
+                </div>
+                <div class="sector-content">
+                    <div class="sector-grid" id="sector-banking"></div>
+                </div>
+            </div>
+
+            <!-- IT Sector -->
+            <div class="sector-group">
+                <div class="sector-header" onclick="toggleSector(this)">
+                    <div class="sector-name">
+                        <i class="bi bi-cpu sector-toggle"></i>
+                        Information Technology <span class="sector-count">2 stocks</span>
+                    </div>
+                    <div class="sector-stats">
+                        <div class="sector-stat"><div class="value">₹6.20L</div><div class="label">Invested</div></div>
+                        <div class="sector-stat"><div class="value">₹6.88L</div><div class="label">Current</div></div>
+                        <div class="sector-stat"><div class="value text-success">+₹67.6K</div><div class="label">P&L</div></div>
+                        <div class="sector-stat"><div class="value text-success">+10.9%</div><div class="label">Returns</div></div>
+                    </div>
+                </div>
+                <div class="sector-content">
+                    <div class="sector-grid" id="sector-it"></div>
+                </div>
+            </div>
+
+            <!-- Energy Sector -->
+            <div class="sector-group">
+                <div class="sector-header" onclick="toggleSector(this)">
+                    <div class="sector-name">
+                        <i class="bi bi-lightning-charge sector-toggle"></i>
+                        Energy <span class="sector-count">1 stock</span>
+                    </div>
+                    <div class="sector-stats">
+                        <div class="sector-stat"><div class="value">₹4.25L</div><div class="label">Invested</div></div>
+                        <div class="sector-stat"><div class="value">₹5.04L</div><div class="label">Current</div></div>
+                        <div class="sector-stat"><div class="value text-success">+₹78.6K</div><div class="label">P&L</div></div>
+                        <div class="sector-stat"><div class="value text-success">+18.5%</div><div class="label">Returns</div></div>
+                    </div>
+                </div>
+                <div class="sector-content">
+                    <div class="sector-grid" id="sector-energy"></div>
+                </div>
+            </div>
+
+            <!-- Telecom Sector -->
+            <div class="sector-group">
+                <div class="sector-header" onclick="toggleSector(this)">
+                    <div class="sector-name">
+                        <i class="bi bi-phone sector-toggle"></i>
+                        Telecom <span class="sector-count">1 stock</span>
+                    </div>
+                    <div class="sector-stats">
+                        <div class="sector-stat"><div class="value">₹1.95L</div><div class="label">Invested</div></div>
+                        <div class="sector-stat"><div class="value">₹2.56L</div><div class="label">Current</div></div>
+                        <div class="sector-stat"><div class="value text-success">+₹60.8K</div><div class="label">P&L</div></div>
+                        <div class="sector-stat"><div class="value text-success">+31.2%</div><div class="label">Returns</div></div>
+                    </div>
+                </div>
+                <div class="sector-content">
+                    <div class="sector-grid" id="sector-telecom"></div>
+                </div>
+            </div>
+
+            <!-- FMCG Sector -->
+            <div class="sector-group">
+                <div class="sector-header" onclick="toggleSector(this)">
+                    <div class="sector-name">
+                        <i class="bi bi-cart3 sector-toggle"></i>
+                        FMCG <span class="sector-count">1 stock</span>
+                    </div>
+                    <div class="sector-stats">
+                        <div class="sector-stat"><div class="value">₹1.85L</div><div class="label">Invested</div></div>
+                        <div class="sector-stat"><div class="value">₹1.71L</div><div class="label">Current</div></div>
+                        <div class="sector-stat"><div class="value text-danger">-₹14.4K</div><div class="label">P&L</div></div>
+                        <div class="sector-stat"><div class="value text-danger">-7.8%</div><div class="label">Returns</div></div>
+                    </div>
+                </div>
+                <div class="sector-content">
+                    <div class="sector-grid" id="sector-fmcg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expanded View Overlay -->
+    <div class="expanded-overlay" id="expandedOverlay" onclick="closeExpanded(event)">
+        <div class="expanded-card" onclick="event.stopPropagation()">
+            <div class="expanded-header">
+                <div class="header-left">
+                    <div class="stock-logo" id="exp-logo">RIL</div>
+                    <div>
+                        <div class="stock-name" id="exp-name">Reliance Industries</div>
+                        <div class="stock-symbol" id="exp-symbol">RELIANCE</div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="div-indicator">
+                        <span class="div-val" id="exp-div-yield">0.32%</span>
+                        <span class="div-lbl">D.Yield</span>
+                    </div>
+                    <div class="div-indicator">
+                        <span class="div-val" id="exp-div-date">Jan 2025</span>
+                        <span class="div-lbl">Next Div</span>
+                    </div>
+                    <button class="close-btn" onclick="closeExpanded(event)">&times;</button>
+                </div>
+            </div>
+            <div class="expanded-body">
+                <div class="expanded-metrics">
+                    <div class="exp-metric"><div class="value" id="exp-invested">₹4.25L</div><div class="label">Invested</div></div>
+                    <div class="exp-metric"><div class="value" id="exp-current">₹5.04L</div><div class="label">Current</div></div>
+                    <div class="exp-metric"><div class="value text-success" id="exp-pnl">+₹78.6K</div><div class="label">P&L</div></div>
+                    <div class="exp-metric"><div class="value text-success" id="exp-pnl-pct">+18.5%</div><div class="label">Returns</div></div>
+                </div>
+                <p class="text-secondary small mb-3" id="exp-overview">India's largest private sector company. Diversified in petrochemicals, refining, telecom (Jio), and retail.</p>
+
+                <div class="expanded-fundamentals">
+                    <div class="exp-fund-box revenue"><div class="title">Revenue ₹K Cr</div><canvas id="exp-revenue"></canvas></div>
+                    <div class="exp-fund-box profit"><div class="title">Net Profit ₹K Cr</div><canvas id="exp-profit"></canvas></div>
+                    <div class="exp-fund-box opm"><div class="title">OPM %</div><canvas id="exp-opm"></canvas></div>
+                </div>
+                <div class="expanded-ratios" id="exp-ratios">
+                    <div class="exp-ratio"><div class="value">0.42</div><div class="label">D/E Ratio</div></div>
+                    <div class="exp-ratio"><div class="value">28.5 <span class="text-secondary">/</span> <span class="industry-pe">25.2</span></div><div class="label">P/E (Stock / Industry)</div></div>
+                    <div class="exp-ratio"><div class="value">12.8%</div><div class="label">ROE</div></div>
+                    <div class="exp-ratio"><div class="value">8.2%</div><div class="label">ROCE</div></div>
+                </div>
+
+                <!-- Price Chart moved to bottom -->
+                <div class="expanded-chart mt-3"><canvas id="exp-chart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // View switching
+        function switchView(viewType) {
+            // Update toggle buttons
+            document.querySelectorAll('.view-toggle button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === viewType);
+            });
+
+            // Show/hide views
+            const gridView = document.querySelector('.holdings-grid');
+            const sectorView = document.getElementById('sector-view');
+
+            if (viewType === 'grid') {
+                gridView.style.display = 'grid';
+                sectorView.style.display = 'none';
+            } else if (viewType === 'sector') {
+                gridView.style.display = 'none';
+                sectorView.style.display = 'block';
+                populateSectorView();
+            } else {
+                // List view - fallback to grid for now
+                gridView.style.display = 'grid';
+                sectorView.style.display = 'none';
+            }
+        }
+
+        // Populate sector view with cloned cards
+        function populateSectorView() {
+            const sectorMapping = {
+                'Banking': 'sector-banking',
+                'IT': 'sector-it',
+                'Energy': 'sector-energy',
+                'Telecom': 'sector-telecom',
+                'FMCG': 'sector-fmcg'
+            };
+
+            // Clear existing cards in sectors
+            Object.values(sectorMapping).forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+
+            // Clone cards to their respective sectors
+            document.querySelectorAll('.holdings-grid .flip-card').forEach(card => {
+                const sector = card.dataset.sector;
+                const targetId = sectorMapping[sector];
+                if (targetId) {
+                    const clone = card.cloneNode(true);
+                    document.getElementById(targetId).appendChild(clone);
+                }
+            });
+        }
+
+        // Toggle sector collapse
+        function toggleSector(header) {
+            header.classList.toggle('collapsed');
+            const content = header.nextElementSibling;
+            content.classList.toggle('collapsed');
+        }
+
+        // Flip card on single click
+        function flipCard(card) {
+            card.classList.toggle('flipped');
+            // Initialize back charts when flipped
+            if (card.classList.contains('flipped')) {
+                initBackCharts(card.dataset.stock);
+            }
+        }
+
+        // Expand card on double click
+        function expandCard(card, event) {
+            event.stopPropagation();
+            const stock = card.dataset.stock;
+            document.getElementById('expandedOverlay').classList.add('active');
+            populateExpandedView(stock);
+        }
+
+        function closeExpanded(event) {
+            if (event.target === document.getElementById('expandedOverlay') || event.target.closest('.close-btn')) {
+                document.getElementById('expandedOverlay').classList.remove('active');
+            }
+        }
+
+        // Store chart instances for cleanup
+        let expChartInstance = null;
+        let expRevenueInstance = null;
+        let expProfitInstance = null;
+        let expOpmInstance = null;
+
+        function populateExpandedView(stock) {
+            // Stock data with dividend info and industry P/E
+            const stockData = {
+                'RELIANCE': {
+                    name: 'Reliance Industries', symbol: 'RELIANCE', logo: 'RIL',
+                    logoGradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                    invested: '₹4.25L', current: '₹5.04L', pnl: '+₹78.6K', pnlPct: '+18.5%', isProfit: true,
+                    overview: "India's largest private sector company. Diversified in petrochemicals, refining, telecom (Jio), and retail.",
+                    rev: [611, 486, 722, 875, 955], profit: [40, 49, 61, 74, 79], opm: [12.5, 14.2, 13.8, 15.1, 14.8],
+                    divYield: '0.32%', nextDiv: 'Jan 2025',
+                    ratios: [{v: '0.42', l: 'D/E Ratio'}, {v: '28.5', industryPE: '25.2', l: 'P/E (Stock / Industry)'}, {v: '12.8%', l: 'ROE'}, {v: '8.2%', l: 'ROCE'}],
+                    priceData: generateRealisticPriceData(2200, 0.185, 0.018)
+                },
+                'TCS': {
+                    name: 'Tata Consultancy Services', symbol: 'TCS', logo: 'TCS',
+                    logoGradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                    invested: '₹3.80L', current: '₹4.27L', pnl: '+₹46.7K', pnlPct: '+12.3%', isProfit: true,
+                    overview: "India's largest IT services company. Global leader in consulting with 150+ locations worldwide.",
+                    rev: [157, 164, 192, 225, 241], profit: [32, 33, 38, 42, 46], opm: [26.8, 27.2, 26.5, 27.8, 28.1],
+                    divYield: '1.24%', nextDiv: 'Jan 2025',
+                    ratios: [{v: '0.05', l: 'D/E Ratio'}, {v: '32.1', industryPE: '28.5', l: 'P/E (Stock / Industry)'}, {v: '48.2%', l: 'ROE'}, {v: '62.5%', l: 'ROCE'}],
+                    priceData: generateRealisticPriceData(3400, 0.123, 0.015)
+                },
+                'HDFCBANK': {
+                    name: 'HDFC Bank', symbol: 'HDFCBANK', logo: 'HDFC',
+                    logoGradient: 'linear-gradient(135deg, #ef4444, #f97316)',
+                    invested: '₹2.75L', current: '₹2.66L', pnl: '-₹8.8K', pnlPct: '-3.2%', isProfit: false,
+                    overview: "India's largest private sector bank by assets. Known for strong asset quality and digital leadership.",
+                    rev: [56, 64, 75, 89, 105], profit: [26, 31, 37, 44, 52], opm: [42.5, 44.2, 45.8, 46.1, 47.2],
+                    divYield: '1.12%', nextDiv: 'May 2025',
+                    ratios: [{v: '0.89%', l: 'GNPA'}, {v: '18.2', industryPE: '15.8', l: 'P/E (Stock / Industry)'}, {v: '16.8%', l: 'ROE'}, {v: '19.2%', l: 'CAR'}],
+                    priceData: generateRealisticPriceData(1700, -0.032, 0.016)
+                },
+                'INFY': {
+                    name: 'Infosys', symbol: 'INFY', logo: 'INFY',
+                    logoGradient: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                    invested: '₹2.40L', current: '₹2.61L', pnl: '+₹20.9K', pnlPct: '+8.7%', isProfit: true,
+                    overview: "India's 2nd largest IT company. Pioneer in digital transformation and AI/ML services.",
+                    rev: [91, 100, 122, 147, 154], profit: [17, 19, 22, 24, 26], opm: [24.1, 25.5, 24.8, 23.2, 22.8],
+                    divYield: '2.45%', nextDiv: 'Jan 2025',
+                    ratios: [{v: '0.08', l: 'D/E Ratio'}, {v: '26.4', industryPE: '28.5', l: 'P/E (Stock / Industry)'}, {v: '31.5%', l: 'ROE'}, {v: '42.1%', l: 'ROCE'}],
+                    priceData: generateRealisticPriceData(1500, 0.087, 0.017)
+                },
+                'ITC': {
+                    name: 'ITC Limited', symbol: 'ITC', logo: 'ITC',
+                    logoGradient: 'linear-gradient(135deg, #f59e0b, #eab308)',
+                    invested: '₹1.85L', current: '₹1.71L', pnl: '-₹14.4K', pnlPct: '-7.8%', isProfit: false,
+                    overview: "Diversified conglomerate in FMCG, hotels, paperboards. Known for high dividend yield.",
+                    rev: [49, 48, 61, 69, 71], profit: [15, 13, 16, 19, 20], opm: [35.2, 32.8, 34.5, 36.1, 37.2],
+                    divYield: '3.15%', nextDiv: 'Feb 2025',
+                    ratios: [{v: '0.00', l: 'D/E Ratio'}, {v: '24.8', industryPE: '42.5', l: 'P/E (Stock / Industry)'}, {v: '28.4%', l: 'ROE'}, {v: '36.2%', l: 'ROCE'}],
+                    priceData: generateRealisticPriceData(450, -0.078, 0.015)
+                },
+                'SBIN': {
+                    name: 'State Bank of India', symbol: 'SBIN', logo: 'SBI',
+                    logoGradient: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                    invested: '₹2.10L', current: '₹2.57L', pnl: '+₹47.0K', pnlPct: '+22.4%', isProfit: true,
+                    overview: "India's largest public sector bank with dominant market share in deposits and loans.",
+                    rev: [112, 120, 138, 165, 189], profit: [14, 21, 31, 40, 50], opm: [18.5, 22.4, 26.8, 28.5, 31.2],
+                    divYield: '1.82%', nextDiv: 'Jun 2025',
+                    ratios: [{v: '1.12%', l: 'GNPA'}, {v: '9.8', industryPE: '15.8', l: 'P/E (Stock / Industry)'}, {v: '18.2%', l: 'ROE'}, {v: '14.5%', l: 'CAR'}],
+                    priceData: generateRealisticPriceData(580, 0.224, 0.022)
+                },
+                'ICICIBANK': {
+                    name: 'ICICI Bank', symbol: 'ICICIBANK', logo: 'ICICI',
+                    logoGradient: 'linear-gradient(135deg, #f97316, #dc2626)',
+                    invested: '₹3.20L', current: '₹3.70L', pnl: '+₹49.9K', pnlPct: '+15.6%', isProfit: true,
+                    overview: "India's 2nd largest private bank with strong retail and digital banking presence.",
+                    rev: [38, 42, 49, 58, 69], profit: [8, 10, 17, 24, 31], opm: [28.5, 31.2, 38.5, 42.8, 45.2],
+                    divYield: '0.85%', nextDiv: 'Aug 2025',
+                    ratios: [{v: '0.78%', l: 'GNPA'}, {v: '19.5', industryPE: '15.8', l: 'P/E (Stock / Industry)'}, {v: '18.9%', l: 'ROE'}, {v: '17.8%', l: 'CAR'}],
+                    priceData: generateRealisticPriceData(950, 0.156, 0.018)
+                },
+                'BHARTIARTL': {
+                    name: 'Bharti Airtel', symbol: 'BHARTIARTL', logo: 'ARTL',
+                    logoGradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                    invested: '₹1.95L', current: '₹2.56L', pnl: '+₹60.8K', pnlPct: '+31.2%', isProfit: true,
+                    overview: "India's 2nd largest telecom operator with strong 5G rollout and Africa presence.",
+                    rev: [100, 107, 132, 145, 155], profit: [-3, 5, 8, 12, 15], opm: [18.2, 22.5, 25.8, 28.2, 32.1],
+                    divYield: '0.45%', nextDiv: 'Mar 2025',
+                    ratios: [{v: '1.85', l: 'D/E Ratio'}, {v: '72.3', industryPE: '45.2', l: 'P/E (Stock / Industry)'}, {v: '14.2%', l: 'ROE'}, {v: '11.8%', l: 'ROCE'}],
+                    priceData: generateRealisticPriceData(1100, 0.312, 0.025)
+                }
+            };
+
+            const data = stockData[stock];
+            if (!data) return;
+
+            // Update text fields
+            document.getElementById('exp-logo').textContent = data.logo;
+            document.getElementById('exp-logo').style.background = data.logoGradient;
+            document.getElementById('exp-name').textContent = data.name;
+            document.getElementById('exp-symbol').textContent = data.symbol;
+            document.getElementById('exp-invested').textContent = data.invested;
+            document.getElementById('exp-current').textContent = data.current;
+            document.getElementById('exp-pnl').textContent = data.pnl;
+            document.getElementById('exp-pnl').className = 'value ' + (data.isProfit ? 'text-success' : 'text-danger');
+            document.getElementById('exp-pnl-pct').textContent = data.pnlPct;
+            document.getElementById('exp-pnl-pct').className = 'value ' + (data.isProfit ? 'text-success' : 'text-danger');
+            document.getElementById('exp-overview').textContent = data.overview;
+
+            // Update dividend info
+            document.getElementById('exp-div-yield').textContent = data.divYield;
+            document.getElementById('exp-div-date').textContent = data.nextDiv;
+
+            // Update ratios with industry P/E comparison
+            const ratiosHtml = data.ratios.map(r => {
+                if (r.industryPE) {
+                    return `<div class="exp-ratio"><div class="value">${r.v} <span class="text-secondary">/</span> <span class="industry-pe">${r.industryPE}</span></div><div class="label">${r.l}</div></div>`;
+                }
+                return `<div class="exp-ratio"><div class="value">${r.v}</div><div class="label">${r.l}</div></div>`;
+            }).join('');
+            document.getElementById('exp-ratios').innerHTML = ratiosHtml;
+
+            // Destroy existing charts
+            if (expChartInstance) { expChartInstance.destroy(); expChartInstance = null; }
+            if (expRevenueInstance) { expRevenueInstance.destroy(); expRevenueInstance = null; }
+            if (expProfitInstance) { expProfitInstance.destroy(); expProfitInstance = null; }
+            if (expOpmInstance) { expOpmInstance.destroy(); expOpmInstance = null; }
+
+            // Create price chart
+            const chartCtx = document.getElementById('exp-chart');
+            const color = data.isProfit ? '#22c55e' : '#ef4444';
+            expChartInstance = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: data.priceData.map((_, i) => i),
+                    datasets: [{
+                        data: data.priceData,
+                        borderColor: color,
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: color + '20',
+                        tension: 0.1,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            display: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+
+            // Enhanced chart options with trend line
+            const chartLabels = ['FY20', 'FY21', 'FY22', 'FY23', 'FY24'];
+
+            // Create revenue chart with trend line
+            const revCtx = document.getElementById('exp-revenue');
+            expRevenueInstance = new Chart(revCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        type: 'bar',
+                        data: data.rev,
+                        backgroundColor: createGradientBars(revCtx, '#3b82f6'),
+                        borderColor: '#60a5fa',
+                        borderWidth: 0,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: data.rev,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fbbf24',
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 8 } }
+                        },
+                        y: {
+                            display: true,
+                            grid: { color: 'rgba(255,255,255,0.08)', drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4 }
+                        }
+                    }
+                }
+            });
+
+            // Create profit chart with trend line
+            const profitCtx = document.getElementById('exp-profit');
+            expProfitInstance = new Chart(profitCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        type: 'bar',
+                        data: data.profit,
+                        backgroundColor: data.profit.map(v => v >= 0 ? createGradientBar('#22c55e') : createGradientBar('#ef4444')),
+                        borderColor: data.profit.map(v => v >= 0 ? '#4ade80' : '#f87171'),
+                        borderWidth: 0,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: data.profit,
+                        borderColor: '#fbbf24',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fbbf24',
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 8 } }
+                        },
+                        y: {
+                            display: true,
+                            grid: { color: 'rgba(255,255,255,0.08)', drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4 }
+                        }
+                    }
+                }
+            });
+
+            // Create OPM chart with trend line
+            const opmCtx = document.getElementById('exp-opm');
+            expOpmInstance = new Chart(opmCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        type: 'bar',
+                        data: data.opm,
+                        backgroundColor: createGradientBars(opmCtx, '#f59e0b'),
+                        borderColor: '#fbbf24',
+                        borderWidth: 0,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        order: 2
+                    }, {
+                        type: 'line',
+                        data: data.opm,
+                        borderColor: '#a78bfa',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#a78bfa',
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 8 } }
+                        },
+                        y: {
+                            display: true,
+                            grid: { color: 'rgba(255,255,255,0.08)', drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 8 }, maxTicksLimit: 4, callback: v => v + '%' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper to create gradient for bars
+        function createGradientBars(ctx, color) {
+            return color + '90';
+        }
+
+        function createGradientBar(color) {
+            return color + '90';
+        }
+
+        // Generate realistic 1-year price data
+        function generateRealisticPriceData(startPrice, annualReturn, volatility = 0.02, days = 252) {
+            const prices = [startPrice];
+            const dailyReturn = annualReturn / days;
+            for (let i = 1; i < days; i++) {
+                const randomShock = (Math.random() - 0.5) * 2 * volatility;
+                let extraShock = 0;
+                if (Math.random() < 0.02) extraShock = (Math.random() - 0.5) * 0.08;
+                prices.push(prices[i - 1] * (1 + dailyReturn + randomShock + extraShock));
+            }
+            return prices;
+        }
+
+        function createSparkline(canvasId, data, isProfit) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            const color = isProfit ? '#22c55e' : '#ef4444';
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map((_, i) => i),
+                    datasets: [{ data, borderColor: color, borderWidth: 1.5, fill: true, backgroundColor: color + '15', tension: 0.1, pointRadius: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+            });
+        }
+
+        function createMiniBarChart(canvasId, data, color) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['20', '21', '22', '23', '24'],
+                    datasets: [{ data, backgroundColor: color + '80', borderColor: color, borderWidth: 1, borderRadius: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+            });
+        }
+
+        // Initialize back charts
+        function initBackCharts(stock) {
+            const data = {
+                'RELIANCE': { rev: [611, 486, 722, 875, 955], profit: [40, 49, 61, 74, 79] },
+                'TCS': { rev: [157, 164, 192, 225, 241], profit: [32, 33, 38, 42, 46] },
+                'HDFCBANK': { rev: [56, 64, 75, 89, 105], profit: [26, 31, 37, 44, 52] },
+                'INFY': { rev: [91, 100, 122, 147, 154], profit: [17, 19, 22, 24, 26] },
+                'ITC': { rev: [49, 48, 61, 69, 71], profit: [15, 13, 16, 19, 20] },
+                'SBIN': { rev: [112, 120, 138, 165, 189], profit: [14, 21, 31, 40, 50] },
+                'ICICIBANK': { rev: [38, 42, 49, 58, 69], profit: [8, 10, 17, 24, 31] },
+                'BHARTIARTL': { rev: [100, 107, 132, 145, 155], profit: [-3, 5, 8, 12, 15] }
+            };
+            const stockKey = stock.toLowerCase().replace('bank', '');
+            if (data[stock]) {
+                createMiniBarChart(`rev-${stockKey}`, data[stock].rev, '#3b82f6');
+                createMiniBarChart(`profit-${stockKey}`, data[stock].profit, '#22c55e');
+            }
+        }
+
+        // Initialize front sparklines
+        createSparkline('chart-reliance', generateRealisticPriceData(2200, 0.185, 0.018), true);
+        createSparkline('chart-tcs', generateRealisticPriceData(3400, 0.123, 0.015), true);
+        createSparkline('chart-hdfc', generateRealisticPriceData(1700, -0.032, 0.016), false);
+        createSparkline('chart-infy', generateRealisticPriceData(1500, 0.087, 0.017), true);
+        createSparkline('chart-itc', generateRealisticPriceData(450, -0.078, 0.015), false);
+        createSparkline('chart-sbin', generateRealisticPriceData(580, 0.224, 0.022), true);
+        createSparkline('chart-icici', generateRealisticPriceData(950, 0.156, 0.018), true);
+        createSparkline('chart-bharti', generateRealisticPriceData(1100, 0.312, 0.025), true);
+
+        // Sort buttons
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Keyboard escape to close expanded
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeExpanded({target: document.getElementById('expandedOverlay')});
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+Test Case ID,Module,Title,Scenario,Expected Behaviour,Test Type,Priority,Preconditions,Test Data,Result,Actual Result,Comments,Linked Req
+TCCC001,Core Functionality,Successful backtest execution with single stock,"1. Login to application
+2. Navigate to /backtest
+3. Select RELIANCE from stock selector
+4. Set date range: 2023-01-01 to 2023-12-31
+5. Select DELTA_30 strike selection
+6. Select HOLD_TO_EXPIRY exit strategy
+7. Click Run Backtest",Backtest completes successfully within 2 minutes. Results dashboard displays all 7 metrics (Total Return, Premium Yield, Win Rate, Max Drawdown, Assignment Rate, Sharpe Ratio, vs Buy-and-Hold). Trade log shows entries for each monthly expiry.,Positive,P0,User logged in with valid Zerodha session. Historical data for RELIANCE available for 2023.,Stock: RELIANCE | Date Range: 2023-01-01 to 2023-12-31 | Strategy: DELTA_30 + HOLD_TO_EXPIRY,Not Tested,,,PRD Section B
+TCCC002,Core Functionality,Backtest with multiple stocks,"1. Login and navigate to /backtest
+2. Select RELIANCE, TCS, HDFCBANK from multi-select
+3. Set date range: 2022-01-01 to 2023-12-31
+4. Select ATM strike selection
+5. Select PROFIT_TARGET_50 exit strategy
+6. Click Run Backtest",Backtest runs for all 3 stocks. Results show aggregated metrics and per-stock breakdown. Strategy comparison table shows performance for each stock.,Positive,P0,All 3 stocks have historical data available,Stocks: [RELIANCE TCS HDFCBANK] | Date Range: 2022-01-01 to 2023-12-31,Not Tested,,,PRD Section A
+TCCC003,Core Functionality,Strategy comparison with multiple strategies,"1. Navigate to backtest page
+2. Select single stock: TCS
+3. Select multiple strike methods: DELTA_30, DELTA_40, OTM_2PCT
+4. Select multiple exit rules: HOLD_TO_EXPIRY, PROFIT_TARGET_50
+5. Run backtest",System generates 6 strategy combinations (3x2). Comparison table shows metrics for each combination. Charts display overlay of equity curves for all strategies.,Positive,P0,TCS historical data available,Stock: TCS | Strategies: 6 combinations,Not Tested,,,PRD Section B
+TCCC004,Core Functionality,View backtest results after completion,"1. Run any valid backtest
+2. Wait for completion
+3. Verify results dashboard loads",Results Section C displays: Total Return %, Premium Yield %, Win Rate %, Max Drawdown %, Assignment Rate %, Sharpe Ratio, vs Buy-and-Hold %. All metrics are calculated and displayed with proper formatting (2 decimal places).,Positive,P0,Backtest completed successfully,Any valid backtest,Not Tested,,,PRD Section C
+TCCC005,Core Functionality,View all 10 chart visualizations,"1. Complete a backtest
+2. Navigate to visualization panel
+3. Verify each chart renders",All 10 charts render correctly: 1) Equity Curve 2) Returns Distribution 3) Monthly Returns Heatmap 4) Drawdown Chart 5) Premium Collected 6) Strike Selection Impact 7) DTE Impact 8) Win/Loss Distribution 9) P&L by Market Condition 10) Rolling Sharpe Ratio,Positive,P0,Backtest with at least 12 months data,Full year backtest data,Not Tested,,,PRD Section D
+TCCC006,Calculations,Covered call P&L calculation - option expires worthless,"1. Set up backtest with ATM strike
+2. Use scenario where stock price < strike at expiry
+3. Verify P&L calculation",P&L = Premium Received (call option expires worthless). Stock appreciation/depreciation reflected separately. Total P&L = Premium + Stock Change.,Positive,P0,Known test data with predictable outcome,Stock entry: 1000 | Strike: 1020 | Premium: 25 | Stock at expiry: 1010,Not Tested,,,PRD Appendix A
+TCCC007,Calculations,Covered call P&L calculation - option assigned,"1. Set up backtest scenario where stock > strike at expiry
+2. Verify P&L accounts for assignment",P&L = Premium Received + (Strike - Entry Price). Stock is sold at strike price. Assignment is recorded in trade log.,Positive,P0,Known test data with predictable outcome,Stock entry: 1000 | Strike: 1020 | Premium: 25 | Stock at expiry: 1050,Not Tested,,,PRD Appendix A
+TCCC008,Calculations,Delta-based strike selection (0.30 delta),"1. Configure backtest with DELTA_30
+2. Verify strike selected has approximately 0.30 delta",Strike selected should have delta closest to 0.30. If exact delta not available selected strike delta should be within 0.25-0.35 range.,Positive,P0,Greeks calculator functioning,Stock price: 2500 | IV: 20%,Not Tested,,,PRD Section B
+TCCC009,Calculations,Delta-based strike selection (0.40 delta),"1. Configure backtest with DELTA_40
+2. Verify strike selection",Strike selected should have delta closest to 0.40. Delta should be within 0.35-0.45 range.,Positive,P0,Greeks calculator functioning,Stock price: 2500 | IV: 20%,Not Tested,,,PRD Section B
+TCCC010,Calculations,Percentage OTM strike selection (2%),"1. Configure backtest with OTM_2PCT
+2. Verify strike calculation",Strike = Stock Price * 1.02 (2% above current price). Strike rounds to nearest standard strike interval.,Positive,P0,Standard strike intervals defined,Stock price: 2500 | Expected strike: 2550,Not Tested,,,PRD Section B
+TCCC011,Calculations,Percentage OTM strike selection (5%),"1. Configure backtest with OTM_5PCT
+2. Verify strike calculation",Strike = Stock Price * 1.05 (5% above current price). Strike rounds to nearest standard strike interval.,Positive,P0,Standard strike intervals defined,Stock price: 2500 | Expected strike: 2625,Not Tested,,,PRD Section B
+TCCC012,Calculations,ATM strike selection,"1. Configure backtest with ATM
+2. Verify strike is closest to current price",Strike selected is the one closest to current stock price. For price 2510 with strikes at 2500 and 2520 should select 2500.,Positive,P0,Strike intervals defined,Stock price: 2510,Not Tested,,,PRD Section B
+TCCC013,Calculations,Sharpe Ratio calculation,"1. Complete backtest with known returns
+2. Verify Sharpe calculation",Sharpe Ratio = (Portfolio Return - Risk Free Rate) / Standard Deviation of Returns. Risk-free rate = 7% (India). Annualized calculation.,Positive,P0,Backtest completed with daily equity curve,Known return series,Not Tested,,,PRD Section C
+TCCC014,Calculations,Maximum Drawdown calculation,"1. Complete backtest
+2. Verify max drawdown metric",Max Drawdown = Largest peak-to-trough decline in portfolio value expressed as percentage. Calculation matches equity curve valleys.,Positive,P0,Backtest completed,Equity curve with known peaks/troughs,Not Tested,,,PRD Section C
+TCCC015,Calculations,Win Rate calculation,"1. Complete backtest
+2. Verify win rate metric",Win Rate = (Profitable Trades / Total Trades) * 100. A trade is profitable if total P&L > 0.,Positive,P0,Backtest with multiple trades,10 trades: 7 winners 3 losers = 70%,Not Tested,,,PRD Section C
+TCCC016,Calculations,Assignment Rate calculation,"1. Complete backtest with hold-to-expiry strategy
+2. Count assignments vs expirations",Assignment Rate = (Assigned Trades / Total Expiries) * 100. Only applies to trades held to expiry.,Positive,P0,Hold-to-expiry strategy used,12 expiries: 4 assigned = 33.3%,Not Tested,,,PRD Section C
+TCCC017,Calculations,Hold to Expiry exit rule,"1. Configure HOLD_TO_EXPIRY strategy
+2. Verify no early exits occur",All positions held until expiry date. Exit date matches option expiry (last Thursday). No profit target or stop loss triggers checked.,Positive,P0,Monthly expiry dates defined,Full month trade,Not Tested,,,PRD Appendix A
+TCCC018,Calculations,50% Profit Target exit rule,"1. Configure PROFIT_TARGET_50 strategy
+2. Set up scenario where option value drops 50%
+3. Verify early exit",Position closed when option premium drops to 50% of entry value. Exit logged with reason PROFIT_TARGET. Remaining premium (50%) captured as profit.,Positive,P0,Daily option price estimation working,Entry premium: 50 | Target exit: 25,Not Tested,,,PRD Appendix A
+TCCC019,Calculations,2x Stop Loss exit rule,"1. Configure STOP_LOSS_2X strategy
+2. Set up scenario where option value doubles
+3. Verify stop loss triggers",Position closed when option premium reaches 2x entry value. Exit logged with reason STOP_LOSS. Loss = Premium paid to close - Premium received.,Positive,P0,Daily option price estimation working,Entry premium: 50 | Stop loss at: 100,Not Tested,,,PRD Appendix A
+TCCC020,Calculations,Black-Scholes premium estimation,"1. Input known parameters to Greeks calculator
+2. Verify theoretical option price",Option price calculated using Black-Scholes formula with: Stock price Strike DTE Volatility (ATR proxy) Risk-free rate 7%.,Positive,P0,Greeks calculator available,S=2500 K=2550 T=30 days IV=20% r=7%,Not Tested,,,PRD Data Requirements
+TCCC021,Calculations,Greeks calculation (Delta Theta Gamma Vega),"1. Calculate Greeks for test option
+2. Verify each Greek value",Delta between 0-1 for calls. Theta negative (time decay). Gamma positive. Vega positive. All values mathematically consistent.,Positive,P0,GreeksCalculator class available,Known option parameters,Not Tested,,,PRD Components
+TCCC022,Calculations,vs Buy-and-Hold comparison,"1. Complete covered call backtest
+2. Compare with underlying buy-and-hold return",vs Buy-and-Hold = Covered Call Return - Stock Return. Positive means covered call outperformed. Calculation uses same date range.,Positive,P0,Backtest completed,Covered call return: 15% | Stock return: 12% | Expected: +3%,Not Tested,,,PRD Section C
+TCCC023,Data Management,Download historical data for single stock,"1. Navigate to /data-management
+2. Select RELIANCE
+3. Set date range
+4. Click Download",Data downloads successfully from Zerodha API. Progress bar updates during download. Completion message shown. Data visible in available data table.,Positive,P1,Valid Zerodha session,RELIANCE | 2023-01-01 to 2023-12-31,Not Tested,,,PRD Data Management
+TCCC024,Data Management,Download data for multiple stocks,"1. Select RELIANCE TCS HDFCBANK for download
+2. Start bulk download",All 3 stocks download sequentially or in parallel. Individual progress shown for each. All data stored in SQLite database.,Positive,P1,Valid Zerodha session,3 stocks | 1 year each,Not Tested,,,PRD Data Management
+TCCC025,Data Management,View available data summary,"1. Navigate to /data-management
+2. Check available data table",Table shows: Symbol Timeframe Start Date End Date Total Candles Last Updated. Sortable and searchable.,Positive,P1,Some data already downloaded,At least 2 stocks with data,Not Tested,,,PRD Data Management
+TCCC026,Data Management,Data caching prevents duplicate downloads,"1. Download RELIANCE data for 2023
+2. Attempt to download same date range again",System detects existing data and either skips download or prompts user. No duplicate records created in database.,Positive,P1,RELIANCE 2023 data already exists,Duplicate download attempt,Not Tested,,,PRD Constraints
+TCCC027,Data Management,Delete cached data for a stock,"1. Navigate to data management
+2. Select symbol to delete
+3. Confirm deletion",Data removed from SQLite database. Symbol no longer appears in available data. Confirmation message shown.,Positive,P2,Data exists for selected symbol,DELETE /api/data/RELIANCE,Not Tested,,,ARCH API 5.3
+TCCC028,Validation,Invalid date range (end before start),"1. Set start date: 2024-01-01
+2. Set end date: 2023-01-01
+3. Attempt to run backtest",Error message: Start date must be before end date. Form submission blocked. No backtest initiated.,Negative,P1,User on backtest page,Start: 2024-01-01 | End: 2023-01-01,Not Tested,,,PRD Constraints
+TCCC029,Validation,Date range exceeds available data,"1. Set date range where data partially exists
+2. Run backtest",Warning shown: Data only available from X to Y. Option to proceed with available range or cancel.,Boundary,P1,Partial data exists,Request: 2020-2024 | Available: 2022-2024,Not Tested,,,PRD Constraints
+TCCC030,Validation,No stock selected,"1. Leave stock selector empty
+2. Attempt to run backtest",Error message: Please select at least one stock. Form submission blocked.,Negative,P1,User on backtest page,Empty stock selection,Not Tested,,,PRD Section A
+TCCC031,Validation,Invalid DTE range,"1. Enter DTE range: 100-200 (outside 30-45)
+2. Run backtest",Error or warning: DTE range should be 30-45 for monthly options. MVP may enforce 30-45 range.,Boundary,P1,User on backtest page,DTE: 100-200,Not Tested,,,PRD Section A
+TCCC032,Validation,No strategy selected,"1. Deselect all strike selection methods
+2. Attempt to run backtest",Error message: Please select at least one strike selection method and one exit rule.,Negative,P1,User on backtest page,No strategies selected,Not Tested,,,PRD Section B
+TCCC033,Validation,Stock symbol not found,"1. Enter invalid stock symbol
+2. Attempt operations",Error message: Stock symbol XYZ not found or not supported. Graceful handling no crash.,Negative,P1,User on data management or backtest,Invalid symbol: XYZABC,Not Tested,,,PRD Constraints
+TCCC034,Validation,No data available for selected stock/date,"1. Select stock with no downloaded data
+2. Run backtest",Error message: No historical data available for [STOCK]. Please download data first. Link to data management page.,Negative,P1,Stock selected has no data,Stock without data,Not Tested,,,ARCH Data Flow
+TCCC035,Authentication,Successful Zerodha login flow,"1. Click Login
+2. Complete Zerodha OAuth
+3. Return to application",User redirected to Zerodha login. After auth callback processed. Session created. User shown as logged in on navbar. Access token saved.,Positive,P1,Valid Zerodha credentials,Valid Zerodha account,Not Tested,,,PRD Page 2
+TCCC036,Authentication,Session expiry handling,"1. Login to application
+2. Wait for session/token to expire
+3. Attempt protected action",User notified of expired session. Redirected to login page. Clear error message shown. Previous action can be retried after re-login.,Boundary,P1,Session timeout configured,Expired session,Not Tested,,,ARCH Security
+TCCC037,Authentication,Logout clears session,"1. Login to application
+2. Click Logout",Session cleared. Token removed. User redirected to landing page. Subsequent protected requests require re-login.,Positive,P1,User currently logged in,Active session,Not Tested,,,PRD Page 2
+TCCC038,Authentication,Access protected page without login,"1. Clear all cookies/session
+2. Navigate directly to /backtest",User redirected to login page or shown Please login to access this feature message.,Negative,P1,No active session,Direct URL access without auth,Not Tested,,,ARCH Security
+TCCC039,UI/UX,Responsive layout on mobile viewport,"1. Access /backtest on mobile device (375px width)
+2. Navigate through all sections",All elements accessible. Forms usable. Tables scroll horizontally if needed. Charts resize appropriately. No horizontal page scroll.,Positive,P2,Application running,Viewport: 375px width,Not Tested,,,PRD Design
+TCCC040,UI/UX,Chart interactivity (hover tooltips),"1. Hover over equity curve chart points
+2. Check other chart tooltips",Tooltips show date and value. Tooltips properly positioned. Data accurately reflects underlying values.,Positive,P2,Backtest results displayed,Any chart with data,Not Tested,,,PRD Appendix B
+TCCC041,UI/UX,DataTables sorting and filtering,"1. View trade log table
+2. Click column headers to sort
+3. Use search box",Table sorts ascending/descending on all columns. Search filters results in real-time. Pagination works correctly.,Positive,P2,Trade log with 20+ entries,Trade log table,Not Tested,,,PRD Components
+TCCC042,UI/UX,Loading spinner during backtest,"1. Start a backtest
+2. Observe UI during processing",Loading spinner displayed. Progress percentage updates. UI remains responsive. Cancel option available if applicable.,Positive,P2,Backtest takes >5 seconds,Long-running backtest,Not Tested,,,PRD Design Patterns
+TCCC043,UI/UX,Export to CSV functionality,"1. Complete a backtest
+2. Click Export > CSV",CSV file downloads. Contains trade log with all fields. File opens correctly in Excel/spreadsheet. Data matches displayed results.,Positive,P2,Backtest completed,Trade log CSV export,Not Tested,,,PRD Appendix C
+TCCC044,UI/UX,Export to PDF functionality,"1. Complete a backtest
+2. Click Export > PDF",PDF generates with: Executive summary Metrics table Key charts Trade log. Properly formatted and printable.,Positive,P2,Backtest completed,Full report PDF export,Not Tested,,,PRD Appendix C
+TCCC045,UI/UX,Metric cards display with proper formatting,"1. View results dashboard
+2. Check metric card formatting",Positive values in green (#198754). Negative values in red (#dc3545). Percentages show 2 decimal places. Icons display correctly.,Positive,P2,Backtest with mixed results,Various metric values,Not Tested,,,PRD Design System
+TCCC046,UI/UX,Strategy toggle enable/disable,"1. Toggle different strategies on/off
+2. Observe form behavior",Toggled-off strategies grayed out. Only enabled strategies included in backtest. Visual feedback clear.,Positive,P2,User on backtest page,Strategy toggles,Not Tested,,,PRD Components
+TCCC047,Edge Cases,Backtest with only 1 month of data,"1. Set date range for exactly 1 month
+2. Run backtest",Single trade generated. All metrics calculated (some may show N/A for rolling metrics). Charts display single data point appropriately.,Boundary,P2,1 month data available,30 days of data only,Not Tested,,,Edge Case
+TCCC048,Edge Cases,Market holiday handling,"1. Run backtest that includes Diwali/other market holidays
+2. Verify trade logic",No trades attempted on market holidays. Expiry shifted if holiday falls on last Thursday. Data gaps handled gracefully.,Boundary,P1,Data includes holiday periods,Date range with known holidays,Not Tested,,,PRD Indian Market
+TCCC049,Edge Cases,Very high volatility period,"1. Backtest period including Mar 2020 COVID crash
+2. Verify calculations handle extreme moves",No calculation errors or overflows. Drawdown metric captures extreme decline. Premium estimates remain reasonable.,Boundary,P1,2020 data available,March 2020 period,Not Tested,,,Edge Case
+TCCC050,Edge Cases,Zero premium scenario,"1. Deep ITM option selected
+2. Premium approaches zero",System handles zero/near-zero premium. No division by zero errors. Trade still logged appropriately.,Boundary,P2,Edge case data setup,Extreme ITM scenario,Not Tested,,,Edge Case
+TCCC051,Performance,Backtest with 5 years of data,"1. Set 5-year date range
+2. Run backtest for single stock",Backtest completes within 5 minutes. Progress updates throughout. Results accurate. No timeout errors.,Positive,P2,5 years data available,2019-2024 date range,Not Tested,,,Performance
+TCCC052,Performance,Concurrent backtest requests,"1. User A starts backtest
+2. User B starts different backtest simultaneously",Both backtests complete successfully. Results not mixed. Task IDs properly isolated.,Positive,P2,Multi-user scenario,2 simultaneous backtests,Not Tested,,,ARCH APScheduler
+TCCC053,API,POST /api/backtest/run with valid payload,"1. Send valid JSON config to API
+2. Check response",Returns 200 OK with task_id. Background task queued. Status endpoint returns progress.,Positive,P1,Valid auth session,Valid JSON body,Not Tested,,,ARCH API 5.2
+TCCC054,API,GET /api/backtest/status polling,"1. Start backtest
+2. Poll status endpoint every 2 seconds",Returns JSON with: status (running/completed/failed) progress percentage partial results if available.,Positive,P1,Backtest running,GET requests during execution,Not Tested,,,ARCH API 5.2
+TCCC055,API,GET /api/backtest/results/{id},"1. Get results for completed backtest
+2. Verify full response structure",Returns complete results JSON matching documented structure. Includes metrics strategy_comparison chart_data trade_count.,Positive,P1,Backtest completed,Valid backtest ID,Not Tested,,,ARCH API 5.2
+TCCC056,API,API error handling - invalid backtest ID,"1. Request results for non-existent ID
+2. Check error response",Returns 404 Not Found. Error message: Backtest ID not found. No server crash.,Negative,P1,No backtest with ID 99999,GET /api/backtest/results/99999,Not Tested,,,ARCH API
+TCCC057,Database,Backtest results persistence,"1. Complete backtest
+2. Restart application
+3. Access /api/backtest/history",Previous backtest results retrievable from database. All metrics and trade log preserved.,Positive,P1,Completed backtest exists,Application restart,Not Tested,,,ARCH DB Schema
+TCCC058,Database,Trade log foreign key integrity,"1. Insert trades with valid backtest_id
+2. Attempt insert with invalid backtest_id",Valid inserts succeed. Invalid FK rejected. Database maintains referential integrity.,Positive,P1,Database schema created,Invalid backtest_id reference,Not Tested,,,ARCH DB Schema 4.2
+TCCC059,Integration,Zerodha API rate limit handling,"1. Make rapid successive API calls
+2. Observe rate limit handling",Rate limiting detected. Requests backed off or queued. User notified of delay. No data corruption.,Boundary,P1,Zerodha API access,Rapid data requests,Not Tested,,,PRD Constraints
+TCCC060,Integration,yfinance fallback when Kite unavailable,"1. Simulate Kite API unavailable
+2. Attempt data download",System falls back to yfinance. User notified of fallback source. Data quality disclaimer shown if applicable.,Positive,P2,Kite API down/unavailable,Fallback scenario,Not Tested,,,PRD APIs

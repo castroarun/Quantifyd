@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Data Management - Covered Calls{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <!-- Download Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cloud-download me-2"></i>
+                    Download Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="download-form">
+                    <div class="mb-3">
+                        <label class="form-label">Select Stocks</label>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="selectAll()">
+                                Select All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAll()">
+                                Clear
+                            </button>
+                        </div>
+                        <select class="form-select" id="download-symbols" multiple size="10">
+                            {% for symbol in symbols %}
+                            <option value="{{ symbol }}">{{ symbol }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Timeframe</label>
+                        <select class="form-select" id="timeframe">
+                            <option value="day" selected>Daily</option>
+                            <option value="60minute">60 Minute</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="download-btn">
+                        <i class="bi bi-download me-2"></i>
+                        Download Selected
+                    </button>
+                </form>
+
+                <!-- Progress -->
+                <div id="download-progress" class="mt-3" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                             id="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted" id="progress-message">Starting...</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Summary -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-hdd me-2"></i>
+                    Database Summary
+                </h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td>Total Records</td>
+                        <td class="text-end"><strong>{{ summary.total_records | default(0) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Total Symbols</td>
+                        <td class="text-end"><strong>{{ summary.total_symbols | default(0) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Database Size</td>
+                        <td class="text-end"><strong>{{ summary.database_size_mb | default(0) }} MB</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Download Status -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-table me-2"></i>
+                    Available Data
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="refreshStatus()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Timeframe</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Candles</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody id="status-table">
+                            {% for row in download_status %}
+                            <tr>
+                                <td>{{ row.symbol }}</td>
+                                <td>{{ row.timeframe }}</td>
+                                <td>{{ row.start_date }}</td>
+                                <td>{{ row.end_date }}</td>
+                                <td>{{ row.total_candles }}</td>
+                                <td>{{ row.last_updated }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-muted text-center py-4">
+                                    No data downloaded yet. Select stocks and click Download.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let downloadTaskId = null;
+
+    function selectAll() {
+        const select = document.getElementById('download-symbols');
+        for (let option of select.options) {
+            option.selected = true;
+        }
+    }
+
+    function clearAll() {
+        const select = document.getElementById('download-symbols');
+        for (let option of select.options) {
+            option.selected = false;
+        }
+    }
+
+    document.getElementById('download-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const symbols = Array.from(document.getElementById('download-symbols').selectedOptions).map(o => o.value);
+        const timeframe = document.getElementById('timeframe').value;
+
+        if (symbols.length === 0) {
+            alert('Please select at least one stock');
+            return;
+        }
+
+        document.getElementById('download-progress').style.display = 'block';
+        document.getElementById('download-btn').disabled = true;
+
+        try {
+            const response = await fetch('/api/data/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbols, timeframe })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                alert('Error: ' + result.error);
+                resetDownload();
+                return;
+            }
+
+            downloadTaskId = result.task_id;
+            pollDownloadStatus();
+
+        } catch (error) {
+            alert('Error: ' + error);
+            resetDownload();
+        }
+    });
+
+    async function pollDownloadStatus() {
+        if (!downloadTaskId) return;
+
+        try {
+            const response = await fetch(`/api/data/status/${downloadTaskId}`);
+            const status = await response.json();
+
+            document.getElementById('progress-bar').style.width = status.progress + '%';
+            document.getElementById('progress-message').textContent = status.message;
+
+            if (status.status === 'completed') {
+                resetDownload();
+                refreshStatus();
+                alert(`Download complete! ${status.result.success} succeeded, ${status.result.failed} failed`);
+            } else if (status.status === 'failed') {
+                resetDownload();
+                alert('Download failed: ' + status.message);
+            } else {
+                setTimeout(pollDownloadStatus, 1000);
+            }
+
+        } catch (error) {
+            console.error('Polling error:', error);
+            setTimeout(pollDownloadStatus, 2000);
+        }
+    }
+
+    function resetDownload() {
+        document.getElementById('download-progress').style.display = 'none';
+        document.getElementById('download-btn').disabled = false;
+        document.getElementById('progress-bar').style.width = '0%';
+        downloadTaskId = null;
+    }
+
+    async function refreshStatus() {
+        location.reload();
+    }
+</script>
+{% endblock %}

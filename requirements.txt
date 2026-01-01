@@ -1,0 +1,54 @@
+# Covered Calls Backtester - Python Dependencies
+
+# Web Framework
+Flask==2.3.3
+gunicorn==21.2.0
+Flask-Session==0.5.0
+Werkzeug==2.3.7
+
+# Zerodha API
+kiteconnect==5.0.1
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Technical Analysis
+pandas-ta>=0.3.14b0
+
+# Background Tasks
+APScheduler==3.10.4
+
+# Date/Time
+python-dateutil>=2.8.2
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Fallback Data Source
+yfinance>=0.2.28
+
+# PDF Generation
+reportlab>=4.0.4
+
+# Visualization (for notebooks)
+matplotlib>=3.7.0
+plotly>=5.15.0
+
+# Jupyter (optional for analysis)
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# AI Chat Integration
+anthropic>=0.36.0
+mcp>=1.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Code Quality
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0

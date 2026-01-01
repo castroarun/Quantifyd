@@ -1,0 +1,1024 @@
+{% extends "base.html" %}
+
+{% block title %}Backtest - Covered Calls{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Configuration Panel -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-sliders me-2"></i>
+                    Backtest Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="backtest-form">
+                    <!-- Date Range -->
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row g-2">
+                            <div class="col">
+                                <input type="date" class="form-control" id="start-date" name="start_date" required>
+                                <small class="text-muted">Start</small>
+                            </div>
+                            <div class="col">
+                                <input type="date" class="form-control" id="end-date" name="end_date" required>
+                                <small class="text-muted">End</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Stocks</label>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="selectPreset('top10')">
+                                Top 10
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="selectPreset('nifty50')">
+                                NIFTY 50
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectPreset('clear')">
+                                Clear
+                            </button>
+                        </div>
+                        <select class="form-select" id="symbols" name="symbols" multiple size="8" required>
+                            {% for symbol in symbols %}
+                            <option value="{{ symbol }}" {% if symbol in top_10 %}selected{% endif %}>
+                                {{ symbol }} (Lot: {{ lot_sizes.get(symbol, 1) }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+                    </div>
+
+                    <!-- Strike Method -->
+                    <div class="mb-3">
+                        <label class="form-label">Strike Selection</label>
+                        <select class="form-select" id="strike-method" name="strike_method" onchange="toggleStrikeParams()">
+                            {% for method in strike_methods %}
+                            <option value="{{ method }}" {% if method == 'DELTA_30' %}selected{% endif %}>
+                                {% if method == 'PIVOT_R1' %}
+                                    PIVOT R1 (1st Resistance)
+                                {% elif method == 'PIVOT_R2' %}
+                                    PIVOT R2 (2nd Resistance)
+                                {% elif method == 'BOLLINGER_UPPER' %}
+                                    BOLLINGER UPPER (Upper Band)
+                                {% else %}
+                                    {{ method.replace('_', ' ') }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <!-- ATR Multiplier (shown when ATR_BASED is selected) -->
+                        <div class="mt-2" id="atr-params" style="display: none;">
+                            <label class="form-label small">ATR Multiplier</label>
+                            <div class="input-group input-group-sm" style="max-width: 200px;">
+                                <input type="number" class="form-control" id="atr-multiplier"
+                                       name="atr_multiplier" value="1.5" min="0.5" max="5" step="0.1">
+                                <span class="input-group-text">x ATR</span>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Strike = Price + (14-day ATR x Multiplier)
+                            </small>
+                        </div>
+                        <!-- Pivot Point Info (shown when PIVOT_R1 or PIVOT_R2 is selected) -->
+                        <div class="mt-2" id="pivot-params" style="display: none;">
+                            <small class="text-muted d-block">
+                                <strong>Pivot Points Formula:</strong><br>
+                                P = (High + Low + Close) / 3<br>
+                                R1 = (2 x P) - Low<br>
+                                R2 = P + (High - Low)
+                            </small>
+                        </div>
+                        <!-- Bollinger Info (shown when BOLLINGER_UPPER is selected) -->
+                        <div class="mt-2" id="bollinger-strike-info" style="display: none;">
+                            <small class="text-muted d-block">
+                                <strong>Bollinger Bands Formula:</strong><br>
+                                Upper Band = SMA(20) + (2 x StdDev)<br>
+                                Natural resistance level for strike selection
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Exit Strategy with Checkboxes -->
+                    <div class="mb-3">
+                        <label class="form-label">Exit Strategy</label>
+                        <small class="text-muted d-block mb-2">Select exit rules (none = hold to expiry)</small>
+                        <input type="hidden" id="exit-strategy" name="exit_strategy" value="HOLD_TO_EXPIRY">
+
+                        <!-- Profit Target Option -->
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="use-profit-target"
+                                   onchange="updateExitStrategy()">
+                            <label class="form-check-label" for="use-profit-target">
+                                <strong>Profit Target</strong>
+                            </label>
+                            <div class="ms-4 mt-1" id="profit-target-params" style="display: none;">
+                                <div class="input-group input-group-sm" style="max-width: 200px;">
+                                    <input type="number" class="form-control" id="profit-target-pct"
+                                           name="profit_target_pct" value="50" min="10" max="100" step="5">
+                                    <span class="input-group-text">% of max profit</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stop Loss Option -->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use-stop-loss"
+                                   onchange="updateExitStrategy()">
+                            <label class="form-check-label" for="use-stop-loss">
+                                <strong>Stop Loss</strong>
+                            </label>
+                            <div class="ms-4 mt-1" id="stop-loss-params" style="display: none;">
+                                <div class="input-group input-group-sm" style="max-width: 200px;">
+                                    <input type="number" class="form-control" id="stop-loss-multiple"
+                                           name="stop_loss_multiple" value="2.0" min="0.5" max="5" step="0.5">
+                                    <span class="input-group-text">x premium</span>
+                                </div>
+                                <!-- SL Adjustment Option -->
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="allow-sl-adjustment"
+                                           name="allow_sl_adjustment">
+                                    <label class="form-check-label small" for="allow-sl-adjustment">
+                                        <strong>Roll Up on SL</strong>
+                                        <br><span class="text-muted">Sell further OTM call instead of closing (once)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-2">
+                        <small class="text-muted d-block mb-2"><strong>Advanced Exit Strategies</strong></small>
+
+                        <!-- DTE-based Exit Option -->
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="use-dte-exit"
+                                   name="use_dte_exit" onchange="toggleDteParams()">
+                            <label class="form-check-label" for="use-dte-exit">
+                                <strong>DTE Exit</strong>
+                            </label>
+                            <div class="ms-4 mt-1" id="dte-exit-params" style="display: none;">
+                                <div class="input-group input-group-sm" style="max-width: 200px;">
+                                    <input type="number" class="form-control" id="dte-exit-threshold"
+                                           name="dte_exit_threshold" value="7" min="1" max="21" step="1">
+                                    <span class="input-group-text">days to expiry</span>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Close position when DTE falls below threshold (avoid gamma risk)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Trailing Stop Option -->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use-trailing-stop"
+                                   name="use_trailing_stop" onchange="toggleTrailingStopParams()">
+                            <label class="form-check-label" for="use-trailing-stop">
+                                <strong>Trailing Stop</strong>
+                            </label>
+                            <div class="ms-4 mt-1" id="trailing-stop-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small">Activation</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control" id="trailing-stop-activation"
+                                                   name="trailing_stop_activation" value="25" min="10" max="80" step="5">
+                                            <span class="input-group-text">% profit</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Trail Distance</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control" id="trailing-stop-distance"
+                                                   name="trailing_stop_distance" value="15" min="5" max="50" step="5">
+                                            <span class="input-group-text">% pullback</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Lock in profits: activates at 25% profit, exits if profit drops 15% from high
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Initial Capital -->
+                    <div class="mb-3">
+                        <label class="form-label">Initial Capital</label>
+                        <input type="number" class="form-control" id="initial-capital"
+                               name="initial_capital" value="1000000" min="100000" step="100000">
+                    </div>
+
+                    <!-- Entry Filters -->
+                    <div class="mb-3">
+                        <label class="form-label">Entry Filters</label>
+
+                        <!-- Multi-Timeframe EMA Trend Filter -->
+                        <div class="mb-2">
+                            <label class="form-label small"><strong>EMA Trend Filter</strong></label>
+                            <select class="form-select form-select-sm" id="trend-filter-mode" name="trend_filter_mode">
+                                <option value="NONE" selected>None (No Filter)</option>
+                                <option value="BEARISH">Bearish (20 EMA &lt; 50 EMA)</option>
+                                <option value="BULLISH">Bullish (20 EMA &gt; 50 EMA)</option>
+                                <option value="GOLDEN_CROSS">Golden Cross (50 EMA &gt; 200 EMA)</option>
+                                <option value="DEATH_CROSS">Death Cross (50 EMA &lt; 200 EMA)</option>
+                                <option value="BULLISH_ALIGNED">Bullish Aligned (20 &gt; 50 &gt; 200 EMA)</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                Filter entries based on multi-timeframe EMA alignment
+                            </small>
+                        </div>
+
+                        <!-- RSI Filter -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-rsi-filter"
+                                   name="use_rsi_filter" onchange="toggleRsiParams()">
+                            <label class="form-check-label small" for="use-rsi-filter">
+                                <strong>RSI Filter (40-70 Range)</strong>
+                                <br><span class="text-muted">Enter when RSI is in bullish but not overbought zone</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="rsi-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small">Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="rsi-period"
+                                               name="rsi_period" value="14" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Min RSI</label>
+                                        <input type="number" class="form-control form-control-sm" id="rsi-min"
+                                               name="rsi_min" value="40" min="10" max="50" step="5">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Max RSI</label>
+                                        <input type="number" class="form-control form-control-sm" id="rsi-max"
+                                               name="rsi_max" value="70" min="50" max="90" step="5">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    RSI 40-70: Bullish momentum without being overbought (ideal for covered calls)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Stochastic Filter -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-stochastic-filter"
+                                   name="use_stochastic_filter" onchange="toggleStochasticParams()">
+                            <label class="form-check-label small" for="use-stochastic-filter">
+                                <strong>Stochastic Filter (%K crossing below %D)</strong>
+                                <br><span class="text-muted">Enter when momentum is turning from overbought</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="stochastic-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small">%K Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="stochastic-k-period"
+                                               name="stochastic_k_period" value="14" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">%D Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="stochastic-d-period"
+                                               name="stochastic_d_period" value="3" min="1" max="10" step="1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Smoothing</label>
+                                        <input type="number" class="form-control form-control-sm" id="stochastic-smoothing"
+                                               name="stochastic_smoothing" value="3" min="1" max="10" step="1">
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="form-label small">Overbought Level</label>
+                                    <input type="number" class="form-control form-control-sm" id="stochastic-overbought"
+                                           name="stochastic_overbought" value="70" min="60" max="90" step="5" style="max-width: 100px;">
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Signal: %K crosses below %D after being overbought (&gt;70)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Supertrend Filter -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-supertrend-filter"
+                                   name="use_supertrend_filter" onchange="toggleSupertrendParams()">
+                            <label class="form-check-label small" for="use-supertrend-filter">
+                                <strong>Supertrend Filter (Bullish Trend)</strong>
+                                <br><span class="text-muted">Enter only when price is above Supertrend line</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="supertrend-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small">ATR Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="supertrend-period"
+                                               name="supertrend_period" value="10" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Multiplier</label>
+                                        <input type="number" class="form-control form-control-sm" id="supertrend-multiplier"
+                                               name="supertrend_multiplier" value="3.0" min="1.0" max="5.0" step="0.5">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Signal: Price &gt; Supertrend = bullish trend, good for covered calls
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- VWAP Filter -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-vwap-filter"
+                                   name="use_vwap_filter" onchange="toggleVwapParams()">
+                            <label class="form-check-label small" for="use-vwap-filter">
+                                <strong>VWAP Filter (Volume Weighted Average Price)</strong>
+                                <br><span class="text-muted">Enter based on price vs VWAP (institutional support)</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="vwap-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small">Mode</label>
+                                        <select class="form-select form-select-sm" id="vwap-mode" name="vwap_mode">
+                                            <option value="ABOVE" selected>Above VWAP (Bullish)</option>
+                                            <option value="BELOW">Below VWAP (Bearish)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Period (days)</label>
+                                        <input type="number" class="form-control form-control-sm" id="vwap-period"
+                                               name="vwap_period" value="1" min="1" max="20" step="1">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Price &gt; VWAP = institutional buying support (good for covered calls)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Bollinger Bands Filter -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-bollinger-filter"
+                                   name="use_bollinger_filter" onchange="toggleBollingerParams()">
+                            <label class="form-check-label small" for="use-bollinger-filter">
+                                <strong>Bollinger Bands Filter (Not Overbought)</strong>
+                                <br><span class="text-muted">Enter only when price is below upper band</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="bollinger-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small">SMA Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="bollinger-period"
+                                               name="bollinger_period" value="20" min="10" max="50" step="1">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Std Deviations</label>
+                                        <input type="number" class="form-control form-control-sm" id="bollinger-std"
+                                               name="bollinger_std" value="2.0" min="1.0" max="3.0" step="0.5">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Price &lt; Upper Band = not overbought (ideal entry for covered calls)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- ADX Filter (Trend Strength) -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-adx-filter"
+                                   name="use_adx_filter" onchange="toggleAdxParams()">
+                            <label class="form-check-label small" for="use-adx-filter">
+                                <strong>ADX Filter (Trend Strength)</strong>
+                                <br><span class="text-muted">Enter only when stock is trending (ADX > threshold)</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="adx-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small">ADX Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="adx-period"
+                                               name="adx_period" value="14" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">ADX Threshold</label>
+                                        <input type="number" class="form-control form-control-sm" id="adx-threshold"
+                                               name="adx_threshold" value="25" min="15" max="40" step="1">
+                                    </div>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="adx-require-bullish"
+                                           name="adx_require_bullish" checked>
+                                    <label class="form-check-label small" for="adx-require-bullish">
+                                        Require Bullish (+DI &gt; -DI)
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    ADX &gt; 25 = trending market | +DI &gt; -DI = uptrend (bullish)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- MACD Filter (Momentum) -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-macd-filter"
+                                   name="use_macd_filter" onchange="toggleMacdParams()">
+                            <label class="form-check-label small" for="use-macd-filter">
+                                <strong>MACD Filter (Momentum)</strong>
+                                <br><span class="text-muted">Enter based on MACD momentum signals</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="macd-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small">Fast EMA</label>
+                                        <input type="number" class="form-control form-control-sm" id="macd-fast"
+                                               name="macd_fast" value="12" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Slow EMA</label>
+                                        <input type="number" class="form-control form-control-sm" id="macd-slow"
+                                               name="macd_slow" value="26" min="10" max="50" step="1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Signal</label>
+                                        <input type="number" class="form-control form-control-sm" id="macd-signal"
+                                               name="macd_signal" value="9" min="3" max="20" step="1">
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="form-label small">MACD Mode</label>
+                                    <select class="form-select form-select-sm" id="macd-mode" name="macd_mode">
+                                        <option value="BULLISH" selected>Bullish (MACD &gt; Signal)</option>
+                                        <option value="REVERSAL">Reversal (Histogram turning negative)</option>
+                                    </select>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Bullish: MACD above Signal = momentum up | Reversal: Histogram fading = premium decay opportunity
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Williams %R Filter (Momentum Oscillator) -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-williams-filter"
+                                   name="use_williams_filter" onchange="toggleWilliamsParams()">
+                            <label class="form-check-label small" for="use-williams-filter">
+                                <strong>Williams %R Filter (Momentum Oscillator)</strong>
+                                <br><span class="text-muted">Enter when momentum turns from overbought</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="williams-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small">Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="williams-period"
+                                               name="williams_period" value="14" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Overbought</label>
+                                        <input type="number" class="form-control form-control-sm" id="williams-overbought"
+                                               name="williams_overbought" value="-20" min="-30" max="-10" step="5">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Oversold</label>
+                                        <input type="number" class="form-control form-control-sm" id="williams-oversold"
+                                               name="williams_oversold" value="-80" min="-90" max="-70" step="5">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Signal: %R drops from overbought (above -20) = momentum turning, good for selling calls
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="run-btn">
+                        <i class="bi bi-play-fill me-2"></i>
+                        Run Backtest
+                    </button>
+                </form>
+
+                <!-- Progress -->
+                <div id="progress-section" class="mt-3" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                             id="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted" id="progress-message">Initializing...</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Backtests -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Recent Backtests
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" id="recent-backtests">
+                    <div class="list-group-item text-muted">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="col-lg-8">
+        <div id="results-section" style="display: none;">
+            <!-- Metrics Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-return">--</div>
+                        <div class="metric-label">Total Return</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-sharpe">--</div>
+                        <div class="metric-label">Sharpe Ratio</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-drawdown">--</div>
+                        <div class="metric-label">Max Drawdown</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-winrate">--</div>
+                        <div class="metric-label">Win Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equity Chart -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Equity Curve</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="equity-chart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Trade Log -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Trade Log</h6>
+                    <span class="badge bg-secondary" id="trade-count">0 trades</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>Strike</th>
+                                    <th>Premium</th>
+                                    <th>P&L</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trade-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placeholder -->
+        <div id="placeholder-section" class="text-center py-5">
+            <i class="bi bi-bar-chart-line display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">Configure and run a backtest</h4>
+            <p class="text-muted">Results will appear here</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const top10 = {{ top_10 | tojson }};
+    const nifty50 = {{ symbols | tojson }};
+    let equityChart = null;
+    let currentTaskId = null;
+
+    // Set default dates
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const twoYearsAgo = new Date(today);
+        twoYearsAgo.setFullYear(today.getFullYear() - 2);
+
+        document.getElementById('start-date').value = twoYearsAgo.toISOString().split('T')[0];
+        document.getElementById('end-date').value = today.toISOString().split('T')[0];
+
+        loadRecentBacktests();
+        updateExitStrategy();  // Initialize exit strategy
+    });
+
+    function updateExitStrategy() {
+        const useProfitTarget = document.getElementById('use-profit-target').checked;
+        const useStopLoss = document.getElementById('use-stop-loss').checked;
+        const profitParams = document.getElementById('profit-target-params');
+        const stopParams = document.getElementById('stop-loss-params');
+        const exitStrategyInput = document.getElementById('exit-strategy');
+
+        // Show/hide parameter inputs based on checkboxes
+        profitParams.style.display = useProfitTarget ? 'block' : 'none';
+        stopParams.style.display = useStopLoss ? 'block' : 'none';
+
+        // Determine exit strategy based on selections
+        if (useProfitTarget && useStopLoss) {
+            exitStrategyInput.value = 'PROFIT_TARGET_AND_STOP_LOSS';
+        } else if (useProfitTarget) {
+            exitStrategyInput.value = 'PROFIT_TARGET';
+        } else if (useStopLoss) {
+            exitStrategyInput.value = 'STOP_LOSS';
+        } else {
+            exitStrategyInput.value = 'HOLD_TO_EXPIRY';
+        }
+    }
+
+    function toggleAtrParams() {
+        const strikeMethod = document.getElementById('strike-method').value;
+        const atrParams = document.getElementById('atr-params');
+        atrParams.style.display = strikeMethod === 'ATR_BASED' ? 'block' : 'none';
+    }
+
+    function toggleStrikeParams() {
+        const strikeMethod = document.getElementById('strike-method').value;
+        const atrParams = document.getElementById('atr-params');
+        const pivotParams = document.getElementById('pivot-params');
+        const bollingerStrikeInfo = document.getElementById('bollinger-strike-info');
+
+        // Show/hide ATR params
+        atrParams.style.display = strikeMethod === 'ATR_BASED' ? 'block' : 'none';
+
+        // Show/hide Pivot params
+        pivotParams.style.display = (strikeMethod === 'PIVOT_R1' || strikeMethod === 'PIVOT_R2') ? 'block' : 'none';
+
+        // Show/hide Bollinger strike info
+        bollingerStrikeInfo.style.display = strikeMethod === 'BOLLINGER_UPPER' ? 'block' : 'none';
+    }
+
+    function toggleRsiParams() {
+        const useRsi = document.getElementById('use-rsi-filter').checked;
+        const rsiParams = document.getElementById('rsi-params');
+        rsiParams.style.display = useRsi ? 'block' : 'none';
+    }
+
+    function toggleStochasticParams() {
+        const useStochastic = document.getElementById('use-stochastic-filter').checked;
+        const stochasticParams = document.getElementById('stochastic-params');
+        stochasticParams.style.display = useStochastic ? 'block' : 'none';
+    }
+
+    function toggleDteParams() {
+        const useDte = document.getElementById('use-dte-exit').checked;
+        const dteParams = document.getElementById('dte-exit-params');
+        dteParams.style.display = useDte ? 'block' : 'none';
+    }
+
+    function toggleTrailingStopParams() {
+        const useTrailing = document.getElementById('use-trailing-stop').checked;
+        const trailingParams = document.getElementById('trailing-stop-params');
+        trailingParams.style.display = useTrailing ? 'block' : 'none';
+    }
+
+    function toggleSupertrendParams() {
+        const useSupertrend = document.getElementById('use-supertrend-filter').checked;
+        const supertrendParams = document.getElementById('supertrend-params');
+        supertrendParams.style.display = useSupertrend ? 'block' : 'none';
+    }
+
+    function toggleVwapParams() {
+        const useVwap = document.getElementById('use-vwap-filter').checked;
+        const vwapParams = document.getElementById('vwap-params');
+        vwapParams.style.display = useVwap ? 'block' : 'none';
+    }
+
+    function toggleBollingerParams() {
+        const useBollinger = document.getElementById('use-bollinger-filter').checked;
+        const bollingerParams = document.getElementById('bollinger-params');
+        bollingerParams.style.display = useBollinger ? 'block' : 'none';
+    }
+
+    function toggleAdxParams() {
+        const useAdx = document.getElementById('use-adx-filter').checked;
+        const adxParams = document.getElementById('adx-params');
+        adxParams.style.display = useAdx ? 'block' : 'none';
+    }
+
+    function toggleMacdParams() {
+        const useMacd = document.getElementById('use-macd-filter').checked;
+        const macdParams = document.getElementById('macd-params');
+        macdParams.style.display = useMacd ? 'block' : 'none';
+    }
+
+    function toggleWilliamsParams() {
+        const useWilliams = document.getElementById('use-williams-filter').checked;
+        const williamsParams = document.getElementById('williams-params');
+        williamsParams.style.display = useWilliams ? 'block' : 'none';
+    }
+
+    function selectPreset(preset) {
+        const select = document.getElementById('symbols');
+        const options = select.options;
+
+        for (let i = 0; i < options.length; i++) {
+            if (preset === 'top10') {
+                options[i].selected = top10.includes(options[i].value);
+            } else if (preset === 'nifty50') {
+                options[i].selected = true;
+            } else {
+                options[i].selected = false;
+            }
+        }
+    }
+
+    // Form submission
+    document.getElementById('backtest-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const symbols = Array.from(document.getElementById('symbols').selectedOptions).map(o => o.value);
+
+        if (symbols.length === 0) {
+            alert('Please select at least one stock');
+            return;
+        }
+
+        const data = {
+            symbols: symbols,
+            start_date: document.getElementById('start-date').value,
+            end_date: document.getElementById('end-date').value,
+            strike_method: document.getElementById('strike-method').value,
+            exit_strategy: document.getElementById('exit-strategy').value,
+            initial_capital: parseFloat(document.getElementById('initial-capital').value),
+            profit_target_pct: parseFloat(document.getElementById('profit-target-pct').value),
+            stop_loss_multiple: parseFloat(document.getElementById('stop-loss-multiple').value),
+            allow_sl_adjustment: document.getElementById('allow-sl-adjustment').checked,
+            // Multi-timeframe EMA trend filter
+            trend_filter_mode: document.getElementById('trend-filter-mode').value,
+            // ATR-based strike selection
+            atr_multiplier: parseFloat(document.getElementById('atr-multiplier').value),
+            // RSI filter parameters
+            use_rsi_filter: document.getElementById('use-rsi-filter').checked,
+            rsi_period: parseInt(document.getElementById('rsi-period').value),
+            rsi_min: parseFloat(document.getElementById('rsi-min').value),
+            rsi_max: parseFloat(document.getElementById('rsi-max').value),
+            // Stochastic filter parameters
+            use_stochastic_filter: document.getElementById('use-stochastic-filter').checked,
+            stochastic_k_period: parseInt(document.getElementById('stochastic-k-period').value),
+            stochastic_d_period: parseInt(document.getElementById('stochastic-d-period').value),
+            stochastic_smoothing: parseInt(document.getElementById('stochastic-smoothing').value),
+            stochastic_overbought: parseFloat(document.getElementById('stochastic-overbought').value),
+            // Advanced exit strategies - DTE-based exit
+            use_dte_exit: document.getElementById('use-dte-exit').checked,
+            dte_exit_threshold: parseInt(document.getElementById('dte-exit-threshold').value),
+            // Advanced exit strategies - Trailing stop
+            use_trailing_stop: document.getElementById('use-trailing-stop').checked,
+            trailing_stop_activation: parseFloat(document.getElementById('trailing-stop-activation').value),
+            trailing_stop_distance: parseFloat(document.getElementById('trailing-stop-distance').value),
+            // Supertrend filter parameters
+            use_supertrend_filter: document.getElementById('use-supertrend-filter').checked,
+            supertrend_period: parseInt(document.getElementById('supertrend-period').value),
+            supertrend_multiplier: parseFloat(document.getElementById('supertrend-multiplier').value),
+            // VWAP filter parameters
+            use_vwap_filter: document.getElementById('use-vwap-filter').checked,
+            vwap_mode: document.getElementById('vwap-mode').value,
+            vwap_period: parseInt(document.getElementById('vwap-period').value),
+            // Bollinger Bands filter parameters
+            use_bollinger_filter: document.getElementById('use-bollinger-filter').checked,
+            bollinger_period: parseInt(document.getElementById('bollinger-period').value),
+            bollinger_std: parseFloat(document.getElementById('bollinger-std').value),
+            // ADX filter parameters (trend strength)
+            use_adx_filter: document.getElementById('use-adx-filter').checked,
+            adx_period: parseInt(document.getElementById('adx-period').value),
+            adx_threshold: parseFloat(document.getElementById('adx-threshold').value),
+            adx_require_bullish: document.getElementById('adx-require-bullish').checked,
+            // MACD filter parameters (momentum)
+            use_macd_filter: document.getElementById('use-macd-filter').checked,
+            macd_fast: parseInt(document.getElementById('macd-fast').value),
+            macd_slow: parseInt(document.getElementById('macd-slow').value),
+            macd_signal: parseInt(document.getElementById('macd-signal').value),
+            macd_mode: document.getElementById('macd-mode').value,
+            // Williams %R filter parameters (momentum oscillator)
+            use_williams_filter: document.getElementById('use-williams-filter').checked,
+            williams_period: parseInt(document.getElementById('williams-period').value),
+            williams_overbought: parseFloat(document.getElementById('williams-overbought').value),
+            williams_oversold: parseFloat(document.getElementById('williams-oversold').value)
+        };
+
+        // Show progress
+        document.getElementById('progress-section').style.display = 'block';
+        document.getElementById('run-btn').disabled = true;
+        document.getElementById('placeholder-section').style.display = 'none';
+
+        try {
+            const response = await fetch('/api/backtest/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                alert('Error: ' + result.error);
+                resetProgress();
+                return;
+            }
+
+            currentTaskId = result.task_id;
+            pollStatus();
+
+        } catch (error) {
+            alert('Error starting backtest: ' + error);
+            resetProgress();
+        }
+    });
+
+    async function pollStatus() {
+        if (!currentTaskId) return;
+
+        try {
+            const response = await fetch(`/api/backtest/status/${currentTaskId}`);
+            const status = await response.json();
+
+            document.getElementById('progress-bar').style.width = status.progress + '%';
+            document.getElementById('progress-message').textContent = status.message;
+
+            if (status.status === 'completed') {
+                showResults(status.result);
+                resetProgress();
+                loadRecentBacktests();
+            } else if (status.status === 'failed') {
+                alert('Backtest failed: ' + status.message);
+                resetProgress();
+            } else {
+                setTimeout(pollStatus, 1000);
+            }
+
+        } catch (error) {
+            console.error('Polling error:', error);
+            setTimeout(pollStatus, 2000);
+        }
+    }
+
+    function resetProgress() {
+        document.getElementById('progress-section').style.display = 'none';
+        document.getElementById('run-btn').disabled = false;
+        document.getElementById('progress-bar').style.width = '0%';
+        currentTaskId = null;
+    }
+
+    async function showResults(result) {
+        if (!result || !result.backtest_id) return;
+
+        try {
+            const response = await fetch(`/api/backtest/${result.backtest_id}`);
+            const data = await response.json();
+
+            // Show results section
+            document.getElementById('results-section').style.display = 'block';
+
+            // Update metrics
+            const metrics = result.metrics;
+            document.getElementById('metric-return').textContent =
+                (metrics.total_return || 0).toFixed(2) + '%';
+            document.getElementById('metric-return').className =
+                'metric-value ' + (metrics.total_return >= 0 ? 'positive' : 'negative');
+
+            document.getElementById('metric-sharpe').textContent =
+                (metrics.sharpe_ratio || 0).toFixed(2);
+            document.getElementById('metric-drawdown').textContent =
+                (metrics.max_drawdown || 0).toFixed(2) + '%';
+            document.getElementById('metric-winrate').textContent =
+                (metrics.win_rate || 0).toFixed(1) + '%';
+
+            // Update chart
+            updateEquityChart(data.equity);
+
+            // Update trade table
+            updateTradeTable(data.trades);
+
+        } catch (error) {
+            console.error('Error loading results:', error);
+        }
+    }
+
+    function updateEquityChart(equityData) {
+        const ctx = document.getElementById('equity-chart').getContext('2d');
+
+        if (equityChart) {
+            equityChart.destroy();
+        }
+
+        const labels = equityData.map(d => d.date);
+        const values = equityData.map(d => d.portfolio_value);
+
+        equityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: values,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                    fill: true,
+                    tension: 0.1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: { color: '#30363d' }
+                    },
+                    y: {
+                        display: true,
+                        grid: { color: '#30363d' }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateTradeTable(trades) {
+        const tbody = document.getElementById('trade-table');
+        tbody.innerHTML = '';
+
+        document.getElementById('trade-count').textContent = trades.length + ' trades';
+
+        trades.forEach(trade => {
+            const row = document.createElement('tr');
+            const pnlClass = trade.total_pnl >= 0 ? 'positive' : 'negative';
+
+            row.innerHTML = `
+                <td>${trade.symbol}</td>
+                <td>${trade.entry_date}</td>
+                <td>${trade.exit_date || '-'}</td>
+                <td>${trade.strike_price?.toFixed(0) || '-'}</td>
+                <td>${trade.premium_received?.toFixed(2) || '-'}</td>
+                <td class="${pnlClass}">${trade.total_pnl?.toFixed(2) || '-'}</td>
+                <td><span class="badge bg-secondary">${trade.exit_reason || '-'}</span></td>
+            `;
+
+            tbody.appendChild(row);
+        });
+    }
+
+    async function loadRecentBacktests() {
+        try {
+            const response = await fetch('/api/backtest/history');
+            const backtests = await response.json();
+
+            const container = document.getElementById('recent-backtests');
+            container.innerHTML = '';
+
+            if (backtests.length === 0) {
+                container.innerHTML = '<div class="list-group-item text-muted">No backtests yet</div>';
+                return;
+            }
+
+            backtests.slice(0, 5).forEach(bt => {
+                const item = document.createElement('a');
+                item.href = `/results/${bt.id}`;
+                item.className = 'list-group-item list-group-item-action';
+
+                const returnClass = (bt.total_return || 0) >= 0 ? 'positive' : 'negative';
+
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">${bt.created_at}</small>
+                            <br>
+                            <span>${bt.strike_method}</span>
+                        </div>
+                        <span class="${returnClass}">${(bt.total_return || 0).toFixed(1)}%</span>
+                    </div>
+                `;
+
+                container.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    }
+</script>
+{% endblock %}

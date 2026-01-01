@@ -1,0 +1,770 @@
+{% extends "base.html" %}
+
+{% block title %}Adaptive Backtest - Covered Calls{% endblock %}
+
+{% block extra_css %}
+<style>
+    .iv-regime-card {
+        background: linear-gradient(135deg, #1f2937 0%, #161b22 100%);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    .iv-regime-card:hover {
+        border-color: #58a6ff;
+    }
+    .iv-regime-card.low { border-left: 3px solid #3fb950; }
+    .iv-regime-card.normal { border-left: 3px solid #58a6ff; }
+    .iv-regime-card.elevated { border-left: 3px solid #d29922; }
+    .iv-regime-card.high { border-left: 3px solid #f85149; }
+
+    .regime-name { font-weight: 600; font-size: 0.9rem; }
+    .regime-value { font-size: 1.1rem; color: #58a6ff; }
+    .regime-meta { font-size: 0.75rem; color: #8b949e; }
+
+    .strategy-badge {
+        background: linear-gradient(135deg, #238636, #2ea043);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .iv-chart-container {
+        height: 150px;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Strategy Info Banner -->
+    <div class="col-12 mb-4">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="bi bi-graph-up me-2 text-primary"></i>
+                            Adaptive Delta Strategy
+                            <span class="strategy-badge ms-2">IV Percentile Based</span>
+                        </h5>
+                        <p class="text-muted mb-0 small">
+                            Dynamic strike selection based on implied volatility regime.
+                            Sells closer to money (higher delta) in low IV, farther OTM (lower delta) in high IV.
+                        </p>
+                    </div>
+                    <a href="/backtest" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i> Standard Backtest
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Panel -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-sliders me-2"></i>
+                    Adaptive Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="backtest-form">
+                    <!-- Hidden field for strike method -->
+                    <input type="hidden" id="strike-method" name="strike_method" value="ADAPTIVE_DELTA">
+
+                    <!-- IV Regime Preview -->
+                    <div class="mb-3">
+                        <label class="form-label">IV Regime Rules</label>
+                        <div class="row g-2">
+                            {% for regime in iv_regimes %}
+                            <div class="col-6">
+                                <div class="iv-regime-card {{ regime.name|lower }}">
+                                    <div class="regime-name">{{ regime.name }}</div>
+                                    <div class="regime-value">Delta {{ regime.target_delta }}</div>
+                                    <div class="regime-meta">IV {{ regime.iv_range }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row g-2">
+                            <div class="col">
+                                <input type="date" class="form-control" id="start-date" name="start_date" required>
+                                <small class="text-muted">Start</small>
+                            </div>
+                            <div class="col">
+                                <input type="date" class="form-control" id="end-date" name="end_date" required>
+                                <small class="text-muted">End</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Stocks</label>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="selectPreset('top10')">
+                                Top 10
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="selectPreset('nifty50')">
+                                NIFTY 50
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectPreset('clear')">
+                                Clear
+                            </button>
+                        </div>
+                        <select class="form-select" id="symbols" name="symbols" multiple size="6" required>
+                            {% for symbol in symbols %}
+                            <option value="{{ symbol }}" {% if symbol in top_10 %}selected{% endif %}>
+                                {{ symbol }} (Lot: {{ lot_sizes.get(symbol, 1) }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+                    </div>
+
+                    <!-- Exit Strategy -->
+                    <div class="mb-3">
+                        <label class="form-label">Exit Strategy</label>
+                        <select class="form-select" id="exit-strategy" name="exit_strategy" onchange="toggleExitParams()">
+                            {% for rule in exit_rules %}
+                            <option value="{{ rule }}" {% if rule == 'PROFIT_TARGET_AND_STOP_LOSS' %}selected{% endif %}>
+                                {{ rule.replace('_', ' ') }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Exit Parameters -->
+                    <div id="exit-params" class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-6" id="profit-target-group">
+                                <label class="form-label">Profit Target %</label>
+                                <input type="number" class="form-control" id="profit-target-pct"
+                                       name="profit_target_pct" value="50" min="10" max="100" step="5">
+                                <small class="text-muted">50% recommended</small>
+                            </div>
+                            <div class="col-6" id="stop-loss-group">
+                                <label class="form-label">Stop Loss Multiple</label>
+                                <input type="number" class="form-control" id="stop-loss-multiple"
+                                       name="stop_loss_multiple" value="2.0" min="0.5" max="5" step="0.5">
+                                <small class="text-muted">2x premium</small>
+                            </div>
+                        </div>
+                        <!-- SL Adjustment Option -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="allow-sl-adjustment"
+                                   name="allow_sl_adjustment">
+                            <label class="form-check-label small" for="allow-sl-adjustment">
+                                <strong>Roll Up on Stop Loss</strong>
+                                <span class="text-muted">- Sell further OTM call instead of closing (once per position)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Initial Capital -->
+                    <div class="mb-3">
+                        <label class="form-label">Initial Capital</label>
+                        <input type="number" class="form-control" id="initial-capital"
+                               name="initial_capital" value="1000000" min="100000" step="100000">
+                    </div>
+
+                    <!-- Entry Filters -->
+                    <div class="mb-3">
+                        <label class="form-label">Entry Filters</label>
+
+                        <!-- Multi-Timeframe EMA Trend Filter -->
+                        <div class="mb-2">
+                            <label class="form-label small"><strong>EMA Trend Filter</strong></label>
+                            <select class="form-select form-select-sm" id="trend-filter-mode" name="trend_filter_mode">
+                                <option value="NONE" selected>None (No Filter)</option>
+                                <option value="BEARISH">Bearish (20 EMA &lt; 50 EMA)</option>
+                                <option value="BULLISH">Bullish (20 EMA &gt; 50 EMA)</option>
+                                <option value="GOLDEN_CROSS">Golden Cross (50 EMA &gt; 200 EMA)</option>
+                                <option value="DEATH_CROSS">Death Cross (50 EMA &lt; 200 EMA)</option>
+                                <option value="BULLISH_ALIGNED">Bullish Aligned (20 &gt; 50 &gt; 200 EMA)</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                Filter entries based on multi-timeframe EMA alignment
+                            </small>
+                        </div>
+
+                        <!-- RSI Filter -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-rsi-filter"
+                                   name="use_rsi_filter" onchange="toggleRsiParams()">
+                            <label class="form-check-label small" for="use-rsi-filter">
+                                <strong>RSI Filter (40-70 Range)</strong>
+                                <br><span class="text-muted">Enter when RSI is in bullish but not overbought zone</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="rsi-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small">Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="rsi-period"
+                                               name="rsi_period" value="14" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Min RSI</label>
+                                        <input type="number" class="form-control form-control-sm" id="rsi-min"
+                                               name="rsi_min" value="40" min="10" max="50" step="5">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Max RSI</label>
+                                        <input type="number" class="form-control form-control-sm" id="rsi-max"
+                                               name="rsi_max" value="70" min="50" max="90" step="5">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    RSI 40-70: Bullish momentum without being overbought (ideal for covered calls)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Supertrend Filter -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="use-supertrend-filter"
+                                   name="use_supertrend_filter" onchange="toggleSupertrendParams()">
+                            <label class="form-check-label small" for="use-supertrend-filter">
+                                <strong>Supertrend Filter (Bullish Trend)</strong>
+                                <br><span class="text-muted">Enter only when price is above Supertrend line</span>
+                            </label>
+                            <div class="ms-4 mt-2" id="supertrend-params" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small">ATR Period</label>
+                                        <input type="number" class="form-control form-control-sm" id="supertrend-period"
+                                               name="supertrend_period" value="10" min="5" max="30" step="1">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Multiplier</label>
+                                        <input type="number" class="form-control form-control-sm" id="supertrend-multiplier"
+                                               name="supertrend_multiplier" value="3.0" min="1.0" max="5.0" step="0.5">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Signal: Price &gt; Supertrend = bullish trend, good for covered calls
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="run-btn">
+                        <i class="bi bi-play-fill me-2"></i>
+                        Run Adaptive Backtest
+                    </button>
+                </form>
+
+                <!-- Progress -->
+                <div id="progress-section" class="mt-3" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                             id="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted" id="progress-message">Initializing...</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Backtests -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Recent Adaptive Backtests
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" id="recent-backtests">
+                    <div class="list-group-item text-muted">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="col-lg-8">
+        <div id="results-section" style="display: none;">
+            <!-- Metrics Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-return">--</div>
+                        <div class="metric-label">Total Return</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-sharpe">--</div>
+                        <div class="metric-label">Sharpe Ratio</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-drawdown">--</div>
+                        <div class="metric-label">Max Drawdown</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metric-winrate">--</div>
+                        <div class="metric-label">Win Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IV Percentile Summary -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>
+                        IV Regime Distribution
+                    </h6>
+                    <span class="badge bg-secondary" id="regime-period">--</span>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center" id="regime-distribution">
+                        <div class="col-3">
+                            <div class="fw-bold text-success" id="regime-low">--</div>
+                            <small class="text-muted">LOW (Delta 0.35)</small>
+                        </div>
+                        <div class="col-3">
+                            <div class="fw-bold text-primary" id="regime-normal">--</div>
+                            <small class="text-muted">NORMAL (Delta 0.30)</small>
+                        </div>
+                        <div class="col-3">
+                            <div class="fw-bold text-warning" id="regime-elevated">--</div>
+                            <small class="text-muted">ELEVATED (Delta 0.25)</small>
+                        </div>
+                        <div class="col-3">
+                            <div class="fw-bold text-danger" id="regime-high">--</div>
+                            <small class="text-muted">HIGH (Delta 0.20)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equity Chart -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Equity Curve</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="equity-chart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Trade Log -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Trade Log</h6>
+                    <span class="badge bg-secondary" id="trade-count">0 trades</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>Strike</th>
+                                    <th>Delta</th>
+                                    <th>IV</th>
+                                    <th>Premium</th>
+                                    <th>P&L</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trade-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placeholder -->
+        <div id="placeholder-section" class="text-center py-5">
+            <i class="bi bi-graph-up display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">Adaptive IV Percentile Strategy</h4>
+            <p class="text-muted">
+                Configure parameters and run backtest to see results.<br>
+                Strike selection adjusts automatically based on IV regime.
+            </p>
+            <div class="mt-4">
+                <div class="row justify-content-center g-2">
+                    {% for regime in iv_regimes %}
+                    <div class="col-auto">
+                        <span class="badge {{ 'bg-success' if regime.name == 'LOW' else 'bg-primary' if regime.name == 'NORMAL' else 'bg-warning' if regime.name == 'ELEVATED' else 'bg-danger' }}">
+                            {{ regime.name }}: Delta {{ regime.target_delta }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const top10 = {{ top_10 | tojson }};
+    const nifty50 = {{ symbols | tojson }};
+    let equityChart = null;
+    let currentTaskId = null;
+
+    // Set default dates
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const twoYearsAgo = new Date(today);
+        twoYearsAgo.setFullYear(today.getFullYear() - 2);
+
+        document.getElementById('start-date').value = twoYearsAgo.toISOString().split('T')[0];
+        document.getElementById('end-date').value = today.toISOString().split('T')[0];
+
+        loadRecentBacktests();
+        toggleExitParams();
+    });
+
+    function toggleExitParams() {
+        const strategy = document.getElementById('exit-strategy').value;
+        const exitParams = document.getElementById('exit-params');
+        const profitGroup = document.getElementById('profit-target-group');
+        const stopGroup = document.getElementById('stop-loss-group');
+
+        if (strategy === 'HOLD_TO_EXPIRY') {
+            exitParams.style.display = 'none';
+        } else if (strategy === 'PROFIT_TARGET') {
+            exitParams.style.display = 'block';
+            profitGroup.style.display = 'block';
+            stopGroup.style.display = 'none';
+        } else if (strategy === 'STOP_LOSS') {
+            exitParams.style.display = 'block';
+            profitGroup.style.display = 'none';
+            stopGroup.style.display = 'block';
+        } else if (strategy === 'PROFIT_TARGET_AND_STOP_LOSS') {
+            exitParams.style.display = 'block';
+            profitGroup.style.display = 'block';
+            stopGroup.style.display = 'block';
+        }
+    }
+
+    function selectPreset(preset) {
+        const select = document.getElementById('symbols');
+        const options = select.options;
+
+        for (let i = 0; i < options.length; i++) {
+            if (preset === 'top10') {
+                options[i].selected = top10.includes(options[i].value);
+            } else if (preset === 'nifty50') {
+                options[i].selected = true;
+            } else {
+                options[i].selected = false;
+            }
+        }
+    }
+
+    function toggleRsiParams() {
+        const useRsi = document.getElementById('use-rsi-filter').checked;
+        const rsiParams = document.getElementById('rsi-params');
+        rsiParams.style.display = useRsi ? 'block' : 'none';
+    }
+
+    function toggleSupertrendParams() {
+        const useSupertrend = document.getElementById('use-supertrend-filter').checked;
+        const supertrendParams = document.getElementById('supertrend-params');
+        supertrendParams.style.display = useSupertrend ? 'block' : 'none';
+    }
+
+    // Form submission
+    document.getElementById('backtest-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const symbols = Array.from(document.getElementById('symbols').selectedOptions).map(o => o.value);
+
+        if (symbols.length === 0) {
+            alert('Please select at least one stock');
+            return;
+        }
+
+        const data = {
+            symbols: symbols,
+            start_date: document.getElementById('start-date').value,
+            end_date: document.getElementById('end-date').value,
+            strike_method: 'ADAPTIVE_DELTA',  // Force adaptive strategy
+            exit_strategy: document.getElementById('exit-strategy').value,
+            initial_capital: parseFloat(document.getElementById('initial-capital').value),
+            profit_target_pct: parseFloat(document.getElementById('profit-target-pct').value),
+            stop_loss_multiple: parseFloat(document.getElementById('stop-loss-multiple').value),
+            allow_sl_adjustment: document.getElementById('allow-sl-adjustment').checked,
+            // Multi-timeframe EMA trend filter
+            trend_filter_mode: document.getElementById('trend-filter-mode').value,
+            // RSI filter parameters
+            use_rsi_filter: document.getElementById('use-rsi-filter').checked,
+            rsi_period: parseInt(document.getElementById('rsi-period').value),
+            rsi_min: parseFloat(document.getElementById('rsi-min').value),
+            rsi_max: parseFloat(document.getElementById('rsi-max').value),
+            // Supertrend filter parameters
+            use_supertrend_filter: document.getElementById('use-supertrend-filter').checked,
+            supertrend_period: parseInt(document.getElementById('supertrend-period').value),
+            supertrend_multiplier: parseFloat(document.getElementById('supertrend-multiplier').value)
+        };
+
+        // Show progress
+        document.getElementById('progress-section').style.display = 'block';
+        document.getElementById('run-btn').disabled = true;
+        document.getElementById('placeholder-section').style.display = 'none';
+
+        try {
+            const response = await fetch('/api/backtest/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                alert('Error: ' + result.error);
+                resetProgress();
+                return;
+            }
+
+            currentTaskId = result.task_id;
+            pollStatus();
+
+        } catch (error) {
+            alert('Error starting backtest: ' + error);
+            resetProgress();
+        }
+    });
+
+    async function pollStatus() {
+        if (!currentTaskId) return;
+
+        try {
+            const response = await fetch(`/api/backtest/status/${currentTaskId}`);
+            const status = await response.json();
+
+            document.getElementById('progress-bar').style.width = status.progress + '%';
+            document.getElementById('progress-message').textContent = status.message;
+
+            if (status.status === 'completed') {
+                showResults(status.result);
+                resetProgress();
+                loadRecentBacktests();
+            } else if (status.status === 'failed') {
+                alert('Backtest failed: ' + status.message);
+                resetProgress();
+            } else {
+                setTimeout(pollStatus, 1000);
+            }
+
+        } catch (error) {
+            console.error('Polling error:', error);
+            setTimeout(pollStatus, 2000);
+        }
+    }
+
+    function resetProgress() {
+        document.getElementById('progress-section').style.display = 'none';
+        document.getElementById('run-btn').disabled = false;
+        document.getElementById('progress-bar').style.width = '0%';
+        currentTaskId = null;
+    }
+
+    async function showResults(result) {
+        if (!result || !result.backtest_id) return;
+
+        try {
+            const response = await fetch(`/api/backtest/${result.backtest_id}`);
+            const data = await response.json();
+
+            // Show results section
+            document.getElementById('results-section').style.display = 'block';
+
+            // Update metrics
+            const metrics = result.metrics;
+            document.getElementById('metric-return').textContent =
+                (metrics.total_return || 0).toFixed(2) + '%';
+            document.getElementById('metric-return').className =
+                'metric-value ' + (metrics.total_return >= 0 ? 'positive' : 'negative');
+
+            document.getElementById('metric-sharpe').textContent =
+                (metrics.sharpe_ratio || 0).toFixed(2);
+            document.getElementById('metric-drawdown').textContent =
+                (metrics.max_drawdown || 0).toFixed(2) + '%';
+            document.getElementById('metric-winrate').textContent =
+                (metrics.win_rate || 0).toFixed(1) + '%';
+
+            // Calculate IV regime distribution from trades
+            calculateRegimeDistribution(data.trades);
+
+            // Update chart
+            updateEquityChart(data.equity);
+
+            // Update trade table
+            updateTradeTable(data.trades);
+
+        } catch (error) {
+            console.error('Error loading results:', error);
+        }
+    }
+
+    function calculateRegimeDistribution(trades) {
+        // Count trades by delta range to infer IV regime
+        let regimeCounts = { low: 0, normal: 0, elevated: 0, high: 0 };
+
+        trades.forEach(trade => {
+            const delta = trade.delta_at_entry || 0;
+            if (delta >= 0.33) {
+                regimeCounts.low++;
+            } else if (delta >= 0.27) {
+                regimeCounts.normal++;
+            } else if (delta >= 0.22) {
+                regimeCounts.elevated++;
+            } else {
+                regimeCounts.high++;
+            }
+        });
+
+        const total = trades.length || 1;
+        document.getElementById('regime-low').textContent =
+            Math.round((regimeCounts.low / total) * 100) + '%';
+        document.getElementById('regime-normal').textContent =
+            Math.round((regimeCounts.normal / total) * 100) + '%';
+        document.getElementById('regime-elevated').textContent =
+            Math.round((regimeCounts.elevated / total) * 100) + '%';
+        document.getElementById('regime-high').textContent =
+            Math.round((regimeCounts.high / total) * 100) + '%';
+        document.getElementById('regime-period').textContent =
+            `${trades.length} trades analyzed`;
+    }
+
+    function updateEquityChart(equityData) {
+        const ctx = document.getElementById('equity-chart').getContext('2d');
+
+        if (equityChart) {
+            equityChart.destroy();
+        }
+
+        const labels = equityData.map(d => d.date);
+        const values = equityData.map(d => d.portfolio_value);
+
+        equityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: values,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                    fill: true,
+                    tension: 0.1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: { color: '#30363d' }
+                    },
+                    y: {
+                        display: true,
+                        grid: { color: '#30363d' }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateTradeTable(trades) {
+        const tbody = document.getElementById('trade-table');
+        tbody.innerHTML = '';
+
+        document.getElementById('trade-count').textContent = trades.length + ' trades';
+
+        trades.forEach(trade => {
+            const row = document.createElement('tr');
+            const pnlClass = trade.total_pnl >= 0 ? 'positive' : 'negative';
+
+            row.innerHTML = `
+                <td>${trade.symbol}</td>
+                <td>${trade.entry_date}</td>
+                <td>${trade.exit_date || '-'}</td>
+                <td>${trade.strike_price?.toFixed(0) || '-'}</td>
+                <td>${trade.delta_at_entry?.toFixed(2) || '-'}</td>
+                <td>${(trade.iv_at_entry * 100)?.toFixed(1) || '-'}%</td>
+                <td>${trade.premium_received?.toFixed(2) || '-'}</td>
+                <td class="${pnlClass}">${trade.total_pnl?.toFixed(2) || '-'}</td>
+                <td><span class="badge bg-secondary">${trade.exit_reason || '-'}</span></td>
+            `;
+
+            tbody.appendChild(row);
+        });
+    }
+
+    async function loadRecentBacktests() {
+        try {
+            const response = await fetch('/api/backtest/history');
+            const backtests = await response.json();
+
+            const container = document.getElementById('recent-backtests');
+            container.innerHTML = '';
+
+            // Filter for ADAPTIVE_DELTA backtests
+            const adaptiveBacktests = backtests.filter(bt => bt.strike_method === 'ADAPTIVE_DELTA');
+
+            if (adaptiveBacktests.length === 0) {
+                container.innerHTML = '<div class="list-group-item text-muted">No adaptive backtests yet</div>';
+                return;
+            }
+
+            adaptiveBacktests.slice(0, 5).forEach(bt => {
+                const item = document.createElement('a');
+                item.href = `/results/${bt.id}`;
+                item.className = 'list-group-item list-group-item-action';
+
+                const returnClass = (bt.total_return || 0) >= 0 ? 'positive' : 'negative';
+
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">${bt.created_at}</small>
+                            <br>
+                            <span class="strategy-badge">ADAPTIVE</span>
+                        </div>
+                        <span class="${returnClass}">${(bt.total_return || 0).toFixed(1)}%</span>
+                    </div>
+                `;
+
+                container.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    }
+</script>
+{% endblock %}

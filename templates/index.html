@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Covered Calls Backtester - Home{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center py-5">
+            <h1 class="display-4 mb-4">
+                <i class="bi bi-graph-up-arrow text-primary"></i>
+                Covered Calls Backtester
+            </h1>
+            <p class="lead text-muted mb-4">
+                Backtest covered call strategies on Indian stocks with real market data
+            </p>
+
+            {% if authenticated %}
+            <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                <a href="/backtest" class="btn btn-primary btn-lg px-5">
+                    <i class="bi bi-calculator me-2"></i>
+                    Run Backtest
+                </a>
+                <a href="/data-management" class="btn btn-outline-secondary btn-lg px-5">
+                    <i class="bi bi-database me-2"></i>
+                    Manage Data
+                </a>
+            </div>
+            {% else %}
+            <a href="/login" class="btn btn-primary btn-lg px-5">
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+                Login with Zerodha
+            </a>
+            <p class="text-muted mt-3">
+                <small>Connect your Zerodha account to access historical data</small>
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Features -->
+        <div class="row g-4 mt-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-bar-chart-line display-4 text-primary mb-3"></i>
+                        <h5 class="card-title">Multiple Strategies</h5>
+                        <p class="card-text text-muted">
+                            Compare Delta-based, OTM percentage, and ATM strike selection
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-collection display-4 text-primary mb-3"></i>
+                        <h5 class="card-title">NIFTY 50 Stocks</h5>
+                        <p class="card-text text-muted">
+                            Test on top Indian F&O stocks with accurate lot sizes
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-clipboard-data display-4 text-primary mb-3"></i>
+                        <h5 class="card-title">Complete Metrics</h5>
+                        <p class="card-text text-muted">
+                            Sharpe ratio, max drawdown, premium yield, and more
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy Overview -->
+        <div class="card mt-5">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    What is a Covered Call?
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>A <strong>covered call</strong> is an options strategy where you:</p>
+                <ol>
+                    <li><strong>Own</strong> the underlying stock</li>
+                    <li><strong>Sell</strong> a call option against it</li>
+                </ol>
+                <p class="mb-0">
+                    This generates premium income in exchange for capping upside potential.
+                    It works best in sideways to moderately bullish markets.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
