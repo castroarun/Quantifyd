@@ -22,14 +22,33 @@ import { useUnit } from '@/contexts'
 import { formatWeightValue, convertToKg } from '@/lib/utils/units'
 import { RestTimer, TimerSettings, FullScreenTimer } from '@/components/timer'
 import { getTimerSettings, saveExerciseTimerDuration } from '@/lib/storage/timer'
+import { setInProgressExercise } from '@/lib/storage/inProgress'
 import { getFormTip } from '@/data/formTips'
 import { calculateWarmupSets } from '@/lib/utils/warmup'
+import {
+  hasActiveSession,
+  addSetToSession,
+  recordPR,
+  recordLevelUp,
+  endSession,
+  clearSession,
+  isSessionInactive,
+  getMinutesSinceLastActivity,
+  INACTIVITY_THRESHOLD_MINUTES
+} from '@/lib/storage/session'
+import SessionSummary from '@/components/workout/SessionSummary'
 
 interface WorkoutLoggerProps {
   profileId: string
   exerciseId: Exercise
   onLevelUp?: (newLevel: Level) => void
+  onRequestFullScreen?: () => void
+  onRegisterEndWorkout?: (endFn: () => void) => void
+  onCompletableSetsChange?: (hasCompletable: boolean) => void
 }
+
+// Double-tap detection threshold in milliseconds
+const DOUBLE_TAP_THRESHOLD = 300
 
 interface CelebrationState {
   show: boolean
@@ -47,10 +66,11 @@ interface Suggestion {
  * Logic:
  * - If most recent session is incomplete (1-2 sets), look at earlier sessions too
  * - For each set, use the HIGHER suggestion between recent incomplete + earlier complete data
- * - If S1 reps >= 10: PROGRESS (add 5kg, adjust reps)
- * - If S1 reps < 10: MAINTAIN (same weights, try to beat reps)
+ * - If S1 reps >= 10: PROGRESS (add 5kg to S1, adjust reps down)
+ * - If S1 reps < 10: MAINTAIN (same weights, try to beat reps by 1)
+ * - As weight increases per set, reps decrease (pyramid style)
  */
-function calculateSuggestions(sessions: WorkoutSession[]): Suggestion[] | null {
+function calculateSuggestions(sessions: WorkoutSession[], numSets: number): Suggestion[] | null {
   if (sessions.length === 0) return null
 
   const mostRecent = sessions[0]
@@ -69,16 +89,16 @@ function calculateSuggestions(sessions: WorkoutSession[]): Suggestion[] | null {
   }
 
   // Calculate suggestion from a single set's data
-  const calculateFromSet = (set: WorkoutSet, setIndex: number): Suggestion => {
-    const targetReps = [12, 10, 8]
+  // When weight increases, reps decrease (roughly -2 reps per +5kg)
+  const calculateFromSet = (set: WorkoutSet): Suggestion => {
     const setReps = set.reps ?? 0
     const setWeight = set.weight ?? 0
     if (setReps >= 10) {
-      // PROGRESS
-      return { weight: setWeight + 5, reps: targetReps[setIndex] }
+      // PROGRESS: increase weight, start fresh rep target
+      return { weight: setWeight + 5, reps: Math.max(6, setReps - 2) }
     } else {
-      // MAINTAIN
-      return { weight: setWeight, reps: Math.min(targetReps[setIndex], setReps + 1) }
+      // MAINTAIN: same weight, try to beat reps by 1
+      return { weight: setWeight, reps: setReps + 1 }
     }
   }
 
@@ -86,46 +106,41 @@ function calculateSuggestions(sessions: WorkoutSession[]): Suggestion[] | null {
   const s1 = mostRecent.sets[0]
   const shouldProgress = s1.reps! >= 10
 
-  // Calculate suggestions for each set
+  // Calculate suggestions for each set (based on numSets parameter)
   const suggestions: Suggestion[] = []
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < numSets; i++) {
     const recentSet = mostRecent.sets[i]
     const hasRecentData = recentSet?.weight && recentSet?.reps
 
     if (hasRecentData) {
       // Use the most recent data directly
-      suggestions.push(calculateFromSet(recentSet, i))
+      suggestions.push(calculateFromSet(recentSet))
     } else {
       // Recent session is incomplete for this set - look for earlier data
       const earlierSet = getBestSetData(i)
 
       if (earlierSet) {
         // Calculate suggestion from earlier session
-        const earlierSuggestion = calculateFromSet(earlierSet, i)
-
-        // Also calculate a suggestion based on the recent S1 progression
-        const baseWeight = s1.weight!
-        const setOffset = i * 5 // S2 is +5kg, S3 is +10kg from S1 base
-        const progressionSuggestion: Suggestion = shouldProgress
-          ? { weight: baseWeight + 5 + setOffset, reps: [12, 10, 8][i] }
-          : { weight: baseWeight + setOffset, reps: [12, 10, 8][i] }
-
-        // Use the HIGHER weight suggestion
-        if (earlierSuggestion.weight >= progressionSuggestion.weight) {
-          suggestions.push(earlierSuggestion)
-        } else {
-          suggestions.push(progressionSuggestion)
-        }
+        suggestions.push(calculateFromSet(earlierSet))
+      } else if (i > 0 && suggestions[i - 1]) {
+        // No historical data - derive from previous set's suggestion
+        // Pyramid: weight +5, reps -2
+        const prevSuggestion = suggestions[i - 1]
+        suggestions.push({
+          weight: prevSuggestion.weight + 5,
+          reps: Math.max(4, prevSuggestion.reps - 2)
+        })
       } else {
-        // No earlier data either - derive from S1
+        // Fallback to S1 data with pyramid progression
         const baseWeight = s1.weight!
+        const baseReps = s1.reps!
         const setOffset = i * 5
-        suggestions.push(
-          shouldProgress
-            ? { weight: baseWeight + 5 + setOffset, reps: [12, 10, 8][i] }
-            : { weight: baseWeight + setOffset, reps: [12, 10, 8][i] }
-        )
+        const repsOffset = i * 2
+        suggestions.push({
+          weight: shouldProgress ? baseWeight + 5 + setOffset : baseWeight + setOffset,
+          reps: Math.max(4, shouldProgress ? baseReps - 2 - repsOffset : baseReps - repsOffset)
+        })
       }
     }
   }
@@ -136,7 +151,7 @@ function calculateSuggestions(sessions: WorkoutSession[]): Suggestion[] | null {
 // Maximum number of sets allowed
 const MAX_SETS = 10
 
-export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: WorkoutLoggerProps) {
+export default function WorkoutLogger({ profileId, exerciseId, onLevelUp, onRequestFullScreen, onRegisterEndWorkout, onCompletableSetsChange }: WorkoutLoggerProps) {
   const { unit } = useUnit()
   const [pastSessions, setPastSessions] = useState<WorkoutSession[]>([])
   const [todaySets, setTodaySets] = useState<WorkoutSet[]>(() => {
@@ -149,6 +164,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
   const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null)
   const [levelDownMessage, setLevelDownMessage] = useState<string | null>(null)
   const [trackedPRs, setTrackedPRs] = useState<Set<number>>(new Set())
+
+  // Double-tap detection for full screen
+  const lastTapTimeRef = useRef<number>(0)
 
   // Timer state
   const [showTimer, setShowTimer] = useState(true)
@@ -165,6 +183,13 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
   // Coaching state - subtle, user-initiated
   const [showFormTip, setShowFormTip] = useState(false)
   const [showWarmup, setShowWarmup] = useState(false)
+
+  // Session summary state
+  const [showSessionSummary, setShowSessionSummary] = useState(false)
+
+  // Inactivity prompt state
+  const [showInactivityPrompt, setShowInactivityPrompt] = useState(false)
+  const [inactivityMinutes, setInactivityMinutes] = useState(0)
 
   // Ref to store pending level notification - deferred until component unmounts
   // This prevents the exercise card from repositioning while user is still entering sets
@@ -183,16 +208,20 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
   }, [exerciseId, currentLevel])
 
   useEffect(() => {
-    // Load only last 2 past sessions (excluding today) for 3-column display
-    const sessions = getExerciseSessions(profileId, exerciseId, 3)
+    // Load last 8 past sessions (excluding today) for scrollable history
+    const sessions = getExerciseSessions(profileId, exerciseId, 9)
       .filter(s => s.date !== getTodayDate())
-      .slice(0, 2)
+      .slice(0, 8)
     setPastSessions(sessions)
 
     // Load today's session if exists, otherwise use default sets from settings
     const today = getTodaySession(profileId, exerciseId)
     if (today && today.sets.length > 0) {
       setTodaySets(today.sets)
+      // Restore completed sets from storage
+      if (today.completedSets && today.completedSets.length > 0) {
+        setCompletedSets(new Set(today.completedSets))
+      }
     } else {
       // No existing session - use default sets from settings
       const settings = getTimerSettings()
@@ -255,12 +284,82 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     }
   }, [onLevelUp])
 
+  // Check for session inactivity on mount and when visibility changes
+  useEffect(() => {
+    const checkInactivity = () => {
+      if (hasActiveSession() && isSessionInactive()) {
+        const minutes = getMinutesSinceLastActivity()
+        setInactivityMinutes(minutes)
+        setShowInactivityPrompt(true)
+      }
+    }
+
+    // Check on mount
+    checkInactivity()
+
+    // Check when user returns to the page (visibility change)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkInactivity()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Check periodically every minute
+    const intervalId = setInterval(checkInactivity, 60000)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(intervalId)
+    }
+  }, [])
+
+  // Register end workout function with parent
+  // This function auto-completes any sets with data and saves
+  useEffect(() => {
+    if (onRegisterEndWorkout) {
+      const handleEndWorkout = () => {
+        // Find sets with both weight and reps that aren't marked complete
+        const setsToComplete: number[] = []
+        todaySets.forEach((set, index) => {
+          if (set.weight && set.weight > 0 && set.reps && set.reps > 0 && !completedSets.has(index)) {
+            setsToComplete.push(index)
+          }
+        })
+
+        // Auto-complete these sets
+        if (setsToComplete.length > 0) {
+          const newCompleted = new Set(completedSets)
+          setsToComplete.forEach(index => newCompleted.add(index))
+          setCompletedSets(newCompleted)
+          // Save to storage
+          saveWorkoutSession(profileId, exerciseId, todaySets, Array.from(newCompleted))
+        }
+      }
+      onRegisterEndWorkout(handleEndWorkout)
+    }
+  }, [onRegisterEndWorkout, todaySets, completedSets, profileId, exerciseId])
+
+  // Report to parent whether there are completable sets
+  useEffect(() => {
+    if (onCompletableSetsChange) {
+      // Check if there are any sets with data (weight > 0 AND reps > 0) that aren't completed
+      const hasCompletable = todaySets.some((set, index) =>
+        set.weight && set.weight > 0 && set.reps && set.reps > 0 && !completedSets.has(index)
+      )
+      // Also consider if there are already completed sets (user has done work)
+      const hasCompleted = completedSets.size > 0
+      onCompletableSetsChange(hasCompletable || hasCompleted)
+    }
+  }, [onCompletableSetsChange, todaySets, completedSets])
+
   // Calculate smart suggestions based on past sessions
   // Handles incomplete sessions by looking at earlier complete data
   const suggestions = useMemo(() => {
     if (pastSessions.length === 0) return null
-    return calculateSuggestions(pastSessions)
-  }, [pastSessions])
+    return calculateSuggestions(pastSessions, todaySets.length)
+  }, [pastSessions, todaySets.length])
 
   // Check if suggested S3 weight would be a new PR
   const prEncouragement = useMemo(() => {
@@ -342,8 +441,22 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     if (!currentSet.weight || currentSet.weight <= 0) return
     if (!currentSet.reps || currentSet.reps <= 0) return
 
-    // Mark this set as completed by user
-    setCompletedSets(prev => new Set(prev).add(setIndex))
+    // Set this exercise as in-progress (clears any previous in-progress exercise)
+    setInProgressExercise(exerciseId)
+
+    // Add set to workout session (auto-starts session if needed)
+    const exerciseInfo = getExerciseById(exerciseId)
+    if (exerciseInfo) {
+      addSetToSession(exerciseId, exerciseInfo.name, currentSet.weight, currentSet.reps)
+    }
+
+    // Mark this set as completed by user and persist to storage
+    setCompletedSets(prev => {
+      const newCompleted = new Set(prev).add(setIndex)
+      // Save completedSets to storage
+      saveWorkoutSession(profileId, exerciseId, todaySets, Array.from(newCompleted))
+      return newCompleted
+    })
 
     // Check for PR and level upgrade NOW (when user explicitly marks set as done)
     const exercise = getExerciseById(exerciseId)
@@ -363,6 +476,9 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       if (isPR) {
         // Mark this weight as celebrated
         setTrackedPRs(prev => new Set([...prev, weightValue]))
+
+        // Record PR in session
+        recordPR(exerciseId, exercise.name, weightValue, currentSet.reps!)
 
         // Show PR celebration
         const message = getCelebrationMessage(exercise.name)
@@ -390,6 +506,10 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
 
         // Auto-update the level in storage
         updateExerciseRating(profileId, exerciseId, newLevel)
+
+        // Record level up in session
+        recordLevelUp(exerciseId, exercise.name, newLevel)
+
         setLevelUpMessage(`Level up! You're now ${newLevel.charAt(0).toUpperCase() + newLevel.slice(1)}!`)
 
         // Store pending level for deferred parent notification
@@ -484,8 +604,84 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
     todaySets[todaySets.length - 1].weight === null &&
     todaySets[todaySets.length - 1].reps === null
 
+  // Handle double-tap on workout log area to request full screen
+  const handleWorkoutLogDoubleTap = () => {
+    const now = Date.now()
+    const timeSinceLastTap = now - lastTapTimeRef.current
+    lastTapTimeRef.current = now
+
+    if (timeSinceLastTap < DOUBLE_TAP_THRESHOLD && onRequestFullScreen) {
+      onRequestFullScreen()
+    }
+  }
+
+  // Handle "End Workout" button click
+  const handleEndWorkout = () => {
+    const session = endSession()
+    if (session) {
+      setShowSessionSummary(true)
+    }
+  }
+
+  // Handle session summary close
+  const handleSessionSummaryClose = () => {
+    setShowSessionSummary(false)
+    clearSession()
+  }
+
+  // Handle inactivity prompt - end workout
+  const handleInactivityEndWorkout = () => {
+    setShowInactivityPrompt(false)
+    handleEndWorkout()
+  }
+
+  // Handle inactivity prompt - continue workout
+  const handleInactivityContinue = () => {
+    setShowInactivityPrompt(false)
+  }
+
   return (
     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 relative">
+      {/* Session Summary Modal */}
+      {showSessionSummary && (
+        <SessionSummary
+          onClose={handleSessionSummaryClose}
+          session={endSession()!}
+        />
+      )}
+
+      {/* Inactivity Prompt Modal */}
+      {showInactivityPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-sm w-full p-6">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">⏰</div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Still Working Out?
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Your last set was {inactivityMinutes} minute{inactivityMinutes !== 1 ? 's' : ''} ago.
+                Would you like to end your workout?
+              </p>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={handleInactivityEndWorkout}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md"
+              >
+                End Workout & See Summary
+              </button>
+              <button
+                onClick={handleInactivityContinue}
+                className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 rounded-xl transition-all"
+              >
+                Continue Workout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PR Celebration Toast */}
       {celebration.show && (
         <div className="absolute -top-2 left-0 right-0 z-10 animate-pulse">
@@ -641,9 +837,11 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
       )}
 
       {/* Main Workout Entry - Horizontal scroll: History (left) → Today → Target (right) */}
+      {/* Double-tap on this area to expand full screen */}
       <div
         ref={scrollContainerRef}
-        className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-visible -mx-4 px-4"
+        onClick={handleWorkoutLogDoubleTap}
+        className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-visible -mx-4 px-4 cursor-pointer"
         style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y pan-x' }}
       >
         {/* Past Sessions columns (LEFT side - history first) */}
@@ -741,38 +939,6 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
               </div>
             )
           })}
-          {/* Add/Remove set buttons */}
-          <div className="flex items-center justify-center gap-2 mt-1">
-            <button
-              onClick={handleRemoveSet}
-              disabled={!canRemoveSet}
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                canRemoveSet
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30 dark:hover:text-red-400'
-                  : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
-              }`}
-              title={canRemoveSet ? 'Remove last set' : 'Cannot remove set with data'}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
-              </svg>
-            </button>
-            <span className="text-xs text-gray-400 dark:text-gray-500">{todaySets.length} sets</span>
-            <button
-              onClick={handleAddSet}
-              disabled={todaySets.length >= MAX_SETS}
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                todaySets.length < MAX_SETS
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-900/30 dark:hover:text-blue-400'
-                  : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
-              }`}
-              title={todaySets.length < MAX_SETS ? 'Add another set' : `Maximum ${MAX_SETS} sets`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          </div>
         </div>
 
         {/* Chevron buttons column - copy from target (only for sets with suggestions) */}
@@ -830,9 +996,42 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
         )}
       </div>
 
-      {/* Rep scheme suggestion */}
+      {/* Add/Remove set buttons - outside scroll container for proper alignment */}
+      <div className="flex items-center justify-center gap-2 mt-2">
+        <button
+          onClick={handleRemoveSet}
+          disabled={!canRemoveSet}
+          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+            canRemoveSet
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30 dark:hover:text-red-400'
+              : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+          }`}
+          title={canRemoveSet ? 'Remove last set' : 'Cannot remove set with data'}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
+          </svg>
+        </button>
+        <span className="text-xs text-gray-400 dark:text-gray-500">{todaySets.length} sets</span>
+        <button
+          onClick={handleAddSet}
+          disabled={todaySets.length >= MAX_SETS}
+          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+            todaySets.length < MAX_SETS
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-900/30 dark:hover:text-blue-400'
+              : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+          }`}
+          title={todaySets.length < MAX_SETS ? 'Add another set' : `Maximum ${MAX_SETS} sets`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Rep scheme suggestion and double-tap hint */}
       <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">
-        Suggested reps: 12 / 10 / 8
+        Suggested reps: 12 / 10 / 8 {onRequestFullScreen && <span className="italic">• Double-tap to expand</span>}
       </p>
 
       {/* Rest Timer Preview - Double-click to open full-screen */}
@@ -863,6 +1062,21 @@ export default function WorkoutLogger({ profileId, exerciseId, onLevelUp }: Work
             initialDuration={minimizedTimerState?.duration}
             initialIsRunning={minimizedTimerState?.isRunning}
           />
+        </div>
+      )}
+
+      {/* End Workout Button - Only show when session is active */}
+      {hasActiveSession() && (
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={handleEndWorkout}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            End Workout
+          </button>
         </div>
       )}
     </div>

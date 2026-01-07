@@ -3,8 +3,32 @@
 > **App Name:** REPPIT (formerly Strength Profile Tracker)
 > **Tagline:** Track your reps. Build your strength.
 
-**Last Updated:** 2025-12-13
+**Last Updated:** 2026-01-07
 **Jira Board:** https://castroarun.atlassian.net/jira/software/projects/SPT/board
+
+---
+
+## Jira Backlog - Created Today (Jan 7, 2026)
+
+### Bugs (P1 - High Priority)
+| Key | Summary | Status |
+|-----|---------|--------|
+| SPT-56 | Reppit icon notification not appearing in mobile status bar when app minimized | ✅ Done |
+| SPT-57 | Timer countdown/countup flip resets to zero instead of preserving elapsed time | ✅ Done |
+| SPT-60 | Full screen timer goes out of window in landscape mode on mobile | ✅ Done |
+| SPT-62 | Cannot scroll left to see beyond 1-2 last workout logs | ✅ Done |
+
+### Bugs (P2 - Medium Priority)
+| Key | Summary | Status |
+|-----|---------|--------|
+| SPT-59 | 30-second timer remaining should have double blip sound in sync | To Do |
+| SPT-61 | Set suggestions should match user actual workout history pattern | To Do |
+
+### Enhancements (P2)
+| Key | Summary | Status |
+|-----|---------|--------|
+| SPT-58 | Add floating timer window when switching to other apps | To Do |
+| SPT-63 | Add machine brand logging feature for workout equipment | To Do |
 
 ---
 
@@ -12,23 +36,35 @@
 
 **Completed Features:**
 - Profile management (create/edit/delete up to 5 profiles)
-- 23 exercises across 5 body parts with strength standards
+- 46 exercises across 6 body parts (including Core) with strength standards
+- 7 predefined workout routines (PPL, Upper/Lower, Bro Split, Full Body, etc.)
+- Per-routine exercise selection with persistence
 - Workout logging with history (last 2 sessions + today)
+- Rest timer with per-exercise memory and auto-start
 - PR detection (triggers celebration when you beat records)
 - Auto level-up when PR exceeds threshold
 - Smart suggestions - TARGET column with recommended weights/reps
 - Copy buttons to quickly fill today's entry from suggestions
-- Progress page with muscle heatmap visualization
+- Progress page with muscle heatmap and calendar visualization
 - Unit conversion (kg/lbs)
 - Dark mode toggle
 - Motivational quotes on app load
+- Contextual tips system (onboarding)
+- Wake lock during workouts (keep screen on)
+- Full-screen timer mode
 
-**Recently Added (Current Session):**
-- TARGET column with progression suggestions (PROGRESS/MAINTAIN logic)
-- Arrow buttons between TODAY and TARGET columns for quick copy
-- Wider/taller columns for easier mobile input
-- Clickable target cells to copy values directly
-- PR detection within same session (not just vs history)
+**Recently Added (Dec 28, 2025):**
+- 22 new exercises: Core (Ab Crunch Machine/Cable, Hanging Leg Raise, Cable Woodchop, Russian Twist, Leg Raise), Chest (Chest Press Machine, Pec Deck, Decline Bench), Back (T-Bar Row, Dumbbell Row, Seated Row), Shoulders (Rear Delt Fly, Face Pull), Legs (Hip Thrust, Bulgarian Split Squat, Goblet Squat, Hack Squat), Arms (Hammer Curl, Tricep Dip, Overhead Tricep Extension, Preacher Curl, Cable Curl)
+- Expanded default exercise selections (18 exercises per routine vs. 6)
+- Updated all predefined routines with 7-10 exercises per workout day
+- Per-routine exercise persistence (selections saved per routine)
+- Separate "Activate" toggle inside routines (viewing doesn't auto-activate)
+- Training Program status shows "Active: [name]" in Settings
+- Fixed Done button to only show when there are completable sets
+- Added contextual tips for training program setup and timer settings
+
+**Pending Features:**
+- [ ] Reorder by Workout Log toggle - auto-reorder exercises based on user's logging order (default ON first time, then user-controlled)
 
 ---
 
@@ -38,7 +74,7 @@
 |-------|------|---------------|-------------|
 | Design | PRD Document (APP_PRD.md) | Done | In Review |
 | Design | UI Prototype (ui-prototype.html) | Done | In Review |
-| Design | - 23 Exercises (5 body parts) | Done | - |
+| Design | - 46 Exercises (6 body parts incl. Core) | Done | - |
 | Design | - Dark Mode Toggle | Done | - |
 | Design | - 50 Motivational Quotes | Done | - |
 | Design | - 4 User Difficulty Levels | Done | - |
@@ -66,6 +102,13 @@
 | Build | Smart Suggestions (TARGET column) | Done | - |
 | Build | Copy-to-Today Buttons | Done | - |
 | Build | Progress Page with Heatmap | Done | - |
+| Build | Rest Timer (per-exercise, auto-start) | Done | - |
+| Build | 7 Predefined Workout Routines | Done | - |
+| Build | Per-routine Exercise Selection | Done | - |
+| Build | Contextual Tips/Onboarding | Done | - |
+| Build | Wake Lock (keep screen on) | Done | - |
+| Build | Full-Screen Timer Mode | Done | - |
+| Build | Reorder by Workout Log | Pending | - |
 
 ---
 
@@ -87,6 +130,10 @@
 
 ## Next Actions
 
+- [ ] Implement "Reorder by Workout Log" toggle feature
+  - Toggle in Settings (default ON first time, then OFF)
+  - Auto-reorder exercises based on logging order
+  - Persist order for next session
 - [ ] Complete manual testing of all features
 - [ ] Test PR detection and level-up flow
 - [ ] Test smart suggestions accuracy

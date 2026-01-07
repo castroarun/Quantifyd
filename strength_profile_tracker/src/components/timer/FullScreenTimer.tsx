@@ -6,11 +6,13 @@ import {
   getTimerSettings,
   getExerciseTimerDuration,
   saveExerciseTimerDuration,
-  formatTime
+  formatTime,
+  onTimerSettingsChange
 } from '@/lib/storage/timer'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { useUnit } from '@/contexts'
 import { ContextualTip } from '@/components/onboarding'
+import { showWorkoutNotification } from '@/lib/pwa/notifications'
 
 interface FullScreenTimerProps {
   exerciseId?: Exercise
@@ -79,6 +81,19 @@ export default function FullScreenTimer({
     }
   }, [exerciseId, autoStart, initialTimeLeft, initialDuration, initialIsRunning])
 
+  // Listen for timer settings changes (e.g., when user changes default duration in settings)
+  useEffect(() => {
+    const unsubscribe = onTimerSettingsChange((newSettings) => {
+      // Only update if timer is not currently running
+      if (!isRunning) {
+        setDuration(newSettings.defaultDuration)
+        setTimeLeft(newSettings.defaultDuration)
+      }
+      setWarningTime(newSettings.warningTime ?? 30)
+    })
+    return unsubscribe
+  }, [isRunning])
+
   // Handle minimize (double-click on background)
   const handleMinimize = () => {
     if (onMinimize) {
@@ -94,6 +109,25 @@ export default function FullScreenTimer({
       releaseWakeLock()
     }
   }, [isRunning, wakeLockActive, requestWakeLock, releaseWakeLock])
+
+  // Show notification when app goes to background while timer is running
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && isRunning) {
+        // App went to background - show notification
+        const timerDisplay = formatTime(timeLeft)
+        showWorkoutNotification(
+          `REPPIT - Rest Timer ${timerDisplay}`,
+          exerciseName ? `${exerciseName} - Tap to return` : 'Tap to return to your workout'
+        )
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [isRunning, timeLeft, exerciseName])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -269,16 +303,21 @@ export default function FullScreenTimer({
 
   const toggleMode = () => {
     if (mode === 'countdown') {
+      // Switching to countup: preserve elapsed time (duration - timeLeft)
+      const elapsed = Math.max(0, duration - timeLeft)
       setMode('countup')
-      setTimeLeft(0)
-      setDuration(0)
+      setTimeLeft(elapsed)
+      // Keep duration for potential switch back
     } else {
-      setMode('countdown')
+      // Switching back to countdown: calculate remaining time from elapsed
       const settings = getTimerSettings()
-      setTimeLeft(settings.defaultDuration)
-      setDuration(settings.defaultDuration)
+      const targetDuration = exerciseId ? getExerciseTimerDuration(exerciseId) : settings.defaultDuration
+      const remaining = Math.max(0, targetDuration - timeLeft)
+      setMode('countdown')
+      setDuration(targetDuration)
+      setTimeLeft(remaining)
     }
-    setIsRunning(false)
+    // Keep timer running - don't pause on mode switch
     setHasEnded(false)
   }
 
@@ -317,7 +356,7 @@ export default function FullScreenTimer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black overflow-y-auto py-4 landscape:py-2"
       onDoubleClick={handleMinimize}
     >
       {/* 30-second warning flash overlay */}
@@ -332,17 +371,17 @@ export default function FullScreenTimer({
       <button
         onClick={(e) => { e.stopPropagation(); skipRest() }}
         onDoubleClick={(e) => e.stopPropagation()}
-        className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 text-2xl transition-colors"
+        className="absolute top-4 landscape:top-2 right-4 landscape:right-2 z-10 w-12 h-12 landscape:w-10 landscape:h-10 flex items-center justify-center rounded-full bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 text-2xl transition-colors"
         aria-label="Close timer"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 landscape:w-5 landscape:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
       {/* Exercise name at top */}
       {exerciseName && (
-        <p className="absolute top-8 left-0 right-0 text-center text-blue-400 text-lg uppercase tracking-[0.3em] font-medium">
+        <p className="absolute top-8 landscape:top-2 left-0 right-0 text-center text-blue-400 text-lg landscape:text-sm uppercase tracking-[0.3em] font-medium">
           {exerciseName}
         </p>
       )}
@@ -351,18 +390,18 @@ export default function FullScreenTimer({
       <button
         onClick={(e) => { e.stopPropagation(); toggleMode() }}
         onDoubleClick={(e) => e.stopPropagation()}
-        className="absolute top-8 left-6 text-gray-500 hover:text-white flex items-center gap-2 text-xs transition-colors uppercase tracking-wider p-2"
+        className="absolute top-8 landscape:top-2 left-6 landscape:left-4 text-gray-500 hover:text-white flex items-center gap-2 text-xs transition-colors uppercase tracking-wider p-2"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 landscape:w-3 landscape:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
-        {mode === 'countdown' ? 'Timer' : 'Stopwatch'}
+        <span className="landscape:hidden">{mode === 'countdown' ? 'Timer' : 'Stopwatch'}</span>
       </button>
 
       {/* Main timer - double-click on timer text should not minimize */}
-      <div className="flex flex-col items-center" onDoubleClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-col items-center landscape:mt-8" onDoubleClick={(e) => e.stopPropagation()}>
         {/* Time display */}
-        <div className={`font-mono-timer font-bold ${getTimerColor()} breathe`} style={{ fontSize: 'clamp(5rem, 20vw, 10rem)', lineHeight: 1 }}>
+        <div className={`font-mono-timer font-bold ${getTimerColor()} breathe`} style={{ fontSize: 'clamp(3.5rem, 18vw, 10rem)', lineHeight: 1 }}>
           {formatTime(timeLeft)}
         </div>
 
@@ -379,8 +418,8 @@ export default function FullScreenTimer({
 
       {/* Progress bar with glow effect when running */}
       {mode === 'countdown' && (
-        <div className="w-80 max-w-[80vw] mt-6">
-          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div className="w-80 max-w-[80vw] mt-6 landscape:mt-2">
+          <div className="h-2 landscape:h-1.5 bg-gray-800 rounded-full overflow-hidden">
             <div
               className={`h-full bg-gradient-to-r ${getProgressGradient()} rounded-full transition-all duration-1000 ${isRunning ? 'glow-pulse' : ''}`}
               style={{ width: `${progress * 100}%` }}
@@ -391,23 +430,23 @@ export default function FullScreenTimer({
 
       {/* Stats row */}
       {(setNumber || weight || reps) && (
-        <div className="flex gap-12 mt-10" onDoubleClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-12 landscape:gap-8 mt-10 landscape:mt-4" onDoubleClick={(e) => e.stopPropagation()}>
           {setNumber && (
             <div className="text-center">
-              <p className="text-3xl font-bold text-white">S{setNumber}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">Set</p>
+              <p className="text-3xl landscape:text-2xl font-bold text-white">S{setNumber}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1 landscape:hidden">Set</p>
             </div>
           )}
           {weight !== undefined && weight > 0 && (
             <div className="text-center">
-              <p className="text-3xl font-bold text-green-400">{formatWeight(weight)}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">Weight</p>
+              <p className="text-3xl landscape:text-2xl font-bold text-green-400">{formatWeight(weight)}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1 landscape:hidden">Weight</p>
             </div>
           )}
           {reps !== undefined && reps > 0 && (
             <div className="text-center">
-              <p className="text-3xl font-bold text-white">{reps}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">Reps</p>
+              <p className="text-3xl landscape:text-2xl font-bold text-white">{reps}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mt-1 landscape:hidden">Reps</p>
             </div>
           )}
         </div>
@@ -415,12 +454,12 @@ export default function FullScreenTimer({
 
       {/* Preset buttons - show 5 options around current duration */}
       {mode === 'countdown' && (
-        <div className="flex gap-2 mt-10 px-4" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2 mt-10 landscape:mt-3 px-4" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
           {getDynamicTimerPresets(duration).map(preset => (
             <button
               key={preset}
               onClick={() => setPreset(preset)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-2 landscape:px-2 landscape:py-1 rounded-lg text-xs font-medium transition-all ${
                 duration === preset
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -433,13 +472,13 @@ export default function FullScreenTimer({
       )}
 
       {/* Control buttons */}
-      <div className="flex items-center gap-8 mt-8" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-8 landscape:gap-6 mt-8 landscape:mt-3" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
         {/* -15s */}
         {mode === 'countdown' && (
           <button
             onClick={(e) => { e.stopPropagation(); adjustTime(-TIMER_INCREMENT) }}
             onDoubleClick={(e) => e.stopPropagation()}
-            className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
+            className="w-16 h-16 landscape:w-12 landscape:h-12 rounded-full border-2 border-gray-700 text-gray-500 text-xl landscape:text-lg font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
           >
             -15
           </button>
@@ -449,17 +488,17 @@ export default function FullScreenTimer({
         <button
           onClick={(e) => { e.stopPropagation(); isRunning ? pause() : start() }}
           onDoubleClick={(e) => e.stopPropagation()}
-          className={`w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-105 bg-gradient-to-r ${
+          className={`w-24 h-24 landscape:w-16 landscape:h-16 rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-105 bg-gradient-to-r ${
             isRunning ? 'from-orange-500 to-amber-500 shadow-orange-500/30' : `${getButtonGradient()} shadow-blue-500/30`
           }`}
         >
           {isRunning ? (
-            <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-12 h-12 landscape:w-8 landscape:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
               <rect x="6" y="4" width="4" height="16" />
               <rect x="14" y="4" width="4" height="16" />
             </svg>
           ) : (
-            <svg className="w-12 h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-12 h-12 landscape:w-8 landscape:h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
           )}
@@ -470,7 +509,7 @@ export default function FullScreenTimer({
           <button
             onClick={(e) => { e.stopPropagation(); adjustTime(TIMER_INCREMENT) }}
             onDoubleClick={(e) => e.stopPropagation()}
-            className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 text-xl font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
+            className="w-16 h-16 landscape:w-12 landscape:h-12 rounded-full border-2 border-gray-700 text-gray-500 text-xl landscape:text-lg font-bold hover:border-blue-500 hover:text-blue-400 transition-all"
           >
             +15
           </button>
@@ -478,9 +517,9 @@ export default function FullScreenTimer({
           <button
             onClick={(e) => { e.stopPropagation(); reset() }}
             onDoubleClick={(e) => e.stopPropagation()}
-            className="w-16 h-16 rounded-full border-2 border-gray-700 text-gray-500 hover:border-blue-500 hover:text-blue-400 flex items-center justify-center transition-all"
+            className="w-16 h-16 landscape:w-12 landscape:h-12 rounded-full border-2 border-gray-700 text-gray-500 hover:border-blue-500 hover:text-blue-400 flex items-center justify-center transition-all"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 landscape:w-5 landscape:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
@@ -491,9 +530,9 @@ export default function FullScreenTimer({
       <button
         onClick={(e) => { e.stopPropagation(); skipRest() }}
         onDoubleClick={(e) => e.stopPropagation()}
-        className="mt-6 px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-white rounded-lg transition-all text-sm font-medium uppercase tracking-wider flex items-center gap-2"
+        className="mt-6 landscape:mt-2 px-5 py-2 landscape:px-4 landscape:py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-white rounded-lg transition-all text-sm landscape:text-xs font-medium uppercase tracking-wider flex items-center gap-2"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 landscape:w-3 landscape:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
         </svg>
@@ -501,7 +540,7 @@ export default function FullScreenTimer({
       </button>
 
       {/* Bottom hints - combined to avoid overlap */}
-      <p className="absolute bottom-6 right-0 left-0 text-center text-gray-600 text-xs flex items-center justify-center gap-2">
+      <p className="absolute bottom-6 landscape:bottom-2 right-0 left-0 text-center text-gray-600 text-xs flex items-center justify-center gap-2">
         {wakeLockActive && (
           <>
             <span className="flex items-center gap-1.5">
