@@ -2,6 +2,24 @@
 
 A Python-based backtesting and research tool for Covered Call options strategies.
 
+<!-- LAUNCHPAD:START -->
+```json
+{
+  "stage": "building",
+  "progress": 20,
+  "complexity": "F",
+  "lastUpdated": "2026-01-17",
+  "targetDate": null,
+  "nextAction": "Implement backtest engine core",
+  "blocker": null,
+  "demoUrl": null,
+  "techStack": ["Python", "Pandas", "NumPy", "Jupyter", "Matplotlib"],
+  "shipped": false,
+  "linkedinPosted": false
+}
+```
+<!-- LAUNCHPAD:END -->
+
 ## Overview
 
 This project enables:
