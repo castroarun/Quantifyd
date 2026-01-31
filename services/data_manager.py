@@ -354,14 +354,18 @@ class CentralizedDataManager:
 
         Handles the 2000 candle limit by breaking into chunks
         """
-        # Get instrument token
-        instruments = self.kite.instruments("NSE")
-        instrument_token = None
+        # Get instrument token (check cache first, then fall back to API)
+        from .nifty500_universe import get_instrument_token
+        instrument_token = get_instrument_token(symbol)
 
-        for inst in instruments:
-            if inst['tradingsymbol'] == symbol and inst['instrument_type'] == 'EQ':
-                instrument_token = inst['instrument_token']
-                break
+        if not instrument_token:
+            # Fall back to full instrument list from API
+            logger.debug(f"Cache miss for {symbol}, fetching from Kite API")
+            instruments = self.kite.instruments("NSE")
+            for inst in instruments:
+                if inst['tradingsymbol'] == symbol and inst['instrument_type'] == 'EQ':
+                    instrument_token = inst['instrument_token']
+                    break
 
         if not instrument_token:
             raise ValueError(f"Instrument token not found for {symbol}")

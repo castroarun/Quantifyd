@@ -1,0 +1,1056 @@
+{% extends "base.html" %}
+
+{% block title %}MQ Agent Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .regime-badge {
+        font-size: 0.9rem;
+        padding: 0.4em 0.8em;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    .regime-BULLISH { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950; }
+    .regime-BEARISH { background: rgba(248,81,73,0.2); color: #f85149; border: 1px solid #f85149; }
+    .regime-HIGH_VOLATILITY { background: rgba(210,153,34,0.2); color: #d29922; border: 1px solid #d29922; }
+
+    .signal-HIGH { border-left: 3px solid #f85149; }
+    .signal-MEDIUM { border-left: 3px solid #d29922; }
+    .signal-LOW { border-left: 3px solid #58a6ff; }
+
+    .signal-type-EXIT { color: #f85149; }
+    .signal-type-TOPUP { color: #3fb950; }
+    .signal-type-WATCH { color: #58a6ff; }
+    .signal-type-WARNING { color: #d29922; }
+
+    .status-running { color: #58a6ff; }
+    .status-completed { color: #3fb950; }
+    .status-failed { color: #f85149; }
+
+    .action-btn {
+        min-width: 160px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .table-agent th {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+
+    .table-agent td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+    }
+
+    .pulse-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    .task-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1050;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .task-overlay.active { display: flex; }
+
+    .task-card {
+        background: #161b22;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 2rem;
+        min-width: 400px;
+        text-align: center;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 280px;
+    }
+
+    .refresh-indicator {
+        font-size: 0.75rem;
+        color: #8b949e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">
+            <i class="bi bi-robot me-2"></i>MQ Agent Dashboard
+        </h4>
+        <small class="text-muted">Momentum + Quality Strategy Autonomous Agent System</small>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <span class="refresh-indicator" id="lastRefresh">Last refresh: --</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+            <label class="form-check-label text-muted" for="autoRefreshToggle">Auto-refresh</label>
+        </div>
+    </div>
+</div>
+
+<!-- Row 1: Top Metric Cards -->
+<div class="row g-3 mb-4">
+    <!-- Market Regime -->
+    <div class="col-md-4">
+        <div class="metric-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="metric-label">Market Regime</span>
+                <span class="regime-badge regime-BULLISH" id="regimeBadge">BULLISH</span>
+            </div>
+            <div class="mt-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <small class="text-muted">Nifty 500</small>
+                    <small id="indexClose">--</small>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <small class="text-muted">200 DMA</small>
+                    <small id="index200dma">--</small>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">India VIX</small>
+                    <small id="vixValue">--</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Value -->
+    <div class="col-md-4">
+        <div class="metric-card h-100">
+            <span class="metric-label">Portfolio Value</span>
+            <div class="metric-value mt-2" id="totalValue">--</div>
+            <div class="d-flex justify-content-between mt-2">
+                <div>
+                    <small class="text-muted d-block">Equity</small>
+                    <small id="equityDeployed">--</small>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted d-block">Positions</small>
+                    <small id="positionsCount">--</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debt Fund Balance -->
+    <div class="col-md-4">
+        <div class="metric-card h-100">
+            <span class="metric-label">Debt Fund Balance</span>
+            <div class="metric-value mt-2" id="debtBalance">--</div>
+            <div class="mt-2">
+                <small class="text-muted d-block">Initial Capital</small>
+                <small id="initialCapital">--</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Action Buttons -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary action-btn" onclick="runBacktest()">
+                <i class="bi bi-play-fill me-1"></i> Run Backtest
+            </button>
+            <button class="btn btn-outline-info action-btn" onclick="forceScreening()">
+                <i class="bi bi-funnel me-1"></i> Force Screen Now
+            </button>
+            <button class="btn btn-outline-secondary action-btn" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Screening Results -->
+<div class="row g-3 mb-4" id="screeningSection" style="display: none;">
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <i class="bi bi-funnel me-2"></i>Screening Summary
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <small class="text-muted">Universe Scanned</small>
+                    <span class="fw-bold" id="screenTotal">--</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <small class="text-muted">Momentum Passed</small>
+                    <span class="fw-bold positive" id="screenMomentum">--</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <small class="text-muted">Quality Passed</small>
+                    <span class="fw-bold" style="color: #58a6ff;" id="screenQuality">--</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">Last Run</small>
+                    <small id="screenDate">--</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card h-100">
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-trophy me-2"></i>Top Ranked Stocks</span>
+                <span class="badge bg-info" id="topRankedCount">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-agent table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Symbol</th>
+                                <th>Sector</th>
+                                <th>Price</th>
+                                <th>Quality Score</th>
+                                <th>ATH Distance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topRankedBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    Run screening to see results
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 4: Active Signals -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bell me-2"></i>Active Signals</span>
+                <span class="badge bg-secondary" id="signalCount">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-agent table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Symbol</th>
+                                <th>Priority</th>
+                                <th>Details</th>
+                                <th>Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="signalsBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No active signals
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 5: Backtest Metrics -->
+<div class="row g-3 mb-4" id="backtestSection" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header-custom">
+                <i class="bi bi-bar-chart-line me-2"></i>Backtest Results
+            </div>
+            <div class="card-body">
+                <!-- Key metrics row -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <small class="text-muted d-block">CAGR</small>
+                            <span class="fs-4 fw-bold positive" id="btCagr">--</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <small class="text-muted d-block">Sharpe</small>
+                            <span class="fs-4 fw-bold" style="color: #58a6ff;" id="btSharpe">--</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <small class="text-muted d-block">Sortino</small>
+                            <span class="fs-4 fw-bold" style="color: #58a6ff;" id="btSortino">--</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <small class="text-muted d-block">Max Drawdown</small>
+                            <span class="fs-4 fw-bold negative" id="btMaxDD">--</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <small class="text-muted d-block">Win Rate</small>
+                            <span class="fs-4 fw-bold" id="btWinRate">--</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <small class="text-muted d-block">Trades</small>
+                            <span class="fs-4 fw-bold" id="btTrades">--</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- CAGR Comparison + Exit Reasons + Trade Analysis -->
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-2">CAGR Comparison</h6>
+                        <table class="table table-agent table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Strategy</th>
+                                    <th>CAGR</th>
+                                    <th>vs MQ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cagrCompBody">
+                                <tr><td colspan="3" class="text-center text-muted py-2">Run backtest to see comparison</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-2">Exit Reason Breakdown</h6>
+                        <table class="table table-agent table-sm mb-0">
+                            <thead>
+                                <tr><th>Reason</th><th class="text-end">Count</th><th class="text-end">P&L</th><th class="text-end">Avg Ret</th></tr>
+                            </thead>
+                            <tbody id="exitReasonBody">
+                                <tr><td colspan="4" class="text-center text-muted py-2">--</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-2">Trade Analysis</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Winners / Losers</small>
+                            <span><span class="positive fw-bold" id="btWinners">--</span> / <span class="negative fw-bold" id="btLosers">--</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Avg Win</small>
+                            <span class="positive fw-bold" id="btAvgWin">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Avg Loss</small>
+                            <span class="negative fw-bold" id="btAvgLoss">--</span>
+                        </div>
+                        <hr class="my-2" style="border-color: var(--bs-border-color);">
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Expectancy</small>
+                            <span class="fw-bold" id="btExpectancy">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Topups</small>
+                            <span class="fw-bold" id="btTopups">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 6: Charts -->
+<div class="row g-3 mb-4">
+    <!-- Equity Curve -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header-custom">
+                <i class="bi bi-graph-up me-2"></i>Equity Curve (Last Backtest)
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sector Allocation -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header-custom">
+                <i class="bi bi-pie-chart me-2"></i>Sector Allocation
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="sectorChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 5: Reports & Run History -->
+<div class="row g-3 mb-4">
+    <!-- Recent Reports -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header-custom">
+                <i class="bi bi-file-earmark-text me-2"></i>Recent Reports
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-agent table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Summary</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsBody">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    No reports yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Run History -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header-custom">
+                <i class="bi bi-clock-history me-2"></i>Agent Run History
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-agent table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Summary</th>
+                            </tr>
+                        </thead>
+                        <tbody id="runsBody">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No agent runs yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Overlay (for background tasks) -->
+<div class="task-overlay" id="taskOverlay">
+    <div class="task-card">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5 id="taskTitle">Running...</h5>
+        <div class="d-flex justify-content-between align-items-center mt-3 mb-1">
+            <small class="text-muted" id="taskMessage">Initializing...</small>
+            <small class="fw-bold" style="color: #58a6ff;" id="taskPercent">0%</small>
+        </div>
+        <div class="progress" style="height: 8px;">
+            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" id="taskProgress" style="width: 0%"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ============================================================
+// State
+// ============================================================
+let autoRefresh = true;
+let refreshTimer = null;
+let equityChart = null;
+let sectorChart = null;
+let activeTaskId = null;
+let taskPollTimer = null;
+
+// ============================================================
+// Dashboard Data Loading
+// ============================================================
+async function refreshDashboard() {
+    try {
+        const [stateRes, signalsRes, runsRes] = await Promise.all([
+            fetch('/api/agent/state'),
+            fetch('/api/agent/signals'),
+            fetch('/api/agent/runs'),
+        ]);
+
+        if (stateRes.ok) {
+            const state = await stateRes.json();
+            updateStateCards(state);
+        }
+
+        if (signalsRes.ok) {
+            const signals = await signalsRes.json();
+            updateSignalsTable(signals);
+        }
+
+        if (runsRes.ok) {
+            const data = await runsRes.json();
+            updateRunsTable(data.runs || []);
+            updateReportsTable(data.reports || []);
+        }
+
+        document.getElementById('lastRefresh').textContent =
+            'Last refresh: ' + new Date().toLocaleTimeString();
+
+    } catch (err) {
+        console.error('Dashboard refresh error:', err);
+    }
+}
+
+// ============================================================
+// Update UI
+// ============================================================
+function updateStateCards(state) {
+    const portfolio = state.portfolio || {};
+    const regime = state.regime || {};
+
+    // Regime card
+    const regimeName = regime.regime || 'BULLISH';
+    const badge = document.getElementById('regimeBadge');
+    badge.textContent = regimeName.replace('_', ' ');
+    badge.className = 'regime-badge regime-' + regimeName;
+
+    document.getElementById('indexClose').textContent =
+        regime.index_close ? regime.index_close.toLocaleString('en-IN', {maximumFractionDigits: 0}) : '--';
+    document.getElementById('index200dma').textContent =
+        regime.index_200dma ? regime.index_200dma.toLocaleString('en-IN', {maximumFractionDigits: 0}) : '--';
+    document.getElementById('vixValue').textContent =
+        regime.vix ? regime.vix.toFixed(1) : '--';
+
+    // Portfolio card
+    const fmt = (v) => v ? '\u20B9' + Number(v).toLocaleString('en-IN', {maximumFractionDigits: 0}) : '--';
+    document.getElementById('totalValue').textContent = fmt(portfolio.total_value);
+    document.getElementById('equityDeployed').textContent = fmt(portfolio.equity_deployed);
+    document.getElementById('positionsCount').textContent =
+        portfolio.positions_count !== undefined ? portfolio.positions_count : '--';
+    document.getElementById('debtBalance').textContent = fmt(portfolio.debt_fund_balance);
+    document.getElementById('initialCapital').textContent = fmt(portfolio.initial_capital);
+
+    // Equity curve from last backtest
+    if (state.equity_curve && Object.keys(state.equity_curve).length > 0) {
+        renderEquityCurve(state.equity_curve, state.benchmark_curves || {});
+    }
+
+    // Sector allocation
+    if (state.sector_allocation && Object.keys(state.sector_allocation).length > 0) {
+        renderSectorChart(state.sector_allocation);
+    }
+
+    // Backtest metrics
+    updateBacktestMetrics(state.backtest_metrics || {});
+
+    // Screening results
+    updateScreeningResults(state.screening || {});
+}
+
+function updateBacktestMetrics(metrics) {
+    const section = document.getElementById('backtestSection');
+    if (!metrics || !metrics.cagr) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = '';
+    document.getElementById('btCagr').textContent = metrics.cagr + '%';
+    document.getElementById('btSharpe').textContent = metrics.sharpe_ratio;
+    document.getElementById('btSortino').textContent = metrics.sortino_ratio;
+    document.getElementById('btMaxDD').textContent = metrics.max_drawdown + '%';
+    document.getElementById('btWinRate').textContent = (metrics.win_rate || 0) + '%';
+    document.getElementById('btTrades').textContent = metrics.total_trades || 0;
+
+    // CAGR comparison table
+    const body = document.getElementById('cagrCompBody');
+    const mqCagr = metrics.cagr;
+    const bmCagrs = metrics.benchmark_cagrs || {};
+
+    let rows = `<tr class="table-active">
+        <td class="fw-bold"><i class="bi bi-star-fill me-1" style="color: #58a6ff;"></i>MQ Strategy</td>
+        <td class="fw-bold positive">${mqCagr}%</td>
+        <td>--</td>
+    </tr>`;
+
+    for (const [name, cagr] of Object.entries(bmCagrs)) {
+        const diff = (mqCagr - cagr).toFixed(1);
+        const diffClass = diff >= 0 ? 'positive' : 'negative';
+        const diffSign = diff >= 0 ? '+' : '';
+        rows += `<tr>
+            <td>${name}</td>
+            <td>${cagr}%</td>
+            <td class="${diffClass} fw-bold">${diffSign}${diff}%</td>
+        </tr>`;
+    }
+
+    body.innerHTML = rows;
+
+    // Exit reason breakdown with P&L
+    const exitBody = document.getElementById('exitReasonBody');
+    const exitCounts = metrics.exit_reason_counts || {};
+    const exitPnl = metrics.exit_reason_pnl || {};
+    const totalTrades = metrics.total_trades || 0;
+    const reasonLabels = {
+        'hard_stop_loss': '30% Hard Stop',
+        'ath_drawdown_rebalance': 'ATH DD >20%',
+        'fundamental_3q_decline': 'Fundamental 3Q',
+        'fundamental_2y_decline': 'Fundamental 2Y',
+        'rebalance_replaced': 'Rebalance',
+        'manual': 'Manual',
+    };
+    const reasonColors = {
+        'hard_stop_loss': '#f85149',
+        'ath_drawdown_rebalance': '#d29922',
+        'fundamental_3q_decline': '#bc8cff',
+        'fundamental_2y_decline': '#a371f7',
+        'rebalance_replaced': '#58a6ff',
+        'manual': '#8b949e',
+    };
+
+    const fmtCurrency = (v) => {
+        if (Math.abs(v) >= 10000000) return (v >= 0 ? '' : '-') + '\u20B9' + (Math.abs(v)/10000000).toFixed(1) + 'Cr';
+        if (Math.abs(v) >= 100000) return (v >= 0 ? '' : '-') + '\u20B9' + (Math.abs(v)/100000).toFixed(1) + 'L';
+        return '\u20B9' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0});
+    };
+
+    const sortedReasons = Object.entries(exitCounts).sort((a, b) => b[1] - a[1]);
+    if (sortedReasons.length > 0) {
+        exitBody.innerHTML = sortedReasons.map(([reason, count]) => {
+            const label = reasonLabels[reason] || reason;
+            const color = reasonColors[reason] || '#8b949e';
+            const pnlData = exitPnl[reason] || {};
+            const totalPnl = pnlData.total_pnl || 0;
+            const avgRet = pnlData.avg_return_pct || 0;
+            const pnlColor = totalPnl >= 0 ? '#3fb950' : '#f85149';
+            const retColor = avgRet >= 0 ? '#3fb950' : '#f85149';
+            return `<tr>
+                <td><span style="color: ${color}; font-weight: 600;">${label}</span></td>
+                <td class="text-end">${count}</td>
+                <td class="text-end" style="color: ${pnlColor}; font-weight: 600;">${fmtCurrency(totalPnl)}</td>
+                <td class="text-end" style="color: ${retColor};">${avgRet >= 0 ? '+' : ''}${avgRet.toFixed(1)}%</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Trade analysis
+    const winning = metrics.winning_trades || 0;
+    const losing = metrics.losing_trades || 0;
+    const avgWin = metrics.avg_win_pct || 0;
+    const avgLoss = metrics.avg_loss_pct || 0;
+    const winRate = metrics.win_rate || 0;
+    const lossRate = 100 - winRate;
+    const expectancy = totalTrades > 0 ? ((winRate / 100 * avgWin) - (lossRate / 100 * Math.abs(avgLoss))).toFixed(2) : 0;
+
+    document.getElementById('btWinners').textContent = winning;
+    document.getElementById('btLosers').textContent = losing;
+    document.getElementById('btAvgWin').textContent = '+' + Math.abs(avgWin).toFixed(1) + '%';
+    document.getElementById('btAvgLoss').textContent = '-' + Math.abs(avgLoss).toFixed(1) + '%';
+    document.getElementById('btTopups').textContent = metrics.total_topups || 0;
+
+    const expEl = document.getElementById('btExpectancy');
+    expEl.textContent = (expectancy >= 0 ? '+' : '') + expectancy + '%';
+    expEl.className = 'fw-bold ' + (expectancy >= 0 ? 'positive' : 'negative');
+}
+
+function updateScreeningResults(screening) {
+    const section = document.getElementById('screeningSection');
+    if (!screening || !screening.total_scanned) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = '';
+    document.getElementById('screenTotal').textContent = screening.total_scanned;
+    document.getElementById('screenMomentum').textContent = screening.momentum_passed;
+    document.getElementById('screenQuality').textContent = screening.quality_passed;
+
+    if (screening.run_date) {
+        const d = new Date(screening.run_date);
+        document.getElementById('screenDate').textContent = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    }
+
+    const body = document.getElementById('topRankedBody');
+    const count = document.getElementById('topRankedCount');
+    const ranked = screening.top_ranked || [];
+    count.textContent = ranked.length;
+
+    if (!ranked.length) {
+        body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No stocks passed screening</td></tr>';
+        return;
+    }
+
+    body.innerHTML = ranked.map((s, i) => {
+        const qScore = typeof s.quality_score === 'number' ? s.quality_score.toFixed(3) : (s.quality_score || '--');
+        const athDist = typeof s.distance_from_ath === 'number' ? (s.distance_from_ath * 100).toFixed(1) + '%' : '--';
+        const price = typeof s.price === 'number' ? '\u20B9' + s.price.toLocaleString('en-IN') : (s.price || '--');
+        return `
+            <tr>
+                <td>${i + 1}</td>
+                <td class="fw-semibold">${s.symbol || '--'}</td>
+                <td><small>${s.sector || '--'}</small></td>
+                <td>${price}</td>
+                <td><span class="badge bg-${parseFloat(qScore) >= 0.8 ? 'success' : parseFloat(qScore) >= 0.5 ? 'info' : 'secondary'}">${qScore}</span></td>
+                <td><small class="positive">${athDist}</small></td>
+            </tr>`;
+    }).join('');
+}
+
+function updateSignalsTable(signals) {
+    const body = document.getElementById('signalsBody');
+    const count = document.getElementById('signalCount');
+    count.textContent = signals.length;
+
+    if (!signals.length) {
+        body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No active signals</td></tr>';
+        return;
+    }
+
+    body.innerHTML = signals.map(s => {
+        const details = typeof s.details === 'string' ? s.details : JSON.stringify(s.details || {});
+        const time = s.created_date ? new Date(s.created_date).toLocaleString() : '--';
+        return `
+            <tr class="signal-${s.priority}">
+                <td><span class="signal-type-${s.signal_type} fw-bold">${s.signal_type}</span></td>
+                <td class="fw-semibold">${s.symbol || '--'}</td>
+                <td><span class="badge bg-${s.priority === 'HIGH' ? 'danger' : s.priority === 'MEDIUM' ? 'warning' : 'info'}">${s.priority}</span></td>
+                <td><small>${truncate(details, 60)}</small></td>
+                <td><small>${time}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="dismissSignal(${s.id})">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+function updateRunsTable(runs) {
+    const body = document.getElementById('runsBody');
+
+    if (!runs.length) {
+        body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No agent runs yet</td></tr>';
+        return;
+    }
+
+    body.innerHTML = runs.slice(0, 15).map(r => {
+        const date = r.run_date ? new Date(r.run_date).toLocaleString() : '--';
+        const dur = r.duration_seconds ? r.duration_seconds.toFixed(1) + 's' : '--';
+        return `
+            <tr>
+                <td class="fw-semibold">${r.agent_type}</td>
+                <td><small>${date}</small></td>
+                <td><span class="status-${r.status}">${r.status}</span></td>
+                <td>${dur}</td>
+                <td><small>${truncate(r.summary || '', 50)}</small></td>
+            </tr>`;
+    }).join('');
+}
+
+function updateReportsTable(reports) {
+    const body = document.getElementById('reportsBody');
+
+    if (!reports.length) {
+        body.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No reports yet</td></tr>';
+        return;
+    }
+
+    body.innerHTML = reports.slice(0, 10).map(r => {
+        const date = r.run_date ? new Date(r.run_date).toLocaleString() : '--';
+        return `
+            <tr>
+                <td class="fw-semibold">${r.report_type || r.agent_type}</td>
+                <td><small>${date}</small></td>
+                <td><small>${truncate(r.summary || '', 50)}</small></td>
+                <td>
+                    ${r.id ? `<a href="/api/agent/report/${r.id}" target="_blank" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i></a>` : ''}
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+// ============================================================
+// Charts
+// ============================================================
+function renderEquityCurve(equity, benchmarks) {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+
+    if (equityChart) equityChart.destroy();
+
+    const dates = Object.keys(equity).sort();
+    const values = dates.map(d => equity[d]);
+
+    const datasets = [{
+        label: 'MQ Strategy',
+        data: values,
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88,166,255,0.1)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.3,
+    }];
+
+    // Benchmark overlays
+    const benchColors = {'Nifty 50': '#8b949e', 'Nifty 500': '#d29922'};
+    for (const [name, curve] of Object.entries(benchmarks)) {
+        const bValues = dates.map(d => curve[d] || null);
+        datasets.push({
+            label: name,
+            data: bValues,
+            borderColor: benchColors[name] || '#666',
+            borderWidth: 1.5,
+            borderDash: [4, 2],
+            fill: false,
+            pointRadius: 0,
+            tension: 0.3,
+        });
+    }
+
+    equityChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: dates, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { color: '#8b949e', font: { size: 11 } } },
+                tooltip: { mode: 'index', intersect: false },
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 10 } },
+                    grid: { color: 'rgba(48,54,61,0.5)' },
+                },
+                y: {
+                    ticks: { color: '#8b949e', font: { size: 10 } },
+                    grid: { color: 'rgba(48,54,61,0.5)' },
+                },
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        },
+    });
+}
+
+function renderSectorChart(sectors) {
+    const ctx = document.getElementById('sectorChart').getContext('2d');
+
+    if (sectorChart) sectorChart.destroy();
+
+    const labels = Object.keys(sectors);
+    const values = Object.values(sectors);
+    const colors = [
+        '#58a6ff', '#3fb950', '#d29922', '#f85149', '#bc8cff',
+        '#39d353', '#f78166', '#79c0ff', '#e3b341', '#7ee787',
+        '#a5d6ff', '#ffa657', '#d2a8ff', '#ff7b72',
+    ];
+
+    sectorChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: '#161b22',
+                borderWidth: 2,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#8b949e', font: { size: 10 }, padding: 8, boxWidth: 12 },
+                },
+            },
+        },
+    });
+}
+
+// ============================================================
+// Actions
+// ============================================================
+async function runBacktest() {
+    try {
+        showTaskOverlay('Running MQ Backtest...');
+        const res = await fetch('/api/agent/backtest', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.error) {
+            hideTaskOverlay();
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        activeTaskId = data.task_id;
+        pollTaskStatus(data.task_id);
+    } catch (err) {
+        hideTaskOverlay();
+        alert('Failed to start backtest: ' + err.message);
+    }
+}
+
+async function forceScreening() {
+    try {
+        showTaskOverlay('Running Universe Screening...');
+        const res = await fetch('/api/agent/screen', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.error) {
+            hideTaskOverlay();
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        activeTaskId = data.task_id;
+        pollTaskStatus(data.task_id);
+    } catch (err) {
+        hideTaskOverlay();
+        alert('Failed to start screening: ' + err.message);
+    }
+}
+
+async function dismissSignal(signalId) {
+    try {
+        await fetch(`/api/agent/signal/${signalId}/dismiss`, { method: 'POST' });
+        refreshDashboard();
+    } catch (err) {
+        console.error('Dismiss error:', err);
+    }
+}
+
+// ============================================================
+// Task Polling
+// ============================================================
+function pollTaskStatus(taskId) {
+    if (taskPollTimer) clearInterval(taskPollTimer);
+
+    taskPollTimer = setInterval(async () => {
+        try {
+            const res = await fetch(`/api/agent/status/${taskId}`);
+            const data = await res.json();
+
+            const pct = Math.round(data.progress || 0);
+            document.getElementById('taskProgress').style.width = pct + '%';
+            document.getElementById('taskPercent').textContent = pct + '%';
+            document.getElementById('taskMessage').textContent = data.message || 'Working...';
+
+            if (data.status === 'completed' || data.status === 'failed') {
+                clearInterval(taskPollTimer);
+                taskPollTimer = null;
+                activeTaskId = null;
+
+                setTimeout(() => {
+                    hideTaskOverlay();
+                    refreshDashboard();
+                    if (data.status === 'failed') {
+                        alert('Task failed: ' + (data.message || 'Unknown error'));
+                    }
+                }, 800);
+            }
+        } catch (err) {
+            console.error('Poll error:', err);
+        }
+    }, 2000);
+}
+
+// ============================================================
+// Task Overlay
+// ============================================================
+function showTaskOverlay(title) {
+    document.getElementById('taskTitle').textContent = title;
+    document.getElementById('taskProgress').style.width = '0%';
+    document.getElementById('taskPercent').textContent = '0%';
+    document.getElementById('taskMessage').textContent = 'Initializing...';
+    document.getElementById('taskOverlay').classList.add('active');
+}
+
+function hideTaskOverlay() {
+    document.getElementById('taskOverlay').classList.remove('active');
+}
+
+// ============================================================
+// Helpers
+// ============================================================
+function truncate(str, n) {
+    return str.length > n ? str.substring(0, n) + '...' : str;
+}
+
+// ============================================================
+// Auto-refresh
+// ============================================================
+function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => {
+        if (autoRefresh && !activeTaskId) refreshDashboard();
+    }, 30000);
+}
+
+document.getElementById('autoRefreshToggle').addEventListener('change', function() {
+    autoRefresh = this.checked;
+    if (autoRefresh) startAutoRefresh();
+    else if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+});
+
+// ============================================================
+// Init
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    refreshDashboard();
+    startAutoRefresh();
+});
+</script>
+{% endblock %}

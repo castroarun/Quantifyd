@@ -300,6 +300,45 @@
     .summary-stat .value { font-size: 1.25rem; font-weight: 700; }
     .summary-stat .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; }
 
+    /* Live Price Status Indicator */
+    .live-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #6b7280;
+        animation: none;
+    }
+    .live-dot.live {
+        background: #22c55e;
+        animation: livePulse 2s infinite;
+    }
+    .live-dot.market-closed {
+        background: #f59e0b;
+    }
+    .live-dot.error {
+        background: #ef4444;
+    }
+    @keyframes livePulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    }
+
+    /* Price flash animations for real-time updates */
+    .price-flash-up {
+        animation: flashUp 0.3s ease-out;
+    }
+    .price-flash-down {
+        animation: flashDown 0.3s ease-out;
+    }
+    @keyframes flashUp {
+        0% { background-color: rgba(34, 197, 94, 0.3); }
+        100% { background-color: transparent; }
+    }
+    @keyframes flashDown {
+        0% { background-color: rgba(239, 68, 68, 0.3); }
+        100% { background-color: transparent; }
+    }
+
     .sort-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
     .sort-btn {
         background: var(--card-bg);
@@ -1610,6 +1649,16 @@
             <div class="col"><div class="summary-stat"><div class="value text-success" id="count100Plus">0</div><div class="label">100%+</div></div></div>
             <div class="col"><div class="summary-stat"><div class="value text-success" id="count200Plus">0</div><div class="label">200%+</div></div></div>
             <div class="col"><div class="summary-stat"><div class="value text-success" id="count300Plus">0</div><div class="label">300%+</div></div></div>
+            <div class="col-auto px-2"><div style="width: 1px; height: 40px; background: var(--border-color);"></div></div>
+            <div class="col-auto">
+                <div class="summary-stat" style="min-width: 100px;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="live-dot" id="liveDot" title="Live prices"></span>
+                        <span class="value" id="liveStatus" style="font-size: 0.85rem;">--</span>
+                    </div>
+                    <div class="label" id="lastUpdated">Connecting...</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1771,6 +1820,8 @@
 {% block extra_js %}
 <!-- html2canvas for screenshots -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Socket.IO client for live ticker -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
 
 <script>
     // Theme toggle function
@@ -1818,6 +1869,11 @@
     let sparklineCharts = {};
     let listDayCharts = {};  // Track day ticker charts in list view
     let list1YCharts = {};   // Track 1Y ticker charts in list view
+
+    // Socket.IO for live ticker
+    let socket = null;
+    let socketConnected = false;
+    let useSocketIO = true;  // Try socket first, fallback to polling
 
     // Cache configuration - increment version to force refresh
     const CACHE_VERSION = 'v3';  // Increment when data structure changes (v3: dynamic labels, unique colors)
@@ -1937,6 +1993,350 @@
         }
     }
 
+    // =========================================================================
+    // Live Price Auto-Refresh
+    // =========================================================================
+
+    let refreshInterval = null;
+    let lastRefreshTime = null;
+    const REFRESH_INTERVAL_MS = 5000; // 5 seconds - faster updates during market hours
+
+    // Check if Indian market is open (9:15 AM - 3:30 PM IST)
+    function isMarketOpen() {
+        const now = new Date();
+        // Convert to IST (UTC+5:30)
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + istOffset);
+
+        const day = istTime.getDay();
+        const hours = istTime.getHours();
+        const minutes = istTime.getMinutes();
+        const timeInMinutes = hours * 60 + minutes;
+
+        // Market hours: 9:15 AM (555 min) to 3:30 PM (930 min), Mon-Fri
+        const marketOpen = 9 * 60 + 15;  // 9:15 AM
+        const marketClose = 15 * 60 + 30; // 3:30 PM
+
+        // Weekend check (0 = Sunday, 6 = Saturday)
+        if (day === 0 || day === 6) return false;
+
+        return timeInMinutes >= marketOpen && timeInMinutes <= marketClose;
+    }
+
+    // Update live status indicator
+    function updateLiveStatus(status, message) {
+        const dot = document.getElementById('liveDot');
+        const statusEl = document.getElementById('liveStatus');
+        const updatedEl = document.getElementById('lastUpdated');
+
+        if (!dot || !statusEl) return;
+
+        dot.classList.remove('live', 'market-closed', 'error');
+
+        if (status === 'live') {
+            dot.classList.add('live');
+            statusEl.textContent = 'LIVE';
+            statusEl.style.color = 'var(--profit-green)';
+        } else if (status === 'closed') {
+            dot.classList.add('market-closed');
+            statusEl.textContent = 'Closed';
+            statusEl.style.color = '#f59e0b';
+        } else if (status === 'error') {
+            dot.classList.add('error');
+            statusEl.textContent = 'Error';
+            statusEl.style.color = 'var(--loss-red)';
+        }
+
+        if (updatedEl && message) {
+            updatedEl.textContent = message;
+        }
+    }
+
+    // Format time for display
+    function formatUpdateTime(date) {
+        return date.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    }
+
+    // Refresh prices without full re-render
+    async function refreshPrices() {
+        try {
+            const response = await fetch('/api/holdings');
+            if (!response.ok) throw new Error('Failed to fetch holdings');
+
+            const data = await response.json();
+            const newHoldings = data.holdings || [];
+
+            // Update holdingsData prices
+            newHoldings.forEach(newH => {
+                const existing = holdingsData.find(h => h.symbol === newH.symbol);
+                if (existing) {
+                    existing.last_price = newH.last_price;
+                    existing.current = newH.current;
+                    existing.pnl = newH.pnl;
+                    existing.pnl_pct = newH.pnl_pct;
+                    existing.is_profit = newH.is_profit;
+                    existing.day_change = newH.day_change;
+                    existing.day_change_pct = newH.day_change_pct;
+                }
+            });
+
+            // Update summary stats
+            updateSummary(data.summary);
+
+            // Update prices in current view (cards or list)
+            updatePricesInView();
+
+            lastRefreshTime = new Date();
+            updateLiveStatus('live', `Updated ${formatUpdateTime(lastRefreshTime)}`);
+
+        } catch (error) {
+            console.error('Error refreshing prices:', error);
+            updateLiveStatus('error', 'Refresh failed');
+        }
+    }
+
+    // Update prices in the current view without full re-render
+    function updatePricesInView() {
+        holdingsData.forEach(h => {
+            // Update card view prices
+            const priceEl = document.querySelector(`[data-symbol="${h.symbol}"] .stock-ltp`);
+            if (priceEl) {
+                priceEl.textContent = `₹${parseFloat(h.last_price).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+
+            // Update P&L badges - show today's % in Trading mode, overall P/L in Holdings mode
+            const pnlBadge = document.querySelector(`[data-symbol="${h.symbol}"] .pnl-badge`);
+            if (pnlBadge) {
+                const isTrading = currentMode === 'trading';
+                if (isTrading) {
+                    const td = tradingData[h.symbol] || {};
+                    const todayPct = td.today_pct || 0;
+                    const todaySign = todayPct >= 0 ? '+' : '';
+                    const todayClass = todayPct >= 0 ? 'profit' : 'loss';
+                    pnlBadge.textContent = `${todaySign}${todayPct.toFixed(2)}%`;
+                    pnlBadge.className = `pnl-badge ${todayClass}`;
+                } else {
+                    const pnlSign = h.is_profit ? '+' : '';
+                    pnlBadge.textContent = `${pnlSign}${parseFloat(h.pnl_pct).toFixed(1)}%`;
+                    pnlBadge.className = `pnl-badge ${h.is_profit ? 'profit' : 'loss'}`;
+                }
+            }
+
+            // Update list view prices if visible
+            const listPrice = document.querySelector(`.list-row[data-symbol="${h.symbol}"] .list-stock-ltp`);
+            if (listPrice) {
+                listPrice.textContent = `₹${parseFloat(h.last_price).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+
+            const listPnl = document.querySelector(`.list-row[data-symbol="${h.symbol}"] .list-pnl-badge`);
+            if (listPnl) {
+                const pnlSign = h.is_profit ? '+' : '';
+                listPnl.textContent = `${pnlSign}${parseFloat(h.pnl_pct).toFixed(1)}%`;
+                listPnl.className = `list-pnl-badge ${h.is_profit ? 'profit' : 'loss'}`;
+            }
+        });
+    }
+
+    // Start/stop auto-refresh based on market hours
+    function manageAutoRefresh() {
+        if (isMarketOpen()) {
+            if (!refreshInterval) {
+                console.log('Market open - starting auto-refresh');
+                refreshPrices(); // Immediate refresh
+                refreshInterval = setInterval(refreshPrices, REFRESH_INTERVAL_MS);
+                updateLiveStatus('live', 'Auto-refresh active');
+            }
+        } else {
+            if (refreshInterval) {
+                console.log('Market closed - stopping auto-refresh');
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+            updateLiveStatus('closed', 'Market closed');
+        }
+    }
+
+    // Initialize auto-refresh system
+    function initAutoRefresh() {
+        // Check market status immediately
+        manageAutoRefresh();
+
+        // Re-check market status every minute
+        setInterval(manageAutoRefresh, 60000);
+    }
+
+    // =========================================================================
+    // Socket.IO Live Ticker Integration
+    // =========================================================================
+
+    // Initialize Socket.IO connection for live price streaming
+    function initSocketIO() {
+        if (!useSocketIO) {
+            console.log('Socket.IO disabled, using polling only');
+            return;
+        }
+
+        try {
+            socket = io({
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
+            });
+
+            socket.on('connect', () => {
+                console.log('Socket.IO connected');
+                socketConnected = true;
+
+                // Subscribe to all holdings symbols
+                const symbols = holdingsData.map(h => h.symbol);
+                if (symbols.length > 0) {
+                    socket.emit('subscribe_ticker', { symbols: symbols });
+                    console.log('Subscribed to ticker for:', symbols);
+                }
+
+                updateLiveStatus('live', 'WebSocket connected');
+            });
+
+            socket.on('disconnect', (reason) => {
+                console.log('Socket.IO disconnected:', reason);
+                socketConnected = false;
+                updateLiveStatus('error', 'Disconnected - reconnecting...');
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('Socket.IO connection error:', error);
+                socketConnected = false;
+                // Fall back to polling if socket fails
+                if (!refreshInterval && isMarketOpen()) {
+                    console.log('Socket.IO failed, falling back to polling');
+                    manageAutoRefresh();
+                }
+            });
+
+            // Handle live price ticks
+            socket.on('price_tick', (data) => {
+                handleSocketPriceTick(data);
+            });
+
+            // Handle subscription confirmation
+            socket.on('ticker_subscribed', (data) => {
+                console.log('Ticker subscription confirmed:', data);
+            });
+
+            // Handle ticker errors
+            socket.on('ticker_error', (data) => {
+                console.error('Ticker error:', data.error);
+            });
+
+        } catch (error) {
+            console.error('Failed to initialize Socket.IO:', error);
+            socketConnected = false;
+            useSocketIO = false;
+        }
+    }
+
+    // Handle incoming price tick from WebSocket
+    function handleSocketPriceTick(data) {
+        const symbol = data.symbol;
+        if (!symbol) return;
+
+        // Find the holding
+        const holding = holdingsData.find(h => h.symbol === symbol);
+        if (!holding) return;
+
+        // Update holding data
+        const prevPrice = holding.last_price || 0;
+        holding.last_price = data.ltp;
+        holding.current = data.ltp * (holding.quantity || 0);
+        holding.pnl = holding.current - holding.invested;
+        holding.pnl_pct = holding.invested > 0 ? ((holding.pnl / holding.invested) * 100).toFixed(2) : 0;
+        holding.is_profit = holding.pnl >= 0;
+        holding.day_change = data.change || 0;
+        holding.day_change_pct = data.change_pct || 0;
+
+        // Update trading data if available
+        if (tradingData[symbol]) {
+            tradingData[symbol].ltp = data.ltp;
+            tradingData[symbol].today_pct = data.change_pct || 0;
+            tradingData[symbol].day_change = data.change || 0;
+            tradingData[symbol].day_high = data.high || tradingData[symbol].day_high;
+            tradingData[symbol].day_low = data.low || tradingData[symbol].day_low;
+        }
+
+        // Update UI for this symbol
+        updateSingleStockUI(symbol, data, prevPrice);
+
+        // Update last refresh time
+        lastRefreshTime = new Date();
+        updateLiveStatus('live', `Tick ${formatUpdateTime(lastRefreshTime)}`);
+    }
+
+    // Update UI for a single stock (optimized for real-time updates)
+    function updateSingleStockUI(symbol, data, prevPrice) {
+        const holding = holdingsData.find(h => h.symbol === symbol);
+        if (!holding) return;
+
+        const isTrading = currentMode === 'trading';
+        const priceUp = data.ltp > prevPrice;
+        const priceClass = priceUp ? 'price-flash-up' : 'price-flash-down';
+
+        // Update card view LTP
+        const cardPriceEl = document.querySelector(`[data-symbol="${symbol}"] .stock-ltp`);
+        if (cardPriceEl) {
+            cardPriceEl.textContent = `₹${data.ltp.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            cardPriceEl.classList.add(priceClass);
+            setTimeout(() => cardPriceEl.classList.remove(priceClass), 300);
+        }
+
+        // Update P&L badge
+        const pnlBadge = document.querySelector(`[data-symbol="${symbol}"] .pnl-badge`);
+        if (pnlBadge) {
+            if (isTrading) {
+                const todayPct = data.change_pct || 0;
+                const todaySign = todayPct >= 0 ? '+' : '';
+                const todayClass = todayPct >= 0 ? 'profit' : 'loss';
+                pnlBadge.textContent = `${todaySign}${todayPct.toFixed(2)}%`;
+                pnlBadge.className = `pnl-badge ${todayClass}`;
+            } else {
+                const pnlSign = holding.is_profit ? '+' : '';
+                pnlBadge.textContent = `${pnlSign}${holding.pnl_pct}%`;
+                pnlBadge.className = `pnl-badge ${holding.is_profit ? 'profit' : 'loss'}`;
+            }
+        }
+
+        // Update list view LTP
+        const listPriceEl = document.querySelector(`.list-row[data-symbol="${symbol}"] .ltp-value`);
+        if (listPriceEl) {
+            listPriceEl.textContent = `₹${data.ltp.toFixed(0)}`;
+            listPriceEl.classList.add(priceClass);
+            setTimeout(() => listPriceEl.classList.remove(priceClass), 300);
+        }
+
+        // Update list P&L badge
+        const listPnl = document.querySelector(`.list-row[data-symbol="${symbol}"] .list-pnl-badge`);
+        if (listPnl) {
+            const pnlSign = holding.is_profit ? '+' : '';
+            listPnl.textContent = `${pnlSign}${holding.pnl_pct}%`;
+            listPnl.className = `list-pnl-badge ${holding.is_profit ? 'profit' : 'loss'}`;
+        }
+    }
+
+    // Subscribe to ticker after holdings are loaded
+    function subscribeToTicker() {
+        if (!socketConnected || !socket) return;
+
+        const symbols = holdingsData.map(h => h.symbol);
+        if (symbols.length > 0) {
+            socket.emit('subscribe_ticker', { symbols: symbols });
+        }
+    }
+
     // Update portfolio summary
     function updateSummary(summary) {
         if (!summary) return;
@@ -2015,6 +2415,11 @@
             const cprClass = cprStatus === 'Above CPR' ? 'above' : cprStatus === 'Below CPR' ? 'below' : '';
             const emaStatus = td.ema_status || 'N/A';
             const emaClass = emaStatus === 'Bullish' ? 'bullish' : emaStatus === 'Bearish' ? 'bearish' : 'neutral';
+            // Today's P/L amount (quantity × day_change)
+            const dayChange = td.day_change || 0;
+            const todayPnL = dayChange * (h.quantity || 0);
+            const dayHigh = td.day_high || 0;
+            const dayLow = td.day_low || 0;
 
             html += `
                 <div class="flip-card" data-symbol="${h.symbol}" data-sector="${h.sector}" onclick="flipCard(this)">
@@ -2043,6 +2448,10 @@
                             <div class="metrics-row">
                                 ${isTrading ? `
                                     <div class="metric-item">
+                                        <div class="value ${todayClass}">${todaySign}₹${Math.abs(todayPnL).toFixed(0)}</div>
+                                        <div class="label">Today P/L</div>
+                                    </div>
+                                    <div class="metric-item">
                                         <span class="cpr-badge ${cprClass}">${cprStatus}</span>
                                         <div class="label">W.CPR</div>
                                     </div>
@@ -2051,8 +2460,8 @@
                                         <div class="label">20/50 EMA</div>
                                     </div>
                                     <div class="metric-item">
-                                        <div class="value">₹${(td.ltp || h.last_price || 0).toFixed(0)}</div>
-                                        <div class="label">Price</div>
+                                        <div class="value" style="font-size: 0.8rem;">₹${dayLow.toFixed(0)} - ₹${dayHigh.toFixed(0)}</div>
+                                        <div class="label">Day Range</div>
                                     </div>
                                 ` : `
                                     <div class="metric-item"><div class="value">${formatCurrency(h.invested)}</div><div class="label">Invested</div></div>
@@ -2090,8 +2499,13 @@
         grid.innerHTML = html;
 
         // Load sparklines and fundamentals for each stock
+        // In Trading mode, use intraday data; in Holdings mode, use 1Y data
         sorted.forEach(h => {
-            loadSparkline(h.symbol, h.is_profit);
+            if (isTrading) {
+                loadIntradaySparkline(h.symbol, h.is_profit);
+            } else {
+                loadSparkline(h.symbol, h.is_profit);
+            }
             loadCardFundamentals(h.symbol);
         });
     }
@@ -2146,6 +2560,68 @@
 
         } catch (error) {
             console.error(`Error loading sparkline for ${symbol}:`, error);
+        }
+    }
+
+    // Load intraday sparkline chart for Trading mode (today's price movement)
+    async function loadIntradaySparkline(symbol, isProfit) {
+        try {
+            // Use shorter cache key for intraday data
+            let prices = getCachedData(`intraday_${symbol}`);
+
+            if (!prices) {
+                // Fetch intraday data (1 day, 5-minute intervals)
+                const response = await fetch(`/api/historical/${symbol}?period=1d&interval=5m`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (!data.prices || data.prices.length === 0) {
+                    // Fallback to 1-day without interval if intraday fails
+                    return loadSparkline(symbol, isProfit);
+                }
+
+                prices = data.prices;
+                // Cache for 5 minutes only (intraday data changes frequently)
+                setCachedData(`intraday_${symbol}`, prices, 5 * 60 * 1000);
+            }
+
+            const ctx = document.getElementById(`chart-${symbol}`);
+            if (!ctx) return;
+
+            // Color based on day performance (first vs last price)
+            const dayProfit = prices.length > 1 && prices[prices.length - 1] >= prices[0];
+            const color = dayProfit ? '#22c55e' : '#ef4444';
+
+            if (sparklineCharts[symbol]) {
+                sparklineCharts[symbol].destroy();
+            }
+
+            sparklineCharts[symbol] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: prices.map((_, i) => i),
+                    datasets: [{
+                        data: prices,
+                        borderColor: color,
+                        borderWidth: 1.5,
+                        fill: true,
+                        backgroundColor: color + '15',
+                        tension: 0.1,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+
+        } catch (error) {
+            console.error(`Error loading intraday sparkline for ${symbol}:`, error);
+            // Fallback to daily chart
+            loadSparkline(symbol, isProfit);
         }
     }
 
@@ -3150,8 +3626,9 @@
         sectorView.innerHTML = html;
 
         // Load sparklines for all sector cards
+        // In Trading mode, use intraday data; in Holdings mode, use 1Y data
         holdingsData.forEach(h => {
-            loadSectorSparkline(h.symbol, h.is_profit);
+            loadSectorSparkline(h.symbol, h.is_profit, isTrading);
         });
     }
 
@@ -3169,6 +3646,11 @@
         const cprClass = cprStatus === 'Above CPR' ? 'above' : cprStatus === 'Below CPR' ? 'below' : '';
         const emaStatus = td.ema_status || 'N/A';
         const emaClass = emaStatus === 'Bullish' ? 'bullish' : emaStatus === 'Bearish' ? 'bearish' : 'neutral';
+        // Today's P/L amount (quantity × day_change)
+        const dayChange = td.day_change || 0;
+        const todayPnL = dayChange * (h.quantity || 0);
+        const dayHigh = td.day_high || 0;
+        const dayLow = td.day_low || 0;
 
         return `
             <div class="flip-card" data-symbol="${h.symbol}" onclick="flipCard(this)">
@@ -3196,6 +3678,10 @@
                         <div class="metrics-row">
                             ${isTrading ? `
                                 <div class="metric-item">
+                                    <div class="value ${todayClass}">${todaySign}₹${Math.abs(todayPnL).toFixed(0)}</div>
+                                    <div class="label">Today P/L</div>
+                                </div>
+                                <div class="metric-item">
                                     <span class="cpr-badge ${cprClass}">${cprStatus}</span>
                                     <div class="label">W.CPR</div>
                                 </div>
@@ -3204,8 +3690,8 @@
                                     <div class="label">20/50 EMA</div>
                                 </div>
                                 <div class="metric-item">
-                                    <div class="value">₹${(td.ltp || h.last_price || 0).toFixed(0)}</div>
-                                    <div class="label">Price</div>
+                                    <div class="value" style="font-size: 0.8rem;">₹${dayLow.toFixed(0)} - ₹${dayHigh.toFixed(0)}</div>
+                                    <div class="label">Day Range</div>
                                 </div>
                             ` : `
                                 <div class="metric-item"><div class="value">${formatCurrency(h.invested)}</div><div class="label">Invested</div></div>
@@ -3230,27 +3716,47 @@
     }
 
     // Load sparkline for sector view cards
-    async function loadSectorSparkline(symbol, isProfit) {
+    async function loadSectorSparkline(symbol, isProfit, isTrading = false) {
         try {
-            let prices = getCachedData(`hist_${symbol}`);
-            if (!prices) {
-                // Try to fetch if not cached
-                const response = await fetch(`/api/historical/${symbol}?period=1y`);
-                if (response.ok) {
-                    const data = await response.json();
-                    prices = data.prices || [];
-                    if (prices.length > 0) {
-                        setCachedData(`hist_${symbol}`, prices);
+            let prices;
+            let color;
+
+            if (isTrading) {
+                // In Trading mode, use intraday data
+                prices = getCachedData(`intraday_${symbol}`);
+                if (!prices) {
+                    const response = await fetch(`/api/historical/${symbol}?period=1d&interval=5m`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        prices = data.prices || [];
+                        if (prices.length > 0) {
+                            setCachedData(`intraday_${symbol}`, prices, 5 * 60 * 1000);
+                        }
                     }
                 }
+                // Color based on day performance (first vs last price)
+                const dayProfit = prices && prices.length > 1 && prices[prices.length - 1] >= prices[0];
+                color = dayProfit ? '#22c55e' : '#ef4444';
+            } else {
+                // In Holdings mode, use 1Y data
+                prices = getCachedData(`hist_${symbol}`);
+                if (!prices) {
+                    const response = await fetch(`/api/historical/${symbol}?period=1y`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        prices = data.prices || [];
+                        if (prices.length > 0) {
+                            setCachedData(`hist_${symbol}`, prices);
+                        }
+                    }
+                }
+                color = isProfit ? '#22c55e' : '#ef4444';
             }
 
             if (!prices || prices.length === 0) return;
 
             const ctx = document.getElementById(`sector-chart-${symbol}`);
             if (!ctx) return;
-
-            const color = isProfit ? '#22c55e' : '#ef4444';
 
             new Chart(ctx, {
                 type: 'line',
@@ -3261,7 +3767,7 @@
                         borderColor: color,
                         borderWidth: 1.5,
                         fill: true,
-                        backgroundColor: isProfit ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        backgroundColor: color + '15',
                         tension: 0.3,
                         pointRadius: 0
                     }]
@@ -3477,7 +3983,11 @@
     });
 
     // Initialize on page load
-    document.addEventListener('DOMContentLoaded', loadHoldings);
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadHoldings();
+        initSocketIO();  // Initialize Socket.IO for live price streaming
+        initAutoRefresh();  // Fallback polling if socket fails
+    });
 
     // =========================================================================
     // AI Chat Functions

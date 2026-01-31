@@ -902,13 +902,14 @@ def get_fundamentals(symbol: str, force_refresh: bool = False) -> Dict[str, Any]
         }
 
 
-def get_historical_prices(symbol: str, period: str = "1y") -> List[float]:
+def get_historical_prices(symbol: str, period: str = "1y", interval: str = None) -> List[float]:
     """
     Get historical closing prices for sparkline/chart.
 
     Args:
         symbol: NSE stock symbol
-        period: Time period (e.g., "1y", "6mo", "3mo")
+        period: Time period (e.g., "1y", "6mo", "3mo", "1d" for intraday)
+        interval: Data interval (e.g., "5m", "15m" for intraday, None for daily)
 
     Returns:
         List of closing prices
@@ -916,7 +917,12 @@ def get_historical_prices(symbol: str, period: str = "1y") -> List[float]:
     try:
         yahoo_symbol = get_yahoo_symbol(symbol)
         ticker = yf.Ticker(yahoo_symbol)
-        hist = ticker.history(period=period)
+
+        # For intraday data, use specified interval
+        if interval:
+            hist = ticker.history(period=period, interval=interval)
+        else:
+            hist = ticker.history(period=period)
 
         if hist.empty:
             return []
@@ -1013,6 +1019,12 @@ def get_trading_data(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
             current_price = hist["Close"].iloc[-1]
             prev_close = hist["Close"].iloc[-2]
             today_pct = ((current_price - prev_close) / prev_close) * 100 if prev_close else 0
+            day_change = current_price - prev_close if prev_close else 0
+
+            # Day high/low from today's candle
+            day_high = hist["High"].iloc[-1] if "High" in hist else current_price
+            day_low = hist["Low"].iloc[-1] if "Low" in hist else current_price
+            day_open = hist["Open"].iloc[-1] if "Open" in hist else prev_close
 
             # Calculate Weekly CPR (Central Pivot Range)
             # Use last week's high, low, close for weekly pivot
@@ -1080,6 +1092,11 @@ def get_trading_data(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
             result[symbol] = {
                 "ltp": round(current_price, 2),
                 "today_pct": round(today_pct, 2),
+                "day_change": round(day_change, 2),
+                "day_open": round(day_open, 2),
+                "day_high": round(day_high, 2),
+                "day_low": round(day_low, 2),
+                "prev_close": round(prev_close, 2),
                 "cpr_status": cpr_status,
                 "ema_status": ema_status,
             }

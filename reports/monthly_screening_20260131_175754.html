@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Screening - Jan 2026 | MQ Agent</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; }
+        .card { border: 1px solid #334155; }
+        .text-muted { color: #94a3b8 !important; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4><i class="bi bi-robot me-2"></i>Monthly Screening - Jan 2026</h4>
+            <small class="text-muted">Generated: 2026-01-31 17:57</small>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Regime</h6>
+                        <h3><span class="badge bg-danger">BEARISH</span></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Universe</h6>
+                        <h3>395</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Momentum</h6>
+                        <h3>126</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Quality</h6>
+                        <h3>8</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5>Screening Funnel</h5>
+        <canvas id="funnelChart" height="80"></canvas>
+
+        <h5 class="mt-4">Top 30 Ranked Stocks</h5>
+        <table class="table table-dark table-striped table-sm">
+            <thead><tr><th>#</th><th>Symbol</th><th>Sector</th><th>ATH Distance</th><th>Quality Score</th><th>Passes All</th></tr></thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td><strong>BSE</strong></td>
+                <td>Financial Services</td>
+                <td>4.5%</td>
+                <td>1.0</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><strong>BAJFINANCE</strong></td>
+                <td>Financial Services</td>
+                <td>6.7%</td>
+                <td>0.965</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><strong>BAJAJFINSV</strong></td>
+                <td>Financial Services</td>
+                <td>4.5%</td>
+                <td>0.872</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><strong>HDFCBANK</strong></td>
+                <td>Financial Services</td>
+                <td>3.7%</td>
+                <td>0.867</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><strong>MAHABANK</strong></td>
+                <td>Financial Services</td>
+                <td>3.3%</td>
+                <td>0.834</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td><strong>BEL</strong></td>
+                <td>Capital Goods</td>
+                <td>5.2%</td>
+                <td>0.807</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td><strong>JBCHEPHARM</strong></td>
+                <td>Healthcare</td>
+                <td>7.7%</td>
+                <td>0.788</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td><strong>AXISBANK</strong></td>
+                <td>Financial Services</td>
+                <td>4.2%</td>
+                <td>0.692</td>
+                <td>Yes</td>
+            </tr></tbody>
+        </table>
+
+        <script>
+        new Chart(document.getElementById('funnelChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Universe', 'Momentum Filter', 'Quality Filter', 'Top 30'],
+                datasets: [{
+                    data: [395, 126, 8, 8],
+                    backgroundColor: ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd'],
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { color: '#334155' } }, y: { grid: { display: false } } }
+            }
+        });
+        </script>
+        
+    </div>
+</body>
+</html>

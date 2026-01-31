@@ -331,8 +331,9 @@ class CPRCoveredCallEngine:
             # Get all Mondays in the date range
             current = self.config.start_date
             while current <= self.config.end_date:
-                # Find Monday of this week
+                # Find Monday of this week and normalize to midnight
                 monday = current - timedelta(days=current.weekday())
+                monday = monday.replace(hour=0, minute=0, second=0, microsecond=0)
 
                 # Calculate CPR for this week
                 cpr_data = self._calculate_weekly_cpr(
@@ -450,6 +451,8 @@ class CPRCoveredCallEngine:
     def _get_week_cpr(self, symbol: str, date: datetime) -> Optional[CPRWeeklyData]:
         """Get CPR data for the week containing the given date."""
         monday = date - timedelta(days=date.weekday())
+        # Normalize to midnight to match cache keys
+        monday = monday.replace(hour=0, minute=0, second=0, microsecond=0)
         return self.weekly_cpr_cache.get(symbol, {}).get(monday)
 
     def _process_day(
@@ -586,7 +589,7 @@ class CPRCoveredCallEngine:
                 return
 
             # Get Greeks
-            greeks = self.greeks.calculate_greeks(
+            greeks = self.greeks.calculate_all_greeks(
                 spot=stock_price,
                 strike=strike_price,
                 time_to_expiry=time_to_expiry,

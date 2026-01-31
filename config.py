@@ -109,3 +109,61 @@ CPR_DEFAULTS = {
     'enable_r1_exit': True,           # Exit on R1 breach
     'use_closer_r1': True,            # Use closer of current/previous R1
 }
+
+# Momentum + Quality Strategy Defaults
+MQ_DEFAULTS = {
+    # Portfolio
+    'portfolio_size': 30,
+    'equity_allocation_pct': 0.80,
+    'debt_reserve_pct': 0.20,
+    'debt_fund_annual_return': 0.065,
+    'max_position_size': 0.10,
+    'max_sector_weight': 0.25,
+    'max_stocks_per_sector': 6,
+
+    # Momentum Filter
+    'ath_proximity_threshold': 0.10,  # Within 10% of 52-week high
+
+    # Fundamental Quality (Non-Financial)
+    'min_revenue_growth_3y_cagr': 0.15,
+    'require_revenue_positive_each_year': True,
+    'max_debt_to_equity': 0.20,
+    'min_opm_3y': 0.15,
+    'require_opm_no_decline': True,
+
+    # Fundamental Quality (Financial)
+    'min_roa': 0.01,
+    'min_roe': 0.12,
+
+    # Consolidation & Breakout
+    'consolidation_days': 20,
+    'consolidation_range_pct': 0.05,
+    'breakout_volume_multiplier': 1.5,
+    'topup_pct_of_initial': 0.20,
+    'topup_cooldown_days': 5,
+
+    # Exit Rules
+    'rebalance_ath_drawdown': 0.20,
+    'quarterly_decline_threshold': 0.10,
+    'hard_stop_loss': 0.30,
+
+    # Backtest
+    'start_date': '2023-01-01',
+    'end_date': '2025-12-31',
+    'initial_capital': 10_000_000,
+    'brokerage_pct': 0.0003,
+    'stt_pct': 0.001,
+    'gst_pct': 0.18,
+    'stamp_duty_pct': 0.00015,
+    'slippage_pct': 0.001,
+    'rebalance_months': [1, 7],
+
+    # Composite Ranking Weights
+    'weight_revenue': 0.30,
+    'weight_debt': 0.25,
+    'weight_opm': 0.25,
+    'weight_opm_growth': 0.20,
+}
+
+# Nifty 500 Universe
+NIFTY500_CSV = DATA_DIR.parent / 'data' / 'nifty500_list.csv'

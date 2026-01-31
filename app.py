@@ -26,6 +26,7 @@ from flask import (
     session, jsonify, flash, Response
 )
 from flask_session import Session
+from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -46,8 +47,12 @@ from services.cpr_covered_call_service import CPRCoveredCallEngine, CPRBacktestC
 from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
-    STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE
+    STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
+    MQ_DEFAULTS,
 )
+
+# MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
+_mq_agents_loaded = False
 
 # Setup logging
 logging.basicConfig(
@@ -71,12 +76,18 @@ app.config['SESSION_FILE_DIR'] = str(SESSION_DIR)
 app.config['SESSION_PERMANENT'] = False
 Session(app)
 
+# Initialize Flask-SocketIO for real-time updates
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
 # Background scheduler for async tasks
 scheduler = BackgroundScheduler()
 scheduler.start()
 
 # In-memory task status storage
 task_status = {}
+
+# Ticker service import (lazy load to avoid circular imports)
+_ticker_service = None
 
 
 # =============================================================================
@@ -315,7 +326,8 @@ def api_get_historical(symbol: str):
     """Get historical prices for sparkline charts"""
     try:
         period = request.args.get('period', '1y')
-        prices = get_historical_prices(symbol, period=period)
+        interval = request.args.get('interval', None)  # e.g., '5m', '15m' for intraday
+        prices = get_historical_prices(symbol, period=period, interval=interval)
         return jsonify({'symbol': symbol, 'prices': prices})
     except Exception as e:
         logger.error(f"Error fetching historical prices for {symbol}: {e}")
@@ -1148,6 +1160,635 @@ def api_get_cpr_optimization_results(task_id: str):
 
 
 # =============================================================================
+# Live Ticker WebSocket Routes
+# =============================================================================
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle client WebSocket connection"""
+    logger.info(f"Client connected: {request.sid}")
+    emit('ticker_status', {'status': 'connected', 'message': 'WebSocket connected'})
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client WebSocket disconnection"""
+    logger.info(f"Client disconnected: {request.sid}")
+
+
+@socketio.on('subscribe_ticker')
+def handle_subscribe_ticker(data):
+    """Subscribe to live ticker for given symbols"""
+    global _ticker_service
+
+    symbols = data.get('symbols', [])
+    if not symbols:
+        emit('ticker_error', {'error': 'No symbols provided'})
+        return
+
+    try:
+        from services.kite_ticker_service import get_ticker_service, KiteTickerService
+
+        access_token = get_access_token()
+        if not access_token:
+            emit('ticker_error', {'error': 'Not authenticated. Please login first.'})
+            return
+
+        # Get or create ticker service
+        _ticker_service = get_ticker_service(access_token)
+
+        if not _ticker_service:
+            emit('ticker_error', {'error': 'Could not initialize ticker service'})
+            return
+
+        # Check if we need to update instrument tokens
+        if not _ticker_service.symbol_to_token:
+            logger.info("Updating instrument tokens...")
+            kite = get_kite()
+            _ticker_service.update_instruments(kite)
+
+        # Set up tick callback to broadcast via SocketIO
+        def on_tick(tick_data):
+            socketio.emit('price_tick', tick_data)
+
+        _ticker_service.set_callback(on_tick)
+
+        # Subscribe to symbols
+        subscribed = _ticker_service.subscribe(symbols)
+
+        # Start ticker if not already running
+        if not _ticker_service.is_running():
+            _ticker_service.start(threaded=True)
+
+        emit('ticker_subscribed', {
+            'subscribed': subscribed,
+            'total': len(symbols),
+            'missing': [s for s in symbols if s not in subscribed]
+        })
+
+        logger.info(f"Subscribed to {len(subscribed)} symbols: {subscribed}")
+
+    except Exception as e:
+        logger.error(f"Error subscribing to ticker: {e}")
+        emit('ticker_error', {'error': str(e)})
+
+
+@socketio.on('unsubscribe_ticker')
+def handle_unsubscribe_ticker(data):
+    """Unsubscribe from live ticker for given symbols"""
+    global _ticker_service
+
+    symbols = data.get('symbols', [])
+    if not symbols or not _ticker_service:
+        return
+
+    try:
+        _ticker_service.unsubscribe(symbols)
+        emit('ticker_unsubscribed', {'symbols': symbols})
+    except Exception as e:
+        logger.error(f"Error unsubscribing from ticker: {e}")
+
+
+@app.route('/api/ticker/start', methods=['POST'])
+@login_required
+def api_start_ticker():
+    """Start the live ticker service"""
+    global _ticker_service
+
+    try:
+        from services.kite_ticker_service import get_ticker_service
+
+        access_token = get_access_token()
+        if not access_token:
+            return jsonify({'error': 'Not authenticated'}), 401
+
+        _ticker_service = get_ticker_service(access_token)
+
+        if not _ticker_service:
+            return jsonify({'error': 'Could not initialize ticker service'}), 500
+
+        # Update instruments if needed
+        if not _ticker_service.symbol_to_token:
+            kite = get_kite()
+            _ticker_service.update_instruments(kite)
+
+        # Set up broadcast callback
+        def on_tick(tick_data):
+            socketio.emit('price_tick', tick_data)
+
+        _ticker_service.set_callback(on_tick)
+
+        if not _ticker_service.is_running():
+            _ticker_service.start(threaded=True)
+
+        return jsonify({
+            'status': 'started',
+            'instruments_loaded': len(_ticker_service.symbol_to_token)
+        })
+
+    except Exception as e:
+        logger.error(f"Error starting ticker: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ticker/stop', methods=['POST'])
+@login_required
+def api_stop_ticker():
+    """Stop the live ticker service"""
+    global _ticker_service
+
+    try:
+        from services.kite_ticker_service import stop_ticker_service
+
+        stop_ticker_service()
+        _ticker_service = None
+
+        return jsonify({'status': 'stopped'})
+
+    except Exception as e:
+        logger.error(f"Error stopping ticker: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ticker/status')
+@login_required
+def api_ticker_status():
+    """Get ticker service status"""
+    global _ticker_service
+
+    if not _ticker_service:
+        return jsonify({
+            'running': False,
+            'connected': False,
+            'subscribed_count': 0
+        })
+
+    return jsonify({
+        'running': True,
+        'connected': _ticker_service.is_connected,
+        'subscribed_count': len(_ticker_service.subscribed_tokens),
+        'instruments_loaded': len(_ticker_service.symbol_to_token)
+    })
+
+
+@app.route('/api/ticker/subscribe', methods=['POST'])
+@login_required
+def api_subscribe_symbols():
+    """Subscribe to additional symbols"""
+    global _ticker_service
+
+    if not _ticker_service:
+        return jsonify({'error': 'Ticker not started'}), 400
+
+    data = request.get_json()
+    symbols = data.get('symbols', [])
+
+    if not symbols:
+        return jsonify({'error': 'No symbols provided'}), 400
+
+    subscribed = _ticker_service.subscribe(symbols)
+
+    return jsonify({
+        'subscribed': subscribed,
+        'total': len(symbols)
+    })
+
+
+# =============================================================================
+# MQ Agent Routes
+# =============================================================================
+
+@app.route('/agent')
+def mq_agent_dashboard():
+    """MQ Agent Dashboard - no login required (read-only strategy dashboard)"""
+    return render_template(
+        'mq_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/agent/state')
+def api_agent_state():
+    """Get current agent state: portfolio, regime, last backtest curves."""
+    try:
+        from services.mq_agent_db import get_agent_db
+        db = get_agent_db()
+
+        portfolio = db.get_portfolio_state() or {}
+
+        # Get regime from DB (persists across restarts)
+        db_regime = db.get_regime()
+        if db_regime:
+            regime = {
+                'regime': db_regime.get('regime', 'UNKNOWN'),
+                'index_close': db_regime.get('index_close', 0),
+                'index_200dma': db_regime.get('index_200dma', 0),
+                'vix': db_regime.get('vix'),
+            }
+        else:
+            regime = {'regime': 'UNKNOWN', 'index_close': 0, 'index_200dma': 0, 'vix': None}
+
+        # Get last backtest results from task_status cache
+        equity_curve = {}
+        benchmark_curves = {}
+        sector_allocation = {}
+        backtest_metrics = {}
+        for tid, ts in list(task_status.items()):
+            if tid.startswith('mq_backtest_') and ts.get('status') == 'completed':
+                result = ts.get('result', {})
+                equity_curve = result.get('equity_curve', {})
+                benchmark_curves = result.get('benchmark_curves', {})
+                sector_allocation = result.get('sector_allocation', {})
+                backtest_metrics = result.get('metrics', {})
+                break
+        if not backtest_metrics:
+            try:
+                import json
+                bt_file = Path('backtest_data') / 'last_backtest.json'
+                if bt_file.exists():
+                    bt_data = json.loads(bt_file.read_text(encoding='utf-8'))
+                    backtest_metrics = bt_data.get('metrics', {})
+                    if not sector_allocation:
+                        sector_allocation = bt_data.get('sector_allocation', {})
+            except Exception:
+                pass
+
+        # Get last screening results (from memory or persisted file)
+        screening = {}
+        for tid, ts in list(task_status.items()):
+            if tid.startswith('mq_screen_') and ts.get('status') == 'completed':
+                screening = ts.get('result', {})
+                break
+        if not screening:
+            try:
+                import json
+                screening_file = Path('backtest_data') / 'last_screening.json'
+                if screening_file.exists():
+                    screening = json.loads(screening_file.read_text(encoding='utf-8'))
+            except Exception:
+                pass
+
+        return jsonify({
+            'portfolio': portfolio,
+            'regime': regime,
+            'equity_curve': equity_curve,
+            'benchmark_curves': benchmark_curves,
+            'sector_allocation': sector_allocation,
+            'backtest_metrics': backtest_metrics,
+            'screening': screening,
+        })
+    except Exception as e:
+        logger.error(f"Agent state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/agent/signals')
+def api_agent_signals():
+    """Get active signals from the agent DB."""
+    try:
+        from services.mq_agent_db import get_agent_db
+        db = get_agent_db()
+        signals = db.get_active_signals(limit=50)
+        return jsonify(signals)
+    except Exception as e:
+        logger.error(f"Agent signals error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/agent/runs')
+def api_agent_runs():
+    """Get recent agent runs and reports."""
+    try:
+        from services.mq_agent_db import get_agent_db
+        db = get_agent_db()
+        runs = db.get_recent_runs(limit=20)
+        reports = db.get_recent_reports(limit=10)
+        return jsonify({'runs': runs, 'reports': reports})
+    except Exception as e:
+        logger.error(f"Agent runs error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/agent/backtest', methods=['POST'])
+def api_agent_run_backtest():
+    """Start an MQ backtest in the background."""
+    try:
+        task_id = f"mq_backtest_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        task_status[task_id] = {
+            'status': 'running',
+            'progress': 0,
+            'message': 'Initializing MQ backtest...',
+            'result': None,
+        }
+
+        scheduler.add_job(
+            _execute_mq_backtest,
+            args=[task_id],
+            id=task_id,
+        )
+
+        return jsonify({'task_id': task_id, 'status': 'started'})
+    except Exception as e:
+        logger.error(f"MQ backtest start error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def _execute_mq_backtest(task_id: str):
+    """Run MQ backtest in background thread."""
+    try:
+        from services.mq_backtest_agent import BacktestAgent
+        from services.mq_backtest_engine import MQBacktestConfig
+
+        def progress_cb(day_idx, total_days, current_date, msg):
+            pct = (day_idx / total_days * 100) if total_days else 0
+            task_status[task_id]['progress'] = round(pct, 1)
+            task_status[task_id]['message'] = msg
+
+        agent = BacktestAgent()
+        config = MQBacktestConfig()
+        report = agent.run(config=config, progress_callback=progress_cb)
+
+        # Cache results for dashboard display
+        backtest_result = {
+            'metrics': report.metrics,
+            'equity_curve': report.equity_curve,
+            'benchmark_curves': report.benchmark_curves,
+            'sector_allocation': report.sector_allocation,
+            'trade_count': report.trade_count,
+        }
+        task_status[task_id]['status'] = 'completed'
+        task_status[task_id]['progress'] = 100
+        task_status[task_id]['message'] = f"CAGR {report.metrics.get('cagr', 0)}%, Sharpe {report.metrics.get('sharpe_ratio', 0)}"
+        task_status[task_id]['result'] = backtest_result
+
+        # Persist backtest metrics so they survive restarts
+        try:
+            import json as json_mod
+            bt_file = Path('backtest_data') / 'last_backtest.json'
+            bt_file.parent.mkdir(parents=True, exist_ok=True)
+            # Save metrics + sector allocation (skip large equity curves)
+            bt_file.write_text(json_mod.dumps({
+                'metrics': report.metrics,
+                'sector_allocation': report.sector_allocation,
+                'trade_count': report.trade_count,
+                'run_date': datetime.now().isoformat(),
+            }, default=str), encoding='utf-8')
+        except Exception as pf:
+            logger.warning(f"Could not persist backtest results: {pf}")
+
+        # Generate HTML report and save path to DB
+        try:
+            from services.mq_reporting_agent import ReportingAgent
+            from services.mq_agent_db import get_agent_db
+            reporter = ReportingAgent()
+            report_path = reporter.generate_backtest_report(report)
+            db = get_agent_db()
+            latest = db.get_latest_run('backtest')
+            if latest and report_path:
+                db.update_run_report_path(latest['id'], report_path)
+        except Exception as re:
+            logger.warning(f"Report generation failed (non-fatal): {re}")
+
+    except Exception as e:
+        logger.error(f"MQ backtest error: {e}")
+        task_status[task_id]['status'] = 'failed'
+        task_status[task_id]['message'] = str(e)
+
+
+@app.route('/api/agent/screen', methods=['POST'])
+def api_agent_run_screening():
+    """Start MQ screening in the background."""
+    try:
+        task_id = f"mq_screen_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        task_status[task_id] = {
+            'status': 'running',
+            'progress': 0,
+            'message': 'Initializing universe screening...',
+            'result': None,
+        }
+
+        scheduler.add_job(
+            _execute_mq_screening,
+            args=[task_id],
+            id=task_id,
+        )
+
+        return jsonify({'task_id': task_id, 'status': 'started'})
+    except Exception as e:
+        logger.error(f"MQ screening start error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def _execute_mq_screening(task_id: str):
+    """Run MQ screening in background thread."""
+    try:
+        from services.mq_screening_agent import ScreeningAgent
+        from services.mq_agent_db import get_agent_db
+
+        task_status[task_id]['message'] = 'Running momentum + quality screening...'
+        task_status[task_id]['progress'] = 10
+
+        agent = ScreeningAgent()
+        report = agent.run()
+
+        # Extract regime details and persist to DB
+        regime = report.regime
+        db = get_agent_db()
+        if regime:
+            db.save_regime(
+                regime=regime.regime,
+                index_close=regime.index_close,
+                index_200dma=regime.index_200dma,
+                vix=regime.vix,
+                above_200dma=regime.above_200dma,
+                vix_ok=regime.vix_ok,
+            )
+
+        task_status[task_id]['status'] = 'completed'
+        task_status[task_id]['progress'] = 100
+        task_status[task_id]['message'] = (
+            f"Scanned {report.total_scanned}: "
+            f"{report.momentum_passed} momentum, "
+            f"{report.quality_passed} quality"
+        )
+        screening_result = {
+            'total_scanned': report.total_scanned,
+            'momentum_passed': report.momentum_passed,
+            'quality_passed': report.quality_passed,
+            'top_ranked': report.top_ranked[:10],
+            'regime': regime.regime if regime else 'UNKNOWN',
+            'index_close': regime.index_close if regime else 0,
+            'index_200dma': regime.index_200dma if regime else 0,
+            'vix': regime.vix if regime else None,
+            'run_date': datetime.now().isoformat(),
+        }
+        task_status[task_id]['result'] = screening_result
+
+        # Persist screening results to file so they survive restarts
+        try:
+            import json
+            screening_file = Path('backtest_data') / 'last_screening.json'
+            screening_file.parent.mkdir(parents=True, exist_ok=True)
+            screening_file.write_text(json.dumps(screening_result, default=str), encoding='utf-8')
+        except Exception as fe:
+            logger.warning(f"Could not persist screening results: {fe}")
+
+        # Generate HTML report and save path to DB
+        try:
+            from services.mq_reporting_agent import ReportingAgent
+            reporter = ReportingAgent()
+            report_path = reporter.generate_monthly_screening(report)
+            # Update the DB run with the report path
+            db = get_agent_db()
+            latest = db.get_latest_run('screening')
+            if latest and report_path:
+                db.update_run_report_path(latest['id'], report_path)
+        except Exception as re:
+            logger.warning(f"Screening report generation failed (non-fatal): {re}")
+
+    except Exception as e:
+        logger.error(f"MQ screening error: {e}")
+        task_status[task_id]['status'] = 'failed'
+        task_status[task_id]['message'] = str(e)
+
+
+@app.route('/api/agent/status/<task_id>')
+def api_agent_task_status(task_id: str):
+    """Get status of a running MQ agent task."""
+    if task_id not in task_status:
+        return jsonify({'error': 'Task not found'}), 404
+    return jsonify(task_status[task_id])
+
+
+@app.route('/api/agent/signal/<int:signal_id>/dismiss', methods=['POST'])
+def api_agent_dismiss_signal(signal_id: int):
+    """Dismiss an active signal."""
+    try:
+        from services.mq_agent_db import get_agent_db
+        db = get_agent_db()
+        db.dismiss_signal(signal_id)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        logger.error(f"Dismiss signal error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/agent/report/<int:run_id>')
+def api_agent_view_report(run_id: int):
+    """Serve the HTML report for a given agent run."""
+    try:
+        from services.mq_agent_db import get_agent_db
+        db = get_agent_db()
+        run = db.get_run(run_id)
+
+        if not run or not run.get('report_path'):
+            return jsonify({'error': 'Report not found'}), 404
+
+        report_path = Path(run['report_path'])
+        if not report_path.exists():
+            return jsonify({'error': 'Report file missing'}), 404
+
+        return Response(
+            report_path.read_text(encoding='utf-8'),
+            mimetype='text/html',
+        )
+    except Exception as e:
+        logger.error(f"Report view error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# MQ Scheduled Jobs
+# =============================================================================
+
+def _scheduled_monitoring():
+    """Weekday 4:30 PM - run monitoring agent."""
+    try:
+        from services.mq_monitoring_agent import MonitoringAgent
+        from services.mq_reporting_agent import ReportingAgent
+        logger.info("[Scheduler] Running daily monitoring...")
+        agent = MonitoringAgent()
+        report = agent.run(symbols=[])  # Uses DB portfolio positions
+        ReportingAgent().generate_daily_brief(report)
+        logger.info(f"[Scheduler] Monitoring complete: {len(report.signals)} signals")
+    except Exception as e:
+        logger.error(f"[Scheduler] Monitoring failed: {e}")
+
+
+def _scheduled_screening():
+    """1st of month 5 PM - run full screening."""
+    try:
+        from services.mq_screening_agent import ScreeningAgent
+        from services.mq_reporting_agent import ReportingAgent
+        logger.info("[Scheduler] Running monthly screening...")
+        agent = ScreeningAgent()
+        report = agent.run()
+        ReportingAgent().generate_monthly_screening(report)
+        logger.info(f"[Scheduler] Screening complete: {report.quality_passed} quality stocks")
+    except Exception as e:
+        logger.error(f"[Scheduler] Screening failed: {e}")
+
+
+def _scheduled_weekly_digest():
+    """Sunday 10 AM - weekly digest report."""
+    try:
+        from services.mq_reporting_agent import ReportingAgent
+        from services.mq_agent_db import get_agent_db
+        logger.info("[Scheduler] Generating weekly digest...")
+        db = get_agent_db()
+        runs = db.get_recent_runs(limit=50)
+        signals = db.get_active_signals(limit=50)
+        ReportingAgent().generate_weekly_digest(runs, signals)
+        logger.info("[Scheduler] Weekly digest generated")
+    except Exception as e:
+        logger.error(f"[Scheduler] Weekly digest failed: {e}")
+
+
+def _scheduled_rebalance():
+    """Jan/Jul 1st 9 AM - semi-annual rebalance."""
+    try:
+        from services.mq_rebalance_agent import RebalanceAgent
+        from services.mq_reporting_agent import ReportingAgent
+        logger.info("[Scheduler] Running semi-annual rebalance...")
+        agent = RebalanceAgent()
+        report = agent.run()
+        ReportingAgent().generate_rebalance_report(report)
+        logger.info(f"[Scheduler] Rebalance complete: {len(report.exits)} exits, {len(report.entries)} entries")
+    except Exception as e:
+        logger.error(f"[Scheduler] Rebalance failed: {e}")
+
+
+# Register scheduled jobs
+try:
+    scheduler.add_job(
+        _scheduled_monitoring,
+        'cron', day_of_week='mon-fri', hour=16, minute=30,
+        id='mq_monitoring', replace_existing=True,
+    )
+    scheduler.add_job(
+        _scheduled_screening,
+        'cron', day='1', hour=17, minute=0,
+        id='mq_screening', replace_existing=True,
+    )
+    scheduler.add_job(
+        _scheduled_weekly_digest,
+        'cron', day_of_week='sun', hour=10, minute=0,
+        id='mq_weekly_digest', replace_existing=True,
+    )
+    scheduler.add_job(
+        _scheduled_rebalance,
+        'cron', month='1,7', day='1', hour=9, minute=0,
+        id='mq_rebalance', replace_existing=True,
+    )
+    logger.info("MQ Agent scheduled jobs registered: monitoring, screening, weekly_digest, rebalance")
+except Exception as e:
+    logger.warning(f"Could not register MQ scheduled jobs: {e}")
+
+
+# =============================================================================
 # Error Handlers
 # =============================================================================
 
@@ -1172,9 +1813,11 @@ if __name__ == '__main__':
     templates_dir.mkdir(exist_ok=True)
     static_dir.mkdir(exist_ok=True)
 
-    # Run app
-    app.run(
+    # Run app with SocketIO support
+    socketio.run(
+        app,
         host='127.0.0.1',
         port=5000,
-        debug=os.getenv('FLASK_DEBUG', '0') == '1'
+        debug=os.getenv('FLASK_DEBUG', '0') == '1',
+        allow_unsafe_werkzeug=True  # Required for development mode
     )
