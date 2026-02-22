@@ -582,7 +582,28 @@
             .pool-grid, .big-compare, .two-col, .workflow-grid { grid-template-columns: 1fr !important; }
             .hero-stats { gap: 32px; }
             .steps { flex-direction: column; }
-            nav .nav-links { display: none; }
+            /* Mobile hamburger nav */
+            nav .nav-links {
+                display: none;
+                position: absolute; top: 60px; left: 0; right: 0;
+                background: rgba(15, 23, 42, 0.98);
+                backdrop-filter: blur(12px);
+                flex-direction: column;
+                padding: 16px 24px;
+                gap: 16px;
+                border-bottom: 1px solid var(--border);
+            }
+            nav .nav-links.open { display: flex; }
+            nav .nav-links a { font-size: 14px; padding: 6px 0; }
+            .hamburger { display: block !important; cursor: pointer; padding: 8px; }
+            .hamburger span {
+                display: block; width: 22px; height: 2px;
+                background: var(--text-secondary); margin: 5px 0;
+                transition: 0.3s;
+            }
+            .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+            .hamburger.open span:nth-child(2) { opacity: 0; }
+            .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
             /* Container padding */
             section { padding: 60px 14px; }
@@ -704,7 +725,8 @@
             .chart-legend-row { gap: 12px !important; font-size: 11px !important; flex-wrap: wrap; }
 
             /* Hero logo */
-            .hero-logo-text { font-size: 36px !important; }
+            .hero-logo-text { font-size: 28px !important; white-space: nowrap; }
+            #hero .hero-content { overflow: hidden; }
 
             /* Total system callout */
             .total-system-value { font-size: 16px !important; }
@@ -719,6 +741,8 @@
             .compare-stat .val { font-size: 18px; }
             .waterfall { flex-direction: column; height: auto; }
             .wf-seg { width: 100% !important; }
+            .hero-logo-text { font-size: 24px !important; }
+            .hero-title { font-size: 22px !important; }
         }
 
         /* Count-up animation helper */
@@ -791,6 +815,9 @@
     <div class="nav-inner">
         <span class="logo" style="font-family: 'Inter', sans-serif; font-size: 24px; letter-spacing: 2px; line-height: 1;"><span style="font-weight: 300; color: #f1f5f9;">Q</span><span style="font-weight: 900; color: #10b981;">d</span></span>
         <span style="flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; color: #475569; text-transform: uppercase; padding: 4px 10px;"><span style="border: 1px solid #334155; border-radius: 4px; padding: 4px 10px;">Edition 1</span></span>
+        <div class="hamburger" style="display:none;" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
+            <span></span><span></span><span></span>
+        </div>
         <div class="nav-links">
             <a href="#architecture">Architecture</a>
             <a href="#mq-core">MQ Core</a>
@@ -2793,6 +2820,14 @@
     } catch(e) { console.warn('MP charts error:', e.message); }
 
     } catch(e) { console.warn('Chart.js not loaded (expected on file:// protocol):', e.message); }
+
+    // Mobile nav: close on link click
+    document.querySelectorAll('.nav-links a').forEach(function(a) {
+        a.addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.remove('open');
+            document.querySelector('.hamburger').classList.remove('open');
+        });
+    });
 </script>
 </body>
 </html>
