@@ -583,6 +583,142 @@
             .hero-stats { gap: 32px; }
             .steps { flex-direction: column; }
             nav .nav-links { display: none; }
+
+            /* Container padding */
+            section { padding: 60px 14px; }
+            .container { padding: 0 4px; }
+
+            /* Hero adjustments */
+            #hero { padding-top: 50px; min-height: auto; }
+            .hero-stats { gap: 24px; justify-content: center; }
+            .hero-stat .number { font-size: 28px; }
+            .hero-stat .label { font-size: 11px; }
+
+            /* Typography scaling */
+            h2 { font-size: 1.5rem !important; letter-spacing: -0.5px; }
+            h3 { font-size: 1.15rem !important; }
+            .subtitle { font-size: 15px; margin-bottom: 28px; }
+            .hero-subtitle { font-size: 16px !important; }
+
+            /* Metric cards */
+            .metrics-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; margin: 24px 0; }
+            .metric-card { padding: 18px 12px; }
+            .metric-card .metric-value { font-size: 1.4rem; }
+            .metric-card .metric-label { font-size: 11px; }
+            .metric-card .metric-detail { font-size: 10px; }
+
+            /* Comparison tables: horizontal scroll */
+            .comparison-table { font-size: 12px; }
+            .comparison-table th, .comparison-table td { padding: 8px 6px; font-size: 11px; }
+            .comparison-table th { font-size: 10px; letter-spacing: 0.5px; }
+
+            /* Chart containers */
+            .chart-container { padding: 16px 10px; margin: 20px 0; }
+            .chart-title { font-size: 15px; }
+            .chart-subtitle { font-size: 12px; }
+
+            /* Pool cards */
+            .pool-card { padding: 20px; }
+            .pool-card .pool-pct { font-size: 32px; }
+            .pool-card .pool-name { font-size: 15px; }
+
+            /* Compare cards */
+            .compare-card { padding: 24px 18px; }
+            .compare-card .compare-name { font-size: 18px; }
+            .compare-stat .val { font-size: 20px; }
+            .compare-stat .lbl { font-size: 11px; }
+
+            /* Waterfall bars */
+            .waterfall { height: auto; min-height: 42px; flex-wrap: wrap; }
+            .wf-seg { font-size: 10px; padding: 6px 4px; min-height: 36px; }
+
+            /* Callout */
+            .callout { padding: 16px 14px; font-size: 14px; }
+
+            /* Info/warning boxes */
+            .info-box, .warning-box, .success-box { padding: 14px 12px; font-size: 13px; }
+
+            /* Rule blocks */
+            .rule-block { font-size: 11px; padding: 14px 12px; line-height: 1.7; }
+
+            /* Steps */
+            .step { padding-left: 48px; }
+
+            /* Inline grid overrides for sections with style attributes */
+            .responsive-grid-2,
+            [style*="grid-template-columns: 1fr 1fr"],
+            [style*="grid-template-columns:1fr 1fr"],
+            [style*="grid-template-columns: repeat(4"],
+            [style*="grid-template-columns: repeat(5"],
+            [style*="grid-template-columns: repeat(3"],
+            [style*="grid-template-columns:2fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Table wrappers: ensure horizontal scroll */
+            .table-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .comparison-table { min-width: 500px; }
+
+            /* SVG 20-year equity curve: hide most annotations, keep only final values */
+            .equity-curve-svg .svg-annotation { display: none; }
+            .equity-curve-svg .svg-annotation-final { display: inline; font-size: 10px; }
+
+            /* Reduce the equity curve chart height on mobile */
+            .equity-curve-container { height: 240px !important; margin-left: 40px !important; }
+            .equity-curve-container .y-axis-label { left: -42px !important; font-size: 9px !important; }
+
+            /* X-axis labels on mobile: show every other year */
+            .x-axis-labels { font-size: 9px !important; }
+            .x-axis-labels span:nth-child(2),
+            .x-axis-labels span:nth-child(4),
+            .x-axis-labels span:nth-child(6),
+            .x-axis-labels span:nth-child(8),
+            .x-axis-labels span:nth-child(10) { display: none; }
+
+            /* Footer */
+            footer { padding: 32px 14px; font-size: 12px; }
+
+            /* Nav edition badge */
+            nav .nav-inner > span:nth-child(2) { display: none; }
+
+            /* Priority list */
+            .priority-item { gap: 10px; padding: 14px 0; }
+            .priority-badge { width: 30px; height: 30px; font-size: 12px; }
+
+            /* Two summary cards (MQ vs Nifty) */
+            .summary-cards-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+            /* Drawdown bars on mobile */
+            .drawdown-label { width: 50px !important; font-size: 10px !important; }
+
+            /* Big value text */
+            .big-value-text { font-size: 28px !important; }
+
+            /* Model Portfolio specific */
+            #model-portfolio .metric-card .metric-value { font-size: 1.2rem; }
+
+            /* Contribution bars on mobile */
+            .contrib-label { width: 90px !important; font-size: 11px !important; }
+
+            /* Legend row on mobile */
+            .chart-legend-row { gap: 12px !important; font-size: 11px !important; flex-wrap: wrap; }
+
+            /* Hero logo */
+            .hero-logo-text { font-size: 36px !important; }
+
+            /* Total system callout */
+            .total-system-value { font-size: 16px !important; }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .metrics-grid { grid-template-columns: 1fr !important; }
+            .hero-stats { flex-direction: column; align-items: center; gap: 16px; }
+            .hero-stat .number { font-size: 24px; }
+            .compare-card .compare-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .compare-stat .val { font-size: 18px; }
+            .waterfall { flex-direction: column; height: auto; }
+            .wf-seg { width: 100% !important; }
         }
 
         /* Count-up animation helper */
@@ -676,7 +812,7 @@
     <div class="container">
         <div class="hero-content">
             <div style="margin-bottom: 40px; display: inline-block;">
-                <div style="font-family: 'Inter', sans-serif; font-size: 52px; letter-spacing: 1px; line-height: 1; display: inline-block; position: relative;">
+                <div class="hero-logo-text" style="font-family: 'Inter', sans-serif; font-size: 52px; letter-spacing: 1px; line-height: 1; display: inline-block; position: relative;">
                     <span style="font-weight: 300; color: #10b981; opacity: 0.4; margin-right: 10px;">{</span><span style="font-weight: 300; color: #f1f5f9;">Quantify</span><span style="font-weight: 900; color: #10b981; position: relative;"><span style="position: relative;">d<span style="position: absolute; left: 50%; transform: translateX(-50%); top: 100%; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #34d399; opacity: 0.35; margin-top: 6px; letter-spacing: 0;">$</span></span></span><span style="font-weight: 300; color: #10b981; opacity: 0.4; margin-left: 10px;">}</span>
                 </div>
                 <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-secondary); margin-top: 6px; font-weight: 400; padding-left: 32px;">From Backtest To Bank</div>
@@ -782,7 +918,7 @@
         <p class="subtitle" style="color: var(--text-muted);">One simple rule changes everything: buy companies that are <em>already winning</em>, not ones you <em>hope</em> will recover.</p>
 
         <!-- The Rule -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 40px 0;">
+        <div class="responsive-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 40px 0;">
             <div style="background: var(--bg-hero); border-radius: 16px; padding: 32px;">
                 <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--green); margin-bottom: 16px;">&#x2714; Entry Rule</div>
                 <div style="font-size: 16px; color: var(--text-light); line-height: 1.7;">
@@ -834,13 +970,13 @@
             <div class="chart-title" style="color: var(--text-dark);">Rs.1 Crore &rarr; 20 Years Later</div>
             <div class="chart-subtitle" style="color: var(--text-muted);">MQ Core (29% CAGR) vs Nifty 50 Index (13% CAGR) &mdash; 2005 to 2025. Same starting capital.</div>
 
-            <div style="position: relative; height: 360px; margin-top: 24px; margin-left: 60px; border-left: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
+            <div class="equity-curve-container" style="position: relative; height: 360px; margin-top: 24px; margin-left: 60px; border-left: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
                 <!-- Y-axis labels (scale: max=160 Cr) -->
-                <div style="position: absolute; left: -60px; top: -4px; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.160 Cr</div>
-                <div style="position: absolute; left: -60px; top: 25%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.120 Cr</div>
-                <div style="position: absolute; left: -60px; top: 50%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.80 Cr</div>
-                <div style="position: absolute; left: -60px; top: 75%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.40 Cr</div>
-                <div style="position: absolute; left: -44px; bottom: -4px; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.1 Cr</div>
+                <div class="y-axis-label" style="position: absolute; left: -60px; top: -4px; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.160 Cr</div>
+                <div class="y-axis-label" style="position: absolute; left: -60px; top: 25%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.120 Cr</div>
+                <div class="y-axis-label" style="position: absolute; left: -60px; top: 50%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.80 Cr</div>
+                <div class="y-axis-label" style="position: absolute; left: -60px; top: 75%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.40 Cr</div>
+                <div class="y-axis-label" style="position: absolute; left: -44px; bottom: -4px; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.1 Cr</div>
 
                 <!-- Grid lines -->
                 <div style="position: absolute; top: 25%; left: 0; right: 0; border-top: 1px dashed #e2e8f0;"></div>
@@ -850,7 +986,7 @@
                 <!-- SVG curves (scale: x=year_index*50, y=350-(value/160)*350) -->
                 <!-- MQ 28.8% CAGR: 1.0→1.29→1.66→2.14→2.75→3.55→4.57→5.88→7.58→9.76→12.57→16.19→20.86→26.87→34.60→44.57→57.40→73.93→95.22→122.65→158.01 -->
                 <!-- Nifty 13% CAGR: 1.0→1.13→1.28→1.44→1.63→1.84→2.08→2.35→2.66→3.00→3.39→3.84→4.33→4.90→5.53→6.25→7.07→7.99→9.02→10.20→11.52 -->
-                <svg viewBox="0 0 1000 350" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
+                <svg class="equity-curve-svg" viewBox="0 0 1000 350" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
                     <defs>
                         <linearGradient id="mqGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#10b981" stop-opacity="0.25"/>
@@ -879,53 +1015,53 @@
                     <!-- ===== YEAR 10 (2015, x=500) ===== -->
                     <circle cx="500" cy="323" r="5" fill="#10b981"/>
                     <circle cx="500" cy="343" r="4" fill="#94a3b8"/>
-                    <line x1="510" y1="323" x2="510" y2="343" stroke="#f59e0b" stroke-width="2"/>
-                    <text x="500" y="313" fill="#10b981" font-size="12" font-weight="700" font-family="Inter" text-anchor="middle">Rs.12.6 Cr</text>
-                    <text x="500" y="360" fill="#64748b" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">Rs.3.4 Cr</text>
-                    <text x="530" y="337" fill="#f59e0b" font-size="11" font-weight="700" font-family="Inter">3.7x</text>
-                    <text x="500" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">10 yrs</text>
+                    <line class="svg-annotation" x1="510" y1="323" x2="510" y2="343" stroke="#f59e0b" stroke-width="2"/>
+                    <text class="svg-annotation" x="500" y="313" fill="#10b981" font-size="12" font-weight="700" font-family="Inter" text-anchor="middle">Rs.12.6 Cr</text>
+                    <text class="svg-annotation" x="500" y="360" fill="#64748b" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">Rs.3.4 Cr</text>
+                    <text class="svg-annotation" x="530" y="337" fill="#f59e0b" font-size="11" font-weight="700" font-family="Inter">3.7x</text>
+                    <text class="svg-annotation svg-annotation-year" x="500" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">10 yrs</text>
 
                     <!-- ===== YEAR 15 (2020, x=750) ===== -->
                     <circle cx="750" cy="253" r="5" fill="#10b981"/>
                     <circle cx="750" cy="336" r="4" fill="#94a3b8"/>
-                    <line x1="760" y1="253" x2="760" y2="336" stroke="#f59e0b" stroke-width="2"/>
-                    <text x="750" y="243" fill="#10b981" font-size="12" font-weight="700" font-family="Inter" text-anchor="middle">Rs.44.6 Cr</text>
-                    <text x="750" y="353" fill="#64748b" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">Rs.6.3 Cr</text>
-                    <text x="780" y="298" fill="#f59e0b" font-size="11" font-weight="700" font-family="Inter">7.1x</text>
-                    <text x="750" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">15 yrs</text>
+                    <line class="svg-annotation" x1="760" y1="253" x2="760" y2="336" stroke="#f59e0b" stroke-width="2"/>
+                    <text class="svg-annotation" x="750" y="243" fill="#10b981" font-size="12" font-weight="700" font-family="Inter" text-anchor="middle">Rs.44.6 Cr</text>
+                    <text class="svg-annotation" x="750" y="353" fill="#64748b" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">Rs.6.3 Cr</text>
+                    <text class="svg-annotation" x="780" y="298" fill="#f59e0b" font-size="11" font-weight="700" font-family="Inter">7.1x</text>
+                    <text class="svg-annotation svg-annotation-year" x="750" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">15 yrs</text>
 
                     <!-- ===== YEAR 20 (2025, x=1000) ===== -->
                     <circle cx="1000" cy="4" r="6" fill="#10b981"/>
                     <circle cx="1000" cy="325" r="5" fill="#94a3b8"/>
-                    <text x="970" y="-8" fill="#10b981" font-size="13" font-weight="700" font-family="Inter">Rs.158 Cr</text>
-                    <text x="955" y="318" fill="#64748b" font-size="12" font-weight="600" font-family="Inter">Rs.11.5 Cr</text>
-                    <line x1="1010" y1="4" x2="1010" y2="325" stroke="#f59e0b" stroke-width="2"/>
-                    <text x="1020" y="168" fill="#f59e0b" font-size="12" font-weight="700" font-family="Inter">13.7x</text>
-                    <text x="1000" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">20 yrs</text>
+                    <text class="svg-annotation svg-annotation-final" x="970" y="-8" fill="#10b981" font-size="13" font-weight="700" font-family="Inter">Rs.158 Cr</text>
+                    <text class="svg-annotation" x="955" y="318" fill="#64748b" font-size="12" font-weight="600" font-family="Inter">Rs.11.5 Cr</text>
+                    <line class="svg-annotation" x1="1010" y1="4" x2="1010" y2="325" stroke="#f59e0b" stroke-width="2"/>
+                    <text class="svg-annotation" x="1020" y="168" fill="#f59e0b" font-size="12" font-weight="700" font-family="Inter">13.7x</text>
+                    <text class="svg-annotation svg-annotation-year" x="1000" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">20 yrs</text>
                 </svg>
 
                 <!-- X-axis labels -->
-                <div style="display: flex; justify-content: space-between; padding-top: 8px; font-size: 11px; color: var(--text-muted); font-family: Inter;">
+                <div class="x-axis-labels" style="display: flex; justify-content: space-between; padding-top: 8px; font-size: 11px; color: var(--text-muted); font-family: Inter;">
                     <span>2005</span><span>2007</span><span>2009</span><span>2011</span><span>2013</span><span>2015</span><span>2017</span><span>2019</span><span>2021</span><span>2023</span><span>2025</span>
                 </div>
             </div>
 
             <!-- Legend -->
-            <div style="display: flex; gap: 32px; justify-content: center; margin-top: 16px; font-size: 13px;">
+            <div class="chart-legend-row" style="display: flex; gap: 32px; justify-content: center; margin-top: 16px; font-size: 13px;">
                 <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 3px; background: #10b981; display: inline-block; border-radius: 2px;"></span> <span style="color: var(--text-muted);">MQ Core (29% CAGR)</span></div>
                 <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 3px; background: #94a3b8; display: inline-block; border-radius: 2px; border-top: 2px dashed #94a3b8; height: 0;"></span> <span style="color: var(--text-muted);">Nifty 50 Index (13% CAGR)</span></div>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
+        <div class="responsive-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
             <div style="background: linear-gradient(135deg, #065f46, #047857); border-radius: 16px; padding: 28px; text-align: center;">
                 <div style="font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px;">MQ Core &mdash; Rs.1 Cr becomes</div>
-                <div style="font-size: 42px; font-weight: 900; color: white;">Rs.158 Cr</div>
+                <div class="big-value-text" style="font-size: 42px; font-weight: 900; color: white;">Rs.158 Cr</div>
                 <div style="font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px;">28.80% CAGR &bull; 20 years</div>
             </div>
             <div style="background: linear-gradient(135deg, #374151, #4b5563); border-radius: 16px; padding: 28px; text-align: center;">
                 <div style="font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px;">Nifty 50 Index &mdash; Rs.1 Cr becomes</div>
-                <div style="font-size: 42px; font-weight: 900; color: white;">Rs.11.5 Cr</div>
+                <div class="big-value-text" style="font-size: 42px; font-weight: 900; color: white;">Rs.11.5 Cr</div>
                 <div style="font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px;">~13% CAGR &bull; 20 years</div>
             </div>
         </div>
@@ -1050,6 +1186,7 @@
             </div>
         </div>
 
+        <div class="table-scroll-wrapper">
         <table class="comparison-table">
             <thead>
                 <tr>
@@ -1126,6 +1263,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
 
         <div class="info-box">
             <strong>Complementary, not competing.</strong> KC6 fires daily on mean reversion dips.
@@ -1189,6 +1327,7 @@
             </div>
         </div>
 
+        <div class="table-scroll-wrapper">
         <table class="comparison-table" style="margin-top: 40px;">
             <thead>
                 <tr>
@@ -1249,6 +1388,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
 </section>
 
@@ -1302,6 +1442,7 @@
         <div class="chart-container">
             <div class="chart-title">Priority Decision Matrix</div>
             <div class="chart-subtitle">What happens when signals collide (full pool available)</div>
+            <div class="table-scroll-wrapper">
             <table class="comparison-table" style="margin: 0;">
                 <thead>
                     <tr>
@@ -1364,6 +1505,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </section>
@@ -1412,7 +1554,7 @@
             <div style="padding: 24px 0;">
                 <!-- Debt Fund: Rs.0.6L -->
                 <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
-                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">Debt Fund Interest</div>
+                    <div class="contrib-label" style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">Debt Fund Interest</div>
                     <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
                         <div style="width: 4.1%; min-width: 60px; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
                             <span style="font-size: 14px; font-weight: 800; color: white;">Rs.0.6L</span>
@@ -1421,7 +1563,7 @@
                 </div>
                 <!-- KC6: Rs.9.8L -->
                 <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
-                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">KC6 Trading</div>
+                    <div class="contrib-label" style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">KC6 Trading</div>
                     <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
                         <div style="width: 67.1%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
                             <span style="font-size: 14px; font-weight: 800; color: white;">Rs.9.8L</span>
@@ -1430,7 +1572,7 @@
                 </div>
                 <!-- IPO Scalper: Rs.1.8L -->
                 <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
-                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">IPO Scalper</div>
+                    <div class="contrib-label" style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">IPO Scalper</div>
                     <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
                         <div style="width: 12.3%; min-width: 70px; height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
                             <span style="font-size: 14px; font-weight: 800; color: white;">Rs.1.8L</span>
@@ -1439,7 +1581,7 @@
                 </div>
                 <!-- IPO Swing: Rs.2.4L -->
                 <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
-                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">IPO Swing</div>
+                    <div class="contrib-label" style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">IPO Swing</div>
                     <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
                         <div style="width: 16.4%; min-width: 70px; height: 100%; background: linear-gradient(90deg, #8b5cf6, #a78bfa); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
                             <span style="font-size: 14px; font-weight: 800; color: white;">Rs.2.4L</span>
@@ -1448,7 +1590,7 @@
                 </div>
                 <!-- Total: Rs.14.6L -->
                 <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--green); font-weight: 700;">TOTAL</div>
+                    <div class="contrib-label" style="width: 130px; text-align: right; font-size: 13px; color: var(--green); font-weight: 700;">TOTAL</div>
                     <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 40px; position: relative;">
                         <div style="width: 100%; height: 100%; background: linear-gradient(90deg, rgba(16,185,129,0.3), rgba(16,185,129,0.6)); border: 2px solid var(--green); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
                             <span style="font-size: 16px; font-weight: 900; color: var(--green);">Rs.14.6L / yr</span>
@@ -1463,11 +1605,12 @@
             <span style="font-size: 14px; color: var(--text-secondary);">
                 Combined with MQ Core (Rs.60L &times; 29% = Rs.17.3L)
             </span><br>
-            <span style="font-size: 22px; font-weight: 800; color: var(--green);">
+            <span class="total-system-value" style="font-size: 22px; font-weight: 800; color: var(--green);">
                 Total System: Rs.32L / year &asymp; 32% CAGR on Rs.1 Crore
             </span>
         </div>
 
+        <div class="table-scroll-wrapper">
         <table class="comparison-table" style="margin-top: 40px;">
             <thead>
                 <tr>
@@ -1502,6 +1645,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
 </section>
 
@@ -1702,6 +1846,7 @@
         </div>
 
         <!-- Period comparison table -->
+        <div class="table-scroll-wrapper">
         <table class="comparison-table" style="margin-top: 32px;">
             <thead>
                 <tr>
@@ -1740,6 +1885,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
         <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
             MQ Core = PS20 portfolio with smart parking (NiftyBEES above 200 SMA, debt fund below). Nifty 50 = buy-and-hold via NIFTYBEES ETF.
         </div>
@@ -1865,7 +2011,7 @@
         </div>
 
         <!-- Status Legend -->
-        <div style="display:flex; gap:1.5rem; margin:1rem 0 0.5rem; font-size:13px; color:#94a3b8;">
+        <div class="status-legend" style="display:flex; gap:1.5rem; margin:1rem 0 0.5rem; font-size:13px; color:#94a3b8; flex-wrap:wrap;">
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);margin-right:5px;vertical-align:middle;"></span> Open</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5);margin-right:5px;vertical-align:middle;"></span> Nearing SL (&ge;15% ATH DD)</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#64748b;margin-right:5px;vertical-align:middle;"></span> Exited</span>
@@ -2338,7 +2484,7 @@
         </div>
 
         <!-- Charts -->
-        <div style="display:grid; grid-template-columns:2fr 1fr; gap:1.5rem; margin-top:1.5rem;">
+        <div class="responsive-grid-2" style="display:grid; grid-template-columns:2fr 1fr; gap:1.5rem; margin-top:1.5rem;">
             <div class="chart-container" style="border-radius:12px; border:1px solid var(--border); padding:1rem; background:var(--bg-dark);">
                 <h4 style="font-size:14px; margin-bottom:0.75rem; color:#e2e8f0;">
                     Equity Curve (&#8377;1 Cr &rarr; &#8377;2.62 Cr)
@@ -2429,6 +2575,8 @@
     // Charts (wrapped in try-catch for file:// protocol where CDN may not load)
     try {
 
+    var isMobile = window.innerWidth < 768;
+
     // Allocation Doughnut
     new Chart(document.getElementById('allocChart'), {
         type: 'doughnut',
@@ -2455,7 +2603,7 @@
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' }, padding: 10 }
+                    labels: { color: '#94a3b8', font: { size: isMobile ? 9 : 11, family: 'Inter' }, padding: isMobile ? 6 : 10, boxWidth: isMobile ? 10 : 40 }
                 }
             }
         }
@@ -2496,19 +2644,19 @@
             scales: {
                 x: {
                     stacked: true,
-                    ticks: { color: '#94a3b8', font: { size: 11 } },
+                    ticks: { color: '#94a3b8', font: { size: isMobile ? 9 : 11 }, maxRotation: isMobile ? 45 : 0 },
                     grid: { display: false }
                 },
                 y: {
                     stacked: true,
                     max: 100,
-                    ticks: { color: '#94a3b8', callback: v => v + '%' },
+                    ticks: { color: '#94a3b8', callback: v => v + '%', font: { size: isMobile ? 9 : 12 } },
                     grid: { color: 'rgba(148,163,184,0.1)' }
                 }
             },
             plugins: {
                 legend: {
-                    labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' } }
+                    labels: { color: '#94a3b8', font: { size: isMobile ? 9 : 11, family: 'Inter' }, boxWidth: isMobile ? 10 : 40, padding: isMobile ? 6 : 10 }
                 },
                 tooltip: {
                     callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '% of pool' }
@@ -2547,14 +2695,14 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' } } },
+                    legend: { position: 'top', labels: { color: '#94a3b8', font: { size: isMobile ? 9 : 11, family: 'Inter' }, boxWidth: isMobile ? 10 : 40, padding: isMobile ? 6 : 10 } },
                     tooltip: { mode: 'index', intersect: false,
                         callbacks: { label: ctx => ctx.dataset.label + ': \u20B9' + (ctx.parsed.y/1e7).toFixed(2) + ' Cr' }
                     },
                 },
                 scales: {
-                    x: { ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
-                    y: { ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => '\u20B9' + (v/1e7).toFixed(1) + 'Cr' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                    x: { ticks: { color: '#94a3b8', maxTicksLimit: isMobile ? 4 : 8, maxRotation: isMobile ? 45 : 0, font: { size: isMobile ? 8 : 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                    y: { ticks: { color: '#94a3b8', font: { size: isMobile ? 8 : 10 }, callback: v => '\u20B9' + (v/1e7).toFixed(1) + 'Cr' }, grid: { color: 'rgba(148,163,184,0.1)' } },
                 },
             },
         });
@@ -2569,7 +2717,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false, cutout: '55%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, family: 'Inter' }, padding: 8, boxWidth: 10 } },
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: isMobile ? 8 : 10, family: 'Inter' }, padding: isMobile ? 4 : 8, boxWidth: isMobile ? 8 : 10 } },
                     tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(1) + '%' } }
                 },
             },
@@ -2615,14 +2763,14 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' } } },
+                    legend: { position: 'top', labels: { color: '#94a3b8', font: { size: isMobile ? 9 : 11, family: 'Inter' }, boxWidth: isMobile ? 10 : 40, padding: isMobile ? 6 : 10 } },
                     tooltip: { mode: 'index', intersect: false,
                         callbacks: { label: function(ctx) { return ctx.dataset.label + ': \u20B9' + (ctx.parsed.y/1e7).toFixed(2) + ' Cr'; } }
                     },
                 },
                 scales: {
-                    x: { ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
-                    y: { min: 10000000, ticks: { color: '#94a3b8', font: { size: 10 }, callback: function(v) { return '\u20B9' + (v/1e7).toFixed(1) + 'Cr'; } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                    x: { ticks: { color: '#94a3b8', maxTicksLimit: isMobile ? 4 : 8, maxRotation: isMobile ? 45 : 0, font: { size: isMobile ? 8 : 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                    y: { min: 10000000, ticks: { color: '#94a3b8', font: { size: isMobile ? 8 : 10 }, callback: function(v) { return '\u20B9' + (v/1e7).toFixed(1) + 'Cr'; } }, grid: { color: 'rgba(148,163,184,0.1)' } },
                 },
             },
         });
@@ -2637,7 +2785,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false, cutout: '55%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, family: 'Inter' }, padding: 8, boxWidth: 10 } },
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: isMobile ? 8 : 10, family: 'Inter' }, padding: isMobile ? 4 : 8, boxWidth: isMobile ? 8 : 10 } },
                     tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + ctx.parsed.toFixed(1) + '%'; } } }
                 },
             },
