@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPO Launch Strategy &mdash; Breakout Research Report by Castronix</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-hero: #0f172a;
+            --bg-dark: #0f172a;
+            --bg-mid: #1e293b;
+            --bg-light: #f8fafc;
+            --bg-card: rgba(30, 41, 59, 0.9);
+            --accent: #f59e0b;
+            --accent-hover: #d97706;
+            --green: #10b981;
+            --green-light: #34d399;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --text-light: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: rgba(148, 163, 184, 0.15);
+            --max-w: 1200px;
+            --radius: 16px;
+            --radius-sm: 8px;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.7;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+        }
+        nav .nav-inner {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+        }
+        nav .logo {
+            font-weight: 800;
+            font-size: 18px;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+        }
+        nav .nav-links { display: flex; gap: 24px; }
+        nav .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        nav .nav-links a:hover { color: var(--accent); }
+
+        /* Sections */
+        section { padding: 100px 24px; }
+        .container { max-width: var(--max-w); margin: 0 auto; }
+        .section-light { background: var(--bg-light); color: var(--text-dark); }
+        .section-mid { background: var(--bg-mid); }
+
+        /* Typography */
+        .section-tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+        .section-light .section-tag { color: var(--accent-hover); }
+        h2 {
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        .section-light h2 { color: var(--text-dark); }
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 680px;
+            margin-bottom: 48px;
+        }
+        .section-light .subtitle { color: var(--text-muted); }
+
+        /* Hero */
+        #hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+            padding-top: 60px;
+        }
+        #hero::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(245, 158, 11, 0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero-title {
+            font-size: clamp(36px, 6vw, 64px);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+        }
+        .hero-title .highlight { color: var(--accent); }
+        .hero-subtitle {
+            font-size: clamp(18px, 2.5vw, 22px);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 48px;
+            line-height: 1.6;
+        }
+        .hero-stats {
+            display: flex;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+        .hero-stat { text-align: left; }
+        .hero-stat .number {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .hero-stat .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Metric Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            text-align: center;
+        }
+        .section-light .metric-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .metric-card .metric-value {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 6px;
+        }
+        .metric-card .metric-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .section-light .metric-card .metric-label { color: var(--text-muted); }
+        .metric-card.accent .metric-value { color: var(--accent); }
+        .metric-card.green .metric-value { color: var(--green); }
+        .metric-card.red .metric-value { color: var(--red); }
+        .metric-card.blue .metric-value { color: var(--blue); }
+        .metric-card.purple .metric-value { color: var(--purple); }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 32px 0;
+            font-size: 14px;
+        }
+        .comparison-table th, .comparison-table td {
+            padding: 14px 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .comparison-table th {
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        .section-light .comparison-table th { color: var(--text-muted); }
+        .section-light .comparison-table td { border-color: #e2e8f0; }
+        .comparison-table td.positive { color: var(--green); font-weight: 600; }
+        .comparison-table td.negative { color: var(--red); font-weight: 600; }
+        .comparison-table tr:hover { background: rgba(245, 158, 11, 0.05); }
+
+        /* Chart containers */
+        .chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin: 32px 0;
+        }
+        .section-light .chart-container {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .chart-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        .section-light .chart-subtitle { color: var(--text-muted); }
+
+        /* Steps */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin: 48px 0;
+        }
+        .step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 24px;
+            text-align: center;
+            position: relative;
+        }
+        .section-light .step {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .step-number {
+            width: 40px; height: 40px;
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            margin: 0 auto 16px;
+        }
+        .step h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .section-light .step h4 { color: var(--text-dark); }
+        .step p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .section-light .step p { color: var(--text-muted); }
+
+        /* Big comparison cards */
+        .big-compare {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin: 48px 0;
+        }
+        .compare-card {
+            border-radius: var(--radius);
+            padding: 36px 28px;
+            text-align: center;
+        }
+        .compare-card .cc-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+        .compare-card .cc-amount {
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 8px;
+        }
+        .compare-card .cc-detail {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Callout */
+        .callout {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--accent);
+            padding: 20px 24px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            margin: 32px 0;
+            font-size: 17px;
+            font-weight: 500;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+        .section-light .callout { color: var(--text-dark); }
+
+        /* Warning box */
+        .warning-box {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            margin: 24px 0;
+        }
+        .warning-box h4 { color: var(--red); font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .warning-box p, .warning-box li { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+        .warning-box ul { margin-left: 20px; margin-top: 8px; }
+
+        /* Info box */
+        .info-box {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            margin: 24px 0;
+        }
+        .info-box h4 { color: var(--blue); font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .info-box p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+        /* Success box */
+        .success-box {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            margin: 24px 0;
+        }
+        .success-box h4 { color: var(--green); font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .success-box p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+        /* Two-col */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        /* Table scrollable on mobile */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 32px 0;
+            border-radius: var(--radius);
+        }
+
+        /* Recommendation cards */
+        .rec-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin: 48px 0;
+        }
+        .rec-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .rec-card.primary {
+            border: 2px solid var(--green);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+        }
+        .rec-card .rec-tag {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .rec-card .rec-name {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        .rec-card .rec-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .rec-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .badge-wr { background: rgba(16,185,129,0.15); color: var(--green); }
+        .badge-pf { background: rgba(139,92,246,0.15); color: var(--purple); }
+        .badge-trades { background: rgba(59,130,246,0.15); color: var(--blue); }
+        .badge-hold { background: rgba(245,158,11,0.15); color: var(--accent); }
+        .rec-card .rule-block {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: pre-line;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+        .rule-block .kw { color: var(--accent); font-weight: 700; }
+        .rule-block .val { color: var(--green-light); }
+        .rec-card .rec-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 24px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+        footer p { font-size: 13px; color: var(--text-secondary); }
+
+        .text-accent { color: var(--accent); }
+        .text-green { color: var(--green); }
+        .text-red { color: var(--red); }
+        .text-blue { color: var(--blue); }
+        .text-purple { color: var(--purple); }
+        .fw-800 { font-weight: 800; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            section { padding: 60px 16px; }
+            .hero-stats { gap: 32px; }
+            .hero-stat .number { font-size: 28px; }
+            nav .nav-links { display: none; }
+            .two-col { grid-template-columns: 1fr; gap: 24px; }
+            .big-compare { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: 1fr; }
+            .rec-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+    <div class="nav-inner">
+        <div class="logo"><span style="color:#22D3EE; font-size:22px; margin-right:6px;">C</span>IPO Launch Strategy</div>
+        <div class="nav-links">
+            <a href="#rules">Rules</a>
+            <a href="#findings">Findings</a>
+            <a href="#heatmap">Heatmap</a>
+            <a href="#systems">Best Systems</a>
+            <a href="#recommendations">Recommendations</a>
+            <a href="#bias">Bias Check</a>
+            <a href="#caveats">Caveats</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ================================================================ -->
+<!-- HERO -->
+<!-- ================================================================ -->
+<section id="hero">
+    <div class="container hero-content">
+        <p class="section-tag">2,201 Backtest Configs &bull; Castronix Research</p>
+        <h1 class="hero-title">
+            The <span class="highlight">IPO Launch</span><br>
+            Breakout Strategy
+        </h1>
+        <p class="hero-subtitle" style="font-size:20px; color:var(--accent); font-weight:600; margin-bottom:12px; letter-spacing:0.5px;">
+            Buy the first ATH breakout. Ride the momentum. Exit by rule.
+        </p>
+        <p class="hero-subtitle">
+            Systematic backtesting of IPO breakout trading on the Indian stock market &mdash;
+            1,151 IPOs tested over 10 years. From 54% win rate baseline to 86% with the right filters.
+        </p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="number" style="color:var(--accent);" data-count="2201" data-decimals="0">0</div>
+                <div class="label">Configs Tested</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number" style="color:var(--green);" data-count="86.3" data-suffix="%" data-decimals="1">0</div>
+                <div class="label">Best Win Rate</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number" style="color:var(--purple);" data-count="4.25" data-suffix="x" data-decimals="2">0</div>
+                <div class="label">Best Profit Factor</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number" style="color:var(--green);" data-count="989" data-suffix="%" data-decimals="0">0</div>
+                <div class="label">Best Total Return</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 1: THE STRATEGY RULES -->
+<!-- ================================================================ -->
+<section id="rules" class="section-light">
+    <div class="container">
+        <p class="section-tag">Chapter 1</p>
+        <h2>The IPO Launch Strategy:<br>Clear Rules, No Guesswork</h2>
+        <p class="subtitle">
+            Buy stocks within their first 50 trading days when price breaks
+            the initial all-time high. Simple entry, systematic exit, no opinions.
+        </p>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h4>Wait for the IPO</h4>
+                <p>Stock must be 10-50 trading days old. Too early = no price history. Too late = momentum spent.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h4>Detect ATH Breakout</h4>
+                <p>Close must exceed the highest high of the first 10 days. This is the first time price has ever been this high.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h4>Confirm Quality</h4>
+                <p>Listing Gain (day 1 close &gt; open) + Breakout &ge;3% above initial ATH. This is the only filter that matters.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h4>Size the Position</h4>
+                <p>5% of capital per trade. Sequential execution on Rs 1 Crore starting capital.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">5</div>
+                <h4>Exit by Rule</h4>
+                <p>Fixed target (+6%), trailing SL, time exit (20 days), or wide stop loss (-20%). Pick your style.</p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h4>Why IPO Breakouts Work</h4>
+            <p>Newly listed stocks have no overhead resistance. When they break their initial ATH, it signals genuine institutional demand &mdash;
+            IPOs that list positive AND break out 3%+ are the strongest momentum stocks in the market.
+            The strategy captures this explosive first-breakout energy before the stock "settles" into normal trading.</p>
+        </div>
+
+        <!-- Exit strategies tested -->
+        <h3 style="font-size:20px; font-weight:700; margin-top:48px; margin-bottom:24px; color:var(--text-dark);">13 Exit Strategies Tested</h3>
+        <div class="table-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Exit Strategy</th>
+                        <th>Parameters</th>
+                        <th>Avg Hold</th>
+                        <th>Win Rate</th>
+                        <th>Profit Factor</th>
+                        <th>Verdict</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align:left; font-weight:600;">Fixed Target</td>
+                        <td>+6% to +40% target, -7% to -30% SL</td>
+                        <td>5&ndash;162d</td>
+                        <td class="positive">44&ndash;86%</td>
+                        <td>1.3&ndash;2.7</td>
+                        <td class="positive">Best WR</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; font-weight:600;">Time Exit</td>
+                        <td>Hold N days + SL</td>
+                        <td>14&ndash;42d</td>
+                        <td>45&ndash;67%</td>
+                        <td class="positive">1.6&ndash;4.3</td>
+                        <td class="positive">Best PF</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; font-weight:600;">Trailing SL</td>
+                        <td>8&ndash;30% trail from peak</td>
+                        <td>10&ndash;223d</td>
+                        <td>43&ndash;57%</td>
+                        <td>1.4&ndash;4.1</td>
+                        <td>Versatile</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; font-weight:600;">EMA Cross</td>
+                        <td>8/21 or 10/30 crossover</td>
+                        <td>48&ndash;66d</td>
+                        <td>40&ndash;42%</td>
+                        <td>2.3&ndash;2.8</td>
+                        <td>Big-catch</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; font-weight:600;">ATR Trail</td>
+                        <td>3x ATR(10) trailing</td>
+                        <td>28d</td>
+                        <td>43&ndash;45%</td>
+                        <td>2.0</td>
+                        <td>Middle ground</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; font-weight:600;">Supertrend</td>
+                        <td>ATR(14), mult 2.0</td>
+                        <td>299d</td>
+                        <td>47%</td>
+                        <td>2.65</td>
+                        <td class="negative">Impractical</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 2: KEY FINDINGS -->
+<!-- ================================================================ -->
+<section id="findings">
+    <div class="container">
+        <p class="section-tag">Chapter 2</p>
+        <h2>What 2,201 Backtests<br>Taught Us</h2>
+        <p class="subtitle">
+            Five research phases, 483 configs just for 65%+ win rate optimization.
+            These are the findings that actually matter.
+        </p>
+
+        <!-- Finding 1 -->
+        <div class="success-box">
+            <h4>Finding #1: Listing Gain + Breakout 3% is the ONLY filter that works</h4>
+            <p>IPOs that (a) list positive AND (b) break out 3%+ above initial ATH have dramatically higher success rates.
+            This combo reduces 259 trades to 51 but concentrates on highest-quality setups.</p>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Entry Filter Impact on Win Rate</div>
+            <div class="chart-subtitle">RSI, EMA, ADX, MFI all produce identical results to baseline. Only Listing Gain + Breakout 3% moves the needle.</div>
+            <canvas id="chartFilterWR"></canvas>
+        </div>
+
+        <div class="table-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Filter</th>
+                        <th>Trades</th>
+                        <th>Win Rate</th>
+                        <th>Profit Factor</th>
+                        <th>Effect</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="text-align:left;">None (base)</td><td>259</td><td>53.6%</td><td>2.22</td><td>Baseline</td></tr>
+                    <tr><td style="text-align:left;">RSI(7) &gt; 50&ndash;65</td><td>226&ndash;233</td><td>53.6%</td><td>2.22</td><td class="negative">Zero effect</td></tr>
+                    <tr><td style="text-align:left;">EMA(5/7)</td><td>233</td><td>53.6%</td><td>2.22</td><td class="negative">Zero effect</td></tr>
+                    <tr><td style="text-align:left;">ADX(7) &gt; 15&ndash;25</td><td>232</td><td>53.9%</td><td>2.24</td><td class="negative">Zero effect</td></tr>
+                    <tr><td style="text-align:left;">MFI(7) &gt; 50&ndash;60</td><td>232</td><td>53.9%</td><td>2.25</td><td class="negative">Zero effect</td></tr>
+                    <tr><td style="text-align:left;">Above Avg Price</td><td>233</td><td>53.6%</td><td>2.22</td><td class="negative">Zero effect</td></tr>
+                    <tr><td style="text-align:left;">Breakout &ge;3%</td><td>131</td><td>55.0%</td><td>2.30</td><td>+1.4pp</td></tr>
+                    <tr><td style="text-align:left;">Listing Gain</td><td>99</td><td>53.5%</td><td>2.28</td><td>Filters weak IPOs</td></tr>
+                    <tr style="background:rgba(16,185,129,0.06);">
+                        <td style="text-align:left; font-weight:700;">LG + BRK3%</td>
+                        <td><strong>64</strong></td>
+                        <td class="positive"><strong>60.9%</strong></td>
+                        <td class="positive"><strong>2.95</strong></td>
+                        <td class="positive"><strong>+7.3pp WR</strong></td>
+                    </tr>
+                    <tr style="background:rgba(16,185,129,0.1);">
+                        <td style="text-align:left; font-weight:700;">LG + BRK3% + wider SL</td>
+                        <td><strong>51</strong></td>
+                        <td class="positive"><strong>62.7%</strong></td>
+                        <td class="positive"><strong>2.55</strong></td>
+                        <td class="positive"><strong>+9.1pp WR</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout">
+            <strong>Why are RSI/EMA/ADX/MFI useless?</strong> Because a stock breaking its ATH for the first time
+            is, by definition, in a strong uptrend with elevated momentum indicators.
+            These filters are <em>redundant</em> with the breakout signal itself.
+        </div>
+
+        <!-- Finding 2 -->
+        <div class="success-box" style="margin-top:48px;">
+            <h4>Finding #2: Win Rate is driven by Target/SL Ratio, NOT entry filters</h4>
+            <p>The breakthrough to 65%+ came from asymmetric R:R &mdash; making the SL much wider than the target.
+            A T5/SL20 setup (SL = 4x target) achieves 86.3% WR vs 53.6% for T30/SL15 (SL = 0.5x target).</p>
+        </div>
+
+        <!-- Finding 3 -->
+        <div class="success-box">
+            <h4>Finding #3: Time-capped exits produce the highest Profit Factors</h4>
+            <p>Holding for exactly 20 days with a wide SL (no fixed target) captures natural momentum without capping the upside.
+            LG+BRK3+TIME20d/SL20 achieves PF 4.25 at 66.7% WR &mdash; the best risk-adjusted system.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 3: TARGET/SL HEATMAP -->
+<!-- ================================================================ -->
+<section id="heatmap" class="section-light">
+    <div class="container">
+        <p class="section-tag">Chapter 3</p>
+        <h2>The Target/SL Heatmap:<br>Where Win Rate Lives</h2>
+        <p class="subtitle">
+            Win rate is mechanically determined by the ratio of stop loss to target.
+            Wider SL = more room to breathe = higher WR. The filters add ~9pp on top.
+        </p>
+
+        <div class="table-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Target</th>
+                        <th>Stop Loss</th>
+                        <th>SL:Target</th>
+                        <th>WR (Base)</th>
+                        <th>WR (LG+BRK3)</th>
+                        <th>WR Boost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>30%</td><td>15%</td><td>0.5:1</td><td>53.6%</td><td>60.9%</td><td class="positive">+7.3pp</td></tr>
+                    <tr><td>30%</td><td>20%</td><td>0.67:1</td><td>54.1%</td><td>62.7%</td><td class="positive">+8.6pp</td></tr>
+                    <tr><td>10%</td><td>15%</td><td>1.5:1</td><td>66.0%</td><td>72.5%</td><td class="positive">+6.5pp</td></tr>
+                    <tr><td>8%</td><td>15%</td><td>1.9:1</td><td>68.0%</td><td>74.5%</td><td class="positive">+6.5pp</td></tr>
+                    <tr><td>8%</td><td>20%</td><td>2.5:1</td><td>73.0%</td><td>82.4%</td><td class="positive">+9.4pp</td></tr>
+                    <tr style="background:rgba(16,185,129,0.06);">
+                        <td><strong>6%</strong></td><td><strong>20%</strong></td><td><strong>3.3:1</strong></td>
+                        <td><strong>75.3%</strong></td><td class="positive"><strong>84.3%</strong></td><td class="positive"><strong>+9.0pp</strong></td>
+                    </tr>
+                    <tr style="background:rgba(16,185,129,0.1);">
+                        <td><strong>5%</strong></td><td><strong>20%</strong></td><td><strong>4.0:1</strong></td>
+                        <td><strong>77.2%</strong></td><td class="positive"><strong>86.3%</strong></td><td class="positive"><strong>+9.1pp</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="two-col">
+            <div class="chart-container">
+                <div class="chart-title">Base Signal (259 trades)</div>
+                <div class="chart-subtitle">Win rate by target size, grouped by stop loss level. No entry filters.</div>
+                <canvas id="chartHeatBase"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">LG + BRK3% Filtered (51 trades)</div>
+                <div class="chart-subtitle">Same targets/SLs with quality filter applied. ~9pp lift across the board.</div>
+                <canvas id="chartHeatFiltered"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 4: BEST SYSTEMS -->
+<!-- ================================================================ -->
+<section id="systems">
+    <div class="container">
+        <p class="section-tag">Chapter 4</p>
+        <h2>All 27 Systems With<br><span class="text-accent">65%+ Win Rate</span></h2>
+        <p class="subtitle">
+            From 2,201 configs tested, 27 achieved &ge;65% WR with PF &ge;1.6 and &ge;19 trades.
+            4 are Pareto-optimal (no other config has BOTH higher WR AND higher PF).
+        </p>
+
+        <!-- WR vs PF Scatter -->
+        <div class="chart-container">
+            <div class="chart-title">Win Rate vs Profit Factor: The Pareto Frontier</div>
+            <div class="chart-subtitle">Bubble size = expectancy per trade. Green = fixed target exits, purple = time-based exits. The top-left quadrant is the sweet spot.</div>
+            <canvas id="chartScatter"></canvas>
+        </div>
+
+        <div class="table-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th style="text-align:left;">System</th>
+                        <th>WR%</th>
+                        <th>PF</th>
+                        <th>Exp/Trade</th>
+                        <th>Total Ret%</th>
+                        <th>Trades</th>
+                        <th>Hold</th>
+                        <th>Style</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background:rgba(16,185,129,0.06);">
+                        <td>1</td><td style="text-align:left; font-weight:700;">LG+BRK3 + T5/SL20</td>
+                        <td class="positive">86.3</td><td>2.33</td><td>+4.07%</td><td>207%</td><td>51</td><td>31d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr style="background:rgba(16,185,129,0.08);">
+                        <td>2</td><td style="text-align:left; font-weight:700;">LG+BRK3 + T6/SL20</td>
+                        <td class="positive">84.3</td><td class="positive">2.73</td><td>+5.50%</td><td>281%</td><td>51</td><td>37d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>3</td><td style="text-align:left;">LG+BRK3 + T8/SL20</td>
+                        <td class="positive">82.4</td><td>2.56</td><td>+5.91%</td><td>301%</td><td>51</td><td>39d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>4</td><td style="text-align:left;">LG+BRK3 + T10/SL20</td>
+                        <td class="positive">80.4</td><td>2.70</td><td>+7.27%</td><td>371%</td><td>51</td><td>44d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>5</td><td style="text-align:left;">LG+BRK3 + T5/SL15</td>
+                        <td class="positive">80.4</td><td>1.91</td><td>+3.17%</td><td>162%</td><td>51</td><td>19d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>6</td><td style="text-align:left;">LG+BRK3 + T6/SL15</td>
+                        <td class="positive">76.5</td><td>1.91</td><td>+3.76%</td><td>192%</td><td>51</td><td>22d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>7</td><td style="text-align:left;">LG+BRK3 + T3/SL10</td>
+                        <td class="positive">74.5</td><td>1.66</td><td>+2.07%</td><td>106%</td><td>51</td><td>7d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>8</td><td style="text-align:left;">LG+BRK3 + T8/SL15</td>
+                        <td class="positive">74.5</td><td>1.87</td><td>+4.15%</td><td>212%</td><td>51</td><td>24d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>9</td><td style="text-align:left;">LG+BRK3 + T10/SL15</td>
+                        <td class="positive">72.5</td><td>2.06</td><td>+5.41%</td><td>276%</td><td>51</td><td>26d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>10</td><td style="text-align:left;">LG+BRK3 + T3/SL7</td>
+                        <td class="positive">72.5</td><td>1.80</td><td>+2.22%</td><td>113%</td><td>51</td><td>5d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>11</td><td style="text-align:left;">LG+BRK3 + T4/SL10</td>
+                        <td class="positive">72.5</td><td>1.72</td><td>+2.41%</td><td>123%</td><td>51</td><td>9d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>12</td><td style="text-align:left;">BRK10 + T5/SL7</td>
+                        <td class="positive">72.4</td><td class="positive">2.81</td><td>+4.96%</td><td>144%</td><td>29</td><td>10d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>13</td><td style="text-align:left;">LG+BRK5 + T10/SL15</td>
+                        <td class="positive">72.4</td><td>2.23</td><td>+6.14%</td><td>178%</td><td>29</td><td>26d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr>
+                        <td>14</td><td style="text-align:left;">LG+BRK3 + T5/SL10</td>
+                        <td class="positive">70.6</td><td>1.66</td><td>+2.37%</td><td>121%</td><td>51</td><td>10d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>15</td><td style="text-align:left;">GAPUP+LG+BRK3 + T5/SL7</td>
+                        <td class="positive">69.8</td><td>1.94</td><td>+2.75%</td><td>118%</td><td>43</td><td>9d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>16</td><td style="text-align:left;">LG+BRK3 + T3/SL5</td>
+                        <td class="positive">68.6</td><td>2.01</td><td>+2.40%</td><td>122%</td><td>51</td><td>5d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>17</td><td style="text-align:left;">LG+BRK3 + T4/SL7</td>
+                        <td class="positive">68.6</td><td>1.69</td><td>+2.14%</td><td>109%</td><td>51</td><td>7d</td><td class="text-blue">Quick</td>
+                    </tr>
+                    <tr>
+                        <td>18</td><td style="text-align:left;">LG+BRK7 + T10/SL15</td>
+                        <td class="positive">68.4</td><td>1.96</td><td>+5.57%</td><td>106%</td><td>19</td><td>32d</td><td class="text-green">Scalper</td>
+                    </tr>
+                    <tr style="background:rgba(139,92,246,0.08);">
+                        <td>19</td><td style="text-align:left; font-weight:700;">LG+BRK3 + TIME20d/SL20</td>
+                        <td class="positive">66.7</td><td class="positive" style="font-weight:800;">4.25</td><td class="positive">+13.72%</td><td>700%</td><td>51</td><td>29d</td><td class="text-purple">Swing</td>
+                    </tr>
+                    <tr style="background:rgba(139,92,246,0.05);">
+                        <td>20</td><td style="text-align:left; font-weight:700;">LG+BRK3 + TIME30d/SL20</td>
+                        <td class="positive">66.7</td><td class="positive">4.14</td><td class="positive">+14.43%</td><td>736%</td><td>51</td><td>42d</td><td class="text-purple">Swing</td>
+                    </tr>
+                    <tr><td>21</td><td style="text-align:left;">LG+BRK3 + TIME20d/SL15</td><td class="positive">66.7</td><td class="positive">4.09</td><td>+13.52%</td><td>690%</td><td>51</td><td>27d</td><td class="text-purple">Swing</td></tr>
+                    <tr><td>22</td><td style="text-align:left;">LG+BRK3 + TIME30d/SL15</td><td class="positive">66.7</td><td class="positive">3.75</td><td>+13.95%</td><td>712%</td><td>51</td><td>38d</td><td class="text-purple">Swing</td></tr>
+                    <tr><td>23</td><td style="text-align:left;">LG+BRK3 + T40/SL30</td><td class="positive">66.7</td><td>2.74</td><td class="positive">+19.39%</td><td>989%</td><td>51</td><td>162d</td><td class="text-accent">Hold</td></tr>
+                    <tr><td>24</td><td style="text-align:left;">GAPUP+LG+BRK3 + T30/SL25</td><td class="positive">65.1</td><td>2.41</td><td>+13.74%</td><td>591%</td><td>43</td><td>102d</td><td class="text-accent">Hold</td></tr>
+                    <tr><td>25</td><td style="text-align:left;">GAPUP+LG+BRK3 + T8/SL10</td><td class="positive">65.1</td><td>1.82</td><td>+3.52%</td><td>152%</td><td>43</td><td>14d</td><td class="text-green">Scalper</td></tr>
+                    <tr><td>26</td><td style="text-align:left;">BRK10 + T8/SL10</td><td class="positive">65.5</td><td>2.05</td><td>+4.48%</td><td>130%</td><td>29</td><td>14d</td><td class="text-blue">Quick</td></tr>
+                    <tr><td>27</td><td style="text-align:left;">LG+BRK5 + T5/SL7</td><td class="positive">65.5</td><td>1.81</td><td>+2.69%</td><td>78%</td><td>29</td><td>6d</td><td class="text-blue">Quick</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 5: RECOMMENDATIONS -->
+<!-- ================================================================ -->
+<section id="recommendations" class="section-mid">
+    <div class="container">
+        <p class="section-tag">Chapter 5</p>
+        <h2>Recommended Systems<br>for Live Trading</h2>
+        <p class="subtitle">
+            Four systems, four trading styles. Same entry signal, different exit rules.
+            Pick the one that matches your psychology.
+        </p>
+
+        <div class="rec-cards">
+            <!-- System 1 -->
+            <div class="rec-card primary">
+                <div class="rec-tag">System 1 &mdash; Primary</div>
+                <div class="rec-name" style="color:var(--green);">&ldquo;IPO Scalper&rdquo;</div>
+                <div class="rec-badges">
+                    <span class="rec-badge badge-wr">84.3% WR</span>
+                    <span class="rec-badge badge-pf">PF 2.73</span>
+                    <span class="rec-badge badge-trades">~51 trades/decade</span>
+                    <span class="rec-badge badge-hold">37d avg hold</span>
+                </div>
+                <div class="rule-block"><span class="kw">Entry:</span> ATH breakout (10d) + Vol &ge; 2.5x of 30d avg
+       + Listing Gain + Breakout &ge;3% above ATH
+<span class="kw">Exit:</span>  Fixed Target <span class="val">+6%</span> / Stop Loss <span class="val">-20%</span>
+<span class="kw">Median Return:</span> <span class="val">+8.3%</span></div>
+                <p class="rec-desc">
+                    <strong style="color:var(--text-light);">8 out of 10 trades win.</strong> Tight +6% target captures quick post-breakout momentum.
+                    Wide -20% SL rarely fires because filtered stocks have genuine institutional buying pressure.
+                    Best for traders who want <strong style="color:var(--green);">maximum consistency</strong>.
+                </p>
+            </div>
+
+            <!-- System 2 -->
+            <div class="rec-card primary">
+                <div class="rec-tag">System 2 &mdash; Primary</div>
+                <div class="rec-name" style="color:var(--purple);">&ldquo;IPO Swing&rdquo;</div>
+                <div class="rec-badges">
+                    <span class="rec-badge badge-wr">66.7% WR</span>
+                    <span class="rec-badge badge-pf">PF 4.25</span>
+                    <span class="rec-badge badge-trades">~51 trades/decade</span>
+                    <span class="rec-badge badge-hold">29d avg hold</span>
+                </div>
+                <div class="rule-block"><span class="kw">Entry:</span> ATH breakout (10d) + Vol &ge; 2.5x of 30d avg
+       + Listing Gain + Breakout &ge;3% above ATH
+<span class="kw">Exit:</span>  Hold exactly <span class="val">20 days</span> / Stop Loss <span class="val">-20%</span>
+<span class="kw">Expectancy:</span> <span class="val">+13.72%</span> per trade | Total Return: <span class="val">700%</span></div>
+                <p class="rec-desc">
+                    <strong style="color:var(--text-light);">2 out of 3 trades win, winners are 4.25x larger.</strong>
+                    No fixed target &mdash; captures full natural momentum. The time exit acts as a natural trailing stop.
+                    Best for traders who want <strong style="color:var(--purple);">maximum capital growth per trade</strong>.
+                </p>
+            </div>
+
+            <!-- System 3 -->
+            <div class="rec-card">
+                <div class="rec-tag">System 3 &mdash; High Frequency</div>
+                <div class="rec-name" style="color:var(--blue);">&ldquo;IPO Quick Scalp&rdquo;</div>
+                <div class="rec-badges">
+                    <span class="rec-badge badge-wr">46.6% WR</span>
+                    <span class="rec-badge badge-pf">PF 2.51</span>
+                    <span class="rec-badge badge-trades">~298 trades/decade</span>
+                    <span class="rec-badge badge-hold">10d avg hold</span>
+                </div>
+                <div class="rule-block"><span class="kw">Entry:</span> ATH breakout (10d) + Vol &ge; 2.0x of 20d avg
+<span class="kw">Exit:</span>  Trailing SL <span class="val">8%</span> from peak
+<span class="kw">Max Loss:</span> <span class="val">-8%</span> per trade</div>
+                <p class="rec-desc">
+                    Lower WR but <strong style="color:var(--text-light);">6x more trades (~30/year)</strong>. No entry quality filter needed &mdash;
+                    the tight 8% trail does the filtering. Best for <strong style="color:var(--blue);">active traders</strong> who want high frequency systematic execution.
+                </p>
+            </div>
+
+            <!-- System 4 -->
+            <div class="rec-card">
+                <div class="rec-tag">System 4 &mdash; Maximum Growth</div>
+                <div class="rec-name" style="color:var(--accent);">&ldquo;IPO Maximum Growth&rdquo;</div>
+                <div class="rec-badges">
+                    <span class="rec-badge badge-wr">66.7% WR</span>
+                    <span class="rec-badge badge-pf">PF 2.74</span>
+                    <span class="rec-badge badge-trades">~51 trades/decade</span>
+                    <span class="rec-badge badge-hold">162d avg hold</span>
+                </div>
+                <div class="rule-block"><span class="kw">Entry:</span> ATH breakout (10d) + Vol &ge; 2.5x of 30d avg
+       + Listing Gain + Breakout &ge;3% above ATH
+<span class="kw">Exit:</span>  Fixed Target <span class="val">+40%</span> / Stop Loss <span class="val">-30%</span>
+<span class="kw">Expectancy:</span> <span class="val">+19.39%</span>/trade | Total Return: <span class="val">989%</span>
+<span class="kw">Median Return:</span> <span class="val">+41.7%</span></div>
+                <p class="rec-desc">
+                    Patient strategy. Hold 5+ months. Highest total return (989%) and expectancy (+19.39%) of any 65%+ WR system.
+                    Best for <strong style="color:var(--accent);">long-term capital allocators</strong>.
+                </p>
+            </div>
+        </div>
+
+        <!-- Decision Matrix -->
+        <h3 style="font-size:22px; font-weight:800; margin-top:48px; margin-bottom:24px;">Strategy Decision Matrix</h3>
+        <div class="table-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Your Priority</th>
+                        <th>Choose</th>
+                        <th>System</th>
+                        <th>WR%</th>
+                        <th>PF</th>
+                        <th>Trades/Decade</th>
+                        <th>Avg Hold</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="text-align:left; font-weight:700; color:var(--green);">Max Consistency</td><td>System 1</td><td>LG+BRK3+T6/SL20</td><td class="positive">84.3</td><td>2.73</td><td>~51</td><td>37d</td></tr>
+                    <tr><td style="text-align:left; font-weight:700; color:var(--purple);">Max Profit Factor</td><td>System 2</td><td>LG+BRK3+TIME20d/SL20</td><td class="positive">66.7</td><td class="positive">4.25</td><td>~51</td><td>29d</td></tr>
+                    <tr><td style="text-align:left; font-weight:700; color:var(--blue);">Max Trade Frequency</td><td>System 3</td><td>TRAIL 8%</td><td>46.6</td><td>2.51</td><td>~298</td><td>10d</td></tr>
+                    <tr><td style="text-align:left; font-weight:700; color:var(--accent);">Max Total Return</td><td>System 4</td><td>LG+BRK3+T40/SL30</td><td class="positive">66.7</td><td>2.74</td><td>~51</td><td>162d</td></tr>
+                    <tr><td style="text-align:left; font-weight:600;">Max Win Rate</td><td>Variant</td><td>LG+BRK3+T5/SL20</td><td class="positive">86.3</td><td>2.33</td><td>~51</td><td>31d</td></tr>
+                    <tr><td style="text-align:left; font-weight:600;">Best Quick Scalp</td><td>Variant</td><td>LG+BRK3+T3/SL5</td><td class="positive">68.6</td><td>2.01</td><td>~51</td><td>5d</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 6: VS NIFTY 50 -->
+<!-- ================================================================ -->
+<section id="nifty" class="section-light">
+    <div class="container">
+        <p class="section-tag">Chapter 6</p>
+        <h2>vs Nifty 50:<br>How Much Alpha?</h2>
+        <p class="subtitle">
+            The Nifty 50 returned ~210% over 2015&ndash;2025.
+            Every recommended IPO system crushed it.
+        </p>
+
+        <div class="big-compare">
+            <div class="compare-card" style="background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid var(--border);">
+                <div class="cc-label">Nifty 50 (Passive)</div>
+                <div class="cc-amount" style="color:var(--text-secondary);">~210%</div>
+                <div class="cc-detail">~12% CAGR &bull; Buy & hold</div>
+            </div>
+            <div class="compare-card" style="background: linear-gradient(135deg, #064e3b, #065f46); border: 2px solid var(--green);">
+                <div class="cc-label">IPO Scalper (Sys 1)</div>
+                <div class="cc-amount" style="color:var(--green);">281%</div>
+                <div class="cc-detail">84.3% WR &bull; 51 trades &bull; 37d hold</div>
+            </div>
+            <div class="compare-card" style="background: linear-gradient(135deg, #3b0764, #4c1d95); border: 2px solid var(--purple);">
+                <div class="cc-label">IPO Swing (Sys 2)</div>
+                <div class="cc-amount" style="color:var(--purple);">700%</div>
+                <div class="cc-detail">66.7% WR &bull; PF 4.25 &bull; 29d hold</div>
+            </div>
+            <div class="compare-card" style="background: linear-gradient(135deg, #78350f, #92400e); border: 2px solid var(--accent);">
+                <div class="cc-label">IPO Max Growth (Sys 4)</div>
+                <div class="cc-amount" style="color:var(--accent);">989%</div>
+                <div class="cc-detail">66.7% WR &bull; +19.39%/trade &bull; 162d hold</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Total Return Comparison (2015&ndash;2025)</div>
+            <div class="chart-subtitle">All systems vs Nifty 50 and Nifty 500 passive benchmarks. IPO strategies deployed on 5% sequential capital.</div>
+            <canvas id="chartNiftyCompare"></canvas>
+        </div>
+
+        <div class="callout">
+            System 4 produced <strong>989% total return</strong> on 51 trades vs Nifty 50's ~210% &mdash;
+            nearly <strong class="text-green">5x the alpha</strong>. Even the conservative System 1 (281%) outperforms
+            passive indexing with 84% of trades being winners.
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 7: SURVIVORSHIP BIAS -->
+<!-- ================================================================ -->
+<section id="bias">
+    <div class="container">
+        <p class="section-tag">Chapter 7</p>
+        <h2>Survivorship Bias:<br><span class="text-red">The Reality Check</span></h2>
+        <p class="subtitle">
+            Our first results on Nifty 500 stocks showed 73% win rate and PF 5.3.
+            When we expanded to all 1,151 NSE IPOs, the truth was sobering.
+        </p>
+
+        <div class="two-col">
+            <div>
+                <div class="chart-container" style="margin-top:0;">
+                    <div class="chart-title">The Bias Effect</div>
+                    <div class="chart-subtitle">Same strategy, dramatically different results on different universes.</div>
+                    <canvas id="chartBias"></canvas>
+                </div>
+            </div>
+            <div>
+                <div class="table-wrap" style="margin-top:0;">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;">Metric</th>
+                                <th style="color:var(--red);">Nifty 500 (145)</th>
+                                <th style="color:var(--green);">All NSE (1,151)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align:left; font-weight:600;">Avg trades/config</td>
+                                <td>44</td>
+                                <td class="positive">270 (+6x)</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align:left; font-weight:600;">Avg win rate</td>
+                                <td>57%</td>
+                                <td class="negative">45% (-12pp)</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align:left; font-weight:600;">Avg profit factor</td>
+                                <td>3.15</td>
+                                <td class="negative">1.98 (-1.17)</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align:left; font-weight:600;">Statistical reliability</td>
+                                <td class="negative">Poor</td>
+                                <td class="positive">Good</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Why the Original Results Were Inflated</h4>
+                    <ul>
+                        <li>Nifty 500 stocks are companies that became large and successful &mdash; their IPO breakouts naturally worked</li>
+                        <li>Failed IPOs (collapsed, delisted) weren't in the database at all</li>
+                        <li>Volume filter appeared powerful because it was filtering already-good stocks</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>What Survived the Expansion</h4>
+                    <p>The directional edge is real (PF consistently 1.5&ndash;2.8). The strategy genuinely identifies a profitable entry point.
+                    And with LG+BRK3% filters + asymmetric R:R, we pushed the expanded universe to 86.3% WR.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 8: RESEARCH PHASES -->
+<!-- ================================================================ -->
+<section id="phases" class="section-mid">
+    <div class="container">
+        <p class="section-tag">Chapter 8</p>
+        <h2>Research Journey:<br>5 Phases, 2,201 Configs</h2>
+        <p class="subtitle">
+            The path from naive Nifty 500 backtesting to statistically robust 86% win rate systems.
+        </p>
+
+        <div class="table-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th>Configs</th>
+                        <th>Universe</th>
+                        <th>IPOs</th>
+                        <th style="text-align:left;">Focus</th>
+                        <th style="text-align:left;">Key Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td><td>158</td><td>Nifty 500</td><td>145</td>
+                        <td style="text-align:left;">7 exit families, default entries</td>
+                        <td style="text-align:left;">Supertrend PF 5.3 (800d holds, impractical)</td>
+                    </tr>
+                    <tr>
+                        <td>2</td><td>780</td><td>Nifty 500</td><td>145</td>
+                        <td style="text-align:left;">13 exits x entry params</td>
+                        <td style="text-align:left;">73.1% WR (26 trades &mdash; inflated)</td>
+                    </tr>
+                    <tr>
+                        <td>3</td><td>780</td><td>All NSE</td><td>1,151</td>
+                        <td style="text-align:left;">Same sweep, full universe</td>
+                        <td style="text-align:left; color:var(--red);">Bias exposed: 45% WR, PF 2.0</td>
+                    </tr>
+                    <tr>
+                        <td>4</td><td>318</td><td>All NSE</td><td>1,151</td>
+                        <td style="text-align:left;">10 entry filters + hybrid exits</td>
+                        <td style="text-align:left;">LG+BRK3 = only useful filter (61.7% ceiling)</td>
+                    </tr>
+                    <tr style="background:rgba(16,185,129,0.06);">
+                        <td style="font-weight:700;">5</td><td style="font-weight:700;">165</td><td>All NSE</td><td>1,151</td>
+                        <td style="text-align:left; font-weight:700;">Asymmetric R:R + filter combos</td>
+                        <td style="text-align:left; font-weight:700; color:var(--green);">86.3% WR, PF 4.25 breakthrough</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Exit comparison radar -->
+        <div class="chart-container">
+            <div class="chart-title">4 Recommended Systems: Strengths Comparison</div>
+            <div class="chart-subtitle">Each system excels in a different dimension. Pick the shape that matches your trading style.</div>
+            <canvas id="chartRadar"></canvas>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CHAPTER 9: CAVEATS -->
+<!-- ================================================================ -->
+<section id="caveats" class="section-light">
+    <div class="container">
+        <p class="section-tag">Chapter 9</p>
+        <h2>Caveats &amp; Limitations</h2>
+        <p class="subtitle">
+            No backtest is perfect. Here's what could break in live trading.
+        </p>
+
+        <div class="warning-box">
+            <h4>1. Partial Universe Coverage</h4>
+            <p>While expanded to 1,621 symbols, many NSE micro/nano-cap IPOs may still be missing from yfinance. Stocks that delisted quickly or changed ticker may not have data.</p>
+        </div>
+        <div class="warning-box">
+            <h4>2. No Slippage or Market Impact</h4>
+            <p>IPO stocks in their first 10-50 days may have wide spreads and thin order books. Backtest uses closing prices with no slippage. Especially problematic for micro-cap IPOs.</p>
+        </div>
+        <div class="warning-box">
+            <h4>3. Sequential Capital Assumption</h4>
+            <p>Trades are sized as 5% of current capital, executed sequentially. In practice, multiple IPOs may signal simultaneously. With ~27 trades/year, concurrent positions are likely.</p>
+        </div>
+        <div class="warning-box">
+            <h4>4. Bull Market Period</h4>
+            <p>2015&ndash;2025 was a strong bull market for Indian equities, especially mid/small-caps and IPOs. The 2021&ndash;2022 IPO boom may skew results.</p>
+        </div>
+        <div class="warning-box">
+            <h4>5. Negative Median Returns</h4>
+            <p>Most configs have negative median returns. The strategy's edge comes from fat-tailed winners. This requires strict systematic execution &mdash; cherry-picking "good" setups will underperform.</p>
+        </div>
+        <div class="warning-box">
+            <h4>6. Small Sample on Filtered Systems</h4>
+            <p>LG+BRK3% systems have only 51 trades over 10 years. While the metrics are strong, this is a limited sample for statistical confidence. The unfiltered systems (259+ trades) are more statistically robust.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p style="font-weight:700; color:var(--accent); margin-bottom:8px;">IPO Launch Strategy Research Report</p>
+        <p>Generated from 2,201 backtest configurations &bull; NSE equities via yfinance (2015&ndash;2025)</p>
+        <p>Engine: <code style="color:var(--text-secondary);">services/ipo_strategy.py</code> &bull; Covered Calls Backtester &copy; 2025 Castronix</p>
+    </div>
+</footer>
+
+<!-- ================================================================ -->
+<!-- CHARTS -->
+<!-- ================================================================ -->
+<script>
+// Chart defaults
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+// ── 1. Filter Impact Bar Chart ──
+new Chart(document.getElementById('chartFilterWR'), {
+    type: 'bar',
+    data: {
+        labels: ['None\n(Base)', 'RSI\n>50', 'EMA\n5/7', 'ADX\n>15', 'MFI\n>50', 'Above\nAvg', 'BRK\n≥3%', 'Listing\nGain', 'LG +\nBRK3%', 'LG+BRK3\n+wider SL'],
+        datasets: [{
+            label: 'Win Rate %',
+            data: [53.6, 53.6, 53.6, 53.9, 53.9, 53.6, 55.0, 53.5, 60.9, 62.7],
+            backgroundColor: [
+                'rgba(100,116,139,0.6)', 'rgba(239,68,68,0.3)', 'rgba(239,68,68,0.3)',
+                'rgba(239,68,68,0.3)', 'rgba(239,68,68,0.3)', 'rgba(239,68,68,0.3)',
+                'rgba(245,158,11,0.4)', 'rgba(245,158,11,0.4)',
+                'rgba(16,185,129,0.5)', 'rgba(16,185,129,0.7)'
+            ],
+            borderColor: [
+                '#64748b', '#ef4444', '#ef4444', '#ef4444', '#ef4444', '#ef4444',
+                '#f59e0b', '#f59e0b', '#10b981', '#10b981'
+            ],
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        aspectRatio: 2.5,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { min: 50, max: 65, ticks: { callback: v => v + '%' } },
+            x: { ticks: { font: { size: 11 }, maxRotation: 0 } }
+        }
+    }
+});
+
+// ── 2. Heatmap Base ──
+function makeHeatmap(canvasId, data) {
+    const targets = ['T3', 'T4', 'T5', 'T6', 'T8', 'T10', 'T30'];
+    const slLevels = [
+        { sl: 'SL5', color: '#ef4444' },
+        { sl: 'SL7', color: '#f59e0b' },
+        { sl: 'SL10', color: '#3b82f6' },
+        { sl: 'SL15', color: '#8b5cf6' },
+        { sl: 'SL20', color: '#10b981' }
+    ];
+    new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: {
+            labels: targets,
+            datasets: slLevels.map(s => ({
+                label: s.sl,
+                data: targets.map(t => data[t + '/' + s.sl] || null),
+                backgroundColor: s.color + '55',
+                borderColor: s.color,
+                borderWidth: 1,
+                borderRadius: 3
+            }))
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '% WR' } }
+            },
+            scales: {
+                y: { min: 40, max: 90, ticks: { callback: v => v + '%' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+makeHeatmap('chartHeatBase', {
+    'T3/SL5':59.1,'T3/SL7':63.3,'T3/SL10':68.0,
+    'T4/SL5':53.7,'T4/SL7':59.1,'T4/SL10':64.9,
+    'T5/SL10':63.3,'T5/SL15':73.0,'T5/SL20':77.2,
+    'T6/SL10':60.6,'T6/SL15':70.3,'T6/SL20':75.3,
+    'T8/SL10':58.3,'T8/SL15':68.0,'T8/SL20':73.0,
+    'T10/SL10':55.6,'T10/SL15':66.0,'T10/SL20':71.0,
+    'T30/SL15':50.6,'T30/SL20':54.1
+});
+
+makeHeatmap('chartHeatFiltered', {
+    'T3/SL5':68.6,'T3/SL7':72.5,'T3/SL10':74.5,
+    'T4/SL5':60.8,'T4/SL7':68.6,'T4/SL10':72.5,
+    'T5/SL10':70.6,'T5/SL15':80.4,'T5/SL20':86.3,
+    'T6/SL10':64.7,'T6/SL15':76.5,'T6/SL20':84.3,
+    'T8/SL10':62.7,'T8/SL15':74.5,'T8/SL20':82.4,
+    'T10/SL10':60.8,'T10/SL15':72.5,'T10/SL20':80.4,
+    'T30/SL15':60.9,'T30/SL20':62.7
+});
+
+// ── 3. WR vs PF Scatter ──
+const scatterData = [
+    {x:86.3,y:2.33,r:6,label:'T5/SL20'},
+    {x:84.3,y:2.73,r:8,label:'T6/SL20'},
+    {x:82.4,y:2.56,r:7,label:'T8/SL20'},
+    {x:80.4,y:2.70,r:8,label:'T10/SL20'},
+    {x:80.4,y:1.91,r:5,label:'T5/SL15'},
+    {x:76.5,y:1.91,r:5,label:'T6/SL15'},
+    {x:74.5,y:1.66,r:4,label:'T3/SL10'},
+    {x:74.5,y:1.87,r:5,label:'T8/SL15'},
+    {x:72.5,y:2.06,r:6,label:'T10/SL15'},
+    {x:72.5,y:1.80,r:4,label:'T3/SL7'},
+    {x:72.5,y:1.72,r:4,label:'T4/SL10'},
+    {x:72.4,y:2.81,r:7,label:'BRK10+T5/SL7'},
+    {x:72.4,y:2.23,r:7,label:'BRK5+T10/SL15'},
+    {x:70.6,y:1.66,r:4,label:'T5/SL10'},
+    {x:69.8,y:1.94,r:5,label:'GAP+T5/SL7'},
+    {x:68.6,y:2.01,r:4,label:'T3/SL5'},
+    {x:68.6,y:1.69,r:4,label:'T4/SL7'},
+    {x:68.4,y:1.96,r:6,label:'BRK7+T10/SL15'}
+];
+const scatterTime = [
+    {x:66.7,y:4.25,r:14,label:'TIME20d/SL20'},
+    {x:66.7,y:4.14,r:13,label:'TIME30d/SL20'},
+    {x:66.7,y:4.09,r:12,label:'TIME20d/SL15'},
+    {x:66.7,y:3.75,r:11,label:'TIME30d/SL15'},
+    {x:66.7,y:2.74,r:16,label:'T40/SL30'}
+];
+
+new Chart(document.getElementById('chartScatter'), {
+    type: 'bubble',
+    data: {
+        datasets: [
+            { label: 'Fixed Target', data: scatterData, backgroundColor: 'rgba(16,185,129,0.4)', borderColor: '#10b981' },
+            { label: 'Time Exit', data: scatterTime, backgroundColor: 'rgba(139,92,246,0.4)', borderColor: '#8b5cf6' }
+        ]
+    },
+    options: {
+        responsive: true,
+        aspectRatio: 2,
+        plugins: {
+            legend: { labels: { usePointStyle: true, padding: 20 } },
+            tooltip: { callbacks: { label: ctx => { const d=ctx.raw; return d.label+': WR='+d.x+'%, PF='+d.y; } } }
+        },
+        scales: {
+            x: { title: { display: true, text: 'Win Rate %' }, min: 63, max: 88 },
+            y: { title: { display: true, text: 'Profit Factor' }, min: 1.4, max: 4.5 }
+        }
+    }
+});
+
+// ── 4. Nifty Compare ──
+new Chart(document.getElementById('chartNiftyCompare'), {
+    type: 'bar',
+    data: {
+        labels: ['Nifty 50\n(Passive)', 'Nifty 500\n(Passive)', 'Sys 3\nQuick Scalp', 'Sys 1\nIPO Scalper', 'Sys 2\nIPO Swing', 'Sys 4\nMax Growth'],
+        datasets: [{
+            label: 'Total Return %',
+            data: [210, 280, 598, 281, 700, 989],
+            backgroundColor: [
+                'rgba(100,116,139,0.5)', 'rgba(100,116,139,0.5)',
+                'rgba(59,130,246,0.6)', 'rgba(16,185,129,0.6)',
+                'rgba(139,92,246,0.6)', 'rgba(245,158,11,0.6)'
+            ],
+            borderColor: ['#64748b','#64748b','#3b82f6','#10b981','#8b5cf6','#f59e0b'],
+            borderWidth: 1,
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        aspectRatio: 2.5,
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => 'Total Return: ' + ctx.parsed.y + '%' } }
+        },
+        scales: {
+            y: { ticks: { callback: v => v + '%' } },
+            x: { ticks: { font: { size: 11 }, maxRotation: 0 } }
+        }
+    }
+});
+
+// ── 5. Survivorship Bias ──
+new Chart(document.getElementById('chartBias'), {
+    type: 'bar',
+    data: {
+        labels: ['Avg Win Rate', 'Avg Profit Factor', 'Avg Trades / Config'],
+        datasets: [
+            {
+                label: 'Nifty 500 (145 IPOs)',
+                data: [57, 3.15, 44],
+                backgroundColor: 'rgba(239,68,68,0.4)',
+                borderColor: '#ef4444',
+                borderWidth: 1,
+                borderRadius: 4
+            },
+            {
+                label: 'All NSE (1,151 IPOs)',
+                data: [45, 1.98, 270],
+                backgroundColor: 'rgba(16,185,129,0.4)',
+                borderColor: '#10b981',
+                borderWidth: 1,
+                borderRadius: 4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { usePointStyle: true, padding: 20 } }
+        },
+        scales: {
+            y: { grid: { color: 'rgba(148,163,184,0.1)' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// ── 6. Radar Chart: 4 Systems Comparison ──
+new Chart(document.getElementById('chartRadar'), {
+    type: 'radar',
+    data: {
+        labels: ['Win Rate', 'Profit Factor', 'Expectancy', 'Trade Volume', 'Speed (1/hold)'],
+        datasets: [
+            {
+                label: 'Sys 1: Scalper',
+                data: [84.3, 54.6, 27.5, 17, 27],
+                backgroundColor: 'rgba(16,185,129,0.12)',
+                borderColor: '#10b981',
+                pointBackgroundColor: '#10b981',
+                borderWidth: 2
+            },
+            {
+                label: 'Sys 2: Swing',
+                data: [66.7, 85, 68.6, 17, 34.5],
+                backgroundColor: 'rgba(139,92,246,0.12)',
+                borderColor: '#8b5cf6',
+                pointBackgroundColor: '#8b5cf6',
+                borderWidth: 2
+            },
+            {
+                label: 'Sys 3: Quick',
+                data: [46.6, 50.2, 10, 100, 100],
+                backgroundColor: 'rgba(59,130,246,0.12)',
+                borderColor: '#3b82f6',
+                pointBackgroundColor: '#3b82f6',
+                borderWidth: 2
+            },
+            {
+                label: 'Sys 4: Growth',
+                data: [66.7, 54.8, 96.95, 17, 6.2],
+                backgroundColor: 'rgba(245,158,11,0.12)',
+                borderColor: '#f59e0b',
+                pointBackgroundColor: '#f59e0b',
+                borderWidth: 2
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        aspectRatio: 1.8,
+        plugins: {
+            legend: { labels: { usePointStyle: true, padding: 20, font: { size: 12 } } },
+            tooltip: { enabled: false }
+        },
+        scales: {
+            r: {
+                grid: { color: 'rgba(148,163,184,0.15)' },
+                angleLines: { color: 'rgba(148,163,184,0.15)' },
+                pointLabels: { font: { size: 12, weight: '600' } },
+                ticks: { display: false },
+                suggestedMin: 0,
+                suggestedMax: 100
+            }
+        }
+    }
+});
+
+// ── Count-up animation for hero stats ──
+function animateCountUp(el) {
+    const target = parseFloat(el.dataset.count);
+    const decimals = parseInt(el.dataset.decimals || '0');
+    const suffix = el.dataset.suffix || '';
+    const duration = 1800;
+    const start = performance.now();
+    function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = (eased * target).toFixed(decimals) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+const heroObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            document.querySelectorAll('.hero-stat .number[data-count]').forEach(animateCountUp);
+            heroObserver.disconnect();
+        }
+    });
+}, { threshold: 0.3 });
+
+const heroSection = document.getElementById('hero');
+if (heroSection) heroObserver.observe(heroSection);
+</script>
+
+</body>
+</html>

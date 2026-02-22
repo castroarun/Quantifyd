@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+{% block title %}Breakout V3 Strategy Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .system-card {
+        background: linear-gradient(135deg, #1f2937 0%, #161b22 100%);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: transform 0.2s, border-color 0.2s;
+        cursor: default;
+    }
+    .system-card:hover {
+        transform: translateY(-2px);
+        border-color: #58a6ff;
+    }
+    .system-card.recommended {
+        border-color: #3fb950;
+        box-shadow: 0 0 12px rgba(63, 185, 80, 0.15);
+    }
+    .system-name { font-size: 1.1rem; font-weight: 700; }
+    .system-metric { font-size: 0.8rem; color: #8b949e; }
+    .system-value { font-size: 1.5rem; font-weight: 700; }
+    .badge-win { background-color: #238636; }
+    .badge-calmar { background-color: #1f6feb; }
+    .badge-pf { background-color: #8b5cf6; }
+    .strat-row:hover { background-color: rgba(88, 166, 255, 0.05); }
+    .heatmap-cell {
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .signal-win { color: #3fb950; }
+    .signal-loss { color: #f85149; }
+    .research-card {
+        background: linear-gradient(135deg, #0d2137 0%, #161b22 100%);
+        border: 1px solid #1f6feb;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+    .overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.85); z-index: 9999;
+        display: none; align-items: center; justify-content: center;
+    }
+    .overlay.active { display: flex; }
+    .overlay-content { text-align: center; color: #c9d1d9; }
+    .equity-legend { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 0.5rem; }
+    .equity-legend span { font-size: 0.8rem; }
+    .equity-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+    #refreshTimer { font-size: 0.75rem; color: #8b949e; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Task overlay -->
+<div id="taskOverlay" class="overlay">
+    <div class="overlay-content">
+        <div class="spinner-border text-info mb-3" style="width:3rem;height:3rem;"></div>
+        <h5 id="overlayMsg">Running V3 Backtest...</h5>
+        <div class="progress mt-3" style="width:300px;height:8px;">
+            <div id="overlayBar" class="progress-bar bg-info" style="width:0%"></div>
+        </div>
+        <small id="overlayPct" class="mt-2 d-block text-muted">0%</small>
+    </div>
+</div>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1"><i class="bi bi-lightning me-2"></i>Breakout V3 Strategy Dashboard</h3>
+        <small class="text-muted">Multi-Strategy OR System | 9,739 trades | 457 stocks | 2000-2025</small>
+    </div>
+    <div class="text-end">
+        <button id="btnRun" class="btn btn-primary" onclick="runBacktest()">
+            <i class="bi bi-play-fill me-1"></i> Run Backtest
+        </button>
+        <div id="refreshTimer" class="mt-1">Auto-refresh: 5 min</div>
+        <div id="lastRun" class="mt-1" style="font-size:0.75rem;color:#8b949e;"></div>
+    </div>
+</div>
+
+<!-- Research Summary -->
+<div class="research-card mb-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h5><i class="bi bi-journal-text me-2"></i>V3 Research Conclusion</h5>
+            <p class="mb-1">Using <strong>OR logic</strong> to combine complementary AND-strategies breaks the 250-trade/65% barrier.
+            Each strategy captures different breakout types with low overlap.</p>
+            <p class="mb-0"><strong>Recommended: PRIMARY</strong> (ALPHA OR T1B OR MOMVOL) &mdash;
+            <span class="positive">332 trades, 66.9% win, PF 6.44</span>. Take a trade when <em>any</em> of the 3 strategies fires.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-inline-block text-start">
+                <div class="system-metric">Baseline (No Filter)</div>
+                <div id="baselineInfo" style="font-size:0.9rem;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Comparison Cards -->
+<div class="row g-3 mb-4" id="systemCards">
+    <!-- Populated by JS -->
+</div>
+
+<!-- Equity Curve Chart -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Equity Curves (Rs.1L per trade, cumulative)</h5>
+        <canvas id="equityChart" height="100"></canvas>
+        <div class="equity-legend" id="equityLegend"></div>
+    </div>
+</div>
+
+<!-- Strategy Breakdown + Year Heatmap -->
+<div class="row g-4 mb-4">
+    <!-- Individual Strategies -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-layers me-2"></i>Individual Strategies (AND)</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr>
+                            <th>Strategy</th><th class="text-end">Trades</th>
+                            <th class="text-end">Win%</th><th class="text-end">PF</th>
+                            <th class="text-end">Avg Ret</th>
+                        </tr></thead>
+                        <tbody id="strategyTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Year-by-Year Heatmap -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-calendar3 me-2"></i>Year-by-Year Win Rate</h5>
+                <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+                    <table class="table table-sm mb-0" style="font-size:0.8rem;">
+                        <thead id="heatmapHead"></thead>
+                        <tbody id="heatmapBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Signals Table -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-bell me-2"></i>Recent Signals (PRIMARY System)</h5>
+        <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr>
+                    <th>Date</th><th>Symbol</th><th>Detector</th>
+                    <th class="text-end">Return</th><th>Result</th>
+                    <th>Exit</th><th class="text-end">RSI14</th>
+                    <th class="text-end">Vol Ratio</th><th class="text-end">ATH%</th>
+                </tr></thead>
+                <tbody id="signalTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const COLORS = {
+    SNIPER: '#f85149', PRIMARY: '#3fb950', BALANCED: '#58a6ff',
+    ACTIVE: '#d29922', HIGH_VOLUME: '#bc8cff'
+};
+const SYSTEM_ORDER = ['SNIPER', 'PRIMARY', 'BALANCED', 'ACTIVE', 'HIGH_VOLUME'];
+const SYSTEM_LABELS = {
+    SNIPER: 'Sniper', PRIMARY: 'Primary', BALANCED: 'Balanced',
+    ACTIVE: 'Active', HIGH_VOLUME: 'High Volume'
+};
+let equityChart = null;
+
+function loadResults() {
+    fetch('/api/breakout-v3/results')
+        .then(r => { if (!r.ok) throw new Error('No data'); return r.json(); })
+        .then(data => {
+            if (data.error) { console.log(data.error); return; }
+            renderDashboard(data);
+        })
+        .catch(e => console.log('No cached results:', e.message));
+}
+
+function renderDashboard(data) {
+    document.getElementById('lastRun').textContent = 'Last run: ' + (data.generated_at || '').slice(0, 19).replace('T', ' ');
+
+    // Baseline
+    const b = data.baseline;
+    document.getElementById('baselineInfo').innerHTML =
+        `${b.trades} trades | ${b.win_pct}% win | PF ${b.profit_factor}`;
+
+    // System cards
+    const cardsHtml = SYSTEM_ORDER.map(name => {
+        const m = data.systems[name]?.metrics || {};
+        const rec = name === 'PRIMARY' ? ' recommended' : '';
+        const badge = name === 'PRIMARY' ? '<span class="badge badge-win ms-2">Recommended</span>' : '';
+        return `
+        <div class="col-lg col-md-4 col-6">
+            <div class="system-card${rec}">
+                <div class="system-name" style="color:${COLORS[name]}">${SYSTEM_LABELS[name]}${badge}</div>
+                <div class="system-value positive">${m.win_pct || 0}%</div>
+                <div class="system-metric">Win Rate</div>
+                <hr class="my-2" style="border-color:#30363d">
+                <div class="row text-center" style="font-size:0.8rem;">
+                    <div class="col-4">
+                        <div style="font-weight:700;color:#c9d1d9">${m.trades || 0}</div>
+                        <div class="system-metric">Trades</div>
+                    </div>
+                    <div class="col-4">
+                        <div style="font-weight:700;color:#8b5cf6">${m.profit_factor || 0}</div>
+                        <div class="system-metric">PF</div>
+                    </div>
+                    <div class="col-4">
+                        <div style="font-weight:700;color:#58a6ff">${m.calmar || 0}</div>
+                        <div class="system-metric">Calmar</div>
+                    </div>
+                </div>
+                <hr class="my-2" style="border-color:#30363d">
+                <div class="row text-center" style="font-size:0.75rem;">
+                    <div class="col-4">
+                        <div>${m.cagr || 0}%</div>
+                        <div class="system-metric">CAGR</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="negative">${m.max_drawdown || 0}%</div>
+                        <div class="system-metric">Max DD</div>
+                    </div>
+                    <div class="col-4">
+                        <div>${m.signals_per_year || 0}</div>
+                        <div class="system-metric">/Year</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    document.getElementById('systemCards').innerHTML = cardsHtml;
+
+    // Equity chart
+    renderEquityChart(data);
+
+    // Strategy table
+    const stratHtml = Object.entries(data.strategies || {}).map(([name, s]) => {
+        const m = s.metrics || {};
+        return `<tr class="strat-row">
+            <td><strong>${name}</strong><br><small class="text-muted">${s.description || ''}</small></td>
+            <td class="text-end">${m.trades || 0}</td>
+            <td class="text-end ${m.win_pct >= 65 ? 'positive' : ''}">${m.win_pct || 0}%</td>
+            <td class="text-end">${m.profit_factor || 0}</td>
+            <td class="text-end ${m.avg_return >= 0 ? 'positive' : 'negative'}">${m.avg_return > 0 ? '+' : ''}${m.avg_return || 0}%</td>
+        </tr>`;
+    }).join('');
+    document.getElementById('strategyTable').innerHTML = stratHtml;
+
+    // Year heatmap
+    renderHeatmap(data);
+
+    // Recent signals (PRIMARY)
+    const sigs = data.systems.PRIMARY?.recent_signals || [];
+    const sigHtml = sigs.map(s => `
+        <tr>
+            <td>${s.date}</td>
+            <td><strong>${s.symbol}</strong></td>
+            <td><span class="badge bg-secondary">${s.detector}</span></td>
+            <td class="text-end ${s.return_pct >= 0 ? 'signal-win' : 'signal-loss'}">${s.return_pct > 0 ? '+' : ''}${s.return_pct}%</td>
+            <td><span class="badge ${s.outcome === 'WIN' ? 'badge-win' : 'bg-danger'}">${s.outcome}</span></td>
+            <td>${s.exit_reason}</td>
+            <td class="text-end">${s.rsi14}</td>
+            <td class="text-end">${s.volume_ratio}x</td>
+            <td class="text-end">${s.ath_proximity}%</td>
+        </tr>
+    `).join('');
+    document.getElementById('signalTable').innerHTML = sigHtml;
+}
+
+function renderEquityChart(data) {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    if (equityChart) equityChart.destroy();
+
+    const datasets = SYSTEM_ORDER.map(name => {
+        const curve = data.systems[name]?.equity_curve || [];
+        return {
+            label: SYSTEM_LABELS[name],
+            data: curve.map(p => ({ x: p.date, y: p.equity })),
+            borderColor: COLORS[name],
+            backgroundColor: 'transparent',
+            borderWidth: name === 'PRIMARY' ? 2.5 : 1.5,
+            pointRadius: 0,
+            tension: 0.1,
+        };
+    });
+
+    equityChart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.dataset.label}: Rs.${ctx.parsed.y.toLocaleString('en-IN')}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'category',
+                    ticks: { maxTicksLimit: 15, color: '#8b949e', font: { size: 10 } },
+                    grid: { color: 'rgba(48,54,61,0.3)' }
+                },
+                y: {
+                    ticks: {
+                        color: '#8b949e',
+                        callback: v => 'Rs.' + (v/100000).toFixed(1) + 'L'
+                    },
+                    grid: { color: 'rgba(48,54,61,0.3)' }
+                }
+            }
+        }
+    });
+
+    // Legend
+    const legendHtml = SYSTEM_ORDER.map(name =>
+        `<span><span class="dot" style="background:${COLORS[name]}"></span>${SYSTEM_LABELS[name]}</span>`
+    ).join('');
+    document.getElementById('equityLegend').innerHTML = legendHtml;
+}
+
+function renderHeatmap(data) {
+    // Collect all years across all systems
+    const allYears = new Set();
+    SYSTEM_ORDER.forEach(name => {
+        (data.systems[name]?.year_breakdown || []).forEach(y => allYears.add(y.year));
+    });
+    const years = [...allYears].sort();
+
+    // Build lookup
+    const lookup = {};
+    SYSTEM_ORDER.forEach(name => {
+        lookup[name] = {};
+        (data.systems[name]?.year_breakdown || []).forEach(y => { lookup[name][y.year] = y; });
+    });
+
+    // Header
+    document.getElementById('heatmapHead').innerHTML =
+        '<tr><th>Year</th>' + SYSTEM_ORDER.map(n =>
+            `<th class="text-center" style="color:${COLORS[n]}">${SYSTEM_LABELS[n]}</th>`
+        ).join('') + '</tr>';
+
+    // Body
+    const rows = years.map(yr => {
+        const cells = SYSTEM_ORDER.map(name => {
+            const y = lookup[name][yr];
+            if (!y || y.trades === 0) return '<td class="heatmap-cell" style="color:#484f58">-</td>';
+            const wp = y.win_pct;
+            let bg, fg;
+            if (wp >= 75) { bg = 'rgba(63,185,80,0.3)'; fg = '#3fb950'; }
+            else if (wp >= 60) { bg = 'rgba(63,185,80,0.15)'; fg = '#3fb950'; }
+            else if (wp >= 50) { bg = 'rgba(210,153,34,0.15)'; fg = '#d29922'; }
+            else if (wp > 0) { bg = 'rgba(248,81,73,0.15)'; fg = '#f85149'; }
+            else { bg = 'rgba(248,81,73,0.3)'; fg = '#f85149'; }
+            return `<td class="heatmap-cell" style="background:${bg};color:${fg}">${wp}% <small>(${y.trades})</small></td>`;
+        }).join('');
+        return `<tr><td style="font-weight:600">${yr}</td>${cells}</tr>`;
+    }).join('');
+    document.getElementById('heatmapBody').innerHTML = rows;
+}
+
+function runBacktest() {
+    document.getElementById('taskOverlay').classList.add('active');
+    document.getElementById('btnRun').disabled = true;
+
+    fetch('/api/breakout-v3/run', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.task_id) pollTask(data.task_id);
+        })
+        .catch(e => {
+            alert('Failed to start: ' + e.message);
+            document.getElementById('taskOverlay').classList.remove('active');
+            document.getElementById('btnRun').disabled = false;
+        });
+}
+
+function pollTask(taskId) {
+    const poll = setInterval(() => {
+        fetch(`/api/breakout-v3/status/${taskId}`)
+            .then(r => r.json())
+            .then(s => {
+                document.getElementById('overlayMsg').textContent = s.message || 'Processing...';
+                document.getElementById('overlayBar').style.width = (s.progress || 0) + '%';
+                document.getElementById('overlayPct').textContent = (s.progress || 0) + '%';
+
+                if (s.status === 'complete' || s.status === 'error') {
+                    clearInterval(poll);
+                    document.getElementById('taskOverlay').classList.remove('active');
+                    document.getElementById('btnRun').disabled = false;
+                    if (s.status === 'complete') loadResults();
+                    else alert('Error: ' + (s.error || s.message));
+                }
+            });
+    }, 1500);
+}
+
+// Initial load + auto-refresh
+loadResults();
+setInterval(loadResults, 300000);  // 5 minutes
+
+// Countdown timer
+let countdown = 300;
+setInterval(() => {
+    countdown--;
+    if (countdown <= 0) countdown = 300;
+    const m = Math.floor(countdown / 60);
+    const s = countdown % 60;
+    document.getElementById('refreshTimer').textContent =
+        `Auto-refresh: ${m}:${s.toString().padStart(2, '0')}`;
+}, 1000);
+</script>
+{% endblock %}

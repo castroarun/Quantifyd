@@ -1,0 +1,944 @@
+{% extends "base.html" %}
+
+{% block title %}Tactical Capital Pool{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pool-card {
+        border-radius: 12px;
+        padding: 1.25rem;
+        background: rgba(22,27,34,0.6);
+        border: 1px solid var(--bs-border-color);
+        position: relative;
+        overflow: hidden;
+    }
+    .pool-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+    }
+    .pool-mq::before { background: linear-gradient(90deg, #3fb950, #2ea043); }
+    .pool-tactical::before { background: linear-gradient(90deg, #58a6ff, #1f6feb); }
+
+    .pool-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #8b949e;
+        margin-bottom: 0.25rem;
+    }
+    .pool-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    .pool-sub {
+        font-size: 0.82rem;
+        color: #8b949e;
+        margin-top: 0.25rem;
+    }
+
+    .alloc-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.05);
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+    .alloc-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s ease;
+    }
+
+    .strat-card {
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        background: rgba(22,27,34,0.5);
+        border: 1px solid var(--bs-border-color);
+    }
+    .strat-badge {
+        font-size: 0.7rem;
+        padding: 0.2em 0.6em;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .strat-kc6 { background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.3); }
+    .strat-ipo { background: rgba(210,153,34,0.15); color: #e3b341; border: 1px solid rgba(210,153,34,0.3); }
+    .strat-debt { background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+
+    .rule-row {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .rule-row:last-child { border-bottom: none; }
+    .rule-priority {
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 700;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .table-tactical th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .table-tactical td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.88rem;
+    }
+
+    .waterfall-segment {
+        display: inline-block;
+        height: 32px;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+        position: relative;
+    }
+    .waterfall-segment .wf-label {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.7rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .expected-return {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #3fb950, #58a6ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .pnl-positive { color: #3fb950; }
+    .pnl-negative { color: #f85149; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">
+                <i class="bi bi-layers me-2"></i>Tactical Capital Pool
+            </h3>
+            <small class="text-muted">
+                MQ Core (60%) + Tactical Pool (40%: KC6 + IPO Scalper + IPO Swing) &mdash; Rs.1 Crore
+            </small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="refreshState()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+            <span class="badge bg-secondary" id="lastUpdated">--</span>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- POOL ALLOCATION CARDS                                            -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <!-- MQ Core -->
+        <div class="col-md-6">
+            <div class="pool-card pool-mq">
+                <div class="pool-label">MQ Core Portfolio</div>
+                <div class="pool-value text-success" id="mqValue">Rs.60,00,000</div>
+                <div class="pool-sub">
+                    60% &bull; 30 stocks &bull; Semi-annual rebalance
+                </div>
+                <div class="alloc-bar">
+                    <div class="alloc-fill bg-success" style="width: 60%"></div>
+                </div>
+                <div class="pool-sub mt-2">
+                    <span class="text-success">~22% CAGR</span> &bull; Always deployed
+                </div>
+            </div>
+        </div>
+
+        <!-- Tactical Pool -->
+        <div class="col-md-6">
+            <div class="pool-card pool-tactical">
+                <div class="pool-label">Tactical Pool (KC6 + IPO Scalper + IPO Swing)</div>
+                <div class="pool-value" style="color: #58a6ff;" id="tacticalValue">Rs.40,00,000</div>
+                <div class="pool-sub">
+                    40% &bull; <span id="tacticalUtil">0%</span> deployed &bull;
+                    <span id="tacticalPositions">0</span> positions &bull;
+                    Idle cash earns <span style="color: #e3b341;">7% p.a.</span> in liquid fund
+                </div>
+                <div class="alloc-bar">
+                    <div class="alloc-fill" id="tacticalBar" style="width: 0%; background: #58a6ff;"></div>
+                </div>
+                <div class="pool-sub mt-2">
+                    <span style="color: #58a6ff;" id="tacticalPnl">Rs.0</span> realized P&L
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TACTICAL POOL BREAKDOWN                                          -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <!-- Capital Waterfall -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header-custom">
+                    <i class="bi bi-bar-chart-steps me-1"></i> Tactical Pool Breakdown
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-1 mb-3" style="height: 40px;">
+                        <div class="waterfall-segment" id="wfDebt" style="background: rgba(63,185,80,0.3); border: 1px solid #3fb950;">
+                            <span class="wf-label" style="color: #3fb950;">Debt Fund</span>
+                        </div>
+                        <div class="waterfall-segment" id="wfKc6" style="background: rgba(88,166,255,0.3); border: 1px solid #58a6ff;">
+                            <span class="wf-label" style="color: #58a6ff;">KC6</span>
+                        </div>
+                        <div class="waterfall-segment" id="wfIpo" style="background: rgba(210,153,34,0.3); border: 1px solid #d29922;">
+                            <span class="wf-label" style="color: #e3b341;">IPO</span>
+                        </div>
+                        <div class="waterfall-segment" id="wfIpoSwing" style="background: rgba(163,113,247,0.3); border: 1px solid #a371f7;">
+                            <span class="wf-label" style="color: #a371f7;">IPO Swing</span>
+                        </div>
+                        <!-- Buffer removed: full pool available for trades -->
+                    </div>
+
+                    <!-- Breakdown table -->
+                    <table class="table table-sm table-tactical mb-0">
+                        <thead><tr>
+                            <th>Component</th><th class="text-end">Capital</th>
+                            <th class="text-end">% of Pool</th><th class="text-end">Status</th>
+                        </tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="strat-badge strat-debt">DEBT</span> Liquid Fund (Idle Cash)</td>
+                                <td class="text-end" id="debtFundAmt">--</td>
+                                <td class="text-end" id="debtFundPct">--</td>
+                                <td class="text-end"><span class="text-success">Earning 7%</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="strat-badge strat-kc6">KC6</span> Mean Reversion Deployed</td>
+                                <td class="text-end" id="kc6DeployedAmt">--</td>
+                                <td class="text-end" id="kc6DeployedPct">--</td>
+                                <td class="text-end" id="kc6PosCount">0 positions</td>
+                            </tr>
+                            <tr>
+                                <td><span class="strat-badge strat-ipo">IPO</span> Breakout Deployed</td>
+                                <td class="text-end" id="ipoDeployedAmt">--</td>
+                                <td class="text-end" id="ipoDeployedPct">--</td>
+                                <td class="text-end" id="ipoPosCount">0 positions</td>
+                            </tr>
+                            <tr>
+                                <td><span class="strat-badge" style="background:rgba(163,113,247,0.15);color:#a371f7;border:1px solid rgba(163,113,247,0.3);">SWING</span> IPO Swing Deployed</td>
+                                <td class="text-end" id="ipoSwingDeployedAmt">--</td>
+                                <td class="text-end" id="ipoSwingDeployedPct">--</td>
+                                <td class="text-end" id="ipoSwingPosCount">0 positions</td>
+                            </tr>
+                            <tr class="table-active">
+                                <td><strong>Available for New Entries</strong></td>
+                                <td class="text-end fw-bold" id="availableAmt">--</td>
+                                <td class="text-end" id="availablePct">--</td>
+                                <td class="text-end text-muted">Full pool, no buffer</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy Comparison -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header-custom">
+                    <i class="bi bi-bar-chart me-1"></i> Strategy Comparison
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-tactical mb-0">
+                        <thead><tr>
+                            <th></th><th class="text-center">KC6</th><th class="text-center">IPO Scalper</th><th class="text-center">IPO Swing</th>
+                        </tr></thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-muted">Type</td>
+                                <td class="text-center">Mean Rev</td>
+                                <td class="text-center">Quick Scalp</td>
+                                <td class="text-center">Big Runner</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Win Rate</td>
+                                <td class="text-center">65.0%</td>
+                                <td class="text-center fw-bold" style="color:#e3b341;">84.3%</td>
+                                <td class="text-center" style="color:#a371f7;">64.5%</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">PF</td>
+                                <td class="text-center">1.70</td>
+                                <td class="text-center" style="color:#e3b341;">2.73</td>
+                                <td class="text-center fw-bold" style="color:#a371f7;">3.42</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Exp/trade</td>
+                                <td class="text-center">+1.7%</td>
+                                <td class="text-center" style="color:#e3b341;">+5.5%</td>
+                                <td class="text-center fw-bold" style="color:#a371f7;">+16.2%</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Trades/yr</td>
+                                <td class="text-center fw-bold" style="color:#58a6ff;">~124</td>
+                                <td class="text-center">~5</td>
+                                <td class="text-center">~3</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Avg Hold</td>
+                                <td class="text-center">7-15d</td>
+                                <td class="text-center">37d</td>
+                                <td class="text-center">51d</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Exit</td>
+                                <td class="text-center">KC6 mid</td>
+                                <td class="text-center">T6/SL20</td>
+                                <td class="text-center">T30/SL15</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Position</td>
+                                <td class="text-center">Rs.4L</td>
+                                <td class="text-center">Rs.6.5L</td>
+                                <td class="text-center">Rs.5L</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Max Pos</td>
+                                <td class="text-center">7</td>
+                                <td class="text-center">2</td>
+                                <td class="text-center">2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- ALLOCATION CHART + EXPECTED RETURNS                              -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header-custom">
+                    <i class="bi bi-pie-chart me-1"></i> Capital Allocation
+                </div>
+                <div class="card-body" style="height: 280px; position: relative;">
+                    <canvas id="allocationChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header-custom">
+                    <i class="bi bi-calculator me-1"></i> Expected Annual Returns (Tactical Pool)
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-3 text-center">
+                            <div class="strat-card">
+                                <div class="strat-badge strat-debt mb-2">DEBT FUND</div>
+                                <div class="fs-4 fw-bold text-success">Rs.0.7L</div>
+                                <div class="text-muted" style="font-size:0.78rem;">~Rs.10L idle avg &times; 7%</div>
+                            </div>
+                        </div>
+                        <div class="col-3 text-center">
+                            <div class="strat-card">
+                                <div class="strat-badge strat-kc6 mb-2">KC6 TRADES</div>
+                                <div class="fs-4 fw-bold" style="color:#58a6ff;">Rs.9.8L</div>
+                                <div class="text-muted" style="font-size:0.78rem;">~144 trades &times; Rs.4L &times; 1.7%</div>
+                            </div>
+                        </div>
+                        <div class="col-3 text-center">
+                            <div class="strat-card">
+                                <div class="strat-badge strat-ipo mb-2">IPO SCALPER</div>
+                                <div class="fs-4 fw-bold" style="color:#e3b341;">Rs.1.8L</div>
+                                <div class="text-muted" style="font-size:0.78rem;">~5 trades &times; Rs.6.5L &times; 5.5%</div>
+                            </div>
+                        </div>
+                        <div class="col-3 text-center">
+                            <div class="strat-card">
+                                <div class="strat-badge mb-2" style="background:rgba(163,113,247,0.15);color:#a371f7;border:1px solid rgba(163,113,247,0.3);">IPO SWING</div>
+                                <div class="fs-4 fw-bold" style="color:#a371f7;">Rs.2.4L</div>
+                                <div class="text-muted" style="font-size:0.78rem;">~3 trades &times; Rs.5L &times; 16.2%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-3" style="border-color: var(--bs-border-color);">
+                    <div class="text-center">
+                        <div class="text-muted mb-1" style="font-size:0.8rem;">COMBINED TACTICAL POOL RETURN</div>
+                        <div class="expected-return">Rs.14.7L / yr</div>
+                        <div class="text-muted" style="font-size:0.85rem;">
+                            36.8% on Rs.40L pool &bull;
+                            <span class="text-success">~27.9% combined system CAGR</span> on Rs.1Cr
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- PRIORITY RULES + SYSTEM RULES                                    -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header-custom">
+                    <i class="bi bi-shield-check me-1"></i> Capital Priority Rules
+                </div>
+                <div class="card-body">
+                    <div class="rule-row">
+                        <div class="rule-priority bg-success text-dark">1</div>
+                        <div>
+                            <strong>Full Pool Deployed</strong>
+                            <div class="text-muted" style="font-size:0.82rem;">
+                                All Rs.40L available for trades. No buffer lock &mdash; idle cash earns 7% in liquid fund until deployed.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: #e3b341; color: #000;">2</div>
+                        <div>
+                            <strong>IPO Scalper Gets Priority</strong>
+                            <div class="text-muted" style="font-size:0.82rem;">
+                                When capital is tight, IPO Scalper takes precedence (84% WR, +5.5% exp). Quick in/out, frees capital fast.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: #a371f7; color: #000;">3</div>
+                        <div>
+                            <strong>IPO Swing Next</strong>
+                            <div class="text-muted" style="font-size:0.82rem;">
+                                IPO Swing (BRK&ge;7%, T30/SL15) catches big runners. Rs.5L per position, max 2 concurrent. 16.2% exp/trade.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: #58a6ff; color: #000;">4</div>
+                        <div>
+                            <strong>KC6 Fills Remaining</strong>
+                            <div class="text-muted" style="font-size:0.82rem;">
+                                KC6 positions taken with whatever capital remains after IPO Scalper + IPO Swing allocations.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority bg-danger">5</div>
+                        <div>
+                            <strong>Skip on Conflict</strong>
+                            <div class="text-muted" style="font-size:0.82rem;">
+                                If available capital &lt; position size, skip the entry entirely. No forced liquidation.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card h-100">
+                <div class="card-header-custom">
+                    <span class="strat-badge strat-ipo me-1">SCALPER</span> IPO System 1
+                </div>
+                <div class="card-body">
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: rgba(210,153,34,0.3); color: #e3b341;">E</div>
+                        <div>
+                            <strong>Entry</strong>
+                            <div class="text-muted" style="font-size:0.78rem;">LG + BRK &ge; 3% + Vol &ge; 2.5x</div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: rgba(63,185,80,0.3); color: #3fb950;">T</div>
+                        <div>
+                            <strong>Target +6%</strong>
+                            <div class="text-muted" style="font-size:0.78rem;">Quick scalp, tight target</div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: rgba(248,81,73,0.3); color: #f85149;">S</div>
+                        <div>
+                            <strong>SL -20%</strong>
+                            <div class="text-muted" style="font-size:0.78rem;">Wide SL = 84% WR</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card h-100">
+                <div class="card-header-custom">
+                    <span class="strat-badge me-1" style="background:rgba(163,113,247,0.15);color:#a371f7;border:1px solid rgba(163,113,247,0.3);">SWING</span> IPO System 2
+                </div>
+                <div class="card-body">
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: rgba(163,113,247,0.3); color: #a371f7;">E</div>
+                        <div>
+                            <strong>Entry</strong>
+                            <div class="text-muted" style="font-size:0.78rem;">LG + BRK &ge; 7% (stricter)</div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: rgba(63,185,80,0.3); color: #3fb950;">T</div>
+                        <div>
+                            <strong>Target +30%</strong>
+                            <div class="text-muted" style="font-size:0.78rem;">Ride big runners, 31.8% median</div>
+                        </div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-priority" style="background: rgba(248,81,73,0.3); color: #f85149;">S</div>
+                        <div>
+                            <strong>SL -15%</strong>
+                            <div class="text-muted" style="font-size:0.78rem;">Tighter SL, 2:1 R:R</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- ACTIVE POSITIONS                                                 -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span><i class="bi bi-briefcase me-1"></i> Active Positions</span>
+                    <span class="text-muted" id="activeCount">0 positions</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-tactical mb-0">
+                            <thead><tr>
+                                <th>Strategy</th><th>Symbol</th><th>Entry Date</th>
+                                <th class="text-end">Entry Price</th><th class="text-end">Capital</th>
+                                <th class="text-end">Unrealized P&L</th>
+                            </tr></thead>
+                            <tbody id="activePositions">
+                                <tr><td colspan="6" class="text-center text-muted py-3">No active positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TRADE HISTORY + ACTIVITY LOG                                     -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span><i class="bi bi-clock-history me-1"></i> Recent Trades</span>
+                    <span class="text-muted" id="tradeCount">--</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-sm table-tactical mb-0">
+                            <thead><tr>
+                                <th>Strategy</th><th>Symbol</th><th>Entry</th><th>Exit</th>
+                                <th class="text-end">P&L</th><th>Reason</th>
+                            </tr></thead>
+                            <tbody id="closedTrades">
+                                <tr><td colspan="6" class="text-center text-muted py-3">No completed trades</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header-custom">
+                    <i class="bi bi-journal-text me-1"></i> Activity Log
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-sm table-tactical mb-0">
+                            <thead><tr>
+                                <th>Time</th><th>Action</th><th>Details</th>
+                            </tr></thead>
+                            <tbody id="activityLog">
+                                <tr><td colspan="3" class="text-center text-muted py-3">No activity yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- LIVE STATS (KC6 + IPO)                                           -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header-custom">
+                    <span class="strat-badge strat-kc6 me-2">KC6</span> Live Performance
+                </div>
+                <div class="card-body">
+                    <div class="row text-center g-2">
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="kc6LiveTrades">0</div>
+                            <div class="text-muted" style="font-size:0.75rem;">TRADES</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="kc6LiveWR">--%</div>
+                            <div class="text-muted" style="font-size:0.75rem;">WIN RATE</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="kc6LivePnl">Rs.0</div>
+                            <div class="text-muted" style="font-size:0.75rem;">TOTAL P&L</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header-custom">
+                    <span class="strat-badge strat-ipo me-2">IPO</span> Live Performance
+                </div>
+                <div class="card-body">
+                    <div class="row text-center g-2">
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="ipoLiveTrades">0</div>
+                            <div class="text-muted" style="font-size:0.75rem;">TRADES</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="ipoLiveWR">--%</div>
+                            <div class="text-muted" style="font-size:0.75rem;">WIN RATE</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="ipoLivePnl">Rs.0</div>
+                            <div class="text-muted" style="font-size:0.75rem;">TOTAL P&L</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header-custom">
+                    <span class="strat-badge me-2" style="background:rgba(163,113,247,0.15);color:#a371f7;border:1px solid rgba(163,113,247,0.3);">SWING</span> Live Performance
+                </div>
+                <div class="card-body">
+                    <div class="row text-center g-2">
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="ipoSwingLiveTrades">0</div>
+                            <div class="text-muted" style="font-size:0.75rem;">TRADES</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="ipoSwingLiveWR">--%</div>
+                            <div class="text-muted" style="font-size:0.75rem;">WIN RATE</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-5 fw-bold" id="ipoSwingLivePnl">Rs.0</div>
+                            <div class="text-muted" style="font-size:0.75rem;">TOTAL P&L</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- DAY-TO-DAY WORKFLOW                                              -->
+    <!-- ================================================================ -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header-custom">
+                    <i class="bi bi-calendar-check me-1"></i> Daily Workflow
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="strat-card">
+                                <div class="fw-bold mb-2"><i class="bi bi-sunrise me-1 text-warning"></i> Morning (9:15-9:30)</div>
+                                <ul class="mb-0 ps-3" style="font-size:0.85rem; color: #8b949e;">
+                                    <li>KC6 position sync with broker</li>
+                                    <li>Place KC6 SELL LIMIT targets at KC6 mid</li>
+                                    <li>Check for new IPO listings in past 50 days</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="strat-card">
+                                <div class="fw-bold mb-2"><i class="bi bi-sun me-1 text-info"></i> Afternoon (3:15-3:25)</div>
+                                <ul class="mb-0 ps-3" style="font-size:0.85rem; color: #8b949e;">
+                                    <li>KC6 exit check (SL/TP/MaxHold/Target fill)</li>
+                                    <li>IPO Scalper exit check (+6% target / -20% SL / 20d time)</li>
+                                    <li>IPO Swing exit check (+30% target / -15% SL)</li>
+                                    <li>Scan for new KC6 + IPO Scalper + IPO Swing entries</li>
+                                    <li>Execute via tactical pool allocation</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="strat-card">
+                                <div class="fw-bold mb-2"><i class="bi bi-moon me-1 text-secondary"></i> Post-Market (3:30+)</div>
+                                <ul class="mb-0 ps-3" style="font-size:0.85rem; color: #8b949e;">
+                                    <li>Save daily pool snapshot</li>
+                                    <li>Verify order fills/rejections</li>
+                                    <li>Move freed capital back to debt fund</li>
+                                    <li>Log activity for audit trail</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    const Rs = (v) => {
+        if (Math.abs(v) >= 10000000) return 'Rs.' + (v/10000000).toFixed(2) + 'Cr';
+        if (Math.abs(v) >= 100000) return 'Rs.' + (v/100000).toFixed(2) + 'L';
+        return 'Rs.' + v.toLocaleString('en-IN');
+    };
+
+    let allocChart = null;
+
+    function initAllocationChart() {
+        const ctx = document.getElementById('allocationChart').getContext('2d');
+        allocChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['MQ Core (60%)', 'KC6 Deployed', 'IPO Scalper', 'IPO Swing', 'Debt Fund (Idle)'],
+                datasets: [{
+                    data: [60, 0, 0, 0, 40],
+                    backgroundColor: [
+                        'rgba(63,185,80,0.7)',
+                        'rgba(88,166,255,0.7)',
+                        'rgba(210,153,34,0.7)',
+                        'rgba(163,113,247,0.7)',
+                        'rgba(63,185,80,0.3)',
+                    ],
+                    borderColor: ['#3fb950','#58a6ff','#d29922','#a371f7','#3fb950'],
+                    borderWidth: 1,
+                    hoverOffset: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '55%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#8b949e', font: { size: 11 }, padding: 8 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.label}: ${ctx.parsed}% of total`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateDashboard(data) {
+        const cfg = data.config;
+        const pool = data.pool;
+        const kc6 = data.kc6_stats;
+        const ipo = data.ipo_stats;
+        const ipoSwing = data.ipo_swing_stats;
+        const tacticalTotal = cfg.tactical_capital;
+
+        // Pool cards
+        document.getElementById('mqValue').textContent = Rs(cfg.mq_capital);
+        document.getElementById('tacticalValue').textContent = Rs(tacticalTotal + pool.total_realized_pnl);
+        document.getElementById('tacticalUtil').textContent = pool.utilization_pct.toFixed(1) + '%';
+        document.getElementById('tacticalPositions').textContent = (pool.kc6_positions + pool.ipo_positions + pool.ipo_swing_positions);
+        document.getElementById('tacticalBar').style.width = pool.utilization_pct + '%';
+
+        const pnlEl = document.getElementById('tacticalPnl');
+        pnlEl.textContent = Rs(pool.total_realized_pnl);
+        pnlEl.className = pool.total_realized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+
+        // Breakdown table
+        document.getElementById('debtFundAmt').textContent = Rs(pool.debt_fund_balance);
+        document.getElementById('debtFundPct').textContent = (pool.debt_fund_balance / tacticalTotal * 100).toFixed(1) + '%';
+        document.getElementById('kc6DeployedAmt').textContent = Rs(pool.kc6_deployed);
+        document.getElementById('kc6DeployedPct').textContent = (pool.kc6_deployed / tacticalTotal * 100).toFixed(1) + '%';
+        document.getElementById('kc6PosCount').textContent = pool.kc6_positions + '/' + cfg.kc6_max_positions;
+        document.getElementById('ipoDeployedAmt').textContent = Rs(pool.ipo_deployed);
+        document.getElementById('ipoDeployedPct').textContent = (pool.ipo_deployed / tacticalTotal * 100).toFixed(1) + '%';
+        document.getElementById('ipoPosCount').textContent = pool.ipo_positions + '/' + cfg.ipo_max_positions;
+        document.getElementById('ipoSwingDeployedAmt').textContent = Rs(pool.ipo_swing_deployed);
+        document.getElementById('ipoSwingDeployedPct').textContent = (pool.ipo_swing_deployed / tacticalTotal * 100).toFixed(1) + '%';
+        document.getElementById('ipoSwingPosCount').textContent = pool.ipo_swing_positions + '/' + cfg.ipo_swing_max_positions;
+        document.getElementById('availableAmt').textContent = Rs(pool.available_capital);
+        document.getElementById('availablePct').textContent = (pool.available_capital / tacticalTotal * 100).toFixed(1) + '%';
+
+        // Waterfall bar (no buffer — full pool available)
+        const debtPct = Math.max(5, pool.debt_fund_balance / tacticalTotal * 100);
+        const kc6Pct = Math.max(0, pool.kc6_deployed / tacticalTotal * 100);
+        const ipoPct = Math.max(0, pool.ipo_deployed / tacticalTotal * 100);
+        const ipoSwingPct = Math.max(0, pool.ipo_swing_deployed / tacticalTotal * 100);
+        document.getElementById('wfDebt').style.width = debtPct + '%';
+        document.getElementById('wfKc6').style.width = kc6Pct + '%';
+        document.getElementById('wfIpo').style.width = ipoPct + '%';
+        document.getElementById('wfIpoSwing').style.width = ipoSwingPct + '%';
+
+        // Allocation chart
+        if (allocChart) {
+            const mqPct = cfg.mq_pct;
+            const kc6ChartPct = pool.kc6_deployed / cfg.total_capital * 100;
+            const ipoChartPct = pool.ipo_deployed / cfg.total_capital * 100;
+            const ipoSwingChartPct = pool.ipo_swing_deployed / cfg.total_capital * 100;
+            const debtFundPct = pool.debt_fund_balance / cfg.total_capital * 100;
+            allocChart.data.datasets[0].data = [
+                +(mqPct * 100).toFixed(1), +kc6ChartPct.toFixed(1), +ipoChartPct.toFixed(1),
+                +ipoSwingChartPct.toFixed(1), +debtFundPct.toFixed(1)
+            ];
+            allocChart.update('none');
+        }
+
+        // Live stats
+        document.getElementById('kc6LiveTrades').textContent = kc6.total_closed;
+        document.getElementById('kc6LiveWR').textContent = kc6.win_rate + '%';
+        const kc6PnlEl = document.getElementById('kc6LivePnl');
+        kc6PnlEl.textContent = Rs(kc6.total_pnl);
+        kc6PnlEl.className = 'fs-5 fw-bold ' + (kc6.total_pnl >= 0 ? 'pnl-positive' : 'pnl-negative');
+
+        document.getElementById('ipoLiveTrades').textContent = ipo.total_closed;
+        document.getElementById('ipoLiveWR').textContent = ipo.win_rate + '%';
+        const ipoPnlEl = document.getElementById('ipoLivePnl');
+        ipoPnlEl.textContent = Rs(ipo.total_pnl);
+        ipoPnlEl.className = 'fs-5 fw-bold ' + (ipo.total_pnl >= 0 ? 'pnl-positive' : 'pnl-negative');
+
+        document.getElementById('ipoSwingLiveTrades').textContent = ipoSwing.total_closed;
+        document.getElementById('ipoSwingLiveWR').textContent = ipoSwing.win_rate + '%';
+        const ipoSwingPnlEl = document.getElementById('ipoSwingLivePnl');
+        ipoSwingPnlEl.textContent = Rs(ipoSwing.total_pnl);
+        ipoSwingPnlEl.className = 'fs-5 fw-bold ' + (ipoSwing.total_pnl >= 0 ? 'pnl-positive' : 'pnl-negative');
+
+        // Active positions
+        const activeBody = document.getElementById('activePositions');
+        const allActive = [...(pool.kc6_active || []), ...(pool.ipo_active || []), ...(pool.ipo_swing_active || [])];
+        if (allActive.length === 0) {
+            activeBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No active positions &mdash; capital parked in debt fund</td></tr>';
+        } else {
+            activeBody.innerHTML = allActive.map(p => {
+                let badge;
+                if (p.strategy === 'kc6') badge = '<span class="strat-badge strat-kc6">KC6</span>';
+                else if (p.strategy === 'ipo') badge = '<span class="strat-badge strat-ipo">SCALPER</span>';
+                else badge = '<span class="strat-badge" style="background:rgba(163,113,247,0.15);color:#a371f7;border:1px solid rgba(163,113,247,0.3);">SWING</span>';
+                const pnlClass = (p.unrealized_pnl || 0) >= 0 ? 'pnl-positive' : 'pnl-negative';
+                return `<tr>
+                    <td>${badge}</td>
+                    <td class="fw-bold">${p.symbol}</td>
+                    <td>${p.entry_date}</td>
+                    <td class="text-end">${p.entry_price.toFixed(2)}</td>
+                    <td class="text-end">${Rs(p.capital_deployed)}</td>
+                    <td class="text-end ${pnlClass}">${Rs(p.unrealized_pnl || 0)}</td>
+                </tr>`;
+            }).join('');
+        }
+        document.getElementById('activeCount').textContent = allActive.length + ' positions';
+
+        // Closed trades
+        const closedBody = document.getElementById('closedTrades');
+        const closed = data.closed_trades || [];
+        if (closed.length === 0) {
+            closedBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No completed trades</td></tr>';
+        } else {
+            closedBody.innerHTML = closed.slice(0, 20).map(t => {
+                let badge;
+                if (t.strategy === 'kc6') badge = '<span class="strat-badge strat-kc6">KC6</span>';
+                else if (t.strategy === 'ipo') badge = '<span class="strat-badge strat-ipo">SCALPER</span>';
+                else badge = '<span class="strat-badge" style="background:rgba(163,113,247,0.15);color:#a371f7;border:1px solid rgba(163,113,247,0.3);">SWING</span>';
+                const pnlClass = t.realized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                return `<tr>
+                    <td>${badge}</td>
+                    <td class="fw-bold">${t.symbol}</td>
+                    <td>${t.entry_date}</td>
+                    <td>${t.exit_date || '-'}</td>
+                    <td class="text-end ${pnlClass}">${Rs(t.realized_pnl)}</td>
+                    <td><small class="text-muted">${t.exit_reason || '-'}</small></td>
+                </tr>`;
+            }).join('');
+        }
+        document.getElementById('tradeCount').textContent = closed.length + ' trades';
+
+        // Activity log
+        const logBody = document.getElementById('activityLog');
+        const logs = data.activity_log || [];
+        if (logs.length === 0) {
+            logBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No activity yet</td></tr>';
+        } else {
+            logBody.innerHTML = logs.slice(0, 15).map(l => {
+                const action = l.action === 'ALLOCATE'
+                    ? '<span class="text-info">ALLOCATE</span>'
+                    : '<span class="text-success">RELEASE</span>';
+                const details = l.details ? JSON.parse(l.details) : {};
+                const detail = l.symbol
+                    ? `${l.strategy?.toUpperCase()} / ${l.symbol} / ${Rs(l.amount || 0)}`
+                    : Rs(l.amount || 0);
+                return `<tr>
+                    <td style="font-size:0.75rem;">${l.timestamp?.slice(0,16) || '-'}</td>
+                    <td>${action}</td>
+                    <td style="font-size:0.82rem;">${detail}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+    }
+
+    async function refreshState() {
+        try {
+            const resp = await fetch('/api/tactical/state');
+            const data = await resp.json();
+            updateDashboard(data);
+        } catch (e) {
+            console.error('Failed to load tactical state:', e);
+        }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        initAllocationChart();
+        refreshState();
+        setInterval(refreshState, 60000);
+    });
+</script>
+{% endblock %}

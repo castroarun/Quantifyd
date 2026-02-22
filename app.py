@@ -48,7 +48,7 @@ from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
-    MQ_DEFAULTS,
+    MQ_DEFAULTS, KC6_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -1786,6 +1786,786 @@ try:
     logger.info("MQ Agent scheduled jobs registered: monitoring, screening, weekly_digest, rebalance")
 except Exception as e:
     logger.warning(f"Could not register MQ scheduled jobs: {e}")
+
+
+# =============================================================================
+# KC6 Mean Reversion Routes
+# =============================================================================
+
+@app.route('/kc6')
+@login_required
+def kc6_dashboard():
+    """KC6 Mean Reversion Trading Dashboard"""
+    return render_template(
+        'kc6_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/kc6/state')
+@login_required
+def api_kc6_state():
+    """Get KC6 dashboard state: positions, signals, crash filter, stats."""
+    try:
+        from services.kc6_db import get_kc6_db
+        db = get_kc6_db()
+
+        positions = db.get_active_positions()
+        daily_state = db.get_daily_state()
+        stats = db.get_stats()
+        recent_trades = db.get_trade_history(limit=20)
+
+        # Get last scan results from task_status
+        last_scan = {}
+        for tid, ts in list(task_status.items()):
+            if tid.startswith('kc6_scan_') and ts.get('status') == 'completed':
+                last_scan = ts.get('result', {})
+                break
+
+        return jsonify({
+            'positions': positions,
+            'daily_state': daily_state,
+            'stats': stats,
+            'recent_trades': recent_trades,
+            'last_scan': last_scan,
+            'config': {
+                'paper_trading_mode': KC6_DEFAULTS.get('paper_trading_mode', True),
+                'live_trading_enabled': KC6_DEFAULTS.get('live_trading_enabled', False),
+                'max_positions': KC6_DEFAULTS.get('max_positions', 5),
+                'sl_pct': KC6_DEFAULTS.get('sl_pct', 5.0),
+                'tp_pct': KC6_DEFAULTS.get('tp_pct', 15.0),
+                'max_hold_days': KC6_DEFAULTS.get('max_hold_days', 15),
+                'atr_ratio_threshold': KC6_DEFAULTS.get('atr_ratio_threshold', 1.3),
+            },
+        })
+    except Exception as e:
+        logger.error(f"KC6 state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kc6/scan', methods=['POST'])
+@login_required
+def api_kc6_manual_scan():
+    """Trigger a manual KC6 scan."""
+    try:
+        task_id = f"kc6_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        task_status[task_id] = {
+            'status': 'running',
+            'progress': 0,
+            'message': 'Starting KC6 scan...',
+            'result': None,
+        }
+
+        scheduler.add_job(
+            _execute_kc6_scan,
+            args=[task_id],
+            id=task_id,
+        )
+
+        return jsonify({'task_id': task_id, 'status': 'started'})
+    except Exception as e:
+        logger.error(f"KC6 scan start error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def _execute_kc6_scan(task_id: str):
+    """Run KC6 scan in background."""
+    try:
+        from services.kc6_scanner import run_full_scan
+
+        task_status[task_id]['message'] = 'Loading data and computing indicators...'
+        task_status[task_id]['progress'] = 10
+
+        kite = None
+        if is_authenticated():
+            kite = get_kite()
+
+        scan = run_full_scan(kite=kite, config=KC6_DEFAULTS)
+
+        task_status[task_id]['status'] = 'completed'
+        task_status[task_id]['progress'] = 100
+        task_status[task_id]['message'] = (
+            f"Scan complete: {scan.get('symbols_loaded', 0)} symbols | "
+            f"ATR ratio: {scan.get('universe_atr_ratio', 'N/A')} | "
+            f"Entries: {len(scan.get('entries', []))} | "
+            f"Exits: {len(scan.get('exits', []))}"
+        )
+        task_status[task_id]['result'] = scan
+
+    except Exception as e:
+        logger.error(f"KC6 scan error: {e}")
+        task_status[task_id]['status'] = 'failed'
+        task_status[task_id]['message'] = str(e)
+
+
+@app.route('/api/kc6/scan/status/<task_id>')
+@login_required
+def api_kc6_scan_status(task_id: str):
+    """Get KC6 scan task status."""
+    if task_id not in task_status:
+        return jsonify({'error': 'Task not found'}), 404
+    return jsonify(task_status[task_id])
+
+
+@app.route('/api/kc6/kill-switch', methods=['POST'])
+@login_required
+def api_kc6_kill_switch():
+    """Emergency exit ALL KC6 positions."""
+    try:
+        from services.kc6_executor import KC6Executor
+        executor = KC6Executor(config=KC6_DEFAULTS)
+        results = executor.emergency_exit_all()
+        logger.warning(f"KC6 KILL SWITCH activated: {len(results)} positions closed")
+        return jsonify({'status': 'executed', 'results': results})
+    except Exception as e:
+        logger.error(f"KC6 kill switch error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kc6/trades')
+@login_required
+def api_kc6_trades():
+    """Get KC6 trade history."""
+    try:
+        from services.kc6_db import get_kc6_db
+        db = get_kc6_db()
+        limit = request.args.get('limit', 50, type=int)
+        trades = db.get_trade_history(limit=limit)
+        return jsonify(trades)
+    except Exception as e:
+        logger.error(f"KC6 trades error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kc6/orders')
+@login_required
+def api_kc6_orders():
+    """Get KC6 order audit log."""
+    try:
+        from services.kc6_db import get_kc6_db
+        db = get_kc6_db()
+        limit = request.args.get('limit', 50, type=int)
+        orders = db.get_recent_orders(limit=limit)
+        return jsonify(orders)
+    except Exception as e:
+        logger.error(f"KC6 orders error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kc6/equity-curve')
+@login_required
+def api_kc6_equity_curve():
+    """Get equity curve data for chart."""
+    try:
+        from services.kc6_db import get_kc6_db
+        db = get_kc6_db()
+        curve = db.get_equity_curve()
+        return jsonify(curve)
+    except Exception as e:
+        logger.error(f"KC6 equity curve error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kc6/toggle-mode', methods=['POST'])
+@login_required
+def api_kc6_toggle_mode():
+    """Toggle between paper and live trading mode."""
+    try:
+        data = request.get_json() or {}
+        mode = data.get('mode', 'paper')
+
+        if mode == 'live':
+            KC6_DEFAULTS['paper_trading_mode'] = False
+            KC6_DEFAULTS['live_trading_enabled'] = True
+            logger.warning("KC6: Switched to LIVE trading mode")
+        else:
+            KC6_DEFAULTS['paper_trading_mode'] = True
+            KC6_DEFAULTS['live_trading_enabled'] = False
+            logger.info("KC6: Switched to PAPER trading mode")
+
+        return jsonify({
+            'mode': mode,
+            'paper_trading_mode': KC6_DEFAULTS['paper_trading_mode'],
+            'live_trading_enabled': KC6_DEFAULTS['live_trading_enabled'],
+        })
+    except Exception as e:
+        logger.error(f"KC6 toggle mode error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# KC6 Scheduled Jobs
+# =============================================================================
+
+def _kc6_check_exits():
+    """3:15 PM Mon-Fri: Check exit conditions for active positions."""
+    try:
+        from services.kc6_executor import run_exit_check
+        logger.info("[KC6 Scheduler] Running exit check...")
+        results = run_exit_check(config=KC6_DEFAULTS)
+        logger.info(f"[KC6 Scheduler] Exit check complete: {len(results)} exits")
+    except Exception as e:
+        logger.error(f"[KC6 Scheduler] Exit check failed: {e}")
+
+
+def _kc6_full_scan():
+    """3:20 PM Mon-Fri: Full scan + execute entries."""
+    try:
+        from services.kc6_executor import run_entry_scan
+        logger.info("[KC6 Scheduler] Running full scan...")
+        results = run_entry_scan(config=KC6_DEFAULTS)
+        logger.info(f"[KC6 Scheduler] Full scan complete: {len(results)} entries")
+    except Exception as e:
+        logger.error(f"[KC6 Scheduler] Full scan failed: {e}")
+
+
+def _kc6_verify_orders():
+    """3:25 PM Mon-Fri: Verify order fills/rejections."""
+    try:
+        from services.kc6_executor import KC6Executor
+        logger.info("[KC6 Scheduler] Verifying orders...")
+        executor = KC6Executor(config=KC6_DEFAULTS)
+        results = executor.verify_orders()
+        logger.info(f"[KC6 Scheduler] Order verification: {len(results)} updated")
+    except Exception as e:
+        logger.error(f"[KC6 Scheduler] Order verification failed: {e}")
+
+
+def _kc6_position_sync():
+    """9:20 AM Mon-Fri: Sync DB positions with Kite holdings."""
+    try:
+        from services.kc6_executor import KC6Executor
+        logger.info("[KC6 Scheduler] Syncing positions...")
+        executor = KC6Executor(config=KC6_DEFAULTS)
+        result = executor.sync_positions_with_kite()
+        logger.info(f"[KC6 Scheduler] Position sync: {result.get('status')}")
+    except Exception as e:
+        logger.error(f"[KC6 Scheduler] Position sync failed: {e}")
+
+
+def _kc6_place_targets():
+    """9:25 AM Mon-Fri: Place SELL LIMIT orders at KC6 mid for active positions."""
+    try:
+        from services.kc6_executor import run_place_targets
+        logger.info("[KC6 Scheduler] Placing target limit orders...")
+        results = run_place_targets(config=KC6_DEFAULTS)
+        logger.info(f"[KC6 Scheduler] Target orders placed: {len(results)}")
+    except Exception as e:
+        logger.error(f"[KC6 Scheduler] Target order placement failed: {e}")
+
+
+def _kc6_midday_fill_check():
+    """12:30 PM Mon-Fri: Check if any target orders filled during the morning."""
+    try:
+        from services.kc6_executor import KC6Executor
+        logger.info("[KC6 Scheduler] Midday target fill check...")
+        executor = KC6Executor(config=KC6_DEFAULTS)
+        fills = executor.check_target_fills()
+        if fills:
+            logger.info(f"[KC6 Scheduler] Midday fills: {len(fills)} targets hit")
+    except Exception as e:
+        logger.error(f"[KC6 Scheduler] Midday fill check failed: {e}")
+
+
+# Register KC6 scheduled jobs
+try:
+    scheduler.add_job(
+        _kc6_position_sync,
+        'cron', day_of_week='mon-fri', hour=9, minute=20,
+        id='kc6_position_sync', replace_existing=True,
+    )
+    scheduler.add_job(
+        _kc6_place_targets,
+        'cron', day_of_week='mon-fri', hour=9, minute=25,
+        id='kc6_place_targets', replace_existing=True,
+    )
+    scheduler.add_job(
+        _kc6_midday_fill_check,
+        'cron', day_of_week='mon-fri', hour=12, minute=30,
+        id='kc6_midday_fills', replace_existing=True,
+    )
+    scheduler.add_job(
+        _kc6_check_exits,
+        'cron', day_of_week='mon-fri', hour=15, minute=15,
+        id='kc6_exit_check', replace_existing=True,
+    )
+    scheduler.add_job(
+        _kc6_full_scan,
+        'cron', day_of_week='mon-fri', hour=15, minute=20,
+        id='kc6_full_scan', replace_existing=True,
+    )
+    scheduler.add_job(
+        _kc6_verify_orders,
+        'cron', day_of_week='mon-fri', hour=15, minute=25,
+        id='kc6_verify_orders', replace_existing=True,
+    )
+    logger.info(
+        "KC6 scheduled jobs registered: "
+        "sync(9:20), targets(9:25), midday(12:30), "
+        "exit_check(3:15), full_scan(3:20), verify(3:25)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register KC6 scheduled jobs: {e}")
+
+
+# =============================================================================
+# Tactical Capital Pool Dashboard
+# =============================================================================
+
+@app.route('/tactical')
+def tactical_dashboard():
+    """Tactical Capital Pool Dashboard - no login required (read-only)."""
+    return render_template(
+        'tactical_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/crash-recovery')
+def crash_recovery():
+    """Crash & Recovery showcase - how MQ handles wealth during market crashes."""
+    return render_template(
+        'crash_recovery.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/tactical/state')
+def tactical_state():
+    """Get full tactical pool state for dashboard."""
+    from services.tactical_pool import TacticalPoolDB
+    db = TacticalPoolDB()
+    return jsonify(db.get_dashboard_state())
+
+
+# =============================================================================
+# IPO Research Report
+# =============================================================================
+
+@app.route('/ipo-research')
+def ipo_research_report():
+    """IPO Launch Strategy Research Report - no login required (read-only)."""
+    return render_template(
+        'ipo_strategy_report.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/breakout-v3')
+def breakout_v3_dashboard():
+    """Breakout V3 Multi-Strategy Dashboard - no login required (read-only)."""
+    return render_template(
+        'breakout_v3_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/breakout-v3/results')
+def api_breakout_v3_results():
+    """Return cached V3 backtest results."""
+    try:
+        from services.breakout_v3_backtest import get_cached_results
+        results = get_cached_results()
+        if results:
+            return jsonify(results)
+        return jsonify({'error': 'No results cached. Click Run Backtest.'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/breakout-v3/run', methods=['POST'])
+def api_breakout_v3_run():
+    """Start V3 backtest in background."""
+    import threading
+    task_id = f'bov3_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+    task_status[task_id] = {
+        'status': 'running', 'progress': 0, 'message': 'Starting...',
+    }
+
+    def _run(tid):
+        try:
+            from services.breakout_v3_backtest import run_v3_backtest
+
+            def cb(pct, msg):
+                task_status[tid].update(progress=pct, message=msg)
+
+            results = run_v3_backtest(progress_callback=cb)
+            task_status[tid] = {
+                'status': 'complete', 'progress': 100,
+                'message': 'Done', 'result': 'saved',
+            }
+        except Exception as e:
+            logger.error(f"V3 backtest failed: {e}")
+            task_status[tid] = {
+                'status': 'error', 'progress': 0,
+                'message': str(e), 'error': str(e),
+            }
+
+    threading.Thread(target=_run, args=(task_id,), daemon=True).start()
+    return jsonify({'task_id': task_id})
+
+
+@app.route('/api/breakout-v3/status/<task_id>')
+def api_breakout_v3_status(task_id):
+    """Check V3 backtest task progress."""
+    status = task_status.get(task_id)
+    if status:
+        return jsonify(status)
+    return jsonify({'error': 'Task not found'}), 404
+
+
+# =============================================================================
+# Combined MQ + V3 Routes
+# =============================================================================
+
+@app.route('/combined')
+def combined_dashboard():
+    """Combined MQ + V3 Dashboard - no login required (read-only)."""
+    return render_template(
+        'combined_mq_v3_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/combined/results')
+def api_combined_results():
+    """Return cached combined backtest results."""
+    try:
+        results_path = Path('backtest_data/combined_mq_v3_results.json')
+        if results_path.exists():
+            import json
+            with open(results_path) as f:
+                return jsonify(json.load(f))
+        return jsonify({'error': 'No results cached. Click Run Backtest.'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/combined/run', methods=['POST'])
+def api_combined_run():
+    """Start combined MQ + V3 backtest in background."""
+    import threading
+    task_id = f'combined_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+    task_status[task_id] = {
+        'status': 'running', 'progress': 0, 'message': 'Starting...',
+    }
+
+    # Get optional params from request
+    params = request.get_json(silent=True) or {}
+
+    def _run(tid):
+        try:
+            from services.combined_mq_v3_engine import CombinedMQV3Engine, CombinedConfig
+            import json
+
+            config = CombinedConfig(
+                start_date=params.get('start_date', '2023-01-01'),
+                end_date=params.get('end_date', '2025-12-31'),
+                topup_stop_loss_pct=float(params.get('topup_sl_pct', 0)),
+                v3_trail_pct=float(params.get('v3_trail_pct', 20.0)),
+                v3_max_concurrent=int(params.get('v3_max_concurrent', 5)),
+                v3_system_name=params.get('v3_system', 'PRIMARY'),
+            )
+
+            def cb(pct, msg):
+                task_status[tid].update(progress=pct, message=msg)
+
+            engine = CombinedMQV3Engine(config)
+            result = engine.run(progress_callback=cb)
+
+            # Serialize result for JSON storage
+            serialized = {
+                'generated_at': datetime.now().isoformat(),
+                'config': {
+                    'start_date': config.start_date,
+                    'end_date': config.end_date,
+                    'initial_capital': config.initial_capital,
+                    'mq_pct': config.mq_capital_pct * 100,
+                    'v3_pct': config.v3_capital_pct * 100,
+                    'debt_pct': config.debt_capital_pct * 100,
+                    'v3_leverage': config.v3_leverage,
+                    'v3_trail_pct': config.v3_trail_pct,
+                    'v3_system': config.v3_system_name,
+                    'topup_sl_pct': config.topup_stop_loss_pct * 100,
+                },
+                'mq': {
+                    'initial': result.mq_result.initial_capital,
+                    'final': result.mq_result.final_value,
+                    'cagr': result.mq_result.cagr,
+                    'sharpe': result.mq_result.sharpe_ratio,
+                    'max_dd': result.mq_result.max_drawdown,
+                    'calmar': result.mq_result.calmar_ratio,
+                    'trades': result.mq_result.total_trades,
+                    'win_rate': result.mq_result.win_rate,
+                    'topups': result.mq_result.total_topups,
+                    'topup_sl_reversals': len(result.mq_result.topup_sl_log),
+                    'equity_curve': result.mq_result.daily_equity,
+                    'debt_curve': result.mq_result.daily_debt_fund,
+                    'positions': result.mq_result.final_positions,
+                    'sector_allocation': result.mq_result.sector_allocation,
+                    'exit_reasons': result.mq_result.exit_reason_counts,
+                },
+                'v3': {
+                    'initial': result.v3_initial_capital,
+                    'final': result.v3_final_value,
+                    'trades': result.v3_total_trades,
+                    'winning': result.v3_winning_trades,
+                    'win_rate': result.v3_win_rate,
+                    'avg_leveraged_return': result.v3_avg_leveraged_return,
+                    'profit_factor': result.v3_profit_factor,
+                    'total_pnl': result.v3_total_pnl,
+                    'equity_curve': result.v3_equity_curve,
+                    'strategy_breakdown': result.v3_strategy_breakdown,
+                    'trades_log': [
+                        {
+                            'symbol': t.symbol,
+                            'strategy': t.strategy,
+                            'entry_date': t.entry_date.strftime('%Y-%m-%d'),
+                            'entry_price': t.entry_price,
+                            'exit_date': t.exit_date.strftime('%Y-%m-%d'),
+                            'exit_price': t.exit_price,
+                            'exit_reason': t.exit_reason,
+                            'base_return': t.base_return_pct,
+                            'leveraged_return': t.leveraged_return_pct,
+                            'margin': t.margin_deployed,
+                            'pnl': t.pnl,
+                        }
+                        for t in result.v3_trades
+                    ],
+                },
+                'combined': {
+                    'initial': result.combined_initial,
+                    'final': result.combined_final,
+                    'total_return': result.combined_total_return_pct,
+                    'cagr': result.combined_cagr,
+                    'sharpe': result.combined_sharpe,
+                    'max_dd': result.combined_max_drawdown,
+                    'calmar': result.combined_calmar,
+                    'equity_curve': result.combined_equity_curve,
+                },
+                'yearly': result.yearly_returns,
+                'capital_allocation': result.capital_allocation,
+            }
+
+            # Persist to file
+            results_path = Path('backtest_data/combined_mq_v3_results.json')
+            results_path.parent.mkdir(exist_ok=True)
+            with open(results_path, 'w') as f:
+                json.dump(serialized, f, indent=2, default=str)
+
+            task_status[tid] = {
+                'status': 'complete', 'progress': 100,
+                'message': 'Done', 'result': 'saved',
+            }
+        except Exception as e:
+            logger.error(f"Combined backtest failed: {e}", exc_info=True)
+            task_status[tid] = {
+                'status': 'error', 'progress': 0,
+                'message': str(e), 'error': str(e),
+            }
+
+    threading.Thread(target=_run, args=(task_id,), daemon=True).start()
+    return jsonify({'task_id': task_id})
+
+
+@app.route('/api/combined/status/<task_id>')
+def api_combined_status(task_id):
+    """Check combined backtest task progress."""
+    status = task_status.get(task_id)
+    if status:
+        return jsonify(status)
+    return jsonify({'error': 'Task not found'}), 404
+
+
+# =============================================================================
+# Model Portfolio Routes
+# =============================================================================
+
+def _calculate_xirr(cashflows, guess=0.1, max_iter=100, tol=1e-6):
+    """Calculate XIRR using Newton-Raphson. cashflows = [(datetime, amount), ...]"""
+    if not cashflows or len(cashflows) < 2:
+        return None
+    cashflows = sorted(cashflows, key=lambda x: x[0])
+    t0 = cashflows[0][0]
+    days = [(cf[0] - t0).days / 365.25 for cf in cashflows]
+    amounts = [cf[1] for cf in cashflows]
+    rate = guess
+    for _ in range(max_iter):
+        npv = sum(a / (1 + rate) ** d for a, d in zip(amounts, days))
+        dnpv = sum(-d * a / (1 + rate) ** (d + 1) for a, d in zip(amounts, days))
+        if abs(dnpv) < 1e-12:
+            return None
+        new_rate = rate - npv / dnpv
+        if abs(new_rate - rate) < tol:
+            return new_rate
+        rate = new_rate
+    return None
+
+
+def _serialize_model_portfolio(result, config):
+    """Convert BacktestResult into JSON-serializable model portfolio data."""
+    # Closed positions
+    closed = []
+    for t in result.trade_log:
+        closed.append({
+            'symbol': t.symbol, 'sector': t.sector,
+            'entry_date': t.entry_date.strftime('%Y-%m-%d'),
+            'entry_price': round(t.entry_price, 2),
+            'exit_date': t.exit_date.strftime('%Y-%m-%d'),
+            'exit_price': round(t.exit_price, 2),
+            'current_price': None,
+            'return_pct': round(t.return_pct * 100, 1),
+            'net_pnl': round(t.net_pnl, 2),
+            'exit_reason': t.exit_reason.value if hasattr(t.exit_reason, 'value') else str(t.exit_reason),
+            'holding_days': t.holding_days,
+            'drawdown_from_ath': None,
+            'topups': t.topup_count,
+            'total_invested': round(t.total_invested, 2),
+            'shares': t.total_shares_at_exit,
+            'status': 'closed',
+        })
+
+    # Open positions
+    open_positions = []
+    for p in result.final_positions:
+        dd = p.get('drawdown_from_ath', 0)
+        status = 'warning' if dd >= 15 else 'open'
+        end_dt = datetime.strptime(config.end_date, '%Y-%m-%d')
+        entry_dt = datetime.strptime(p['entry_date'], '%Y-%m-%d')
+        open_positions.append({
+            'symbol': p['symbol'], 'sector': p['sector'],
+            'entry_date': p['entry_date'],
+            'entry_price': round(p['entry_price'], 2),
+            'exit_date': None, 'exit_price': None,
+            'current_price': round(p['current_price'], 2),
+            'return_pct': round(p['return_pct'], 1),
+            'net_pnl': round(p['pnl'], 2),
+            'exit_reason': None,
+            'holding_days': (end_dt - entry_dt).days,
+            'drawdown_from_ath': round(dd, 1),
+            'topups': p.get('topups', 0),
+            'total_invested': round(p.get('value', 0) - p.get('pnl', 0), 2),
+            'shares': p.get('shares', 0),
+            'status': status,
+        })
+
+    status_order = {'open': 0, 'warning': 1, 'closed': 2}
+    positions = sorted(open_positions + closed,
+                       key=lambda x: (status_order.get(x['status'], 9), -abs(x['return_pct'])))
+
+    # XIRR
+    start_dt = datetime.strptime(config.start_date, '%Y-%m-%d')
+    end_dt = datetime.strptime(config.end_date, '%Y-%m-%d')
+    xirr_val = _calculate_xirr([(start_dt, -config.initial_capital), (end_dt, result.final_value)])
+
+    summary = {
+        'total_positions': len(positions),
+        'open_count': len(open_positions),
+        'closed_count': len(closed),
+        'warning_count': sum(1 for p in open_positions if p['status'] == 'warning'),
+        'xirr': round(xirr_val * 100, 2) if xirr_val else None,
+        'cagr': round(result.cagr, 2),
+        'sharpe': round(result.sharpe_ratio, 2),
+        'sortino': round(result.sortino_ratio, 2),
+        'max_drawdown': round(result.max_drawdown, 2),
+        'calmar': round(result.calmar_ratio, 2),
+        'final_value': round(result.final_value, 2),
+        'initial_capital': config.initial_capital,
+        'total_return_pct': round(result.total_return_pct, 2),
+        'total_topups': result.total_topups,
+        'total_trades': result.total_trades,
+        'win_rate': round(result.win_rate, 1),
+    }
+
+    eq_dates = sorted(result.daily_equity.keys())
+    equity_curve = {d: round(result.daily_equity[d], 2)
+                    for i, d in enumerate(eq_dates) if i % 5 == 0 or i == len(eq_dates) - 1}
+
+    return {
+        'generated_at': datetime.now().isoformat(),
+        'config': {'start_date': config.start_date, 'end_date': config.end_date,
+                   'initial_capital': config.initial_capital, 'portfolio_size': config.portfolio_size},
+        'positions': positions,
+        'summary': summary,
+        'equity_curve': equity_curve,
+        'sector_allocation': result.sector_allocation,
+        'exit_reason_counts': result.exit_reason_counts,
+    }
+
+
+@app.route('/model-portfolio')
+def model_portfolio_dashboard():
+    """Model Portfolio Dashboard - MQ strategy positions from Jan 2023."""
+    return render_template(
+        'model_portfolio.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/model-portfolio')
+def api_model_portfolio():
+    """Return cached model portfolio results."""
+    results_path = Path('backtest_data/model_portfolio_results.json')
+    if results_path.exists():
+        return jsonify(json.loads(results_path.read_text(encoding='utf-8')))
+    return jsonify({'error': 'No results cached. Click Run Backtest.'}), 404
+
+
+@app.route('/api/model-portfolio/run', methods=['POST'])
+def api_model_portfolio_run():
+    """Start model portfolio backtest in background thread."""
+    import threading
+    task_id = f'model_portfolio_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+    task_status[task_id] = {'status': 'running', 'progress': 0, 'message': 'Starting...'}
+
+    def _run(tid):
+        try:
+            from services.mq_backtest_engine import MQBacktestEngine
+            from services.mq_portfolio import MQBacktestConfig
+
+            task_status[tid].update(progress=5, message='Loading universe data...')
+            config = MQBacktestConfig(
+                start_date='2023-01-01', end_date='2026-02-17',
+                initial_capital=10_000_000, portfolio_size=20,
+                equity_allocation_pct=0.95, hard_stop_loss=0.50,
+                rebalance_ath_drawdown=0.20,
+            )
+
+            def cb(day_idx, total_days, current_date, msg):
+                pct = (day_idx / total_days * 100) if total_days else 0
+                task_status[tid].update(progress=round(pct, 1), message=msg)
+
+            engine = MQBacktestEngine(config)
+            result = engine.run(progress_callback=cb)
+            serialized = _serialize_model_portfolio(result, config)
+
+            results_path = Path('backtest_data/model_portfolio_results.json')
+            results_path.parent.mkdir(exist_ok=True)
+            results_path.write_text(json.dumps(serialized, indent=2, default=str), encoding='utf-8')
+
+            task_status[tid] = {'status': 'completed', 'progress': 100, 'message': 'Done'}
+        except Exception as e:
+            logger.error(f"Model portfolio backtest failed: {e}", exc_info=True)
+            task_status[tid] = {'status': 'error', 'progress': 0, 'message': str(e)}
+
+    threading.Thread(target=_run, args=(task_id,), daemon=True).start()
+    return jsonify({'task_id': task_id})
+
+
+@app.route('/api/model-portfolio/status/<task_id>')
+def api_model_portfolio_status(task_id):
+    """Check model portfolio task progress."""
+    status = task_status.get(task_id)
+    if status:
+        return jsonify(status)
+    return jsonify({'error': 'Task not found'}), 404
 
 
 # =============================================================================

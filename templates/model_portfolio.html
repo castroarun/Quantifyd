@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Model Portfolio | Covered Calls{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        vertical-align: middle;
+    }
+    .dot-open {
+        background: #3fb950;
+        box-shadow: 0 0 6px rgba(63,185,80,0.5);
+        animation: pulse 2s infinite;
+    }
+    .dot-warning {
+        background: #d29922;
+        box-shadow: 0 0 6px rgba(210,153,34,0.5);
+        animation: pulse 1.5s infinite;
+    }
+    .dot-closed {
+        background: #8b949e;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    .table-portfolio th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+        white-space: nowrap;
+    }
+    .table-portfolio td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.88rem;
+    }
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    .legend-bar {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.82rem;
+        color: #8b949e;
+        padding: 0.5rem 0;
+    }
+    .legend-bar .status-dot { margin-right: 5px; }
+    .exit-badge {
+        font-size: 0.7rem;
+        padding: 0.15em 0.5em;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    .exit-ath { background: rgba(248,81,73,0.15); color: #f85149; }
+    .exit-rebal { background: rgba(88,166,255,0.15); color: #58a6ff; }
+    .exit-stop { background: rgba(210,153,34,0.15); color: #d29922; }
+    .exit-fund { background: rgba(163,113,247,0.15); color: #a371f7; }
+
+    .task-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1050;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .task-overlay.active { display: flex; }
+    .task-card {
+        background: #161b22;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 2rem;
+        min-width: 400px;
+        text-align: center;
+    }
+    .search-input {
+        background: #0d1117;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        color: #c9d1d9;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        width: 220px;
+    }
+    .search-input:focus {
+        outline: none;
+        border-color: #58a6ff;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #8b949e;
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-briefcase-fill me-2" style="color: #58a6ff;"></i>Model Portfolio</h4>
+        <small class="text-muted">MQ Strategy | Entered Jan 2023 | 30 stocks | Rs.1 Cr initial capital</small>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-secondary" onclick="loadData()" title="Refresh">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="runBacktest()" id="btnRun">
+            <i class="bi bi-play-fill me-1"></i> Run Backtest
+        </button>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-3" id="kpiRow" style="display: none;">
+    <div class="col-md-2">
+        <div class="metric-card text-center">
+            <div class="metric-value" id="kpiTotal">--</div>
+            <div class="metric-label">Total Positions</div>
+            <small class="text-muted" id="kpiSplit"></small>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card text-center">
+            <div class="metric-value" style="color: #3fb950;" id="kpiOpen">--</div>
+            <div class="metric-label">Open Positions</div>
+            <small id="kpiWarning" style="color: #d29922;"></small>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card text-center">
+            <div class="metric-value" id="kpiXirr">--</div>
+            <div class="metric-label">XIRR</div>
+            <small class="text-muted">Portfolio IRR</small>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card text-center">
+            <div class="metric-value" id="kpiValue">--</div>
+            <div class="metric-label">Portfolio Value</div>
+            <small class="text-muted" id="kpiReturn"></small>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card text-center">
+            <div class="metric-value" id="kpiSharpe">--</div>
+            <div class="metric-label">Sharpe Ratio</div>
+            <small class="text-muted" id="kpiMaxDD"></small>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="metric-card text-center">
+            <div class="metric-value" style="color: #3fb950;" id="kpiWinRate">--</div>
+            <div class="metric-label">Win Rate</div>
+            <small class="text-muted" id="kpiTrades"></small>
+        </div>
+    </div>
+</div>
+
+<!-- Legend + Search -->
+<div class="d-flex justify-content-between align-items-center mb-2" id="legendRow" style="display: none;">
+    <div class="legend-bar">
+        <span><span class="status-dot dot-open"></span> Open (Healthy)</span>
+        <span><span class="status-dot dot-warning"></span> Nearing SL (&gt;15% ATH DD)</span>
+        <span><span class="status-dot dot-closed"></span> Exited</span>
+    </div>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search symbol or sector...">
+</div>
+
+<!-- Positions Table -->
+<div class="card mb-3" id="tableCard" style="display: none;">
+    <div class="card-header-custom">
+        <i class="bi bi-table me-2"></i>All Positions
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+            <table class="table table-portfolio table-hover mb-0">
+                <thead class="sticky-top" style="background: #161b22;">
+                    <tr>
+                        <th style="width: 30px;"></th>
+                        <th>Symbol</th>
+                        <th>Sector</th>
+                        <th>Entry Date</th>
+                        <th class="text-end">Entry Price</th>
+                        <th class="text-end">Exit / Current</th>
+                        <th class="text-end">P&L %</th>
+                        <th class="text-end">Net P&L</th>
+                        <th>Exit Reason</th>
+                        <th class="text-end">Days</th>
+                        <th class="text-end">Topups</th>
+                    </tr>
+                </thead>
+                <tbody id="positionsBody">
+                    <tr><td colspan="11" class="text-center text-muted py-4">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-3" id="chartsRow" style="display: none;">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header-custom">
+                <i class="bi bi-graph-up me-2"></i>Equity Curve vs Nifty 50
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header-custom">
+                <i class="bi bi-pie-chart me-2"></i>Sector Allocation
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="sectorChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Empty State -->
+<div class="empty-state" id="emptyState">
+    <i class="bi bi-briefcase"></i>
+    <h5>No Model Portfolio Data</h5>
+    <p>Click <strong>Run Backtest</strong> to generate the model portfolio.<br>
+    This runs the MQ strategy from Jan 2023 with Rs.1 Cr capital.</p>
+    <button class="btn btn-primary" onclick="runBacktest()">
+        <i class="bi bi-play-fill me-1"></i> Run Backtest
+    </button>
+</div>
+
+<!-- Task Overlay -->
+<div class="task-overlay" id="taskOverlay">
+    <div class="task-card">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5 id="taskTitle">Running Model Portfolio Backtest...</h5>
+        <div class="d-flex justify-content-between align-items-center mt-3 mb-1">
+            <small class="text-muted" id="taskMessage">Initializing...</small>
+            <small class="fw-bold" style="color: #58a6ff;" id="taskPercent">0%</small>
+        </div>
+        <div class="progress" style="height: 8px;">
+            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                 id="taskProgress" style="width: 0%"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let equityChart = null;
+let sectorChart = null;
+
+const EXIT_LABELS = {
+    'ath_drawdown_rebalance': { text: 'ATH DD >20%', cls: 'exit-ath' },
+    'hard_stop_loss':         { text: 'Hard Stop',   cls: 'exit-stop' },
+    'rebalance_replaced':     { text: 'Rebalanced',  cls: 'exit-rebal' },
+    'fundamental_3q_decline': { text: 'Fund. 3Q',    cls: 'exit-fund' },
+    'fundamental_2y_decline': { text: 'Fund. 2Y',    cls: 'exit-fund' },
+    'called_away':            { text: 'Called Away',  cls: 'exit-stop' },
+};
+
+function fmtINR(n) {
+    if (n == null) return '--';
+    const abs = Math.abs(n);
+    if (abs >= 1e7) return (n < 0 ? '-' : '') + '\u20B9' + (abs/1e7).toFixed(2) + ' Cr';
+    if (abs >= 1e5) return (n < 0 ? '-' : '') + '\u20B9' + (abs/1e5).toFixed(2) + ' L';
+    return '\u20B9' + n.toLocaleString('en-IN', {maximumFractionDigits: 0});
+}
+
+function fmtPrice(n) {
+    if (n == null) return '--';
+    return '\u20B9' + n.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
+
+async function loadData() {
+    try {
+        const res = await fetch('/api/model-portfolio');
+        if (res.ok) {
+            const data = await res.json();
+            renderDashboard(data);
+        } else {
+            document.getElementById('emptyState').style.display = 'block';
+        }
+    } catch (err) {
+        console.error('Load error:', err);
+        document.getElementById('emptyState').style.display = 'block';
+    }
+}
+
+function renderDashboard(data) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('kpiRow').style.display = 'flex';
+    document.getElementById('legendRow').style.display = 'flex';
+    document.getElementById('tableCard').style.display = 'block';
+    document.getElementById('chartsRow').style.display = 'flex';
+
+    renderKPIs(data.summary);
+    renderTable(data.positions);
+    renderEquityCurve(data.equity_curve, data.nifty_curve);
+    if (data.sector_allocation) renderSectorChart(data.sector_allocation);
+}
+
+function renderKPIs(s) {
+    document.getElementById('kpiTotal').textContent = s.total_positions;
+    document.getElementById('kpiSplit').textContent = s.open_count + ' open / ' + s.closed_count + ' closed';
+    document.getElementById('kpiOpen').textContent = s.open_count;
+    document.getElementById('kpiWarning').textContent = s.warning_count > 0
+        ? s.warning_count + ' nearing SL' : 'All healthy';
+    document.getElementById('kpiXirr').textContent = (s.xirr != null ? s.xirr + '%' : '--');
+    document.getElementById('kpiValue').textContent = fmtINR(s.final_value);
+    document.getElementById('kpiReturn').textContent = '+' + s.total_return_pct + '% total return';
+    document.getElementById('kpiSharpe').textContent = s.sharpe;
+    document.getElementById('kpiMaxDD').textContent = 'MaxDD: ' + s.max_drawdown + '%';
+    document.getElementById('kpiWinRate').textContent = s.win_rate + '%';
+    document.getElementById('kpiTrades').textContent = s.total_trades + ' closed trades';
+}
+
+function renderTable(positions) {
+    const tbody = document.getElementById('positionsBody');
+    if (!positions || !positions.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No positions</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = positions.map(p => {
+        const dotClass = p.status === 'open' ? 'dot-open' : p.status === 'warning' ? 'dot-warning' : 'dot-closed';
+        const priceCol = p.status === 'closed' ? p.exit_price : p.current_price;
+        const pnlClass = p.return_pct >= 0 ? 'positive' : 'negative';
+        const pnlSign = p.return_pct >= 0 ? '+' : '';
+
+        let exitHtml = '--';
+        if (p.exit_reason) {
+            const lbl = EXIT_LABELS[p.exit_reason] || { text: p.exit_reason, cls: 'exit-rebal' };
+            exitHtml = '<span class="exit-badge ' + lbl.cls + '">' + lbl.text + '</span>';
+        }
+
+        let ddInfo = '';
+        if (p.status === 'warning') {
+            ddInfo = '<br><small style="color:#d29922;">' + p.drawdown_from_ath + '% DD</small>';
+        } else if (p.status === 'open' && p.drawdown_from_ath != null) {
+            ddInfo = '<br><small class="text-muted">' + p.drawdown_from_ath + '% DD</small>';
+        }
+
+        return '<tr>' +
+            '<td><span class="status-dot ' + dotClass + '"></span></td>' +
+            '<td class="fw-semibold">' + p.symbol + '</td>' +
+            '<td><small class="text-muted">' + p.sector + '</small></td>' +
+            '<td>' + p.entry_date + '</td>' +
+            '<td class="text-end">' + fmtPrice(p.entry_price) + '</td>' +
+            '<td class="text-end">' + fmtPrice(priceCol) + ddInfo + '</td>' +
+            '<td class="text-end ' + pnlClass + ' fw-bold">' + pnlSign + p.return_pct + '%</td>' +
+            '<td class="text-end ' + pnlClass + '">' + fmtINR(p.net_pnl) + '</td>' +
+            '<td>' + exitHtml + '</td>' +
+            '<td class="text-end">' + p.holding_days + 'd</td>' +
+            '<td class="text-end">' + (p.topups || 0) + '</td>' +
+        '</tr>';
+    }).join('');
+}
+
+function renderEquityCurve(equity, niftyCurve) {
+    if (!equity) return;
+    const dates = Object.keys(equity);
+    const values = Object.values(equity);
+
+    const datasets = [{
+        label: 'MQ Portfolio',
+        data: values,
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88,166,255,0.08)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.3,
+    }];
+
+    if (niftyCurve) {
+        const niftyValues = dates.map(d => niftyCurve[d] || null);
+        datasets.push({
+            label: 'Nifty 50 (NIFTYBEES)',
+            data: niftyValues,
+            borderColor: '#d29922',
+            backgroundColor: 'rgba(210,153,34,0.05)',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+            tension: 0.3,
+            borderDash: [4, 2],
+        });
+    }
+
+    datasets.push({
+        label: 'Initial Capital',
+        data: Array(dates.length).fill(10000000),
+        borderColor: 'rgba(139,148,158,0.4)',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        pointRadius: 0,
+        fill: false,
+    });
+
+    if (equityChart) equityChart.destroy();
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    equityChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: datasets,
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { color: '#8b949e', font: { size: 11 } } },
+                tooltip: {
+                    mode: 'index', intersect: false,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + fmtINR(ctx.parsed.y);
+                        }
+                    }
+                },
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 10 } },
+                    grid: { color: 'rgba(48,54,61,0.5)' },
+                },
+                y: {
+                    ticks: {
+                        color: '#8b949e', font: { size: 10 },
+                        callback: function(v) { return fmtINR(v); }
+                    },
+                    grid: { color: 'rgba(48,54,61,0.5)' },
+                },
+            },
+        },
+    });
+}
+
+function renderSectorChart(sectors) {
+    if (!sectors) return;
+    const labels = Object.keys(sectors);
+    const values = Object.values(sectors);
+    const colors = ['#58a6ff','#3fb950','#d29922','#f85149','#a371f7','#f0883e','#79c0ff','#56d364','#e3b341','#ff7b72','#d2a8ff','#ffa657'];
+
+    if (sectorChart) sectorChart.destroy();
+    const ctx = document.getElementById('sectorChart').getContext('2d');
+    sectorChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: '#161b22',
+                borderWidth: 2,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#8b949e', font: { size: 9 }, padding: 6, boxWidth: 10 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.label + ': ' + ctx.parsed.toFixed(1) + '%';
+                        }
+                    }
+                }
+            },
+        },
+    });
+}
+
+// --- Run Backtest ---
+async function runBacktest() {
+    document.getElementById('taskOverlay').classList.add('active');
+    document.getElementById('taskProgress').style.width = '0%';
+    document.getElementById('taskPercent').textContent = '0%';
+    document.getElementById('taskMessage').textContent = 'Starting backtest...';
+
+    try {
+        const res = await fetch('/api/model-portfolio/run', { method: 'POST' });
+        const data = await res.json();
+        pollTask(data.task_id);
+    } catch (err) {
+        alert('Failed to start backtest: ' + err.message);
+        document.getElementById('taskOverlay').classList.remove('active');
+    }
+}
+
+function pollTask(taskId) {
+    const interval = setInterval(async () => {
+        try {
+            const res = await fetch('/api/model-portfolio/status/' + taskId);
+            const data = await res.json();
+            const pct = Math.round(data.progress || 0);
+            document.getElementById('taskProgress').style.width = pct + '%';
+            document.getElementById('taskPercent').textContent = pct + '%';
+            document.getElementById('taskMessage').textContent = data.message || 'Processing...';
+
+            if (data.status === 'completed' || data.status === 'error') {
+                clearInterval(interval);
+                setTimeout(() => {
+                    document.getElementById('taskOverlay').classList.remove('active');
+                    if (data.status === 'completed') {
+                        loadData();
+                    } else {
+                        alert('Backtest error: ' + (data.message || 'Unknown error'));
+                    }
+                }, 500);
+            }
+        } catch (err) {
+            console.error('Poll error:', err);
+        }
+    }, 2000);
+}
+
+// --- Search/Filter ---
+document.getElementById('searchInput').addEventListener('input', function() {
+    const term = this.value.toLowerCase();
+    document.querySelectorAll('#positionsBody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,2650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantifyd &mdash; From Backtest To Bank | by Castronix</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f172a'/%3E%3Ctext x='3' y='23' font-family='Inter,sans-serif' font-size='20' font-weight='300' fill='%23f1f5f9'%3EQ%3C/text%3E%3Ctext x='19' y='23' font-family='Inter,sans-serif' font-size='20' font-weight='900' fill='%2310b981'%3Ed%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-hero: #0f172a;
+            --bg-dark: #0f172a;
+            --bg-mid: #1e293b;
+            --bg-light: #f8fafc;
+            --bg-card: rgba(30, 41, 59, 0.9);
+            --accent: #f59e0b;
+            --accent-hover: #d97706;
+            --green: #10b981;
+            --green-light: #34d399;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --text-light: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: rgba(148, 163, 184, 0.15);
+            --max-w: 1200px;
+            --radius: 16px;
+            --radius-sm: 8px;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.7;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+        }
+        nav .nav-inner {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            position: relative;
+        }
+        nav .logo {
+            font-weight: 800;
+            font-size: 18px;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+        }
+        nav .nav-links { display: flex; gap: 24px; }
+        nav .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        nav .nav-links a:hover { color: var(--accent); }
+
+        /* Sections */
+        section { padding: 100px 24px; }
+        .container { max-width: var(--max-w); margin: 0 auto; }
+        .section-light { background: var(--bg-light); color: var(--text-dark); }
+        .section-mid { background: var(--bg-mid); }
+
+        /* Typography */
+        .section-tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+        .section-light .section-tag { color: var(--accent-hover); }
+        h2 {
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        .section-light h2 { color: var(--text-dark); }
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 680px;
+            margin-bottom: 48px;
+        }
+        .section-light .subtitle { color: var(--text-muted); }
+
+        /* Hero */
+        #hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+            padding-top: 60px;
+        }
+        #hero::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(245, 158, 11, 0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero-title {
+            font-size: clamp(36px, 6vw, 64px);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: 0.5px;
+            margin-bottom: 24px;
+        }
+        .hero-title .highlight { color: var(--accent); }
+        .hero-title .highlight-blue { color: var(--blue); }
+        .hero-title .highlight-green { color: var(--green); }
+        .hero-subtitle {
+            font-size: clamp(18px, 2.5vw, 22px);
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin-bottom: 48px;
+            line-height: 1.6;
+        }
+        .hero-stats {
+            display: flex;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+        .hero-stat { text-align: center; }
+        .hero-stat .number {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .hero-stat .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Metric Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            text-align: center;
+        }
+        .section-light .metric-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .metric-card .metric-value {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 6px;
+        }
+        .metric-card .metric-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .section-light .metric-card .metric-label { color: var(--text-muted); }
+        .metric-card.accent .metric-value { color: var(--accent); }
+        .metric-card.green .metric-value { color: var(--green); }
+        .metric-card.red .metric-value { color: var(--red); }
+        .metric-card.blue .metric-value { color: var(--blue); }
+        .metric-card.purple .metric-value { color: var(--purple); }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 32px 0;
+            font-size: 14px;
+        }
+        .comparison-table th, .comparison-table td {
+            padding: 14px 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .comparison-table th {
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        .section-light .comparison-table th { color: var(--text-muted); }
+        .section-light .comparison-table td { border-color: #e2e8f0; }
+        .comparison-table td:first-child { text-align: left; font-weight: 600; }
+        .comparison-table td.positive { color: var(--green); font-weight: 600; }
+        .comparison-table td.negative { color: var(--red); font-weight: 600; }
+        .comparison-table tr:hover { background: rgba(245, 158, 11, 0.05); }
+
+        /* Chart containers */
+        .chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin: 32px 0;
+        }
+        .section-light .chart-container {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .chart-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        .section-light .chart-subtitle { color: var(--text-muted); }
+
+        /* Pool cards */
+        .pool-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin: 40px 0;
+        }
+        .pool-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .pool-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+        }
+        .pool-card.pool-mq::before { background: linear-gradient(90deg, var(--green), var(--green-light)); }
+        .pool-card.pool-tactical::before { background: linear-gradient(90deg, var(--blue), var(--purple)); }
+
+        .pool-card .pool-pct {
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 4px;
+        }
+        .pool-card .pool-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .pool-card .pool-amount {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .pool-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .pool-bar .fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+        .pool-card .pool-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Steps */
+        .steps {
+            display: flex;
+            gap: 32px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        .step {
+            flex: 1;
+            min-width: 220px;
+            position: relative;
+            padding-left: 56px;
+        }
+        .step-number {
+            position: absolute;
+            left: 0; top: 0;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--bg-dark);
+            font-weight: 800;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-light .step-number { background: var(--accent-hover); color: white; }
+        .step-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .step-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .section-light .step-desc { color: var(--text-muted); }
+
+        /* Priority rules */
+        .priority-list { list-style: none; margin: 32px 0; }
+        .priority-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .priority-item:last-child { border-bottom: none; }
+        .priority-badge {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 14px;
+            flex-shrink: 0;
+        }
+        .priority-text { flex: 1; }
+        .priority-text strong { display: block; margin-bottom: 4px; }
+        .priority-text span { font-size: 14px; color: var(--text-secondary); }
+        .section-light .priority-text span { color: var(--text-muted); }
+
+        /* Big compare cards */
+        .big-compare {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin: 40px 0;
+        }
+        .compare-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 36px;
+            position: relative;
+            overflow: hidden;
+        }
+        .section-light .compare-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        .compare-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+        }
+        .compare-card.kc6::before { background: var(--blue); }
+        .compare-card.ipo::before { background: var(--accent); }
+        .compare-card.iposwing::before { background: var(--purple); }
+        .compare-card .compare-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .compare-card.kc6 .compare-label { color: var(--blue); }
+        .compare-card.ipo .compare-label { color: var(--accent); }
+        .compare-card.iposwing .compare-label { color: var(--purple); }
+        .compare-card .compare-name {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .compare-card .compare-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .compare-stat .val {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .compare-stat .lbl {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .section-light .compare-stat .lbl { color: var(--text-muted); }
+
+        /* Callout */
+        .callout {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            padding: 24px 28px;
+            margin: 32px 0;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+        .section-light .callout {
+            background: rgba(245, 158, 11, 0.06);
+        }
+        .callout strong { color: var(--accent); }
+
+        /* Warning/Info boxes */
+        .info-box {
+            background: rgba(59, 130, 246, 0.08);
+            border-left: 4px solid var(--blue);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            padding: 20px 24px;
+            margin: 24px 0;
+            font-size: 14px;
+        }
+        .warning-box {
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 4px solid var(--red);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            padding: 20px 24px;
+            margin: 24px 0;
+            font-size: 14px;
+        }
+        .success-box {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 4px solid var(--green);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            padding: 20px 24px;
+            margin: 24px 0;
+            font-size: 14px;
+        }
+
+        /* Rule blocks */
+        .rule-block {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            margin: 16px 0;
+            color: var(--text-secondary);
+        }
+        .section-light .rule-block {
+            background: #f1f5f9;
+            color: var(--text-dark);
+        }
+        .rule-block .hl-green { color: var(--green); font-weight: 700; }
+        .rule-block .hl-red { color: var(--red); font-weight: 700; }
+        .rule-block .hl-blue { color: var(--blue); font-weight: 700; }
+        .rule-block .hl-accent { color: var(--accent); font-weight: 700; }
+
+        /* Two column */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 40px 0;
+        }
+
+        /* Waterfall bar */
+        .waterfall {
+            display: flex;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin: 32px 0;
+            border: 1px solid var(--border);
+        }
+        .waterfall .wf-seg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            transition: width 0.5s;
+            position: relative;
+        }
+
+        /* Workflow cards */
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin: 40px 0;
+        }
+        .workflow-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+        }
+        .section-light .workflow-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        .workflow-card .wf-time {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .workflow-card .wf-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .workflow-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .workflow-card li {
+            padding: 6px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            position: relative;
+        }
+        .section-light .workflow-card li { color: var(--text-muted); }
+        .workflow-card li::before {
+            content: '\2022';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .pool-grid, .big-compare, .two-col, .workflow-grid { grid-template-columns: 1fr !important; }
+            .hero-stats { gap: 32px; }
+            .steps { flex-direction: column; }
+            nav .nav-links { display: none; }
+        }
+
+        /* Count-up animation helper */
+        .count-up { display: inline-block; }
+    </style>
+
+<style>
+    .mp-dot {
+        display: inline-block;
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        vertical-align: middle;
+    }
+    .mp-dot.dot-open, .mp-dot.mp-dot-open {
+        background: var(--green);
+        box-shadow: 0 0 6px rgba(16,185,129,0.5);
+        animation: mp-pulse 2s infinite;
+    }
+    .mp-dot.dot-warning, .mp-dot.mp-dot-warning {
+        background: var(--accent);
+        box-shadow: 0 0 6px rgba(245,158,11,0.5);
+        animation: mp-pulse 1.5s infinite;
+    }
+    .mp-dot.dot-closed, .mp-dot.mp-dot-closed {
+        background: var(--text-secondary);
+    }
+    @keyframes mp-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+    .live-blink {
+        color: var(--green);
+        animation: live-glow 1.5s ease-in-out infinite;
+    }
+    @keyframes live-glow {
+        0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(16,185,129,0.6); }
+        50% { opacity: 0.5; text-shadow: 0 0 2px rgba(16,185,129,0.2); }
+    }
+    .mp-exit-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .mp-exit-badge.exit-ath { background: rgba(239,68,68,0.12); color: var(--red); }
+    .mp-exit-badge.exit-rebal { background: rgba(59,130,246,0.12); color: var(--blue); }
+    .mp-exit-badge.exit-stop { background: rgba(245,158,11,0.12); color: var(--accent); }
+    .mp-exit-badge.exit-fund { background: rgba(139,92,246,0.12); color: var(--purple); }
+
+    #model-portfolio .comparison-table td:first-child {
+        text-align: center;
+        font-weight: normal;
+    }
+    #model-portfolio .comparison-table thead {
+        position: sticky;
+        top: 0;
+        background: var(--bg-mid);
+        z-index: 1;
+    }
+    #model-portfolio .comparison-table tr:hover {
+        background: rgba(16,185,129,0.05);
+    }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+    <div class="nav-inner">
+        <span class="logo" style="font-family: 'Inter', sans-serif; font-size: 24px; letter-spacing: 2px; line-height: 1;"><span style="font-weight: 300; color: #f1f5f9;">Q</span><span style="font-weight: 900; color: #10b981;">d</span></span>
+        <span style="flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; color: #475569; text-transform: uppercase; padding: 4px 10px;"><span style="border: 1px solid #334155; border-radius: 4px; padding: 4px 10px;">Edition 1</span></span>
+        <div class="nav-links">
+            <a href="#architecture">Architecture</a>
+            <a href="#mq-core">MQ Core</a>
+            <a href="#strategies">Tact. Strategies</a>
+            <a href="#allocation">Allocation</a>
+            <a href="#rules">Rules</a>
+            <a href="#returns">Returns</a>
+            <a href="#comparison">vs Nifty</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#model-portfolio" style="color:#f59e0b;font-weight:700;">Model Portfolio</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ================================================================ -->
+<!-- HERO                                                             -->
+<!-- ================================================================ -->
+<section id="hero">
+    <div class="container">
+        <div class="hero-content">
+            <div style="margin-bottom: 40px; display: inline-block;">
+                <div style="font-family: 'Inter', sans-serif; font-size: 52px; letter-spacing: 1px; line-height: 1; display: inline-block; position: relative;">
+                    <span style="font-weight: 300; color: #10b981; opacity: 0.4; margin-right: 10px;">{</span><span style="font-weight: 300; color: #f1f5f9;">Quantify</span><span style="font-weight: 900; color: #10b981; position: relative;"><span style="position: relative;">d<span style="position: absolute; left: 50%; transform: translateX(-50%); top: 100%; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #34d399; opacity: 0.35; margin-top: 6px; letter-spacing: 0;">$</span></span></span><span style="font-weight: 300; color: #10b981; opacity: 0.4; margin-left: 10px;">}</span>
+                </div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-secondary); margin-top: 6px; font-weight: 400; padding-left: 32px;">From Backtest To Bank</div>
+                <div style="height: 1px; margin-top: 10px; max-width: 100%; background: linear-gradient(to right, transparent, rgba(16,185,129,0.15) 30%, #10b981); margin-left: -23px; margin-right: 5px;"></div>
+            </div>
+            <div class="hero-title" style="font-size: 28px; line-height: 1.3;">
+                <span class="highlight">MQ</span> + <span class="highlight-blue">KC6</span> + <span class="highlight">IPO</span> + <span class="highlight" style="color: var(--purple);">IPO Swing</span>
+                &mdash; Capital System
+            </div>
+            <div class="hero-subtitle">
+                <span style="color: #e2e8f0;">One</span> core winners' portfolio. <span style="color: #e2e8f0;">Three</span> uncorrelated strategies sharing a tactical capital pool.
+                Idle cash earns 6% in liquid debt. Signals draw from the pool, return on exit.
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="number" style="color: var(--green);">
+                        <span class="count-up" data-target="32">32</span>%
+                    </div>
+                    <div class="label">Combined System CAGR (20yr)</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number" style="color: var(--blue);">
+                        <span class="count-up" data-target="4">4</span>
+                    </div>
+                    <div class="label">Independent Strategies</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number" style="color: var(--purple);">
+                        <span class="count-up" data-target="20">20</span> yrs
+                    </div>
+                    <div class="label">Backtesting Period</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number" style="color: var(--text-light);">
+                        <span class="count-up" data-target="23000">23,000</span>+
+                    </div>
+                    <div class="label">Backtested Combinations</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CH 1: ARCHITECTURE                                               -->
+<!-- ================================================================ -->
+<section id="architecture">
+    <div class="container">
+        <div class="section-tag">Chapter 1</div>
+        <h2>System Architecture</h2>
+        <p class="subtitle">Rs.1 Crore split into two pools, each with a clear mandate.</p>
+
+        <div class="pool-grid">
+            <!-- MQ Core -->
+            <div class="pool-card pool-mq">
+                <div class="pool-pct" style="color: var(--green);">60%</div>
+                <div class="pool-name">MQ Core Portfolio</div>
+                <div class="pool-amount">Rs.60,00,000</div>
+                <div class="pool-bar">
+                    <div class="fill" style="width: 60%; background: var(--green);"></div>
+                </div>
+                <div class="pool-desc">
+                    20 Momentum + Quality stocks. Continuous monitoring &mdash;
+                    exit on SL/ATH drawdown, re-enter next qualifying stock same day.
+                    Idle cash to NiftyBEES (above 200 SMA) or debt fund.
+                    <br><br>
+                    <strong style="color: var(--green);">~29% CAGR</strong> &bull; 20yr backtest (2005&ndash;2025) &bull; PS20 + Smart Parking
+                </div>
+            </div>
+
+            <!-- Tactical Pool -->
+            <div class="pool-card pool-tactical">
+                <div class="pool-pct" style="color: var(--blue);">40%</div>
+                <div class="pool-name">Tactical Pool</div>
+                <div class="pool-amount">Rs.40,00,000</div>
+                <div class="pool-bar">
+                    <div class="fill" style="width: 40%; background: var(--blue);"></div>
+                </div>
+                <div class="pool-desc">
+                    Shared between KC6 mean reversion, IPO Scalper, and IPO Swing.
+                    Idle cash parked in liquid debt fund (6% p.a.).
+                    <br><br>
+                    <strong style="color: var(--blue);">~36.5% return</strong> &bull; KC6 + IPO Scalper + IPO Swing + Debt Interest
+                </div>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>The Core Idea:</strong> Most capital sits in MQ (always working) + liquid debt (earning 6%).
+            KC6, IPO Scalper, and IPO Swing signals draw from the tactical pool only when conditions fire, then return cash on exit.
+            Full Rs.40L is available for trades &mdash; no capital locked in buffer.
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- MQ CORE: THE ENGINE (light)                                       -->
+<!-- ================================================================ -->
+<section id="mq-core" class="section-light">
+    <div class="container">
+        <div class="section-tag" style="color: var(--green);">Strategy 1 &mdash; The Engine</div>
+        <h2 style="color: var(--text-dark);">MQ Core &mdash; Momentum Meets Quality</h2>
+        <p class="subtitle" style="color: var(--text-muted);">One simple rule changes everything: buy companies that are <em>already winning</em>, not ones you <em>hope</em> will recover.</p>
+
+        <!-- The Rule -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 40px 0;">
+            <div style="background: var(--bg-hero); border-radius: 16px; padding: 32px;">
+                <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--green); margin-bottom: 16px;">&#x2714; Entry Rule</div>
+                <div style="font-size: 16px; color: var(--text-light); line-height: 1.7;">
+                    Stock breaks <strong style="color: var(--yellow);">all-time high</strong> AND passes:
+                    <ul style="margin-top: 12px; padding-left: 20px; color: var(--text-secondary);">
+                        <li>Topline &amp; profits <strong style="color: var(--text-light);">positive AND growing</strong></li>
+                        <li>D/E ratio <strong style="color: var(--text-light);">&le; 0.20</strong> (near-zero debt)</li>
+                        <li>ROE &amp; ROCE <strong style="color: var(--text-light);">&ge; 15%</strong></li>
+                        <li>Operating margins <strong style="color: var(--text-light);">steady or expanding</strong></li>
+                    </ul>
+                </div>
+            </div>
+            <div style="background: var(--bg-hero); border-radius: 16px; padding: 32px;">
+                <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--red); margin-bottom: 16px;">&#x2716; Exit Rule</div>
+                <div style="font-size: 16px; color: var(--text-light); line-height: 1.7;">
+                    Stock drops <strong style="color: var(--red);">20% from its peak</strong> since entry (ATH trailing exit). Checked at <strong style="color: var(--yellow);">semi-annual rebalance</strong> (Jan &amp; Jul).
+                    <br><br>
+                    <span style="color: var(--text-secondary);">Same day: scan for the next qualifying stock and deploy. No cash sits idle &mdash; parked in NiftyBEES (above 200 SMA) or liquid debt fund.</span>
+                </div>
+                <div style="margin-top: 20px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue); margin-bottom: 8px;">&#x21C4; Smart Parking</div>
+                <div style="font-size: 14px; color: var(--text-secondary);">
+                    Idle cash &rarr; NiftyBEES when Nifty &gt; 200 SMA, debt fund when below. 2-day confirmation before switching.
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="metric-card green">
+                <div class="metric-value">~29%</div>
+                <div class="metric-label">CAGR (20 years)</div>
+            </div>
+            <div class="metric-card accent">
+                <div class="metric-value">20</div>
+                <div class="metric-label">Stocks Held</div>
+            </div>
+            <div class="metric-card blue">
+                <div class="metric-value">71%</div>
+                <div class="metric-label">Win Rate</div>
+            </div>
+            <div class="metric-card purple">
+                <div class="metric-value">0.43</div>
+                <div class="metric-label">Calmar Ratio</div>
+            </div>
+        </div>
+
+        <!-- Growth Visualization (pure CSS — no Chart.js dependency) -->
+        <div class="chart-container" style="margin-top: 40px;">
+            <div class="chart-title" style="color: var(--text-dark);">Rs.1 Crore &rarr; 20 Years Later</div>
+            <div class="chart-subtitle" style="color: var(--text-muted);">MQ Core (29% CAGR) vs Nifty 50 Index (13% CAGR) &mdash; 2005 to 2025. Same starting capital.</div>
+
+            <div style="position: relative; height: 360px; margin-top: 24px; margin-left: 60px; border-left: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
+                <!-- Y-axis labels (scale: max=160 Cr) -->
+                <div style="position: absolute; left: -60px; top: -4px; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.160 Cr</div>
+                <div style="position: absolute; left: -60px; top: 25%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.120 Cr</div>
+                <div style="position: absolute; left: -60px; top: 50%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.80 Cr</div>
+                <div style="position: absolute; left: -60px; top: 75%; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.40 Cr</div>
+                <div style="position: absolute; left: -44px; bottom: -4px; font-size: 11px; color: var(--text-muted); font-family: Inter;">Rs.1 Cr</div>
+
+                <!-- Grid lines -->
+                <div style="position: absolute; top: 25%; left: 0; right: 0; border-top: 1px dashed #e2e8f0;"></div>
+                <div style="position: absolute; top: 50%; left: 0; right: 0; border-top: 1px dashed #e2e8f0;"></div>
+                <div style="position: absolute; top: 75%; left: 0; right: 0; border-top: 1px dashed #e2e8f0;"></div>
+
+                <!-- SVG curves (scale: x=year_index*50, y=350-(value/160)*350) -->
+                <!-- MQ 28.8% CAGR: 1.0→1.29→1.66→2.14→2.75→3.55→4.57→5.88→7.58→9.76→12.57→16.19→20.86→26.87→34.60→44.57→57.40→73.93→95.22→122.65→158.01 -->
+                <!-- Nifty 13% CAGR: 1.0→1.13→1.28→1.44→1.63→1.84→2.08→2.35→2.66→3.00→3.39→3.84→4.33→4.90→5.53→6.25→7.07→7.99→9.02→10.20→11.52 -->
+                <svg viewBox="0 0 1000 350" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
+                    <defs>
+                        <linearGradient id="mqGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#10b981" stop-opacity="0.25"/>
+                            <stop offset="100%" stop-color="#10b981" stop-opacity="0.02"/>
+                        </linearGradient>
+                        <linearGradient id="niftyGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#94a3b8" stop-opacity="0.15"/>
+                            <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.02"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Milestone vertical lines -->
+                    <line x1="500" y1="0" x2="500" y2="350" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="6,4"/>
+                    <line x1="750" y1="0" x2="750" y2="350" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="6,4"/>
+
+                    <!-- MQ Core (28.8% CAGR): 1→158 Cr -->
+                    <path d="M0,348 L50,347 L100,346 L150,345 L200,344 L250,342 L300,340 L350,337 L400,333 L450,329 L500,323 L550,315 L600,304 L650,291 L700,274 L750,253 L800,224 L850,188 L900,142 L950,82 L1000,4 L1000,350 L0,350 Z" fill="url(#mqGrad)"/>
+                    <polyline points="0,348 50,347 100,346 150,345 200,344 250,342 300,340 350,337 400,333 450,329 500,323 550,315 600,304 650,291 700,274 750,253 800,224 850,188 900,142 950,82 1000,4"
+                        fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+                    <!-- Nifty 50 (13% CAGR): 1→11.5 Cr -->
+                    <path d="M0,348 L50,348 L100,347 L150,347 L200,346 L250,346 L300,345 L350,345 L400,344 L450,343 L500,343 L550,342 L600,341 L650,339 L700,338 L750,336 L800,335 L850,333 L900,330 L950,328 L1000,325 L1000,350 L0,350 Z" fill="url(#niftyGrad)"/>
+                    <polyline points="0,348 50,348 100,347 150,347 200,346 250,346 300,345 350,345 400,344 450,343 500,343 550,342 600,341 650,339 700,338 750,336 800,335 850,333 900,330 950,328 1000,325"
+                        fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="8,5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                    <!-- ===== YEAR 10 (2015, x=500) ===== -->
+                    <circle cx="500" cy="323" r="5" fill="#10b981"/>
+                    <circle cx="500" cy="343" r="4" fill="#94a3b8"/>
+                    <line x1="510" y1="323" x2="510" y2="343" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="500" y="313" fill="#10b981" font-size="12" font-weight="700" font-family="Inter" text-anchor="middle">Rs.12.6 Cr</text>
+                    <text x="500" y="360" fill="#64748b" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">Rs.3.4 Cr</text>
+                    <text x="530" y="337" fill="#f59e0b" font-size="11" font-weight="700" font-family="Inter">3.7x</text>
+                    <text x="500" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">10 yrs</text>
+
+                    <!-- ===== YEAR 15 (2020, x=750) ===== -->
+                    <circle cx="750" cy="253" r="5" fill="#10b981"/>
+                    <circle cx="750" cy="336" r="4" fill="#94a3b8"/>
+                    <line x1="760" y1="253" x2="760" y2="336" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="750" y="243" fill="#10b981" font-size="12" font-weight="700" font-family="Inter" text-anchor="middle">Rs.44.6 Cr</text>
+                    <text x="750" y="353" fill="#64748b" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">Rs.6.3 Cr</text>
+                    <text x="780" y="298" fill="#f59e0b" font-size="11" font-weight="700" font-family="Inter">7.1x</text>
+                    <text x="750" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">15 yrs</text>
+
+                    <!-- ===== YEAR 20 (2025, x=1000) ===== -->
+                    <circle cx="1000" cy="4" r="6" fill="#10b981"/>
+                    <circle cx="1000" cy="325" r="5" fill="#94a3b8"/>
+                    <text x="970" y="-8" fill="#10b981" font-size="13" font-weight="700" font-family="Inter">Rs.158 Cr</text>
+                    <text x="955" y="318" fill="#64748b" font-size="12" font-weight="600" font-family="Inter">Rs.11.5 Cr</text>
+                    <line x1="1010" y1="4" x2="1010" y2="325" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="1020" y="168" fill="#f59e0b" font-size="12" font-weight="700" font-family="Inter">13.7x</text>
+                    <text x="1000" y="378" fill="#94a3b8" font-size="11" font-weight="600" font-family="Inter" text-anchor="middle">20 yrs</text>
+                </svg>
+
+                <!-- X-axis labels -->
+                <div style="display: flex; justify-content: space-between; padding-top: 8px; font-size: 11px; color: var(--text-muted); font-family: Inter;">
+                    <span>2005</span><span>2007</span><span>2009</span><span>2011</span><span>2013</span><span>2015</span><span>2017</span><span>2019</span><span>2021</span><span>2023</span><span>2025</span>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div style="display: flex; gap: 32px; justify-content: center; margin-top: 16px; font-size: 13px;">
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 3px; background: #10b981; display: inline-block; border-radius: 2px;"></span> <span style="color: var(--text-muted);">MQ Core (29% CAGR)</span></div>
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 3px; background: #94a3b8; display: inline-block; border-radius: 2px; border-top: 2px dashed #94a3b8; height: 0;"></span> <span style="color: var(--text-muted);">Nifty 50 Index (13% CAGR)</span></div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
+            <div style="background: linear-gradient(135deg, #065f46, #047857); border-radius: 16px; padding: 28px; text-align: center;">
+                <div style="font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px;">MQ Core &mdash; Rs.1 Cr becomes</div>
+                <div style="font-size: 42px; font-weight: 900; color: white;">Rs.158 Cr</div>
+                <div style="font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px;">28.80% CAGR &bull; 20 years</div>
+            </div>
+            <div style="background: linear-gradient(135deg, #374151, #4b5563); border-radius: 16px; padding: 28px; text-align: center;">
+                <div style="font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px;">Nifty 50 Index &mdash; Rs.1 Cr becomes</div>
+                <div style="font-size: 42px; font-weight: 900; color: white;">Rs.11.5 Cr</div>
+                <div style="font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px;">~13% CAGR &bull; 20 years</div>
+            </div>
+        </div>
+
+        <div class="callout" style="border-left-color: var(--green); margin-top: 32px; background: #f0fdf4;">
+            <strong style="color: var(--green);">The compounding gap:</strong>
+            A 16% CAGR difference looks modest in year 1 (Rs.29L vs Rs.13L gain). By year 20, the gap is <strong>Rs.147 Crore</strong>.
+            That's not stock-picking luck &mdash; it's a systematic edge compounding relentlessly.
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CH 2: STRATEGIES (light)                                         -->
+<!-- ================================================================ -->
+<section id="strategies" class="section-light">
+    <div class="container">
+        <div class="section-tag">Strategies 2, 3 &amp; 4</div>
+        <h2>The Three Tactical Strategies</h2>
+        <p class="subtitle">KC6 is the daily workhorse. IPO Scalper is the high-conviction jackpot. IPO Swing rides big runners.</p>
+
+        <div class="big-compare">
+            <!-- KC6 -->
+            <div class="compare-card kc6">
+                <div class="compare-label">Mean Reversion</div>
+                <div class="compare-name">KC6</div>
+                <div class="compare-stats">
+                    <div class="compare-stat">
+                        <div class="val" style="color: var(--blue);">65%</div>
+                        <div class="lbl">Win Rate</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val" style="color: var(--blue);">1.70</div>
+                        <div class="lbl">Profit Factor</div>
+                        <div class="lbl" style="font-size: 10px; margin-top: 2px; opacity: 0.7;">Wins / Losses in Rs.</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val">~144</div>
+                        <div class="lbl">Trades / Year</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val">7-15d</div>
+                        <div class="lbl">Avg Hold</div>
+                    </div>
+                </div>
+                <div class="rule-block" style="margin-top: 20px;">
+<span class="hl-blue">ENTRY:</span> Close &lt; KC(6, 1.3 ATR) Lower
+       AND Close &gt; SMA(200)
+
+<span class="hl-green">EXIT:</span>  High &gt; KC6 Mid (target)
+       OR SL 5% | TP 15% | MaxHold 15d
+
+<span class="hl-red">FILTER:</span> Universe ATR Ratio &ge; 1.3x
+        blocks all new entries
+                </div>
+            </div>
+
+            <!-- IPO -->
+            <div class="compare-card ipo">
+                <div class="compare-label">Breakout (System 1)</div>
+                <div class="compare-name">IPO Scalper</div>
+                <div class="compare-stats">
+                    <div class="compare-stat">
+                        <div class="val" style="color: var(--accent);">84.3%</div>
+                        <div class="lbl">Win Rate</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val" style="color: var(--accent);">2.73</div>
+                        <div class="lbl">Profit Factor</div>
+                        <div class="lbl" style="font-size: 10px; margin-top: 2px; opacity: 0.7;">Wins / Losses in Rs.</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val">~5</div>
+                        <div class="lbl">Trades / Year</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val">37d</div>
+                        <div class="lbl">Avg Hold</div>
+                    </div>
+                </div>
+                <div class="rule-block" style="margin-top: 20px;">
+<span class="hl-accent">ENTRY:</span> Listing Gain (Day1 close &gt; open)
+       + Close &gt; ATH(10d) for first time
+       + Breakout &ge; 3% above ATH
+       + Volume &ge; 2.5x avg
+
+<span class="hl-green">EXIT:</span>  Target +6% | Time 20d (hybrid)
+<span class="hl-red">STOP:</span>  -20% from entry (wide SL)
+                </div>
+            </div>
+
+            <!-- IPO Swing -->
+            <div class="compare-card iposwing">
+                <div class="compare-label">Big Runner (System 2)</div>
+                <div class="compare-name">IPO Swing (BRK7+LG)</div>
+                <div class="compare-stats">
+                    <div class="compare-stat">
+                        <div class="val" style="color: var(--purple);">64.5%</div>
+                        <div class="lbl">Win Rate</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val" style="color: var(--purple);">3.42</div>
+                        <div class="lbl">Profit Factor</div>
+                        <div class="lbl" style="font-size: 10px; margin-top: 2px; opacity: 0.7;">Wins / Losses in Rs.</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val">~3</div>
+                        <div class="lbl">Trades / Year</div>
+                    </div>
+                    <div class="compare-stat">
+                        <div class="val">51d</div>
+                        <div class="lbl">Avg Hold</div>
+                    </div>
+                </div>
+                <div class="rule-block" style="margin-top: 20px;">
+<span class="hl-accent" style="color: var(--purple);">ENTRY:</span> IPO with Listing Gain + Breakout
+       &ge; 7% above ATH
+
+<span class="hl-green">EXIT:</span>  Target +30% / Stop Loss -15%
+<span class="hl-red">SIZE:</span>  Rs.5L per position, max 2 positions
+                </div>
+            </div>
+        </div>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">Metric</th>
+                    <th>KC6</th>
+                    <th>IPO Scalper</th>
+                    <th>IPO Swing</th>
+                    <th>Why It Matters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Strategy Type</td>
+                    <td>Mean Reversion</td>
+                    <td>Momentum Breakout</td>
+                    <td>Big Runner</td>
+                    <td style="font-size:12px; color: var(--text-muted);">Uncorrelated signals</td>
+                </tr>
+                <tr>
+                    <td>Win Rate</td>
+                    <td>65.0%</td>
+                    <td class="positive">84.3%</td>
+                    <td>64.5%</td>
+                    <td style="font-size:12px; color: var(--text-muted);">IPO rarely loses</td>
+                </tr>
+                <tr>
+                    <td>Profit Factor<br><span style="font-size:11px; font-weight:400; color: var(--text-muted);">Total wins &divide; total losses in Rs.</span></td>
+                    <td>1.70</td>
+                    <td class="positive">2.73</td>
+                    <td>3.42</td>
+                    <td style="font-size:12px; color: var(--text-muted);">Above 1.0 = profitable system</td>
+                </tr>
+                <tr>
+                    <td>Expectancy</td>
+                    <td>+1.7%</td>
+                    <td class="positive">+5.5%</td>
+                    <td class="positive">+16.2%</td>
+                    <td style="font-size:12px; color: var(--text-muted);">Per-trade expected return</td>
+                </tr>
+                <tr>
+                    <td>Trades / Year</td>
+                    <td class="positive">~144</td>
+                    <td>~5</td>
+                    <td>~3</td>
+                    <td style="font-size:12px; color: var(--text-muted);">KC6 is the workhorse</td>
+                </tr>
+                <tr>
+                    <td>Position Size</td>
+                    <td>Rs.4L</td>
+                    <td>Rs.6.5L</td>
+                    <td>Rs.5L</td>
+                    <td style="font-size:12px; color: var(--text-muted);">IPO gets bigger sizing</td>
+                </tr>
+                <tr>
+                    <td>Max Concurrent</td>
+                    <td>7</td>
+                    <td>2</td>
+                    <td>2</td>
+                    <td style="font-size:12px; color: var(--text-muted);">11 max positions total</td>
+                </tr>
+                <tr>
+                    <td>Backtest Period</td>
+                    <td>20 years</td>
+                    <td>10 years</td>
+                    <td>10 years</td>
+                    <td style="font-size:12px; color: var(--text-muted);">KC6 has longer track record</td>
+                </tr>
+                <tr>
+                    <td>Total Backtest Trades</td>
+                    <td class="positive">2,880</td>
+                    <td>51</td>
+                    <td>31</td>
+                    <td style="font-size:12px; color: var(--text-muted);">KC6: statistically robust</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Complementary, not competing.</strong> KC6 fires daily on mean reversion dips.
+            IPO Scalper fires ~5x/year on fresh listing breakouts. IPO Swing fires ~3x/year on big IPO runners.
+            They rarely compete for capital simultaneously. When they do, IPO Scalper gets priority (highest win rate).
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CH 3: TACTICAL POOL ALLOCATION                                   -->
+<!-- ================================================================ -->
+<section id="allocation" class="section-mid">
+    <div class="container">
+        <div class="section-tag">Chapter 3</div>
+        <h2>Tactical Pool Breakdown</h2>
+        <p class="subtitle">Rs.40L divided between idle cash and active trades. Full pool available, no buffer lock.</p>
+
+        <div class="chart-container">
+            <div class="chart-title">Capital Waterfall</div>
+            <div class="chart-subtitle" style="margin-bottom: 6px;">Quiet Day (~40% of trading days) &mdash; 2 KC6 positions, idle cash earns 6%</div>
+            <div class="waterfall">
+                <div class="wf-seg" style="width: 80%; background: rgba(16,185,129,0.2); color: var(--green); border-right: 1px solid var(--border);">
+                    Liquid Debt (Idle) &mdash; Rs.32L
+                </div>
+                <div class="wf-seg" style="width: 20%; background: rgba(59,130,246,0.2); color: var(--blue);">
+                    KC6 &mdash; Rs.8L
+                </div>
+            </div>
+
+            <div class="chart-subtitle" style="margin-top: 24px; margin-bottom: 6px;">Peak Active Day (~5%) &mdash; all strategies firing</div>
+            <div class="waterfall">
+                <div class="wf-seg" style="width: 70%; background: rgba(59,130,246,0.3); color: var(--blue); border-right: 1px solid var(--border);">
+                    KC6 7 pos &mdash; Rs.28L
+                </div>
+                <div class="wf-seg" style="width: 16.25%; background: rgba(245,158,11,0.3); color: var(--accent); border-right: 1px solid var(--border);">
+                    IPO Scalper &mdash; Rs.6.5L
+                </div>
+                <div class="wf-seg" style="width: 12.5%; background: rgba(139,92,246,0.3); color: var(--purple); border-right: 1px solid var(--border);">
+                    IPO Swing &mdash; Rs.5L
+                </div>
+                <div class="wf-seg" style="width: 1.25%; background: rgba(16,185,129,0.15); color: var(--green);">
+                </div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="chart-container" style="margin: 0;">
+                <div class="chart-title">Allocation Doughnut</div>
+                <div class="chart-subtitle">Full Rs.1 Crore on a median day (3 KC6 + 1 IPO Swing active)</div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="allocChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container" style="margin: 0;">
+                <div class="chart-title">Capital Utilization Scenarios</div>
+                <div class="chart-subtitle">% of Rs.40L tactical pool deployed at any given time</div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="utilChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <table class="comparison-table" style="margin-top: 40px;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">Scenario</th>
+                    <th>Frequency</th>
+                    <th>KC6</th>
+                    <th>IPO Scalper</th>
+                    <th>IPO Swing</th>
+                    <th>Total Deployed</th>
+                    <th>In Debt Fund</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Quiet Day</td>
+                    <td>~35%</td>
+                    <td>2 pos (Rs.8L)</td>
+                    <td>0 pos</td>
+                    <td>0 pos</td>
+                    <td>Rs.8L (20%)</td>
+                    <td class="positive">Rs.32L</td>
+                </tr>
+                <tr>
+                    <td>Median Day</td>
+                    <td>~25%</td>
+                    <td>4 pos (Rs.16L)</td>
+                    <td>0 pos</td>
+                    <td>1 pos (Rs.5L)</td>
+                    <td>Rs.21L (53%)</td>
+                    <td>Rs.19L</td>
+                </tr>
+                <tr>
+                    <td>Active Day</td>
+                    <td>~20%</td>
+                    <td>5 pos (Rs.20L)</td>
+                    <td>0 pos</td>
+                    <td>1 pos (Rs.5L)</td>
+                    <td>Rs.25L (63%)</td>
+                    <td>Rs.15L</td>
+                </tr>
+                <tr>
+                    <td>IPO Signal</td>
+                    <td>~10%</td>
+                    <td>5 pos (Rs.20L)</td>
+                    <td>1 pos (Rs.6.5L)</td>
+                    <td>1 pos (Rs.5L)</td>
+                    <td>Rs.31.5L (79%)</td>
+                    <td>Rs.8.5L</td>
+                </tr>
+                <tr>
+                    <td>Peak Load</td>
+                    <td>~5%</td>
+                    <td>7 pos (Rs.28L)</td>
+                    <td>1 pos (Rs.6.5L)</td>
+                    <td>1 pos (Rs.5L)</td>
+                    <td>Rs.39.5L (99%)</td>
+                    <td>Rs.0.5L</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CH 4: PRIORITY RULES (light)                                     -->
+<!-- ================================================================ -->
+<section id="rules" class="section-light">
+    <div class="container">
+        <div class="section-tag">Chapter 4</div>
+        <h2>Capital Priority Rules</h2>
+        <p class="subtitle">When multiple signals fire simultaneously, these rules determine allocation.</p>
+
+        <ul class="priority-list">
+            <li class="priority-item">
+                <div class="priority-badge" style="background: rgba(16,185,129,0.15); color: var(--green);">1</div>
+                <div class="priority-text">
+                    <strong>Full Pool Deployed</strong>
+                    <span>All Rs.40L is available for trades. No buffer lock &mdash; idle cash earns 6% in liquid fund until allocated. Every rupee works.</span>
+                </div>
+            </li>
+            <li class="priority-item">
+                <div class="priority-badge" style="background: rgba(245,158,11,0.15); color: var(--accent);">2</div>
+                <div class="priority-text">
+                    <strong>IPO Scalper Gets Top Priority</strong>
+                    <span>When capital is tight, IPO Scalper takes available capital first. Rationale: 84.3% WR and +5.5% expectancy vs KC6's 65% WR and +1.7%. One good IPO Scalper trade = 3 KC6 trades.</span>
+                </div>
+            </li>
+            <li class="priority-item">
+                <div class="priority-badge" style="background: rgba(139,92,246,0.15); color: var(--purple);">3</div>
+                <div class="priority-text">
+                    <strong>IPO Swing Gets Second Priority</strong>
+                    <span>IPO Swing (64.5% WR, +16.17% expectancy) gets second priority after Scalper. These are big IPO runners with listing gain + breakout above ATH. Rs.5L per position, max 2 concurrent.</span>
+                </div>
+            </li>
+            <li class="priority-item">
+                <div class="priority-badge" style="background: rgba(59,130,246,0.15); color: var(--blue);">4</div>
+                <div class="priority-text">
+                    <strong>KC6 Fills Remaining Slots</strong>
+                    <span>After IPO Scalper and IPO Swing, KC6 trades take whatever capital remains. KC6 recycles faster (7-15 day holds) so freed capital quickly returns to the pool.</span>
+                </div>
+            </li>
+            <li class="priority-item">
+                <div class="priority-badge" style="background: rgba(239,68,68,0.15); color: var(--red);">5</div>
+                <div class="priority-text">
+                    <strong>Skip When Insufficient</strong>
+                    <span>If available capital is less than the position size, skip the entry entirely. Never reduce position size to squeeze in a trade &mdash; maintain fixed sizing for consistent risk management.</span>
+                </div>
+            </li>
+        </ul>
+
+        <div class="chart-container">
+            <div class="chart-title">Priority Decision Matrix</div>
+            <div class="chart-subtitle">What happens when signals collide (full pool available)</div>
+            <table class="comparison-table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Available Capital</th>
+                        <th>Scalper Signal</th>
+                        <th>Swing Signal</th>
+                        <th>KC6 Signal</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>&ge; Rs.15.5L free</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td><strong style="color: var(--green);">Take ALL</strong> (6.5+5+4)</td>
+                    </tr>
+                    <tr>
+                        <td>&ge; Rs.11.5L free</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td>No</td>
+                        <td>Take Scalper + Swing (6.5+5)</td>
+                    </tr>
+                    <tr>
+                        <td>&ge; Rs.10.5L free</td>
+                        <td class="positive">Yes</td>
+                        <td>No</td>
+                        <td class="positive">Yes</td>
+                        <td>Take Scalper + KC6 (6.5+4)</td>
+                    </tr>
+                    <tr>
+                        <td>Rs.6.5-10.5L free</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td><strong style="color: var(--accent);">Scalper only</strong> (top priority)</td>
+                    </tr>
+                    <tr>
+                        <td>Rs.5-6.5L free</td>
+                        <td>No</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td>Swing only</td>
+                    </tr>
+                    <tr>
+                        <td>Rs.4-5L free</td>
+                        <td>No</td>
+                        <td>No</td>
+                        <td class="positive">Yes</td>
+                        <td>KC6 only</td>
+                    </tr>
+                    <tr>
+                        <td>&lt; Rs.4L (too low)</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td class="positive">Yes</td>
+                        <td class="negative"><strong>Skip all</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CH 5: EXPECTED RETURNS                                           -->
+<!-- ================================================================ -->
+<section id="returns">
+    <div class="container">
+        <div class="section-tag">Chapter 5</div>
+        <h2>Expected Annual Returns</h2>
+        <p class="subtitle">What each component contributes to the tactical pool.</p>
+
+        <div class="metrics-grid" style="grid-template-columns: repeat(5, 1fr);">
+            <div class="metric-card green">
+                <div class="metric-value">Rs.0.6L</div>
+                <div class="metric-label">Debt Fund Interest</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">~Rs.10L idle avg &times; 6% p.a.</div>
+            </div>
+            <div class="metric-card blue">
+                <div class="metric-value">Rs.9.8L</div>
+                <div class="metric-label">KC6 Trading Profits</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">~144 trades &times; Rs.4L &times; 1.7%</div>
+            </div>
+            <div class="metric-card accent">
+                <div class="metric-value">Rs.1.8L</div>
+                <div class="metric-label">IPO Scalper Profits</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">~5 trades &times; Rs.6.5L &times; 5.5%</div>
+            </div>
+            <div class="metric-card purple">
+                <div class="metric-value">Rs.2.4L</div>
+                <div class="metric-label">IPO Swing Profits</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">~3 trades &times; Rs.5L &times; 16.17%</div>
+            </div>
+            <div class="metric-card" style="background: rgba(139,92,246,0.1); border-color: var(--purple);">
+                <div class="metric-value" style="color: var(--green);">Rs.14.6L</div>
+                <div class="metric-label">Total / Year</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">36.5% on Rs.40L pool</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Contribution Breakdown</div>
+            <div class="chart-subtitle">Annual expected returns from each source (on the Rs.40L tactical pool)</div>
+            <!-- Pure CSS horizontal bar chart -->
+            <div style="padding: 24px 0;">
+                <!-- Debt Fund: Rs.0.6L -->
+                <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
+                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">Debt Fund Interest</div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
+                        <div style="width: 4.1%; min-width: 60px; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+                            <span style="font-size: 14px; font-weight: 800; color: white;">Rs.0.6L</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- KC6: Rs.9.8L -->
+                <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
+                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">KC6 Trading</div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
+                        <div style="width: 67.1%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+                            <span style="font-size: 14px; font-weight: 800; color: white;">Rs.9.8L</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- IPO Scalper: Rs.1.8L -->
+                <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
+                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">IPO Scalper</div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
+                        <div style="width: 12.3%; min-width: 70px; height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+                            <span style="font-size: 14px; font-weight: 800; color: white;">Rs.1.8L</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- IPO Swing: Rs.2.4L -->
+                <div style="display: flex; align-items: center; margin-bottom: 16px; gap: 16px;">
+                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 600;">IPO Swing</div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 36px; position: relative;">
+                        <div style="width: 16.4%; min-width: 70px; height: 100%; background: linear-gradient(90deg, #8b5cf6, #a78bfa); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+                            <span style="font-size: 14px; font-weight: 800; color: white;">Rs.2.4L</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total: Rs.14.6L -->
+                <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="width: 130px; text-align: right; font-size: 13px; color: var(--green); font-weight: 700;">TOTAL</div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; height: 40px; position: relative;">
+                        <div style="width: 100%; height: 100%; background: linear-gradient(90deg, rgba(16,185,129,0.3), rgba(16,185,129,0.6)); border: 2px solid var(--green); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+                            <span style="font-size: 16px; font-weight: 900; color: var(--green);">Rs.14.6L / yr</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="callout" style="text-align: center; font-size: 18px;">
+            <strong>Total Tactical Pool Return: Rs.14.6L / year = 36.5%</strong><br>
+            <span style="font-size: 14px; color: var(--text-secondary);">
+                Combined with MQ Core (Rs.60L &times; 29% = Rs.17.3L)
+            </span><br>
+            <span style="font-size: 22px; font-weight: 800; color: var(--green);">
+                Total System: Rs.32L / year &asymp; 32% CAGR on Rs.1 Crore
+            </span>
+        </div>
+
+        <table class="comparison-table" style="margin-top: 40px;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">Pool</th>
+                    <th>Capital</th>
+                    <th>Expected CAGR</th>
+                    <th>Annual P&L</th>
+                    <th>Risk Profile</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color: var(--green); font-weight: 700;">MQ Core</td>
+                    <td>Rs.60L</td>
+                    <td class="positive">~29%</td>
+                    <td>Rs.17.3L</td>
+                    <td>20yr backtest incl. 2008 GFC</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue); font-weight: 700;">Tactical Pool</td>
+                    <td>Rs.40L</td>
+                    <td class="positive">~36.5%</td>
+                    <td>Rs.14.6L</td>
+                    <td>Active (daily monitoring)</td>
+                </tr>
+                <tr style="background: rgba(245,158,11,0.05);">
+                    <td style="font-weight: 800;">TOTAL</td>
+                    <td style="font-weight: 800;">Rs.1 Crore</td>
+                    <td class="positive" style="font-size: 18px; font-weight: 800;">~32%</td>
+                    <td style="font-weight: 800; color: var(--green);">Rs.32L</td>
+                    <td>Diversified</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CH 6: SYSTEM vs NIFTY 50                                        -->
+<!-- ================================================================ -->
+<section id="comparison" class="section-light">
+    <div class="container">
+        <div class="section-tag">Chapter 6</div>
+        <h2>MQ Core vs Nifty 50</h2>
+        <p class="subtitle">Same starting capital of Rs.1 Crore. Same 20-year window. How does a momentum-quality system compare to passive index investing?</p>
+
+        <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="metric-card" style="background: white; border: 2px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px;">CAGR (20 Years)</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 24px;">
+                    <div>
+                        <div style="font-size: 28px; font-weight: 800; color: var(--green);">~29%</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">MQ Core</div>
+                    </div>
+                    <div style="font-size: 20px; color: var(--text-muted);">vs</div>
+                    <div>
+                        <div style="font-size: 28px; font-weight: 800; color: var(--text-muted);">~13%</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Nifty 50</div>
+                    </div>
+                </div>
+                <div style="margin-top: 8px; font-size: 13px; color: var(--green); font-weight: 600;">2.2x higher returns</div>
+            </div>
+            <div class="metric-card" style="background: white; border: 2px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px;">GROWTH OF Rs.1 CRORE</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 24px;">
+                    <div>
+                        <div style="font-size: 28px; font-weight: 800; color: var(--green);">Rs.158 Cr</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">MQ Core</div>
+                    </div>
+                    <div style="font-size: 20px; color: var(--text-muted);">vs</div>
+                    <div>
+                        <div style="font-size: 28px; font-weight: 800; color: var(--text-muted);">Rs.11.5 Cr</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Nifty 50</div>
+                    </div>
+                </div>
+                <div style="margin-top: 8px; font-size: 13px; color: var(--green); font-weight: 600;">13.7x more wealth</div>
+            </div>
+            <div class="metric-card" style="background: white; border: 2px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">CALMAR RATIO</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Return per unit of worst-case risk</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 24px;">
+                    <div>
+                        <div style="font-size: 28px; font-weight: 800; color: var(--green);">0.43</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">MQ Core</div>
+                    </div>
+                    <div style="font-size: 20px; color: var(--text-muted);">vs</div>
+                    <div>
+                        <div style="font-size: 28px; font-weight: 800; color: var(--text-muted);">0.22</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Nifty 50</div>
+                    </div>
+                </div>
+                <div style="margin-top: 8px; font-size: 13px; color: var(--green); font-weight: 600;">2x better risk-adjusted</div>
+            </div>
+        </div>
+
+        <!-- Drawdown Comparison: Max Drawdown Bars -->
+        <h3 style="font-size: 22px; font-weight: 800; margin-top: 48px; margin-bottom: 8px; color: var(--text-dark);">Drawdown Comparison</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Maximum portfolio decline (peak-to-trough) across two distinct backtest windows. Lower is better.</p>
+
+        <div style="background: white; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0;">
+            <!-- Period 1: 2005-2025 (includes 2008 GFC) -->
+            <div style="margin-bottom: 28px;">
+                <div style="margin-bottom: 8px;">
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-dark);">2005 &ndash; 2025 <span style="font-weight: 400; color: var(--text-muted); font-size: 12px;">(20 years &mdash; includes 2008 GFC)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                    <span style="font-size: 12px; font-weight: 600; color: var(--green); width: 70px;">MQ Core</span>
+                    <div style="flex: 1; background: #f1f5f9; border-radius: 8px; height: 28px;">
+                        <div style="width: 66.6%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;">
+                            <span style="font-size: 12px; font-weight: 700; color: white;">66.6%</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); width: 70px;">Nifty 50</span>
+                    <div style="flex: 1; background: #f1f5f9; border-radius: 8px; height: 28px;">
+                        <div style="width: 60%; height: 100%; background: linear-gradient(90deg, #94a3b8, #64748b); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;">
+                            <span style="font-size: 12px; font-weight: 700; color: white;">~60%</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; padding-left: 82px;">2008 GFC devastated all equity &mdash; both suffered extreme drawdowns</div>
+            </div>
+
+            <!-- Period 2: 2015-2025 (includes COVID, no GFC) -->
+            <div>
+                <div style="margin-bottom: 8px;">
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-dark);">2015 &ndash; 2025 <span style="font-weight: 400; color: var(--text-muted); font-size: 12px;">(11 years &mdash; includes COVID crash, no GFC)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                    <span style="font-size: 12px; font-weight: 600; color: var(--green); width: 70px;">MQ Core</span>
+                    <div style="flex: 1; background: #f1f5f9; border-radius: 8px; height: 28px;">
+                        <div style="width: 30.3%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;">
+                            <span style="font-size: 12px; font-weight: 700; color: white;">30.3%</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); width: 70px;">Nifty 50</span>
+                    <div style="flex: 1; background: #f1f5f9; border-radius: 8px; height: 28px;">
+                        <div style="width: 39%; height: 100%; background: linear-gradient(90deg, #94a3b8, #64748b); border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;">
+                            <span style="font-size: 12px; font-weight: 700; color: white;">~39%</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 11px; color: var(--green); font-weight: 600; margin-top: 4px; padding-left: 82px;">MQ Core: 22% lower drawdown &mdash; Calmar ratio 0.62</div>
+            </div>
+        </div>
+
+        <!-- COVID Crash Zoom: SVG Drawdown Chart (Feb - Sep 2020) -->
+        <h3 style="font-size: 22px; font-weight: 800; margin-top: 48px; margin-bottom: 8px; color: var(--text-dark);">COVID Crash Zoom: Feb &ndash; Sep 2020</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">
+            Real backtest data showing how MQ Core&rsquo;s 20% ATH trailing exit behaved during the sharpest crash in a decade.
+            Nifty 50 fell <strong>39%</strong> in 33 days. MQ&rsquo;s smart exits limited the fall to <strong>34%</strong>.
+        </p>
+
+        <div style="background: white; border-radius: 16px; padding: 24px 16px 16px 16px; border: 1px solid #e2e8f0; overflow-x: auto;">
+            <svg viewBox="0 0 620 310" style="width: 100%; max-width: 620px; display: block; margin: 0 auto; font-family: Inter, sans-serif;">
+                <!-- Grid lines -->
+                <line x1="50" y1="49" x2="590" y2="49" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+                <line x1="50" y1="107" x2="590" y2="107" stroke="#f1f5f9" stroke-width="1"/>
+                <line x1="50" y1="164" x2="590" y2="164" stroke="#f1f5f9" stroke-width="1"/>
+                <line x1="50" y1="222" x2="590" y2="222" stroke="#f1f5f9" stroke-width="1"/>
+                <line x1="50" y1="280" x2="590" y2="280" stroke="#f1f5f9" stroke-width="1"/>
+
+                <!-- 0% line -->
+                <line x1="50" y1="49" x2="590" y2="49" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+
+                <!-- Y-axis labels -->
+                <text x="46" y="53" text-anchor="end" font-size="10" fill="#94a3b8" font-weight="600">0%</text>
+                <text x="46" y="111" text-anchor="end" font-size="10" fill="#94a3b8">-10%</text>
+                <text x="46" y="168" text-anchor="end" font-size="10" fill="#94a3b8">-20%</text>
+                <text x="46" y="226" text-anchor="end" font-size="10" fill="#94a3b8">-30%</text>
+                <text x="46" y="284" text-anchor="end" font-size="10" fill="#94a3b8">-40%</text>
+
+                <!-- X-axis labels (Feb-Sep, spaced at ~76px) -->
+                <text x="60" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">Feb</text>
+                <text x="136" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">Mar</text>
+                <text x="212" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">Apr</text>
+                <text x="288" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">May</text>
+                <text x="364" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">Jun</text>
+                <text x="440" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">Jul</text>
+                <text x="516" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">Aug</text>
+                <text x="590" y="298" text-anchor="middle" font-size="10" fill="#94a3b8">Sep</text>
+
+                <!-- Nifty 50 fill area -->
+                <polygon points="60,49 94,49 118,49 136,84 155,136 174,211 194,275 212,206 234,165 276,148 340,165 383,136 421,113 478,107 522,72 560,49 590,55 590,290 60,290"
+                    fill="rgba(148,163,184,0.08)"/>
+                <!-- Nifty 50 line -->
+                <polyline points="60,49 94,49 118,49 136,84 155,136 174,211 194,275 212,206 234,165 276,148 340,165 383,136 421,113 478,107 522,72 560,49 590,55"
+                    fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6,4"/>
+
+                <!-- MQ Core fill area -->
+                <polygon points="60,71 94,59 118,49 136,72 155,94 174,156 194,239 212,211 234,179 276,157 340,181 383,151 421,130 478,127 522,94 560,79 590,88 590,290 60,290"
+                    fill="rgba(16,185,129,0.08)"/>
+                <!-- MQ Core line -->
+                <polyline points="60,71 94,59 118,49 136,72 155,94 174,156 194,239 212,211 234,179 276,157 340,181 383,151 421,130 478,127 522,94 560,79 590,88"
+                    fill="none" stroke="#10b981" stroke-width="3"/>
+
+                <!-- Bottom markers -->
+                <!-- Nifty bottom: Mar 23, -39% -->
+                <circle cx="194" cy="275" r="5" fill="#ef4444" stroke="white" stroke-width="2"/>
+                <text x="194" y="290" text-anchor="middle" font-size="10" fill="#ef4444" font-weight="700">-39%</text>
+
+                <!-- MQ bottom: Mar 23, -34% -->
+                <circle cx="194" cy="239" r="5" fill="#10b981" stroke="white" stroke-width="2"/>
+                <text x="218" y="248" text-anchor="start" font-size="10" fill="#10b981" font-weight="700">-34%</text>
+
+                <!-- Gap annotation at bottom -->
+                <line x1="200" y1="245" x2="200" y2="268" stroke="#f59e0b" stroke-width="2"/>
+                <text x="210" y="262" font-size="9" fill="#f59e0b" font-weight="700">5% cushion</text>
+
+                <!-- Legend -->
+                <line x1="60" y1="10" x2="80" y2="10" stroke="#10b981" stroke-width="3"/>
+                <text x="84" y="14" font-size="11" fill="#10b981" font-weight="700">MQ Core (real backtest data)</text>
+                <line x1="310" y1="10" x2="330" y2="10" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6,4"/>
+                <text x="334" y="14" font-size="11" fill="#94a3b8" font-weight="600">Nifty 50</text>
+            </svg>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+            MQ Core drawdown from real PS20 backtest (weekly data). Nifty 50 based on NIFTYBEES ETF prices. Both measured from their pre-COVID peak (Feb 2020).
+        </div>
+
+        <div class="callout" style="border-left-color: var(--green); margin-top: 32px;">
+            <strong style="color: var(--green);">The takeaway:</strong>
+            During the 2008 GFC (a 1-in-50-year event), both MQ and Nifty suffered ~60%+ drawdowns &mdash; no equity strategy survives that unscathed.
+            But in the COVID era (2015&ndash;2025), MQ&rsquo;s <strong>20% ATH trailing exit</strong> limited the worst drawdown to <strong>34%</strong> vs Nifty&rsquo;s <strong>39%</strong>.
+            Smart money management plays a role too &mdash; when stocks are exited, idle cash isn&rsquo;t sitting dead.
+            It&rsquo;s <strong>parked in NiftyBEES ETF</strong> when Nifty is above its 200-day SMA (riding the trend), or in a <strong>liquid debt fund</strong> when below (preserving capital).
+            This means even the &ldquo;cash&rdquo; portion of the portfolio is working.
+            Adding KC6 tactical trading and IPO strategies further diversifies and cushions the portfolio.
+        </div>
+
+        <!-- Period comparison table -->
+        <table class="comparison-table" style="margin-top: 32px;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">Period</th>
+                    <th colspan="3" style="color: var(--green);">MQ Core (PS20)</th>
+                    <th colspan="3">Nifty 50</th>
+                </tr>
+                <tr style="font-size: 11px;">
+                    <th></th>
+                    <th style="color: var(--green);">CAGR</th>
+                    <th style="color: var(--green);">MaxDD</th>
+                    <th style="color: var(--green);">Calmar</th>
+                    <th>CAGR</th>
+                    <th>MaxDD</th>
+                    <th>Calmar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: 600;">2005&ndash;2025 (20yr)</td>
+                    <td class="positive" style="font-weight: 700;">28.80%</td>
+                    <td>66.56%</td>
+                    <td style="font-weight: 700;">0.43</td>
+                    <td>~13%</td>
+                    <td>~60%</td>
+                    <td>~0.22</td>
+                </tr>
+                <tr style="background: rgba(16,185,129,0.05);">
+                    <td style="font-weight: 600;">2015&ndash;2025 (11yr)</td>
+                    <td class="positive">18.89%</td>
+                    <td class="positive" style="font-weight: 700;">30.27%</td>
+                    <td style="font-weight: 700;">0.62</td>
+                    <td>~13%</td>
+                    <td class="negative">~39%</td>
+                    <td>~0.33</td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+            MQ Core = PS20 portfolio with smart parking (NiftyBEES above 200 SMA, debt fund below). Nifty 50 = buy-and-hold via NIFTYBEES ETF.
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CH 7: DAILY WORKFLOW                                             -->
+<!-- ================================================================ -->
+<section id="workflow" class="section-mid">
+    <div class="container">
+        <div class="section-tag">Chapter 7</div>
+        <h2>Daily Workflow</h2>
+        <p class="subtitle">The system runs on three time blocks every trading day.</p>
+
+        <div class="workflow-grid">
+            <div class="workflow-card">
+                <div class="wf-time">9:15 &ndash; 9:30 AM</div>
+                <div class="wf-title">Morning Setup</div>
+                <ul>
+                    <li>Sync KC6 positions with broker (Zerodha)</li>
+                    <li>Place KC6 SELL LIMIT targets at today's KC6 mid</li>
+                    <li>Check for new IPO listings in past 50 days</li>
+                    <li>Check IPO Swing positions for target/SL levels</li>
+                    <li>Review overnight corporate actions</li>
+                </ul>
+            </div>
+            <div class="workflow-card">
+                <div class="wf-time">3:15 &ndash; 3:25 PM</div>
+                <div class="wf-title">Afternoon Execution</div>
+                <ul>
+                    <li>KC6: Check target fills + SL/TP/MaxHold exits</li>
+                    <li>IPO Scalper: Check +6% target / -20% SL / 20d time exit</li>
+                    <li>IPO Swing: Check +30% target / -15% SL exits</li>
+                    <li>Scan for new KC6 entries (crash filter check first)</li>
+                    <li>Scan for IPO Scalper breakout signals on recent listings</li>
+                    <li>Scan for IPO Swing signals (listing gain + BRK7 above ATH)</li>
+                    <li>Execute entries via tactical pool allocation</li>
+                </ul>
+            </div>
+            <div class="workflow-card">
+                <div class="wf-time">3:30+ PM</div>
+                <div class="wf-title">Post-Market Reconciliation</div>
+                <ul>
+                    <li>Verify all order fills and rejections</li>
+                    <li>Return freed capital to debt fund bucket</li>
+                    <li>Save daily pool snapshot (equity curve data)</li>
+                    <li>Log all activity for audit trail</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="steps" style="margin-top: 48px;">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-title">Signal Fires</div>
+                <div class="step-desc">KC6, IPO Scalper, or IPO Swing scanner detects a valid entry signal meeting all conditions.</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-desc">Pool manager checks available capital and position limits. Returns allow/deny.</div>
+                <div class="step-title">Pool Check</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-title">Capital Drawn</div>
+                <div class="step-desc">Fixed amount (Rs.4L for KC6, Rs.6.5L for IPO Scalper, Rs.5L for IPO Swing) redeemed from liquid debt fund.</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-title">Trade Executed</div>
+                <div class="step-desc">CNC equity delivery order placed. Position tracked in pool DB with entry price and SL/target.</div>
+            </div>
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-title">Capital Returned</div>
+                <div class="step-desc">On exit (target/SL/time), proceeds flow back to debt fund. P&L logged.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- MODEL PORTFOLIO (MQ Core 60% Allocation)                        -->
+<!-- ================================================================ -->
+<section id="model-portfolio" class="section-mid">
+    <div class="container">
+        <div class="section-tag">Chapter 8</div>
+        <h2>MQ Core &mdash; <span class="live-blink">Live</span> Holdings</h2>
+        <p class="subtitle">The <strong>MQ (Momentum + Quality)</strong> component of the Tactical Capital Pool &mdash; the 60% core equity allocation. This is what the portfolio looks like if started in January 2023 with &#8377;1 Crore. Does not include KC6, IPO, or debt fund allocations.</p>
+
+        <div class="info-box">
+            <strong>MQ Core Only.</strong> This section shows the 60% long-term equity allocation (Momentum + Quality strategy). The tactical 40% pool (KC6 Mean Reversion + IPO Scalper + IPO Swing + Liquid Debt) is tracked separately above.
+        </div>
+
+        <!-- KPI Metrics -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(5, 1fr);">
+            <div class="metric-card">
+                <div class="metric-value">37</div>
+                <div class="metric-label">Positions</div>
+                <div class="metric-detail"><span style="color:#10b981;">20 open</span> &bull; <span style="color:#f59e0b;">3 nearing SL</span> &bull; <span style="color:#64748b;">17 exited</span></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">35.99%</div>
+                <div class="metric-label">XIRR</div>
+                <div class="metric-detail">Portfolio IRR</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">&#8377;2.62 Cr</div>
+                <div class="metric-label">Portfolio Value</div>
+                <div class="metric-detail" style="color:var(--green);">+161.71% total return</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">1.16</div>
+                <div class="metric-label">Sharpe Ratio</div>
+                <div class="metric-detail">MaxDD: 26.85%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color:var(--green);">76.5%</div>
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-detail">17 closed trades</div>
+            </div>
+        </div>
+
+        <!-- Status Legend -->
+        <div style="display:flex; gap:1.5rem; margin:1rem 0 0.5rem; font-size:13px; color:#94a3b8;">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);margin-right:5px;vertical-align:middle;"></span> Open</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5);margin-right:5px;vertical-align:middle;"></span> Nearing SL (&ge;15% ATH DD)</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#64748b;margin-right:5px;vertical-align:middle;"></span> Exited</span>
+        </div>
+
+        <!-- Positions Table -->
+        <div style="overflow-x:auto; max-height:600px; overflow-y:auto; border-radius:8px; border:1px solid var(--border);">
+            <table class="comparison-table" style="width:100%; margin:0;">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"></th>
+                        <th>Symbol</th>
+                        <th>Sector</th>
+                        <th>Entry Date</th>
+                        <th style="text-align:right;">Entry Price</th>
+                        <th style="text-align:right;">Exit / Current</th>
+                        <th style="text-align:right;">P&amp;L %</th>
+                        <th style="text-align:right;">Net P&amp;L</th>
+                        <th>Exit Reason</th>
+                        <th style="text-align:center;">Days Held</th>
+                    </tr>
+                </thead>
+                <tbody>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">JSL</td>
+                            <td><small style="color:#64748b;">Metals & Mining</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;253.30</td>
+                            <td style="text-align:right;">&#8377;839.25<br><small style="color:#64748b;">0% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+231.0%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;10.95 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">1142d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">CANBK</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;61.82</td>
+                            <td style="text-align:right;">&#8377;151.80<br><small style="color:#64748b;">0% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+145.3%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;6.89 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">1142d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">ASTRAZEN</td>
+                            <td><small style="color:#64748b;">Healthcare</small></td>
+                            <td>2023-07-03</td>
+                            <td style="text-align:right;">&#8377;3,795.40</td>
+                            <td style="text-align:right;">&#8377;9,015.00<br><small style="color:#64748b;">14.2% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+137.3%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;5.48 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">960d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">JINDALSTEL</td>
+                            <td><small style="color:#64748b;">Metals & Mining</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;594.65</td>
+                            <td style="text-align:right;">&#8377;1,041.00<br><small style="color:#64748b;">4.3% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+74.9%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;3.55 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">1142d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">CCL</td>
+                            <td><small style="color:#64748b;">Consumer Goods</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;544.25</td>
+                            <td style="text-align:right;">&#8377;944.20<br><small style="color:#64748b;">11.6% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+69.4%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;4.60 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">1142d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">MUTHOOTFIN</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;2,215.05</td>
+                            <td style="text-align:right;">&#8377;3,753.00<br><small style="color:#64748b;">0.2% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+69.3%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;9.43 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">LAURUSLABS</td>
+                            <td><small style="color:#64748b;">Healthcare</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;615.65</td>
+                            <td style="text-align:right;">&#8377;1,006.00<br><small style="color:#64748b;">1.6% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+63.2%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;8.62 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">JSWSTEEL</td>
+                            <td><small style="color:#64748b;">Metals & Mining</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;775.30</td>
+                            <td style="text-align:right;">&#8377;1,171.70<br><small style="color:#64748b;">3.2% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+51.8%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;2.95 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">1142d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">SOUTHBANK</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2025-07-01</td>
+                            <td style="text-align:right;">&#8377;31.60</td>
+                            <td style="text-align:right;">&#8377;40.11<br><small style="color:#64748b;">2.4% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+26.8%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;2.17 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">231d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">RADICO</td>
+                            <td><small style="color:#64748b;">Consumer Goods</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;2,582.10</td>
+                            <td style="text-align:right;">&#8377;3,177.00<br><small style="color:#64748b;">6.6% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+22.9%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;3.12 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">AUBANK</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2025-07-01</td>
+                            <td style="text-align:right;">&#8377;838.35</td>
+                            <td style="text-align:right;">&#8377;994.50<br><small style="color:#64748b;">0.2% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+18.5%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;1.50 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">231d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">FEDERALBNK</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2025-07-01</td>
+                            <td style="text-align:right;">&#8377;218.72</td>
+                            <td style="text-align:right;">&#8377;255.35<br><small style="color:#64748b;">0.4% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+16.6%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;1.34 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">231d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">INDIACEM</td>
+                            <td><small style="color:#64748b;">Cement</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;377.35</td>
+                            <td style="text-align:right;">&#8377;435.25<br><small style="color:#64748b;">2.9% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+15.2%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;2.08 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">FSL</td>
+                            <td><small style="color:#64748b;">Information Technology</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;383.95</td>
+                            <td style="text-align:right;">&#8377;349.00<br><small style="color:#64748b;">14.2% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--red)">-9.2%</td>
+                            <td style="text-align:right;color:var(--red)">-&#8377;1.25 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">WELCORP</td>
+                            <td><small style="color:#64748b;">Metals & Mining</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;812.70</td>
+                            <td style="text-align:right;">&#8377;864.00<br><small style="color:#64748b;">10.6% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+6.2%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;84,566</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">APOLLOHOSP</td>
+                            <td><small style="color:#64748b;">Healthcare</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;7,369.65</td>
+                            <td style="text-align:right;">&#8377;7,642.00<br><small style="color:#64748b;">4.6% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+3.6%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;48,756</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.5);animation:mp-pulse 2s infinite;"></span></td>
+                            <td style="font-weight:600;">LEMONTREE</td>
+                            <td><small style="color:#64748b;">Services</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;159.00</td>
+                            <td style="text-align:right;">&#8377;159.26<br><small style="color:#64748b;">10.5% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+0.1%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;865</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5);animation:mp-pulse 1.5s infinite;"></span></td>
+                            <td style="font-weight:600;">ABBOTINDIA</td>
+                            <td><small style="color:#64748b;">Healthcare</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;21,436.90</td>
+                            <td style="text-align:right;">&#8377;29,025.00<br><small style="color:var(--accent);">18.6% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+31.8%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;2.10 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">1142d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5);animation:mp-pulse 1.5s infinite;"></span></td>
+                            <td style="font-weight:600;">JUBLFOOD</td>
+                            <td><small style="color:#64748b;">Consumer Goods</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;739.20</td>
+                            <td style="text-align:right;">&#8377;558.60<br><small style="color:var(--accent);">27.1% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--red)">-24.5%</td>
+                            <td style="text-align:right;color:var(--red)">-&#8377;3.34 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5);animation:mp-pulse 1.5s infinite;"></span></td>
+                            <td style="font-weight:600;">COROMANDEL</td>
+                            <td><small style="color:#64748b;">Agri Chemicals</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;1,928.75</td>
+                            <td style="text-align:right;">&#8377;2,264.00<br><small style="color:var(--accent);">15.9% from ATH</small></td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+17.3%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;2.35 L</td>
+                            <td>--</td>
+                            <td style="text-align:center;">412d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">RECLTD</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;120.40</td>
+                            <td style="text-align:right;">&#8377;505.55</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+303.6%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;20.15 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">SUZLON</td>
+                            <td><small style="color:#64748b;">Capital Goods</small></td>
+                            <td>2023-07-03</td>
+                            <td style="text-align:right;">&#8377;16.80</td>
+                            <td style="text-align:right;">&#8377;65.33</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+287.0%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;12.94 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">548d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">PFC</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;119.75</td>
+                            <td style="text-align:right;">&#8377;448.30</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+253.9%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;21.66 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">NCC</td>
+                            <td><small style="color:#64748b;">Construction</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;91.70</td>
+                            <td style="text-align:right;">&#8377;277.50</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+198.1%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;11.27 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">SOLARINDS</td>
+                            <td><small style="color:#64748b;">Chemicals</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;4,434.15</td>
+                            <td style="text-align:right;">&#8377;9,864.25</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+121.3%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;5.71 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">PNBHOUSING</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;474.70</td>
+                            <td style="text-align:right;">&#8377;908.10</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+88.0%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;5.84 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">NMDC</td>
+                            <td><small style="color:#64748b;">Metals & Mining</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;37.84</td>
+                            <td style="text-align:right;">&#8377;63.77</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+67.6%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;3.21 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">BHARATFORG</td>
+                            <td><small style="color:#64748b;">Capital Goods</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;884.05</td>
+                            <td style="text-align:right;">&#8377;1,299.90</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+48.1%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;2.73 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">VGUARD</td>
+                            <td><small style="color:#64748b;">Consumer Goods</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;266.05</td>
+                            <td style="text-align:right;">&#8377;386.75</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+44.6%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;2.11 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">911d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">APOLLOTYRE</td>
+                            <td><small style="color:#64748b;">Automobile</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;328.25</td>
+                            <td style="text-align:right;">&#8377;447.70</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+35.6%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;1.69 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">911d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">NESTLEIND</td>
+                            <td><small style="color:#64748b;">Consumer Goods</small></td>
+                            <td>2024-01-01</td>
+                            <td style="text-align:right;">&#8377;1,368.60</td>
+                            <td style="text-align:right;">&#8377;1,084.60</td>
+                            <td style="text-align:right;font-weight:700;color:var(--red)">-21.2%</td>
+                            <td style="text-align:right;color:var(--red)">-&#8377;1.49 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">366d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">IPCALAB</td>
+                            <td><small style="color:#64748b;">Healthcare</small></td>
+                            <td>2025-01-01</td>
+                            <td style="text-align:right;">&#8377;1,692.95</td>
+                            <td style="text-align:right;">&#8377;1,371.90</td>
+                            <td style="text-align:right;font-weight:700;color:var(--red)">-19.5%</td>
+                            <td style="text-align:right;color:var(--red)">-&#8377;2.65 L</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">181d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">GODFRYPHLP</td>
+                            <td><small style="color:#64748b;">Consumer Goods</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;669.00</td>
+                            <td style="text-align:right;">&#8377;565.00</td>
+                            <td style="text-align:right;font-weight:700;color:var(--red)">-16.1%</td>
+                            <td style="text-align:right;color:var(--red)">&#8377;-76,159</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">182d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">IRB</td>
+                            <td><small style="color:#64748b;">Construction</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;31.40</td>
+                            <td style="text-align:right;">&#8377;26.95</td>
+                            <td style="text-align:right;font-weight:700;color:var(--red)">-14.7%</td>
+                            <td style="text-align:right;color:var(--red)">&#8377;-69,696</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">182d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">M&MFIN</td>
+                            <td><small style="color:#64748b;">Financial Services</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;222.85</td>
+                            <td style="text-align:right;">&#8377;255.30</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+6.0%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;39,635</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">364d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">SUNDRMFAST</td>
+                            <td><small style="color:#64748b;">Automobile</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;970.00</td>
+                            <td style="text-align:right;">&#8377;1,045.40</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+5.6%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;31,862</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;background:#64748b;"></span></td>
+                            <td style="font-weight:600;">PNCINFRA</td>
+                            <td><small style="color:#64748b;">Construction</small></td>
+                            <td>2023-01-02</td>
+                            <td style="text-align:right;">&#8377;309.65</td>
+                            <td style="text-align:right;">&#8377;328.60</td>
+                            <td style="text-align:right;font-weight:700;color:var(--green)">+4.2%</td>
+                            <td style="text-align:right;color:var(--green)">&#8377;31,743</td>
+                            <td><span class="mp-exit-badge exit-ath">ATH DD >20%</span></td>
+                            <td style="text-align:center;">730d</td>
+                        </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Charts -->
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:1.5rem; margin-top:1.5rem;">
+            <div class="chart-container" style="border-radius:12px; border:1px solid var(--border); padding:1rem; background:var(--bg-dark);">
+                <h4 style="font-size:14px; margin-bottom:0.75rem; color:#e2e8f0;">
+                    Equity Curve (&#8377;1 Cr &rarr; &#8377;2.62 Cr)
+                </h4>
+                <div style="position:relative; height:300px;">
+                    <canvas id="mpEquityChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container" style="border-radius:12px; border:1px solid var(--border); padding:1rem; background:var(--bg-dark);">
+                <h4 style="font-size:14px; margin-bottom:0.75rem; color:#e2e8f0;">Sector Allocation</h4>
+                <div style="position:relative; height:300px;">
+                    <canvas id="mpSectorChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:center; font-size:11px; color:#64748b; margin-top:1.5rem; padding-top:0.75rem; border-top:1px solid var(--border);">
+            MQ Momentum + Quality Strategy &bull; Backtest: 2023-01-01 to 2026-02-17
+            &bull; Nifty 500 Universe &bull; 20 stocks &bull; Semi-annual rebalance &bull; 20% ATH drawdown exit
+        </div>
+    </div>
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        Tactical Capital Pool System &mdash; Designed by Castronix<br>
+        <span style="color: var(--text-secondary);">
+            MQ Portfolio (29% CAGR, PS20) + KC6 Mean Reversion (65% WR, Rs.4L) + IPO Scalper (84% WR, Rs.6.5L) + IPO Swing (64.5% WR, Rs.5L) + Liquid Debt (6% p.a.)
+        </span>
+    </div>
+</footer>
+
+<!-- ================================================================ -->
+<!-- CHARTS                                                           -->
+<!-- ================================================================ -->
+<script>
+    // Count-up animation
+    (function() {
+        function animateCountUp(el) {
+            const target = parseFloat(el.dataset.target);
+            const isInt = Number.isInteger(target);
+            let current = 0;
+            const increment = target / 40;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                el.textContent = isInt ? Math.round(current).toLocaleString('en-IN') : current.toFixed(1);
+            }, 30);
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCountUp(entry.target);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.count-up').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight) {
+                animateCountUp(el);
+            } else {
+                observer.observe(el);
+            }
+        });
+    })();
+</script>
+
+<script>
+    // Charts (wrapped in try-catch for file:// protocol where CDN may not load)
+    try {
+
+    // Allocation Doughnut
+    new Chart(document.getElementById('allocChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['MQ Core (60%)', 'KC6 Active (~18%)', 'IPO Scalper (0%)', 'IPO Swing (~5%)', 'Debt Fund Idle (~17%)'],
+            datasets: [{
+                data: [60, 18, 0, 5, 17],
+                backgroundColor: [
+                    'rgba(16,185,129,0.7)',
+                    'rgba(59,130,246,0.7)',
+                    'rgba(245,158,11,0.7)',
+                    'rgba(139,92,246,0.7)',
+                    'rgba(16,185,129,0.25)',
+                ],
+                borderColor: ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#10b981'],
+                borderWidth: 1,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '55%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' }, padding: 10 }
+                }
+            }
+        }
+    });
+
+    // Utilization Scenarios
+    new Chart(document.getElementById('utilChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Quiet Day (~35%)', 'Active Day (~20%)', 'IPO Signal (~10%)', 'Peak Load (~5%)'],
+            datasets: [
+                {
+                    label: 'KC6 Deployed',
+                    data: [20, 50, 50, 70],
+                    backgroundColor: 'rgba(59,130,246,0.6)',
+                    borderColor: '#3b82f6',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'IPO Scalper Deployed',
+                    data: [0, 0, 16, 16],
+                    backgroundColor: 'rgba(245,158,11,0.6)',
+                    borderColor: '#f59e0b',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'IPO Swing Deployed',
+                    data: [0, 12.5, 12.5, 12.5],
+                    backgroundColor: 'rgba(139,92,246,0.6)',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 1,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: { color: '#94a3b8', font: { size: 11 } },
+                    grid: { display: false }
+                },
+                y: {
+                    stacked: true,
+                    max: 100,
+                    ticks: { color: '#94a3b8', callback: v => v + '%' },
+                    grid: { color: 'rgba(148,163,184,0.1)' }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' } }
+                },
+                tooltip: {
+                    callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '% of pool' }
+                }
+            }
+        }
+    });
+
+    
+    // Model Portfolio Charts
+    try {
+        new Chart(document.getElementById('mpEquityChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ["2023-01-02", "2023-01-09", "2023-01-16", "2023-01-23", "2023-01-31", "2023-02-07", "2023-02-14", "2023-02-21", "2023-02-28", "2023-03-08", "2023-03-15", "2023-03-22", "2023-03-29", "2023-04-10", "2023-04-18", "2023-04-25", "2023-05-03", "2023-05-10", "2023-05-17", "2023-05-24", "2023-05-31", "2023-06-07", "2023-06-14", "2023-06-21", "2023-06-28", "2023-07-06", "2023-07-13", "2023-07-20", "2023-07-27", "2023-08-03", "2023-08-10", "2023-08-18", "2023-08-25", "2023-09-01", "2023-09-08", "2023-09-15", "2023-09-25", "2023-10-03", "2023-10-10", "2023-10-17", "2023-10-25", "2023-11-01", "2023-11-08", "2023-11-15", "2023-11-22", "2023-11-30", "2023-12-07", "2023-12-14", "2023-12-21", "2023-12-29", "2024-01-05", "2024-01-12", "2024-01-19", "2024-01-29", "2024-02-05", "2024-02-12", "2024-02-19", "2024-02-26", "2024-03-02", "2024-03-11", "2024-03-18", "2024-03-26", "2024-04-03", "2024-04-10", "2024-04-19", "2024-04-26", "2024-05-06", "2024-05-13", "2024-05-18", "2024-05-27", "2024-06-03", "2024-06-10", "2024-06-18", "2024-06-25", "2024-07-02", "2024-07-09", "2024-07-16", "2024-07-24", "2024-07-31", "2024-08-07", "2024-08-14", "2024-08-22", "2024-08-29", "2024-09-05", "2024-09-12", "2024-09-19", "2024-09-26", "2024-10-04", "2024-10-11", "2024-10-18", "2024-10-25", "2024-11-01", "2024-11-08", "2024-11-18", "2024-11-26", "2024-12-03", "2024-12-10", "2024-12-17", "2024-12-24", "2025-01-01", "2025-01-08", "2025-01-15", "2025-01-22", "2025-01-29", "2025-02-04", "2025-02-11", "2025-02-18", "2025-02-25", "2025-03-05", "2025-03-12", "2025-03-20", "2025-03-27", "2025-04-04", "2025-04-15", "2025-04-23", "2025-04-30", "2025-05-08", "2025-05-15", "2025-05-22", "2025-05-29", "2025-06-05", "2025-06-12", "2025-06-19", "2025-06-26", "2025-07-03", "2025-07-10", "2025-07-17", "2025-07-24", "2025-07-31", "2025-08-07", "2025-08-14", "2025-08-22", "2025-09-01", "2025-09-08", "2025-09-15", "2025-09-22", "2025-09-29", "2025-10-07", "2025-10-14", "2025-10-21", "2025-10-29", "2025-11-06", "2025-11-13", "2025-11-20", "2025-11-27", "2025-12-04", "2025-12-11", "2025-12-18", "2025-12-26", "2025-12-31"],
+                datasets: [{
+                    label: 'MQ Portfolio Value',
+                    data: [11500000.0, 11466968.02, 11342295.14, 11364876.09, 11196025.97, 11224531.38, 11178463.23, 11186619.93, 11015892.71, 11439396.67, 11158667.33, 11109935.14, 11025351.48, 11253076.25, 11257943.69, 11394666.93, 11650113.52, 11637785.91, 11639377.59, 11566023.22, 11850137.93, 12154314.24, 12305026.87, 12576716.68, 12657989.81, 13110271.28, 13097323.1, 13164701.17, 13500626.33, 13536396.78, 13871097.24, 13827663.3, 13954101.49, 14421050.95, 15060778.53, 14887760.79, 14759841.36, 15258848.06, 15185138.6, 15466380.69, 14715637.78, 14654574.95, 15527149.44, 16225074.57, 16324918.67, 16691955.75, 17463828.52, 17937188.89, 17429801.31, 17965867.98, 18492418.34, 18778394.64, 19038944.54, 19435611.07, 19863775.54, 18919206.52, 19669432.4, 19626915.21, 19797096.42, 19679896.71, 18758894.5, 19316031.02, 19985424.66, 20198124.38, 19767468.67, 20491701.3, 20752680.28, 20485323.38, 21542372.68, 22242177.1, 22877202.1, 22441572.62, 23033860.54, 22944393.57, 23345214.21, 24350337.96, 24222712.01, 23774169.47, 24613049.96, 23395059.65, 23166990.73, 24066980.02, 24203646.95, 24497661.82, 24261323.16, 23665081.74, 24219275.42, 23586991.5, 23742653.12, 23502316.71, 21937045.07, 22669671.54, 22238741.73, 21112836.53, 21780555.99, 22485469.46, 22991355.39, 22531660.2, 21451787.96, 21558736.87, 20935339.16, 19961605.13, 19689083.75, 19172767.53, 19634101.0, 19113980.76, 18518668.13, 18463751.08, 18665690.24, 18626430.93, 19470884.75, 19603357.2, 19150549.54, 19627489.7, 20313958.91, 19956060.61, 19756298.46, 20555195.28, 20490432.14, 20761093.53, 21166540.49, 21270342.54, 20846839.61, 21385695.58, 21580665.48, 21686779.6, 21838849.96, 21637709.63, 21743524.77, 21381861.52, 21482104.9, 21856879.46, 21604998.96, 21796465.84, 22075562.25, 22163594.88, 21523774.57, 22082732.94, 21867547.65, 22590396.19, 22829205.32, 22670654.54, 22938624.23, 23093790.5, 23000194.25, 23049598.35, 23055592.77, 23005153.17, 23036078.38, 23085034.76].map(v => v * 10000000 / 11500000),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.08)',
+                    borderWidth: 2, fill: true, pointRadius: 0, tension: 0.3,
+                }, {
+                    label: 'Nifty 50 (NIFTYBEES)',
+                    data: [10000000.0, 9946824.52, 9835457.01, 9954851.01, 9704023.28, 9734122.6, 9831443.76, 9795324.57, 9516404.13, 9729607.71, 9335808.17, 9425102.84, 9385472.06, 9663890.84, 9693990.17, 9738637.5, 9916725.19, 10033109.26, 10021069.53, 10045148.99, 10216715.16, 10300993.28, 10326577.71, 10377746.56, 10443463.43, 10733420.29, 10719875.59, 11011839.07, 10867362.3, 10713354.07, 10802147.09, 10685261.36, 10673221.63, 10748971.61, 10956656.97, 11165345.64, 10875890.44, 10814186.82, 10892445.07, 10963680.14, 10609009.73, 10534263.07, 10777064.31, 10884418.58, 10962676.83, 11143272.8, 11579713.05, 11738236.18, 11768837.16, 12022173.17, 12026688.07, 12126517.51, 11997090.4, 12042239.39, 12051770.84, 12005618.54, 12292565.47, 12284037.32, 12406441.26, 12413464.43, 12239389.99, 12229858.53, 12470653.16, 12620146.48, 12317146.58, 12463128.32, 12459616.74, 12298585.33, 12493729.31, 12778167.95, 12949734.12, 12939701.01, 13121300.29, 13223136.35, 13496036.92, 13613925.96, 13722785.19, 13639510.38, 13933480.49, 13599879.6, 13511588.24, 13869770.24, 14051369.52, 14067924.15, 14182301.6, 14243001.91, 14625765.02, 14053877.8, 13982141.07, 13922444.07, 13568776.96, 13663589.85, 13546202.47, 13166950.94, 13571786.9, 13694190.83, 13779472.26, 13656065.01, 13318450.89, 13323467.44, 13289856.53, 13021972.51, 12985351.66, 13011939.4, 13296378.05, 12970302.0, 12884518.91, 12679341.83, 12565466.04, 12628674.63, 13008929.47, 13230159.53, 12900571.89, 13086686.06, 13635998.8, 13644526.94, 13596869.67, 14054881.11, 13841175.88, 13973111.27, 13948530.15, 13993679.14, 13941506.97, 14366910.81, 14316745.26, 14305207.18, 14188321.46, 14151700.61, 14009230.46, 13910404.33, 13957559.95, 14083977.12, 13955051.67, 14045851.31, 14202869.47, 14271596.27, 13973111.27, 14217417.48, 14231463.83, 14641818.0, 14773753.39, 14459717.07, 14667904.08, 14830942.11, 14870071.24, 14767231.87, 14694993.48, 14640313.03, 14771746.76, 14814387.48],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245,158,11,0.05)',
+                    borderWidth: 2, fill: false, pointRadius: 0, tension: 0.3,
+                    borderDash: [4, 2],
+                }, {
+                    label: 'Initial (\u20B91 Cr)',
+                    data: Array(150).fill(10000000),
+                    borderColor: 'rgba(148,163,184,0.3)',
+                    borderWidth: 1, borderDash: [5,5], pointRadius: 0, fill: false,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' } } },
+                    tooltip: { mode: 'index', intersect: false,
+                        callbacks: { label: ctx => ctx.dataset.label + ': \u20B9' + (ctx.parsed.y/1e7).toFixed(2) + ' Cr' }
+                    },
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                    y: { ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => '\u20B9' + (v/1e7).toFixed(1) + 'Cr' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                },
+            },
+        });
+
+        var mpSecColors = ['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#f97316','#06b6d4','#84cc16','#eab308','#fb7185','#a78bfa','#fb923c','#22d3ee'];
+        new Chart(document.getElementById('mpSectorChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ["Metals & Mining", "Financial Services", "Healthcare", "Consumer Goods", "Telecom", "Construction", "Automobile", "Energy", "Agri Chemicals", "Services", "Information Technology", "Cement", "Chemicals"],
+                datasets: [{ data: [13.4, 16.7, 20.0, 12.2, 4.0, 5.7, 4.2, 2.3, 4.3, 6.8, 3.4, 4.3, 2.8], backgroundColor: mpSecColors.slice(0, 13), borderColor: '#1e293b', borderWidth: 2, hoverOffset: 8 }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '55%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, family: 'Inter' }, padding: 8, boxWidth: 10 } },
+                    tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(1) + '%' } }
+                },
+            },
+        });
+    } catch(e) { console.warn('MP charts error:', e.message); }
+
+
+
+    // --- Model Portfolio Charts ---
+    try {
+        var mpNiftyData = [10000000.0, 10000000.0, 10000000.0, 10000000.0, 10000000.0, 9946824.52, 9838968.6, 9838968.6, 9812882.51, 9863048.06, 9835457.01, 9906190.43, 9965385.77, 9954349.35, 9905187.12, 9954851.01, 9953847.7, 9834453.7, 9681950.44, 9694491.82, 9704023.28, 9688471.96, 9677435.54, 9788301.39, 9756195.44, 9734122.6, 9809370.92, 9826928.87, 9806862.65, 9762215.31, 9831443.76, 9795324.57, 9516404.13, 9729607.71, 9335808.17, 9425102.84, 9385472.06, 9663890.84, 9693990.17, 9738637.5, 9916725.19, 10033109.26, 10021069.53, 10045148.99, 10216715.16, 10300993.28, 10326577.71, 10377746.56, 10443463.43, 10733420.29, 10719875.59, 11011839.07, 10867362.3, 10713354.07, 10802147.09, 10685261.36, 10673221.63, 10748971.61, 10956656.97, 11165345.64, 10875890.44, 10814186.82, 10892445.07, 10963680.14, 10609009.73, 10534263.07, 10777064.31, 10884418.58, 10962676.83, 11143272.8, 11579713.05, 11738236.18, 11768837.16, 12022173.17, 12026688.07, 12126517.51, 11997090.4, 12042239.39, 12051770.84, 12005618.54, 12292565.47, 12284037.32, 12406441.26, 12413464.43, 12239389.99, 12229858.53, 12470653.16, 12620146.48, 12317146.58, 12463128.32, 12459616.74, 12298585.33, 12493729.31, 12778167.95, 12949734.12, 12939701.01, 13121300.29, 13223136.35, 13496036.92, 13613925.96, 13722785.19, 13639510.38, 13933480.49, 13599879.6, 13511588.24, 13869770.24, 14051369.52, 14067924.15, 14182301.6, 14243001.91, 14625765.02, 14053877.8, 13982141.07, 13922444.07, 13568776.96, 13663589.85, 13546202.47, 13166950.94, 13571786.9, 13694190.83, 13779472.26, 13656065.01, 13318450.89, 13323467.44, 13289856.53, 13021972.51, 12985351.66, 13011939.4, 13296378.05, 12970302.0, 12884518.91, 12679341.83, 12565466.04, 12628674.63, 13008929.47, 13230159.53, 12900571.89, 13086686.06, 13635998.8, 13644526.94, 13596869.67, 14054881.11, 13841175.88, 13973111.27, 13948530.15, 13993679.14, 13941506.97, 14366910.81, 14316745.26, 14305207.18, 14188321.46, 14151700.61, 14009230.46, 13910404.33, 13957559.95, 14083977.12, 13955051.67, 14045851.31, 14202869.47, 14271596.27, 13973111.27, 14217417.48, 14231463.83, 14641818.0, 14773753.39, 14459717.07, 14667904.08, 14830942.11, 14870071.24, 14767231.87, 14694993.48, 14640313.03, 14771746.76, 14814387.48];
+        var mpMqData = [10000000.0, 10000000.0, 10000000.0, 10000000.0, 10000000.0, 11475065.76, 11372468.77, 11375046.97, 11390946.47, 11462442.97, 11375513.94, 11295383.37, 11373698.34, 11391153.03, 11345228.12, 11346318.16, 11303089.93, 11205071.14, 10964982.66, 10947432.06, 11180512.62, 11102853.39, 11170571.69, 11179740.96, 11173554.6, 11176174.41, 11310677.64, 11271655.47, 11243859.82, 11156346.29, 11112418.88, 11145542.97, 10942600.49, 11450283.87, 11113378.13, 11005645.93, 10888463.05, 11178840.71, 11216856.69, 11315935.94, 11646153.03, 11588911.65, 11553426.2, 11488065.18, 11887244.45, 12226377.41, 12426944.3, 12696000.78, 12796439.98, 13247218.94, 13285355.47, 13321226.16, 13597305.13, 13732451.96, 14175078.22, 14074165.65, 14290564.12, 14754312.18, 15417857.19, 15232088.58, 15193909.41, 15848450.42, 15690690.06, 15954213.8, 15230408.55, 15185884.77, 16107236.5, 16927116.99, 17058912.3, 17438906.98, 18213561.39, 18905959.98, 18212603.8, 18683640.9, 19205597.78, 19620257.13, 19885191.3, 20400014.8, 21078298.43, 20015088.43, 20555285.05, 20531784.8, 20739266.66, 20662241.92, 19432664.77, 20069062.24, 20866753.13, 20950651.71, 20309216.41, 21062104.27, 21556910.68, 21119095.39, 22473346.96, 23529217.39, 24446565.23, 23544730.91, 24137835.14, 23988392.55, 24352115.92, 25519861.02, 25401842.83, 24911084.61, 25992912.38, 24457164.38, 24266555.55, 25207644.73, 25609810.25, 25889498.9, 25513173.22, 24765888.62, 25308694.33, 24437360.0, 24573850.48, 24471328.47, 22643016.44, 23547674.04, 23201618.56, 22145006.19, 22938888.16, 23685577.78, 24429186.14, 23849723.29, 22590892.51, 22619826.38, 21971226.28, 20909448.15, 20626364.42, 20081234.37, 20581463.64, 20182183.4, 19533767.63, 19546459.31, 19766065.9, 19744521.85, 20669365.01, 20907054.1, 20372461.69, 20885977.89, 21565643.17, 21174813.43, 21018651.45, 21941724.58, 21885910.13, 22284312.87, 22884403.66, 22997075.13, 22483598.91, 23060519.23, 23372145.96, 23567079.99, 23692693.72, 23513420.98, 23767942.36, 23395087.29, 23551928.12, 24013991.04, 23726024.47, 23998815.74, 24351996.07, 24407866.28, 23658223.98, 24369655.96, 24084486.79, 25011548.82, 25371458.29, 25208124.72, 25622053.99, 25973793.96, 25993231.06, 25990072.46, 26068626.59, 26093178.34, 26103056.78, 26171030.15];
+        var mpLen = mpMqData.length;
+        var mpStartDot = [5].concat(Array(mpLen - 1).fill(0));
+        var mpNiftyDataset = mpNiftyData.some(function(v) { return v !== null; }) ? [{
+            label: 'Nifty 50 (NIFTYBEES)',
+            data: mpNiftyData,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245,158,11,0.05)',
+            borderWidth: 1.5, fill: false, pointRadius: mpStartDot, tension: 0, borderDash: [4,3],
+            spanGaps: true,
+        }] : [];
+
+        var mpDs = [{
+            label: 'MQ Portfolio',
+            data: mpMqData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'transparent',
+            borderWidth: 2, fill: false, pointRadius: mpStartDot, tension: 0,
+        }].concat(mpNiftyDataset).concat([{
+            label: 'Initial Capital (\u20B91 Cr)',
+            data: Array(174).fill(10000000),
+            borderColor: 'rgba(148,163,184,0.4)',
+            borderWidth: 1, borderDash: [5,5], pointRadius: 0, fill: false,
+        }]);
+
+        new Chart(document.getElementById('mpEquityChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ["2023-01-02", "2023-01-03", "2023-01-04", "2023-01-05", "2023-01-06", "2023-01-09", "2023-01-10", "2023-01-11", "2023-01-12", "2023-01-13", "2023-01-16", "2023-01-17", "2023-01-18", "2023-01-19", "2023-01-20", "2023-01-23", "2023-01-24", "2023-01-25", "2023-01-27", "2023-01-30", "2023-01-31", "2023-02-01", "2023-02-02", "2023-02-03", "2023-02-06", "2023-02-07", "2023-02-08", "2023-02-09", "2023-02-10", "2023-02-13", "2023-02-14", "2023-02-21", "2023-02-28", "2023-03-08", "2023-03-15", "2023-03-22", "2023-03-29", "2023-04-10", "2023-04-18", "2023-04-25", "2023-05-03", "2023-05-10", "2023-05-17", "2023-05-24", "2023-05-31", "2023-06-07", "2023-06-14", "2023-06-21", "2023-06-28", "2023-07-06", "2023-07-13", "2023-07-20", "2023-07-27", "2023-08-03", "2023-08-10", "2023-08-18", "2023-08-25", "2023-09-01", "2023-09-08", "2023-09-15", "2023-09-25", "2023-10-03", "2023-10-10", "2023-10-17", "2023-10-25", "2023-11-01", "2023-11-08", "2023-11-15", "2023-11-22", "2023-11-30", "2023-12-07", "2023-12-14", "2023-12-21", "2023-12-29", "2024-01-05", "2024-01-12", "2024-01-19", "2024-01-29", "2024-02-05", "2024-02-12", "2024-02-19", "2024-02-26", "2024-03-02", "2024-03-11", "2024-03-18", "2024-03-26", "2024-04-03", "2024-04-10", "2024-04-19", "2024-04-26", "2024-05-06", "2024-05-13", "2024-05-18", "2024-05-27", "2024-06-03", "2024-06-10", "2024-06-18", "2024-06-25", "2024-07-02", "2024-07-09", "2024-07-16", "2024-07-24", "2024-07-31", "2024-08-07", "2024-08-14", "2024-08-22", "2024-08-29", "2024-09-05", "2024-09-12", "2024-09-19", "2024-09-26", "2024-10-04", "2024-10-11", "2024-10-18", "2024-10-25", "2024-11-01", "2024-11-08", "2024-11-18", "2024-11-26", "2024-12-03", "2024-12-10", "2024-12-17", "2024-12-24", "2025-01-01", "2025-01-08", "2025-01-15", "2025-01-22", "2025-01-29", "2025-02-04", "2025-02-11", "2025-02-18", "2025-02-25", "2025-03-05", "2025-03-12", "2025-03-20", "2025-03-27", "2025-04-04", "2025-04-15", "2025-04-23", "2025-04-30", "2025-05-08", "2025-05-15", "2025-05-22", "2025-05-29", "2025-06-05", "2025-06-12", "2025-06-19", "2025-06-26", "2025-07-03", "2025-07-10", "2025-07-17", "2025-07-24", "2025-07-31", "2025-08-07", "2025-08-14", "2025-08-22", "2025-09-01", "2025-09-08", "2025-09-15", "2025-09-22", "2025-09-29", "2025-10-07", "2025-10-14", "2025-10-21", "2025-10-29", "2025-11-06", "2025-11-13", "2025-11-20", "2025-11-27", "2025-12-04", "2025-12-11", "2025-12-18", "2025-12-26", "2025-12-31"],
+                datasets: mpDs
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' } } },
+                    tooltip: { mode: 'index', intersect: false,
+                        callbacks: { label: function(ctx) { return ctx.dataset.label + ': \u20B9' + (ctx.parsed.y/1e7).toFixed(2) + ' Cr'; } }
+                    },
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                    y: { min: 10000000, ticks: { color: '#94a3b8', font: { size: 10 }, callback: function(v) { return '\u20B9' + (v/1e7).toFixed(1) + 'Cr'; } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                },
+            },
+        });
+
+        var mpSecColors = ['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#f97316','#06b6d4','#84cc16','#eab308','#fb7185','#a78bfa','#fb923c','#22d3ee'];
+        new Chart(document.getElementById('mpSectorChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ["Metals & Mining", "Financial Services", "Healthcare", "Consumer Goods", "Agri Chemicals", "Services", "Information Technology", "Cement"],
+                datasets: [{ data: [18.0, 24.5, 20.8, 14.6, 6.1, 5.2, 4.7, 6.0], backgroundColor: mpSecColors.slice(0, 8), borderColor: '#1e293b', borderWidth: 2, hoverOffset: 8 }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '55%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, family: 'Inter' }, padding: 8, boxWidth: 10 } },
+                    tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + ctx.parsed.toFixed(1) + '%'; } } }
+                },
+            },
+        });
+    } catch(e) { console.warn('MP charts error:', e.message); }
+
+    } catch(e) { console.warn('Chart.js not loaded (expected on file:// protocol):', e.message); }
+</script>
+</body>
+</html>

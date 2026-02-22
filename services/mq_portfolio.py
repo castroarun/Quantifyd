@@ -34,6 +34,7 @@ class ExitReason(str, Enum):
     ATH_DRAWDOWN = 'ath_drawdown_rebalance'
     HARD_STOP = 'hard_stop_loss'
     REBALANCE_REPLACE = 'rebalance_replaced'
+    CALLED_AWAY = 'called_away'
     MANUAL = 'manual'
 
 
@@ -88,12 +89,41 @@ class MQBacktestConfig:
     breakout_volume_multiplier: float = 1.5
     topup_pct_of_initial: float = 0.20  # 20% of original entry
     topup_cooldown_days: int = 5
+    topup_stop_loss_pct: float = 0.0  # 0 = no SL, 0.05 = 5%, 0.08 = 8% below topup entry
 
     # Exit rules
     rebalance_ath_drawdown: float = 0.20  # >20% from ATH → exit at rebalance
     quarterly_decline_threshold: float = 0.10  # >10% YoY decline
     quarterly_decline_count: int = 3  # 3 consecutive quarters → exit
     hard_stop_loss: float = 0.30  # 30% loss from entry
+    trailing_stop_loss: bool = False  # If True, hard stop uses rolling ATH instead of entry price
+    daily_ath_drawdown_exit: bool = False  # If True, ATH drawdown checked daily (not just at rebalance)
+    immediate_replacement: bool = False  # If True, immediately screen & enter replacement when daily ATH exit fires
+    idle_cash_to_nifty_etf: bool = False  # If True, deploy idle equity_cash into NIFTYBEES when Nifty < 200 SMA
+    idle_cash_to_debt: bool = False  # If True, sweep idle equity_cash into debt fund (6.5% p.a.)
+    nifty_etf_deploy_pct: float = 1.0  # Fraction of idle cash to deploy per trigger (1.0 = all at once, 0.25 = 25% tranches)
+    nifty_etf_deploy_interval: str = 'daily'  # 'daily', 'weekly', 'drop_1pct', 'drop_2pct', 'drop_5pct'
+    nifty_etf_above_sma: bool = False  # If True, INVERT logic: buy NiftyBEES when ABOVE 200 SMA, debt when below
+    nifty_sma_confirm_days: int = 1  # Consecutive days above/below 200 SMA before switching (1=immediate, 2=2-day confirm)
+
+    # Covered call overlay
+    cc_enabled: bool = False
+    cc_signal_type: str = 'ema_cross'   # ema_cross, ema_below, rsi_ob, stoch_ob, bb_upper, kc_upper, ichimoku_bear, supertrend_bear, macd_bear, adx_low, always
+    cc_signal_fast: int = 10            # Fast period / main period
+    cc_signal_slow: int = 20            # Slow period (EMA, MACD, Ichimoku)
+    cc_signal_threshold: float = 70.0   # Threshold (RSI/Stoch OB, BB/KC mult, ADX, ST mult)
+    cc_strike_otm_pct: float = 0.05     # Strike % above current price (OTM)
+    cc_expiry_days: int = 30            # Days to expiry
+    cc_iv_lookback: int = 20            # HV lookback for premium estimate
+    cc_risk_free_rate: float = 0.07     # Risk-free rate (India ~7%)
+
+    # CC position management
+    cc_mgmt: str = 'none'              # none, roll_up, roll_out, stop_loss, roll_defend
+    cc_roll_up_trigger: float = 0.02   # Roll up when stock within 2% of strike
+    cc_roll_up_distance: float = 0.05  # New strike = current price + 5%
+    cc_roll_out_days: int = 5          # Roll out when <= 5 days to expiry and near ITM
+    cc_stop_loss_mult: float = 2.0     # Buy back CC if value reaches 2x premium received
+    cc_defend_drop_pct: float = 0.05   # In roll_defend: if stock drops 5%, sell new lower CC
 
     # Rebalance schedule
     rebalance_months: List[int] = field(default_factory=lambda: [1, 7])
@@ -110,6 +140,72 @@ class MQBacktestConfig:
     weight_debt: float = 0.25
     weight_opm: float = 0.25
     weight_opm_growth: float = 0.20
+
+    # Technical Indicators
+    use_technical_filter: bool = False  # Master switch for technical filters
+
+    # EMA settings
+    use_ema_entry: bool = False
+    ema_fast: int = 9
+    ema_slow: int = 21
+    ema_entry_type: str = 'crossover'  # 'crossover', 'price_above', 'both'
+    use_ema_exit: bool = False
+    ema_exit_type: str = 'crossover'  # 'crossover', 'price_below'
+
+    # RSI settings
+    use_rsi_filter: bool = False
+    rsi_period: int = 14
+    rsi_min_entry: float = 40  # RSI > X for entry
+    rsi_max_entry: float = 70  # RSI < X for entry (avoid overbought)
+    use_rsi_exit: bool = False
+    rsi_exit_overbought: float = 80  # Exit when RSI > X
+
+    # Stochastics settings
+    use_stoch_filter: bool = False
+    stoch_k: int = 14
+    stoch_d: int = 3
+    stoch_overbought: float = 80
+    stoch_oversold: float = 20
+
+    # Ichimoku settings
+    use_ichimoku: bool = False
+    ichimoku_tenkan: int = 9
+    ichimoku_kijun: int = 26
+    require_above_cloud: bool = True  # Price must be above cloud for entry
+    exit_below_cloud: bool = False  # Exit if price goes below cloud
+
+    # Supertrend settings
+    use_supertrend: bool = False
+    supertrend_atr: int = 10
+    supertrend_mult: float = 3.0
+    supertrend_entry_bullish: bool = True  # Only enter when supertrend bullish
+    supertrend_exit_flip: bool = False  # Exit on supertrend flip to bearish
+
+    # MACD settings
+    use_macd: bool = False
+    macd_fast: int = 12
+    macd_slow: int = 26
+    macd_signal: int = 9
+    require_macd_positive: bool = True  # MACD line > 0 for entry
+    require_macd_above_signal: bool = True  # MACD > Signal for entry
+
+    # ADX (trend strength) settings
+    use_adx: bool = False
+    adx_period: int = 14
+    adx_min_trend: float = 25  # ADX > 25 indicates strong trend
+    require_plus_di_above: bool = True  # +DI > -DI for uptrend
+
+    # Bollinger Band settings
+    use_bollinger: bool = False
+    bb_period: int = 20
+    bb_std: float = 2.0
+    bb_entry_squeeze: bool = False  # Only enter during BB squeeze
+    bb_exit_overbought: bool = False  # Exit when touching upper band
+
+    # Weekly/Multi-timeframe settings
+    use_weekly_filter: bool = False
+    weekly_ema_period: int = 20
+    require_weekly_above_ema: bool = True  # Weekly close > weekly EMA
 
     @property
     def equity_capital(self) -> float:
@@ -146,6 +242,9 @@ class Position:
     total_invested: float = 0.0  # initial + all topups
     total_shares: int = 0
     last_topup_date: Optional[datetime] = None
+
+    # Topup lots with individual SL tracking: [(topup_price, shares, sl_price, date)]
+    topup_lots: List[Tuple] = field(default_factory=list)
 
     # Fundamental monitoring
     quarterly_decline_streak: int = 0  # Consecutive quarters with >10% YoY decline
@@ -196,13 +295,34 @@ class Position:
         if price > self.rolling_ath:
             self.rolling_ath = price
 
-    def add_topup(self, shares: int, price: float, amount: float, date: datetime):
-        """Record a topup purchase."""
+    def add_topup(self, shares: int, price: float, amount: float, date: datetime,
+                  sl_pct: float = 0.0):
+        """Record a topup purchase with optional SL tracking."""
         self.total_shares += shares
         self.total_invested += amount
         self.topup_count += 1
         self.last_topup_date = date
         self.current_price = price
+        if sl_pct > 0:
+            sl_price = price * (1 - sl_pct)
+            self.topup_lots.append((price, shares, sl_price, date))
+
+    def check_topup_sl(self, current_price: float) -> List[Tuple]:
+        """Check if any topup lots hit their SL. Returns list of (shares, sl_price, date) to exit."""
+        hit = []
+        remaining = []
+        for topup_price, shares, sl_price, date in self.topup_lots:
+            if current_price <= sl_price:
+                hit.append((shares, sl_price, date))
+            else:
+                remaining.append((topup_price, shares, sl_price, date))
+        self.topup_lots = remaining
+        return hit
+
+    def reverse_topup(self, shares: int, sell_price: float, invested_per_share: float):
+        """Remove topup shares from position (SL hit on topup lot)."""
+        self.total_shares -= shares
+        self.total_invested -= invested_per_share * shares
 
 
 @dataclass
@@ -335,8 +455,17 @@ class Portfolio:
         self.daily_equity: Dict[str, float] = {}  # date_str -> total portfolio value
         self.daily_debt_fund: Dict[str, float] = {}  # date_str -> debt fund balance
 
+        # NIFTYBEES ETF position (for idle cash deployment)
+        self.nifty_etf_units: float = 0.0  # Number of NIFTYBEES units held
+        self.nifty_etf_value: float = 0.0  # Current market value of NIFTYBEES holding
+        self.idle_cash_in_debt: float = 0.0  # Idle equity cash parked in debt (separate from original debt reserve)
+
         # Debt fund last accrual date
         self._last_accrual_date: Optional[datetime] = None
+
+        # NIFTYBEES tranche deployment tracking
+        self._last_nifty_deploy_date: Optional[datetime] = None
+        self._last_nifty_deploy_price: Optional[float] = None
 
     # -------------------------------------------------------------------------
     # Properties
@@ -349,8 +478,8 @@ class Portfolio:
 
     @property
     def total_value(self) -> float:
-        """Total portfolio value (equity + cash + debt fund)."""
-        return self.equity_value + self.equity_cash + self.debt_fund_balance
+        """Total portfolio value (equity + cash + debt fund + NIFTYBEES + idle debt)."""
+        return self.equity_value + self.equity_cash + self.debt_fund_balance + self.nifty_etf_value + self.idle_cash_in_debt
 
     @property
     def position_count(self) -> int:
@@ -403,7 +532,115 @@ class Portfolio:
         # Daily rate from annual
         daily_rate = (1 + self.config.debt_fund_annual_return) ** (1 / 365) - 1
         self.debt_fund_balance *= (1 + daily_rate) ** days
+        # Also accrue idle cash parked in debt
+        if self.idle_cash_in_debt > 0:
+            self.idle_cash_in_debt *= (1 + daily_rate) ** days
         self._last_accrual_date = current_date
+
+    def deploy_idle_cash(self, nifty_price: float, nifty_below_200sma: bool,
+                         current_date: datetime = None):
+        """Deploy idle equity_cash into NIFTYBEES or debt fund.
+        Called daily by engine when idle_cash_to_nifty_etf is enabled.
+        Supports tranche deployment via config.nifty_etf_deploy_pct and nifty_etf_deploy_interval."""
+        if self.equity_cash <= 0:
+            return
+
+        if nifty_below_200sma:
+            deploy_pct = self.config.nifty_etf_deploy_pct
+            interval = self.config.nifty_etf_deploy_interval
+
+            # Check if this trigger should fire based on interval
+            should_deploy = True
+            if deploy_pct < 1.0 and interval != 'daily':
+                if interval == 'weekly':
+                    if self._last_nifty_deploy_date and current_date:
+                        days_since = (current_date - self._last_nifty_deploy_date).days
+                        should_deploy = days_since >= 5  # ~1 trading week
+                elif interval.startswith('drop_'):
+                    drop_pct = float(interval.replace('drop_', '').replace('pct', '')) / 100.0
+                    if self._last_nifty_deploy_price is not None:
+                        price_change = (self._last_nifty_deploy_price - nifty_price) / self._last_nifty_deploy_price
+                        should_deploy = price_change >= drop_pct
+                    # First deployment always goes through
+
+            if not should_deploy:
+                return
+
+            # Calculate amount to deploy
+            total_available = self.equity_cash + self.idle_cash_in_debt
+            to_deploy = total_available * deploy_pct
+
+            if to_deploy <= 0:
+                return
+
+            # Subtract from sources: idle_debt first, then equity_cash
+            from_debt = min(self.idle_cash_in_debt, to_deploy)
+            from_cash = to_deploy - from_debt
+            self.idle_cash_in_debt -= from_debt
+            self.equity_cash -= from_cash
+
+            # Buy NIFTYBEES
+            units = to_deploy / nifty_price
+            self.nifty_etf_units += units
+            self.nifty_etf_value = self.nifty_etf_units * nifty_price
+
+            # Track for tranche intervals
+            self._last_nifty_deploy_date = current_date
+            self._last_nifty_deploy_price = nifty_price
+        else:
+            # Nifty above 200 SMA → park idle cash in debt fund
+            self.idle_cash_in_debt += self.equity_cash
+            self.equity_cash = 0.0
+            # Reset tranche tracking when back above 200 SMA
+            self._last_nifty_deploy_date = None
+            self._last_nifty_deploy_price = None
+
+    def update_nifty_etf_price(self, nifty_price: float):
+        """Update NIFTYBEES value with current price."""
+        if self.nifty_etf_units > 0:
+            self.nifty_etf_value = self.nifty_etf_units * nifty_price
+
+    def liquidate_nifty_etf(self, nifty_price: float) -> float:
+        """Sell all NIFTYBEES units, return proceeds to equity_cash."""
+        if self.nifty_etf_units <= 0:
+            return 0.0
+        proceeds = self.nifty_etf_units * nifty_price
+        self.nifty_etf_units = 0.0
+        self.nifty_etf_value = 0.0
+        self.equity_cash += proceeds
+        return proceeds
+
+    def withdraw_idle_debt(self) -> float:
+        """Move idle debt fund cash back to equity_cash for stock purchase."""
+        amount = self.idle_cash_in_debt
+        self.idle_cash_in_debt = 0.0
+        self.equity_cash += amount
+        return amount
+
+    def recover_idle_cash_for_entry(self, capital_needed: float, nifty_price: float) -> float:
+        """Recover capital from idle deployments when we need to enter a new stock.
+        Priority: idle_debt first, then sell NIFTYBEES.
+        Returns amount recovered."""
+        recovered = 0.0
+
+        # First: pull from idle debt fund
+        if self.idle_cash_in_debt > 0:
+            take = min(self.idle_cash_in_debt, capital_needed - recovered)
+            self.idle_cash_in_debt -= take
+            self.equity_cash += take
+            recovered += take
+
+        # Second: sell NIFTYBEES if still need more
+        if recovered < capital_needed and self.nifty_etf_units > 0:
+            still_need = capital_needed - recovered
+            units_to_sell = min(self.nifty_etf_units, still_need / nifty_price)
+            proceeds = units_to_sell * nifty_price
+            self.nifty_etf_units -= units_to_sell
+            self.nifty_etf_value = self.nifty_etf_units * nifty_price
+            self.equity_cash += proceeds
+            recovered += proceeds
+
+        return recovered
 
     # -------------------------------------------------------------------------
     # Sector Limit Checks
@@ -482,6 +719,25 @@ class Portfolio:
             return None
 
         capital = capital or self.config.position_capital
+
+        # Recover idle cash from NIFTYBEES/debt if equity_cash is insufficient
+        if self.equity_cash < capital and (self.idle_cash_in_debt > 0 or self.nifty_etf_units > 0):
+            shortfall = capital - self.equity_cash
+            # Pull from idle debt first, then sell NIFTYBEES
+            if self.idle_cash_in_debt > 0:
+                take = min(self.idle_cash_in_debt, shortfall)
+                self.idle_cash_in_debt -= take
+                self.equity_cash += take
+                shortfall -= take
+            if shortfall > 0 and self.nifty_etf_units > 0:
+                # Sell NIFTYBEES at current price (nifty_etf_value / nifty_etf_units)
+                etf_price = self.nifty_etf_value / self.nifty_etf_units if self.nifty_etf_units > 0 else 0
+                if etf_price > 0:
+                    units_to_sell = min(self.nifty_etf_units, shortfall / etf_price)
+                    proceeds = units_to_sell * etf_price
+                    self.nifty_etf_units -= units_to_sell
+                    self.nifty_etf_value = self.nifty_etf_units * etf_price
+                    self.equity_cash += proceeds
 
         # Apply transaction costs
         buy_cost = self.cost_model.buy_cost(capital)
@@ -671,7 +927,8 @@ class Portfolio:
         self.debt_fund_balance -= amount
         actual_investment = amount - buy_cost
 
-        position.add_topup(shares, price, actual_investment, date)
+        position.add_topup(shares, price, actual_investment, date,
+                           sl_pct=self.config.topup_stop_loss_pct)
 
         record = TopupRecord(
             symbol=symbol,
@@ -698,11 +955,54 @@ class Portfolio:
     # -------------------------------------------------------------------------
 
     def check_hard_stop(self, symbol: str) -> bool:
-        """Check if position has breached hard stop loss (30% from avg entry)."""
+        """Check if position has breached hard stop loss.
+
+        In trailing mode, uses drawdown from rolling ATH (highest since entry).
+        In fixed mode (default), uses loss from average entry price.
+        """
         position = self.positions.get(symbol)
         if position is None:
             return False
+        if self.config.trailing_stop_loss:
+            return position.drawdown_from_ath >= self.config.hard_stop_loss
         return position.loss_from_entry >= self.config.hard_stop_loss
+
+    def check_topup_stop_losses(self, current_date: datetime) -> List[Dict]:
+        """Check all positions for topup SL hits. Returns list of reversal records."""
+        if self.config.topup_stop_loss_pct <= 0:
+            return []
+
+        reversals = []
+        for symbol in list(self.positions.keys()):
+            position = self.positions[symbol]
+            hit_lots = position.check_topup_sl(position.current_price)
+            for shares, sl_price, topup_date in hit_lots:
+                avg_cost = position.total_invested / position.total_shares if position.total_shares > 0 else sl_price
+                position.reverse_topup(shares, sl_price, avg_cost)
+
+                sell_proceeds = shares * sl_price
+                sell_cost = self.cost_model.sell_cost(sell_proceeds)
+                net_proceeds = sell_proceeds - sell_cost
+                self.equity_cash += net_proceeds
+
+                reversals.append({
+                    'symbol': symbol,
+                    'date': current_date.strftime('%Y-%m-%d'),
+                    'topup_date': topup_date.strftime('%Y-%m-%d') if hasattr(topup_date, 'strftime') else str(topup_date),
+                    'shares_reversed': shares,
+                    'sl_price': round(sl_price, 2),
+                    'proceeds': round(net_proceeds, 2),
+                })
+                logger.debug(
+                    f"TOPUP SL HIT: {symbol} reversed {shares} shares @ {sl_price:.2f} "
+                    f"(topup from {topup_date})"
+                )
+
+            # Clean up position if all shares removed
+            if position.total_shares <= 0:
+                del self.positions[symbol]
+
+        return reversals
 
     def check_ath_drawdown_exit(self, symbol: str) -> bool:
         """Check if position has >20% drawdown from rolling ATH (rebalance exit)."""

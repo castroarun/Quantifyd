@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantifyd &mdash; Logo Exploration v2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #e2e8f0;
+            padding: 40px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #64748b;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 12px;
+            color: #334155;
+            margin-bottom: 60px;
+            letter-spacing: 1px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .grid-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .card {
+            border-radius: 20px;
+            padding: 48px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card.compact { min-height: 200px; padding: 32px 28px; }
+        .tagline {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            opacity: 0.5;
+            margin-top: 12px;
+        }
+        .label {
+            position: absolute;
+            top: 16px;
+            left: 20px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.3;
+            font-weight: 600;
+        }
+        .variant {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 10px;
+            background: rgba(255,255,255,0.08);
+            padding: 3px 10px;
+            border-radius: 20px;
+            opacity: 0.4;
+        }
+        .section-label {
+            text-align: center;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #475569;
+            margin: 60px 0 24px;
+            font-weight: 600;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 36px;
+            background: #10b981;
+            margin-left: 4px;
+            vertical-align: middle;
+            animation: blink 1.8s step-end infinite;
+        }
+        .cursor-sm {
+            height: 28px;
+        }
+
+        /* Common card bg */
+        .bg-slate { background: #0f172a; border: 1px solid rgba(16,185,129,0.12); }
+        .bg-black { background: #0c0c0c; border: 1px solid rgba(16,185,129,0.15); }
+        .bg-void  { background: #050505; border: 1px solid rgba(255,255,255,0.04); }
+        .bg-grad  { background: linear-gradient(180deg, #111827 0%, #0f172a 100%); border: 1px solid rgba(16,185,129,0.1); }
+
+        /* Nav styles */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .nav-card {
+            background: rgba(15,23,42,0.95);
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .nav-card .nav-links {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+
+<h1>Quantifyd &mdash; Logo Exploration v2</h1>
+<div class="subtitle">Mixing elements from #02 Terminal, #08 Split Weight, #10 Stacked</div>
+
+<!-- ============================================ -->
+<!-- ORIGINALS (for reference)                    -->
+<!-- ============================================ -->
+<div class="section-label">Originals (Reference)</div>
+<div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+
+    <!-- #02 Terminal -->
+    <div class="card bg-black">
+        <span class="label">#02 Terminal</span>
+        <div style="font-family: 'JetBrains Mono'; font-size: 44px; font-weight: 700; letter-spacing: -1px;">
+            <span style="color: #10b981; opacity: 0.6;">{</span><span style="color: #10b981;">Q</span><span style="color: #e2e8f0;">uantify</span><span style="color: #f59e0b;">d</span><span style="color: #10b981; opacity: 0.6;">}</span><span class="cursor"></span>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- #08 Split Weight -->
+    <div class="card bg-grad">
+        <span class="label">#08 Split Weight</span>
+        <div style="font-family: 'Inter'; font-size: 52px; letter-spacing: -2px;">
+            <span style="font-weight: 300; color: #94a3b8;">Quantify</span><span style="font-weight: 900; color: #10b981;">d</span>
+        </div>
+        <div class="tagline">From Backtest To Bank</div>
+    </div>
+
+    <!-- #10 Stacked -->
+    <div class="card bg-void">
+        <span class="label">#10 Stacked</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Space Grotesk'; font-size: 14px; text-transform: uppercase; letter-spacing: 8px; color: #10b981; font-weight: 600;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 56px; font-weight: 900; letter-spacing: -3px; color: #fff; line-height: 1; margin-top: 4px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- ROUND 1: Terminal + Split Weight combos      -->
+<!-- ============================================ -->
+<div class="section-label" style="margin-top: 80px;">Terminal &times; Split Weight</div>
+<div class="grid">
+
+    <!-- A: Mono font + split weight -->
+    <div class="card bg-black">
+        <span class="label">A</span>
+        <span class="variant">Mono + Light/Bold</span>
+        <div style="font-family: 'JetBrains Mono'; font-size: 46px; letter-spacing: -1px;">
+            <span style="font-weight: 400; color: #64748b;">Quantify</span><span style="font-weight: 700; color: #10b981;">d</span><span class="cursor"></span>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- B: Mono font + split weight + braces on d only -->
+    <div class="card bg-black">
+        <span class="label">B</span>
+        <span class="variant">Mono + Brace-d</span>
+        <div style="font-family: 'JetBrains Mono'; font-size: 46px; letter-spacing: -1px;">
+            <span style="font-weight: 400; color: #94a3b8;">Quantify</span><span style="color: #10b981; opacity: 0.5; font-weight: 400;">{</span><span style="font-weight: 700; color: #10b981;">d</span><span style="color: #10b981; opacity: 0.5; font-weight: 400;">}</span>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- C: Split weight Inter + cursor -->
+    <div class="card bg-grad">
+        <span class="label">C</span>
+        <span class="variant">Inter + Cursor</span>
+        <div style="font-family: 'Inter'; font-size: 52px; letter-spacing: -2px;">
+            <span style="font-weight: 300; color: #94a3b8;">Quantify</span><span style="font-weight: 900; color: #10b981;">d</span><span class="cursor"></span>
+        </div>
+        <div class="tagline">From Backtest To Bank</div>
+    </div>
+
+    <!-- D: Mono + green Q, light mid, bold amber d -->
+    <div class="card bg-black">
+        <span class="label">D</span>
+        <span class="variant">Mono + Q&d Color</span>
+        <div style="font-family: 'JetBrains Mono'; font-size: 44px; letter-spacing: -1px;">
+            <span style="font-weight: 700; color: #10b981;">Q</span><span style="font-weight: 400; color: #64748b;">uantify</span><span style="font-weight: 700; color: #f59e0b;">d</span><span class="cursor" style="background: #f59e0b;"></span>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- E: Braces + split weight + amber cursor -->
+    <div class="card bg-black">
+        <span class="label">E</span>
+        <span class="variant">Full Terminal Split</span>
+        <div style="font-family: 'JetBrains Mono'; font-size: 42px; letter-spacing: -1px;">
+            <span style="color: #334155; font-weight: 400;">$</span>
+            <span style="font-weight: 400; color: #94a3b8;"> Quantify</span><span style="font-weight: 700; color: #10b981;">d</span><span class="cursor"></span>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px; color: #10b981; opacity: 0.3;">// from backtest to bank</div>
+    </div>
+
+    <!-- F: Pipe separator + split weight mono -->
+    <div class="card bg-black">
+        <span class="label">F</span>
+        <span class="variant">Pipe Split</span>
+        <div style="font-family: 'JetBrains Mono'; font-size: 44px; letter-spacing: -1px;">
+            <span style="font-weight: 400; color: #64748b;">Quantify</span><span style="color: #334155; font-weight: 300;">|</span><span style="font-weight: 700; color: #10b981;">d</span>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px;">From Backtest To Bank</div>
+    </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- ROUND 2: Terminal + Stacked combos           -->
+<!-- ============================================ -->
+<div class="section-label" style="margin-top: 80px;">Terminal &times; Stacked</div>
+<div class="grid">
+
+    <!-- G: Mono stacked -->
+    <div class="card bg-black">
+        <span class="label">G</span>
+        <span class="variant">Mono Stacked</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 13px; text-transform: uppercase; letter-spacing: 6px; color: #10b981; font-weight: 600;">// quant</div>
+            <div style="font-family: 'JetBrains Mono'; font-size: 52px; font-weight: 700; letter-spacing: -2px; color: #fff; line-height: 1; margin-top: 4px;">ify<span style="color: #f59e0b;">d</span><span class="cursor"></span></div>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px; margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- H: Braces stacked -->
+    <div class="card bg-black">
+        <span class="label">H</span>
+        <span class="variant">Brace Stack</span>
+        <div style="text-align: left; padding-left: 20px;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 20px; color: #10b981; opacity: 0.5; line-height: 1;">{</div>
+            <div style="font-family: 'JetBrains Mono'; font-size: 48px; font-weight: 700; letter-spacing: -1px; color: #fff; line-height: 1.1; padding-left: 16px;">
+                <span style="color: #10b981;">Q</span>uantify<span style="color: #f59e0b;">d</span>
+            </div>
+            <div style="font-family: 'JetBrains Mono'; font-size: 20px; color: #10b981; opacity: 0.5; line-height: 1;">}</div>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px; margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- I: Terminal comment stacked -->
+    <div class="card bg-void">
+        <span class="label">I</span>
+        <span class="variant">Comment Stack</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 12px; letter-spacing: 3px; color: #334155; font-weight: 400;">/** systematic investing */</div>
+            <div style="font-family: 'JetBrains Mono'; font-size: 50px; font-weight: 700; letter-spacing: -1px; color: #fff; line-height: 1; margin-top: 8px;">
+                <span style="color: #10b981;">Q</span>uantify<span style="color: #f59e0b;">d</span>
+            </div>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px; margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- J: Stacked with mono top, big serif-like bottom -->
+    <div class="card bg-void">
+        <span class="label">J</span>
+        <span class="variant">Mono + Grotesk Stack</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 13px; text-transform: uppercase; letter-spacing: 6px; color: #10b981; font-weight: 500; opacity: 0.7;">&gt;_ quant</div>
+            <div style="font-family: 'Space Grotesk'; font-size: 60px; font-weight: 700; letter-spacing: -3px; color: #fff; line-height: 1; margin-top: 2px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- ROUND 3: Split Weight + Stacked combos       -->
+<!-- ============================================ -->
+<div class="section-label" style="margin-top: 80px;">Split Weight &times; Stacked</div>
+<div class="grid">
+
+    <!-- K: Light QUANT top, bold ifyd bottom -->
+    <div class="card bg-grad">
+        <span class="label">K</span>
+        <span class="variant">Weight Stack</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 16px; text-transform: uppercase; letter-spacing: 10px; color: #94a3b8; font-weight: 300;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 60px; font-weight: 900; letter-spacing: -3px; color: #fff; line-height: 1; margin-top: 2px;">ify<span style="color: #10b981;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- L: Stacked with green line separator -->
+    <div class="card bg-slate">
+        <span class="label">L</span>
+        <span class="variant">Line Stack</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 14px; text-transform: uppercase; letter-spacing: 8px; color: #94a3b8; font-weight: 300;">Quant</div>
+            <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #10b981, #f59e0b); border-radius: 2px; margin: 8px auto;"></div>
+            <div style="font-family: 'Inter'; font-size: 56px; font-weight: 900; letter-spacing: -3px; color: #fff; line-height: 1;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- M: Full name stacked weight split -->
+    <div class="card bg-grad">
+        <span class="label">M</span>
+        <span class="variant">Full Stack Split</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 42px; font-weight: 200; letter-spacing: 2px; color: #64748b; line-height: 1;">QUANTIFY</div>
+            <div style="font-family: 'Inter'; font-size: 72px; font-weight: 900; letter-spacing: -4px; color: #10b981; line-height: 0.85;">d</div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- N: Stacked horizontal split -->
+    <div class="card bg-slate">
+        <span class="label">N</span>
+        <span class="variant">Side Split</span>
+        <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span style="font-family: 'Inter'; font-size: 48px; font-weight: 200; color: #64748b; letter-spacing: -1px;">Quantify</span>
+            <span style="font-family: 'Space Grotesk'; font-size: 64px; font-weight: 700; color: #10b981; line-height: 1; letter-spacing: -2px;">d</span>
+        </div>
+        <div class="tagline" style="margin-top: 12px;">From Backtest To Bank</div>
+    </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- ROUND 4: Triple Mix (all 3 combined)         -->
+<!-- ============================================ -->
+<div class="section-label" style="margin-top: 80px;">Triple Mix &mdash; Terminal &times; Split Weight &times; Stacked</div>
+<div class="grid">
+
+    <!-- O: Mono stacked + split weight -->
+    <div class="card bg-black">
+        <span class="label">O</span>
+        <span class="variant">The Full Mix</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 12px; letter-spacing: 4px; color: #10b981; font-weight: 400; opacity: 0.6;">&gt; quantify.run()</div>
+            <div style="font-family: 'Inter'; font-size: 58px; letter-spacing: -3px; line-height: 1; margin-top: 8px;">
+                <span style="font-weight: 200; color: #64748b;">Quantify</span><span style="font-weight: 900; color: #10b981;">d</span>
+            </div>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px; margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- P: Stacked mono top + Inter bold bottom + cursor -->
+    <div class="card bg-black">
+        <span class="label">P</span>
+        <span class="variant">Stack + Cursor</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 14px; text-transform: uppercase; letter-spacing: 6px; color: #10b981; font-weight: 500;">&lt;quant/&gt;</div>
+            <div style="font-family: 'Inter'; font-size: 56px; font-weight: 900; letter-spacing: -3px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #f59e0b;">d</span><span class="cursor"></span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- Q: Terminal prompt + light/bold + stacked tagline -->
+    <div class="card bg-void">
+        <span class="label">Q</span>
+        <span class="variant">Prompt Style</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 46px; letter-spacing: -1px;">
+                <span style="font-weight: 400; color: #334155;">$</span>
+                <span style="font-weight: 400; color: #94a3b8;"> Quantify</span><span style="font-weight: 700; color: #10b981;">d</span><span class="cursor"></span>
+            </div>
+            <div style="font-family: 'JetBrains Mono'; font-size: 11px; letter-spacing: 3px; color: #1e293b; margin-top: 12px; text-transform: uppercase;">from backtest to bank</div>
+        </div>
+    </div>
+
+    <!-- R: Clean stack, mono accent, weight split -->
+    <div class="card bg-slate">
+        <span class="label">R</span>
+        <span class="variant">Editorial Code</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 11px; letter-spacing: 3px; color: #475569; font-weight: 400;">001 &mdash; SYSTEMATIC ALPHA</div>
+            <div style="font-family: 'Inter'; font-size: 54px; letter-spacing: -2px; line-height: 1; margin-top: 10px;">
+                <span style="font-weight: 300; color: #cbd5e1;">Quantify</span><span style="font-weight: 900; color: #10b981;">d</span>
+            </div>
+            <div style="width: 40px; height: 2px; background: #10b981; margin: 14px auto 0; border-radius: 1px;"></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- S: Boxed stacked mono -->
+    <div class="card bg-void" style="min-height: 300px;">
+        <span class="label">S</span>
+        <span class="variant">Boxed Terminal</span>
+        <div style="border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 28px 40px; text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 11px; letter-spacing: 4px; color: #10b981; opacity: 0.5; margin-bottom: 8px;">{&nbsp;QUANT&nbsp;}</div>
+            <div style="font-family: 'Inter'; font-size: 50px; letter-spacing: -2px; line-height: 1;">
+                <span style="font-weight: 300; color: #94a3b8;">ify</span><span style="font-weight: 900; color: #f59e0b;">d</span>
+            </div>
+        </div>
+        <div class="tagline" style="margin-top: 20px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- T: Minimal data-driven -->
+    <div class="card bg-void" style="min-height: 300px;">
+        <span class="label">T</span>
+        <span class="variant">Data Minimal</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 52px; letter-spacing: 1px; line-height: 1; display: inline-block; position: relative;">
+                <span style="font-weight: 300; color: #10b981; opacity: 0.4; margin-right: 10px;">{</span><span style="font-weight: 300; color: #94a3b8;">Quantify</span><span style="font-weight: 900; color: #10b981; position: relative;"><span style="position: relative;">d<span style="position: absolute; left: 50%; transform: translateX(-50%); top: 100%; font-family: 'JetBrains Mono'; font-size: 14px; color: #34d399; opacity: 0.35; margin-top: 10px; letter-spacing: 0;">$</span></span></span><span style="font-weight: 300; color: #10b981; opacity: 0.4; margin-left: 10px;">}</span>
+            </div>
+            <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px; margin-top: 14px;">From Backtest To Bank</div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- ROUND 5: #10 Stacked Refined                  -->
+<!-- ============================================ -->
+<div class="section-label" style="margin-top: 80px;">#10 Stacked &mdash; Refined Variants</div>
+<div class="grid">
+
+    <!-- 10a: QUANT bigger, ifyd smaller -->
+    <div class="card bg-void">
+        <span class="label">10a</span>
+        <span class="variant">Flipped Scale</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Space Grotesk'; font-size: 52px; text-transform: uppercase; letter-spacing: 8px; color: #10b981; font-weight: 700; line-height: 1;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- 10b: Same flipped scale but Inter font (from T) -->
+    <div class="card bg-void">
+        <span class="label">10b</span>
+        <span class="variant">Inter Font</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 52px; text-transform: uppercase; letter-spacing: 6px; color: #10b981; font-weight: 300; line-height: 1;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank<span class="cursor" style="height: 14px; width: 2px; margin-left: 3px;"></span></div>
+    </div>
+
+    <!-- 10c: Braces on QUANT -->
+    <div class="card bg-black">
+        <span class="label">10c</span>
+        <span class="variant">Braced Quant</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Space Grotesk'; font-size: 52px; text-transform: uppercase; letter-spacing: 6px; line-height: 1;">
+                <span style="color: #10b981; opacity: 0.4; font-weight: 400;">{</span><span style="color: #10b981; font-weight: 700;">Quant</span><span style="color: #10b981; opacity: 0.4; font-weight: 400;">}</span>
+            </div>
+            <div style="font-family: 'Inter'; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- 10d: Boxed like S -->
+    <div class="card bg-void">
+        <span class="label">10d</span>
+        <span class="variant">Boxed Stack</span>
+        <div style="border: 1px solid rgba(16,185,129,0.2); border-radius: 14px; padding: 28px 48px; text-align: center;">
+            <div style="font-family: 'Space Grotesk'; font-size: 48px; text-transform: uppercase; letter-spacing: 8px; color: #10b981; font-weight: 700; line-height: 1;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 20px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- 10e: Braces + mono QUANT, boxed -->
+    <div class="card bg-black">
+        <span class="label">10e</span>
+        <span class="variant">Mono Braced Box</span>
+        <div style="border: 1px solid rgba(16,185,129,0.15); border-radius: 14px; padding: 28px 48px; text-align: center;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 44px; text-transform: uppercase; letter-spacing: 6px; line-height: 1;">
+                <span style="color: #10b981; opacity: 0.4;">{</span><span style="color: #10b981; font-weight: 700;">Quant</span><span style="color: #10b981; opacity: 0.4;">}</span>
+            </div>
+            <div style="font-family: 'Inter'; font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="font-family: 'JetBrains Mono'; letter-spacing: 2px; margin-top: 20px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- 10f: Inter split weight, boxed, braces -->
+    <div class="card bg-void">
+        <span class="label">10f</span>
+        <span class="variant">Inter Braced Box</span>
+        <div style="border: 1px solid rgba(16,185,129,0.15); border-radius: 14px; padding: 28px 48px; text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 48px; text-transform: uppercase; letter-spacing: 4px; line-height: 1;">
+                <span style="color: #10b981; opacity: 0.35; font-weight: 200;">{</span><span style="color: #10b981; font-weight: 300;">Quant</span><span style="color: #10b981; opacity: 0.35; font-weight: 200;">}</span>
+            </div>
+            <div style="font-family: 'Inter'; font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 20px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- 10g: Flipped scale + gradient line + braces -->
+    <div class="card bg-black">
+        <span class="label">10g</span>
+        <span class="variant">Line + Braces</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Space Grotesk'; font-size: 50px; text-transform: uppercase; letter-spacing: 6px; line-height: 1;">
+                <span style="color: #10b981; opacity: 0.4; font-weight: 400;">{</span><span style="color: #10b981; font-weight: 700;">Quant</span><span style="color: #10b981; opacity: 0.4; font-weight: 400;">}</span>
+            </div>
+            <div style="width: 50px; height: 2px; background: linear-gradient(90deg, #10b981, #f59e0b); border-radius: 1px; margin: 8px auto;"></div>
+            <div style="font-family: 'Inter'; font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- 10h: Clean box, Inter light QUANT, bold ifyd, no braces -->
+    <div class="card bg-slate">
+        <span class="label">10h</span>
+        <span class="variant">Clean Box</span>
+        <div style="border: 1px solid rgba(16,185,129,0.12); border-radius: 14px; padding: 32px 52px; text-align: center; background: rgba(0,0,0,0.3);">
+            <div style="font-family: 'Inter'; font-size: 50px; text-transform: uppercase; letter-spacing: 8px; color: #10b981; font-weight: 200; line-height: 1;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 8px;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 20px;">From Backtest To Bank</div>
+    </div>
+
+    <!-- 10i: T's split-weight style in stacked layout -->
+    <div class="card bg-void">
+        <span class="label">10i</span>
+        <span class="variant">T + Stacked</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 52px; text-transform: uppercase; letter-spacing: 6px; color: #94a3b8; font-weight: 300; line-height: 1;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #94a3b8; line-height: 1; margin-top: 6px;">ify<span style="color: #10b981;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank<span class="cursor" style="height: 14px; width: 2px; margin-left: 3px;"></span></div>
+    </div>
+
+    <!-- 10j: T style stacked, ifyd in white -->
+    <div class="card bg-void">
+        <span class="label">10j</span>
+        <span class="variant">T + White ifyd</span>
+        <div style="text-align: center;">
+            <div style="font-family: 'Inter'; font-size: 52px; text-transform: uppercase; letter-spacing: 6px; color: #94a3b8; font-weight: 300; line-height: 1;">Quant</div>
+            <div style="font-family: 'Inter'; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #fff; line-height: 1; margin-top: 6px;">ify<span style="color: #10b981;">d</span></div>
+        </div>
+        <div class="tagline" style="margin-top: 16px;">From Backtest To Bank<span class="cursor" style="height: 14px; width: 2px; margin-left: 3px;"></span></div>
+    </div>
+
+</div>
+
+
+<!-- ============================================ -->
+<!-- NAV BAR PREVIEWS                              -->
+<!-- ============================================ -->
+<div class="section-label" style="margin-top: 80px;">Nav Bar Previews</div>
+<div class="nav-grid">
+
+    <!-- Nav: Qd minimal (current) -->
+    <div class="nav-card">
+        <span style="font-family: 'Inter'; font-size: 22px; font-weight: 900; letter-spacing: -2px;"><span style="color: #10b981;">Q</span><span style="color: #f59e0b;">d</span></span>
+        <div class="nav-links"><span>Architecture</span><span>MQ Core</span><span>Strategies</span></div>
+    </div>
+
+    <!-- Nav: Mono Qd -->
+    <div class="nav-card">
+        <span style="font-family: 'JetBrains Mono'; font-size: 16px; font-weight: 700;"><span style="color: #10b981;">Q</span><span style="color: #f59e0b;">d</span></span>
+        <div class="nav-links"><span>Architecture</span><span>MQ Core</span><span>Strategies</span></div>
+    </div>
+
+    <!-- Nav: Mono braces -->
+    <div class="nav-card">
+        <span style="font-family: 'JetBrains Mono'; font-size: 15px;"><span style="color: #10b981; opacity: 0.5;">{</span><span style="font-weight: 700; color: #10b981;">Q</span><span style="font-weight: 700; color: #f59e0b;">d</span><span style="color: #10b981; opacity: 0.5;">}</span></span>
+        <div class="nav-links"><span>Architecture</span><span>MQ Core</span><span>Strategies</span></div>
+    </div>
+
+    <!-- Nav: Split weight full -->
+    <div class="nav-card">
+        <span style="font-family: 'Inter'; font-size: 16px; letter-spacing: -0.5px;"><span style="font-weight: 300; color: #64748b;">Quantify</span><span style="font-weight: 900; color: #10b981;">d</span></span>
+        <div class="nav-links"><span>Architecture</span><span>MQ Core</span><span>Strategies</span></div>
+    </div>
+
+    <!-- Nav: $ prompt -->
+    <div class="nav-card">
+        <span style="font-family: 'JetBrains Mono'; font-size: 14px;"><span style="color: #334155;">$</span> <span style="font-weight: 400; color: #94a3b8;">Quantify</span><span style="font-weight: 700; color: #10b981;">d</span></span>
+        <div class="nav-links"><span>Architecture</span><span>MQ Core</span><span>Strategies</span></div>
+    </div>
+
+    <!-- Nav: Stacked mini -->
+    <div class="nav-card">
+        <div style="line-height: 1;">
+            <div style="font-family: 'JetBrains Mono'; font-size: 8px; letter-spacing: 3px; color: #10b981; opacity: 0.6;">QUANT</div>
+            <div style="font-family: 'Inter'; font-size: 18px; font-weight: 900; letter-spacing: -1px; color: #fff;">ify<span style="color: #f59e0b;">d</span></div>
+        </div>
+        <div class="nav-links"><span>Architecture</span><span>MQ Core</span><span>Strategies</span></div>
+    </div>
+</div>
+
+
+<p style="text-align: center; margin-top: 80px; font-size: 11px; color: #1e293b; letter-spacing: 2px; text-transform: uppercase;">Quantifyd &copy; 2026 Castronix</p>
+
+</body>
+</html>

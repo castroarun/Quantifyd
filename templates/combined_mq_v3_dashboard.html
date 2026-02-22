@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+{% block title %}MQ + V3 Combined System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pool-card {
+        background: linear-gradient(135deg, #1f2937 0%, #161b22 100%);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+    .pool-card.mq { border-left: 4px solid #3fb950; }
+    .pool-card.v3 { border-left: 4px solid #f85149; }
+    .pool-card.debt { border-left: 4px solid #d29922; }
+    .pool-card.combined { border-left: 4px solid #58a6ff; }
+    .pool-label { font-size: 0.8rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+    .pool-value { font-size: 1.8rem; font-weight: 700; }
+    .pool-sub { font-size: 0.85rem; color: #8b949e; }
+    .strat-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .strat-alpha { background: #f8714950; color: #f87149; }
+    .strat-t1b { background: #3fb95050; color: #3fb950; }
+    .strat-momvol { background: #58a6ff50; color: #58a6ff; }
+    .overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.85); z-index: 9999;
+        display: none; align-items: center; justify-content: center;
+    }
+    .overlay.active { display: flex; }
+    .overlay-content { text-align: center; color: #c9d1d9; }
+    .settings-panel {
+        background: #0d1117;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="bi bi-layers me-2"></i>MQ + V3 Combined System</h4>
+            <small class="text-muted">70% MQ Core + 20% V3 Overlay (5x Futures) + 10% Debt Reserve</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <small id="lastRun" class="text-muted"></small>
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleSettings()">
+                <i class="bi bi-gear me-1"></i>Settings
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="runBacktest()" id="btnRun">
+                <i class="bi bi-play-fill me-1"></i>Run Backtest
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Panel (collapsible) -->
+    <div id="settingsPanel" class="settings-panel mb-3" style="display:none;">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label small">Start Date</label>
+                <input type="date" class="form-control form-control-sm" id="cfgStart" value="2023-01-01">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">End Date</label>
+                <input type="date" class="form-control form-control-sm" id="cfgEnd" value="2025-12-31">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">V3 System</label>
+                <select class="form-select form-select-sm" id="cfgV3System">
+                    <option value="PRIMARY" selected>PRIMARY</option>
+                    <option value="SNIPER">SNIPER</option>
+                    <option value="BALANCED">BALANCED</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="HIGH_VOLUME">HIGH_VOLUME</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">V3 Trail SL %</label>
+                <select class="form-select form-select-sm" id="cfgV3Trail">
+                    <option value="15">15%</option>
+                    <option value="20" selected>20%</option>
+                    <option value="25">25%</option>
+                    <option value="30">30%</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Topup SL %</label>
+                <select class="form-select form-select-sm" id="cfgTopupSL">
+                    <option value="0" selected>No SL</option>
+                    <option value="0.05">5%</option>
+                    <option value="0.08">8%</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Max V3 Trades</label>
+                <select class="form-select form-select-sm" id="cfgMaxV3">
+                    <option value="3">3</option>
+                    <option value="5" selected>5</option>
+                    <option value="7">7</option>
+                    <option value="10">10</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capital Allocation Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="pool-card mq">
+                <div class="pool-label">MQ Core (70%)</div>
+                <div class="pool-value positive" id="mqValue">--</div>
+                <div class="pool-sub">CAGR: <span id="mqCagr">--</span> | Trades: <span id="mqTrades">--</span></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pool-card v3">
+                <div class="pool-label">V3 Overlay (20%)</div>
+                <div class="pool-value" id="v3Value" style="color:#f85149;">--</div>
+                <div class="pool-sub">Win: <span id="v3WinRate">--</span> | PF: <span id="v3PF">--</span> | Trades: <span id="v3Trades">--</span></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pool-card debt">
+                <div class="pool-label">Debt Reserve (10%)</div>
+                <div class="pool-value" id="debtValue" style="color:#d29922;">--</div>
+                <div class="pool-sub">Topups funded | <span id="mqTopups">--</span> executed</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pool-card combined">
+                <div class="pool-label">Combined Total</div>
+                <div class="pool-value" id="combinedValue" style="color:#58a6ff;">--</div>
+                <div class="pool-sub">CAGR: <span id="combinedCagr">--</span> | MaxDD: <span id="combinedDD">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Combined Equity Chart -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between">
+            <span><i class="bi bi-graph-up me-1"></i>Combined Equity Curve</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary active" onclick="setChartMode('combined')">Combined</button>
+                <button class="btn btn-outline-secondary" onclick="setChartMode('separate')">MQ vs V3</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <canvas id="equityChart" height="300"></canvas>
+        </div>
+    </div>
+
+    <!-- Combined Metrics Row -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-label">Total Return</div>
+                <div class="metric-value" id="totalReturn">--</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-label">CAGR</div>
+                <div class="metric-value" id="cagrVal">--</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-label">Sharpe</div>
+                <div class="metric-value" id="sharpeVal">--</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-label">Max Drawdown</div>
+                <div class="metric-value negative" id="maxDDVal">--</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-label">Calmar</div>
+                <div class="metric-value" id="calmarVal">--</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-label">V3 P&L</div>
+                <div class="metric-value" id="v3PnlVal">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- V3 Strategy Breakdown + Year Table -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-pie-chart me-1"></i>V3 Strategy Breakdown</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-borderless mb-0">
+                        <thead><tr><th>Strategy</th><th>Trades</th><th>Win%</th><th>Avg Ret</th><th>P&L</th></tr></thead>
+                        <tbody id="stratBreakdown"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-calendar3 me-1"></i>Year-by-Year Returns</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-borderless mb-0">
+                        <thead><tr><th>Year</th><th>MQ Return</th><th>V3 Return</th><th>Combined</th><th>V3 Trades</th></tr></thead>
+                        <tbody id="yearlyTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- V3 Trades Table -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between">
+            <span><i class="bi bi-list-ul me-1"></i>V3 Overlay Trades</span>
+            <small class="text-muted" id="v3TradeCount">0 trades</small>
+        </div>
+        <div class="card-body p-0" style="max-height:400px;overflow-y:auto;">
+            <table class="table table-sm table-borderless mb-0">
+                <thead class="sticky-top" style="background:#161b22;">
+                    <tr>
+                        <th>Symbol</th><th>Strategy</th><th>Entry</th><th>Exit</th>
+                        <th>Days</th><th>Base%</th><th>Lev%</th><th>P&L</th><th>Exit</th>
+                    </tr>
+                </thead>
+                <tbody id="v3TradesTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Progress Overlay -->
+<div class="overlay" id="progressOverlay">
+    <div class="overlay-content">
+        <div class="spinner-border text-primary mb-3" style="width:3rem;height:3rem;"></div>
+        <h5 id="progressMsg">Running combined backtest...</h5>
+        <div class="progress mt-3" style="width:300px;height:8px;">
+            <div class="progress-bar bg-primary" id="progressBar" style="width:0%"></div>
+        </div>
+        <small class="text-muted mt-2" id="progressDetail"></small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let equityChart = null;
+let chartMode = 'combined';
+let currentData = null;
+
+// Load results on page load
+document.addEventListener('DOMContentLoaded', loadResults);
+
+function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function loadResults() {
+    try {
+        const res = await fetch('/api/combined/results');
+        if (res.ok) {
+            currentData = await res.json();
+            renderDashboard(currentData);
+        }
+    } catch (e) { console.log('No cached results'); }
+}
+
+async function runBacktest() {
+    const params = {
+        start_date: document.getElementById('cfgStart').value,
+        end_date: document.getElementById('cfgEnd').value,
+        v3_system: document.getElementById('cfgV3System').value,
+        v3_trail_pct: document.getElementById('cfgV3Trail').value,
+        topup_sl_pct: document.getElementById('cfgTopupSL').value,
+        v3_max_concurrent: document.getElementById('cfgMaxV3').value,
+    };
+
+    document.getElementById('progressOverlay').classList.add('active');
+    document.getElementById('progressBar').style.width = '0%';
+
+    try {
+        const res = await fetch('/api/combined/run', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(params),
+        });
+        const {task_id} = await res.json();
+        pollStatus(task_id);
+    } catch (e) {
+        alert('Failed to start backtest: ' + e.message);
+        document.getElementById('progressOverlay').classList.remove('active');
+    }
+}
+
+function pollStatus(taskId) {
+    const poll = setInterval(async () => {
+        try {
+            const res = await fetch(`/api/combined/status/${taskId}`);
+            const status = await res.json();
+            document.getElementById('progressBar').style.width = (status.progress || 0) + '%';
+            document.getElementById('progressMsg').textContent = status.message || 'Running...';
+
+            if (status.status === 'complete') {
+                clearInterval(poll);
+                document.getElementById('progressOverlay').classList.remove('active');
+                loadResults();
+            } else if (status.status === 'error') {
+                clearInterval(poll);
+                document.getElementById('progressOverlay').classList.remove('active');
+                alert('Backtest failed: ' + (status.error || status.message));
+            }
+        } catch (e) { console.error(e); }
+    }, 2000);
+}
+
+function renderDashboard(data) {
+    if (!data) return;
+    currentData = data;
+
+    // Header
+    document.getElementById('lastRun').textContent = data.generated_at ?
+        'Last run: ' + new Date(data.generated_at).toLocaleString() : '';
+
+    // Capital cards
+    const mq = data.mq || {};
+    const v3 = data.v3 || {};
+    const comb = data.combined || {};
+    const cfg = data.config || {};
+
+    document.getElementById('mqValue').textContent = fmt(mq.final);
+    document.getElementById('mqCagr').textContent = mq.cagr ? mq.cagr + '%' : '--';
+    document.getElementById('mqTrades').textContent = mq.trades || 0;
+    document.getElementById('mqTopups').textContent = mq.topups || 0;
+
+    document.getElementById('v3Value').textContent = fmt(v3.final);
+    document.getElementById('v3WinRate').textContent = v3.win_rate ? v3.win_rate + '%' : '--';
+    document.getElementById('v3PF').textContent = v3.profit_factor || '--';
+    document.getElementById('v3Trades').textContent = v3.trades || 0;
+
+    // Debt: get last value from capital allocation
+    const allocDates = Object.keys(data.capital_allocation || {}).sort();
+    const lastAlloc = allocDates.length ? data.capital_allocation[allocDates[allocDates.length - 1]] : {};
+    document.getElementById('debtValue').textContent = fmt(lastAlloc.debt);
+
+    document.getElementById('combinedValue').textContent = fmt(comb.final);
+    document.getElementById('combinedCagr').textContent = comb.cagr ? comb.cagr + '%' : '--';
+    document.getElementById('combinedDD').textContent = comb.max_dd ? '-' + comb.max_dd + '%' : '--';
+
+    // Metrics row
+    document.getElementById('totalReturn').textContent = comb.total_return ? comb.total_return + '%' : '--';
+    document.getElementById('cagrVal').textContent = comb.cagr ? comb.cagr + '%' : '--';
+    document.getElementById('sharpeVal').textContent = comb.sharpe || '--';
+    document.getElementById('maxDDVal').textContent = comb.max_dd ? '-' + comb.max_dd + '%' : '--';
+    document.getElementById('calmarVal').textContent = comb.calmar || '--';
+    document.getElementById('v3PnlVal').textContent = v3.total_pnl ? fmtPnl(v3.total_pnl) : '--';
+    document.getElementById('v3PnlVal').className = 'metric-value ' + (v3.total_pnl >= 0 ? 'positive' : 'negative');
+
+    // Equity chart
+    renderEquityChart(data);
+
+    // Strategy breakdown
+    renderStratBreakdown(v3.strategy_breakdown || {});
+
+    // Yearly table
+    renderYearly(data.yearly || []);
+
+    // V3 trades table
+    renderV3Trades(v3.trades_log || []);
+}
+
+function renderEquityChart(data) {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    if (equityChart) equityChart.destroy();
+
+    const comb = data.combined || {};
+    const mq = data.mq || {};
+    const v3 = data.v3 || {};
+
+    const combDates = Object.keys(comb.equity_curve || {}).sort();
+    // Sample every Nth point for performance
+    const step = Math.max(1, Math.floor(combDates.length / 500));
+    const labels = [];
+    const combVals = [], mqVals = [], v3Vals = [];
+
+    for (let i = 0; i < combDates.length; i += step) {
+        const d = combDates[i];
+        labels.push(d);
+        combVals.push(comb.equity_curve[d] / 100000);
+        mqVals.push((mq.equity_curve && mq.equity_curve[d] || 0) / 100000);
+        v3Vals.push((v3.equity_curve && v3.equity_curve[d] || 0) / 100000);
+    }
+
+    const datasets = chartMode === 'combined' ? [
+        { label: 'Combined (Rs.L)', data: combVals, borderColor: '#58a6ff', borderWidth: 2, pointRadius: 0, fill: false },
+    ] : [
+        { label: 'MQ Core (Rs.L)', data: mqVals, borderColor: '#3fb950', borderWidth: 2, pointRadius: 0, fill: false },
+        { label: 'V3 Overlay (Rs.L)', data: v3Vals, borderColor: '#f85149', borderWidth: 2, pointRadius: 0, fill: false },
+        { label: 'Combined (Rs.L)', data: combVals, borderColor: '#58a6ff', borderWidth: 1, pointRadius: 0, fill: false, borderDash: [5,5] },
+    ];
+
+    equityChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { color: '#c9d1d9', usePointStyle: true } },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => ctx.dataset.label + ': Rs.' + ctx.parsed.y.toFixed(1) + 'L'
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#8b949e', maxTicksLimit: 12 }, grid: { color: '#21262d' } },
+                y: { ticks: { color: '#8b949e', callback: v => 'Rs.' + v.toFixed(0) + 'L' }, grid: { color: '#21262d' } }
+            }
+        }
+    });
+}
+
+function setChartMode(mode) {
+    chartMode = mode;
+    document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    if (currentData) renderEquityChart(currentData);
+}
+
+function renderStratBreakdown(breakdown) {
+    const tbody = document.getElementById('stratBreakdown');
+    tbody.innerHTML = '';
+    const order = ['ALPHA', 'T1B', 'MOMVOL'];
+    const colors = { ALPHA: 'strat-alpha', T1B: 'strat-t1b', MOMVOL: 'strat-momvol' };
+
+    for (const name of order) {
+        const s = breakdown[name];
+        if (!s) continue;
+        tbody.innerHTML += `<tr>
+            <td><span class="strat-badge ${colors[name]}">${name}</span></td>
+            <td>${s.trades}</td>
+            <td>${s.win_rate}%</td>
+            <td class="${s.avg_return >= 0 ? 'positive' : 'negative'}">${s.avg_return > 0 ? '+' : ''}${s.avg_return}%</td>
+            <td class="${s.total_pnl >= 0 ? 'positive' : 'negative'}">${fmtPnl(s.total_pnl)}</td>
+        </tr>`;
+    }
+    if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No V3 trades yet</td></tr>';
+}
+
+function renderYearly(yearly) {
+    const tbody = document.getElementById('yearlyTable');
+    tbody.innerHTML = '';
+    for (const y of yearly) {
+        tbody.innerHTML += `<tr>
+            <td><strong>${y.year}</strong></td>
+            <td class="${y.mq_return >= 0 ? 'positive' : 'negative'}">${y.mq_return > 0 ? '+' : ''}${y.mq_return}%</td>
+            <td class="${y.v3_return >= 0 ? 'positive' : 'negative'}">${y.v3_return > 0 ? '+' : ''}${y.v3_return}%</td>
+            <td class="${y.combined_return >= 0 ? 'positive' : 'negative'}"><strong>${y.combined_return > 0 ? '+' : ''}${y.combined_return}%</strong></td>
+            <td>${y.v3_trades}</td>
+        </tr>`;
+    }
+    if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No data</td></tr>';
+}
+
+function renderV3Trades(trades) {
+    const tbody = document.getElementById('v3TradesTable');
+    tbody.innerHTML = '';
+    document.getElementById('v3TradeCount').textContent = trades.length + ' trades';
+
+    const colors = { ALPHA: 'strat-alpha', T1B: 'strat-t1b', MOMVOL: 'strat-momvol' };
+    const exitColors = { TRAIL_SL: '#d29922', TIME_EXIT: '#8b949e', MQ_EXIT: '#bc8cff', END_OF_BACKTEST: '#8b949e' };
+
+    for (const t of trades.slice().reverse()) {
+        const days = Math.round((new Date(t.exit_date) - new Date(t.entry_date)) / 86400000);
+        const levClass = t.leveraged_return >= 0 ? 'positive' : 'negative';
+        const baseClass = t.base_return >= 0 ? 'positive' : 'negative';
+        tbody.innerHTML += `<tr>
+            <td><strong>${t.symbol}</strong></td>
+            <td><span class="strat-badge ${colors[t.strategy] || ''}">${t.strategy}</span></td>
+            <td>${t.entry_date}<br><small class="text-muted">Rs.${t.entry_price.toFixed(0)}</small></td>
+            <td>${t.exit_date}<br><small class="text-muted">Rs.${t.exit_price.toFixed(0)}</small></td>
+            <td>${days}d</td>
+            <td class="${baseClass}">${t.base_return > 0 ? '+' : ''}${t.base_return}%</td>
+            <td class="${levClass}"><strong>${t.leveraged_return > 0 ? '+' : ''}${t.leveraged_return}%</strong></td>
+            <td class="${t.pnl >= 0 ? 'positive' : 'negative'}">${fmtPnl(t.pnl)}</td>
+            <td><small style="color:${exitColors[t.exit_reason] || '#8b949e'}">${t.exit_reason}</small></td>
+        </tr>`;
+    }
+    if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="9" class="text-muted text-center">No V3 trades</td></tr>';
+}
+
+// Helpers
+function fmt(val) {
+    if (val == null) return '--';
+    return 'Rs.' + (val / 100000).toFixed(1) + 'L';
+}
+function fmtPnl(val) {
+    if (val == null) return '--';
+    const sign = val >= 0 ? '+' : '';
+    if (Math.abs(val) >= 100000) return sign + 'Rs.' + (val / 100000).toFixed(1) + 'L';
+    return sign + 'Rs.' + Math.round(val).toLocaleString();
+}
+
+// Auto-refresh every 5 minutes
+setInterval(loadResults, 300000);
+</script>
+{% endblock %}

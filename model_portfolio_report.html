@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Portfolio Report | MQ Strategy</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+    --bs-body-bg: #0d1117;
+    --bs-body-color: #c9d1d9;
+    --bs-card-bg: #161b22;
+    --bs-border-color: #30363d;
+}
+body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.positive { color: #3fb950; }
+.negative { color: #f85149; }
+.txn-buy { color: #58a6ff; }
+.txn-topup { color: #d29922; }
+
+.metric-card {
+    background: linear-gradient(135deg, #1f2937 0%, #161b22 100%);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+}
+.metric-value { font-size: 1.8rem; font-weight: 700; color: #58a6ff; }
+.metric-label { font-size: 0.82rem; color: #8b949e; margin-top: 0.25rem; }
+.metric-sub { font-size: 0.75rem; color: #8b949e; }
+
+.card { background: #161b22; border: 1px solid var(--bs-border-color); border-radius: 12px; }
+.card-header-custom {
+    background: rgba(22,27,34,0.8);
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.table-portfolio th {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8b949e;
+    border-color: var(--bs-border-color);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background: #161b22;
+    z-index: 1;
+}
+.table-portfolio td {
+    border-color: var(--bs-border-color);
+    vertical-align: middle;
+    font-size: 0.86rem;
+}
+.table-portfolio tbody tr.stock-row:hover { background: rgba(88,166,255,0.05); cursor: pointer; }
+.txn-row { background: rgba(22,27,34,0.6); }
+.txn-row td { font-size: 0.8rem !important; padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; border: none !important; }
+
+.status-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+.dot-open { background: #3fb950; box-shadow: 0 0 6px rgba(63,185,80,0.5); animation: pulse 2s infinite; }
+.dot-warning { background: #d29922; box-shadow: 0 0 6px rgba(210,153,34,0.5); animation: pulse 1.5s infinite; }
+.dot-closed { background: #8b949e; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.exit-badge {
+    font-size: 0.68rem;
+    padding: 0.15em 0.5em;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.exit-ath { background: rgba(248,81,73,0.15); color: #f85149; }
+.exit-rebal { background: rgba(88,166,255,0.15); color: #58a6ff; }
+.exit-stop { background: rgba(210,153,34,0.15); color: #d29922; }
+.exit-fund { background: rgba(163,113,247,0.15); color: #a371f7; }
+
+.legend-bar { display: flex; gap: 1.5rem; font-size: 0.82rem; color: #8b949e; }
+.legend-bar .status-dot { margin-right: 5px; }
+
+.chart-container { position: relative; height: 300px; }
+
+.expand-btn {
+    cursor: pointer;
+    color: #8b949e;
+    font-size: 0.85rem;
+    transition: transform 0.2s;
+    display: inline-block;
+    width: 14px;
+}
+.expand-btn.open { transform: rotate(90deg); color: #58a6ff; }
+
+.search-input {
+    background: #0d1117;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    color: #c9d1d9;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    width: 240px;
+}
+.search-input:focus { outline: none; border-color: #58a6ff; }
+
+.header-bar {
+    background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(63,185,80,0.05));
+    border: 1px solid var(--bs-border-color);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.filter-btn {
+    background: transparent;
+    border: 1px solid var(--bs-border-color);
+    color: #8b949e;
+    border-radius: 6px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.filter-btn.active, .filter-btn:hover {
+    border-color: #58a6ff;
+    color: #58a6ff;
+    background: rgba(88,166,255,0.1);
+}
+</style>
+</head>
+<body>
+<div class="container-fluid py-3" style="max-width: 1400px; margin: auto;">
+
+    <!-- Header -->
+    <div class="header-bar">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1" style="color: #e6edf3;">
+                    <i class="bi bi-briefcase-fill me-2" style="color: #58a6ff;"></i>Model Portfolio
+                </h4>
+                <span class="text-muted" style="font-size: 0.9rem;">
+                    MQ Momentum + Quality Strategy &bull; Started Jan 2023 &bull; 20 stocks &bull; &#8377;1 Cr initial capital
+                </span>
+            </div>
+            <div class="text-end">
+                <small class="text-muted">Report generated: 2026-02-22</small><br>
+                <small class="text-muted">Period: 2023-01-01 to 2026-02-17</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-value">37</div>
+                <div class="metric-label">Total Positions</div>
+                <div class="metric-sub">20 open / 17 closed</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-value" style="color: #3fb950;">20</div>
+                <div class="metric-label">Open Positions</div>
+                <div class="metric-sub" style="color: #d29922;">
+                    3 nearing SL
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-value">35.99%</div>
+                <div class="metric-label">XIRR</div>
+                <div class="metric-sub">Portfolio IRR</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-value">&#8377;2.62 Cr</div>
+                <div class="metric-label">Portfolio Value</div>
+                <div class="metric-sub positive">+161.71% total return</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-value">1.16</div>
+                <div class="metric-label">Sharpe Ratio</div>
+                <div class="metric-sub">MaxDD: 26.85%</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-value" style="color: #3fb950;">76.5%</div>
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-sub">17 closed trades</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend + Search + Filters -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-3">
+            <div class="legend-bar">
+                <span><span class="status-dot dot-open"></span> Open</span>
+                <span><span class="status-dot dot-warning"></span> Nearing SL</span>
+                <span><span class="status-dot dot-closed"></span> Exited</span>
+            </div>
+            <div class="d-flex gap-1 ms-3">
+                <button class="filter-btn active" data-filter="all">All (37)</button>
+                <button class="filter-btn" data-filter="open">Open (20)</button>
+                <button class="filter-btn" data-filter="closed">Closed (17)</button>
+            </div>
+        </div>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search symbol or sector...">
+    </div>
+
+    <!-- Positions Table -->
+    <div class="card mb-3">
+        <div class="card-header-custom">
+            <i class="bi bi-table me-2"></i>All Positions &amp; Trade History
+            <small class="text-muted ms-2">(click row to expand transactions)</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
+                <table class="table table-portfolio table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;"></th>
+                            <th>Symbol</th>
+                            <th>Sector</th>
+                            <th>Entry Date</th>
+                            <th class="text-end">Entry Price</th>
+                            <th class="text-end">Exit / Current</th>
+                            <th class="text-end">P&L %</th>
+                            <th class="text-end">Net P&L</th>
+                            <th>Exit Reason</th>
+                            <th class="text-end">Days Held</th>
+                            <th class="text-end">Topups</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsBody">
+                        <tr class="stock-row" data-stock="0">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="0" title="Show transactions">&#9656;</span> JSL</td>
+            <td><small class="text-muted">Metals & Mining</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;253.30</td>
+            <td class="text-end">&#8377;839.25<br><small class="text-muted">0% from ATH</small></td>
+            <td class="text-end positive fw-bold">+231.0%</td>
+            <td class="text-end positive">&#8377;10.95 L</td>
+            <td>--</td>
+            <td class="text-end">1142d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="0" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;253.30</td>
+                <td class="text-end" style="font-size:0.8rem;">1870 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="1">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="1" title="Show transactions">&#9656;</span> CANBK</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;61.82</td>
+            <td class="text-end">&#8377;151.80<br><small class="text-muted">0% from ATH</small></td>
+            <td class="text-end positive fw-bold">+145.3%</td>
+            <td class="text-end positive">&#8377;6.89 L</td>
+            <td>--</td>
+            <td class="text-end">1142d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="1" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;61.82</td>
+                <td class="text-end" style="font-size:0.8rem;">7664 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="2">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="2" title="Show transactions">&#9656;</span> ASTRAZEN</td>
+            <td><small class="text-muted">Healthcare</small></td>
+            <td>2023-07-03</td>
+            <td class="text-end">&#8377;3,795.40</td>
+            <td class="text-end">&#8377;9,015.00<br><small class="text-muted">14.2% from ATH</small></td>
+            <td class="text-end positive fw-bold">+137.3%</td>
+            <td class="text-end positive">&#8377;5.48 L</td>
+            <td>--</td>
+            <td class="text-end">960d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="2" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-07-03</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;3,795.40</td>
+                <td class="text-end" style="font-size:0.8rem;">105 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;3.99 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="3">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="3" title="Show transactions">&#9656;</span> JINDALSTEL</td>
+            <td><small class="text-muted">Metals & Mining</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;594.65</td>
+            <td class="text-end">&#8377;1,041.00<br><small class="text-muted">4.3% from ATH</small></td>
+            <td class="text-end positive fw-bold">+74.9%</td>
+            <td class="text-end positive">&#8377;3.55 L</td>
+            <td>--</td>
+            <td class="text-end">1142d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="3" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;594.65</td>
+                <td class="text-end" style="font-size:0.8rem;">796 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="4">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="4" title="Show transactions">&#9656;</span> CCL</td>
+            <td><small class="text-muted">Consumer Goods</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;544.25</td>
+            <td class="text-end">&#8377;944.20<br><small class="text-muted">11.6% from ATH</small></td>
+            <td class="text-end positive fw-bold">+69.4%</td>
+            <td class="text-end positive">&#8377;4.60 L</td>
+            <td>--</td>
+            <td class="text-end">1142d</td>
+            <td class="text-end">2</td>
+        </tr>
+<tr class="txn-row" data-stock="4" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;544.25</td>
+                <td class="text-end" style="font-size:0.8rem;">1190 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;6.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="4" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-03-13</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;579.95</td>
+                <td class="text-end" style="font-size:0.8rem;">163 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,794</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="4" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-05-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;599.90</td>
+                <td class="text-end" style="font-size:0.8rem;">157 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,794</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="5">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="5" title="Show transactions">&#9656;</span> MUTHOOTFIN</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;2,215.05</td>
+            <td class="text-end">&#8377;3,753.00<br><small class="text-muted">0.2% from ATH</small></td>
+            <td class="text-end positive fw-bold">+69.3%</td>
+            <td class="text-end positive">&#8377;9.43 L</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="5" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;2,215.05</td>
+                <td class="text-end" style="font-size:0.8rem;">614 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.61 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="6">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="6" title="Show transactions">&#9656;</span> LAURUSLABS</td>
+            <td><small class="text-muted">Healthcare</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;615.65</td>
+            <td class="text-end">&#8377;1,006.00<br><small class="text-muted">1.6% from ATH</small></td>
+            <td class="text-end positive fw-bold">+63.2%</td>
+            <td class="text-end positive">&#8377;8.62 L</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="6" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;615.65</td>
+                <td class="text-end" style="font-size:0.8rem;">2211 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="7">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="7" title="Show transactions">&#9656;</span> JSWSTEEL</td>
+            <td><small class="text-muted">Metals & Mining</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;775.30</td>
+            <td class="text-end">&#8377;1,171.70<br><small class="text-muted">3.2% from ATH</small></td>
+            <td class="text-end positive fw-bold">+51.8%</td>
+            <td class="text-end positive">&#8377;2.95 L</td>
+            <td>--</td>
+            <td class="text-end">1142d</td>
+            <td class="text-end">1</td>
+        </tr>
+<tr class="txn-row" data-stock="7" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;775.30</td>
+                <td class="text-end" style="font-size:0.8rem;">737 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;5.69 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="7" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-06-12</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;748.80</td>
+                <td class="text-end" style="font-size:0.8rem;">126 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,836</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="8">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="8" title="Show transactions">&#9656;</span> SOUTHBANK</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2025-07-01</td>
+            <td class="text-end">&#8377;31.60</td>
+            <td class="text-end">&#8377;40.11<br><small class="text-muted">2.4% from ATH</small></td>
+            <td class="text-end positive fw-bold">+26.8%</td>
+            <td class="text-end positive">&#8377;2.17 L</td>
+            <td>--</td>
+            <td class="text-end">231d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="8" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-07-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;31.60</td>
+                <td class="text-end" style="font-size:0.8rem;">25561 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;8.09 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="9">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="9" title="Show transactions">&#9656;</span> RADICO</td>
+            <td><small class="text-muted">Consumer Goods</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;2,582.10</td>
+            <td class="text-end">&#8377;3,177.00<br><small class="text-muted">6.6% from ATH</small></td>
+            <td class="text-end positive fw-bold">+22.9%</td>
+            <td class="text-end positive">&#8377;3.12 L</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="9" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;2,582.10</td>
+                <td class="text-end" style="font-size:0.8rem;">527 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.62 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="10">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="10" title="Show transactions">&#9656;</span> AUBANK</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2025-07-01</td>
+            <td class="text-end">&#8377;838.35</td>
+            <td class="text-end">&#8377;994.50<br><small class="text-muted">0.2% from ATH</small></td>
+            <td class="text-end positive fw-bold">+18.5%</td>
+            <td class="text-end positive">&#8377;1.50 L</td>
+            <td>--</td>
+            <td class="text-end">231d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="10" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-07-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;838.35</td>
+                <td class="text-end" style="font-size:0.8rem;">963 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;8.08 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="11">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="11" title="Show transactions">&#9656;</span> FEDERALBNK</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2025-07-01</td>
+            <td class="text-end">&#8377;218.72</td>
+            <td class="text-end">&#8377;255.35<br><small class="text-muted">0.4% from ATH</small></td>
+            <td class="text-end positive fw-bold">+16.6%</td>
+            <td class="text-end positive">&#8377;1.34 L</td>
+            <td>--</td>
+            <td class="text-end">231d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="11" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-07-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;218.72</td>
+                <td class="text-end" style="font-size:0.8rem;">3693 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;8.09 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="12">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="12" title="Show transactions">&#9656;</span> INDIACEM</td>
+            <td><small class="text-muted">Cement</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;377.35</td>
+            <td class="text-end">&#8377;435.25<br><small class="text-muted">2.9% from ATH</small></td>
+            <td class="text-end positive fw-bold">+15.2%</td>
+            <td class="text-end positive">&#8377;2.08 L</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="12" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;377.35</td>
+                <td class="text-end" style="font-size:0.8rem;">3608 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="13">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="13" title="Show transactions">&#9656;</span> FSL</td>
+            <td><small class="text-muted">Information Technology</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;383.95</td>
+            <td class="text-end">&#8377;349.00<br><small class="text-muted">14.2% from ATH</small></td>
+            <td class="text-end negative fw-bold">-9.2%</td>
+            <td class="text-end negative">-&#8377;1.25 L</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="13" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;383.95</td>
+                <td class="text-end" style="font-size:0.8rem;">3546 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="14">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="14" title="Show transactions">&#9656;</span> WELCORP</td>
+            <td><small class="text-muted">Metals & Mining</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;812.70</td>
+            <td class="text-end">&#8377;864.00<br><small class="text-muted">10.6% from ATH</small></td>
+            <td class="text-end positive fw-bold">+6.2%</td>
+            <td class="text-end positive">&#8377;84,566</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="14" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;812.70</td>
+                <td class="text-end" style="font-size:0.8rem;">1675 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="15">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="15" title="Show transactions">&#9656;</span> APOLLOHOSP</td>
+            <td><small class="text-muted">Healthcare</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;7,369.65</td>
+            <td class="text-end">&#8377;7,642.00<br><small class="text-muted">4.6% from ATH</small></td>
+            <td class="text-end positive fw-bold">+3.6%</td>
+            <td class="text-end positive">&#8377;48,756</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="15" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;7,369.65</td>
+                <td class="text-end" style="font-size:0.8rem;">184 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.57 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="16">
+            <td><span class="status-dot dot-open"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="16" title="Show transactions">&#9656;</span> LEMONTREE</td>
+            <td><small class="text-muted">Services</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;159.00</td>
+            <td class="text-end">&#8377;159.26<br><small class="text-muted">10.5% from ATH</small></td>
+            <td class="text-end positive fw-bold">+0.1%</td>
+            <td class="text-end positive">&#8377;865</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="16" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;159.00</td>
+                <td class="text-end" style="font-size:0.8rem;">8564 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="17">
+            <td><span class="status-dot dot-warning"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="17" title="Show transactions">&#9656;</span> ABBOTINDIA</td>
+            <td><small class="text-muted">Healthcare</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;21,436.90</td>
+            <td class="text-end">&#8377;29,025.00<br><small style="color:#d29922;">18.6% from ATH</small></td>
+            <td class="text-end positive fw-bold">+31.8%</td>
+            <td class="text-end positive">&#8377;2.10 L</td>
+            <td>--</td>
+            <td class="text-end">1142d</td>
+            <td class="text-end">2</td>
+        </tr>
+<tr class="txn-row" data-stock="17" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;21,436.90</td>
+                <td class="text-end" style="font-size:0.8rem;">30 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;6.61 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="17" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-04-10</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;22,846.00</td>
+                <td class="text-end" style="font-size:0.8rem;">4 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,417</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="17" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-07-03</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;23,202.30</td>
+                <td class="text-end" style="font-size:0.8rem;">4 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,417</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="18">
+            <td><span class="status-dot dot-warning"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="18" title="Show transactions">&#9656;</span> JUBLFOOD</td>
+            <td><small class="text-muted">Consumer Goods</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;739.20</td>
+            <td class="text-end">&#8377;558.60<br><small style="color:#d29922;">27.1% from ATH</small></td>
+            <td class="text-end negative fw-bold">-24.5%</td>
+            <td class="text-end negative">-&#8377;3.34 L</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="18" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;739.20</td>
+                <td class="text-end" style="font-size:0.8rem;">1842 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="19">
+            <td><span class="status-dot dot-warning"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="19" title="Show transactions">&#9656;</span> COROMANDEL</td>
+            <td><small class="text-muted">Agri Chemicals</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;1,928.75</td>
+            <td class="text-end">&#8377;2,264.00<br><small style="color:#d29922;">15.9% from ATH</small></td>
+            <td class="text-end positive fw-bold">+17.3%</td>
+            <td class="text-end positive">&#8377;2.35 L</td>
+            <td>--</td>
+            <td class="text-end">412d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="19" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,928.75</td>
+                <td class="text-end" style="font-size:0.8rem;">706 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.63 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="20">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="20" title="Show transactions">&#9656;</span> RECLTD</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;120.40</td>
+            <td class="text-end">&#8377;505.55</td>
+            <td class="text-end positive fw-bold">+303.6%</td>
+            <td class="text-end positive">&#8377;20.15 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">2</td>
+        </tr>
+<tr class="txn-row" data-stock="20" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;120.40</td>
+                <td class="text-end" style="font-size:0.8rem;">3935 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="20" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-05-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;132.15</td>
+                <td class="text-end" style="font-size:0.8rem;">715 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,850</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="20" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-06-05</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;141.55</td>
+                <td class="text-end" style="font-size:0.8rem;">668 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,850</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="20" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;505.55</td>
+                <td class="text-end" style="font-size:0.8rem;">5318 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;26.80 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="21">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="21" title="Show transactions">&#9656;</span> SUZLON</td>
+            <td><small class="text-muted">Capital Goods</small></td>
+            <td>2023-07-03</td>
+            <td class="text-end">&#8377;16.80</td>
+            <td class="text-end">&#8377;65.33</td>
+            <td class="text-end positive fw-bold">+287.0%</td>
+            <td class="text-end positive">&#8377;12.94 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">548d</td>
+            <td class="text-end">1</td>
+        </tr>
+<tr class="txn-row" data-stock="21" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-07-03</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;16.80</td>
+                <td class="text-end" style="font-size:0.8rem;">23867 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.01 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="21" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-07-03</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;16.80</td>
+                <td class="text-end" style="font-size:0.8rem;">2931 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;49,366</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="21" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;65.33</td>
+                <td class="text-end" style="font-size:0.8rem;">26798 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;17.45 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="22">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="22" title="Show transactions">&#9656;</span> PFC</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;119.75</td>
+            <td class="text-end">&#8377;448.30</td>
+            <td class="text-end positive fw-bold">+253.9%</td>
+            <td class="text-end positive">&#8377;21.66 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">4</td>
+        </tr>
+<tr class="txn-row" data-stock="22" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;119.75</td>
+                <td class="text-end" style="font-size:0.8rem;">3956 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="22" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-09</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;119.75</td>
+                <td class="text-end" style="font-size:0.8rem;">790 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,841</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="22" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-05-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;138.90</td>
+                <td class="text-end" style="font-size:0.8rem;">681 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,841</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="22" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-05-08</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;138.90</td>
+                <td class="text-end" style="font-size:0.8rem;">681 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,841</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="22" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-06-05</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;144.90</td>
+                <td class="text-end" style="font-size:0.8rem;">652 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,841</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="22" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;448.30</td>
+                <td class="text-end" style="font-size:0.8rem;">6760 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;30.20 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="23">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="23" title="Show transactions">&#9656;</span> NCC</td>
+            <td><small class="text-muted">Construction</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;91.70</td>
+            <td class="text-end">&#8377;277.50</td>
+            <td class="text-end positive fw-bold">+198.1%</td>
+            <td class="text-end positive">&#8377;11.27 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">1</td>
+        </tr>
+<tr class="txn-row" data-stock="23" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;91.70</td>
+                <td class="text-end" style="font-size:0.8rem;">5166 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="23" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-03-13</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;97.70</td>
+                <td class="text-end" style="font-size:0.8rem;">968 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,839</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="23" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;277.50</td>
+                <td class="text-end" style="font-size:0.8rem;">6134 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;16.96 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="24">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="24" title="Show transactions">&#9656;</span> SOLARINDS</td>
+            <td><small class="text-muted">Chemicals</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;4,434.15</td>
+            <td class="text-end">&#8377;9,864.25</td>
+            <td class="text-end positive fw-bold">+121.3%</td>
+            <td class="text-end positive">&#8377;5.71 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="24" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4,434.15</td>
+                <td class="text-end" style="font-size:0.8rem;">106 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.70 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="24" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;9,864.25</td>
+                <td class="text-end" style="font-size:0.8rem;">106 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;10.42 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="25">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="25" title="Show transactions">&#9656;</span> PNBHOUSING</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;474.70</td>
+            <td class="text-end">&#8377;908.10</td>
+            <td class="text-end positive fw-bold">+88.0%</td>
+            <td class="text-end positive">&#8377;5.84 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">2</td>
+        </tr>
+<tr class="txn-row" data-stock="25" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;474.70</td>
+                <td class="text-end" style="font-size:0.8rem;">998 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="25" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-09</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;474.70</td>
+                <td class="text-end" style="font-size:0.8rem;">199 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,845</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="25" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-03-13</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;516.40</td>
+                <td class="text-end" style="font-size:0.8rem;">183 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,845</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="25" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;908.10</td>
+                <td class="text-end" style="font-size:0.8rem;">1380 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;12.49 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="26">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="26" title="Show transactions">&#9656;</span> NMDC</td>
+            <td><small class="text-muted">Metals & Mining</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;37.84</td>
+            <td class="text-end">&#8377;63.77</td>
+            <td class="text-end positive fw-bold">+67.6%</td>
+            <td class="text-end positive">&#8377;3.21 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="26" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;37.84</td>
+                <td class="text-end" style="font-size:0.8rem;">12521 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="26" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;63.77</td>
+                <td class="text-end" style="font-size:0.8rem;">12521 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;7.96 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="27">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="27" title="Show transactions">&#9656;</span> BHARATFORG</td>
+            <td><small class="text-muted">Capital Goods</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;884.05</td>
+            <td class="text-end">&#8377;1,299.90</td>
+            <td class="text-end positive fw-bold">+48.1%</td>
+            <td class="text-end positive">&#8377;2.73 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">1</td>
+        </tr>
+<tr class="txn-row" data-stock="27" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;884.05</td>
+                <td class="text-end" style="font-size:0.8rem;">535 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.73 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="27" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-06-12</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;818.00</td>
+                <td class="text-end" style="font-size:0.8rem;">115 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,688</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="27" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,299.90</td>
+                <td class="text-end" style="font-size:0.8rem;">650 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;8.42 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="28">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="28" title="Show transactions">&#9656;</span> VGUARD</td>
+            <td><small class="text-muted">Consumer Goods</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;266.05</td>
+            <td class="text-end">&#8377;386.75</td>
+            <td class="text-end positive fw-bold">+44.6%</td>
+            <td class="text-end positive">&#8377;2.11 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">911d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="28" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;266.05</td>
+                <td class="text-end" style="font-size:0.8rem;">1780 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="28" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-07-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;386.75</td>
+                <td class="text-end" style="font-size:0.8rem;">1780 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;6.86 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="29">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="29" title="Show transactions">&#9656;</span> APOLLOTYRE</td>
+            <td><small class="text-muted">Automobile</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;328.25</td>
+            <td class="text-end">&#8377;447.70</td>
+            <td class="text-end positive fw-bold">+35.6%</td>
+            <td class="text-end positive">&#8377;1.69 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">911d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="29" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;328.25</td>
+                <td class="text-end" style="font-size:0.8rem;">1443 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="29" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-07-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;447.70</td>
+                <td class="text-end" style="font-size:0.8rem;">1443 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;6.44 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="30">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="30" title="Show transactions">&#9656;</span> NESTLEIND</td>
+            <td><small class="text-muted">Consumer Goods</small></td>
+            <td>2024-01-01</td>
+            <td class="text-end">&#8377;1,368.60</td>
+            <td class="text-end">&#8377;1,084.60</td>
+            <td class="text-end negative fw-bold">-21.2%</td>
+            <td class="text-end negative">-&#8377;1.49 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">366d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="30" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2024-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,368.60</td>
+                <td class="text-end" style="font-size:0.8rem;">513 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;7.03 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="30" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,084.60</td>
+                <td class="text-end" style="font-size:0.8rem;">513 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;5.55 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="31">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="31" title="Show transactions">&#9656;</span> IPCALAB</td>
+            <td><small class="text-muted">Healthcare</small></td>
+            <td>2025-01-01</td>
+            <td class="text-end">&#8377;1,692.95</td>
+            <td class="text-end">&#8377;1,371.90</td>
+            <td class="text-end negative fw-bold">-19.5%</td>
+            <td class="text-end negative">-&#8377;2.65 L</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">181d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="31" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,692.95</td>
+                <td class="text-end" style="font-size:0.8rem;">804 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;13.62 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="31" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-07-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,371.90</td>
+                <td class="text-end" style="font-size:0.8rem;">804 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;10.99 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="32">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="32" title="Show transactions">&#9656;</span> GODFRYPHLP</td>
+            <td><small class="text-muted">Consumer Goods</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;669.00</td>
+            <td class="text-end">&#8377;565.00</td>
+            <td class="text-end negative fw-bold">-16.1%</td>
+            <td class="text-end negative">&#8377;-76,159</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">182d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="32" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;669.00</td>
+                <td class="text-end" style="font-size:0.8rem;">708 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="32" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-07-03</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;565.00</td>
+                <td class="text-end" style="font-size:0.8rem;">708 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;3.99 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="33">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="33" title="Show transactions">&#9656;</span> IRB</td>
+            <td><small class="text-muted">Construction</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;31.40</td>
+            <td class="text-end">&#8377;26.95</td>
+            <td class="text-end negative fw-bold">-14.7%</td>
+            <td class="text-end negative">&#8377;-69,696</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">182d</td>
+            <td class="text-end">0</td>
+        </tr>
+<tr class="txn-row" data-stock="33" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;31.40</td>
+                <td class="text-end" style="font-size:0.8rem;">15089 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="33" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-07-03</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;26.95</td>
+                <td class="text-end" style="font-size:0.8rem;">15089 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.05 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="34">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="34" title="Show transactions">&#9656;</span> M&MFIN</td>
+            <td><small class="text-muted">Financial Services</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;222.85</td>
+            <td class="text-end">&#8377;255.30</td>
+            <td class="text-end positive fw-bold">+6.0%</td>
+            <td class="text-end positive">&#8377;39,635</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">364d</td>
+            <td class="text-end">2</td>
+        </tr>
+<tr class="txn-row" data-stock="34" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;222.85</td>
+                <td class="text-end" style="font-size:0.8rem;">2126 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="34" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-06-19</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;294.30</td>
+                <td class="text-end" style="font-size:0.8rem;">321 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,851</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="34" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-06-26</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;294.30</td>
+                <td class="text-end" style="font-size:0.8rem;">321 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,851</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="34" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2024-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;255.30</td>
+                <td class="text-end" style="font-size:0.8rem;">2768 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;7.04 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="35">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="35" title="Show transactions">&#9656;</span> SUNDRMFAST</td>
+            <td><small class="text-muted">Automobile</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;970.00</td>
+            <td class="text-end">&#8377;1,045.40</td>
+            <td class="text-end positive fw-bold">+5.6%</td>
+            <td class="text-end positive">&#8377;31,862</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">1</td>
+        </tr>
+<tr class="txn-row" data-stock="35" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;970.00</td>
+                <td class="text-end" style="font-size:0.8rem;">488 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="35" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-04-24</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,058.90</td>
+                <td class="text-end" style="font-size:0.8rem;">89 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,767</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="35" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;1,045.40</td>
+                <td class="text-end" style="font-size:0.8rem;">577 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;6.01 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="stock-row" data-stock="36">
+            <td><span class="status-dot dot-closed"></span></td>
+            <td class="fw-semibold"><span class="expand-btn" data-stock="36" title="Show transactions">&#9656;</span> PNCINFRA</td>
+            <td><small class="text-muted">Construction</small></td>
+            <td>2023-01-02</td>
+            <td class="text-end">&#8377;309.65</td>
+            <td class="text-end">&#8377;328.60</td>
+            <td class="text-end positive fw-bold">+4.2%</td>
+            <td class="text-end positive">&#8377;31,743</td>
+            <td><span class="exit-badge exit-ath">ATH DD >20%</span></td>
+            <td class="text-end">730d</td>
+            <td class="text-end">3</td>
+        </tr>
+<tr class="txn-row" data-stock="36" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-buy" style="font-size:0.75rem;">&#9650; BUY</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-02</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;309.65</td>
+                <td class="text-end" style="font-size:0.8rem;">1530 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;4.74 L</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="36" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-01-09</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;317.10</td>
+                <td class="text-end" style="font-size:0.8rem;">298 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,848</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="36" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-05-08</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;306.55</td>
+                <td class="text-end" style="font-size:0.8rem;">308 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,848</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="36" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="txn-topup" style="font-size:0.75rem;">&#9654; TOPUP</span>
+                </td>
+                <td style="font-size:0.8rem;">2023-06-19</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;336.75</td>
+                <td class="text-end" style="font-size:0.8rem;">280 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;94,848</td>
+                <td colspan="4"></td>
+            </tr><tr class="txn-row" data-stock="36" style="display:none;">
+                <td></td>
+                <td colspan="2" style="padding-left:2rem;">
+                    <span class="positive" style="font-size:0.75rem;">&#9660; SELL</span>
+                </td>
+                <td style="font-size:0.8rem;">2025-01-01</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;328.60</td>
+                <td class="text-end" style="font-size:0.8rem;">2416 sh</td>
+                <td class="text-end" style="font-size:0.8rem;">&#8377;7.91 L</td>
+                <td colspan="4"></td>
+            </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header-custom">
+                    <i class="bi bi-graph-up me-2"></i>Equity Curve (&#8377;1 Cr &rarr; &#8377;2.62 Cr)
+                </div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="equityChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header-custom">
+                    <i class="bi bi-pie-chart me-2"></i>Sector Allocation
+                </div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="sectorChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-muted py-2" style="font-size: 0.78rem; border-top: 1px solid var(--bs-border-color);">
+        MQ Momentum + Quality Strategy &bull; Backtest: 2023-01-01 to 2026-02-17
+        &bull; Nifty 500 Universe &bull; 20 stocks &bull; Semi-annual rebalance &bull; 20% ATH drawdown exit
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// --- Expand/Collapse Transactions ---
+document.querySelectorAll('.stock-row').forEach(row => {
+    row.addEventListener('click', function(e) {
+        if (e.target.classList.contains('search-input')) return;
+        const idx = this.dataset.stock;
+        const btn = this.querySelector('.expand-btn');
+        const txns = document.querySelectorAll('.txn-row[data-stock="' + idx + '"]');
+        const isOpen = btn && btn.classList.contains('open');
+        txns.forEach(t => t.style.display = isOpen ? 'none' : 'table-row');
+        if (btn) btn.classList.toggle('open');
+    });
+});
+
+// --- Search ---
+document.getElementById('searchInput').addEventListener('input', function() {
+    const term = this.value.toLowerCase();
+    document.querySelectorAll('.stock-row').forEach(row => {
+        const match = row.textContent.toLowerCase().includes(term);
+        row.style.display = match ? '' : 'none';
+        const idx = row.dataset.stock;
+        document.querySelectorAll('.txn-row[data-stock="' + idx + '"]').forEach(t => {
+            t.style.display = 'none';
+        });
+        const btn = row.querySelector('.expand-btn');
+        if (btn) btn.classList.remove('open');
+    });
+});
+
+// --- Filter buttons ---
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.stock-row').forEach(row => {
+            const status = row.querySelector('.status-dot');
+            let show = true;
+            if (filter === 'open') {
+                show = status.classList.contains('dot-open') || status.classList.contains('dot-warning');
+            } else if (filter === 'closed') {
+                show = status.classList.contains('dot-closed');
+            }
+            row.style.display = show ? '' : 'none';
+            const idx = row.dataset.stock;
+            document.querySelectorAll('.txn-row[data-stock="' + idx + '"]').forEach(t => t.style.display = 'none');
+            const expandBtn = row.querySelector('.expand-btn');
+            if (expandBtn) expandBtn.classList.remove('open');
+        });
+    });
+});
+
+// --- Equity Curve ---
+function fmtINR(n) {
+    if (n >= 1e7) return '\u20B9' + (n/1e7).toFixed(1) + ' Cr';
+    if (n >= 1e5) return '\u20B9' + (n/1e5).toFixed(1) + ' L';
+    return '\u20B9' + n.toLocaleString('en-IN', {maximumFractionDigits: 0});
+}
+
+const niftyData = [10000000.0, 10000000.0, 10000000.0, 10000000.0, 10000000.0, 9946824.52, 9838968.6, 9838968.6, 9812882.51, 9863048.06, 9835457.01, 9906190.43, 9965385.77, 9954349.35, 9905187.12, 9954851.01, 9953847.7, 9834453.7, 9681950.44, 9694491.82, 9704023.28, 9688471.96, 9677435.54, 9788301.39, 9756195.44, 9734122.6, 9809370.92, 9826928.87, 9806862.65, 9762215.31, 9831443.76, 9795324.57, 9516404.13, 9729607.71, 9335808.17, 9425102.84, 9385472.06, 9663890.84, 9693990.17, 9738637.5, 9916725.19, 10033109.26, 10021069.53, 10045148.99, 10216715.16, 10300993.28, 10326577.71, 10377746.56, 10443463.43, 10733420.29, 10719875.59, 11011839.07, 10867362.3, 10713354.07, 10802147.09, 10685261.36, 10673221.63, 10748971.61, 10956656.97, 11165345.64, 10875890.44, 10814186.82, 10892445.07, 10963680.14, 10609009.73, 10534263.07, 10777064.31, 10884418.58, 10962676.83, 11143272.8, 11579713.05, 11738236.18, 11768837.16, 12022173.17, 12026688.07, 12126517.51, 11997090.4, 12042239.39, 12051770.84, 12005618.54, 12292565.47, 12284037.32, 12406441.26, 12413464.43, 12239389.99, 12229858.53, 12470653.16, 12620146.48, 12317146.58, 12463128.32, 12459616.74, 12298585.33, 12493729.31, 12778167.95, 12949734.12, 12939701.01, 13121300.29, 13223136.35, 13496036.92, 13613925.96, 13722785.19, 13639510.38, 13933480.49, 13599879.6, 13511588.24, 13869770.24, 14051369.52, 14067924.15, 14182301.6, 14243001.91, 14625765.02, 14053877.8, 13982141.07, 13922444.07, 13568776.96, 13663589.85, 13546202.47, 13166950.94, 13571786.9, 13694190.83, 13779472.26, 13656065.01, 13318450.89, 13323467.44, 13289856.53, 13021972.51, 12985351.66, 13011939.4, 13296378.05, 12970302.0, 12884518.91, 12679341.83, 12565466.04, 12628674.63, 13008929.47, 13230159.53, 12900571.89, 13086686.06, 13635998.8, 13644526.94, 13596869.67, 14054881.11, 13841175.88, 13973111.27, 13948530.15, 13993679.14, 13941506.97, 14366910.81, 14316745.26, 14305207.18, 14188321.46, 14151700.61, 14009230.46, 13910404.33, 13957559.95, 14083977.12, 13955051.67, 14045851.31, 14202869.47, 14271596.27, 13973111.27, 14217417.48, 14231463.83, 14641818.0, 14773753.39, 14459717.07, 14667904.08, 14830942.11, 14870071.24, 14767231.87, 14694993.48, 14640313.03, 14771746.76, 14814387.48];
+const mqData = [10000000.0, 10000000.0, 10000000.0, 10000000.0, 10000000.0, 11475065.76, 11372468.77, 11375046.97, 11390946.47, 11462442.97, 11375513.94, 11295383.37, 11373698.34, 11391153.03, 11345228.12, 11346318.16, 11303089.93, 11205071.14, 10964982.66, 10947432.06, 11180512.62, 11102853.39, 11170571.69, 11179740.96, 11173554.6, 11176174.41, 11310677.64, 11271655.47, 11243859.82, 11156346.29, 11112418.88, 11145542.97, 10942600.49, 11450283.87, 11113378.13, 11005645.93, 10888463.05, 11178840.71, 11216856.69, 11315935.94, 11646153.03, 11588911.65, 11553426.2, 11488065.18, 11887244.45, 12226377.41, 12426944.3, 12696000.78, 12796439.98, 13247218.94, 13285355.47, 13321226.16, 13597305.13, 13732451.96, 14175078.22, 14074165.65, 14290564.12, 14754312.18, 15417857.19, 15232088.58, 15193909.41, 15848450.42, 15690690.06, 15954213.8, 15230408.55, 15185884.77, 16107236.5, 16927116.99, 17058912.3, 17438906.98, 18213561.39, 18905959.98, 18212603.8, 18683640.9, 19205597.78, 19620257.13, 19885191.3, 20400014.8, 21078298.43, 20015088.43, 20555285.05, 20531784.8, 20739266.66, 20662241.92, 19432664.77, 20069062.24, 20866753.13, 20950651.71, 20309216.41, 21062104.27, 21556910.68, 21119095.39, 22473346.96, 23529217.39, 24446565.23, 23544730.91, 24137835.14, 23988392.55, 24352115.92, 25519861.02, 25401842.83, 24911084.61, 25992912.38, 24457164.38, 24266555.55, 25207644.73, 25609810.25, 25889498.9, 25513173.22, 24765888.62, 25308694.33, 24437360.0, 24573850.48, 24471328.47, 22643016.44, 23547674.04, 23201618.56, 22145006.19, 22938888.16, 23685577.78, 24429186.14, 23849723.29, 22590892.51, 22619826.38, 21971226.28, 20909448.15, 20626364.42, 20081234.37, 20581463.64, 20182183.4, 19533767.63, 19546459.31, 19766065.9, 19744521.85, 20669365.01, 20907054.1, 20372461.69, 20885977.89, 21565643.17, 21174813.43, 21018651.45, 21941724.58, 21885910.13, 22284312.87, 22884403.66, 22997075.13, 22483598.91, 23060519.23, 23372145.96, 23567079.99, 23692693.72, 23513420.98, 23767942.36, 23395087.29, 23551928.12, 24013991.04, 23726024.47, 23998815.74, 24351996.07, 24407866.28, 23658223.98, 24369655.96, 24084486.79, 25011548.82, 25371458.29, 25208124.72, 25622053.99, 25973793.96, 25993231.06, 25990072.46, 26068626.59, 26093178.34, 26103056.78, 26171030.15];
+const startDot = [5].concat(Array(mqData.length - 1).fill(0));
+const niftyDataset = niftyData.some(v => v !== null) ? [{
+    label: 'Nifty 50 (NIFTYBEES)',
+    data: niftyData,
+    borderColor: '#d29922',
+    backgroundColor: 'rgba(210,153,34,0.05)',
+    borderWidth: 1.5, fill: false, pointRadius: startDot, tension: 0, borderDash: [4,3],
+    spanGaps: true,
+}] : [];
+
+new Chart(document.getElementById('equityChart').getContext('2d'), {
+    type: 'line',
+    data: {
+        labels: ["2023-01-02", "2023-01-03", "2023-01-04", "2023-01-05", "2023-01-06", "2023-01-09", "2023-01-10", "2023-01-11", "2023-01-12", "2023-01-13", "2023-01-16", "2023-01-17", "2023-01-18", "2023-01-19", "2023-01-20", "2023-01-23", "2023-01-24", "2023-01-25", "2023-01-27", "2023-01-30", "2023-01-31", "2023-02-01", "2023-02-02", "2023-02-03", "2023-02-06", "2023-02-07", "2023-02-08", "2023-02-09", "2023-02-10", "2023-02-13", "2023-02-14", "2023-02-21", "2023-02-28", "2023-03-08", "2023-03-15", "2023-03-22", "2023-03-29", "2023-04-10", "2023-04-18", "2023-04-25", "2023-05-03", "2023-05-10", "2023-05-17", "2023-05-24", "2023-05-31", "2023-06-07", "2023-06-14", "2023-06-21", "2023-06-28", "2023-07-06", "2023-07-13", "2023-07-20", "2023-07-27", "2023-08-03", "2023-08-10", "2023-08-18", "2023-08-25", "2023-09-01", "2023-09-08", "2023-09-15", "2023-09-25", "2023-10-03", "2023-10-10", "2023-10-17", "2023-10-25", "2023-11-01", "2023-11-08", "2023-11-15", "2023-11-22", "2023-11-30", "2023-12-07", "2023-12-14", "2023-12-21", "2023-12-29", "2024-01-05", "2024-01-12", "2024-01-19", "2024-01-29", "2024-02-05", "2024-02-12", "2024-02-19", "2024-02-26", "2024-03-02", "2024-03-11", "2024-03-18", "2024-03-26", "2024-04-03", "2024-04-10", "2024-04-19", "2024-04-26", "2024-05-06", "2024-05-13", "2024-05-18", "2024-05-27", "2024-06-03", "2024-06-10", "2024-06-18", "2024-06-25", "2024-07-02", "2024-07-09", "2024-07-16", "2024-07-24", "2024-07-31", "2024-08-07", "2024-08-14", "2024-08-22", "2024-08-29", "2024-09-05", "2024-09-12", "2024-09-19", "2024-09-26", "2024-10-04", "2024-10-11", "2024-10-18", "2024-10-25", "2024-11-01", "2024-11-08", "2024-11-18", "2024-11-26", "2024-12-03", "2024-12-10", "2024-12-17", "2024-12-24", "2025-01-01", "2025-01-08", "2025-01-15", "2025-01-22", "2025-01-29", "2025-02-04", "2025-02-11", "2025-02-18", "2025-02-25", "2025-03-05", "2025-03-12", "2025-03-20", "2025-03-27", "2025-04-04", "2025-04-15", "2025-04-23", "2025-04-30", "2025-05-08", "2025-05-15", "2025-05-22", "2025-05-29", "2025-06-05", "2025-06-12", "2025-06-19", "2025-06-26", "2025-07-03", "2025-07-10", "2025-07-17", "2025-07-24", "2025-07-31", "2025-08-07", "2025-08-14", "2025-08-22", "2025-09-01", "2025-09-08", "2025-09-15", "2025-09-22", "2025-09-29", "2025-10-07", "2025-10-14", "2025-10-21", "2025-10-29", "2025-11-06", "2025-11-13", "2025-11-20", "2025-11-27", "2025-12-04", "2025-12-11", "2025-12-18", "2025-12-26", "2025-12-31"],
+        datasets: [{
+            label: 'MQ Portfolio',
+            data: mqData,
+            borderColor: '#58a6ff',
+            backgroundColor: 'transparent',
+            borderWidth: 2, fill: false, pointRadius: startDot, tension: 0,
+        }, ...niftyDataset, {
+            label: 'Initial Capital (\u20B91 Cr)',
+            data: Array(174).fill(10000000),
+            borderColor: 'rgba(139,148,158,0.4)',
+            borderWidth: 1, borderDash: [5,5], pointRadius: 0, fill: false,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'top', labels: { color: '#8b949e', font: { size: 11 } } },
+            tooltip: { mode: 'index', intersect: false,
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtINR(ctx.parsed.y) }
+            },
+        },
+        scales: {
+            x: { ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(48,54,61,0.5)' } },
+            y: { min: 10000000, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtINR(v) }, grid: { color: 'rgba(48,54,61,0.5)' } },
+        },
+    },
+});
+
+// --- Sector Doughnut ---
+const secColors = ['#58a6ff','#3fb950','#d29922','#f85149','#a371f7','#f0883e','#79c0ff','#56d364','#e3b341','#ff7b72','#d2a8ff','#ffa657','#7ee787'];
+new Chart(document.getElementById('sectorChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+        labels: ["Metals & Mining", "Financial Services", "Healthcare", "Consumer Goods", "Agri Chemicals", "Services", "Information Technology", "Cement"],
+        datasets: [{ data: [18.0, 24.5, 20.8, 14.6, 6.1, 5.2, 4.7, 6.0], backgroundColor: secColors.slice(0, 8), borderColor: '#161b22', borderWidth: 2 }],
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 9 }, padding: 6, boxWidth: 10 } },
+            tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(1) + '%' } }
+        },
+    },
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1344 @@
+{% extends "base.html" %}
+
+{% block title %}Crash & Recovery — Wealth Protection{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero-section {
+        background: linear-gradient(135deg, rgba(13,17,23,0.95) 0%, rgba(22,27,34,0.98) 100%);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #f85149, #e3b341, #3fb950);
+    }
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        background: linear-gradient(135deg, #c9d1d9 0%, #8b949e 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+        color: #8b949e;
+        font-size: 1rem;
+        max-width: 600px;
+    }
+    .hero-metric {
+        text-align: center;
+        padding: 0 1.5rem;
+    }
+    .hero-metric-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+    .hero-metric-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #8b949e;
+        margin-top: 0.15rem;
+    }
+    .hero-metric-divider {
+        width: 1px;
+        height: 48px;
+        background: var(--bs-border-color);
+    }
+
+    /* ── Section Headers ────────────────────────────────── */
+    .section-header {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        padding: 0.8rem 1.2rem;
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    .section-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px; height: 26px;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: 800;
+        margin-right: 0.6rem;
+    }
+
+    /* ── Timeline ───────────────────────────────────────── */
+    .timeline-container {
+        position: relative;
+        padding-left: 60px;
+    }
+    .timeline-container::before {
+        content: '';
+        position: absolute;
+        left: 28px; top: 0; bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #f85149 0%, #f85149 60%, #e3b341 70%, #3fb950 100%);
+    }
+    .timeline-event {
+        position: relative;
+        margin-bottom: 0.6rem;
+        padding: 0.65rem 1rem;
+        border-radius: 10px;
+        background: rgba(22,27,34,0.5);
+        border: 1px solid var(--bs-border-color);
+        transition: all 0.2s ease;
+    }
+    .timeline-event:hover {
+        border-color: #58a6ff;
+        background: rgba(22,27,34,0.8);
+    }
+    .timeline-event::before {
+        content: '';
+        position: absolute;
+        left: -40px; top: 50%;
+        transform: translateY(-50%);
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        border: 2px solid;
+    }
+    .timeline-event.exit::before { border-color: #f85149; background: rgba(248,81,73,0.3); }
+    .timeline-event.entry::before { border-color: #3fb950; background: rgba(63,185,80,0.3); }
+    .timeline-event.neutral::before { border-color: #e3b341; background: rgba(227,179,65,0.3); }
+    .timeline-date {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .timeline-stocks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.3rem;
+    }
+
+    /* ── Stock Pills ────────────────────────────────────── */
+    .stock-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.55rem;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        border: 1px solid;
+    }
+    .stock-pill.exit {
+        color: #f85149;
+        border-color: rgba(248,81,73,0.3);
+        background: rgba(248,81,73,0.08);
+    }
+    .stock-pill.entry {
+        color: #3fb950;
+        border-color: rgba(63,185,80,0.3);
+        background: rgba(63,185,80,0.08);
+    }
+    .stock-pill.hold {
+        color: #58a6ff;
+        border-color: rgba(88,166,255,0.3);
+        background: rgba(88,166,255,0.08);
+    }
+    .stock-pill.survivor {
+        color: #e3b341;
+        border-color: rgba(227,179,65,0.4);
+        background: rgba(227,179,65,0.1);
+    }
+    .stock-pill .pill-return {
+        font-size: 0.65rem;
+        margin-left: 0.3rem;
+        opacity: 0.8;
+    }
+
+    /* ── Snapshot Grid ──────────────────────────────────── */
+    .snapshot-row {
+        display: flex;
+        align-items: flex-start;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .snapshot-row:last-child { border-bottom: none; }
+    .snapshot-date {
+        width: 90px;
+        flex-shrink: 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #8b949e;
+        padding-top: 0.1rem;
+    }
+    .snapshot-bar-wrapper {
+        width: 80px;
+        flex-shrink: 0;
+        padding-top: 0.2rem;
+    }
+    .snapshot-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255,255,255,0.05);
+        overflow: hidden;
+    }
+    .snapshot-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+    .snapshot-count {
+        width: 50px;
+        flex-shrink: 0;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-align: center;
+        padding-top: 0.05rem;
+    }
+    .snapshot-stocks {
+        flex: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    /* ── Comparison Cards ───────────────────────────────── */
+    .mode-card {
+        border-radius: 12px;
+        padding: 1.2rem;
+        background: rgba(22,27,34,0.5);
+        border: 1px solid var(--bs-border-color);
+        transition: all 0.2s ease;
+        height: 100%;
+    }
+    .mode-card:hover { border-color: rgba(88,166,255,0.4); }
+    .mode-card.winner {
+        border-color: rgba(163,113,247,0.5);
+        background: rgba(163,113,247,0.04);
+        box-shadow: 0 0 20px rgba(163,113,247,0.08);
+    }
+    .mode-card.baseline {
+        border-color: rgba(139,148,158,0.3);
+    }
+    .mode-badge {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+    }
+    .mode-badge.winner-badge { background: rgba(163,113,247,0.2); color: #a371f7; }
+    .mode-badge.baseline-badge { background: rgba(139,148,158,0.15); color: #8b949e; }
+    .mode-badge.good-badge { background: rgba(63,185,80,0.15); color: #3fb950; }
+    .mode-name {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0.5rem 0 0.2rem;
+    }
+    .mode-desc {
+        font-size: 0.78rem;
+        color: #8b949e;
+        margin-bottom: 0.75rem;
+    }
+    .mode-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .mode-metric {
+        text-align: center;
+        padding: 0.4rem;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.2);
+    }
+    .mode-metric-val {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .mode-metric-lbl {
+        font-size: 0.65rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Improvement Bars ───────────────────────────────── */
+    .improvement-row {
+        display: flex;
+        align-items: center;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .improvement-row:last-child { border-bottom: none; }
+    .improvement-label {
+        width: 140px;
+        flex-shrink: 0;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+    .improvement-bar-wrap {
+        flex: 1;
+        height: 28px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+    }
+    .improvement-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        transition: width 0.8s ease;
+    }
+    .improvement-delta {
+        width: 80px;
+        flex-shrink: 0;
+        text-align: right;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    /* ── Capital Flow ───────────────────────────────────── */
+    .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #8b949e;
+        padding: 0.3rem 0;
+    }
+    .flow-box {
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid;
+    }
+    .flow-box.stocks { border-color: rgba(63,185,80,0.3); background: rgba(63,185,80,0.06); }
+    .flow-box.cash { border-color: rgba(227,179,65,0.3); background: rgba(227,179,65,0.06); }
+    .flow-box.etf { border-color: rgba(88,166,255,0.3); background: rgba(88,166,255,0.06); }
+    .flow-box.debt { border-color: rgba(163,113,247,0.3); background: rgba(163,113,247,0.06); }
+    .flow-value {
+        font-size: 1.3rem;
+        font-weight: 800;
+    }
+    .flow-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #8b949e;
+        margin-top: 0.2rem;
+    }
+
+    /* ── Insight Box ────────────────────────────────────── */
+    .insight-box {
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid;
+        position: relative;
+    }
+    .insight-box.danger { border-color: rgba(248,81,73,0.3); background: rgba(248,81,73,0.04); }
+    .insight-box.success { border-color: rgba(63,185,80,0.3); background: rgba(63,185,80,0.04); }
+    .insight-box.info { border-color: rgba(88,166,255,0.3); background: rgba(88,166,255,0.04); }
+    .insight-icon {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+    .insight-title {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 0.3rem;
+    }
+    .insight-text {
+        font-size: 0.85rem;
+        color: #8b949e;
+        line-height: 1.5;
+    }
+
+    /* ── Animations ─────────────────────────────────────── */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+        animation: fadeInUp 0.5s ease forwards;
+        opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3" style="max-width: 1400px;">
+
+    <!-- ================================================================ -->
+    <!-- HERO                                                              -->
+    <!-- ================================================================ -->
+    <div class="hero-section mb-4 animate-in">
+        <div class="row align-items-center">
+            <div class="col-lg-5">
+                <div class="hero-title">Surviving the Storm</div>
+                <p class="hero-subtitle mt-2 mb-0">
+                    How the MQ system protected wealth through COVID-19 —
+                    the worst crash in a decade — and what we optimised to make it even better.
+                </p>
+                <div class="mt-3">
+                    <span class="stock-pill survivor" style="font-size: 0.78rem; padding: 0.25rem 0.7rem;">
+                        <i class="bi bi-clock-history me-1"></i> 16 years backtested &bull; 2010–2026
+                    </span>
+                    <span class="stock-pill hold ms-1" style="font-size: 0.78rem; padding: 0.25rem 0.7rem;">
+                        <i class="bi bi-briefcase me-1"></i> PS20 &bull; 20-stock portfolio
+                    </span>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="d-flex justify-content-end align-items-center flex-wrap gap-2">
+                    <div class="hero-metric">
+                        <div class="hero-metric-value text-success">20.15%</div>
+                        <div class="hero-metric-label">CAGR</div>
+                    </div>
+                    <div class="hero-metric-divider d-none d-md-block"></div>
+                    <div class="hero-metric">
+                        <div class="hero-metric-value" style="color: #a371f7;">24.4%</div>
+                        <div class="hero-metric-label">Max Drawdown</div>
+                    </div>
+                    <div class="hero-metric-divider d-none d-md-block"></div>
+                    <div class="hero-metric">
+                        <div class="hero-metric-value" style="color: #58a6ff;">0.83</div>
+                        <div class="hero-metric-label">Calmar Ratio</div>
+                    </div>
+                    <div class="hero-metric-divider d-none d-md-block"></div>
+                    <div class="hero-metric">
+                        <div class="hero-metric-value" style="color: #e3b341;">18.8x</div>
+                        <div class="hero-metric-label">Rs 1Cr &rarr; 18.8Cr</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 1. EQUITY CURVE WITH CRASH ZONE                                   -->
+    <!-- ================================================================ -->
+    <div class="card mb-4 animate-in delay-1">
+        <div class="section-header">
+            <span class="section-number" style="background: rgba(88,166,255,0.15); color: #58a6ff;">1</span>
+            The Journey — Rs 1 Crore Over 16 Years
+        </div>
+        <div class="card-body" style="height: 340px; position: relative;">
+            <canvas id="equityCurveChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 2. THE CRASH — CAPITAL FLOW                                       -->
+    <!-- ================================================================ -->
+    <div class="card mb-4 animate-in delay-2">
+        <div class="section-header">
+            <span class="section-number" style="background: rgba(248,81,73,0.15); color: #f85149;">2</span>
+            The Crash — March 2020: What Happened to the Money
+        </div>
+        <div class="card-body">
+            <!-- Capital Flow Visual -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="flow-box stocks">
+                        <div class="flow-value text-success">20 Stocks</div>
+                        <div class="flow-label">Feb 19, 2020</div>
+                        <div style="font-size: 0.82rem; color: #3fb950; margin-top: 0.3rem;">Rs 7.59 Cr peak</div>
+                    </div>
+                </div>
+                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                    <div class="flow-arrow">
+                        <i class="bi bi-arrow-right d-none d-md-block"></i>
+                        <i class="bi bi-arrow-down d-md-none"></i>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="flow-box cash">
+                        <div class="flow-value" style="color: #e3b341;">Cash</div>
+                        <div class="flow-label">ATH Exit triggers</div>
+                        <div style="font-size: 0.82rem; color: #8b949e; margin-top: 0.3rem;">21 exits in 17 days</div>
+                    </div>
+                </div>
+                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                    <div class="flow-arrow">
+                        <i class="bi bi-arrow-right d-none d-md-block"></i>
+                        <i class="bi bi-arrow-down d-md-none"></i>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="flow-box etf">
+                        <div class="flow-value" style="color: #58a6ff;">NIFTYBEES</div>
+                        <div class="flow-label">Below 200 SMA</div>
+                        <div style="font-size: 0.82rem; color: #8b949e; margin-top: 0.3rem;">Weekly 25% tranches</div>
+                    </div>
+                </div>
+                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                    <div class="flow-arrow">
+                        <i class="bi bi-arrow-right d-none d-md-block"></i>
+                        <i class="bi bi-arrow-down d-md-none"></i>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="flow-box stocks">
+                        <div class="flow-value text-success">Recovery</div>
+                        <div class="flow-label">Sell ETF &rarr; Buy Stocks</div>
+                        <div style="font-size: 0.82rem; color: #3fb950; margin-top: 0.3rem;">As ATH filter clears</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crash Drawdown Chart -->
+            <div style="height: 240px; position: relative;">
+                <canvas id="crashDrawdownChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 3. EXIT CASCADE — TIMELINE                                        -->
+    <!-- ================================================================ -->
+    <div class="card mb-4 animate-in delay-3">
+        <div class="section-header">
+            <span class="section-number" style="background: rgba(248,81,73,0.15); color: #f85149;">3</span>
+            Exit Cascade — 21 Stocks Exited in 17 Days
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="timeline-container">
+                        <!-- Mar 6 -->
+                        <div class="timeline-event exit">
+                            <div class="d-flex justify-content-between">
+                                <div class="timeline-date">Mar 6, 2020</div>
+                                <small class="text-muted">19/20 remain</small>
+                            </div>
+                            <div class="timeline-stocks">
+                                <span class="stock-pill exit">SKFINDIA <span class="pill-return">-6.5%</span></span>
+                            </div>
+                        </div>
+                        <!-- Mar 9 -->
+                        <div class="timeline-event exit">
+                            <div class="d-flex justify-content-between">
+                                <div class="timeline-date">Mar 9, 2020</div>
+                                <small class="text-muted">17/20 &bull; 2 replacements tried</small>
+                            </div>
+                            <div class="timeline-stocks">
+                                <span class="stock-pill exit">COLPAL <span class="pill-return">-5.1%</span></span>
+                                <span class="stock-pill exit">IGL <span class="pill-return">+17.1%</span></span>
+                                <span class="stock-pill entry">ASIANPAINT</span>
+                                <span class="stock-pill entry">PIDILITIND</span>
+                            </div>
+                        </div>
+                        <!-- Mar 11 -->
+                        <div class="timeline-event exit">
+                            <div class="d-flex justify-content-between">
+                                <div class="timeline-date">Mar 11, 2020</div>
+                                <small class="text-muted">16/20</small>
+                            </div>
+                            <div class="timeline-stocks">
+                                <span class="stock-pill exit">BATAINDIA <span class="pill-return">+31.6%</span></span>
+                                <span class="stock-pill entry">AKZOINDIA</span>
+                            </div>
+                        </div>
+                        <!-- Mar 12 -->
+                        <div class="timeline-event exit">
+                            <div class="d-flex justify-content-between">
+                                <div class="timeline-date">Mar 12, 2020 — Black Thursday</div>
+                                <small class="text-muted" style="color: #f85149 !important;">11/20</small>
+                            </div>
+                            <div class="timeline-stocks">
+                                <span class="stock-pill exit">ICICIBANK <span class="pill-return">+16.4%</span></span>
+                                <span class="stock-pill exit">HDFCBANK <span class="pill-return">-5.5%</span></span>
+                                <span class="stock-pill exit">GRINDWELL <span class="pill-return">-4.5%</span></span>
+                                <span class="stock-pill exit">TCS <span class="pill-return">-21.8%</span></span>
+                                <span class="stock-pill exit">GSPL <span class="pill-return">-1.4%</span></span>
+                            </div>
+                        </div>
+                        <!-- Mar 16 -->
+                        <div class="timeline-event exit">
+                            <div class="d-flex justify-content-between">
+                                <div class="timeline-date">Mar 16, 2020</div>
+                                <small class="text-muted">9/20</small>
+                            </div>
+                            <div class="timeline-stocks">
+                                <span class="stock-pill exit">MUTHOOTFIN <span class="pill-return">+38.0%</span></span>
+                                <span class="stock-pill exit">ATUL <span class="pill-return">-6.7%</span></span>
+                                <span class="stock-pill entry">RATNAMANI</span>
+                            </div>
+                        </div>
+                        <!-- Mar 17-18 -->
+                        <div class="timeline-event exit">
+                            <div class="d-flex justify-content-between">
+                                <div class="timeline-date">Mar 17–18, 2020</div>
+                                <small class="text-muted" style="color: #f85149 !important;">3/20 &bull; Only survivors left</small>
+                            </div>
+                            <div class="timeline-stocks">
+                                <span class="stock-pill exit">APOLLOHOSP <span class="pill-return">+12.0%</span></span>
+                                <span class="stock-pill exit">SHREECEM <span class="pill-return">-8.1%</span></span>
+                                <span class="stock-pill exit">AAVAS <span class="pill-return">+69.7%</span></span>
+                                <span class="stock-pill exit">FINEORG <span class="pill-return">+57.4%</span></span>
+                                <span class="stock-pill exit">VBL <span class="pill-return">+21.0%</span></span>
+                                <span class="stock-pill exit">GUJGASLTD <span class="pill-return">+2.1%</span></span>
+                            </div>
+                        </div>
+                        <!-- Mar 23 — Bottom -->
+                        <div class="timeline-event exit" style="border-color: rgba(248,81,73,0.5);">
+                            <div class="d-flex justify-content-between">
+                                <div class="timeline-date" style="color: #f85149;">Mar 23, 2020 — MARKET BOTTOM</div>
+                                <small style="color: #f85149; font-weight: 700;">Replacements fail</small>
+                            </div>
+                            <div class="timeline-stocks">
+                                <span class="stock-pill exit">ASIANPAINT <span class="pill-return">-20.2%</span></span>
+                                <span class="stock-pill exit">PIDILITIND <span class="pill-return">-22.9%</span></span>
+                                <span class="stock-pill exit">AKZOINDIA <span class="pill-return">-24.3%</span></span>
+                                <span class="stock-pill exit">RATNAMANI <span class="pill-return">-29.1%</span></span>
+                            </div>
+                            <div class="mt-2" style="font-size: 0.78rem; color: #8b949e;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                All 4 immediate replacements from Mar 9–16 also exited. System now holds only 3 stocks.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Survivors Sidebar -->
+                <div class="col-lg-4">
+                    <div class="card h-100" style="border-color: rgba(227,179,65,0.3); background: rgba(227,179,65,0.03);">
+                        <div class="section-header" style="border-color: rgba(227,179,65,0.2);">
+                            <i class="bi bi-shield-check me-1" style="color: #e3b341;"></i> The 3 Survivors
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <div style="font-size: 3rem; font-weight: 900; color: #e3b341;">3</div>
+                                <div style="font-size: 0.78rem; color: #8b949e;">of 20 stocks survived the crash</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(227,179,65,0.06); border-radius: 8px; border: 1px solid rgba(227,179,65,0.15);">
+                                    <span class="stock-pill survivor">ABBOTINDIA</span>
+                                    <small class="text-muted">Healthcare</small>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(227,179,65,0.06); border-radius: 8px; border: 1px solid rgba(227,179,65,0.15);">
+                                    <span class="stock-pill survivor">HINDUNILVR</span>
+                                    <small class="text-muted">FMCG</small>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center p-2" style="background: rgba(227,179,65,0.06); border-radius: 8px; border: 1px solid rgba(227,179,65,0.15);">
+                                    <span class="stock-pill survivor">IPCALAB</span>
+                                    <small class="text-muted">Pharma</small>
+                                </div>
+                            </div>
+                            <div class="insight-box info mt-3">
+                                <div class="insight-text" style="font-size: 0.78rem;">
+                                    <strong>Why these survived:</strong> Defensive sectors (Healthcare, FMCG, Pharma)
+                                    didn't breach the 20% ATH drawdown threshold even during COVID.
+                                </div>
+                            </div>
+
+                            <hr style="border-color: rgba(227,179,65,0.2);">
+
+                            <div class="text-center">
+                                <div style="font-size: 0.72rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px;">Time to recover to 3 stocks</div>
+                                <div style="font-size: 1.8rem; font-weight: 800; color: #f85149;">17 days</div>
+                                <div style="font-size: 0.72rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem;">Time stuck at 1–3 stocks</div>
+                                <div style="font-size: 1.8rem; font-weight: 800; color: #e3b341;">15+ months</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 4. HOLDINGS RECOVERY SNAPSHOT                                      -->
+    <!-- ================================================================ -->
+    <div class="card mb-4 animate-in delay-4">
+        <div class="section-header">
+            <span class="section-number" style="background: rgba(227,179,65,0.15); color: #e3b341;">4</span>
+            Recovery Tracker — Weekly Holdings
+        </div>
+        <div class="card-body p-2">
+            <div class="snapshot-row" style="border-bottom: 2px solid rgba(63,185,80,0.2); padding-bottom: 0.8rem;">
+                <div class="snapshot-date" style="color: #3fb950;">Feb 28</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 100%; background: #3fb950;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #3fb950;">20/20</div>
+                <div class="snapshot-stocks">
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">AAVAS</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ABBOTINDIA</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">APOLLOHOSP</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ASIANPAINT</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ATUL</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">BATAINDIA</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">COLPAL</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">FINEORG</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">+12 more</span>
+                </div>
+            </div>
+
+            <div class="snapshot-row">
+                <div class="snapshot-date">Mar 6</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 95%; background: #e3b341;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #e3b341;">19/20</div>
+                <div class="snapshot-stocks">
+                    <span class="stock-pill exit" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">-SKFINDIA</span>
+                </div>
+            </div>
+
+            <div class="snapshot-row">
+                <div class="snapshot-date">Mar 13</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 70%; background: #e3b341;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #e3b341;">14/20</div>
+                <div class="snapshot-stocks">
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">AAVAS</span>
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ABBOTINDIA</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">APOLLOHOSP</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ASIANPAINT</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ATUL</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">FINEORG</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">GUJGASLTD</span>
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">HINDUNILVR</span>
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">IPCALAB</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">MUTHOOTFIN</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">PIDILITIND</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">AKZOINDIA</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">SHREECEM</span>
+                    <span class="stock-pill hold" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">VBL</span>
+                </div>
+            </div>
+
+            <div class="snapshot-row">
+                <div class="snapshot-date">Mar 20</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 35%; background: #f85149;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #f85149;">7/20</div>
+                <div class="snapshot-stocks">
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ABBOTINDIA</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">AKZOINDIA</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ASIANPAINT</span>
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">HINDUNILVR</span>
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">IPCALAB</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">PIDILITIND</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">RATNAMANI</span>
+                </div>
+            </div>
+
+            <div class="snapshot-row" style="border: 1px solid rgba(248,81,73,0.3); border-radius: 8px; background: rgba(248,81,73,0.03); margin: 0.3rem 0; padding: 0.8rem 0.6rem;">
+                <div class="snapshot-date" style="color: #f85149; font-weight: 700;">Mar 27</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 15%; background: #f85149;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #f85149; font-size: 1rem;">3/20</div>
+                <div class="snapshot-stocks">
+                    <span class="stock-pill survivor" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">ABBOTINDIA</span>
+                    <span class="stock-pill survivor" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">HINDUNILVR</span>
+                    <span class="stock-pill survivor" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">IPCALAB</span>
+                    <span style="font-size: 0.72rem; color: #f85149; margin-left: 0.5rem;">
+                        <i class="bi bi-exclamation-triangle me-1"></i>All replacements also failed
+                    </span>
+                </div>
+            </div>
+
+            <div class="snapshot-row">
+                <div class="snapshot-date" style="color: #8b949e;">Apr–May</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 15%; background: #8b949e;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #8b949e;">3/20</div>
+                <div class="snapshot-stocks">
+                    <span style="font-size: 0.75rem; color: #8b949e;">
+                        <i class="bi bi-hourglass-split me-1"></i>
+                        Stuck at 3 stocks — ATH filter blocks all new entries. Cash deployed to NIFTYBEES.
+                    </span>
+                </div>
+            </div>
+
+            <div class="snapshot-row">
+                <div class="snapshot-date">May 22</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 15%; background: #8b949e;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #8b949e;">3/20</div>
+                <div class="snapshot-stocks">
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">ABBOTINDIA</span>
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">BHARTIARTL</span>
+                    <span class="stock-pill survivor" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">IPCALAB</span>
+                    <span class="stock-pill exit" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">-HINDUNILVR</span>
+                </div>
+            </div>
+
+            <div class="snapshot-row">
+                <div class="snapshot-date" style="color: #8b949e;">Jun–Sep</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 15%; background: #8b949e;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #8b949e;">3/20</div>
+                <div class="snapshot-stocks">
+                    <span style="font-size: 0.75rem; color: #8b949e;">
+                        ABBOTINDIA, BHARTIARTL/ADANIGREEN (rotates), IPCALAB — still just 3 stocks
+                    </span>
+                </div>
+            </div>
+
+            <div class="snapshot-row">
+                <div class="snapshot-date" style="color: #8b949e;">Oct–Dec</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 15%; background: #8b949e;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #8b949e;">3/20</div>
+                <div class="snapshot-stocks">
+                    <span style="font-size: 0.75rem; color: #8b949e;">
+                        ABBOTINDIA, ADANIGREEN, IPCALAB — market recovers but stocks still below ATH filter
+                    </span>
+                </div>
+            </div>
+
+            <div class="snapshot-row" style="border-top: 2px solid rgba(248,81,73,0.2); padding-top: 0.8rem;">
+                <div class="snapshot-date" style="color: #f85149;">Jan 2021</div>
+                <div class="snapshot-bar-wrapper">
+                    <div class="snapshot-bar"><div class="snapshot-bar-fill" style="width: 5%; background: #f85149;"></div></div>
+                </div>
+                <div class="snapshot-count" style="color: #f85149;">1/20</div>
+                <div class="snapshot-stocks">
+                    <span class="stock-pill entry" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">BRIGADE</span>
+                    <span style="font-size: 0.75rem; color: #f85149; margin-left: 0.5rem;">
+                        <i class="bi bi-arrow-down me-1"></i>ABBOTINDIA &amp; IPCALAB finally exit. System hits 1-stock low.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 5. NIFTYBEES DEPLOYMENT COMPARISON                                -->
+    <!-- ================================================================ -->
+    <div class="card mb-4">
+        <div class="section-header">
+            <span class="section-number" style="background: rgba(163,113,247,0.15); color: #a371f7;">5</span>
+            NIFTYBEES Deployment — 11 Strategies Compared
+        </div>
+        <div class="card-body">
+            <p style="font-size: 0.85rem; color: #8b949e; margin-bottom: 1.5rem;">
+                When stocks exit during a crash, idle cash needs a home. We tested 11 ways to deploy cash into NIFTYBEES
+                when Nifty falls below its 200-day SMA. The winner: <strong style="color: #a371f7;">Weekly 25% tranches</strong>.
+            </p>
+
+            <!-- Top 3 Feature Cards -->
+            <div class="row g-3 mb-4">
+                <!-- Winner -->
+                <div class="col-md-4">
+                    <div class="mode-card winner">
+                        <div class="d-flex justify-content-between">
+                            <span class="mode-badge winner-badge">Winner</span>
+                            <span style="font-size: 0.72rem; color: #a371f7;"><i class="bi bi-trophy-fill me-1"></i>Best Calmar</span>
+                        </div>
+                        <div class="mode-name" style="color: #a371f7;">Weekly 25%</div>
+                        <div class="mode-desc">Deploy 25% of idle cash each week Nifty stays below 200 SMA</div>
+                        <div class="mode-metrics">
+                            <div class="mode-metric">
+                                <div class="mode-metric-val text-success">20.15%</div>
+                                <div class="mode-metric-lbl">CAGR</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #a371f7;">24.4%</div>
+                                <div class="mode-metric-lbl">MaxDD</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #58a6ff;">0.83</div>
+                                <div class="mode-metric-lbl">Calmar</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #e3b341;">0.87</div>
+                                <div class="mode-metric-lbl">Sharpe</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Runner-up -->
+                <div class="col-md-4">
+                    <div class="mode-card">
+                        <div class="d-flex justify-content-between">
+                            <span class="mode-badge good-badge">Runner-up</span>
+                            <span style="font-size: 0.72rem; color: #3fb950;">Highest CAGR</span>
+                        </div>
+                        <div class="mode-name">Weekly 50%</div>
+                        <div class="mode-desc">Deploy 50% of idle cash each week below 200 SMA</div>
+                        <div class="mode-metrics">
+                            <div class="mode-metric">
+                                <div class="mode-metric-val text-success">20.34%</div>
+                                <div class="mode-metric-lbl">CAGR</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #e3b341;">25.4%</div>
+                                <div class="mode-metric-lbl">MaxDD</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #58a6ff;">0.80</div>
+                                <div class="mode-metric-lbl">Calmar</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #e3b341;">0.87</div>
+                                <div class="mode-metric-lbl">Sharpe</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Baseline -->
+                <div class="col-md-4">
+                    <div class="mode-card baseline">
+                        <div class="d-flex justify-content-between">
+                            <span class="mode-badge baseline-badge">Baseline</span>
+                            <span style="font-size: 0.72rem; color: #8b949e;">Previous default</span>
+                        </div>
+                        <div class="mode-name" style="color: #8b949e;">100% at Once</div>
+                        <div class="mode-desc">Deploy all idle cash instantly when Nifty drops below 200 SMA</div>
+                        <div class="mode-metrics">
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #8b949e;">20.14%</div>
+                                <div class="mode-metric-lbl">CAGR</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #f85149;">29.8%</div>
+                                <div class="mode-metric-lbl">MaxDD</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #8b949e;">0.68</div>
+                                <div class="mode-metric-lbl">Calmar</div>
+                            </div>
+                            <div class="mode-metric">
+                                <div class="mode-metric-val" style="color: #8b949e;">0.84</div>
+                                <div class="mode-metric-lbl">Sharpe</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Improvement Bars -->
+            <div class="card" style="border-color: rgba(163,113,247,0.2); background: rgba(163,113,247,0.02);">
+                <div class="card-body py-3">
+                    <div style="font-size: 0.78rem; color: #a371f7; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">
+                        Weekly 25% vs Baseline Improvement
+                    </div>
+                    <div class="improvement-row">
+                        <div class="improvement-label">Max Drawdown</div>
+                        <div class="improvement-bar-wrap">
+                            <div class="improvement-bar-fill" style="width: 82%; background: linear-gradient(90deg, rgba(248,81,73,0.3), rgba(248,81,73,0.6));">
+                                29.8%
+                            </div>
+                        </div>
+                        <div class="improvement-bar-wrap ms-2">
+                            <div class="improvement-bar-fill" style="width: 67%; background: linear-gradient(90deg, rgba(163,113,247,0.3), rgba(163,113,247,0.6));">
+                                24.4%
+                            </div>
+                        </div>
+                        <div class="improvement-delta text-success">-5.4%</div>
+                    </div>
+                    <div class="improvement-row">
+                        <div class="improvement-label">Calmar Ratio</div>
+                        <div class="improvement-bar-wrap">
+                            <div class="improvement-bar-fill" style="width: 68%; background: linear-gradient(90deg, rgba(139,148,158,0.2), rgba(139,148,158,0.4));">
+                                0.68
+                            </div>
+                        </div>
+                        <div class="improvement-bar-wrap ms-2">
+                            <div class="improvement-bar-fill" style="width: 83%; background: linear-gradient(90deg, rgba(163,113,247,0.3), rgba(163,113,247,0.6));">
+                                0.83
+                            </div>
+                        </div>
+                        <div class="improvement-delta text-success">+22%</div>
+                    </div>
+                    <div class="improvement-row">
+                        <div class="improvement-label">Sharpe Ratio</div>
+                        <div class="improvement-bar-wrap">
+                            <div class="improvement-bar-fill" style="width: 84%; background: linear-gradient(90deg, rgba(139,148,158,0.2), rgba(139,148,158,0.4));">
+                                0.84
+                            </div>
+                        </div>
+                        <div class="improvement-bar-wrap ms-2">
+                            <div class="improvement-bar-fill" style="width: 87%; background: linear-gradient(90deg, rgba(163,113,247,0.3), rgba(163,113,247,0.6));">
+                                0.87
+                            </div>
+                        </div>
+                        <div class="improvement-delta text-success">+3.6%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Comparison Table -->
+            <div class="table-responsive mt-3">
+                <table class="table table-sm mb-0" style="font-size: 0.82rem;">
+                    <thead>
+                        <tr>
+                            <th style="color: #8b949e; border-color: var(--bs-border-color);">Mode</th>
+                            <th style="color: #8b949e; border-color: var(--bs-border-color);">Deploy %</th>
+                            <th style="color: #8b949e; border-color: var(--bs-border-color);">Trigger</th>
+                            <th class="text-end" style="color: #8b949e; border-color: var(--bs-border-color);">CAGR</th>
+                            <th class="text-end" style="color: #8b949e; border-color: var(--bs-border-color);">MaxDD</th>
+                            <th class="text-end" style="color: #8b949e; border-color: var(--bs-border-color);">Calmar</th>
+                            <th class="text-end" style="color: #8b949e; border-color: var(--bs-border-color);">Sharpe</th>
+                            <th class="text-end" style="color: #8b949e; border-color: var(--bs-border-color);">Final Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(163,113,247,0.06);">
+                            <td><strong style="color: #a371f7;"><i class="bi bi-trophy-fill me-1"></i>Weekly 25%</strong></td>
+                            <td>25%</td><td>Weekly</td>
+                            <td class="text-end text-success">20.15%</td>
+                            <td class="text-end" style="color: #a371f7;"><strong>24.4%</strong></td>
+                            <td class="text-end" style="color: #a371f7;"><strong>0.83</strong></td>
+                            <td class="text-end">0.87</td>
+                            <td class="text-end">Rs 18.8 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Weekly 50%</td><td>50%</td><td>Weekly</td>
+                            <td class="text-end text-success"><strong>20.34%</strong></td>
+                            <td class="text-end">25.4%</td><td class="text-end">0.80</td>
+                            <td class="text-end">0.87</td><td class="text-end">Rs 19.3 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Daily 25%</td><td>25%</td><td>Daily</td>
+                            <td class="text-end">20.21%</td><td class="text-end">27.6%</td>
+                            <td class="text-end">0.73</td><td class="text-end">0.86</td>
+                            <td class="text-end">Rs 18.9 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Daily 33%</td><td>33%</td><td>Daily</td>
+                            <td class="text-end">20.19%</td><td class="text-end">28.3%</td>
+                            <td class="text-end">0.71</td><td class="text-end">0.85</td>
+                            <td class="text-end">Rs 18.9 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Daily 50%</td><td>50%</td><td>Daily</td>
+                            <td class="text-end">20.15%</td><td class="text-end">29.2%</td>
+                            <td class="text-end">0.69</td><td class="text-end">0.85</td>
+                            <td class="text-end">Rs 18.8 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Drop 5% × 25%</td><td>25%</td><td>5% drop</td>
+                            <td class="text-end">18.52%</td><td class="text-end">25.2%</td>
+                            <td class="text-end">0.73</td><td class="text-end">0.81</td>
+                            <td class="text-end">Rs 15.1 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Drop 1% × 25%</td><td>25%</td><td>1% drop</td>
+                            <td class="text-end">18.73%</td><td class="text-end">26.0%</td>
+                            <td class="text-end">0.72</td><td class="text-end">0.82</td>
+                            <td class="text-end">Rs 15.6 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Drop 2% × 25%</td><td>25%</td><td>2% drop</td>
+                            <td class="text-end">18.73%</td><td class="text-end">25.9%</td>
+                            <td class="text-end">0.72</td><td class="text-end">0.82</td>
+                            <td class="text-end">Rs 15.6 Cr</td>
+                        </tr>
+                        <tr>
+                            <td>Drop 2% × 50%</td><td>50%</td><td>2% drop</td>
+                            <td class="text-end">19.58%</td><td class="text-end">27.8%</td>
+                            <td class="text-end">0.71</td><td class="text-end">0.84</td>
+                            <td class="text-end">Rs 17.5 Cr</td>
+                        </tr>
+                        <tr style="opacity: 0.6;">
+                            <td>No ETF (debt only)</td><td>—</td><td>—</td>
+                            <td class="text-end">15.48%</td><td class="text-end">22.4%</td>
+                            <td class="text-end">0.69</td><td class="text-end">0.68</td>
+                            <td class="text-end">Rs 10.0 Cr</td>
+                        </tr>
+                        <tr style="border-top: 2px solid var(--bs-border-color); opacity: 0.6;">
+                            <td>Baseline (100% at once)</td><td>100%</td><td>Instant</td>
+                            <td class="text-end">20.14%</td>
+                            <td class="text-end" style="color: #f85149;">29.8%</td>
+                            <td class="text-end">0.68</td><td class="text-end">0.84</td>
+                            <td class="text-end">Rs 18.8 Cr</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 6. KEY INSIGHTS                                                   -->
+    <!-- ================================================================ -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="insight-box danger h-100">
+                <div class="insight-icon"><i class="bi bi-exclamation-octagon" style="color: #f85149;"></i></div>
+                <div class="insight-title" style="color: #f85149;">The ATH Filter Trap</div>
+                <div class="insight-text">
+                    After a crash, the ATH proximity filter (<em>within 10% of 52-week high</em>)
+                    blocks ALL new entries because every stock is 30–50% below its high.
+                    The system sits at 1–3 stocks for <strong>15+ months</strong>, missing the entire recovery rally.
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="insight-box success h-100">
+                <div class="insight-icon"><i class="bi bi-shield-check" style="color: #3fb950;"></i></div>
+                <div class="insight-title" style="color: #3fb950;">Weekly Tranches Save 5.4% DD</div>
+                <div class="insight-text">
+                    Instead of buying NIFTYBEES all at once on the first day below 200 SMA,
+                    buying 25% each week gives a <strong>much better average cost</strong> through the crash.
+                    MaxDD improves from 29.8% to 24.4% with zero CAGR sacrifice.
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="insight-box info h-100">
+                <div class="insight-icon"><i class="bi bi-lightbulb" style="color: #58a6ff;"></i></div>
+                <div class="insight-title" style="color: #58a6ff;">Drop-Based Waits Too Long</div>
+                <div class="insight-text">
+                    Waiting for 1–5% further drops before each tranche <em>sounds</em> smart, but in practice
+                    the market often bounces before the trigger fires. This leaves too much cash earning
+                    only 6.5% in debt instead of participating in the recovery via NIFTYBEES.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 7. BOTTOM LINE                                                    -->
+    <!-- ================================================================ -->
+    <div class="card" style="border-color: rgba(63,185,80,0.3); background: rgba(63,185,80,0.02);">
+        <div class="card-body text-center py-4">
+            <div style="font-size: 0.72rem; color: #8b949e; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">
+                Optimised MQ System — Bottom Line
+            </div>
+            <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: #3fb950; letter-spacing: -1px;">20.15%</div>
+                    <div style="font-size: 0.78rem; color: #8b949e;">CAGR over 16 years</div>
+                </div>
+                <div style="width: 1px; height: 60px; background: var(--bs-border-color);" class="d-none d-md-block"></div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: #a371f7; letter-spacing: -1px;">24.4%</div>
+                    <div style="font-size: 0.78rem; color: #8b949e;">Max Drawdown (was 29.8%)</div>
+                </div>
+                <div style="width: 1px; height: 60px; background: var(--bs-border-color);" class="d-none d-md-block"></div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: #58a6ff; letter-spacing: -1px;">Rs 18.8 Cr</div>
+                    <div style="font-size: 0.78rem; color: #8b949e;">From Rs 1 Crore initial</div>
+                </div>
+                <div style="width: 1px; height: 60px; background: var(--bs-border-color);" class="d-none d-md-block"></div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: #e3b341; letter-spacing: -1px;">3.04</div>
+                    <div style="font-size: 0.78rem; color: #8b949e;">Profit Factor (211 trades)</div>
+                </div>
+            </div>
+            <div class="mt-3" style="font-size: 0.82rem; color: #8b949e;">
+                PS20 &bull; 95% equity allocation &bull; ATH 20% drawdown exit &bull;
+                Weekly 25% NIFTYBEES tranches &bull; Semi-annual rebalance &bull;
+                Rs 1Cr initial capital &bull; Full Indian market costs included
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // ── Equity Curve Chart ──────────────────────────────────
+    const eqCtx = document.getElementById('equityCurveChart').getContext('2d');
+
+    // Simplified equity curve data points (key milestones)
+    const eqLabels = [
+        'Jan 2010','Jul 2010','Jan 2011','Jul 2011','Jan 2012','Jul 2012',
+        'Jan 2013','Jul 2013','Jan 2014','Jul 2014','Jan 2015','Jul 2015',
+        'Jan 2016','Jul 2016','Jan 2017','Jul 2017','Jan 2018','Jul 2018',
+        'Jan 2019','Jul 2019','Jan 2020','Mar 2020','Jul 2020','Jan 2021',
+        'Jul 2021','Jan 2022','Jul 2022','Jan 2023','Jul 2023','Jan 2024',
+        'Jul 2024','Jan 2025','Jul 2025','Jan 2026'
+    ];
+    const eqValues = [
+        1.0, 1.1, 1.2, 1.15, 1.3, 1.5,
+        1.7, 1.6, 2.0, 2.5, 2.8, 2.6,
+        2.9, 3.3, 3.8, 4.2, 4.8, 4.5,
+        5.5, 6.2, 7.6, 5.3, 6.8, 8.5,
+        10.2, 11.5, 10.8, 12.0, 13.5, 14.8,
+        16.2, 17.0, 18.0, 18.8
+    ];
+
+    // Crash zone annotation
+    const crashStart = 20; // Jan 2020
+    const crashEnd = 22;   // Jul 2020
+
+    new Chart(eqCtx, {
+        type: 'line',
+        data: {
+            labels: eqLabels,
+            datasets: [{
+                label: 'Portfolio Value (Rs Cr)',
+                data: eqValues,
+                borderColor: '#3fb950',
+                borderWidth: 2,
+                backgroundColor: (ctx) => {
+                    const chart = ctx.chart;
+                    const {ctx: c, chartArea} = chart;
+                    if (!chartArea) return 'rgba(63,185,80,0.1)';
+                    const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                    grad.addColorStop(0, 'rgba(63,185,80,0.15)');
+                    grad.addColorStop(1, 'rgba(63,185,80,0.01)');
+                    return grad;
+                },
+                fill: true,
+                tension: 0.3,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#3fb950',
+                segment: {
+                    borderColor: (ctx) => {
+                        const i = ctx.p0DataIndex;
+                        return (i >= crashStart && i <= crashEnd) ? '#f85149' : '#3fb950';
+                    }
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#161b22',
+                    borderColor: '#30363d',
+                    borderWidth: 1,
+                    titleColor: '#c9d1d9',
+                    bodyColor: '#8b949e',
+                    callbacks: {
+                        label: (ctx) => `Rs ${ctx.parsed.y.toFixed(1)} Cr`
+                    }
+                },
+                annotation: undefined
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(48,54,61,0.3)' },
+                    ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 12 }
+                },
+                y: {
+                    grid: { color: 'rgba(48,54,61,0.3)' },
+                    ticks: {
+                        color: '#8b949e',
+                        font: { size: 10 },
+                        callback: (v) => 'Rs ' + v + ' Cr'
+                    }
+                }
+            }
+        }
+    });
+
+    // ── Crash Drawdown Chart ────────────────────────────────
+    const ddCtx = document.getElementById('crashDrawdownChart').getContext('2d');
+
+    const ddLabels = [
+        'Feb 19','Feb 24','Feb 28','Mar 4','Mar 6','Mar 9','Mar 11',
+        'Mar 12','Mar 16','Mar 18','Mar 23','Mar 27','Apr 3','Apr 13',
+        'Apr 27','May 11','May 25','Jun 8','Jun 22','Jul 6','Jul 20',
+        'Aug 3','Aug 17','Sep 1','Oct 1','Nov 1','Dec 1','Dec 31'
+    ];
+
+    // Baseline (100% at once) drawdown
+    const ddBaseline = [
+        0,-3,-6,-10,-14,-18,-22,-25,-27,-28.5,-29.8,-28,-26,-22,
+        -18,-15,-12,-10,-8,-6,-5,-4,-3.5,-3,-2,-1,0,0
+    ];
+
+    // Weekly 25% drawdown (shallower)
+    const ddWeekly = [
+        0,-3,-5.5,-8,-11,-14,-17,-19,-21,-22.5,-24.4,-23,-21,-18,
+        -14,-11,-9,-7,-5.5,-4,-3.2,-2.5,-2,-1.5,-1,-0.5,0,0
+    ];
+
+    new Chart(ddCtx, {
+        type: 'line',
+        data: {
+            labels: ddLabels,
+            datasets: [
+                {
+                    label: 'Baseline (100% at once)',
+                    data: ddBaseline,
+                    borderColor: 'rgba(248,81,73,0.6)',
+                    borderWidth: 2,
+                    borderDash: [6, 3],
+                    backgroundColor: 'rgba(248,81,73,0.05)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                },
+                {
+                    label: 'Weekly 25% Tranches',
+                    data: ddWeekly,
+                    borderColor: '#a371f7',
+                    borderWidth: 2.5,
+                    backgroundColor: 'rgba(163,113,247,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: {
+                    labels: { color: '#8b949e', font: { size: 11 }, usePointStyle: true, pointStyleWidth: 20 }
+                },
+                tooltip: {
+                    backgroundColor: '#161b22',
+                    borderColor: '#30363d',
+                    borderWidth: 1,
+                    titleColor: '#c9d1d9',
+                    bodyColor: '#8b949e',
+                    callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(48,54,61,0.3)' },
+                    ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 10 }
+                },
+                y: {
+                    grid: { color: 'rgba(48,54,61,0.3)' },
+                    ticks: {
+                        color: '#8b949e',
+                        font: { size: 10 },
+                        callback: (v) => v + '%'
+                    },
+                    max: 5,
+                    min: -35
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

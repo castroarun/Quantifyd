@@ -1,0 +1,651 @@
+{% extends "base.html" %}
+
+{% block title %}KC6 Mean Reversion Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mode-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.7em;
+        border-radius: 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .mode-PAPER { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950; }
+    .mode-LIVE { background: rgba(248,81,73,0.2); color: #f85149; border: 1px solid #f85149; }
+
+    .crash-safe { background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+    .crash-active { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .table-kc6 th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .table-kc6 td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .exit-STOP_LOSS { color: #f85149; }
+    .exit-TAKE_PROFIT { color: #3fb950; }
+    .exit-SIGNAL_KC6_MID { color: #58a6ff; }
+    .exit-MAX_HOLD { color: #d29922; }
+    .exit-EMERGENCY { color: #f85149; font-weight: 700; }
+
+    .action-btn {
+        min-width: 140px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .pulse-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    .scan-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1050;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">
+                <i class="bi bi-graph-up-arrow me-2"></i>KC6 Mean Reversion
+            </h3>
+            <small class="text-muted">
+                Entry: Close &lt; KC(6,1.3) Lower &amp; &gt; SMA200 | Exit: High &gt; KC6 Mid | SL 5% | TP 15%
+            </small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span id="modeBadge" class="mode-badge mode-PAPER">PAPER</span>
+            <span id="crashBadge" class="mode-badge crash-safe">FILTER: SAFE</span>
+        </div>
+    </div>
+
+    <!-- Metric Cards Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-value" id="metricAtrRatio">--</div>
+                <div class="metric-label">Universe ATR Ratio</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-value" id="metricPositions">0/5</div>
+                <div class="metric-label">Active Positions</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-value" id="metricWinRate">--</div>
+                <div class="metric-label">Win Rate</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-value" id="metricProfitFactor">--</div>
+                <div class="metric-label">Profit Factor</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-value" id="metricTotalTrades">0</div>
+                <div class="metric-label">Total Trades</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card text-center">
+                <div class="metric-value" id="metricTotalPnl">--</div>
+                <div class="metric-label">Total P/L</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-primary action-btn" onclick="runScan()">
+            <i class="bi bi-search me-1"></i> Manual Scan
+        </button>
+        <button class="btn btn-outline-danger action-btn" onclick="killSwitch()">
+            <i class="bi bi-power me-1"></i> Kill Switch
+        </button>
+        <button class="btn btn-outline-secondary action-btn" onclick="toggleMode()">
+            <i class="bi bi-toggles me-1"></i> <span id="toggleBtnText">Go Live</span>
+        </button>
+        <button class="btn btn-outline-info action-btn" onclick="refreshState()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- Equity Curve -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span><i class="bi bi-graph-up me-1"></i> Equity Curve (Cumulative P/L)</span>
+                    <span class="text-muted" id="curveTradeCount">0 trades</span>
+                </div>
+                <div class="card-body" style="height: 300px; position: relative;">
+                    <canvas id="equityCurveChart"></canvas>
+                    <div id="equityCurveEmpty" class="text-center text-muted py-5" style="display:none;">
+                        No completed trades yet. The equity curve will appear after the first trade.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="row g-3">
+        <!-- Active Positions -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span><i class="bi bi-briefcase me-1"></i> Active Positions</span>
+                    <span class="text-muted" id="positionsCount">0 positions</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-kc6 mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Entry</th>
+                                    <th>SL</th>
+                                    <th>Target (KC6 Mid)</th>
+                                    <th>TP</th>
+                                    <th>Days</th>
+                                    <th>Order</th>
+                                </tr>
+                            </thead>
+                            <tbody id="positionsBody">
+                                <tr><td colspan="7" class="text-center text-muted py-4">No active positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entry Signals -->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span><i class="bi bi-bullseye me-1"></i> Entry Signals</span>
+                    <span class="text-muted" id="entrySignalsCount">0 signals</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-kc6 mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Close</th>
+                                    <th>KC6 Lower</th>
+                                    <th>SMA200</th>
+                                    <th>ATR Ratio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entrySignalsBody">
+                                <tr><td colspan="5" class="text-center text-muted py-4">Run scan to see signals</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exit Signals + Recent Trades Row -->
+    <div class="row g-3 mt-1">
+        <!-- Exit Signals -->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span><i class="bi bi-box-arrow-right me-1"></i> Exit Signals</span>
+                    <span class="text-muted" id="exitSignalsCount">0 signals</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-kc6 mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>P/L%</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exitSignalsBody">
+                                <tr><td colspan="5" class="text-center text-muted py-4">No exit signals</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Trades -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span><i class="bi bi-clock-history me-1"></i> Recent Trades</span>
+                    <span class="text-muted" id="tradesCount">0 trades</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-kc6 mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>P/L%</th>
+                                    <th>Hold</th>
+                                    <th>Reason</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradesBody">
+                                <tr><td colspan="7" class="text-center text-muted py-4">No trades yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Status -->
+    <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header-custom">
+                    <i class="bi bi-info-circle me-1"></i> Scheduler Info
+                </div>
+                <div class="card-body">
+                    <div class="row text-muted" style="font-size: 0.85rem;">
+                        <div class="col-md-2"><strong>9:20 AM</strong> - Position sync</div>
+                        <div class="col-md-2"><strong>9:25 AM</strong> - Place target limit orders (KC6 mid)</div>
+                        <div class="col-md-2"><strong>12:30 PM</strong> - Check target fills</div>
+                        <div class="col-md-2"><strong>3:15 PM</strong> - Exit check (SL/TP/MaxHold)</div>
+                        <div class="col-md-2"><strong>3:20 PM</strong> - New entry scan</div>
+                        <div class="col-md-2"><strong>3:25 PM</strong> - Verify all orders</div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted" id="lastScanTime">Last scan: --</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Overlay -->
+<div class="scan-overlay" id="scanOverlay">
+    <div class="card p-4 text-center" style="min-width: 350px;">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <h5 id="scanOverlayTitle">Running Scan...</h5>
+        <p class="text-muted" id="scanOverlayMsg">Loading data...</p>
+        <div class="progress mt-2" style="height: 6px;">
+            <div class="progress-bar" id="scanProgress" style="width: 0%"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    let currentMode = 'paper';
+    let pollInterval = null;
+    let equityChart = null;
+
+    // ========== State Refresh ==========
+    function refreshState() {
+        fetch('/api/kc6/state')
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { console.error(data.error); return; }
+                updateDashboard(data);
+            })
+            .catch(e => console.error('State refresh error:', e));
+    }
+
+    function updateDashboard(data) {
+        // Mode badge
+        const cfg = data.config || {};
+        currentMode = cfg.paper_trading_mode ? 'paper' : 'live';
+        const badge = document.getElementById('modeBadge');
+        badge.textContent = currentMode.toUpperCase();
+        badge.className = 'mode-badge mode-' + currentMode.toUpperCase();
+        document.getElementById('toggleBtnText').textContent = currentMode === 'paper' ? 'Go Live' : 'Go Paper';
+
+        // Crash filter
+        const ds = data.daily_state || {};
+        const atr = ds.universe_atr_ratio;
+        const crashActive = ds.crash_filter_active;
+        const crashBadge = document.getElementById('crashBadge');
+        if (crashActive) {
+            crashBadge.textContent = 'FILTER: BLOCKED';
+            crashBadge.className = 'mode-badge crash-active';
+        } else {
+            crashBadge.textContent = 'FILTER: SAFE';
+            crashBadge.className = 'mode-badge crash-safe';
+        }
+        document.getElementById('metricAtrRatio').textContent = atr ? atr.toFixed(3) : '--';
+
+        // Positions
+        const positions = data.positions || [];
+        const maxPos = cfg.max_positions || 5;
+        document.getElementById('metricPositions').textContent = positions.length + '/' + maxPos;
+        document.getElementById('positionsCount').textContent = positions.length + ' positions';
+        renderPositions(positions);
+
+        // Stats
+        const stats = data.stats || {};
+        document.getElementById('metricWinRate').textContent = stats.win_rate ? stats.win_rate + '%' : '--';
+        document.getElementById('metricProfitFactor').textContent = stats.profit_factor || '--';
+        document.getElementById('metricTotalTrades').textContent = stats.total_trades || 0;
+        const totalPnl = stats.total_pnl;
+        const pnlEl = document.getElementById('metricTotalPnl');
+        if (totalPnl !== undefined && totalPnl !== null) {
+            pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + totalPnl.toLocaleString('en-IN');
+            pnlEl.style.color = totalPnl >= 0 ? '#3fb950' : '#f85149';
+        } else {
+            pnlEl.textContent = '--';
+        }
+
+        // Recent trades
+        const trades = data.recent_trades || [];
+        document.getElementById('tradesCount').textContent = trades.length + ' trades';
+        renderTrades(trades);
+
+        // Last scan
+        const scan = data.last_scan || {};
+        if (scan.scan_time) {
+            document.getElementById('lastScanTime').textContent = 'Last scan: ' + new Date(scan.scan_time).toLocaleString();
+        }
+
+        // Entry/exit signals from last scan
+        renderEntrySignals(scan.entries || []);
+        renderExitSignals(scan.exits || []);
+    }
+
+    function renderPositions(positions) {
+        const body = document.getElementById('positionsBody');
+        if (!positions.length) {
+            body.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No active positions</td></tr>';
+            return;
+        }
+        body.innerHTML = positions.map(p => {
+            const today = new Date();
+            const entry = new Date(p.entry_date);
+            const days = Math.floor((today - entry) / 86400000);
+            const hasTarget = p.target_order_id && p.target_order_price;
+            const targetDisplay = hasTarget
+                ? `<span class="text-info">${p.target_order_price.toFixed(2)}</span>`
+                : `<span class="text-muted">${p.kc6_mid_today ? p.kc6_mid_today.toFixed(2) : (p.kc6_mid_at_entry ? p.kc6_mid_at_entry.toFixed(2) : '--')}</span>`;
+            const orderBadge = hasTarget
+                ? '<span class="badge bg-info">LIMIT SET</span>'
+                : '<span class="badge bg-secondary">NO ORDER</span>';
+            return `<tr>
+                <td><strong>${p.symbol}</strong></td>
+                <td>${p.entry_price.toFixed(2)}</td>
+                <td class="text-danger">${p.sl_price ? p.sl_price.toFixed(2) : '--'}</td>
+                <td>${targetDisplay}</td>
+                <td class="text-success">${p.tp_price ? p.tp_price.toFixed(2) : '--'}</td>
+                <td>${days}d</td>
+                <td>${orderBadge}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderEntrySignals(entries) {
+        const body = document.getElementById('entrySignalsBody');
+        document.getElementById('entrySignalsCount').textContent = entries.length + ' signals';
+        if (!entries.length) {
+            body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No entry signals</td></tr>';
+            return;
+        }
+        body.innerHTML = entries.map(e => `<tr>
+            <td><strong>${e.symbol}</strong></td>
+            <td>${e.close}</td>
+            <td class="text-warning">${e.kc6_lower}</td>
+            <td>${e.sma200}</td>
+            <td>${e.atr_ratio}</td>
+        </tr>`).join('');
+    }
+
+    function renderExitSignals(exits) {
+        const body = document.getElementById('exitSignalsBody');
+        document.getElementById('exitSignalsCount').textContent = exits.length + ' signals';
+        if (!exits.length) {
+            body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No exit signals</td></tr>';
+            return;
+        }
+        body.innerHTML = exits.map(e => {
+            const pnlClass = e.pnl_pct >= 0 ? 'text-success' : 'text-danger';
+            return `<tr>
+                <td><strong>${e.symbol}</strong></td>
+                <td>${e.entry_price}</td>
+                <td>${e.exit_price}</td>
+                <td class="${pnlClass}">${e.pnl_pct > 0 ? '+' : ''}${e.pnl_pct}%</td>
+                <td><span class="exit-${e.exit_reason}">${e.exit_reason}</span></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderTrades(trades) {
+        const body = document.getElementById('tradesBody');
+        if (!trades.length) {
+            body.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No trades yet</td></tr>';
+            return;
+        }
+        body.innerHTML = trades.map(t => {
+            const pnlClass = t.pnl_pct >= 0 ? 'text-success' : 'text-danger';
+            return `<tr>
+                <td><strong>${t.symbol}</strong></td>
+                <td>${t.entry_price.toFixed(2)}</td>
+                <td>${t.exit_price.toFixed(2)}</td>
+                <td class="${pnlClass}">${t.pnl_pct > 0 ? '+' : ''}${t.pnl_pct}%</td>
+                <td>${t.hold_days}d</td>
+                <td><span class="exit-${t.exit_reason}">${t.exit_reason}</span></td>
+                <td>${t.exit_date}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ========== Actions ==========
+    function runScan() {
+        const overlay = document.getElementById('scanOverlay');
+        overlay.style.display = 'flex';
+        document.getElementById('scanOverlayMsg').textContent = 'Starting scan...';
+        document.getElementById('scanProgress').style.width = '0%';
+
+        fetch('/api/kc6/scan', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { throw new Error(data.error); }
+                pollScanStatus(data.task_id);
+            })
+            .catch(e => {
+                overlay.style.display = 'none';
+                alert('Scan failed: ' + e.message);
+            });
+    }
+
+    function pollScanStatus(taskId) {
+        pollInterval = setInterval(() => {
+            fetch('/api/kc6/scan/status/' + taskId)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('scanOverlayMsg').textContent = data.message || '';
+                    document.getElementById('scanProgress').style.width = (data.progress || 0) + '%';
+
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        document.getElementById('scanOverlay').style.display = 'none';
+                        refreshState();
+                        if (data.status === 'failed') {
+                            alert('Scan failed: ' + data.message);
+                        }
+                    }
+                });
+        }, 1500);
+    }
+
+    function killSwitch() {
+        if (!confirm('EMERGENCY EXIT: This will close ALL KC6 positions immediately. Continue?')) return;
+        fetch('/api/kc6/kill-switch', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                alert('Kill switch executed: ' + (data.results || []).length + ' positions closed');
+                refreshState();
+            })
+            .catch(e => alert('Kill switch error: ' + e.message));
+    }
+
+    function toggleMode() {
+        const newMode = currentMode === 'paper' ? 'live' : 'paper';
+        if (newMode === 'live') {
+            if (!confirm('Switch to LIVE trading? Real orders will be placed on Zerodha.')) return;
+        }
+        fetch('/api/kc6/toggle-mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: newMode })
+        })
+        .then(r => r.json())
+        .then(data => {
+            refreshState();
+        })
+        .catch(e => alert('Toggle error: ' + e.message));
+    }
+
+    // ========== Equity Curve ==========
+    function loadEquityCurve() {
+        fetch('/api/kc6/equity-curve')
+            .then(r => r.json())
+            .then(data => {
+                if (data.error || !data.length) {
+                    document.getElementById('equityCurveEmpty').style.display = 'block';
+                    document.getElementById('equityCurveChart').style.display = 'none';
+                    document.getElementById('curveTradeCount').textContent = '0 trades';
+                    return;
+                }
+                document.getElementById('equityCurveEmpty').style.display = 'none';
+                document.getElementById('equityCurveChart').style.display = 'block';
+                document.getElementById('curveTradeCount').textContent = data.length + ' trades';
+                renderEquityCurve(data);
+            })
+            .catch(e => console.error('Equity curve error:', e));
+    }
+
+    function renderEquityCurve(data) {
+        const labels = data.map((d, i) => d.date + (data.filter(x => x.date === d.date).length > 1 ? ` #${i+1}` : ''));
+        const cumPnl = data.map(d => d.cumulative_pnl);
+        const colors = data.map(d => d.pnl >= 0 ? '#3fb950' : '#f85149');
+
+        const ctx = document.getElementById('equityCurveChart').getContext('2d');
+
+        if (equityChart) equityChart.destroy();
+
+        equityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cumulative P/L (₹)',
+                    data: cumPnl,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88,166,255,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: colors,
+                    pointBorderColor: colors,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => data[items[0].dataIndex].date,
+                            label: (item) => {
+                                const d = data[item.dataIndex];
+                                return [
+                                    `Cumulative: ₹${d.cumulative_pnl.toLocaleString('en-IN')}`,
+                                    `Trade: ${d.symbol} ${d.pnl >= 0 ? '+' : ''}₹${d.pnl.toLocaleString('en-IN')} (${d.pnl_pct > 0 ? '+' : ''}${d.pnl_pct}%)`,
+                                    `Exit: ${d.exit_reason}`,
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#8b949e', maxRotation: 45, maxTicksLimit: 15 },
+                        grid: { color: 'rgba(139,148,158,0.1)' }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#8b949e',
+                            callback: v => '₹' + v.toLocaleString('en-IN')
+                        },
+                        grid: { color: 'rgba(139,148,158,0.1)' }
+                    }
+                }
+            }
+        });
+    }
+
+    // ========== Init ==========
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshState();
+        loadEquityCurve();
+        // Auto-refresh every 60 seconds
+        setInterval(refreshState, 60000);
+        setInterval(loadEquityCurve, 60000);
+    });
+</script>
+{% endblock %}

@@ -10,9 +10,12 @@ load_dotenv()
 
 # Base paths
 BASE_DIR = Path(__file__).parent
-DATA_DIR = BASE_DIR / "backtest_data"
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
+
+# Data directory: use Railway volume if available, else local backtest_data/
+_volume_path = os.getenv("RAILWAY_VOLUME_MOUNT_PATH")
+DATA_DIR = Path(_volume_path) / "data" if _volume_path else BASE_DIR / "backtest_data"
 
 # Ensure data directory exists
 DATA_DIR.mkdir(exist_ok=True)
@@ -163,6 +166,37 @@ MQ_DEFAULTS = {
     'weight_debt': 0.25,
     'weight_opm': 0.25,
     'weight_opm_growth': 0.20,
+}
+
+# KC6 Mean Reversion Strategy Defaults
+KC6_DEFAULTS = {
+    # Keltner Channel
+    'kc_ema_period': 6,
+    'kc_atr_period': 6,
+    'kc_multiplier': 1.3,
+
+    # Trend filter
+    'sma_period': 200,
+
+    # Exit rules
+    'sl_pct': 5.0,
+    'tp_pct': 15.0,
+    'max_hold_days': 15,
+
+    # Crash filter (Universe ATR Ratio)
+    'atr_ratio_threshold': 1.3,
+    'atr_lookback': 14,
+    'atr_avg_window': 50,
+
+    # Position sizing
+    'max_positions': 5,
+    'position_size_pct': 0.10,
+
+    # Safety
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+    'max_daily_orders': 5,
+    'max_daily_loss_pct': 3.0,
 }
 
 # Nifty 500 Universe
