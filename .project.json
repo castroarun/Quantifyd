@@ -1,0 +1,12 @@
+{
+  "id": "quantifyd",
+  "name": "Quantifyd",
+  "tagline": "Systematic quant trading platform for Indian markets",
+  "status": "live",
+  "progress": { "completed": 7, "total": 9, "inProgress": 8 },
+  "tech": ["Python", "Flask", "Pandas", "Chart.js", "Kite API"],
+  "github": "https://github.com/castroarun/Quantifyd",
+  "preview": "https://castroarun.github.io/Quantifyd/tactical_capital_system.html",
+  "image": "assets/screenshot.png",
+  "lastUpdated": "2026-02-22"
+}
