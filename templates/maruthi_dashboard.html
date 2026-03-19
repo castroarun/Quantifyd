@@ -1,0 +1,621 @@
+{% extends "base.html" %}
+
+{% block title %}Maruthi Always-On Strategy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mode-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.7em;
+        border-radius: 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .mode-PAPER { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950; }
+    .mode-LIVE { background: rgba(248,81,73,0.2); color: #f85149; border: 1px solid #f85149; }
+
+    .regime-BULL { background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+    .regime-BEAR { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+    .regime-FLAT { background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.3); }
+
+    .regime-indicator {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        padding: 0.5rem 1.5rem;
+        border-radius: 10px;
+        display: inline-block;
+    }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .table-maruthi th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .table-maruthi td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .pos-FUTURES { color: #58a6ff; }
+    .pos-SHORT_OPTION { color: #f0883e; }
+    .pos-PROTECTIVE_OPTION { color: #a371f7; }
+
+    .signal-MASTER_BULL, .signal-CHILD_BULL { color: #3fb950; }
+    .signal-MASTER_BEAR, .signal-CHILD_BEAR { color: #f85149; }
+    .signal-HARD_SL { color: #f85149; font-weight: 700; }
+
+    .action-btn {
+        min-width: 140px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 10px;
+        background: rgba(22,27,34,0.6);
+        border: 1px solid var(--bs-border-color);
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #8b949e;
+        letter-spacing: 0.5px;
+    }
+
+    .pulse-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    .scan-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1050;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .st-line {
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">
+                Maruthi Always-On
+                <span id="modeBadge" class="mode-badge ms-2">PAPER</span>
+            </h4>
+            <small class="text-muted">Dual SuperTrend (7,5 + 7,2) · Futures + Options ·
+                <span id="tickerStatus" class="text-danger">Ticker OFF</span> ·
+                LTP: <span id="tickerLTP">—</span> ·
+                Candles: <span id="tickerCandles">0</span>
+            </small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-success action-btn" id="tickerBtn" onclick="toggleTicker()">
+                <i class="bi bi-broadcast"></i> <span id="tickerBtnText">Start Ticker</span>
+            </button>
+            <button class="btn btn-outline-primary action-btn" onclick="runScan()">
+                <i class="bi bi-search"></i> Scan Now
+            </button>
+            <button class="btn btn-outline-warning action-btn" onclick="toggleMode()">
+                <i class="bi bi-toggle-on"></i> Toggle Mode
+            </button>
+            <button class="btn btn-outline-info action-btn" onclick="triggerAuth()">
+                <i class="bi bi-key"></i> TOTP Login
+            </button>
+            <button class="btn btn-outline-danger action-btn" onclick="killSwitch()">
+                <i class="bi bi-exclamation-triangle"></i> Kill Switch
+            </button>
+        </div>
+    </div>
+
+    <!-- Regime & Stats Row -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Current Regime</div>
+                <div id="regimeIndicator" class="regime-indicator regime-FLAT mt-1">FLAT</div>
+                <div class="mt-1">
+                    <small class="text-muted">Master ST: <span id="masterST" class="st-line">—</span></small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Hard Stop Loss</div>
+                <div id="hardSL" class="stat-value text-warning">—</div>
+                <small class="text-muted">Buffer: 50 pts from Master ST</small>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-label">Futures Lots</div>
+                <div id="futuresCount" class="stat-value text-info">0 / 5</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-label">Short Options</div>
+                <div id="optionsCount" class="stat-value text-warning">0</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-label">Total P&L</div>
+                <div id="totalPnl" class="stat-value">₹0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Positions Row -->
+    <div class="row g-3 mb-3">
+        <!-- Active Positions -->
+        <div class="col-md-8">
+            <div class="card bg-dark">
+                <div class="card-header-custom d-flex justify-content-between">
+                    <span>Active Positions</span>
+                    <span class="pulse-dot bg-success" id="positionsPulse"></span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover table-maruthi mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Symbol</th>
+                                    <th>Direction</th>
+                                    <th>Qty</th>
+                                    <th>Entry</th>
+                                    <th>SL</th>
+                                    <th>Strike</th>
+                                    <th>Expiry</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="positionsBody">
+                                <tr><td colspan="9" class="text-center text-muted py-4">No active positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SuperTrend State -->
+        <div class="col-md-4">
+            <div class="card bg-dark">
+                <div class="card-header-custom">SuperTrend State</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Master ST (7,5)</span>
+                            <span id="masterDir" class="fw-bold">—</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Child ST (7,2)</span>
+                            <span id="childDir" class="fw-bold">—</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span class="text-muted">Regime Start</span>
+                            <span id="regimeStart" class="text-muted">—</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Last Signal</span>
+                            <span id="lastSignal" class="text-muted">—</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Last Candle</span>
+                            <span id="lastCandle" class="text-muted">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card bg-dark mt-3">
+                <div class="card-header-custom">Statistics</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Total Trades</span>
+                        <span id="statTrades" class="fw-bold">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Win Rate</span>
+                        <span id="statWinRate" class="fw-bold">0%</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Total P&L</span>
+                        <span id="statPnl" class="fw-bold">₹0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signals & Trades Row -->
+    <div class="row g-3 mb-3">
+        <!-- Recent Signals -->
+        <div class="col-md-6">
+            <div class="card bg-dark">
+                <div class="card-header-custom">Recent Signals</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-dark table-hover table-maruthi mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Signal</th>
+                                    <th>Regime</th>
+                                    <th>Close</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="signalsBody">
+                                <tr><td colspan="5" class="text-center text-muted py-3">No signals yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Trades -->
+        <div class="col-md-6">
+            <div class="card bg-dark">
+                <div class="card-header-custom">Recent Trades</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-dark table-hover table-maruthi mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>P&L</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradesBody">
+                                <tr><td colspan="6" class="text-center text-muted py-3">No trades yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equity Curve -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card bg-dark">
+                <div class="card-header-custom">Equity Curve</div>
+                <div class="card-body">
+                    <canvas id="equityChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Overlay -->
+<div class="scan-overlay" id="scanOverlay">
+    <div class="text-center">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+        <h5 id="scanMessage">Running scan...</h5>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let equityChart = null;
+
+// ---- Data Loading ----
+async function loadState() {
+    try {
+        const resp = await fetch('/api/maruthi/state');
+        const data = await resp.json();
+        if (data.error) { console.error(data.error); return; }
+        updateUI(data);
+    } catch (e) {
+        console.error('Failed to load state:', e);
+    }
+}
+
+function updateUI(data) {
+    // Mode
+    const cfg = data.config || {};
+    const mode = cfg.paper_mode ? 'PAPER' : 'LIVE';
+    const badge = document.getElementById('modeBadge');
+    badge.textContent = mode;
+    badge.className = `mode-badge ms-2 mode-${mode}`;
+
+    // Regime
+    const regime = data.regime || {};
+    const r = regime.regime || 'FLAT';
+    const ri = document.getElementById('regimeIndicator');
+    ri.textContent = r;
+    ri.className = `regime-indicator regime-${r} mt-1`;
+
+    document.getElementById('masterST').textContent = regime.master_st_value ? regime.master_st_value.toFixed(1) : '—';
+    document.getElementById('hardSL').textContent = regime.hard_sl_price ? '₹' + regime.hard_sl_price.toFixed(1) : '—';
+
+    const masterDir = regime.master_direction;
+    const childDir = regime.child_direction;
+    document.getElementById('masterDir').textContent = masterDir === 1 ? '▲ BULLISH' : masterDir === -1 ? '▼ BEARISH' : '—';
+    document.getElementById('masterDir').style.color = masterDir === 1 ? '#3fb950' : '#f85149';
+    document.getElementById('childDir').textContent = childDir === 1 ? '▲ BULLISH' : childDir === -1 ? '▼ BEARISH' : '—';
+    document.getElementById('childDir').style.color = childDir === 1 ? '#3fb950' : '#f85149';
+
+    document.getElementById('regimeStart').textContent = regime.regime_start_time ? new Date(regime.regime_start_time).toLocaleString() : '—';
+    document.getElementById('lastSignal').textContent = regime.last_signal_time ? new Date(regime.last_signal_time).toLocaleString() : '—';
+    document.getElementById('lastCandle').textContent = regime.last_candle_time || '—';
+
+    // Counts
+    const futures = data.futures || [];
+    const shortOpts = data.short_options || [];
+    const protOpts = data.protective_options || [];
+    document.getElementById('futuresCount').textContent = `${futures.length} / ${cfg.max_futures || 5}`;
+    document.getElementById('optionsCount').textContent = `${shortOpts.length} + ${protOpts.length} prot`;
+
+    // Stats
+    const stats = data.stats || {};
+    document.getElementById('statTrades').textContent = stats.total_trades || 0;
+    document.getElementById('statWinRate').textContent = (stats.win_rate || 0).toFixed(1) + '%';
+    const pnl = stats.total_pnl || 0;
+    document.getElementById('statPnl').textContent = '₹' + pnl.toLocaleString('en-IN');
+    document.getElementById('statPnl').style.color = pnl >= 0 ? '#3fb950' : '#f85149';
+    document.getElementById('totalPnl').textContent = '₹' + pnl.toLocaleString('en-IN');
+    document.getElementById('totalPnl').style.color = pnl >= 0 ? '#3fb950' : '#f85149';
+
+    // Positions table
+    const allPos = [...futures, ...shortOpts, ...protOpts, ...(data.pending_orders || [])];
+    const tbody = document.getElementById('positionsBody');
+    if (allPos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No active positions</td></tr>';
+    } else {
+        tbody.innerHTML = allPos.map(p => `
+            <tr>
+                <td><span class="pos-${p.position_type}">${p.position_type}</span></td>
+                <td>${p.tradingsymbol || '—'}</td>
+                <td>${p.transaction_type}</td>
+                <td>${p.qty}</td>
+                <td>₹${(p.entry_price || 0).toFixed(1)}</td>
+                <td>${p.sl_price ? '₹' + p.sl_price.toFixed(1) : '—'}</td>
+                <td>${p.strike ? p.strike.toFixed(0) : '—'}</td>
+                <td>${p.expiry_date || '—'}</td>
+                <td><span class="badge bg-${p.status === 'ACTIVE' ? 'success' : p.status === 'PENDING' ? 'warning' : 'secondary'}">${p.status}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    // Signals
+    const signals = data.recent_signals || [];
+    const sigBody = document.getElementById('signalsBody');
+    if (signals.length === 0) {
+        sigBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No signals yet</td></tr>';
+    } else {
+        sigBody.innerHTML = signals.slice(0, 20).map(s => `
+            <tr>
+                <td><small>${s.candle_time || s.created_at || '—'}</small></td>
+                <td><span class="signal-${s.signal_type}">${s.signal_type}</span></td>
+                <td>${s.regime || '—'}</td>
+                <td>${s.candle_close ? s.candle_close.toFixed(1) : '—'}</td>
+                <td><small>${s.action_taken || '—'}</small></td>
+            </tr>
+        `).join('');
+    }
+
+    // Trades
+    const trades = data.recent_trades || [];
+    const trBody = document.getElementById('tradesBody');
+    if (trades.length === 0) {
+        trBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No trades yet</td></tr>';
+    } else {
+        trBody.innerHTML = trades.slice(0, 20).map(t => {
+            const pnlColor = (t.pnl_abs || 0) >= 0 ? '#3fb950' : '#f85149';
+            return `
+            <tr>
+                <td>${t.tradingsymbol || '—'}</td>
+                <td>${t.position_type || '—'}</td>
+                <td>₹${(t.entry_price || 0).toFixed(1)}</td>
+                <td>₹${(t.exit_price || 0).toFixed(1)}</td>
+                <td style="color:${pnlColor}">₹${(t.pnl_abs || 0).toLocaleString('en-IN')}</td>
+                <td>${t.exit_reason || '—'}</td>
+            </tr>`;
+        }).join('');
+    }
+}
+
+// ---- Actions ----
+async function runScan() {
+    document.getElementById('scanOverlay').style.display = 'flex';
+    document.getElementById('scanMessage').textContent = 'Starting scan...';
+
+    try {
+        const resp = await fetch('/api/maruthi/scan', { method: 'POST' });
+        const { task_id } = await resp.json();
+
+        const poll = setInterval(async () => {
+            const sr = await fetch(`/api/maruthi/scan/status/${task_id}`);
+            const sd = await sr.json();
+            document.getElementById('scanMessage').textContent = sd.message || 'Scanning...';
+            if (sd.status === 'completed' || sd.status === 'error') {
+                clearInterval(poll);
+                setTimeout(() => {
+                    document.getElementById('scanOverlay').style.display = 'none';
+                    loadState();
+                }, 1500);
+            }
+        }, 1000);
+    } catch (e) {
+        document.getElementById('scanOverlay').style.display = 'none';
+        alert('Scan failed: ' + e.message);
+    }
+}
+
+async function toggleMode() {
+    if (!confirm('Toggle trading mode?')) return;
+    const resp = await fetch('/api/maruthi/toggle-mode', { method: 'POST' });
+    const data = await resp.json();
+    alert(`Mode switched to: ${data.mode}`);
+    loadState();
+}
+
+async function killSwitch() {
+    if (!confirm('⚠️ KILL SWITCH: Close ALL positions at market? This cannot be undone!')) return;
+    const resp = await fetch('/api/maruthi/kill-switch', { method: 'POST' });
+    const data = await resp.json();
+    alert(`Closed ${data.closed} positions`);
+    loadState();
+}
+
+let tickerRunning = false;
+
+async function toggleTicker() {
+    const action = tickerRunning ? 'stop' : 'start';
+    if (tickerRunning && !confirm('Stop the WebSocket ticker?')) return;
+    try {
+        const resp = await fetch(`/api/maruthi/ticker/${action}`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.error) { alert('Ticker error: ' + data.error); return; }
+        updateTickerUI(data.ticker || data);
+    } catch (e) {
+        alert('Ticker error: ' + e.message);
+    }
+}
+
+async function loadTickerStatus() {
+    try {
+        const resp = await fetch('/api/maruthi/ticker/status');
+        const data = await resp.json();
+        if (!data.error) updateTickerUI(data);
+    } catch (e) { /* ignore */ }
+}
+
+function updateTickerUI(data) {
+    tickerRunning = data.is_running || false;
+    const statusEl = document.getElementById('tickerStatus');
+    const btnText = document.getElementById('tickerBtnText');
+    const btn = document.getElementById('tickerBtn');
+
+    if (data.is_connected) {
+        statusEl.textContent = 'LIVE';
+        statusEl.className = 'text-success fw-bold';
+    } else if (data.is_running) {
+        statusEl.textContent = 'Connecting...';
+        statusEl.className = 'text-warning';
+    } else {
+        statusEl.textContent = 'Ticker OFF';
+        statusEl.className = 'text-danger';
+    }
+
+    btnText.textContent = tickerRunning ? 'Stop Ticker' : 'Start Ticker';
+    btn.className = tickerRunning
+        ? 'btn btn-danger action-btn'
+        : 'btn btn-outline-success action-btn';
+
+    document.getElementById('tickerLTP').textContent =
+        data.last_ltp ? '₹' + data.last_ltp.toFixed(1) : '—';
+    document.getElementById('tickerCandles').textContent =
+        data.completed_candles || 0;
+}
+
+async function triggerAuth() {
+    try {
+        const resp = await fetch('/api/maruthi/auth', { method: 'POST' });
+        const data = await resp.json();
+        if (data.authenticated) {
+            alert('TOTP auto-login successful!');
+        } else {
+            alert('Auth failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Auth error: ' + e.message);
+    }
+}
+
+// ---- Equity Chart ----
+async function loadEquityCurve() {
+    try {
+        const resp = await fetch('/api/maruthi/equity-curve');
+        const data = await resp.json();
+        if (!data.length) return;
+
+        const ctx = document.getElementById('equityChart').getContext('2d');
+        if (equityChart) equityChart.destroy();
+
+        equityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.trade_date),
+                datasets: [{
+                    label: 'Cumulative P&L (₹)',
+                    data: data.map(d => d.cumulative_pnl || 0),
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88,166,255,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(139,148,158,0.1)' }, ticks: { color: '#8b949e' } },
+                    y: { grid: { color: 'rgba(139,148,158,0.1)' }, ticks: { color: '#8b949e' } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error('Equity curve error:', e);
+    }
+}
+
+// ---- Init ----
+loadState();
+loadEquityCurve();
+loadTickerStatus();
+setInterval(loadState, 30000); // Refresh every 30s
+setInterval(loadTickerStatus, 10000); // Ticker status every 10s
+</script>
+{% endblock %}

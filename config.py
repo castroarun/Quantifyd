@@ -199,5 +199,55 @@ KC6_DEFAULTS = {
     'max_daily_loss_pct': 3.0,
 }
 
+# Maruthi Always-On Strategy Defaults
+MARUTHI_DEFAULTS = {
+    # Instrument
+    'symbol': 'MARUTI',
+    'exchange': 'NSE',
+    'exchange_fo': 'NFO',
+    'lot_size': 200,  # MARUTI F&O lot size
+    'strike_interval': 100,  # Strike gap for MARUTI options
+
+    # SuperTrend Settings
+    'master_atr_period': 7,
+    'master_multiplier': 5.0,  # Master ST(7,5)
+    'child_atr_period': 7,
+    'child_multiplier': 2.0,   # Child ST(7,2)
+
+    # Timeframe
+    'candle_interval': '30minute',
+    'candle_minutes': 30,
+
+    # Position Limits
+    'max_futures_lots': 5,
+    'lots_per_signal': 1,
+    'capital': 1_500_000,  # 15L max
+
+    # Hard Stop Loss
+    'hard_sl_buffer': 50,  # Points below/above master ST line
+
+    # Protective Options
+    'protective_otm_pct': 0.05,  # 5% OTM for protective puts/calls
+
+    # Contract Management
+    'min_expiry_days_new': 6,    # Don't open options with ≤6 days to expiry
+    'roll_expiry_days': 6,       # Roll existing options at 6 days to expiry
+    'futures_roll_day_last': True,  # Roll futures on last day of expiry (first half)
+
+    # Option Strike Selection
+    'option_otm_strikes': 1,  # 1 strike OTM for short options
+
+    # Safety
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+    'max_daily_orders': 20,
+    'max_daily_loss_pct': 5.0,
+
+    # TOTP
+    'totp_secret': '',  # Set via env var KITE_TOTP_SECRET
+    'kite_user_id': '',  # Set via env var KITE_USER_ID
+    'kite_password': '',  # Set via env var KITE_PASSWORD
+}
+
 # Nifty 500 Universe
 NIFTY500_CSV = DATA_DIR.parent / 'data' / 'nifty500_list.csv'

@@ -48,7 +48,7 @@ from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
-    MQ_DEFAULTS, KC6_DEFAULTS,
+    MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -2107,6 +2107,414 @@ try:
     )
 except Exception as e:
     logger.warning(f"Could not register KC6 scheduled jobs: {e}")
+
+
+# =============================================================================
+# Maruthi Always-On Strategy
+# =============================================================================
+
+@app.route('/maruthi')
+def maruthi_dashboard():
+    """Maruthi Always-On Strategy Dashboard."""
+    return render_template(
+        'maruthi_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/maruthi/state')
+def api_maruthi_state():
+    """Get full Maruthi strategy state."""
+    try:
+        from services.maruthi_executor import MaruthiExecutor
+        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+        return jsonify(executor.get_state())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/scan', methods=['POST'])
+def api_maruthi_scan():
+    """Trigger manual candle check."""
+    import threading
+    task_id = f"maruthi_scan_{datetime.now().strftime('%H%M%S')}"
+    task_status[task_id] = {'status': 'running', 'progress': 0, 'message': 'Starting scan...'}
+
+    def _run(tid):
+        try:
+            from services.maruthi_executor import MaruthiExecutor
+            from services.kite_service import get_kite
+            import pandas as pd
+
+            task_status[tid] = {'status': 'running', 'progress': 20, 'message': 'Loading 30-min candles...'}
+
+            executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+            symbol = MARUTHI_DEFAULTS.get('symbol', 'MARUTI')
+
+            # Load 30-min data
+            if MARUTHI_DEFAULTS.get('paper_trading_mode'):
+                # Paper mode: load from DB
+                from config import MARKET_DATA_DB
+                import sqlite3
+                conn = sqlite3.connect(str(MARKET_DATA_DB))
+                df = pd.read_sql_query(
+                    "SELECT date, open, high, low, close, volume FROM market_data_unified "
+                    "WHERE symbol = ? AND timeframe = '30minute' ORDER BY date DESC LIMIT 200",
+                    conn, params=(symbol,)
+                )
+                conn.close()
+                if df.empty:
+                    # Fallback: use daily data for testing
+                    conn = sqlite3.connect(str(MARKET_DATA_DB))
+                    df = pd.read_sql_query(
+                        "SELECT date, open, high, low, close, volume FROM market_data_unified "
+                        "WHERE symbol = ? AND timeframe = 'day' ORDER BY date DESC LIMIT 200",
+                        conn, params=(symbol,)
+                    )
+                    conn.close()
+                df = df.sort_values('date').reset_index(drop=True)
+            else:
+                # Live mode: fetch from Kite
+                kite = get_kite()
+                from services.nifty500_universe import get_instrument_token
+                token = get_instrument_token(symbol)
+                from datetime import timedelta
+                to_date = datetime.now()
+                from_date = to_date - timedelta(days=30)
+                data = kite.historical_data(
+                    instrument_token=token,
+                    from_date=from_date, to_date=to_date,
+                    interval='30minute'
+                )
+                df = pd.DataFrame(data)
+
+            if df.empty:
+                task_status[tid] = {'status': 'error', 'message': f'No data for {symbol}'}
+                return
+
+            task_status[tid] = {'status': 'running', 'progress': 60, 'message': 'Computing signals...'}
+            results = executor.run_candle_check(df)
+
+            msg = '; '.join(results) if results else 'No signals'
+            task_status[tid] = {'status': 'completed', 'progress': 100, 'message': msg}
+        except Exception as e:
+            logger.error(f"Maruthi scan failed: {e}", exc_info=True)
+            task_status[tid] = {'status': 'error', 'message': str(e)}
+
+    threading.Thread(target=_run, args=(task_id,), daemon=True).start()
+    return jsonify({'task_id': task_id})
+
+
+@app.route('/api/maruthi/scan/status/<task_id>')
+def api_maruthi_scan_status(task_id):
+    """Check Maruthi scan task status."""
+    status = task_status.get(task_id)
+    if status:
+        return jsonify(status)
+    return jsonify({'error': 'Task not found'}), 404
+
+
+@app.route('/api/maruthi/kill-switch', methods=['POST'])
+def api_maruthi_kill_switch():
+    """Emergency: close all Maruthi positions at market."""
+    try:
+        from services.maruthi_executor import MaruthiExecutor
+        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+        closed = executor.emergency_exit_all()
+        return jsonify({'success': True, 'closed': closed})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/trades')
+def api_maruthi_trades():
+    """Get Maruthi trade history."""
+    try:
+        from services.maruthi_db import get_maruthi_db
+        db = get_maruthi_db()
+        return jsonify(db.get_recent_trades(50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/orders')
+def api_maruthi_orders():
+    """Get Maruthi order audit log."""
+    try:
+        from services.maruthi_db import get_maruthi_db
+        db = get_maruthi_db()
+        orders = db.get_pending_orders()
+        return jsonify(orders)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/signals')
+def api_maruthi_signals():
+    """Get Maruthi signal history."""
+    try:
+        from services.maruthi_db import get_maruthi_db
+        db = get_maruthi_db()
+        return jsonify(db.get_recent_signals(50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/equity-curve')
+def api_maruthi_equity_curve():
+    """Get Maruthi cumulative PnL for charting."""
+    try:
+        from services.maruthi_db import get_maruthi_db
+        db = get_maruthi_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/toggle-mode', methods=['POST'])
+def api_maruthi_toggle_mode():
+    """Toggle Maruthi between paper and live trading."""
+    global MARUTHI_DEFAULTS
+    if MARUTHI_DEFAULTS.get('paper_trading_mode'):
+        MARUTHI_DEFAULTS['paper_trading_mode'] = False
+        MARUTHI_DEFAULTS['live_trading_enabled'] = True
+        mode = 'LIVE'
+    else:
+        MARUTHI_DEFAULTS['paper_trading_mode'] = True
+        MARUTHI_DEFAULTS['live_trading_enabled'] = False
+        mode = 'PAPER'
+    return jsonify({'mode': mode})
+
+
+@app.route('/api/maruthi/auth', methods=['POST'])
+def api_maruthi_auth():
+    """Trigger TOTP auto-login."""
+    try:
+        from services.kite_auth import ensure_authenticated
+        success = ensure_authenticated()
+        return jsonify({'authenticated': success})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---- Maruthi WebSocket Ticker + Postback + Scheduled Jobs ----
+
+# Postback endpoint — Kite POSTs here when order status changes
+@app.route('/api/maruthi/postback', methods=['POST'])
+def api_maruthi_postback():
+    """
+    Kite order postback webhook.
+    Configure this URL in your Kite Connect app settings:
+    https://your-domain.com/api/maruthi/postback
+
+    Kite sends JSON like:
+    {
+        "order_id": "123456",
+        "status": "COMPLETE",  // or CANCELLED, REJECTED
+        "average_price": 7045.0,
+        "filled_quantity": 200,
+        "tradingsymbol": "MARUTI25MARFUT",
+        ...
+    }
+    """
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        order_id = data.get('order_id', '')
+        status = data.get('status', '')
+        avg_price = data.get('average_price', 0)
+        tradingsymbol = data.get('tradingsymbol', '')
+
+        logger.info(f"[Maruthi Postback] order={order_id} status={status} "
+                     f"symbol={tradingsymbol} price={avg_price}")
+
+        if not order_id:
+            return jsonify({'status': 'ignored', 'reason': 'no order_id'}), 200
+
+        from services.maruthi_db import get_maruthi_db
+        db = get_maruthi_db()
+
+        if status == 'COMPLETE':
+            # Check if this is a pending trigger order that just filled
+            pending = db.get_pending_positions()
+            for pos in pending:
+                if pos.get('kite_order_id') == str(order_id):
+                    fill_price = avg_price or pos.get('trigger_price', 0)
+                    db.activate_position(pos['id'], fill_price)
+                    logger.info(f"[Maruthi Postback] Position {pos['id']} activated: "
+                                f"{tradingsymbol} @ {fill_price}")
+                    break
+
+            # Also update the order log
+            pending_orders = db.get_pending_orders()
+            for order in pending_orders:
+                if order.get('kite_order_id') == str(order_id):
+                    db.update_order(order['id'], status='FILLED', price=avg_price)
+                    break
+
+        elif status in ('CANCELLED', 'REJECTED'):
+            pending = db.get_pending_positions()
+            for pos in pending:
+                if pos.get('kite_order_id') == str(order_id):
+                    db.cancel_position(pos['id'])
+                    logger.warning(f"[Maruthi Postback] Position {pos['id']} cancelled: "
+                                   f"{tradingsymbol} ({status})")
+                    break
+
+            pending_orders = db.get_pending_orders()
+            for order in pending_orders:
+                if order.get('kite_order_id') == str(order_id):
+                    reason = data.get('status_message', status)
+                    db.update_order(order['id'], status=status, error_message=reason)
+                    break
+
+        return jsonify({'status': 'ok'}), 200
+
+    except Exception as e:
+        logger.error(f"[Maruthi Postback] Error: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 200  # Return 200 so Kite doesn't retry
+
+
+# WebSocket ticker control endpoints
+@app.route('/api/maruthi/ticker/start', methods=['POST'])
+def api_maruthi_ticker_start():
+    """Start the WebSocket ticker for live candle streaming."""
+    try:
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+        ticker.start()
+        return jsonify({'status': 'started', 'ticker': ticker.get_status()})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/ticker/stop', methods=['POST'])
+def api_maruthi_ticker_stop():
+    """Stop the WebSocket ticker."""
+    try:
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker()
+        ticker.stop()
+        return jsonify({'status': 'stopped'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/maruthi/ticker/status')
+def api_maruthi_ticker_status():
+    """Get ticker connection status."""
+    try:
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+        return jsonify(ticker.get_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---- Scheduled Jobs (only time-based, no candle polling) ----
+
+def _maruthi_auto_login_and_start():
+    """9:00 AM — TOTP auto-login, then start WebSocket ticker."""
+    try:
+        from services.kite_auth import ensure_authenticated
+        if ensure_authenticated():
+            logger.info("[Maruthi] TOTP auto-login successful")
+            # Start or restart ticker with fresh token
+            from services.maruthi_ticker import get_maruthi_ticker
+            ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+            ticker.restart()
+            logger.info("[Maruthi] WebSocket ticker started")
+        else:
+            logger.error("[Maruthi] TOTP auto-login FAILED — ticker not started")
+    except Exception as e:
+        logger.error(f"[Maruthi] Auto-login error: {e}")
+
+
+def _maruthi_eod_protection():
+    """3:00 PM — Buy protective options for unhedged futures."""
+    try:
+        from services.maruthi_executor import MaruthiExecutor
+        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+
+        if MARUTHI_DEFAULTS.get('paper_trading_mode'):
+            logger.info("[Maruthi] Paper mode — skipping EOD protection")
+            return
+
+        # Get spot from ticker LTP
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+        spot = ticker._last_ltp
+
+        if spot <= 0:
+            # Fallback: fetch from Kite quote API
+            from services.kite_service import get_kite
+            kite = get_kite()
+            symbol = MARUTHI_DEFAULTS.get('symbol', 'MARUTI')
+            quote = kite.quote([f"NSE:{symbol}"])
+            spot = quote.get(f"NSE:{symbol}", {}).get('last_price', 0)
+
+        if spot > 0:
+            results = executor.run_eod_protection(spot)
+            if results:
+                logger.info(f"[Maruthi] EOD protection: {results}")
+    except Exception as e:
+        logger.error(f"[Maruthi] EOD protection failed: {e}")
+
+
+def _maruthi_roll_check():
+    """3:15 PM — Check for contracts nearing expiry and roll."""
+    try:
+        from services.maruthi_executor import MaruthiExecutor
+        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+        results = executor.run_roll_check()
+        if results:
+            logger.info(f"[Maruthi] Rolls: {results}")
+    except Exception as e:
+        logger.error(f"[Maruthi] Roll check failed: {e}")
+
+
+def _maruthi_market_close():
+    """3:30 PM — Force-close current candle, stop ticker."""
+    try:
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+        ticker.aggregator.force_close()
+        logger.info("[Maruthi] Forced final candle close at market close")
+        # Don't stop ticker — let it disconnect naturally
+    except Exception as e:
+        logger.error(f"[Maruthi] Market close handler failed: {e}")
+
+
+# Register Maruthi scheduled jobs (only 4 time-based jobs — candles handled by WebSocket)
+try:
+    scheduler.add_job(
+        _maruthi_auto_login_and_start,
+        'cron', day_of_week='mon-fri', hour=9, minute=0,
+        id='maruthi_auto_login', replace_existing=True,
+    )
+    scheduler.add_job(
+        _maruthi_eod_protection,
+        'cron', day_of_week='mon-fri', hour=15, minute=0,
+        id='maruthi_eod_protection', replace_existing=True,
+    )
+    scheduler.add_job(
+        _maruthi_roll_check,
+        'cron', day_of_week='mon-fri', hour=15, minute=15,
+        id='maruthi_roll_check', replace_existing=True,
+    )
+    scheduler.add_job(
+        _maruthi_market_close,
+        'cron', day_of_week='mon-fri', hour=15, minute=30,
+        id='maruthi_market_close', replace_existing=True,
+    )
+    logger.info(
+        "Maruthi scheduled jobs registered: "
+        "auto-login+ticker(9:00), EOD protection(15:00), "
+        "roll check(15:15), market close(15:30). "
+        "Candle signals handled by WebSocket ticker."
+    )
+except Exception as e:
+    logger.warning(f"Could not register Maruthi scheduled jobs: {e}")
 
 
 # =============================================================================
