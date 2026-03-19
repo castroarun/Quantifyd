@@ -2977,6 +2977,125 @@ def api_model_portfolio_status(task_id):
 
 
 # =============================================================================
+# Multi-Strategy Dashboard
+# =============================================================================
+
+@app.route('/strategies')
+def strategies_dashboard():
+    """Unified multi-strategy dashboard."""
+    return render_template(
+        'strategies_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/strategies/nondirectional/summary')
+def api_nondirectional_summary():
+    """Get BankNifty Non-Directional V3 backtest summary (best config)."""
+    try:
+        import csv as csv_mod
+        csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'nondirectional_v3_summary.csv')
+        if not os.path.exists(csv_path):
+            return jsonify({'error': 'No V3 summary CSV found'}), 404
+
+        best_label = 'BANKNIFTY_short_strangle_biweekly_monthly_BB_only_SD1.5_TF2.0_L5'
+        best = None
+        all_rows = []
+
+        with open(csv_path) as f:
+            for row in csv_mod.DictReader(f):
+                all_rows.append(row)
+                if row['label'] == best_label:
+                    best = row
+
+        if not best and all_rows:
+            # Fallback: pick highest CAGR
+            best = max(all_rows, key=lambda r: float(r.get('cagr_pct', 0)))
+
+        if not best:
+            return jsonify({'error': 'No data'}), 404
+
+        # Convert numeric fields
+        for k in ['total_trades', 'max_consecutive_losses', 'lots']:
+            if k in best:
+                best[k] = int(float(best[k]))
+        for k in ['win_rate', 'total_pnl', 'total_return_pct', 'cagr_pct',
+                   'profit_factor', 'max_drawdown_pct', 'avg_premium',
+                   'avg_zone_width_pct', 'zone_hold_rate', 'avg_pnl_per_trade',
+                   'avg_win', 'avg_loss', 'max_win', 'max_loss', 'final_capital']:
+            if k in best:
+                best[k] = round(float(best[k]), 2)
+
+        return jsonify(best)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/strategies/nondirectional/trades')
+def api_nondirectional_trades():
+    """Get BankNifty Non-Directional V3 trade log (best config only)."""
+    try:
+        import csv as csv_mod
+        csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'nondirectional_v3_trades.csv')
+        if not os.path.exists(csv_path):
+            return jsonify([])
+
+        best_label = 'BANKNIFTY_short_strangle_biweekly_monthly_BB_only_SD1.5_TF2.0_L5'
+        trades = []
+
+        with open(csv_path) as f:
+            for row in csv_mod.DictReader(f):
+                if row.get('config') == best_label:
+                    # Convert numeric fields
+                    for k in ['entry_price', 'call_strike', 'put_strike',
+                              'zone_width_pct', 'premium', 'exit_price',
+                              'gross_pnl', 'net_pnl', 'pnl_rs', 'iv', 'atr']:
+                        if k in row and row[k]:
+                            try:
+                                row[k] = round(float(row[k]), 2)
+                            except ValueError:
+                                pass
+                    trades.append(row)
+
+        return jsonify(trades)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/strategies/nondirectional/equity-curve')
+def api_nondirectional_equity_curve():
+    """Get BankNifty Non-Directional equity curve from trade log."""
+    try:
+        import csv as csv_mod
+        csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'nondirectional_v3_trades.csv')
+        if not os.path.exists(csv_path):
+            return jsonify([])
+
+        best_label = 'BANKNIFTY_short_strangle_biweekly_monthly_BB_only_SD1.5_TF2.0_L5'
+        capital = 10_00_000  # 10L starting capital
+        curve = [{'date': '2023-04-01', 'capital': capital, 'pnl': 0}]
+
+        with open(csv_path) as f:
+            for row in csv_mod.DictReader(f):
+                if row.get('config') == best_label:
+                    pnl_rs = float(row.get('pnl_rs', 0))
+                    capital += pnl_rs
+                    curve.append({
+                        'date': row.get('exit_date', '')[:10],
+                        'capital': round(capital, 2),
+                        'pnl': round(pnl_rs, 2),
+                    })
+
+        return jsonify(curve)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
 # Error Handlers
 # =============================================================================
 

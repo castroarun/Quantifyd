@@ -1,0 +1,683 @@
+{% extends "base.html" %}
+
+{% block title %}Strategies | Quantifyd{% endblock %}
+
+{% block extra_css %}
+<style>
+    .strategy-card {
+        background: linear-gradient(135deg, #1f2937 0%, #161b22 100%);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: border-color 0.2s;
+    }
+    .strategy-card.active { border-color: #3fb950; }
+    .strategy-card.inactive { opacity: 0.5; }
+
+    .strategy-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .badge-backtest { background: #1f6feb; color: #fff; }
+    .badge-live { background: #238636; color: #fff; }
+    .badge-paper { background: #f59e0b; color: #000; }
+
+    .metric-sm {
+        text-align: center;
+        padding: 0.75rem 0.5rem;
+    }
+    .metric-sm .value {
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+    .metric-sm .label {
+        font-size: 0.75rem;
+        color: #8b949e;
+        margin-top: 0.15rem;
+    }
+
+    .toggle-switch {
+        cursor: pointer;
+    }
+
+    .trade-row-win { border-left: 3px solid #3fb950; }
+    .trade-row-loss { border-left: 3px solid #f85149; }
+
+    .tab-content { min-height: 300px; }
+
+    .equity-chart-container {
+        position: relative;
+        height: 320px;
+    }
+
+    .combined-pnl {
+        font-size: 2.5rem;
+        font-weight: 800;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1"><i class="bi bi-diagram-3 me-2"></i>Strategy Command Center</h3>
+            <small class="text-muted">Toggle strategies, track P&L, monitor positions</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="refreshAll()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Combined Summary Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <div class="metric-label">Combined P&L</div>
+                <div class="combined-pnl" id="combinedPnl">--</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <div class="metric-label">Active Strategies</div>
+                <div class="metric-value" id="activeCount">0 / 2</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <div class="metric-label">Total Trades</div>
+                <div class="metric-value" id="totalTrades">--</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <div class="metric-label">Combined Win Rate</div>
+                <div class="metric-value" id="combinedWR">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategy Cards Row -->
+    <div class="row g-3 mb-4">
+        <!-- BankNifty Non-Directional -->
+        <div class="col-lg-6">
+            <div class="strategy-card active" id="cardBNF">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="bi bi-activity me-2" style="color: #58a6ff;"></i>
+                            BankNifty Non-Directional
+                        </h5>
+                        <small class="text-muted">Short Strangle | BB Squeeze + Trend Filter | 30 DTE Monthly</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="strategy-badge badge-backtest">Backtest</span>
+                        <div class="form-check form-switch toggle-switch">
+                            <input class="form-check-input" type="checkbox" id="toggleBNF" checked
+                                   onchange="toggleStrategy('bnf')">
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value positive" id="bnfCAGR">--</div>
+                        <div class="label">CAGR</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="bnfWR" style="color: #58a6ff;">--</div>
+                        <div class="label">Win Rate</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value positive" id="bnfPF">--</div>
+                        <div class="label">Profit Factor</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value negative" id="bnfDD">--</div>
+                        <div class="label">Max DD</div>
+                    </div></div>
+                </div>
+                <hr style="border-color: var(--bs-border-color);">
+                <div class="row g-2">
+                    <div class="col-4"><div class="metric-sm">
+                        <div class="value" id="bnfTrades" style="color: #c9d1d9;">--</div>
+                        <div class="label">Trades</div>
+                    </div></div>
+                    <div class="col-4"><div class="metric-sm">
+                        <div class="value positive" id="bnfTotalPnl">--</div>
+                        <div class="label">Total P&L</div>
+                    </div></div>
+                    <div class="col-4"><div class="metric-sm">
+                        <div class="value" id="bnfFinal" style="color: #c9d1d9;">--</div>
+                        <div class="label">Final Capital</div>
+                    </div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maruthi Always-On -->
+        <div class="col-lg-6">
+            <div class="strategy-card active" id="cardMaruthi">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="bi bi-lightning-charge me-2" style="color: #f59e0b;"></i>
+                            Maruthi Always-On
+                        </h5>
+                        <small class="text-muted">Dual SuperTrend | Futures + Options | WebSocket Live</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="strategy-badge" id="maruthiModeBadge">--</span>
+                        <div class="form-check form-switch toggle-switch">
+                            <input class="form-check-input" type="checkbox" id="toggleMaruthi" checked
+                                   onchange="toggleStrategy('maruthi')">
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="maruthiRegime" style="color: #f59e0b;">--</div>
+                        <div class="label">Regime</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="maruthiPositions" style="color: #58a6ff;">--</div>
+                        <div class="label">Positions</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value positive" id="maruthiPnl">--</div>
+                        <div class="label">Total P&L</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="maruthiTrades" style="color: #c9d1d9;">--</div>
+                        <div class="label">Trades</div>
+                    </div></div>
+                </div>
+                <hr style="border-color: var(--bs-border-color);">
+                <div class="row g-2" id="maruthiPositionsList">
+                    <div class="col-12 text-center text-muted py-2">
+                        <small>No active positions</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs: Equity Curve / Trade History -->
+    <div class="card mb-4">
+        <div class="card-header" style="background: #161b22; border-bottom: 1px solid var(--bs-border-color);">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#tabEquity" role="tab">
+                        <i class="bi bi-graph-up me-1"></i> Equity Curves
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tabTrades" role="tab">
+                        <i class="bi bi-list-ul me-1"></i> Trade History
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- Equity Curve Tab -->
+                <div class="tab-pane fade show active" id="tabEquity" role="tabpanel">
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-sm btn-outline-primary active" id="btnShowBoth"
+                                onclick="setEquityView('both')">Both</button>
+                        <button class="btn btn-sm btn-outline-info" id="btnShowBNF"
+                                onclick="setEquityView('bnf')">BankNifty Only</button>
+                        <button class="btn btn-sm btn-outline-warning" id="btnShowMaruthi"
+                                onclick="setEquityView('maruthi')">Maruthi Only</button>
+                    </div>
+                    <div class="equity-chart-container">
+                        <canvas id="equityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Trade History Tab -->
+                <div class="tab-pane fade" id="tabTrades" role="tabpanel">
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-sm btn-outline-secondary active" id="filterAll"
+                                onclick="filterTrades('all')">All</button>
+                        <button class="btn btn-sm btn-outline-info" id="filterBNF"
+                                onclick="filterTrades('bnf')">BankNifty</button>
+                        <button class="btn btn-sm btn-outline-warning" id="filterMaruthi"
+                                onclick="filterTrades('maruthi')">Maruthi</button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-sm table-hover" id="tradesTable">
+                            <thead class="sticky-top" style="background: #161b22;">
+                                <tr>
+                                    <th>Strategy</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>Type</th>
+                                    <th class="text-end">Entry Price</th>
+                                    <th class="text-end">P&L (Rs)</th>
+                                    <th>Outcome</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradesBody">
+                                <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ============================================================
+// State
+// ============================================================
+const state = {
+    bnfEnabled: true,
+    maruthiEnabled: true,
+    bnfSummary: null,
+    bnfTrades: [],
+    bnfEquity: [],
+    maruthiState: null,
+    maruthiTrades: [],
+    maruthiEquity: [],
+    equityChart: null,
+    equityView: 'both',
+    tradeFilter: 'all',
+};
+
+// ============================================================
+// Data Fetching
+// ============================================================
+async function fetchJSON(url) {
+    try {
+        const r = await fetch(url);
+        if (!r.ok) return null;
+        return await r.json();
+    } catch (e) {
+        console.error('Fetch error:', url, e);
+        return null;
+    }
+}
+
+async function loadBNFData() {
+    const [summary, trades, equity] = await Promise.all([
+        fetchJSON('/api/strategies/nondirectional/summary'),
+        fetchJSON('/api/strategies/nondirectional/trades'),
+        fetchJSON('/api/strategies/nondirectional/equity-curve'),
+    ]);
+    state.bnfSummary = summary;
+    state.bnfTrades = trades || [];
+    state.bnfEquity = equity || [];
+    renderBNFCard();
+}
+
+async function loadMaruthiData() {
+    const [mState, trades, equity] = await Promise.all([
+        fetchJSON('/api/maruthi/state'),
+        fetchJSON('/api/maruthi/trades'),
+        fetchJSON('/api/maruthi/equity-curve'),
+    ]);
+    state.maruthiState = mState;
+    state.maruthiTrades = trades || [];
+    state.maruthiEquity = equity || [];
+    renderMaruthiCard();
+}
+
+async function refreshAll() {
+    await Promise.all([loadBNFData(), loadMaruthiData()]);
+    renderCombinedMetrics();
+    renderEquityChart();
+    renderTradeTable();
+}
+
+// ============================================================
+// Rendering: BNF Card
+// ============================================================
+function renderBNFCard() {
+    const s = state.bnfSummary;
+    if (!s) return;
+
+    setText('bnfCAGR', s.cagr_pct.toFixed(1) + '%');
+    setText('bnfWR', s.win_rate.toFixed(0) + '%');
+    setText('bnfPF', s.profit_factor.toFixed(1));
+    setText('bnfDD', s.max_drawdown_pct.toFixed(1) + '%');
+    setText('bnfTrades', s.total_trades);
+    setText('bnfTotalPnl', fmtRs(s.total_pnl));
+    setText('bnfFinal', fmtRs(s.final_capital));
+
+    setColor('bnfTotalPnl', s.total_pnl >= 0);
+    setColor('bnfCAGR', s.cagr_pct >= 0);
+}
+
+// ============================================================
+// Rendering: Maruthi Card
+// ============================================================
+function renderMaruthiCard() {
+    const ms = state.maruthiState;
+
+    if (ms && !ms.error) {
+        const regime = ms.regime || ms.current_regime || '--';
+        const positions = ms.positions || ms.active_positions || [];
+        const posCount = Array.isArray(positions) ? positions.length : 0;
+        const totalPnl = ms.total_pnl || ms.realized_pnl || 0;
+        const tradeCount = state.maruthiTrades.length;
+        const mode = ms.paper_mode || ms.paper_trading_mode ? 'PAPER' : 'LIVE';
+
+        setText('maruthiRegime', regime);
+        setColor('maruthiRegime', regime === 'BULL');
+        if (regime === 'BEAR') el('maruthiRegime').style.color = '#f85149';
+
+        setText('maruthiPositions', posCount);
+        setText('maruthiPnl', fmtRs(totalPnl));
+        setColor('maruthiPnl', totalPnl >= 0);
+        setText('maruthiTrades', tradeCount);
+
+        const badge = el('maruthiModeBadge');
+        badge.textContent = mode;
+        badge.className = 'strategy-badge ' + (mode === 'LIVE' ? 'badge-live' : 'badge-paper');
+
+        // Render positions list
+        const container = el('maruthiPositionsList');
+        if (posCount > 0) {
+            let html = '';
+            positions.forEach(p => {
+                const type = p.instrument_type || p.type || 'FUT';
+                const qty = p.quantity || p.lots || 0;
+                const entry = p.entry_price || p.avg_price || 0;
+                const pnl = p.unrealized_pnl || p.pnl || 0;
+                const pnlClass = pnl >= 0 ? 'positive' : 'negative';
+                html += `<div class="col-6 col-md-4 col-lg-3">
+                    <div class="p-2 rounded" style="background: #0d1117; border: 1px solid var(--bs-border-color);">
+                        <div class="d-flex justify-content-between">
+                            <small class="fw-bold">${type}</small>
+                            <small class="${pnlClass}">${fmtRs(pnl)}</small>
+                        </div>
+                        <small class="text-muted">Qty: ${qty} | Entry: ${fmtNum(entry)}</small>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div class="col-12 text-center text-muted py-2"><small>No active positions</small></div>';
+        }
+    } else {
+        // No data or error
+        const badge = el('maruthiModeBadge');
+        badge.textContent = 'OFFLINE';
+        badge.className = 'strategy-badge badge-backtest';
+        setText('maruthiRegime', '--');
+        setText('maruthiPositions', '0');
+        setText('maruthiPnl', '--');
+        setText('maruthiTrades', state.maruthiTrades.length || '0');
+    }
+}
+
+// ============================================================
+// Combined Metrics
+// ============================================================
+function renderCombinedMetrics() {
+    let totalPnl = 0, totalTrades = 0, totalWins = 0;
+
+    if (state.bnfEnabled && state.bnfSummary) {
+        totalPnl += state.bnfSummary.total_pnl || 0;
+        totalTrades += state.bnfSummary.total_trades || 0;
+        totalWins += Math.round((state.bnfSummary.win_rate || 0) / 100 * (state.bnfSummary.total_trades || 0));
+    }
+
+    if (state.maruthiEnabled) {
+        const ms = state.maruthiState;
+        if (ms && !ms.error) {
+            totalPnl += ms.total_pnl || ms.realized_pnl || 0;
+        }
+        // Count maruthi trades
+        const mt = state.maruthiTrades.length;
+        totalTrades += mt;
+        // Estimate wins from trades
+        if (Array.isArray(state.maruthiTrades)) {
+            totalWins += state.maruthiTrades.filter(t =>
+                (t.pnl || t.realized_pnl || 0) > 0
+            ).length;
+        }
+    }
+
+    const pnlEl = el('combinedPnl');
+    pnlEl.textContent = fmtRs(totalPnl);
+    pnlEl.className = 'combined-pnl ' + (totalPnl >= 0 ? 'positive' : 'negative');
+
+    const activeCount = (state.bnfEnabled ? 1 : 0) + (state.maruthiEnabled ? 1 : 0);
+    setText('activeCount', activeCount + ' / 2');
+    setText('totalTrades', totalTrades);
+
+    const wr = totalTrades > 0 ? (totalWins / totalTrades * 100).toFixed(0) + '%' : '--';
+    setText('combinedWR', wr);
+}
+
+// ============================================================
+// Equity Chart
+// ============================================================
+function renderEquityChart() {
+    const ctx = el('equityChart').getContext('2d');
+    if (state.equityChart) state.equityChart.destroy();
+
+    const datasets = [];
+
+    if ((state.equityView === 'both' || state.equityView === 'bnf') && state.bnfEnabled) {
+        datasets.push({
+            label: 'BankNifty Non-Directional',
+            data: state.bnfEquity.map(p => ({ x: p.date, y: p.capital })),
+            borderColor: '#58a6ff',
+            backgroundColor: 'rgba(88, 166, 255, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+        });
+    }
+
+    if ((state.equityView === 'both' || state.equityView === 'maruthi') && state.maruthiEnabled) {
+        if (state.maruthiEquity.length > 0) {
+            datasets.push({
+                label: 'Maruthi Always-On',
+                data: state.maruthiEquity.map(p => ({
+                    x: p.date || p.timestamp,
+                    y: p.capital || p.cumulative_pnl || p.equity
+                })),
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                borderWidth: 2,
+            });
+        }
+    }
+
+    state.equityChart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    labels: { color: '#c9d1d9', usePointStyle: true }
+                },
+                tooltip: {
+                    backgroundColor: '#161b22',
+                    titleColor: '#c9d1d9',
+                    bodyColor: '#c9d1d9',
+                    borderColor: '#30363d',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: ctx => `${ctx.dataset.label}: Rs ${ctx.parsed.y.toLocaleString('en-IN')}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'category',
+                    ticks: { color: '#8b949e', maxTicksLimit: 12 },
+                    grid: { color: 'rgba(48, 54, 61, 0.4)' }
+                },
+                y: {
+                    ticks: {
+                        color: '#8b949e',
+                        callback: v => 'Rs ' + (v / 100000).toFixed(1) + 'L'
+                    },
+                    grid: { color: 'rgba(48, 54, 61, 0.4)' }
+                }
+            }
+        }
+    });
+}
+
+function setEquityView(view) {
+    state.equityView = view;
+    document.querySelectorAll('#tabEquity .btn').forEach(b => b.classList.remove('active'));
+    if (view === 'both') el('btnShowBoth').classList.add('active');
+    else if (view === 'bnf') el('btnShowBNF').classList.add('active');
+    else el('btnShowMaruthi').classList.add('active');
+    renderEquityChart();
+}
+
+// ============================================================
+// Trade Table
+// ============================================================
+function renderTradeTable() {
+    const tbody = el('tradesBody');
+    let rows = [];
+
+    // BNF trades
+    if (state.bnfEnabled) {
+        state.bnfTrades.forEach(t => {
+            rows.push({
+                strategy: 'BankNifty',
+                strategyClass: 'text-info',
+                entry: (t.entry_date || '').substring(0, 10),
+                exit: (t.exit_date || '').substring(0, 10),
+                type: 'Strangle',
+                entryPrice: t.entry_price,
+                pnl: t.pnl_rs,
+                outcome: t.outcome || (t.pnl_rs >= 0 ? 'win' : 'loss'),
+                source: 'bnf',
+                sortDate: t.exit_date || t.entry_date || '',
+            });
+        });
+    }
+
+    // Maruthi trades
+    if (state.maruthiEnabled) {
+        state.maruthiTrades.forEach(t => {
+            const pnl = t.pnl || t.realized_pnl || 0;
+            rows.push({
+                strategy: 'Maruthi',
+                strategyClass: 'text-warning',
+                entry: (t.entry_date || t.entry_time || '').substring(0, 10),
+                exit: (t.exit_date || t.exit_time || '').substring(0, 10),
+                type: t.instrument_type || t.type || 'FUT',
+                entryPrice: t.entry_price || t.avg_price || 0,
+                pnl: pnl,
+                outcome: pnl >= 0 ? 'win' : 'loss',
+                source: 'maruthi',
+                sortDate: t.exit_date || t.exit_time || t.entry_date || '',
+            });
+        });
+    }
+
+    // Filter
+    if (state.tradeFilter !== 'all') {
+        rows = rows.filter(r => r.source === state.tradeFilter);
+    }
+
+    // Sort by exit date descending
+    rows.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+
+    if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No trades to display</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+        const rowClass = r.outcome === 'loss' || r.pnl < 0 ? 'trade-row-loss' : 'trade-row-win';
+        const pnlClass = r.pnl >= 0 ? 'positive' : 'negative';
+        const outcomeClass = r.pnl >= 0 ? 'text-bg-success' : 'text-bg-danger';
+        return `<tr class="${rowClass}">
+            <td><span class="${r.strategyClass} fw-bold">${r.strategy}</span></td>
+            <td>${r.entry}</td>
+            <td>${r.exit}</td>
+            <td>${r.type}</td>
+            <td class="text-end">${fmtNum(r.entryPrice)}</td>
+            <td class="text-end ${pnlClass} fw-bold">${fmtRs(r.pnl)}</td>
+            <td><span class="badge ${outcomeClass}">${r.outcome}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+function filterTrades(filter) {
+    state.tradeFilter = filter;
+    document.querySelectorAll('#tabTrades .btn').forEach(b => b.classList.remove('active'));
+    el('filter' + filter.charAt(0).toUpperCase() + filter.slice(1)).classList.add('active');
+    renderTradeTable();
+}
+
+// ============================================================
+// Toggle Strategy
+// ============================================================
+function toggleStrategy(name) {
+    if (name === 'bnf') {
+        state.bnfEnabled = el('toggleBNF').checked;
+        el('cardBNF').className = 'strategy-card ' + (state.bnfEnabled ? 'active' : 'inactive');
+    } else {
+        state.maruthiEnabled = el('toggleMaruthi').checked;
+        el('cardMaruthi').className = 'strategy-card ' + (state.maruthiEnabled ? 'active' : 'inactive');
+    }
+    renderCombinedMetrics();
+    renderEquityChart();
+    renderTradeTable();
+}
+
+// ============================================================
+// Helpers
+// ============================================================
+function el(id) { return document.getElementById(id); }
+function setText(id, val) { const e = el(id); if (e) e.textContent = val; }
+function setColor(id, positive) {
+    const e = el(id);
+    if (e) e.className = e.className.replace(/positive|negative/g, '') + ' ' + (positive ? 'positive' : 'negative');
+}
+function fmtRs(n) {
+    if (n === null || n === undefined || isNaN(n)) return '--';
+    const abs = Math.abs(n);
+    let s;
+    if (abs >= 10000000) s = (n / 10000000).toFixed(2) + ' Cr';
+    else if (abs >= 100000) s = (n / 100000).toFixed(2) + ' L';
+    else s = n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    return (n >= 0 ? '+' : '') + 'Rs ' + s;
+}
+function fmtNum(n) {
+    if (n === null || n === undefined || isNaN(n)) return '--';
+    return Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+// ============================================================
+// Init
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    refreshAll();
+    // Auto-refresh every 60s
+    setInterval(refreshAll, 60000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,379 @@
+// This Pine Script source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Quantifyd - Non-Directional Range Detection System
+// For NIFTY / BANKNIFTY weekly/bi-weekly options selling
+
+//@version=6
+indicator("Quantifyd Range Detector", overlay=true, max_boxes_count=500, max_labels_count=500, max_lines_count=500)
+
+// =============================================================================
+// INPUTS
+// =============================================================================
+
+grp_signal = "Signal Settings"
+signal_mode     = input.string("BB Only", "Signal Mode",    options=["BB Only", "BB + ATR", "Consensus 3"], group=grp_signal,
+                               tooltip="BB Only = best backtest result (17.6% CAGR). BB+ATR = stricter, fewer trades. Consensus 3 = requires 3/5 indicators agree.")
+bb_period       = input.int(10,  "BB Squeeze Period",       minval=5,  maxval=50,  group=grp_signal)
+bb_std          = input.float(2.0, "BB Std Dev",            minval=1.0, maxval=4.0, group=grp_signal)
+atr_period      = input.int(14,  "ATR Period",              minval=5,  maxval=30,  group=grp_signal)
+atr_contract_p  = input.int(14,  "ATR Contraction Period",  minval=5,  maxval=30,  group=grp_signal)
+
+grp_zone = "Zone & Strike Settings"
+strike_dist     = input.float(1.5, "Strike Distance (ATR mult)", minval=0.5, maxval=5.0, step=0.5, group=grp_zone)
+wing_dist       = input.float(3.0, "Wing Distance (ATR mult)",  minval=1.0, maxval=7.0, step=0.5, group=grp_zone)
+hold_bars       = input.int(10,  "Hold Period (bars)",      minval=1,  maxval=30,  group=grp_zone)
+strike_rounding = input.int(100, "Strike Rounding",         options=[50, 100], group=grp_zone)
+
+grp_display = "Display"
+display_mode    = input.string("Full", "Display Mode",      options=["Full", "Arrows Only"], group=grp_display)
+show_zone       = input.bool(true,  "Show Range Zone",      group=grp_display)
+show_strikes    = input.bool(true,  "Show Strike Levels",   group=grp_display)
+show_wings      = input.bool(false, "Show Wing Levels",     group=grp_display)
+show_labels     = input.bool(true,  "Show Signal Labels",   group=grp_display)
+show_table      = input.bool(true,  "Show Info Table",      group=grp_display)
+show_squeeze_bg = input.bool(true,  "Show Squeeze Background", group=grp_display)
+
+grp_filter = "Additional Filters (Optional)"
+use_adx_filter  = input.bool(false, "Require ADX < 25",     group=grp_filter)
+adx_period      = input.int(14,  "ADX Period",              minval=7,  maxval=30,  group=grp_filter)
+use_chop_filter = input.bool(false, "Require Choppiness > 61.8", group=grp_filter)
+chop_period     = input.int(14,  "Choppiness Period",       minval=7,  maxval=20,  group=grp_filter)
+use_rsi_filter  = input.bool(false, "Require RSI 40-60",    group=grp_filter)
+rsi_period      = input.int(14,  "RSI Period",              minval=7,  maxval=30,  group=grp_filter)
+use_trend_filter = input.bool(true, "Block Signals in Strong Trends", group=grp_filter,
+                              tooltip="Blocks signals when price is >2 ATR from 20 SMA (strong trend). Prevents selling strangles during crashes/rallies.")
+trend_sma_len   = input.int(20,  "Trend SMA Length",        minval=10, maxval=50,  group=grp_filter)
+trend_atr_mult  = input.float(2.0, "Trend ATR Threshold",   minval=0.5, maxval=4.0, step=0.5, group=grp_filter,
+                              tooltip="How far price must be from SMA (in ATRs) to be considered trending. Lower = stricter.")
+min_days_gap    = input.int(10,  "Min Bars Between Signals", minval=1, maxval=30,  group=grp_filter)
+
+grp_colors = "Colors"
+zone_bull_color  = input.color(color.new(#26a69a, 80), "Zone (Held)", group=grp_colors)
+zone_bear_color  = input.color(color.new(#ef5350, 80), "Zone (Broken)", group=grp_colors)
+strike_color     = input.color(color.new(#ff9800, 40), "Short Strikes", group=grp_colors)
+wing_color       = input.color(color.new(#9c27b0, 60), "Long Wings", group=grp_colors)
+signal_color     = input.color(#00e676, "Signal Marker", group=grp_colors)
+exit_color       = input.color(#ff5252, "Exit Marker", group=grp_colors)
+
+// Derived
+arrows_only = display_mode == "Arrows Only"
+
+
+// =============================================================================
+// INDICATORS
+// =============================================================================
+
+// --- ATR ---
+atr_val = ta.atr(atr_period)
+
+// --- Bollinger Band Squeeze ---
+bb_sma   = ta.sma(close, bb_period)
+bb_std_v = ta.stdev(close, bb_period)
+bb_upper = bb_sma + bb_std * bb_std_v
+bb_lower = bb_sma - bb_std * bb_std_v
+bb_width = (bb_upper - bb_lower) / bb_sma * 100
+bb_width_ma = ta.sma(bb_width, bb_period)
+bb_squeeze = bb_width < bb_width_ma
+
+// --- ATR Contraction ---
+atr_contract_val = ta.atr(atr_contract_p)
+atr_contract_ma  = ta.sma(atr_contract_val, atr_contract_p * 2)
+atr_contracting  = atr_contract_val < atr_contract_ma
+
+// --- ADX ---
+[di_plus, di_minus, adx_val] = ta.dmi(adx_period, adx_period)
+adx_low = adx_val < 25
+
+// --- Choppiness Index ---
+atr1 = ta.atr(1)
+atr1_sum = math.sum(atr1, chop_period)
+hh = ta.highest(high, chop_period)
+ll = ta.lowest(low, chop_period)
+chop_range = hh - ll
+chop_val = chop_range > 0 ? 100 * math.log10(atr1_sum / chop_range) / math.log10(chop_period) : 50
+chop_high = chop_val > 61.8
+
+// --- RSI ---
+rsi_val = ta.rsi(close, rsi_period)
+rsi_mid = rsi_val > 40 and rsi_val < 60
+
+// --- Keltner Channels (for TTM Squeeze visual) ---
+kc_ema = ta.ema(close, 20)
+kc_atr = ta.atr(20)
+kc_upper = kc_ema + 1.5 * kc_atr
+kc_lower = kc_ema - 1.5 * kc_atr
+ttm_squeeze = bb_lower > kc_lower and bb_upper < kc_upper
+
+// --- Trend Filter (price distance from SMA) ---
+trend_sma = ta.sma(close, trend_sma_len)
+price_dist_atr = math.abs(close - trend_sma) / atr_val
+is_ranging = price_dist_atr <= trend_atr_mult   // true = price near SMA = range-bound
+
+
+// =============================================================================
+// COMPOSITE SIGNAL
+// =============================================================================
+
+// Consensus count: how many indicators agree on range-bound
+consensus_count = (bb_squeeze ? 1 : 0) + (atr_contracting ? 1 : 0) + (adx_low ? 1 : 0) + (chop_high ? 1 : 0) + (rsi_mid ? 1 : 0)
+
+// Signal mode selection (matches simulation configs)
+primary_signal = switch signal_mode
+    "BB Only"      => bb_squeeze
+    "BB + ATR"     => bb_squeeze and atr_contracting
+    "Consensus 3"  => consensus_count >= 3
+    => bb_squeeze
+
+// Apply optional filters (on top of selected mode)
+signal_raw = primary_signal
+if use_trend_filter
+    signal_raw := signal_raw and is_ranging
+if use_adx_filter and signal_mode != "Consensus 3"
+    signal_raw := signal_raw and adx_low
+if use_chop_filter and signal_mode != "Consensus 3"
+    signal_raw := signal_raw and chop_high
+if use_rsi_filter and signal_mode != "Consensus 3"
+    signal_raw := signal_raw and rsi_mid
+
+// Debounce: minimum gap between signals
+var int last_signal_bar = -999
+signal_valid = signal_raw and (bar_index - last_signal_bar >= min_days_gap)
+
+if signal_valid
+    last_signal_bar := bar_index
+
+
+// =============================================================================
+// STRIKE CALCULATION
+// =============================================================================
+
+// Short strikes (where you SELL options)
+call_strike_raw = close + strike_dist * atr_val
+put_strike_raw  = close - strike_dist * atr_val
+call_strike = math.round(call_strike_raw / strike_rounding) * strike_rounding
+put_strike  = math.round(put_strike_raw / strike_rounding) * strike_rounding
+
+// Wing strikes (where you BUY protection - iron condor)
+call_wing_raw = close + wing_dist * atr_val
+put_wing_raw  = close - wing_dist * atr_val
+call_wing = math.round(call_wing_raw / strike_rounding) * strike_rounding
+put_wing  = math.round(put_wing_raw / strike_rounding) * strike_rounding
+
+// Zone width as % of price
+zone_width_pct = (call_strike - put_strike) / close * 100
+
+
+// =============================================================================
+// EXIT SIGNAL — fires hold_bars after entry
+// =============================================================================
+
+var int last_entry_bar = -999
+
+if signal_valid
+    last_entry_bar := bar_index
+
+bars_since_entry = bar_index - last_entry_bar
+is_exit_bar = bars_since_entry == hold_bars and last_entry_bar >= 0
+
+
+// =============================================================================
+// ZONE TRACKING & OUTCOME (color zones green/red)
+// =============================================================================
+
+var box[]   zone_boxes       = array.new_box(0)
+var float[] zone_call_strikes = array.new_float(0)
+var float[] zone_put_strikes  = array.new_float(0)
+var int[]   zone_entry_bars   = array.new_int(0)
+var bool[]  zone_broken_arr   = array.new_bool(0)
+
+// Register new zone on signal
+if signal_valid
+    array.push(zone_call_strikes, call_strike)
+    array.push(zone_put_strikes, put_strike)
+    array.push(zone_entry_bars, bar_index)
+    array.push(zone_broken_arr, false)
+    // Placeholder box (will be created below if in Full mode)
+    array.push(zone_boxes, box(na))
+
+// Check active zones for breach and update colors
+if array.size(zone_entry_bars) > 0
+    for i = array.size(zone_entry_bars) - 1 to 0
+        entry_bar = array.get(zone_entry_bars, i)
+        age = bar_index - entry_bar
+
+        if age <= hold_bars and age > 0
+            cs = array.get(zone_call_strikes, i)
+            ps = array.get(zone_put_strikes, i)
+            was_broken = array.get(zone_broken_arr, i)
+            if high > cs or low < ps
+                if not was_broken
+                    array.set(zone_broken_arr, i, true)
+                    // Recolor the box to red
+                    b = array.get(zone_boxes, i)
+                    if not na(b)
+                        box.set_bgcolor(b, zone_bear_color)
+                        box.set_border_color(b, exit_color)
+
+        // Clean up old zones
+        if age > hold_bars + 10
+            array.remove(zone_entry_bars, i)
+            array.remove(zone_call_strikes, i)
+            array.remove(zone_put_strikes, i)
+            array.remove(zone_broken_arr, i)
+            array.remove(zone_boxes, i)
+
+
+// =============================================================================
+// DRAWING
+// =============================================================================
+
+if signal_valid and not arrows_only
+    // Zone box
+    if show_zone
+        b = box.new(
+             bar_index, call_strike,
+             bar_index + hold_bars, put_strike,
+             border_color=color.new(signal_color, 60),
+             border_width=1,
+             bgcolor=zone_bull_color,
+             border_style=line.style_dashed)
+        // Store box reference for color updates
+        if array.size(zone_boxes) > 0
+            array.set(zone_boxes, array.size(zone_boxes) - 1, b)
+
+    // Short strike lines
+    if show_strikes
+        line.new(bar_index, call_strike, bar_index + hold_bars, call_strike,
+                 color=strike_color, width=2, style=line.style_solid)
+        line.new(bar_index, put_strike, bar_index + hold_bars, put_strike,
+                 color=strike_color, width=2, style=line.style_solid)
+
+    // Wing lines (iron condor)
+    if show_wings
+        line.new(bar_index, call_wing, bar_index + hold_bars, call_wing,
+                 color=wing_color, width=1, style=line.style_dotted)
+        line.new(bar_index, put_wing, bar_index + hold_bars, put_wing,
+                 color=wing_color, width=1, style=line.style_dotted)
+
+    // Info label
+    if show_labels
+        info = "SELL STRANGLE\n"
+        info += "CE: " + str.tostring(call_strike, "#") + "\n"
+        info += "PE: " + str.tostring(put_strike, "#") + "\n"
+        info += "Zone: " + str.tostring(zone_width_pct, "#.#") + "%"
+
+        label.new(bar_index, call_strike + atr_val * 0.3, info,
+                  style=label.style_label_down,
+                  color=color.new(signal_color, 20),
+                  textcolor=color.black,
+                  size=size.small)
+
+
+// =============================================================================
+// ENTRY & EXIT ARROWS (always visible in both modes)
+// =============================================================================
+
+// Entry arrow: green triangle up below bar
+plotshape(signal_valid, "Entry", shape.triangleup, location.belowbar,
+          color=signal_color, size=size.small, text="SELL")
+
+// Exit arrow: red triangle down above bar
+plotshape(is_exit_bar, "Exit", shape.triangledown, location.abovebar,
+          color=exit_color, size=size.small, text="CLOSE")
+
+// Squeeze background (optional)
+bgcolor(show_squeeze_bg and not arrows_only and ttm_squeeze ? color.new(#ff9800, 94) : na,
+        title="TTM Squeeze Active")
+
+
+// =============================================================================
+// INFO TABLE (hidden in Arrows Only mode)
+// =============================================================================
+
+var table info_table = table.new(position.top_right, 2, 15, bgcolor=color.new(#1e1e1e, 10),
+                                  border_width=1, border_color=color.new(#444444, 0))
+
+if barstate.islast and show_table and not arrows_only
+    // Header
+    table.cell(info_table, 0, 0, "RANGE DETECTOR", text_color=signal_color,
+               text_size=size.normal, bgcolor=color.new(#1e1e1e, 0))
+    table.cell(info_table, 1, 0, signal_mode, text_color=#ff9800,
+               text_size=size.normal, bgcolor=color.new(#1e1e1e, 0))
+
+    // Current state
+    squeeze_status = bb_squeeze ? "YES" : "NO"
+    squeeze_clr = bb_squeeze ? color.green : color.red
+    table.cell(info_table, 0, 1, "BB Squeeze", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 1, squeeze_status, text_color=squeeze_clr, text_size=size.small)
+
+    atr_status = atr_contracting ? "YES" : "NO"
+    atr_clr = atr_contracting ? color.green : color.red
+    table.cell(info_table, 0, 2, "ATR Contract", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 2, atr_status, text_color=atr_clr, text_size=size.small)
+
+    adx_status = adx_low ? str.tostring(adx_val, "#.#") : str.tostring(adx_val, "#.#")
+    adx_clr = adx_low ? color.green : color.red
+    table.cell(info_table, 0, 3, "ADX (<25)", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 3, adx_status, text_color=adx_clr, text_size=size.small)
+
+    chop_status = str.tostring(chop_val, "#.#")
+    chop_clr = chop_high ? color.green : color.red
+    table.cell(info_table, 0, 4, "Chop (>61.8)", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 4, chop_status, text_color=chop_clr, text_size=size.small)
+
+    rsi_status = str.tostring(rsi_val, "#.#")
+    rsi_clr = rsi_mid ? color.green : color.red
+    table.cell(info_table, 0, 5, "RSI (40-60)", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 5, rsi_status, text_color=rsi_clr, text_size=size.small)
+
+    ttm_status = ttm_squeeze ? "SQUEEZE" : "NO"
+    ttm_clr = ttm_squeeze ? #ff9800 : color.gray
+    table.cell(info_table, 0, 6, "TTM Squeeze", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 6, ttm_status, text_color=ttm_clr, text_size=size.small)
+
+    // Trend filter
+    trend_status = is_ranging ? "RANGE" : str.tostring(price_dist_atr, "#.#") + " ATR"
+    trend_clr = is_ranging ? color.green : color.red
+    table.cell(info_table, 0, 7, "Trend Filter", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 7, trend_status, text_color=trend_clr, text_size=size.small)
+
+    // Consensus count
+    cons_clr = consensus_count >= 3 ? color.green : (consensus_count >= 2 ? #ff9800 : color.red)
+    table.cell(info_table, 0, 8, "Consensus", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 8, str.tostring(consensus_count) + "/5", text_color=cons_clr, text_size=size.small)
+
+    // Separator
+    table.cell(info_table, 0, 9, "---------", text_color=color.gray, text_size=size.small)
+    table.cell(info_table, 1, 9, "---------", text_color=color.gray, text_size=size.small)
+
+    // Strike info
+    signal_status = signal_valid ? "DEPLOY NOW" : (signal_raw ? "WAITING" : "WAIT")
+    sig_clr = signal_valid ? signal_color : (signal_raw ? #ff9800 : color.gray)
+    table.cell(info_table, 0, 10, "SIGNAL", text_color=color.white, text_size=size.normal)
+    table.cell(info_table, 1, 10, signal_status, text_color=sig_clr, text_size=size.normal)
+
+    table.cell(info_table, 0, 11, "Sell CE", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 11, str.tostring(call_strike, "#"), text_color=strike_color, text_size=size.small)
+
+    table.cell(info_table, 0, 12, "Sell PE", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 12, str.tostring(put_strike, "#"), text_color=strike_color, text_size=size.small)
+
+    table.cell(info_table, 0, 13, "Zone Width", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 13, str.tostring(zone_width_pct, "#.#") + "%",
+               text_color=color.white, text_size=size.small)
+
+
+// =============================================================================
+// ALERTS
+// =============================================================================
+
+alertcondition(signal_valid,
+     title="Range Signal - Entry",
+     message="RANGE DETECTED on {{ticker}} at {{close}}! Check chart for CE/PE strikes. Deploy non-directional strategy now.")
+
+alertcondition(is_exit_bar,
+     title="Range Signal - Exit",
+     message="HOLDING PERIOD COMPLETE on {{ticker}} at {{close}}. Close your strangle/iron condor position.")
+
+alertcondition(bb_squeeze and not bb_squeeze[1],
+     title="BB Squeeze Starts",
+     message="Bollinger Band SQUEEZE starting on {{ticker}} - watch for range signal")
