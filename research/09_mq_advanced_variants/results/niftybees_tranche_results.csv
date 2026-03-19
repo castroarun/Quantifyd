@@ -1,0 +1,12 @@
+label,deploy_pct,deploy_interval,cagr,sharpe,sortino,max_drawdown,calmar,profit_factor,total_trades,win_rate,avg_win_pct,avg_loss_pct,final_value,total_return_pct,exit_reason_counts,topups
+BASELINE_100PCT,1.0,daily,20.14,0.84,1.09,29.8,0.68,3.04,211,47.9,69.49,-13.8,187923391.0,1779.2,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+DAILY_25PCT,0.25,daily,20.21,0.86,1.12,27.6,0.73,3.04,211,47.9,69.49,-13.8,189843721.0,1798.4,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+DAILY_33PCT,0.33,daily,20.19,0.85,1.11,28.3,0.71,3.04,211,47.9,69.49,-13.8,189285536.0,1792.9,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+DAILY_50PCT,0.5,daily,20.15,0.85,1.1,29.2,0.69,3.04,211,47.9,69.49,-13.8,188226616.0,1782.3,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+WEEKLY_25PCT,0.25,weekly,20.15,0.87,1.15,24.4,0.83,3.04,211,47.9,69.49,-13.8,188114797.0,1781.1,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+WEEKLY_50PCT,0.5,weekly,20.34,0.87,1.16,25.4,0.8,3.04,211,47.9,69.49,-13.8,193048382.0,1830.5,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+DROP1_25PCT,0.25,drop_1pct,18.73,0.82,1.07,26.0,0.72,3.04,211,47.9,69.49,-13.8,155621794.0,1456.2,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+DROP2_25PCT,0.25,drop_2pct,18.73,0.82,1.07,25.9,0.72,3.04,211,47.9,69.49,-13.8,155575546.0,1455.8,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+DROP5_25PCT,0.25,drop_5pct,18.52,0.81,1.06,25.2,0.73,3.04,211,47.9,69.49,-13.8,151241207.0,1412.4,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+DROP2_50PCT,0.5,drop_2pct,19.58,0.84,1.09,27.8,0.71,3.04,211,47.9,69.49,-13.8,174533723.0,1645.3,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6
+NO_ETF_DEBT_ONLY,1.0,daily,15.48,0.68,0.84,22.4,0.69,3.04,211,47.9,69.49,-13.8,99889195.0,898.9,"{'ath_drawdown_rebalance': 210, 'hard_stop_loss': 1}",6

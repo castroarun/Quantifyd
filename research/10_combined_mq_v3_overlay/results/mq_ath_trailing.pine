@@ -1,0 +1,84 @@
+// @version=5
+// MQ Strategy - ATH Drawdown Trailing Exit
+// Tracks rolling peak from YOUR entry date, not stock's all-time high.
+// Shows exit signal when price drops 20% (configurable) from peak since entry.
+indicator("MQ ATH Trail", overlay=true, max_labels_count=50)
+
+// ===== SETTINGS =====
+i_entry_date  = input.time(timestamp("2023-01-02"), "Entry Date", tooltip="Date you entered the position. ATH tracking starts from here.")
+i_dd_pct      = input.float(20.0, "Drawdown % Exit", minval=5, maxval=50, step=5, tooltip="Exit when price falls this % below peak since entry. MQ default = 20%")
+i_show_fill   = input.bool(true, "Show shaded zone")
+i_show_labels = input.bool(true, "Show entry/exit labels")
+
+// ===== STATE =====
+var float peak       = na
+var bool  inTrade    = false
+var bool  exitFired  = false
+var float entryPrice = na
+
+// Detect entry bar
+isEntryBar = time >= i_entry_date and time[1] < i_entry_date
+
+// Start tracking from entry date
+if isEntryBar and not inTrade
+    inTrade    := true
+    exitFired  := false
+    peak       := high
+    entryPrice := close
+
+// Update rolling peak while in trade (only goes up, never down)
+if inTrade and not exitFired
+    peak := math.max(peak, high)
+
+// Drawdown line = peak minus configured %
+slLevel = inTrade and not exitFired ? peak * (1 - i_dd_pct / 100) : na
+
+// Exit signal: low breaches the drawdown level
+exitHit = inTrade and not exitFired and not na(slLevel) and low <= slLevel
+if exitHit
+    exitFired := true
+
+// ===== PLOTS =====
+// Rolling peak (green step line - only goes up)
+peakPlot = inTrade ? peak : na
+p1 = plot(peakPlot, "Rolling Peak", color=color.new(color.green, 30), style=plot.style_stepline, linewidth=1)
+
+// Drawdown exit line (red - the trailing stop)
+slPlot = inTrade and not exitFired ? slLevel : na
+p2 = plot(slPlot, "Exit Level", color=color.new(color.red, 0), style=plot.style_stepline, linewidth=2)
+
+// Shaded zone between peak and exit level
+fill(p1, p2, color=i_show_fill and inTrade and not exitFired ? color.new(color.green, 90) : na)
+
+// Entry price reference (dotted blue)
+plot(inTrade ? entryPrice : na, "Entry Price", color=color.new(color.blue, 50), style=plot.style_linebr, linewidth=1)
+
+// ===== LABELS =====
+if isEntryBar and i_show_labels
+    label.new(bar_index, low * 0.98, "ENTRY\nRs." + str.tostring(close, "#.0") + "\nSL: Rs." + str.tostring(close * (1 - i_dd_pct / 100), "#.0"), style=label.style_label_up, color=color.green, textcolor=color.white, size=size.small)
+
+if exitHit and i_show_labels
+    pnl = entryPrice > 0 ? (slLevel - entryPrice) / entryPrice * 100 : 0
+    label.new(bar_index, high * 1.02, "EXIT " + str.tostring(i_dd_pct, "#") + "% DD\nRs." + str.tostring(slLevel, "#.0") + "\n" + str.tostring(pnl, "+#.1") + "%", style=label.style_label_down, color=color.red, textcolor=color.white, size=size.small)
+
+// Background tint
+bgcolor(inTrade and not exitFired ? color.new(color.green, 95) : na)
+bgcolor(exitFired ? color.new(color.red, 95) : na)
+
+// ===== INFO TABLE =====
+var table t = table.new(position.top_right, 2, 6, bgcolor=color.new(color.black, 70), border_width=1)
+if barstate.islast and inTrade
+    curDD = peak > 0 ? (peak - close) / peak * 100 : 0
+    pnl = entryPrice > 0 ? (close - entryPrice) / entryPrice * 100 : 0
+    table.cell(t, 0, 0, "Entry",     text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 0, "Rs." + str.tostring(entryPrice, "#.0"), text_color=color.blue, text_size=size.small)
+    table.cell(t, 0, 1, "Peak",      text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 1, "Rs." + str.tostring(peak, "#.0"), text_color=color.green, text_size=size.small)
+    table.cell(t, 0, 2, "Exit @",    text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 2, "Rs." + str.tostring(peak * (1 - i_dd_pct / 100), "#.0"), text_color=color.red, text_size=size.small)
+    table.cell(t, 0, 3, "Cur DD",    text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 3, str.tostring(curDD, "#.1") + "%", text_color=(curDD >= i_dd_pct ? color.red : curDD >= i_dd_pct * 0.7 ? color.orange : color.gray), text_size=size.small)
+    table.cell(t, 0, 4, "P&L",       text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 4, str.tostring(pnl, "+#.1") + "%", text_color=(pnl >= 0 ? color.green : color.red), text_size=size.small)
+    table.cell(t, 0, 5, "Status",    text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 5, exitFired ? "EXITED" : "ACTIVE", text_color=(exitFired ? color.red : color.green), text_size=size.small)

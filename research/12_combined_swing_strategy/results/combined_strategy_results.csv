@@ -1,0 +1,2 @@
+label,cagr,sharpe,sortino,max_drawdown,calmar,profit_factor,total_trades,win_rate,total_pnl,final_value,total_return_pct,trend_alloc,meanrev_alloc,breakout_alloc,max_pos_trend,max_pos_meanrev,max_pos_breakout
+BASELINE,6.66,0.84,1.04,21.72,0.31,1.27,5739,48.1,6586937.195155169,16589824.418810094,65.9,0.5,0.3,0.2,10,8,10

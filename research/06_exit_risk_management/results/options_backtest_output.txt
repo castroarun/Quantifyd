@@ -1,0 +1,238 @@
+==============================================================================================================
+OPTIONS-HEDGED FUTURES BACKTEST - V3 BREAKOUT SYSTEM
+==============================================================================================================
+Capital: Rs.10L | PRIMARY system: 332 trades
+Futures: 7% carry | Options: Black-Scholes estimate, 30% IV
+Idle cash: 6.5% liquid fund
+==============================================================================================================
+
+SECTION 1: OPTION PREMIUM ESTIMATES (% of stock price)
+--------------------------------------------------------------------------------
+   OTM %  30-day Call   30-day Put  60-day Call   60-day Put
+  --------------------------------------------------------
+      3%        2.38%        1.90%        4.00%        3.01%
+      5%        1.72%        1.28%        3.24%        2.30%
+      7%        1.22%        0.82%        2.60%        1.71%
+     10%        0.69%        0.38%        1.82%        1.04%
+     15%        0.23%        0.08%        0.96%        0.39%
+
+  Note: Breakout stocks typically have IV of 30-40%. These are monthly
+  options rolled every 30 days. Premium accrues each month you hold.
+
+
+==============================================================================================================
+SECTION 2: STRATEGY COMPARISON - PRIMARY @ 3x LEVERAGE, 5% POSITION
+==============================================================================================================
+  Strategy                           CAGR    MaxDD   Calmar    Win%   AvgWin  AvgLoss  Severe  Wipeout
+  --------------------------------------------------------------------------------------------------
+  NAKED FUTURES                     27.3%    10.9%    2.49   65.7%   115.2%   -37.1%     85       0
+  COVERED CALL (5% OTM)             12.5%     7.9%    1.57   71.7%    39.0%   -32.6%     60       0
+  COVERED CALL (10% OTM)             9.3%    10.5%    0.88   68.7%    34.6%   -35.5%     75       0
+  COVERED CALL (15% OTM)             9.7%    13.2%    0.73   66.9%    39.3%   -36.7%     83       0
+  MARRIED PUT (5% OTM)              23.9%     6.7%    3.57   55.7%   110.6%   -21.6%     26       0
+  MARRIED PUT (10% OTM)             26.9%     9.5%    2.83   63.9%   111.6%   -29.2%     92       0
+  MARRIED PUT (15% OTM)             27.3%    10.7%    2.55   65.1%   114.9%   -35.1%     86       0
+  COLLAR (5/5)                       8.1%     2.4%    3.40   67.5%    17.9%   -13.0%      0       0
+  COLLAR (10/10)                     8.6%     7.1%    1.21   67.2%    28.6%   -26.7%      0       0
+  COLLAR (10/5)                      4.7%     7.0%    0.67   61.4%    14.3%   -18.2%      0       0
+  COLLAR (15/10)                     9.0%     8.7%    1.03   64.5%    33.8%   -27.9%     86       0
+  RATIO WRITE 2:1 (7% OTM)          -7.6%    85.9%   -0.09   35.2%    32.1%   -48.2%    129      56
+  RATIO WRITE 2:1 (10% OTM)        -10.4%    92.6%   -0.11   32.8%    25.4%   -49.1%    149      56
+
+
+==============================================================================================================
+SECTION 3: LEVERAGE SWEEP - BEST STRATEGIES
+==============================================================================================================
+
+  NAKED:
+    Lev      CAGR     MaxDD    Calmar    Win%   Severe  Wipeout       Rs.10L->
+  ---------------------------------------------------------------------------
+     1x     12.2%      2.6%     4.63   63.0%       0       0 Rs.       139L
+     2x     20.2%      6.3%     3.21   65.1%      32       0 Rs.       674L
+     3x     27.3%     10.9%     2.49   65.7%      85       0 Rs.      2508L
+     5x     39.5%     19.9%     1.98   66.6%     102      23 Rs.     20640L
+     7x     51.0%     27.1%     1.88   66.9%     104      72 Rs.    125785L
+
+  CC 10% OTM:
+    Lev      CAGR     MaxDD    Calmar    Win%   Severe  Wipeout       Rs.10L->
+  ---------------------------------------------------------------------------
+     1x      5.1%      3.5%     1.45   66.9%       0       0 Rs.        31L
+     2x      7.3%      6.9%     1.05   67.5%      23       0 Rs.        50L
+     3x      9.3%     10.5%     0.88   68.7%      75       0 Rs.        76L
+     5x     13.0%     17.6%     0.74   68.7%      93      12 Rs.       166L
+     7x     16.3%     24.2%     0.67   68.7%      94      56 Rs.       320L
+
+  MP 10% OTM:
+    Lev      CAGR     MaxDD    Calmar    Win%   Severe  Wipeout       Rs.10L->
+  ---------------------------------------------------------------------------
+     1x     11.9%      2.0%     6.06   60.2%       0       0 Rs.       133L
+     2x     19.9%      5.3%     3.75   63.0%       0       0 Rs.       637L
+     3x     26.9%      9.5%     2.83   63.9%      92       0 Rs.      2360L
+     5x     39.4%     17.7%     2.23   64.2%     104       0 Rs.     20151L
+     7x     49.4%     25.4%     1.94   64.2%     108      16 Rs.     99079L
+
+  COLLAR 10/10:
+    Lev      CAGR     MaxDD    Calmar    Win%   Severe  Wipeout       Rs.10L->
+  ---------------------------------------------------------------------------
+     1x      4.8%      2.2%     2.19   64.5%       0       0 Rs.        29L
+     2x      6.8%      3.8%     1.77   66.9%       0       0 Rs.        45L
+     3x      8.6%      7.1%     1.21   67.2%       0       0 Rs.        66L
+     5x     11.9%     13.8%     0.86   67.5%      94       0 Rs.       131L
+     7x     14.9%     20.2%     0.74   67.5%     101       0 Rs.       242L
+
+  COLLAR 15/10:
+    Lev      CAGR     MaxDD    Calmar    Win%   Severe  Wipeout       Rs.10L->
+  ---------------------------------------------------------------------------
+     1x      5.0%      3.0%     1.64   61.4%       0       0 Rs.        31L
+     2x      7.1%      5.3%     1.33   64.2%       0       0 Rs.        48L
+     3x      9.0%      8.7%     1.03   64.5%      86       0 Rs.        72L
+     5x     12.3%     16.6%     0.74   65.1%     103       0 Rs.       142L
+     7x     15.8%     23.7%     0.67   65.1%     104       3 Rs.       290L
+
+
+==============================================================================================================
+SECTION 4: IV SENSITIVITY (3x leverage, 5% position)
+==============================================================================================================
+  Breakout stocks have higher IV. How does this affect each strategy?
+
+  Low IV (20%):
+  Strategy                      CAGR    MaxDD   Calmar
+  ----------------------------------------------------
+  Naked Futures                27.3%    10.9%    2.49
+  Covered Call 10%              5.4%    16.1%    0.34
+  Married Put 10%              29.0%     8.4%    3.47
+  Collar 10/10                  7.1%     7.8%    0.91
+
+  Normal IV (30%):
+  Strategy                      CAGR    MaxDD   Calmar
+  ----------------------------------------------------
+  Naked Futures                27.3%    10.9%    2.49
+  Covered Call 10%              9.3%    10.5%    0.88
+  Married Put 10%              26.9%     9.5%    2.83
+  Collar 10/10                  8.6%     7.1%    1.21
+
+  High IV (40%):
+  Strategy                      CAGR    MaxDD   Calmar
+  ----------------------------------------------------
+  Naked Futures                27.3%    10.9%    2.49
+  Covered Call 10%             14.7%     8.2%    1.80
+  Married Put 10%              23.3%    11.6%    2.01
+  Collar 10/10                 10.1%     6.3%    1.60
+
+  Very High IV (50%):
+  Strategy                      CAGR    MaxDD   Calmar
+  ----------------------------------------------------
+  Naked Futures                27.3%    10.9%    2.49
+  Covered Call 10%             20.9%     7.3%    2.85
+  Married Put 10%              18.2%    15.7%    1.16
+  Collar 10/10                 11.5%     5.8%    1.97
+
+
+==============================================================================================================
+SECTION 5: TOP 20 RISK-ADJUSTED COMBINATIONS (Calmar > 3, CAGR > 15%)
+==============================================================================================================
+
+  Strategy      Lev  Pos%     CAGR    MaxDD   Calmar    Win%  Severe          Final
+  --------------------------------------------------------------------------------
+  MP-10%         2x    3%    17.1%     2.0%    8.53   63.0%      0 Rs.       369L
+  MP-5%          2x    3%    15.5%     2.2%    7.14   54.2%      0 Rs.       270L
+  Naked          2x    3%    17.3%     3.0%    5.84   65.1%     32 Rs.       389L
+  MP-5%          3x    3%    20.2%     3.6%    5.54   55.7%     26 Rs.       676L
+  MP-10%         3x    3%    22.4%     4.4%    5.05   63.9%     92 Rs.      1020L
+  MP-5%          5x    3%    28.6%     5.8%    4.96   57.2%    118 Rs.      3187L
+  Naked          3x    3%    22.7%     5.0%    4.50   65.7%     85 Rs.      1092L
+  MP-5%          2x    5%    17.6%     3.9%    4.49   54.2%      0 Rs.       412L
+  MP-10%         2x    5%    19.9%     5.3%    3.75   63.0%      0 Rs.       637L
+  MP-10%         5x    3%    31.8%     8.6%    3.70   64.2%    104 Rs.      5580L
+  MP-5%          3x    5%    23.9%     6.7%    3.57   55.7%     26 Rs.      1371L
+  Naked          2x    5%    20.2%     6.3%    3.21   65.1%     32 Rs.       674L
+  Naked          5x    3%    32.0%    10.0%    3.19   66.6%    102 Rs.      5854L
+
+
+==============================================================================================================
+SECTION 6: BEST OF EACH STRATEGY TYPE
+==============================================================================================================
+
+  Setup                              CAGR    MaxDD   Calmar    Win%    AvgW    AvgL  Severe    Rs.10L->
+  -----------------------------------------------------------------------------------------------
+  Naked 3x, 5%                      27.3%    10.9%    2.49   65.7%  115.2%  -37.1%     85 Rs.   2508L
+  Naked 2x, 5%                      20.2%     6.3%    3.21   65.1%   76.0%  -24.9%     32 Rs.    674L
+  CC-10% 3x, 5%                      9.3%    10.5%    0.88   68.7%   34.6%  -35.5%     75 Rs.     76L
+  CC-10% 5x, 5%                     13.0%    17.6%    0.74   68.7%   60.6%  -58.1%     93 Rs.    166L
+  MP-10% 3x, 5%                     26.9%     9.5%    2.83   63.9%  111.6%  -29.2%     92 Rs.   2360L
+  MP-10% 5x, 5%                     39.4%    17.7%    2.23   64.2%  188.1%  -48.0%    104 Rs.  20151L
+  Collar 10/10 3x, 5%                8.6%     7.1%    1.21   67.2%   28.6%  -26.7%      0 Rs.     66L
+  Collar 15/10 3x, 5%                9.0%     8.7%    1.03   64.5%   33.8%  -27.9%     86 Rs.     72L
+  Collar 15/10 5x, 5%               12.3%    16.6%    0.74   65.1%   58.8%  -46.1%    103 Rs.    142L
+  RatioWrite 10% 3x, 5%            -10.4%    92.6%   -0.11   32.8%   25.4%  -49.1%    149 Rs.      1L
+
+
+==============================================================================================================
+SECTION 7: CAN OPTIONS TAME HIGH LEVERAGE? (5x and 7x)
+==============================================================================================================
+
+  The question: At 5x leverage, naked futures had 26 near-wipeout trades.
+  Can married puts or collars eliminate those while preserving most of the upside?
+
+  AT 5x LEVERAGE, 5% position:
+  Strategy                      CAGR    MaxDD   Calmar    Win%  Severe  Wipeout    Rs.10L->
+  ---------------------------------------------------------------------------------------
+  Naked (baseline)             39.5%    19.9%    1.98   66.6%    102      23 Rs.  20640L
+  Married Put 5%               34.9%    13.2%    2.65   57.2%    118       0 Rs.   9589L
+  Married Put 10%              39.4%    17.7%    2.23   64.2%    104       0 Rs.  20151L
+  Married Put 15%              39.6%    19.6%    2.02   66.0%    102       3 Rs.  20805L
+  Collar 15/5                   6.4%    18.1%    0.36   59.9%    113       0 Rs.     42L
+  Collar 15/10                 12.3%    16.6%    0.74   65.1%    103       0 Rs.    142L
+  Collar 20/10                 16.0%    17.3%    0.93   64.5%    104       0 Rs.    303L
+
+  AT 7x LEVERAGE, 5% position:
+  Strategy                      CAGR    MaxDD   Calmar    Win%  Severe  Wipeout    Rs.10L->
+  ---------------------------------------------------------------------------------------
+  Naked (baseline)             51.0%    27.1%    1.88   66.9%    104      72 Rs. 125785L
+  Married Put 5%               44.5%    19.4%    2.29   57.8%    120      16 Rs.  45818L
+  Married Put 10%              49.4%    25.4%    1.94   64.2%    108      16 Rs.  99079L
+  Married Put 15%              49.9%    27.7%    1.80   66.0%    104      75 Rs. 106445L
+  Collar 15/5                   8.0%    22.5%    0.36   59.9%    118      12 Rs.     58L
+  Collar 15/10                 15.8%    23.7%    0.67   65.1%    104       3 Rs.    290L
+  Collar 20/10                 19.6%    24.9%    0.79   64.5%    108      10 Rs.    603L
+
+
+==============================================================================================================
+SUMMARY & KEY FINDINGS
+==============================================================================================================
+
+  COVERED CALL (Sell OTM call on futures position):
+  + Earns monthly premium income (1-3% per month on breakout stocks)
+  + Reduces effective cost basis -> improves win rate
+  + Works best with breakout trades (high IV = rich premiums)
+  - Caps upside at strike price (breakout runners get cut short)
+  - Does NOT protect downside
+
+  MARRIED PUT (Buy OTM put with futures position):
+  + Hard floor on losses -> eliminates wipeout risk
+  + Allows full upside participation
+  + Makes high leverage (5-7x) viable
+  - Costs premium every month (1-3% per month)
+  - At low leverage, the premium drag kills returns
+
+  COLLAR (Sell OTM call + Buy OTM put):
+  + Bounded risk profile (known max loss AND max gain)
+  + Near zero-cost if call/put strikes balanced
+  + Best risk-adjusted returns (Calmar)
+  - Caps both upside and downside
+  - You lose the big breakout runners
+
+  RATIO WRITE (Sell 2x calls for every futures lot):
+  + Double premium income -> highest win rate
+  + Works great when stocks dont move much above strike
+  - Naked call exposure above the strike = unlimited risk
+  - Worst when breakouts run hard (which is the whole point)
+
+  RECOMMENDED SETUPS:
+  Setup                                   CAGR    MaxDD   Calmar
+  ------------------------------------------------------------
+  Naked 3x (baseline)                    27.3%    10.9%    2.49
+  Covered Call 10% OTM, 3x                9.3%    10.5%    0.88
+  Collar 15/10, 3x                        9.0%     8.7%    1.03
+  Married Put 10%, 5x                    39.4%    17.7%    2.23
+  Collar 15/10, 5x                       12.3%    16.6%    0.74

@@ -1,0 +1,117 @@
+//@version=5
+indicator("PA_MACD BuyStop (L+S)", overlay=true, max_labels_count=500, max_lines_count=500)
+
+// ═══════════════════════════════════════════════════════════════
+// STRATEGY RULES:
+// LONG SIGNAL (detected at bar close):
+//   - Today is green (close > open)
+//   - Previous bar was red (close < open)
+//   - Today's close > previous bar's high
+//   - MACD histogram > 0
+//   → Place BUY-STOP at previous bar's high for next day
+//   → SL = previous bar's low
+//   → TP = entry + 3 × (entry - SL)
+//   → MaxHold = 10 bars
+//
+// SHORT SIGNAL (detected at bar close):
+//   - Today is red (close < open)
+//   - Previous bar was green (close > open)
+//   - Today's close < previous bar's low
+//   - MACD histogram < 0
+//   → Place SELL-STOP at previous bar's low for next day
+//   → SL = previous bar's high
+//   → TP = entry - 3 × (SL - entry)
+//   → MaxHold = 10 bars
+// ═══════════════════════════════════════════════════════════════
+
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+
+// ─── LONG PATTERN DETECTION (at signal bar) ───
+// Signal bar: green, prev red, close > prev high, MACD hist > 0
+longPattern = close[1] > open[1] and           // signal bar is green
+              close[2] < open[2] and            // bar before signal was red
+              close[1] > high[2] and            // signal close > red bar's high
+              histLine[1] > 0                   // MACD hist positive at signal
+
+// Entry bar (today) — buy-stop at red bar's high (high[2])
+longStopLevel = high[2]
+longTriggered = longPattern and high >= longStopLevel
+
+longEntry = longStopLevel
+longSL = low[2]                                  // red bar's low
+longRisk = longEntry - longSL
+longTP = longEntry + 3 * longRisk
+
+// ─── SHORT PATTERN DETECTION ───
+shortPattern = close[1] < open[1] and           // signal bar is red
+               close[2] > open[2] and            // bar before signal was green
+               close[1] < low[2] and             // signal close < green bar's low
+               histLine[1] < 0                   // MACD hist negative at signal
+
+shortStopLevel = low[2]                          // green bar's low
+shortTriggered = shortPattern and low <= shortStopLevel
+
+shortEntry = shortStopLevel
+shortSL = high[2]                                // green bar's high
+shortRisk = shortSL - shortEntry
+shortTP = shortEntry - 3 * shortRisk
+
+// ─── HIGHLIGHT SIGNAL BARS ───
+// Green candle closes above prev red high with MACD+
+longSignalBar = close > open and
+                close[1] < open[1] and
+                close > high[1] and
+                histLine > 0
+bgcolor(longSignalBar ? color.new(color.green, 85) : na, title="Long Signal Bar")
+
+// Red candle closes below prev green low with MACD-
+shortSignalBar = close < open and
+                 close[1] > open[1] and
+                 close < low[1] and
+                 histLine < 0
+bgcolor(shortSignalBar ? color.new(color.red, 85) : na, title="Short Signal Bar")
+
+// ─── PLOT LONG ENTRIES ───
+plotshape(longTriggered and longRisk > 0, title="Long Entry", style=shape.triangleup,
+     location=location.belowbar, color=color.green, size=size.small, text="L")
+
+if longTriggered and longRisk > 0
+    line.new(bar_index, longEntry, bar_index + 10, longEntry, color=color.blue, style=line.style_solid, width=1)
+    line.new(bar_index, longSL, bar_index + 10, longSL, color=color.red, style=line.style_dashed, width=1)
+    line.new(bar_index, longTP, bar_index + 10, longTP, color=color.green, style=line.style_dashed, width=1)
+    label.new(bar_index + 10, longTP, "TP " + str.tostring(longTP, "#.##"),
+         style=label.style_label_left, color=color.green, textcolor=color.white, size=size.tiny)
+    label.new(bar_index + 10, longSL, "SL " + str.tostring(longSL, "#.##"),
+         style=label.style_label_left, color=color.red, textcolor=color.white, size=size.tiny)
+
+// ─── PLOT SHORT ENTRIES ───
+plotshape(shortTriggered and shortRisk > 0, title="Short Entry", style=shape.triangledown,
+     location=location.abovebar, color=color.red, size=size.small, text="S")
+
+if shortTriggered and shortRisk > 0
+    line.new(bar_index, shortEntry, bar_index + 10, shortEntry, color=color.blue, style=line.style_solid, width=1)
+    line.new(bar_index, shortSL, bar_index + 10, shortSL, color=color.red, style=line.style_dashed, width=1)
+    line.new(bar_index, shortTP, bar_index + 10, shortTP, color=color.green, style=line.style_dashed, width=1)
+    label.new(bar_index + 10, shortTP, "TP " + str.tostring(shortTP, "#.##"),
+         style=label.style_label_left, color=color.green, textcolor=color.white, size=size.tiny)
+    label.new(bar_index + 10, shortSL, "SL " + str.tostring(shortSL, "#.##"),
+         style=label.style_label_left, color=color.red, textcolor=color.white, size=size.tiny)
+
+// ─── MACD HISTOGRAM (separate pane would need strategy, so plot as background reference) ───
+plot(histLine, title="MACD Hist", color=histLine > 0 ? color.new(color.green, 70) : color.new(color.red, 70),
+     style=plot.style_columns, display=display.none)
+
+// ─── INFO TABLE ───
+var table infoTable = table.new(position.top_right, 2, 6, bgcolor=color.new(color.black, 70))
+if barstate.islast
+    table.cell(infoTable, 0, 0, "PA_MACD BuyStop", text_color=color.white, text_size=size.small)
+    table.cell(infoTable, 0, 1, "Long:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 1, "Green > prev red high + MACD+", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 2, "Short:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 2, "Red < prev green low + MACD-", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 3, "Entry:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 3, "Buy/Sell stop at prev candle high/low", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 4, "SL:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 4, "Prev candle low (L) / high (S)", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 5, "TP / Hold:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 5, "3x risk / 10 bars max", text_color=color.white, text_size=size.tiny)

@@ -1,0 +1,11 @@
+FIXED: Win%=67.5, AvgRet=21.8%, PF=6.38, Total=7239.8%, Severe=2
+TRAIL-10%: Win%=54.2, AvgRet=3.7%, PF=2.55, Total=1217.0%, Severe=0
+TRAIL-15%: Win%=56.9, AvgRet=10.2%, PF=4.17, Total=3374.2%, Severe=0
+TRAIL-20%: Win%=61.7, AvgRet=15.2%, PF=4.96, Total=5035.6%, Severe=0
+TRAIL-25%: Win%=69.0, AvgRet=20.5%, PF=6.09, Total=6805.2%, Severe=25
+TRAIL-30%: Win%=73.5, AvgRet=22.8%, PF=6.81, Total=7558.7%, Severe=29
+RATCHET-10%: Win%=54.2, AvgRet=3.7%, PF=2.55, Total=1217.9%, Severe=0
+RATCHET-15%: Win%=56.6, AvgRet=10.2%, PF=4.23, Total=3371.7%, Severe=0
+RATCHET-20%: Win%=60.2, AvgRet=14.9%, PF=5.12, Total=4934.2%, Severe=0
+RATCHET-25%: Win%=66.0, AvgRet=20.0%, PF=6.35, Total=6623.5%, Severe=1
+RATCHET-30%: Win%=66.9, AvgRet=21.1%, PF=6.42, Total=6999.0%, Severe=2

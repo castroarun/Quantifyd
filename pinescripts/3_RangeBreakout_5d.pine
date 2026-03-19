@@ -1,0 +1,85 @@
+//@version=5
+indicator("Range Breakout 5D (L+S)", overlay=true, max_labels_count=500, max_lines_count=500)
+
+// ═══════════════════════════════════════════════════════════════
+// STRATEGY RULES:
+// - Calculate 5-day high and 5-day low from previous 5 bars
+// - LONG:  Today's high breaks above 5-day high
+//          Entry = 5-day high (buy-stop, known before market open)
+//          SL = 5-day low
+//          TP = entry + 3 × (entry - SL)
+//          MaxHold = 15 bars
+// - SHORT: Today's low breaks below 5-day low
+//          Entry = 5-day low (sell-stop, known before market open)
+//          SL = 5-day high
+//          TP = entry - 3 × (SL - entry)
+//          MaxHold = 15 bars
+// - No look-ahead: 5d high/low calculated from bars [1] to [5]
+// ═══════════════════════════════════════════════════════════════
+
+// 5-day high and low from previous 5 bars (NOT including current bar)
+high5d = ta.highest(high[1], 5)
+low5d  = ta.lowest(low[1], 5)
+
+// ─── PLOT 5-DAY CHANNEL ───
+plot(high5d, title="5D High", color=color.new(color.teal, 30), linewidth=2, style=plot.style_stepline)
+plot(low5d, title="5D Low", color=color.new(color.orange, 30), linewidth=2, style=plot.style_stepline)
+
+// ─── LONG: price breaks above 5d high ───
+longTriggered = high >= high5d and high5d > low5d
+
+longEntry = high5d
+longSL = low5d
+longRisk = longEntry - longSL
+longTP = longEntry + 3 * longRisk
+
+// ─── SHORT: price breaks below 5d low ───
+shortTriggered = low <= low5d and high5d > low5d
+
+shortEntry = low5d
+shortSL = high5d
+shortRisk = shortSL - shortEntry
+shortTP = shortEntry - 3 * shortRisk
+
+// ─── PLOT LONG ENTRIES ───
+plotshape(longTriggered and longRisk > 0, title="Long Entry", style=shape.triangleup,
+     location=location.belowbar, color=color.green, size=size.small, text="L")
+
+if longTriggered and longRisk > 0
+    line.new(bar_index, longEntry, bar_index + 15, longEntry, color=color.blue, style=line.style_solid, width=1)
+    line.new(bar_index, longSL, bar_index + 15, longSL, color=color.red, style=line.style_dashed, width=1)
+    line.new(bar_index, longTP, bar_index + 15, longTP, color=color.green, style=line.style_dashed, width=1)
+    label.new(bar_index + 15, longTP, "TP " + str.tostring(longTP, "#.##"),
+         style=label.style_label_left, color=color.green, textcolor=color.white, size=size.tiny)
+    label.new(bar_index + 15, longSL, "SL " + str.tostring(longSL, "#.##"),
+         style=label.style_label_left, color=color.red, textcolor=color.white, size=size.tiny)
+
+// ─── PLOT SHORT ENTRIES ───
+plotshape(shortTriggered and shortRisk > 0, title="Short Entry", style=shape.triangledown,
+     location=location.abovebar, color=color.red, size=size.small, text="S")
+
+if shortTriggered and shortRisk > 0
+    line.new(bar_index, shortEntry, bar_index + 15, shortEntry, color=color.blue, style=line.style_solid, width=1)
+    line.new(bar_index, shortSL, bar_index + 15, shortSL, color=color.red, style=line.style_dashed, width=1)
+    line.new(bar_index, shortTP, bar_index + 15, shortTP, color=color.green, style=line.style_dashed, width=1)
+    label.new(bar_index + 15, shortTP, "TP " + str.tostring(shortTP, "#.##"),
+         style=label.style_label_left, color=color.green, textcolor=color.white, size=size.tiny)
+    label.new(bar_index + 15, shortSL, "SL " + str.tostring(shortSL, "#.##"),
+         style=label.style_label_left, color=color.red, textcolor=color.white, size=size.tiny)
+
+// ─── HIGHLIGHT BREAKOUT BARS ───
+bgcolor(longTriggered and longRisk > 0 ? color.new(color.green, 90) : na, title="Long Breakout")
+bgcolor(shortTriggered and shortRisk > 0 ? color.new(color.red, 90) : na, title="Short Breakout")
+
+// ─── INFO TABLE ───
+var table infoTable = table.new(position.top_right, 2, 5, bgcolor=color.new(color.black, 70))
+if barstate.islast
+    table.cell(infoTable, 0, 0, "Range Breakout 5D", text_color=color.white, text_size=size.small)
+    table.cell(infoTable, 0, 1, "Long:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 1, "High breaks above 5-day high", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 2, "Short:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 2, "Low breaks below 5-day low", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 3, "SL:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 3, "5-day low (L) / 5-day high (S)", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 4, "TP / Hold:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 4, "3x risk / 15 bars max", text_color=color.white, text_size=size.tiny)

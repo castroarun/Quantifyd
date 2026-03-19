@@ -35,7 +35,12 @@ data/*.csv
 data/*.parquet
 data/*.pkl
 data/*.h5
+data/fundamentals_cache/
 !data/.gitkeep
+
+# SQLite databases (large, local only)
+*.db
+!backtest_data/.gitkeep
 
 # Backtest data (SQLite databases, session files)
 backtest_data/
@@ -81,3 +86,7 @@ credentials.json
 secrets.json
 
 .vercel
+
+# Sweep logs (verbose output)
+*_sweep_log.txt
+*_log.txt

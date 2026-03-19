@@ -1,0 +1,302 @@
+# Quantifyd - Project Instructions
+
+## Project Overview
+
+Indian stock market backtesting system: Momentum + Quality (MQ) portfolio strategy with Breakout V3 overlay. Flask app with Bootstrap 5 dark theme dashboards, Chart.js, SQLite.
+
+**Tech stack:** Python 3.12, Flask, pandas, numpy, ta library, Chart.js (CDN)
+
+## Jira
+
+- Project key: **CC** (if needed)
+
+---
+
+## ACTIVE TASK: MQ Strategy Optimization
+
+### Context
+
+We are optimizing the MQ portfolio strategy to maximize CAGR while keeping MaxDD < 30%. Backtest period: 2023-01-01 to 2025-12-31, initial capital Rs.1 Crore, universe = Nifty 500 (375 symbols with data).
+
+### Current Best Results
+
+| Config | CAGR | Sharpe | MaxDD | Notes |
+|--------|------|--------|-------|-------|
+| PS30_HSL50_ATH20_EQ95 | 32.19% | 1.05 | 27.0% | Best PS30 baseline |
+| PS30_TOPUP30_CD3_HSL50 | 32.24% | 1.05 | 27.07% | Topups + cooldown 3d |
+| PS25_HSL50 | 34.48% | 1.10 | 25.81% | |
+| PS20_HSL50 | 37.84% | 1.16 | 26.85% | |
+| PS15_HSL50 | 38.45% | 1.16 | 28.07% | |
+| PS10_SEC70_POS30_TOP30_BIM | **48.66%** | **1.30** | 26.35% | Best risk-adjusted |
+
+### Key Findings (Don't Re-test These)
+
+1. **HSL >= 50% all produce same result** — hard stop never fires when ATH20 exit is active
+2. **Quality weights have ZERO effect** — same 30 stocks regardless of weight tweaks
+3. **Fundamental filter variations have ZERO effect** — same 30 stocks pass all filters
+4. **Concentration is the #1 CAGR lever** — PS3=65%, PS5=58%, PS10=49%, PS15=38%, PS30=32%
+5. **ATH drawdown exit is the only exit that fires** — no hard stops triggered with HSL50
+6. **Technical indicators HURT PS30 performance** — All tested (EMA, RSI, SuperTrend, MACD, ADX) reduce CAGR from 32% to 3-28% by blocking momentum entries and Darvas topups
+7. **STREND_atr7_m3.0 is best risk-adjusted PS30**: 27.79% CAGR, 16.65% MaxDD, Calmar 1.67 (baseline: 27% MaxDD, Calmar 1.19)
+
+### Pending Optimization Sweeps
+
+Full details in: `docs/OPTIMIZATION-PICKUP.md`
+
+| Priority | Sweep | Configs | Status | Script |
+|----------|-------|---------|--------|--------|
+| 1 | Technical Indicators | 27 | **17/27 done** | `run_agent3_technical_optimization.py` — No indicator beats baseline |
+| 2 | Exit Rules | 16 | 0/16 done | `run_exit_optimization.py` (needs rewrite) |
+| 3 | Rebalance Frequency | 24 | 0/24 done | Needs new script |
+| 4 | Combined MQ+V3 | 15 | 0/15 done | `run_combined_optimization.py` |
+
+### To Resume: Read `docs/OPTIMIZATION-PICKUP.md` First
+
+That doc has:
+- Exact halt points and what went wrong
+- Fixed script patterns for each sweep
+- Mandatory agent rules (below)
+
+---
+
+## MANDATORY RULES FOR OPTIMIZATION AGENTS
+
+When spawning agents to run backtests, these rules are **non-negotiable**:
+
+### 1. ALWAYS preload data
+
+```python
+from services.mq_backtest_engine import MQBacktestEngine
+from services.mq_portfolio import MQBacktestConfig
+
+# Load once (takes ~30s)
+universe, price_data = MQBacktestEngine.preload_data(MQBacktestConfig())
+
+# Pass to EVERY engine instance
+engine = MQBacktestEngine(config,
+    preloaded_universe=universe,
+    preloaded_price_data=price_data)
+result = engine.run()
+```
+
+Without preloading: ~190s per config. With preloading: ~50s per config.
+
+### 2. ALWAYS write CSV incrementally
+
+```python
+import csv, os
+
+OUTPUT_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'optimization_SWEEPNAME.csv')
+FIELDNAMES = ['label','cagr','sharpe','sortino','max_drawdown','calmar',
+              'total_trades','win_rate','final_value','total_return_pct','topups']
+
+# Write header once at start
+with open(OUTPUT_CSV, 'w', newline='') as f:
+    csv.DictWriter(f, fieldnames=FIELDNAMES).writeheader()
+
+# After EACH config completes, append immediately:
+with open(OUTPUT_CSV, 'a', newline='') as f:
+    csv.DictWriter(f, fieldnames=FIELDNAMES).writerow(row)
+```
+
+Never batch CSV writes at the end. Timeout = lost data.
+
+### 3. Use correct base parameters
+
+```python
+# NOTE: Do NOT set debt_reserve_pct explicitly — default 0.20 is correct
+# (it funds Darvas topups which drive CAGR from 26% to 32%)
+base = dict(
+    portfolio_size=30,
+    equity_allocation_pct=0.95,
+    hard_stop_loss=0.50,           # NOT 0.20 or 0.30
+    rebalance_ath_drawdown=0.20,   # NOT 0.10 or 0.15
+)
+```
+
+### 4. Max 8 configs per bash call
+
+- Each PS30 config takes ~50-60s with preloading
+- Data loading takes ~30s
+- Total per bash call: 30 + (8 x 55) = ~470s (under 600s timeout)
+- For more configs, run multiple sequential bash calls
+
+### 5. DO NOT waste agent turns
+
+- Do NOT run `help()` on classes — read source files directly with Read tool
+- Do NOT test individual imports — write the complete script, then run it
+- Do NOT debug interactively — if script has errors, read the file, fix with Edit, re-run
+- Write script using Write tool (not heredoc in bash)
+
+### 6. Skip already-completed configs
+
+```python
+done = set()
+if os.path.exists(OUTPUT_CSV):
+    with open(OUTPUT_CSV) as f:
+        done = {row['label'] for row in csv.DictReader(f)}
+    print(f'Skipping {len(done)} already-completed configs')
+
+for label, params in configs:
+    if label in done:
+        continue
+    # ... run backtest
+```
+
+### 7. Print progress on every config
+
+```python
+print(f'[{i}/{total}] {label} ...', end='', flush=True)
+# ... run ...
+print(f' {elapsed:.0f}s | CAGR={row["cagr"]:.2f}% Sharpe={row["sharpe"]:.2f}')
+sys.stdout.flush()
+```
+
+### 8. Suppress logging
+
+```python
+import logging
+logging.disable(logging.WARNING)
+```
+
+---
+
+## Centralized Database Reference
+
+### Primary: `backtest_data/market_data.db` (1.24 GB)
+
+Table: `market_data_unified` — Columns: `id, symbol, timeframe, date, open, high, low, close, volume, created_at`
+Index: `(symbol, timeframe, date)` composite
+
+| Timeframe | Symbols | Date Range | Rows |
+|-----------|---------|------------|------|
+| day | 1,621 | 2000-2026 | 3.4M |
+| 60minute | 93 | 2018-2025 | 1.2M |
+| 5minute | 10 | 2018-2025 | 1.3M |
+| 30minute | 49 | Sep-Nov 2025 | 24K |
+
+**5-min stocks (only 10):** BHARTIARTL, HDFCBANK, HINDUNILVR, ICICIBANK, INFY, ITC, KOTAKBANK, RELIANCE, SBIN, TCS
+
+### Download: `services/data_manager.py` > `CentralizedDataManager`
+
+- Kite API, token at `backtest_data/access_token.json`
+- 5-min chunk: 7 days/request, rate limit: 0.35s (3 req/sec)
+- F&O universe: 86 stocks (`FNO_LOT_SIZES` dict, lines 42-127)
+
+### Other DBs
+
+| DB | Size | Purpose |
+|----|------|---------|
+| backtest_results.db | 708 KB | Runs, trades, equity curves |
+| kc6_trading.db | 52 KB | KC6 live trading state |
+| mq_agent.db | 40 KB | MQ agent runs |
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `services/mq_portfolio.py` | Portfolio, Position, MQBacktestConfig, Trade classes |
+| `services/mq_backtest_engine.py` | MQBacktestEngine with `preload_data()` static method |
+| `services/combined_mq_v3_engine.py` | Combined MQ + V3 overlay engine |
+| `services/consolidation_breakout.py` | V3 breakout detection, SYSTEM_PRIMARY |
+| `services/technical_indicators.py` | EMA, RSI, etc. |
+| `app.py` | Flask app with all dashboard routes |
+| `docs/OPTIMIZATION-PICKUP.md` | Full halt points + continuation guide |
+| `verification_output/mq_ath_trailing.pine` | TradingView Pine Script for ATH trailing |
+| `backtest_data/optimization_results.json` | Previous 1,062 optimization results |
+| `optimization_focused_results.csv` | Focused batch results (3 rows) |
+
+## MQBacktestEngine Key APIs
+
+```python
+# Static method - load data once, reuse across configs
+universe, price_data = MQBacktestEngine.preload_data(config)
+
+# Constructor with preloaded data
+engine = MQBacktestEngine(config,
+    preloaded_universe=universe,
+    preloaded_price_data=price_data)
+
+# Run backtest - returns BacktestResult dataclass
+result = engine.run()
+
+# BacktestResult fields:
+# .cagr, .sharpe_ratio, .sortino_ratio, .max_drawdown, .calmar_ratio
+# .total_trades, .win_rate, .avg_win_pct, .avg_loss_pct
+# .final_value, .total_return_pct, .total_topups
+# .equity_curve (dict), .trades (list), .exit_reason_counts (dict)
+```
+
+## MQBacktestConfig Key Parameters
+
+```python
+MQBacktestConfig(
+    start_date='2023-01-01', end_date='2025-12-31',
+    initial_capital=10_000_000,
+    portfolio_size=30,              # Number of stocks to hold
+    equity_allocation_pct=0.95,     # % in equity (rest in debt)
+    hard_stop_loss=0.50,            # Exit if stock drops 50% from entry
+    rebalance_ath_drawdown=0.20,    # Exit if stock drops 20% from peak since entry
+    rebalance_months=[1, 7],        # Semi-annual rebalance
+    max_sector_weight=0.25,         # Max 25% in one sector
+    max_stocks_per_sector=6,
+    max_position_size=0.10,         # Max 10% in one stock
+    topup_pct_of_initial=0.20,      # Darvas topup = 20% of initial capital
+    # Technical filters (all False by default):
+    use_ema_entry, use_rsi_filter, use_supertrend, use_macd, use_adx, use_weekly_filter
+)
+```
+
+---
+
+## KC6 V2 Live Trading System
+
+### What It Is
+
+Fully automated **KC6 mean reversion live trading system** on Zerodha (Nifty 500). Paper trading mode by default, toggle to live from dashboard. Runs daily via APScheduler cron jobs.
+
+### Strategy Rules
+
+- **Entry**: Close < KC(6, 1.3 ATR) Lower AND Close > SMA(200)
+- **Exit (primary)**: Standing SELL LIMIT at KC6 mid, placed each morning
+- **Exit (SL)**: 5% stop loss
+- **Exit (TP)**: 15% take profit
+- **Exit (MaxHold)**: 15 days
+- **Crash filter**: Universe ATR Ratio >= 1.3x blocks all new entries
+- **Backtest**: 2,482 trades, 65% win rate, PF 1.70, +2,863% P/L over 20 years
+
+### KC6 Files
+
+| File | Purpose |
+|------|---------|
+| `services/kc6_db.py` | SQLite persistence (positions, trades, orders, daily state, equity curve) |
+| `services/kc6_scanner.py` | Signal computation (indicators, crash filter, entries, exits, target prices) |
+| `services/kc6_executor.py` | Order execution with 10-point safety guardrails, target order lifecycle |
+| `templates/kc6_dashboard.html` | Dashboard with Chart.js equity curve, positions, signals, trades |
+| `config.py` | `KC6_DEFAULTS` dict (~line 170), `DATA_DIR` Railway-aware |
+| `app.py` | Routes `/kc6`, `/api/kc6/*` (~line 1795), 6 scheduled jobs (~line 1987) |
+
+### Scheduled Jobs (Mon-Fri)
+
+| Time | Job | What |
+|------|-----|------|
+| 9:20 AM | Position sync | Compare DB vs Kite holdings |
+| 9:25 AM | Place targets | SELL LIMIT at today's KC6 mid |
+| 12:30 PM | Midday check | Check if target orders filled |
+| 3:15 PM | Exit check | Target fills + SL/TP/MaxHold |
+| 3:20 PM | Entry scan | Crash filter + new entries |
+| 3:25 PM | Verify orders | Check order fills/rejections |
+
+### API Endpoints
+
+`/kc6` (dashboard), `/api/kc6/state`, `/api/kc6/scan` (POST), `/api/kc6/scan/status/<id>`, `/api/kc6/kill-switch` (POST), `/api/kc6/trades`, `/api/kc6/orders`, `/api/kc6/equity-curve`, `/api/kc6/toggle-mode` (POST)
+
+### Railway Cloud Deployment
+
+Config ready: `Procfile` (single worker), `railway.json`, `DATA_DIR` reads `RAILWAY_VOLUME_MOUNT_PATH` env var. Needs: Railway project creation, volume at `/data`, env vars (KITE_API_KEY, KITE_API_SECRET, KITE_REDIRECT_URL, FLASK_SECRET_KEY, RAILWAY_VOLUME_MOUNT_PATH).
+
+### Full Handoff Doc
+
+For complete implementation details, code references, and next steps: `docs/KC6-SESSION-HANDOFF.md`

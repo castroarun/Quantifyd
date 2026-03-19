@@ -1,0 +1,4 @@
+rank,label,cagr,sharpe,sortino,max_drawdown,calmar,total_trades,win_rate,final_value,total_return_pct,topups
+0,HSL50_ATH20_EQ95,32.19,1.05,1.14,27.0,1.19,21,81.0,23085034.76,130.85,33
+0,HSL60_ATH20_EQ95,32.19,1.05,1.14,27.0,1.19,21,81.0,23085034.76,130.85,33
+0,HSL100_ATH20_EQ95,32.19,1.05,1.14,27.0,1.19,21,81.0,23085034.76,130.85,33

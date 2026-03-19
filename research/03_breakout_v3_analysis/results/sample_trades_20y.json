@@ -1,0 +1,512 @@
+{
+  "EMA_20_50_Trail10": [
+    {
+      "symbol": "RALLIS",
+      "entry_date": "2019-07-12",
+      "entry_price": 154.25,
+      "exit_date": "2019-12-16",
+      "exit_price": 168.8,
+      "exit_reason": "Trail_10pct",
+      "days": 157,
+      "pnl_pct": 9.4
+    },
+    {
+      "symbol": "NTPC",
+      "entry_date": "2007-03-13",
+      "entry_price": 109.12,
+      "exit_date": "2007-10-19",
+      "exit_price": 154.39,
+      "exit_reason": "Trail_10pct",
+      "days": 220,
+      "pnl_pct": 41.5
+    },
+    {
+      "symbol": "RELIANCE",
+      "entry_date": "2005-06-08",
+      "entry_price": 51.2,
+      "exit_date": "2006-02-15",
+      "exit_price": 83.6,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 63.3
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "entry_date": "2021-09-22",
+      "entry_price": 61.7,
+      "exit_date": "2021-11-22",
+      "exit_price": 64.35,
+      "exit_reason": "Trail_10pct",
+      "days": 61,
+      "pnl_pct": 4.3
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "entry_date": "2010-09-16",
+      "entry_price": 19.1,
+      "exit_date": "2010-11-16",
+      "exit_price": 20.6,
+      "exit_reason": "Trail_10pct",
+      "days": 61,
+      "pnl_pct": 7.9
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "entry_date": "2014-01-14",
+      "entry_price": 15.1,
+      "exit_date": "2014-02-12",
+      "exit_price": 13.8,
+      "exit_reason": "Trail_10pct",
+      "days": 29,
+      "pnl_pct": -8.6
+    },
+    {
+      "symbol": "HEIDELBERG",
+      "entry_date": "2013-05-17",
+      "entry_price": 46.37,
+      "exit_date": "2013-05-23",
+      "exit_price": 40.9,
+      "exit_reason": "Trail_10pct",
+      "days": 6,
+      "pnl_pct": -11.8
+    },
+    {
+      "symbol": "DELTACORP",
+      "entry_date": "2010-04-30",
+      "entry_price": 39.9,
+      "exit_date": "2010-05-07",
+      "exit_price": 34.6,
+      "exit_reason": "Trail_10pct",
+      "days": 7,
+      "pnl_pct": -13.3
+    },
+    {
+      "symbol": "DRREDDY",
+      "entry_date": "2022-10-03",
+      "entry_price": 883.95,
+      "exit_date": "2023-05-12",
+      "exit_price": 893.2,
+      "exit_reason": "Trail_10pct",
+      "days": 221,
+      "pnl_pct": 1.0
+    },
+    {
+      "symbol": "BAJAJHLDNG",
+      "entry_date": "2007-07-25",
+      "entry_price": 868.27,
+      "exit_date": "2007-11-12",
+      "exit_price": 858.71,
+      "exit_reason": "Trail_10pct",
+      "days": 110,
+      "pnl_pct": -1.1
+    }
+  ],
+  "PA_Stoch20_ATH20": [
+    {
+      "symbol": "ASTRAZEN",
+      "entry_date": "2009-04-08",
+      "entry_price": 520.0,
+      "exit_date": "2010-02-02",
+      "exit_price": 826.8,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 300,
+      "pnl_pct": 59.0
+    },
+    {
+      "symbol": "BRITANNIA",
+      "entry_date": "2005-10-13",
+      "entry_price": 122.12,
+      "exit_date": "2006-05-19",
+      "exit_price": 150.16,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 218,
+      "pnl_pct": 23.0
+    },
+    {
+      "symbol": "NAVINFLUOR",
+      "entry_date": "2016-02-01",
+      "entry_price": 308.31,
+      "exit_date": "2016-11-21",
+      "exit_price": 443.91,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 294,
+      "pnl_pct": 44.0
+    },
+    {
+      "symbol": "INDHOTEL",
+      "entry_date": "2014-07-17",
+      "entry_price": 89.05,
+      "exit_date": "2015-05-26",
+      "exit_price": 96.95,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 313,
+      "pnl_pct": 8.9
+    },
+    {
+      "symbol": "TRIDENT",
+      "entry_date": "2014-02-14",
+      "entry_price": 1.45,
+      "exit_date": "2014-12-01",
+      "exit_price": 2.65,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 290,
+      "pnl_pct": 82.8
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "entry_date": "2008-03-18",
+      "entry_price": 192.8,
+      "exit_date": "2008-07-01",
+      "exit_price": 172.25,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 105,
+      "pnl_pct": -10.7
+    },
+    {
+      "symbol": "LT",
+      "entry_date": "2008-02-11",
+      "entry_price": 737.21,
+      "exit_date": "2008-03-10",
+      "exit_price": 606.27,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 28,
+      "pnl_pct": -17.8
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "entry_date": "2025-01-13",
+      "entry_price": 1853.4,
+      "exit_date": "2025-04-25",
+      "exit_price": 1739.2,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 102,
+      "pnl_pct": -6.2
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "entry_date": "2006-01-12",
+      "entry_price": 52.4,
+      "exit_date": "2006-03-07",
+      "exit_price": 51.95,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 54,
+      "pnl_pct": -0.9
+    },
+    {
+      "symbol": "WIPRO",
+      "entry_date": "2018-12-21",
+      "entry_price": 118.75,
+      "exit_date": "2019-09-23",
+      "exit_price": 117.35,
+      "exit_reason": "ATH_DD_20pct",
+      "days": 276,
+      "pnl_pct": -1.2
+    }
+  ],
+  "PA_RSI2_10_Trail15": [
+    {
+      "symbol": "CENTURYPLY",
+      "entry_date": "2021-06-28",
+      "entry_price": 404.75,
+      "exit_date": "2021-11-29",
+      "exit_price": 586.2,
+      "exit_reason": "Trail_15pct",
+      "days": 154,
+      "pnl_pct": 44.8
+    },
+    {
+      "symbol": "MARICO",
+      "entry_date": "2007-03-12",
+      "entry_price": 25.91,
+      "exit_date": "2007-11-19",
+      "exit_price": 33.44,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 29.1
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "entry_date": "2005-03-29",
+      "entry_price": 101.0,
+      "exit_date": "2005-12-06",
+      "exit_price": 167.55,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 65.9
+    },
+    {
+      "symbol": "KTKBANK",
+      "entry_date": "2023-11-07",
+      "entry_price": 204.95,
+      "exit_date": "2024-02-12",
+      "exit_price": 231.5,
+      "exit_reason": "Trail_15pct",
+      "days": 97,
+      "pnl_pct": 13.0
+    },
+    {
+      "symbol": "NESTLEIND",
+      "entry_date": "2011-10-19",
+      "entry_price": 206.2,
+      "exit_date": "2012-06-27",
+      "exit_price": 225.0,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 9.1
+    },
+    {
+      "symbol": "CIPLA",
+      "entry_date": "2008-06-25",
+      "entry_price": 207.4,
+      "exit_date": "2008-10-10",
+      "exit_price": 194.4,
+      "exit_reason": "Trail_15pct",
+      "days": 107,
+      "pnl_pct": -6.3
+    },
+    {
+      "symbol": "OFSS",
+      "entry_date": "2008-07-29",
+      "entry_price": 906.5,
+      "exit_date": "2008-08-20",
+      "exit_price": 852.5,
+      "exit_reason": "Trail_15pct",
+      "days": 22,
+      "pnl_pct": -6.0
+    },
+    {
+      "symbol": "SAIL",
+      "entry_date": "2008-01-21",
+      "entry_price": 203.5,
+      "exit_date": "2008-02-11",
+      "exit_price": 184.85,
+      "exit_reason": "Trail_15pct",
+      "days": 21,
+      "pnl_pct": -9.2
+    },
+    {
+      "symbol": "ZENSARTECH",
+      "entry_date": "2010-05-10",
+      "entry_price": 30.64,
+      "exit_date": "2010-11-03",
+      "exit_price": 30.4,
+      "exit_reason": "Trail_15pct",
+      "days": 177,
+      "pnl_pct": -0.8
+    },
+    {
+      "symbol": "JINDALSTEL",
+      "entry_date": "2010-01-29",
+      "entry_price": 627.95,
+      "exit_date": "2010-05-19",
+      "exit_price": 618.35,
+      "exit_reason": "Trail_15pct",
+      "days": 110,
+      "pnl_pct": -1.5
+    }
+  ],
+  "EMA_20_50_Trail20": [
+    {
+      "symbol": "AMBUJACEM",
+      "entry_date": "2008-12-22",
+      "entry_price": 70.75,
+      "exit_date": "2009-08-31",
+      "exit_price": 99.15,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 40.1
+    },
+    {
+      "symbol": "GUJALKALI",
+      "entry_date": "2006-02-06",
+      "entry_price": 153.7,
+      "exit_date": "2006-05-15",
+      "exit_price": 182.35,
+      "exit_reason": "Trail_20pct",
+      "days": 98,
+      "pnl_pct": 18.6
+    },
+    {
+      "symbol": "GRASIM",
+      "entry_date": "2015-07-15",
+      "entry_price": 734.4,
+      "exit_date": "2016-03-23",
+      "exit_price": 753.2,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 2.6
+    },
+    {
+      "symbol": "AARTIIND",
+      "entry_date": "2014-02-25",
+      "entry_price": 25.65,
+      "exit_date": "2014-11-05",
+      "exit_price": 75.5,
+      "exit_reason": "Time_252d",
+      "days": 253,
+      "pnl_pct": 194.3
+    },
+    {
+      "symbol": "TIMKEN",
+      "entry_date": "2013-07-29",
+      "entry_price": 159.9,
+      "exit_date": "2014-04-07",
+      "exit_price": 196.65,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 23.0
+    },
+    {
+      "symbol": "AKZOINDIA",
+      "entry_date": "2008-02-29",
+      "entry_price": 518.99,
+      "exit_date": "2008-07-01",
+      "exit_price": 486.67,
+      "exit_reason": "Trail_20pct",
+      "days": 123,
+      "pnl_pct": -6.2
+    },
+    {
+      "symbol": "PFIZER",
+      "entry_date": "2020-04-15",
+      "entry_price": 4428.0,
+      "exit_date": "2020-06-18",
+      "exit_price": 3991.6,
+      "exit_reason": "Trail_20pct",
+      "days": 64,
+      "pnl_pct": -9.9
+    },
+    {
+      "symbol": "EMAMILTD",
+      "entry_date": "2008-02-08",
+      "entry_price": 44.35,
+      "exit_date": "2008-03-13",
+      "exit_price": 33.43,
+      "exit_reason": "Trail_20pct",
+      "days": 34,
+      "pnl_pct": -24.6
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "entry_date": "2019-07-24",
+      "entry_price": 1483.4,
+      "exit_date": "2020-03-23",
+      "exit_price": 1498.45,
+      "exit_reason": "Trail_20pct",
+      "days": 243,
+      "pnl_pct": 1.0
+    },
+    {
+      "symbol": "HFCL",
+      "entry_date": "2021-12-06",
+      "entry_price": 78.3,
+      "exit_date": "2022-02-14",
+      "exit_price": 76.9,
+      "exit_reason": "Trail_20pct",
+      "days": 70,
+      "pnl_pct": -1.8
+    }
+  ],
+  "PA_ADX30_Trail15": [
+    {
+      "symbol": "RAYMOND",
+      "entry_date": "2022-09-19",
+      "entry_price": 683.5,
+      "exit_date": "2022-12-23",
+      "exit_price": 821.5,
+      "exit_reason": "Trail_15pct",
+      "days": 95,
+      "pnl_pct": 20.2
+    },
+    {
+      "symbol": "THERMAX",
+      "entry_date": "2007-08-02",
+      "entry_price": 637.65,
+      "exit_date": "2008-01-11",
+      "exit_price": 777.55,
+      "exit_reason": "Trail_15pct",
+      "days": 162,
+      "pnl_pct": 21.9
+    },
+    {
+      "symbol": "TITAN",
+      "entry_date": "2005-10-31",
+      "entry_price": 24.84,
+      "exit_date": "2006-01-23",
+      "exit_price": 36.04,
+      "exit_reason": "Trail_15pct",
+      "days": 84,
+      "pnl_pct": 45.1
+    },
+    {
+      "symbol": "NH",
+      "entry_date": "2025-02-28",
+      "entry_price": 1444.5,
+      "exit_date": "2025-07-21",
+      "exit_price": 1915.8,
+      "exit_reason": "Trail_15pct",
+      "days": 143,
+      "pnl_pct": 32.6
+    },
+    {
+      "symbol": "BATAINDIA",
+      "entry_date": "2012-04-13",
+      "entry_price": 410.68,
+      "exit_date": "2012-12-21",
+      "exit_price": 436.65,
+      "exit_reason": "Time_252d",
+      "days": 252,
+      "pnl_pct": 6.3
+    },
+    {
+      "symbol": "TIMKEN",
+      "entry_date": "2008-10-29",
+      "entry_price": 62.15,
+      "exit_date": "2008-11-18",
+      "exit_price": 58.05,
+      "exit_reason": "Trail_15pct",
+      "days": 20,
+      "pnl_pct": -6.6
+    },
+    {
+      "symbol": "CEATLTD",
+      "entry_date": "2008-10-14",
+      "entry_price": 53.0,
+      "exit_date": "2008-10-20",
+      "exit_price": 44.75,
+      "exit_reason": "Trail_15pct",
+      "days": 6,
+      "pnl_pct": -15.6
+    },
+    {
+      "symbol": "KEC",
+      "entry_date": "2008-02-11",
+      "entry_price": 155.2,
+      "exit_date": "2008-03-13",
+      "exit_price": 130.22,
+      "exit_reason": "Trail_15pct",
+      "days": 31,
+      "pnl_pct": -16.1
+    },
+    {
+      "symbol": "SCHAEFFLER",
+      "entry_date": "2008-10-21",
+      "entry_price": 54.5,
+      "exit_date": "2008-11-17",
+      "exit_price": 53.95,
+      "exit_reason": "Trail_15pct",
+      "days": 27,
+      "pnl_pct": -1.0
+    },
+    {
+      "symbol": "WELCORP",
+      "entry_date": "2007-11-14",
+      "entry_price": 425.06,
+      "exit_date": "2008-01-21",
+      "exit_price": 417.35,
+      "exit_reason": "Trail_15pct",
+      "days": 68,
+      "pnl_pct": -1.8
+    }
+  ]
+}

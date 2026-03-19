@@ -1,0 +1,13 @@
+name,cagr,sharpe,sortino,max_drawdown,calmar,profit_factor,total_trades,win_rate,avg_win_pct,avg_loss_pct,final_value,total_return_pct,top3_pnl_pct,top3_symbols,cagr_ex_top3,exit_reason_counts
+HYB_EMA_ADX_Trail15,12.72,0.39,0.42,22.21,0.57,2.19,1095,45.0,28.6,-10.7,37324125,273.2,16.7,"['ADANIGREEN', 'HEG', 'GRAPHITE']",11.84,"{'Trail_15pct': 863, 'Time_180d': 207, 'End_of_Period': 25}"
+HYB_ST_Vol_ATH20,13.68,0.46,0.50,22.34,0.61,2.52,835,50.7,33.3,-13.6,40958684,309.6,13.6,"['GRAPHITE', 'ADANIGREEN', 'HEG']",12.86,"{'ATH_DD_20pct': 491, 'Time_180d': 319, 'End_of_Period': 25}"
+HYB_RSI_BB_Confluence,8.85,0.22,0.25,20.23,0.44,1.48,2261,50.1,12.4,-8.4,25403538,154.0,7.1,"['VBL', 'JSL', 'JBCHEPHARM']",9.06,"{'TP_15pct': 636, 'SL_8pct': 891, 'Time_60d': 709, 'End_of_Period': 25}"
+HYB_MACD_SMA200_STExit,14.31,0.51,0.55,20.85,0.69,2.85,806,49.1,35.4,-12.0,43549483,335.5,15.1,"['HEG', 'ADANIGREEN', 'KEI']",13.27,"{'SL_12pct': 325, 'ST_Flip': 54, 'Time_180d': 402, 'End_of_Period': 25}"
+HYB_DC50_ADX_DCExit20,11.70,0.35,0.39,19.42,0.60,2.90,535,58.9,31.6,-15.6,33769763,237.7,17.9,"['HEG', 'ADANIGREEN', 'GRAPHITE']",10.60,"{'Time_180d': 510, 'End_of_Period': 25}"
+HYB_52W_Vol_Trail10,10.14,0.31,0.37,15.36,0.66,1.83,1244,45.3,17.0,-7.7,28918898,189.2,13.3,"['ADANIGREEN', 'HEG', 'NILKAMAL']",9.77,"{'Trail_10pct': 970, 'Time_120d': 254, 'End_of_Period': 20}"
+HYB_Weekly_MACD_Trail15,13.68,0.46,0.49,21.20,0.65,2.35,1115,46.3,29.0,-10.6,40959828,309.6,14.9,"['ADANIGREEN', 'GRAPHITE', 'HEG']",12.84,"{'Trail_15pct': 891, 'Time_180d': 199, 'End_of_Period': 25}"
+HYB_GoldenRSI_Wide20,12.76,0.40,0.44,26.89,0.47,2.41,712,47.3,38.3,-14.3,37461843,274.6,14.2,"['ADANIGREEN', 'DIXON', 'GRAPHITE']",11.95,"{'Trail_20pct': 507, 'Time_252d': 180, 'End_of_Period': 25}"
+HYB_WeeklyPull_RSI2Exit,10.16,0.32,0.35,21.14,0.48,1.34,6784,49.5,7.4,-5.4,28986152,189.9,6.5,"['KEI', 'PRESTIGE', 'NAUKRI']",11.35,"{'SL_5pct': 2423, 'TP_10pct': 1401, 'Time_20d': 2935, 'End_of_Period': 25}"
+HYB_EMA_ADX_PS20,13.90,0.42,0.46,25.57,0.54,2.43,682,49.1,34.9,-13.9,41844769,318.4,19.2,"['ADANIGREEN', 'HEG', 'GRAPHITE']",12.47,"{'ATH_DD_20pct': 418, 'Time_180d': 244, 'End_of_Period': 20}"
+HYB_ST_MACD_ADXExit,4.25,-0.38,-0.43,16.52,0.26,1.66,570,42.5,17.5,-7.8,15798944,58.0,22.9,"['CHENNPETRO', 'IDEA', 'BEML']",3.71,"{'ADX_Weak_20': 356, 'Trail_15pct': 190, 'Time_180d': 11, 'End_of_Period': 13}"
+HYB_SMA200_HighRank_SemiAnn,10.91,0.29,0.32,25.95,0.42,3.22,447,52.6,37.2,-12.8,31244720,212.4,15.8,"['DIXON', 'BAJFINANCE', 'PFC']",10.24,"{'ATH_DD_20pct': 288, 'Time_365d': 134, 'End_of_Period': 25}"

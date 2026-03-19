@@ -1,0 +1,512 @@
+{
+  "P3_MACD200_T20_PS15_Q": [
+    {
+      "symbol": "ESCORTS",
+      "entry_date": "2023-07-10",
+      "entry_price": 2285.85,
+      "exit_date": "2024-03-13",
+      "exit_price": 2712.9,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": 18.7
+    },
+    {
+      "symbol": "ATUL",
+      "entry_date": "2016-05-06",
+      "entry_price": 1899.35,
+      "exit_date": "2017-01-13",
+      "exit_price": 2154.85,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": 13.5
+    },
+    {
+      "symbol": "PFIZER",
+      "entry_date": "2015-01-01",
+      "entry_price": 2192.0,
+      "exit_date": "2015-09-10",
+      "exit_price": 2264.69,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": 3.3
+    },
+    {
+      "symbol": "COROMANDEL",
+      "entry_date": "2025-04-11",
+      "entry_price": 2060.0,
+      "exit_date": "2025-10-17",
+      "exit_price": 2146.6,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": 4.2
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "entry_date": "2019-01-21",
+      "entry_price": 1267.6,
+      "exit_date": "2019-09-30",
+      "exit_price": 1644.45,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": 29.7
+    },
+    {
+      "symbol": "HAVELLS",
+      "entry_date": "2019-03-05",
+      "entry_price": 720.85,
+      "exit_date": "2019-08-05",
+      "exit_price": 634.65,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": -12.0
+    },
+    {
+      "symbol": "HCLTECH",
+      "entry_date": "2018-09-25",
+      "entry_price": 558.15,
+      "exit_date": "2019-06-04",
+      "exit_price": 542.9,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": -2.7
+    },
+    {
+      "symbol": "RAIN",
+      "entry_date": "2018-03-08",
+      "entry_price": 382.6,
+      "exit_date": "2018-05-02",
+      "exit_price": 306.5,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": -19.9
+    },
+    {
+      "symbol": "WHIRLPOOL",
+      "entry_date": "2015-01-01",
+      "entry_price": 653.6,
+      "exit_date": "2015-09-03",
+      "exit_price": 642.25,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": -1.7
+    },
+    {
+      "symbol": "LUPIN",
+      "entry_date": "2025-04-03",
+      "entry_price": 2095.7,
+      "exit_date": "2025-12-31",
+      "exit_price": 2074.0,
+      "exit_reason": "End_of_Period",
+      "days": "",
+      "pnl_pct": -1.0
+    }
+  ],
+  "HYB_MACD_SMA200_STExit": [
+    {
+      "symbol": "COLPAL",
+      "entry_date": "2024-06-04",
+      "entry_price": 2809.75,
+      "exit_date": "2024-12-02",
+      "exit_price": 2887.45,
+      "exit_reason": "Time_180d",
+      "days": "",
+      "pnl_pct": 2.8
+    },
+    {
+      "symbol": "KPRMILL",
+      "entry_date": "2016-11-07",
+      "entry_price": 116.1,
+      "exit_date": "2017-05-08",
+      "exit_price": 146.85,
+      "exit_reason": "Time_180d",
+      "days": "",
+      "pnl_pct": 26.5
+    },
+    {
+      "symbol": "BALMLAWRIE",
+      "entry_date": "2015-02-09",
+      "entry_price": 96.83,
+      "exit_date": "2015-08-10",
+      "exit_price": 104.25,
+      "exit_reason": "Time_180d",
+      "days": "",
+      "pnl_pct": 7.7
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "entry_date": "2019-06-10",
+      "entry_price": 1061.65,
+      "exit_date": "2019-12-09",
+      "exit_price": 1623.5,
+      "exit_reason": "Time_180d",
+      "days": "",
+      "pnl_pct": 52.9
+    },
+    {
+      "symbol": "WIPRO",
+      "entry_date": "2018-11-19",
+      "entry_price": 122.7,
+      "exit_date": "2019-05-20",
+      "exit_price": 142.25,
+      "exit_reason": "Time_180d",
+      "days": "",
+      "pnl_pct": 15.9
+    },
+    {
+      "symbol": "DELTACORP",
+      "entry_date": "2017-12-18",
+      "entry_price": 270.15,
+      "exit_date": "2018-03-28",
+      "exit_price": 250.25,
+      "exit_reason": "ST_Flip",
+      "days": "",
+      "pnl_pct": -7.4
+    },
+    {
+      "symbol": "GRANULES",
+      "entry_date": "2016-07-20",
+      "entry_price": 147.25,
+      "exit_date": "2016-08-22",
+      "exit_price": 129.1,
+      "exit_reason": "SL_12pct",
+      "days": "",
+      "pnl_pct": -12.3
+    },
+    {
+      "symbol": "CHAMBLFERT",
+      "entry_date": "2025-03-05",
+      "entry_price": 571.1,
+      "exit_date": "2025-09-01",
+      "exit_price": 544.85,
+      "exit_reason": "Time_180d",
+      "days": "",
+      "pnl_pct": -4.6
+    },
+    {
+      "symbol": "GLENMARK",
+      "entry_date": "2018-10-23",
+      "entry_price": 615.7,
+      "exit_date": "2019-04-22",
+      "exit_price": 626.1,
+      "exit_reason": "Time_180d",
+      "days": "",
+      "pnl_pct": 1.7
+    },
+    {
+      "symbol": "ERIS",
+      "entry_date": "2025-10-08",
+      "entry_price": 1600.8,
+      "exit_date": "2025-12-31",
+      "exit_price": 1610.0,
+      "exit_reason": "End_of_Period",
+      "days": "",
+      "pnl_pct": 0.6
+    }
+  ],
+  "P2_MACD200_Trail20_252d": [
+    {
+      "symbol": "BALRAMCHIN",
+      "entry_date": "2016-11-18",
+      "entry_price": 116.15,
+      "exit_date": "2017-07-28",
+      "exit_price": 155.0,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": 33.4
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "entry_date": "2015-10-14",
+      "entry_price": 227.0,
+      "exit_date": "2015-12-18",
+      "exit_price": 401.0,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": 76.7
+    },
+    {
+      "symbol": "NESTLEIND",
+      "entry_date": "2020-03-27",
+      "entry_price": 755.4,
+      "exit_date": "2020-12-04",
+      "exit_price": 891.4,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": 18.0
+    },
+    {
+      "symbol": "GRANULES",
+      "entry_date": "2019-11-20",
+      "entry_price": 129.15,
+      "exit_date": "2020-03-17",
+      "exit_price": 150.1,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": 16.2
+    },
+    {
+      "symbol": "AIAENG",
+      "entry_date": "2019-02-08",
+      "entry_price": 1661.2,
+      "exit_date": "2019-10-18",
+      "exit_price": 1749.5,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": 5.3
+    },
+    {
+      "symbol": "SFL",
+      "entry_date": "2018-02-05",
+      "entry_price": 803.6,
+      "exit_date": "2018-05-18",
+      "exit_price": 649.7,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": -19.2
+    },
+    {
+      "symbol": "PIIND",
+      "entry_date": "2016-10-26",
+      "entry_price": 864.95,
+      "exit_date": "2017-07-05",
+      "exit_price": 810.75,
+      "exit_reason": "Time_252d",
+      "days": "",
+      "pnl_pct": -6.3
+    },
+    {
+      "symbol": "ESCORTS",
+      "entry_date": "2016-09-22",
+      "entry_price": 382.7,
+      "exit_date": "2016-11-15",
+      "exit_price": 299.1,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": -21.8
+    },
+    {
+      "symbol": "RADICO",
+      "entry_date": "2023-02-27",
+      "entry_price": 1177.55,
+      "exit_date": "2023-09-25",
+      "exit_price": 1158.35,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": -1.6
+    },
+    {
+      "symbol": "JAMNAAUTO",
+      "entry_date": "2015-06-29",
+      "entry_price": 19.82,
+      "exit_date": "2015-08-25",
+      "exit_price": 19.51,
+      "exit_reason": "Trail_20pct",
+      "days": "",
+      "pnl_pct": -1.6
+    }
+  ],
+  "P2_ADX25_ADXWeakExit": [
+    {
+      "symbol": "SOUTHBANK",
+      "entry_date": "2023-07-04",
+      "entry_price": 18.1,
+      "exit_date": "2023-10-18",
+      "exit_price": 23.9,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": 32.0
+    },
+    {
+      "symbol": "BIOCON",
+      "entry_date": "2016-05-27",
+      "entry_price": 116.55,
+      "exit_date": "2016-07-12",
+      "exit_price": 122.55,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": 5.1
+    },
+    {
+      "symbol": "NAVINFLUOR",
+      "entry_date": "2015-01-01",
+      "entry_price": 127.99,
+      "exit_date": "2015-05-07",
+      "exit_price": 156.79,
+      "exit_reason": "Trail_15pct",
+      "days": "",
+      "pnl_pct": 22.5
+    },
+    {
+      "symbol": "COROMANDEL",
+      "entry_date": "2024-06-04",
+      "entry_price": 1305.0,
+      "exit_date": "2024-11-04",
+      "exit_price": 1634.55,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": 25.3
+    },
+    {
+      "symbol": "THYROCARE",
+      "entry_date": "2018-08-27",
+      "entry_price": 633.7,
+      "exit_date": "2018-10-05",
+      "exit_price": 664.95,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": 4.9
+    },
+    {
+      "symbol": "DEEPAKNTR",
+      "entry_date": "2020-05-07",
+      "entry_price": 552.8,
+      "exit_date": "2020-05-18",
+      "exit_price": 501.0,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": -9.4
+    },
+    {
+      "symbol": "NH",
+      "entry_date": "2020-01-07",
+      "entry_price": 339.65,
+      "exit_date": "2020-03-03",
+      "exit_price": 320.25,
+      "exit_reason": "Trail_15pct",
+      "days": "",
+      "pnl_pct": -5.7
+    },
+    {
+      "symbol": "VIPIND",
+      "entry_date": "2018-01-23",
+      "entry_price": 366.45,
+      "exit_date": "2018-03-07",
+      "exit_price": 342.6,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": -6.5
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "entry_date": "2024-07-19",
+      "entry_price": 1403.0,
+      "exit_date": "2024-07-24",
+      "exit_price": 1393.0,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": -0.7
+    },
+    {
+      "symbol": "TORNTPOWER",
+      "entry_date": "2016-02-05",
+      "entry_price": 223.5,
+      "exit_date": "2016-02-10",
+      "exit_price": 219.55,
+      "exit_reason": "ADX_Weak",
+      "days": "",
+      "pnl_pct": -1.8
+    }
+  ],
+  "P3_SMA200_Comp_PS10": [
+    {
+      "symbol": "HEG",
+      "entry_date": "2017-08-11",
+      "entry_price": 93.75,
+      "exit_date": "2017-11-24",
+      "exit_price": 329.2,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": 251.1
+    },
+    {
+      "symbol": "NILKAMAL",
+      "entry_date": "2015-09-08",
+      "entry_price": 869.9,
+      "exit_date": "2016-01-18",
+      "exit_price": 1100.0,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": 26.5
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "entry_date": "2021-03-22",
+      "entry_price": 641.9,
+      "exit_date": "2021-10-25",
+      "exit_price": 760.55,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": 18.5
+    },
+    {
+      "symbol": "JBCHEPHARM",
+      "entry_date": "2020-03-18",
+      "entry_price": 255.1,
+      "exit_date": "2021-03-18",
+      "exit_price": 582.25,
+      "exit_reason": "Time_365d",
+      "days": "",
+      "pnl_pct": 128.2
+    },
+    {
+      "symbol": "ABBOTINDIA",
+      "entry_date": "2020-03-12",
+      "entry_price": 13874.85,
+      "exit_date": "2021-01-19",
+      "exit_price": 14601.7,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": 5.2
+    },
+    {
+      "symbol": "DBL",
+      "entry_date": "2018-03-23",
+      "entry_price": 985.35,
+      "exit_date": "2018-05-30",
+      "exit_price": 918.4,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": -6.8
+    },
+    {
+      "symbol": "SUDARSCHEM",
+      "entry_date": "2016-11-15",
+      "entry_price": 329.55,
+      "exit_date": "2016-12-22",
+      "exit_price": 283.85,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": -13.9
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "entry_date": "2025-02-17",
+      "entry_price": 2346.0,
+      "exit_date": "2025-02-24",
+      "exit_price": 1862.0,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": -20.6
+    },
+    {
+      "symbol": "KNRCON",
+      "entry_date": "2015-04-24",
+      "entry_price": 48.15,
+      "exit_date": "2016-01-18",
+      "exit_price": 48.45,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": 0.6
+    },
+    {
+      "symbol": "NAM-INDIA",
+      "entry_date": "2019-10-23",
+      "entry_price": 339.85,
+      "exit_date": "2020-03-06",
+      "exit_price": 344.3,
+      "exit_reason": "ATH_DD_20pct",
+      "days": "",
+      "pnl_pct": 1.3
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+// @version=5
+// Breakout V3 Verifier - Simple Arrows
+indicator("BV3", overlay=true, max_labels_count=10, max_lines_count=10)
+
+// ===== INPUTS =====
+i_strategy   = input.string("T1B", "Strategy", options=["ALPHA","T1B","MOMVOL","CALMAR","BB_MOM"])
+i_entry_year = input.int(2024, "Entry Year", minval=2000, maxval=2030)
+i_entry_mon  = input.int(3, "Entry Month", minval=1, maxval=12)
+i_entry_day  = input.int(26, "Entry Day", minval=1, maxval=31)
+i_exit_year  = input.int(2024, "Exit Year", minval=2000, maxval=2030)
+i_exit_mon   = input.int(9, "Exit Month", minval=1, maxval=12)
+i_exit_day   = input.int(20, "Exit Day", minval=1, maxval=31)
+i_entry_price = input.float(3492.1, "Entry Price")
+i_stop_price  = input.float(2985.7, "Stop Loss")
+i_exit_price  = input.float(4867.9, "Exit Price")
+i_lookback    = input.int(60, "Consol Start (trading days before entry)", minval=5, maxval=200)
+
+// ===== COMPUTED =====
+entryTime  = timestamp(i_entry_year, i_entry_mon, i_entry_day)
+exitTime   = timestamp(i_exit_year, i_exit_mon, i_exit_day)
+consolTime = entryTime - i_lookback * 86400000 * 7 / 5
+baseRet    = i_entry_price > 0 ? (i_exit_price - i_entry_price) / i_entry_price * 100 : 0
+hedgedRet  = baseRet * 5 - 3.4 - 2.3
+isWin      = i_exit_price >= i_entry_price
+
+// ===== BAR DETECTION (time-crossing = reliable on any timeframe) =====
+isConsolBar = time >= consolTime and time[1] < consolTime
+isEntryBar  = time >= entryTime and time[1] < entryTime
+isExitBar   = time >= exitTime and time[1] < exitTime
+
+// 1. CONSOLIDATION START (blue arrow at entry price level)
+if isConsolBar
+    label.new(bar_index, i_entry_price, "CONSOL\nSTART", style=label.style_label_down, color=color.blue, textcolor=color.white, size=size.small)
+
+// 2. ENTRY (green arrow at entry price)
+if isEntryBar
+    label.new(bar_index, i_entry_price, i_strategy + " ENTRY\nRs." + str.tostring(i_entry_price, "#.0"), style=label.style_label_up, color=color.green, textcolor=color.white, size=size.normal)
+
+// 3. STOP LOSS LINE (red dashed, entry to exit)
+var line slLine = na
+if isEntryBar and i_stop_price > 0
+    slLine := line.new(bar_index, i_stop_price, bar_index + 1, i_stop_price, color=color.red, style=line.style_dashed, width=1, extend=extend.right)
+if isExitBar and not na(slLine)
+    line.set_extend(slLine, extend.none)
+    line.set_x2(slLine, bar_index)
+
+// 4. EXIT (arrow at exit price, green=win red=loss)
+if isExitBar
+    exitCol = isWin ? color.green : color.red
+    exitTxt = (isWin ? "WIN " : "LOSS ") + str.tostring(baseRet, "+#.1") + "%\nRs." + str.tostring(i_exit_price, "#.0")
+    label.new(bar_index, i_exit_price, exitTxt, style=label.style_label_down, color=exitCol, textcolor=color.white, size=size.normal)
+
+// ===== INFO TABLE =====
+var table t = table.new(position.top_right, 2, 5, bgcolor=color.new(color.black, 70), border_width=1)
+if barstate.islast and i_entry_price > 0
+    table.cell(t, 0, 0, "Strategy",  text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 0, i_strategy,  text_color=color.yellow, text_size=size.small)
+    table.cell(t, 0, 1, "Entry",     text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 1, "Rs." + str.tostring(i_entry_price, "#.0"), text_color=color.green, text_size=size.small)
+    table.cell(t, 0, 2, "Stop",      text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 2, "Rs." + str.tostring(i_stop_price, "#.0"), text_color=color.red, text_size=size.small)
+    table.cell(t, 0, 3, "Base",      text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 3, str.tostring(baseRet, "+#.1") + "%", text_color=(isWin ? color.green : color.red), text_size=size.small)
+    table.cell(t, 0, 4, "5x Hedged", text_color=color.white, text_size=size.small)
+    table.cell(t, 1, 4, str.tostring(hedgedRet, "+#.1") + "%", text_color=(hedgedRet > 0 ? color.green : color.red), text_size=size.small)

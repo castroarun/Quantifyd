@@ -1,0 +1,13 @@
+name,cagr,sharpe,sortino,max_drawdown,calmar,profit_factor,total_trades,win_rate,avg_win_pct,avg_loss_pct,final_value,total_return_pct,top3_pnl_pct,top3_symbols,cagr_ex_top3,exit_reason_counts
+MOM_EMA2050_Trail15,10.50,0.31,0.36,19.49,0.54,2.13,861,48.7,24.5,-10.9,29998771,200.0,10.8,"['RAIN', 'GRANULES', 'CAPLIPOINT']",9.98,"{'Trail_15pct': 562, 'Time_180d': 274, 'End_of_Period': 25}"
+MOM_EMA1030_ATH20,10.18,0.27,0.31,25.13,0.41,2.08,719,49.4,28.1,-13.2,29043643,190.4,12.2,"['RAIN', 'COCHINSHIP', 'FINCABLES']",9.55,"{'ATH_DD_20pct': 350, 'Time_180d': 344, 'End_of_Period': 25}"
+MOM_GoldenCross_Wide20,9.74,0.25,0.29,21.43,0.45,2.43,518,51.7,31.1,-13.8,27789217,177.9,16.7,"['GRAPHITE', 'CHENNPETRO', 'JINDALSAW']",8.87,"{'Trail_20pct': 304, 'Time_252d': 189, 'End_of_Period': 25}"
+MOM_ST10_3_Trail15,4.73,-0.20,-0.22,22.21,0.21,1.62,527,43.5,22.5,-10.7,16631834,66.3,18.9,"['KARURVYSYA', 'CHENNPETRO', 'IDEA']",4.42,"{'Trail_15pct': 377, 'Time_180d': 126, 'End_of_Period': 24}"
+MOM_ST7_2_Tight10,5.40,-0.08,-0.10,29.23,0.18,1.33,1490,39.8,16.0,-7.9,17830384,78.3,15.8,"['BSOFT', 'JINDALSTEL', 'GRANULES']",5.27,"{'Trail_10pct': 1255, 'Time_120d': 210, 'End_of_Period': 25}"
+MOM_DC50_Trail15,11.84,0.39,0.43,20.32,0.58,2.26,954,48.1,26.2,-10.8,34225399,242.2,13.3,"['GRAPHITE', 'HEG', 'ADANIENT']",11.18,"{'Trail_15pct': 680, 'Time_180d': 249, 'End_of_Period': 25}"
+MOM_DC20_ATH20,11.90,0.39,0.41,19.46,0.61,2.33,774,52.3,29.3,-13.8,34426738,244.3,12.2,"['ADANIGREEN', 'JSL', 'ADANIENT']",11.33,"{'ATH_DD_20pct': 401, 'Time_180d': 348, 'End_of_Period': 25}"
+MOM_MACD_RSIRank_Trail15,9.87,0.27,0.30,22.46,0.44,1.96,933,48.0,23.1,-10.9,28157583,181.6,11.1,"['ADANIGREEN', 'MRPL', 'BSOFT']",9.47,"{'Trail_15pct': 629, 'Time_180d': 279, 'End_of_Period': 25}"
+MOM_ADX25_Trail15,13.12,0.41,0.44,21.01,0.62,2.19,1127,44.4,29.5,-10.8,38780652,287.8,17.1,"['HEG', 'ADANIGREEN', 'GRAPHITE']",12.11,"{'Trail_15pct': 892, 'Time_180d': 210, 'End_of_Period': 25}"
+MOM_VolBreak2x_Wide20,12.41,0.42,0.46,21.38,0.58,2.74,634,53.6,33.3,-14.0,36191090,261.9,12.3,"['HEG', 'ADANIENT', 'LINDEINDIA']",11.74,"{'Trail_20pct': 409, 'Time_252d': 200, 'End_of_Period': 25}"
+MOM_52WHigh90_Trail15,12.52,0.39,0.42,24.10,0.52,2.22,1066,47.2,26.9,-10.8,36588583,265.9,14.7,"['HEG', 'GRAPHITE', 'ADANIENT']",11.79,"{'Trail_15pct': 814, 'Time_180d': 227, 'End_of_Period': 25}"
+MOM_BBSqueeze_ATH20,11.54,0.35,0.38,25.42,0.45,2.30,761,51.1,29.0,-13.2,33242790,232.4,13.2,"['HEG', 'ADANIENT', 'TATAELXSI']",10.82,"{'ATH_DD_20pct': 384, 'Time_180d': 352, 'End_of_Period': 25}"
