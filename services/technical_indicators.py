@@ -225,7 +225,10 @@ def calc_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
 def calc_supertrend(df: pd.DataFrame, atr_period: int = 10,
                     multiplier: float = 3.0) -> Tuple[pd.Series, pd.Series]:
     """
-    Calculate Supertrend indicator.
+    Calculate Supertrend indicator (matches TradingView Pine Script implementation).
+
+    Band-locking: lower band only moves UP during uptrend, upper band only moves
+    DOWN during downtrend. This prevents premature flips in choppy markets.
 
     Returns:
     - supertrend: The supertrend line value
@@ -235,32 +238,52 @@ def calc_supertrend(df: pd.DataFrame, atr_period: int = 10,
     atr = calc_atr(df, atr_period)
 
     hl2 = (df['high'] + df['low']) / 2
-    upper_band = hl2 + (multiplier * atr)
-    lower_band = hl2 - (multiplier * atr)
+    basic_upper = (hl2 + (multiplier * atr)).values
+    basic_lower = (hl2 - (multiplier * atr)).values
+    close = df['close'].values
+    n = len(df)
 
-    supertrend = pd.Series(index=df.index, dtype=float)
-    direction = pd.Series(index=df.index, dtype=int)
+    final_upper = basic_upper.copy()
+    final_lower = basic_lower.copy()
+    st = np.empty(n)
+    direction = np.empty(n, dtype=int)
 
-    supertrend.iloc[0] = upper_band.iloc[0]
-    direction.iloc[0] = 1
+    st[0] = basic_upper[0]
+    direction[0] = 1
 
-    for i in range(1, len(df)):
-        if df['close'].iloc[i] > supertrend.iloc[i-1]:
-            supertrend.iloc[i] = lower_band.iloc[i]
-            direction.iloc[i] = 1
-        elif df['close'].iloc[i] < supertrend.iloc[i-1]:
-            supertrend.iloc[i] = upper_band.iloc[i]
-            direction.iloc[i] = -1
+    for i in range(1, n):
+        # Band locking (TradingView standard):
+        # Lower band: only move up, never down (during uptrend)
+        if basic_lower[i] > final_lower[i - 1] or close[i - 1] < final_lower[i - 1]:
+            final_lower[i] = basic_lower[i]
         else:
-            supertrend.iloc[i] = supertrend.iloc[i-1]
-            direction.iloc[i] = direction.iloc[i-1]
+            final_lower[i] = final_lower[i - 1]
 
-            if direction.iloc[i] == 1 and lower_band.iloc[i] > supertrend.iloc[i]:
-                supertrend.iloc[i] = lower_band.iloc[i]
-            elif direction.iloc[i] == -1 and upper_band.iloc[i] < supertrend.iloc[i]:
-                supertrend.iloc[i] = upper_band.iloc[i]
+        # Upper band: only move down, never up (during downtrend)
+        if basic_upper[i] < final_upper[i - 1] or close[i - 1] > final_upper[i - 1]:
+            final_upper[i] = basic_upper[i]
+        else:
+            final_upper[i] = final_upper[i - 1]
 
-    return supertrend, direction
+        # Direction flip logic
+        if direction[i - 1] == 1:
+            # Was uptrend — flip to downtrend if close < final_lower
+            if close[i] < final_lower[i]:
+                direction[i] = -1
+                st[i] = final_upper[i]
+            else:
+                direction[i] = 1
+                st[i] = final_lower[i]
+        else:
+            # Was downtrend — flip to uptrend if close > final_upper
+            if close[i] > final_upper[i]:
+                direction[i] = 1
+                st[i] = final_lower[i]
+            else:
+                direction[i] = -1
+                st[i] = final_upper[i]
+
+    return pd.Series(st, index=df.index), pd.Series(direction, index=df.index)
 
 
 def add_supertrend_signals(df: pd.DataFrame, atr_period: int = 10,

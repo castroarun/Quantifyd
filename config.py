@@ -205,7 +205,7 @@ MARUTHI_DEFAULTS = {
     'symbol': 'MARUTI',
     'exchange': 'NSE',
     'exchange_fo': 'NFO',
-    'lot_size': 200,  # MARUTI F&O lot size
+    'lot_size': 100,  # MARUTI F&O lot size (updated per NSE)
     'strike_interval': 100,  # Strike gap for MARUTI options
 
     # SuperTrend Settings
