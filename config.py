@@ -205,7 +205,7 @@ MARUTHI_DEFAULTS = {
     'symbol': 'MARUTI',
     'exchange': 'NSE',
     'exchange_fo': 'NFO',
-    'lot_size': 100,  # MARUTI F&O lot size (updated per NSE)
+    'lot_size': 50,   # MARUTI F&O lot size (verified from Kite instruments API)
     'strike_interval': 100,  # Strike gap for MARUTI options
 
     # SuperTrend Settings
@@ -249,6 +249,47 @@ MARUTHI_DEFAULTS = {
     'totp_secret': '',  # Set via env var KITE_TOTP_SECRET
     'kite_user_id': '',  # Set via env var KITE_USER_ID
     'kite_password': '',  # Set via env var KITE_PASSWORD
+}
+
+# BNF Squeeze & Fire Strategy Defaults
+BNF_DEFAULTS = {
+    # Instrument
+    'symbol': 'BANKNIFTY',
+    'exchange': 'NSE',
+    'exchange_fo': 'NFO',
+    'lot_size': 15,
+    'strike_interval': 100,
+
+    # BB Squeeze-Fire Indicators
+    'bb_period': 10,
+    'atr_period': 14,
+    'sma_period': 20,
+    'squeeze_min_bars': 3,
+    'trend_atr_min': 0.5,
+
+    # Squeeze Mode (Non-Directional Strangles)
+    'squeeze_strike_atr': 1.5,     # Strike distance in ATR (each side)
+    'squeeze_hold_bars': 10,       # Max hold in daily bars
+    'squeeze_max_loss_rupees': 30000,
+    'squeeze_lots': 5,
+    'max_squeeze_positions': 2,
+
+    # Fire Mode (Directional Naked Sell)
+    'fire_strike_atr': 0.5,       # OTM distance in ATR
+    'fire_hold_bars': 7,          # Max hold in daily bars
+    'fire_sl_mult': 3.0,          # Exit if option val >= 3x premium
+    'fire_max_loss_rupees': 20000,
+    'fire_lots': 5,
+    'max_fire_positions': 1,
+
+    # Capital
+    'capital': 10_00_000,          # 10L
+
+    # Safety
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+    'max_daily_orders': 10,
 }
 
 # Nifty 500 Universe
