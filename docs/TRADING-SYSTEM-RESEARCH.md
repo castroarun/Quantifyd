@@ -277,13 +277,13 @@ Only 10 stocks with 5-min data. All tested strategies lost money even with futur
 - 5-min scalping: ALL unprofitable. ORB best at -9.7% CAGR. Dead end.
 - Multi-strategy portfolio combination sweep launched (IN PROGRESS)
 
-## Phase 5: Multi-Strategy Portfolio Combination (COMPLETED)
+## Phase 5: Trident — 3-Strategy Futures Portfolio (COMPLETED)
 
 **Script:** `run_multi_strategy_portfolio.py` | **Results:** `multi_strategy_portfolio_results.csv`
 
 ### RESULT: 25.66% CAGR ACHIEVED (No Look-Ahead Bias)
 
-Combining top 3 honest strategies into a shared capital pool:
+**Codename: Trident** — 3 daily breakout strategies combined into a shared futures capital pool:
 1. **InsideDay Breakout** (L+S) — 3,198 trades (45%)
 2. **PA_MACD BuyStop** (L+S) — 2,884 trades (41%)
 3. **Range Breakout 5d** (L+S) — 1,036 trades (14%)
