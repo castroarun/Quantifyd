@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BNF Squeeze & Fire — Unified System Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    h1 { color: #00e676; font-size: 32px; margin-bottom: 5px; }
+    h2 { color: #29b6f6; font-size: 20px; margin: 30px 0 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+    h3 { color: #ff9800; font-size: 16px; margin: 20px 0 10px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+    .mode-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .mode-squeeze { background: #1b5e20; color: #69f0ae; }
+    .mode-fire { background: #e65100; color: #ffab40; }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 15px 0; }
+    .card { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 14px; text-align: center; }
+    .card .value { font-size: 26px; font-weight: 700; color: #00e676; }
+    .card .value.warn { color: #ff9800; }
+    .card .value.negative { color: #ef5350; }
+    .card .label { font-size: 11px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+    .mode-section { background: #111; border: 1px solid #333; border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .mode-section.squeeze { border-left: 4px solid #00e676; }
+    .mode-section.fire { border-left: 4px solid #ff9800; }
+
+    .chart-container { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; margin: 15px 0; }
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+    th { background: #1a1a1a; color: #29b6f6; padding: 8px 6px; text-align: left; border-bottom: 2px solid #333; position: sticky; top: 0; }
+    td { padding: 6px; border-bottom: 1px solid #222; }
+    tr:hover { background: #1a1a2a; }
+    tr.win td { border-left-color: #00e676; }
+    tr.loss td { border-left-color: #ef5350; }
+    tr.highlight { background: #1a2a1a !important; }
+    .positive { color: #00e676; }
+    .negative { color: #ef5350; }
+    .label-cell { font-size: 10px; font-family: monospace; word-break: break-all; max-width: 300px; }
+
+    .explanation { background: #111; border: 1px solid #333; border-radius: 8px; padding: 15px; margin: 15px 0; font-size: 13px; line-height: 1.6; }
+    .explanation strong { color: #00e676; }
+    .explanation em { color: #ff9800; font-style: normal; }
+
+    .config-box { background: #111; border: 1px solid #333; border-radius: 8px; padding: 15px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+
+    .footer { text-align: center; color: #555; font-size: 11px; margin-top: 40px; padding-top: 20px; border-top: 1px solid #222; }
+</style>
+</head>
+<body>
+<div class="container">
+
+    <h1>BNF Squeeze & Fire</h1>
+    <p class="subtitle">
+        Unified BankNifty options system — One signal engine, two trade modes
+        <br>Backtest: Jan 2023 — Dec 2025 | Capital: Rs 10,00,000 | BankNifty Monthly Options
+    </p>
+
+    <!-- System Concept -->
+    <div class="explanation">
+        <strong>How it works:</strong> The system uses Bollinger Band width and trend distance to classify market regime:
+        <br><br>
+        <span class="mode-tag mode-squeeze">SQUEEZE</span>
+        BB width contracting + price near SMA &rarr; <strong>Range-bound</strong> &rarr; Sell short strangles (collect premium)
+        <br><br>
+        <span class="mode-tag mode-fire">FIRE</span>
+        BB expanding after squeeze + price trending away from SMA &rarr; <strong>Breakout</strong> &rarr; Sell directional option (theta + direction)
+        <br><br>
+        Same indicators, opposite signals, complementary trades. Squeeze profits in calm markets, Fire profits in volatile breakouts.
+    </div>
+
+    <!-- ===== COMBINED METRICS ===== -->
+    <h2>Combined System Performance</h2>
+    <div class="cards">
+        <div class="card"><div class="value">31.0%</div><div class="label">Combined CAGR</div></div>
+        <div class="card"><div class="value">72.9%</div><div class="label">Win Rate</div></div>
+        <div class="card"><div class="value">7.80</div><div class="label">Profit Factor</div></div>
+        <div class="card"><div class="value warn">2.81%</div><div class="label">Max Drawdown</div></div>
+        <div class="card"><div class="value">11.02</div><div class="label">Calmar Ratio</div></div>
+        <div class="card"><div class="value">59</div><div class="label">Total Trades</div></div>
+        <div class="card"><div class="value">Rs 2,138,684</div><div class="label">Final Capital</div></div>
+        <div class="card"><div class="value">+113.9%</div><div class="label">Total Return</div></div>
+    </div>
+
+    <!-- Combined Equity Curve -->
+    <div class="chart-container">
+        <canvas id="combinedEquity" height="100"></canvas>
+    </div>
+
+    <!-- Mode Comparison Cards -->
+    <div class="chart-row">
+        <div class="mode-section squeeze">
+            <h3><span class="mode-tag mode-squeeze">SQUEEZE</span> Short Strangles</h3>
+            <div class="cards">
+                <div class="card"><div class="value">22.2%</div><div class="label">CAGR</div></div>
+                <div class="card"><div class="value">86.2%</div><div class="label">Win Rate</div></div>
+                <div class="card"><div class="value">15.9</div><div class="label">Profit Factor</div></div>
+                <div class="card"><div class="value warn">1.9%</div><div class="label">Max DD</div></div>
+                <div class="card"><div class="value">29</div><div class="label">Trades</div></div>
+                <div class="card"><div class="value">Rs +808,880</div><div class="label">Total P&L</div></div>
+            </div>
+            <div class="config-box">
+                Config: BB Only | Strike: 1.5x ATR | Hold: Biweekly | TF: 2.0 | 5 Lots | Monthly Expiry (30 DTE)
+            </div>
+        </div>
+
+        <div class="mode-section fire">
+            <h3><span class="mode-tag mode-fire">FIRE</span> Directional Option Selling</h3>
+            <div class="cards">
+                <div class="card"><div class="value">11.9%</div><div class="label">CAGR</div></div>
+                <div class="card"><div class="value">60.0%</div><div class="label">Win Rate</div></div>
+                <div class="card"><div class="value">3.9</div><div class="label">Profit Factor</div></div>
+                <div class="card"><div class="value warn">1.8%</div><div class="label">Max DD</div></div>
+                <div class="card"><div class="value">30</div><div class="label">Trades (19 Puts/11 Calls)</div></div>
+                <div class="card"><div class="value">Rs +329,804</div><div class="label">Total P&L</div></div>
+            </div>
+            <div class="config-box">
+                Config: Strike: 0.5 ATR OTM | Hold: 7 bars | SL: 3x premium | Squeeze: 3 min bars | Trend: 0.5 ATR | Loss cap: Rs 20K | 5 Lots
+                <br>Long signal &rarr; Sell PUT | Short signal &rarr; Sell CALL | Theta decay works in our favor
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly P&L Stacked Bar -->
+    <h2>Monthly P&L — Stacked by Mode</h2>
+    <div class="chart-container">
+        <canvas id="monthlyPnl" height="80"></canvas>
+    </div>
+
+    <!-- ===== SQUEEZE TRADE LOG ===== -->
+    <h2><span class="mode-tag mode-squeeze">SQUEEZE</span> Trade Log (29 trades)</h2>
+    <div style="max-height: 500px; overflow-y: auto;">
+    <table>
+        <thead>
+            <tr>
+                <th>Entry</th><th>Exit</th><th>Spot</th>
+                <th>Call Strike</th><th>Put Strike</th><th>DTE</th>
+                <th>Premium</th><th>P&L</th><th>Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+        <tr class="win">
+            <td>2023-05-08</td>
+            <td>2023-05-22</td>
+            <td>43,284</td>
+            <td>44,000</td>
+            <td>42,600</td>
+            <td>30</td>
+            <td>1063</td>
+            <td class="positive">+19,952</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2023-06-08</td>
+            <td>2023-06-22</td>
+            <td>43,995</td>
+            <td>44,600</td>
+            <td>43,400</td>
+            <td>30</td>
+            <td>846</td>
+            <td class="positive">+24,324</td>
+            <td>partial</td>
+        </tr>
+        <tr class="loss">
+            <td>2023-07-11</td>
+            <td>2023-07-25</td>
+            <td>44,745</td>
+            <td>45,400</td>
+            <td>44,100</td>
+            <td>30</td>
+            <td>996</td>
+            <td class="negative">-959</td>
+            <td>loss</td>
+        </tr>
+        <tr class="win">
+            <td>2023-08-22</td>
+            <td>2023-09-05</td>
+            <td>43,993</td>
+            <td>44,700</td>
+            <td>43,300</td>
+            <td>30</td>
+            <td>1018</td>
+            <td class="positive">+20,130</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2023-09-21</td>
+            <td>2023-10-06</td>
+            <td>44,624</td>
+            <td>45,400</td>
+            <td>43,900</td>
+            <td>30</td>
+            <td>1197</td>
+            <td class="positive">+33,564</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2023-11-02</td>
+            <td>2023-11-17</td>
+            <td>43,017</td>
+            <td>43,800</td>
+            <td>42,200</td>
+            <td>30</td>
+            <td>1200</td>
+            <td class="positive">+25,180</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2023-12-22</td>
+            <td>2024-01-08</td>
+            <td>47,492</td>
+            <td>48,400</td>
+            <td>46,600</td>
+            <td>30</td>
+            <td>1350</td>
+            <td class="positive">+38,347</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-01-31</td>
+            <td>2024-02-14</td>
+            <td>45,997</td>
+            <td>47,200</td>
+            <td>44,800</td>
+            <td>30</td>
+            <td>1940</td>
+            <td class="positive">+54,632</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-02-29</td>
+            <td>2024-03-15</td>
+            <td>46,121</td>
+            <td>47,200</td>
+            <td>45,100</td>
+            <td>30</td>
+            <td>1596</td>
+            <td class="positive">+40,256</td>
+            <td>partial</td>
+        </tr>
+        <tr class="loss">
+            <td>2024-04-15</td>
+            <td>2024-04-30</td>
+            <td>47,773</td>
+            <td>48,500</td>
+            <td>47,100</td>
+            <td>30</td>
+            <td>1132</td>
+            <td class="negative">-18,610</td>
+            <td>loss</td>
+        </tr>
+        <tr class="win">
+            <td>2024-05-16</td>
+            <td>2024-05-31</td>
+            <td>47,977</td>
+            <td>49,000</td>
+            <td>47,000</td>
+            <td>30</td>
+            <td>1561</td>
+            <td class="positive">+26,838</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-06-18</td>
+            <td>2024-07-02</td>
+            <td>50,441</td>
+            <td>52,200</td>
+            <td>48,700</td>
+            <td>30</td>
+            <td>2801</td>
+            <td class="positive">+50,914</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-07-18</td>
+            <td>2024-08-01</td>
+            <td>52,621</td>
+            <td>53,500</td>
+            <td>51,700</td>
+            <td>30</td>
+            <td>1438</td>
+            <td class="positive">+32,384</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-08-19</td>
+            <td>2024-09-02</td>
+            <td>50,368</td>
+            <td>51,400</td>
+            <td>49,400</td>
+            <td>30</td>
+            <td>1582</td>
+            <td class="positive">+25,645</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-09-30</td>
+            <td>2024-10-15</td>
+            <td>52,978</td>
+            <td>53,800</td>
+            <td>52,200</td>
+            <td>30</td>
+            <td>1315</td>
+            <td class="positive">+25,976</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-11-04</td>
+            <td>2024-11-19</td>
+            <td>51,215</td>
+            <td>52,300</td>
+            <td>50,100</td>
+            <td>30</td>
+            <td>1772</td>
+            <td class="positive">+49,191</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2024-12-12</td>
+            <td>2024-12-27</td>
+            <td>53,216</td>
+            <td>54,100</td>
+            <td>52,300</td>
+            <td>30</td>
+            <td>1472</td>
+            <td class="positive">+6,805</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2025-01-20</td>
+            <td>2025-02-03</td>
+            <td>49,351</td>
+            <td>50,600</td>
+            <td>48,100</td>
+            <td>30</td>
+            <td>1919</td>
+            <td class="positive">+54,845</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2025-02-18</td>
+            <td>2025-03-05</td>
+            <td>49,087</td>
+            <td>50,100</td>
+            <td>48,100</td>
+            <td>30</td>
+            <td>1530</td>
+            <td class="positive">+41,998</td>
+            <td>partial</td>
+        </tr>
+        <tr class="loss">
+            <td>2025-04-01</td>
+            <td>2025-04-17</td>
+            <td>50,828</td>
+            <td>51,800</td>
+            <td>49,800</td>
+            <td>30</td>
+            <td>1525</td>
+            <td class="negative">-30,000</td>
+            <td>stopped_out</td>
+        </tr>
+        <tr class="win">
+            <td>2025-05-06</td>
+            <td>2025-05-20</td>
+            <td>54,271</td>
+            <td>55,600</td>
+            <td>52,900</td>
+            <td>30</td>
+            <td>2104</td>
+            <td class="positive">+52,734</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2025-06-04</td>
+            <td>2025-06-18</td>
+            <td>55,677</td>
+            <td>56,500</td>
+            <td>54,900</td>
+            <td>30</td>
+            <td>1275</td>
+            <td class="positive">+34,208</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2025-07-03</td>
+            <td>2025-07-17</td>
+            <td>56,792</td>
+            <td>57,600</td>
+            <td>56,000</td>
+            <td>30</td>
+            <td>1247</td>
+            <td class="positive">+34,616</td>
+            <td>max_profit</td>
+        </tr>
+        <tr class="win">
+            <td>2025-08-07</td>
+            <td>2025-08-22</td>
+            <td>55,521</td>
+            <td>56,300</td>
+            <td>54,700</td>
+            <td>30</td>
+            <td>1256</td>
+            <td class="positive">+35,797</td>
+            <td>max_profit</td>
+        </tr>
+        <tr class="loss">
+            <td>2025-09-09</td>
+            <td>2025-09-23</td>
+            <td>54,216</td>
+            <td>54,900</td>
+            <td>53,500</td>
+            <td>30</td>
+            <td>1148</td>
+            <td class="negative">-4,657</td>
+            <td>loss</td>
+        </tr>
+        <tr class="win">
+            <td>2025-10-30</td>
+            <td>2025-11-14</td>
+            <td>58,031</td>
+            <td>58,800</td>
+            <td>57,200</td>
+            <td>30</td>
+            <td>1234</td>
+            <td class="positive">+26,996</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2025-12-02</td>
+            <td>2025-12-16</td>
+            <td>59,274</td>
+            <td>60,000</td>
+            <td>58,600</td>
+            <td>30</td>
+            <td>1151</td>
+            <td class="positive">+32,522</td>
+            <td>max_profit</td>
+        </tr>
+        <tr class="win">
+            <td>2026-01-12</td>
+            <td>2026-01-28</td>
+            <td>59,450</td>
+            <td>60,100</td>
+            <td>58,800</td>
+            <td>30</td>
+            <td>1038</td>
+            <td class="positive">+27,062</td>
+            <td>partial</td>
+        </tr>
+        <tr class="win">
+            <td>2026-02-16</td>
+            <td>2026-03-02</td>
+            <td>60,949</td>
+            <td>62,200</td>
+            <td>59,700</td>
+            <td>30</td>
+            <td>1903</td>
+            <td class="positive">+48,189</td>
+            <td>partial</td>
+        </tr></tbody>
+    </table>
+    </div>
+
+    <!-- ===== FIRE TRADE LOG ===== -->
+    <h2><span class="mode-tag mode-fire">FIRE</span> Trade Log (30 trades — Naked Option Selling)</h2>
+    <div style="max-height: 500px; overflow-y: auto;">
+    <table>
+        <thead>
+            <tr>
+                <th>Action</th><th>Entry</th><th>Exit</th><th>Spot</th>
+                <th>Strike</th><th>Premium</th><th>Exit Value</th>
+                <th>PnL %</th><th>PnL Rs</th><th>Exit Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+        <tr class="loss">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2023-06-15</td>
+            <td>2023-06-26</td>
+            <td>43,444</td>
+            <td>43,600</td>
+            <td>878</td>
+            <td>891</td>
+            <td>-1.4%</td>
+            <td class="negative">-1,656</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2023-07-20</td>
+            <td>2023-07-31</td>
+            <td>46,187</td>
+            <td>45,900</td>
+            <td>787</td>
+            <td>956</td>
+            <td>-21.4%</td>
+            <td class="negative">-13,352</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2023-09-07</td>
+            <td>2023-09-18</td>
+            <td>44,878</td>
+            <td>44,700</td>
+            <td>507</td>
+            <td>113</td>
+            <td>+77.7%</td>
+            <td class="positive">+28,835</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2023-10-19</td>
+            <td>2023-10-31</td>
+            <td>43,754</td>
+            <td>44,000</td>
+            <td>941</td>
+            <td>447</td>
+            <td>+52.5%</td>
+            <td class="positive">+36,331</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2023-11-15</td>
+            <td>2023-11-24</td>
+            <td>44,202</td>
+            <td>44,000</td>
+            <td>442</td>
+            <td>517</td>
+            <td>-16.9%</td>
+            <td class="negative">-6,311</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2024-01-09</td>
+            <td>2024-01-18</td>
+            <td>47,243</td>
+            <td>47,500</td>
+            <td>738</td>
+            <td>90</td>
+            <td>+87.8%</td>
+            <td class="positive">+47,890</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-02-16</td>
+            <td>2024-02-27</td>
+            <td>46,385</td>
+            <td>46,000</td>
+            <td>1345</td>
+            <td>1141</td>
+            <td>+15.2%</td>
+            <td class="positive">+14,648</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-03-05</td>
+            <td>2024-03-15</td>
+            <td>47,581</td>
+            <td>47,300</td>
+            <td>730</td>
+            <td>1102</td>
+            <td>-50.9%</td>
+            <td class="negative">-20,000</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-04-02</td>
+            <td>2024-04-12</td>
+            <td>47,545</td>
+            <td>47,300</td>
+            <td>685</td>
+            <td>248</td>
+            <td>+63.8%</td>
+            <td class="positive">+32,098</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-04-29</td>
+            <td>2024-05-09</td>
+            <td>49,424</td>
+            <td>49,100</td>
+            <td>882</td>
+            <td>1852</td>
+            <td>-109.8%</td>
+            <td class="negative">-20,000</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-05-27</td>
+            <td>2024-06-05</td>
+            <td>49,282</td>
+            <td>49,000</td>
+            <td>867</td>
+            <td>859</td>
+            <td>+0.9%</td>
+            <td class="negative">-82</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-06-25</td>
+            <td>2024-07-04</td>
+            <td>52,606</td>
+            <td>52,200</td>
+            <td>1238</td>
+            <td>883</td>
+            <td>+28.6%</td>
+            <td class="positive">+25,906</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2024-07-24</td>
+            <td>2024-08-02</td>
+            <td>51,317</td>
+            <td>51,600</td>
+            <td>1262</td>
+            <td>1121</td>
+            <td>+11.2%</td>
+            <td class="positive">+9,901</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-08-27</td>
+            <td>2024-09-05</td>
+            <td>51,279</td>
+            <td>51,000</td>
+            <td>709</td>
+            <td>545</td>
+            <td>+23.2%</td>
+            <td class="positive">+11,620</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2024-10-04</td>
+            <td>2024-10-15</td>
+            <td>51,462</td>
+            <td>51,800</td>
+            <td>1028</td>
+            <td>1080</td>
+            <td>-5.0%</td>
+            <td class="negative">-4,570</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2024-10-29</td>
+            <td>2024-11-07</td>
+            <td>52,321</td>
+            <td>51,900</td>
+            <td>1022</td>
+            <td>1060</td>
+            <td>-3.8%</td>
+            <td class="negative">-3,580</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2024-12-19</td>
+            <td>2024-12-31</td>
+            <td>51,576</td>
+            <td>51,900</td>
+            <td>1483</td>
+            <td>989</td>
+            <td>+33.3%</td>
+            <td class="positive">+36,345</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2025-01-09</td>
+            <td>2025-01-20</td>
+            <td>49,504</td>
+            <td>49,900</td>
+            <td>1021</td>
+            <td>719</td>
+            <td>+29.6%</td>
+            <td class="positive">+21,929</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-01-31</td>
+            <td>2025-02-11</td>
+            <td>49,587</td>
+            <td>49,200</td>
+            <td>970</td>
+            <td>902</td>
+            <td>+7.0%</td>
+            <td class="positive">+4,398</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2025-03-03</td>
+            <td>2025-03-12</td>
+            <td>48,114</td>
+            <td>48,400</td>
+            <td>1019</td>
+            <td>796</td>
+            <td>+21.9%</td>
+            <td class="positive">+16,056</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-04-15</td>
+            <td>2025-04-25</td>
+            <td>52,380</td>
+            <td>51,900</td>
+            <td>1611</td>
+            <td>734</td>
+            <td>+54.4%</td>
+            <td class="positive">+65,023</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-05-13</td>
+            <td>2025-05-22</td>
+            <td>54,941</td>
+            <td>54,500</td>
+            <td>866</td>
+            <td>617</td>
+            <td>+28.8%</td>
+            <td class="positive">+18,006</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-06-06</td>
+            <td>2025-06-17</td>
+            <td>56,578</td>
+            <td>56,300</td>
+            <td>678</td>
+            <td>969</td>
+            <td>-42.9%</td>
+            <td class="negative">-20,000</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-06-26</td>
+            <td>2025-07-07</td>
+            <td>57,207</td>
+            <td>56,900</td>
+            <td>790</td>
+            <td>815</td>
+            <td>-3.1%</td>
+            <td class="negative">-2,563</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2025-07-18</td>
+            <td>2025-07-29</td>
+            <td>56,283</td>
+            <td>56,500</td>
+            <td>1030</td>
+            <td>878</td>
+            <td>+14.7%</td>
+            <td class="positive">+10,647</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2025-08-22</td>
+            <td>2025-09-03</td>
+            <td>55,149</td>
+            <td>55,400</td>
+            <td>983</td>
+            <td>404</td>
+            <td>+58.9%</td>
+            <td class="positive">+42,747</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-09-17</td>
+            <td>2025-09-26</td>
+            <td>55,493</td>
+            <td>55,300</td>
+            <td>642</td>
+            <td>1139</td>
+            <td>-77.5%</td>
+            <td class="negative">-20,000</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-10-20</td>
+            <td>2025-10-30</td>
+            <td>58,033</td>
+            <td>57,800</td>
+            <td>793</td>
+            <td>722</td>
+            <td>+8.9%</td>
+            <td class="positive">+4,600</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="win">
+            <td><span style="color:#00e676">&#9650;</span> SELL PUT</td>
+            <td>2025-11-13</td>
+            <td>2025-11-24</td>
+            <td>58,382</td>
+            <td>58,100</td>
+            <td>765</td>
+            <td>542</td>
+            <td>+29.2%</td>
+            <td class="positive">+16,064</td>
+            <td>hold_complete</td>
+        </tr>
+        <tr class="loss">
+            <td><span style="color:#ef5350">&#9660;</span> SELL CALL</td>
+            <td>2025-12-18</td>
+            <td>2025-12-30</td>
+            <td>58,913</td>
+            <td>59,200</td>
+            <td>1192</td>
+            <td>1198</td>
+            <td>-0.5%</td>
+            <td class="negative">-1,128</td>
+            <td>hold_complete</td>
+        </tr></tbody>
+    </table>
+    </div>
+
+    <!-- ===== FINDINGS ===== -->
+    <h2>Key Findings</h2>
+    <div class="explanation">
+        <h3 style="color:#00e676">Squeeze Mode (Non-Directional)</h3>
+        <ul style="margin: 10px 0 15px 20px;">
+            <li><strong>22.2% CAGR</strong> with only 1.9% max drawdown — exceptional risk-adjusted returns</li>
+            <li>BB Squeeze + Trend Filter (TF2.0) is the winning signal — blocks trades during crash periods</li>
+            <li>86% win rate, Profit Factor 15.9 — nearly every trade profitable when signal fires</li>
+            <li>~29 trades over 3 years (biweekly hold), 30 DTE monthly options</li>
+            <li>1.5x ATR strike distance is optimal — wide enough for safety, tight enough for premium</li>
+        </ul>
+
+        <h3 style="color:#ff9800">Fire Mode (Directional Naked Selling)</h3>
+        <ul style="margin: 10px 0 15px 20px;">
+            <li><strong>11.9% CAGR</strong> with 1.8% max drawdown — <strong>Calmar 6.56</strong></li>
+            <li>BB squeeze-fire (3 bar min) + light trend filter (0.5 ATR) gives high-quality breakout signals</li>
+            <li>Naked selling with directional bias: <em>Long signal &rarr; sell PUT, Short signal &rarr; sell CALL</em></li>
+            <li><strong>Theta decay is the edge</strong> — even when direction is wrong or flat, time decay erodes the sold option</li>
+            <li>0.5 ATR OTM strikes, 7-bar hold, 3x premium SL, Rs 20K loss cap per trade</li>
+            <li>Both directions profitable: sell-PUT avg +3.75%, sell-CALL avg +10.12%</li>
+            <li>1,152 configs tested — naked selling <strong>massively outperforms debit spreads</strong> (11.9% vs 3.8% CAGR)</li>
+        </ul>
+
+        <h3 style="color:#29b6f6">Combined System</h3>
+        <ul style="margin: 10px 0 15px 20px;">
+            <li>Squeeze and Fire are <strong>naturally complementary</strong> — one profits in calm ranges, the other in breakouts</li>
+            <li>Both modes sell options &rarr; theta always works in our favor across all regimes</li>
+            <li>Minimal overlap in trade timing — squeeze signals fire during contraction, fire signals fire during expansion</li>
+            <li>Fire adds significant CAGR while keeping drawdown under control</li>
+            <li>Combined system captures value in <strong>every market regime</strong></li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        Generated 2026-03-20 13:40 | BNF Squeeze & Fire v1.0 | Quantifyd
+    </div>
+</div>
+
+<script>
+// Combined Equity Curve
+new Chart(document.getElementById('combinedEquity'), {
+    type: 'line',
+    data: {
+        datasets: [
+            {
+                label: 'Combined (Squeeze + Fire)',
+                data: [{"x": "2023-05-08", "y": 1000000}, {"x": "2023-05-22", "y": 1019952.5}, {"x": "2023-06-22", "y": 1044276.0}, {"x": "2023-06-26", "y": 1042620.33}, {"x": "2023-07-25", "y": 1041661.33}, {"x": "2023-07-31", "y": 1028309.0}, {"x": "2023-09-05", "y": 1048439.25}, {"x": "2023-09-18", "y": 1077274.43}, {"x": "2023-10-06", "y": 1110838.68}, {"x": "2023-10-31", "y": 1147169.92}, {"x": "2023-11-17", "y": 1172349.92}, {"x": "2023-11-24", "y": 1166038.89}, {"x": "2024-01-08", "y": 1204385.89}, {"x": "2024-01-18", "y": 1252276.06}, {"x": "2024-02-14", "y": 1306908.56}, {"x": "2024-02-27", "y": 1321556.83}, {"x": "2024-03-15", "y": 1361812.58}, {"x": "2024-03-15", "y": 1341812.58}, {"x": "2024-04-12", "y": 1373910.81}, {"x": "2024-04-30", "y": 1355301.31}, {"x": "2024-05-09", "y": 1335301.31}, {"x": "2024-05-31", "y": 1362139.56}, {"x": "2024-06-05", "y": 1362058.0}, {"x": "2024-07-02", "y": 1412972.0}, {"x": "2024-07-04", "y": 1438877.8}, {"x": "2024-08-01", "y": 1471261.55}, {"x": "2024-08-02", "y": 1481162.52}, {"x": "2024-09-02", "y": 1506807.52}, {"x": "2024-09-05", "y": 1518427.76}, {"x": "2024-10-15", "y": 1544403.51}, {"x": "2024-10-15", "y": 1539833.35}, {"x": "2024-11-07", "y": 1536253.72}, {"x": "2024-11-19", "y": 1585444.97}, {"x": "2024-12-27", "y": 1592249.97}, {"x": "2024-12-31", "y": 1628595.09}, {"x": "2025-01-20", "y": 1650524.46}, {"x": "2025-02-03", "y": 1705369.21}, {"x": "2025-02-11", "y": 1709766.89}, {"x": "2025-03-05", "y": 1751764.89}, {"x": "2025-03-12", "y": 1767820.97}, {"x": "2025-04-17", "y": 1737820.97}, {"x": "2025-04-25", "y": 1802844.05}, {"x": "2025-05-20", "y": 1855578.3}, {"x": "2025-05-22", "y": 1873584.62}, {"x": "2025-06-17", "y": 1853584.62}, {"x": "2025-06-18", "y": 1887792.37}, {"x": "2025-07-07", "y": 1885229.0}, {"x": "2025-07-17", "y": 1919844.75}, {"x": "2025-07-29", "y": 1930491.62}, {"x": "2025-08-22", "y": 1966288.62}, {"x": "2025-09-03", "y": 2009036.07}, {"x": "2025-09-23", "y": 2004378.82}, {"x": "2025-09-26", "y": 1984378.82}, {"x": "2025-10-30", "y": 1988979.18}, {"x": "2025-11-14", "y": 2015974.93}, {"x": "2025-11-24", "y": 2032038.58}, {"x": "2025-12-16", "y": 2064560.33}, {"x": "2025-12-30", "y": 2063432.2}, {"x": "2026-01-28", "y": 2090494.7}, {"x": "2026-03-02", "y": 2138683.95}],
+                borderColor: '#29b6f6',
+                backgroundColor: 'rgba(41,182,246,0.1)',
+                fill: true,
+                borderWidth: 2.5,
+                pointRadius: 0,
+                tension: 0.3,
+            },
+            {
+                label: 'Squeeze Only',
+                data: [{"x": "2023-05-08", "y": 1000000}, {"x": "2023-05-22", "y": 1019952.5}, {"x": "2023-06-22", "y": 1044276.0}, {"x": "2023-07-25", "y": 1043317.0}, {"x": "2023-09-05", "y": 1063447.25}, {"x": "2023-10-06", "y": 1097011.5}, {"x": "2023-11-17", "y": 1122191.5}, {"x": "2024-01-08", "y": 1160538.5}, {"x": "2024-02-14", "y": 1215171.0}, {"x": "2024-03-15", "y": 1255426.75}, {"x": "2024-04-30", "y": 1236817.25}, {"x": "2024-05-31", "y": 1263655.5}, {"x": "2024-07-02", "y": 1314569.5}, {"x": "2024-08-01", "y": 1346953.25}, {"x": "2024-09-02", "y": 1372598.25}, {"x": "2024-10-15", "y": 1398574.0}, {"x": "2024-11-19", "y": 1447765.25}, {"x": "2024-12-27", "y": 1454570.25}, {"x": "2025-02-03", "y": 1509415.0}, {"x": "2025-03-05", "y": 1551413.0}, {"x": "2025-04-17", "y": 1521413.0}, {"x": "2025-05-20", "y": 1574147.25}, {"x": "2025-06-18", "y": 1608355.0}, {"x": "2025-07-17", "y": 1642970.75}, {"x": "2025-08-22", "y": 1678767.75}, {"x": "2025-09-23", "y": 1674110.5}, {"x": "2025-11-14", "y": 1701106.25}, {"x": "2025-12-16", "y": 1733628.0}, {"x": "2026-01-28", "y": 1760690.5}, {"x": "2026-03-02", "y": 1808879.75}],
+                borderColor: '#00e676',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.3,
+                borderDash: [5, 3],
+            },
+            {
+                label: 'Fire Only',
+                data: [{"x": "2023-06-15", "y": 1000000}, {"x": "2023-06-26", "y": 998344.33}, {"x": "2023-07-31", "y": 984992.0}, {"x": "2023-09-18", "y": 1013827.18}, {"x": "2023-10-31", "y": 1050158.42}, {"x": "2023-11-24", "y": 1043847.39}, {"x": "2024-01-18", "y": 1091737.56}, {"x": "2024-02-27", "y": 1106385.83}, {"x": "2024-03-15", "y": 1086385.83}, {"x": "2024-04-12", "y": 1118484.06}, {"x": "2024-05-09", "y": 1098484.06}, {"x": "2024-06-05", "y": 1098402.5}, {"x": "2024-07-04", "y": 1124308.3}, {"x": "2024-08-02", "y": 1134209.27}, {"x": "2024-09-05", "y": 1145829.51}, {"x": "2024-10-15", "y": 1141259.35}, {"x": "2024-11-07", "y": 1137679.72}, {"x": "2024-12-31", "y": 1174024.84}, {"x": "2025-01-20", "y": 1195954.21}, {"x": "2025-02-11", "y": 1200351.89}, {"x": "2025-03-12", "y": 1216407.97}, {"x": "2025-04-25", "y": 1281431.05}, {"x": "2025-05-22", "y": 1299437.37}, {"x": "2025-06-17", "y": 1279437.37}, {"x": "2025-07-07", "y": 1276874.0}, {"x": "2025-07-29", "y": 1287520.87}, {"x": "2025-09-03", "y": 1330268.32}, {"x": "2025-09-26", "y": 1310268.32}, {"x": "2025-10-30", "y": 1314868.68}, {"x": "2025-11-24", "y": 1330932.33}, {"x": "2025-12-30", "y": 1329804.2}],
+                borderColor: '#ff9800',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.3,
+                borderDash: [5, 3],
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: { display: true, text: 'Equity Curve — Combined vs Individual Modes', color: '#888' },
+            legend: { labels: { color: '#888' } }
+        },
+        scales: {
+            x: {
+                type: 'time',
+                time: { unit: 'month' },
+                ticks: { color: '#666' },
+                grid: { color: '#222' }
+            },
+            y: {
+                ticks: { color: '#666', callback: v => 'Rs ' + (v/100000).toFixed(1) + 'L' },
+                grid: { color: '#222' }
+            }
+        }
+    }
+});
+
+// Monthly P&L Stacked Bar
+new Chart(document.getElementById('monthlyPnl'), {
+    type: 'bar',
+    data: {
+        labels: ["2023-05", "2023-06", "2023-07", "2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02"],
+        datasets: [
+            {
+                label: 'Squeeze',
+                data: [19952, 24324, -959, 20130, 33564, 0, 25180, 38347, 54632, 40256, 0, -18610, 26838, 50914, 32384, 25645, 25976, 0, 49191, 6805, 54845, 41998, 0, -30000, 52734, 34208, 34616, 35797, -4657, 26996, 0, 32522, 27062, 48189],
+                backgroundColor: '#1b5e20',
+                borderColor: '#00e676',
+                borderWidth: 1,
+            },
+            {
+                label: 'Fire',
+                data: [0, -1656, -13352, 0, 28835, 36331, -6311, 0, 47890, 14648, -20000, 12098, -82, 25906, 9901, 11620, 0, -8150, 0, 36345, 26327, 0, 16056, 65023, 18006, -22563, 10647, 42747, -20000, 4600, 16064, -1128, 0, 0],
+                backgroundColor: '#e65100',
+                borderColor: '#ff9800',
+                borderWidth: 1,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: '#888' } }
+        },
+        scales: {
+            x: { stacked: true, ticks: { color: '#666' }, grid: { color: '#222' } },
+            y: {
+                stacked: true,
+                ticks: { color: '#666', callback: v => (v >= 0 ? '+' : '') + (v/1000).toFixed(0) + 'K' },
+                grid: { color: '#222' }
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>

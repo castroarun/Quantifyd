@@ -1,0 +1,2 @@
+total_trades,long_trades,short_trades,win_rate,profit_factor,total_pnl,avg_pnl_pct,long_avg_pnl_pct,short_avg_pnl_pct,cagr,max_drawdown,calmar,final_equity,total_return_pct,avg_days_held,avg_premium,exit_hold,exit_sl
+30,19,11,60.0,3.91,329804.0,10.48,0.6,27.54,11.86,1.81,6.56,1329804.0,32.98,7.0,930.1,30,0
