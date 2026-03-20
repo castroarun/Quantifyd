@@ -123,38 +123,41 @@ def auto_login() -> str:
         kite = KiteConnect(api_key=KITE_API_KEY)
         login_redirect = kite.login_url()
 
-        # Follow the redirect — Kite redirects to our callback URL with request_token
-        resp3 = session.get(login_redirect, allow_redirects=False)
+        # Follow redirects manually — Kite may have multiple hops:
+        # login_url → /connect/finish?sess_id=... → redirect_url?request_token=...
+        request_token = None
+        url = login_redirect
+        for hop in range(5):  # Max 5 redirects
+            resp3 = session.get(url, allow_redirects=False)
+            redirect_url = resp3.headers.get('Location', '')
 
-        # The redirect Location header contains the request_token
-        redirect_url = resp3.headers.get('Location', '')
+            # Check if request_token is in current URL or redirect URL
+            for check_url in [redirect_url, url]:
+                if 'request_token=' in check_url:
+                    parsed = urlparse(check_url)
+                    params = parse_qs(parsed.query)
+                    request_token = params.get('request_token', [None])[0]
+                    if request_token:
+                        break
 
-        if not redirect_url:
-            # Sometimes the response itself is a redirect page
-            # Try following one more redirect
-            if resp3.status_code in (301, 302, 303, 307, 308):
-                redirect_url = resp3.headers.get('Location', '')
-            else:
-                # Check if we got HTML with the redirect
+            if request_token:
+                break
+
+            # Check response body for request_token (some flows embed it in HTML)
+            if not redirect_url:
                 text = resp3.text
                 match = re.search(r'request_token=([a-zA-Z0-9]+)', text)
                 if match:
                     request_token = match.group(1)
-                else:
-                    logger.error(f"No redirect URL found. Status: {resp3.status_code}")
-                    logger.debug(f"Response headers: {dict(resp3.headers)}")
-                    logger.debug(f"Response body: {text[:500]}")
-                    return ""
+                break
 
-        if redirect_url:
-            # Parse request_token from URL
-            parsed = urlparse(redirect_url)
-            params = parse_qs(parsed.query)
-            request_token = params.get('request_token', [None])[0]
+            # Follow the redirect
+            url = redirect_url
 
-            if not request_token:
-                logger.error(f"request_token not found in redirect URL: {redirect_url}")
-                return ""
+        if not request_token:
+            logger.error(f"request_token not found after {hop + 1} redirects. Last URL: {url}")
+            logger.debug(f"Last status: {resp3.status_code}, headers: {dict(resp3.headers)}")
+            return ""
 
         logger.info(f"Got request_token: {request_token[:8]}...")
 
