@@ -43,6 +43,17 @@
         cursor: pointer;
     }
 
+    .btn-on {
+        background: #238636;
+        border-color: #238636;
+        color: #fff;
+    }
+    .btn-off {
+        background: #21262d;
+        border-color: #f85149;
+        color: #f85149;
+    }
+
     .trade-row-win { border-left: 3px solid #3fb950; }
     .trade-row-loss { border-left: 3px solid #f85149; }
 
@@ -57,6 +68,7 @@
         font-size: 2.5rem;
         font-weight: 800;
     }
+    .text-purple { color: #a371f7; }
 </style>
 {% endblock %}
 
@@ -68,7 +80,8 @@
             <h3 class="mb-1"><i class="bi bi-diagram-3 me-2"></i>Strategy Command Center</h3>
             <small class="text-muted">Toggle strategies, track P&L, monitor positions</small>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <span id="overallStatus" class="text-muted" style="font-size:0.8rem;"></span>
             <button class="btn btn-sm btn-outline-secondary" onclick="refreshAll()">
                 <i class="bi bi-arrow-clockwise me-1"></i> Refresh
             </button>
@@ -79,14 +92,20 @@
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="metric-card text-center">
-                <div class="metric-label">Combined P&L</div>
-                <div class="combined-pnl" id="combinedPnl">--</div>
+                <div class="metric-label">Closed P&L</div>
+                <div class="combined-pnl" id="combinedClosedPnl">--</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <div class="metric-label">Running P&L</div>
+                <div class="metric-value" id="combinedRunningPnl" style="font-size:2rem;font-weight:700;">--</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="metric-card text-center">
                 <div class="metric-label">Active Strategies</div>
-                <div class="metric-value" id="activeCount">0 / 2</div>
+                <div class="metric-value" id="activeCount">0 / 3</div>
             </div>
         </div>
         <div class="col-md-3">
@@ -95,114 +114,139 @@
                 <div class="metric-value" id="totalTrades">--</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="metric-card text-center">
-                <div class="metric-label">Combined Win Rate</div>
-                <div class="metric-value" id="combinedWR">--</div>
-            </div>
-        </div>
     </div>
 
     <!-- Strategy Cards Row -->
     <div class="row g-3 mb-4">
-        <!-- BankNifty Non-Directional -->
-        <div class="col-lg-6">
+        <!-- BNF Squeeze & Fire -->
+        <div class="col-lg-4">
             <div class="strategy-card active" id="cardBNF">
-                <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h5 class="mb-1">
-                            <i class="bi bi-activity me-2" style="color: #58a6ff;"></i>
-                            BankNifty Non-Directional
+                            <i class="bi bi-graph-up-arrow me-2" style="color: #58a6ff;"></i>
+                            BNF Squeeze & Fire
                         </h5>
-                        <small class="text-muted">Short Strangle | BB Squeeze + Trend Filter | 30 DTE Monthly</small>
+                        <small class="text-muted">BB Squeeze Strangles + Fire Naked Sell | Daily</small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="strategy-badge badge-backtest">Backtest</span>
-                        <div class="form-check form-switch toggle-switch">
-                            <input class="form-check-input" type="checkbox" id="toggleBNF" checked
-                                   onchange="toggleStrategy('bnf')">
-                        </div>
+                        <span class="strategy-badge" id="bnfModeBadge">--</span>
+                        <button class="btn btn-sm px-2 py-0" id="bnfToggle" onclick="toggleStrategy('bnf')"
+                                style="font-size:0.7rem; border-radius:20px;" title="Enable/Disable BNF">
+                            <i class="bi bi-power"></i> ON
+                        </button>
                     </div>
                 </div>
                 <div class="row g-2">
                     <div class="col-3"><div class="metric-sm">
-                        <div class="value positive" id="bnfCAGR">--</div>
-                        <div class="label">CAGR</div>
-                    </div></div>
-                    <div class="col-3"><div class="metric-sm">
-                        <div class="value" id="bnfWR" style="color: #58a6ff;">--</div>
-                        <div class="label">Win Rate</div>
-                    </div></div>
-                    <div class="col-3"><div class="metric-sm">
-                        <div class="value positive" id="bnfPF">--</div>
-                        <div class="label">Profit Factor</div>
-                    </div></div>
-                    <div class="col-3"><div class="metric-sm">
-                        <div class="value negative" id="bnfDD">--</div>
-                        <div class="label">Max DD</div>
-                    </div></div>
-                </div>
-                <hr style="border-color: var(--bs-border-color);">
-                <div class="row g-2">
-                    <div class="col-4"><div class="metric-sm">
-                        <div class="value" id="bnfTrades" style="color: #c9d1d9;">--</div>
+                        <div class="value" id="bnfTrades" style="color: #c9d1d9;">0</div>
                         <div class="label">Trades</div>
                     </div></div>
-                    <div class="col-4"><div class="metric-sm">
-                        <div class="value positive" id="bnfTotalPnl">--</div>
-                        <div class="label">Total P&L</div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="bnfPositions" style="color: #58a6ff;">0</div>
+                        <div class="label">Positions</div>
                     </div></div>
-                    <div class="col-4"><div class="metric-sm">
-                        <div class="value" id="bnfFinal" style="color: #c9d1d9;">--</div>
-                        <div class="label">Final Capital</div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value positive" id="bnfClosedPnl">--</div>
+                        <div class="label">Closed P&L</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="bnfRunningPnl" style="color: #58a6ff;">--</div>
+                        <div class="label">Running P&L</div>
                     </div></div>
                 </div>
+                <hr style="border-color: var(--bs-border-color); margin: 0.5rem 0;">
+                <a href="/bnf" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open Dashboard
+                </a>
             </div>
         </div>
 
         <!-- Maruthi Always-On -->
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="strategy-card active" id="cardMaruthi">
-                <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h5 class="mb-1">
                             <i class="bi bi-lightning-charge me-2" style="color: #f59e0b;"></i>
                             Maruthi Always-On
                         </h5>
-                        <small class="text-muted">Dual SuperTrend | Futures + Options | WebSocket Live</small>
+                        <small class="text-muted">Dual SuperTrend FUT+OPT | 30min WebSocket</small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <span class="strategy-badge" id="maruthiModeBadge">--</span>
-                        <div class="form-check form-switch toggle-switch">
-                            <input class="form-check-input" type="checkbox" id="toggleMaruthi" checked
-                                   onchange="toggleStrategy('maruthi')">
-                        </div>
+                        <button class="btn btn-sm px-2 py-0" id="maruthiToggle" onclick="toggleStrategy('maruthi')"
+                                style="font-size:0.7rem; border-radius:20px;" title="Enable/Disable Maruthi">
+                            <i class="bi bi-power"></i> ON
+                        </button>
                     </div>
                 </div>
                 <div class="row g-2">
                     <div class="col-3"><div class="metric-sm">
-                        <div class="value" id="maruthiRegime" style="color: #f59e0b;">--</div>
-                        <div class="label">Regime</div>
+                        <div class="value" id="maruthiTrades" style="color: #c9d1d9;">0</div>
+                        <div class="label">Trades</div>
                     </div></div>
                     <div class="col-3"><div class="metric-sm">
-                        <div class="value" id="maruthiPositions" style="color: #58a6ff;">--</div>
+                        <div class="value" id="maruthiPositions" style="color: #58a6ff;">0</div>
                         <div class="label">Positions</div>
                     </div></div>
                     <div class="col-3"><div class="metric-sm">
-                        <div class="value positive" id="maruthiPnl">--</div>
-                        <div class="label">Total P&L</div>
+                        <div class="value positive" id="maruthiClosedPnl">--</div>
+                        <div class="label">Closed P&L</div>
                     </div></div>
                     <div class="col-3"><div class="metric-sm">
-                        <div class="value" id="maruthiTrades" style="color: #c9d1d9;">--</div>
-                        <div class="label">Trades</div>
+                        <div class="value" id="maruthiRunningPnl" style="color: #f59e0b;">--</div>
+                        <div class="label">Running P&L</div>
                     </div></div>
                 </div>
-                <hr style="border-color: var(--bs-border-color);">
-                <div class="row g-2" id="maruthiPositionsList">
-                    <div class="col-12 text-center text-muted py-2">
-                        <small>No active positions</small>
+                <hr style="border-color: var(--bs-border-color); margin: 0.5rem 0;">
+                <a href="/maruthi" class="btn btn-sm btn-outline-warning w-100">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- KC6 Mean Reversion -->
+        <div class="col-lg-4">
+            <div class="strategy-card active" id="cardKC6">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="bi bi-bar-chart me-2" style="color: #a371f7;"></i>
+                            KC6 Mean Reversion
+                        </h5>
+                        <small class="text-muted">Keltner Channel | Nifty 500 | Scheduled</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="strategy-badge" id="kc6ModeBadge">--</span>
+                        <button class="btn btn-sm px-2 py-0" id="kc6Toggle" onclick="toggleStrategy('kc6')"
+                                style="font-size:0.7rem; border-radius:20px;" title="Enable/Disable KC6">
+                            <i class="bi bi-power"></i> ON
+                        </button>
                     </div>
                 </div>
+                <div class="row g-2">
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="kc6Trades" style="color: #c9d1d9;">0</div>
+                        <div class="label">Trades</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="kc6Positions" style="color: #a371f7;">0</div>
+                        <div class="label">Positions</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value positive" id="kc6ClosedPnl">--</div>
+                        <div class="label">Closed P&L</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="kc6RunningPnl" style="color: #a371f7;">--</div>
+                        <div class="label">Running P&L</div>
+                    </div></div>
+                </div>
+                <hr style="border-color: var(--bs-border-color); margin: 0.5rem 0;">
+                <a href="/kc6" class="btn btn-sm btn-outline-info w-100" style="border-color: #a371f7; color: #a371f7;">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open Dashboard
+                </a>
             </div>
         </div>
     </div>
@@ -228,12 +272,14 @@
                 <!-- Equity Curve Tab -->
                 <div class="tab-pane fade show active" id="tabEquity" role="tabpanel">
                     <div class="d-flex gap-2 mb-3">
-                        <button class="btn btn-sm btn-outline-primary active" id="btnShowBoth"
-                                onclick="setEquityView('both')">Both</button>
+                        <button class="btn btn-sm btn-outline-primary active" id="btnShowAll"
+                                onclick="setEquityView('all')">All</button>
                         <button class="btn btn-sm btn-outline-info" id="btnShowBNF"
-                                onclick="setEquityView('bnf')">BankNifty Only</button>
+                                onclick="setEquityView('bnf')">BNF S&F</button>
                         <button class="btn btn-sm btn-outline-warning" id="btnShowMaruthi"
-                                onclick="setEquityView('maruthi')">Maruthi Only</button>
+                                onclick="setEquityView('maruthi')">Maruthi</button>
+                        <button class="btn btn-sm" id="btnShowKC6"
+                                onclick="setEquityView('kc6')" style="border-color:#a371f7;color:#a371f7;">KC6</button>
                     </div>
                     <div class="equity-chart-container">
                         <canvas id="equityChart"></canvas>
@@ -245,10 +291,12 @@
                     <div class="d-flex gap-2 mb-3">
                         <button class="btn btn-sm btn-outline-secondary active" id="filterAll"
                                 onclick="filterTrades('all')">All</button>
-                        <button class="btn btn-sm btn-outline-info" id="filterBNF"
-                                onclick="filterTrades('bnf')">BankNifty</button>
+                        <button class="btn btn-sm btn-outline-info" id="filterBnf"
+                                onclick="filterTrades('bnf')">BNF S&F</button>
                         <button class="btn btn-sm btn-outline-warning" id="filterMaruthi"
                                 onclick="filterTrades('maruthi')">Maruthi</button>
+                        <button class="btn btn-sm" id="filterKc6"
+                                onclick="filterTrades('kc6')" style="border-color:#a371f7;color:#a371f7;">KC6</button>
                     </div>
                     <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                         <table class="table table-sm table-hover" id="tradesTable">
@@ -272,6 +320,268 @@
             </div>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- Development Pipeline — Systems In Progress / Planned           -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="mb-4">
+        <h4 class="mb-3"><i class="bi bi-kanban me-2" style="color: #f59e0b;"></i>Development Pipeline</h4>
+        <small class="text-muted d-block mb-3">Systems under research, backtesting, or pending live deployment. Click context links to resume work in a new Claude session.</small>
+
+        <div class="row g-3">
+
+            <!-- ─── Multi-Strategy Portfolio (READY FOR LIVE) ─── -->
+            <div class="col-lg-6">
+                <div class="strategy-card" style="border-color: #238636;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-1">
+                                <i class="bi bi-collection me-2" style="color: #3fb950;"></i>
+                                Multi-Strategy Portfolio
+                            </h5>
+                            <small class="text-muted">InsideDay + PA_MACD + RangeBreakout | Daily | 50 F&O Stocks</small>
+                        </div>
+                        <span class="strategy-badge" style="background: #238636; color: #fff;">BACKTEST DONE</span>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value positive">25.66%</div>
+                            <div class="label">CAGR</div>
+                        </div></div>
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value" style="color: #f59e0b;">8.08%</div>
+                            <div class="label">Max DD</div>
+                        </div></div>
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value" style="color: #58a6ff;">2.42</div>
+                            <div class="label">Sharpe</div>
+                        </div></div>
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value" style="color: #a371f7;">1.50</div>
+                            <div class="label">Profit Factor</div>
+                        </div></div>
+                    </div>
+
+                    <div class="p-2 rounded mb-2" style="background: #0d1117; font-size: 0.8rem;">
+                        <div class="mb-1"><strong style="color: #c9d1d9;">System:</strong> <span class="text-muted">3 strategies sharing 20 position slots on Rs 1 Cr capital (2x leverage via futures). ~890 trades/year, all 8 years profitable (2018-2025). Avg annual income: ~Rs 63.6L.</span></div>
+                        <div class="mb-1"><strong style="color: #c9d1d9;">Strategies:</strong>
+                            <span class="badge" style="background: #1f6feb; font-size: 0.65rem;">InsideDay Breakout (45%)</span>
+                            <span class="badge" style="background: #8b5cf6; font-size: 0.65rem;">PA_MACD BuyStop (41%)</span>
+                            <span class="badge" style="background: #f59e0b; color: #000; font-size: 0.65rem;">Range Breakout 5d (14%)</span>
+                        </div>
+                        <div><strong style="color: #c9d1d9;">Entry:</strong> <span class="text-muted">All use buy-stop/sell-stop orders (no look-ahead bias). Futures: 0.01% comm + 0.05% slip.</span></div>
+                    </div>
+
+                    <div class="p-2 rounded mb-2" style="background: #161b22; border: 1px solid #30363d;">
+                        <div style="font-size: 0.75rem; color: #f59e0b; font-weight: 600; margin-bottom: 0.3rem;">
+                            <i class="bi bi-exclamation-triangle me-1"></i> PENDING ACTIONS
+                        </div>
+                        <ol style="font-size: 0.78rem; color: #8b949e; margin: 0; padding-left: 1.2rem;">
+                            <li><strong style="color: #c9d1d9;">Pine Script Verification</strong> — 3 TradingView indicators created, need manual trade-by-trade verification</li>
+                            <li><strong style="color: #c9d1d9;">Walk-Forward Validation</strong> — Test on 2000-2017 out-of-sample data</li>
+                            <li><strong style="color: #c9d1d9;">Universe Expansion</strong> — Test with 100+ stocks for more signals</li>
+                            <li><strong style="color: #c9d1d9;">Live Execution Engine</strong> — Automated order placement via Kite API</li>
+                            <li><strong style="color: #c9d1d9;">Dashboard</strong> — Create <code>/multi-strategy</code> page</li>
+                        </ol>
+                    </div>
+
+                    <div class="p-2 rounded mb-2" style="background: #0d1117; border: 1px solid #21262d;">
+                        <div style="font-size: 0.75rem; color: #58a6ff; font-weight: 600; margin-bottom: 0.3rem;">
+                            <i class="bi bi-folder2-open me-1"></i> KEY FILES (for new Claude session)
+                        </div>
+                        <div style="font-size: 0.75rem; color: #8b949e;">
+                            <div><code>docs/TRADING-SYSTEM-RESEARCH.md</code> — Full research, all phases, crash recovery</div>
+                            <div><code>run_multi_strategy_portfolio.py</code> — Combined backtest (3 strategies, shared pool)</div>
+                            <div><code>multi_strategy_portfolio_results.csv</code> — 5 config results</div>
+                            <div><code>services/intraday_backtest_engine.py</code> — Universal backtest engine</div>
+                            <div><code>pinescripts/1_InsideDay_Breakout.pine</code> — TradingView indicator</div>
+                            <div><code>pinescripts/2_PA_MACD_BuyStop.pine</code> — TradingView indicator</div>
+                            <div><code>pinescripts/3_RangeBreakout_5d.pine</code> — TradingView indicator</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="https://github.com/castroarun/Quantifyd/blob/main/docs/TRADING-SYSTEM-RESEARCH.md"
+                           target="_blank" class="btn btn-sm btn-outline-secondary flex-fill">
+                            <i class="bi bi-github me-1"></i> Research Doc
+                        </a>
+                        <a href="https://github.com/castroarun/Quantifyd/blob/main/run_multi_strategy_portfolio.py"
+                           target="_blank" class="btn btn-sm btn-outline-secondary flex-fill">
+                            <i class="bi bi-code-slash me-1"></i> Backtest Script
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── MQ Momentum Quality Portfolio ─── -->
+            <div class="col-lg-6">
+                <div class="strategy-card" style="border-color: #1f6feb;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-1">
+                                <i class="bi bi-pie-chart me-2" style="color: #58a6ff;"></i>
+                                MQ Momentum + Quality
+                            </h5>
+                            <small class="text-muted">Nifty 500 Semi-Annual Rebalance | Cash Equity | Monthly</small>
+                        </div>
+                        <span class="strategy-badge badge-backtest">OPTIMIZING</span>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value positive">48.66%</div>
+                            <div class="label">Best CAGR</div>
+                        </div></div>
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value" style="color: #f59e0b;">26.35%</div>
+                            <div class="label">Max DD</div>
+                        </div></div>
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value" style="color: #58a6ff;">1.30</div>
+                            <div class="label">Sharpe</div>
+                        </div></div>
+                        <div class="col-3"><div class="metric-sm">
+                            <div class="value" style="color: #a371f7;">PS10</div>
+                            <div class="label">Best Config</div>
+                        </div></div>
+                    </div>
+
+                    <div class="p-2 rounded mb-2" style="background: #0d1117; font-size: 0.8rem;">
+                        <div class="mb-1"><strong style="color: #c9d1d9;">System:</strong> <span class="text-muted">Select top stocks by momentum + quality score from Nifty 500. Semi-annual rebalance (Jan/Jul). ATH drawdown exit + Darvas topups. Cash equity (no leverage).</span></div>
+                        <div><strong style="color: #c9d1d9;">Best Config:</strong> <span class="text-muted">PS10 stocks, 70% sector cap, 30% position cap, Darvas topups, BIM scoring.</span></div>
+                    </div>
+
+                    <div class="p-2 rounded mb-2" style="background: #161b22; border: 1px solid #30363d;">
+                        <div style="font-size: 0.75rem; color: #f59e0b; font-weight: 600; margin-bottom: 0.3rem;">
+                            <i class="bi bi-exclamation-triangle me-1"></i> PENDING ACTIONS
+                        </div>
+                        <ol style="font-size: 0.78rem; color: #8b949e; margin: 0; padding-left: 1.2rem;">
+                            <li><strong style="color: #c9d1d9;">Exit Rules Sweep</strong> — 16 configs: trailing stops, partial exits, time-based exits</li>
+                            <li><strong style="color: #c9d1d9;">Rebalance Frequency</strong> — 24 configs: monthly, quarterly, semi-annual, annual</li>
+                            <li><strong style="color: #c9d1d9;">Combined MQ+V3</strong> — 15 configs: breakout overlay on momentum portfolio</li>
+                            <li><strong style="color: #c9d1d9;">Live Dashboard</strong> — Real-time portfolio tracking with rebalance alerts</li>
+                        </ol>
+                    </div>
+
+                    <div class="p-2 rounded mb-2" style="background: #0d1117; border: 1px solid #21262d;">
+                        <div style="font-size: 0.75rem; color: #58a6ff; font-weight: 600; margin-bottom: 0.3rem;">
+                            <i class="bi bi-folder2-open me-1"></i> KEY FILES
+                        </div>
+                        <div style="font-size: 0.75rem; color: #8b949e;">
+                            <div><code>docs/OPTIMIZATION-PICKUP.md</code> — Halt points and continuation guide</div>
+                            <div><code>services/mq_backtest_engine.py</code> — MQ engine with preload_data()</div>
+                            <div><code>services/mq_portfolio.py</code> — Portfolio, Position, MQBacktestConfig</div>
+                            <div><code>services/combined_mq_v3_engine.py</code> — Combined MQ + V3 overlay</div>
+                        </div>
+                    </div>
+
+                    <a href="https://github.com/castroarun/Quantifyd/blob/main/docs/OPTIMIZATION-PICKUP.md"
+                       target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-github me-1"></i> Optimization Pickup Guide
+                    </a>
+                </div>
+            </div>
+
+            <!-- ─── BNF Squeeze & Fire ─── -->
+            <div class="col-lg-4">
+                <div class="strategy-card" style="border-color: #30363d;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-1" style="font-size: 1rem;">
+                                <i class="bi bi-graph-up-arrow me-2" style="color: #58a6ff;"></i>
+                                BNF Squeeze & Fire
+                            </h5>
+                            <small class="text-muted">BB Squeeze Strangles + Naked Sell | Daily</small>
+                        </div>
+                        <span class="strategy-badge badge-live">LIVE</span>
+                    </div>
+                    <div class="p-2 rounded mb-2" style="background: #0d1117; font-size: 0.78rem;">
+                        <div style="color: #8b949e;">Already live. Pending: performance review, parameter optimization, Greeks-based position sizing.</div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #8b949e;">
+                        <code>services/bnf_scanner.py</code> | <code>services/bnf_executor.py</code> | <code>services/bnf_db.py</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Maruthi Always-On ─── -->
+            <div class="col-lg-4">
+                <div class="strategy-card" style="border-color: #30363d;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-1" style="font-size: 1rem;">
+                                <i class="bi bi-lightning-charge me-2" style="color: #f59e0b;"></i>
+                                Maruthi Always-On
+                            </h5>
+                            <small class="text-muted">Dual SuperTrend FUT+OPT | 30min WebSocket</small>
+                        </div>
+                        <span class="strategy-badge badge-paper">PAPER</span>
+                    </div>
+                    <div class="p-2 rounded mb-2" style="background: #0d1117; font-size: 0.78rem;">
+                        <div style="color: #8b949e;">Paper trading. Pending: go-live decision, protective options logic, P&L tracking verification.</div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #8b949e;">
+                        <code>services/maruthi_executor.py</code> | <code>services/maruthi_db.py</code> | <code>pinescripts/maruthi_always_on.pine</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── KC6 Mean Reversion ─── -->
+            <div class="col-lg-4">
+                <div class="strategy-card" style="border-color: #30363d;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-1" style="font-size: 1rem;">
+                                <i class="bi bi-bar-chart me-2" style="color: #a371f7;"></i>
+                                KC6 Mean Reversion
+                            </h5>
+                            <small class="text-muted">Keltner Channel | Nifty 500 | Scheduled</small>
+                        </div>
+                        <span class="strategy-badge badge-paper">PAPER</span>
+                    </div>
+                    <div class="p-2 rounded mb-2" style="background: #0d1117; font-size: 0.78rem;">
+                        <div style="color: #8b949e;">Paper trading. Pending: go-live, Railway cloud deployment, crash filter tuning. 20yr backtest: 65% WR, PF 1.70.</div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #8b949e;">
+                        <code>services/kc6_scanner.py</code> | <code>services/kc6_executor.py</code> | <code>docs/KC6-SESSION-HANDOFF.md</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Claude Session Handoff -->
+    <div class="card mb-4" style="border-color: #8b5cf6;">
+        <div class="card-header" style="background: #161b22; border-bottom: 1px solid #8b5cf6;">
+            <h5 class="mb-0" style="color: #c9d1d9;">
+                <i class="bi bi-robot me-2" style="color: #8b5cf6;"></i>
+                Claude Session Handoff
+            </h5>
+        </div>
+        <div class="card-body" style="font-size: 0.85rem;">
+            <p class="text-muted mb-2">Copy-paste into a new Claude Code session to resume any system:</p>
+            <div class="p-3 rounded" style="background: #0d1117; border: 1px solid #30363d; font-family: monospace; font-size: 0.78rem; white-space: pre-wrap; color: #c9d1d9;">Read these files for full context:
+1. .claude/CLAUDE.md — Project instructions, all system docs, mandatory rules
+2. docs/TRADING-SYSTEM-RESEARCH.md — Multi-strategy portfolio research (25.66% CAGR achieved)
+
+Key results:
+- COMBINED_20POS: 25.66% CAGR, 8.08% MaxDD, Sharpe 2.42, PF 1.50
+- 3 strategies: InsideDay Breakout + PA_MACD BuyStop + Range Breakout 5d
+- All use buy-stop/sell-stop orders (no look-ahead bias)
+- Futures L+S, 50 F&O stocks, 20 positions, 10% sizing, 2x leverage
+
+Pending work:
+1. Verify Pine Scripts in TradingView (pinescripts/1_InsideDay_Breakout.pine, 2_PA_MACD_BuyStop.pine, 3_RangeBreakout_5d.pine)
+2. Walk-forward validation on 2000-2017 out-of-sample data
+3. Build live execution engine (order placement via Kite API)
+4. Create /multi-strategy dashboard page
+5. MQ optimization sweeps pending: exit rules (16), rebalance freq (24), combined MQ+V3 (15)
+
+GitHub: https://github.com/castroarun/Quantifyd
+Backup agent: @backup (stages, commits, pushes to GitHub)</div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -281,16 +591,17 @@
 // State
 // ============================================================
 const state = {
-    bnfEnabled: true,
-    maruthiEnabled: true,
-    bnfSummary: null,
+    bnfState: null,
     bnfTrades: [],
     bnfEquity: [],
     maruthiState: null,
     maruthiTrades: [],
     maruthiEquity: [],
+    kc6State: null,
+    kc6Trades: [],
+    kc6Equity: [],
     equityChart: null,
-    equityView: 'both',
+    equityView: 'all',
     tradeFilter: 'all',
 };
 
@@ -309,12 +620,12 @@ async function fetchJSON(url) {
 }
 
 async function loadBNFData() {
-    const [summary, trades, equity] = await Promise.all([
-        fetchJSON('/api/strategies/nondirectional/summary'),
-        fetchJSON('/api/strategies/nondirectional/trades'),
-        fetchJSON('/api/strategies/nondirectional/equity-curve'),
+    const [bnfState, trades, equity] = await Promise.all([
+        fetchJSON('/api/bnf/state'),
+        fetchJSON('/api/bnf/trades'),
+        fetchJSON('/api/bnf/equity-curve'),
     ]);
-    state.bnfSummary = summary;
+    state.bnfState = bnfState;
     state.bnfTrades = trades || [];
     state.bnfEquity = equity || [];
     renderBNFCard();
@@ -332,30 +643,72 @@ async function loadMaruthiData() {
     renderMaruthiCard();
 }
 
+async function loadKC6Data() {
+    const [kState, trades, equity] = await Promise.all([
+        fetchJSON('/api/kc6/state'),
+        fetchJSON('/api/kc6/trades'),
+        fetchJSON('/api/kc6/equity-curve'),
+    ]);
+    state.kc6State = kState;
+    state.kc6Trades = trades || [];
+    state.kc6Equity = equity || [];
+    renderKC6Card();
+}
+
 async function refreshAll() {
-    await Promise.all([loadBNFData(), loadMaruthiData()]);
+    await Promise.all([loadBNFData(), loadMaruthiData(), loadKC6Data()]);
     renderCombinedMetrics();
     renderEquityChart();
     renderTradeTable();
+    el('overallStatus').textContent = 'Last refresh: ' + new Date().toLocaleTimeString();
 }
 
 // ============================================================
-// Rendering: BNF Card
+// Rendering: BNF Squeeze & Fire Card
 // ============================================================
 function renderBNFCard() {
-    const s = state.bnfSummary;
-    if (!s) return;
+    const bs = state.bnfState;
+    if (!bs || bs.error) {
+        const badge = el('bnfModeBadge');
+        badge.textContent = 'IDLE';
+        badge.className = 'strategy-badge badge-backtest';
+        updateToggleButton('bnfToggle', false);
+        el('cardBNF').className = 'strategy-card inactive';
+        // Still show trade history from locally fetched data
+        setText('bnfTrades', state.bnfTrades.length);
+        return;
+    }
 
-    setText('bnfCAGR', s.cagr_pct.toFixed(1) + '%');
-    setText('bnfWR', s.win_rate.toFixed(0) + '%');
-    setText('bnfPF', s.profit_factor.toFixed(1));
-    setText('bnfDD', s.max_drawdown_pct.toFixed(1) + '%');
-    setText('bnfTrades', s.total_trades);
-    setText('bnfTotalPnl', fmtRs(s.total_pnl));
-    setText('bnfFinal', fmtRs(s.final_capital));
+    const st = bs.state || {};
+    const stats = bs.stats || {};
+    const cfg = bs.config || {};
+    const positions = bs.positions || {};
 
-    setColor('bnfTotalPnl', s.total_pnl >= 0);
-    setColor('bnfCAGR', s.cagr_pct >= 0);
+    // Mode badge + toggle
+    const bnfEnabled = cfg.enabled !== false;
+    const mode = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+    const badge = el('bnfModeBadge');
+    badge.textContent = mode;
+    badge.className = 'strategy-badge ' + (mode === 'LIVE' ? 'badge-live' : 'badge-paper');
+    updateToggleButton('bnfToggle', bnfEnabled);
+    el('cardBNF').className = 'strategy-card ' + (bnfEnabled ? 'active' : 'inactive');
+
+    // Positions
+    const totalActive = positions.total_active || 0;
+    setText('bnfPositions', totalActive);
+
+    // Trades
+    setText('bnfTrades', stats.total_trades || 0);
+
+    // Closed P&L (from completed trades)
+    const closedPnl = stats.total_pnl || 0;
+    setText('bnfClosedPnl', fmtRs(closedPnl));
+    setColor('bnfClosedPnl', closedPnl >= 0);
+
+    // Running P&L (unrealized from active positions)
+    const runPnl = stats.running_pnl || 0;
+    setText('bnfRunningPnl', fmtRs(runPnl));
+    setColor('bnfRunningPnl', runPnl >= 0);
 }
 
 // ============================================================
@@ -365,59 +718,95 @@ function renderMaruthiCard() {
     const ms = state.maruthiState;
 
     if (ms && !ms.error) {
-        const regime = ms.regime || ms.current_regime || '--';
-        const positions = ms.positions || ms.active_positions || [];
-        const posCount = Array.isArray(positions) ? positions.length : 0;
-        const totalPnl = ms.total_pnl || ms.realized_pnl || 0;
+        // regime can be a dict {regime: 'BULL', ...} or a string
+        const regimeObj = ms.regime || {};
+        const regime = typeof regimeObj === 'string' ? regimeObj : (regimeObj.regime || '--');
+        const futures = ms.futures || [];
+        const shortOpts = ms.short_options || [];
+        const protectives = ms.protective_options || [];
+        const posCount = futures.length + shortOpts.length + protectives.length;
+        const stats = ms.stats || {};
+        const totalPnl = stats.total_pnl || 0;
         const tradeCount = state.maruthiTrades.length;
-        const mode = ms.paper_mode || ms.paper_trading_mode ? 'PAPER' : 'LIVE';
+        const cfg = ms.config || {};
+        const mode = (cfg.paper_trading_mode || cfg.paper_mode) ? 'PAPER' : 'LIVE';
+        const maruthiEnabled = cfg.enabled !== false;
+        updateToggleButton('maruthiToggle', maruthiEnabled);
+        el('cardMaruthi').className = 'strategy-card ' + (maruthiEnabled ? 'active' : 'inactive');
 
         setText('maruthiRegime', regime);
         setColor('maruthiRegime', regime === 'BULL');
         if (regime === 'BEAR') el('maruthiRegime').style.color = '#f85149';
 
         setText('maruthiPositions', posCount);
-        setText('maruthiPnl', fmtRs(totalPnl));
-        setColor('maruthiPnl', totalPnl >= 0);
         setText('maruthiTrades', tradeCount);
+
+        // Closed P&L (from completed trades)
+        const closedPnl = stats.total_pnl || stats.realized_pnl || 0;
+        setText('maruthiClosedPnl', fmtRs(closedPnl));
+        setColor('maruthiClosedPnl', closedPnl >= 0);
+
+        // Running P&L (unrealized from active positions)
+        const runPnl = stats.running_pnl || stats.unrealized_pnl || ms.unrealized_pnl || 0;
+        setText('maruthiRunningPnl', fmtRs(runPnl));
+        setColor('maruthiRunningPnl', runPnl >= 0);
 
         const badge = el('maruthiModeBadge');
         badge.textContent = mode;
         badge.className = 'strategy-badge ' + (mode === 'LIVE' ? 'badge-live' : 'badge-paper');
-
-        // Render positions list
-        const container = el('maruthiPositionsList');
-        if (posCount > 0) {
-            let html = '';
-            positions.forEach(p => {
-                const type = p.instrument_type || p.type || 'FUT';
-                const qty = p.quantity || p.lots || 0;
-                const entry = p.entry_price || p.avg_price || 0;
-                const pnl = p.unrealized_pnl || p.pnl || 0;
-                const pnlClass = pnl >= 0 ? 'positive' : 'negative';
-                html += `<div class="col-6 col-md-4 col-lg-3">
-                    <div class="p-2 rounded" style="background: #0d1117; border: 1px solid var(--bs-border-color);">
-                        <div class="d-flex justify-content-between">
-                            <small class="fw-bold">${type}</small>
-                            <small class="${pnlClass}">${fmtRs(pnl)}</small>
-                        </div>
-                        <small class="text-muted">Qty: ${qty} | Entry: ${fmtNum(entry)}</small>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        } else {
-            container.innerHTML = '<div class="col-12 text-center text-muted py-2"><small>No active positions</small></div>';
-        }
     } else {
-        // No data or error
         const badge = el('maruthiModeBadge');
-        badge.textContent = 'OFFLINE';
+        badge.textContent = 'IDLE';
         badge.className = 'strategy-badge badge-backtest';
-        setText('maruthiRegime', '--');
-        setText('maruthiPositions', '0');
-        setText('maruthiPnl', '--');
-        setText('maruthiTrades', state.maruthiTrades.length || '0');
+        updateToggleButton('maruthiToggle', false);
+        el('cardMaruthi').className = 'strategy-card inactive';
+        // Still show trade history from locally fetched data
+        const mt = state.maruthiTrades.length;
+        setText('maruthiTrades', mt);
+    }
+}
+
+// ============================================================
+// Rendering: KC6 Card
+// ============================================================
+function renderKC6Card() {
+    const ks = state.kc6State;
+
+    if (ks && !ks.error) {
+        const cfg = ks.config || {};
+        const stats = ks.stats || {};
+        const positions = ks.positions || ks.active_positions || [];
+        const posCount = Array.isArray(positions) ? positions.length : 0;
+        const mode = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+        const kc6Enabled = cfg.enabled !== false;
+        updateToggleButton('kc6Toggle', kc6Enabled);
+        el('cardKC6').className = 'strategy-card ' + (kc6Enabled ? 'active' : 'inactive');
+
+        setText('kc6Positions', posCount);
+        setText('kc6Trades', stats.total_trades || 0);
+
+        // Closed P&L
+        const closedPnl = stats.total_pnl || 0;
+        setText('kc6ClosedPnl', fmtRs(closedPnl));
+        setColor('kc6ClosedPnl', closedPnl >= 0);
+
+        // Running P&L
+        const runPnl = stats.running_pnl || stats.unrealized_pnl || 0;
+        setText('kc6RunningPnl', fmtRs(runPnl));
+        setColor('kc6RunningPnl', runPnl >= 0);
+
+        const badge = el('kc6ModeBadge');
+        badge.textContent = mode;
+        badge.className = 'strategy-badge ' + (mode === 'LIVE' ? 'badge-live' : 'badge-paper');
+    } else {
+        const badge = el('kc6ModeBadge');
+        badge.textContent = 'IDLE';
+        badge.className = 'strategy-badge badge-backtest';
+        updateToggleButton('kc6Toggle', false);
+        el('cardKC6').className = 'strategy-card inactive';
+        // Still show trade history from locally fetched data
+        const kt = state.kc6Trades.length;
+        setText('kc6Trades', kt);
     }
 }
 
@@ -425,40 +814,46 @@ function renderMaruthiCard() {
 // Combined Metrics
 // ============================================================
 function renderCombinedMetrics() {
-    let totalPnl = 0, totalTrades = 0, totalWins = 0;
+    let closedPnl = 0, runningPnl = 0, totalTrades = 0;
+    let activeCount = 0;
 
-    if (state.bnfEnabled && state.bnfSummary) {
-        totalPnl += state.bnfSummary.total_pnl || 0;
-        totalTrades += state.bnfSummary.total_trades || 0;
-        totalWins += Math.round((state.bnfSummary.win_rate || 0) / 100 * (state.bnfSummary.total_trades || 0));
+    // BNF
+    if (state.bnfState && !state.bnfState.error) {
+        const bs = state.bnfState.stats || {};
+        closedPnl += bs.total_pnl || 0;
+        runningPnl += bs.running_pnl || 0;
+        totalTrades += bs.total_trades || 0;
+        if ((state.bnfState.config || {}).enabled !== false) activeCount++;
     }
 
-    if (state.maruthiEnabled) {
-        const ms = state.maruthiState;
-        if (ms && !ms.error) {
-            totalPnl += ms.total_pnl || ms.realized_pnl || 0;
-        }
-        // Count maruthi trades
-        const mt = state.maruthiTrades.length;
-        totalTrades += mt;
-        // Estimate wins from trades
-        if (Array.isArray(state.maruthiTrades)) {
-            totalWins += state.maruthiTrades.filter(t =>
-                (t.pnl || t.realized_pnl || 0) > 0
-            ).length;
-        }
+    // Maruthi
+    if (state.maruthiState && !state.maruthiState.error) {
+        const ms = state.maruthiState.stats || {};
+        closedPnl += ms.total_pnl || ms.realized_pnl || 0;
+        runningPnl += ms.running_pnl || ms.unrealized_pnl || state.maruthiState.unrealized_pnl || 0;
+        totalTrades += state.maruthiTrades.length;
+        if ((state.maruthiState.config || {}).enabled !== false) activeCount++;
     }
 
-    const pnlEl = el('combinedPnl');
-    pnlEl.textContent = fmtRs(totalPnl);
-    pnlEl.className = 'combined-pnl ' + (totalPnl >= 0 ? 'positive' : 'negative');
+    // KC6
+    if (state.kc6State && !state.kc6State.error) {
+        const ks = state.kc6State.stats || {};
+        closedPnl += ks.total_pnl || 0;
+        runningPnl += ks.running_pnl || ks.unrealized_pnl || 0;
+        totalTrades += ks.total_trades || 0;
+        if ((state.kc6State.config || {}).enabled !== false) activeCount++;
+    }
 
-    const activeCount = (state.bnfEnabled ? 1 : 0) + (state.maruthiEnabled ? 1 : 0);
-    setText('activeCount', activeCount + ' / 2');
+    const closedEl = el('combinedClosedPnl');
+    closedEl.textContent = fmtRs(closedPnl);
+    closedEl.className = 'combined-pnl ' + (closedPnl >= 0 ? 'positive' : 'negative');
+
+    const runEl = el('combinedRunningPnl');
+    runEl.textContent = fmtRs(runningPnl);
+    runEl.className = 'metric-value ' + (runningPnl >= 0 ? 'positive' : 'negative');
+
+    setText('activeCount', activeCount + ' / 3');
     setText('totalTrades', totalTrades);
-
-    const wr = totalTrades > 0 ? (totalWins / totalTrades * 100).toFixed(0) + '%' : '--';
-    setText('combinedWR', wr);
 }
 
 // ============================================================
@@ -469,38 +864,42 @@ function renderEquityChart() {
     if (state.equityChart) state.equityChart.destroy();
 
     const datasets = [];
+    const v = state.equityView;
 
-    if ((state.equityView === 'both' || state.equityView === 'bnf') && state.bnfEnabled) {
+    if ((v === 'all' || v === 'bnf') && state.bnfEquity.length > 0) {
         datasets.push({
-            label: 'BankNifty Non-Directional',
-            data: state.bnfEquity.map(p => ({ x: p.date, y: p.capital })),
+            label: 'BNF Squeeze & Fire',
+            data: state.bnfEquity.map(p => ({ x: p.trade_date || p.date, y: p.cumulative_pnl || p.capital || 0 })),
             borderColor: '#58a6ff',
             backgroundColor: 'rgba(88, 166, 255, 0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            borderWidth: 2,
+            fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2,
         });
     }
 
-    if ((state.equityView === 'both' || state.equityView === 'maruthi') && state.maruthiEnabled) {
-        if (state.maruthiEquity.length > 0) {
-            datasets.push({
-                label: 'Maruthi Always-On',
-                data: state.maruthiEquity.map(p => ({
-                    x: p.date || p.timestamp,
-                    y: p.capital || p.cumulative_pnl || p.equity
-                })),
-                borderColor: '#f59e0b',
-                backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                borderWidth: 2,
-            });
-        }
+    if ((v === 'all' || v === 'maruthi') && state.maruthiEquity.length > 0) {
+        datasets.push({
+            label: 'Maruthi Always-On',
+            data: state.maruthiEquity.map(p => ({
+                x: p.date || p.timestamp,
+                y: p.capital || p.cumulative_pnl || p.equity || 0
+            })),
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2,
+        });
+    }
+
+    if ((v === 'all' || v === 'kc6') && state.kc6Equity.length > 0) {
+        datasets.push({
+            label: 'KC6 Mean Reversion',
+            data: state.kc6Equity.map(p => ({
+                x: p.date || p.trade_date,
+                y: p.cumulative_pnl || p.capital || 0
+            })),
+            borderColor: '#a371f7',
+            backgroundColor: 'rgba(163, 113, 247, 0.1)',
+            fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2,
+        });
     }
 
     state.equityChart = new Chart(ctx, {
@@ -546,9 +945,8 @@ function renderEquityChart() {
 function setEquityView(view) {
     state.equityView = view;
     document.querySelectorAll('#tabEquity .btn').forEach(b => b.classList.remove('active'));
-    if (view === 'both') el('btnShowBoth').classList.add('active');
-    else if (view === 'bnf') el('btnShowBNF').classList.add('active');
-    else el('btnShowMaruthi').classList.add('active');
+    const btnMap = { all: 'btnShowAll', bnf: 'btnShowBNF', maruthi: 'btnShowMaruthi', kc6: 'btnShowKC6' };
+    if (btnMap[view]) el(btnMap[view]).classList.add('active');
     renderEquityChart();
 }
 
@@ -559,42 +957,56 @@ function renderTradeTable() {
     const tbody = el('tradesBody');
     let rows = [];
 
-    // BNF trades
-    if (state.bnfEnabled) {
-        state.bnfTrades.forEach(t => {
-            rows.push({
-                strategy: 'BankNifty',
-                strategyClass: 'text-info',
-                entry: (t.entry_date || '').substring(0, 10),
-                exit: (t.exit_date || '').substring(0, 10),
-                type: 'Strangle',
-                entryPrice: t.entry_price,
-                pnl: t.pnl_rs,
-                outcome: t.outcome || (t.pnl_rs >= 0 ? 'win' : 'loss'),
-                source: 'bnf',
-                sortDate: t.exit_date || t.entry_date || '',
-            });
+    // BNF S&F trades
+    state.bnfTrades.forEach(t => {
+        const pnl = t.pnl_abs || 0;
+        rows.push({
+            strategy: 'BNF S&F',
+            strategyClass: 'text-info',
+            entry: (t.entry_time || '').substring(0, 10),
+            exit: (t.exit_time || '').substring(0, 10),
+            type: (t.mode || '') + ' ' + (t.instrument_type || ''),
+            entryPrice: t.entry_price,
+            pnl: pnl,
+            outcome: pnl >= 0 ? 'win' : 'loss',
+            source: 'bnf',
+            sortDate: t.exit_time || t.entry_time || '',
         });
-    }
+    });
 
     // Maruthi trades
-    if (state.maruthiEnabled) {
-        state.maruthiTrades.forEach(t => {
-            const pnl = t.pnl || t.realized_pnl || 0;
-            rows.push({
-                strategy: 'Maruthi',
-                strategyClass: 'text-warning',
-                entry: (t.entry_date || t.entry_time || '').substring(0, 10),
-                exit: (t.exit_date || t.exit_time || '').substring(0, 10),
-                type: t.instrument_type || t.type || 'FUT',
-                entryPrice: t.entry_price || t.avg_price || 0,
-                pnl: pnl,
-                outcome: pnl >= 0 ? 'win' : 'loss',
-                source: 'maruthi',
-                sortDate: t.exit_date || t.exit_time || t.entry_date || '',
-            });
+    state.maruthiTrades.forEach(t => {
+        const pnl = t.pnl_abs || t.pnl || t.realized_pnl || 0;
+        rows.push({
+            strategy: 'Maruthi',
+            strategyClass: 'text-warning',
+            entry: (t.entry_date || t.entry_time || '').substring(0, 10),
+            exit: (t.exit_date || t.exit_time || '').substring(0, 10),
+            type: t.instrument_type || t.position_type || 'FUT',
+            entryPrice: t.entry_price || t.avg_price || 0,
+            pnl: pnl,
+            outcome: pnl >= 0 ? 'win' : 'loss',
+            source: 'maruthi',
+            sortDate: t.exit_date || t.exit_time || t.entry_date || '',
         });
-    }
+    });
+
+    // KC6 trades
+    state.kc6Trades.forEach(t => {
+        const pnl = t.pnl_abs || t.pnl || 0;
+        rows.push({
+            strategy: 'KC6',
+            strategyClass: 'text-purple',
+            entry: (t.entry_date || t.entry_time || '').substring(0, 10),
+            exit: (t.exit_date || t.exit_time || '').substring(0, 10),
+            type: t.tradingsymbol || t.symbol || 'Equity',
+            entryPrice: t.entry_price || 0,
+            pnl: pnl,
+            outcome: pnl >= 0 ? 'win' : 'loss',
+            source: 'kc6',
+            sortDate: t.exit_date || t.exit_time || t.entry_date || '',
+        });
+    });
 
     // Filter
     if (state.tradeFilter !== 'all') {
@@ -628,24 +1040,45 @@ function renderTradeTable() {
 function filterTrades(filter) {
     state.tradeFilter = filter;
     document.querySelectorAll('#tabTrades .btn').forEach(b => b.classList.remove('active'));
-    el('filter' + filter.charAt(0).toUpperCase() + filter.slice(1)).classList.add('active');
+    const btnMap = { all: 'filterAll', bnf: 'filterBnf', maruthi: 'filterMaruthi', kc6: 'filterKc6' };
+    if (btnMap[filter]) el(btnMap[filter]).classList.add('active');
     renderTradeTable();
 }
 
 // ============================================================
-// Toggle Strategy
+// Strategy ON/OFF Toggle
 // ============================================================
-function toggleStrategy(name) {
-    if (name === 'bnf') {
-        state.bnfEnabled = el('toggleBNF').checked;
-        el('cardBNF').className = 'strategy-card ' + (state.bnfEnabled ? 'active' : 'inactive');
-    } else {
-        state.maruthiEnabled = el('toggleMaruthi').checked;
-        el('cardMaruthi').className = 'strategy-card ' + (state.maruthiEnabled ? 'active' : 'inactive');
+async function toggleStrategy(strategy) {
+    const urls = {
+        bnf: '/api/bnf/toggle-enabled',
+        maruthi: '/api/maruthi/toggle-enabled',
+        kc6: '/api/kc6/toggle-enabled',
+    };
+    try {
+        const r = await fetch(urls[strategy], { method: 'POST' });
+        const data = await r.json();
+        if (data.error) { alert('Error: ' + data.error); return; }
+        // Refresh all data to reflect new state
+        await refreshAll();
+    } catch (e) {
+        alert('Toggle failed: ' + e.message);
     }
-    renderCombinedMetrics();
-    renderEquityChart();
-    renderTradeTable();
+}
+
+function updateToggleButton(btnId, enabled) {
+    const btn = el(btnId);
+    if (!btn) return;
+    if (enabled) {
+        btn.className = 'btn btn-sm px-2 py-0 btn-on';
+        btn.innerHTML = '<i class="bi bi-power"></i> ON';
+        btn.style.fontSize = '0.7rem';
+        btn.style.borderRadius = '20px';
+    } else {
+        btn.className = 'btn btn-sm px-2 py-0 btn-off';
+        btn.innerHTML = '<i class="bi bi-power"></i> OFF';
+        btn.style.fontSize = '0.7rem';
+        btn.style.borderRadius = '20px';
+    }
 }
 
 // ============================================================

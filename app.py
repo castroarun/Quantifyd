@@ -48,7 +48,7 @@ from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
-    MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS,
+    MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -1804,7 +1804,6 @@ def kc6_dashboard():
 
 
 @app.route('/api/kc6/state')
-@login_required
 def api_kc6_state():
     """Get KC6 dashboard state: positions, signals, crash filter, stats."""
     try:
@@ -1832,6 +1831,7 @@ def api_kc6_state():
             'config': {
                 'paper_trading_mode': KC6_DEFAULTS.get('paper_trading_mode', True),
                 'live_trading_enabled': KC6_DEFAULTS.get('live_trading_enabled', False),
+                'enabled': KC6_DEFAULTS.get('enabled', True),
                 'max_positions': KC6_DEFAULTS.get('max_positions', 5),
                 'sl_pct': KC6_DEFAULTS.get('sl_pct', 5.0),
                 'tp_pct': KC6_DEFAULTS.get('tp_pct', 15.0),
@@ -1991,6 +1991,19 @@ def api_kc6_toggle_mode():
         })
     except Exception as e:
         logger.error(f"KC6 toggle mode error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kc6/toggle-enabled', methods=['POST'])
+def api_kc6_toggle_enabled():
+    """Enable/disable KC6 system."""
+    try:
+        current = KC6_DEFAULTS.get('enabled', True)
+        KC6_DEFAULTS['enabled'] = not current
+        status = 'ENABLED' if KC6_DEFAULTS['enabled'] else 'DISABLED'
+        logger.info(f"KC6 system {status}")
+        return jsonify({'enabled': KC6_DEFAULTS['enabled'], 'status': status})
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
@@ -2374,7 +2387,7 @@ def api_maruthi_mtm():
 
 @app.route('/api/maruthi/toggle-mode', methods=['POST'])
 def api_maruthi_toggle_mode():
-    """Toggle Maruthi between paper and live trading."""
+    """Toggle Maruthi between paper and live trading. Persists to DB."""
     global MARUTHI_DEFAULTS
     if MARUTHI_DEFAULTS.get('paper_trading_mode'):
         MARUTHI_DEFAULTS['paper_trading_mode'] = False
@@ -2384,7 +2397,57 @@ def api_maruthi_toggle_mode():
         MARUTHI_DEFAULTS['paper_trading_mode'] = True
         MARUTHI_DEFAULTS['live_trading_enabled'] = False
         mode = 'PAPER'
+    # Persist to DB
+    try:
+        from services.maruthi_db import get_maruthi_db
+        db = get_maruthi_db()
+        db.set_setting('trading_mode', mode)
+    except Exception as e:
+        logger.warning(f"Failed to persist Maruthi mode: {e}")
     return jsonify({'mode': mode})
+
+
+@app.route('/api/maruthi/toggle-enabled', methods=['POST'])
+def api_maruthi_toggle_enabled():
+    """Enable/disable Maruthi system. Auto-starts/stops ticker. Persists to DB."""
+    try:
+        # Toggle enabled state (default True if not set)
+        current = MARUTHI_DEFAULTS.get('enabled', True)
+        MARUTHI_DEFAULTS['enabled'] = not current
+        new_enabled = MARUTHI_DEFAULTS['enabled']
+        status = 'ENABLED' if new_enabled else 'DISABLED'
+        logger.info(f"Maruthi system {status}")
+        # Persist to DB
+        try:
+            from services.maruthi_db import get_maruthi_db
+            db = get_maruthi_db()
+            db.set_setting('enabled', str(new_enabled))
+        except Exception:
+            pass
+
+        # Auto-start/stop ticker
+        if new_enabled:
+            try:
+                from services.maruthi_ticker import get_maruthi_ticker
+                ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+                if not ticker.is_connected():
+                    ticker.start()
+                    logger.info("[Maruthi] Ticker auto-started on enable")
+            except Exception as te:
+                logger.warning(f"[Maruthi] Ticker auto-start failed: {te}")
+        else:
+            try:
+                from services.maruthi_ticker import get_maruthi_ticker
+                ticker = get_maruthi_ticker()
+                if ticker.is_connected():
+                    ticker.stop()
+                    logger.info("[Maruthi] Ticker stopped on disable")
+            except Exception as te:
+                logger.warning(f"[Maruthi] Ticker stop failed: {te}")
+
+        return jsonify({'enabled': new_enabled, 'status': status})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/maruthi/auth', methods=['POST'])
@@ -2615,6 +2678,201 @@ try:
     )
 except Exception as e:
     logger.warning(f"Could not register Maruthi scheduled jobs: {e}")
+
+
+# =============================================================================
+# BNF Squeeze & Fire — Dashboard & API
+# =============================================================================
+
+@app.route('/bnf')
+def bnf_dashboard():
+    """BNF Squeeze & Fire execution dashboard."""
+    return render_template(
+        'bnf_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/bnf/state')
+def api_bnf_state():
+    """Get full BNF system state for dashboard."""
+    try:
+        from services.bnf_executor import BnfExecutor
+        executor = BnfExecutor(config=BNF_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bnf/scan', methods=['POST'])
+def api_bnf_scan():
+    """Trigger manual BNF scan (async)."""
+    import uuid
+    task_id = str(uuid.uuid4())[:8]
+
+    def _run_scan(tid):
+        try:
+            from services.bnf_executor import BnfExecutor
+            executor = BnfExecutor(config=BNF_DEFAULTS)
+            result = executor.run_daily_scan()
+            _bnf_scan_results[tid] = {'status': 'complete', 'result': result}
+        except Exception as e:
+            _bnf_scan_results[tid] = {'status': 'error', 'error': str(e)}
+
+    _bnf_scan_results[task_id] = {'status': 'running'}
+    scheduler.add_job(_run_scan, args=[task_id], id=f'bnf_scan_{task_id}',
+                      replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'started'})
+
+
+# Store scan results
+_bnf_scan_results = {}
+
+
+@app.route('/api/bnf/scan/status/<task_id>')
+def api_bnf_scan_status(task_id):
+    """Check BNF scan task status."""
+    result = _bnf_scan_results.get(task_id, {'status': 'unknown'})
+    return jsonify(result)
+
+
+@app.route('/api/bnf/kill-switch', methods=['POST'])
+def api_bnf_kill_switch():
+    """Emergency exit all BNF positions."""
+    try:
+        from services.bnf_executor import BnfExecutor
+        executor = BnfExecutor(config=BNF_DEFAULTS)
+        closed = executor.emergency_exit_all()
+        return jsonify({'closed': closed, 'status': 'OK'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bnf/trades')
+def api_bnf_trades():
+    """Get recent BNF trades."""
+    try:
+        from services.bnf_db import get_bnf_db
+        db = get_bnf_db()
+        trades = db.get_recent_trades(limit=50)
+        return jsonify(trades)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bnf/orders')
+def api_bnf_orders():
+    """Get recent BNF orders."""
+    try:
+        from services.bnf_db import get_bnf_db
+        db = get_bnf_db()
+        orders = db.get_pending_orders()
+        return jsonify(orders)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bnf/signals')
+def api_bnf_signals():
+    """Get recent BNF signals."""
+    try:
+        from services.bnf_db import get_bnf_db
+        db = get_bnf_db()
+        signals = db.get_recent_signals(limit=30)
+        return jsonify(signals)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bnf/equity-curve')
+def api_bnf_equity_curve():
+    """Get BNF equity curve."""
+    try:
+        from services.bnf_db import get_bnf_db
+        db = get_bnf_db()
+        curve = db.get_equity_curve()
+        return jsonify(curve)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bnf/toggle-mode', methods=['POST'])
+def api_bnf_toggle_mode():
+    """Toggle BNF paper/live trading mode."""
+    try:
+        current = BNF_DEFAULTS.get('paper_trading_mode', True)
+        BNF_DEFAULTS['paper_trading_mode'] = not current
+        new_mode = 'PAPER' if BNF_DEFAULTS['paper_trading_mode'] else 'LIVE'
+        logger.info(f"BNF mode toggled to {new_mode}")
+        return jsonify({'mode': new_mode})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bnf/toggle-enabled', methods=['POST'])
+def api_bnf_toggle_enabled():
+    """Enable/disable BNF system."""
+    try:
+        current = BNF_DEFAULTS.get('enabled', True)
+        BNF_DEFAULTS['enabled'] = not current
+        status = 'ENABLED' if BNF_DEFAULTS['enabled'] else 'DISABLED'
+        logger.info(f"BNF system {status}")
+        return jsonify({'enabled': BNF_DEFAULTS['enabled'], 'status': status})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---- BNF Scheduled Jobs ----
+
+def _bnf_daily_scan():
+    """3:20 PM Mon-Fri — Run BNF daily scan after market close."""
+    if not BNF_DEFAULTS.get('enabled', True):
+        logger.info("[BNF] Skipping daily scan — strategy disabled")
+        return
+    try:
+        from services.bnf_executor import BnfExecutor
+        executor = BnfExecutor(config=BNF_DEFAULTS)
+        result = executor.run_daily_scan()
+        entries = len(result.get('entries', []))
+        exits = len(result.get('exits', []))
+        logger.info(f"[BNF] Daily scan: {entries} entries, {exits} exits")
+    except Exception as e:
+        logger.error(f"[BNF] Daily scan error: {e}")
+
+
+def _bnf_exit_check():
+    """3:15 PM Mon-Fri — Check BNF positions for exits (before new entries)."""
+    if not BNF_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.bnf_executor import BnfExecutor
+        executor = BnfExecutor(config=BNF_DEFAULTS)
+        scan = executor.scanner.scan()
+        exits = executor.check_and_exit(scan)
+        if exits:
+            logger.info(f"[BNF] Exit check: {len(exits)} positions closed")
+    except Exception as e:
+        logger.error(f"[BNF] Exit check error: {e}")
+
+
+try:
+    scheduler.add_job(
+        _bnf_exit_check,
+        'cron', day_of_week='mon-fri', hour=15, minute=15,
+        id='bnf_exit_check', replace_existing=True,
+    )
+    scheduler.add_job(
+        _bnf_daily_scan,
+        'cron', day_of_week='mon-fri', hour=15, minute=20,
+        id='bnf_daily_scan', replace_existing=True,
+    )
+    logger.info(
+        "BNF scheduled jobs registered: "
+        "exit check(15:15), daily scan(15:20)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register BNF scheduled jobs: {e}")
 
 
 # =============================================================================
@@ -3219,6 +3477,35 @@ if __name__ == '__main__':
     static_dir = Path(__file__).parent / 'static'
     templates_dir.mkdir(exist_ok=True)
     static_dir.mkdir(exist_ok=True)
+
+    # Restore Maruthi trading mode from DB (survives Flask restarts)
+    try:
+        from services.maruthi_db import get_maruthi_db
+        _mdb = get_maruthi_db()
+        _saved_mode = _mdb.get_setting('trading_mode', 'PAPER')
+        if _saved_mode == 'LIVE':
+            MARUTHI_DEFAULTS['paper_trading_mode'] = False
+            MARUTHI_DEFAULTS['live_trading_enabled'] = True
+            logger.info("[Maruthi] Restored LIVE trading mode from DB")
+        else:
+            logger.info("[Maruthi] Mode is PAPER (default)")
+        _saved_enabled = _mdb.get_setting('enabled', 'True')
+        if _saved_enabled == 'False':
+            MARUTHI_DEFAULTS['enabled'] = False
+            logger.info("[Maruthi] Restored DISABLED state from DB")
+    except Exception as e:
+        logger.warning(f"[Maruthi] Could not restore mode from DB: {e}")
+
+    # Auto-start Maruthi ticker if strategy is enabled
+    if MARUTHI_DEFAULTS.get('enabled', True):
+        try:
+            from services.maruthi_ticker import get_maruthi_ticker
+            ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+            if not ticker.is_connected():
+                ticker.start()
+                logger.info("[Maruthi] Ticker auto-started on Flask boot")
+        except Exception as e:
+            logger.warning(f"[Maruthi] Ticker auto-start failed on boot: {e}")
 
     # Run app with SocketIO support
     socketio.run(

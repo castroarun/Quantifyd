@@ -1,0 +1,730 @@
+{% extends "base.html" %}
+
+{% block title %}BNF Squeeze & Fire{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mode-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.7em;
+        border-radius: 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .mode-PAPER { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950; }
+    .mode-LIVE { background: rgba(248,81,73,0.2); color: #f85149; border: 1px solid #f85149; }
+
+    .bb-SQUEEZING { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .bb-EXPANDING { background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.3); }
+
+    .bb-indicator {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        padding: 0.5rem 1.5rem;
+        border-radius: 10px;
+        display: inline-block;
+    }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .table-bnf th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .table-bnf td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .mode-SQUEEZE { color: #f59e0b; }
+    .mode-FIRE { color: #58a6ff; }
+
+    .signal-FIRE_LONG, .signal-SQUEEZE_ENTRY { color: #3fb950; }
+    .signal-FIRE_SHORT { color: #f85149; }
+
+    .action-btn {
+        min-width: 130px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 10px;
+        background: rgba(22,27,34,0.6);
+        border: 1px solid var(--bs-border-color);
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #8b949e;
+        letter-spacing: 0.5px;
+    }
+
+    .mode-card {
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid var(--bs-border-color);
+    }
+    .mode-card-squeeze {
+        background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(22,27,34,0.9) 100%);
+        border-left: 3px solid #f59e0b;
+    }
+    .mode-card-fire {
+        background: linear-gradient(135deg, rgba(88,166,255,0.08) 0%, rgba(22,27,34,0.9) 100%);
+        border-left: 3px solid #58a6ff;
+    }
+
+    .pulse-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .pulse-active {
+        background: #3fb950;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    .pulse-idle {
+        background: #8b949e;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .scan-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7); z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">
+                <i class="bi bi-graph-up-arrow me-2" style="color: #58a6ff;"></i>
+                BNF Squeeze & Fire
+            </h4>
+            <small class="text-muted">
+                <a href="/strategies" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Strategies
+                </a>
+            </small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span id="modeBadge" class="mode-badge mode-PAPER">PAPER</span>
+            <span id="enabledBadge" class="mode-badge" style="background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950;">ENABLED</span>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+        <button class="btn btn-outline-primary action-btn" onclick="runScan()">
+            <i class="bi bi-search me-1"></i> Manual Scan
+        </button>
+        <button class="btn btn-outline-warning action-btn" onclick="toggleMode()">
+            <i class="bi bi-toggles me-1"></i> Toggle Mode
+        </button>
+        <button class="btn btn-outline-secondary action-btn" onclick="toggleEnabled()">
+            <i class="bi bi-power me-1"></i> Enable/Disable
+        </button>
+        <button class="btn btn-outline-danger action-btn" onclick="killSwitch()">
+            <i class="bi bi-exclamation-octagon me-1"></i> Kill Switch
+        </button>
+        <button class="btn btn-outline-info action-btn" onclick="refreshState()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- BB State + Direction Row -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div id="bbState" class="bb-indicator bb-SQUEEZING">--</div>
+                <div class="stat-label mt-2">BB State</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="squeezeCount" class="stat-value" style="color: #f59e0b;">0 / 3</div>
+                <div class="stat-label">Squeeze Bars</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="direction" class="stat-value">--</div>
+                <div class="stat-label">Direction</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="trendStrength" class="stat-value" style="color: #8b949e;">-- ATR</div>
+                <div class="stat-label">Trend Strength</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div id="totalPnl" class="stat-value positive">--</div>
+                <div class="stat-label">Total P&L</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mode Cards Row -->
+    <div class="row g-3 mb-3">
+        <!-- Squeeze Card -->
+        <div class="col-md-6">
+            <div class="mode-card mode-card-squeeze">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0" style="color: #f59e0b;">
+                        <i class="bi bi-arrows-collapse me-1"></i> SQUEEZE MODE
+                        <small class="text-muted ms-2">Non-Directional Strangles</small>
+                    </h6>
+                    <span id="sqPositions" class="badge bg-secondary">0 active</span>
+                </div>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="stat-label">Trades</div>
+                        <div id="sqTrades" class="fw-bold" style="color: #f59e0b;">0</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-label">Win Rate</div>
+                        <div id="sqWinRate" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-label">P&L</div>
+                        <div id="sqPnl" class="fw-bold positive">--</div>
+                    </div>
+                </div>
+                <div id="sqActiveList" class="mt-2" style="font-size: 0.85rem;"></div>
+            </div>
+        </div>
+
+        <!-- Fire Card -->
+        <div class="col-md-6">
+            <div class="mode-card mode-card-fire">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0" style="color: #58a6ff;">
+                        <i class="bi bi-lightning me-1"></i> FIRE MODE
+                        <small class="text-muted ms-2">Directional Naked Sell</small>
+                    </h6>
+                    <span id="frPositions" class="badge bg-secondary">0 active</span>
+                </div>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="stat-label">Trades</div>
+                        <div id="frTrades" class="fw-bold" style="color: #58a6ff;">0</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-label">Win Rate</div>
+                        <div id="frWinRate" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-label">P&L</div>
+                        <div id="frPnl" class="fw-bold positive">--</div>
+                    </div>
+                </div>
+                <div id="frActiveList" class="mt-2" style="font-size: 0.85rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Positions Table -->
+    <div class="card mb-3">
+        <div class="card-header-custom d-flex justify-content-between">
+            <span><i class="bi bi-briefcase me-1"></i> Active Positions</span>
+            <span id="posCount" class="text-muted">0 positions</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover table-bnf mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mode</th>
+                            <th>Symbol</th>
+                            <th>Type</th>
+                            <th>Strike</th>
+                            <th>Qty</th>
+                            <th>Entry</th>
+                            <th>SL</th>
+                            <th>Hold Left</th>
+                            <th>Entry Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsBody">
+                        <tr><td colspan="9" class="text-center text-muted py-3">No active positions</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs: Signals / Trades / Equity -->
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#signals-tab">
+                <i class="bi bi-broadcast me-1"></i> Signals
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#trades-tab">
+                <i class="bi bi-receipt me-1"></i> Trades
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#equity-tab">
+                <i class="bi bi-graph-up me-1"></i> Equity Curve
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Signals Tab -->
+        <div class="tab-pane fade show active" id="signals-tab">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover table-bnf mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Signal</th>
+                                    <th>Mode</th>
+                                    <th>BB State</th>
+                                    <th>Direction</th>
+                                    <th>Spot</th>
+                                    <th>Action Taken</th>
+                                </tr>
+                            </thead>
+                            <tbody id="signalsBody">
+                                <tr><td colspan="7" class="text-center text-muted py-3">No signals yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trades Tab -->
+        <div class="tab-pane fade" id="trades-tab">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover table-bnf mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mode</th>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Strike</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>P&L</th>
+                                    <th>Exit Reason</th>
+                                    <th>Exit Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradesBody">
+                                <tr><td colspan="9" class="text-center text-muted py-3">No trades yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equity Curve Tab -->
+        <div class="tab-pane fade" id="equity-tab">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="equityChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicator Details (collapsible) -->
+    <div class="card mt-3">
+        <div class="card-header-custom" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#indicatorDetails">
+            <i class="bi bi-info-circle me-1"></i> Indicator Details
+            <i class="bi bi-chevron-down float-end"></i>
+        </div>
+        <div class="collapse" id="indicatorDetails">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="stat-label">BB Width</div>
+                        <div id="bbWidth" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-label">BB Width MA</div>
+                        <div id="bbWidthMa" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-label">SMA(20)</div>
+                        <div id="smaValue" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-label">ATR(14)</div>
+                        <div id="atrValue" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-label">Last Close</div>
+                        <div id="lastClose" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-label">Est. IV</div>
+                        <div id="estIv" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-label">Last Scan</div>
+                        <div id="lastScan" class="fw-bold text-muted">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-label">Last Signal</div>
+                        <div id="lastSignal" class="fw-bold text-muted">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scan Overlay -->
+<div id="scanOverlay" class="scan-overlay" style="display:none;">
+    <div class="text-center">
+        <div class="spinner-border text-primary mb-3" style="width:3rem;height:3rem;"></div>
+        <h5>Running BNF Scan...</h5>
+        <p class="text-muted" id="scanStatus">Checking indicators</p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let equityChart = null;
+let refreshInterval = null;
+
+// ─── State Load ─────────────────────────────────────
+
+async function refreshState() {
+    try {
+        const res = await fetch('/api/bnf/state');
+        const data = await res.json();
+        if (data.error) { console.error(data.error); return; }
+        updateDashboard(data);
+    } catch(e) { console.error('State fetch error:', e); }
+}
+
+function updateDashboard(data) {
+    const st = data.state || {};
+    const stats = data.stats || {};
+    const cfg = data.config || {};
+    const positions = data.positions || {};
+
+    // Mode badge
+    const mode = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+    const modeBadge = document.getElementById('modeBadge');
+    modeBadge.textContent = mode;
+    modeBadge.className = `mode-badge mode-${mode}`;
+
+    // Enabled badge
+    const enabled = cfg.enabled !== false;
+    const eb = document.getElementById('enabledBadge');
+    eb.textContent = enabled ? 'ENABLED' : 'DISABLED';
+    eb.style.background = enabled ? 'rgba(63,185,80,0.2)' : 'rgba(139,148,158,0.2)';
+    eb.style.color = enabled ? '#3fb950' : '#8b949e';
+    eb.style.border = enabled ? '1px solid #3fb950' : '1px solid #8b949e';
+
+    // BB State
+    const bbEl = document.getElementById('bbState');
+    const bbState = st.bb_state || 'UNKNOWN';
+    bbEl.textContent = bbState;
+    bbEl.className = `bb-indicator bb-${bbState}`;
+
+    // Squeeze count
+    const sqMin = 3; // from config
+    document.getElementById('squeezeCount').textContent =
+        `${st.squeeze_count || 0} / ${sqMin}`;
+
+    // Direction
+    const dirEl = document.getElementById('direction');
+    const dir = st.direction || 'NEUTRAL';
+    dirEl.textContent = dir;
+    dirEl.style.color = dir === 'BULLISH' ? '#3fb950' : dir === 'BEARISH' ? '#f85149' : '#8b949e';
+
+    // Trend
+    const ts = st.trend_strength || 0;
+    const tsEl = document.getElementById('trendStrength');
+    tsEl.textContent = `${ts.toFixed(2)} ATR`;
+    tsEl.style.color = ts >= 0.5 ? '#3fb950' : '#8b949e';
+
+    // Total P&L
+    const totalPnl = stats.total_pnl || 0;
+    const pnlEl = document.getElementById('totalPnl');
+    pnlEl.textContent = formatRupees(totalPnl);
+    pnlEl.className = `stat-value ${totalPnl >= 0 ? 'positive' : 'negative'}`;
+
+    // Squeeze mode stats
+    document.getElementById('sqTrades').textContent = stats.squeeze_trades || 0;
+    document.getElementById('sqPnl').textContent = formatRupees(stats.squeeze_pnl || 0);
+    document.getElementById('sqPnl').className = `fw-bold ${(stats.squeeze_pnl || 0) >= 0 ? 'positive' : 'negative'}`;
+    const sqActive = positions.squeeze || [];
+    document.getElementById('sqPositions').textContent = `${sqActive.length} active`;
+
+    // Fire mode stats
+    document.getElementById('frTrades').textContent = stats.fire_trades || 0;
+    document.getElementById('frPnl').textContent = formatRupees(stats.fire_pnl || 0);
+    document.getElementById('frPnl').className = `fw-bold ${(stats.fire_pnl || 0) >= 0 ? 'positive' : 'negative'}`;
+    const frActive = positions.fire || [];
+    document.getElementById('frPositions').textContent = `${frActive.length} active`;
+
+    // Active position summaries in mode cards
+    renderModePositions('sqActiveList', sqActive, '#f59e0b');
+    renderModePositions('frActiveList', frActive, '#58a6ff');
+
+    // Positions table
+    const allActive = [...sqActive, ...frActive];
+    document.getElementById('posCount').textContent = `${allActive.length} positions`;
+    renderPositionsTable(allActive);
+
+    // Indicator details
+    document.getElementById('bbWidth').textContent = st.bb_width ? st.bb_width.toFixed(2) : '--';
+    document.getElementById('bbWidthMa').textContent = st.bb_width_ma ? st.bb_width_ma.toFixed(2) : '--';
+    document.getElementById('smaValue').textContent = st.sma_value ? st.sma_value.toFixed(1) : '--';
+    document.getElementById('atrValue').textContent = st.atr_value ? st.atr_value.toFixed(1) : '--';
+    document.getElementById('lastClose').textContent = st.last_close ? st.last_close.toFixed(1) : '--';
+    document.getElementById('lastScan').textContent = st.last_scan_time || '--';
+    document.getElementById('lastSignal').textContent = st.last_signal_time || '--';
+
+    // Signals
+    renderSignals(data.recent_signals || []);
+
+    // Trades
+    renderTrades(data.recent_trades || []);
+
+    // Win rates
+    if (stats.squeeze_trades > 0) {
+        const sqWins = Math.round((stats.squeeze_pnl || 0) > 0 ? 100 : 0); // simplified
+        document.getElementById('sqWinRate').textContent = `${stats.win_rate || 0}%`;
+    }
+    document.getElementById('frWinRate').textContent = stats.fire_trades > 0 ? `${stats.win_rate || 0}%` : '--';
+}
+
+function renderModePositions(elementId, positions, color) {
+    const el = document.getElementById(elementId);
+    if (!positions.length) {
+        el.innerHTML = '<span class="text-muted">No active positions</span>';
+        return;
+    }
+    el.innerHTML = positions.map(p =>
+        `<div><span class="pulse-dot pulse-active"></span>
+         <span style="color:${color}">${p.instrument_type}</span>
+         ${p.strike} @ ${p.entry_price?.toFixed(2) || '--'}
+         <span class="text-muted ms-2">${p.hold_bars_remaining || 0} bars left</span></div>`
+    ).join('');
+}
+
+function renderPositionsTable(positions) {
+    const tbody = document.getElementById('positionsBody');
+    if (!positions.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No active positions</td></tr>';
+        return;
+    }
+    tbody.innerHTML = positions.map(p => `
+        <tr>
+            <td><span class="mode-${p.mode}">${p.mode}</span></td>
+            <td>${p.tradingsymbol}</td>
+            <td>${p.instrument_type}</td>
+            <td>${p.strike}</td>
+            <td>${p.qty}</td>
+            <td>${p.entry_price?.toFixed(2) || '--'}</td>
+            <td style="color:#f59e0b;">${p.sl_price?.toFixed(2) || '--'}</td>
+            <td>${p.hold_bars_remaining ?? '--'}</td>
+            <td class="text-muted">${formatTime(p.entry_time)}</td>
+        </tr>
+    `).join('');
+}
+
+function renderSignals(signals) {
+    const tbody = document.getElementById('signalsBody');
+    if (!signals.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No signals yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = signals.map(s => `
+        <tr>
+            <td class="text-muted">${formatTime(s.created_at)}</td>
+            <td><span class="signal-${s.signal_type}">${s.signal_type}</span></td>
+            <td><span class="mode-${s.mode}">${s.mode || '--'}</span></td>
+            <td>${s.bb_state || '--'}</td>
+            <td>${s.direction || '--'}</td>
+            <td>${s.spot_price?.toFixed(1) || '--'}</td>
+            <td>${s.action_taken || '--'}</td>
+        </tr>
+    `).join('');
+}
+
+function renderTrades(trades) {
+    const tbody = document.getElementById('tradesBody');
+    if (!trades.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No trades yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = trades.map(t => {
+        const pnl = t.pnl_abs || 0;
+        return `
+        <tr>
+            <td><span class="mode-${t.mode}">${t.mode}</span></td>
+            <td>${t.tradingsymbol}</td>
+            <td>${t.instrument_type}</td>
+            <td>${t.strike}</td>
+            <td>${t.entry_price?.toFixed(2) || '--'}</td>
+            <td>${t.exit_price?.toFixed(2) || '--'}</td>
+            <td class="${pnl >= 0 ? 'positive' : 'negative'}">${formatRupees(pnl)}</td>
+            <td>${t.exit_reason || '--'}</td>
+            <td class="text-muted">${formatTime(t.exit_time)}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ─── Actions ────────────────────────────────────────
+
+async function runScan() {
+    document.getElementById('scanOverlay').style.display = 'flex';
+    try {
+        const res = await fetch('/api/bnf/scan', { method: 'POST' });
+        const data = await res.json();
+        if (data.task_id) {
+            pollScan(data.task_id);
+        }
+    } catch(e) {
+        document.getElementById('scanOverlay').style.display = 'none';
+        alert('Scan failed: ' + e.message);
+    }
+}
+
+async function pollScan(taskId) {
+    const check = async () => {
+        const res = await fetch(`/api/bnf/scan/status/${taskId}`);
+        const data = await res.json();
+        document.getElementById('scanStatus').textContent = data.status;
+        if (data.status === 'complete' || data.status === 'error') {
+            document.getElementById('scanOverlay').style.display = 'none';
+            refreshState();
+            return;
+        }
+        setTimeout(check, 1000);
+    };
+    check();
+}
+
+async function toggleMode() {
+    if (!confirm('Toggle trading mode?')) return;
+    const res = await fetch('/api/bnf/toggle-mode', { method: 'POST' });
+    const data = await res.json();
+    refreshState();
+}
+
+async function toggleEnabled() {
+    const res = await fetch('/api/bnf/toggle-enabled', { method: 'POST' });
+    const data = await res.json();
+    refreshState();
+}
+
+async function killSwitch() {
+    if (!confirm('KILL SWITCH: Close ALL BNF positions immediately?')) return;
+    const res = await fetch('/api/bnf/kill-switch', { method: 'POST' });
+    const data = await res.json();
+    alert(`Closed ${data.closed} positions`);
+    refreshState();
+}
+
+// ─── Equity Chart ───────────────────────────────────
+
+async function loadEquityCurve() {
+    try {
+        const res = await fetch('/api/bnf/equity-curve');
+        const data = await res.json();
+        if (!data.length) return;
+
+        const ctx = document.getElementById('equityChart').getContext('2d');
+        if (equityChart) equityChart.destroy();
+
+        equityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.trade_date),
+                datasets: [{
+                    label: 'Cumulative P&L',
+                    data: data.map(d => d.cumulative_pnl),
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88,166,255,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(48,54,61,0.5)' } },
+                    y: {
+                        grid: { color: 'rgba(48,54,61,0.5)' },
+                        ticks: { callback: v => formatRupees(v) }
+                    }
+                }
+            }
+        });
+    } catch(e) { console.error('Equity curve error:', e); }
+}
+
+// ─── Helpers ────────────────────────────────────────
+
+function formatRupees(val) {
+    if (val === null || val === undefined) return '--';
+    const abs = Math.abs(val);
+    const prefix = val < 0 ? '-' : '+';
+    if (abs >= 100000) return `${prefix}Rs ${(abs/100000).toFixed(2)}L`;
+    if (abs >= 1000) return `${prefix}Rs ${(abs/1000).toFixed(1)}K`;
+    return `${prefix}Rs ${abs.toFixed(0)}`;
+}
+
+function formatTime(ts) {
+    if (!ts) return '--';
+    return ts.replace('T', ' ').substring(0, 16);
+}
+
+// ─── Init ───────────────────────────────────────────
+
+refreshState();
+loadEquityCurve();
+refreshInterval = setInterval(refreshState, 30000); // refresh every 30s
+</script>
+{% endblock %}

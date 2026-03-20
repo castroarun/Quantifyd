@@ -193,6 +193,7 @@ KC6_DEFAULTS = {
     'position_size_pct': 0.10,
 
     # Safety
+    'enabled': True,
     'paper_trading_mode': True,
     'live_trading_enabled': False,
     'max_daily_orders': 5,
@@ -240,6 +241,7 @@ MARUTHI_DEFAULTS = {
     'option_otm_strikes': 1,  # 1 strike OTM for short options
 
     # Safety
+    'enabled': True,
     'paper_trading_mode': True,
     'live_trading_enabled': False,
     'max_daily_orders': 20,

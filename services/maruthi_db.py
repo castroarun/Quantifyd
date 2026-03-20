@@ -157,6 +157,13 @@ class MaruthiDB:
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
 
+                    -- Settings (persists paper/live mode across restarts)
+                    CREATE TABLE IF NOT EXISTS maruthi_settings (
+                        key VARCHAR(50) PRIMARY KEY,
+                        value TEXT NOT NULL,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+
                     -- Daily state snapshot
                     CREATE TABLE IF NOT EXISTS maruthi_daily_state (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -533,6 +540,33 @@ class MaruthiDB:
                     "SELECT trade_date, cumulative_pnl FROM maruthi_daily_state ORDER BY trade_date"
                 ).fetchall()
                 return [dict(r) for r in rows]
+            finally:
+                conn.close()
+
+    # =========================================================================
+    # Settings (persists mode across restarts)
+    # =========================================================================
+
+    def get_setting(self, key: str, default: str = None) -> str:
+        with db_lock:
+            conn = self._get_conn()
+            try:
+                row = conn.execute(
+                    "SELECT value FROM maruthi_settings WHERE key = ?", (key,)
+                ).fetchone()
+                return row['value'] if row else default
+            finally:
+                conn.close()
+
+    def set_setting(self, key: str, value: str):
+        with db_lock:
+            conn = self._get_conn()
+            try:
+                conn.execute(
+                    "INSERT OR REPLACE INTO maruthi_settings (key, value, updated_at) "
+                    "VALUES (?, ?, CURRENT_TIMESTAMP)", (key, value)
+                )
+                conn.commit()
             finally:
                 conn.close()
 

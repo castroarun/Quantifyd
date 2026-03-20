@@ -1,0 +1,306 @@
+// This Pine Script source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Quantifyd — BNF Fire Mode: Naked Option Selling (BB Squeeze-Fire)
+// Best config: STK0.5_H7_SL3x_SQ3_TF0.5_ML20k → 11.86% CAGR, 1.81% DD, Calmar 6.56
+
+//@version=6
+indicator("BNF Fire — Naked Sell Signals", overlay=true, max_labels_count=500, max_lines_count=500)
+
+// =============================================================================
+// INPUTS
+// =============================================================================
+
+grp_bb = "Bollinger Squeeze-Fire"
+bb_period     = input.int(10, "BB Period", group=grp_bb)
+bb_mult       = input.float(2.0, "BB Multiplier", step=0.5, group=grp_bb)
+squeeze_min   = input.int(3, "Min Squeeze Bars", minval=1, maxval=10, group=grp_bb,
+                 tooltip="Bars BB must be squeezing before fire triggers")
+
+grp_trend = "Trend / Direction"
+sma_period    = input.int(20, "SMA Period (Direction)", group=grp_trend)
+atr_period    = input.int(14, "ATR Period", group=grp_trend)
+trend_atr_min = input.float(0.5, "Trend ATR Threshold", step=0.1, group=grp_trend,
+                 tooltip="Min |close - SMA| / ATR to confirm trend. 0 = disabled")
+
+grp_trade = "Trade Parameters"
+strike_atr    = input.float(0.5, "Strike Distance (ATR)", step=0.1, group=grp_trade,
+                 tooltip="How far OTM the sold option strike is (in ATR units)")
+hold_bars     = input.int(7, "Max Hold Bars", minval=1, maxval=30, group=grp_trade)
+sl_mult       = input.float(3.0, "SL Multiplier (x premium)", step=0.5, group=grp_trade,
+                 tooltip="Exit if option value >= this * collected premium")
+min_gap       = input.int(5, "Min Gap Between Trades", minval=1, group=grp_trade)
+strike_step   = input.int(100, "BNF Strike Interval", group=grp_trade)
+
+grp_display = "Display"
+show_bb       = input.bool(true, "Show BB Bands", group=grp_display)
+show_sma      = input.bool(true, "Show SMA Line", group=grp_display)
+show_squeeze  = input.bool(true, "Show Squeeze Background", group=grp_display)
+show_signals  = input.bool(true, "Show Signal Labels", group=grp_display)
+show_holds    = input.bool(true, "Show Hold Period Lines", group=grp_display)
+show_table    = input.bool(true, "Show Info Table", group=grp_display)
+
+grp_colors = "Colors"
+bull_color    = input.color(#26a69a, "Bull (Sell PUT)", group=grp_colors)
+bear_color    = input.color(#ef5350, "Bear (Sell CALL)", group=grp_colors)
+squeeze_color = input.color(#ff9800, "Squeeze Zone", group=grp_colors)
+fire_color    = input.color(#ffeb3b, "Fire Signal", group=grp_colors)
+
+
+// =============================================================================
+// INDICATORS
+// =============================================================================
+
+// ATR
+atr = ta.atr(atr_period)
+
+// Bollinger Bands
+bb_sma = ta.sma(close, bb_period)
+bb_std = ta.stdev(close, bb_period)
+bb_upper = bb_sma + bb_mult * bb_std
+bb_lower = bb_sma - bb_mult * bb_std
+
+// BB Width & Width MA (squeeze detection)
+bb_width = (2 * bb_mult * bb_std) / bb_sma * 100
+bb_width_ma = ta.sma(bb_width, bb_period)
+
+// Squeeze: BB is narrowing (width < width MA)
+is_squeezing = bb_width < bb_width_ma
+is_expanding = bb_width > bb_width_ma
+
+// Count consecutive squeeze bars (looking back)
+var int squeeze_count = 0
+if is_squeezing
+    squeeze_count += 1
+else
+    squeeze_count := 0
+
+// Squeeze Fire: BB just expanded AND was squeezing for squeeze_min bars before
+squeeze_fire = is_expanding and squeeze_count[1] >= squeeze_min
+
+// SMA for direction
+sma_line = ta.sma(close, sma_period)
+
+// Trend confirmation: |close - SMA| / ATR >= threshold
+price_dist = math.abs(close - sma_line) / atr
+is_trending = trend_atr_min > 0 ? price_dist >= trend_atr_min : true
+
+// Directional signals
+long_signal  = squeeze_fire and is_trending and close > sma_line
+short_signal = squeeze_fire and is_trending and close < sma_line
+
+
+// =============================================================================
+// TRADE TRACKING (visual hold period)
+// =============================================================================
+
+var int bars_since_signal = 999
+var int last_direction = 0  // 1 = long (sell put), -1 = short (sell call)
+var float entry_spot = na
+var float trade_strike = na
+var int bars_in_trade = 0
+var int last_trade_end_bar = -min_gap
+
+in_trade = bars_since_signal <= hold_bars and bars_since_signal > 0
+
+// Track new signals
+if long_signal and (bar_index - last_trade_end_bar) >= min_gap
+    bars_since_signal := 0
+    last_direction := 1
+    entry_spot := close
+    // Sell OTM PUT: strike below spot
+    trade_strike := math.floor((close - strike_atr * atr) / strike_step) * strike_step
+    bars_in_trade := 0
+else if short_signal and (bar_index - last_trade_end_bar) >= min_gap
+    bars_since_signal := 0
+    last_direction := -1
+    entry_spot := close
+    // Sell OTM CALL: strike above spot
+    trade_strike := math.ceil((close + strike_atr * atr) / strike_step) * strike_step
+    bars_in_trade := 0
+else
+    bars_since_signal += 1
+
+// Track trade end
+if bars_since_signal == hold_bars
+    last_trade_end_bar := bar_index
+
+
+// =============================================================================
+// PLOTS
+// =============================================================================
+
+// Bollinger Bands
+p_bb_upper = plot(show_bb ? bb_upper : na, "BB Upper", color=color.new(#2196f3, 60), linewidth=1)
+p_bb_lower = plot(show_bb ? bb_lower : na, "BB Lower", color=color.new(#2196f3, 60), linewidth=1)
+fill(p_bb_upper, p_bb_lower, color=color.new(#2196f3, 92), title="BB Fill")
+
+// SMA
+plot(show_sma ? sma_line : na, "SMA(20)", color=color.new(#ff9800, 30), linewidth=2)
+
+// Squeeze background — orange when squeezing
+sq_bg = is_squeezing ? color.new(squeeze_color, 90) : na
+bgcolor(show_squeeze ? sq_bg : na, title="Squeeze Zone")
+
+// Fire background flash — brief yellow on fire bar
+fire_bg = squeeze_fire ? color.new(fire_color, 80) : na
+bgcolor(fire_bg, title="Fire Flash")
+
+// Hold period background
+hold_bg = (bars_since_signal >= 1 and bars_since_signal <= hold_bars) ?
+     (last_direction == 1 ? color.new(bull_color, 92) : color.new(bear_color, 92)) : na
+bgcolor(show_holds ? hold_bg : na, title="Hold Period")
+
+
+// =============================================================================
+// SIGNAL LABELS
+// =============================================================================
+
+if show_signals
+    if long_signal and (bar_index - last_trade_end_bar[1]) >= min_gap
+        put_strike = math.floor((close - strike_atr * atr) / strike_step) * strike_step
+        label.new(bar_index, low - atr * 0.5,
+             "FIRE LONG\nSell " + str.tostring(put_strike, "#") + " PE\n" +
+             str.tostring(hold_bars) + " bar hold",
+             style=label.style_label_up, color=bull_color,
+             textcolor=color.black, size=size.normal)
+
+    if short_signal and (bar_index - last_trade_end_bar[1]) >= min_gap
+        call_strike = math.ceil((close + strike_atr * atr) / strike_step) * strike_step
+        label.new(bar_index, high + atr * 0.5,
+             "FIRE SHORT\nSell " + str.tostring(call_strike, "#") + " CE\n" +
+             str.tostring(hold_bars) + " bar hold",
+             style=label.style_label_down, color=bear_color,
+             textcolor=color.white, size=size.normal)
+
+    // Hold end marker
+    if bars_since_signal == hold_bars
+        exit_text = last_direction == 1 ? "EXIT PUT" : "EXIT CALL"
+        exit_clr = last_direction == 1 ? bull_color : bear_color
+        label.new(bar_index, last_direction == 1 ? high + atr * 0.3 : low - atr * 0.3,
+             exit_text,
+             style=last_direction == 1 ? label.style_label_down : label.style_label_up,
+             color=color.new(exit_clr, 50), textcolor=color.white, size=size.tiny)
+
+
+// =============================================================================
+// ENTRY ARROWS
+// =============================================================================
+
+plotshape(long_signal and (bar_index - last_trade_end_bar[1]) >= min_gap,
+     "Fire Long (Sell PUT)", shape.triangleup, location.belowbar,
+     color=bull_color, size=size.normal, text="SELL PE")
+
+plotshape(short_signal and (bar_index - last_trade_end_bar[1]) >= min_gap,
+     "Fire Short (Sell CALL)", shape.triangledown, location.abovebar,
+     color=bear_color, size=size.normal, text="SELL CE")
+
+// Squeeze fire raw (no direction filter) — small diamond
+plotshape(squeeze_fire and not long_signal and not short_signal,
+     "Fire (No Trend)", shape.diamond, location.abovebar,
+     color=color.new(fire_color, 30), size=size.tiny, text="?")
+
+
+// =============================================================================
+// INFO TABLE
+// =============================================================================
+
+var table info = table.new(position.top_right, 2, 12, bgcolor=color.new(#1e1e1e, 10),
+                           border_width=1, border_color=color.new(#444444, 0))
+
+if barstate.islast and show_table
+    // Header
+    table.cell(info, 0, 0, "BNF FIRE", text_color=fire_color, text_size=size.normal,
+               bgcolor=color.new(#1e1e1e, 0))
+    table.cell(info, 1, 0, "NAKED SELL", text_color=#ff9800, text_size=size.normal,
+               bgcolor=color.new(#1e1e1e, 0))
+
+    // BB State
+    bb_state = is_squeezing ? "SQUEEZING" : "EXPANDING"
+    bb_state_clr = is_squeezing ? squeeze_color : #2196f3
+    table.cell(info, 0, 1, "BB State", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 1, bb_state, text_color=bb_state_clr, text_size=size.small)
+
+    // Squeeze Count
+    table.cell(info, 0, 2, "Squeeze Bars", text_color=color.white, text_size=size.small)
+    sq_clr = squeeze_count >= squeeze_min ? #26a69a : color.gray
+    table.cell(info, 1, 2, str.tostring(squeeze_count) + " / " + str.tostring(squeeze_min),
+               text_color=sq_clr, text_size=size.small)
+
+    // BB Width vs MA
+    table.cell(info, 0, 3, "BB Width", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 3, str.tostring(bb_width, "#.##") + " vs " + str.tostring(bb_width_ma, "#.##"),
+               text_color=is_squeezing ? squeeze_color : #2196f3, text_size=size.small)
+
+    // Direction
+    dir_text = close > sma_line ? "BULLISH" : "BEARISH"
+    dir_clr = close > sma_line ? bull_color : bear_color
+    table.cell(info, 0, 4, "Direction", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 4, dir_text, text_color=dir_clr, text_size=size.small)
+
+    // Trend Strength
+    trend_text = str.tostring(price_dist, "#.##") + " ATR"
+    trend_clr = is_trending ? #26a69a : color.gray
+    table.cell(info, 0, 5, "Trend Strength", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 5, trend_text + (is_trending ? " OK" : " WEAK"), text_color=trend_clr, text_size=size.small)
+
+    // Separator
+    table.cell(info, 0, 6, "-----", text_color=color.gray, text_size=size.small)
+    table.cell(info, 1, 6, "-----", text_color=color.gray, text_size=size.small)
+
+    // Current trade state
+    trade_state = "NO TRADE"
+    trade_clr = color.gray
+    if bars_since_signal >= 1 and bars_since_signal <= hold_bars
+        bars_left = hold_bars - bars_since_signal
+        if last_direction == 1
+            trade_state := "SELL PUT | " + str.tostring(bars_left) + " bars left"
+            trade_clr := bull_color
+        else
+            trade_state := "SELL CALL | " + str.tostring(bars_left) + " bars left"
+            trade_clr := bear_color
+
+    table.cell(info, 0, 7, "Trade", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 7, trade_state, text_color=trade_clr, text_size=size.small)
+
+    // Strike
+    strike_text = na(trade_strike) or not (bars_since_signal >= 0 and bars_since_signal <= hold_bars) ?
+         "---" : str.tostring(trade_strike, "#")
+    table.cell(info, 0, 8, "Strike", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 8, strike_text, text_color=color.white, text_size=size.small)
+
+    // SMA / ATR
+    table.cell(info, 0, 9, "SMA(20)", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 9, str.tostring(sma_line, "#.#"), text_color=#ff9800, text_size=size.small)
+
+    table.cell(info, 0, 10, "ATR(14)", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 10, str.tostring(atr, "#.#"), text_color=color.white, text_size=size.small)
+
+    // Config reminder
+    table.cell(info, 0, 11, "Config", text_color=color.gray, text_size=size.tiny)
+    table.cell(info, 1, 11,
+         "STK" + str.tostring(strike_atr, "#.#") +
+         " H" + str.tostring(hold_bars) +
+         " SL" + str.tostring(sl_mult, "#.#") + "x" +
+         " SQ" + str.tostring(squeeze_min) +
+         " TF" + str.tostring(trend_atr_min, "#.#"),
+         text_color=color.gray, text_size=size.tiny)
+
+
+// =============================================================================
+// ALERTS
+// =============================================================================
+
+alertcondition(long_signal,
+     title="Fire Long — Sell PUT",
+     message="BNF FIRE: Squeeze-Fire LONG at {{close}}. SELL OTM PUT.")
+
+alertcondition(short_signal,
+     title="Fire Short — Sell CALL",
+     message="BNF FIRE: Squeeze-Fire SHORT at {{close}}. SELL OTM CALL.")
+
+alertcondition(squeeze_fire,
+     title="Squeeze Fire (any direction)",
+     message="BNF FIRE: BB Squeeze-Fire detected at {{close}}. Check direction for trade.")
+
+alertcondition(is_squeezing and squeeze_count == squeeze_min,
+     title="Squeeze Ready (min bars met)",
+     message="BNF: Squeeze min bars met. FIRE signal will trigger on next expansion bar.")

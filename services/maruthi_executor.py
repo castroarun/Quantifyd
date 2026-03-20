@@ -1008,7 +1008,9 @@ class MaruthiExecutor:
             'recent_trades': recent_trades,
             'config': {
                 'paper_mode': self.config.get('paper_trading_mode', True),
+                'paper_trading_mode': self.config.get('paper_trading_mode', True),
                 'live_enabled': self.config.get('live_trading_enabled', False),
+                'enabled': self.config.get('enabled', True),
                 'max_futures': self.config.get('max_futures_lots', 5),
                 'hard_sl_atr_mult': self.config.get('hard_sl_atr_mult', 1.0),
                 'hard_sl_buffer_pts': round(resolve_sl_buffer(self.config, self._current_master_atr), 1),
