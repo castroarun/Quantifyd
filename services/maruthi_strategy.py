@@ -15,11 +15,12 @@ Signal types:
 - MASTER_BEAR: Master ST flips bearish → new BEAR regime
 - CHILD_BULL: Child ST flips bullish within regime
 - CHILD_BEAR: Child ST flips bearish within regime
-- HARD_SL: Price breaches master ST ± buffer → go FLAT
+- HARD_SL: Price breaches master ST ± buffer → go FLAT, close ALL positions
 
-Hard SL is a TRAILING stop: it follows the master SuperTrend line each candle.
+Hard SL is a TRAILING stop checked on EVERY TICK (not candle close):
 - BULL: SL = master_st - buffer, only moves UP (never down)
 - BEAR: SL = master_st + buffer, only moves DOWN (never up)
+- On trigger: close ALL positions including last shorted option (no exceptions)
 
 All computation is pure — no API calls, no DB writes.
 """

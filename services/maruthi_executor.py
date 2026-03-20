@@ -736,12 +736,13 @@ class MaruthiExecutor:
                     results.append(f"Short PE {action['strike']}")
 
             elif act == 'HARD_SL_EXIT':
+                # Hard SL = close EVERYTHING, no exceptions
                 closed = self.close_all_positions(
                     exit_reason='HARD_SL',
-                    keep_last_option=True,
+                    keep_last_option=False,
                 )
                 self.db.update_regime(regime='FLAT', last_signal_time=datetime.now().isoformat())
-                results.append(f"HARD SL HIT — closed {closed} positions, now FLAT")
+                results.append(f"HARD SL HIT — closed ALL {closed} positions, now FLAT")
 
         # Log signal
         self.db.log_signal(

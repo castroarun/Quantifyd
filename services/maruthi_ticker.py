@@ -286,6 +286,79 @@ class MaruthiTicker:
                     self._last_ltp = ltp
                     self.aggregator.process_tick(ltp, volume, timestamp)
 
+                    # Real-time hard SL check on every tick
+                    self._check_hard_sl_tick(ltp)
+
+    def _check_hard_sl_tick(self, ltp: float):
+        """
+        Instant tick-level hard SL check.
+
+        Fires immediately when price breaches the trailing hard SL level,
+        without waiting for 30-min candle close. Closes ALL positions.
+        """
+        try:
+            from services.maruthi_db import get_maruthi_db
+            db = get_maruthi_db()
+            regime = db.get_regime()
+
+            current_regime = regime.get('regime', 'FLAT')
+            hard_sl = regime.get('hard_sl_price', 0)
+
+            if current_regime == 'FLAT' or not hard_sl:
+                return
+
+            sl_hit = False
+            if current_regime == 'BULL' and ltp <= hard_sl:
+                sl_hit = True
+            elif current_regime == 'BEAR' and ltp >= hard_sl:
+                sl_hit = True
+
+            if not sl_hit:
+                return
+
+            # Prevent duplicate triggers (check if already went FLAT)
+            regime = db.get_regime()  # Re-read to avoid race
+            if regime.get('regime') == 'FLAT':
+                return
+
+            logger.warning(f"[MaruthiTicker] HARD SL HIT! LTP={ltp} SL={hard_sl} Regime={current_regime}")
+            logger.warning(f"[MaruthiTicker] Closing ALL positions immediately — going FLAT")
+
+            from services.maruthi_executor import MaruthiExecutor
+            executor = MaruthiExecutor(config=self.config)
+
+            # Close ALL positions — no exceptions on hard SL
+            closed = executor.close_all_positions(
+                exit_reason='HARD_SL',
+                keep_last_option=False,  # Hard SL = close EVERYTHING
+            )
+
+            # Set regime to FLAT
+            db.update_regime(
+                regime='FLAT',
+                last_signal_time=datetime.now().isoformat(),
+            )
+
+            # Log signal
+            db.log_signal(
+                signal_type='HARD_SL',
+                regime='FLAT',
+                master_direction=regime.get('master_direction', 0),
+                child_direction=regime.get('child_direction', 0),
+                master_st_value=regime.get('master_st_value', 0),
+                child_st_value=0,
+                candle_time=datetime.now().isoformat(),
+                candle_high=ltp,
+                candle_low=ltp,
+                candle_close=ltp,
+                action_taken=f'TICK HARD SL: closed {closed} positions at LTP={ltp}',
+            )
+
+            logger.warning(f"[MaruthiTicker] HARD SL complete: closed {closed} positions, now FLAT")
+
+        except Exception as e:
+            logger.error(f"[MaruthiTicker] Hard SL tick check error: {e}", exc_info=True)
+
     def _on_connect(self, ws, response):
         """Handle WebSocket connect."""
         logger.info(f"[MaruthiTicker] Connected to KiteTicker")
