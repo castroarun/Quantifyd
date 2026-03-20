@@ -198,12 +198,12 @@
                                 <tr>
                                     <th>Type</th>
                                     <th>Symbol</th>
-                                    <th>Direction</th>
+                                    <th>Dir</th>
                                     <th>Qty</th>
                                     <th>Entry</th>
+                                    <th>LTP</th>
+                                    <th>P&L</th>
                                     <th>SL</th>
-                                    <th>Strike</th>
-                                    <th>Expiry</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -406,22 +406,22 @@ function updateUI(data) {
     document.getElementById('totalPnl').textContent = '₹' + pnl.toLocaleString('en-IN');
     document.getElementById('totalPnl').style.color = pnl >= 0 ? '#3fb950' : '#f85149';
 
-    // Positions table
+    // Positions table (basic — MTM overlay updates LTP + P&L)
     const allPos = [...futures, ...shortOpts, ...protOpts, ...(data.pending_orders || [])];
     const tbody = document.getElementById('positionsBody');
     if (allPos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No active positions</td></tr>';
     } else {
         tbody.innerHTML = allPos.map(p => `
-            <tr>
+            <tr data-pos-id="${p.id}">
                 <td><span class="pos-${p.position_type}">${p.position_type}</span></td>
-                <td>${p.tradingsymbol || '—'}</td>
+                <td><small>${p.tradingsymbol || '—'}</small></td>
                 <td>${p.transaction_type}</td>
                 <td>${p.qty}</td>
                 <td>₹${(p.entry_price || 0).toFixed(1)}</td>
+                <td class="pos-ltp">—</td>
+                <td class="pos-pnl">—</td>
                 <td>${p.sl_price ? '₹' + p.sl_price.toFixed(1) : '—'}</td>
-                <td>${p.strike ? p.strike.toFixed(0) : '—'}</td>
-                <td>${p.expiry_date || '—'}</td>
                 <td><span class="badge bg-${p.status === 'ACTIVE' ? 'success' : p.status === 'PENDING' ? 'warning' : 'secondary'}">${p.status}</span></td>
             </tr>
         `).join('');
@@ -611,11 +611,53 @@ async function loadEquityCurve() {
     }
 }
 
+// ---- Live MTM ----
+async function loadMTM() {
+    try {
+        const resp = await fetch('/api/maruthi/mtm');
+        const data = await resp.json();
+        if (data.error) return;
+
+        // Update per-position LTP and P&L
+        (data.positions || []).forEach(p => {
+            const row = document.querySelector(`tr[data-pos-id="${p.id}"]`);
+            if (!row) return;
+            const ltpCell = row.querySelector('.pos-ltp');
+            const pnlCell = row.querySelector('.pos-pnl');
+            if (ltpCell) ltpCell.textContent = p.ltp > 0 ? '₹' + p.ltp.toFixed(1) : '—';
+            if (pnlCell) {
+                const pnl = p.pnl || 0;
+                const color = pnl >= 0 ? '#3fb950' : '#f85149';
+                const sign = pnl >= 0 ? '+' : '';
+                pnlCell.innerHTML = `<span style="color:${color}">${sign}₹${pnl.toLocaleString('en-IN')}</span>`;
+                if (p.pnl_pct) {
+                    pnlCell.innerHTML += `<br><small style="color:${color}">${sign}${p.pnl_pct}%</small>`;
+                }
+            }
+        });
+
+        // Update total MTM in header
+        const unrealized = data.total_unrealized || 0;
+        const realized = data.total_realized || 0;
+        const total = data.total_mtm || 0;
+        const color = total >= 0 ? '#3fb950' : '#f85149';
+        const sign = total >= 0 ? '+' : '';
+
+        const totalEl = document.getElementById('totalPnl');
+        totalEl.innerHTML = `<span style="color:${color}">${sign}₹${total.toLocaleString('en-IN')}</span>`;
+        totalEl.innerHTML += `<br><small class="text-muted" style="font-size:0.6rem">Unrealized: ${sign}₹${unrealized.toLocaleString('en-IN')}</small>`;
+    } catch (e) {
+        console.error('MTM error:', e);
+    }
+}
+
 // ---- Init ----
 loadState();
 loadEquityCurve();
 loadTickerStatus();
+loadMTM();
 setInterval(loadState, 30000); // Refresh every 30s
 setInterval(loadTickerStatus, 10000); // Ticker status every 10s
+setInterval(loadMTM, 10000); // MTM refresh every 10s
 </script>
 {% endblock %}

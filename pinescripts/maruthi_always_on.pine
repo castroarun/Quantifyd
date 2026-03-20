@@ -1,0 +1,315 @@
+// This Pine Script source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Quantifyd - Maruthi Always-On Strategy Indicator
+// Dual SuperTrend (7,5 Master + 7,2 Child) with regime detection
+
+//@version=6
+indicator("Maruthi Always-On", overlay=true, max_labels_count=500, max_lines_count=500)
+
+// =============================================================================
+// INPUTS
+// =============================================================================
+
+grp_st = "SuperTrend Settings"
+master_period = input.int(7, "Master ATR Period", group=grp_st)
+master_mult   = input.float(5.0, "Master Multiplier", step=0.5, group=grp_st)
+child_period  = input.int(7, "Child ATR Period", group=grp_st)
+child_mult    = input.float(2.0, "Child Multiplier", step=0.5, group=grp_st)
+
+grp_sl = "Hard Stop Loss"
+sl_buffer     = input.float(50.0, "SL Buffer (points from Master ST)", group=grp_sl)
+show_sl       = input.bool(true, "Show Hard SL Line", group=grp_sl)
+
+grp_options = "Option Strikes"
+strike_interval = input.int(100, "Strike Interval", group=grp_options)
+show_strikes    = input.bool(true, "Show OTM Strike on Signal", group=grp_options)
+
+grp_display = "Display"
+show_master   = input.bool(true, "Show Master ST Line", group=grp_display)
+show_child    = input.bool(true, "Show Child ST Line", group=grp_display)
+show_regime   = input.bool(true, "Show Regime Background", group=grp_display)
+show_signals  = input.bool(true, "Show Signal Labels", group=grp_display)
+show_table    = input.bool(true, "Show Info Table", group=grp_display)
+
+grp_colors = "Colors"
+bull_color    = input.color(#26a69a, "Bull", group=grp_colors)
+bear_color    = input.color(#ef5350, "Bear", group=grp_colors)
+child_bull_c  = input.color(#66bb6a, "Child Bull", group=grp_colors)
+child_bear_c  = input.color(#ff7043, "Child Bear", group=grp_colors)
+sl_color      = input.color(#ffeb3b, "Hard SL", group=grp_colors)
+
+
+// =============================================================================
+// SUPERTREND CALCULATION (with band locking — matches our Python engine)
+// =============================================================================
+
+// --- Master SuperTrend (7, 5) ---
+m_atr = ta.atr(master_period)
+m_hl2 = (high + low) / 2
+m_basic_upper = m_hl2 + master_mult * m_atr
+m_basic_lower = m_hl2 - master_mult * m_atr
+
+var float m_final_upper = na
+var float m_final_lower = na
+var int m_dir = 1
+var float m_st = na
+
+// Band locking
+m_final_lower := na(m_final_lower[1]) ? m_basic_lower :
+     (m_basic_lower > m_final_lower[1] or close[1] < m_final_lower[1]) ? m_basic_lower : m_final_lower[1]
+m_final_upper := na(m_final_upper[1]) ? m_basic_upper :
+     (m_basic_upper < m_final_upper[1] or close[1] > m_final_upper[1]) ? m_basic_upper : m_final_upper[1]
+
+// Direction
+if m_dir[1] == 1
+    if close < m_final_lower
+        m_dir := -1
+        m_st := m_final_upper
+    else
+        m_dir := 1
+        m_st := m_final_lower
+else
+    if close > m_final_upper
+        m_dir := 1
+        m_st := m_final_lower
+    else
+        m_dir := -1
+        m_st := m_final_upper
+
+
+// --- Child SuperTrend (7, 2) ---
+c_atr = ta.atr(child_period)
+c_hl2 = (high + low) / 2
+c_basic_upper = c_hl2 + child_mult * c_atr
+c_basic_lower = c_hl2 - child_mult * c_atr
+
+var float c_final_upper = na
+var float c_final_lower = na
+var int c_dir = 1
+var float c_st = na
+
+c_final_lower := na(c_final_lower[1]) ? c_basic_lower :
+     (c_basic_lower > c_final_lower[1] or close[1] < c_final_lower[1]) ? c_basic_lower : c_final_lower[1]
+c_final_upper := na(c_final_upper[1]) ? c_basic_upper :
+     (c_basic_upper < c_final_upper[1] or close[1] > c_final_upper[1]) ? c_basic_upper : c_final_upper[1]
+
+if c_dir[1] == 1
+    if close < c_final_lower
+        c_dir := -1
+        c_st := c_final_upper
+    else
+        c_dir := 1
+        c_st := c_final_lower
+else
+    if close > c_final_upper
+        c_dir := 1
+        c_st := c_final_lower
+    else
+        c_dir := -1
+        c_st := c_final_upper
+
+
+// =============================================================================
+// REGIME & SIGNAL DETECTION
+// =============================================================================
+
+master_flip_bull = m_dir == 1 and m_dir[1] == -1
+master_flip_bear = m_dir == -1 and m_dir[1] == 1
+child_flip_bull  = c_dir == 1 and c_dir[1] == -1
+child_flip_bear  = c_dir == -1 and c_dir[1] == 1
+
+// Track regime
+var string regime = "FLAT"
+if master_flip_bull
+    regime := "BULL"
+if master_flip_bear
+    regime := "BEAR"
+
+// Hard SL
+hard_sl = regime == "BULL" ? m_st - sl_buffer : regime == "BEAR" ? m_st + sl_buffer : na
+hard_sl_hit = (regime == "BULL" and low <= hard_sl) or (regime == "BEAR" and high >= hard_sl)
+
+if hard_sl_hit
+    regime := "FLAT"
+
+
+// =============================================================================
+// PLOTS
+// =============================================================================
+
+// Master SuperTrend line
+m_color = m_dir == 1 ? bull_color : bear_color
+plot(show_master ? m_st : na, "Master ST (7,5)", color=m_color, linewidth=3, style=plot.style_linebr)
+
+// Child SuperTrend line
+c_color = c_dir == 1 ? child_bull_c : child_bear_c
+plot(show_child ? c_st : na, "Child ST (7,2)", color=c_color, linewidth=1, style=plot.style_linebr)
+
+// Hard SL line
+plot(show_sl and regime != "FLAT" ? hard_sl : na, "Hard SL", color=sl_color, linewidth=1, style=plot.style_cross)
+
+// Regime background
+regime_bg = regime == "BULL" ? color.new(bull_color, 93) : regime == "BEAR" ? color.new(bear_color, 93) : na
+bgcolor(show_regime ? regime_bg : na, title="Regime Background")
+
+
+// =============================================================================
+// SIGNAL LABELS
+// =============================================================================
+
+if show_signals
+    // Master flips
+    if master_flip_bull
+        label.new(bar_index, low - m_atr * 0.5,
+             "MASTER BULL\nShort FUT above " + str.tostring(high, "#"),
+             style=label.style_label_up, color=bull_color, textcolor=color.black, size=size.normal)
+
+    if master_flip_bear
+        label.new(bar_index, high + m_atr * 0.5,
+             "MASTER BEAR\nShort FUT below " + str.tostring(low, "#"),
+             style=label.style_label_down, color=bear_color, textcolor=color.white, size=size.normal)
+
+    // Child flips — action depends on regime
+    if child_flip_bull and not master_flip_bull and not master_flip_bear
+        if regime == "BULL"
+            // Add long futures
+            label.new(bar_index, low - m_atr * 0.3,
+                 "CHILD BULL\nBuy FUT above " + str.tostring(high, "#"),
+                 style=label.style_label_up, color=child_bull_c, textcolor=color.black, size=size.small)
+        else if regime == "BEAR"
+            // Short OTM put
+            put_strike = math.floor(close / strike_interval) * strike_interval
+            label.new(bar_index, low - m_atr * 0.3,
+                 "CHILD BULL\nShort " + str.tostring(put_strike, "#") + " PE",
+                 style=label.style_label_up, color=child_bull_c, textcolor=color.black, size=size.small)
+
+    if child_flip_bear and not master_flip_bull and not master_flip_bear
+        if regime == "BULL"
+            // Short OTM call
+            call_strike = math.ceil(close / strike_interval) * strike_interval
+            label.new(bar_index, high + m_atr * 0.3,
+                 "CHILD BEAR\nShort " + str.tostring(call_strike, "#") + " CE",
+                 style=label.style_label_down, color=child_bear_c, textcolor=color.white, size=size.small)
+        else if regime == "BEAR"
+            // Add short futures
+            label.new(bar_index, high + m_atr * 0.3,
+                 "CHILD BEAR\nShort FUT below " + str.tostring(low, "#"),
+                 style=label.style_label_down, color=child_bear_c, textcolor=color.white, size=size.small)
+
+    // Hard SL hit
+    if hard_sl_hit
+        label.new(bar_index, regime[1] == "BULL" ? low - m_atr * 0.5 : high + m_atr * 0.5,
+             "HARD SL HIT\nGO FLAT",
+             style=regime[1] == "BULL" ? label.style_label_up : label.style_label_down,
+             color=#ffeb3b, textcolor=color.black, size=size.normal)
+
+
+// =============================================================================
+// ENTRY ARROWS
+// =============================================================================
+
+// Master regime change arrows
+plotshape(master_flip_bull, "Master Bull", shape.triangleup, location.belowbar,
+          color=bull_color, size=size.normal, text="BULL")
+plotshape(master_flip_bear, "Master Bear", shape.triangledown, location.abovebar,
+          color=bear_color, size=size.normal, text="BEAR")
+
+// Child flip arrows (smaller)
+plotshape(child_flip_bull and not master_flip_bull and not master_flip_bear, "Child Bull",
+          shape.triangleup, location.belowbar, color=child_bull_c, size=size.small)
+plotshape(child_flip_bear and not master_flip_bull and not master_flip_bear, "Child Bear",
+          shape.triangledown, location.abovebar, color=child_bear_c, size=size.small)
+
+// Hard SL
+plotshape(hard_sl_hit, "Hard SL", shape.xcross, location.belowbar,
+          color=#ffeb3b, size=size.normal, text="SL")
+
+
+// =============================================================================
+// INFO TABLE
+// =============================================================================
+
+var table info = table.new(position.top_right, 2, 10, bgcolor=color.new(#1e1e1e, 10),
+                           border_width=1, border_color=color.new(#444444, 0))
+
+if barstate.islast and show_table
+    // Header
+    table.cell(info, 0, 0, "MARUTHI", text_color=bull_color, text_size=size.normal,
+               bgcolor=color.new(#1e1e1e, 0))
+    table.cell(info, 1, 0, "ALWAYS-ON", text_color=#ff9800, text_size=size.normal,
+               bgcolor=color.new(#1e1e1e, 0))
+
+    // Regime
+    r_clr = regime == "BULL" ? bull_color : regime == "BEAR" ? bear_color : color.gray
+    table.cell(info, 0, 1, "Regime", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 1, regime, text_color=r_clr, text_size=size.small)
+
+    // Master ST
+    m_dir_text = m_dir == 1 ? "BULL " + str.tostring(m_st, "#.#") : "BEAR " + str.tostring(m_st, "#.#")
+    m_dir_clr = m_dir == 1 ? bull_color : bear_color
+    table.cell(info, 0, 2, "Master (7,5)", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 2, m_dir_text, text_color=m_dir_clr, text_size=size.small)
+
+    // Child ST
+    c_dir_text = c_dir == 1 ? "BULL " + str.tostring(c_st, "#.#") : "BEAR " + str.tostring(c_st, "#.#")
+    c_dir_clr = c_dir == 1 ? child_bull_c : child_bear_c
+    table.cell(info, 0, 3, "Child (7,2)", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 3, c_dir_text, text_color=c_dir_clr, text_size=size.small)
+
+    // Hard SL
+    sl_text = regime != "FLAT" ? str.tostring(hard_sl, "#.#") : "—"
+    table.cell(info, 0, 4, "Hard SL", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 4, sl_text, text_color=sl_color, text_size=size.small)
+
+    // Separator
+    table.cell(info, 0, 5, "─────", text_color=color.gray, text_size=size.small)
+    table.cell(info, 1, 5, "─────", text_color=color.gray, text_size=size.small)
+
+    // Current action hint
+    action = "WAIT"
+    action_clr = color.gray
+    if regime == "BULL"
+        if c_dir == 1
+            action := "Hold LONG FUT"
+            action_clr := bull_color
+        else
+            action := "Hold + Short CE"
+            action_clr := child_bear_c
+    else if regime == "BEAR"
+        if c_dir == -1
+            action := "Hold SHORT FUT"
+            action_clr := bear_color
+        else
+            action := "Hold + Short PE"
+            action_clr := child_bull_c
+
+    table.cell(info, 0, 6, "Action", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 6, action, text_color=action_clr, text_size=size.small)
+
+    // Price
+    table.cell(info, 0, 7, "Close", text_color=color.white, text_size=size.small)
+    table.cell(info, 1, 7, str.tostring(close, "#.#"), text_color=color.white, text_size=size.small)
+
+
+// =============================================================================
+// ALERTS
+// =============================================================================
+
+alertcondition(master_flip_bull,
+     title="Master Bullish",
+     message="MARUTHI: Master ST(7,5) turned BULLISH at {{close}}. BUY futures above {{high}}.")
+
+alertcondition(master_flip_bear,
+     title="Master Bearish",
+     message="MARUTHI: Master ST(7,5) turned BEARISH at {{close}}. SHORT futures below {{low}}.")
+
+alertcondition(child_flip_bull,
+     title="Child Bullish",
+     message="MARUTHI: Child ST(7,2) turned BULLISH at {{close}}. Check regime for action.")
+
+alertcondition(child_flip_bear,
+     title="Child Bearish",
+     message="MARUTHI: Child ST(7,2) turned BEARISH at {{close}}. Check regime for action.")
+
+alertcondition(hard_sl_hit,
+     title="Hard SL Hit",
+     message="MARUTHI: HARD STOP LOSS HIT at {{close}}! Close all positions. GO FLAT.")

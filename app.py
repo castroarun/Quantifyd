@@ -2272,6 +2272,106 @@ def api_maruthi_equity_curve():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/maruthi/mtm')
+def api_maruthi_mtm():
+    """Get live MTM P&L for all active positions."""
+    try:
+        from services.maruthi_db import get_maruthi_db
+        from services.kite_service import get_kite, is_authenticated
+
+        db = get_maruthi_db()
+        all_pos = db.get_active_positions()
+
+        if not all_pos:
+            return jsonify({'positions': [], 'total_mtm': 0, 'total_unrealized': 0})
+
+        # Try to get live prices from ticker first, then Kite API
+        ltp_map = {}
+        try:
+            from services.maruthi_ticker import get_maruthi_ticker
+            ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+            if ticker._last_ltp > 0:
+                ltp_map['SPOT'] = ticker._last_ltp
+        except Exception:
+            pass
+
+        # For live mode or if we need option prices, use Kite quotes
+        if is_authenticated():
+            try:
+                kite = get_kite()
+                symbols_to_quote = []
+                for pos in all_pos:
+                    sym = pos['tradingsymbol']
+                    if '_PAPER' not in sym:
+                        symbols_to_quote.append(f"NFO:{sym}")
+
+                if symbols_to_quote:
+                    quotes = kite.quote(symbols_to_quote)
+                    for key, q in quotes.items():
+                        sym = key.split(':')[1] if ':' in key else key
+                        ltp_map[sym] = q.get('last_price', 0)
+            except Exception as e:
+                logger.warning(f"MTM quote fetch failed: {e}")
+
+        # Compute MTM for each position
+        spot_ltp = ltp_map.get('SPOT', 0)
+        result_positions = []
+        total_unrealized = 0
+
+        for pos in all_pos:
+            sym = pos['tradingsymbol']
+            entry = pos['entry_price'] or 0
+            qty = pos['qty'] or 0
+
+            # Get LTP for this instrument
+            if '_PAPER' in sym and pos['position_type'] == 'FUTURES':
+                ltp = spot_ltp
+            else:
+                ltp = ltp_map.get(sym, 0)
+
+            # Calculate unrealized P&L
+            if ltp > 0 and entry > 0:
+                if pos['transaction_type'] == 'BUY':
+                    pnl = (ltp - entry) * qty
+                else:  # SELL
+                    pnl = (entry - ltp) * qty
+            else:
+                pnl = 0
+
+            total_unrealized += pnl
+
+            result_positions.append({
+                'id': pos['id'],
+                'position_type': pos['position_type'],
+                'tradingsymbol': sym,
+                'transaction_type': pos['transaction_type'],
+                'qty': qty,
+                'entry_price': entry,
+                'ltp': ltp,
+                'pnl': round(pnl, 2),
+                'pnl_pct': round((pnl / (entry * qty) * 100), 2) if entry * qty > 0 else 0,
+                'sl_price': pos.get('sl_price'),
+                'strike': pos.get('strike'),
+                'expiry_date': pos.get('expiry_date'),
+                'status': pos.get('status'),
+            })
+
+        # Add realized P&L from closed trades
+        stats = db.get_stats()
+        realized = stats.get('total_pnl', 0)
+
+        return jsonify({
+            'positions': result_positions,
+            'total_unrealized': round(total_unrealized, 2),
+            'total_realized': round(realized, 2),
+            'total_mtm': round(total_unrealized + realized, 2),
+            'spot_ltp': spot_ltp,
+        })
+    except Exception as e:
+        logger.error(f"MTM error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/maruthi/toggle-mode', methods=['POST'])
 def api_maruthi_toggle_mode():
     """Toggle Maruthi between paper and live trading."""
