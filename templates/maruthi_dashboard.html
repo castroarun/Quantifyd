@@ -159,7 +159,7 @@
             <div class="stat-card">
                 <div class="stat-label">Trailing Hard SL</div>
                 <div id="hardSL" class="stat-value text-warning">—</div>
-                <small class="text-muted">Trails Master ST ± 50 pts</small>
+                <small id="slBufferInfo" class="text-muted">1.0× ATR buffer</small>
             </div>
         </div>
         <div class="col-md-2">
@@ -377,6 +377,14 @@ function updateUI(data) {
 
     document.getElementById('masterST').textContent = regime.master_st_value ? regime.master_st_value.toFixed(1) : '—';
     document.getElementById('hardSL').textContent = regime.hard_sl_price ? '₹' + regime.hard_sl_price.toFixed(1) : '—';
+    // Show SL buffer info
+    const cfg = data.config || {};
+    const bufPts = cfg.hard_sl_buffer_pts || 0;
+    const atrMult = cfg.hard_sl_atr_mult || 1.0;
+    const atrVal = cfg.master_atr || 0;
+    document.getElementById('slBufferInfo').textContent = bufPts > 0
+        ? `${atrMult}× ATR = ${bufPts} pts (ATR ${atrVal})`
+        : `${atrMult}× ATR buffer`;
 
     const masterDir = regime.master_direction;
     const childDir = regime.child_direction;

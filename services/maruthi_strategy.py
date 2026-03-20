@@ -65,6 +65,7 @@ def compute_dual_supertrend(df: pd.DataFrame,
 
     Returns df with columns:
     - master_st, master_dir (1=bull, -1=bear)
+    - master_atr (raw ATR used for SL buffer calculation)
     - child_st, child_dir
     - master_flip_bull, master_flip_bear
     - child_flip_bull, child_flip_bear
@@ -73,6 +74,10 @@ def compute_dual_supertrend(df: pd.DataFrame,
 
     # Master SuperTrend (7, 5)
     df['master_st'], df['master_dir'] = calc_supertrend(df, master_period, master_mult)
+
+    # Store master ATR for hard SL buffer calculation
+    from services.technical_indicators import calc_atr
+    df['master_atr'] = calc_atr(df, master_period)
 
     # Child SuperTrend (7, 2)
     df['child_st'], df['child_dir'] = calc_supertrend(df, child_period, child_mult)
@@ -87,14 +92,16 @@ def compute_dual_supertrend(df: pd.DataFrame,
 
 
 def detect_signals(df: pd.DataFrame, current_regime: str,
-                   hard_sl_buffer: float = 50.0) -> List[MaruthiSignal]:
+                   hard_sl_buffer: float = 0.0,
+                   hard_sl_atr_mult: float = 1.0) -> List[MaruthiSignal]:
     """
     Scan the latest candle(s) for signals.
 
     Args:
         df: DataFrame with dual SuperTrend computed (use compute_dual_supertrend first)
         current_regime: 'BULL', 'BEAR', or 'FLAT'
-        hard_sl_buffer: Points buffer for hard stop loss from master ST line
+        hard_sl_buffer: Fixed points buffer (0 = use ATR-based)
+        hard_sl_atr_mult: ATR multiplier for SL distance (used when hard_sl_buffer=0)
 
     Returns:
         List of signals (usually 0 or 1 per candle)
@@ -118,9 +125,12 @@ def detect_signals(df: pd.DataFrame, current_regime: str,
     master_dir = int(latest['master_dir'])
     child_dir = int(latest['child_dir'])
 
+    # Resolve SL buffer: fixed points or ATR-based
+    sl_buffer = hard_sl_buffer if hard_sl_buffer > 0 else hard_sl_atr_mult * float(latest.get('master_atr', 100))
+
     # Check hard SL first (highest priority)
     if current_regime == 'BULL':
-        hard_sl = master_st - hard_sl_buffer
+        hard_sl = master_st - sl_buffer
         if latest['low'] <= hard_sl:
             signals.append(MaruthiSignal(
                 MaruthiSignal.HARD_SL, candle,
@@ -129,7 +139,7 @@ def detect_signals(df: pd.DataFrame, current_regime: str,
             return signals  # Hard SL overrides everything
 
     elif current_regime == 'BEAR':
-        hard_sl = master_st + hard_sl_buffer
+        hard_sl = master_st + sl_buffer
         if latest['high'] >= hard_sl:
             signals.append(MaruthiSignal(
                 MaruthiSignal.HARD_SL, candle,
@@ -262,9 +272,23 @@ def get_protective_strike(spot_price: float, direction: str, otm_pct: float = 0.
         return float(int(np.ceil(target / strike_interval)) * strike_interval)
 
 
+def resolve_sl_buffer(config: dict, master_atr: float = 100.0) -> float:
+    """
+    Resolve the hard SL buffer in points.
+
+    If hard_sl_buffer > 0 in config, use that fixed value.
+    Otherwise use hard_sl_atr_mult × master_atr.
+    """
+    fixed = config.get('hard_sl_buffer', 0)
+    if fixed > 0:
+        return fixed
+    mult = config.get('hard_sl_atr_mult', 1.0)
+    return round(mult * master_atr, 1)
+
+
 def determine_actions(signal: MaruthiSignal, current_regime: str,
                       active_futures_count: int, max_futures: int = 5,
-                      config: dict = None) -> List[dict]:
+                      config: dict = None, master_atr: float = 100.0) -> List[dict]:
     """
     Determine what actions to take based on a signal.
 
@@ -280,7 +304,7 @@ def determine_actions(signal: MaruthiSignal, current_regime: str,
     strike_interval = cfg.get('strike_interval', 100)
     otm_strikes = cfg.get('option_otm_strikes', 1)
     otm_pct = cfg.get('protective_otm_pct', 0.05)
-    hard_sl_buffer = cfg.get('hard_sl_buffer', 50)
+    sl_buffer = resolve_sl_buffer(cfg, master_atr)
     actions = []
     spot = signal.candle['close']
 
@@ -292,7 +316,7 @@ def determine_actions(signal: MaruthiSignal, current_regime: str,
         # 2. Buy futures with trigger above candle high
         trigger = compute_trigger_price(signal.candle, 'BUY')
         limit = compute_limit_price(trigger, 'BUY')
-        hard_sl = compute_hard_sl(signal.master_st, 'BULL', hard_sl_buffer)
+        hard_sl = compute_hard_sl(signal.master_st, 'BULL', sl_buffer)
         actions.append({
             'action': 'BUY_FUTURES',
             'trigger_price': trigger,
@@ -308,7 +332,7 @@ def determine_actions(signal: MaruthiSignal, current_regime: str,
         # Short futures with trigger below candle low
         trigger = compute_trigger_price(signal.candle, 'SELL')
         limit = compute_limit_price(trigger, 'SELL')
-        hard_sl = compute_hard_sl(signal.master_st, 'BEAR', hard_sl_buffer)
+        hard_sl = compute_hard_sl(signal.master_st, 'BEAR', sl_buffer)
         actions.append({
             'action': 'SHORT_FUTURES',
             'trigger_price': trigger,
@@ -323,7 +347,7 @@ def determine_actions(signal: MaruthiSignal, current_regime: str,
             if active_futures_count < max_futures:
                 trigger = compute_trigger_price(signal.candle, 'BUY')
                 limit = compute_limit_price(trigger, 'BUY')
-                hard_sl = compute_hard_sl(signal.master_st, 'BULL', hard_sl_buffer)
+                hard_sl = compute_hard_sl(signal.master_st, 'BULL', sl_buffer)
                 actions.append({
                     'action': 'BUY_FUTURES',
                     'trigger_price': trigger,
@@ -352,7 +376,7 @@ def determine_actions(signal: MaruthiSignal, current_regime: str,
             if active_futures_count < max_futures:
                 trigger = compute_trigger_price(signal.candle, 'SELL')
                 limit = compute_limit_price(trigger, 'SELL')
-                hard_sl = compute_hard_sl(signal.master_st, 'BEAR', hard_sl_buffer)
+                hard_sl = compute_hard_sl(signal.master_st, 'BEAR', sl_buffer)
                 actions.append({
                     'action': 'SHORT_FUTURES',
                     'trigger_price': trigger,

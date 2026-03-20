@@ -224,7 +224,9 @@ MARUTHI_DEFAULTS = {
     'capital': 1_500_000,  # 15L max
 
     # Trailing Hard Stop Loss — follows master ST, only moves in favorable direction
-    'hard_sl_buffer': 50,  # Master ST ± 50 pts, trails up in BULL / down in BEAR
+    # Buffer = hard_sl_atr_mult × ATR(master_period). 1.0x ATR ≈ 75-125 pts on 30-min MARUTI
+    'hard_sl_atr_mult': 1.0,  # ATR multiplier for SL distance from master ST
+    'hard_sl_buffer': 0,      # Fixed fallback (0 = use ATR-based, >0 = override with fixed points)
 
     # Protective Options
     'protective_otm_pct': 0.05,  # 5% OTM for protective puts/calls

@@ -29,7 +29,7 @@ from config import MARUTHI_DEFAULTS
 from services.maruthi_db import get_maruthi_db, MaruthiDB
 from services.maruthi_strategy import (
     MaruthiSignal, determine_actions, compute_dual_supertrend,
-    detect_signals, compute_hard_sl
+    detect_signals, compute_hard_sl, resolve_sl_buffer
 )
 from services.maruthi_contract_manager import MaruthiContractManager
 from services.kite_service import get_kite, is_authenticated
@@ -44,6 +44,7 @@ class MaruthiExecutor:
         self.config = config or MARUTHI_DEFAULTS.copy()
         self.db = get_maruthi_db()
         self.contract_mgr = None  # Set when kite is available
+        self._current_master_atr = 100.0  # Updated each candle check
 
     def _get_kite(self):
         """Get authenticated Kite instance."""
@@ -552,6 +553,7 @@ class MaruthiExecutor:
                 results.append(f"Closed {closed} positions for regime change to {new_regime}")
 
                 # Update regime in DB — fresh SL (no trailing on new regime)
+                sl_buf = resolve_sl_buffer(self.config, self._current_master_atr)
                 self.db.update_regime(
                     regime=new_regime,
                     master_st_value=signal.master_st,
@@ -559,12 +561,13 @@ class MaruthiExecutor:
                     child_direction=signal.child_direction,
                     hard_sl_price=compute_hard_sl(
                         signal.master_st, new_regime,
-                        self.config.get('hard_sl_buffer', 50),
+                        sl_buf,
                         prev_hard_sl=0,  # Fresh start — no trailing on regime change
                     ),
                     regime_start_time=datetime.now().isoformat(),
                     last_signal_time=datetime.now().isoformat(),
                 )
+                logger.info(f"Regime {new_regime}: SL buffer={sl_buf:.1f} (ATR={self._current_master_atr:.1f})")
                 current_regime = new_regime
 
             elif act == 'BUY_FUTURES':
@@ -671,16 +674,25 @@ class MaruthiExecutor:
         regime = self.db.get_regime()
         current_regime = regime.get('regime', 'FLAT')
 
+        # Get current master ATR for SL buffer calculation
+        latest = df.iloc[-1]
+        master_atr = float(latest.get('master_atr', 100))
+        self._current_master_atr = master_atr
+        sl_buffer = resolve_sl_buffer(cfg, master_atr)
+
         # Detect signals
-        signals = detect_signals(df, current_regime, cfg.get('hard_sl_buffer', 50))
+        signals = detect_signals(
+            df, current_regime,
+            hard_sl_buffer=cfg.get('hard_sl_buffer', 0),
+            hard_sl_atr_mult=cfg.get('hard_sl_atr_mult', 1.0),
+        )
 
         if not signals:
             # Trail hard SL with master SuperTrend even without signals
-            latest = df.iloc[-1]
             prev_hard_sl = regime.get('hard_sl_price', 0) or 0
             new_hard_sl = compute_hard_sl(
                 float(latest['master_st']), current_regime,
-                cfg.get('hard_sl_buffer', 50),
+                sl_buffer,
                 prev_hard_sl=prev_hard_sl,
             )
             self.db.update_regime(
@@ -691,7 +703,7 @@ class MaruthiExecutor:
                 hard_sl_price=new_hard_sl,
             )
             if new_hard_sl != prev_hard_sl and prev_hard_sl > 0:
-                logger.info(f"Trailing hard SL updated: {prev_hard_sl} → {new_hard_sl}")
+                logger.info(f"Trailing hard SL: {prev_hard_sl} -> {new_hard_sl} (buffer={sl_buffer:.1f})")
             return []
 
         # Execute each signal
@@ -702,6 +714,7 @@ class MaruthiExecutor:
                 signal, current_regime, active_fut,
                 max_futures=cfg.get('max_futures_lots', 5),
                 config=cfg,
+                master_atr=master_atr,
             )
             results = self.execute_actions(actions, signal)
             all_results.extend(results)
@@ -875,6 +888,8 @@ class MaruthiExecutor:
                 'paper_mode': self.config.get('paper_trading_mode', True),
                 'live_enabled': self.config.get('live_trading_enabled', False),
                 'max_futures': self.config.get('max_futures_lots', 5),
-                'hard_sl_buffer': self.config.get('hard_sl_buffer', 50),
+                'hard_sl_atr_mult': self.config.get('hard_sl_atr_mult', 1.0),
+                'hard_sl_buffer_pts': round(resolve_sl_buffer(self.config, self._current_master_atr), 1),
+                'master_atr': round(self._current_master_atr, 1),
             },
         }
