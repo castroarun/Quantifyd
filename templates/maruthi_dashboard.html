@@ -121,7 +121,7 @@
             </h4>
             <small class="text-muted">Dual SuperTrend (7,5 + 7,2) · Futures + Options ·
                 <span id="tickerStatus" class="text-danger">Ticker OFF</span> ·
-                LTP: <span id="tickerLTP">—</span> ·
+                LTP: <span id="tickerLTP">—</span> <span id="tickerLTPTime" class="text-muted" style="font-size:0.75em"></span> ·
                 Candles: <span id="tickerCandles">0</span>
             </small>
         </div>
@@ -563,6 +563,8 @@ function updateTickerUI(data) {
 
     document.getElementById('tickerLTP').textContent =
         data.last_ltp ? '₹' + data.last_ltp.toFixed(1) : '—';
+    document.getElementById('tickerLTPTime').textContent =
+        data.last_ltp ? '@ ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'}) : '';
     document.getElementById('tickerCandles').textContent =
         data.completed_candles || 0;
 }
