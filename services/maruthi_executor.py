@@ -136,6 +136,101 @@ class MaruthiExecutor:
             logger.error(f"Order failed: {e} | params={params}")
             return None
 
+    def _get_option_limit_price(self, tradingsymbol: str, transaction_type: str) -> float:
+        """Get current bid/ask for option LIMIT order pricing."""
+        kite = self._get_kite()
+        if not kite:
+            return 0
+        try:
+            q = kite.quote([f'NFO:{tradingsymbol}'])
+            data = q.get(f'NFO:{tradingsymbol}', {})
+            depth = data.get('depth', {})
+            if transaction_type == 'SELL':
+                # Selling: use best bid
+                bids = depth.get('buy', [{}])
+                return bids[0].get('price', data.get('last_price', 0))
+            else:
+                # Buying: use best ask
+                asks = depth.get('sell', [{}])
+                return asks[0].get('price', data.get('last_price', 0))
+        except Exception as e:
+            logger.error(f"Failed to get quote for {tradingsymbol}: {e}")
+            return 0
+
+    def _place_option_with_retry(self, params: dict, max_retries: int = 3,
+                                  retry_delay: float = 2.0) -> Optional[str]:
+        """
+        Place option order as LIMIT with fill-check-revise loop.
+
+        Stock options on Zerodha reject MARKET orders (illiquidity protection).
+        Places LIMIT at current bid/ask, checks fill, revises price if unfilled.
+
+        Returns kite_order_id on fill, None on failure.
+        """
+        import time
+        kite = self._get_kite()
+        if not kite:
+            return None
+
+        symbol = params['tradingsymbol']
+        txn = params['transaction_type']
+
+        # Force LIMIT order type for stock options
+        params['order_type'] = 'LIMIT'
+        params['price'] = self._get_option_limit_price(symbol, txn)
+        if not params['price']:
+            logger.error(f"Cannot get price for {symbol}, aborting")
+            return None
+
+        # Place initial order
+        order_id = self._place_order_kite(params)
+        if not order_id:
+            return None
+
+        # Check fill with retries
+        for attempt in range(max_retries):
+            time.sleep(retry_delay)
+            try:
+                order_history = kite.order_history(order_id)
+                latest = order_history[-1] if order_history else {}
+                status = latest.get('status', '')
+
+                if status == 'COMPLETE':
+                    logger.info(f"Option order filled: {symbol} @ {latest.get('average_price')}")
+                    return order_id
+
+                if status in ('CANCELLED', 'REJECTED'):
+                    logger.error(f"Option order {status}: {symbol} — {latest.get('status_message', '')}")
+                    return None
+
+                # Still OPEN — revise price to chase fill
+                new_price = self._get_option_limit_price(symbol, txn)
+                if new_price and new_price != params['price']:
+                    logger.info(f"Revising {symbol} order: {params['price']} -> {new_price} (attempt {attempt+1})")
+                    kite.modify_order(
+                        variety='regular',
+                        order_id=order_id,
+                        price=new_price,
+                    )
+                    params['price'] = new_price
+
+            except Exception as e:
+                logger.error(f"Fill check failed for {symbol}: {e}")
+
+        # Final check
+        try:
+            order_history = kite.order_history(order_id)
+            latest = order_history[-1] if order_history else {}
+            if latest.get('status') == 'COMPLETE':
+                return order_id
+            # Cancel unfilled order
+            logger.warning(f"Option order not filled after {max_retries} retries, cancelling: {symbol}")
+            kite.cancel_order('regular', order_id)
+        except Exception as e:
+            logger.error(f"Final fill check/cancel failed: {e}")
+
+        return None
+
     def place_futures_entry(self, direction: str, trigger_price: float,
                             limit_price: float, hard_sl: float,
                             signal_type: str, regime: str) -> Optional[int]:
@@ -296,25 +391,32 @@ class MaruthiExecutor:
             transaction_type='SELL',
             qty=lot_size,
             price=entry_price,
-            order_type='MARKET',
+            order_type='LIMIT',  # Stock options MUST use LIMIT (Zerodha rejects MARKET)
             product='NRML',
             signal_type=signal_type,
             status='PAPER' if cfg.get('paper_trading_mode') else 'PENDING',
         )
 
-        # Place on Kite
+        # Place on Kite — stock options require LIMIT with fill-check-revise
         kite_order_id = None
         if cfg.get('live_trading_enabled') and not cfg.get('paper_trading_mode'):
-            kite_order_id = self._place_order_kite({
+            kite_order_id = self._place_option_with_retry({
                 'exchange': 'NFO',
                 'tradingsymbol': tradingsymbol,
                 'transaction_type': 'SELL',
                 'quantity': lot_size,
                 'product': 'NRML',
-                'order_type': 'MARKET',
             })
             if kite_order_id:
-                self.db.update_order(order_id, kite_order_id=kite_order_id, status='PLACED')
+                # Get actual fill price
+                try:
+                    kite = self._get_kite()
+                    oh = kite.order_history(kite_order_id)
+                    fill_price = oh[-1].get('average_price', entry_price) if oh else entry_price
+                    entry_price = fill_price
+                except Exception:
+                    pass
+                self.db.update_order(order_id, kite_order_id=kite_order_id, status='COMPLETE')
             else:
                 self.db.update_order(order_id, status='FAILED')
                 return None
@@ -396,7 +498,7 @@ class MaruthiExecutor:
             transaction_type='BUY',
             qty=lot_size,
             price=entry_price,
-            order_type='MARKET',
+            order_type='LIMIT',  # Stock options MUST use LIMIT
             product='NRML',
             signal_type='PROTECTIVE',
             status='PAPER' if cfg.get('paper_trading_mode') else 'PENDING',
@@ -404,16 +506,22 @@ class MaruthiExecutor:
 
         kite_order_id = None
         if cfg.get('live_trading_enabled') and not cfg.get('paper_trading_mode'):
-            kite_order_id = self._place_order_kite({
+            kite_order_id = self._place_option_with_retry({
                 'exchange': 'NFO',
                 'tradingsymbol': tradingsymbol,
                 'transaction_type': 'BUY',
                 'quantity': lot_size,
                 'product': 'NRML',
-                'order_type': 'MARKET',
             })
             if kite_order_id:
-                self.db.update_order(order_id, kite_order_id=kite_order_id, status='PLACED')
+                try:
+                    kite = self._get_kite()
+                    oh = kite.order_history(kite_order_id)
+                    fill_price = oh[-1].get('average_price', entry_price) if oh else entry_price
+                    entry_price = fill_price
+                except Exception:
+                    pass
+                self.db.update_order(order_id, kite_order_id=kite_order_id, status='COMPLETE')
             else:
                 self.db.update_order(order_id, status='FAILED')
                 return None
@@ -443,7 +551,7 @@ class MaruthiExecutor:
     # =========================================================================
 
     def _close_position(self, pos: dict, exit_reason: str, exit_price: float = None) -> bool:
-        """Close a single position (market order)."""
+        """Close a single position. Uses MARKET for futures, LIMIT with retry for options."""
         cfg = self.config
 
         if exit_price is None:
@@ -456,14 +564,27 @@ class MaruthiExecutor:
             close_direction = 'BUY'
 
         if cfg.get('live_trading_enabled') and not cfg.get('paper_trading_mode'):
-            kite_order_id = self._place_order_kite({
-                'exchange': pos.get('exchange', 'NFO'),
-                'tradingsymbol': pos['tradingsymbol'],
-                'transaction_type': close_direction,
-                'quantity': pos['qty'],
-                'product': 'NRML',
-                'order_type': 'MARKET',
-            })
+            is_option = pos.get('position_type') in ('SHORT_OPTION', 'PROTECTIVE_OPTION')
+
+            if is_option:
+                # Stock options: LIMIT with fill-check-revise
+                kite_order_id = self._place_option_with_retry({
+                    'exchange': pos.get('exchange', 'NFO'),
+                    'tradingsymbol': pos['tradingsymbol'],
+                    'transaction_type': close_direction,
+                    'quantity': pos['qty'],
+                    'product': 'NRML',
+                })
+            else:
+                # Futures: MARKET is fine
+                kite_order_id = self._place_order_kite({
+                    'exchange': pos.get('exchange', 'NFO'),
+                    'tradingsymbol': pos['tradingsymbol'],
+                    'transaction_type': close_direction,
+                    'quantity': pos['qty'],
+                    'product': 'NRML',
+                    'order_type': 'MARKET',
+                })
             if not kite_order_id:
                 logger.error(f"Failed to close position {pos['id']}: {pos['tradingsymbol']}")
                 return False
