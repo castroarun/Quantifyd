@@ -551,7 +551,7 @@ class MaruthiExecutor:
                 )
                 results.append(f"Closed {closed} positions for regime change to {new_regime}")
 
-                # Update regime in DB
+                # Update regime in DB — fresh SL (no trailing on new regime)
                 self.db.update_regime(
                     regime=new_regime,
                     master_st_value=signal.master_st,
@@ -559,7 +559,8 @@ class MaruthiExecutor:
                     child_direction=signal.child_direction,
                     hard_sl_price=compute_hard_sl(
                         signal.master_st, new_regime,
-                        self.config.get('hard_sl_buffer', 50)
+                        self.config.get('hard_sl_buffer', 50),
+                        prev_hard_sl=0,  # Fresh start — no trailing on regime change
                     ),
                     regime_start_time=datetime.now().isoformat(),
                     last_signal_time=datetime.now().isoformat(),
@@ -674,18 +675,23 @@ class MaruthiExecutor:
         signals = detect_signals(df, current_regime, cfg.get('hard_sl_buffer', 50))
 
         if not signals:
-            # Update master ST value for SL tracking even without signals
+            # Trail hard SL with master SuperTrend even without signals
             latest = df.iloc[-1]
+            prev_hard_sl = regime.get('hard_sl_price', 0) or 0
+            new_hard_sl = compute_hard_sl(
+                float(latest['master_st']), current_regime,
+                cfg.get('hard_sl_buffer', 50),
+                prev_hard_sl=prev_hard_sl,
+            )
             self.db.update_regime(
                 master_st_value=float(latest['master_st']),
                 master_direction=int(latest['master_dir']),
                 child_direction=int(latest['child_dir']),
                 last_candle_time=str(latest.get('date', latest.name)),
-                hard_sl_price=compute_hard_sl(
-                    float(latest['master_st']), current_regime,
-                    cfg.get('hard_sl_buffer', 50)
-                ),
+                hard_sl_price=new_hard_sl,
             )
+            if new_hard_sl != prev_hard_sl and prev_hard_sl > 0:
+                logger.info(f"Trailing hard SL updated: {prev_hard_sl} → {new_hard_sl}")
             return []
 
         # Execute each signal
@@ -761,13 +767,16 @@ class MaruthiExecutor:
             self._close_position(pos, exit_reason='ROLL')
 
             # Step 2: Open new position with next month contract
-            # Re-enter same direction with new symbol
+            # Re-enter same direction with new symbol, carry forward trailing SL
             if pos['position_type'] == 'FUTURES':
+                # Use current regime's trailing SL (not the old position's SL)
+                regime = self.db.get_regime()
+                current_hard_sl = regime.get('hard_sl_price', pos.get('sl_price', 0))
                 self.place_futures_entry(
                     direction=pos['transaction_type'],
                     trigger_price=pos.get('entry_price', 0),  # Enter at market
                     limit_price=pos.get('entry_price', 0),
-                    hard_sl=pos.get('sl_price', 0),
+                    hard_sl=current_hard_sl,
                     signal_type='ROLL',
                     regime=pos.get('regime', 'FLAT'),
                 )

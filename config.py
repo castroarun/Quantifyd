@@ -223,8 +223,8 @@ MARUTHI_DEFAULTS = {
     'lots_per_signal': 1,
     'capital': 1_500_000,  # 15L max
 
-    # Hard Stop Loss
-    'hard_sl_buffer': 50,  # Points below/above master ST line
+    # Trailing Hard Stop Loss — follows master ST, only moves in favorable direction
+    'hard_sl_buffer': 50,  # Master ST ± 50 pts, trails up in BULL / down in BEAR
 
     # Protective Options
     'protective_otm_pct': 0.05,  # 5% OTM for protective puts/calls

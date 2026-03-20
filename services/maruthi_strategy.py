@@ -15,7 +15,11 @@ Signal types:
 - MASTER_BEAR: Master ST flips bearish → new BEAR regime
 - CHILD_BULL: Child ST flips bullish within regime
 - CHILD_BEAR: Child ST flips bearish within regime
-- HARD_SL: Price breaches master ST - buffer → go FLAT
+- HARD_SL: Price breaches master ST ± buffer → go FLAT
+
+Hard SL is a TRAILING stop: it follows the master SuperTrend line each candle.
+- BULL: SL = master_st - buffer, only moves UP (never down)
+- BEAR: SL = master_st + buffer, only moves DOWN (never up)
 
 All computation is pure — no API calls, no DB writes.
 """
@@ -190,17 +194,33 @@ def compute_limit_price(trigger_price: float, direction: str, slippage: float = 
         return round(trigger_price - slippage, 1)
 
 
-def compute_hard_sl(master_st_value: float, regime: str, buffer: float = 50.0) -> float:
+def compute_hard_sl(master_st_value: float, regime: str, buffer: float = 50.0,
+                    prev_hard_sl: float = 0.0) -> float:
     """
-    Compute hard stop loss price.
+    Compute trailing hard stop loss price.
 
-    BULL regime: SL = master ST line - buffer
-    BEAR regime: SL = master ST line + buffer
+    The hard SL trails the master SuperTrend line each candle:
+    - BULL regime: SL = master_st - buffer, only moves UP (never down)
+    - BEAR regime: SL = master_st + buffer, only moves DOWN (never up)
+
+    Args:
+        master_st_value: Current master SuperTrend value
+        regime: 'BULL' or 'BEAR'
+        buffer: Points distance from master ST (default 50)
+        prev_hard_sl: Previous hard SL value (for trailing logic)
     """
     if regime == 'BULL':
-        return round(master_st_value - buffer, 1)
+        new_sl = round(master_st_value - buffer, 1)
+        # Trail up only — never move SL down in BULL
+        if prev_hard_sl > 0:
+            return max(new_sl, prev_hard_sl)
+        return new_sl
     elif regime == 'BEAR':
-        return round(master_st_value + buffer, 1)
+        new_sl = round(master_st_value + buffer, 1)
+        # Trail down only — never move SL up in BEAR
+        if prev_hard_sl > 0:
+            return min(new_sl, prev_hard_sl)
+        return new_sl
     return 0.0
 
 

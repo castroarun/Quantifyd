@@ -1,6 +1,7 @@
 // This Pine Script source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Quantifyd - Maruthi Always-On Strategy Indicator
 // Dual SuperTrend (7,5 Master + 7,2 Child) with regime detection
+// Hard SL is a TRAILING stop that follows master SuperTrend line ± buffer
 
 //@version=6
 indicator("Maruthi Always-On", overlay=true, max_labels_count=500, max_lines_count=500)
@@ -124,12 +125,27 @@ if master_flip_bull
 if master_flip_bear
     regime := "BEAR"
 
-// Hard SL
-hard_sl = regime == "BULL" ? m_st - sl_buffer : regime == "BEAR" ? m_st + sl_buffer : na
-hard_sl_hit = (regime == "BULL" and low <= hard_sl) or (regime == "BEAR" and high >= hard_sl)
+// Trailing Hard SL — follows master ST, only moves in favorable direction
+var float hard_sl = na
+float raw_sl = regime == "BULL" ? m_st - sl_buffer : regime == "BEAR" ? m_st + sl_buffer : na
+
+if master_flip_bull or master_flip_bear
+    // Fresh SL on new regime (no trailing from previous regime)
+    hard_sl := raw_sl
+else if regime == "BULL" and not na(raw_sl)
+    // BULL: trail UP only
+    hard_sl := na(hard_sl) ? raw_sl : math.max(raw_sl, hard_sl)
+else if regime == "BEAR" and not na(raw_sl)
+    // BEAR: trail DOWN only
+    hard_sl := na(hard_sl) ? raw_sl : math.min(raw_sl, hard_sl)
+else
+    hard_sl := na
+
+hard_sl_hit = (regime == "BULL" and not na(hard_sl) and low <= hard_sl) or (regime == "BEAR" and not na(hard_sl) and high >= hard_sl)
 
 if hard_sl_hit
     regime := "FLAT"
+    hard_sl := na
 
 
 // =============================================================================
