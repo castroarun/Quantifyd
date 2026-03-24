@@ -159,6 +159,29 @@
         </button>
     </div>
 
+    <!-- Connection & Readiness Status Bar -->
+    <div class="d-flex align-items-center gap-3 mb-3 px-3 py-2"
+         style="background: rgba(22,27,34,0.6); border: 1px solid var(--bs-border-color); border-radius: 8px; font-size: 0.82rem;">
+        <span id="connMaruthi" class="text-muted">
+            <span class="pulse-dot pulse-idle"></span> Maruthi Ticker: --
+        </span>
+        <span class="text-muted">|</span>
+        <span id="connLiveSpot" class="text-muted">
+            <i class="bi bi-broadcast me-1"></i> BankNifty Spot: --
+        </span>
+        <span class="text-muted">|</span>
+        <span id="connScanSchedule" class="text-muted">
+            <i class="bi bi-clock me-1"></i> Next Scan: 15:20
+        </span>
+        <span class="text-muted">|</span>
+        <span id="connLastScan" class="text-muted">
+            <i class="bi bi-check-circle me-1"></i> Last Scan: --
+        </span>
+        <span class="text-muted ms-auto" id="connOverall">
+            <span class="pulse-dot pulse-idle"></span> System: --
+        </span>
+    </div>
+
     <!-- BB State + Direction Row -->
     <div class="row g-3 mb-3">
         <div class="col-md-3">
@@ -534,6 +557,41 @@ function updateDashboard(data) {
         document.getElementById('sqWinRate').textContent = `${stats.win_rate || 0}%`;
     }
     document.getElementById('frWinRate').textContent = stats.fire_trades > 0 ? `${stats.win_rate || 0}%` : '--';
+
+    // Connection & Readiness Status
+    const conn = data.connection || {};
+    const maruthiOk = conn.maruthi_ticker === true;
+    const liveSpot = conn.live_spot || 0;
+
+    // Maruthi ticker status
+    const cm = document.getElementById('connMaruthi');
+    cm.innerHTML = `<span class="pulse-dot ${maruthiOk ? 'pulse-active' : 'pulse-idle'}"></span> Maruthi Ticker: ${maruthiOk ? 'Connected' : 'Disconnected'}`;
+    cm.style.color = maruthiOk ? '#3fb950' : '#f85149';
+
+    // Live spot
+    const cs = document.getElementById('connLiveSpot');
+    cs.innerHTML = `<i class="bi bi-broadcast me-1"></i> BankNifty Spot: ${liveSpot > 0 ? liveSpot.toLocaleString('en-IN', {maximumFractionDigits: 1}) : '--'}`;
+    cs.style.color = liveSpot > 0 ? '#58a6ff' : '#8b949e';
+
+    // Last scan time
+    const lastScanTime = st.last_scan_time || null;
+    const cls = document.getElementById('connLastScan');
+    cls.innerHTML = `<i class="bi bi-check-circle me-1"></i> Last Scan: ${lastScanTime ? new Date(lastScanTime).toLocaleTimeString() : 'Never'}`;
+    cls.style.color = lastScanTime ? '#3fb950' : '#f59e0b';
+
+    // Scan schedule
+    const now = new Date();
+    const scanTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 20);
+    const isBeforeScan = now < scanTime;
+    const csch = document.getElementById('connScanSchedule');
+    csch.innerHTML = `<i class="bi bi-clock me-1"></i> Daily Scan: 15:20 ${isBeforeScan ? '(pending)' : '(done)'}`;
+    csch.style.color = isBeforeScan ? '#f59e0b' : '#3fb950';
+
+    // Overall system status
+    const systemOk = maruthiOk && (st.bb_state && st.bb_state !== 'UNKNOWN');
+    const co = document.getElementById('connOverall');
+    co.innerHTML = `<span class="pulse-dot ${systemOk ? 'pulse-active' : 'pulse-idle'}"></span> System: ${systemOk ? 'Ready' : (maruthiOk ? 'Scan Pending' : 'No Connection')}`;
+    co.style.color = systemOk ? '#3fb950' : (maruthiOk ? '#f59e0b' : '#f85149');
 }
 
 function renderModePositions(elementId, positions, color) {

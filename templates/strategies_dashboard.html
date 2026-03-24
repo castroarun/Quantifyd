@@ -250,14 +250,14 @@
             </div>
         </div>
 
-        <!-- NAS Nifty ATR Strangle -->
+        <!-- NAS OTM — Nifty ATR Strangle (OTM) -->
         <div class="col-lg-4">
             <div class="strategy-card active" id="cardNAS">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h5 class="mb-1">
                             <i class="bi bi-lightning-charge me-2" style="color: #e879f9;"></i>
-                            NAS Nifty ATR Strangle
+                            NAS OTM — Nifty ATR Strangle (OTM)
                         </h5>
                         <small class="text-muted">ATR Squeeze Strangles | 5min Intraday</small>
                     </div>
@@ -289,6 +289,50 @@
                 </div>
                 <hr style="border-color: var(--bs-border-color); margin: 0.5rem 0;">
                 <a href="/nas" class="btn btn-sm btn-outline-info w-100" style="border-color: #e879f9; color: #e879f9;">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- NAS ATM — Nifty ATR Strangle (ATM Cascading) -->
+        <div class="col-lg-4">
+            <div class="strategy-card active" id="cardNASATM">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="bi bi-bullseye me-2" style="color: #38a6f7;"></i>
+                            NAS ATM — Nifty ATR Strangle (ATM)
+                        </h5>
+                        <small class="text-muted">ATM Cascading | 30% SL per leg | 5min</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="strategy-badge" id="nasAtmModeBadge">--</span>
+                        <button class="btn btn-sm px-2 py-0" id="nasAtmToggle" onclick="toggleStrategy('nas_atm')"
+                                style="font-size:0.7rem; border-radius:20px;" title="Enable/Disable NAS ATM">
+                            <i class="bi bi-power"></i> ON
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="nasAtmTrades" style="color: #c9d1d9;">0</div>
+                        <div class="label">Trades</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="nasAtmPositions" style="color: #38a6f7;">0</div>
+                        <div class="label">Positions</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value positive" id="nasAtmClosedPnl">--</div>
+                        <div class="label">Closed P&L</div>
+                    </div></div>
+                    <div class="col-3"><div class="metric-sm">
+                        <div class="value" id="nasAtmRunningPnl" style="color: #38a6f7;">--</div>
+                        <div class="label">Running P&L</div>
+                    </div></div>
+                </div>
+                <hr style="border-color: var(--bs-border-color); margin: 0.5rem 0;">
+                <a href="/nas-atm" class="btn btn-sm btn-outline-info w-100" style="border-color: #38a6f7; color: #38a6f7;">
                     <i class="bi bi-box-arrow-up-right me-1"></i> Open Dashboard
                 </a>
             </div>
@@ -647,6 +691,9 @@ const state = {
     nasState: null,
     nasTrades: [],
     nasEquity: [],
+    nasAtmState: null,
+    nasAtmTrades: [],
+    nasAtmEquity: [],
     equityChart: null,
     equityView: 'all',
     tradeFilter: 'all',
@@ -714,8 +761,20 @@ async function loadNASData() {
     renderNASCard();
 }
 
+async function loadNASATMData() {
+    const [nState, trades, equity] = await Promise.all([
+        fetchJSON('/api/nas-atm/state'),
+        fetchJSON('/api/nas-atm/trades'),
+        fetchJSON('/api/nas-atm/equity-curve'),
+    ]);
+    state.nasAtmState = nState;
+    state.nasAtmTrades = trades || [];
+    state.nasAtmEquity = equity || [];
+    renderNASATMCard();
+}
+
 async function refreshAll() {
-    await Promise.all([loadBNFData(), loadMaruthiData(), loadKC6Data(), loadNASData()]);
+    await Promise.all([loadBNFData(), loadMaruthiData(), loadKC6Data(), loadNASData(), loadNASATMData()]);
     renderCombinedMetrics();
     renderEquityChart();
     renderTradeTable();
@@ -909,6 +968,45 @@ function renderNASCard() {
 }
 
 // ============================================================
+// Rendering: NAS ATM Card
+// ============================================================
+function renderNASATMCard() {
+    const ns = state.nasAtmState;
+
+    if (ns && !ns.error) {
+        const cfg = ns.config || {};
+        const stats = ns.stats || {};
+        const positions = ns.positions || {};
+        const posCount = positions.total_active || 0;
+        const mode = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+        const nasAtmEnabled = cfg.enabled !== false;
+        updateToggleButton('nasAtmToggle', nasAtmEnabled);
+        el('cardNASATM').className = 'strategy-card ' + (nasAtmEnabled ? 'active' : 'inactive');
+
+        setText('nasAtmPositions', posCount);
+        setText('nasAtmTrades', stats.total_trades || 0);
+
+        const closedPnl = stats.total_pnl || 0;
+        setText('nasAtmClosedPnl', fmtRs(closedPnl));
+        setColor('nasAtmClosedPnl', closedPnl >= 0);
+
+        const runPnl = 0;
+        setText('nasAtmRunningPnl', fmtRs(runPnl));
+
+        const badge = el('nasAtmModeBadge');
+        badge.textContent = mode;
+        badge.className = 'strategy-badge ' + (mode === 'LIVE' ? 'badge-live' : 'badge-paper');
+    } else {
+        const badge = el('nasAtmModeBadge');
+        badge.textContent = 'IDLE';
+        badge.className = 'strategy-badge badge-backtest';
+        updateToggleButton('nasAtmToggle', false);
+        el('cardNASATM').className = 'strategy-card inactive';
+        setText('nasAtmTrades', state.nasAtmTrades.length);
+    }
+}
+
+// ============================================================
 // Combined Metrics
 // ============================================================
 function renderCombinedMetrics() {
@@ -942,12 +1040,20 @@ function renderCombinedMetrics() {
         if ((state.kc6State.config || {}).enabled !== false) activeCount++;
     }
 
-    // NAS
+    // NAS OTM
     if (state.nasState && !state.nasState.error) {
         const ns = state.nasState.stats || {};
         closedPnl += ns.total_pnl || 0;
         totalTrades += ns.total_trades || 0;
         if ((state.nasState.config || {}).enabled !== false) activeCount++;
+    }
+
+    // NAS ATM
+    if (state.nasAtmState && !state.nasAtmState.error) {
+        const na = state.nasAtmState.stats || {};
+        closedPnl += na.total_pnl || 0;
+        totalTrades += na.total_trades || 0;
+        if ((state.nasAtmState.config || {}).enabled !== false) activeCount++;
     }
 
     const closedEl = el('combinedClosedPnl');
@@ -958,7 +1064,7 @@ function renderCombinedMetrics() {
     runEl.textContent = fmtRs(runningPnl);
     runEl.className = 'metric-value ' + (runningPnl >= 0 ? 'positive' : 'negative');
 
-    setText('activeCount', activeCount + ' / 4');
+    setText('activeCount', activeCount + ' / 5');
     setText('totalTrades', totalTrades);
 }
 
@@ -1160,6 +1266,7 @@ async function toggleStrategy(strategy) {
         maruthi: '/api/maruthi/toggle-enabled',
         kc6: '/api/kc6/toggle-enabled',
         nas: '/api/nas/toggle-enabled',
+        nas_atm: '/api/nas-atm/toggle-enabled',
     };
     try {
         const r = await fetch(urls[strategy], { method: 'POST' });

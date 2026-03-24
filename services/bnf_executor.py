@@ -32,6 +32,7 @@ class BnfExecutor:
         self.cfg = config
         self.db = get_bnf_db()
         self.scanner = BnfScanner(config)
+        self._last_live_spot = 0.0  # Updated by Maruthi ticker forwarding
 
     # ─── Guardrails ──────────────────────────────────────────
 
@@ -496,6 +497,15 @@ class BnfExecutor:
         sq_active = [p for p in active if p['mode'] == 'SQUEEZE']
         fr_active = [p for p in active if p['mode'] == 'FIRE']
 
+        # Connection status (via Maruthi ticker)
+        maruthi_connected = False
+        try:
+            from services.maruthi_ticker import get_maruthi_ticker
+            mt = get_maruthi_ticker()
+            maruthi_connected = mt is not None and mt.is_connected
+        except Exception:
+            pass
+
         return {
             'state': state,
             'stats': stats,
@@ -515,4 +525,26 @@ class BnfExecutor:
             },
             'recent_signals': signals,
             'recent_trades': trades,
+            'connection': {
+                'maruthi_ticker': maruthi_connected,
+                'live_spot': self._last_live_spot,
+                'data_source': 'daily_bars',
+                'scan_schedule': '15:20',
+            },
         }
+
+
+# ─── Singleton ──────────────────────────────────────────────
+
+_bnf_executor_instance = None
+
+
+def get_bnf_executor(config: dict = None) -> BnfExecutor:
+    """Get or create the global BnfExecutor singleton."""
+    global _bnf_executor_instance
+    if _bnf_executor_instance is None:
+        if config is None:
+            from config import BNF_DEFAULTS
+            config = BNF_DEFAULTS
+        _bnf_executor_instance = BnfExecutor(config)
+    return _bnf_executor_instance

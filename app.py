@@ -48,7 +48,7 @@ from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
-    MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS, NAS_DEFAULTS,
+    MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS, NAS_DEFAULTS, NAS_ATM_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -3186,9 +3186,9 @@ _nas_tasks = {}
 
 @app.route('/nas')
 def nas_dashboard():
-    """NAS Nifty ATR Strangle Dashboard."""
+    """NAS Combined Dashboard (OTM + ATM side-by-side)."""
     return render_template(
-        'nas_dashboard.html',
+        'nas_combined_dashboard.html',
         authenticated=is_authenticated(),
         user_name=session.get('user_name', 'User'),
     )
@@ -3499,7 +3499,8 @@ STRATEGY_META = {
     'bnf': {'name': 'BNF Squeeze & Fire', 'type': 'F&O', 'capital': BNF_DEFAULTS.get('capital', 1000000)},
     'maruthi': {'name': 'Maruthi Always-On', 'type': 'F&O', 'capital': MARUTHI_DEFAULTS.get('capital', 1500000)},
     'kc6': {'name': 'KC6 Mean Reversion', 'type': 'Equity', 'capital': 400000},
-    'nas': {'name': 'NAS ATR Strangle', 'type': 'F&O', 'capital': 300000},
+    'nas': {'name': 'NAS OTM Strangle', 'type': 'F&O', 'capital': 300000},
+    'nas_atm': {'name': 'NAS ATM Strangle', 'type': 'F&O', 'capital': NAS_ATM_DEFAULTS.get('capital', 500000)},
     'trident': {'name': 'Trident', 'type': 'F&O', 'capital': 1000000},
 }
 
@@ -3582,6 +3583,18 @@ def _scc_get_strategy_state(strategy_id):
             trades = [t for t in state.get('trades', []) if isinstance(t, dict)]
             base['trades'] = len(trades)
             base['pnlTotal'] = sum(t.get('pnl', t.get('net_pnl', 0)) for t in trades)
+
+        elif strategy_id == 'nas_atm':
+            from services.nas_atm_executor import NasAtmExecutor
+            executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+            state = executor.get_full_state()
+            enabled = NAS_ATM_DEFAULTS.get('enabled', True)
+            base['status'] = 'running' if enabled else 'paused'
+            base['mode'] = 'live' if not NAS_ATM_DEFAULTS.get('paper_trading_mode', True) else 'paper'
+            stats = state.get('stats', {})
+            base['trades'] = stats.get('total_trades', 0)
+            base['pnlTotal'] = stats.get('total_pnl', 0)
+            base['winRate'] = stats.get('win_rate', 0)
 
         elif strategy_id == 'trident':
             from services.trident_executor import get_trident_executor
@@ -3688,7 +3701,7 @@ def _scc_get_positions(strategy_id):
             for i, p in enumerate(state.get('positions', [])):
                 positions.append({
                     'id': f'nas_{i}',
-                    'strategy': 'NAS ATR Strangle',
+                    'strategy': 'NAS OTM Strangle',
                     'symbol': p.get('tradingsymbol', p.get('symbol', 'NIFTY')),
                     'type': 'OPT',
                     'side': p.get('side', 'SHORT').upper(),
@@ -3699,6 +3712,29 @@ def _scc_get_positions(strategy_id):
                     'pnlPct': p.get('pnl_pct', 0),
                     'sl': p.get('sl', 0),
                     'tp': p.get('tp', None),
+                    'flags': [],
+                })
+
+        elif strategy_id == 'nas_atm':
+            from services.nas_atm_executor import NasAtmExecutor
+            executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+            state = executor.get_full_state()
+            all_pos = (state.get('positions', {}).get('ce', []) +
+                       state.get('positions', {}).get('pe', []))
+            for i, p in enumerate(all_pos):
+                positions.append({
+                    'id': f'nas_atm_{i}',
+                    'strategy': 'NAS ATM Strangle',
+                    'symbol': p.get('tradingsymbol', 'NIFTY'),
+                    'type': 'OPT',
+                    'side': 'SHORT',
+                    'qty': abs(p.get('qty', 0)),
+                    'entry': p.get('entry_price', 0),
+                    'current': p.get('entry_price', 0),
+                    'pnl': 0,
+                    'pnlPct': 0,
+                    'sl': p.get('sl_price', 0),
+                    'tp': None,
                     'flags': [],
                 })
 
@@ -3757,7 +3793,7 @@ def _scc_get_trades(strategy_id, limit=50):
                 trades.append({
                     'id': f"nas_t_{t.get('id', '')}",
                     'date': t.get('exit_date', t.get('date', '')),
-                    'strategy': 'NAS ATR Strangle',
+                    'strategy': 'NAS OTM Strangle',
                     'symbol': t.get('tradingsymbol', t.get('symbol', '')),
                     'side': t.get('side', 'SHORT').upper(),
                     'entry': t.get('entry_price', 0),
@@ -3765,6 +3801,25 @@ def _scc_get_trades(strategy_id, limit=50):
                     'pnl': t.get('pnl', 0),
                     'pnlPct': t.get('pnl_pct', 0),
                     'holding': t.get('holding_period', ''),
+                    'notes': t.get('exit_reason', ''),
+                    'journal': '',
+                })
+
+        elif strategy_id == 'nas_atm':
+            from services.nas_atm_db import get_nas_atm_db
+            db = get_nas_atm_db()
+            for t in db.get_recent_trades(limit=limit):
+                trades.append({
+                    'id': f"nas_atm_t_{t.get('id', '')}",
+                    'date': t.get('trade_date', ''),
+                    'strategy': 'NAS ATM Strangle',
+                    'symbol': 'NIFTY',
+                    'side': 'SHORT',
+                    'entry': t.get('total_premium_collected', 0),
+                    'exit': t.get('total_premium_paid', 0),
+                    'pnl': t.get('net_pnl', 0),
+                    'pnlPct': 0,
+                    'holding': 'Intraday',
                     'notes': t.get('exit_reason', ''),
                     'journal': '',
                 })
@@ -3844,6 +3899,7 @@ def api_scc_kill_all():
         'kc6': lambda: KC6_DEFAULTS.update({'enabled': False}),
         'maruthi': lambda: MARUTHI_DEFAULTS.update({'enabled': False}),
         'nas': lambda: NAS_DEFAULTS.update({'enabled': False}),
+        'nas_atm': lambda: NAS_ATM_DEFAULTS.update({'enabled': False}),
     }
     for sid, fn in kill_funcs.items():
         try:
@@ -3867,6 +3923,7 @@ def api_scc_toggle_strategy():
         'maruthi': MARUTHI_DEFAULTS,
         'kc6': KC6_DEFAULTS,
         'nas': NAS_DEFAULTS,
+        'nas_atm': NAS_ATM_DEFAULTS,
     }
 
     if sid not in config_map:
@@ -3985,6 +4042,249 @@ try:
     )
 except Exception as e:
     logger.warning(f"Could not register NAS scheduled jobs: {e}")
+
+
+# =============================================================================
+# NAS ATM — Nifty ATM Strangle (Cascading, per-leg SL)
+# =============================================================================
+
+_nas_atm_tasks = {}
+
+
+@app.route('/nas-atm')
+def nas_atm_dashboard():
+    """NAS ATM Dashboard — redirects to combined NAS page."""
+    return redirect(url_for('nas_dashboard'))
+
+
+@app.route('/api/nas-atm/state')
+def api_nas_atm_state():
+    """Full state dump for NAS ATM dashboard."""
+    try:
+        from services.nas_atm_executor import NasAtmExecutor
+        executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"NAS-ATM state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/scan', methods=['POST'])
+def api_nas_atm_scan():
+    """Trigger a manual NAS ATM scan (entry attempt)."""
+    task_id = f"nas_atm_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_atm_tasks[task_id] = {'status': 'running'}
+
+    def _run_scan(tid):
+        try:
+            from services.nas_atm_executor import NasAtmExecutor
+            executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+            sid, msg = executor.execute_strangle_entry()
+            _nas_atm_tasks[tid] = {'status': 'completed', 'result': {'strangle_id': sid, 'message': msg}}
+        except Exception as e:
+            logger.error(f"NAS-ATM scan error: {e}")
+            _nas_atm_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run_scan, args=[task_id], id=f'nas_atm_scan_{task_id}',
+                      replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas-atm/scan/status/<task_id>')
+def api_nas_atm_scan_status(task_id):
+    """Poll NAS ATM scan status."""
+    task = _nas_atm_tasks.get(task_id, {'status': 'unknown'})
+    return jsonify(task)
+
+
+@app.route('/api/nas-atm/kill-switch', methods=['POST'])
+def api_nas_atm_kill_switch():
+    """Emergency close all NAS ATM positions."""
+    try:
+        from services.nas_atm_executor import NasAtmExecutor
+        executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+        exits = executor.emergency_exit_all()
+        return jsonify({'status': 'killed', 'positions_closed': exits})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/trades')
+def api_nas_atm_trades():
+    """Recent NAS ATM trades."""
+    try:
+        from services.nas_atm_db import get_nas_atm_db
+        db = get_nas_atm_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/signals')
+def api_nas_atm_signals():
+    """NAS ATM signal history."""
+    try:
+        from services.nas_atm_db import get_nas_atm_db
+        db = get_nas_atm_db()
+        return jsonify(db.get_recent_signals(limit=30))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/equity-curve')
+def api_nas_atm_equity_curve():
+    """NAS ATM daily P&L for equity curve chart."""
+    try:
+        from services.nas_atm_db import get_nas_atm_db
+        db = get_nas_atm_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/toggle-mode', methods=['POST'])
+def api_nas_atm_toggle_mode():
+    """Toggle NAS ATM paper/live trading mode."""
+    try:
+        current = NAS_ATM_DEFAULTS.get('paper_trading_mode', True)
+        NAS_ATM_DEFAULTS['paper_trading_mode'] = not current
+        new_mode = 'PAPER' if NAS_ATM_DEFAULTS['paper_trading_mode'] else 'LIVE'
+        logger.info(f"NAS-ATM mode toggled to {new_mode}")
+        return jsonify({'mode': new_mode})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/toggle-enabled', methods=['POST'])
+def api_nas_atm_toggle_enabled():
+    """Enable/disable NAS ATM system."""
+    try:
+        current = NAS_ATM_DEFAULTS.get('enabled', True)
+        NAS_ATM_DEFAULTS['enabled'] = not current
+        new_enabled = NAS_ATM_DEFAULTS['enabled']
+        status = 'enabled' if new_enabled else 'disabled'
+        logger.info(f"NAS-ATM system {status}")
+        return jsonify({'enabled': new_enabled, 'status': status})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/ticker/start', methods=['POST'])
+def api_nas_atm_ticker_start():
+    """Start NAS ticker (shared with OTM) for ATM system."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        if not ticker.is_running:
+            ticker.start()
+        return jsonify({'status': 'started'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/ticker/stop', methods=['POST'])
+def api_nas_atm_ticker_stop():
+    """Stop NAS ticker (shared)."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.stop()
+        return jsonify({'status': 'stopped'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/ticker/status')
+def api_nas_atm_ticker_status():
+    """Get NAS ticker status (shared)."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        return jsonify(ticker.get_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm/ticker/stream')
+def api_nas_atm_ticker_stream():
+    """SSE stream for NAS ATM tick-by-tick updates (shares NIFTY spot from NAS ticker)."""
+    import time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_spot = 0
+        while True:
+            _time.sleep(1)
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'status', 'running': False})}\n\n"
+                continue
+            spot = ticker._last_ltp
+            if spot != last_spot and spot > 0:
+                last_spot = spot
+                # Include ATM option leg premiums
+                atm_legs = {}
+                for token, info in ticker._atm_option_tokens.items():
+                    tsym = info['tradingsymbol']
+                    ltp = ticker._atm_option_ltps.get(token)
+                    if ltp is not None:
+                        atm_legs[tsym] = {'ltp': ltp, 'sl': info.get('sl_price', 0)}
+                yield f"data: {json.dumps({'type': 'tick', 'spot': round(spot, 2), 'legs': atm_legs})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+# ---- NAS ATM Scheduled Jobs ----
+
+def _nas_atm_eod_squareoff():
+    """3:15 PM — EOD squareoff for NAS ATM."""
+    if not NAS_ATM_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.nas_atm_executor import NasAtmExecutor
+        executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+        exits = executor.eod_squareoff()
+        logger.info(f"[NAS-ATM] EOD squareoff: {len(exits)} positions closed")
+
+        # Unsubscribe ATM legs from ticker
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.subscribe_atm_option_legs([])
+    except Exception as e:
+        logger.error(f"[NAS-ATM] EOD squareoff error: {e}")
+
+
+def _nas_atm_daily_summary():
+    """3:20 PM — Daily summary for NAS ATM."""
+    if not NAS_ATM_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.nas_atm_db import get_nas_atm_db
+        db = get_nas_atm_db()
+        stats = db.get_stats()
+        logger.info(f"[NAS-ATM] Daily summary: {stats.get('total_trades', 0)} total trades, "
+                     f"P&L: Rs {stats.get('total_pnl', 0):.0f}")
+    except Exception as e:
+        logger.error(f"[NAS-ATM] Daily summary error: {e}")
+
+
+try:
+    scheduler.add_job(
+        _nas_atm_eod_squareoff,
+        'cron', hour=15, minute=15, day_of_week='mon-fri',
+        id='nas_atm_eod_squareoff', replace_existing=True,
+    )
+    scheduler.add_job(
+        _nas_atm_daily_summary,
+        'cron', hour=15, minute=20, day_of_week='mon-fri',
+        id='nas_atm_daily_summary', replace_existing=True,
+    )
+    logger.info(
+        "NAS ATM scheduled jobs registered: EOD squareoff(15:15), daily summary(15:20)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register NAS ATM scheduled jobs: {e}")
 
 
 # =============================================================================
@@ -4935,16 +5235,22 @@ if __name__ == '__main__':
         except Exception as e:
             logger.warning(f"[Maruthi] Ticker auto-start failed on boot: {e}")
 
-    # Auto-start NAS ticker if enabled
+    # Auto-start NAS ticker if enabled and during market hours
     if NAS_DEFAULTS.get('enabled', True):
-        try:
-            from services.nas_ticker import get_nas_ticker
-            ticker = get_nas_ticker(NAS_DEFAULTS)
-            if not ticker.is_connected:
-                ticker.start()
-                logger.info("[NAS] Ticker auto-started on Flask boot")
-        except Exception as e:
-            logger.warning(f"[NAS] Ticker auto-start failed on boot: {e}")
+        _now = datetime.now()
+        _market_open = _now.replace(hour=9, minute=15, second=0)
+        _market_close = _now.replace(hour=15, minute=30, second=0)
+        if _market_open <= _now <= _market_close and _now.weekday() < 5:
+            try:
+                from services.nas_ticker import get_nas_ticker
+                ticker = get_nas_ticker(NAS_DEFAULTS)
+                if not ticker.is_running:
+                    ticker.start()
+                    logger.info("[NAS] Ticker auto-started on Flask boot")
+            except Exception as e:
+                logger.warning(f"[NAS] Ticker auto-start failed on boot: {e}")
+        else:
+            logger.info("[NAS] Outside market hours, ticker will start at 9:16 via cron")
 
     # BNF: Run initial scan to populate BB state from daily bars
     if BNF_DEFAULTS.get('enabled', True):

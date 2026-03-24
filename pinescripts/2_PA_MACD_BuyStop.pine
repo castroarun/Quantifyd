@@ -28,10 +28,7 @@ indicator("PA_MACD BuyStop (L+S)", overlay=true, max_labels_count=500, max_lines
 
 // ─── LONG PATTERN DETECTION (at signal bar) ───
 // Signal bar: green, prev red, close > prev high, MACD hist > 0
-longPattern = close[1] > open[1] and           // signal bar is green
-              close[2] < open[2] and            // bar before signal was red
-              close[1] > high[2] and            // signal close > red bar's high
-              histLine[1] > 0                   // MACD hist positive at signal
+longPattern = close[1] > open[1] and close[2] < open[2] and close[1] > high[2] and histLine[1] > 0
 
 // Entry bar (today) — buy-stop at red bar's high (high[2])
 longStopLevel = high[2]
@@ -43,10 +40,7 @@ longRisk = longEntry - longSL
 longTP = longEntry + 3 * longRisk
 
 // ─── SHORT PATTERN DETECTION ───
-shortPattern = close[1] < open[1] and           // signal bar is red
-               close[2] > open[2] and            // bar before signal was green
-               close[1] < low[2] and             // signal close < green bar's low
-               histLine[1] < 0                   // MACD hist negative at signal
+shortPattern = close[1] < open[1] and close[2] > open[2] and close[1] < low[2] and histLine[1] < 0
 
 shortStopLevel = low[2]                          // green bar's low
 shortTriggered = shortPattern and low <= shortStopLevel
@@ -58,17 +52,11 @@ shortTP = shortEntry - 3 * shortRisk
 
 // ─── HIGHLIGHT SIGNAL BARS ───
 // Green candle closes above prev red high with MACD+
-longSignalBar = close > open and
-                close[1] < open[1] and
-                close > high[1] and
-                histLine > 0
+longSignalBar = close > open and close[1] < open[1] and close > high[1] and histLine > 0
 bgcolor(longSignalBar ? color.new(color.green, 85) : na, title="Long Signal Bar")
 
 // Red candle closes below prev green low with MACD-
-shortSignalBar = close < open and
-                 close[1] > open[1] and
-                 close < low[1] and
-                 histLine < 0
+shortSignalBar = close < open and close[1] > open[1] and close < low[1] and histLine < 0
 bgcolor(shortSignalBar ? color.new(color.red, 85) : na, title="Short Signal Bar")
 
 // ─── PLOT LONG ENTRIES ───

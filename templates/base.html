@@ -135,6 +135,11 @@
                             <i class="bi bi-briefcase me-1"></i> Holdings
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/positions">
+                            <i class="bi bi-stack me-1"></i> Positions
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-calculator me-1"></i> Backtest
@@ -211,6 +216,13 @@
                             <li><a class="dropdown-item" href="/kc6">
                                 <i class="bi bi-bar-chart me-2"></i> KC6 Mean Reversion
                             </a></li>
+                            <li><a class="dropdown-item" href="/trident">
+                                <i class="bi bi-crosshair me-2"></i> Trident (PA_MACD + RB)
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/nas">
+                                <i class="bi bi-lightning-charge me-2"></i> NAS Strangles (OTM + ATM)
+                            </a></li>
                         </ul>
                     </li>
                 </ul>
@@ -230,8 +242,13 @@
                     </li>
                     {% else %}
                     <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="fetch('/api/auth/auto-login',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.status==='success'){location.reload()}else{alert(d.message)}})">
+                            <i class="bi bi-key me-1"></i> Auto-Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/login">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Login with Zerodha
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Manual Login
                         </a>
                     </li>
                     {% endif %}

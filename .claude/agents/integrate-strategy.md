@@ -42,15 +42,17 @@ You are a strategy integration planner for the **Quantifyd** trading system at `
 - **DB:** `backtest_data/bnf_trading.db`
 - **Status:** LIVE — fully operational
 
-### 2. Maruthi Always-On (PAPER)
+### 2. Maruthi Always-On (LIVE)
 - **Type:** Dual SuperTrend futures+options on MARUTI 30-min
 - **Service files:** `services/maruthi_strategy.py`, `maruthi_executor.py`, `maruthi_db.py`, `maruthi_ticker.py`, `maruthi_contract_manager.py`
 - **Pine Script:** `pinescripts/maruthi_always_on.pine`
-- **API:** `/api/maruthi/*` (14 endpoints including ticker start/stop, MTM, auth)
-- **Scheduler:** 4 jobs (auto-login 9 AM, EOD protection 3 PM, roll check 3:15 PM, market close 3:30 PM)
+- **API:** `/api/maruthi/*` (15 endpoints including ticker start/stop/status, MTM, auth, recalc-sl, manual-entry)
+- **Scheduler:** 6 jobs (auto-login 9 AM, re-place pending 9:16 AM, gap handler 9:21 AM, EOD protection 3 PM, roll check 3:15 PM, market close 3:30 PM)
 - **DB:** `backtest_data/maruthi_trading.db`
-- **Special:** WebSocket ticker for real-time 30-min candle signals, TOTP auto-login
-- **Status:** Paper trading — go-live pending
+- **Real-time:** KiteTicker WebSocket → CandleAggregator → SocketIO `maruthi_tick` broadcast. `on_order_update` for instant fill detection. Tick-level hard SL check. Proximity gauges + signal wave on dashboard.
+- **Special:** TOTP auto-login, cross-day order persistence, signal reversal cancellation, catch-up on ticker restart, gap protection (gap up/down past trigger → defer 5 min → confirm + enter with full hedges or cancel)
+- **Algo docs:** `/maruthi/algo` visual flow page
+- **Status:** LIVE — fully operational
 
 ### 3. KC6 Mean Reversion (PAPER)
 - **Type:** Keltner Channel mean reversion on Nifty 500 equities
@@ -219,11 +221,57 @@ POST /api/{strategy}/toggle-enabled # Enable ↔ Disable
 - Browser notifications for alerts
 - WebSocket integration for live position updates
 
+## Real-Time Infrastructure (Established Pattern)
+
+All live strategies share this infrastructure. Read `docs/Design/LIVE-TRADING-ARCHITECTURE.md` for full details.
+
+### Connection Pool
+- **1 KiteTicker WebSocket** — carries ALL tick data (MARUTI + NIFTY + BANKNIFTY). New instruments added in `_on_connect`.
+- **Flask-SocketIO** — pushes `{strategy}_tick` events to dashboards (~2/sec, throttled). Client listens via `socket.on()`.
+- **Kite REST API** — historical data, orders, quotes. Rate limited (3 req/sec historical, 10 req/sec orders).
+- **SQLite per strategy** — thread-safe via `threading.Lock()`, singleton accessor.
+
+### Order Fill Detection
+- **Paper mode:** Tick-level simulation in `_check_pending_triggers(ltp)`
+- **Live mode:** `on_order_update` callback from KiteTicker (instant push from Zerodha, no polling)
+- **Fallback:** `run_verify_triggers()` on candle close
+
+### Gap Up/Down Protection (Cross-Day Trigger Orders)
+Any strategy with overnight pending trigger orders (SL-L) must handle gap opens:
+- **9:16 AM** `re_place_pending_orders()`: Before re-placing, compare LTP vs trigger price
+  - SELL trigger + LTP already below trigger = gap down past level
+  - BUY trigger + LTP already above trigger = gap up past level
+  - If gap detected: do NOT re-place. Mark position `GAP_PENDING`
+- **9:21 AM** `handle_gap_entry()`: After 5 minutes of market confirmation:
+  - **Gap filled** (price retraced back past trigger)? → Cancel position. Was a fake gap.
+  - **Signal reversed** (regime/direction changed)? → Cancel position. Signal is stale.
+  - **Gap holds + signal intact**? → Enter at MARKET price + place full hedges immediately:
+    - Protective option (far OTM insurance)
+    - Short option (1 strike OTM for premium income)
+    - Hard SL recalculated from master ST + ATR buffer
+- **Why:** Filling at a gap price is risky — price often retraces gaps. The 5-min wait filters fake gaps from genuine breakaway moves. Full hedges on entry (not deferred to EOD) because the gap entry is inherently higher-risk.
+- **Reference:** `services/maruthi_executor.py` > `re_place_pending_orders()` and `handle_gap_entry()`
+
+### Onboarding Checklist (New Strategy)
+1. **3 service files:** `{strat}_scanner.py`, `{strat}_executor.py`, `{strat}_db.py` (all singletons)
+2. **Config:** `{STRAT}_DEFAULTS` dict in `config.py`
+3. **API:** Standard 9 endpoints at `/api/{strat}/*` in `app.py`
+4. **Tick data:** Subscribe token in MaruthiTicker `_on_connect`, add `_forward_to_{strat}()` method
+5. **SocketIO:** Emit `{strat}_tick` from ticker, listen in dashboard JS
+6. **Scheduler:** APScheduler cron jobs in `app.py` (Mon-Fri)
+7. **Dashboard:** `templates/{strat}_dashboard.html` extending `base.html`
+8. **Boot:** Auto-start in `app.py` `__main__` block
+9. **Gap protection:** If strategy uses cross-day pending orders, implement gap detection in re-place + delayed handler (see pattern above)
+
+Full pattern with code examples: `docs/Design/LIVE-TRADING-ARCHITECTURE.md` § "Onboarding a New Live Strategy"
+
 ## What to Do When Called
 
-1. Read `misc/DESIGN-ARCHITECTURE.md` and `misc/strategy-command-center.jsx` for current spec
-2. Check each strategy's service files exist and are complete
-3. Produce a **Status Matrix** showing completion level per strategy
-4. List **Missing Items** prioritized by impact
-5. Give **File Pointers** — exact paths and line numbers
-6. Output a numbered **Action Plan** with scope estimates (S/M/L)
+1. Read `docs/Design/LIVE-TRADING-ARCHITECTURE.md` for the established real-time infrastructure pattern
+2. Read `misc/DESIGN-ARCHITECTURE.md` and `misc/strategy-command-center.jsx` for SCC spec
+3. Check each strategy's service files exist and are complete
+4. Produce a **Status Matrix** showing completion level per strategy
+5. List **Missing Items** prioritized by impact
+6. Give **File Pointers** — exact paths and line numbers
+7. Output a numbered **Action Plan** with scope estimates (S/M/L)
+8. For new strategies: generate the onboarding checklist with all 8 items checked/unchecked

@@ -206,6 +206,7 @@ class MaruthiTicker:
         self._thread: Optional[threading.Thread] = None
         self._instrument_token: Optional[int] = None
         self._last_ltp: float = 0.0
+        self._last_tick_time: Optional[datetime] = None
         self._lock = threading.Lock()
 
         # Set candle close callback
@@ -274,20 +275,189 @@ class MaruthiTicker:
         except Exception as e:
             logger.error(f"Failed to load historical candles: {e}", exc_info=True)
 
+    def _catchup_signal_check(self):
+        """
+        Run signal check on historical candles to catch flips that
+        happened while the ticker was offline (e.g., gap open, overnight).
+
+        Scans all candles since last processed candle for master/child flips.
+        Processes each flip in chronological order using the DF truncated to
+        that flip's candle (so detect_signals sees it as the latest row).
+        """
+        try:
+            df = self.aggregator.get_dataframe()
+            if len(df) < 20:
+                logger.info("[MaruthiTicker] Not enough candles for catch-up check")
+                return
+
+            from services.maruthi_executor import get_maruthi_executor
+            from services.maruthi_strategy import compute_dual_supertrend
+            from services.maruthi_db import get_maruthi_db
+
+            db = get_maruthi_db()
+            regime = db.get_regime()
+            db_last_candle = str(regime.get('last_candle_time', ''))
+
+            # Compute current indicators
+            cfg = self.config
+            df_st = compute_dual_supertrend(
+                df,
+                master_period=cfg.get('master_atr_period', 7),
+                master_mult=cfg.get('master_multiplier', 5.0),
+                child_period=cfg.get('child_atr_period', 7),
+                child_mult=cfg.get('child_multiplier', 2.0),
+            )
+
+            # Find all flip candles since last processed
+            flips = []
+            for i in range(1, len(df_st)):
+                row = df_st.iloc[i]
+                prev = df_st.iloc[i - 1]
+                candle_date = str(row.get('date', ''))
+
+                # Skip candles already processed
+                if db_last_candle and candle_date <= db_last_candle:
+                    continue
+
+                has_flip = False
+                if int(row['master_dir']) != int(prev['master_dir']):
+                    has_flip = True
+                    logger.info(f"[MaruthiTicker] Catch-up: master flip at {candle_date}")
+                if int(row['child_dir']) != int(prev['child_dir']):
+                    has_flip = True
+                    logger.info(f"[MaruthiTicker] Catch-up: child flip at {candle_date}")
+
+                if has_flip:
+                    flips.append(i)
+
+            executor = get_maruthi_executor(self.config)
+
+            if flips:
+                # Process each flip in order
+                for idx in flips:
+                    flip_df = df_st.iloc[:idx + 1].copy()
+                    results = executor.run_candle_check(flip_df)
+                    if results:
+                        logger.info(f"[MaruthiTicker] Catch-up actions at row {idx}: {results}")
+
+                # Also run on full DF to update ATR/SL to latest
+                executor.run_candle_check(df_st)
+                logger.info(f"[MaruthiTicker] Catch-up complete: processed {len(flips)} flips")
+            else:
+                # No missed flips — just update ATR/SL
+                executor.run_candle_check(df_st)
+                logger.info("[MaruthiTicker] Catch-up: no missed flips, ATR/SL updated")
+        except Exception as e:
+            logger.error(f"[MaruthiTicker] Catch-up signal check error: {e}", exc_info=True)
+
     def _on_ticks(self, ws, ticks):
         """Handle incoming ticks from KiteTicker."""
         for tick in ticks:
-            if tick.get('instrument_token') == self._instrument_token:
-                ltp = tick.get('last_price', 0)
+            token = tick.get('instrument_token')
+            ltp = tick.get('last_price', 0)
+
+            if token == self._instrument_token and ltp > 0:
                 volume = tick.get('volume_traded', 0)
                 timestamp = tick.get('exchange_timestamp') or datetime.now()
 
-                if ltp > 0:
-                    self._last_ltp = ltp
-                    self.aggregator.process_tick(ltp, volume, timestamp)
+                self._last_ltp = ltp
+                self._last_tick_time = datetime.now()
+                self.aggregator.process_tick(ltp, volume, timestamp)
 
-                    # Real-time hard SL check on every tick
-                    self._check_hard_sl_tick(ltp)
+                # Real-time hard SL check on every tick
+                self._check_hard_sl_tick(ltp)
+
+                # Check if any pending trigger orders have filled
+                self._check_pending_triggers(ltp)
+
+                # Broadcast to dashboard via SocketIO (~2/sec throttle)
+                self._emit_tick(ltp)
+
+            # Forward ALL ticks to NAS ticker (if active)
+            if ltp > 0:
+                self._forward_to_nas(tick)
+
+            # Forward BANKNIFTY ticks to BNF for live spot
+            if tick.get('instrument_token') == 260105 and ltp > 0:
+                self._forward_to_bnf(tick)
+
+            # Forward position-subscribed ticks to positions page via SocketIO
+            if ltp > 0 and hasattr(self, '_pos_token_map') and token in self._pos_token_map:
+                self._emit_pos_tick(token, ltp)
+
+    _pending_cache = None
+    _pending_cache_time = 0
+
+    def _check_pending_triggers(self, ltp: float):
+        """
+        Check if pending SL-L trigger orders have been filled.
+
+        Paper mode: Simulate fill when LTP crosses trigger (tick-level).
+        Live mode: Poll kite.orders() every 30 seconds to detect fills.
+                   On fill → activate position, place protective option, notify.
+
+        Uses a 5-second DB cache to avoid hitting SQLite on every tick.
+        """
+        import time
+        now = time.time()
+
+        # Refresh DB cache every 5 seconds
+        if MaruthiTicker._pending_cache is None or now - MaruthiTicker._pending_cache_time > 5:
+            try:
+                from services.maruthi_db import get_maruthi_db
+                db = get_maruthi_db()
+                MaruthiTicker._pending_cache = db.get_pending_positions()
+                MaruthiTicker._pending_cache_time = now
+            except Exception:
+                return
+
+        pending = MaruthiTicker._pending_cache
+        if not pending:
+            return
+
+        is_paper = self.config.get('paper_trading_mode', True)
+
+        if is_paper:
+            # Paper mode: simulate trigger fill at tick level
+            self._check_paper_triggers(pending, ltp)
+        # Live mode: no polling needed — on_order_update handles fills instantly
+
+    def _check_paper_triggers(self, pending: list, ltp: float):
+        """Paper mode: simulate trigger fill when LTP crosses trigger price."""
+        try:
+            from services.maruthi_db import get_maruthi_db
+            from services.maruthi_executor import get_maruthi_executor
+            db = get_maruthi_db()
+
+            for pos in pending:
+                trigger = pos.get('trigger_price', 0)
+                direction = pos.get('transaction_type', '')
+                if not trigger:
+                    continue
+
+                triggered = False
+                if direction == 'BUY' and ltp >= trigger:
+                    triggered = True
+                elif direction == 'SELL' and ltp <= trigger:
+                    triggered = True
+
+                if triggered:
+                    db.activate_position(pos['id'], entry_price=trigger)
+                    MaruthiTicker._pending_cache = None  # Force refresh
+                    logger.info(
+                        f"[MaruthiTicker] Paper trigger filled: {pos.get('tradingsymbol')} "
+                        f"{direction} @ {trigger} (LTP={ltp})"
+                    )
+                    # Run post-fill actions (protective options, etc.)
+                    try:
+                        executor = get_maruthi_executor(self.config)
+                        executor.on_trigger_fill(pos, fill_price=trigger)
+                    except Exception as e:
+                        logger.error(f"[MaruthiTicker] Post-fill action error: {e}", exc_info=True)
+
+        except Exception as e:
+            logger.error(f"[MaruthiTicker] Paper trigger check error: {e}", exc_info=True)
+
 
     def _check_hard_sl_tick(self, ltp: float):
         """
@@ -324,8 +494,8 @@ class MaruthiTicker:
             logger.warning(f"[MaruthiTicker] HARD SL HIT! LTP={ltp} SL={hard_sl} Regime={current_regime}")
             logger.warning(f"[MaruthiTicker] Closing ALL positions immediately — going FLAT")
 
-            from services.maruthi_executor import MaruthiExecutor
-            executor = MaruthiExecutor(config=self.config)
+            from services.maruthi_executor import get_maruthi_executor
+            executor = get_maruthi_executor(self.config)
 
             # Close ALL positions — no exceptions on hard SL
             closed = executor.close_all_positions(
@@ -359,18 +529,113 @@ class MaruthiTicker:
         except Exception as e:
             logger.error(f"[MaruthiTicker] Hard SL tick check error: {e}", exc_info=True)
 
+    _last_emit_time = 0
+
+    def _emit_tick(self, ltp: float):
+        """Broadcast tick to dashboard via SocketIO. Throttled to ~2/sec."""
+        import time
+        now = time.time()
+        if now - MaruthiTicker._last_emit_time < 0.5:
+            return
+        MaruthiTicker._last_emit_time = now
+
+        try:
+            from app import socketio
+            from services.maruthi_db import get_maruthi_db
+
+            db = get_maruthi_db()
+            regime = db.get_regime()
+
+            candle = self.aggregator.current_candle or {}
+
+            socketio.emit('maruthi_tick', {
+                'ltp': round(ltp, 1),
+                'ts': now,
+                'master_st': regime.get('master_st_value', 0),
+                'child_st': regime.get('child_st_value', 0),
+                'hard_sl': regime.get('hard_sl_price', 0),
+                'regime': regime.get('regime', 'FLAT'),
+                'master_dir': regime.get('master_direction', 0),
+                'child_dir': regime.get('child_direction', 0),
+                'candle': {
+                    'o': candle.get('open', 0),
+                    'h': candle.get('high', 0),
+                    'l': candle.get('low', 0),
+                    'c': candle.get('close', 0),
+                } if candle else None,
+            })
+        except Exception:
+            pass  # Silently fail — dashboard is optional
+
+    # Throttle for position ticks: per-token last emit time
+    _pos_emit_times: Dict[int, float] = {}
+
+    def _emit_pos_tick(self, token: int, ltp: float):
+        """Broadcast a position tick via SocketIO. Throttled to ~2/sec per token."""
+        import time
+        now = time.time()
+        last = MaruthiTicker._pos_emit_times.get(token, 0)
+        if now - last < 0.5:
+            return
+        MaruthiTicker._pos_emit_times[token] = now
+
+        try:
+            from app import socketio
+            tsym = self._pos_token_map.get(token, '')
+            socketio.emit('pos_tick', {
+                'token': token,
+                'tradingsymbol': tsym,
+                'ltp': round(ltp, 2),
+            })
+        except Exception:
+            pass
+
+    def _forward_to_nas(self, tick):
+        """Forward ticks to NAS ticker for NIFTY candle aggregation."""
+        try:
+            from services.nas_ticker import get_nas_ticker
+            nas = get_nas_ticker()
+            if nas and nas.is_running:
+                nas._on_ticks(None, [tick])
+        except Exception:
+            pass
+
+    def _forward_to_bnf(self, tick):
+        """Forward BANKNIFTY ticks for live spot display on BNF dashboard."""
+        try:
+            from services.bnf_executor import get_bnf_executor
+            bnf = get_bnf_executor()
+            if bnf:
+                bnf._last_live_spot = tick.get('last_price', 0)
+        except Exception:
+            pass
+
     def _on_connect(self, ws, response):
         """Handle WebSocket connect."""
         logger.info(f"[MaruthiTicker] Connected to KiteTicker")
         self.is_connected = True
 
+        tokens = []
         token = self._get_instrument_token()
         if token:
-            ws.subscribe([token])
-            ws.set_mode(ws.MODE_FULL, [token])
+            tokens.append(token)
             logger.info(f"[MaruthiTicker] Subscribed to {self.symbol} (token={token})")
         else:
             logger.error(f"[MaruthiTicker] No token for {self.symbol} — cannot subscribe")
+
+        # Also subscribe NIFTY 50 for NAS strategy
+        NIFTY_TOKEN = 256265
+        tokens.append(NIFTY_TOKEN)
+        logger.info(f"[MaruthiTicker] Also subscribing NIFTY 50 (token={NIFTY_TOKEN}) for NAS")
+
+        # Also subscribe BANKNIFTY for BNF strategy (live spot)
+        BANKNIFTY_TOKEN = 260105
+        tokens.append(BANKNIFTY_TOKEN)
+        logger.info(f"[MaruthiTicker] Also subscribing BANKNIFTY (token={BANKNIFTY_TOKEN}) for BNF")
+
+        if tokens:
+            ws.subscribe(tokens)
+            ws.set_mode(ws.MODE_FULL, tokens)
 
     def _on_close(self, ws, code, reason):
         """Handle WebSocket close."""
@@ -385,6 +650,69 @@ class MaruthiTicker:
         """Handle reconnect attempts."""
         logger.info(f"[MaruthiTicker] Reconnecting... attempt {attempts}")
 
+    def _on_order_update(self, ws, data):
+        """
+        Handle real-time order update pushed by Zerodha via WebSocket.
+
+        KiteTicker sends order status changes as text messages with type='order'.
+        This fires instantly when an order is placed, modified, completed, cancelled, or rejected.
+        No polling needed — this is the authoritative source for fill detection.
+
+        data dict keys: order_id, status, tradingsymbol, transaction_type,
+                        average_price, filled_quantity, status_message, etc.
+        """
+        try:
+            order_id = str(data.get('order_id', ''))
+            status = data.get('status', '')
+            tradingsymbol = data.get('tradingsymbol', '')
+            txn_type = data.get('transaction_type', '')
+
+            logger.info(
+                f"[MaruthiTicker] Order update: {txn_type} {tradingsymbol} "
+                f"status={status} order_id={order_id}"
+            )
+
+            # Only act on terminal states
+            if status not in ('COMPLETE', 'CANCELLED', 'REJECTED'):
+                return
+
+            # Match against our pending positions
+            from services.maruthi_db import get_maruthi_db
+            db = get_maruthi_db()
+            pending = db.get_pending_positions()
+
+            for pos in pending:
+                if str(pos.get('kite_order_id', '')) != order_id:
+                    continue
+
+                if status == 'COMPLETE':
+                    fill_price = data.get('average_price', pos.get('trigger_price', 0))
+                    db.activate_position(pos['id'], fill_price)
+                    MaruthiTicker._pending_cache = None  # Invalidate cache
+
+                    logger.info(
+                        f"[MaruthiTicker] ORDER FILLED: {txn_type} {tradingsymbol} "
+                        f"@ {fill_price} (order_id={order_id})"
+                    )
+
+                    # Post-fill actions: protective option, hard SL update
+                    from services.maruthi_executor import get_maruthi_executor
+                    executor = get_maruthi_executor(self.config)
+                    executor.on_trigger_fill(pos, fill_price=fill_price)
+
+                elif status in ('CANCELLED', 'REJECTED'):
+                    db.cancel_position(pos['id'])
+                    MaruthiTicker._pending_cache = None
+
+                    logger.warning(
+                        f"[MaruthiTicker] ORDER {status}: {tradingsymbol} "
+                        f"(order_id={order_id}, reason={data.get('status_message', '')})"
+                    )
+                break
+
+        except Exception as e:
+            logger.error(f"[MaruthiTicker] Order update handler error: {e}", exc_info=True)
+
     def _on_candle_close(self, candle: dict):
         """
         Fired when a 30-min candle closes.
@@ -393,9 +721,9 @@ class MaruthiTicker:
         logger.info(f"[MaruthiTicker] 30-min candle closed: {candle['date']} close={candle['close']:.1f}")
 
         try:
-            from services.maruthi_executor import MaruthiExecutor
+            from services.maruthi_executor import get_maruthi_executor
 
-            executor = MaruthiExecutor(config=self.config)
+            executor = get_maruthi_executor(self.config)
 
             # Get DataFrame with all completed candles
             df = self.aggregator.get_dataframe()
@@ -434,6 +762,10 @@ class MaruthiTicker:
         # Load historical candles for SuperTrend warmup
         self._load_historical_candles()
 
+        # Run catch-up signal check on historical data to detect flips
+        # that happened while ticker was offline (e.g., overnight gap open)
+        self._catchup_signal_check()
+
         # Initialize KiteTicker
         self.kws = KiteTicker(KITE_API_KEY, access_token)
         self.kws.on_ticks = self._on_ticks
@@ -441,6 +773,7 @@ class MaruthiTicker:
         self.kws.on_close = self._on_close
         self.kws.on_error = self._on_error
         self.kws.on_reconnect = self._on_reconnect
+        self.kws.on_order_update = self._on_order_update
 
         self.is_running = True
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -482,6 +815,7 @@ class MaruthiTicker:
             'is_connected': self.is_connected,
             'symbol': self.symbol,
             'last_ltp': self._last_ltp,
+            'last_tick_time': self._last_tick_time.isoformat() if self._last_tick_time else None,
             'completed_candles': len(self.aggregator.completed_candles),
             'current_candle': self.aggregator.current_candle,
             'instrument_token': self._instrument_token,
