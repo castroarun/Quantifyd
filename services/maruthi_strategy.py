@@ -179,12 +179,14 @@ def detect_signals(df: pd.DataFrame, current_regime: str,
     return signals
 
 
-def compute_trigger_price(candle: dict, direction: str, buffer: float = 1.0) -> float:
+def compute_trigger_price(candle: dict, direction: str, buffer: float = 5.0) -> float:
     """
     Compute SL-L trigger price for futures entry.
 
     For BUY: trigger = candle high + buffer (enters above the candle)
     For SELL: trigger = candle low - buffer (enters below the candle)
+
+    Buffer default: 5 points.
     """
     if direction == 'BUY':
         return round(candle['high'] + buffer, 1)
@@ -222,14 +224,20 @@ def compute_hard_sl(master_st_value: float, regime: str, buffer: float = 50.0,
     """
     if regime == 'BULL':
         new_sl = round(master_st_value - buffer, 1)
-        # Trail up only — never move SL down in BULL
         if prev_hard_sl > 0:
+            # Reset if SL drifted above Master ST (wrong side)
+            if prev_hard_sl >= master_st_value:
+                return new_sl
+            # Trail up only — never move SL down in BULL
             return max(new_sl, prev_hard_sl)
         return new_sl
     elif regime == 'BEAR':
         new_sl = round(master_st_value + buffer, 1)
-        # Trail down only — never move SL up in BEAR
         if prev_hard_sl > 0:
+            # Reset if SL drifted below Master ST (wrong side)
+            if prev_hard_sl <= master_st_value:
+                return new_sl
+            # Trail down only — never move SL up in BEAR
             return min(new_sl, prev_hard_sl)
         return new_sl
     return 0.0
@@ -289,7 +297,8 @@ def resolve_sl_buffer(config: dict, master_atr: float = 100.0) -> float:
 
 def determine_actions(signal: MaruthiSignal, current_regime: str,
                       active_futures_count: int, max_futures: int = 5,
-                      config: dict = None, master_atr: float = 100.0) -> List[dict]:
+                      config: dict = None, master_atr: float = 100.0,
+                      active_short_options_count: int = 0) -> List[dict]:
     """
     Determine what actions to take based on a signal.
 
@@ -357,21 +366,23 @@ def determine_actions(signal: MaruthiSignal, current_regime: str,
                     'master_st': signal.master_st,
                 })
         elif current_regime == 'BEAR':
-            # Short OTM put
-            strike = get_otm_strike(spot, 'PE', strike_interval, otm_strikes)
-            actions.append({
-                'action': 'SHORT_PUT',
-                'strike': strike,
-            })
+            # Short OTM put — only if options < futures count (1 per lot)
+            if active_short_options_count < active_futures_count:
+                strike = get_otm_strike(spot, 'PE', strike_interval, otm_strikes)
+                actions.append({
+                    'action': 'SHORT_PUT',
+                    'strike': strike,
+                })
 
     elif signal.signal_type == MaruthiSignal.CHILD_BEAR:
         if current_regime == 'BULL':
-            # Short OTM call
-            strike = get_otm_strike(spot, 'CE', strike_interval, otm_strikes)
-            actions.append({
-                'action': 'SHORT_CALL',
-                'strike': strike,
-            })
+            # Short OTM call — only if options < futures count (1 per lot)
+            if active_short_options_count < active_futures_count:
+                strike = get_otm_strike(spot, 'CE', strike_interval, otm_strikes)
+                actions.append({
+                    'action': 'SHORT_CALL',
+                    'strike': strike,
+                })
         elif current_regime == 'BEAR':
             # Add short futures (if under max)
             if active_futures_count < max_futures:

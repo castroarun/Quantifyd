@@ -53,6 +53,7 @@ class MaruthiDB:
                         id INTEGER PRIMARY KEY CHECK (id = 1),
                         regime VARCHAR(10) DEFAULT 'FLAT',
                         master_st_value REAL,
+                        child_st_value REAL,
                         master_direction INTEGER,
                         child_direction INTEGER,
                         hard_sl_price REAL,
@@ -179,6 +180,11 @@ class MaruthiDB:
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
+                # Migration: add child_st_value if missing
+                cols = [r[1] for r in conn.execute("PRAGMA table_info(maruthi_regime)").fetchall()]
+                if 'child_st_value' not in cols:
+                    conn.execute("ALTER TABLE maruthi_regime ADD COLUMN child_st_value REAL")
+
                 conn.commit()
             finally:
                 conn.close()
@@ -354,6 +360,18 @@ class MaruthiDB:
             try:
                 row = conn.execute(
                     "SELECT COUNT(*) as cnt FROM maruthi_positions WHERE status = 'ACTIVE' AND position_type = 'FUTURES'"
+                ).fetchone()
+                return row['cnt'] if row else 0
+            finally:
+                conn.close()
+
+    def get_active_short_options_count(self) -> int:
+        """Count active short option positions."""
+        with db_lock:
+            conn = self._get_conn()
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM maruthi_positions WHERE status = 'ACTIVE' AND position_type = 'SHORT_OPTION'"
                 ).fetchone()
                 return row['cnt'] if row else 0
             finally:

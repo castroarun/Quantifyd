@@ -29,7 +29,8 @@ from config import MARUTHI_DEFAULTS
 from services.maruthi_db import get_maruthi_db, MaruthiDB
 from services.maruthi_strategy import (
     MaruthiSignal, determine_actions, compute_dual_supertrend,
-    detect_signals, compute_hard_sl, resolve_sl_buffer
+    detect_signals, compute_hard_sl, resolve_sl_buffer,
+    compute_trigger_price, compute_limit_price
 )
 from services.maruthi_contract_manager import MaruthiContractManager
 from services.kite_service import get_kite, is_authenticated
@@ -65,11 +66,71 @@ class MaruthiExecutor:
                 strike_interval=self.config.get('strike_interval', 100),
             )
 
+    def _get_futures_candle(self, candle_time: str = None) -> Optional[dict]:
+        """
+        Fetch the matching 30-min futures candle from Kite historical API.
+
+        Trigger prices must be based on the futures candle (not equity)
+        because the order is placed on the futures instrument.
+
+        Returns dict with open, high, low, close or None.
+        """
+        try:
+            kite = self._get_kite()
+            if not kite:
+                return None
+
+            self._ensure_contract_mgr()
+            fut = self.contract_mgr.get_futures_symbol()
+            if not fut:
+                logger.warning("No futures contract — cannot fetch futures candle")
+                return None
+
+            fut_token = fut.get('instrument_token')
+            if not fut_token:
+                # Look up token from instruments
+                instruments = kite.instruments('NFO')
+                for inst in instruments:
+                    if inst['tradingsymbol'] == fut['tradingsymbol']:
+                        fut_token = inst['instrument_token']
+                        break
+            if not fut_token:
+                logger.warning(f"No instrument token for {fut['tradingsymbol']}")
+                return None
+
+            from_date = datetime.now() - timedelta(days=2)
+            to_date = datetime.now()
+            data = kite.historical_data(fut_token, from_date, to_date, '30minute')
+
+            if not data:
+                return None
+
+            # Find matching candle by time, or use latest
+            if candle_time:
+                candle_str = str(candle_time).replace('+05:30', '')
+                for d in reversed(data):
+                    if candle_str in str(d['date']):
+                        return {
+                            'open': d['open'], 'high': d['high'],
+                            'low': d['low'], 'close': d['close'],
+                            'date': str(d['date']),
+                        }
+
+            # Default: return latest completed candle
+            return {
+                'open': data[-1]['open'], 'high': data[-1]['high'],
+                'low': data[-1]['low'], 'close': data[-1]['close'],
+                'date': str(data[-1]['date']),
+            }
+        except Exception as e:
+            logger.error(f"Failed to fetch futures candle: {e}")
+            return None
+
     # =========================================================================
     # Guardrails
     # =========================================================================
 
-    def _check_guardrails(self, is_entry: bool = True) -> tuple:
+    def _check_guardrails(self, is_entry: bool = True, is_option: bool = False) -> tuple:
         """Pre-order safety checks. Returns (passed, reason)."""
         cfg = self.config
 
@@ -101,6 +162,14 @@ class MaruthiExecutor:
             active_fut = self.db.get_active_futures_count()
             if active_fut >= max_fut:
                 return False, f"Max futures lots reached ({active_fut}/{max_fut})"
+
+        # Option count guard: short options must not exceed active futures count
+        # Rule: 1 short option per 1 futures lot — never more
+        if is_option:
+            active_fut = self.db.get_active_futures_count()
+            active_opts = self.db.get_active_short_options_count()
+            if active_opts >= active_fut:
+                return False, f"Short options ({active_opts}) already match futures ({active_fut}) — no more allowed"
 
         return True, "OK"
 
@@ -337,7 +406,7 @@ class MaruthiExecutor:
             signal_type: What triggered this
             regime: Current regime
         """
-        passed, reason = self._check_guardrails(is_entry=False)
+        passed, reason = self._check_guardrails(is_entry=False, is_option=True)
         if not passed:
             logger.warning(f"Guardrail blocked option short: {reason}")
             return None
@@ -678,6 +747,7 @@ class MaruthiExecutor:
                 self.db.update_regime(
                     regime=new_regime,
                     master_st_value=signal.master_st,
+                    child_st_value=signal.child_st,
                     master_direction=signal.master_direction,
                     child_direction=signal.child_direction,
                     hard_sl_price=compute_hard_sl(
@@ -691,29 +761,60 @@ class MaruthiExecutor:
                 logger.info(f"Regime {new_regime}: SL buffer={sl_buf:.1f} (ATR={self._current_master_atr:.1f})")
                 current_regime = new_regime
 
-            elif act == 'BUY_FUTURES':
-                pos_id = self.place_futures_entry(
-                    direction='BUY',
-                    trigger_price=action['trigger_price'],
-                    limit_price=action['limit_price'],
-                    hard_sl=action['hard_sl'],
-                    signal_type=signal.signal_type,
-                    regime=current_regime,
-                )
-                if pos_id:
-                    results.append(f"Buy futures trigger @ {action['trigger_price']}")
+            elif act in ('BUY_FUTURES', 'SHORT_FUTURES'):
+                direction = 'BUY' if act == 'BUY_FUTURES' else 'SELL'
+                opposite = 'SELL' if direction == 'BUY' else 'BUY'
+                trigger = action['trigger_price']
+                limit = action['limit_price']
 
-            elif act == 'SHORT_FUTURES':
+                # 1. Cancel any pending triggers in the OPPOSITE direction
+                #    (signal reversed — stale orders are invalid)
+                pending = self.db.get_pending_positions()
+                for pend in pending:
+                    if pend.get('transaction_type') == opposite:
+                        # Cancel on Kite if live
+                        if self.config.get('live_trading_enabled') and pend.get('kite_order_id'):
+                            try:
+                                kite = self._get_kite()
+                                kite.cancel_order('regular', pend['kite_order_id'])
+                                logger.info(f"Cancelled stale Kite order {pend['kite_order_id']}")
+                            except Exception as e:
+                                logger.error(f"Failed to cancel stale order: {e}")
+                        self.db.cancel_position(pend['id'])
+                        results.append(f"Cancelled stale {opposite} trigger #{pend['id']}")
+
+                # 2. Skip if same-direction pending already exists
+                #    (avoid duplicate triggers for the same signal)
+                pending_refresh = self.db.get_pending_positions()
+                has_same = any(p.get('transaction_type') == direction for p in pending_refresh)
+                if has_same:
+                    logger.info(f"Already have pending {direction} trigger — skipping")
+                    results.append(f"Skipped {direction} trigger (already pending)")
+                    continue
+
+                # 3. Override trigger with futures candle data (not equity)
+                if not self.config.get('paper_trading_mode'):
+                    candle_time = signal.candle.get('date')
+                    fut_candle = self._get_futures_candle(candle_time)
+                    if fut_candle:
+                        trigger = compute_trigger_price(fut_candle, direction)
+                        limit = compute_limit_price(trigger, direction)
+                        logger.info(
+                            f"Futures candle {fut_candle['date']}: "
+                            f"H={fut_candle['high']} L={fut_candle['low']} "
+                            f"→ trigger={trigger} limit={limit}"
+                        )
+
                 pos_id = self.place_futures_entry(
-                    direction='SELL',
-                    trigger_price=action['trigger_price'],
-                    limit_price=action['limit_price'],
+                    direction=direction,
+                    trigger_price=trigger,
+                    limit_price=limit,
                     hard_sl=action['hard_sl'],
                     signal_type=signal.signal_type,
                     regime=current_regime,
                 )
                 if pos_id:
-                    results.append(f"Short futures trigger @ {action['trigger_price']}")
+                    results.append(f"{act.replace('_', ' ').title()} trigger @ {trigger}")
 
             elif act == 'SHORT_CALL':
                 pos_id = self.place_option_short(
@@ -762,6 +863,7 @@ class MaruthiExecutor:
         # Update regime timestamps
         self.db.update_regime(
             child_direction=signal.child_direction,
+            child_st_value=signal.child_st,
             last_signal_time=datetime.now().isoformat(),
             last_candle_time=signal.candle.get('time'),
         )
@@ -819,6 +921,7 @@ class MaruthiExecutor:
             )
             self.db.update_regime(
                 master_st_value=float(latest['master_st']),
+                child_st_value=float(latest['child_st']),
                 master_direction=int(latest['master_dir']),
                 child_direction=int(latest['child_dir']),
                 last_candle_time=str(latest.get('date', latest.name)),
@@ -832,11 +935,13 @@ class MaruthiExecutor:
         all_results = []
         for signal in signals:
             active_fut = self.db.get_active_futures_count()
+            active_opts = self.db.get_active_short_options_count()
             actions = determine_actions(
                 signal, current_regime, active_fut,
                 max_futures=cfg.get('max_futures_lots', 5),
                 config=cfg,
                 master_atr=master_atr,
+                active_short_options_count=active_opts,
             )
             results = self.execute_actions(actions, signal)
             all_results.extend(results)
@@ -934,6 +1039,78 @@ class MaruthiExecutor:
 
         return results
 
+    def on_trigger_fill(self, position: dict, fill_price: float) -> List[str]:
+        """
+        Post-fill actions when a pending trigger order gets executed.
+
+        Called by ticker immediately on fill detection (paper or live).
+        Actions:
+          1. Place protective option (PE for BULL, CE for BEAR)
+          2. Update hard SL for the new position
+          3. Log the fill event
+
+        Args:
+            position: The position dict that just filled
+            fill_price: The actual fill price
+        """
+        results = []
+        cfg = self.config
+        regime = self.db.get_regime()
+        current_regime = regime.get('regime', 'FLAT')
+
+        direction = position.get('transaction_type', '')
+        tradingsymbol = position.get('tradingsymbol', '')
+
+        logger.info(
+            f"[PostFill] {direction} {tradingsymbol} filled @ {fill_price} | "
+            f"Regime={current_regime}"
+        )
+        results.append(f"Trigger filled: {direction} {tradingsymbol} @ {fill_price}")
+
+        # 1. Place protective option
+        try:
+            if current_regime == 'BULL':
+                opt_type = 'PE'  # Protective put for long futures
+            elif current_regime == 'BEAR':
+                opt_type = 'CE'  # Protective call for short futures
+            else:
+                opt_type = None
+
+            if opt_type:
+                pos_id = self.place_protective_option(opt_type, fill_price, current_regime)
+                if pos_id:
+                    results.append(f"Protective {opt_type} placed for {tradingsymbol}")
+                else:
+                    results.append(f"WARNING: Failed to place protective {opt_type}")
+        except Exception as e:
+            logger.error(f"[PostFill] Protective option error: {e}", exc_info=True)
+            results.append(f"ERROR placing protective option: {e}")
+
+        # 2. Update hard SL (recalculate from current master ST + ATR)
+        try:
+            master_st = regime.get('master_st', 0)
+            atr = getattr(self, '_current_master_atr', cfg.get('hard_sl_buffer', 100))
+            atr_mult = cfg.get('hard_sl_atr_mult', 1.0)
+            buffer = atr_mult * atr if not cfg.get('hard_sl_buffer', 0) else cfg['hard_sl_buffer']
+
+            if current_regime == 'BULL':
+                hard_sl = master_st - buffer
+            elif current_regime == 'BEAR':
+                hard_sl = master_st + buffer
+            else:
+                hard_sl = 0
+
+            if hard_sl > 0:
+                self.db.update_regime(hard_sl_price=hard_sl)
+                results.append(f"Hard SL set: {hard_sl:.1f}")
+        except Exception as e:
+            logger.error(f"[PostFill] Hard SL update error: {e}", exc_info=True)
+
+        for r in results:
+            logger.info(f"[PostFill] {r}")
+
+        return results
+
     def run_verify_triggers(self, current_price: float) -> List[str]:
         """
         Check if any pending trigger orders have been filled.
@@ -947,14 +1124,19 @@ class MaruthiExecutor:
             if self.config.get('paper_trading_mode'):
                 # Paper mode: simulate fill if price crossed trigger
                 trigger = pos.get('trigger_price', 0)
+                filled = False
                 if pos['transaction_type'] == 'BUY' and current_price >= trigger:
                     self.db.activate_position(pos['id'], trigger)
                     results.append(f"Paper fill: BUY {pos['tradingsymbol']} @ {trigger}")
+                    filled = True
                 elif pos['transaction_type'] == 'SELL' and current_price <= trigger:
                     self.db.activate_position(pos['id'], trigger)
                     results.append(f"Paper fill: SELL {pos['tradingsymbol']} @ {trigger}")
+                    filled = True
+                if filled:
+                    self.on_trigger_fill(pos, fill_price=trigger)
             else:
-                # Live mode: check Kite order status
+                # Live mode: check Kite order status (fallback — ticker polls every 30s)
                 if pos.get('kite_order_id'):
                     try:
                         kite = self._get_kite()
@@ -965,12 +1147,304 @@ class MaruthiExecutor:
                                     fill_price = order.get('average_price', pos.get('trigger_price', 0))
                                     self.db.activate_position(pos['id'], fill_price)
                                     results.append(f"Filled: {pos['tradingsymbol']} @ {fill_price}")
+                                    self.on_trigger_fill(pos, fill_price=fill_price)
                                 elif order['status'] in ('CANCELLED', 'REJECTED'):
                                     self.db.cancel_position(pos['id'])
                                     results.append(f"Cancelled/Rejected: {pos['tradingsymbol']}")
                                 break
                     except Exception as e:
                         logger.error(f"Failed to verify order {pos['kite_order_id']}: {e}")
+
+        return results
+
+    # =========================================================================
+    # Cross-Day Order Persistence
+    # =========================================================================
+
+    def re_place_pending_orders(self) -> List[str]:
+        """
+        Re-place pending trigger orders on Kite at market open.
+
+        Zerodha cancels all unfilled SL-L orders at 3:30 PM EOD.
+        If we have PENDING positions in DB from yesterday, we need to
+        re-place them on Kite this morning with the same trigger/limit.
+
+        Gap protection: If the market opens past the trigger price (gap through),
+        we DON'T re-place the order. Instead, mark as GAP_PENDING and let
+        handle_gap_entry() deal with it after 5 minutes.
+
+        Called by scheduled job at 9:16 AM (just after market open).
+        """
+        results = []
+        pending = self.db.get_pending_positions()
+        if not pending:
+            return results
+
+        cfg = self.config
+        is_paper = cfg.get('paper_trading_mode', True)
+
+        # Get current LTP for gap detection
+        current_ltp = 0
+        try:
+            from services.maruthi_ticker import get_maruthi_ticker
+            ticker = get_maruthi_ticker()
+            current_ltp = ticker._last_ltp
+        except Exception:
+            pass
+
+        # Fallback: fetch LTP from Kite quote
+        if current_ltp <= 0 and not is_paper:
+            try:
+                kite = self._get_kite()
+                if kite:
+                    quote = kite.quote([f"NSE:{cfg.get('symbol', 'MARUTI')}"])
+                    current_ltp = quote.get(f"NSE:{cfg.get('symbol', 'MARUTI')}", {}).get('last_price', 0)
+            except Exception:
+                pass
+
+        if not is_paper:
+            kite = self._get_kite()
+            if not kite:
+                return ['Kite not authenticated — cannot re-place orders']
+
+        for pos in pending:
+            try:
+                trigger = pos.get('trigger_price', 0)
+                direction = pos.get('transaction_type', '')
+
+                # --- Gap detection ---
+                # SELL trigger: price should be ABOVE trigger (waiting to drop to it)
+                #   Gap = LTP already BELOW trigger → market gapped past our level
+                # BUY trigger: price should be BELOW trigger (waiting to rise to it)
+                #   Gap = LTP already ABOVE trigger → market gapped past our level
+                gap_detected = False
+                if current_ltp > 0 and trigger > 0:
+                    if direction == 'SELL' and current_ltp < trigger:
+                        gap_detected = True
+                    elif direction == 'BUY' and current_ltp > trigger:
+                        gap_detected = True
+
+                if gap_detected:
+                    gap_pct = abs(current_ltp - trigger) / trigger * 100
+                    self.db.update_position(pos['id'], status='GAP_PENDING')
+                    results.append(
+                        f"GAP DETECTED: {direction} trigger {trigger:.0f} but LTP={current_ltp:.0f} "
+                        f"({gap_pct:.1f}% gap) — deferring to 9:21 AM gap handler"
+                    )
+                    logger.warning(
+                        f"[GapProtect] #{pos['id']} {direction} trigger={trigger} "
+                        f"LTP={current_ltp} gap={gap_pct:.1f}% — deferred to gap handler"
+                    )
+                    continue
+
+                # --- Normal re-placement (no gap) ---
+                if is_paper:
+                    results.append(f"Paper mode — pending {direction} @ {trigger} remains in DB")
+                    continue
+
+                # Get current futures contract (may have changed month)
+                self._ensure_contract_mgr()
+                fut = self.contract_mgr.get_futures_symbol()
+                if not fut:
+                    results.append(f"No futures contract — skipping {pos['tradingsymbol']}")
+                    continue
+
+                tradingsymbol = fut['tradingsymbol']
+                lot_size = fut.get('lot_size', cfg.get('lot_size', 50))
+
+                # Update tradingsymbol if expiry rolled
+                if tradingsymbol != pos.get('tradingsymbol'):
+                    self.db.update_position(pos['id'],
+                                            tradingsymbol=tradingsymbol,
+                                            qty=lot_size)
+                    logger.info(f"Updated pending #{pos['id']}: {pos['tradingsymbol']} → {tradingsymbol}")
+
+                # Place fresh SL-L order on Kite
+                kite_order_id = self._place_order_kite({
+                    'exchange': cfg.get('exchange_fo', 'NFO'),
+                    'tradingsymbol': tradingsymbol,
+                    'transaction_type': direction,
+                    'quantity': lot_size,
+                    'product': 'NRML',
+                    'order_type': 'SL',
+                    'price': trigger - 5 if direction == 'SELL' else trigger + 5,
+                    'trigger_price': trigger,
+                })
+
+                if kite_order_id:
+                    self.db.update_position(pos['id'], kite_order_id=kite_order_id)
+                    results.append(f"Re-placed {direction} trigger @ {trigger} → {kite_order_id}")
+                    logger.info(f"Re-placed pending #{pos['id']} on Kite: {kite_order_id}")
+                else:
+                    results.append(f"Failed to re-place {pos['tradingsymbol']}")
+            except Exception as e:
+                logger.error(f"Failed to re-place pending #{pos['id']}: {e}")
+                results.append(f"Error re-placing #{pos['id']}: {e}")
+
+        return results
+
+    def handle_gap_entry(self) -> List[str]:
+        """
+        Handle GAP_PENDING positions after the first 5 minutes of market open.
+
+        Called at 9:21 AM (5 mins after market open). For each GAP_PENDING position:
+        1. Check if the gap is still unfilled (price hasn't retraced back past trigger)
+        2. Check if the signal direction is still valid (regime hasn't changed)
+        3. If both: enter at MARKET + place full hedges immediately
+           (protective option + short option — same as EOD + child signal combo)
+        4. If gap filled or signal reversed: cancel the position
+
+        This prevents entering at a terrible gap price that might retrace,
+        while still entering if the move is genuine after 5 mins of confirmation.
+        """
+        results = []
+        cfg = self.config
+
+        # Get GAP_PENDING positions
+        try:
+            conn = self.db._get_conn()
+            rows = conn.execute(
+                "SELECT * FROM maruthi_positions WHERE status = 'GAP_PENDING' ORDER BY id"
+            ).fetchall()
+            gap_positions = [dict(r) for r in rows]
+            conn.close()
+        except Exception as e:
+            logger.error(f"[GapHandler] DB error: {e}")
+            return [f"DB error: {e}"]
+
+        if not gap_positions:
+            return ['No GAP_PENDING positions']
+
+        # Get current state
+        regime = self.db.get_regime()
+        current_regime = regime.get('regime', 'FLAT')
+
+        # Get current LTP
+        current_ltp = 0
+        try:
+            from services.maruthi_ticker import get_maruthi_ticker
+            ticker = get_maruthi_ticker()
+            current_ltp = ticker._last_ltp
+        except Exception:
+            pass
+
+        if current_ltp <= 0:
+            try:
+                kite = self._get_kite()
+                if kite:
+                    quote = kite.quote([f"NSE:{cfg.get('symbol', 'MARUTI')}"])
+                    current_ltp = quote.get(f"NSE:{cfg.get('symbol', 'MARUTI')}", {}).get('last_price', 0)
+            except Exception:
+                pass
+
+        if current_ltp <= 0:
+            return ['Cannot get LTP — gap handler deferred']
+
+        for pos in gap_positions:
+            trigger = pos.get('trigger_price', 0)
+            direction = pos.get('transaction_type', '')
+            pos_id = pos['id']
+
+            # Check 1: Is the gap still unfilled?
+            # SELL: gap was LTP < trigger. Gap unfilled = LTP still below trigger
+            # BUY: gap was LTP > trigger. Gap unfilled = LTP still above trigger
+            gap_still_open = False
+            if direction == 'SELL' and current_ltp < trigger:
+                gap_still_open = True
+            elif direction == 'BUY' and current_ltp > trigger:
+                gap_still_open = True
+
+            if not gap_still_open:
+                # Gap filled — price retraced back. Cancel the position.
+                self.db.cancel_position(pos_id)
+                results.append(
+                    f"GAP FILLED: {direction} trigger={trigger:.0f} LTP={current_ltp:.0f} "
+                    f"— price retraced, position cancelled"
+                )
+                logger.info(f"[GapHandler] #{pos_id} gap filled, cancelled")
+                continue
+
+            # Check 2: Is the signal direction still valid?
+            # SELL pending = BEAR regime should still be active
+            # BUY pending = BULL regime should still be active
+            signal_valid = False
+            if direction == 'SELL' and current_regime == 'BEAR':
+                signal_valid = True
+            elif direction == 'BUY' and current_regime == 'BULL':
+                signal_valid = True
+
+            if not signal_valid:
+                self.db.cancel_position(pos_id)
+                results.append(
+                    f"SIGNAL INVALID: {direction} but regime={current_regime} "
+                    f"— position cancelled"
+                )
+                logger.info(f"[GapHandler] #{pos_id} signal invalid (regime={current_regime}), cancelled")
+                continue
+
+            # Both checks passed — enter at MARKET with full hedges
+            logger.info(
+                f"[GapHandler] #{pos_id} gap confirmed after 5 min: "
+                f"{direction} LTP={current_ltp:.0f} (trigger was {trigger:.0f})"
+            )
+
+            # Activate the position at current LTP (MARKET entry)
+            self.db.activate_position(pos_id, entry_price=current_ltp)
+            results.append(f"GAP ENTRY: {direction} @ {current_ltp:.0f} (trigger was {trigger:.0f})")
+
+            # Place MARKET order on Kite (live mode)
+            if cfg.get('live_trading_enabled') and not cfg.get('paper_trading_mode'):
+                self._ensure_contract_mgr()
+                fut = self.contract_mgr.get_futures_symbol()
+                if fut:
+                    kite_order_id = self._place_order_kite({
+                        'exchange': cfg.get('exchange_fo', 'NFO'),
+                        'tradingsymbol': fut['tradingsymbol'],
+                        'transaction_type': direction,
+                        'quantity': fut.get('lot_size', cfg.get('lot_size', 50)),
+                        'product': 'NRML',
+                        'order_type': 'MARKET',
+                    })
+                    if kite_order_id:
+                        self.db.update_position(pos_id, kite_order_id=kite_order_id)
+                        results.append(f"MARKET order placed: {kite_order_id}")
+
+            # Place hedges only if position counts allow it
+            # Rule: 1 short option per 1 futures lot — guardrails enforce this
+            active_fut = self.db.get_active_futures_count()
+            active_opts = self.db.get_active_short_options_count()
+
+            if current_regime == 'BEAR':
+                short_type = 'PE'  # Short put to collect premium
+            else:
+                short_type = 'CE'  # Short call to collect premium
+
+            # Short option only if we have more futures than short options
+            if active_opts < active_fut:
+                strike_interval = cfg.get('strike_interval', 100)
+                if short_type == 'PE':
+                    short_strike = float(int(current_ltp // strike_interval) * strike_interval - strike_interval)
+                else:
+                    short_strike = float(int(-(-current_ltp // strike_interval)) * strike_interval + strike_interval)
+
+                short_id = self.place_option_short(short_type, short_strike,
+                                                    signal_type='GAP_ENTRY', regime=current_regime)
+                if short_id:
+                    results.append(f"Short {short_type} {short_strike} placed")
+            else:
+                results.append(f"Short options ({active_opts}) already match futures ({active_fut}) — skipping")
+
+            # Update hard SL for the new entry
+            master_st = regime.get('master_st_value', 0)
+            atr = getattr(self, '_current_master_atr', 100)
+            sl_buffer = resolve_sl_buffer(cfg, atr)
+            hard_sl = compute_hard_sl(master_st, current_regime, sl_buffer, prev_hard_sl=0)
+            if hard_sl > 0:
+                self.db.update_regime(hard_sl_price=hard_sl)
+                results.append(f"Hard SL set: {hard_sl:.1f}")
+
+        for r in results:
+            logger.info(f"[GapHandler] {r}")
 
         return results
 
@@ -997,6 +1471,19 @@ class MaruthiExecutor:
         recent_signals = self.db.get_recent_signals(20)
         recent_trades = self.db.get_recent_trades(20)
 
+        # Get ticker status if available
+        ticker_status = {}
+        try:
+            from services.maruthi_ticker import get_maruthi_ticker
+            ticker = get_maruthi_ticker()
+            ticker_status = ticker.get_status()
+        except Exception:
+            pass
+
+        # Use live ATR if available, otherwise instance value
+        master_atr = self._current_master_atr
+        sl_buffer = resolve_sl_buffer(self.config, master_atr)
+
         return {
             'regime': regime,
             'futures': futures,
@@ -1006,6 +1493,7 @@ class MaruthiExecutor:
             'stats': stats,
             'recent_signals': recent_signals,
             'recent_trades': recent_trades,
+            'ticker': ticker_status,
             'config': {
                 'paper_mode': self.config.get('paper_trading_mode', True),
                 'paper_trading_mode': self.config.get('paper_trading_mode', True),
@@ -1013,7 +1501,21 @@ class MaruthiExecutor:
                 'enabled': self.config.get('enabled', True),
                 'max_futures': self.config.get('max_futures_lots', 5),
                 'hard_sl_atr_mult': self.config.get('hard_sl_atr_mult', 1.0),
-                'hard_sl_buffer_pts': round(resolve_sl_buffer(self.config, self._current_master_atr), 1),
-                'master_atr': round(self._current_master_atr, 1),
+                'hard_sl_buffer_pts': round(sl_buffer, 1),
+                'master_atr': round(master_atr, 1),
             },
         }
+
+
+# Singleton
+_executor_instance = None
+
+
+def get_maruthi_executor(config: dict = None) -> MaruthiExecutor:
+    """Get or create the singleton MaruthiExecutor."""
+    global _executor_instance
+    if _executor_instance is None:
+        _executor_instance = MaruthiExecutor(config)
+    elif config:
+        _executor_instance.config = config
+    return _executor_instance

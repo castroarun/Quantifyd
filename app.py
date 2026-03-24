@@ -48,7 +48,7 @@ from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
-    MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS,
+    MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS, NAS_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -167,12 +167,77 @@ def zerodha_callback():
 
         logger.info(f"Login successful for user: {session['user_name']}")
         flash('Login successful!', 'success')
+
+        # Start all tickers after browser login too
+        _start_all_tickers()
+
         return redirect(url_for('backtest_page'))
 
     except Exception as e:
         logger.error(f"OAuth callback error: {e}")
         flash(f'Login failed: {str(e)}', 'error')
         return redirect(url_for('index'))
+
+
+@app.route('/api/auth/auto-login', methods=['POST'])
+def api_auto_login():
+    """One-click TOTP auto-login — no browser redirect needed. Starts all tickers."""
+    try:
+        from services.kite_auth import ensure_authenticated
+        if ensure_authenticated():
+            try:
+                kite = get_kite()
+                profile = kite.profile()
+                session['user_name'] = profile.get('user_name', 'User')
+                session['user_id'] = profile.get('user_id', '')
+            except Exception:
+                session['user_name'] = 'Authenticated'
+                session['user_id'] = ''
+
+            # Auto-start Maruthi ticker after successful login
+            _start_all_tickers()
+
+            return jsonify({'status': 'success', 'message': f'Logged in as {session.get("user_name", "User")}. All tickers started.'}), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'TOTP auto-login failed. Check KITE_USER_ID, KITE_PASSWORD, KITE_TOTP_SECRET env vars.'}), 401
+    except Exception as e:
+        logger.error(f"Auto-login error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+def _start_all_tickers():
+    """Start all strategy tickers/connections after authentication."""
+    # Maruthi ticker
+    try:
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+        if not ticker.is_connected:
+            ticker.restart()
+            logger.info("[Auth] Maruthi ticker started after login")
+        else:
+            logger.info("[Auth] Maruthi ticker already connected")
+    except Exception as e:
+        logger.warning(f"[Auth] Maruthi ticker start failed: {e}")
+
+
+@app.route('/api/auth/status')
+def api_auth_status():
+    """Check if Kite is authenticated."""
+    try:
+        from kiteconnect import KiteConnect as KC
+        token = get_access_token()
+        if token:
+            kc = KC(api_key=KITE_API_KEY)
+            kc.set_access_token(token)
+            profile = kc.profile()
+            return jsonify({
+                'authenticated': True,
+                'user_name': profile.get('user_name', ''),
+                'user_id': profile.get('user_id', ''),
+            })
+    except Exception:
+        pass
+    return jsonify({'authenticated': False})
 
 
 @app.route('/logout')
@@ -2136,12 +2201,22 @@ def maruthi_dashboard():
     )
 
 
+@app.route('/maruthi/algo')
+def maruthi_algo_flow():
+    """Maruthi strategy algo logic flow diagram."""
+    return render_template(
+        'maruthi_algo_flow.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
 @app.route('/api/maruthi/state')
 def api_maruthi_state():
     """Get full Maruthi strategy state."""
     try:
-        from services.maruthi_executor import MaruthiExecutor
-        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+        from services.maruthi_executor import get_maruthi_executor
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
         return jsonify(executor.get_state())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -2156,13 +2231,13 @@ def api_maruthi_scan():
 
     def _run(tid):
         try:
-            from services.maruthi_executor import MaruthiExecutor
+            from services.maruthi_executor import get_maruthi_executor
             from services.kite_service import get_kite
             import pandas as pd
 
             task_status[tid] = {'status': 'running', 'progress': 20, 'message': 'Loading 30-min candles...'}
 
-            executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+            executor = get_maruthi_executor(MARUTHI_DEFAULTS)
             symbol = MARUTHI_DEFAULTS.get('symbol', 'MARUTI')
 
             # Load 30-min data
@@ -2228,12 +2303,109 @@ def api_maruthi_scan_status(task_id):
     return jsonify({'error': 'Task not found'}), 404
 
 
+@app.route('/api/maruthi/recalc-sl', methods=['POST'])
+def api_maruthi_recalc_sl():
+    """Force recalculate hard SL from fresh Kite data (resets trailing)."""
+    try:
+        from services.maruthi_executor import get_maruthi_executor
+        from services.maruthi_strategy import compute_dual_supertrend, resolve_sl_buffer, compute_hard_sl
+        from services.maruthi_db import get_maruthi_db
+        from services.kite_service import get_kite
+        from services.nifty500_universe import get_instrument_token
+        import pandas as pd
+
+        symbol = MARUTHI_DEFAULTS.get('symbol', 'MARUTI')
+        kite = get_kite()
+        token = get_instrument_token(symbol)
+        to_date = datetime.now()
+        from_date = to_date - timedelta(days=30)
+        data = kite.historical_data(token, from_date, to_date, '30minute')
+        df = pd.DataFrame(data)
+
+        df = compute_dual_supertrend(df,
+            master_period=MARUTHI_DEFAULTS.get('master_atr_period', 7),
+            master_mult=MARUTHI_DEFAULTS.get('master_multiplier', 5.0),
+            child_period=MARUTHI_DEFAULTS.get('child_atr_period', 7),
+            child_mult=MARUTHI_DEFAULTS.get('child_multiplier', 2.0),
+        )
+
+        last = df.iloc[-1]
+        master_st = float(last['master_st'])
+        master_atr = float(last['master_atr'])
+        sl_buffer = resolve_sl_buffer(MARUTHI_DEFAULTS, master_atr)
+
+        db = get_maruthi_db()
+        regime = db.get_regime()
+        current_regime = regime.get('regime', 'FLAT')
+
+        # Fresh SL — no trailing (prev_hard_sl=0)
+        hard_sl = compute_hard_sl(master_st, current_regime, sl_buffer, prev_hard_sl=0)
+
+        # Update DB and executor
+        db.update_regime(master_st_value=master_st, hard_sl_price=hard_sl)
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
+        executor._current_master_atr = master_atr
+
+        return jsonify({
+            'status': 'success',
+            'master_st': round(master_st, 2),
+            'master_atr': round(master_atr, 2),
+            'sl_buffer': round(sl_buffer, 2),
+            'hard_sl': round(hard_sl, 2),
+            'regime': current_regime,
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/maruthi/manual-entry', methods=['POST'])
+def api_maruthi_manual_entry():
+    """Place a manual futures entry order via the live executor."""
+    try:
+        from services.maruthi_executor import get_maruthi_executor
+        from services.maruthi_db import get_maruthi_db
+
+        data = request.get_json()
+        direction = data.get('direction', 'SELL')
+        trigger_price = float(data['trigger_price'])
+        limit_price = float(data.get('limit_price', trigger_price - 2))
+        signal_type = data.get('signal_type', 'MANUAL_LIVE_ENTRY')
+
+        db = get_maruthi_db()
+        regime = db.get_regime()
+        hard_sl = regime.get('hard_sl_price', 0)
+
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
+        pos_id = executor.place_futures_entry(
+            direction=direction,
+            trigger_price=trigger_price,
+            limit_price=limit_price,
+            hard_sl=hard_sl,
+            signal_type=signal_type,
+            regime=regime.get('regime', 'FLAT'),
+        )
+
+        if pos_id:
+            return jsonify({
+                'status': 'success',
+                'position_id': pos_id,
+                'direction': direction,
+                'trigger_price': trigger_price,
+                'limit_price': limit_price,
+                'hard_sl': hard_sl,
+            })
+        else:
+            return jsonify({'status': 'error', 'message': 'Order blocked by guardrails'}), 400
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 @app.route('/api/maruthi/kill-switch', methods=['POST'])
 def api_maruthi_kill_switch():
     """Emergency: close all Maruthi positions at market."""
     try:
-        from services.maruthi_executor import MaruthiExecutor
-        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+        from services.maruthi_executor import get_maruthi_executor
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
         closed = executor.emergency_exit_all()
         return jsonify({'success': True, 'closed': closed})
     except Exception as e:
@@ -2430,7 +2602,7 @@ def api_maruthi_toggle_enabled():
             try:
                 from services.maruthi_ticker import get_maruthi_ticker
                 ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
-                if not ticker.is_connected():
+                if not ticker.is_connected:
                     ticker.start()
                     logger.info("[Maruthi] Ticker auto-started on enable")
             except Exception as te:
@@ -2439,7 +2611,7 @@ def api_maruthi_toggle_enabled():
             try:
                 from services.maruthi_ticker import get_maruthi_ticker
                 ticker = get_maruthi_ticker()
-                if ticker.is_connected():
+                if ticker.is_connected:
                     ticker.stop()
                     logger.info("[Maruthi] Ticker stopped on disable")
             except Exception as te:
@@ -2574,6 +2746,7 @@ def api_maruthi_ticker_status():
         return jsonify({'error': str(e)}), 500
 
 
+
 # ---- Scheduled Jobs (only time-based, no candle polling) ----
 
 def _maruthi_auto_login_and_start():
@@ -2596,8 +2769,8 @@ def _maruthi_auto_login_and_start():
 def _maruthi_eod_protection():
     """3:00 PM — Buy protective options for unhedged futures."""
     try:
-        from services.maruthi_executor import MaruthiExecutor
-        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+        from services.maruthi_executor import get_maruthi_executor
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
 
         if MARUTHI_DEFAULTS.get('paper_trading_mode'):
             logger.info("[Maruthi] Paper mode — skipping EOD protection")
@@ -2627,13 +2800,37 @@ def _maruthi_eod_protection():
 def _maruthi_roll_check():
     """3:15 PM — Check for contracts nearing expiry and roll."""
     try:
-        from services.maruthi_executor import MaruthiExecutor
-        executor = MaruthiExecutor(config=MARUTHI_DEFAULTS)
+        from services.maruthi_executor import get_maruthi_executor
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
         results = executor.run_roll_check()
         if results:
             logger.info(f"[Maruthi] Rolls: {results}")
     except Exception as e:
         logger.error(f"[Maruthi] Roll check failed: {e}")
+
+
+def _maruthi_re_place_pending():
+    """9:16 AM — Re-place pending trigger orders on Kite (Zerodha cancels unfilled SL-L at EOD)."""
+    try:
+        from services.maruthi_executor import get_maruthi_executor
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
+        results = executor.re_place_pending_orders()
+        if results:
+            logger.info(f"[Maruthi] Re-placed pending orders: {results}")
+    except Exception as e:
+        logger.error(f"[Maruthi] Re-place pending orders failed: {e}")
+
+
+def _maruthi_gap_handler():
+    """9:21 AM — Handle GAP_PENDING positions after 5 minutes of market confirmation."""
+    try:
+        from services.maruthi_executor import get_maruthi_executor
+        executor = get_maruthi_executor(MARUTHI_DEFAULTS)
+        results = executor.handle_gap_entry()
+        if results:
+            logger.info(f"[Maruthi] Gap handler: {results}")
+    except Exception as e:
+        logger.error(f"[Maruthi] Gap handler failed: {e}")
 
 
 def _maruthi_market_close():
@@ -2648,12 +2845,22 @@ def _maruthi_market_close():
         logger.error(f"[Maruthi] Market close handler failed: {e}")
 
 
-# Register Maruthi scheduled jobs (only 4 time-based jobs — candles handled by WebSocket)
+# Register Maruthi scheduled jobs
 try:
     scheduler.add_job(
         _maruthi_auto_login_and_start,
         'cron', day_of_week='mon-fri', hour=9, minute=0,
         id='maruthi_auto_login', replace_existing=True,
+    )
+    scheduler.add_job(
+        _maruthi_re_place_pending,
+        'cron', day_of_week='mon-fri', hour=9, minute=16,
+        id='maruthi_re_place_pending', replace_existing=True,
+    )
+    scheduler.add_job(
+        _maruthi_gap_handler,
+        'cron', day_of_week='mon-fri', hour=9, minute=21,
+        id='maruthi_gap_handler', replace_existing=True,
     )
     scheduler.add_job(
         _maruthi_eod_protection,
@@ -2672,8 +2879,8 @@ try:
     )
     logger.info(
         "Maruthi scheduled jobs registered: "
-        "auto-login+ticker(9:00), EOD protection(15:00), "
-        "roll check(15:15), market close(15:30). "
+        "auto-login+ticker(9:00), re-place pending(9:16), gap handler(9:21), "
+        "EOD protection(15:00), roll check(15:15), market close(15:30). "
         "Candle signals handled by WebSocket ticker."
     )
 except Exception as e:
@@ -2698,8 +2905,8 @@ def bnf_dashboard():
 def api_bnf_state():
     """Get full BNF system state for dashboard."""
     try:
-        from services.bnf_executor import BnfExecutor
-        executor = BnfExecutor(config=BNF_DEFAULTS)
+        from services.bnf_executor import get_bnf_executor
+        executor = get_bnf_executor(BNF_DEFAULTS)
         return jsonify(executor.get_full_state())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -2713,8 +2920,8 @@ def api_bnf_scan():
 
     def _run_scan(tid):
         try:
-            from services.bnf_executor import BnfExecutor
-            executor = BnfExecutor(config=BNF_DEFAULTS)
+            from services.bnf_executor import get_bnf_executor
+            executor = get_bnf_executor(BNF_DEFAULTS)
             result = executor.run_daily_scan()
             _bnf_scan_results[tid] = {'status': 'complete', 'result': result}
         except Exception as e:
@@ -2741,8 +2948,8 @@ def api_bnf_scan_status(task_id):
 def api_bnf_kill_switch():
     """Emergency exit all BNF positions."""
     try:
-        from services.bnf_executor import BnfExecutor
-        executor = BnfExecutor(config=BNF_DEFAULTS)
+        from services.bnf_executor import get_bnf_executor
+        executor = get_bnf_executor(BNF_DEFAULTS)
         closed = executor.emergency_exit_all()
         return jsonify({'closed': closed, 'status': 'OK'})
     except Exception as e:
@@ -2831,8 +3038,8 @@ def _bnf_daily_scan():
         logger.info("[BNF] Skipping daily scan — strategy disabled")
         return
     try:
-        from services.bnf_executor import BnfExecutor
-        executor = BnfExecutor(config=BNF_DEFAULTS)
+        from services.bnf_executor import get_bnf_executor
+        executor = get_bnf_executor(BNF_DEFAULTS)
         result = executor.run_daily_scan()
         entries = len(result.get('entries', []))
         exits = len(result.get('exits', []))
@@ -2846,8 +3053,8 @@ def _bnf_exit_check():
     if not BNF_DEFAULTS.get('enabled', True):
         return
     try:
-        from services.bnf_executor import BnfExecutor
-        executor = BnfExecutor(config=BNF_DEFAULTS)
+        from services.bnf_executor import get_bnf_executor
+        executor = get_bnf_executor(BNF_DEFAULTS)
         scan = executor.scanner.scan()
         exits = executor.check_and_exit(scan)
         if exits:
@@ -2873,6 +3080,964 @@ try:
     )
 except Exception as e:
     logger.warning(f"Could not register BNF scheduled jobs: {e}")
+
+
+# =============================================================================
+# NAS — Nifty ATR Strangle (Intraday Options Selling)
+# =============================================================================
+
+# Background task store for NAS scans
+_nas_tasks = {}
+
+
+@app.route('/nas')
+def nas_dashboard():
+    """NAS Nifty ATR Strangle Dashboard."""
+    return render_template(
+        'nas_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/nas/state')
+def api_nas_state():
+    """Full state dump for NAS dashboard."""
+    try:
+        from services.nas_executor import NasExecutor
+        executor = NasExecutor(config=NAS_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"NAS state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/scan', methods=['POST'])
+def api_nas_scan():
+    """Trigger a manual NAS scan."""
+    task_id = f"nas_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_tasks[task_id] = {'status': 'running'}
+
+    def _run_scan(tid):
+        try:
+            from services.nas_executor import NasExecutor
+            executor = NasExecutor(config=NAS_DEFAULTS)
+            result = executor.run_scan()
+            _nas_tasks[tid] = {'status': 'completed', 'result': result}
+        except Exception as e:
+            logger.error(f"NAS scan error: {e}")
+            _nas_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run_scan, args=[task_id], id=f'nas_scan_{task_id}',
+                      replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas/scan/status/<task_id>')
+def api_nas_scan_status(task_id):
+    """Poll NAS scan status."""
+    import numpy as np
+    task = _nas_tasks.get(task_id, {'status': 'unknown'})
+    # Convert numpy types to native Python for JSON serialization
+    def _convert(obj):
+        if isinstance(obj, dict):
+            return {k: _convert(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [_convert(v) for v in obj]
+        elif isinstance(obj, (np.bool_,)):
+            return bool(obj)
+        elif isinstance(obj, (np.integer,)):
+            return int(obj)
+        elif isinstance(obj, (np.floating,)):
+            return float(obj)
+        return obj
+    return jsonify(_convert(task))
+
+
+@app.route('/api/nas/kill-switch', methods=['POST'])
+def api_nas_kill_switch():
+    """Emergency close all NAS positions."""
+    try:
+        from services.nas_executor import NasExecutor
+        executor = NasExecutor(config=NAS_DEFAULTS)
+        closed = executor.emergency_exit_all()
+        return jsonify({'closed': closed, 'status': 'EMERGENCY_EXIT'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/trades')
+def api_nas_trades():
+    """Recent NAS trades."""
+    try:
+        from services.nas_db import get_nas_db
+        db = get_nas_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/orders')
+def api_nas_orders():
+    """NAS order audit log."""
+    try:
+        from services.nas_db import get_nas_db
+        db = get_nas_db()
+        with db.db_lock:
+            conn = db._get_conn()
+            try:
+                rows = conn.execute(
+                    "SELECT * FROM nas_orders ORDER BY created_at DESC LIMIT 50"
+                ).fetchall()
+                return jsonify([dict(r) for r in rows])
+            finally:
+                conn.close()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/signals')
+def api_nas_signals():
+    """NAS signal history."""
+    try:
+        from services.nas_db import get_nas_db
+        db = get_nas_db()
+        return jsonify(db.get_recent_signals(limit=30))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/equity-curve')
+def api_nas_equity_curve():
+    """NAS daily P&L for equity curve chart."""
+    try:
+        from services.nas_db import get_nas_db
+        db = get_nas_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/toggle-mode', methods=['POST'])
+def api_nas_toggle_mode():
+    """Toggle NAS paper/live trading mode."""
+    try:
+        current = NAS_DEFAULTS.get('paper_trading_mode', True)
+        NAS_DEFAULTS['paper_trading_mode'] = not current
+        new_mode = 'PAPER' if NAS_DEFAULTS['paper_trading_mode'] else 'LIVE'
+        logger.info(f"NAS mode toggled to {new_mode}")
+        return jsonify({'mode': new_mode})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/toggle-enabled', methods=['POST'])
+def api_nas_toggle_enabled():
+    """Enable/disable NAS system. Starts/stops WebSocket ticker accordingly."""
+    try:
+        current = NAS_DEFAULTS.get('enabled', True)
+        NAS_DEFAULTS['enabled'] = not current
+        new_enabled = NAS_DEFAULTS['enabled']
+        status = 'ENABLED' if new_enabled else 'DISABLED'
+        logger.info(f"NAS system {status}")
+
+        # Start/stop ticker with enable/disable
+        if new_enabled:
+            try:
+                from services.nas_ticker import get_nas_ticker
+                ticker = get_nas_ticker(NAS_DEFAULTS)
+                if not ticker.is_connected:
+                    ticker.start()
+                    logger.info("[NAS] Ticker auto-started on enable")
+            except Exception as te:
+                logger.warning(f"[NAS] Ticker auto-start failed: {te}")
+        else:
+            try:
+                from services.nas_ticker import get_nas_ticker
+                ticker = get_nas_ticker()
+                if ticker.is_connected:
+                    ticker.stop()
+                    logger.info("[NAS] Ticker stopped on disable")
+            except Exception as te:
+                logger.warning(f"[NAS] Ticker stop failed: {te}")
+
+        return jsonify({'enabled': new_enabled, 'status': status})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/config', methods=['POST'])
+def api_nas_config_update():
+    """Hot-update NAS config values without restarting Flask."""
+    data = request.get_json() or {}
+    allowed = {'max_vix', 'min_combined_premium', 'strike_distance_atr',
+               'premium_double_trigger', 'premium_half_trigger', 'max_daily_loss',
+               'lots_per_leg', 'max_adjustments_per_leg', 'combined_sl_mult',
+               'profit_target_pct', 'entry_start_time', 'entry_end_time',
+               'skip_expiry_day', 'eod_squareoff_time', 'time_exit',
+               'target_entry_premium', 'min_leg_premium', 'max_leg_premium',
+               'min_otm_distance', 'min_squeeze_bars'}
+    updated = {}
+    for key, val in data.items():
+        if key in allowed:
+            NAS_DEFAULTS[key] = val
+            updated[key] = val
+    if not updated:
+        return jsonify({'error': 'No valid config keys provided', 'allowed': sorted(allowed)}), 400
+
+    # Update ticker's config copy too
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        for k, v in updated.items():
+            ticker.config[k] = v
+    except Exception:
+        pass
+
+    logger.info(f"[NAS] Config updated: {updated}")
+    return jsonify({'updated': updated, 'status': 'OK'})
+
+
+@app.route('/api/nas/option-chain')
+def api_nas_option_chain():
+    """Latest option chain snapshots."""
+    try:
+        from services.nas_db import get_nas_db
+        db = get_nas_db()
+        return jsonify(db.get_recent_snapshots(limit=100))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---- NAS WebSocket Ticker Control ----
+
+@app.route('/api/nas/ticker/start', methods=['POST'])
+def api_nas_ticker_start():
+    """Start the NAS WebSocket ticker for live 5-min candle streaming."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        ticker.start()
+        return jsonify({'status': 'started', 'ticker': ticker.get_status()})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/ticker/stop', methods=['POST'])
+def api_nas_ticker_stop():
+    """Stop the NAS WebSocket ticker."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.stop()
+        return jsonify({'status': 'stopped'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/ticker/status')
+def api_nas_ticker_status():
+    """Get NAS ticker connection status."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        return jsonify(ticker.get_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/ticker/stream')
+def api_nas_ticker_stream():
+    """SSE stream of live option premiums — tick-by-tick updates."""
+    import json, time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_snapshot = {}
+
+        while True:
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'offline'})}\n\n"
+                _time.sleep(5)
+                continue
+
+            # Build current snapshot
+            snapshot = {
+                'spot': ticker._last_ltp,
+                'legs': {},
+            }
+            for token, info in ticker._option_tokens.items():
+                tsym = info['tradingsymbol']
+                ltp = ticker._option_ltps.get(token)
+                if ltp is not None:
+                    snapshot['legs'][tsym] = {
+                        'ltp': round(ltp, 2),
+                        'entry': info['entry_premium'],
+                        'leg': info['leg'],
+                    }
+
+            # Only send if something changed
+            if snapshot != last_snapshot:
+                last_snapshot = snapshot.copy()
+                payload = {
+                    'type': 'tick',
+                    'spot': round(snapshot['spot'], 2),
+                    'legs': snapshot['legs'],
+                    'ts': _time.time(),
+                }
+                yield f"data: {json.dumps(payload)}\n\n"
+
+            _time.sleep(0.3)  # ~3 updates/sec max
+
+    return app.response_class(
+        generate(),
+        mimetype='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'}
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+# SCC — Strategy Command Center Aggregation APIs
+# ═══════════════════════════════════════════════════════════════
+
+STRATEGY_META = {
+    'bnf': {'name': 'BNF Squeeze & Fire', 'type': 'F&O', 'capital': BNF_DEFAULTS.get('capital', 1000000)},
+    'maruthi': {'name': 'Maruthi Always-On', 'type': 'F&O', 'capital': MARUTHI_DEFAULTS.get('capital', 1500000)},
+    'kc6': {'name': 'KC6 Mean Reversion', 'type': 'Equity', 'capital': 400000},
+    'nas': {'name': 'NAS ATR Strangle', 'type': 'F&O', 'capital': 300000},
+    'trident': {'name': 'Trident', 'type': 'F&O', 'capital': 1000000},
+}
+
+def _scc_get_strategy_state(strategy_id):
+    """Get normalized state for a single strategy. Returns dict matching SCC Strategy interface."""
+    meta = STRATEGY_META.get(strategy_id, {})
+    base = {
+        'id': strategy_id,
+        'name': meta.get('name', strategy_id),
+        'type': meta.get('type', 'Equity'),
+        'status': 'stopped',
+        'mode': 'paper',
+        'capital': meta.get('capital', 0),
+        'deployed': 0,
+        'pnlToday': 0,
+        'pnlTotal': 0,
+        'winRate': 0,
+        'trades': 0,
+        'maxDD': 0,
+        'sharpe': 0,
+        'lastSignal': 'N/A',
+        'risk': 'low',
+    }
+
+    try:
+        if strategy_id == 'bnf':
+            from services.bnf_executor import get_bnf_executor
+            executor = get_bnf_executor(BNF_DEFAULTS)
+            state = executor.get_full_state()
+            enabled = BNF_DEFAULTS.get('enabled', True)
+            base['status'] = 'running' if enabled else 'paused'
+            base['mode'] = 'live' if not BNF_DEFAULTS.get('paper_trading_mode', True) else 'paper'
+            positions = [p for p in state.get('positions', []) if isinstance(p, dict)]
+            base['deployed'] = sum(abs(p.get('premium', 0) * p.get('quantity', 0)) for p in positions) if positions else 0
+            trades = [t for t in state.get('trades', []) if isinstance(t, dict)]
+            base['trades'] = len(trades)
+            base['pnlTotal'] = sum(t.get('pnl', t.get('net_pnl', 0)) for t in trades)
+            base['pnlToday'] = sum(t.get('pnl', t.get('net_pnl', 0)) for t in trades if t.get('exit_date', t.get('trade_date', '')) == str(date.today()))
+            if trades:
+                wins = [t for t in trades if t.get('pnl', t.get('net_pnl', 0)) > 0]
+                base['winRate'] = round(len(wins) / len(trades) * 100, 1)
+
+        elif strategy_id == 'maruthi':
+            from services.maruthi_executor import get_maruthi_executor
+            executor = get_maruthi_executor(MARUTHI_DEFAULTS)
+            state = executor.get_state()
+            enabled = MARUTHI_DEFAULTS.get('enabled', True)
+            base['status'] = 'running' if enabled else 'paused'
+            base['mode'] = 'live' if not MARUTHI_DEFAULTS.get('paper_trading_mode', True) else 'paper'
+            positions = state.get('positions', [])
+            base['deployed'] = sum(abs(p.get('value', 0)) for p in positions) if positions else 0
+            trades = state.get('trades', [])
+            base['trades'] = len(trades)
+            base['pnlTotal'] = sum(t.get('pnl', 0) for t in trades)
+            base['pnlToday'] = sum(t.get('pnl', 0) for t in trades if t.get('exit_date', '') == str(date.today()))
+
+        elif strategy_id == 'kc6':
+            from services.kc6_db import get_kc6_db
+            db = get_kc6_db()
+            positions = db.get_active_positions()
+            stats = db.get_stats()
+            enabled = KC6_DEFAULTS.get('enabled', True)
+            base['status'] = 'running' if enabled else 'paused'
+            base['mode'] = 'live' if not KC6_DEFAULTS.get('paper_trading_mode', True) else 'paper'
+            base['deployed'] = sum(p.get('entry_price', 0) * p.get('quantity', 0) for p in positions) if positions else 0
+            base['trades'] = stats.get('total_trades', 0)
+            base['pnlTotal'] = stats.get('total_pnl', 0)
+            base['winRate'] = stats.get('win_rate', 0)
+            base['pnlToday'] = stats.get('today_pnl', 0)
+
+        elif strategy_id == 'nas':
+            from services.nas_executor import NasExecutor
+            executor = NasExecutor(config=NAS_DEFAULTS)
+            state = executor.get_full_state()
+            enabled = NAS_DEFAULTS.get('enabled', True)
+            base['status'] = 'running' if enabled else 'paused'
+            base['mode'] = 'live' if not NAS_DEFAULTS.get('paper_trading_mode', True) else 'paper'
+            positions = [p for p in state.get('positions', []) if isinstance(p, dict)]
+            base['deployed'] = sum(abs(p.get('premium', 0) * p.get('quantity', 0)) for p in positions) if positions else 0
+            trades = [t for t in state.get('trades', []) if isinstance(t, dict)]
+            base['trades'] = len(trades)
+            base['pnlTotal'] = sum(t.get('pnl', t.get('net_pnl', 0)) for t in trades)
+
+        elif strategy_id == 'trident':
+            from services.trident_executor import get_trident_executor
+            executor = get_trident_executor(TRIDENT_CONFIG)
+            state = executor.get_state()
+            cfg = state.get('config', {})
+            base['status'] = 'running' if cfg.get('enabled', True) else 'paused'
+            base['mode'] = 'live' if not cfg.get('paper_trading_mode', True) else 'paper'
+            stats = state.get('stats', {})
+            base['trades'] = stats.get('total_trades', 0)
+            base['pnlTotal'] = stats.get('total_pnl', 0)
+            base['winRate'] = stats.get('win_rate', 0)
+            base['deployed'] = sum(p.get('entry_price', 0) * p.get('qty', 0) for p in state.get('positions', []))
+
+    except Exception as e:
+        logger.warning(f"[SCC] Error fetching {strategy_id} state: {e}")
+        base['status'] = 'error'
+        base['lastSignal'] = str(e)[:50]
+
+    return base
+
+
+def _scc_get_positions(strategy_id):
+    """Get normalized positions for a strategy. Returns list matching SCC Position interface."""
+    positions = []
+    try:
+        if strategy_id == 'bnf':
+            from services.bnf_executor import get_bnf_executor
+            executor = get_bnf_executor(BNF_DEFAULTS)
+            state = executor.get_full_state()
+            for i, p in enumerate(state.get('positions', [])):
+                positions.append({
+                    'id': f'bnf_{i}',
+                    'strategy': 'BNF Squeeze & Fire',
+                    'symbol': p.get('tradingsymbol', p.get('symbol', 'BANKNIFTY')),
+                    'type': 'OPT',
+                    'side': p.get('side', 'SHORT').upper(),
+                    'qty': abs(p.get('quantity', 0)),
+                    'entry': p.get('entry_price', p.get('premium', 0)),
+                    'current': p.get('ltp', p.get('entry_price', 0)),
+                    'pnl': p.get('pnl', 0),
+                    'pnlPct': p.get('pnl_pct', 0),
+                    'sl': p.get('sl', 0),
+                    'tp': p.get('tp', None),
+                    'flags': [],
+                })
+
+        elif strategy_id == 'maruthi':
+            from services.maruthi_executor import get_maruthi_executor
+            executor = get_maruthi_executor(MARUTHI_DEFAULTS)
+            state = executor.get_state()
+            for i, p in enumerate(state.get('positions', [])):
+                inst_type = 'FUT' if 'FUT' in str(p.get('tradingsymbol', '')).upper() else 'OPT'
+                positions.append({
+                    'id': f'maruthi_{i}',
+                    'strategy': 'Maruthi Always-On',
+                    'symbol': p.get('tradingsymbol', 'MARUTI FUT'),
+                    'type': inst_type,
+                    'side': p.get('side', 'LONG').upper(),
+                    'qty': abs(p.get('quantity', 0)),
+                    'entry': p.get('entry_price', 0),
+                    'current': p.get('ltp', p.get('entry_price', 0)),
+                    'pnl': p.get('pnl', 0),
+                    'pnlPct': p.get('pnl_pct', 0),
+                    'sl': p.get('sl', 0),
+                    'tp': p.get('tp', None),
+                    'flags': [],
+                })
+
+        elif strategy_id == 'kc6':
+            from services.kc6_db import get_kc6_db
+            db = get_kc6_db()
+            for i, p in enumerate(db.get_active_positions()):
+                entry = p.get('entry_price', 0)
+                current = p.get('ltp', entry)
+                qty = p.get('quantity', 0)
+                pnl = (current - entry) * qty
+                pnl_pct = ((current - entry) / entry * 100) if entry else 0
+                sl = entry * (1 - KC6_DEFAULTS.get('sl_pct', 5.0) / 100)
+                tp = entry * (1 + KC6_DEFAULTS.get('tp_pct', 15.0) / 100)
+                flags = []
+                if pnl < -4000:
+                    flags.append(f'Loss > ₹{abs(pnl)/1000:.0f}K')
+                positions.append({
+                    'id': f'kc6_{i}',
+                    'strategy': 'KC6 Mean Reversion',
+                    'symbol': p.get('symbol', ''),
+                    'type': 'EQ',
+                    'side': 'LONG',
+                    'qty': qty,
+                    'entry': round(entry, 2),
+                    'current': round(current, 2),
+                    'pnl': round(pnl, 2),
+                    'pnlPct': round(pnl_pct, 2),
+                    'sl': round(sl, 2),
+                    'tp': round(tp, 2),
+                    'flags': flags,
+                })
+
+        elif strategy_id == 'nas':
+            from services.nas_executor import NasExecutor
+            executor = NasExecutor(config=NAS_DEFAULTS)
+            state = executor.get_full_state()
+            for i, p in enumerate(state.get('positions', [])):
+                positions.append({
+                    'id': f'nas_{i}',
+                    'strategy': 'NAS ATR Strangle',
+                    'symbol': p.get('tradingsymbol', p.get('symbol', 'NIFTY')),
+                    'type': 'OPT',
+                    'side': p.get('side', 'SHORT').upper(),
+                    'qty': abs(p.get('quantity', 0)),
+                    'entry': p.get('entry_price', p.get('premium', 0)),
+                    'current': p.get('ltp', p.get('entry_price', 0)),
+                    'pnl': p.get('pnl', 0),
+                    'pnlPct': p.get('pnl_pct', 0),
+                    'sl': p.get('sl', 0),
+                    'tp': p.get('tp', None),
+                    'flags': [],
+                })
+
+    except Exception as e:
+        logger.warning(f"[SCC] Error fetching {strategy_id} positions: {e}")
+
+    return positions
+
+
+def _scc_get_trades(strategy_id, limit=50):
+    """Get normalized closed trades for a strategy. Returns list matching SCC Trade interface."""
+    trades = []
+    try:
+        if strategy_id == 'bnf':
+            from services.bnf_db import get_bnf_db
+            db = get_bnf_db()
+            for t in db.get_recent_trades(limit=limit):
+                trades.append({
+                    'id': f"bnf_t_{t.get('id', '')}",
+                    'date': t.get('exit_date', t.get('date', '')),
+                    'strategy': 'BNF Squeeze & Fire',
+                    'symbol': t.get('tradingsymbol', t.get('symbol', '')),
+                    'side': t.get('side', 'SHORT').upper(),
+                    'entry': t.get('entry_price', 0),
+                    'exit': t.get('exit_price', 0),
+                    'pnl': t.get('pnl', 0),
+                    'pnlPct': t.get('pnl_pct', 0),
+                    'holding': t.get('holding_period', ''),
+                    'notes': t.get('exit_reason', ''),
+                    'journal': '',
+                })
+
+        elif strategy_id == 'kc6':
+            from services.kc6_db import get_kc6_db
+            db = get_kc6_db()
+            for t in db.get_trade_history(limit=limit):
+                trades.append({
+                    'id': f"kc6_t_{t.get('id', '')}",
+                    'date': t.get('exit_date', t.get('date', '')),
+                    'strategy': 'KC6 Mean Reversion',
+                    'symbol': t.get('symbol', ''),
+                    'side': 'LONG',
+                    'entry': t.get('entry_price', 0),
+                    'exit': t.get('exit_price', 0),
+                    'pnl': t.get('pnl', 0),
+                    'pnlPct': round(((t.get('exit_price', 0) - t.get('entry_price', 1)) / t.get('entry_price', 1) * 100), 2) if t.get('entry_price') else 0,
+                    'holding': t.get('holding_days', ''),
+                    'notes': t.get('exit_reason', ''),
+                    'journal': '',
+                })
+
+        elif strategy_id == 'nas':
+            from services.nas_db import get_nas_db
+            db = get_nas_db()
+            for t in db.get_recent_trades(limit=limit):
+                trades.append({
+                    'id': f"nas_t_{t.get('id', '')}",
+                    'date': t.get('exit_date', t.get('date', '')),
+                    'strategy': 'NAS ATR Strangle',
+                    'symbol': t.get('tradingsymbol', t.get('symbol', '')),
+                    'side': t.get('side', 'SHORT').upper(),
+                    'entry': t.get('entry_price', 0),
+                    'exit': t.get('exit_price', 0),
+                    'pnl': t.get('pnl', 0),
+                    'pnlPct': t.get('pnl_pct', 0),
+                    'holding': t.get('holding_period', ''),
+                    'notes': t.get('exit_reason', ''),
+                    'journal': '',
+                })
+
+    except Exception as e:
+        logger.warning(f"[SCC] Error fetching {strategy_id} trades: {e}")
+
+    return trades
+
+
+@app.route('/api/scc/dashboard')
+def api_scc_dashboard():
+    """Aggregated dashboard: all strategy states + positions + P&L."""
+    strategies = []
+    all_positions = []
+
+    for sid in STRATEGY_META:
+        strategies.append(_scc_get_strategy_state(sid))
+        all_positions.extend(_scc_get_positions(sid))
+
+    total_capital = sum(s['capital'] for s in strategies)
+    total_deployed = sum(s['deployed'] for s in strategies)
+    today_pnl = sum(s['pnlToday'] for s in strategies)
+    total_pnl = sum(s['pnlTotal'] for s in strategies)
+
+    return jsonify({
+        'strategies': strategies,
+        'positions': all_positions,
+        'summary': {
+            'totalCapital': total_capital,
+            'totalDeployed': total_deployed,
+            'todayPnl': today_pnl,
+            'totalPnl': total_pnl,
+            'runningCount': len([s for s in strategies if s['status'] == 'running']),
+            'positionCount': len(all_positions),
+        },
+    })
+
+
+@app.route('/api/scc/positions')
+def api_scc_positions():
+    """All open positions across all strategies."""
+    all_positions = []
+    for sid in STRATEGY_META:
+        all_positions.extend(_scc_get_positions(sid))
+    return jsonify(all_positions)
+
+
+@app.route('/api/scc/trades')
+def api_scc_trades():
+    """All closed trades, optionally filtered by strategy and win/loss."""
+    strategy = request.args.get('strategy', 'all')
+    filt = request.args.get('filter', 'all')
+
+    all_trades = []
+    sids = [strategy] if strategy != 'all' and strategy in STRATEGY_META else list(STRATEGY_META.keys())
+    for sid in sids:
+        all_trades.extend(_scc_get_trades(sid))
+
+    # Sort by date descending
+    all_trades.sort(key=lambda t: t.get('date', ''), reverse=True)
+
+    if filt == 'wins':
+        all_trades = [t for t in all_trades if t['pnl'] > 0]
+    elif filt == 'losses':
+        all_trades = [t for t in all_trades if t['pnl'] <= 0]
+
+    return jsonify(all_trades[:100])
+
+
+@app.route('/api/scc/kill-all', methods=['POST'])
+def api_scc_kill_all():
+    """Emergency: kill-switch all strategies and close all positions."""
+    results = {}
+    kill_funcs = {
+        'bnf': lambda: __import__('services.bnf_executor', fromlist=['get_bnf_executor']).get_bnf_executor(BNF_DEFAULTS).emergency_exit_all(),
+        'kc6': lambda: KC6_DEFAULTS.update({'enabled': False}),
+        'maruthi': lambda: MARUTHI_DEFAULTS.update({'enabled': False}),
+        'nas': lambda: NAS_DEFAULTS.update({'enabled': False}),
+    }
+    for sid, fn in kill_funcs.items():
+        try:
+            fn()
+            results[sid] = 'killed'
+        except Exception as e:
+            results[sid] = f'error: {str(e)}'
+            logger.error(f"[SCC] Kill-all error for {sid}: {e}")
+
+    return jsonify({'status': 'EMERGENCY_KILL_ALL', 'results': results})
+
+
+@app.route('/api/scc/toggle-strategy', methods=['POST'])
+def api_scc_toggle_strategy():
+    """Toggle a strategy enabled/disabled."""
+    data = request.get_json() or {}
+    sid = data.get('id', '')
+
+    config_map = {
+        'bnf': BNF_DEFAULTS,
+        'maruthi': MARUTHI_DEFAULTS,
+        'kc6': KC6_DEFAULTS,
+        'nas': NAS_DEFAULTS,
+    }
+
+    if sid not in config_map:
+        return jsonify({'error': f'Unknown strategy: {sid}'}), 400
+
+    cfg = config_map[sid]
+    current = cfg.get('enabled', True)
+    cfg['enabled'] = not current
+    new_status = 'running' if cfg['enabled'] else 'paused'
+    logger.info(f"[SCC] Strategy {sid} toggled to {new_status}")
+    return jsonify({'id': sid, 'status': new_status, 'enabled': cfg['enabled']})
+
+
+@app.route('/api/scc/blueprints')
+def api_scc_blueprints():
+    """Static strategy blueprints — served from frontend data for now."""
+    return jsonify({'status': 'use_frontend_data'})
+
+
+# ---- NAS Scheduled Jobs ----
+# NOTE: Entry scanning and position monitoring are handled by the WebSocket ticker
+# (services/nas_ticker.py). Only time-based jobs remain here as cron jobs.
+
+def _nas_ticker_autostart():
+    """9:16 AM Mon-Wed,Fri — Auto-start NAS WebSocket ticker after market open."""
+    if not NAS_DEFAULTS.get('enabled', True):
+        return
+    if NAS_DEFAULTS.get('skip_expiry_day', True) and date.today().weekday() == 3:
+        return
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        if not ticker.is_connected:
+            ticker.restart()
+            logger.info("[NAS] Ticker auto-started at 9:16 AM")
+        else:
+            logger.info("[NAS] Ticker already connected")
+    except Exception as e:
+        logger.error(f"[NAS] Ticker auto-start error: {e}")
+
+
+def _nas_eod_squareoff():
+    """3:15 PM Mon-Wed,Fri — Mandatory EOD squareoff."""
+    if not NAS_DEFAULTS.get('enabled', True):
+        return
+    if NAS_DEFAULTS.get('skip_expiry_day', True) and date.today().weekday() == 3:
+        return
+    try:
+        from services.nas_executor import NasExecutor
+        executor = NasExecutor(config=NAS_DEFAULTS)
+        exits = executor.eod_squareoff()
+        logger.info(f"[NAS] EOD squareoff: {len(exits)} positions closed")
+
+        # Unsubscribe option legs after EOD
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.subscribe_option_legs([])
+    except Exception as e:
+        logger.error(f"[NAS] EOD squareoff error: {e}")
+
+
+def _nas_market_close():
+    """3:30 PM Mon-Fri — Force-close current candle, stop ticker."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        ticker.aggregator.force_close()
+        logger.info("[NAS] Forced final candle close at market close")
+    except Exception as e:
+        logger.error(f"[NAS] Market close handler failed: {e}")
+
+
+def _nas_daily_summary():
+    """3:20 PM Mon-Wed,Fri — Save daily summary."""
+    if not NAS_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.nas_db import get_nas_db
+        db = get_nas_db()
+        stats = db.get_stats()
+        logger.info(f"[NAS] Daily summary: {stats.get('total_trades', 0)} total trades, "
+                     f"P&L Rs {stats.get('total_pnl', 0):.0f}")
+    except Exception as e:
+        logger.error(f"[NAS] Daily summary error: {e}")
+
+
+try:
+    # Auto-start ticker at 9:16 AM (after market open)
+    scheduler.add_job(
+        _nas_ticker_autostart,
+        'cron', day_of_week='mon-wed,fri', hour=9, minute=16,
+        id='nas_ticker_autostart', replace_existing=True,
+    )
+    # EOD squareoff at 3:15 PM
+    scheduler.add_job(
+        _nas_eod_squareoff,
+        'cron', day_of_week='mon-wed,fri', hour=15, minute=15,
+        id='nas_eod_squareoff', replace_existing=True,
+    )
+    # Force close candle at 3:30 PM
+    scheduler.add_job(
+        _nas_market_close,
+        'cron', day_of_week='mon-fri', hour=15, minute=30,
+        id='nas_market_close', replace_existing=True,
+    )
+    # Daily summary at 3:20 PM
+    scheduler.add_job(
+        _nas_daily_summary,
+        'cron', day_of_week='mon-wed,fri', hour=15, minute=20,
+        id='nas_daily_summary', replace_existing=True,
+    )
+    logger.info(
+        "NAS scheduled jobs registered: "
+        "ticker autostart(9:16), EOD squareoff(15:15), "
+        "market close(15:30), daily summary(15:20) — Mon-Wed,Fri only"
+    )
+except Exception as e:
+    logger.warning(f"Could not register NAS scheduled jobs: {e}")
+
+
+# =============================================================================
+# Options Data Manager — Index Option Chain Downloader
+# =============================================================================
+
+@app.route('/api/options/capture', methods=['POST'])
+def api_options_capture():
+    """Manually trigger option chain capture for all indices."""
+    task_id = f"opts_capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_tasks[task_id] = {'status': 'running'}
+
+    def _run_capture(tid):
+        try:
+            from services.options_data_manager import OptionsDataManager
+            manager = OptionsDataManager()
+            results = manager.capture_all()
+            _nas_tasks[tid] = {'status': 'completed', 'results': results}
+        except Exception as e:
+            logger.error(f"Options capture error: {e}")
+            _nas_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run_capture, args=[task_id], id=f'opts_{task_id}',
+                      replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/options/capture/status/<task_id>')
+def api_options_capture_status(task_id):
+    """Poll option chain capture status."""
+    task = _nas_tasks.get(task_id, {'status': 'unknown'})
+    return jsonify(task)
+
+
+@app.route('/api/options/stats')
+def api_options_stats():
+    """Get options database statistics."""
+    try:
+        from services.options_data_manager import get_options_db
+        db = get_options_db()
+        return jsonify(db.get_stats())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/options/chain/<symbol>')
+def api_options_chain(symbol):
+    """Get latest option chain for a symbol (NIFTY/BANKNIFTY/SENSEX)."""
+    try:
+        from services.options_data_manager import get_options_db
+        db = get_options_db()
+        expiry = request.args.get('expiry')
+        snap_time = request.args.get('time')
+        chain = db.get_option_chain(symbol.upper(), snap_time, expiry)
+        return jsonify({'symbol': symbol.upper(), 'count': len(chain), 'data': chain})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/options/snapshots/<symbol>')
+def api_options_snapshots(symbol):
+    """Get available snapshot times for a symbol."""
+    try:
+        from services.options_data_manager import get_options_db
+        db = get_options_db()
+        trade_date = request.args.get('date')
+        snapshots = db.get_available_snapshots(symbol.upper(), trade_date)
+        return jsonify(snapshots)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/options/download-log')
+def api_options_download_log():
+    """Get recent download log entries."""
+    try:
+        from services.options_data_manager import get_options_db
+        db = get_options_db()
+        with db.db_lock:
+            conn = db._get_conn()
+            try:
+                rows = conn.execute(
+                    "SELECT * FROM download_log ORDER BY created_at DESC LIMIT 50"
+                ).fetchall()
+                return jsonify([dict(r) for r in rows])
+            finally:
+                conn.close()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---- Options Data Scheduled Jobs ----
+
+def _options_capture_job():
+    """Every 5 min Mon-Fri 9:20-15:25 — Capture index option chains."""
+    try:
+        from services.options_data_manager import OptionsDataManager
+        manager = OptionsDataManager()
+        results = manager.capture_all()
+        total = sum(r.get('instruments_captured', 0) for r in results)
+        errors = [r for r in results if r.get('error')]
+        if errors:
+            logger.warning(f"[OPTIONS] Capture partial: {total} instruments, "
+                           f"{len(errors)} errors: {[e['error'] for e in errors]}")
+        elif total > 0:
+            logger.info(f"[OPTIONS] Captured {total} instruments across 3 indices")
+    except Exception as e:
+        logger.error(f"[OPTIONS] Capture job error: {e}")
+
+
+try:
+    scheduler.add_job(
+        _options_capture_job,
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5',
+        id='options_chain_capture', replace_existing=True,
+    )
+    logger.info(
+        "Options data capture scheduled: every 5 min Mon-Fri 9:00-15:55 "
+        "(NIFTY + BANKNIFTY + SENSEX)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register options capture job: {e}")
+
+
+# ---- Daily Instrument Dump (for historical backfill) ----
+
+def _instruments_dump_job():
+    """9:20 AM Mon-Fri — Dump current NFO/BFO instruments for historical backfill."""
+    try:
+        from backfill_options_data import init_backfill_tables, dump_instruments
+        from services.kite_service import get_kite
+        init_backfill_tables()
+        kite = get_kite()
+        count = dump_instruments(kite)
+        logger.info(f"[OPTIONS] Dumped {count} instruments to archive")
+    except Exception as e:
+        logger.error(f"[OPTIONS] Instrument dump error: {e}")
+
+try:
+    scheduler.add_job(
+        _instruments_dump_job,
+        'cron', day_of_week='mon-fri', hour=9, minute=20,
+        id='instruments_dump', replace_existing=True,
+    )
+    logger.info("Instruments dump scheduled: 9:20 AM Mon-Fri (NFO + BFO)")
+except Exception as e:
+    logger.warning(f"Could not register instruments dump job: {e}")
 
 
 # =============================================================================
@@ -3454,6 +4619,175 @@ def api_nondirectional_equity_curve():
 
 
 # =============================================================================
+# Trident — PA_MACD + RangeBreakout Live Trading
+# =============================================================================
+
+TRIDENT_CONFIG = {
+    'max_positions': 20,
+    'position_size_pct': 0.05,
+    'max_daily_orders': 20,
+    'max_daily_loss_pct': 3.0,
+    'capital': 10_000_000,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+    'enabled': True,
+}
+
+
+@app.route('/trident')
+def trident_dashboard():
+    """Trident execution dashboard."""
+    return render_template('trident_dashboard.html')
+
+
+@app.route('/api/trident/state')
+def api_trident_state():
+    """Get full Trident system state."""
+    try:
+        from services.trident_executor import get_trident_executor
+        executor = get_trident_executor(TRIDENT_CONFIG)
+        return jsonify(executor.get_state())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/trident/scan', methods=['POST'])
+def api_trident_scan():
+    """Trigger a manual Trident scan."""
+    import threading
+
+    def _run_scan():
+        try:
+            from services.trident_executor import get_trident_executor
+            executor = get_trident_executor(TRIDENT_CONFIG)
+            executor.run_scan()
+        except Exception as e:
+            logger.error(f"[Trident] Manual scan error: {e}")
+
+    t = threading.Thread(target=_run_scan, daemon=True)
+    t.start()
+    return jsonify({'status': 'started', 'message': 'Scan running in background'})
+
+
+@app.route('/api/trident/kill-switch', methods=['POST'])
+def api_trident_kill_switch():
+    """Emergency exit all Trident positions."""
+    try:
+        from services.trident_executor import get_trident_executor
+        executor = get_trident_executor(TRIDENT_CONFIG)
+        results = executor.emergency_exit_all()
+        return jsonify({'status': 'done', 'closed': len(results), 'results': results})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/trident/toggle-mode', methods=['POST'])
+def api_trident_toggle_mode():
+    """Toggle Trident paper/live mode."""
+    is_paper = TRIDENT_CONFIG.get('paper_trading_mode', True)
+    TRIDENT_CONFIG['paper_trading_mode'] = not is_paper
+    TRIDENT_CONFIG['live_trading_enabled'] = is_paper
+    mode = 'PAPER' if TRIDENT_CONFIG['paper_trading_mode'] else 'LIVE'
+    logger.info(f"[Trident] Mode toggled to {mode}")
+    return jsonify({'mode': mode})
+
+
+@app.route('/api/trident/toggle-enabled', methods=['POST'])
+def api_trident_toggle_enabled():
+    """Enable/disable Trident system."""
+    TRIDENT_CONFIG['enabled'] = not TRIDENT_CONFIG.get('enabled', True)
+    state = 'ENABLED' if TRIDENT_CONFIG['enabled'] else 'DISABLED'
+    logger.info(f"[Trident] System {state}")
+    return jsonify({'enabled': TRIDENT_CONFIG['enabled']})
+
+
+@app.route('/api/trident/trades')
+def api_trident_trades():
+    """Get Trident trade history."""
+    try:
+        from services.trident_db import get_trident_db
+        db = get_trident_db()
+        limit = request.args.get('limit', 50, type=int)
+        return jsonify(db.get_trades(limit))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/trident/equity-curve')
+def api_trident_equity_curve():
+    """Get Trident equity curve."""
+    try:
+        from services.trident_db import get_trident_db
+        db = get_trident_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/trident/pending-signals')
+def api_trident_pending_signals():
+    """Get pending stop signals."""
+    try:
+        from services.trident_db import get_trident_db
+        db = get_trident_db()
+        return jsonify(db.get_pending_signals())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---- Trident Scheduled Jobs ----
+
+def _trident_check_exits():
+    """3:15 PM — Check SL/TP/MaxHold for active positions."""
+    if not TRIDENT_CONFIG.get('enabled', True):
+        return
+    try:
+        from services.trident_executor import get_trident_executor
+        from services.trident_scanner import load_daily_data_from_db, check_exits
+        executor = get_trident_executor(TRIDENT_CONFIG)
+        db_path = str(DATA_DIR / 'market_data.db')
+        from services.trident_executor import TRIDENT_UNIVERSE
+        symbol_data = load_daily_data_from_db(TRIDENT_UNIVERSE, db_path)
+        positions = executor.db.get_active_positions()
+        exit_signals = check_exits(positions, symbol_data, TRIDENT_CONFIG)
+        for ex in exit_signals:
+            executor.execute_exit(ex)
+        logger.info(f"[Trident] Exit check: {len(exit_signals)} exits")
+    except Exception as e:
+        logger.error(f"[Trident] Exit check error: {e}")
+
+
+def _trident_full_scan():
+    """3:20 PM — Full scan: check pending triggers + new signals."""
+    if not TRIDENT_CONFIG.get('enabled', True):
+        return
+    try:
+        from services.trident_executor import get_trident_executor
+        executor = get_trident_executor(TRIDENT_CONFIG)
+        result = executor.run_scan()
+        logger.info(f"[Trident] Full scan done: {result.get('pamacd_signals', 0)} PA_MACD, "
+                    f"{result.get('rb_signals', 0)} RB signals")
+    except Exception as e:
+        logger.error(f"[Trident] Full scan error: {e}")
+
+
+try:
+    scheduler.add_job(
+        _trident_check_exits,
+        'cron', day_of_week='mon-fri', hour=15, minute=15,
+        id='trident_check_exits', replace_existing=True,
+    )
+    scheduler.add_job(
+        _trident_full_scan,
+        'cron', day_of_week='mon-fri', hour=15, minute=20,
+        id='trident_full_scan', replace_existing=True,
+    )
+    logger.info("Trident scheduled jobs registered: exits(15:15), scan(15:20)")
+except Exception as e:
+    logger.warning(f"Could not register Trident scheduled jobs: {e}")
+
+
+# =============================================================================
 # Error Handlers
 # =============================================================================
 
@@ -3501,11 +4835,49 @@ if __name__ == '__main__':
         try:
             from services.maruthi_ticker import get_maruthi_ticker
             ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
-            if not ticker.is_connected():
+            if not ticker.is_connected:
                 ticker.start()
                 logger.info("[Maruthi] Ticker auto-started on Flask boot")
         except Exception as e:
             logger.warning(f"[Maruthi] Ticker auto-start failed on boot: {e}")
+
+    # Auto-start NAS ticker if enabled
+    if NAS_DEFAULTS.get('enabled', True):
+        try:
+            from services.nas_ticker import get_nas_ticker
+            ticker = get_nas_ticker(NAS_DEFAULTS)
+            if not ticker.is_connected:
+                ticker.start()
+                logger.info("[NAS] Ticker auto-started on Flask boot")
+        except Exception as e:
+            logger.warning(f"[NAS] Ticker auto-start failed on boot: {e}")
+
+    # BNF: Run initial scan to populate BB state from daily bars
+    if BNF_DEFAULTS.get('enabled', True):
+        try:
+            from services.bnf_executor import get_bnf_executor
+            _bnf_exec = get_bnf_executor(BNF_DEFAULTS)
+            _bnf_scan = _bnf_exec.scanner.scan()
+            if _bnf_scan and not _bnf_scan.get('error'):
+                _bnf_exec.db.update_state(
+                    bb_state=_bnf_scan['bb_state'],
+                    squeeze_count=_bnf_scan['squeeze_count'],
+                    bb_width=_bnf_scan['bb_width'],
+                    bb_width_ma=_bnf_scan['bb_width_ma'],
+                    sma_value=_bnf_scan['sma'],
+                    atr_value=_bnf_scan['atr'],
+                    direction=_bnf_scan['direction'],
+                    trend_strength=_bnf_scan['trend_strength'],
+                    last_close=_bnf_scan['spot'],
+                    last_scan_time=datetime.now().isoformat(),
+                )
+                logger.info(f"[BNF] Initial scan: {_bnf_scan['bb_state']}, "
+                           f"spot={_bnf_scan['spot']}, dir={_bnf_scan['direction']}, "
+                           f"squeeze={_bnf_scan['squeeze_count']}")
+            else:
+                logger.warning(f"[BNF] Initial scan failed: {_bnf_scan.get('error', 'unknown')}")
+        except Exception as e:
+            logger.warning(f"[BNF] Initial scan error on boot: {e}")
 
     # Run app with SocketIO support
     socketio.run(
