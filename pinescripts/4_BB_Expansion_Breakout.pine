@@ -1,0 +1,140 @@
+//@version=5
+indicator("BB Expansion Breakout V2 (L+S)", overlay=true, max_labels_count=500, max_lines_count=500)
+
+// ═══════════════════════════════════════════════════════════════
+// STRATEGY RULES (V2):
+// - Bollinger Bands (20, 2.0) squeeze: BB width < BB width MA
+// - FIRE: BB width > BB width MA after ≥3 squeeze bars
+// - LONG:  Fire + close > SMA(20)
+//     SL = candle low - buffer (ATR fraction)
+//     TP = entry + 2× risk
+// - SHORT: Fire + close < SMA(20)
+//     SL = candle high + buffer (ATR fraction)
+//     TP = entry - 2× risk
+// - Optional confirmations: RSI(14), ADX(14)>20, Volume > MA
+// - MaxHold = 10 bars
+// ═══════════════════════════════════════════════════════════════
+
+// ─── INPUTS ───
+bbPeriod     = input.int(20, "BB Period", minval=5)
+bbStdDev     = input.float(2.0, "BB Std Dev", minval=0.5, step=0.5)
+sqMinBars    = input.int(3, "Min Squeeze Bars", minval=1)
+atrPeriod    = input.int(14, "ATR Period", minval=5)
+slBufMult    = input.float(0.2, "SL Buffer (× ATR)", minval=0.0, step=0.1)
+tpMult       = input.float(2.0, "TP Multiplier (× risk)", minval=1.0, step=0.5)
+maxHold      = input.int(10, "Max Hold (bars)", minval=1)
+smaPeriod    = input.int(20, "Direction SMA Period", minval=5)
+useRSI       = input.bool(false, "RSI Confirmation (>50 L / <50 S)")
+useADX       = input.bool(false, "ADX > 20 Confirmation")
+useVol       = input.bool(false, "Volume > 20-MA Confirmation")
+
+// ─── INDICATORS ───
+sma     = ta.sma(close, smaPeriod)
+atr     = ta.atr(atrPeriod)
+bbMid   = ta.sma(close, bbPeriod)
+bbStd   = ta.stdev(close, bbPeriod)
+bbUpper = bbMid + bbStdDev * bbStd
+bbLower = bbMid - bbStdDev * bbStd
+bbWidth = (bbUpper - bbLower) / bbMid * 100
+bbWidthMA = ta.sma(bbWidth, bbPeriod)
+rsiVal  = ta.rsi(close, 14)
+
+// ADX calculation
+[diPlus, diMinus, adxVal] = ta.dmi(14, 14)
+
+// Volume MA
+volMA = ta.sma(volume, 20)
+
+// ─── SQUEEZE DETECTION ───
+isSqueeze   = bbWidth < bbWidthMA
+isExpanding = bbWidth > bbWidthMA
+
+// Count consecutive squeeze bars before current bar
+var int squeezeCount = 0
+if isSqueeze[1]
+    squeezeCount := squeezeCount + 1
+else
+    squeezeCount := 0
+
+// FIRE: expanding now + was squeezing for N bars
+squeezeFire = isExpanding and squeezeCount >= sqMinBars
+
+// ─── DIRECTION ───
+bullish = close > sma
+bearish = close < sma
+
+// ─── CONFIRMATIONS ───
+rsiLongOk  = not useRSI or rsiVal > 50
+rsiShortOk = not useRSI or rsiVal < 50
+adxOk      = not useADX or adxVal > 20
+volOk      = not useVol or volume > volMA
+
+// ─── SIGNALS ───
+longSignal  = squeezeFire and bullish and rsiLongOk and adxOk and volOk
+shortSignal = squeezeFire and bearish and rsiShortOk and adxOk and volOk
+
+// ─── ENTRY / SL / TP (candle-based SL) ───
+slBuffer = slBufMult * atr
+
+longEntry  = close
+longSL     = low - slBuffer
+longRisk   = longEntry - longSL
+longTP     = longEntry + tpMult * longRisk
+
+shortEntry = close
+shortSL    = high + slBuffer
+shortRisk  = shortSL - shortEntry
+shortTP    = shortEntry - tpMult * shortRisk
+
+// ─── PLOT BB ───
+plot(bbUpper, "BB Upper", color=color.new(color.blue, 60), linewidth=1)
+plot(bbMid, "BB Mid", color=color.new(color.gray, 50), linewidth=1, style=plot.style_line)
+plot(bbLower, "BB Lower", color=color.new(color.blue, 60), linewidth=1)
+plot(sma, "Direction SMA", color=color.new(color.orange, 30), linewidth=1)
+
+// ─── HIGHLIGHT SQUEEZE BARS ───
+bgcolor(isSqueeze ? color.new(color.purple, 90) : na, title="Squeeze Zone")
+
+// ─── PLOT LONG ENTRIES ───
+plotshape(longSignal and longRisk > 0, title="Long Entry", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small, text="BB+")
+
+if longSignal and longRisk > 0
+    line.new(bar_index, longEntry, bar_index + maxHold, longEntry, color=color.blue, style=line.style_solid, width=1)
+    line.new(bar_index, longSL, bar_index + maxHold, longSL, color=color.red, style=line.style_dashed, width=1)
+    line.new(bar_index, longTP, bar_index + maxHold, longTP, color=color.green, style=line.style_dashed, width=1)
+    label.new(bar_index + maxHold, longTP, "TP " + str.tostring(longTP, "#.##"), style=label.style_label_left, color=color.green, textcolor=color.white, size=size.tiny)
+    label.new(bar_index + maxHold, longSL, "SL " + str.tostring(longSL, "#.##"), style=label.style_label_left, color=color.red, textcolor=color.white, size=size.tiny)
+
+// ─── PLOT SHORT ENTRIES ───
+plotshape(shortSignal and shortRisk > 0, title="Short Entry", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small, text="BB-")
+
+if shortSignal and shortRisk > 0
+    line.new(bar_index, shortEntry, bar_index + maxHold, shortEntry, color=color.blue, style=line.style_solid, width=1)
+    line.new(bar_index, shortSL, bar_index + maxHold, shortSL, color=color.red, style=line.style_dashed, width=1)
+    line.new(bar_index, shortTP, bar_index + maxHold, shortTP, color=color.green, style=line.style_dashed, width=1)
+    label.new(bar_index + maxHold, shortTP, "TP " + str.tostring(shortTP, "#.##"), style=label.style_label_left, color=color.green, textcolor=color.white, size=size.tiny)
+    label.new(bar_index + maxHold, shortSL, "SL " + str.tostring(shortSL, "#.##"), style=label.style_label_left, color=color.red, textcolor=color.white, size=size.tiny)
+
+// ─── BB WIDTH SUB-INDICATOR (hidden by default) ───
+plot(bbWidth, title="BB Width", color=color.new(color.teal, 70), style=plot.style_columns, display=display.none)
+plot(bbWidthMA, title="BB Width MA", color=color.new(color.red, 70), display=display.none)
+
+// ─── INFO TABLE ───
+var table infoTable = table.new(position.top_right, 2, 8, bgcolor=color.new(color.black, 70))
+if barstate.islast
+    table.cell(infoTable, 0, 0, "BB Expansion V2", text_color=color.yellow, text_size=size.small)
+    table.cell(infoTable, 0, 1, "Trigger:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 1, "BB squeeze " + str.tostring(sqMinBars) + "+ bars -> expansion", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 2, "Long:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 2, "Fire + close > SMA(" + str.tostring(smaPeriod) + ")", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 3, "Short:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 3, "Fire + close < SMA(" + str.tostring(smaPeriod) + ")", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 4, "SL:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 4, "Candle low/high + " + str.tostring(slBufMult) + "x ATR buffer", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 5, "TP:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 5, str.tostring(tpMult) + "x risk", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 6, "MaxHold:", text_color=color.gray, text_size=size.tiny)
+    table.cell(infoTable, 1, 6, str.tostring(maxHold) + " bars", text_color=color.white, text_size=size.tiny)
+    table.cell(infoTable, 0, 7, "Filters:", text_color=color.gray, text_size=size.tiny)
+    string filters = (useRSI ? "RSI " : "") + (useADX ? "ADX " : "") + (useVol ? "VOL " : "")
+    table.cell(infoTable, 1, 7, filters == "" ? "None" : filters, text_color=filters == "" ? color.red : color.green, text_size=size.tiny)

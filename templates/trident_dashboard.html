@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Trident Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mode-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.7em;
+        border-radius: 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .mode-PAPER { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950; }
+    .mode-LIVE { background: rgba(248,81,73,0.2); color: #f85149; border: 1px solid #f85149; }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .table-tri th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .table-tri td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .exit-STOP_LOSS { color: #f85149; }
+    .exit-TAKE_PROFIT { color: #3fb950; }
+    .exit-MAX_HOLD { color: #d29922; }
+    .exit-EMERGENCY { color: #f85149; font-weight: 700; }
+
+    .action-btn {
+        min-width: 130px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .pulse-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    .strat-badge {
+        font-size: 0.7rem;
+        padding: 0.2em 0.5em;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    .strat-PA_MACD { background: rgba(88,166,255,0.2); color: #58a6ff; }
+    .strat-RangeBreak5d { background: rgba(210,153,34,0.2); color: #d29922; }
+
+    .dir-LONG { color: #3fb950; }
+    .dir-SHORT { color: #f85149; }
+
+    .metric-card {
+        background: rgba(22,27,34,0.6);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+    }
+    .metric-card .value { font-size: 1.5rem; font-weight: 700; }
+    .metric-card .label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; }
+
+    .auth-banner {
+        background: rgba(210,153,34,0.15);
+        border: 1px solid rgba(210,153,34,0.4);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .auth-banner.authenticated {
+        background: rgba(63,185,80,0.1);
+        border-color: rgba(63,185,80,0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Auth Banner -->
+    <div id="authBanner" class="auth-banner">
+        <span id="authIcon">⚠️</span>
+        <span id="authText">Checking Zerodha connection...</span>
+        <button id="btnAutoLogin" class="btn btn-sm btn-warning ms-auto" onclick="doAutoLogin()" style="display:none;">
+            🔑 Auto-Login (TOTP)
+        </button>
+        <button id="btnManualLogin" class="btn btn-sm btn-outline-secondary ms-2" onclick="window.location='/login'" style="display:none;">
+            Manual Login
+        </button>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h4 class="mb-0">⚔️ Trident Dashboard
+                <span id="modeBadge" class="mode-badge mode-PAPER ms-2">PAPER</span>
+                <span id="enableBadge" class="mode-badge ms-1" style="background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;">ON</span>
+            </h4>
+            <small class="text-muted">PA_MACD + RangeBreakout 5d | F&O Universe (50 stocks) | Daily</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary action-btn" onclick="triggerScan()">
+                🔍 Manual Scan
+            </button>
+            <button class="btn btn-outline-danger action-btn" onclick="killSwitch()">
+                🛑 Kill Switch
+            </button>
+            <button class="btn btn-outline-secondary action-btn" id="btnToggleMode" onclick="toggleMode()">
+                Toggle Mode
+            </button>
+            <button class="btn btn-outline-secondary" onclick="loadState()">↻</button>
+        </div>
+    </div>
+
+    <!-- Metrics Row -->
+    <div class="row g-3 mb-3">
+        <div class="col"><div class="metric-card"><div class="value" id="mPositions">0</div><div class="label">Positions</div></div></div>
+        <div class="col"><div class="metric-card"><div class="value" id="mTrades">0</div><div class="label">Total Trades</div></div></div>
+        <div class="col"><div class="metric-card"><div class="value" id="mWinRate">--</div><div class="label">Win Rate</div></div></div>
+        <div class="col"><div class="metric-card"><div class="value" id="mPF">--</div><div class="label">Profit Factor</div></div></div>
+        <div class="col"><div class="metric-card"><div class="value" id="mPnL">₹0</div><div class="label">Total P&L</div></div></div>
+        <div class="col"><div class="metric-card"><div class="value" id="mPending">0</div><div class="label">Pending Signals</div></div></div>
+    </div>
+
+    <!-- Positions -->
+    <div class="card mb-3 border-secondary">
+        <div class="card-header-custom d-flex justify-content-between">
+            <span>Active Positions</span>
+            <span class="text-muted" id="posCount">0 positions</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover table-tri mb-0">
+                    <thead><tr>
+                        <th>Symbol</th><th>Dir</th><th>Strategy</th><th>Entry</th>
+                        <th>SL</th><th>TP</th><th>Hold</th><th>Status</th>
+                    </tr></thead>
+                    <tbody id="positionsBody">
+                        <tr><td colspan="8" class="text-center text-muted py-3">No active positions</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Signals -->
+    <div class="card mb-3 border-secondary">
+        <div class="card-header-custom d-flex justify-content-between">
+            <span>Pending Stop Signals (next day triggers)</span>
+            <span class="text-muted" id="pendingCount">0 signals</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover table-tri mb-0">
+                    <thead><tr>
+                        <th>Symbol</th><th>Dir</th><th>Strategy</th><th>Stop Level</th>
+                        <th>SL</th><th>TP</th><th>Signal Date</th>
+                    </tr></thead>
+                    <tbody id="pendingBody">
+                        <tr><td colspan="7" class="text-center text-muted py-3">No pending signals</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Last Scan Results -->
+    <div class="card mb-3 border-secondary">
+        <div class="card-header-custom">Last Scan Result</div>
+        <div class="card-body">
+            <pre id="scanResult" class="text-muted mb-0" style="font-size:0.85rem;">No scan run yet</pre>
+        </div>
+    </div>
+
+    <!-- Trade History -->
+    <div class="card mb-3 border-secondary">
+        <div class="card-header-custom d-flex justify-content-between">
+            <span>Recent Trades</span>
+            <span class="text-muted" id="tradeCount">0 trades</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+                <table class="table table-dark table-hover table-tri mb-0">
+                    <thead><tr>
+                        <th>Date</th><th>Symbol</th><th>Dir</th><th>Strategy</th>
+                        <th>Entry</th><th>Exit</th><th>P&L %</th><th>P&L ₹</th>
+                        <th>Days</th><th>Exit Reason</th>
+                    </tr></thead>
+                    <tbody id="tradesBody">
+                        <tr><td colspan="10" class="text-center text-muted py-3">No trades yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadState() {
+    fetch('/api/trident/state').then(r => r.json()).then(data => {
+        if (data.error) { console.error(data.error); return; }
+
+        // Mode badges
+        const cfg = data.config || {};
+        const mode = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+        document.getElementById('modeBadge').className = 'mode-badge mode-' + mode + ' ms-2';
+        document.getElementById('modeBadge').textContent = mode;
+        document.getElementById('enableBadge').textContent = cfg.enabled ? 'ON' : 'OFF';
+        document.getElementById('enableBadge').style.color = cfg.enabled ? '#3fb950' : '#f85149';
+
+        // Metrics
+        const s = data.stats || {};
+        document.getElementById('mPositions').textContent = data.positions_count || 0;
+        document.getElementById('mTrades').textContent = s.total_trades || 0;
+        document.getElementById('mWinRate').textContent = s.total_trades > 0 ? s.win_rate + '%' : '--';
+        document.getElementById('mPF').textContent = s.total_trades > 0 ? s.profit_factor : '--';
+        document.getElementById('mPnL').textContent = '₹' + (s.total_pnl || 0).toLocaleString('en-IN');
+        document.getElementById('mPending').textContent = (data.pending_signals || []).length;
+
+        // Positions
+        const positions = data.positions || [];
+        document.getElementById('posCount').textContent = positions.length + ' positions';
+        const pb = document.getElementById('positionsBody');
+        if (positions.length === 0) {
+            pb.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No active positions</td></tr>';
+        } else {
+            pb.innerHTML = positions.map(p => {
+                const hold = Math.floor((Date.now() - new Date(p.entry_date).getTime()) / 86400000);
+                return `<tr>
+                    <td><strong>${p.symbol}</strong></td>
+                    <td class="dir-${p.direction}">${p.direction}</td>
+                    <td><span class="strat-badge strat-${p.strategy}">${p.strategy}</span></td>
+                    <td>₹${p.entry_price.toFixed(2)}</td>
+                    <td class="text-danger">₹${p.sl_price.toFixed(2)}</td>
+                    <td class="text-success">₹${p.tp_price.toFixed(2)}</td>
+                    <td>${hold}d / ${p.max_hold_days}d</td>
+                    <td><span class="pulse-dot" style="background:#3fb950;"></span> ${p.status}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Pending signals
+        const pending = data.pending_signals || [];
+        document.getElementById('pendingCount').textContent = pending.length + ' signals';
+        const pgb = document.getElementById('pendingBody');
+        if (pending.length === 0) {
+            pgb.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No pending signals</td></tr>';
+        } else {
+            pgb.innerHTML = pending.map(p => `<tr>
+                <td><strong>${p.symbol}</strong></td>
+                <td class="dir-${p.direction}">${p.direction}</td>
+                <td><span class="strat-badge strat-${p.strategy}">${p.strategy}</span></td>
+                <td>₹${p.stop_level.toFixed(2)}</td>
+                <td class="text-danger">₹${p.sl_price.toFixed(2)}</td>
+                <td class="text-success">₹${p.tp_price.toFixed(2)}</td>
+                <td>${p.signal_date}</td>
+            </tr>`).join('');
+        }
+
+        // Last scan
+        if (data.last_scan) {
+            const ls = data.last_scan;
+            document.getElementById('scanResult').textContent = JSON.stringify(ls, null, 2);
+        }
+
+        // Trades
+        const trades = data.trades || [];
+        document.getElementById('tradeCount').textContent = trades.length + ' trades';
+        const tb = document.getElementById('tradesBody');
+        if (trades.length === 0) {
+            tb.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">No trades yet</td></tr>';
+        } else {
+            tb.innerHTML = trades.map(t => {
+                const pnlColor = t.pnl_pct >= 0 ? 'text-success' : 'text-danger';
+                return `<tr>
+                    <td>${t.exit_date}</td>
+                    <td><strong>${t.symbol}</strong></td>
+                    <td class="dir-${t.direction}">${t.direction}</td>
+                    <td><span class="strat-badge strat-${t.strategy}">${t.strategy}</span></td>
+                    <td>₹${t.entry_price.toFixed(2)}</td>
+                    <td>₹${t.exit_price.toFixed(2)}</td>
+                    <td class="${pnlColor}">${t.pnl_pct >= 0 ? '+' : ''}${t.pnl_pct.toFixed(2)}%</td>
+                    <td class="${pnlColor}">₹${t.pnl_abs.toLocaleString('en-IN')}</td>
+                    <td>${t.hold_days}d</td>
+                    <td class="exit-${t.exit_reason}">${t.exit_reason}</td>
+                </tr>`;
+            }).join('');
+        }
+    }).catch(e => console.error('State load error:', e));
+}
+
+function triggerScan() {
+    if (!confirm('Run a manual Trident scan now?')) return;
+    fetch('/api/trident/scan', {method:'POST'}).then(r => r.json()).then(d => {
+        alert(d.message || 'Scan started');
+        setTimeout(loadState, 5000);
+    });
+}
+
+function killSwitch() {
+    if (!confirm('⚠️ KILL SWITCH: Close ALL Trident positions immediately?')) return;
+    fetch('/api/trident/kill-switch', {method:'POST'}).then(r => r.json()).then(d => {
+        alert('Closed ' + (d.closed || 0) + ' positions');
+        loadState();
+    });
+}
+
+function toggleMode() {
+    const mode = document.getElementById('modeBadge').textContent;
+    if (mode === 'PAPER' && !confirm('Switch to LIVE trading? Real orders will be placed.')) return;
+    fetch('/api/trident/toggle-mode', {method:'POST'}).then(r => r.json()).then(d => {
+        loadState();
+    });
+}
+
+// Auth status
+function checkAuth() {
+    fetch('/api/auth/status').then(r => r.json()).then(d => {
+        const banner = document.getElementById('authBanner');
+        const icon = document.getElementById('authIcon');
+        const text = document.getElementById('authText');
+        const btnAuto = document.getElementById('btnAutoLogin');
+        const btnManual = document.getElementById('btnManualLogin');
+
+        if (d.authenticated) {
+            banner.className = 'auth-banner authenticated';
+            icon.textContent = '✅';
+            text.textContent = 'Zerodha connected — ' + d.user_name + ' (' + d.user_id + ')';
+            btnAuto.style.display = 'none';
+            btnManual.style.display = 'none';
+        } else {
+            banner.className = 'auth-banner';
+            icon.textContent = '⚠️';
+            text.textContent = 'Zerodha not connected — login required for live trading';
+            btnAuto.style.display = '';
+            btnManual.style.display = '';
+        }
+    }).catch(() => {
+        document.getElementById('authText').textContent = 'Could not check auth status';
+    });
+}
+
+function doAutoLogin() {
+    const btn = document.getElementById('btnAutoLogin');
+    btn.disabled = true;
+    btn.textContent = '⏳ Logging in...';
+    fetch('/api/auth/auto-login', {method:'POST'}).then(r => r.json()).then(d => {
+        if (d.status === 'success') {
+            alert('✅ ' + d.message);
+            checkAuth();
+        } else {
+            alert('❌ ' + d.message);
+        }
+        btn.disabled = false;
+        btn.textContent = '🔑 Auto-Login (TOTP)';
+    }).catch(e => {
+        alert('Login failed: ' + e);
+        btn.disabled = false;
+        btn.textContent = '🔑 Auto-Login (TOTP)';
+    });
+}
+
+// Initial load
+loadState();
+checkAuth();
+setInterval(loadState, 15000);  // Refresh every 15s
+</script>
+{% endblock %}

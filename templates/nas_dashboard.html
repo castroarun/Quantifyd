@@ -1,0 +1,971 @@
+{% extends "base.html" %}
+
+{% block title %}NAS OTM — Nifty ATR Strangle (OTM){% endblock %}
+
+{% block extra_css %}
+<style>
+    .mode-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.7em;
+        border-radius: 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .mode-PAPER { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950; }
+    .mode-LIVE { background: rgba(248,81,73,0.2); color: #f85149; border: 1px solid #f85149; }
+
+    .squeeze-indicator {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        padding: 0.5rem 1.5rem;
+        border-radius: 10px;
+        display: inline-block;
+    }
+    .squeeze-ON { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .squeeze-OFF { background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.3); }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .table-nas th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .table-nas td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .leg-CE { color: #f85149; }
+    .leg-PE { color: #3fb950; }
+    .signal-SQUEEZE_ENTRY { color: #f59e0b; }
+    .signal-ADJUST { color: #a371f7; }
+
+    .action-btn {
+        min-width: 130px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 10px;
+        background: rgba(22,27,34,0.6);
+        border: 1px solid var(--bs-border-color);
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #8b949e;
+        letter-spacing: 0.5px;
+    }
+
+    .strangle-card {
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid var(--bs-border-color);
+        background: linear-gradient(135deg, rgba(163,113,247,0.08) 0%, rgba(22,27,34,0.9) 100%);
+        border-left: 3px solid #a371f7;
+    }
+
+    .pulse-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .pulse-active {
+        background: #3fb950;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    .pulse-idle { background: #8b949e; }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .scan-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7); z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    .equity-chart-container {
+        position: relative;
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">
+                <i class="bi bi-lightning-charge me-2" style="color: #a371f7;"></i>
+                NAS OTM — Nifty ATR Strangle (OTM)
+            </h4>
+            <small class="text-muted">
+                <a href="/strategies" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Strategies
+                </a>
+                &nbsp;|&nbsp; 5-min ATR Squeeze &rarr; Sell Strangles &rarr; Adjust on 2x/0.5x
+            </small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span id="tickerBadge" class="mode-badge" style="background: rgba(139,92,246,0.2); color: #a371f7; border: 1px solid #a371f7; cursor: pointer;" onclick="toggleTicker()" title="Click to start/stop ticker">
+                <i class="bi bi-broadcast me-1"></i><span id="tickerText">TICKER OFF</span>
+            </span>
+            <span id="modeBadge" class="mode-badge mode-PAPER">PAPER</span>
+            <span id="enabledBadge" class="mode-badge" style="background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950;">ENABLED</span>
+            <span id="lastUpdated" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">--</span>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+        <button class="btn btn-outline-primary action-btn" onclick="runScan()">
+            <i class="bi bi-search me-1"></i> Manual Scan
+        </button>
+        <button class="btn btn-outline-warning action-btn" onclick="toggleMode()">
+            <i class="bi bi-toggles me-1"></i> Toggle Mode
+        </button>
+        <button class="btn btn-outline-secondary action-btn" onclick="toggleEnabled()">
+            <i class="bi bi-power me-1"></i> Enable/Disable
+        </button>
+        <button class="btn btn-outline-danger action-btn" onclick="killSwitch()">
+            <i class="bi bi-exclamation-octagon me-1"></i> Kill Switch
+        </button>
+        <button class="btn btn-outline-info action-btn" onclick="refreshState()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- ATR State + Key Metrics Row -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="squeezeState" class="squeeze-indicator squeeze-OFF">--</div>
+                <div class="stat-label mt-2">ATR Squeeze</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="squeezeCount" class="stat-value" style="color: #f59e0b;">0 / 1</div>
+                <div class="stat-label">Squeeze Bars</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="spotPrice" class="stat-value" style="color: #c9d1d9;">--</div>
+                <div class="stat-label">Nifty Spot</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="atrValues" class="stat-value" style="color: #58a6ff; font-size: 1.1rem;">-- / --</div>
+                <div class="stat-label">ATR / ATR MA</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="adjustments" class="stat-value" style="color: #a371f7;">0 / 4</div>
+                <div class="stat-label">Adjustments Today</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="totalPnl" class="stat-value positive">--</div>
+                <div class="stat-label">Total P&L</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Strangle Card -->
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="strangle-card" id="strangleCard">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0" style="color: #a371f7;">
+                        <i class="bi bi-arrows-expand me-1"></i> ACTIVE STRANGLE
+                        <small class="text-muted ms-2">Intraday Options</small>
+                    </h6>
+                    <div>
+                        <span id="activeStatus" class="badge bg-secondary">No Position</span>
+                        <span id="dailyPnl" class="badge bg-dark ms-1">Daily P&L: --</span>
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <div class="stat-label">CE Leg</div>
+                        <div id="ceLeg" class="fw-bold leg-CE" style="font-size: 1.1rem;">--</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-label">PE Leg</div>
+                        <div id="peLeg" class="fw-bold leg-PE" style="font-size: 1.1rem;">--</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-label">CE Premium</div>
+                        <div id="cePremium" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-label">PE Premium</div>
+                        <div id="pePremium" class="fw-bold">--</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-label">Total Premium</div>
+                        <div id="totalPremium" class="fw-bold" style="color: #f59e0b;">--</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-label">Expiry</div>
+                        <div id="expiry" class="fw-bold" style="color: #8b949e;">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs: Positions | Trades | Signals | Chart -->
+    <ul class="nav nav-tabs mb-3" id="nasTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabPositions">
+                <i class="bi bi-table me-1"></i> Positions
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTrades">
+                <i class="bi bi-receipt me-1"></i> Trades
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabSignals">
+                <i class="bi bi-broadcast me-1"></i> Signals
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabChart">
+                <i class="bi bi-graph-up me-1"></i> Equity Curve
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Positions Tab -->
+        <div class="tab-pane fade show active" id="tabPositions">
+            <div class="table-responsive">
+                <table class="table table-dark table-nas table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Leg</th><th>Symbol</th><th>Strike</th>
+                            <th>Lots</th><th>Entry</th><th>LTP</th><th>P&L</th>
+                            <th>Status</th><th>Adj</th><th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsBody">
+                        <tr><td colspan="10" class="text-center text-muted">No active positions</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- What's Next Panel -->
+            <div class="card bg-dark mt-3" id="nasWhatsNextCard">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-signpost-2" style="color:#58a6ff;"></i> What's Next</span>
+                    <small class="text-muted" id="nasWhatsNextUpdate"></small>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-dark table-nas table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:30px; text-align:center;"></th>
+                                <th style="width:200px;">Event</th>
+                                <th>Action</th>
+                                <th style="width:140px;">Level / Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nasWhatsNextBody">
+                            <tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trades Tab -->
+        <div class="tab-pane fade" id="tabTrades">
+            <div class="table-responsive">
+                <table class="table table-dark table-nas table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>CE Strike</th><th>PE Strike</th>
+                            <th>Collected</th><th>Paid</th><th>Net P&L</th>
+                            <th>Adj</th><th>Exit Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradesBody">
+                        <tr><td colspan="8" class="text-center text-muted">No trades yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Signals Tab -->
+        <div class="tab-pane fade" id="tabSignals">
+            <div class="table-responsive">
+                <table class="table table-dark table-nas table-sm">
+                    <thead>
+                        <tr>
+                            <th>Time</th><th>Signal</th><th>Spot</th>
+                            <th>ATR</th><th>CE</th><th>PE</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="signalsBody">
+                        <tr><td colspan="7" class="text-center text-muted">No signals yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Chart Tab -->
+        <div class="tab-pane fade" id="tabChart">
+            <div class="equity-chart-container">
+                <canvas id="equityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mt-3">
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statTrades" class="stat-value" style="color: #c9d1d9;">0</div>
+                <div class="stat-label">Total Trades</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statWinRate" class="stat-value" style="color: #3fb950;">--</div>
+                <div class="stat-label">Win Rate</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statPF" class="stat-value" style="color: #58a6ff;">--</div>
+                <div class="stat-label">Profit Factor</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statMaxWin" class="stat-value positive">--</div>
+                <div class="stat-label">Max Win</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statMaxLoss" class="stat-value negative">--</div>
+                <div class="stat-label">Max Loss</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statTotalAdj" class="stat-value" style="color: #a371f7;">0</div>
+                <div class="stat-label">Total Adjustments</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Last scan info -->
+    <div class="text-muted text-center mt-3" style="font-size: 0.8rem;">
+        <span id="lastScan">Last scan: --</span>
+        &nbsp;|&nbsp;
+        <span id="configInfo">Config: --</span>
+    </div>
+</div>
+
+<!-- Scan Overlay -->
+<div id="scanOverlay" class="scan-overlay" style="display:none;">
+    <div class="text-center">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="text-white">Running NAS Scan...</h5>
+        <p class="text-muted" id="scanStatus">Checking ATR squeeze...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let equityChart = null;
+let refreshTimer = null;
+
+// ─── API Calls ──────────────────────────────────────────
+async function fetchState() {
+    try {
+        const res = await fetch('/api/nas/state');
+        return await res.json();
+    } catch(e) { console.error('State fetch error:', e); return null; }
+}
+
+async function runScan() {
+    document.getElementById('scanOverlay').style.display = 'flex';
+    try {
+        const res = await fetch('/api/nas/scan', {method: 'POST'});
+        const data = await res.json();
+        if (data.task_id) {
+            pollScan(data.task_id);
+        }
+    } catch(e) {
+        alert('Scan failed: ' + e.message);
+        document.getElementById('scanOverlay').style.display = 'none';
+    }
+}
+
+async function pollScan(taskId) {
+    try {
+        const res = await fetch(`/api/nas/scan/status/${taskId}`);
+        const data = await res.json();
+        if (data.status === 'completed' || data.status === 'error') {
+            document.getElementById('scanOverlay').style.display = 'none';
+            refreshState();
+        } else {
+            setTimeout(() => pollScan(taskId), 1000);
+        }
+    } catch(e) {
+        document.getElementById('scanOverlay').style.display = 'none';
+    }
+}
+
+async function toggleMode() {
+    if (!confirm('Switch between PAPER and LIVE mode?')) return;
+    await fetch('/api/nas/toggle-mode', {method: 'POST'});
+    refreshState();
+}
+
+async function toggleEnabled() {
+    await fetch('/api/nas/toggle-enabled', {method: 'POST'});
+    refreshState();
+}
+
+async function killSwitch() {
+    if (!confirm('EMERGENCY: Close ALL NAS positions immediately?')) return;
+    await fetch('/api/nas/kill-switch', {method: 'POST'});
+    refreshState();
+}
+
+async function toggleTicker() {
+    const badge = document.getElementById('tickerText');
+    const isOn = badge.textContent.includes('LIVE') || badge.textContent.includes('CONNECTING');
+    if (isOn) {
+        await fetch('/api/nas/ticker/stop', {method: 'POST'});
+    } else {
+        badge.textContent = 'CONNECTING...';
+        await fetch('/api/nas/ticker/start', {method: 'POST'});
+    }
+    setTimeout(refreshTickerStatus, 1500);
+}
+
+// Global store for live option leg premiums from ticker
+let _liveOptionLegs = {};
+
+async function refreshTickerStatus() {
+    try {
+        const resp = await fetch('/api/nas/ticker/status');
+        const data = await resp.json();
+        const badge = document.getElementById('tickerBadge');
+        const text = document.getElementById('tickerText');
+        if (data.is_connected) {
+            text.textContent = `LIVE \u2022 ${data.completed_candles} candles`;
+            badge.style.background = 'rgba(63,185,80,0.2)';
+            badge.style.color = '#3fb950';
+            badge.style.borderColor = '#3fb950';
+        } else if (data.is_running) {
+            text.textContent = 'CONNECTING...';
+            badge.style.background = 'rgba(227,179,65,0.2)';
+            badge.style.color = '#e3b341';
+            badge.style.borderColor = '#e3b341';
+        } else {
+            text.textContent = 'TICKER OFF';
+            badge.style.background = 'rgba(139,92,246,0.2)';
+            badge.style.color = '#a371f7';
+            badge.style.borderColor = '#a371f7';
+        }
+        // Show option legs monitored
+        if (data.option_legs_monitored > 0) {
+            text.textContent += ` \u2022 ${data.option_legs_monitored} legs`;
+        }
+        // Show spot LTP
+        if (data.last_ltp > 0) {
+            const spotEl = document.getElementById('spotValue');
+            if (spotEl) spotEl.textContent = data.last_ltp.toFixed(1);
+        }
+        // Store live option leg premiums for position P&L display
+        _liveOptionLegs = {};
+        if (data.option_legs && data.option_legs.length > 0) {
+            data.option_legs.forEach(leg => {
+                if (leg.tradingsymbol) {
+                    _liveOptionLegs[leg.tradingsymbol] = leg.current_premium;
+                }
+            });
+        }
+    } catch(e) {}
+}
+
+// ─── Positions Table (with live LTP & P/L) ──────────────
+function updatePositionsOnly(data) {
+    if (!data) return;
+    const ceList = (data.positions || {}).ce || [];
+    const peList = (data.positions || {}).pe || [];
+    const closedToday = (data.positions || {}).closed_today || [];
+    const allActive = [...ceList, ...peList];
+    const posBody = document.getElementById('positionsBody');
+
+    if (allActive.length === 0 && closedToday.length === 0) {
+        posBody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">No positions today</td></tr>';
+        return;
+    }
+
+    let totalPnl = 0;
+    let totalEntry = 0;
+    let totalLtp = 0;
+    let allHaveLtp = true;
+    const LOT_SIZE = 75;
+
+    // Active positions
+    const activeRows = allActive.map(p => {
+        const livePrem = _liveOptionLegs[p.tradingsymbol];
+        const entry = p.entry_price || 0;
+        const qty = p.qty || LOT_SIZE;
+        const lots = Math.round(qty / LOT_SIZE);
+        let ltpText = '--';
+        let pnlText = '--';
+        let pnlClass = '';
+
+        totalEntry += entry;
+
+        if (livePrem != null && livePrem > 0) {
+            ltpText = 'Rs ' + livePrem.toFixed(1);
+            const pnlPerUnit = entry - livePrem;
+            const pnlRupees = pnlPerUnit * qty;
+            totalPnl += pnlRupees;
+            totalLtp += livePrem;
+            pnlClass = pnlRupees >= 0 ? 'color: #3fb950' : 'color: #f85149';
+            pnlText = (pnlRupees >= 0 ? '+' : '') + pnlRupees.toFixed(0);
+        } else {
+            allHaveLtp = false;
+        }
+
+        return `
+        <tr>
+            <td>${p.id}</td>
+            <td><span class="leg-${p.leg}">${p.leg}</span></td>
+            <td>${p.tradingsymbol}</td>
+            <td>${p.strike}</td>
+            <td>${lots}L</td>
+            <td>Rs ${entry}</td>
+            <td>${ltpText}</td>
+            <td style="${pnlClass}; font-weight: 600">${pnlText}</td>
+            <td><span class="badge bg-success">${p.status}</span></td>
+            <td>${p.adjustment_count || 0}</td>
+            <td>${p.entry_time ? p.entry_time.substring(11, 19) : '--'}</td>
+        </tr>`;
+    }).join('');
+
+    // Compute closed P&L upfront for the combined total row
+    let closedPnlPreCalc = 0;
+    closedToday.forEach(p => {
+        const qty = p.qty || LOT_SIZE;
+        closedPnlPreCalc += (p.entry_price - (p.exit_price || 0)) * qty;
+    });
+
+    const dayPnl = totalPnl + closedPnlPreCalc;
+    const dayPnlClass = dayPnl >= 0 ? 'color: #3fb950' : 'color: #f85149';
+    let totalRow = '';
+    if (allActive.length > 0 || closedToday.length > 0) {
+        totalRow = `
+        <tr style="border-top: 2px solid #8b949e">
+            <td colspan="7" style="font-weight: 700; color: #c9d1d9;">DAY P&L (open + closed)</td>
+            <td style="${dayPnlClass}; font-weight: 800; font-size: 1.1rem">
+                Rs ${(dayPnl >= 0 ? '+' : '') + dayPnl.toFixed(0)}
+            </td>
+            <td colspan="3"></td>
+        </tr>`;
+    }
+
+    // Closed positions (greyed out)
+    let closedRows = '';
+    if (closedToday.length > 0) {
+        closedRows = `<tr><td colspan="11" style="padding: 0.3rem 0.75rem; color: #6e7681; font-size: 0.8rem; border-top: 1px dashed #30363d;">Closed today</td></tr>`;
+        closedRows += closedToday.map(p => {
+            const entry = p.entry_price || 0;
+            const exit = p.exit_price || 0;
+            const qty = p.qty || LOT_SIZE;
+            const lots = Math.round(qty / LOT_SIZE);
+            const pnlPerUnit = entry - exit;
+            const pnlRupees = pnlPerUnit * qty;
+            const pnlClass = pnlRupees >= 0 ? 'color: #3fb950' : 'color: #f85149';
+            const pnlText = (pnlRupees >= 0 ? '+' : '') + pnlRupees.toFixed(0);
+            const reason = (p.exit_reason || '').replace(/_/g, ' ');
+            return `
+            <tr style="opacity: 0.45;">
+                <td>${p.id}</td>
+                <td><span class="leg-${p.leg}">${p.leg}</span></td>
+                <td>${p.tradingsymbol}</td>
+                <td>${p.strike}</td>
+                <td>${lots}L</td>
+                <td>Rs ${entry}</td>
+                <td>Rs ${exit.toFixed(1)}</td>
+                <td style="${pnlClass}; font-weight: 600">${pnlText}</td>
+                <td><span class="badge bg-secondary" title="${reason}">${reason.substring(0,12)}</span></td>
+                <td>${p.adjustment_count || 0}</td>
+                <td>${p.entry_time ? p.entry_time.substring(11, 19) : '--'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    posBody.innerHTML = activeRows + totalRow + closedRows;
+}
+
+// ─── What's Next ────────────────────────────────────────
+function buildNasWhatsNext(data) {
+    const s = data.state || {};
+    const cfg = data.config || {};
+    const positions = data.positions || {};
+    const hasPositions = (positions.total_active || 0) > 0;
+    const isSqueezing = s.is_squeezing;
+    const squeezeCount = s.squeeze_count || 0;
+    const minSqueeze = cfg.min_squeeze_bars || 1;
+    const atr = s.atr_value || 0;
+    const atrMa = s.atr_ma || 0;
+    const spot = s.spot_price || 0;
+    const tbody = document.getElementById('nasWhatsNextBody');
+    const rows = [];
+
+    if (!hasPositions) {
+        // No positions — show entry conditions
+        if (isSqueezing && squeezeCount >= minSqueeze) {
+            rows.push({icon:'🟢', event:'Squeeze ACTIVE', action:`ATR ${atr.toFixed(1)} < MA ${atrMa.toFixed(1)} for ${squeezeCount} bars — entry will fire on next candle close`, level:'Spot ₹' + spot.toFixed(0)});
+        } else if (isSqueezing) {
+            rows.push({icon:'🟡', event:`Squeeze building (${squeezeCount}/${minSqueeze})`, action:`ATR ${atr.toFixed(1)} < MA ${atrMa.toFixed(1)} — need ${minSqueeze - squeezeCount} more bar(s)`, level:'—'});
+        } else {
+            rows.push({icon:'⏳', event:'Waiting for squeeze', action:`ATR (${atr.toFixed(1)}) must drop below MA (${atrMa.toFixed(1)})`, level:'ATR gap: ' + (atr - atrMa).toFixed(1)});
+        }
+        rows.push({icon:'📊', event:'Squeeze detected', action:`Sell ~₹${cfg.target_entry_premium || 20} CE + PE strangle (${cfg.lots_per_leg || 10} lots each)`, level:'—'});
+        rows.push({icon:'🕐', event:'Entry window', action:`${cfg.entry_start_time || '09:30'} – ${cfg.entry_end_time || '14:30'}`, level:'—'});
+    } else {
+        // Active positions — show what triggers next
+        const ceList = positions.ce || [];
+        const peList = positions.pe || [];
+        const dblTrigger = cfg.premium_double_trigger || 2.0;
+        const halfTrigger = cfg.premium_half_trigger || 0.5;
+
+        for (const pos of ceList) {
+            const entry = pos.entry_price || 0;
+            const ltp = _liveOptionLegs[pos.tradingsymbol] || null;
+            const dblLevel = (entry * dblTrigger).toFixed(1);
+            const halfLevel = (entry * halfTrigger).toFixed(1);
+            rows.push({icon:'🔴', event:`CE ${pos.strike} doubles`, action:`Roll CE out — match PE premium (squeeze out)`, level:`₹${dblLevel}`});
+            rows.push({icon:'🟢', event:`CE ${pos.strike} halves`, action:`Roll CE in — match PE premium (squeeze in)`, level:`₹${halfLevel}`});
+        }
+        for (const pos of peList) {
+            const entry = pos.entry_price || 0;
+            const dblLevel = (entry * dblTrigger).toFixed(1);
+            const halfLevel = (entry * halfTrigger).toFixed(1);
+            rows.push({icon:'🔴', event:`PE ${pos.strike} doubles`, action:`Roll PE out — match CE premium (squeeze out)`, level:`₹${dblLevel}`});
+            rows.push({icon:'🟢', event:`PE ${pos.strike} halves`, action:`Roll PE in — match CE premium (squeeze in)`, level:`₹${halfLevel}`});
+        }
+
+        // Time exit
+        rows.push({icon:'🕐', event:'Time exit', action:'Close all positions', level: cfg.time_exit || '14:45'});
+        // EOD squareoff
+        rows.push({icon:'🛑', event:'EOD squareoff', action:'Force close all remaining', level: cfg.eod_squareoff_time || '15:15'});
+    }
+
+    if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No active strategy</td></tr>';
+    } else {
+        tbody.innerHTML = rows.map(r => `
+            <tr>
+                <td style="text-align:center;">${r.icon}</td>
+                <td style="font-weight:600;">${r.event}</td>
+                <td>${r.action}</td>
+                <td>${r.level}</td>
+            </tr>
+        `).join('');
+    }
+
+    document.getElementById('nasWhatsNextUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+// ─── UI Updates ─────────────────────────────────────────
+function updateUI(data) {
+    if (!data) return;
+    const s = data.state || {};
+    const st = data.stats || {};
+    const cfg = data.config || {};
+
+    // Update last-updated timer
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent =
+        now.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+
+    // Mode badges
+    const modeEl = document.getElementById('modeBadge');
+    if (cfg.paper_trading_mode) {
+        modeEl.textContent = 'PAPER';
+        modeEl.className = 'mode-badge mode-PAPER';
+    } else {
+        modeEl.textContent = 'LIVE';
+        modeEl.className = 'mode-badge mode-LIVE';
+    }
+
+    const enabledEl = document.getElementById('enabledBadge');
+    if (cfg.enabled) {
+        enabledEl.textContent = 'ENABLED';
+        enabledEl.style.cssText = 'background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;';
+    } else {
+        enabledEl.textContent = 'DISABLED';
+        enabledEl.style.cssText = 'background:rgba(248,81,73,0.2);color:#f85149;border:1px solid #f85149;';
+    }
+
+    // Squeeze state
+    const sqEl = document.getElementById('squeezeState');
+    if (s.is_squeezing) {
+        sqEl.textContent = 'SQUEEZE';
+        sqEl.className = 'squeeze-indicator squeeze-ON';
+    } else {
+        sqEl.textContent = 'NORMAL';
+        sqEl.className = 'squeeze-indicator squeeze-OFF';
+    }
+
+    document.getElementById('squeezeCount').textContent =
+        `${s.squeeze_count || 0} / ${cfg.min_squeeze_bars || 1}`;
+    document.getElementById('spotPrice').textContent =
+        s.spot_price ? s.spot_price.toFixed(1) : '--';
+    document.getElementById('atrValues').textContent =
+        `${(s.atr_value || 0).toFixed(1)} / ${(s.atr_ma || 0).toFixed(1)}`;
+    document.getElementById('adjustments').textContent =
+        `${s.total_adjustments || 0} / ${cfg.max_adjustments_total || 4}`;
+
+    // P&L
+    const pnl = st.total_pnl || 0;
+    const pnlEl = document.getElementById('totalPnl');
+    pnlEl.textContent = formatRs(pnl);
+    pnlEl.className = 'stat-value ' + (pnl >= 0 ? 'positive' : 'negative');
+
+    // Active strangle
+    const pos = data.positions || {};
+    const ceList = pos.ce || [];
+    const peList = pos.pe || [];
+    const activeCount = pos.total_active || 0;
+
+    document.getElementById('activeStatus').textContent =
+        activeCount > 0 ? `${activeCount} legs active` : 'No Position';
+    document.getElementById('activeStatus').className =
+        activeCount > 0 ? 'badge bg-success' : 'badge bg-secondary';
+
+    if (ceList.length > 0) {
+        const ce = ceList[0];
+        document.getElementById('ceLeg').textContent = `${ce.strike} CE`;
+        document.getElementById('cePremium').textContent = `Rs ${ce.entry_price}`;
+    } else {
+        document.getElementById('ceLeg').textContent = '--';
+        document.getElementById('cePremium').textContent = '--';
+    }
+
+    if (peList.length > 0) {
+        const pe = peList[0];
+        document.getElementById('peLeg').textContent = `${pe.strike} PE`;
+        document.getElementById('pePremium').textContent = `Rs ${pe.entry_price}`;
+    } else {
+        document.getElementById('peLeg').textContent = '--';
+        document.getElementById('pePremium').textContent = '--';
+    }
+
+    if (ceList.length > 0 && peList.length > 0) {
+        const total = ceList[0].entry_price + peList[0].entry_price;
+        document.getElementById('totalPremium').textContent = `Rs ${total.toFixed(1)}`;
+        document.getElementById('expiry').textContent = ceList[0].expiry_date || '--';
+    } else {
+        document.getElementById('totalPremium').textContent = '--';
+        document.getElementById('expiry').textContent = '--';
+    }
+
+    // Positions table
+    updatePositionsOnly(data);
+
+    // What's Next
+    buildNasWhatsNext(data);
+
+    // Trades table
+    const trades = data.recent_trades || [];
+    const trBody = document.getElementById('tradesBody');
+    if (trades.length === 0) {
+        trBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No trades yet</td></tr>';
+    } else {
+        trBody.innerHTML = trades.map(t => {
+            const pnlClass = (t.net_pnl || 0) >= 0 ? 'positive' : 'negative';
+            return `
+                <tr>
+                    <td>${t.trade_date}</td>
+                    <td class="leg-CE">${t.call_strike || '--'}</td>
+                    <td class="leg-PE">${t.put_strike || '--'}</td>
+                    <td>Rs ${(t.total_premium_collected || 0).toFixed(0)}</td>
+                    <td>Rs ${(t.total_premium_paid || 0).toFixed(0)}</td>
+                    <td class="${pnlClass}">${formatRs(t.net_pnl || 0)}</td>
+                    <td>${t.adjustments || 0}</td>
+                    <td>${t.exit_reason || '--'}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Signals table
+    const signals = data.recent_signals || [];
+    const sigBody = document.getElementById('signalsBody');
+    if (signals.length === 0) {
+        sigBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No signals yet</td></tr>';
+    } else {
+        sigBody.innerHTML = signals.map(sig => `
+            <tr>
+                <td>${sig.created_at ? sig.created_at.substring(11, 19) : '--'}</td>
+                <td><span class="signal-${sig.signal_type?.startsWith('ADJUST') ? 'ADJUST' : sig.signal_type}">${sig.signal_type}</span></td>
+                <td>${sig.spot_price || '--'}</td>
+                <td>${sig.atr_value ? sig.atr_value.toFixed(1) : '--'}</td>
+                <td class="leg-CE">${sig.call_strike || '--'}</td>
+                <td class="leg-PE">${sig.put_strike || '--'}</td>
+                <td style="font-size:0.8rem;">${sig.action_taken || '--'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Stats
+    document.getElementById('statTrades').textContent = st.total_trades || 0;
+    document.getElementById('statWinRate').textContent =
+        st.total_trades ? st.win_rate + '%' : '--';
+    document.getElementById('statPF').textContent =
+        st.profit_factor ? st.profit_factor.toFixed(2) : '--';
+    document.getElementById('statMaxWin').textContent = formatRs(st.max_win || 0);
+    document.getElementById('statMaxLoss').textContent = formatRs(st.max_loss || 0);
+    document.getElementById('statTotalAdj').textContent = st.total_adjustments || 0;
+
+    // Last scan
+    document.getElementById('lastScan').textContent =
+        `Last scan: ${s.last_scan_time || 'never'}`;
+    document.getElementById('configInfo').textContent =
+        `Lots: ${cfg.lots_per_leg || 2} | ATR dist: ${cfg.strike_distance_atr || 1.5}x | ` +
+        `SL: ${cfg.premium_double_trigger || 2.0}x | Max loss: Rs ${cfg.max_daily_loss || 15000}`;
+}
+
+function formatRs(val) {
+    if (val === null || val === undefined) return '--';
+    const prefix = val >= 0 ? '+' : '';
+    return prefix + 'Rs ' + Math.abs(val).toLocaleString('en-IN', {maximumFractionDigits: 0});
+}
+
+// ─── Equity Chart ───────────────────────────────────────
+async function loadEquityCurve() {
+    try {
+        const res = await fetch('/api/nas/equity-curve');
+        const data = await res.json();
+        if (!data || data.length === 0) return;
+
+        const labels = data.map(d => d.trade_date);
+        const values = data.map(d => d.cumulative_pnl);
+
+        const ctx = document.getElementById('equityChart').getContext('2d');
+        if (equityChart) equityChart.destroy();
+
+        equityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cumulative P&L (Rs)',
+                    data: values,
+                    borderColor: '#a371f7',
+                    backgroundColor: 'rgba(163,113,247,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#a371f7',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#c9d1d9' } }
+                },
+                scales: {
+                    x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(139,148,158,0.1)' } },
+                    y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(139,148,158,0.1)' } }
+                }
+            }
+        });
+    } catch(e) { console.error('Equity curve error:', e); }
+}
+
+// ─── Refresh ────────────────────────────────────────────
+async function refreshState() {
+    // Fetch ticker status FIRST so live premiums are available for position P/L
+    await refreshTickerStatus();
+    const data = await fetchState();
+    _lastStateData = data;
+    updateUI(data);
+    loadEquityCurve();
+}
+let _lastStateData = null;
+
+// Auto-refresh: full state every 30s, live premiums via SSE
+document.addEventListener('DOMContentLoaded', () => {
+    refreshState();
+    refreshTimer = setInterval(refreshState, 30000);
+    // Start SSE stream for tick-by-tick premium updates
+    startPremiumStream();
+});
+
+function startPremiumStream() {
+    const evtSource = new EventSource('/api/nas/ticker/stream');
+    evtSource.onmessage = function(event) {
+        try {
+            const d = JSON.parse(event.data);
+            if (d.type === 'tick') {
+                // Update spot
+                const spotEl = document.getElementById('spotValue');
+                if (spotEl && d.spot > 0) spotEl.textContent = d.spot.toFixed(1);
+                // Update live option premiums
+                _liveOptionLegs = {};
+                for (const [tsym, leg] of Object.entries(d.legs || {})) {
+                    _liveOptionLegs[tsym] = leg.ltp;
+                }
+                // Re-render positions with live P/L
+                if (_lastStateData) updatePositionsOnly(_lastStateData);
+            }
+        } catch(e) {}
+    };
+    evtSource.onerror = function() {
+        // Reconnect after 5s on error
+        evtSource.close();
+        setTimeout(startPremiumStream, 5000);
+    };
+}
+</script>
+{% endblock %}

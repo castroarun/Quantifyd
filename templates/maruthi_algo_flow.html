@@ -1,0 +1,827 @@
+{% extends "base.html" %}
+
+{% block title %}Maruthi Strategy - Algo Logic{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Layout ── */
+    .algo-container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+    .algo-title {
+        font-size: 1.6rem; font-weight: 800; letter-spacing: 1px;
+        color: #e6edf3; text-align: center; margin-bottom: 0.3rem;
+    }
+    .algo-subtitle {
+        text-align: center; color: #8b949e; font-size: 0.85rem;
+        margin-bottom: 2rem; letter-spacing: 0.5px;
+    }
+
+    /* ── Flow Section ── */
+    .flow-section {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .flow-section::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -1.5rem;
+        width: 2px;
+        height: 1.5rem;
+        background: #30363d;
+    }
+    .flow-section:last-child::before { display: none; }
+    .section-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #484f58;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #e6edf3;
+        margin-bottom: 0.5rem;
+    }
+
+    /* ── Regime Boxes ── */
+    .regime-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .regime-box {
+        flex: 1;
+        min-width: 200px;
+        border-radius: 10px;
+        padding: 1.2rem;
+        position: relative;
+    }
+    .regime-bull {
+        background: rgba(63,185,80,0.08);
+        border: 1px solid rgba(63,185,80,0.25);
+    }
+    .regime-bear {
+        background: rgba(248,81,73,0.08);
+        border: 1px solid rgba(248,81,73,0.25);
+    }
+    .regime-flat {
+        background: rgba(139,148,158,0.08);
+        border: 1px solid rgba(139,148,158,0.25);
+    }
+    .regime-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+    }
+    .regime-bull .regime-label { color: #3fb950; }
+    .regime-bear .regime-label { color: #f85149; }
+    .regime-flat .regime-label { color: #8b949e; }
+
+    /* ── Signal Cards ── */
+    .signal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; }
+    .signal-card {
+        background: rgba(13,17,23,0.6);
+        border: 1px solid #21262d;
+        border-radius: 8px;
+        padding: 0.9rem;
+        transition: border-color 0.2s;
+    }
+    .signal-card:hover { border-color: #484f58; }
+    .signal-name {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+    }
+    .signal-name.master { color: #f0883e; }
+    .signal-name.child { color: #58a6ff; }
+    .signal-name.hardsl { color: #f85149; }
+    .signal-trigger {
+        font-size: 0.78rem;
+        color: #8b949e;
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+    }
+    .signal-trigger code {
+        color: #c9d1d9;
+        background: rgba(110,118,129,0.15);
+        padding: 0.1rem 0.35rem;
+        border-radius: 3px;
+        font-size: 0.72rem;
+    }
+
+    /* ── Action Badges ── */
+    .action-tag {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+        margin: 0.15rem 0.15rem 0.15rem 0;
+    }
+    .action-buy { background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+    .action-sell { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+    .action-option { background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.3); }
+    .action-close { background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.3); }
+    .action-danger { background: rgba(248,81,73,0.2); color: #ff7b72; border: 1px solid rgba(248,81,73,0.4); }
+
+    /* ── Decision Matrix ── */
+    .matrix-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .matrix-table th {
+        background: #21262d;
+        color: #8b949e;
+        font-weight: 700;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.7rem 0.8rem;
+        text-align: left;
+        border-bottom: 1px solid #30363d;
+    }
+    .matrix-table td {
+        padding: 0.6rem 0.8rem;
+        border-bottom: 1px solid #21262d;
+        color: #c9d1d9;
+        vertical-align: top;
+    }
+    .matrix-table tr:last-child td { border-bottom: none; }
+    .matrix-table tr:hover td { background: rgba(56,62,71,0.3); }
+
+    /* ── Pipeline Steps ── */
+    .pipeline { display: flex; gap: 0; align-items: stretch; flex-wrap: wrap; }
+    .pipe-step {
+        flex: 1;
+        min-width: 140px;
+        padding: 0.8rem;
+        text-align: center;
+        position: relative;
+        background: rgba(13,17,23,0.6);
+        border: 1px solid #21262d;
+    }
+    .pipe-step:first-child { border-radius: 8px 0 0 8px; }
+    .pipe-step:last-child { border-radius: 0 8px 8px 0; }
+    .pipe-step::after {
+        content: '→';
+        position: absolute;
+        right: -5px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #484f58;
+        font-size: 0.9rem;
+        z-index: 1;
+    }
+    .pipe-step:last-child::after { display: none; }
+    .pipe-num {
+        font-size: 0.6rem;
+        font-weight: 800;
+        color: #484f58;
+        letter-spacing: 1px;
+    }
+    .pipe-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #e6edf3;
+        margin-top: 0.2rem;
+    }
+    .pipe-detail {
+        font-size: 0.68rem;
+        color: #8b949e;
+        margin-top: 0.2rem;
+    }
+
+    /* ── Order Type Labels ── */
+    .order-type {
+        display: inline-block;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0.15rem 0.4rem;
+        border-radius: 3px;
+        letter-spacing: 1px;
+        vertical-align: middle;
+    }
+    .order-sll { background: rgba(240,136,62,0.2); color: #f0883e; }
+    .order-limit { background: rgba(88,166,255,0.2); color: #58a6ff; }
+    .order-market { background: rgba(139,148,158,0.2); color: #8b949e; }
+
+    /* ── Param Grid ── */
+    .param-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.5rem;
+    }
+    .param-item {
+        background: rgba(13,17,23,0.5);
+        border: 1px solid #21262d;
+        border-radius: 6px;
+        padding: 0.5rem 0.7rem;
+    }
+    .param-key {
+        font-size: 0.65rem;
+        color: #484f58;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .param-val {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #e6edf3;
+        margin-top: 0.1rem;
+    }
+    .param-val.green { color: #3fb950; }
+    .param-val.orange { color: #f0883e; }
+    .param-val.blue { color: #58a6ff; }
+
+    /* ── Connector Lines ── */
+    .connector {
+        text-align: center;
+        padding: 0.3rem 0;
+        color: #30363d;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+
+    /* ── Two Column ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Highlight Note ── */
+    .note-box {
+        background: rgba(88,166,255,0.06);
+        border-left: 3px solid #58a6ff;
+        padding: 0.6rem 0.9rem;
+        border-radius: 0 6px 6px 0;
+        font-size: 0.78rem;
+        color: #8b949e;
+        margin-top: 0.75rem;
+    }
+    .note-box strong { color: #c9d1d9; }
+    .warn-box {
+        background: rgba(248,81,73,0.06);
+        border-left: 3px solid #f85149;
+        padding: 0.6rem 0.9rem;
+        border-radius: 0 6px 6px 0;
+        font-size: 0.78rem;
+        color: #8b949e;
+        margin-top: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="algo-container">
+
+    <div class="algo-title">Maruthi Always-On</div>
+    <div class="algo-subtitle">Dual SuperTrend Regime Strategy &middot; MARUTI F&O &middot; 30-Min Candles</div>
+
+    <!-- ═══════════════ 1. CORE PARAMETERS ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Configuration</div>
+        <div class="section-title">Core Parameters</div>
+        <div class="param-grid">
+            <div class="param-item">
+                <div class="param-key">Master SuperTrend</div>
+                <div class="param-val orange">ST(7, 5.0)</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Child SuperTrend</div>
+                <div class="param-val blue">ST(7, 2.0)</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Timeframe</div>
+                <div class="param-val">30 min</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Lot Size</div>
+                <div class="param-val">50</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Max Futures</div>
+                <div class="param-val">5 lots</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Capital</div>
+                <div class="param-val green">15L</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Hard SL Buffer</div>
+                <div class="param-val orange">1.0 &times; ATR</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Trigger Buffer</div>
+                <div class="param-val">5 pts</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 2. DATA PIPELINE ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Step 1</div>
+        <div class="section-title">Data Pipeline</div>
+        <div class="pipeline">
+            <div class="pipe-step">
+                <div class="pipe-num">01</div>
+                <div class="pipe-label">Tick Stream</div>
+                <div class="pipe-detail">Kite WebSocket<br>every ~1s</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">02</div>
+                <div class="pipe-label">Aggregate</div>
+                <div class="pipe-detail">Build 30-min<br>OHLCV candles</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">03</div>
+                <div class="pipe-label">Candle Close</div>
+                <div class="pipe-detail">Fire callback<br>every 30 min</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">04</div>
+                <div class="pipe-label">Compute ST</div>
+                <div class="pipe-detail">Master + Child<br>SuperTrend</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">05</div>
+                <div class="pipe-label">Detect Signals</div>
+                <div class="pipe-detail">Flips, SL<br>breaches</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">06</div>
+                <div class="pipe-label">Execute</div>
+                <div class="pipe-detail">Place orders<br>on Kite</div>
+            </div>
+        </div>
+        <div class="note-box">
+            <strong>Instant Hard SL:</strong> Checked on <em>every tick</em>, not just candle close. Fires immediately when LTP breaches the trailing stop.
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 3. REGIME STATE MACHINE ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Step 2</div>
+        <div class="section-title">Regime State Machine</div>
+        <div class="regime-row">
+            <div class="regime-box regime-bull">
+                <div class="regime-label">BULL</div>
+                <div style="font-size:0.78rem; color:#c9d1d9; line-height:1.6;">
+                    Master ST direction = <code style="color:#3fb950;">+1</code><br>
+                    Long bias &mdash; accumulate longs<br>
+                    Hard SL = Master ST &minus; buffer<br>
+                    <span style="color:#8b949e;">Trails UP only (never down)</span>
+                </div>
+            </div>
+            <div class="regime-box regime-bear">
+                <div class="regime-label">BEAR</div>
+                <div style="font-size:0.78rem; color:#c9d1d9; line-height:1.6;">
+                    Master ST direction = <code style="color:#f85149;">&minus;1</code><br>
+                    Short bias &mdash; accumulate shorts<br>
+                    Hard SL = Master ST + buffer<br>
+                    <span style="color:#8b949e;">Trails DOWN only (never up)</span>
+                </div>
+            </div>
+            <div class="regime-box regime-flat">
+                <div class="regime-label">FLAT</div>
+                <div style="font-size:0.78rem; color:#c9d1d9; line-height:1.6;">
+                    After Hard SL exit<br>
+                    No positions, no SL<br>
+                    Waits for fresh Master flip<br>
+                    <span style="color:#8b949e;">Re-enters on next MASTER signal</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 4. SIGNAL → ACTION MATRIX ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Step 3</div>
+        <div class="section-title">Signal &rarr; Action Decision Matrix</div>
+        <div style="overflow-x:auto;">
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th>Signal</th>
+                    <th>Condition</th>
+                    <th>In BULL Regime</th>
+                    <th>In BEAR Regime</th>
+                    <th>In FLAT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="signal-name master" style="font-size:0.72rem;">MASTER BULL</span></td>
+                    <td style="font-size:0.75rem; color:#8b949e;">Master ST flips +1<br><code>prev_dir=-1 &rarr; dir=+1</code></td>
+                    <td style="color:#484f58;">&mdash;</td>
+                    <td>
+                        <span class="action-tag action-close">CLOSE ALL</span>
+                        <span class="action-tag action-buy">BUY FUTURES</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">Regime &rarr; BULL</span>
+                    </td>
+                    <td>
+                        <span class="action-tag action-buy">BUY FUTURES</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">Regime &rarr; BULL</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="signal-name master" style="font-size:0.72rem;">MASTER BEAR</span></td>
+                    <td style="font-size:0.75rem; color:#8b949e;">Master ST flips &minus;1<br><code>prev_dir=+1 &rarr; dir=-1</code></td>
+                    <td>
+                        <span class="action-tag action-close">CLOSE ALL</span>
+                        <span class="action-tag action-sell">SHORT FUTURES</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">Regime &rarr; BEAR</span>
+                    </td>
+                    <td style="color:#484f58;">&mdash;</td>
+                    <td>
+                        <span class="action-tag action-sell">SHORT FUTURES</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">Regime &rarr; BEAR</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="signal-name child" style="font-size:0.72rem;">CHILD BULL</span></td>
+                    <td style="font-size:0.75rem; color:#8b949e;">Child ST flips +1<br><code>prev_dir=-1 &rarr; dir=+1</code></td>
+                    <td>
+                        <span class="action-tag action-buy">BUY FUTURES</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">if &lt; 5 lots</span>
+                    </td>
+                    <td>
+                        <span class="action-tag action-option">SHORT PUT</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">1 strike OTM</span>
+                    </td>
+                    <td style="color:#484f58;">ignored</td>
+                </tr>
+                <tr>
+                    <td><span class="signal-name child" style="font-size:0.72rem;">CHILD BEAR</span></td>
+                    <td style="font-size:0.75rem; color:#8b949e;">Child ST flips &minus;1<br><code>prev_dir=+1 &rarr; dir=-1</code></td>
+                    <td>
+                        <span class="action-tag action-option">SHORT CALL</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">1 strike OTM</span>
+                    </td>
+                    <td>
+                        <span class="action-tag action-sell">SHORT FUTURES</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">if &lt; 5 lots</span>
+                    </td>
+                    <td style="color:#484f58;">ignored</td>
+                </tr>
+                <tr style="background: rgba(248,81,73,0.04);">
+                    <td><span class="signal-name hardsl" style="font-size:0.72rem;">HARD SL</span></td>
+                    <td style="font-size:0.75rem; color:#8b949e;">
+                        BULL: LTP &le; SL<br>
+                        BEAR: LTP &ge; SL
+                    </td>
+                    <td>
+                        <span class="action-tag action-danger">EXIT ALL</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">Regime &rarr; FLAT</span>
+                    </td>
+                    <td>
+                        <span class="action-tag action-danger">EXIT ALL</span><br>
+                        <span style="font-size:0.68rem; color:#8b949e;">Regime &rarr; FLAT</span>
+                    </td>
+                    <td style="color:#484f58;">&mdash;</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 5. ORDER EXECUTION ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Step 4</div>
+        <div class="section-title">Order Execution</div>
+
+        <div class="two-col" style="margin-bottom: 1rem;">
+            <!-- Futures Orders -->
+            <div class="signal-card">
+                <div class="signal-name" style="color: #f0883e;">Futures Entry</div>
+                <div style="margin-bottom: 0.5rem;">
+                    <span class="order-type order-sll">SL-L</span>
+                    <span style="font-size:0.72rem; color:#8b949e; margin-left:0.3rem;">Stop Loss &minus; Limit</span>
+                </div>
+                <div class="signal-trigger">
+                    <strong style="color:#c9d1d9;">BUY trigger:</strong> Futures candle <code>high + 5</code><br>
+                    <strong style="color:#c9d1d9;">SELL trigger:</strong> Futures candle <code>low &minus; 5</code><br>
+                    <strong style="color:#c9d1d9;">Limit:</strong> trigger &plusmn; <code>5 pts</code> slippage<br>
+                    <strong style="color:#c9d1d9;">SL price:</strong> Master ST &plusmn; ATR buffer
+                </div>
+                <div class="note-box" style="margin-top:0.5rem;">
+                    Uses <strong>futures candle</strong> H/L (not equity) for trigger calculation.
+                    Trigger sits dormant until price exceeds level.
+                </div>
+            </div>
+
+            <!-- Option Orders -->
+            <div class="signal-card">
+                <div class="signal-name" style="color: #58a6ff;">Option Entry</div>
+                <div style="margin-bottom: 0.5rem;">
+                    <span class="order-type order-limit">LIMIT</span>
+                    <span style="font-size:0.72rem; color:#8b949e; margin-left:0.3rem;">with fill-check-revise</span>
+                </div>
+                <div class="signal-trigger">
+                    <strong style="color:#c9d1d9;">Short Call/Put:</strong> 1 strike OTM<br>
+                    <strong style="color:#c9d1d9;">Protective:</strong> 5% OTM<br>
+                    <strong style="color:#c9d1d9;">Retry:</strong> 3 attempts, revise price<br>
+                    <strong style="color:#c9d1d9;">Roll:</strong> at &le; 4 DTE
+                </div>
+                <div class="note-box" style="margin-top:0.5rem;">
+                    Zerodha <strong>rejects MARKET orders</strong> on stock options.
+                    All options use LIMIT with auto-revise on bid/ask change.
+                </div>
+            </div>
+        </div>
+
+        <!-- Close Orders -->
+        <div class="signal-card" style="margin-top:0.5rem;">
+            <div class="signal-name" style="color: #8b949e;">Position Close</div>
+            <div class="signal-trigger">
+                <strong style="color:#c9d1d9;">Regime Change:</strong>
+                Close all. Last short option <em>kept</em> with SL at entry premium.<br>
+                <strong style="color:#c9d1d9;">Hard SL Hit:</strong>
+                Close <em>everything</em> — no exceptions. Go FLAT.<br>
+                <strong style="color:#c9d1d9;">Order Types:</strong>
+                Futures &rarr; <span class="order-type order-market">MARKET</span> &nbsp;
+                Options &rarr; <span class="order-type order-limit">LIMIT</span> + retry
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 5b. FILL DETECTION & POST-FILL ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Execution</div>
+        <div class="section-title">Trigger Fill Detection &amp; Post-Fill Actions</div>
+
+        <div class="two-col">
+            <div>
+                <div class="signal-card">
+                    <div class="signal-name" style="color: #f0883e;">Fill Detection</div>
+                    <div style="font-size:0.82rem; color:#c9d1d9; line-height:1.8;">
+                        <strong style="color:#58a6ff;">Paper Mode:</strong><br>
+                        Tick-level simulation &mdash; checks every tick<br>
+                        BUY fills when LTP &ge; trigger price<br>
+                        SELL fills when LTP &le; trigger price<br><br>
+                        <strong style="color:#3fb950;">Live Mode:</strong><br>
+                        KiteTicker <code>on_order_update</code> callback<br>
+                        Zerodha pushes order status via WebSocket<br>
+                        <code>COMPLETE</code> &rarr; activates position instantly<br>
+                        <code>CANCELLED/REJECTED</code> &rarr; removes position<br>
+                        Fill price = <code>average_price</code> from Kite
+                    </div>
+                    <div class="note-box" style="margin-top:0.5rem;">
+                        <strong>No polling needed.</strong> Zerodha pushes order updates
+                        through the same WebSocket we use for tick data.
+                        Fill detection is <strong>instant</strong> &mdash; not 30-second or candle-close delayed.
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="signal-card">
+                    <div class="signal-name" style="color: #3fb950;">Post-Fill Actions</div>
+                    <div style="font-size:0.82rem; color:#c9d1d9; line-height:1.8;">
+                        Triggered <strong>immediately</strong> on fill detection:<br><br>
+                        <strong>1.</strong> Activate position (PENDING &rarr; ACTIVE)<br>
+                        <strong>2.</strong> Place protective option:<br>
+                        &nbsp;&nbsp;&bull; BULL &rarr; Buy protective <span style="color:#f85149;">PUT</span> (5% OTM)<br>
+                        &nbsp;&nbsp;&bull; BEAR &rarr; Buy protective <span style="color:#3fb950;">CALL</span> (5% OTM)<br>
+                        <strong>3.</strong> Recalculate hard SL from master ST + ATR<br>
+                        <strong>4.</strong> Dashboard updates automatically via state API
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cross-Day Persistence -->
+        <div class="signal-card" style="margin-top:0.5rem;">
+            <div class="signal-name" style="color: #8b949e;">Cross-Day Order Persistence</div>
+            <div class="signal-trigger">
+                <strong style="color:#c9d1d9;">Problem:</strong>
+                Zerodha cancels all unfilled SL-L orders at 3:30 PM EOD<br>
+                <strong style="color:#c9d1d9;">Solution:</strong>
+                Scheduled job at <code>9:16 AM</code> re-places all PENDING positions on Kite<br>
+                <strong style="color:#c9d1d9;">Contract Roll:</strong>
+                If futures expiry changed overnight, updates tradingsymbol before re-placing
+            </div>
+        </div>
+
+        <!-- Gap Protection -->
+        <div class="signal-card" style="margin-top:0.5rem;">
+            <div class="signal-name" style="color: #d29922;">Gap Protection</div>
+            <div class="signal-trigger">
+                <strong style="color:#c9d1d9;">Problem:</strong>
+                Market opens past the trigger price (gap through) &mdash; SL-L fills at a terrible price that may retrace<br><br>
+                <strong style="color:#c9d1d9;">Detection (9:16 AM):</strong><br>
+                &bull; SELL trigger: LTP already <em>below</em> trigger &rarr; gap down past level<br>
+                &bull; BUY trigger: LTP already <em>above</em> trigger &rarr; gap up past level<br>
+                &bull; Order is <strong>NOT re-placed</strong> on Kite. Position marked <code>GAP_PENDING</code><br><br>
+                <strong style="color:#c9d1d9;">Confirmation (9:21 AM):</strong><br>
+                After 5 minutes of market confirmation:<br>
+                &bull; <span style="color:#f85149;">Gap filled?</span> Price retraced back past trigger &rarr; <strong>Cancel</strong> (was a fake move)<br>
+                &bull; <span style="color:#f85149;">Signal reversed?</span> Regime changed &rarr; <strong>Cancel</strong><br>
+                &bull; <span style="color:#3fb950;">Gap holds + signal intact?</span> Enter at <strong>MARKET</strong> + immediate full hedges:<br>
+                &nbsp;&nbsp;&nbsp;1. Protective option (5% OTM insurance)<br>
+                &nbsp;&nbsp;&nbsp;2. Short option (1 strike OTM premium income)<br>
+                &nbsp;&nbsp;&nbsp;3. Hard SL recalculated from master ST + ATR
+            </div>
+        </div>
+
+        <!-- Signal Reversal -->
+        <div class="signal-card" style="margin-top:0.5rem;">
+            <div class="signal-name" style="color: #f85149;">Signal Reversal Handling</div>
+            <div class="signal-trigger">
+                <strong style="color:#c9d1d9;">Before placing new trigger:</strong><br>
+                &bull; Cancel any opposite-direction pending orders (DB + Kite)<br>
+                &bull; Skip if same-direction trigger already pending<br>
+                <strong style="color:#c9d1d9;">On Kite:</strong>
+                <code>kite.cancel_order()</code> called for live orders before new placement
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 6. HARD SL DETAIL ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Safety</div>
+        <div class="section-title">Trailing Hard Stop Loss</div>
+
+        <div class="two-col">
+            <div>
+                <div style="font-size:0.82rem; color:#c9d1d9; line-height:1.8;">
+                    <strong style="color:#f0883e;">Formula:</strong><br>
+                    <code>buffer = 1.0 &times; ATR(7) on 30-min</code><br><br>
+                    BULL: <code>SL = Master ST &minus; buffer</code><br>
+                    &nbsp;&nbsp;&rarr; Only moves <span style="color:#3fb950;">UP</span> (tightens toward price)<br><br>
+                    BEAR: <code>SL = Master ST + buffer</code><br>
+                    &nbsp;&nbsp;&rarr; Only moves <span style="color:#f85149;">DOWN</span> (tightens toward price)
+                </div>
+            </div>
+            <div>
+                <div style="font-size:0.82rem; color:#c9d1d9; line-height:1.8;">
+                    <strong style="color:#f0883e;">Tick-Level Check:</strong><br>
+                    Runs on <em>every incoming tick</em><br>
+                    Does NOT wait for candle close<br><br>
+                    <strong style="color:#f0883e;">On breach:</strong><br>
+                    Close ALL positions immediately<br>
+                    Set regime = FLAT<br>
+                    Wait for fresh MASTER signal to re-enter
+                </div>
+            </div>
+        </div>
+
+        <div class="warn-box">
+            Hard SL <strong>resets fresh</strong> on every regime change (no carry-over from previous regime).
+            Within a regime, it only moves in the favorable direction &mdash; never gives back ground.
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 7. GUARDRAILS ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Safety</div>
+        <div class="section-title">Guardrails &amp; Limits</div>
+        <div class="param-grid">
+            <div class="param-item">
+                <div class="param-key">Market Hours</div>
+                <div class="param-val" style="font-size:0.82rem;">9:15 &ndash; 15:30<br>Mon&ndash;Fri</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Max Daily Orders</div>
+                <div class="param-val">20</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Max Futures Lots</div>
+                <div class="param-val">5</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Max Daily Loss</div>
+                <div class="param-val" style="color:#f85149;">5%</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Kite Auth</div>
+                <div class="param-val" style="font-size:0.82rem;">Required<br>(live mode)</div>
+            </div>
+            <div class="param-item">
+                <div class="param-key">Option Min DTE</div>
+                <div class="param-val">4 days</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 8. GAP PROTECTION ═══════════════ -->
+    <div class="flow-section">
+        <div class="section-label">Safety</div>
+        <div class="section-title">Gap Up / Gap Down Protection</div>
+        <div class="note-box" style="margin-bottom: 1rem;">
+            When MARUTI opens with a gap past the pending SL-L trigger price, the order must <strong>not</strong> fill at the gapped price.
+            Instead, wait 5 minutes &mdash; then decide.
+        </div>
+
+        <div class="pipeline">
+            <div class="pipe-step">
+                <div class="pipe-num" style="background:rgba(248,81,73,0.15); color:#f85149;">01</div>
+                <div class="pipe-label">9:16 AM &mdash; Detect Gap</div>
+                <div class="pipe-detail">LTP already past trigger?<br>Mark <code>GAP_PENDING</code><br>Do NOT re-place on Kite</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num" style="background:rgba(210,153,34,0.15); color:#d29922;">02</div>
+                <div class="pipe-label">9:16 &rarr; 9:21 AM</div>
+                <div class="pipe-detail">Wait 5 minutes<br>Let opening volatility<br>settle</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num" style="background:rgba(88,166,255,0.15); color:#58a6ff;">03</div>
+                <div class="pipe-label">9:21 AM &mdash; Evaluate</div>
+                <div class="pipe-detail">Check 3 conditions<br>(see decision matrix<br>below)</div>
+            </div>
+        </div>
+
+        <div class="two-col" style="margin-top: 1rem;">
+            <!-- Cancel scenarios -->
+            <div class="signal-card">
+                <div class="signal-name" style="color: #f85149;">Cancel &mdash; No Entry</div>
+                <div class="signal-trigger">
+                    <strong style="color:#c9d1d9;">Gap Filled:</strong> Price retraced back through trigger level &rarr; original SL-L would have filled at normal price. Cancel GAP_PENDING, resume normal flow.<br><br>
+                    <strong style="color:#c9d1d9;">Signal Reversed:</strong> SuperTrend flipped during the gap &rarr; signal is no longer valid. Cancel everything.
+                </div>
+            </div>
+
+            <!-- Enter scenario -->
+            <div class="signal-card">
+                <div class="signal-name" style="color: #3fb950;">Enter &mdash; Gap Holds + Signal Intact</div>
+                <div class="signal-trigger">
+                    <strong style="color:#c9d1d9;">Futures:</strong> <span class="order-type order-market">MARKET</span> order immediately<br><br>
+                    <strong style="color:#c9d1d9;">Hedges:</strong> Place <strong>all hedges immediately</strong> &mdash; don&rsquo;t wait for EOD<br>
+                    &bull; Call protection (5% OTM)<br>
+                    &bull; Short PE (1 strike OTM)<br><br>
+                    <strong style="color:#c9d1d9;">Why:</strong> Gap entries are higher risk &mdash; full hedge coverage from the start
+                </div>
+            </div>
+        </div>
+
+        <div class="note-box" style="margin-top: 0.75rem;">
+            Applies to <strong>both</strong> gap-up (SELL trigger breached) and gap-down (BUY trigger breached) scenarios.
+            The same logic runs on <code>re_place_pending_orders()</code> at 9:16 AM and <code>handle_gap_entry()</code> at 9:21 AM.
+        </div>
+    </div>
+
+    <div class="connector">&#x25BC;</div>
+
+    <!-- ═══════════════ 9. STARTUP CATCHUP ═══════════════ -->
+    <div class="flow-section" style="margin-bottom:0;">
+        <div class="section-label">Startup</div>
+        <div class="section-title">Catch-Up on Ticker Start</div>
+        <div class="pipeline">
+            <div class="pipe-step">
+                <div class="pipe-num">01</div>
+                <div class="pipe-label">Load History</div>
+                <div class="pipe-detail">30 days of 30-min<br>from Kite API</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">02</div>
+                <div class="pipe-label">Compute ST</div>
+                <div class="pipe-detail">On all<br>historical candles</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">03</div>
+                <div class="pipe-label">Find Missed Flips</div>
+                <div class="pipe-detail">Since last<br>processed candle</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">04</div>
+                <div class="pipe-label">Process Each</div>
+                <div class="pipe-detail">Chronological<br>order</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-num">05</div>
+                <div class="pipe-label">Update ATR/SL</div>
+                <div class="pipe-detail">Set to<br>latest values</div>
+            </div>
+        </div>
+        <div class="note-box">
+            Ensures no signals are missed during overnight gaps, ticker restarts, or market holidays.
+            Each missed flip is processed with the DF truncated to that candle, so the signal detector sees it as the latest row.
+        </div>
+    </div>
+
+</div>
+{% endblock %}
