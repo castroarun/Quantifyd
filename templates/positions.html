@@ -1,0 +1,619 @@
+{% extends "base.html" %}
+
+{% block title %}Positions | Quantifyd{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Positions Page ── */
+    .pos-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .pos-header h4 { margin: 0; font-weight: 600; }
+    .pos-summary { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .pos-summary .item { text-align: right; }
+    .pos-summary .label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pos-summary .value { font-size: 1.1rem; font-weight: 600; }
+
+    /* Tabs */
+    .pos-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--bs-border-color); margin-bottom: 0; }
+    .pos-tab { padding: 0.6rem 1.2rem; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: #8b949e;
+               border-bottom: 2px solid transparent; transition: all 0.15s; user-select: none; }
+    .pos-tab:hover { color: #c9d1d9; }
+    .pos-tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+    .pos-tab .badge { font-size: 0.7rem; padding: 0.15em 0.5em; margin-left: 0.4rem; border-radius: 8px;
+                      background: #21262d; color: #8b949e; font-weight: 500; }
+    .pos-tab.active .badge { background: #1f3a5f; color: #58a6ff; }
+
+    /* Toolbar */
+    .pos-toolbar { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; flex-wrap: wrap; }
+    .pos-toolbar .form-select, .pos-toolbar .form-control { max-width: 180px; font-size: 0.8rem; padding: 0.3rem 0.6rem; }
+    .pos-toolbar .btn-sm { font-size: 0.78rem; padding: 0.28rem 0.7rem; }
+
+    /* Table */
+    .pos-table { width: 100%; font-size: 0.82rem; border-collapse: collapse; }
+    .pos-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8b949e;
+                    padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--bs-border-color); font-weight: 500;
+                    position: sticky; top: 0; background: var(--bs-body-bg); z-index: 2; white-space: nowrap; }
+    .pos-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid #21262d; vertical-align: middle; white-space: nowrap; }
+    .pos-table tr:hover td { background: rgba(88, 166, 255, 0.04); }
+    .pos-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .pos-table th.num { text-align: right; }
+
+    /* Group header row */
+    .group-row td { background: #161b22; font-weight: 600; font-size: 0.8rem; color: #c9d1d9; padding: 0.55rem 0.6rem;
+                    border-bottom: 1px solid #30363d; cursor: pointer; }
+    .group-row td:first-child { padding-left: 0.6rem; }
+    .group-row .chevron { display: inline-block; transition: transform 0.2s; margin-right: 0.4rem; color: #8b949e; font-size: 0.7rem; }
+    .group-row.collapsed .chevron { transform: rotate(-90deg); }
+    .group-row .group-pnl { float: right; }
+
+    /* Side badges */
+    .side-buy { color: #58a6ff; font-weight: 600; }
+    .side-sell { color: #f85149; font-weight: 600; }
+    .tag { font-size: 0.68rem; padding: 0.1em 0.45em; border-radius: 4px; font-weight: 500; }
+    .tag-fut { background: #1f3a5f; color: #58a6ff; }
+    .tag-opt { background: #3b2f1f; color: #d29922; }
+    .tag-eq { background: #1f3a2f; color: #3fb950; }
+    .tag-ce { background: #1a2f1a; color: #3fb950; }
+    .tag-pe { background: #2f1a1a; color: #f85149; }
+
+    /* Refresh spinner */
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Day P&L bar */
+    .day-pnl-bar { height: 3px; border-radius: 2px; margin-top: 2px; min-width: 20px; max-width: 80px; display: inline-block; }
+
+    /* Responsive */
+    .pos-table-wrap { overflow-x: auto; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 4rem 1rem; color: #8b949e; }
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+    /* Connection badge */
+    .conn-badge { font-size: 0.72rem; padding: 0.2em 0.6em; border-radius: 10px; }
+    .conn-live { background: #1a3a1a; color: #3fb950; }
+    .conn-off { background: #2a1a1a; color: #f85149; }
+
+    /* Net qty highlight */
+    .net-zero { color: #8b949e; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-lg-4">
+
+    <!-- Header -->
+    <div class="pos-header">
+        <h4><i class="bi bi-stack me-2"></i>Positions</h4>
+        <div class="ms-auto pos-summary" id="posSummary">
+            <div class="item">
+                <div class="label">Total P&L</div>
+                <div class="value" id="sumTotalPnl">--</div>
+            </div>
+            <div class="item">
+                <div class="label">Realised</div>
+                <div class="value" id="sumRealised">--</div>
+            </div>
+            <div class="item">
+                <div class="label">Unrealised</div>
+                <div class="value" id="sumUnrealised">--</div>
+            </div>
+            <div class="item">
+                <div class="label">Day's P&L</div>
+                <div class="value" id="sumDayPnl">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs: Open | Day's History -->
+    <div class="pos-tabs">
+        <div class="pos-tab active" data-tab="open">Open <span class="badge" id="openCount">0</span></div>
+        <div class="pos-tab" data-tab="closed">Day's Closed <span class="badge" id="closedCount">0</span></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="pos-toolbar">
+        <select class="form-select" id="groupBy">
+            <option value="none">No grouping</option>
+            <option value="instrument" selected>By Instrument</option>
+            <option value="expiry">By Expiry</option>
+            <option value="product">By Product</option>
+        </select>
+        <select class="form-select" id="filterType">
+            <option value="all">All Types</option>
+            <option value="FUT">Futures</option>
+            <option value="OPT">Options</option>
+            <option value="EQ">Equity</option>
+        </select>
+        <input type="text" class="form-control" id="searchBox" placeholder="Search symbol...">
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <span class="conn-badge" id="connBadge"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>Offline</span>
+            <button class="btn btn-outline-secondary btn-sm" onclick="refreshPositions()" id="refreshBtn">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Open Positions Table -->
+    <div id="openPanel" class="pos-table-wrap">
+        <table class="pos-table">
+            <thead>
+                <tr>
+                    <th>Instrument</th>
+                    <th>Product</th>
+                    <th class="num">Qty</th>
+                    <th class="num">Avg Price</th>
+                    <th class="num">LTP</th>
+                    <th class="num">P&L</th>
+                    <th class="num">Day P&L</th>
+                    <th class="num">Net Value</th>
+                </tr>
+            </thead>
+            <tbody id="openBody"></tbody>
+        </table>
+        <div class="empty-state" id="openEmpty" style="display:none;">
+            <i class="bi bi-inbox"></i>
+            <div>No open positions</div>
+            <small>Positions from Kite will appear here when market is open</small>
+        </div>
+    </div>
+
+    <!-- Day's Closed Positions Table -->
+    <div id="closedPanel" class="pos-table-wrap" style="display:none;">
+        <table class="pos-table">
+            <thead>
+                <tr>
+                    <th>Instrument</th>
+                    <th>Product</th>
+                    <th class="num">Qty</th>
+                    <th class="num">Buy Avg</th>
+                    <th class="num">Sell Avg</th>
+                    <th class="num">P&L</th>
+                </tr>
+            </thead>
+            <tbody id="closedBody"></tbody>
+        </table>
+        <div class="empty-state" id="closedEmpty" style="display:none;">
+            <i class="bi bi-inbox"></i>
+            <div>No closed positions today</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- SocketIO CDN -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+// ── State ──
+let openPositions = [];
+let closedPositions = [];
+let collapsedGroups = new Set();
+let subscribedTokens = [];       // tokens we're subscribed to
+let tokenToPosition = {};        // token → position index for O(1) tick updates
+let socket = null;
+let ticksReceived = 0;
+
+// ── Format helpers ──
+const fmt = (v, d=2) => v == null ? '--' : Number(v).toFixed(d);
+const fmtQty = (q) => {
+    const n = Number(q);
+    if (n === 0) return '<span class="net-zero">0</span>';
+    return `<span class="${n > 0 ? 'side-buy' : 'side-sell'}">${n > 0 ? '+' : ''}${n}</span>`;
+};
+
+function instTag(pos) {
+    const ts = (pos.tradingsymbol || '').toUpperCase();
+    if (pos.instrument_type === 'FUT' || ts.includes('FUT')) return '<span class="tag tag-fut">FUT</span>';
+    if (pos.instrument_type === 'CE') return '<span class="tag tag-ce">CE</span>';
+    if (pos.instrument_type === 'PE') return '<span class="tag tag-pe">PE</span>';
+    if (pos.instrument_type === 'OPT' || ts.match(/\d{5}(CE|PE)/)) return '<span class="tag tag-opt">OPT</span>';
+    return '<span class="tag tag-eq">EQ</span>';
+}
+
+function getUnderlying(pos) {
+    const ts = pos.tradingsymbol || pos.trading_symbol || '';
+    const m = ts.match(/^([A-Z&]+?)(\d{2}[A-Z]{3}|\d{2}\d{3}|\d{2}[A-Z]\d{2})/);
+    return m ? m[1] : ts;
+}
+
+function getExpiry(pos) {
+    if (pos.expiry) {
+        const d = new Date(pos.expiry);
+        if (!isNaN(d)) return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'2-digit'});
+    }
+    return '--';
+}
+
+function getInstrumentType(pos) {
+    const ts = (pos.tradingsymbol || '').toUpperCase();
+    if (pos.instrument_type === 'FUT' || ts.includes('FUT')) return 'FUT';
+    if (pos.instrument_type === 'CE' || pos.instrument_type === 'PE') return 'OPT';
+    if (ts.match(/\d{5}(CE|PE)/)) return 'OPT';
+    return 'EQ';
+}
+
+// ═══════════════════════════════════════════
+// SocketIO — Real-time tick updates
+// ═══════════════════════════════════════════
+
+function initSocketIO() {
+    socket = io({ transports: ['websocket', 'polling'] });
+
+    socket.on('connect', () => {
+        console.log('[Positions] SocketIO connected');
+        updateConnBadge('ws');
+        // Re-subscribe if we had tokens
+        if (subscribedTokens.length > 0) subscribeTokens();
+    });
+
+    socket.on('disconnect', () => {
+        console.log('[Positions] SocketIO disconnected');
+        updateConnBadge(false);
+    });
+
+    // Listen for position tick updates
+    socket.on('pos_tick', (data) => {
+        ticksReceived++;
+        const token = data.token;
+        const ltp = data.ltp;
+
+        // Update all positions with this token
+        let changed = false;
+        for (const p of openPositions) {
+            if (p.instrument_token === token) {
+                p.last_price = ltp;
+
+                // Recalculate unrealised P&L from tick
+                // Kite formula: unrealised = (ltp - avg) * qty (sign-aware)
+                p.unrealised = (ltp - p.average_price) * p.quantity;
+                // Total P&L = realised (closed portion) + unrealised (open portion)
+                p.pnl = (p.realised || 0) + p.unrealised;
+
+                // Update the specific row in-place (no full re-render)
+                updateRowInPlace(p);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            updateSummaryFromState();
+            updateGroupPnls();
+        }
+    });
+
+    socket.on('pos_subscribed', (data) => {
+        console.log(`[Positions] Subscribed to ${data.count} tokens`);
+        updateConnBadge('live');
+    });
+
+    socket.on('pos_error', (data) => {
+        console.warn('[Positions] Tick error:', data.error);
+        showToast(data.error, 'error');
+    });
+}
+
+function subscribeTokens() {
+    if (!socket || !socket.connected) return;
+
+    const items = openPositions
+        .filter(p => p.instrument_token)
+        .map(p => ({ token: p.instrument_token, tradingsymbol: p.tradingsymbol }));
+
+    // Deduplicate by token
+    const seen = new Set();
+    const unique = items.filter(t => {
+        if (seen.has(t.token)) return false;
+        seen.add(t.token);
+        return true;
+    });
+
+    if (unique.length === 0) return;
+
+    subscribedTokens = unique.map(t => t.token);
+    socket.emit('subscribe_position_tokens', { tokens: unique });
+    console.log(`[Positions] Subscribing to ${unique.length} tokens`);
+}
+
+function unsubscribeTokens() {
+    if (!socket || !socket.connected || subscribedTokens.length === 0) return;
+    socket.emit('unsubscribe_position_tokens', { tokens: subscribedTokens });
+    subscribedTokens = [];
+}
+
+// ── Set text + color on a cell without innerHTML swap ──
+function setPnlCell(cell, value) {
+    const n = Number(value) || 0;
+    const text = (n >= 0 ? '+' : '') + '₹' + Math.abs(n).toLocaleString('en-IN', {maximumFractionDigits:0});
+    cell.textContent = text;
+    cell.className = 'num ' + (n >= 0 ? 'positive' : 'negative');
+}
+
+// ── Update a single row's LTP + P&L without innerHTML (avoids repaint flash) ──
+function updateRowInPlace(p) {
+    const row = document.getElementById(`pos-row-${p.instrument_token}`);
+    if (!row) return;
+
+    const cells = row.querySelectorAll('td');
+    // cells: [instrument, product, qty, avg, LTP, P&L, DayP&L, NetVal]
+    const ltp = p.last_price || 0;
+    const netVal = Math.abs(p.quantity) * ltp;
+
+    cells[4].textContent = fmt(ltp);
+    setPnlCell(cells[5], p.pnl || 0);
+    setPnlCell(cells[6], p.day_m2m || p.m2m || 0);
+    cells[7].textContent = '₹' + netVal.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+
+function updateSummaryFromState() {
+    const all = [...openPositions, ...closedPositions];
+    let totalPnl = 0, realised = 0, unrealised = 0, dayPnl = 0;
+    for (const p of all) {
+        totalPnl += (p.pnl || 0);
+        realised += (p.realised || 0);
+        unrealised += (p.unrealised || 0);
+        dayPnl += (p.day_m2m || p.m2m || 0);
+    }
+    setPnlCell(document.getElementById('sumTotalPnl'), totalPnl);
+    setPnlCell(document.getElementById('sumRealised'), realised);
+    setPnlCell(document.getElementById('sumUnrealised'), unrealised);
+    setPnlCell(document.getElementById('sumDayPnl'), dayPnl);
+}
+
+function updateGroupPnls() {
+    const groupBy = document.getElementById('groupBy').value;
+    if (groupBy === 'none') return;
+
+    document.querySelectorAll('.group-row').forEach(row => {
+        const key = row.dataset.groupKey;
+        if (!key) return;
+
+        // Sum P&L for all open positions in this group
+        let groupPnl = 0;
+        for (const p of openPositions) {
+            let pKey;
+            if (groupBy === 'instrument') pKey = getUnderlying(p);
+            else if (groupBy === 'expiry') pKey = getExpiry(p);
+            else if (groupBy === 'product') pKey = p.product || 'NRML';
+            if (pKey === key) groupPnl += (p.pnl || 0);
+        }
+
+        const span = row.querySelector('.group-pnl');
+        if (span) {
+            const text = (groupPnl >= 0 ? '+' : '') + '₹' + Math.abs(groupPnl).toLocaleString('en-IN', {maximumFractionDigits:0});
+            span.textContent = text;
+            span.className = 'group-pnl ' + (groupPnl >= 0 ? 'positive' : 'negative');
+        }
+    });
+}
+
+// ═══════════════════════════════════════════
+// Fetch positions (REST — initial + manual refresh)
+// ═══════════════════════════════════════════
+
+async function refreshPositions() {
+    const btn = document.getElementById('refreshBtn');
+    btn.querySelector('i').classList.add('spin');
+    try {
+        const res = await fetch('/api/positions');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.error) {
+            showToast(data.error, 'error');
+            return;
+        }
+        openPositions = (data.net || []).filter(p => p.quantity !== 0);
+        closedPositions = (data.net || []).filter(p => p.quantity === 0 && (p.buy_quantity > 0 || p.sell_quantity > 0));
+        document.getElementById('openCount').textContent = openPositions.length;
+        document.getElementById('closedCount').textContent = closedPositions.length;
+        updateSummary(data.net || []);
+        renderOpenPositions();
+        renderClosedPositions();
+        updateConnBadge('api');
+
+        // Subscribe to live ticks for open positions
+        subscribeTokens();
+    } catch (e) {
+        console.error('Position fetch error:', e);
+        updateConnBadge(false);
+        showToast('Failed to fetch positions: ' + e.message, 'error');
+    } finally {
+        btn.querySelector('i').classList.remove('spin');
+    }
+}
+
+function updateSummary(all) {
+    let totalPnl = 0, realised = 0, unrealised = 0, dayPnl = 0;
+    for (const p of all) {
+        totalPnl += (p.pnl || 0);
+        realised += (p.realised || 0);
+        unrealised += (p.unrealised || 0);
+        dayPnl += (p.day_m2m || p.m2m || 0);
+    }
+    setPnlCell(document.getElementById('sumTotalPnl'), totalPnl);
+    setPnlCell(document.getElementById('sumRealised'), realised);
+    setPnlCell(document.getElementById('sumUnrealised'), unrealised);
+    setPnlCell(document.getElementById('sumDayPnl'), dayPnl);
+}
+
+function updateConnBadge(state) {
+    const b = document.getElementById('connBadge');
+    if (state === 'live') {
+        b.className = 'conn-badge conn-live';
+        b.innerHTML = '<i class="bi bi-broadcast me-1"></i>Live Ticks';
+    } else if (state === 'ws') {
+        b.className = 'conn-badge conn-live';
+        b.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>WS Connected';
+    } else if (state === 'api') {
+        b.className = 'conn-badge conn-live';
+        b.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>API';
+    } else {
+        b.className = 'conn-badge conn-off';
+        b.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>Offline';
+    }
+}
+
+// ═══════════════════════════════════════════
+// Render tables
+// ═══════════════════════════════════════════
+
+function renderOpenPositions() {
+    const groupBy = document.getElementById('groupBy').value;
+    const filterType = document.getElementById('filterType').value;
+    const search = document.getElementById('searchBox').value.toUpperCase();
+
+    let filtered = openPositions.filter(p => {
+        if (filterType !== 'all' && getInstrumentType(p) !== filterType) return false;
+        if (search && !(p.tradingsymbol || '').toUpperCase().includes(search)) return false;
+        return true;
+    });
+
+    const tbody = document.getElementById('openBody');
+    const empty = document.getElementById('openEmpty');
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    if (groupBy === 'none') {
+        tbody.innerHTML = filtered.map(p => posRow(p)).join('');
+        return;
+    }
+
+    // Group
+    const groups = {};
+    for (const p of filtered) {
+        let key;
+        if (groupBy === 'instrument') key = getUnderlying(p);
+        else if (groupBy === 'expiry') key = getExpiry(p);
+        else if (groupBy === 'product') key = p.product || 'NRML';
+        else key = 'All';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(p);
+    }
+
+    // Sort groups by total PnL descending
+    const sorted = Object.entries(groups).sort((a, b) => {
+        const pnlA = a[1].reduce((s, p) => s + (p.pnl || 0), 0);
+        const pnlB = b[1].reduce((s, p) => s + (p.pnl || 0), 0);
+        return pnlB - pnlA;
+    });
+
+    let html = '';
+    for (const [key, items] of sorted) {
+        const groupPnl = items.reduce((s, p) => s + (p.pnl || 0), 0);
+        const isCollapsed = collapsedGroups.has(key);
+        const gpClass = groupPnl >= 0 ? 'positive' : 'negative';
+        const gpText = (groupPnl >= 0 ? '+' : '') + '₹' + Math.abs(groupPnl).toLocaleString('en-IN', {maximumFractionDigits:0});
+        html += `<tr class="group-row ${isCollapsed ? 'collapsed' : ''}" data-group-key="${key}" onclick="toggleGroup('${key}')">
+            <td colspan="8">
+                <span class="chevron"><i class="bi bi-chevron-down"></i></span>
+                ${key} <small class="text-muted ms-1">(${items.length})</small>
+                <span class="group-pnl ${gpClass}">${gpText}</span>
+            </td>
+        </tr>`;
+        if (!isCollapsed) {
+            html += items.map(p => posRow(p)).join('');
+        }
+    }
+    tbody.innerHTML = html;
+}
+
+function pnlText(v) {
+    const n = Number(v) || 0;
+    return (n >= 0 ? '+' : '') + '₹' + Math.abs(n).toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+function pnlClass(v) { return (Number(v) || 0) >= 0 ? 'positive' : 'negative'; }
+
+function posRow(p) {
+    const pnl = p.pnl || 0;
+    const dayPnl = p.day_m2m || p.m2m || 0;
+    const netVal = Math.abs(p.quantity) * (p.last_price || p.close_price || 0);
+    return `<tr id="pos-row-${p.instrument_token || ''}">
+        <td>${instTag(p)} ${p.tradingsymbol || '--'}</td>
+        <td><small class="text-muted">${p.product || '--'}</small></td>
+        <td class="num">${fmtQty(p.quantity)}</td>
+        <td class="num">${fmt(p.average_price)}</td>
+        <td class="num">${fmt(p.last_price)}</td>
+        <td class="num ${pnlClass(pnl)}">${pnlText(pnl)}</td>
+        <td class="num ${pnlClass(dayPnl)}">${pnlText(dayPnl)}</td>
+        <td class="num">₹${netVal.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+    </tr>`;
+}
+
+function renderClosedPositions() {
+    const tbody = document.getElementById('closedBody');
+    const empty = document.getElementById('closedEmpty');
+    if (closedPositions.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = closedPositions.map(p => {
+        const pnl = p.pnl || 0;
+        return `<tr>
+            <td>${instTag(p)} ${p.tradingsymbol || '--'}</td>
+            <td><small class="text-muted">${p.product || '--'}</small></td>
+            <td class="num">${p.buy_quantity || 0} / ${p.sell_quantity || 0}</td>
+            <td class="num">${fmt(p.buy_price)}</td>
+            <td class="num">${fmt(p.sell_price)}</td>
+            <td class="num ${pnlClass(pnl)}">${pnlText(pnl)}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Group toggle ──
+function toggleGroup(key) {
+    if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+    else collapsedGroups.add(key);
+    renderOpenPositions();
+}
+
+// ── Tabs ──
+document.querySelectorAll('.pos-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.pos-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const which = tab.dataset.tab;
+        document.getElementById('openPanel').style.display = which === 'open' ? '' : 'none';
+        document.getElementById('closedPanel').style.display = which === 'closed' ? '' : 'none';
+    });
+});
+
+// ── Filters ──
+document.getElementById('groupBy').addEventListener('change', renderOpenPositions);
+document.getElementById('filterType').addEventListener('change', renderOpenPositions);
+document.getElementById('searchBox').addEventListener('input', renderOpenPositions);
+
+// ── Toast ──
+function showToast(msg, type='info') {
+    const container = document.querySelector('.toast-container') || (() => {
+        const d = document.createElement('div');
+        d.className = 'toast-container';
+        document.body.appendChild(d);
+        return d;
+    })();
+    const toast = document.createElement('div');
+    toast.className = 'toast show';
+    toast.innerHTML = `<div class="toast-header bg-${type === 'error' ? 'danger' : 'info'}">
+        <strong class="me-auto"><i class="bi bi-${type === 'error' ? 'exclamation-circle' : 'info-circle'} me-1"></i>${type}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div><div class="toast-body">${msg}</div>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// ── Cleanup on page leave ──
+window.addEventListener('beforeunload', () => {
+    unsubscribeTokens();
+});
+
+// ── Init ──
+initSocketIO();
+refreshPositions();
+</script>
+{% endblock %}
