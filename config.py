@@ -229,12 +229,13 @@ MARUTHI_DEFAULTS = {
     'hard_sl_atr_mult': 1.0,  # ATR multiplier for SL distance from master ST
     'hard_sl_buffer': 0,      # Fixed fallback (0 = use ATR-based, >0 = override with fixed points)
 
-    # Protective Options
-    'protective_otm_pct': 0.05,  # 5% OTM for protective puts/calls
+    # Protective Options — strike = spot ± (protective_otm_strikes × strike_interval)
+    # 5 strikes × 100 = 500 pts OTM. E.g., spot 12500 BEAR → buy 13000CE
+    'protective_otm_strikes': 5,  # Number of strikes OTM for protective options
 
     # Contract Management
-    'min_expiry_days_new': 6,    # Don't open options with ≤6 days to expiry
-    'roll_expiry_days': 6,       # Roll existing options at 6 days to expiry
+    'min_expiry_days_new': 4,    # Don't open options with ≤4 days to expiry
+    'roll_expiry_days': 4,       # Roll existing options at 4 days to expiry
     'futures_roll_day_last': True,  # Roll futures on last day of expiry (first half)
 
     # Option Strike Selection
@@ -292,6 +293,118 @@ BNF_DEFAULTS = {
     'paper_trading_mode': True,
     'live_trading_enabled': False,
     'max_daily_orders': 10,
+}
+
+# NAS — Nifty ATR Strangle (Intraday Options Selling) Defaults
+NAS_DEFAULTS = {
+    # Instrument
+    'symbol': 'NIFTY',
+    'exchange': 'NSE',
+    'exchange_fo': 'NFO',
+    'lot_size': 75,             # Nifty F&O lot size
+    'strike_interval': 50,      # Nifty options strike gap
+
+    # ATR Squeeze Detection (5-min candles)
+    'atr_period': 14,           # 14-bar ATR on 5-min = ~70 min lookback
+    'atr_ma_period': 50,        # 50-bar SMA of ATR = ~250 min (full day avg)
+    'min_squeeze_bars': 1,      # ATR must be below MA for 1 completed bar
+    'candle_interval': '5minute',
+    'candle_minutes': 5,
+
+    # Strike Selection — premium-based (find strike with target premium)
+    'target_entry_premium': 20.0,  # Entry: find strikes with ~Rs 20 premium each leg
+    'min_leg_premium': 5.0,        # No trades at or below Rs 5 premium
+    'max_leg_premium': 24.0,       # No trades above Rs 24 premium
+    'min_otm_distance': 100,       # Min 100 pts OTM from spot
+    # ATR fallback (used only when live quotes fail)
+    'strike_distance_atr': 1.5,    # OTM distance = 1.5x daily ATR each side
+    'daily_atr_period': 14,        # ATR period on daily bars for strike calc
+
+    # Position Sizing
+    'lots_per_leg': 10,         # 10 lots per leg = 750 qty
+    'max_strangles': 1,         # Only 1 strangle at a time
+
+    # Adjustment Rules
+    'premium_double_trigger': 2.0,   # Cross-leg imbalance trigger (leg1 >= 2x leg2)
+    'adj_min_premium': 4.0,          # Target premium floor — below this, close both
+    'adj_max_premium': 24.0,         # Target premium ceiling — above this, flip direction
+    'max_adjustments_per_leg': 2,    # Max re-positions per leg per day
+    'max_adjustments_total': 4,      # Max total adjustments per day
+    'adjustment_wait_bars': 1,       # Wait 1 bar (5 min) before re-entering
+
+    # Exit Rules
+    'combined_sl_mult': 2.0,    # Close all if total loss > 2x initial premium
+    'profit_target_pct': 70.0,  # Close all when 70% of premium captured
+    'eod_squareoff_time': '15:15',  # Mandatory EOD squareoff
+    'time_exit': '14:45',       # Close if still open at 2:45 PM
+    'entry_start_time': '09:30',    # No entries before 9:30
+    'entry_end_time': '14:30',      # No entries after 2:30 PM
+
+    # Filters
+    'skip_expiry_day': False,   # Trade on expiry days too — intraday with SL protection
+    'max_vix': None,            # VIX filter disabled — intraday with SL protection
+    'min_combined_premium': 0,  # Disabled — BS underestimates OTM premiums heavily
+    'max_spot_move_pct': 0.5,   # Skip if Nifty already moved > 0.5% from open
+
+    # Capital & Risk
+    'capital': 300_000,         # 3L margin for short strangle
+    'max_daily_loss': 15_000,   # Daily loss circuit breaker
+    'max_daily_orders': 20,     # Order limit per day
+
+    # Safety
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+}
+
+# NAS ATM — Nifty ATR Strangle (ATM, SL-based, cascading re-entry)
+NAS_ATM_DEFAULTS = {
+    # Instrument (same as NAS OTM)
+    'symbol': 'NIFTY',
+    'exchange': 'NSE',
+    'exchange_fo': 'NFO',
+    'lot_size': 75,
+    'strike_interval': 50,
+
+    # ATR Squeeze Detection (shared with NAS OTM — same ticker)
+    'atr_period': 14,
+    'atr_ma_period': 50,
+    'min_squeeze_bars': 1,
+    'candle_interval': '5minute',
+    'candle_minutes': 5,
+
+    # Strike Selection — ATM
+    'strike_mode': 'ATM',           # Always enter at-the-money
+
+    # Position Sizing
+    'lots_per_leg': 5,              # 5 lots per leg = 375 qty
+    'max_strangles': 5,             # Allow cascading strangles
+
+    # Stop Loss — per-leg percentage
+    'leg_sl_pct': 0.30,             # 30% of entry premium (sell@100 → SL@130)
+
+    # On SL hit: trail surviving leg to cost, enter new ATM
+    'trail_to_cost_on_sl': True,
+    're_enter_on_sl': True,
+
+    # Exit Rules
+    'eod_squareoff_time': '15:15',  # Mandatory EOD squareoff
+    'time_exit': '15:15',           # Close all by 3:15 PM
+    'entry_start_time': '09:30',
+    'entry_end_time': '14:50',      # No new entries after 2:50 PM
+
+    # Filters
+    'skip_expiry_day': False,
+
+    # Capital & Risk
+    'capital': 500_000,
+    'max_daily_loss': 25_000,
+    'max_daily_orders': 40,
+
+    # Safety
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
 }
 
 # Nifty 500 Universe

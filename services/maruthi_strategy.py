@@ -22,6 +22,15 @@ Hard SL is a TRAILING stop checked on EVERY TICK (not candle close):
 - BEAR: SL = master_st + buffer, only moves DOWN (never up)
 - On trigger: close ALL positions including last shorted option (no exceptions)
 
+Signal candle refresh:
+- When a child signal fires but its trigger (candle low/high ± buffer) is never breached,
+  the pending order stays with the original candle's trigger price.
+- On each subsequent candle close, if the candle still confirms the same direction
+  (close below child ST in BEAR, above in BULL), the trigger is refreshed to use
+  the new candle's low/high. This ensures we always use the most relevant signal candle.
+- If a new child flip occurs (e.g., brief cross above child ST then back below),
+  the existing pending trigger is also updated to the new signal candle.
+
 All computation is pure — no API calls, no DB writes.
 """
 
@@ -265,20 +274,23 @@ def get_otm_strike(spot_price: float, direction: str, strike_interval: int = 100
         return float(base_strike - (otm_strikes - 1) * strike_interval)
 
 
-def get_protective_strike(spot_price: float, direction: str, otm_pct: float = 0.05,
+def get_protective_strike(spot_price: float, direction: str, otm_strikes: int = 5,
                           strike_interval: int = 100) -> float:
     """
-    Get far OTM strike for protective option (5% OTM).
+    Get OTM strike for protective option (N strikes OTM).
 
-    For protective PUT (bull regime): 5% below spot
-    For protective CALL (bear regime): 5% above spot
+    For protective PUT (bull regime): N strikes below spot
+    For protective CALL (bear regime): N strikes above spot
+
+    Default 5 strikes × 100 = 500 pts OTM.
+    E.g., spot=12500, BEAR → CE strike = 13000 (5 strikes above)
     """
     if direction == 'PE':
-        target = spot_price * (1 - otm_pct)
-        return float(int(np.floor(target / strike_interval)) * strike_interval)
+        base = int(np.floor(spot_price / strike_interval)) * strike_interval
+        return float(base - otm_strikes * strike_interval)
     else:  # CE
-        target = spot_price * (1 + otm_pct)
-        return float(int(np.ceil(target / strike_interval)) * strike_interval)
+        base = int(np.ceil(spot_price / strike_interval)) * strike_interval
+        return float(base + otm_strikes * strike_interval)
 
 
 def resolve_sl_buffer(config: dict, master_atr: float = 100.0) -> float:
