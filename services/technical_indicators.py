@@ -212,13 +212,19 @@ def add_ichimoku_signals(df: pd.DataFrame, tenkan: int = 9,
 # =============================================================================
 
 def calc_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
-    """Calculate Average True Range."""
+    """
+    Calculate Average True Range using RMA (Wilder's smoothing).
+
+    TradingView uses RMA for ATR, which is EWM with alpha=1/period.
+    This differs from standard EWM (span=period → alpha=2/(period+1)).
+    """
     high_low = df['high'] - df['low']
     high_close = (df['high'] - df['close'].shift(1)).abs()
     low_close = (df['low'] - df['close'].shift(1)).abs()
 
     tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
-    atr = tr.ewm(span=period, adjust=False).mean()
+    # RMA (Wilder's) = EWM with alpha=1/period — matches TradingView
+    atr = tr.ewm(alpha=1.0/period, adjust=False).mean()
     return atr
 
 

@@ -331,6 +331,44 @@ def results_page(backtest_id: int):
     )
 
 
+@app.route('/positions')
+@login_required
+def positions_page():
+    """Zerodha-style positions page with grouping by instrument/expiry."""
+    return render_template(
+        'positions.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/positions')
+@login_required
+def api_get_positions():
+    """Fetch live positions from Kite API (net + day)."""
+    try:
+        kite = get_kite()
+        positions = kite.positions()
+        net = positions.get('net', [])
+        day = positions.get('day', [])
+
+        # Enrich with instrument type parsing
+        for p in net + day:
+            ts = (p.get('tradingsymbol') or '').upper()
+            if not p.get('instrument_type'):
+                if 'FUT' in ts:
+                    p['instrument_type'] = 'FUT'
+                elif ts and any(ts.endswith(x) for x in ('CE', 'PE')):
+                    p['instrument_type'] = 'CE' if ts.endswith('CE') else 'PE'
+                else:
+                    p['instrument_type'] = 'EQ'
+
+        return jsonify({'net': net, 'day': day})
+    except Exception as e:
+        logger.error(f"Error fetching positions: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/holdings')
 @login_required
 def holdings_page():
@@ -1314,6 +1352,66 @@ def handle_unsubscribe_ticker(data):
         logger.error(f"Error unsubscribing from ticker: {e}")
 
 
+@socketio.on('subscribe_position_tokens')
+def handle_subscribe_position_tokens(data):
+    """Subscribe to live ticks by instrument token (for positions page).
+
+    Expects: { tokens: [{token: int, tradingsymbol: str}, ...] }
+    Reuses MaruthiTicker's KiteTicker connection to avoid hitting the 3-connection limit.
+    """
+    items = data.get('tokens', [])
+    if not items:
+        emit('pos_error', {'error': 'No tokens provided'})
+        return
+
+    try:
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker()
+
+        if not ticker.is_connected or not ticker.kws:
+            emit('pos_error', {'error': 'Ticker not connected. Start Maruthi ticker first.'})
+            return
+
+        token_ids = [int(t['token']) for t in items]
+        tsym_map = {int(t['token']): t.get('tradingsymbol', '') for t in items}
+
+        # Store mapping on ticker so we can resolve in tick handler
+        if not hasattr(ticker, '_pos_token_map'):
+            ticker._pos_token_map = {}
+        ticker._pos_token_map.update(tsym_map)
+
+        # Subscribe via the existing WebSocket
+        ticker.kws.subscribe(token_ids)
+        ticker.kws.set_mode(ticker.kws.MODE_LTP, token_ids)
+
+        logger.info(f"[Positions] Subscribed to {len(token_ids)} tokens for live ticks")
+        emit('pos_subscribed', {'count': len(token_ids)})
+
+    except Exception as e:
+        logger.error(f"[Positions] Token subscription error: {e}")
+        emit('pos_error', {'error': str(e)})
+
+
+@socketio.on('unsubscribe_position_tokens')
+def handle_unsubscribe_position_tokens(data):
+    """Unsubscribe position tokens when leaving the page."""
+    token_ids = data.get('tokens', [])
+    if not token_ids:
+        return
+    try:
+        from services.maruthi_ticker import get_maruthi_ticker
+        ticker = get_maruthi_ticker()
+        if ticker.is_connected and ticker.kws:
+            ticker.kws.unsubscribe(token_ids)
+            # Clean up mapping
+            if hasattr(ticker, '_pos_token_map'):
+                for t in token_ids:
+                    ticker._pos_token_map.pop(int(t), None)
+            logger.info(f"[Positions] Unsubscribed {len(token_ids)} tokens")
+    except Exception as e:
+        logger.error(f"[Positions] Unsubscribe error: {e}")
+
+
 @app.route('/api/ticker/start', methods=['POST'])
 @login_required
 def api_start_ticker():
@@ -2240,9 +2338,28 @@ def api_maruthi_scan():
             executor = get_maruthi_executor(MARUTHI_DEFAULTS)
             symbol = MARUTHI_DEFAULTS.get('symbol', 'MARUTI')
 
-            # Load 30-min data
-            if MARUTHI_DEFAULTS.get('paper_trading_mode'):
-                # Paper mode: load from DB
+            # Load 30-min data — always try Kite first if authenticated
+            from services.kite_service import is_authenticated
+            df = pd.DataFrame()
+
+            if is_authenticated():
+                try:
+                    kite = get_kite()
+                    token = 2815745  # MARUTI instrument token
+                    from datetime import timedelta
+                    to_date = datetime.now()
+                    from_date = to_date - timedelta(days=60)
+                    data = kite.historical_data(
+                        instrument_token=token,
+                        from_date=from_date, to_date=to_date,
+                        interval='30minute'
+                    )
+                    df = pd.DataFrame(data)
+                except Exception as e:
+                    logger.warning(f"Kite historical fetch failed: {e}")
+
+            if df.empty:
+                # Fallback: load from DB
                 from config import MARKET_DATA_DB
                 import sqlite3
                 conn = sqlite3.connect(str(MARKET_DATA_DB))
@@ -2252,30 +2369,7 @@ def api_maruthi_scan():
                     conn, params=(symbol,)
                 )
                 conn.close()
-                if df.empty:
-                    # Fallback: use daily data for testing
-                    conn = sqlite3.connect(str(MARKET_DATA_DB))
-                    df = pd.read_sql_query(
-                        "SELECT date, open, high, low, close, volume FROM market_data_unified "
-                        "WHERE symbol = ? AND timeframe = 'day' ORDER BY date DESC LIMIT 200",
-                        conn, params=(symbol,)
-                    )
-                    conn.close()
                 df = df.sort_values('date').reset_index(drop=True)
-            else:
-                # Live mode: fetch from Kite
-                kite = get_kite()
-                from services.nifty500_universe import get_instrument_token
-                token = get_instrument_token(symbol)
-                from datetime import timedelta
-                to_date = datetime.now()
-                from_date = to_date - timedelta(days=30)
-                data = kite.historical_data(
-                    instrument_token=token,
-                    from_date=from_date, to_date=to_date,
-                    interval='30minute'
-                )
-                df = pd.DataFrame(data)
 
             if df.empty:
                 task_status[tid] = {'status': 'error', 'message': f'No data for {symbol}'}
