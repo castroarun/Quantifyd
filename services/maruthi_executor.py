@@ -904,6 +904,48 @@ class MaruthiExecutor:
         self._current_master_atr = master_atr
         sl_buffer = resolve_sl_buffer(cfg, master_atr)
 
+        # Reconcile regime with computed directions
+        # If app restarted and missed a master flip, fix the regime from live data
+        computed_master_dir = int(latest['master_dir'])
+        if current_regime == 'BULL' and computed_master_dir == -1:
+            logger.warning(f"REGIME MISMATCH: DB says BULL but computed master is BEAR — correcting to BEAR")
+            current_regime = 'BEAR'
+            self.db.update_regime(
+                regime='BEAR',
+                master_st_value=float(latest['master_st']),
+                child_st_value=float(latest['child_st']),
+                master_direction=computed_master_dir,
+                child_direction=int(latest['child_dir']),
+                hard_sl_price=compute_hard_sl(float(latest['master_st']), 'BEAR', sl_buffer, prev_hard_sl=0),
+                regime_start_time=datetime.now().isoformat(),
+            )
+        elif current_regime == 'BEAR' and computed_master_dir == 1:
+            logger.warning(f"REGIME MISMATCH: DB says BEAR but computed master is BULL — correcting to BULL")
+            current_regime = 'BULL'
+            self.db.update_regime(
+                regime='BULL',
+                master_st_value=float(latest['master_st']),
+                child_st_value=float(latest['child_st']),
+                master_direction=computed_master_dir,
+                child_direction=int(latest['child_dir']),
+                hard_sl_price=compute_hard_sl(float(latest['master_st']), 'BULL', sl_buffer, prev_hard_sl=0),
+                regime_start_time=datetime.now().isoformat(),
+            )
+        elif current_regime == 'FLAT' and computed_master_dir != 0:
+            # FLAT but master has a direction — adopt it
+            new_regime = 'BULL' if computed_master_dir == 1 else 'BEAR'
+            logger.warning(f"REGIME MISMATCH: DB says FLAT but computed master is {new_regime} — correcting")
+            current_regime = new_regime
+            self.db.update_regime(
+                regime=new_regime,
+                master_st_value=float(latest['master_st']),
+                child_st_value=float(latest['child_st']),
+                master_direction=computed_master_dir,
+                child_direction=int(latest['child_dir']),
+                hard_sl_price=compute_hard_sl(float(latest['master_st']), new_regime, sl_buffer, prev_hard_sl=0),
+                regime_start_time=datetime.now().isoformat(),
+            )
+
         # Detect signals
         signals = detect_signals(
             df, current_regime,
