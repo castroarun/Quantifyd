@@ -27,6 +27,128 @@
         display: inline-block;
     }
 
+    /* Live monitoring bar */
+    .live-bar {
+        background: rgba(22,27,34,0.9);
+        border: 1px solid rgba(63,185,80,0.3);
+        border-radius: 8px;
+        padding: 0.4rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+        position: relative;
+        font-size: 0.82rem;
+    }
+    .live-bar.disconnected {
+        border-color: rgba(248,81,73,0.3);
+    }
+    /* Signal wave — audio waveform visualizer */
+    .signal-wave {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 22px;
+        flex-shrink: 0;
+        padding: 0 2px;
+    }
+    .signal-wave .wave-bar {
+        width: 3px;
+        border-radius: 1.5px;
+        background: #3fb950;
+        animation: waveAnim 1.2s ease-in-out infinite;
+    }
+    .signal-wave .wave-bar:nth-child(1) { height: 6px;  animation-delay: 0s; }
+    .signal-wave .wave-bar:nth-child(2) { height: 14px; animation-delay: 0.15s; }
+    .signal-wave .wave-bar:nth-child(3) { height: 20px; animation-delay: 0.3s; }
+    .signal-wave .wave-bar:nth-child(4) { height: 10px; animation-delay: 0.45s; }
+    .signal-wave .wave-bar:nth-child(5) { height: 16px; animation-delay: 0.6s; }
+    .signal-wave .wave-bar:nth-child(6) { height: 8px;  animation-delay: 0.75s; }
+    .signal-wave .wave-bar:nth-child(7) { height: 18px; animation-delay: 0.9s; }
+
+    @keyframes waveAnim {
+        0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+        50% { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* Inactive state — flatline */
+    .signal-wave.inactive .wave-bar {
+        animation: none;
+        height: 2px !important;
+        background: #484f58;
+        opacity: 0.5;
+        transition: all 0.6s ease;
+    }
+
+    /* Stale ticks — amber warning pulse */
+    .signal-wave.stale .wave-bar {
+        background: #d29922;
+        animation: waveFade 2s ease-in-out infinite;
+    }
+    @keyframes waveFade {
+        0%, 100% { opacity: 0.3; transform: scaleY(0.4); }
+        50% { opacity: 0.8; transform: scaleY(0.6); }
+    }
+    /* Proximity gauges */
+    .proximity-strip {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        overflow: hidden;
+    }
+    .prox-gauge {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+    .prox-gauge .prox-label {
+        color: #8b949e;
+        font-weight: 500;
+        min-width: 52px;
+    }
+    .prox-gauge .prox-bar-track {
+        width: 60px;
+        height: 6px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+    }
+    .prox-gauge .prox-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease, background 0.5s ease;
+        min-width: 2px;
+    }
+    .prox-gauge .prox-val {
+        font-family: monospace;
+        font-weight: 600;
+        min-width: 42px;
+        text-align: right;
+    }
+    .prox-gauge .prox-arrow {
+        font-size: 0.65rem;
+        opacity: 0.7;
+    }
+    .live-bar .ltp-box {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #e6edf3;
+        flex-shrink: 0;
+    }
+    .live-bar .meta-item {
+        color: #8b949e;
+        flex-shrink: 0;
+    }
+    .live-bar .meta-item span {
+        color: #e6edf3;
+        font-weight: 600;
+    }
+
     .card-header-custom {
         background: rgba(22,27,34,0.8);
         border-bottom: 1px solid var(--bs-border-color);
@@ -93,6 +215,18 @@
         50% { opacity: 0.4; }
     }
 
+    /* What's Next panel */
+    #whatsNextCard .table-maruthi td { padding: 0.5rem 0.75rem; }
+    .wn-icon { font-size: 1rem; text-align: center; }
+    .wn-event { font-weight: 600; }
+    .wn-action { color: #c9d1d9; }
+    .wn-price { font-family: 'JetBrains Mono', monospace; font-weight: 600; letter-spacing: 0.3px; }
+    .wn-row-bull td { border-left: 3px solid #3fb950; }
+    .wn-row-bear td { border-left: 3px solid #f85149; }
+    .wn-row-flat td { border-left: 3px solid #f0883e; }
+    .wn-row-sl td { border-left: 3px solid #ffeb3b; }
+    .wn-row-roll td { border-left: 3px solid #a371f7; }
+
     .scan-overlay {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -112,6 +246,46 @@
 
 {% block content %}
 <div class="container-fluid py-3">
+    <!-- Live Monitoring Bar -->
+    <div class="live-bar disconnected" id="liveBar">
+        <div class="signal-wave inactive" id="signalWave">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        </div>
+        <div class="ltp-box">MARUTI <span id="liveLTP">—</span></div>
+        <div class="meta-item">Ticker: <span id="liveTickerState" style="color:#f85149;">OFF</span></div>
+        <div class="meta-item">Candles: <span id="liveCandleCount">0</span></div>
+        <div class="meta-item">Master: <span id="liveMasterDir">—</span></div>
+        <div class="meta-item">Child: <span id="liveChildDir">—</span></div>
+        <div class="proximity-strip" id="proximityStrip">
+            <!-- Master ST distance -->
+            <div class="prox-gauge">
+                <span class="prox-label">Master</span>
+                <div class="prox-bar-track"><div class="prox-bar-fill" id="proxMasterFill" style="width:0%; background:#58a6ff;"></div></div>
+                <span class="prox-val" id="proxMasterVal" style="color:#8b949e;">—</span>
+                <span class="prox-arrow" id="proxMasterArrow"></span>
+            </div>
+            <!-- Child ST distance -->
+            <div class="prox-gauge">
+                <span class="prox-label">Child</span>
+                <div class="prox-bar-track"><div class="prox-bar-fill" id="proxChildFill" style="width:0%; background:#a371f7;"></div></div>
+                <span class="prox-val" id="proxChildVal" style="color:#8b949e;">—</span>
+                <span class="prox-arrow" id="proxChildArrow"></span>
+            </div>
+            <!-- Hard SL distance -->
+            <div class="prox-gauge">
+                <span class="prox-label">Hard SL</span>
+                <div class="prox-bar-track"><div class="prox-bar-fill" id="proxSLFill" style="width:0%; background:#f85149;"></div></div>
+                <span class="prox-val" id="proxSLVal" style="color:#8b949e;">—</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
@@ -119,7 +293,7 @@
                 Maruthi Always-On
                 <span id="modeBadge" class="mode-badge ms-2">PAPER</span>
             </h4>
-            <small class="text-muted">Dual SuperTrend (7,5 + 7,2) · Futures + Options ·
+            <small class="text-muted">Dual SuperTrend (7,5 + 7,2) · Futures + Options · <a href="/maruthi/algo" class="text-info" style="text-decoration:none; font-weight:600;">Algo Logic</a> ·
                 <span id="tickerStatus" class="text-danger">Ticker OFF</span> ·
                 LTP: <span id="tickerLTP">—</span> <span id="tickerLTPTime" class="text-muted" style="font-size:0.75em"></span> ·
                 Candles: <span id="tickerCandles">0</span>
@@ -179,6 +353,29 @@
                 <div class="stat-label">Total P&L</div>
                 <div id="totalPnl" class="stat-value">₹0</div>
             </div>
+        </div>
+    </div>
+
+    <!-- What's Next Panel -->
+    <div class="card bg-dark mb-3" id="whatsNextCard">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-signpost-2" style="color:#58a6ff;"></i> What's Next</span>
+            <small class="text-muted" id="whatsNextUpdate"></small>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-dark table-maruthi mb-0" style="font-size: 0.88rem;">
+                <thead>
+                    <tr>
+                        <th style="width:30px; text-align:center;">⚡</th>
+                        <th style="width:200px;">Event</th>
+                        <th>Action</th>
+                        <th style="width:120px;">Price Level</th>
+                    </tr>
+                </thead>
+                <tbody id="whatsNextBody">
+                    <tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -344,9 +541,12 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 let equityChart = null;
+let _currentRegime = null;
+let _currentLTP = 0;
 
 // ---- Data Loading ----
 async function loadState() {
@@ -361,6 +561,13 @@ async function loadState() {
 }
 
 function updateUI(data) {
+    // Store regime for proximity gauge
+    _currentRegime = data.regime || {};
+    if (_currentLTP > 0) updateProximity(_currentLTP, _currentRegime);
+
+    // Update live monitoring bar regime
+    updateLiveBarRegime(data);
+
     // Mode
     const cfg = data.config || {};
     const mode = cfg.paper_mode ? 'PAPER' : 'LIVE';
@@ -378,7 +585,6 @@ function updateUI(data) {
     document.getElementById('masterST').textContent = regime.master_st_value ? regime.master_st_value.toFixed(1) : '—';
     document.getElementById('hardSL').textContent = regime.hard_sl_price ? '₹' + regime.hard_sl_price.toFixed(1) : '—';
     // Show SL buffer info
-    const cfg = data.config || {};
     const bufPts = cfg.hard_sl_buffer_pts || 0;
     const atrMult = cfg.hard_sl_atr_mult || 1.0;
     const atrVal = cfg.master_atr || 0;
@@ -471,6 +677,87 @@ function updateUI(data) {
             </tr>`;
         }).join('');
     }
+
+    // What's Next
+    buildWhatsNext(data);
+}
+
+function buildWhatsNext(data) {
+    const regime = data.regime || {};
+    const cfg = data.config || {};
+    const r = regime.regime || 'FLAT';
+    const masterDir = regime.master_direction;
+    const childDir = regime.child_direction;
+    const hardSL = regime.hard_sl_price || 0;
+    const masterST = regime.master_st_value || 0;
+    const futCount = (data.futures || []).length;
+    const optCount = (data.short_options || []).length;
+    const maxFut = cfg.max_futures || 5;
+    const tbody = document.getElementById('whatsNextBody');
+    const rows = [];
+
+    if (r === 'FLAT') {
+        rows.push({cls:'flat', icon:'⏳', event:'Master ST flips Bullish', action:'Enter BUY futures (SL-L trigger above candle high)', price: masterST > 0 ? 'Above ₹' + masterST.toFixed(0) : '—'});
+        rows.push({cls:'flat', icon:'⏳', event:'Master ST flips Bearish', action:'Enter SHORT futures (SL-L trigger below candle low)', price: masterST > 0 ? 'Below ₹' + masterST.toFixed(0) : '—'});
+    } else if (r === 'BULL') {
+        // Child flips
+        if (childDir === 1) {
+            rows.push({cls:'bear', icon:'🔻', event:'Child ST flips Bearish', action:'Short 1 OTM CALL (1 per futures lot)', price: '—'});
+            if (futCount < maxFut) {
+                rows.push({cls:'bull', icon:'⏳', event:'Next Child Bull flip', action:`Add 1 more BUY futures lot (${futCount}/${maxFut})`, price: '—'});
+            }
+        } else {
+            if (futCount < maxFut) {
+                rows.push({cls:'bull', icon:'📈', event:'Child ST flips Bullish', action:`Add 1 more BUY futures lot (${futCount}/${maxFut})`, price: '—'});
+            }
+            rows.push({cls:'bull', icon:'⏳', event:'Hold current positions', action:`${futCount} long futures + ${optCount} short CEs`, price: '—'});
+        }
+        // Master reversal
+        rows.push({cls:'bear', icon:'🔄', event:'Master ST flips Bearish', action:'Close ALL positions → new BEAR regime', price: masterST > 0 ? '₹' + masterST.toFixed(0) + ' (lower band)' : '—'});
+        // Hard SL
+        if (hardSL > 0) {
+            rows.push({cls:'sl', icon:'🛑', event:'Price drops to Hard SL', action:'INSTANT EXIT — close ALL, go FLAT (tick-level)', price: '₹' + hardSL.toFixed(0)});
+        }
+    } else if (r === 'BEAR') {
+        // Child flips
+        if (childDir === -1) {
+            rows.push({cls:'bull', icon:'🔺', event:'Child ST flips Bullish', action:'Short 1 OTM PUT (1 per futures lot)', price: '—'});
+            if (futCount < maxFut) {
+                rows.push({cls:'bear', icon:'⏳', event:'Next Child Bear flip', action:`Add 1 more SHORT futures lot (${futCount}/${maxFut})`, price: '—'});
+            }
+        } else {
+            if (futCount < maxFut) {
+                rows.push({cls:'bear', icon:'📉', event:'Child ST flips Bearish', action:`Add 1 more SHORT futures lot (${futCount}/${maxFut})`, price: '—'});
+            }
+            rows.push({cls:'bear', icon:'⏳', event:'Hold current positions', action:`${futCount} short futures + ${optCount} short PEs`, price: '—'});
+        }
+        // Master reversal
+        rows.push({cls:'bull', icon:'🔄', event:'Master ST flips Bullish', action:'Close ALL positions → new BULL regime', price: masterST > 0 ? '₹' + masterST.toFixed(0) + ' (upper band)' : '—'});
+        // Hard SL
+        if (hardSL > 0) {
+            rows.push({cls:'sl', icon:'🛑', event:'Price rises to Hard SL', action:'INSTANT EXIT — close ALL, go FLAT (tick-level)', price: '₹' + hardSL.toFixed(0)});
+        }
+    }
+
+    // Expiry / roll check (always relevant if positions exist)
+    if (futCount > 0 || optCount > 0) {
+        rows.push({cls:'roll', icon:'📅', event:'Expiry ≤ 6 days (options) / last day (futures)', action:'Auto-roll: close current → open next month', price: '—'});
+    }
+
+    if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No active strategy</td></tr>';
+    } else {
+        tbody.innerHTML = rows.map(r => `
+            <tr class="wn-row-${r.cls}">
+                <td class="wn-icon">${r.icon}</td>
+                <td class="wn-event">${r.event}</td>
+                <td class="wn-action">${r.action}</td>
+                <td class="wn-price">${r.price}</td>
+            </tr>
+        `).join('');
+    }
+
+    document.getElementById('whatsNextUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
 
 // ---- Actions ----
@@ -539,21 +826,60 @@ async function loadTickerStatus() {
     } catch (e) { /* ignore */ }
 }
 
+function isMarketHours() {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    if (day === 0 || day === 6) return false;
+    const hhmm = now.getHours() * 100 + now.getMinutes();
+    return hhmm >= 915 && hhmm <= 1530;
+}
+
 function updateTickerUI(data) {
     tickerRunning = data.is_running || false;
     const statusEl = document.getElementById('tickerStatus');
     const btnText = document.getElementById('tickerBtnText');
     const btn = document.getElementById('tickerBtn');
+    const liveBar = document.getElementById('liveBar');
+    const wave = document.getElementById('signalWave');
+
+    // Determine tick freshness (stale if > 15 seconds since last tick)
+    let tickStale = true;
+    if (data.last_tick_time) {
+        const lastTick = new Date(data.last_tick_time);
+        tickStale = (Date.now() - lastTick.getTime()) > 15000;
+    }
+
+    const marketOpen = isMarketHours();
 
     if (data.is_connected) {
         statusEl.textContent = 'LIVE';
         statusEl.className = 'text-success fw-bold';
+        liveBar.className = 'live-bar';
+        document.getElementById('liveTickerState').textContent = 'LIVE';
+        document.getElementById('liveTickerState').style.color = '#3fb950';
+
+        // Wave state: active if connected + ticks flowing + market open
+        if (!marketOpen) {
+            wave.className = 'signal-wave inactive';
+        } else if (tickStale) {
+            wave.className = 'signal-wave stale';
+        } else {
+            wave.className = 'signal-wave';
+        }
     } else if (data.is_running) {
         statusEl.textContent = 'Connecting...';
         statusEl.className = 'text-warning';
+        liveBar.className = 'live-bar disconnected';
+        document.getElementById('liveTickerState').textContent = 'CONNECTING';
+        document.getElementById('liveTickerState').style.color = '#d29922';
+        wave.className = 'signal-wave stale';
     } else {
         statusEl.textContent = 'Ticker OFF';
         statusEl.className = 'text-danger';
+        liveBar.className = 'live-bar disconnected';
+        document.getElementById('liveTickerState').textContent = 'OFF';
+        document.getElementById('liveTickerState').style.color = '#f85149';
+        wave.className = 'signal-wave inactive';
     }
 
     btnText.textContent = tickerRunning ? 'Stop Ticker' : 'Start Ticker';
@@ -561,12 +887,90 @@ function updateTickerUI(data) {
         ? 'btn btn-danger action-btn'
         : 'btn btn-outline-success action-btn';
 
-    document.getElementById('tickerLTP').textContent =
-        data.last_ltp ? '₹' + data.last_ltp.toFixed(1) : '—';
+    const ltp = data.last_ltp;
+    document.getElementById('tickerLTP').textContent = ltp ? '₹' + ltp.toFixed(1) : '—';
+    document.getElementById('liveLTP').textContent = ltp ? '₹' + ltp.toFixed(1) : '—';
     document.getElementById('tickerLTPTime').textContent =
-        data.last_ltp ? '@ ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'}) : '';
-    document.getElementById('tickerCandles').textContent =
-        data.completed_candles || 0;
+        ltp ? '@ ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'}) : '';
+    document.getElementById('tickerCandles').textContent = data.completed_candles || 0;
+    document.getElementById('liveCandleCount').textContent = data.completed_candles || 0;
+
+    // Update proximity gauges
+    if (ltp > 0) {
+        _currentLTP = ltp;
+        if (_currentRegime) updateProximity(ltp, _currentRegime);
+    }
+}
+
+function updateProximity(ltp, regime) {
+    if (!ltp || !regime) return;
+
+    const masterST = regime.master_st_value || 0;
+    const childST = regime.child_st_value || 0;
+    const hardSL = regime.hard_sl_price || 0;
+    const masterDir = regime.master_direction || 0;
+    const childDir = regime.child_direction || 0;
+
+    // Helper: compute distance and fill bar
+    // maxRange = the ATR-scale distance at which bar is 100% (use ~1.5% of price as reference)
+    const refRange = ltp * 0.015;
+
+    function setGauge(fillId, valId, arrowId, stLevel, direction, color, dangerColor) {
+        const dist = ltp - stLevel;
+        const absDist = Math.abs(dist);
+        const pct = Math.min(absDist / refRange * 100, 100);
+        const pts = absDist.toFixed(0);
+
+        const fillEl = document.getElementById(fillId);
+        const valEl = document.getElementById(valId);
+
+        fillEl.style.width = (100 - pct) + '%';
+
+        // Color: closer = more intense (danger if approaching flip/SL)
+        const isClose = pct < 30;
+        const isMedium = pct < 60;
+        if (isClose) {
+            fillEl.style.background = dangerColor;
+            valEl.style.color = dangerColor;
+        } else if (isMedium) {
+            fillEl.style.background = '#d29922';
+            valEl.style.color = '#d29922';
+        } else {
+            fillEl.style.background = color;
+            valEl.style.color = color;
+        }
+
+        valEl.textContent = pts + ' pts';
+
+        // Arrow: show direction relative to ST
+        if (arrowId) {
+            const arrowEl = document.getElementById(arrowId);
+            if (dist > 0) {
+                arrowEl.textContent = '▲';
+                arrowEl.style.color = '#3fb950';
+            } else {
+                arrowEl.textContent = '▼';
+                arrowEl.style.color = '#f85149';
+            }
+        }
+    }
+
+    if (masterST > 0) setGauge('proxMasterFill', 'proxMasterVal', 'proxMasterArrow', masterST, masterDir, '#58a6ff', '#f0883e');
+    if (childST > 0) setGauge('proxChildFill', 'proxChildVal', 'proxChildArrow', childST, childDir, '#a371f7', '#f0883e');
+    if (hardSL > 0) setGauge('proxSLFill', 'proxSLVal', null, hardSL, 0, '#484f58', '#f85149');
+}
+
+// Update live bar regime from state data
+function updateLiveBarRegime(data) {
+    const regime = data.regime || {};
+    const masterDir = regime.master_direction;
+    const childDir = regime.child_direction;
+    const mEl = document.getElementById('liveMasterDir');
+    const cEl = document.getElementById('liveChildDir');
+    mEl.textContent = masterDir === 1 ? '▲ BULL' : masterDir === -1 ? '▼ BEAR' : '—';
+    mEl.style.color = masterDir === 1 ? '#3fb950' : masterDir === -1 ? '#f85149' : '#8b949e';
+    cEl.textContent = childDir === 1 ? '▲ Bull' : childDir === -1 ? '▼ Bear' : '—';
+    cEl.style.color = childDir === 1 ? '#3fb950' : childDir === -1 ? '#f85149' : '#8b949e';
 }
 
 async function triggerAuth() {
@@ -661,13 +1065,77 @@ async function loadMTM() {
     }
 }
 
+// ---- Live Tick via SocketIO ----
+const socket = io();
+let _lastTickTime = 0;
+
+socket.on('connect', function() {
+    console.log('[Maruthi] SocketIO connected');
+});
+
+socket.on('maruthi_tick', function(d) {
+    _lastTickTime = Date.now();
+    const wave = document.getElementById('signalWave');
+
+    // Update LTP
+    _currentLTP = d.ltp;
+    document.getElementById('tickerLTP').textContent = '\u20B9' + d.ltp.toFixed(1);
+    document.getElementById('liveLTP').textContent = '\u20B9' + d.ltp.toFixed(1);
+    document.getElementById('tickerLTPTime').textContent =
+        '@ ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+    // Update ticker status indicators
+    document.getElementById('tickerStatus').textContent = 'LIVE';
+    document.getElementById('tickerStatus').className = 'text-success fw-bold';
+    document.getElementById('liveBar').className = 'live-bar';
+    document.getElementById('liveTickerState').textContent = 'LIVE';
+    document.getElementById('liveTickerState').style.color = '#3fb950';
+    tickerRunning = true;
+    document.getElementById('tickerBtnText').textContent = 'Stop Ticker';
+    document.getElementById('tickerBtn').className = 'btn btn-danger action-btn';
+
+    // Wave: active during market hours
+    wave.className = isMarketHours() ? 'signal-wave' : 'signal-wave inactive';
+
+    // Update regime from tick data
+    if (d.master_st) {
+        _currentRegime = {
+            master_st_value: d.master_st,
+            child_st_value: d.child_st,
+            hard_sl_price: d.hard_sl,
+            regime: d.regime,
+            master_direction: d.master_dir,
+            child_direction: d.child_dir,
+        };
+
+        // Update Master/Child direction in live bar
+        const mEl = document.getElementById('liveMasterDir');
+        const cEl = document.getElementById('liveChildDir');
+        mEl.textContent = d.master_dir === 1 ? '\u25B2 BULL' : d.master_dir === -1 ? '\u25BC BEAR' : '\u2014';
+        mEl.style.color = d.master_dir === 1 ? '#3fb950' : d.master_dir === -1 ? '#f85149' : '#8b949e';
+        cEl.textContent = d.child_dir === 1 ? '\u25B2 Bull' : d.child_dir === -1 ? '\u25BC Bear' : '\u2014';
+        cEl.style.color = d.child_dir === 1 ? '#3fb950' : d.child_dir === -1 ? '#f85149' : '#8b949e';
+    }
+
+    // Update proximity gauges (real-time)
+    if (_currentRegime) updateProximity(d.ltp, _currentRegime);
+});
+
+// Detect stale ticks (no data for 15s → amber wave)
+setInterval(function() {
+    if (_lastTickTime > 0 && Date.now() - _lastTickTime > 15000) {
+        document.getElementById('signalWave').className = 'signal-wave stale';
+    }
+}, 5000);
+
 // ---- Init ----
 loadState();
 loadEquityCurve();
 loadTickerStatus();
 loadMTM();
-setInterval(loadState, 30000); // Refresh every 30s
-setInterval(loadTickerStatus, 10000); // Ticker status every 10s
+// Real-time ticks via SocketIO (maruthi_tick event) — no polling needed for LTP
+setInterval(loadState, 30000); // Full state refresh every 30s
+setInterval(loadTickerStatus, 30000); // Ticker status (fallback, SocketIO handles real-time)
 setInterval(loadMTM, 10000); // MTM refresh every 10s
 </script>
 {% endblock %}
