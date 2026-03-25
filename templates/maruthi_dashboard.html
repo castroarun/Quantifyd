@@ -633,8 +633,12 @@ function updateUI(data) {
                 <td>${p.transaction_type}</td>
                 <td>${p.qty}</td>
                 <td>₹${(p.entry_price || 0).toFixed(1)}</td>
-                <td class="pos-ltp">—</td>
-                <td class="pos-pnl">—</td>
+                <td class="pos-ltp">${p.ltp > 0 ? '₹' + p.ltp.toFixed(1) : '—'}</td>
+                <td class="pos-pnl">${p.pnl != null ? (() => {
+                    const c = p.pnl >= 0 ? '#3fb950' : '#f85149';
+                    const s = p.pnl >= 0 ? '+' : '';
+                    return '<span style="color:' + c + '">' + s + '₹' + p.pnl.toLocaleString('en-IN') + '</span>';
+                })() : '—'}</td>
                 <td>${p.sl_price ? '₹' + p.sl_price.toFixed(1) : '—'}</td>
                 <td><span class="badge bg-${p.status === 'ACTIVE' ? 'success' : p.status === 'PENDING' ? 'warning' : 'secondary'}">${p.status}</span></td>
             </tr>

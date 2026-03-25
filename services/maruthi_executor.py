@@ -206,6 +206,76 @@ class MaruthiExecutor:
                 'source': 'DB',
             }
 
+    def get_live_positions(self) -> dict:
+        """
+        Get full position details from Kite for dashboard display.
+
+        Returns dict with:
+            futures: list of {type, symbol, dir, qty, entry, ltp, pnl, status}
+            short_options: list of same
+            protective_options: list of same
+            source: 'KITE' or 'DB'
+        """
+        cfg = self.config
+        symbol = cfg.get('symbol', 'MARUTI')
+        lot_size = cfg.get('lot_size', 50)
+
+        futures = []
+        short_options = []
+        protective_options = []
+
+        try:
+            kite = self._get_kite()
+            if not kite or not is_authenticated():
+                raise Exception("Kite not available")
+
+            positions = kite.positions().get('net', [])
+
+            for p in positions:
+                ts = p.get('tradingsymbol', '')
+                qty = p.get('quantity', 0)
+                if qty == 0 or symbol not in ts:
+                    continue
+
+                row = {
+                    'position_type': '',
+                    'tradingsymbol': ts,
+                    'transaction_type': 'SELL' if qty < 0 else 'BUY',
+                    'qty': abs(qty),
+                    'lots': abs(qty) // lot_size,
+                    'entry_price': round(p.get('average_price', 0), 1),
+                    'ltp': p.get('last_price', 0),
+                    'pnl': round(p.get('pnl', 0), 1),
+                    'status': 'ACTIVE',
+                }
+
+                if 'FUT' in ts:
+                    row['position_type'] = 'FUTURES'
+                    futures.append(row)
+                elif 'PE' in ts or 'CE' in ts:
+                    if qty < 0:
+                        row['position_type'] = 'SHORT_OPTION'
+                        short_options.append(row)
+                    else:
+                        row['position_type'] = 'PROTECTIVE_OPTION'
+                        protective_options.append(row)
+
+            return {
+                'futures': futures,
+                'short_options': short_options,
+                'protective_options': protective_options,
+                'source': 'KITE',
+            }
+
+        except Exception as e:
+            logger.warning(f"[LivePositions] Kite unavailable ({e}), falling back to DB")
+            return {
+                'futures': self.db.get_active_positions('FUTURES'),
+                'short_options': self.db.get_active_positions('SHORT_OPTION'),
+                'protective_options': self.db.get_active_positions('PROTECTIVE_OPTION'),
+                'source': 'DB',
+            }
+
     # =========================================================================
     # Guardrails
     # =========================================================================
@@ -904,14 +974,9 @@ class MaruthiExecutor:
                 new_regime = action['new_regime']
                 logger.info(f"REGIME CHANGE: {current_regime} → {new_regime}")
 
-                # Close all positions (keep last option on master reversal)
-                closed = self.close_all_positions(
-                    exit_reason=f'REGIME_{new_regime}',
-                    keep_last_option=True,
-                )
-                results.append(f"Closed {closed} positions for regime change to {new_regime}")
-
-                # Update regime in DB — fresh SL (no trailing on new regime)
+                # DO NOT close positions here — wait for signal candle trigger breach.
+                # Positions will be closed when the BUY/SHORT_FUTURES trigger fills.
+                # Only update regime in DB so state is correct.
                 sl_buf = resolve_sl_buffer(self.config, self._current_master_atr)
                 self.db.update_regime(
                     regime=new_regime,
@@ -927,6 +992,7 @@ class MaruthiExecutor:
                     regime_start_time=datetime.now().isoformat(),
                     last_signal_time=datetime.now().isoformat(),
                 )
+                results.append(f"Regime changed to {new_regime} — positions held until trigger breach")
                 logger.info(f"Regime {new_regime}: SL buffer={sl_buf:.1f} (ATR={self._current_master_atr:.1f})")
                 current_regime = new_regime
 
@@ -1258,35 +1324,25 @@ class MaruthiExecutor:
         self._current_master_atr = master_atr
         sl_buffer = resolve_sl_buffer(cfg, master_atr)
 
-        # Reconcile regime with computed directions
-        # If app restarted and missed a master flip, fix the regime from live data
+        # Reconcile child direction with computed data (fixes stale DB after restart).
+        # IMPORTANT: Do NOT reconcile master/regime here — master flips must go through
+        # the proper signal flow (detect_signals → MASTER_BULL/BEAR → BUY/SHORT trigger)
+        # so that positions are only closed when the signal candle high/low is breached.
         computed_master_dir = int(latest['master_dir'])
-        if current_regime == 'BULL' and computed_master_dir == -1:
-            logger.warning(f"REGIME MISMATCH: DB says BULL but computed master is BEAR — correcting to BEAR")
-            current_regime = 'BEAR'
-            self.db.update_regime(
-                regime='BEAR',
-                master_st_value=float(latest['master_st']),
-                child_st_value=float(latest['child_st']),
-                master_direction=computed_master_dir,
-                child_direction=int(latest['child_dir']),
-                hard_sl_price=compute_hard_sl(float(latest['master_st']), 'BEAR', sl_buffer, prev_hard_sl=0),
-                regime_start_time=datetime.now().isoformat(),
+        computed_child_dir = int(latest['child_dir'])
+        db_child_dir = regime.get('child_direction', 0)
+
+        if db_child_dir != computed_child_dir:
+            logger.info(
+                f"Child direction reconciled: DB={db_child_dir} → computed={computed_child_dir}"
             )
-        elif current_regime == 'BEAR' and computed_master_dir == 1:
-            logger.warning(f"REGIME MISMATCH: DB says BEAR but computed master is BULL — correcting to BULL")
-            current_regime = 'BULL'
             self.db.update_regime(
-                regime='BULL',
-                master_st_value=float(latest['master_st']),
+                child_direction=computed_child_dir,
                 child_st_value=float(latest['child_st']),
-                master_direction=computed_master_dir,
-                child_direction=int(latest['child_dir']),
-                hard_sl_price=compute_hard_sl(float(latest['master_st']), 'BULL', sl_buffer, prev_hard_sl=0),
-                regime_start_time=datetime.now().isoformat(),
             )
-        elif current_regime == 'FLAT' and computed_master_dir != 0:
-            # FLAT but master has a direction — adopt it
+
+        # For FLAT regime, adopt the master direction so signals can start flowing
+        if current_regime == 'FLAT' and computed_master_dir != 0:
             new_regime = 'BULL' if computed_master_dir == 1 else 'BEAR'
             logger.warning(f"REGIME MISMATCH: DB says FLAT but computed master is {new_regime} — correcting")
             current_regime = new_regime
@@ -1295,7 +1351,7 @@ class MaruthiExecutor:
                 master_st_value=float(latest['master_st']),
                 child_st_value=float(latest['child_st']),
                 master_direction=computed_master_dir,
-                child_direction=int(latest['child_dir']),
+                child_direction=computed_child_dir,
                 hard_sl_price=compute_hard_sl(float(latest['master_st']), new_regime, sl_buffer, prev_hard_sl=0),
                 regime_start_time=datetime.now().isoformat(),
             )
@@ -1357,6 +1413,12 @@ class MaruthiExecutor:
         """
         End-of-day: Buy protective options for unprotected futures.
         Called around 3:00 PM.
+
+        Guards:
+        - Only protects futures matching CURRENT regime direction
+          (BULL = long futures need PE protection, BEAR = short futures need CE)
+        - Skips if no futures in the current regime direction
+        - Short options from previous regime (kept with SL at entry) are NOT touched
         """
         regime = self.db.get_regime()
         current_regime = regime.get('regime', 'FLAT')
@@ -1368,12 +1430,28 @@ class MaruthiExecutor:
         # Use live Kite counts (source of truth)
         counts = self.get_live_position_counts()
         fut_count = counts['futures_lots']
+        fut_dir = counts['futures_direction']
         prot_count = counts['protective_options_lots']
 
         logger.info(
-            f"[EODProtection] futures={fut_count}, protectives={prot_count} "
-            f"[src={counts['source']}]"
+            f"[EODProtection] regime={current_regime}, futures={fut_count} ({fut_dir}), "
+            f"protectives={prot_count} [src={counts['source']}]"
         )
+
+        # Guard: futures direction must match regime
+        # BULL regime expects BUY futures, BEAR expects SELL futures
+        # If mismatch (e.g., regime just flipped but old futures still open), skip
+        expected_dir = 'BUY' if current_regime == 'BULL' else 'SELL'
+        if fut_count > 0 and fut_dir != expected_dir:
+            msg = (
+                f"Futures direction ({fut_dir}) doesn't match regime ({current_regime}) "
+                f"— regime may have just changed. Skipping EOD protection."
+            )
+            logger.warning(f"[EODProtection] {msg}")
+            return [msg]
+
+        if fut_count == 0:
+            return ["No futures positions — no protection needed"]
 
         # Need 1 protective per futures lot
         needed = fut_count - prot_count
@@ -1423,6 +1501,8 @@ class MaruthiExecutor:
         shorts_rolled = 0
         protectives_rolled = 0
 
+        current_regime = self.db.get_regime().get('regime', 'FLAT')
+
         for roll in rolls:
             pos_id = roll['position_id']
             pos = next((p for p in all_active if p['id'] == pos_id), None)
@@ -1430,6 +1510,17 @@ class MaruthiExecutor:
                 continue
 
             ts = pos.get('tradingsymbol', '')
+
+            # Skip rolling options from a previous regime (legacy shorts kept with SL at entry).
+            # Only futures and options matching current regime should be rolled.
+            pos_regime = pos.get('regime', '')
+            if pos['position_type'] in ('SHORT_OPTION', 'PROTECTIVE_OPTION'):
+                if pos_regime and pos_regime != current_regime:
+                    logger.info(
+                        f"[RollCheck] Skipping #{pos_id} {ts} — legacy from {pos_regime} regime "
+                        f"(current={current_regime}), let it expire or hit SL"
+                    )
+                    continue
 
             # Verify this position actually exists on Kite before rolling
             if pos['position_type'] == 'FUTURES':
@@ -1491,6 +1582,7 @@ class MaruthiExecutor:
 
         Called by ticker immediately on fill detection (paper or live).
         Actions:
+          0. If regime-change fill (MASTER_BULL/BEAR), close all old positions first
           1. Place protective option (PE for BULL, CE for BEAR)
           2. Update hard SL for the new position
           3. Log the fill event
@@ -1506,12 +1598,103 @@ class MaruthiExecutor:
 
         direction = position.get('transaction_type', '')
         tradingsymbol = position.get('tradingsymbol', '')
+        signal_type = position.get('signal_type', '')
 
         logger.info(
             f"[PostFill] {direction} {tradingsymbol} filled @ {fill_price} | "
-            f"Regime={current_regime}"
+            f"Regime={current_regime} | Signal={signal_type}"
         )
         results.append(f"Trigger filled: {direction} {tradingsymbol} @ {fill_price}")
+
+        # 0. If this is a regime-change entry (MASTER_BULL/MASTER_BEAR),
+        #    close FUT + protective options, but KEEP short options with SL at entry.
+        #    Short options (PEs in BEAR→BULL, CEs in BULL→BEAR) can expire worthless
+        #    or be exited at entry price — no reason to close at a loss on regime change.
+        if signal_type in ('MASTER_BULL', 'MASTER_BEAR'):
+            logger.info(f"[PostFill] REGIME CHANGE fill — closing FUT + protectives, keeping short opts with SL")
+            counts = self.get_live_position_counts()
+            closed = 0
+
+            # Close all futures (old regime direction)
+            kite = self._get_kite()
+            if kite:
+                positions = kite.positions().get('net', [])
+                symbol = self.config.get('symbol', 'MARUTI')
+                lot_size = self.config.get('lot_size', 50)
+
+                for p in positions:
+                    ts = p.get('tradingsymbol', '')
+                    qty = p.get('quantity', 0)
+                    if qty == 0 or symbol not in ts:
+                        continue
+
+                    if 'FUT' in ts:
+                        # Close futures — buy back shorts or sell longs
+                        close_type = 'BUY' if qty < 0 else 'SELL'
+                        try:
+                            kite.place_order(
+                                variety='regular',
+                                exchange='NFO',
+                                tradingsymbol=ts,
+                                transaction_type=close_type,
+                                quantity=abs(qty),
+                                product='NRML',
+                                order_type='MARKET',
+                            )
+                            closed += abs(qty) // lot_size
+                            logger.info(f"[RegimeChange] Closed FUT: {close_type} {abs(qty)} {ts}")
+                        except Exception as e:
+                            logger.error(f"[RegimeChange] Failed to close FUT {ts}: {e}")
+
+                    elif qty > 0 and ('PE' in ts or 'CE' in ts):
+                        # Close protective (long) options
+                        try:
+                            quote = kite.quote([f"NFO:{ts}"])
+                            bid = quote.get(f"NFO:{ts}", {}).get('depth', {}).get('buy', [{}])[0].get('price', 0)
+                            if bid > 0:
+                                kite.place_order(
+                                    variety='regular', exchange='NFO',
+                                    tradingsymbol=ts, transaction_type='SELL',
+                                    quantity=abs(qty), product='NRML',
+                                    order_type='LIMIT', price=bid,
+                                )
+                            else:
+                                kite.place_order(
+                                    variety='regular', exchange='NFO',
+                                    tradingsymbol=ts, transaction_type='SELL',
+                                    quantity=abs(qty), product='NRML',
+                                    order_type='MARKET',
+                                )
+                            closed += 1
+                            logger.info(f"[RegimeChange] Closed protective: SELL {abs(qty)} {ts}")
+                        except Exception as e:
+                            logger.error(f"[RegimeChange] Failed to close protective {ts}: {e}")
+
+                    elif qty < 0 and ('PE' in ts or 'CE' in ts):
+                        # KEEP short options — place SL at entry price
+                        # Use SL-L (not SL-M — MARKET orders blocked on stock options)
+                        avg_price = p.get('average_price', 0)
+                        if avg_price > 0:
+                            try:
+                                sl_trigger = round(avg_price, 1)
+                                # Limit price slightly above trigger to ensure fill
+                                sl_limit = round(avg_price * 1.02, 1)
+                                kite.place_order(
+                                    variety='regular', exchange='NFO',
+                                    tradingsymbol=ts, transaction_type='BUY',
+                                    quantity=abs(qty), product='NRML',
+                                    order_type='SL',
+                                    trigger_price=sl_trigger,
+                                    price=sl_limit,
+                                )
+                                logger.info(
+                                    f"[RegimeChange] Kept short {ts} ({qty}), SL-L trigger=₹{sl_trigger} limit=₹{sl_limit}"
+                                )
+                                results.append(f"Kept short {ts}, SL at entry ₹{sl_trigger}")
+                            except Exception as e:
+                                logger.error(f"[RegimeChange] Failed to place SL for {ts}: {e}")
+
+            results.append(f"Regime change: closed {closed} FUT+protective positions, kept short opts with SL")
 
         # 1. Place protective option — only if protectives < futures (live count)
         try:
@@ -2089,13 +2272,16 @@ class MaruthiExecutor:
         """Get full strategy state for dashboard. Uses Kite for live position data."""
         regime = self.db.get_regime()
 
-        # Live position counts from Kite (source of truth for numbers)
+        # Live positions from Kite (source of truth)
         live_counts = self.get_live_position_counts()
+        live_positions = self.get_live_positions()
 
-        # DB positions for display details (tradingsymbol, entry price, etc.)
-        futures = self.db.get_active_positions('FUTURES')
-        short_opts = self.db.get_active_positions('SHORT_OPTION')
-        protectives = self.db.get_active_positions('PROTECTIVE_OPTION')
+        # Positions from Kite — NOT DB
+        futures = live_positions['futures']
+        short_opts = live_positions['short_options']
+        protectives = live_positions['protective_options']
+
+        # DB-only data (metadata, history)
         pending = self.db.get_pending_positions()
         stats = self.db.get_stats()
         recent_signals = self.db.get_recent_signals(20)

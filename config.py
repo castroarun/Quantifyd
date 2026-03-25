@@ -378,7 +378,8 @@ NAS_ATM_DEFAULTS = {
 
     # Position Sizing
     'lots_per_leg': 5,              # 5 lots per leg = 375 qty
-    'max_strangles': 5,             # Allow cascading strangles
+    'max_strangles': 1,             # Only 1 active strangle at a time
+    'max_reentries': 5,             # Max 5 SL re-entry cycles per day
 
     # Stop Loss — per-leg percentage
     'leg_sl_pct': 0.30,             # 30% of entry premium (sell@100 → SL@130)
