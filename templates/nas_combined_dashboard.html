@@ -108,6 +108,27 @@
         0%, 100% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.5; transform: scale(1.3); }
     }
+
+    .day-header {
+        cursor: pointer;
+        padding: 0.6rem 0.8rem;
+        background: rgba(22,27,34,0.7);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.15s;
+    }
+    .day-header:hover { background: rgba(22,27,34,0.95); }
+    .day-header .day-date { font-weight: 700; font-size: 0.85rem; color: #c9d1d9; }
+    .day-header .day-pnl { font-weight: 800; font-size: 0.95rem; }
+    .day-header .day-meta { font-size: 0.72rem; color: #8b949e; }
+    .day-header .chevron { transition: transform 0.2s; font-size: 0.8rem; color: #8b949e; }
+    .day-header.collapsed .chevron { transform: rotate(-90deg); }
+    .day-body { margin-bottom: 8px; }
+    .day-body.collapsed { display: none; }
 </style>
 {% endblock %}
 
@@ -171,7 +192,7 @@
         <div class="col-md-2">
             <div class="stat-card">
                 <div id="combinedTotalPnl" class="stat-value positive">--</div>
-                <div class="stat-label">Combined Total P&L</div>
+                <div class="stat-label">Combined Cumulative P&L</div>
             </div>
         </div>
     </div>
@@ -199,21 +220,17 @@
                 <div class="system-body">
                     <!-- OTM mini stats -->
                     <div class="row g-1 mb-2">
-                        <div class="col-3"><div class="mini-stat">
+                        <div class="col-4"><div class="mini-stat">
                             <div class="val" id="otmPositions" style="color:#a371f7;">0</div>
                             <div class="lbl">Positions</div>
                         </div></div>
-                        <div class="col-3"><div class="mini-stat">
+                        <div class="col-4"><div class="mini-stat">
                             <div class="val" id="otmTrades" style="color:#c9d1d9;">0</div>
                             <div class="lbl">Trades</div>
                         </div></div>
-                        <div class="col-3"><div class="mini-stat">
+                        <div class="col-4"><div class="mini-stat">
                             <div class="val positive" id="otmDayPnl">--</div>
                             <div class="lbl">Day P&L</div>
-                        </div></div>
-                        <div class="col-3"><div class="mini-stat">
-                            <div class="val positive" id="otmTotalPnl">--</div>
-                            <div class="lbl">Total P&L</div>
                         </div></div>
                     </div>
                     <!-- OTM Actions -->
@@ -236,12 +253,12 @@
                         <table class="table table-dark table-nas table-sm mb-0">
                             <thead>
                                 <tr>
-                                    <th>Leg</th><th>Symbol</th><th>Entry</th>
+                                    <th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
                                     <th>LTP</th><th>P&L</th><th>Adj</th><th>Status</th>
                                 </tr>
                             </thead>
                             <tbody id="otmPositionsBody">
-                                <tr><td colspan="7" class="text-center text-muted">No positions</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted">No positions</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -282,21 +299,17 @@
                 <div class="system-body">
                     <!-- ATM mini stats -->
                     <div class="row g-1 mb-2">
-                        <div class="col-3"><div class="mini-stat">
+                        <div class="col-4"><div class="mini-stat">
                             <div class="val" id="atmPositions" style="color:#38a6f7;">0</div>
                             <div class="lbl">Positions</div>
                         </div></div>
-                        <div class="col-3"><div class="mini-stat">
+                        <div class="col-4"><div class="mini-stat">
                             <div class="val" id="atmStrangles" style="color:#38a6f7;">0/5</div>
-                            <div class="lbl">Strangles</div>
+                            <div class="lbl">RE-ENTRIES</div>
                         </div></div>
-                        <div class="col-3"><div class="mini-stat">
+                        <div class="col-4"><div class="mini-stat">
                             <div class="val positive" id="atmDayPnl">--</div>
                             <div class="lbl">Day P&L</div>
-                        </div></div>
-                        <div class="col-3"><div class="mini-stat">
-                            <div class="val positive" id="atmTotalPnl">--</div>
-                            <div class="lbl">Total P&L</div>
                         </div></div>
                     </div>
                     <!-- ATM Actions -->
@@ -319,12 +332,12 @@
                         <table class="table table-dark table-nas table-sm mb-0">
                             <thead>
                                 <tr>
-                                    <th>S#</th><th>Leg</th><th>Symbol</th><th>Entry</th>
+                                    <th>S#</th><th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
                                     <th>SL</th><th>LTP</th><th>P&L</th>
                                 </tr>
                             </thead>
                             <tbody id="atmPositionsBody">
-                                <tr><td colspan="7" class="text-center text-muted">No positions</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted">No positions</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -396,21 +409,9 @@
     </ul>
 
     <div class="tab-content">
-        <!-- Trades Tab -->
+        <!-- Trades Tab — Day-grouped collapsible -->
         <div class="tab-pane fade show active" id="tabTrades">
-            <div class="table-responsive">
-                <table class="table table-dark table-nas table-sm">
-                    <thead>
-                        <tr>
-                            <th>System</th><th>Date</th><th>CE Strike</th><th>PE Strike</th>
-                            <th>Collected</th><th>Paid</th><th>Net P&L</th><th>Exit Reason</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tradesBody">
-                        <tr><td colspan="8" class="text-center text-muted">No trades yet</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <div id="tradesAccordion"></div>
         </div>
 
         <!-- Signals Tab -->
@@ -617,7 +618,7 @@ function renderOTMPositions(data) {
     closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
 
     if (allActive.length === 0 && closedToday.length === 0) {
-        body.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No positions</td></tr>';
+        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No positions</td></tr>';
         document.getElementById('otmDayPnl').textContent = fmtRs(0);
         return;
     }
@@ -626,6 +627,7 @@ function renderOTMPositions(data) {
         const ltp = _liveOtmLegs[p.tradingsymbol];
         const entry = p.entry_price || 0;
         const qty = p.qty || LOT_SIZE;
+        const lots = Math.round(qty / 75) || 1;
         let ltpText = '--', pnlText = '--', pnlStyle = '';
         if (ltp != null && ltp > 0) {
             ltpText = ltp.toFixed(1);
@@ -637,6 +639,7 @@ function renderOTMPositions(data) {
         return `<tr>
             <td><span class="leg-${p.leg}">${p.leg}</span></td>
             <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+            <td style="color:#8b949e;">${lots}L</td>
             <td>${entry}</td><td>${ltpText}</td>
             <td style="${pnlStyle};font-weight:600">${pnlText}</td>
             <td>${p.adjustment_count || 0}</td>
@@ -646,18 +649,20 @@ function renderOTMPositions(data) {
 
     const dayPnl = totalPnl + closedPnl;
     let dayRow = `<tr style="border-top:2px solid #8b949e">
-        <td colspan="4" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
+        <td colspan="5" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
         <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
         <td colspan="2"></td></tr>`;
 
     let closedRows = '';
     if (closedToday.length > 0) {
-        closedRows = `<tr><td colspan="7" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows = `<tr><td colspan="8" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
+            const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
             return `<tr style="opacity:0.4">
                 <td><span class="leg-${p.leg}">${p.leg}</span></td>
                 <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+                <td style="color:#8b949e;">${lots}L</td>
                 <td>${p.entry_price}</td><td>${(p.exit_price||0).toFixed(1)}</td>
                 <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
                 <td>${p.adjustment_count||0}</td>
@@ -690,7 +695,7 @@ function renderATMPositions(data) {
     closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
 
     if (allActive.length === 0 && closedToday.length === 0) {
-        body.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No positions</td></tr>';
+        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No positions</td></tr>';
         document.getElementById('atmDayPnl').textContent = fmtRs(0);
         return;
     }
@@ -700,6 +705,7 @@ function renderATMPositions(data) {
         const entry = p.entry_price || 0;
         const sl = p.sl_price || 0;
         const qty = p.qty || LOT_SIZE;
+        const lots = Math.round(qty / 75) || 1;
         let ltpText = '--', pnlText = '--', pnlStyle = '';
         if (ltp != null && ltp > 0) {
             ltpText = ltp.toFixed(1);
@@ -713,6 +719,7 @@ function renderATMPositions(data) {
             <td style="color:#38a6f7;">${p.strangle_id||'--'}</td>
             <td><span class="leg-${p.leg}">${p.leg}</span></td>
             <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+            <td style="color:#8b949e;">${lots}L</td>
             <td>${entry}</td>
             <td style="${slStyle}">${sl > 0 ? sl.toFixed(1) : '--'}</td>
             <td>${ltpText}</td>
@@ -722,18 +729,20 @@ function renderATMPositions(data) {
 
     const dayPnl = totalPnl + closedPnl;
     let dayRow = `<tr style="border-top:2px solid #8b949e">
-        <td colspan="6" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
+        <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
         <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td></tr>`;
 
     let closedRows = '';
     if (closedToday.length > 0) {
-        closedRows = `<tr><td colspan="7" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows = `<tr><td colspan="8" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
+            const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
             return `<tr style="opacity:0.4">
                 <td style="color:#38a6f7;">${p.strangle_id||'--'}</td>
                 <td><span class="leg-${p.leg}">${p.leg}</span></td>
                 <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+                <td style="color:#8b949e;">${lots}L</td>
                 <td>${p.entry_price}</td><td>--</td>
                 <td>${(p.exit_price||0).toFixed(1)}</td>
                 <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
@@ -809,8 +818,10 @@ function buildWhatsNext() {
                 rows.push({icon:'🔴', sys:'ATM', event:`${p.instrument_type||p.leg} S#${p.strangle_id} SL`, action:'Close leg, trail other, re-enter ATM', level:`Rs ${sl.toFixed(0)}`});
             }
             const strangleIds = new Set(allActive.map(p => p.strangle_id).filter(Boolean));
-            const maxStr = cfg.max_strangles || 5;
-            rows.push({icon:'📈', sys:'ATM', event:'Cascade capacity', action:`${strangleIds.size}/${maxStr} strangles`, level:'--'});
+            const atmClosedToday = (_atmData.positions || {}).closed_today || [];
+            const atmSlReentries = atmClosedToday.filter(p => (p.exit_reason || '') === 'SL_HIT').length;
+            const maxRe = cfg.max_reentries || 5;
+            rows.push({icon:'📈', sys:'ATM', event:'Re-entry capacity', action:`${atmSlReentries}/${maxRe} re-entries used`, level:'--'});
         }
     }
 
@@ -848,7 +859,7 @@ function buildWhatsNext() {
     document.getElementById('whatsNextUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
 
-// ─── Combined Trades & Signals ──────────────────────────
+// ─── Combined Trades — Day-grouped collapsible ──────────
 function renderTrades() {
     const otmTrades = (_otmData || {}).recent_trades || [];
     const atmTrades = (_atmData || {}).recent_trades || [];
@@ -858,23 +869,85 @@ function renderTrades() {
         ...atmTrades.map(t => ({...t, _sys: 'ATM', _color: '#38a6f7'})),
     ].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
-    const body = document.getElementById('tradesBody');
+    const container = document.getElementById('tradesAccordion');
     if (all.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No trades yet</td></tr>';
+        container.innerHTML = '<div class="text-center text-muted py-3">No trades yet</div>';
         return;
     }
-    body.innerHTML = all.slice(0, 50).map(t => {
-        const pnlClass = (t.net_pnl || 0) >= 0 ? 'positive' : 'negative';
-        return `<tr>
-            <td style="color:${t._color};font-weight:700;font-size:0.78rem;">${t._sys}</td>
-            <td>${t.trade_date || '--'}</td>
-            <td class="leg-CE">${t.call_strike || '--'}</td>
-            <td class="leg-PE">${t.put_strike || '--'}</td>
-            <td>Rs ${(t.total_premium_collected||0).toFixed(0)}</td>
-            <td>Rs ${(t.total_premium_paid||0).toFixed(0)}</td>
-            <td class="${pnlClass}">${fmtRs(t.net_pnl||0)}</td>
-            <td>${t.exit_reason || '--'}</td>
-        </tr>`;
+
+    // Group by date
+    const byDay = {};
+    all.forEach(t => {
+        const day = t.trade_date || (t.created_at || '').substring(0, 10) || 'Unknown';
+        if (!byDay[day]) byDay[day] = [];
+        byDay[day].push(t);
+    });
+
+    const days = Object.keys(byDay).sort().reverse();
+    const today = new Date().toISOString().substring(0, 10);
+
+    container.innerHTML = days.map((day, idx) => {
+        const trades = byDay[day];
+        const dayPnl = trades.reduce((sum, t) => sum + (t.net_pnl || 0), 0);
+        const pnlColor = dayPnl >= 0 ? '#3fb950' : '#f85149';
+        const isToday = day === today;
+        const collapsed = idx > 0 ? 'collapsed' : '';
+        const otmCount = trades.filter(t => t._sys === 'OTM').length;
+        const atmCount = trades.filter(t => t._sys === 'ATM').length;
+        const sysMeta = [otmCount ? `${otmCount} OTM` : '', atmCount ? `${atmCount} ATM` : ''].filter(Boolean).join(', ');
+
+        const dayLabel = isToday ? `Today (${day})` : day;
+
+        const tradeRows = trades.map(t => {
+            const pnlStyle = (t.net_pnl || 0) >= 0 ? 'color:#3fb950' : 'color:#f85149';
+            const ceEntry = t.call_entry_premium ? t.call_entry_premium.toFixed(1) : '--';
+            const peEntry = t.put_entry_premium ? t.put_entry_premium.toFixed(1) : '--';
+            const ceExit = t.call_exit_premium ? t.call_exit_premium.toFixed(1) : '--';
+            const peExit = t.put_exit_premium ? t.put_exit_premium.toFixed(1) : '--';
+            const time = (t.created_at || '').substring(11, 19) || '--';
+            return `<tr>
+                <td style="color:${t._color};font-weight:700;font-size:0.75rem;">${t._sys}</td>
+                <td style="color:#8b949e;font-size:0.75rem;">${time}</td>
+                <td class="leg-CE">${t.call_strike || '--'}</td>
+                <td class="leg-PE">${t.put_strike || '--'}</td>
+                <td style="font-size:0.78rem;"><span class="leg-CE">${ceEntry}</span> / <span class="leg-PE">${peEntry}</span></td>
+                <td style="font-size:0.78rem;"><span class="leg-CE">${ceExit}</span> / <span class="leg-PE">${peExit}</span></td>
+                <td style="${pnlStyle};font-weight:600">${fmtRs(t.net_pnl||0)}</td>
+                <td style="font-size:0.75rem;">${t.exit_reason || '--'}</td>
+            </tr>`;
+        }).join('');
+
+        return `
+        <div class="day-header ${collapsed}" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed');">
+            <div>
+                <span class="day-date">${dayLabel}</span>
+                <span class="day-meta ms-2">${sysMeta} &bull; ${trades.length} trade${trades.length>1?'s':''}</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="day-pnl" style="color:${pnlColor}">${fmtRs(dayPnl)}</span>
+                <span class="chevron"><i class="bi bi-chevron-down"></i></span>
+            </div>
+        </div>
+        <div class="day-body ${collapsed}">
+            <div class="table-responsive">
+                <table class="table table-dark table-nas table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sys</th><th>Time</th><th>CE</th><th>PE</th>
+                            <th>Entry</th><th>Exit</th><th>P&L</th><th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tradeRows}</tbody>
+                    <tfoot>
+                        <tr style="border-top:2px solid #8b949e;">
+                            <td colspan="6" style="font-weight:700;color:#c9d1d9;">Day Total</td>
+                            <td style="font-weight:800;color:${pnlColor}">${fmtRs(dayPnl)}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>`;
     }).join('');
 }
 
@@ -995,8 +1068,6 @@ function updateUI() {
         const pos = _otmData.positions || {};
         document.getElementById('otmPositions').textContent = pos.total_active || 0;
         document.getElementById('otmTrades').textContent = stats.total_trades || 0;
-        document.getElementById('otmTotalPnl').textContent = fmtRs(stats.total_pnl || 0);
-        document.getElementById('otmTotalPnl').style.color = (stats.total_pnl||0) >= 0 ? '#3fb950' : '#f85149';
         document.getElementById('otmWinRate').textContent = stats.total_trades ? stats.win_rate + '%' : '--';
         document.getElementById('otmPF').textContent = stats.profit_factor ? stats.profit_factor.toFixed(2) : '--';
         document.getElementById('otmAdj').textContent = stats.total_adjustments || 0;
@@ -1023,9 +1094,9 @@ function updateUI() {
         const strangleIds = new Set(allActive.map(p => p.strangle_id).filter(Boolean));
 
         document.getElementById('atmPositions').textContent = pos.total_active || 0;
-        document.getElementById('atmStrangles').textContent = `${strangleIds.size}/${cfg.max_strangles||5}`;
-        document.getElementById('atmTotalPnl').textContent = fmtRs(stats.total_pnl || 0);
-        document.getElementById('atmTotalPnl').style.color = (stats.total_pnl||0) >= 0 ? '#3fb950' : '#f85149';
+        const closedToday = (_atmData.positions || {}).closed_today || [];
+        const slReentries = closedToday.filter(p => (p.exit_reason || '') === 'SL_HIT').length;
+        document.getElementById('atmStrangles').textContent = `${slReentries}/${cfg.max_reentries||5}`;
         document.getElementById('atmWinRate').textContent = stats.total_trades ? stats.win_rate + '%' : '--';
         document.getElementById('atmPF').textContent = stats.profit_factor ? stats.profit_factor.toFixed(2) : '--';
 
@@ -1039,7 +1110,7 @@ function updateUI() {
             : 'font-size:0.7rem;background:rgba(248,81,73,0.2);color:#f85149;border:1px solid #f85149;';
 
         document.getElementById('configInfoATM').textContent =
-            `ATM: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}% per leg | Max ${cfg.max_strangles||5} strangles`;
+            `ATM: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}% per leg | Max ${cfg.max_reentries||5} re-entries`;
     }
 
     // Render positions

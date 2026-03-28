@@ -777,11 +777,11 @@ class NasTicker:
             scanner = NasScanner(self.config)
             executor = NasExecutor(config=self.config)
 
-            # Build DataFrame from aggregated candles
+            # Build DataFrame from aggregated candles (or let scanner fetch its own)
             df_5min = self.aggregator.get_dataframe()
             if len(df_5min) < 60:
-                logger.info(f"[NAS] Only {len(df_5min)} candles — need 60+ for ATR. Waiting...")
-                return
+                logger.info(f"[NAS] Only {len(df_5min)} ticker candles — scanner will fetch from Kite/DB")
+                df_5min = None  # scanner.scan() will call load_5min_bars()
 
             # Use pre-loaded daily candles for strike computation
             daily_df = getattr(self, '_daily_candles', None)
@@ -868,10 +868,10 @@ class NasTicker:
             atm_executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
             atm_db = get_nas_atm_db()
 
-            # Build DataFrame from aggregated candles (shared with OTM)
+            # Build DataFrame from aggregated candles (or let scanner fetch its own)
             df_5min = self.aggregator.get_dataframe()
             if len(df_5min) < 60:
-                return
+                df_5min = None  # scanner.scan() will call load_5min_bars()
 
             # Run scan to check squeeze state
             scanner = NasScanner(NAS_ATM_DEFAULTS)

@@ -4357,6 +4357,17 @@ def api_options_snapshots(symbol):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/options-data/summary')
+def api_options_data_summary():
+    """Summary of captured options data: snapshots, dates, symbols, IV coverage."""
+    try:
+        from services.options_data_manager import get_options_db
+        db = get_options_db()
+        return jsonify(db.get_summary())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/options/download-log')
 def api_options_download_log():
     """Get recent download log entries."""
@@ -4395,18 +4406,35 @@ def _options_capture_job():
         logger.error(f"[OPTIONS] Capture job error: {e}")
 
 
+# Specific snapshot times for premium capture at entry/exit windows
+# Format: (hour, minute) tuples
+_OPTIONS_SNAPSHOT_TIMES = [
+    (9, 20),   # after open
+    (10, 0),
+    (10, 30),
+    (11, 0),   # BB cooloff time
+    (11, 30),
+    (12, 0),   # target entry time
+    (12, 30),
+    (13, 0),   # target exit time
+    (14, 0),
+    (15, 0),
+    (15, 20),  # near close
+]
 try:
-    scheduler.add_job(
-        _options_capture_job,
-        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5',
-        id='options_chain_capture', replace_existing=True,
-    )
+    for h, m in _OPTIONS_SNAPSHOT_TIMES:
+        scheduler.add_job(
+            _options_capture_job,
+            'cron', day_of_week='mon-fri', hour=h, minute=m,
+            id=f'options_capture_{h:02d}{m:02d}', replace_existing=True,
+        )
+    _times_str = ', '.join(f'{h}:{m:02d}' for h, m in _OPTIONS_SNAPSHOT_TIMES)
     logger.info(
-        "Options data capture scheduled: every 5 min Mon-Fri 9:00-15:55 "
-        "(NIFTY + BANKNIFTY + SENSEX)"
+        f"Options data capture scheduled at {len(_OPTIONS_SNAPSHOT_TIMES)} times "
+        f"Mon-Fri: {_times_str} (NIFTY + BANKNIFTY + SENSEX, with IV computation)"
     )
 except Exception as e:
-    logger.warning(f"Could not register options capture job: {e}")
+    logger.warning(f"Could not register options capture jobs: {e}")
 
 
 # ---- Daily Instrument Dump (for historical backfill) ----

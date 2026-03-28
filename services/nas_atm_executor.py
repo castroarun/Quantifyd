@@ -47,12 +47,19 @@ class NasAtmExecutor:
             return False, f'Daily order limit ({cfg["max_daily_orders"]}) reached'
 
         if is_entry:
-            # Max concurrent strangles
+            # Only 1 active strangle at a time
             active = self.db.get_active_positions()
             strangle_ids = set(p.get('strangle_id') for p in active if p.get('strangle_id'))
-            max_strangles = cfg.get('max_strangles', 5)
+            max_strangles = cfg.get('max_strangles', 1)
             if len(strangle_ids) >= max_strangles:
-                return False, f'Max strangles ({max_strangles}) reached'
+                return False, f'Active strangle already exists ({len(strangle_ids)} active)'
+
+            # Max re-entry cycles per day
+            today_trades = self.db.get_today_closed_positions()
+            sl_reentries = len([t for t in today_trades if t.get('exit_reason') == 'SL_HIT'])
+            max_reentries = cfg.get('max_reentries', 5)
+            if sl_reentries >= max_reentries:
+                return False, f'Max re-entries ({max_reentries}) reached today'
 
             # Daily P&L circuit breaker
             state = self.db.get_state()
@@ -594,7 +601,8 @@ class NasAtmExecutor:
                 'enabled': self.cfg.get('enabled', True),
                 'lots_per_leg': self.cfg.get('lots_per_leg', 5),
                 'leg_sl_pct': self.cfg.get('leg_sl_pct', 0.30),
-                'max_strangles': self.cfg.get('max_strangles', 5),
+                'max_strangles': self.cfg.get('max_strangles', 1),
+                'max_reentries': self.cfg.get('max_reentries', 5),
                 'eod_squareoff_time': self.cfg.get('eod_squareoff_time', '15:15'),
                 'entry_start_time': self.cfg.get('entry_start_time', '09:30'),
                 'entry_end_time': self.cfg.get('entry_end_time', '14:50'),

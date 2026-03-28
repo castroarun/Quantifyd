@@ -9,9 +9,12 @@ Downloads and stores periodic option chain snapshots for:
 Purpose: Build a historical options database for backtesting various
 options strategies (strangles, straddles, iron condors, etc.)
 
-Data captured every 5 min during market hours:
-  - Strike, Expiry, CE/PE
-  - LTP, Bid, Ask, OI, Volume, IV
+Data captured at 11 scheduled times during market hours (Mon-Fri):
+  09:20, 10:00, 10:30, 11:00, 11:30, 12:00, 12:30, 13:00, 14:00, 15:00, 15:20
+
+Fields per strike:
+  - Strike, Expiry, CE/PE, LTP, Bid, Ask, OI, Volume
+  - IV (computed via Black-Scholes Newton-Raphson from LTP + spot)
   - Underlying spot at snapshot time
 
 Storage: Separate SQLite DB (options_data.db) to avoid bloating market_data.db.
@@ -23,6 +26,7 @@ Kite API usage:
 """
 
 import os
+import math
 import time
 import sqlite3
 import logging
@@ -30,6 +34,7 @@ import threading
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Optional
+from scipy.stats import norm
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +74,89 @@ INDEX_CONFIG = {
         'lot_size': 10,
     },
 }
+
+# Risk-free rate for BS model (India 10-year benchmark)
+RISK_FREE_RATE = 0.07
+
+
+# ─── Implied Volatility (Black-Scholes Newton-Raphson) ──────
+
+def _bs_price(S, K, T, sigma, r, opt_type):
+    """Black-Scholes European option price. Returns 0 on bad inputs."""
+    if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
+        return 0.0
+    sqrt_T = math.sqrt(T)
+    d1 = (math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrt_T)
+    d2 = d1 - sigma * sqrt_T
+    if opt_type == 'CE':
+        return S * norm.cdf(d1) - K * math.exp(-r * T) * norm.cdf(d2)
+    else:
+        return K * math.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+
+
+def _bs_vega(S, K, T, sigma, r):
+    """Vega (dPrice/dSigma) for Newton-Raphson step."""
+    if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
+        return 0.0
+    sqrt_T = math.sqrt(T)
+    d1 = (math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrt_T)
+    return S * norm.pdf(d1) * sqrt_T
+
+
+def compute_iv(market_price, spot, strike, T, opt_type, r=RISK_FREE_RATE,
+               max_iter=50, tol=1e-5):
+    """
+    Compute implied volatility via Newton-Raphson on Black-Scholes.
+
+    Args:
+        market_price: observed option LTP
+        spot: underlying spot price
+        strike: option strike price
+        T: time to expiry in years (must be > 0)
+        opt_type: 'CE' or 'PE'
+        r: risk-free rate (annual)
+        max_iter: max iterations
+        tol: convergence tolerance
+
+    Returns:
+        IV as a decimal (e.g. 0.15 = 15%), or None if convergence fails.
+    """
+    if market_price is None or market_price <= 0 or T <= 0:
+        return None
+
+    # Intrinsic value check
+    if opt_type == 'CE':
+        intrinsic = max(spot - strike, 0)
+    else:
+        intrinsic = max(strike - spot, 0)
+
+    # If market price is below intrinsic, IV is undefined
+    if market_price < intrinsic * 0.95:
+        return None
+
+    # Initial guess: use Brenner-Subrahmanyam approximation
+    sigma = math.sqrt(2 * math.pi / T) * (market_price / spot)
+    sigma = max(0.05, min(sigma, 5.0))  # Clamp initial guess
+
+    for _ in range(max_iter):
+        price = _bs_price(spot, strike, T, sigma, r, opt_type)
+        vega = _bs_vega(spot, strike, T, sigma, r)
+        if vega < 1e-12:
+            break
+        diff = price - market_price
+        if abs(diff) < tol:
+            return sigma
+        sigma = sigma - diff / vega
+        if sigma <= 0.001:
+            sigma = 0.001
+        if sigma > 10.0:
+            break
+
+    # Final check
+    price = _bs_price(spot, strike, T, sigma, r, opt_type)
+    if abs(price - market_price) < max(tol * 10, market_price * 0.05):
+        return sigma
+    return None
 
 
 # ─── Database ────────────────────────────────────────────────
@@ -294,6 +382,92 @@ class OptionsDataDB:
             finally:
                 conn.close()
 
+    def get_summary(self):
+        """Get summary for the /api/options-data/summary endpoint."""
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                summary = {}
+
+                # Total snapshots (distinct snapshot times)
+                row = conn.execute(
+                    "SELECT COUNT(DISTINCT snapshot_time) as cnt FROM option_chain"
+                ).fetchone()
+                summary['total_snapshots'] = row['cnt']
+
+                # Total rows
+                row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM option_chain"
+                ).fetchone()
+                summary['total_rows'] = row['cnt']
+
+                # Date range
+                row = conn.execute(
+                    "SELECT MIN(DATE(snapshot_time)) as first_date, "
+                    "MAX(DATE(snapshot_time)) as last_date, "
+                    "COUNT(DISTINCT DATE(snapshot_time)) as trading_days "
+                    "FROM option_chain"
+                ).fetchone()
+                summary['first_date'] = row['first_date']
+                summary['last_date'] = row['last_date']
+                summary['trading_days'] = row['trading_days']
+
+                # Symbols covered
+                rows = conn.execute(
+                    "SELECT DISTINCT symbol FROM option_chain ORDER BY symbol"
+                ).fetchall()
+                summary['symbols'] = [r['symbol'] for r in rows]
+
+                # Latest snapshot time
+                row = conn.execute(
+                    "SELECT MAX(snapshot_time) as latest FROM option_chain"
+                ).fetchone()
+                summary['latest_snapshot'] = row['latest']
+
+                # IV coverage: rows with non-null IV
+                row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM option_chain WHERE iv IS NOT NULL"
+                ).fetchone()
+                summary['rows_with_iv'] = row['cnt']
+                if summary['total_rows'] > 0:
+                    summary['iv_coverage_pct'] = round(
+                        100.0 * row['cnt'] / summary['total_rows'], 1)
+                else:
+                    summary['iv_coverage_pct'] = 0.0
+
+                # Per-symbol breakdown
+                rows = conn.execute("""
+                    SELECT symbol,
+                           COUNT(DISTINCT snapshot_time) as snapshots,
+                           COUNT(*) as rows,
+                           COUNT(DISTINCT DATE(snapshot_time)) as days,
+                           MIN(snapshot_time) as first_snap,
+                           MAX(snapshot_time) as last_snap,
+                           SUM(CASE WHEN iv IS NOT NULL THEN 1 ELSE 0 END) as iv_rows
+                    FROM option_chain GROUP BY symbol ORDER BY symbol
+                """).fetchall()
+                summary['by_symbol'] = [dict(r) for r in rows]
+
+                # Today's activity
+                today = date.today().isoformat()
+                row = conn.execute("""
+                    SELECT COUNT(DISTINCT snapshot_time) as snaps, COUNT(*) as rows
+                    FROM option_chain WHERE DATE(snapshot_time) = ?
+                """, (today,)).fetchone()
+                summary['today_snapshots'] = row['snaps']
+                summary['today_rows'] = row['rows']
+
+                # DB file size
+                try:
+                    summary['db_size_mb'] = round(
+                        os.path.getsize(self.db_path) / (1024 * 1024), 1)
+                except OSError:
+                    summary['db_size_mb'] = 0
+
+                return summary
+            finally:
+                conn.close()
+
     def get_available_snapshots(self, symbol, trade_date=None, limit=100):
         """Get list of available snapshot times for a symbol."""
         with self.db_lock:
@@ -495,19 +669,45 @@ class OptionsDataManager:
                     best_bid = buy_depth[0].get('price', 0) if buy_depth else 0
                     best_ask = sell_depth[0].get('price', 0) if sell_depth else 0
 
+                    ltp = qdata.get('last_price')
+                    opt_type = inst['instrument_type']  # CE or PE
+                    strike_price = inst['strike']
+
+                    # Compute IV via Black-Scholes Newton-Raphson
+                    # Priority: compute for all strikes (fast enough),
+                    # fallback to Kite greeks if computation fails
+                    iv_val = greeks.get('iv')
+                    if ltp and ltp > 0 and spot and spot > 0:
+                        # Time to expiry in years
+                        try:
+                            if isinstance(expiry, date):
+                                exp_date = expiry
+                            else:
+                                exp_date = datetime.strptime(
+                                    str(expiry)[:10], '%Y-%m-%d').date()
+                            dte_days = (exp_date - date.today()).days
+                            if dte_days > 0:
+                                T = dte_days / 365.0
+                                computed_iv = compute_iv(
+                                    ltp, spot, strike_price, T, opt_type)
+                                if computed_iv is not None:
+                                    iv_val = round(computed_iv * 100, 2)
+                        except Exception:
+                            pass  # Keep Kite IV or None
+
                     row = {
                         'snapshot_time': snapshot_time,
                         'symbol': symbol,
                         'expiry_date': expiry_str,
-                        'strike': inst['strike'],
-                        'instrument_type': inst['instrument_type'],
+                        'strike': strike_price,
+                        'instrument_type': opt_type,
                         'tradingsymbol': inst['tradingsymbol'],
-                        'ltp': qdata.get('last_price'),
+                        'ltp': ltp,
                         'bid': best_bid,
                         'ask': best_ask,
                         'oi': qdata.get('oi'),
                         'volume': qdata.get('volume'),
-                        'iv': greeks.get('iv'),
+                        'iv': iv_val,
                         'delta': greeks.get('delta'),
                         'gamma': greeks.get('gamma'),
                         'theta': greeks.get('theta'),
