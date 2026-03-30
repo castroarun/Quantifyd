@@ -239,6 +239,19 @@ class NasAtmDB:
             finally:
                 conn.close()
 
+    def get_positions_by_strangle(self, strangle_id):
+        """Get all positions (any status) for a given strangle_id."""
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                rows = conn.execute(
+                    "SELECT * FROM nas_atm_positions WHERE strangle_id=? ORDER BY id",
+                    (strangle_id,)
+                ).fetchall()
+                return [dict(r) for r in rows]
+            finally:
+                conn.close()
+
     def get_today_closed_positions(self):
         """Get today's closed positions for display."""
         today = datetime.now().strftime('%Y-%m-%d')

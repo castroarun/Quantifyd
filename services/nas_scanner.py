@@ -272,10 +272,10 @@ class NasScanner:
             (low - close.shift(1)).abs()
         ], axis=1).max(axis=1)
 
-        # ATR
-        df['atr'] = tr.rolling(atr_period).mean()
+        # ATR (Wilder's smoothing / RMA — matches Kite & TradingView)
+        df['atr'] = tr.ewm(alpha=1.0/atr_period, min_periods=atr_period, adjust=False).mean()
 
-        # ATR Moving Average
+        # ATR Moving Average (SMA — smoother baseline for squeeze detection)
         df['atr_ma'] = df['atr'].rolling(atr_ma_period).mean()
 
         # Squeeze detection: ATR < ATR_MA
@@ -841,42 +841,7 @@ class NasScanner:
         if not positions:
             return exits
 
-        # Compute current total premium (what it costs to buy back)
-        today = date.today()
-        total_current_premium = 0
-
-        for pos in positions:
-            # Use live premium if injected, else BS estimate
-            prem = pos.get('_live_premium')
-            if prem is None:
-                strike = pos['strike']
-                inst_type = pos['instrument_type']
-                try:
-                    exp_str = str(pos.get('expiry_date', ''))[:10]
-                    exp_date = date.fromisoformat(exp_str) if exp_str else today + timedelta(days=3)
-                    rem_dte = max((exp_date - today).days, 0.5)
-                    T = rem_dte / 365.0
-                    iv = current_iv or 0.15
-
-                    if inst_type == 'CE':
-                        prem = bs_call(current_spot, strike, T, RISK_FREE_RATE, iv)
-                    else:
-                        prem = bs_put(current_spot, strike, T, RISK_FREE_RATE, iv)
-                except Exception:
-                    prem = 0
-            total_current_premium += prem
-
-        # Combined SL: loss > 2x initial premium
-        sl_mult = cfg.get('combined_sl_mult', 2.0)
-        if total_current_premium > strangle_entry_premium * sl_mult:
-            exits.append(('combined_sl',
-                          f'Buyback cost {total_current_premium:.1f} > {sl_mult}x entry {strangle_entry_premium:.1f}'))
-
-        # Profit target: premium decayed to 30% of entry (70% captured)
-        profit_target_pct = cfg.get('profit_target_pct', 70.0)
-        remaining_pct = (total_current_premium / strangle_entry_premium * 100) if strangle_entry_premium > 0 else 100
-        if remaining_pct <= (100 - profit_target_pct):
-            exits.append(('profit_target',
-                          f'Premium at {remaining_pct:.0f}% of entry — {profit_target_pct:.0f}% captured'))
+        # Per-leg premium adjustments (ROLL_OUT/ROLL_IN) handle risk management
+        # No combined SL — each leg is managed individually via cross-leg comparison
 
         return exits

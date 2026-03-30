@@ -328,12 +328,11 @@ NAS_DEFAULTS = {
     'premium_double_trigger': 2.0,   # Cross-leg imbalance trigger (leg1 >= 2x leg2)
     'adj_min_premium': 4.0,          # Target premium floor — below this, close both
     'adj_max_premium': 24.0,         # Target premium ceiling — above this, flip direction
-    'max_adjustments_per_leg': 2,    # Max re-positions per leg per day
-    'max_adjustments_total': 4,      # Max total adjustments per day
+    'max_adjustments_per_leg': 999,  # No limit
+    'max_adjustments_total': 999,    # No limit
     'adjustment_wait_bars': 1,       # Wait 1 bar (5 min) before re-entering
 
     # Exit Rules
-    'combined_sl_mult': 2.0,    # Close all if total loss > 2x initial premium
     'profit_target_pct': 70.0,  # Close all when 70% of premium captured
     'eod_squareoff_time': '15:15',  # Mandatory EOD squareoff
     'time_exit': '14:45',       # Close if still open at 2:45 PM
@@ -406,6 +405,14 @@ NAS_ATM_DEFAULTS = {
     'enabled': True,
     'paper_trading_mode': True,
     'live_trading_enabled': False,
+}
+
+NAS_ATM2_DEFAULTS = {
+    **NAS_ATM_DEFAULTS,
+    # On SL hit: close BOTH legs, no trailing, no re-entry
+    'trail_to_cost_on_sl': False,
+    're_enter_on_sl': False,
+    'exit_both_on_sl': True,
 }
 
 # Nifty 500 Universe

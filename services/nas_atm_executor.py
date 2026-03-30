@@ -387,14 +387,12 @@ class NasAtmExecutor:
                     }
 
                 # 3. Check if all legs of this strangle are now closed -> record trade
-                all_strangle_positions = [p for p in positions
-                                          if p.get('strangle_id') == pos.get('strangle_id')]
-                # Refresh the stopped leg's status in our local list
-                still_active = [p for p in all_strangle_positions
-                                if p['id'] != pos['id'] and p['status'] == 'ACTIVE']
+                # Re-read from DB to get fresh statuses (in-memory list is stale)
+                fresh_strangle = self.db.get_positions_by_strangle(pos.get('strangle_id'))
+                still_active = [p for p in fresh_strangle if p['status'] == 'ACTIVE']
                 if not still_active:
                     # Both legs closed — record the trade
-                    self._record_trade(pos.get('strangle_id'), all_strangle_positions, 'SL_HIT')
+                    self._record_trade(pos.get('strangle_id'), fresh_strangle, 'SL_HIT')
 
                 # 4. Enter a NEW ATM strangle if within entry window and allowed
                 if cfg.get('re_enter_on_sl', True):
@@ -463,37 +461,40 @@ class NasAtmExecutor:
         return results
 
     def _record_trade(self, strangle_id, positions, exit_reason, spot_at_exit=None):
-        """Record a completed strangle trade when ALL legs are closed."""
-        ce_pos = [p for p in positions if p['instrument_type'] == 'CE']
-        pe_pos = [p for p in positions if p['instrument_type'] == 'PE']
+        """Record a completed strangle trade when ALL legs are closed.
+
+        Re-reads positions from DB to get fresh exit_price/status values
+        (the in-memory list may be stale after _close_leg updates).
+        """
+        # Check for duplicate: skip if this strangle already has a trade recorded
+        existing = self.db.get_recent_trades(limit=100)
+        if any(t.get('strangle_id') == strangle_id for t in existing):
+            logger.debug(f"[NAS-ATM] Trade already recorded for strangle #{strangle_id}, skipping")
+            return
+
+        # Re-read from DB to get fresh exit prices and statuses
+        fresh_positions = self.db.get_positions_by_strangle(strangle_id)
+        if not fresh_positions:
+            fresh_positions = positions  # fallback
+
+        ce_pos = [p for p in fresh_positions if p['instrument_type'] == 'CE']
+        pe_pos = [p for p in fresh_positions if p['instrument_type'] == 'PE']
 
         call_entry = ce_pos[0]['entry_price'] if ce_pos else 0
         put_entry = pe_pos[0]['entry_price'] if pe_pos else 0
-
-        # Get exit prices: from the position if already closed, otherwise 0
-        call_exit = 0
-        if ce_pos:
-            call_exit = ce_pos[0].get('exit_price') or 0
-            # If still active (partially closed strangle), use 0
-            if ce_pos[0]['status'] == 'ACTIVE':
-                call_exit = 0
-
-        put_exit = 0
-        if pe_pos:
-            put_exit = pe_pos[0].get('exit_price') or 0
-            if pe_pos[0]['status'] == 'ACTIVE':
-                put_exit = 0
-
+        call_exit = ce_pos[0].get('exit_price') or 0 if ce_pos else 0
+        put_exit = pe_pos[0].get('exit_price') or 0 if pe_pos else 0
         call_strike = ce_pos[0]['strike'] if ce_pos else 0
         put_strike = pe_pos[0]['strike'] if pe_pos else 0
 
         total_collected = call_entry + put_entry
         total_paid = call_exit + put_exit
-        lots = (ce_pos[0]['qty'] // LOT_SIZE) if ce_pos else 0
+        lots = (ce_pos[0]['qty'] // LOT_SIZE) if ce_pos else (
+            (pe_pos[0]['qty'] // LOT_SIZE) if pe_pos else 0)
         gross_pnl = (total_collected - total_paid) * LOT_SIZE * lots
         net_pnl = gross_pnl - (80 * 2)  # brokerage: Rs 40/order x 4 legs
 
-        entry_time = min(p['entry_time'] for p in positions) if positions else None
+        entry_time = min(p['entry_time'] for p in fresh_positions) if fresh_positions else None
 
         if spot_at_exit is None:
             spot_at_exit = self.scanner.get_live_spot()
@@ -518,7 +519,7 @@ class NasAtmExecutor:
             lots=lots,
             adjustments=0,
             exit_reason=exit_reason,
-            expiry_date=positions[0].get('expiry_date') if positions else None,
+            expiry_date=fresh_positions[0].get('expiry_date') if fresh_positions else None,
         )
 
     # --- EOD Squareoff --------------------------------------------------

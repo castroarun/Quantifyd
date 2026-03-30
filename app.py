@@ -49,6 +49,7 @@ from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
     MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS, NAS_DEFAULTS, NAS_ATM_DEFAULTS,
+    NAS_ATM2_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -3366,7 +3367,7 @@ def api_nas_config_update():
     data = request.get_json() or {}
     allowed = {'max_vix', 'min_combined_premium', 'strike_distance_atr',
                'premium_double_trigger', 'premium_half_trigger', 'max_daily_loss',
-               'lots_per_leg', 'max_adjustments_per_leg', 'combined_sl_mult',
+               'lots_per_leg', 'max_adjustments_per_leg',
                'profit_target_pct', 'entry_start_time', 'entry_end_time',
                'skip_expiry_day', 'eod_squareoff_time', 'time_exit',
                'target_entry_premium', 'min_leg_premium', 'max_leg_premium',
@@ -4049,6 +4050,7 @@ except Exception as e:
 # =============================================================================
 
 _nas_atm_tasks = {}
+_nas_atm2_tasks = {}
 
 
 @app.route('/nas-atm')
@@ -4288,6 +4290,159 @@ except Exception as e:
 
 
 # =============================================================================
+# NAS ATM2 — Nifty ATM Strangle V2 (Variant config)
+# =============================================================================
+
+
+@app.route('/api/nas-atm2/state')
+def api_nas_atm2_state():
+    """Full state dump for NAS ATM2 dashboard."""
+    try:
+        from services.nas_atm2_executor import NasAtm2Executor
+        executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"[NAS-ATM2] state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/scan', methods=['POST'])
+def api_nas_atm2_scan():
+    """Trigger a manual NAS ATM2 scan (entry attempt)."""
+    task_id = f"nas_atm2_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_atm2_tasks[task_id] = {'status': 'running'}
+
+    def _run_scan(tid):
+        try:
+            from services.nas_atm2_executor import NasAtm2Executor
+            executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
+            sid, msg = executor.execute_strangle_entry()
+            _nas_atm2_tasks[tid] = {'status': 'completed', 'result': {'strangle_id': sid, 'message': msg}}
+        except Exception as e:
+            logger.error(f"[NAS-ATM2] scan error: {e}")
+            _nas_atm2_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run_scan, args=[task_id], id=f'nas_atm2_scan_{task_id}',
+                      replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas-atm2/scan/status/<task_id>')
+def api_nas_atm2_scan_status(task_id):
+    """Poll NAS ATM2 scan status."""
+    task = _nas_atm2_tasks.get(task_id, {'status': 'unknown'})
+    return jsonify(task)
+
+
+@app.route('/api/nas-atm2/kill-switch', methods=['POST'])
+def api_nas_atm2_kill_switch():
+    """Emergency close all NAS ATM2 positions."""
+    try:
+        from services.nas_atm2_executor import NasAtm2Executor
+        executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
+        exits = executor.emergency_exit_all()
+        return jsonify({'status': 'killed', 'positions_closed': exits})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/trades')
+def api_nas_atm2_trades():
+    """Recent NAS ATM2 trades."""
+    try:
+        from services.nas_atm2_db import get_nas_atm2_db
+        db = get_nas_atm2_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/signals')
+def api_nas_atm2_signals():
+    """NAS ATM2 signal history."""
+    try:
+        from services.nas_atm2_db import get_nas_atm2_db
+        db = get_nas_atm2_db()
+        return jsonify(db.get_recent_signals(limit=30))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/equity-curve')
+def api_nas_atm2_equity_curve():
+    """NAS ATM2 daily P&L for equity curve chart."""
+    try:
+        from services.nas_atm2_db import get_nas_atm2_db
+        db = get_nas_atm2_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/toggle-mode', methods=['POST'])
+def api_nas_atm2_toggle_mode():
+    """Toggle NAS ATM2 paper/live trading mode."""
+    try:
+        current = NAS_ATM2_DEFAULTS.get('paper_trading_mode', True)
+        NAS_ATM2_DEFAULTS['paper_trading_mode'] = not current
+        new_mode = 'PAPER' if NAS_ATM2_DEFAULTS['paper_trading_mode'] else 'LIVE'
+        logger.info(f"[NAS-ATM2] mode toggled to {new_mode}")
+        return jsonify({'mode': new_mode})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/toggle-enabled', methods=['POST'])
+def api_nas_atm2_toggle_enabled():
+    """Enable/disable NAS ATM2 system."""
+    try:
+        current = NAS_ATM2_DEFAULTS.get('enabled', True)
+        NAS_ATM2_DEFAULTS['enabled'] = not current
+        new_enabled = NAS_ATM2_DEFAULTS['enabled']
+        status = 'enabled' if new_enabled else 'disabled'
+        logger.info(f"[NAS-ATM2] system {status}")
+        return jsonify({'enabled': new_enabled, 'status': status})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/ticker/start', methods=['POST'])
+def api_nas_atm2_ticker_start():
+    """Start NAS ticker (shared with OTM/ATM) for ATM2 system."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        if not ticker.is_running:
+            ticker.start()
+        return jsonify({'status': 'started'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/ticker/stop', methods=['POST'])
+def api_nas_atm2_ticker_stop():
+    """Stop NAS ticker (shared)."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.stop()
+        return jsonify({'status': 'stopped'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm2/ticker/status')
+def api_nas_atm2_ticker_status():
+    """Get NAS ticker status (shared)."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        return jsonify(ticker.get_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
 # Options Data Manager — Index Option Chain Downloader
 # =============================================================================
 
@@ -4390,7 +4545,12 @@ def api_options_download_log():
 # ---- Options Data Scheduled Jobs ----
 
 def _options_capture_job():
-    """Every 5 min Mon-Fri 9:20-15:25 — Capture index option chains."""
+    """Every 1 min Mon-Fri 9:20-15:20 — Capture index option chains."""
+    now = datetime.now()
+    market_start = now.replace(hour=9, minute=20, second=0)
+    market_end = now.replace(hour=15, minute=30, second=0)
+    if now < market_start or now > market_end:
+        return  # Outside market hours
     try:
         from services.options_data_manager import OptionsDataManager
         manager = OptionsDataManager()
@@ -4400,41 +4560,24 @@ def _options_capture_job():
         if errors:
             logger.warning(f"[OPTIONS] Capture partial: {total} instruments, "
                            f"{len(errors)} errors: {[e['error'] for e in errors]}")
-        elif total > 0:
-            logger.info(f"[OPTIONS] Captured {total} instruments across 3 indices")
     except Exception as e:
         logger.error(f"[OPTIONS] Capture job error: {e}")
 
 
-# Specific snapshot times for premium capture at entry/exit windows
-# Format: (hour, minute) tuples
-_OPTIONS_SNAPSHOT_TIMES = [
-    (9, 20),   # after open
-    (10, 0),
-    (10, 30),
-    (11, 0),   # BB cooloff time
-    (11, 30),
-    (12, 0),   # target entry time
-    (12, 30),
-    (13, 0),   # target exit time
-    (14, 0),
-    (15, 0),
-    (15, 20),  # near close
-]
+# Capture option chain every 1 minute during market hours (9:20-15:20)
 try:
-    for h, m in _OPTIONS_SNAPSHOT_TIMES:
-        scheduler.add_job(
-            _options_capture_job,
-            'cron', day_of_week='mon-fri', hour=h, minute=m,
-            id=f'options_capture_{h:02d}{m:02d}', replace_existing=True,
-        )
-    _times_str = ', '.join(f'{h}:{m:02d}' for h, m in _OPTIONS_SNAPSHOT_TIMES)
+    scheduler.add_job(
+        _options_capture_job,
+        'cron', day_of_week='mon-fri',
+        hour='9-15', minute='*',
+        id='options_capture_1min', replace_existing=True,
+    )
     logger.info(
-        f"Options data capture scheduled at {len(_OPTIONS_SNAPSHOT_TIMES)} times "
-        f"Mon-Fri: {_times_str} (NIFTY + BANKNIFTY + SENSEX, with IV computation)"
+        "Options data capture scheduled every 1 min Mon-Fri 9:00-15:59 "
+        "(NIFTY + BANKNIFTY + SENSEX, with IV computation)"
     )
 except Exception as e:
-    logger.warning(f"Could not register options capture jobs: {e}")
+    logger.warning(f"Could not register options capture job: {e}")
 
 
 # ---- Daily Instrument Dump (for historical backfill) ----

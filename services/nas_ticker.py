@@ -21,8 +21,8 @@ Architecture:
                               NasScanner.scan() → NasExecutor.run_scan()
 
     MaruthiTicker._on_ticks() → forward option ticks → _check_premium_tick()
-                                     ↓ premium doubles
-                              NasExecutor.exit_all_positions('combined_sl')
+                                     ↓ cross-leg imbalance
+                              NasExecutor.execute_adjustment(ROLL_OUT / ROLL_IN)
 """
 
 import logging
@@ -212,6 +212,11 @@ class NasTicker:
         self._atm_option_tokens: Dict[int, dict] = {}  # token → {tradingsymbol, sl_price, position_id, ...}
         self._atm_option_ltps: Dict[int, float] = {}   # token → last price
         self._atm_sl_processing = False  # prevent concurrent SL handling
+
+        # NAS ATM2 option leg monitoring (separate SL tracking)
+        self._atm2_option_tokens: Dict[int, dict] = {}
+        self._atm2_option_ltps: Dict[int, float] = {}
+        self._atm2_sl_processing = False
 
         # Set candle close callback
         self.aggregator.on_candle_close = self._on_candle_close
@@ -413,6 +418,11 @@ class NasTicker:
                 self._atm_option_ltps[token] = ltp
                 self._check_atm_premium_tick(token, ltp)
 
+            if token in self._atm2_option_tokens:
+                # NAS ATM2 option leg tick → check per-leg SL
+                self._atm2_option_ltps[token] = ltp
+                self._check_atm2_premium_tick(token, ltp)
+
     def _check_premium_tick(self, token: int, ltp: float):
         """
         Instant tick-level premium check for option legs.
@@ -443,23 +453,6 @@ class NasTicker:
         for t, leg_info in self._option_tokens.items():
             leg_ltp = self._option_ltps.get(t, leg_info['entry_premium'])
             leg_premiums[t] = (leg_ltp, leg_info)
-
-        # Combined SL: total buyback cost exceeds threshold
-        total_current = sum(p[0] for p in leg_premiums.values())
-        total_entry = sum(p[1]['entry_premium'] for p in leg_premiums.values())
-        sl_mult = cfg.get('combined_sl_mult', 2.0)
-        if total_entry > 0 and total_current > total_entry * sl_mult:
-            self._sl_triggered = True
-            logger.warning(
-                f"[NAS] TICK SL! Total buyback {total_current:.1f} > "
-                f"{sl_mult}x entry {total_entry:.1f}"
-            )
-            threading.Thread(
-                target=self._fire_emergency_exit,
-                args=('combined_sl_tick',),
-                daemon=True
-            ).start()
-            return
 
         # Cross-leg adjustment: compare legs against each other
         if self._adj_triggered:
@@ -761,6 +754,126 @@ class NasTicker:
         finally:
             self._atm_sl_processing = False
 
+    # ─── NAS ATM2 Option Leg Monitoring ───────────────────────
+
+    def subscribe_atm2_option_legs(self, positions: List[dict]):
+        """
+        Subscribe to NAS ATM2 option leg tokens for per-leg SL monitoring.
+        Each position must have: tradingsymbol, sl_price, id, strangle_id, entry_price, leg.
+        """
+        kws = self._get_maruthi_kws()
+        if not kws:
+            logger.warning("[NAS-ATM2] Cannot subscribe option legs — Maruthi ticker not connected")
+            return
+
+        with self._lock:
+            old_tokens = set(self._atm2_option_tokens.keys())
+            self._atm2_option_tokens.clear()
+            self._atm2_option_ltps.clear()
+
+            if not positions:
+                if old_tokens:
+                    # Only unsubscribe tokens not used by OTM or ATM
+                    tokens_to_unsub = old_tokens - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys())
+                    if tokens_to_unsub:
+                        kws.unsubscribe(list(tokens_to_unsub))
+                    logger.info(f"[NAS-ATM2] Unsubscribed {len(old_tokens)} option tokens")
+                return
+
+            new_tokens = []
+            for pos in positions:
+                tsym = pos.get('tradingsymbol', '')
+                if not tsym:
+                    continue
+
+                token = self._resolve_option_token(tsym)
+                if token:
+                    self._atm2_option_tokens[token] = {
+                        'tradingsymbol': tsym,
+                        'sl_price': pos.get('sl_price', 0),
+                        'entry_price': pos.get('entry_price', 0),
+                        'position_id': pos.get('id'),
+                        'strangle_id': pos.get('strangle_id'),
+                        'leg': pos.get('leg', ''),
+                        'instrument_type': pos.get('instrument_type', ''),
+                    }
+                    new_tokens.append(token)
+
+            # Subscribe new tokens (avoid duplicating OTM/ATM subscriptions)
+            all_existing = set(self._option_tokens.keys()) | set(self._atm_option_tokens.keys()) | old_tokens
+            tokens_to_add = set(new_tokens) - all_existing
+            if tokens_to_add:
+                kws.subscribe(list(tokens_to_add))
+                kws.set_mode(kws.MODE_LTP, list(tokens_to_add))
+
+            # Unsubscribe old ATM2 tokens no longer needed (and not used by OTM/ATM)
+            tokens_to_remove = old_tokens - set(new_tokens) - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys())
+            if tokens_to_remove:
+                kws.unsubscribe(list(tokens_to_remove))
+
+            logger.info(f"[NAS-ATM2] Monitoring {len(new_tokens)} ATM2 option legs: "
+                        f"{[t['tradingsymbol'] for t in self._atm2_option_tokens.values()]}")
+
+    def _check_atm2_premium_tick(self, token: int, ltp: float):
+        """
+        Per-leg SL check for NAS ATM2 positions.
+        If ltp >= sl_price, fire SL handling via NasAtm2Executor.
+        """
+        if self._atm2_sl_processing:
+            return
+
+        info = self._atm2_option_tokens.get(token)
+        if not info:
+            return
+
+        sl_price = info.get('sl_price', 0)
+        if sl_price <= 0:
+            return
+
+        if ltp >= sl_price:
+            self._atm2_sl_processing = True
+            logger.info(
+                f"[NAS-ATM2] SL TICK! {info['tradingsymbol']} ltp={ltp:.2f} >= SL={sl_price:.2f}"
+            )
+            threading.Thread(
+                target=self._fire_atm2_sl_handler,
+                args=(info, ltp),
+                daemon=True
+            ).start()
+
+    def _fire_atm2_sl_handler(self, info: dict, ltp: float):
+        """Handle ATM2 leg SL hit — delegates to NasAtm2Executor.check_and_handle_sl()."""
+        try:
+            from services.nas_atm2_executor import NasAtm2Executor
+            from services.nas_atm2_db import get_nas_atm2_db
+            from config import NAS_ATM2_DEFAULTS
+
+            db = get_nas_atm2_db()
+            executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
+
+            # Build live LTPs from our tracking
+            live_ltps = {}
+            for t, atm2_info in self._atm2_option_tokens.items():
+                tsym = atm2_info['tradingsymbol']
+                if t in self._atm2_option_ltps:
+                    live_ltps[tsym] = self._atm2_option_ltps[t]
+
+            positions = db.get_active_positions()
+            actions = executor.check_and_handle_sl(positions=positions, live_ltps=live_ltps)
+
+            if actions:
+                logger.info(f"[NAS-ATM2] SL handler: {len(actions)} actions taken")
+                # Re-subscribe with updated positions
+                updated = db.get_active_positions()
+                self.subscribe_atm2_option_legs(updated)
+            else:
+                logger.info("[NAS-ATM2] SL handler: no actions taken (threshold not met in executor)")
+
+        except Exception as e:
+            logger.error(f"[NAS-ATM2] SL handler error: {e}", exc_info=True)
+        finally:
+            self._atm2_sl_processing = False
+
     # ─── Candle Close Handler ────────────────────────────────
 
     def _on_candle_close(self, candle: dict):
@@ -850,6 +963,66 @@ class NasTicker:
 
         # ── NAS ATM: check entry on same squeeze signal ──
         self._on_candle_close_atm(candle)
+
+        # ── NAS ATM2: check entry on same squeeze signal ──
+        self._on_candle_close_atm2(candle)
+
+    def _on_candle_close_atm2(self, candle: dict):
+        """
+        ATM2 entry check on candle close.
+        Shares the same ATR squeeze detection as NAS OTM.
+        """
+        try:
+            from config import NAS_ATM2_DEFAULTS
+            if not NAS_ATM2_DEFAULTS.get('enabled', True):
+                return
+
+            from services.nas_atm2_executor import NasAtm2Executor
+            from services.nas_atm2_db import get_nas_atm2_db
+            from services.nas_scanner import NasScanner
+
+            atm2_executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
+            atm2_db = get_nas_atm2_db()
+
+            # Build DataFrame from aggregated candles (or let scanner fetch its own)
+            df_5min = self.aggregator.get_dataframe()
+            if len(df_5min) < 60:
+                df_5min = None  # scanner.scan() will call load_5min_bars()
+
+            # Run scan to check squeeze state
+            scanner = NasScanner(NAS_ATM2_DEFAULTS)
+            daily_df = getattr(self, '_daily_candles', None)
+            scan = scanner.scan(df_5min=df_5min, daily_df=daily_df)
+            if scan.get('error'):
+                return
+
+            spot = scan['spot']
+
+            # Update ATM2 state
+            atm2_db.update_state(
+                atr_value=scan.get('atr'),
+                atr_ma=scan.get('atr_ma'),
+                is_squeezing=1 if scan.get('is_squeezing') else 0,
+                squeeze_count=scan.get('squeeze_count', 0),
+                spot_price=spot,
+                last_scan_time=datetime.now().isoformat(),
+            )
+
+            # Check for squeeze entry signal
+            for signal in scan.get('signals', []):
+                if signal['type'] == 'SQUEEZE_ENTRY':
+                    sid, msg = atm2_executor.execute_strangle_entry(spot=spot)
+                    if sid:
+                        logger.info(f"[NAS-ATM2] Entry: strangle #{sid} at spot {spot:.1f}")
+                        # Subscribe ATM2 option legs for SL monitoring
+                        new_active = atm2_db.get_active_positions()
+                        self.subscribe_atm2_option_legs(new_active)
+                    else:
+                        logger.info(f"[NAS-ATM2] Entry blocked: {msg}")
+                    break  # Only one entry per candle
+
+        except Exception as e:
+            logger.error(f"[NAS-ATM2] Candle close handler error: {e}", exc_info=True)
 
     def _on_candle_close_atm(self, candle: dict):
         """
@@ -957,6 +1130,16 @@ class NasTicker:
         except Exception as e:
             logger.warning(f"[NAS-ATM] Could not subscribe active legs: {e}")
 
+        # Also subscribe NAS ATM2 active legs
+        try:
+            from services.nas_atm2_db import get_nas_atm2_db
+            atm2_db = get_nas_atm2_db()
+            atm2_active = atm2_db.get_active_positions()
+            if atm2_active:
+                self.subscribe_atm2_option_legs(atm2_active)
+        except Exception as e:
+            logger.warning(f"[NAS-ATM2] Could not subscribe active legs: {e}")
+
     def stop(self):
         """Stop NAS ticker — stop processing ticks."""
         self.is_running = False
@@ -1012,6 +1195,18 @@ class NasTicker:
                     'leg': info['leg'],
                 }
                 for token, info in self._atm_option_tokens.items()
+            ],
+            # NAS ATM2 leg info
+            'atm2_option_legs_monitored': len(self._atm2_option_tokens),
+            'atm2_option_legs': [
+                {
+                    'tradingsymbol': info['tradingsymbol'],
+                    'entry_price': info['entry_price'],
+                    'sl_price': info['sl_price'],
+                    'current_premium': self._atm2_option_ltps.get(token),
+                    'leg': info['leg'],
+                }
+                for token, info in self._atm2_option_tokens.items()
             ],
         }
 
