@@ -140,29 +140,15 @@ class NasScanner:
         self.cfg = config
 
     def load_5min_bars(self, lookback_days=5):
-        """Load recent NIFTY 5-min bars. Tries DB first, falls back to Kite API."""
-        from config import MARKET_DATA_DB
-
-        conn = sqlite3.connect(str(MARKET_DATA_DB))
-        cutoff = (date.today() - timedelta(days=lookback_days)).isoformat()
-        df = pd.read_sql_query(
-            """SELECT date, open, high, low, close, volume
-               FROM market_data_unified
-               WHERE symbol IN ('NIFTY50', 'NIFTY') AND timeframe='5minute'
-               AND date >= ? ORDER BY date""",
-            conn, params=(cutoff,))
-        conn.close()
+        """Load recent NIFTY 5-min bars directly from Kite API."""
+        df = self._fetch_5min_from_kite(lookback_days)
 
         if df.empty:
-            logger.info("No NIFTY 5-min data in DB — fetching from Kite API")
-            df = self._fetch_5min_from_kite(lookback_days)
-
-        if df.empty:
-            logger.warning("No NIFTY 5-min data available from DB or Kite")
+            logger.warning("No NIFTY 5-min data from Kite API")
             return df
 
         df['date'] = pd.to_datetime(df['date'])
-        logger.info(f"Loaded {len(df)} NIFTY 5-min bars")
+        logger.info(f"Loaded {len(df)} NIFTY 5-min bars from Kite (latest: {df['date'].iloc[-1]})")
         return df
 
     def _fetch_5min_from_kite(self, lookback_days=5):
