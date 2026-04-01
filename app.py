@@ -2940,46 +2940,50 @@ def _maruthi_market_close():
         logger.error(f"[Maruthi] Market close handler failed: {e}")
 
 
-# Register Maruthi scheduled jobs
-try:
-    scheduler.add_job(
-        _maruthi_auto_login_and_start,
-        'cron', day_of_week='mon-fri', hour=9, minute=0,
-        id='maruthi_auto_login', replace_existing=True,
-    )
-    scheduler.add_job(
-        _maruthi_re_place_pending,
-        'cron', day_of_week='mon-fri', hour=9, minute=16,
-        id='maruthi_re_place_pending', replace_existing=True,
-    )
-    scheduler.add_job(
-        _maruthi_gap_handler,
-        'cron', day_of_week='mon-fri', hour=9, minute=21,
-        id='maruthi_gap_handler', replace_existing=True,
-    )
-    scheduler.add_job(
-        _maruthi_eod_protection,
-        'cron', day_of_week='mon-fri', hour=15, minute=0,
-        id='maruthi_eod_protection', replace_existing=True,
-    )
-    scheduler.add_job(
-        _maruthi_roll_check,
-        'cron', day_of_week='mon-fri', hour=15, minute=15,
-        id='maruthi_roll_check', replace_existing=True,
-    )
-    scheduler.add_job(
-        _maruthi_market_close,
-        'cron', day_of_week='mon-fri', hour=15, minute=30,
-        id='maruthi_market_close', replace_existing=True,
-    )
-    logger.info(
-        "Maruthi scheduled jobs registered: "
-        "auto-login+ticker(9:00), re-place pending(9:16), gap handler(9:21), "
-        "EOD protection(15:00), roll check(15:15), market close(15:30). "
-        "Candle signals handled by WebSocket ticker."
-    )
-except Exception as e:
-    logger.warning(f"Could not register Maruthi scheduled jobs: {e}")
+# Register Maruthi scheduled jobs — DISABLED until algo bugs are fixed
+# To re-enable: set MARUTHI_DEFAULTS['enabled'] = True in config.py
+if MARUTHI_DEFAULTS.get('enabled', False):
+    try:
+        scheduler.add_job(
+            _maruthi_auto_login_and_start,
+            'cron', day_of_week='mon-fri', hour=9, minute=0,
+            id='maruthi_auto_login', replace_existing=True,
+        )
+        scheduler.add_job(
+            _maruthi_re_place_pending,
+            'cron', day_of_week='mon-fri', hour=9, minute=16,
+            id='maruthi_re_place_pending', replace_existing=True,
+        )
+        scheduler.add_job(
+            _maruthi_gap_handler,
+            'cron', day_of_week='mon-fri', hour=9, minute=21,
+            id='maruthi_gap_handler', replace_existing=True,
+        )
+        scheduler.add_job(
+            _maruthi_eod_protection,
+            'cron', day_of_week='mon-fri', hour=15, minute=0,
+            id='maruthi_eod_protection', replace_existing=True,
+        )
+        scheduler.add_job(
+            _maruthi_roll_check,
+            'cron', day_of_week='mon-fri', hour=15, minute=15,
+            id='maruthi_roll_check', replace_existing=True,
+        )
+        scheduler.add_job(
+            _maruthi_market_close,
+            'cron', day_of_week='mon-fri', hour=15, minute=30,
+            id='maruthi_market_close', replace_existing=True,
+        )
+        logger.info(
+            "Maruthi scheduled jobs registered: "
+            "auto-login+ticker(9:00), re-place pending(9:16), gap handler(9:21), "
+            "EOD protection(15:00), roll check(15:15), market close(15:30). "
+            "Candle signals handled by WebSocket ticker."
+        )
+    except Exception as e:
+        logger.warning(f"Could not register Maruthi scheduled jobs: {e}")
+else:
+    logger.info("Maruthi algo DISABLED (config.enabled=False) — no scheduled jobs, no ticker, no live trades")
 
 
 # =============================================================================

@@ -242,9 +242,10 @@ MARUTHI_DEFAULTS = {
     'option_otm_strikes': 1,  # 1 strike OTM for short options
 
     # Safety
-    'enabled': True,
-    'paper_trading_mode': True,
+    'enabled': False,              # DISABLED — algo has bugs, manual trading only
+    'paper_trading_mode': True,    # Force paper mode as safety net
     'live_trading_enabled': False,
+    'auto_start_ticker': False,    # Don't auto-start WebSocket ticker
     'max_daily_orders': 20,
     'max_daily_loss_pct': 5.0,
 
