@@ -213,6 +213,12 @@ class NasTicker:
         self._atm_option_ltps: Dict[int, float] = {}   # token → last price
         self._atm_sl_processing = False  # prevent concurrent SL handling
 
+        # NAS ATM naked leg ST monitoring
+        self._atm_naked_leg_token = None
+        self._atm_naked_leg_candles = []
+        self._atm_naked_leg_current = None
+        self._atm_naked_leg_info = None
+
         # NAS ATM2 option leg monitoring (separate SL tracking)
         self._atm2_option_tokens: Dict[int, dict] = {}
         self._atm2_option_ltps: Dict[int, float] = {}
@@ -428,6 +434,9 @@ class NasTicker:
                 # NAS ATM option leg tick → check per-leg SL
                 self._atm_option_ltps[token] = ltp
                 self._check_atm_premium_tick(token, ltp)
+
+            if token == self._atm_naked_leg_token:
+                self._update_atm_naked_candle(ltp)
 
             if token in self._atm2_option_tokens:
                 # NAS ATM2 option leg tick → check per-leg SL
@@ -763,6 +772,15 @@ class NasTicker:
 
             if actions:
                 logger.info(f"[NAS-ATM] SL handler: {len(actions)} actions taken")
+                # Check if naked leg ST monitoring needed
+                for action in actions:
+                    if action.get('type') == 'ATM_SL_NAKED' and action.get('surviving_position'):
+                        surviving = action['surviving_position']
+                        tsym = surviving.get('tradingsymbol', '')
+                        for t, atm_info in self._atm_option_tokens.items():
+                            if atm_info['tradingsymbol'] == tsym:
+                                self.start_atm_naked_monitoring(t, atm_info)
+                                break
                 # Re-subscribe with updated positions
                 updated = db.get_active_positions()
                 self.subscribe_atm_option_legs(updated)
@@ -773,6 +791,112 @@ class NasTicker:
             logger.error(f"[NAS-ATM] SL handler error: {e}", exc_info=True)
         finally:
             self._atm_sl_processing = False
+
+    # ─── NAS ATM Naked Leg ST Monitoring ─────────────────────
+
+    def start_atm_naked_monitoring(self, token, info):
+        """Start ST(7,2) monitoring for a naked ATM leg after SL hit."""
+        self._atm_naked_leg_token = token
+        self._atm_naked_leg_info = info
+        self._atm_naked_leg_candles = []
+        self._atm_naked_leg_current = None
+        logger.info(f"[NAS-ATM] Started ST(7,2) monitoring on {info.get('tradingsymbol')}")
+
+    def _update_atm_naked_candle(self, ltp):
+        """Aggregate ticks into 5-min OHLC for naked ATM leg."""
+        now = datetime.now()
+        bar_time = now.replace(minute=(now.minute // 5) * 5, second=0, microsecond=0)
+
+        cur = self._atm_naked_leg_current
+        if cur is None or cur['bar_time'] != bar_time:
+            # Save completed bar
+            if cur is not None:
+                self._atm_naked_leg_candles.append({
+                    'open': cur['open'], 'high': cur['high'],
+                    'low': cur['low'], 'close': cur['close'],
+                })
+                self._check_atm_st_exit()
+            # Start new bar
+            self._atm_naked_leg_current = {
+                'bar_time': bar_time,
+                'open': ltp, 'high': ltp, 'low': ltp, 'close': ltp,
+            }
+        else:
+            cur['high'] = max(cur['high'], ltp)
+            cur['low'] = min(cur['low'], ltp)
+            cur['close'] = ltp
+
+    def _check_atm_st_exit(self):
+        """Check if naked ATM leg's premium closed above SuperTrend → exit."""
+        candles = self._atm_naked_leg_candles
+        if len(candles) < 8:
+            return
+
+        from services.nas_atm4_executor import NasAtm4Executor
+        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+
+        if st_val is None:
+            return
+
+        latest_close = candles[-1]['close']
+        logger.info(f"[NAS-ATM] ST check: close={latest_close:.1f}, ST={st_val:.1f}, "
+                     f"dir={'UP' if direction==1 else 'DN'}")
+
+        if direction == 1:
+            logger.warning(f"[NAS-ATM] ST EXIT! Premium {latest_close:.1f} reversed above ST {st_val:.1f}")
+            threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
+
+    def _fire_atm_st_exit(self):
+        """Exit the naked ATM leg because ST flipped."""
+        try:
+            from services.nas_atm_executor import NasAtmExecutor
+            from services.nas_atm_db import get_nas_atm_db
+            from config import NAS_ATM_DEFAULTS
+
+            db = get_nas_atm_db()
+            executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+
+            active = db.get_active_positions()
+            if not active:
+                return
+
+            for pos in active:
+                tsym = pos.get('tradingsymbol', '')
+                live_prem = self._atm_option_ltps.get(
+                    next((t for t, info in self._atm_option_tokens.items()
+                          if info['tradingsymbol'] == tsym), None)
+                )
+                if live_prem is None:
+                    live_prem = self._atm_naked_leg_current['close'] if self._atm_naked_leg_current else 0
+
+                executor._close_leg(pos, live_prem, 'ST_EXIT')
+
+                pnl = (pos['entry_price'] - live_prem) * pos['qty']
+                state = db.get_state()
+                daily_pnl = (state.get('daily_pnl', 0) or 0) + pnl
+                db.update_state(daily_pnl=round(daily_pnl, 2))
+
+                logger.info(f"[NAS-ATM] ST EXIT: {tsym} @ {live_prem:.2f} "
+                             f"(entry={pos['entry_price']:.2f}, P&L={pnl:.0f})")
+
+            # Record trade for any fully closed strangles
+            strangle_ids = set(p.get('strangle_id') for p in active)
+            for sid in strangle_ids:
+                all_strangle = db.get_positions_by_strangle(sid)
+                executor._record_trade(sid, all_strangle, 'ST_EXIT')
+
+            # Clear naked leg tracking
+            self._atm_naked_leg_token = None
+            self._atm_naked_leg_candles = []
+            self._atm_naked_leg_current = None
+            self._atm_naked_leg_info = None
+
+            # Re-subscribe
+            updated = db.get_active_positions()
+            self.subscribe_atm_option_legs(updated)
+
+        except Exception as e:
+            logger.error(f"[NAS-ATM] ST exit error: {e}", exc_info=True)
 
     # ─── NAS ATM2 Option Leg Monitoring ───────────────────────
 

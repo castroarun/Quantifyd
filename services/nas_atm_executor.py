@@ -366,7 +366,7 @@ class NasAtmExecutor:
                     'pnl': round(pnl_this_leg, 2),
                 }
 
-                # 2. Trail the other leg's SL to its entry price (breakeven)
+                # 2. Hold surviving leg with ST(7,2) monitoring — disable normal SL
                 other_leg_type = 'PE' if pos['instrument_type'] == 'CE' else 'CE'
                 other_legs = [p for p in positions
                               if p.get('strangle_id') == pos.get('strangle_id')
@@ -375,15 +375,20 @@ class NasAtmExecutor:
 
                 for other in other_legs:
                     old_sl = other.get('sl_price', 0)
-                    new_sl = other['entry_price']  # Trail to cost/breakeven
-                    self.db.update_position(other['id'], sl_price=new_sl)
-                    logger.info(f"[NAS-ATM] Trailed {other['tradingsymbol']} SL: "
-                                f"{old_sl:.2f} -> {new_sl:.2f} (breakeven)")
+                    # Disable normal SL — ST(7,2) on option premium will handle exit
+                    self.db.update_position(other['id'],
+                                            sl_price=999999.0,
+                                            notes='st_monitoring=true')
+                    logger.info(f"[NAS-ATM] Surviving {other['tradingsymbol']} "
+                                f"SL disabled (was {old_sl:.2f}) — ST(7,2) monitoring active")
+                    action['type'] = 'ATM_SL_NAKED'
+                    action['surviving_position'] = other
                     action['trailed_leg'] = {
                         'position_id': other['id'],
                         'tradingsymbol': other['tradingsymbol'],
                         'old_sl': old_sl,
-                        'new_sl': new_sl,
+                        'new_sl': 999999.0,
+                        'st_monitoring': True,
                     }
 
                 # 3. Check if all legs of this strangle are now closed -> record trade
@@ -394,17 +399,7 @@ class NasAtmExecutor:
                     # Both legs closed — record the trade
                     self._record_trade(pos.get('strangle_id'), fresh_strangle, 'SL_HIT')
 
-                # 4. Enter a NEW ATM strangle if within entry window and allowed
-                if cfg.get('re_enter_on_sl', True):
-                    spot = self.scanner.get_live_spot()
-                    if spot:
-                        new_sid, msg = self.execute_strangle_entry(spot=spot)
-                        if new_sid:
-                            action['re_entry'] = {'strangle_id': new_sid, 'spot': spot}
-                            logger.info(f"[NAS-ATM] Re-entered new strangle #{new_sid} after SL")
-                        else:
-                            action['re_entry_blocked'] = msg
-                            logger.info(f"[NAS-ATM] Re-entry blocked: {msg}")
+                # No re-entry — surviving leg runs with ST trailing
 
                 actions.append(action)
 
