@@ -15,6 +15,8 @@ import logging
 import re
 from datetime import datetime
 
+import numpy as np
+
 from services.nas_atm_executor import NasAtmExecutor
 from services.nas_atm4_db import get_nas_atm4_db
 from services.nas_atm_scanner import NasAtmScanner, LOT_SIZE, get_current_week_expiry
@@ -86,6 +88,64 @@ class NasAtm4Executor(NasAtmExecutor):
         if match:
             return float(match.group(1))
         return None
+
+    # --- SuperTrend for naked leg exit -----------------------------------
+
+    @staticmethod
+    def _compute_supertrend(candles, period=7, multiplier=2):
+        """
+        Compute SuperTrend on list of OHLC dicts.
+
+        Returns (st_value, direction) for the latest bar.
+        direction: 1 = uptrend (premium rising, bad for short), -1 = downtrend (premium falling, good for short)
+        Returns (None, None) if not enough data.
+        """
+        n = len(candles)
+        if n < period + 1:
+            return None, None
+
+        high = np.array([c['high'] for c in candles])
+        low = np.array([c['low'] for c in candles])
+        close = np.array([c['close'] for c in candles])
+
+        # True Range
+        tr = np.zeros(n)
+        tr[0] = high[0] - low[0]
+        for i in range(1, n):
+            tr[i] = max(high[i] - low[i], abs(high[i] - close[i - 1]), abs(low[i] - close[i - 1]))
+
+        # Wilder's ATR
+        atr = np.zeros(n)
+        atr[period - 1] = np.mean(tr[:period])
+        for i in range(period, n):
+            atr[i] = (atr[i - 1] * (period - 1) + tr[i]) / period
+
+        hl2 = (high + low) / 2
+        up = hl2 + multiplier * atr
+        dn = hl2 - multiplier * atr
+
+        final_up = np.copy(up)
+        final_dn = np.copy(dn)
+        direction = np.ones(n, dtype=int)
+
+        for i in range(1, n):
+            if up[i] < final_up[i - 1] or close[i - 1] > final_up[i - 1]:
+                final_up[i] = up[i]
+            else:
+                final_up[i] = final_up[i - 1]
+
+            if dn[i] > final_dn[i - 1] or close[i - 1] < final_dn[i - 1]:
+                final_dn[i] = dn[i]
+            else:
+                final_dn[i] = final_dn[i - 1]
+
+            if direction[i - 1] == 1:
+                direction[i] = -1 if close[i] < final_dn[i] else 1
+            else:
+                direction[i] = 1 if close[i] > final_up[i] else -1
+
+        st_val = final_dn[-1] if direction[-1] == 1 else final_up[-1]
+        return round(float(st_val), 2), int(direction[-1])
 
     # --- SL Check (called on every tick) --------------------------------
 
@@ -391,29 +451,29 @@ class NasAtm4Executor(NasAtmExecutor):
         # 2. Retrieve price_x from the stopped leg's notes
         price_x = self._parse_price_x(pos.get('notes'))
 
-        # 3. Find surviving leg and tighten its SL to price_x (flat, no multiplier)
+        # 3. Find surviving leg — disable flat SL, enable SuperTrend monitoring
         other_leg_type = 'PE' if pos['instrument_type'] == 'CE' else 'CE'
         surviving_legs = [p for p in strangle_legs
                           if p['instrument_type'] == other_leg_type
                           and p['status'] == 'ACTIVE']
 
-        if surviving_legs and price_x is not None:
+        if surviving_legs:
             surviving = surviving_legs[0]
             old_sl = surviving.get('sl_price', 0)
-            self.db.update_position(surviving['id'], sl_price=price_x)
-            logger.info(f"[NAS-ATM4] Tightened {surviving['tradingsymbol']} SL: "
-                         f"{old_sl:.2f} -> {price_x:.2f} (price_x flat)")
+            px_note = f"st_monitoring=true,price_x={price_x:.2f}" if price_x else "st_monitoring=true"
+            # Set SL to 999999 so normal tick SL check won't fire — ST handles exit
+            self.db.update_position(surviving['id'], sl_price=999999.0, notes=px_note)
+            logger.info(f"[NAS-ATM4] Surviving {surviving['tradingsymbol']} SL disabled "
+                         f"({old_sl:.2f} -> 999999), ST(7,2) monitoring enabled")
+            action['type'] = 'ATM4_SECOND_SL'
+            action['surviving_position'] = dict(surviving)
             action['surviving_tightened'] = {
                 'position_id': surviving['id'],
                 'tradingsymbol': surviving['tradingsymbol'],
                 'old_sl': old_sl,
-                'new_sl': price_x,
+                'new_sl': 999999.0,
+                'st_monitoring': True,
             }
-        elif surviving_legs:
-            # No price_x found — fallback: just let surviving leg continue with current SL
-            surviving = surviving_legs[0]
-            logger.warning(f"[NAS-ATM4] No price_x in notes for {pos['tradingsymbol']}, "
-                           f"surviving leg {surviving['tradingsymbol']} keeps current SL")
 
         # 4. Check if all legs of this strangle are now closed
         fresh = self.db.get_positions_by_strangle(strangle_id)

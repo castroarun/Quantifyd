@@ -223,6 +223,12 @@ class NasTicker:
         self._atm4_option_ltps: Dict[int, float] = {}
         self._atm4_sl_processing = False
 
+        # NAS ATM4 naked leg SuperTrend monitoring (after 2nd SL)
+        self._atm4_naked_leg_token: Optional[int] = None       # token of the naked leg
+        self._atm4_naked_leg_candles: list = []                 # completed 5-min OHLC dicts
+        self._atm4_naked_leg_current: Optional[dict] = None    # current bar being built
+        self._atm4_naked_leg_info: Optional[dict] = None       # {tradingsymbol, position_id, ...}
+
         # Set candle close callback
         self.aggregator.on_candle_close = self._on_candle_close
 
@@ -432,6 +438,10 @@ class NasTicker:
                 # NAS ATM4 option leg tick → check per-leg SL
                 self._atm4_option_ltps[token] = ltp
                 self._check_atm4_premium_tick(token, ltp)
+
+            if token == self._atm4_naked_leg_token:
+                # NAS ATM4 naked leg tick → aggregate into 5-min candle for ST
+                self._update_atm4_naked_candle(ltp)
 
     def _check_premium_tick(self, token: int, ltp: float):
         """
@@ -993,6 +1003,17 @@ class NasTicker:
 
             if actions:
                 logger.info(f"[NAS-ATM4] SL handler: {len(actions)} actions taken")
+
+                # Check if any action is SECOND_SL — start ST monitoring on surviving leg
+                for action in actions:
+                    if action.get('type') == 'ATM4_SECOND_SL' and action.get('surviving_position'):
+                        surviving = action['surviving_position']
+                        tsym = surviving.get('tradingsymbol', '')
+                        for t, t_info in self._atm4_option_tokens.items():
+                            if t_info['tradingsymbol'] == tsym:
+                                self.start_atm4_naked_monitoring(t, t_info)
+                                break
+
                 # Re-subscribe with updated positions
                 updated = db.get_active_positions()
                 self.subscribe_atm4_option_legs(updated)
@@ -1003,6 +1024,124 @@ class NasTicker:
             logger.error(f"[NAS-ATM4] SL handler error: {e}", exc_info=True)
         finally:
             self._atm4_sl_processing = False
+
+    # ─── ATM4 Naked Leg SuperTrend Monitoring ────────────────
+
+    def start_atm4_naked_monitoring(self, token: int, info: dict):
+        """Start SuperTrend(7,2) monitoring for a naked V4 leg after 2nd SL."""
+        self._atm4_naked_leg_token = token
+        self._atm4_naked_leg_info = info
+        self._atm4_naked_leg_candles = []
+        self._atm4_naked_leg_current = None
+        logger.info(f"[NAS-ATM4] Started ST(7,2) monitoring on {info.get('tradingsymbol')}")
+
+    def _update_atm4_naked_candle(self, ltp: float):
+        """Aggregate ticks into 5-min OHLC for naked V4 leg."""
+        now = datetime.now()
+        bar_time = now.replace(minute=(now.minute // 5) * 5, second=0, microsecond=0)
+
+        cur = self._atm4_naked_leg_current
+        if cur is None or cur['bar_time'] != bar_time:
+            # Save completed bar
+            if cur is not None:
+                self._atm4_naked_leg_candles.append({
+                    'open': cur['open'], 'high': cur['high'],
+                    'low': cur['low'], 'close': cur['close'],
+                })
+                # Check ST exit on completed bar
+                self._check_atm4_st_exit()
+
+            # Start new bar
+            self._atm4_naked_leg_current = {
+                'bar_time': bar_time,
+                'open': ltp, 'high': ltp, 'low': ltp, 'close': ltp,
+            }
+        else:
+            cur['high'] = max(cur['high'], ltp)
+            cur['low'] = min(cur['low'], ltp)
+            cur['close'] = ltp
+
+    def _check_atm4_st_exit(self):
+        """Check if naked V4 leg's premium closed above SuperTrend -> exit."""
+        candles = self._atm4_naked_leg_candles
+        if len(candles) < 8:  # Need at least period+1 bars
+            return
+
+        from services.nas_atm4_executor import NasAtm4Executor
+        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+
+        if st_val is None:
+            return
+
+        latest_close = candles[-1]['close']
+        logger.info(f"[NAS-ATM4] ST check: close={latest_close:.1f}, "
+                     f"ST={st_val:.1f}, dir={'UP' if direction == 1 else 'DN'}")
+
+        # For short option: direction==1 means premium trending UP (bad) -> EXIT
+        if direction == 1:
+            logger.warning(f"[NAS-ATM4] ST EXIT! Premium {latest_close:.1f} "
+                            f"reversed above ST {st_val:.1f}")
+            threading.Thread(
+                target=self._fire_atm4_st_exit,
+                daemon=True
+            ).start()
+
+    def _fire_atm4_st_exit(self):
+        """Exit the naked V4 leg because SuperTrend flipped to uptrend."""
+        try:
+            from services.nas_atm4_executor import NasAtm4Executor
+            from services.nas_atm4_db import get_nas_atm4_db
+            from config import NAS_ATM4_DEFAULTS
+
+            db = get_nas_atm4_db()
+            executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+
+            active = db.get_active_positions()
+            if not active:
+                return
+
+            for pos in active:
+                tsym = pos.get('tradingsymbol', '')
+                # Get live premium from our tick tracking
+                live_prem = None
+                for t, info in self._atm4_option_tokens.items():
+                    if info['tradingsymbol'] == tsym:
+                        live_prem = self._atm4_option_ltps.get(t)
+                        break
+                if live_prem is None and self._atm4_naked_leg_current:
+                    live_prem = self._atm4_naked_leg_current['close']
+                if live_prem is None:
+                    live_prem = 0
+
+                executor._close_leg(pos, live_prem, 'ST_EXIT')
+
+                pnl = (pos['entry_price'] - live_prem) * pos['qty']
+                state = db.get_state()
+                daily_pnl = (state.get('daily_pnl', 0) or 0) + pnl
+                db.update_state(daily_pnl=round(daily_pnl, 2))
+
+                logger.info(f"[NAS-ATM4] ST EXIT: {tsym} @ {live_prem:.2f} "
+                            f"(entry={pos['entry_price']:.2f}, P&L={pnl:.0f})")
+
+            # Record trade if all legs closed
+            fresh = db.get_active_positions()
+            if not fresh and active:
+                sid = active[0].get('strangle_id')
+                all_strangle = db.get_positions_by_strangle(sid)
+                executor._record_trade(sid, all_strangle, 'ST_EXIT')
+
+            # Clear naked leg tracking
+            self._atm4_naked_leg_token = None
+            self._atm4_naked_leg_candles = []
+            self._atm4_naked_leg_current = None
+            self._atm4_naked_leg_info = None
+
+            # Re-subscribe with updated positions
+            updated = db.get_active_positions()
+            self.subscribe_atm4_option_legs(updated)
+
+        except Exception as e:
+            logger.error(f"[NAS-ATM4] ST exit error: {e}", exc_info=True)
 
     # ─── Candle Close Handler ────────────────────────────────
 
@@ -1353,6 +1492,15 @@ class NasTicker:
         time.sleep(1)
         self.start()
 
+    def _get_atm4_st_value(self) -> Optional[float]:
+        """Get current SuperTrend value for the naked ATM4 leg, or None."""
+        candles = self._atm4_naked_leg_candles
+        if len(candles) < 8:
+            return None
+        from services.nas_atm4_executor import NasAtm4Executor
+        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+        return st_val
+
     def get_status(self) -> dict:
         """Get ticker status for dashboard."""
         # Check if Maruthi ticker is actually connected
@@ -1420,6 +1568,14 @@ class NasTicker:
                 }
                 for token, info in self._atm4_option_tokens.items()
             ],
+            # NAS ATM4 naked leg SuperTrend monitoring state
+            'atm4_naked_st': {
+                'active': self._atm4_naked_leg_token is not None,
+                'tradingsymbol': self._atm4_naked_leg_info.get('tradingsymbol') if self._atm4_naked_leg_info else None,
+                'candles_completed': len(self._atm4_naked_leg_candles),
+                'current_close': self._atm4_naked_leg_current['close'] if self._atm4_naked_leg_current else None,
+                'st_value': self._get_atm4_st_value(),
+            } if self._atm4_naked_leg_token else {'active': False},
         }
 
 

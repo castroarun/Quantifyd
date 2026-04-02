@@ -264,11 +264,11 @@
                             <thead>
                                 <tr>
                                     <th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
-                                    <th>LTP</th><th>P&L</th><th>Adj</th><th>Status</th>
+                                    <th>LTP</th><th>P&L</th><th>Adj</th><th>Status</th><th>Exit</th><th>Time</th>
                                 </tr>
                             </thead>
                             <tbody id="otmPositionsBody">
-                                <tr><td colspan="8" class="text-center text-muted">No positions</td></tr>
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -287,6 +287,16 @@
                             <div class="lbl">Adjustments</div>
                         </div></div>
                     </div>
+                    <!-- Rules (collapsible) -->
+                    <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
+                        <summary style="cursor:pointer;color:#a371f7;font-weight:600;">Rules</summary>
+                        <div style="margin-top:4px;line-height:1.6;">
+                            <b>Entry:</b> ATR(14) &lt; SMA(ATR,50) on 5-min → SELL OTM CE+PE @ ~Rs20 premium<br>
+                            <b>Adjustment:</b> Cross-leg imbalance ≥ 2x → ROLL_OUT/ROLL_IN alternating to match other leg's premium<br>
+                            <b>Bounds:</b> Target premium [4-24], both fail → close both legs<br>
+                            <b>Exit:</b> Time exit 14:45 / EOD squareoff 15:15
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
@@ -343,11 +353,11 @@
                             <thead>
                                 <tr>
                                     <th>S#</th><th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
-                                    <th>SL</th><th>LTP</th><th>P&L</th>
+                                    <th>SL</th><th>LTP</th><th>P&L</th><th>Exit</th><th>Time</th>
                                 </tr>
                             </thead>
                             <tbody id="atmPositionsBody">
-                                <tr><td colspan="8" class="text-center text-muted">No positions</td></tr>
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -366,6 +376,16 @@
                             <div class="lbl">SL Hits Today</div>
                         </div></div>
                     </div>
+                    <!-- Rules (collapsible) -->
+                    <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
+                        <summary style="cursor:pointer;color:#38a6f7;font-weight:600;">Rules</summary>
+                        <div style="margin-top:4px;line-height:1.6;">
+                            <b>Entry:</b> ATR squeeze → SELL ATM CE+PE, SL = entry × 1.3 (30%)<br>
+                            <b>1st SL:</b> Close stopped leg. Trail surviving leg SL to entry price (breakeven)<br>
+                            <b>Re-entry:</b> Immediately enter new ATM straddle (max 5 re-entries)<br>
+                            <b>Exit:</b> EOD squareoff 15:15
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
@@ -422,11 +442,11 @@
                             <thead>
                                 <tr>
                                     <th>S#</th><th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
-                                    <th>SL</th><th>LTP</th><th>P&L</th>
+                                    <th>SL</th><th>LTP</th><th>P&L</th><th>Exit</th><th>Time</th>
                                 </tr>
                             </thead>
                             <tbody id="atm2PositionsBody">
-                                <tr><td colspan="8" class="text-center text-muted">No positions</td></tr>
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -445,6 +465,15 @@
                             <div class="lbl">SL Hits Today</div>
                         </div></div>
                     </div>
+                    <!-- Rules (collapsible) -->
+                    <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
+                        <summary style="cursor:pointer;color:#f59e0b;font-weight:600;">Rules</summary>
+                        <div style="margin-top:4px;line-height:1.6;">
+                            <b>Entry:</b> ATR squeeze → SELL ATM CE+PE, SL = entry × 1.3 (30%)<br>
+                            <b>Any SL:</b> Close BOTH legs immediately. No trailing, no re-entry<br>
+                            <b>Exit:</b> EOD squareoff 15:15
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
@@ -501,11 +530,11 @@
                             <thead>
                                 <tr>
                                     <th>S#</th><th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
-                                    <th>SL</th><th>LTP</th><th>P&L</th>
+                                    <th>SL</th><th>LTP</th><th>P&L</th><th>Exit</th><th>Time</th>
                                 </tr>
                             </thead>
                             <tbody id="atm4PositionsBody">
-                                <tr><td colspan="8" class="text-center text-muted">No positions</td></tr>
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -524,6 +553,17 @@
                             <div class="lbl">Rolls</div>
                         </div></div>
                     </div>
+                    <!-- Rules (collapsible) -->
+                    <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
+                        <summary style="cursor:pointer;color:#10b981;font-weight:600;">Rules</summary>
+                        <div style="margin-top:4px;line-height:1.6;">
+                            <b>Entry:</b> ATR squeeze → SELL ATM CE+PE, SL = entry × 1.3 (30%)<br>
+                            <b>1st SL:</b> Roll stopped leg to match surviving leg's CMP. Both get new 30% SLs<br>
+                            <b>2nd SL:</b> Close stopped leg. Hold surviving leg naked<br>
+                            <b>Naked exit:</b> SuperTrend(7,2) on option premium — exit when candle closes above ST<br>
+                            <b>Exit:</b> EOD squareoff 15:15
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
@@ -864,7 +904,7 @@ function renderOTMPositions(data) {
     closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
 
     if (allActive.length === 0 && closedToday.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No positions</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
         document.getElementById('otmDayPnl').textContent = fmtRs(0);
         return;
     }
@@ -890,18 +930,19 @@ function renderOTMPositions(data) {
             <td style="${pnlStyle};font-weight:600">${pnlText}</td>
             <td>${p.adjustment_count || 0}</td>
             <td><span class="badge bg-success" style="font-size:0.65rem;">ACTIVE</span></td>
+            <td>--</td><td>--</td>
         </tr>`;
     }).join('');
 
     const dayPnl = totalPnl + closedPnl;
     let dayRow = `<tr style="border-top:2px solid #8b949e">
-        <td colspan="5" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
+        <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
         <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
         <td colspan="2"></td></tr>`;
 
     let closedRows = '';
     if (closedToday.length > 0) {
-        closedRows = `<tr><td colspan="8" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
             const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
@@ -913,6 +954,8 @@ function renderOTMPositions(data) {
                 <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
                 <td>${p.adjustment_count||0}</td>
                 <td><span class="badge bg-secondary" style="font-size:0.6rem;">${(p.exit_reason||'').substring(0,10)}</span></td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
             </tr>`;
         }).join('');
     }
@@ -941,7 +984,7 @@ function renderATMPositions(data) {
     closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
 
     if (allActive.length === 0 && closedToday.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No positions</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
         document.getElementById('atmDayPnl').textContent = fmtRs(0);
         return;
     }
@@ -970,17 +1013,19 @@ function renderATMPositions(data) {
             <td style="${slStyle}">${sl > 0 ? sl.toFixed(1) : '--'}</td>
             <td>${ltpText}</td>
             <td style="${pnlStyle};font-weight:600">${pnlText}</td>
+            <td>--</td><td>--</td>
         </tr>`;
     }).join('');
 
     const dayPnl = totalPnl + closedPnl;
     let dayRow = `<tr style="border-top:2px solid #8b949e">
         <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
-        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td></tr>`;
+        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
+        <td colspan="2"></td></tr>`;
 
     let closedRows = '';
     if (closedToday.length > 0) {
-        closedRows = `<tr><td colspan="8" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
             const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
@@ -992,6 +1037,8 @@ function renderATMPositions(data) {
                 <td>${p.entry_price}</td><td>--</td>
                 <td>${(p.exit_price||0).toFixed(1)}</td>
                 <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
             </tr>`;
         }).join('');
     }
@@ -1022,7 +1069,7 @@ function renderATM2Positions(data) {
     closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
 
     if (allActive.length === 0 && closedToday.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No positions</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
         document.getElementById('atm2DayPnl').textContent = fmtRs(0);
         return;
     }
@@ -1051,17 +1098,19 @@ function renderATM2Positions(data) {
             <td style="${slStyle}">${sl > 0 ? sl.toFixed(1) : '--'}</td>
             <td>${ltpText}</td>
             <td style="${pnlStyle};font-weight:600">${pnlText}</td>
+            <td>--</td><td>--</td>
         </tr>`;
     }).join('');
 
     const dayPnl = totalPnl + closedPnl;
     let dayRow = `<tr style="border-top:2px solid #8b949e">
         <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
-        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td></tr>`;
+        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
+        <td colspan="2"></td></tr>`;
 
     let closedRows = '';
     if (closedToday.length > 0) {
-        closedRows = `<tr><td colspan="8" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
             const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
@@ -1073,6 +1122,8 @@ function renderATM2Positions(data) {
                 <td>${p.entry_price}</td><td>--</td>
                 <td>${(p.exit_price||0).toFixed(1)}</td>
                 <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
             </tr>`;
         }).join('');
     }
@@ -1103,7 +1154,7 @@ function renderATM4Positions(data) {
     closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
 
     if (allActive.length === 0 && closedToday.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No positions</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
         document.getElementById('atm4DayPnl').textContent = fmtRs(0);
         return;
     }
@@ -1132,17 +1183,19 @@ function renderATM4Positions(data) {
             <td style="${slStyle}">${sl > 0 ? sl.toFixed(1) : '--'}</td>
             <td>${ltpText}</td>
             <td style="${pnlStyle};font-weight:600">${pnlText}</td>
+            <td>--</td><td>--</td>
         </tr>`;
     }).join('');
 
     const dayPnl = totalPnl + closedPnl;
     let dayRow = `<tr style="border-top:2px solid #8b949e">
         <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
-        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td></tr>`;
+        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
+        <td colspan="2"></td></tr>`;
 
     let closedRows = '';
     if (closedToday.length > 0) {
-        closedRows = `<tr><td colspan="8" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
             const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
@@ -1154,6 +1207,8 @@ function renderATM4Positions(data) {
                 <td>${p.entry_price}</td><td>--</td>
                 <td>${(p.exit_price||0).toFixed(1)}</td>
                 <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
             </tr>`;
         }).join('');
     }
