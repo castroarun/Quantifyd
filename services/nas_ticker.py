@@ -218,6 +218,11 @@ class NasTicker:
         self._atm2_option_ltps: Dict[int, float] = {}
         self._atm2_sl_processing = False
 
+        # NAS ATM4 option leg monitoring (separate SL tracking)
+        self._atm4_option_tokens: Dict[int, dict] = {}
+        self._atm4_option_ltps: Dict[int, float] = {}
+        self._atm4_sl_processing = False
+
         # Set candle close callback
         self.aggregator.on_candle_close = self._on_candle_close
 
@@ -422,6 +427,11 @@ class NasTicker:
                 # NAS ATM2 option leg tick → check per-leg SL
                 self._atm2_option_ltps[token] = ltp
                 self._check_atm2_premium_tick(token, ltp)
+
+            if token in self._atm4_option_tokens:
+                # NAS ATM4 option leg tick → check per-leg SL
+                self._atm4_option_ltps[token] = ltp
+                self._check_atm4_premium_tick(token, ltp)
 
     def _check_premium_tick(self, token: int, ltp: float):
         """
@@ -874,6 +884,126 @@ class NasTicker:
         finally:
             self._atm2_sl_processing = False
 
+    # ─── NAS ATM4 Option Leg Monitoring ───────────────────────
+
+    def subscribe_atm4_option_legs(self, positions: List[dict]):
+        """
+        Subscribe to NAS ATM4 option leg tokens for per-leg SL monitoring.
+        Each position must have: tradingsymbol, sl_price, id, strangle_id, entry_price, leg.
+        """
+        kws = self._get_maruthi_kws()
+        if not kws:
+            logger.warning("[NAS-ATM4] Cannot subscribe option legs — Maruthi ticker not connected")
+            return
+
+        with self._lock:
+            old_tokens = set(self._atm4_option_tokens.keys())
+            self._atm4_option_tokens.clear()
+            self._atm4_option_ltps.clear()
+
+            if not positions:
+                if old_tokens:
+                    # Only unsubscribe tokens not used by OTM, ATM, or ATM2
+                    tokens_to_unsub = old_tokens - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys()) - set(self._atm2_option_tokens.keys())
+                    if tokens_to_unsub:
+                        kws.unsubscribe(list(tokens_to_unsub))
+                    logger.info(f"[NAS-ATM4] Unsubscribed {len(old_tokens)} option tokens")
+                return
+
+            new_tokens = []
+            for pos in positions:
+                tsym = pos.get('tradingsymbol', '')
+                if not tsym:
+                    continue
+
+                token = self._resolve_option_token(tsym)
+                if token:
+                    self._atm4_option_tokens[token] = {
+                        'tradingsymbol': tsym,
+                        'sl_price': pos.get('sl_price', 0),
+                        'entry_price': pos.get('entry_price', 0),
+                        'position_id': pos.get('id'),
+                        'strangle_id': pos.get('strangle_id'),
+                        'leg': pos.get('leg', ''),
+                        'instrument_type': pos.get('instrument_type', ''),
+                    }
+                    new_tokens.append(token)
+
+            # Subscribe new tokens (avoid duplicating OTM/ATM/ATM2 subscriptions)
+            all_existing = set(self._option_tokens.keys()) | set(self._atm_option_tokens.keys()) | set(self._atm2_option_tokens.keys()) | old_tokens
+            tokens_to_add = set(new_tokens) - all_existing
+            if tokens_to_add:
+                kws.subscribe(list(tokens_to_add))
+                kws.set_mode(kws.MODE_LTP, list(tokens_to_add))
+
+            # Unsubscribe old ATM4 tokens no longer needed (and not used by OTM/ATM/ATM2)
+            tokens_to_remove = old_tokens - set(new_tokens) - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys()) - set(self._atm2_option_tokens.keys())
+            if tokens_to_remove:
+                kws.unsubscribe(list(tokens_to_remove))
+
+            logger.info(f"[NAS-ATM4] Monitoring {len(new_tokens)} ATM4 option legs: "
+                        f"{[t['tradingsymbol'] for t in self._atm4_option_tokens.values()]}")
+
+    def _check_atm4_premium_tick(self, token: int, ltp: float):
+        """
+        Per-leg SL check for NAS ATM4 positions.
+        If ltp >= sl_price, fire SL handling via NasAtm4Executor.
+        """
+        if self._atm4_sl_processing:
+            return
+
+        info = self._atm4_option_tokens.get(token)
+        if not info:
+            return
+
+        sl_price = info.get('sl_price', 0)
+        if sl_price <= 0:
+            return
+
+        if ltp >= sl_price:
+            self._atm4_sl_processing = True
+            logger.info(
+                f"[NAS-ATM4] SL TICK! {info['tradingsymbol']} ltp={ltp:.2f} >= SL={sl_price:.2f}"
+            )
+            threading.Thread(
+                target=self._fire_atm4_sl_handler,
+                args=(info, ltp),
+                daemon=True
+            ).start()
+
+    def _fire_atm4_sl_handler(self, info: dict, ltp: float):
+        """Handle ATM4 leg SL hit — delegates to NasAtm4Executor.check_and_handle_sl()."""
+        try:
+            from services.nas_atm4_executor import NasAtm4Executor
+            from services.nas_atm4_db import get_nas_atm4_db
+            from config import NAS_ATM4_DEFAULTS
+
+            db = get_nas_atm4_db()
+            executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+
+            # Build live LTPs from our tracking
+            live_ltps = {}
+            for t, atm4_info in self._atm4_option_tokens.items():
+                tsym = atm4_info['tradingsymbol']
+                if t in self._atm4_option_ltps:
+                    live_ltps[tsym] = self._atm4_option_ltps[t]
+
+            positions = db.get_active_positions()
+            actions = executor.check_and_handle_sl(positions=positions, live_ltps=live_ltps)
+
+            if actions:
+                logger.info(f"[NAS-ATM4] SL handler: {len(actions)} actions taken")
+                # Re-subscribe with updated positions
+                updated = db.get_active_positions()
+                self.subscribe_atm4_option_legs(updated)
+            else:
+                logger.info("[NAS-ATM4] SL handler: no actions taken (threshold not met in executor)")
+
+        except Exception as e:
+            logger.error(f"[NAS-ATM4] SL handler error: {e}", exc_info=True)
+        finally:
+            self._atm4_sl_processing = False
+
     # ─── Candle Close Handler ────────────────────────────────
 
     def _on_candle_close(self, candle: dict):
@@ -966,6 +1096,66 @@ class NasTicker:
 
         # ── NAS ATM2: check entry on same squeeze signal ──
         self._on_candle_close_atm2(candle)
+
+        # ── NAS ATM4: check entry on same squeeze signal ──
+        self._on_candle_close_atm4(candle)
+
+    def _on_candle_close_atm4(self, candle: dict):
+        """
+        ATM4 entry check on candle close.
+        Shares the same ATR squeeze detection as NAS OTM.
+        """
+        try:
+            from config import NAS_ATM4_DEFAULTS
+            if not NAS_ATM4_DEFAULTS.get('enabled', True):
+                return
+
+            from services.nas_atm4_executor import NasAtm4Executor
+            from services.nas_atm4_db import get_nas_atm4_db
+            from services.nas_scanner import NasScanner
+
+            atm4_executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+            atm4_db = get_nas_atm4_db()
+
+            # Build DataFrame from aggregated candles (or let scanner fetch its own)
+            df_5min = self.aggregator.get_dataframe()
+            if len(df_5min) < 60:
+                df_5min = None  # scanner.scan() will call load_5min_bars()
+
+            # Run scan to check squeeze state
+            scanner = NasScanner(NAS_ATM4_DEFAULTS)
+            daily_df = getattr(self, '_daily_candles', None)
+            scan = scanner.scan(df_5min=df_5min, daily_df=daily_df)
+            if scan.get('error'):
+                return
+
+            spot = scan['spot']
+
+            # Update ATM4 state
+            atm4_db.update_state(
+                atr_value=scan.get('atr'),
+                atr_ma=scan.get('atr_ma'),
+                is_squeezing=1 if scan.get('is_squeezing') else 0,
+                squeeze_count=scan.get('squeeze_count', 0),
+                spot_price=spot,
+                last_scan_time=datetime.now().isoformat(),
+            )
+
+            # Check for squeeze entry signal
+            for signal in scan.get('signals', []):
+                if signal['type'] == 'SQUEEZE_ENTRY':
+                    sid, msg = atm4_executor.execute_strangle_entry(spot=spot)
+                    if sid:
+                        logger.info(f"[NAS-ATM4] Entry: strangle #{sid} at spot {spot:.1f}")
+                        # Subscribe ATM4 option legs for SL monitoring
+                        new_active = atm4_db.get_active_positions()
+                        self.subscribe_atm4_option_legs(new_active)
+                    else:
+                        logger.info(f"[NAS-ATM4] Entry blocked: {msg}")
+                    break  # Only one entry per candle
+
+        except Exception as e:
+            logger.error(f"[NAS-ATM4] Candle close handler error: {e}", exc_info=True)
 
     def _on_candle_close_atm2(self, candle: dict):
         """
@@ -1140,6 +1330,16 @@ class NasTicker:
         except Exception as e:
             logger.warning(f"[NAS-ATM2] Could not subscribe active legs: {e}")
 
+        # Also subscribe NAS ATM4 active legs
+        try:
+            from services.nas_atm4_db import get_nas_atm4_db
+            atm4_db = get_nas_atm4_db()
+            atm4_active = atm4_db.get_active_positions()
+            if atm4_active:
+                self.subscribe_atm4_option_legs(atm4_active)
+        except Exception as e:
+            logger.warning(f"[NAS-ATM4] Could not subscribe active legs: {e}")
+
     def stop(self):
         """Stop NAS ticker — stop processing ticks."""
         self.is_running = False
@@ -1207,6 +1407,18 @@ class NasTicker:
                     'leg': info['leg'],
                 }
                 for token, info in self._atm2_option_tokens.items()
+            ],
+            # NAS ATM4 leg info
+            'atm4_option_legs_monitored': len(self._atm4_option_tokens),
+            'atm4_option_legs': [
+                {
+                    'tradingsymbol': info['tradingsymbol'],
+                    'entry_price': info['entry_price'],
+                    'sl_price': info['sl_price'],
+                    'current_premium': self._atm4_option_ltps.get(token),
+                    'leg': info['leg'],
+                }
+                for token, info in self._atm4_option_tokens.items()
             ],
         }
 

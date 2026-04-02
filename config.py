@@ -416,5 +416,12 @@ NAS_ATM2_DEFAULTS = {
     'exit_both_on_sl': True,
 }
 
+NAS_ATM4_DEFAULTS = {
+    **NAS_ATM_DEFAULTS,
+    'max_rolls': 1,              # Only 1 roll allowed per strangle
+    'trail_to_cost_on_sl': False,
+    're_enter_on_sl': False,
+}
+
 # Nifty 500 Universe
 NIFTY500_CSV = DATA_DIR.parent / 'data' / 'nifty500_list.csv'

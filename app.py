@@ -49,7 +49,7 @@ from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
     MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS, NAS_DEFAULTS, NAS_ATM_DEFAULTS,
-    NAS_ATM2_DEFAULTS,
+    NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -4055,6 +4055,7 @@ except Exception as e:
 
 _nas_atm_tasks = {}
 _nas_atm2_tasks = {}
+_nas_atm4_tasks = {}
 
 
 @app.route('/nas-atm')
@@ -4437,6 +4438,159 @@ def api_nas_atm2_ticker_stop():
 
 @app.route('/api/nas-atm2/ticker/status')
 def api_nas_atm2_ticker_status():
+    """Get NAS ticker status (shared)."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        return jsonify(ticker.get_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# NAS ATM4 — Nifty ATM Strangle V4 (Variant config)
+# =============================================================================
+
+
+@app.route('/api/nas-atm4/state')
+def api_nas_atm4_state():
+    """Full state dump for NAS ATM4 dashboard."""
+    try:
+        from services.nas_atm4_executor import NasAtm4Executor
+        executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"[NAS-ATM4] state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/scan', methods=['POST'])
+def api_nas_atm4_scan():
+    """Trigger a manual NAS ATM4 scan (entry attempt)."""
+    task_id = f"nas_atm4_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_atm4_tasks[task_id] = {'status': 'running'}
+
+    def _run_scan(tid):
+        try:
+            from services.nas_atm4_executor import NasAtm4Executor
+            executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+            sid, msg = executor.execute_strangle_entry()
+            _nas_atm4_tasks[tid] = {'status': 'completed', 'result': {'strangle_id': sid, 'message': msg}}
+        except Exception as e:
+            logger.error(f"[NAS-ATM4] scan error: {e}")
+            _nas_atm4_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run_scan, args=[task_id], id=f'nas_atm4_scan_{task_id}',
+                      replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas-atm4/scan/status/<task_id>')
+def api_nas_atm4_scan_status(task_id):
+    """Poll NAS ATM4 scan status."""
+    task = _nas_atm4_tasks.get(task_id, {'status': 'unknown'})
+    return jsonify(task)
+
+
+@app.route('/api/nas-atm4/kill-switch', methods=['POST'])
+def api_nas_atm4_kill_switch():
+    """Emergency close all NAS ATM4 positions."""
+    try:
+        from services.nas_atm4_executor import NasAtm4Executor
+        executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+        exits = executor.emergency_exit_all()
+        return jsonify({'status': 'killed', 'positions_closed': exits})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/trades')
+def api_nas_atm4_trades():
+    """Recent NAS ATM4 trades."""
+    try:
+        from services.nas_atm4_db import get_nas_atm4_db
+        db = get_nas_atm4_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/signals')
+def api_nas_atm4_signals():
+    """NAS ATM4 signal history."""
+    try:
+        from services.nas_atm4_db import get_nas_atm4_db
+        db = get_nas_atm4_db()
+        return jsonify(db.get_recent_signals(limit=30))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/equity-curve')
+def api_nas_atm4_equity_curve():
+    """NAS ATM4 daily P&L for equity curve chart."""
+    try:
+        from services.nas_atm4_db import get_nas_atm4_db
+        db = get_nas_atm4_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/toggle-mode', methods=['POST'])
+def api_nas_atm4_toggle_mode():
+    """Toggle NAS ATM4 paper/live trading mode."""
+    try:
+        current = NAS_ATM4_DEFAULTS.get('paper_trading_mode', True)
+        NAS_ATM4_DEFAULTS['paper_trading_mode'] = not current
+        new_mode = 'PAPER' if NAS_ATM4_DEFAULTS['paper_trading_mode'] else 'LIVE'
+        logger.info(f"[NAS-ATM4] mode toggled to {new_mode}")
+        return jsonify({'mode': new_mode})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/toggle-enabled', methods=['POST'])
+def api_nas_atm4_toggle_enabled():
+    """Enable/disable NAS ATM4 system."""
+    try:
+        current = NAS_ATM4_DEFAULTS.get('enabled', True)
+        NAS_ATM4_DEFAULTS['enabled'] = not current
+        new_enabled = NAS_ATM4_DEFAULTS['enabled']
+        status = 'enabled' if new_enabled else 'disabled'
+        logger.info(f"[NAS-ATM4] system {status}")
+        return jsonify({'enabled': new_enabled, 'status': status})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/ticker/start', methods=['POST'])
+def api_nas_atm4_ticker_start():
+    """Start NAS ticker (shared with OTM/ATM) for ATM4 system."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        if not ticker.is_running:
+            ticker.start()
+        return jsonify({'status': 'started'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/ticker/stop', methods=['POST'])
+def api_nas_atm4_ticker_stop():
+    """Stop NAS ticker (shared)."""
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.stop()
+        return jsonify({'status': 'stopped'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-atm4/ticker/status')
+def api_nas_atm4_ticker_status():
     """Get NAS ticker status (shared)."""
     try:
         from services.nas_ticker import get_nas_ticker
