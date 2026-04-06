@@ -1616,6 +1616,15 @@ class NasTicker:
         time.sleep(1)
         self.start()
 
+    def _get_atm_st_value(self) -> Optional[float]:
+        """Get current SuperTrend value for the naked ATM leg, or None."""
+        candles = self._atm_naked_leg_candles
+        if len(candles) < 8:
+            return None
+        from services.nas_atm4_executor import NasAtm4Executor
+        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+        return st_val
+
     def _get_atm4_st_value(self) -> Optional[float]:
         """Get current SuperTrend value for the naked ATM4 leg, or None."""
         candles = self._atm4_naked_leg_candles
@@ -1692,6 +1701,14 @@ class NasTicker:
                 }
                 for token, info in self._atm4_option_tokens.items()
             ],
+            # NAS ATM naked leg SuperTrend monitoring state
+            'atm_naked_st': {
+                'active': self._atm_naked_leg_token is not None,
+                'tradingsymbol': self._atm_naked_leg_info.get('tradingsymbol') if self._atm_naked_leg_info else None,
+                'candles_completed': len(self._atm_naked_leg_candles),
+                'current_close': self._atm_naked_leg_current['close'] if self._atm_naked_leg_current else None,
+                'st_value': self._get_atm_st_value(),
+            } if self._atm_naked_leg_token else {'active': False},
             # NAS ATM4 naked leg SuperTrend monitoring state
             'atm4_naked_st': {
                 'active': self._atm4_naked_leg_token is not None,

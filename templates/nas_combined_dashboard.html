@@ -678,6 +678,7 @@ let _otmData = null;
 let _atmData = null;
 let _atm2Data = null;
 let _atm4Data = null;
+let _tickerData = null;
 let _liveOtmLegs = {};
 let _liveAtmLegs = {};
 let _liveAtm2Legs = {};
@@ -846,6 +847,7 @@ async function pollScan(taskId, baseUrl) {
 async function refreshTickerStatus() {
     try {
         const data = await (await fetch('/api/nas/ticker/status')).json();
+        _tickerData = data;
         const badge = document.getElementById('tickerBadge');
         const text = document.getElementById('tickerText');
         if (data.is_connected) {
@@ -989,28 +991,44 @@ function renderATMPositions(data) {
         return;
     }
 
+    // Get ATM naked ST state from ticker
+    const atmNakedST = _tickerData ? (_tickerData.atm_naked_st || {}) : {};
+
     const rows = allActive.map(p => {
         const ltp = _liveAtmLegs[p.tradingsymbol];
         const entry = p.entry_price || 0;
         const sl = p.sl_price || 0;
         const qty = p.qty || LOT_SIZE;
         const lots = Math.round(qty / 75) || 1;
+        const isSTMonitored = sl > 900000 || (p.notes || '').includes('st_monitoring');
         let ltpText = '--', pnlText = '--', pnlStyle = '';
         if (ltp != null && ltp > 0) {
             ltpText = ltp.toFixed(1);
+            // Show ST value next to LTP if naked leg is being ST-monitored
+            if (isSTMonitored && atmNakedST.active && atmNakedST.st_value) {
+                ltpText += ` <span style="color:#f59e0b;font-size:0.65rem;">ST ${atmNakedST.st_value.toFixed(1)}</span>`;
+            }
             const pnl = (entry - ltp) * qty;
             totalPnl += pnl;
             pnlStyle = pnl >= 0 ? 'color:#3fb950' : 'color:#f85149';
             pnlText = (pnl >= 0 ? '+' : '') + pnl.toFixed(0);
         }
-        const slStyle = sl > 0 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
+        let slText = '--';
+        let slStyle = 'color:#8b949e';
+        if (isSTMonitored) {
+            slText = 'ST';
+            slStyle = 'color:#f59e0b;font-weight:700';
+        } else if (sl > 0) {
+            slText = sl.toFixed(1);
+            slStyle = sl > 0 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
+        }
         return `<tr>
             <td style="color:#38a6f7;">${p.strangle_id||'--'}</td>
             <td><span class="leg-${p.leg}">${p.leg}</span></td>
             <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
             <td style="color:#8b949e;">${lots}L</td>
             <td>${entry}</td>
-            <td style="${slStyle}">${sl > 0 ? sl.toFixed(1) : '--'}</td>
+            <td style="${slStyle}">${slText}</td>
             <td>${ltpText}</td>
             <td style="${pnlStyle};font-weight:600">${pnlText}</td>
             <td>--</td><td>--</td>
@@ -1159,28 +1177,43 @@ function renderATM4Positions(data) {
         return;
     }
 
+    // Get ATM4 naked ST state from ticker
+    const atm4NakedST = _tickerData ? (_tickerData.atm4_naked_st || {}) : {};
+
     const rows = allActive.map(p => {
         const ltp = _liveAtm4Legs[p.tradingsymbol];
         const entry = p.entry_price || 0;
         const sl = p.sl_price || 0;
         const qty = p.qty || LOT_SIZE;
         const lots = Math.round(qty / 75) || 1;
+        const isSTMonitored = sl > 900000 || (p.notes || '').includes('st_monitoring');
         let ltpText = '--', pnlText = '--', pnlStyle = '';
         if (ltp != null && ltp > 0) {
             ltpText = ltp.toFixed(1);
+            if (isSTMonitored && atm4NakedST.active && atm4NakedST.st_value) {
+                ltpText += ` <span style="color:#f59e0b;font-size:0.65rem;">ST ${atm4NakedST.st_value.toFixed(1)}</span>`;
+            }
             const pnl = (entry - ltp) * qty;
             totalPnl += pnl;
             pnlStyle = pnl >= 0 ? 'color:#3fb950' : 'color:#f85149';
             pnlText = (pnl >= 0 ? '+' : '') + pnl.toFixed(0);
         }
-        const slStyle = sl > 0 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
+        let slText = '--';
+        let slStyle = 'color:#8b949e';
+        if (isSTMonitored) {
+            slText = 'ST';
+            slStyle = 'color:#f59e0b;font-weight:700';
+        } else if (sl > 0) {
+            slText = sl.toFixed(1);
+            slStyle = sl > 0 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
+        }
         return `<tr>
             <td style="color:#10b981;">${p.strangle_id||'--'}</td>
             <td><span class="leg-${p.leg}">${p.leg}</span></td>
             <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
             <td style="color:#8b949e;">${lots}L</td>
             <td>${entry}</td>
-            <td style="${slStyle}">${sl > 0 ? sl.toFixed(1) : '--'}</td>
+            <td style="${slStyle}">${slText}</td>
             <td>${ltpText}</td>
             <td style="${pnlStyle};font-weight:600">${pnlText}</td>
             <td>--</td><td>--</td>
