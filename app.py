@@ -4600,6 +4600,120 @@ def api_nas_atm4_ticker_status():
         return jsonify({'error': str(e)}), 500
 
 
+# --- NAS Performance Report ---------------------------------------------------
+
+@app.route('/nas/report')
+def nas_report():
+    """NAS Performance Report — all 4 systems side by side."""
+    return render_template(
+        'nas_report.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/nas/report-data')
+def api_nas_report_data():
+    """Aggregated report data across all 4 NAS trading systems."""
+    import sqlite3 as _sqlite3
+
+    systems = {
+        'OTM':  'backtest_data/nas_trading.db',
+        'ATM':  'backtest_data/nas_atm_trading.db',
+        'ATM2': 'backtest_data/nas_atm2_trading.db',
+        'ATM4': 'backtest_data/nas_atm4_trading.db',
+    }
+
+    result = {'systems': {}, 'daily_snapshots': {}}
+
+    for sys_name, db_path in systems.items():
+        try:
+            conn = _sqlite3.connect(db_path)
+            conn.row_factory = _sqlite3.Row
+
+            # Table prefix
+            prefix = 'nas_' if sys_name == 'OTM' else 'nas_atm_'
+
+            # Get all positions
+            positions = conn.execute(
+                f"SELECT * FROM {prefix}positions ORDER BY id"
+            ).fetchall()
+            positions = [dict(r) for r in positions]
+
+            # Get all trades
+            trades = conn.execute(
+                f"SELECT * FROM {prefix}trades ORDER BY id"
+            ).fetchall()
+            trades = [dict(r) for r in trades]
+
+            # System summary
+            total_trades = len(trades)
+            pnls = [t.get('net_pnl', 0) or 0 for t in trades]
+            wins = [p for p in pnls if p > 0]
+            losses = [p for p in pnls if p <= 0]
+
+            result['systems'][sys_name] = {
+                'total_trades': total_trades,
+                'total_pnl': round(sum(pnls), 2),
+                'avg_pnl': round(sum(pnls) / total_trades, 2) if total_trades else 0,
+                'win_rate': round(len(wins) / total_trades * 100, 1) if total_trades else 0,
+                'winners': len(wins),
+                'losers': len(losses),
+                'max_win': round(max(pnls), 2) if pnls else 0,
+                'max_loss': round(min(pnls), 2) if pnls else 0,
+                'profit_factor': round(
+                    sum(wins) / abs(sum(losses)), 2
+                ) if losses and sum(losses) != 0 else 0,
+                'trades': trades,
+                'positions': positions,
+            }
+            conn.close()
+        except Exception as e:
+            result['systems'][sys_name] = {
+                'error': str(e),
+                'total_trades': 0,
+                'positions': [],
+                'trades': [],
+            }
+
+    # Build daily snapshots (all systems merged by date)
+    all_dates = set()
+    for sys_name, data in result['systems'].items():
+        for pos in data.get('positions', []):
+            entry_date = (pos.get('entry_time') or '')[:10]
+            if entry_date:
+                all_dates.add(entry_date)
+
+    daily = {}
+    for d in sorted(all_dates):
+        daily[d] = {}
+        for sys_name, data in result['systems'].items():
+            day_positions = [
+                p for p in data.get('positions', [])
+                if (p.get('entry_time') or '')[:10] == d
+            ]
+            day_trades = [
+                t for t in data.get('trades', [])
+                if (t.get('trade_date') or '') == d
+            ]
+            day_pnl = sum(t.get('net_pnl', 0) or 0 for t in day_trades)
+            daily[d][sys_name] = {
+                'positions': day_positions,
+                'trades': day_trades,
+                'day_pnl': round(day_pnl, 2),
+                'trade_count': len(day_trades),
+            }
+
+    result['daily_snapshots'] = daily
+
+    # Remove raw positions/trades from system summary (too large for JSON)
+    for sys_name in result['systems']:
+        result['systems'][sys_name].pop('positions', None)
+        result['systems'][sys_name].pop('trades', None)
+
+    return jsonify(result)
+
+
 # =============================================================================
 # Options Data Manager — Index Option Chain Downloader
 # =============================================================================

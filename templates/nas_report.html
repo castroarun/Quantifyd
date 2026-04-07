@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}NAS — Performance Report{% endblock %}
+
+{% block extra_css %}
+<style>
+    .system-color-otm  { color: #a371f7; }
+    .system-color-atm  { color: #38a6f7; }
+    .system-color-atm2 { color: #f59e0b; }
+    .system-color-atm4 { color: #10b981; }
+
+    .system-bg-otm  { background: rgba(163,113,247,0.10); border: 1px solid rgba(163,113,247,0.25); }
+    .system-bg-atm  { background: rgba(56,166,247,0.10);  border: 1px solid rgba(56,166,247,0.25); }
+    .system-bg-atm2 { background: rgba(245,158,11,0.10);  border: 1px solid rgba(245,158,11,0.25); }
+    .system-bg-atm4 { background: rgba(16,185,129,0.10);  border: 1px solid rgba(16,185,129,0.25); }
+
+    .summary-table th {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+        white-space: nowrap;
+    }
+    .summary-table td {
+        border-color: var(--bs-border-color);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: right;
+    }
+    .summary-table td:first-child {
+        text-align: left;
+        color: #c9d1d9;
+        font-weight: 500;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #c9d1d9;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .day-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    .day-nav-btn {
+        background: rgba(22,27,34,0.8);
+        border: 1px solid var(--bs-border-color);
+        color: #c9d1d9;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .day-nav-btn:hover { background: rgba(48,54,61,0.9); color: #fff; }
+    .day-nav-btn:disabled { opacity: 0.3; cursor: default; }
+    .day-nav-date {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #c9d1d9;
+        min-width: 280px;
+        text-align: center;
+    }
+
+    .snapshot-panel {
+        border-radius: 10px;
+        border: 1px solid var(--bs-border-color);
+        background: rgba(22,27,34,0.5);
+        overflow: hidden;
+        margin-bottom: 0.75rem;
+    }
+    .snapshot-header {
+        padding: 0.5rem 0.8rem;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .snapshot-header-otm  { background: linear-gradient(135deg, rgba(163,113,247,0.12) 0%, rgba(22,27,34,0.9) 100%); border-bottom: 2px solid #a371f7; }
+    .snapshot-header-atm  { background: linear-gradient(135deg, rgba(56,166,247,0.12) 0%, rgba(22,27,34,0.9) 100%);  border-bottom: 2px solid #38a6f7; }
+    .snapshot-header-atm2 { background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(22,27,34,0.9) 100%);  border-bottom: 2px solid #f59e0b; }
+    .snapshot-header-atm4 { background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(22,27,34,0.9) 100%);  border-bottom: 2px solid #10b981; }
+
+    .pos-table th {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .pos-table td {
+        border-color: var(--bs-border-color);
+        font-size: 0.78rem;
+        vertical-align: middle;
+    }
+
+    .positive { color: #3fb950; }
+    .negative { color: #f85149; }
+    .zero     { color: #8b949e; }
+
+    .dow-table th, .dow-table td {
+        font-size: 0.82rem;
+        border-color: var(--bs-border-color);
+        text-align: right;
+    }
+    .dow-table td:first-child, .dow-table th:first-child { text-align: left; }
+    .dow-sub { font-size: 0.65rem; color: #8b949e; display: block; }
+
+    .loading-spinner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        color: #8b949e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">
+                <i class="bi bi-graph-up me-2" style="color: #a371f7;"></i>
+                NAS — Performance Report
+            </h4>
+            <small class="text-muted">
+                <a href="/nas" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                </a>
+                &nbsp;|&nbsp; All systems: OTM, ATM, ATM 2.0, ATM V4
+            </small>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        Loading report data...
+    </div>
+
+    <!-- Content (hidden until loaded) -->
+    <div id="reportContent" style="display:none;">
+
+        <!-- Section 1: Overall Performance Summary -->
+        <div class="section-title"><i class="bi bi-bar-chart-line me-2"></i>Overall Performance Summary</div>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm summary-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th class="system-color-otm">OTM</th>
+                        <th class="system-color-atm">ATM</th>
+                        <th class="system-color-atm2">ATM 2.0</th>
+                        <th class="system-color-atm4">ATM V4</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Section 2: Performance by Day of Week -->
+        <div class="section-title"><i class="bi bi-calendar-week me-2"></i>Performance by Day of Week</div>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm dow-table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th class="system-color-otm">OTM P&L</th>
+                        <th class="system-color-atm">ATM P&L</th>
+                        <th class="system-color-atm2">ATM2 P&L</th>
+                        <th class="system-color-atm4">ATM4 P&L</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="dowBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Section 3: Daily Snapshots -->
+        <div class="section-title"><i class="bi bi-calendar-day me-2"></i>Daily Snapshots</div>
+        <div class="day-nav">
+            <button class="day-nav-btn" id="btnPrev" onclick="navigateDay(-1)">&larr;</button>
+            <div class="day-nav-date" id="dayLabel">--</div>
+            <button class="day-nav-btn" id="btnNext" onclick="navigateDay(1)">&rarr;</button>
+        </div>
+        <div id="daySnapshot"></div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let _reportData = null;
+let _allDates = [];
+let _currentDateIdx = 0;
+
+const SYS_KEYS  = ['OTM', 'ATM', 'ATM2', 'ATM4'];
+const SYS_LABEL = { OTM: 'OTM', ATM: 'ATM', ATM2: 'ATM 2.0', ATM4: 'ATM V4' };
+const SYS_CSS   = { OTM: 'otm', ATM: 'atm', ATM2: 'atm2', ATM4: 'atm4' };
+const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function pnlClass(v) { return v > 0 ? 'positive' : v < 0 ? 'negative' : 'zero'; }
+function fmt(v, d=2) { return v == null ? '--' : Number(v).toFixed(d); }
+function fmtPnl(v) {
+    if (v == null) return '--';
+    const s = Number(v).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return v > 0 ? '+' + s : s;
+}
+
+async function loadReport() {
+    try {
+        const res = await fetch('/api/nas/report-data');
+        _reportData = await res.json();
+        _allDates = Object.keys(_reportData.daily_snapshots || {}).sort();
+        _currentDateIdx = _allDates.length - 1;
+        document.getElementById('loadingSpinner').style.display = 'none';
+        document.getElementById('reportContent').style.display = 'block';
+        renderSummary();
+        renderDayOfWeek();
+        renderDaySnapshot();
+    } catch (e) {
+        document.getElementById('loadingSpinner').innerHTML =
+            '<span class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load report: ' + e.message + '</span>';
+    }
+}
+
+function renderSummary() {
+    const sys = _reportData.systems || {};
+    const metrics = [
+        ['Total Trades',  'total_trades',  v => v],
+        ['Win Rate',      'win_rate',      v => v + '%'],
+        ['Profit Factor', 'profit_factor', v => fmt(v)],
+        ['Total P&L',     'total_pnl',     v => fmtPnl(v)],
+        ['Avg P&L/Trade', 'avg_pnl',       v => fmtPnl(v)],
+        ['Max Win',       'max_win',       v => fmtPnl(v)],
+        ['Max Loss',      'max_loss',      v => fmtPnl(v)],
+        ['Winners',       'winners',       v => v],
+        ['Losers',        'losers',        v => v],
+    ];
+
+    let html = '';
+    for (const [label, key, formatter] of metrics) {
+        html += '<tr><td>' + label + '</td>';
+        for (const sk of SYS_KEYS) {
+            const d = sys[sk] || {};
+            const val = d[key];
+            let cls = '';
+            if (['total_pnl','avg_pnl','max_win','max_loss'].includes(key)) cls = pnlClass(val);
+            html += '<td class="' + cls + '">' + (d.error ? '<span class="text-danger">ERR</span>' : formatter(val != null ? val : 0)) + '</td>';
+        }
+        html += '</tr>';
+    }
+    document.getElementById('summaryBody').innerHTML = html;
+}
+
+function renderDayOfWeek() {
+    // Aggregate P&L and trade count by day of week from daily_snapshots
+    const snaps = _reportData.daily_snapshots || {};
+    // dow 1=Mon..5=Fri
+    const dowData = {}; // { 1: { OTM: { pnl, count }, ... }, ... }
+    for (let i = 1; i <= 5; i++) {
+        dowData[i] = {};
+        for (const sk of SYS_KEYS) dowData[i][sk] = { pnl: 0, count: 0 };
+    }
+
+    for (const [dateStr, daySys] of Object.entries(snaps)) {
+        const dt = new Date(dateStr + 'T00:00:00');
+        const dow = dt.getDay(); // 0=Sun
+        if (dow < 1 || dow > 5) continue;
+        for (const sk of SYS_KEYS) {
+            const sd = daySys[sk] || {};
+            dowData[dow][sk].pnl += sd.day_pnl || 0;
+            dowData[dow][sk].count += sd.trade_count || 0;
+        }
+    }
+
+    const dowLabels = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' };
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        html += '<tr><td><strong>' + dowLabels[i] + '</strong></td>';
+        let total = 0;
+        for (const sk of SYS_KEYS) {
+            const d = dowData[i][sk];
+            total += d.pnl;
+            html += '<td class="' + pnlClass(d.pnl) + '">' + fmtPnl(d.pnl) + '<span class="dow-sub">' + d.count + ' trades</span></td>';
+        }
+        html += '<td class="' + pnlClass(total) + '" style="font-weight:700;">' + fmtPnl(total) + '</td></tr>';
+    }
+
+    // Totals row
+    html += '<tr style="border-top: 2px solid var(--bs-border-color);"><td><strong>Total</strong></td>';
+    let grandTotal = 0;
+    for (const sk of SYS_KEYS) {
+        let sysPnl = 0, sysCount = 0;
+        for (let i = 1; i <= 5; i++) { sysPnl += dowData[i][sk].pnl; sysCount += dowData[i][sk].count; }
+        grandTotal += sysPnl;
+        html += '<td class="' + pnlClass(sysPnl) + '" style="font-weight:700;">' + fmtPnl(sysPnl) + '<span class="dow-sub">' + sysCount + ' trades</span></td>';
+    }
+    html += '<td class="' + pnlClass(grandTotal) + '" style="font-weight:800;">' + fmtPnl(grandTotal) + '</td></tr>';
+
+    document.getElementById('dowBody').innerHTML = html;
+}
+
+function navigateDay(delta) {
+    _currentDateIdx = Math.max(0, Math.min(_allDates.length - 1, _currentDateIdx + delta));
+    renderDaySnapshot();
+}
+
+function renderDaySnapshot() {
+    if (!_allDates.length) {
+        document.getElementById('daySnapshot').innerHTML = '<p class="text-muted text-center">No trading data found.</p>';
+        document.getElementById('dayLabel').textContent = '--';
+        return;
+    }
+
+    const dateStr = _allDates[_currentDateIdx];
+    const dt = new Date(dateStr + 'T00:00:00');
+    const dayName = DOW_NAMES[dt.getDay()];
+    const dateFormatted = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('dayLabel').textContent = dayName + ', ' + dateFormatted;
+    document.getElementById('btnPrev').disabled = (_currentDateIdx === 0);
+    document.getElementById('btnNext').disabled = (_currentDateIdx === _allDates.length - 1);
+
+    const daySys = (_reportData.daily_snapshots || {})[dateStr] || {};
+    let html = '<div class="row g-2">';
+
+    for (const sk of SYS_KEYS) {
+        const sd = daySys[sk] || { positions: [], trades: [], day_pnl: 0, trade_count: 0 };
+        const cssCls = SYS_CSS[sk];
+
+        html += '<div class="col-lg-6"><div class="snapshot-panel">';
+        html += '<div class="snapshot-header snapshot-header-' + cssCls + '">';
+        html += '<span>' + SYS_LABEL[sk] + '</span>';
+        html += '<span class="' + pnlClass(sd.day_pnl) + '" style="font-size:1rem;">' + fmtPnl(sd.day_pnl) + '</span>';
+        html += '</div>';
+
+        if (sd.positions && sd.positions.length) {
+            html += '<div class="table-responsive"><table class="table table-sm pos-table mb-0">';
+            html += '<thead><tr><th>S#</th><th>Leg</th><th>Symbol</th><th>Entry</th><th>SL</th><th>Exit</th><th>P&L</th><th>Reason</th><th>Entry Time</th><th>Exit Time</th></tr></thead><tbody>';
+            for (const p of sd.positions) {
+                const legCls = (p.leg || '').includes('CE') ? 'leg-CE' : (p.leg || '').includes('PE') ? 'leg-PE' : '';
+                const exitPnl = (p.exit_price != null && p.entry_price != null) ? ((p.entry_price - p.exit_price) * (p.qty || 0)) : null;
+                html += '<tr>';
+                html += '<td>' + (p.strangle_id || '--') + '</td>';
+                html += '<td class="' + legCls + '">' + (p.leg || '--') + '</td>';
+                html += '<td style="font-size:0.72rem;">' + (p.tradingsymbol || '--') + '</td>';
+                html += '<td>' + fmt(p.entry_price, 1) + '</td>';
+                html += '<td>' + (p.sl_price ? fmt(p.sl_price, 1) : '--') + '</td>';
+                html += '<td>' + (p.exit_price != null ? fmt(p.exit_price, 1) : '--') + '</td>';
+                html += '<td class="' + (exitPnl != null ? pnlClass(exitPnl) : '') + '">' + (exitPnl != null ? fmtPnl(exitPnl) : '--') + '</td>';
+                html += '<td style="font-size:0.72rem;">' + (p.exit_reason || '--') + '</td>';
+                html += '<td style="font-size:0.72rem;">' + ((p.entry_time || '').substring(11, 19) || '--') + '</td>';
+                html += '<td style="font-size:0.72rem;">' + ((p.exit_time || '').substring(11, 19) || '--') + '</td>';
+                html += '</tr>';
+            }
+            html += '</tbody></table></div>';
+        } else {
+            html += '<div class="p-3 text-center text-muted" style="font-size:0.8rem;">No positions this day</div>';
+        }
+
+        html += '</div></div>';
+    }
+
+    html += '</div>';
+    document.getElementById('daySnapshot').innerHTML = html;
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft')  navigateDay(-1);
+    if (e.key === 'ArrowRight') navigateDay(1);
+});
+
+document.addEventListener('DOMContentLoaded', loadReport);
+</script>
+{% endblock %}
