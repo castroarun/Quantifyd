@@ -1491,13 +1491,24 @@ class NasTicker:
         except Exception as e:
             logger.warning(f"[NAS] Could not subscribe active legs: {e}")
 
-        # Also subscribe NAS ATM active legs
+        # Also subscribe NAS ATM active legs + auto-start ST monitoring
         try:
             from services.nas_atm_db import get_nas_atm_db
             atm_db = get_nas_atm_db()
             atm_active = atm_db.get_active_positions()
             if atm_active:
                 self.subscribe_atm_option_legs(atm_active)
+                # Auto-start ST monitoring for naked legs (SL=999999)
+                import time
+                time.sleep(1)
+                for pos in atm_active:
+                    if (pos.get('sl_price', 0) or 0) > 900000:
+                        tsym = pos.get('tradingsymbol', '')
+                        for t, info in self._atm_option_tokens.items():
+                            if info['tradingsymbol'] == tsym:
+                                self.start_atm_naked_monitoring(t, info)
+                                logger.info(f"[NAS-ATM] Auto-started ST monitoring for {tsym}")
+                                break
         except Exception as e:
             logger.warning(f"[NAS-ATM] Could not subscribe active legs: {e}")
 
@@ -1511,13 +1522,24 @@ class NasTicker:
         except Exception as e:
             logger.warning(f"[NAS-ATM2] Could not subscribe active legs: {e}")
 
-        # Also subscribe NAS ATM4 active legs
+        # Also subscribe NAS ATM4 active legs + auto-start ST monitoring
         try:
             from services.nas_atm4_db import get_nas_atm4_db
             atm4_db = get_nas_atm4_db()
             atm4_active = atm4_db.get_active_positions()
             if atm4_active:
                 self.subscribe_atm4_option_legs(atm4_active)
+                # Auto-start ST monitoring for naked legs (SL=999999)
+                import time
+                time.sleep(1)
+                for pos in atm4_active:
+                    if (pos.get('sl_price', 0) or 0) > 900000:
+                        tsym = pos.get('tradingsymbol', '')
+                        for t, info in self._atm4_option_tokens.items():
+                            if info['tradingsymbol'] == tsym:
+                                self.start_atm4_naked_monitoring(t, info)
+                                logger.info(f"[NAS-ATM4] Auto-started ST monitoring for {tsym}")
+                                break
         except Exception as e:
             logger.warning(f"[NAS-ATM4] Could not subscribe active legs: {e}")
 
