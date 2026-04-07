@@ -1354,185 +1354,103 @@ class NasTicker:
         except Exception as e:
             logger.error(f"[NAS] Candle close handler error: {e}", exc_info=True)
 
-        # ── NAS ATM: check entry on same squeeze signal ──
-        self._on_candle_close_atm(candle)
+        # ── ATM systems: use the SAME scan result for entry ──
+        self._on_candle_close_atm_all(scan if 'scan' in locals() else None)
 
-        # ── NAS ATM2: check entry on same squeeze signal ──
-        self._on_candle_close_atm2(candle)
-
-        # ── NAS ATM4: check entry on same squeeze signal ──
-        self._on_candle_close_atm4(candle)
-
-    def _on_candle_close_atm4(self, candle: dict):
+    def _on_candle_close_atm_all(self, scan):
         """
-        ATM4 entry check on candle close.
-        Shares the same ATR squeeze detection as NAS OTM.
+        Single scan, shared entry signal for ATM, ATM2, and ATM4.
+        Called after OTM's scan completes — reuses the same scan result.
+        If scan is None (OTM scan failed), runs one fresh scan for all ATM systems.
         """
         try:
-            from config import NAS_ATM4_DEFAULTS
-            if not NAS_ATM4_DEFAULTS.get('enabled', True):
-                return
-
-            from services.nas_atm4_executor import NasAtm4Executor
-            from services.nas_atm4_db import get_nas_atm4_db
-            from services.nas_scanner import NasScanner
-
-            atm4_executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
-            atm4_db = get_nas_atm4_db()
-
-            # Build DataFrame from aggregated candles (or let scanner fetch its own)
-            df_5min = self.aggregator.get_dataframe()
-            if len(df_5min) < 60:
-                df_5min = None  # scanner.scan() will call load_5min_bars()
-
-            # Run scan to check squeeze state
-            scanner = NasScanner(NAS_ATM4_DEFAULTS)
-            daily_df = getattr(self, '_daily_candles', None)
-            scan = scanner.scan(df_5min=df_5min, daily_df=daily_df)
-            if scan.get('error'):
-                return
+            # If OTM scan failed or didn't produce results, run one scan for ATM systems
+            if scan is None or scan.get('error'):
+                from services.nas_scanner import NasScanner
+                from config import NAS_ATM_DEFAULTS
+                scanner = NasScanner(NAS_ATM_DEFAULTS)
+                df_5min = self.aggregator.get_dataframe()
+                if len(df_5min) < 60:
+                    df_5min = None
+                daily_df = getattr(self, '_daily_candles', None)
+                scan = scanner.scan(df_5min=df_5min, daily_df=daily_df)
+                if scan.get('error'):
+                    logger.warning(f"[NAS] ATM shared scan error: {scan['error']}")
+                    return
 
             spot = scan['spot']
+            now_iso = datetime.now().isoformat()
+            has_squeeze = any(s['type'] == 'SQUEEZE_ENTRY' for s in scan.get('signals', []))
 
-            # Update ATM4 state
-            atm4_db.update_state(
+            # Shared state update values
+            state_update = dict(
                 atr_value=scan.get('atr'),
                 atr_ma=scan.get('atr_ma'),
                 is_squeezing=1 if scan.get('is_squeezing') else 0,
                 squeeze_count=scan.get('squeeze_count', 0),
                 spot_price=spot,
-                last_scan_time=datetime.now().isoformat(),
+                last_scan_time=now_iso,
             )
 
-            # Check for squeeze entry signal
-            for signal in scan.get('signals', []):
-                if signal['type'] == 'SQUEEZE_ENTRY':
-                    sid, msg = atm4_executor.execute_strangle_entry(spot=spot)
-                    if sid:
-                        logger.info(f"[NAS-ATM4] Entry: strangle #{sid} at spot {spot:.1f}")
-                        # Subscribe ATM4 option legs for SL monitoring
-                        new_active = atm4_db.get_active_positions()
-                        self.subscribe_atm4_option_legs(new_active)
-                    else:
-                        logger.info(f"[NAS-ATM4] Entry blocked: {msg}")
-                    break  # Only one entry per candle
+            # ── ATM ──
+            try:
+                from config import NAS_ATM_DEFAULTS
+                if NAS_ATM_DEFAULTS.get('enabled', True):
+                    from services.nas_atm_executor import NasAtmExecutor
+                    from services.nas_atm_db import get_nas_atm_db
+                    atm_db = get_nas_atm_db()
+                    atm_db.update_state(**state_update)
+                    if has_squeeze:
+                        executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
+                        sid, msg = executor.execute_strangle_entry(spot=spot)
+                        if sid:
+                            logger.info(f"[NAS-ATM] Entry: strangle #{sid} at spot {spot:.1f}")
+                            self.subscribe_atm_option_legs(atm_db.get_active_positions())
+                        else:
+                            logger.info(f"[NAS-ATM] Entry blocked: {msg}")
+            except Exception as e:
+                logger.error(f"[NAS-ATM] Entry error: {e}", exc_info=True)
+
+            # ── ATM2 ──
+            try:
+                from config import NAS_ATM2_DEFAULTS
+                if NAS_ATM2_DEFAULTS.get('enabled', True):
+                    from services.nas_atm2_executor import NasAtm2Executor
+                    from services.nas_atm2_db import get_nas_atm2_db
+                    atm2_db = get_nas_atm2_db()
+                    atm2_db.update_state(**state_update)
+                    if has_squeeze:
+                        executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
+                        sid, msg = executor.execute_strangle_entry(spot=spot)
+                        if sid:
+                            logger.info(f"[NAS-ATM2] Entry: strangle #{sid} at spot {spot:.1f}")
+                            self.subscribe_atm2_option_legs(atm2_db.get_active_positions())
+                        else:
+                            logger.info(f"[NAS-ATM2] Entry blocked: {msg}")
+            except Exception as e:
+                logger.error(f"[NAS-ATM2] Entry error: {e}", exc_info=True)
+
+            # ── ATM4 ──
+            try:
+                from config import NAS_ATM4_DEFAULTS
+                if NAS_ATM4_DEFAULTS.get('enabled', True):
+                    from services.nas_atm4_executor import NasAtm4Executor
+                    from services.nas_atm4_db import get_nas_atm4_db
+                    atm4_db = get_nas_atm4_db()
+                    atm4_db.update_state(**state_update)
+                    if has_squeeze:
+                        executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+                        sid, msg = executor.execute_strangle_entry(spot=spot)
+                        if sid:
+                            logger.info(f"[NAS-ATM4] Entry: strangle #{sid} at spot {spot:.1f}")
+                            self.subscribe_atm4_option_legs(atm4_db.get_active_positions())
+                        else:
+                            logger.info(f"[NAS-ATM4] Entry blocked: {msg}")
+            except Exception as e:
+                logger.error(f"[NAS-ATM4] Entry error: {e}", exc_info=True)
 
         except Exception as e:
-            logger.error(f"[NAS-ATM4] Candle close handler error: {e}", exc_info=True)
-
-    def _on_candle_close_atm2(self, candle: dict):
-        """
-        ATM2 entry check on candle close.
-        Shares the same ATR squeeze detection as NAS OTM.
-        """
-        try:
-            from config import NAS_ATM2_DEFAULTS
-            if not NAS_ATM2_DEFAULTS.get('enabled', True):
-                return
-
-            from services.nas_atm2_executor import NasAtm2Executor
-            from services.nas_atm2_db import get_nas_atm2_db
-            from services.nas_scanner import NasScanner
-
-            atm2_executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
-            atm2_db = get_nas_atm2_db()
-
-            # Build DataFrame from aggregated candles (or let scanner fetch its own)
-            df_5min = self.aggregator.get_dataframe()
-            if len(df_5min) < 60:
-                df_5min = None  # scanner.scan() will call load_5min_bars()
-
-            # Run scan to check squeeze state
-            scanner = NasScanner(NAS_ATM2_DEFAULTS)
-            daily_df = getattr(self, '_daily_candles', None)
-            scan = scanner.scan(df_5min=df_5min, daily_df=daily_df)
-            if scan.get('error'):
-                return
-
-            spot = scan['spot']
-
-            # Update ATM2 state
-            atm2_db.update_state(
-                atr_value=scan.get('atr'),
-                atr_ma=scan.get('atr_ma'),
-                is_squeezing=1 if scan.get('is_squeezing') else 0,
-                squeeze_count=scan.get('squeeze_count', 0),
-                spot_price=spot,
-                last_scan_time=datetime.now().isoformat(),
-            )
-
-            # Check for squeeze entry signal
-            for signal in scan.get('signals', []):
-                if signal['type'] == 'SQUEEZE_ENTRY':
-                    sid, msg = atm2_executor.execute_strangle_entry(spot=spot)
-                    if sid:
-                        logger.info(f"[NAS-ATM2] Entry: strangle #{sid} at spot {spot:.1f}")
-                        # Subscribe ATM2 option legs for SL monitoring
-                        new_active = atm2_db.get_active_positions()
-                        self.subscribe_atm2_option_legs(new_active)
-                    else:
-                        logger.info(f"[NAS-ATM2] Entry blocked: {msg}")
-                    break  # Only one entry per candle
-
-        except Exception as e:
-            logger.error(f"[NAS-ATM2] Candle close handler error: {e}", exc_info=True)
-
-    def _on_candle_close_atm(self, candle: dict):
-        """
-        ATM entry check on candle close.
-        Shares the same ATR squeeze detection as NAS OTM.
-        """
-        try:
-            from config import NAS_ATM_DEFAULTS
-            if not NAS_ATM_DEFAULTS.get('enabled', True):
-                return
-
-            from services.nas_atm_executor import NasAtmExecutor
-            from services.nas_atm_db import get_nas_atm_db
-            from services.nas_scanner import NasScanner
-
-            atm_executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
-            atm_db = get_nas_atm_db()
-
-            # Build DataFrame from aggregated candles (or let scanner fetch its own)
-            df_5min = self.aggregator.get_dataframe()
-            if len(df_5min) < 60:
-                df_5min = None  # scanner.scan() will call load_5min_bars()
-
-            # Run scan to check squeeze state
-            scanner = NasScanner(NAS_ATM_DEFAULTS)
-            daily_df = getattr(self, '_daily_candles', None)
-            scan = scanner.scan(df_5min=df_5min, daily_df=daily_df)
-            if scan.get('error'):
-                return
-
-            spot = scan['spot']
-
-            # Update ATM state
-            atm_db.update_state(
-                atr_value=scan.get('atr'),
-                atr_ma=scan.get('atr_ma'),
-                is_squeezing=1 if scan.get('is_squeezing') else 0,
-                squeeze_count=scan.get('squeeze_count', 0),
-                spot_price=spot,
-                last_scan_time=datetime.now().isoformat(),
-            )
-
-            # Check for squeeze entry signal
-            for signal in scan.get('signals', []):
-                if signal['type'] == 'SQUEEZE_ENTRY':
-                    sid, msg = atm_executor.execute_strangle_entry(spot=spot)
-                    if sid:
-                        logger.info(f"[NAS-ATM] Entry: strangle #{sid} at spot {spot:.1f}")
-                        # Subscribe ATM option legs for SL monitoring
-                        new_active = atm_db.get_active_positions()
-                        self.subscribe_atm_option_legs(new_active)
-                    else:
-                        logger.info(f"[NAS-ATM] Entry blocked: {msg}")
-                    break  # Only one entry per candle
-
-        except Exception as e:
-            logger.error(f"[NAS-ATM] Candle close handler error: {e}", exc_info=True)
+            logger.error(f"[NAS] ATM shared entry handler error: {e}", exc_info=True)
 
     # ─── Lifecycle (piggybacks on Maruthi's KiteTicker) ──────
 

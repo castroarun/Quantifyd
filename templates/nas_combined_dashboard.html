@@ -1016,8 +1016,9 @@ function renderATMPositions(data) {
         let slText = '--';
         let slStyle = 'color:#8b949e';
         if (isSTMonitored) {
-            slText = 'ST';
-            slStyle = 'color:#f59e0b;font-weight:700';
+            const stVal = atmNakedST.active && atmNakedST.st_value ? atmNakedST.st_value.toFixed(1) : '...';
+            slText = `ST(7,2) ${stVal}`;
+            slStyle = 'color:#f59e0b;font-weight:700;font-size:0.72rem;';
         } else if (sl > 0) {
             slText = sl.toFixed(1);
             slStyle = sl > 0 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
@@ -1047,7 +1048,7 @@ function renderATMPositions(data) {
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
             const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
-            const slVal = (p.sl_price || 0) > 900000 ? 'ST' : (p.sl_price ? p.sl_price.toFixed(1) : '--');
+            const slVal = (p.sl_price || 0) > 900000 ? 'ST(7,2)' : (p.sl_price ? p.sl_price.toFixed(1) : '--');
             const slStyle = (p.sl_price || 0) > 900000 ? 'color:#f59e0b' : 'color:#8b949e';
             return `<tr style="opacity:0.4">
                 <td style="color:#38a6f7;">${p.strangle_id||'--'}</td>
@@ -1203,8 +1204,9 @@ function renderATM4Positions(data) {
         let slText = '--';
         let slStyle = 'color:#8b949e';
         if (isSTMonitored) {
-            slText = 'ST';
-            slStyle = 'color:#f59e0b;font-weight:700';
+            const stVal = atm4NakedST.active && atm4NakedST.st_value ? atm4NakedST.st_value.toFixed(1) : '...';
+            slText = `ST(7,2) ${stVal}`;
+            slStyle = 'color:#f59e0b;font-weight:700;font-size:0.72rem;';
         } else if (sl > 0) {
             slText = sl.toFixed(1);
             slStyle = sl > 0 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
@@ -1234,7 +1236,7 @@ function renderATM4Positions(data) {
         closedRows += closedToday.map(p => {
             const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
             const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
-            const slVal = (p.sl_price || 0) > 900000 ? 'ST' : (p.sl_price ? p.sl_price.toFixed(1) : '--');
+            const slVal = (p.sl_price || 0) > 900000 ? 'ST(7,2)' : (p.sl_price ? p.sl_price.toFixed(1) : '--');
             const slStyle = (p.sl_price || 0) > 900000 ? 'color:#f59e0b' : 'color:#8b949e';
             return `<tr style="opacity:0.4">
                 <td style="color:#10b981;">${p.strangle_id||'--'}</td>
