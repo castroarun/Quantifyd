@@ -410,9 +410,9 @@ NAS_ATM_DEFAULTS = {
 
 NAS_ATM2_DEFAULTS = {
     **NAS_ATM_DEFAULTS,
-    # On SL hit: close BOTH legs, no trailing, no re-entry
+    # On SL hit: close BOTH legs, then immediately re-enter new ATM straddle
     'trail_to_cost_on_sl': False,
-    're_enter_on_sl': False,
+    're_enter_on_sl': True,
     'exit_both_on_sl': True,
 }
 

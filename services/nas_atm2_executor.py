@@ -156,6 +156,17 @@ class NasAtm2Executor(NasAtmExecutor):
                 action['total_pnl'] = round(
                     sum(leg['pnl'] for leg in action['closed_legs']), 2)
 
+                # Immediate re-entry at current ATM
+                spot = self.scanner.get_live_spot()
+                if spot:
+                    new_sid, msg = self.execute_strangle_entry(spot=spot)
+                    if new_sid:
+                        action['re_entry'] = {'strangle_id': new_sid, 'spot': spot}
+                        logger.info(f"[NAS-ATM2] Re-entered strangle #{new_sid} at spot {spot:.1f}")
+                    else:
+                        action['re_entry_blocked'] = msg
+                        logger.info(f"[NAS-ATM2] Re-entry blocked: {msg}")
+
                 actions.append(action)
 
         return actions
