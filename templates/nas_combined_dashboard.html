@@ -1020,7 +1020,10 @@ function renderATMPositions(data) {
         }
         let slText = '--';
         let slStyle = 'color:#8b949e';
-        if (sl > 0 && sl < 900000) {
+        if (isSTMonitored && atmNakedST.active && atmNakedST.st_value) {
+            slText = atmNakedST.st_value.toFixed(1) + '*';
+            slStyle = 'color:#f59e0b;font-weight:700';
+        } else if (sl > 0 && sl < 900000) {
             slText = sl.toFixed(1);
             slStyle = ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
         }
@@ -1204,7 +1207,10 @@ function renderATM4Positions(data) {
         }
         let slText = '--';
         let slStyle = 'color:#8b949e';
-        if (sl > 0 && sl < 900000) {
+        if (isSTMonitored && atm4NakedST.active && atm4NakedST.st_value) {
+            slText = atm4NakedST.st_value.toFixed(1) + '*';
+            slStyle = 'color:#f59e0b;font-weight:700';
+        } else if (sl > 0 && sl < 900000) {
             slText = sl.toFixed(1);
             slStyle = ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
         }
