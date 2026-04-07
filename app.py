@@ -4647,20 +4647,34 @@ def api_nas_report_data():
             trades = [dict(r) for r in trades]
 
             # System summary
-            total_trades = len(trades)
-            pnls = [t.get('net_pnl', 0) or 0 for t in trades]
-            wins = [p for p in pnls if p > 0]
-            losses = [p for p in pnls if p <= 0]
+            # Compute P&L from positions (trades table may have stale data)
+            closed_positions = [p for p in positions if p.get('status') == 'CLOSED' and p.get('exit_price')]
+            pos_pnls = []
+            for p in closed_positions:
+                pnl = (p.get('entry_price', 0) - (p.get('exit_price', 0) or 0)) * (p.get('qty', 0) or 75)
+                pos_pnls.append(pnl)
+
+            # Group by strangle for trade-level stats
+            strangle_pnls = {}
+            for p in closed_positions:
+                sid = p.get('strangle_id', 0)
+                pnl = (p.get('entry_price', 0) - (p.get('exit_price', 0) or 0)) * (p.get('qty', 0) or 75)
+                strangle_pnls[sid] = strangle_pnls.get(sid, 0) + pnl
+
+            trade_pnls = list(strangle_pnls.values())
+            total_trades = len(trade_pnls)
+            wins = [p for p in trade_pnls if p > 0]
+            losses = [p for p in trade_pnls if p <= 0]
 
             result['systems'][sys_name] = {
                 'total_trades': total_trades,
-                'total_pnl': round(sum(pnls), 2),
-                'avg_pnl': round(sum(pnls) / total_trades, 2) if total_trades else 0,
+                'total_pnl': round(sum(pos_pnls), 2),
+                'avg_pnl': round(sum(trade_pnls) / total_trades, 2) if total_trades else 0,
                 'win_rate': round(len(wins) / total_trades * 100, 1) if total_trades else 0,
                 'winners': len(wins),
                 'losers': len(losses),
-                'max_win': round(max(pnls), 2) if pnls else 0,
-                'max_loss': round(min(pnls), 2) if pnls else 0,
+                'max_win': round(max(trade_pnls), 2) if trade_pnls else 0,
+                'max_loss': round(min(trade_pnls), 2) if trade_pnls else 0,
                 'profit_factor': round(
                     sum(wins) / abs(sum(losses)), 2
                 ) if losses and sum(losses) != 0 else 0,
@@ -4696,12 +4710,16 @@ def api_nas_report_data():
                 t for t in data.get('trades', [])
                 if (t.get('trade_date') or '') == d
             ]
-            day_pnl = sum(t.get('net_pnl', 0) or 0 for t in day_trades)
+            # Compute day P&L from positions (not trades table)
+            day_pnl = 0
+            for p in day_positions:
+                if p.get('exit_price'):
+                    day_pnl += (p.get('entry_price', 0) - (p.get('exit_price', 0) or 0)) * (p.get('qty', 0) or 75)
             daily[d][sys_name] = {
                 'positions': day_positions,
                 'trades': day_trades,
                 'day_pnl': round(day_pnl, 2),
-                'trade_count': len(day_trades),
+                'trade_count': len(day_positions),
             }
 
     result['daily_snapshots'] = daily
