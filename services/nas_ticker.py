@@ -1477,8 +1477,58 @@ class NasTicker:
         self.is_connected = True  # Connected via Maruthi's WebSocket
         logger.info("[NAS] Ticker started — receiving ticks via Maruthi ticker")
 
-        # Subscribe to active option legs (via Maruthi's kws)
+        # Cleanup stale positions, then subscribe active legs
+        self._cleanup_stale_positions()
         threading.Thread(target=self._subscribe_active_legs, daemon=True).start()
+
+    def _cleanup_stale_positions(self):
+        """Close any active positions from previous days or expired options on startup."""
+        from datetime import date
+        today = date.today().isoformat()
+
+        systems = [
+            ('OTM', 'backtest_data/nas_trading.db', 'nas_'),
+            ('ATM', 'backtest_data/nas_atm_trading.db', 'nas_atm_'),
+            ('ATM2', 'backtest_data/nas_atm2_trading.db', 'nas_atm_'),
+            ('ATM4', 'backtest_data/nas_atm4_trading.db', 'nas_atm_'),
+        ]
+
+        for sys_name, db_path, prefix in systems:
+            try:
+                import sqlite3
+                conn = sqlite3.connect(db_path)
+                conn.row_factory = sqlite3.Row
+
+                # Find active positions from previous days or expired options
+                stale = conn.execute(f"""
+                    SELECT id, tradingsymbol, entry_time, expiry_date, entry_price
+                    FROM {prefix}positions
+                    WHERE status='ACTIVE'
+                      AND (date(entry_time) < ? OR expiry_date < ?)
+                """, (today, today)).fetchall()
+
+                if stale:
+                    for pos in stale:
+                        conn.execute(f"""
+                            UPDATE {prefix}positions
+                            SET status='CLOSED', exit_price=0, exit_reason='missed_eod',
+                                exit_time=expiry_date || 'T15:30:00'
+                            WHERE id=?
+                        """, (pos['id'],))
+                        logger.info(f"[{sys_name}] Closed stale position #{pos['id']} "
+                                     f"{pos['tradingsymbol']} (entered {str(pos['entry_time'])[:10]}, "
+                                     f"expiry {pos['expiry_date']})")
+
+                    conn.commit()
+                    logger.info(f"[{sys_name}] Cleaned up {len(stale)} stale positions")
+
+                # Reset daily P&L at start of day
+                conn.execute(f"UPDATE {prefix}state SET daily_pnl=0, total_adjustments=0")
+                conn.commit()
+                conn.close()
+
+            except Exception as e:
+                logger.warning(f"[{sys_name}] Cleanup error: {e}")
 
     def _subscribe_active_legs(self):
         """Subscribe to active option leg tokens via Maruthi's WebSocket."""

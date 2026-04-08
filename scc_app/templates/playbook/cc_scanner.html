@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Covered Call Scanner — SCC{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-xl font-bold">Covered Call Scanner</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">7-layer conviction scoring — which stocks are safe to write calls on?</p>
+    </div>
+    <button onclick="runScan()" id="scanBtn" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors">
+      🔄 Run Scan
+    </button>
+  </div>
+
+  <!-- Layer Weights Reference -->
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+    <p class="text-xs font-semibold text-slate-400 uppercase mb-2">Scoring Layers</p>
+    <div class="flex flex-wrap gap-2">
+      <span class="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs"><strong>ADX</strong> 20%</span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs"><strong>Expected Move</strong> 20%</span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs"><strong>Vol Rank</strong> 10%</span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs"><strong>BB Squeeze</strong> 15%</span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs"><strong>RSI</strong> 10%</span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs"><strong>Resistance</strong> 10%</span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs"><strong>Earnings</strong> 15%</span>
+    </div>
+  </div>
+
+  <!-- Scanner Results Table -->
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden" data-privacy>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-100 dark:border-slate-800">
+          <th class="text-left px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase">Stock</th>
+          <th class="text-right px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase">Price</th>
+          <th class="text-right px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase">Lot Value</th>
+          <th class="text-center px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase">Score</th>
+          <th class="text-center px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase">Verdict</th>
+          <th class="text-right px-3 py-3 text-[10px] font-semibold text-slate-400 uppercase">ADX</th>
+          <th class="text-right px-3 py-3 text-[10px] font-semibold text-slate-400 uppercase">RSI</th>
+          <th class="text-right px-3 py-3 text-[10px] font-semibold text-slate-400 uppercase">HV%</th>
+          <th class="text-right px-3 py-3 text-[10px] font-semibold text-slate-400 uppercase">1-SD%</th>
+          <th class="text-right px-3 py-3 text-[10px] font-semibold text-slate-400 uppercase">52wH%</th>
+          <th class="text-center px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase">Action</th>
+        </tr>
+      </thead>
+      <tbody id="ccScanBody" class="divide-y divide-slate-50 dark:divide-slate-800">
+        <!-- Hardcoded initial data from playbook scan (7 April 2026) -->
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">REC Ltd</td>
+          <td class="px-4 py-3 text-right font-mono">₹329</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹1.98L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:70%"></div></div><span class="font-bold font-mono text-xs">70</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">GREEN</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs">17.9</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">48.9</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">42.5</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">13.4</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">22.5</td>
+          <td class="px-4 py-3 text-center"><button class="text-xs text-emerald-600 font-bold hover:underline">Write Call</button></td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">Coal India</td>
+          <td class="px-4 py-3 text-right font-mono">₹463</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹6.25L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:69%"></div></div><span class="font-bold font-mono text-xs">69</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">GREEN</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs">24.1</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">60.3</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">28.4</td>
+          <td class="px-3 py-3 text-right font-mono text-xs text-emerald-600 font-semibold">8.9</td>
+          <td class="px-3 py-3 text-right font-mono text-xs text-emerald-600 font-semibold">2.7</td>
+          <td class="px-4 py-3 text-center"><button class="text-xs text-emerald-600 font-bold hover:underline">Write Call</button></td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">KEI Industries</td>
+          <td class="px-4 py-3 text-right font-mono">₹4,237</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹5.30L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:65%"></div></div><span class="font-bold font-mono text-xs">65</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">GREEN</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs">23.7</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">47.2</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">45.1</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">14.2</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">20.1</td>
+          <td class="px-4 py-3 text-center"><button class="text-xs text-emerald-600 font-bold hover:underline">Write Call</button></td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">Polycab</td>
+          <td class="px-4 py-3 text-right font-mono">₹7,227</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹7.23L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:62%"></div></div><span class="font-bold font-mono text-xs">62</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">AMBER</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs">26.9</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">47.3</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">42.7</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">13.4</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">17.1</td>
+          <td class="px-4 py-3 text-center"><span class="text-xs text-amber-500 font-semibold">Monitor</span></td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">BEL</td>
+          <td class="px-4 py-3 text-right font-mono">₹428</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹6.42L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:61.5%"></div></div><span class="font-bold font-mono text-xs">61.5</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">AMBER</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs">21.2</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">49.6</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">34.2</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">10.8</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">9.6</td>
+          <td class="px-4 py-3 text-center"><span class="text-xs text-amber-500 font-semibold">Monitor</span></td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">APL Apollo</td>
+          <td class="px-4 py-3 text-right font-mono">₹1,891</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹4.73L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:58.5%"></div></div><span class="font-bold font-mono text-xs">58.5</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">AMBER</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs">28.5</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">38.3</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">36.9</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">11.6</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">17.9</td>
+          <td class="px-4 py-3 text-center"><span class="text-xs text-amber-500 font-semibold">Monitor</span></td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">HAL</td>
+          <td class="px-4 py-3 text-right font-mono">₹3,796</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹5.69L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:46%"></div></div><span class="font-bold font-mono text-xs">46</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">AMBER</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs text-red-500 font-semibold">34.8</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">47.2</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">33.8</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">10.6</td>
+          <td class="px-3 py-3 text-right font-mono text-xs text-red-500">25.6</td>
+          <td class="px-4 py-3 text-center"><span class="text-xs text-slate-400">Avoid</span></td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="px-4 py-3 font-semibold">Persistent</td>
+          <td class="px-4 py-3 text-right font-mono">₹5,386</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">₹4.04L</td>
+          <td class="px-4 py-3 text-center"><div class="inline-flex items-center gap-1.5"><div class="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:40.8%"></div></div><span class="font-bold font-mono text-xs">40.8</span></div></td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">AMBER</span></td>
+          <td class="px-3 py-3 text-right font-mono text-xs">29.8</td>
+          <td class="px-3 py-3 text-right font-mono text-xs text-amber-500">65.6</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">39.5</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">12.4</td>
+          <td class="px-3 py-3 text-right font-mono text-xs">18.1</td>
+          <td class="px-4 py-3 text-center"><span class="text-xs text-slate-400">Earnings ~14d</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Optimal Parameters Reference -->
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+    <h3 class="text-sm font-semibold mb-2">Optimal Parameters (ORATS Backtest)</h3>
+    <div class="flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
+      <span class="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg"><strong>DTE:</strong> 30 days</span>
+      <span class="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg"><strong>Delta:</strong> ~10</span>
+      <span class="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg"><strong>IV Filter:</strong> Percentile &gt;66%</span>
+      <span class="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg"><strong>Earnings:</strong> Avoid 7d before</span>
+      <span class="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg"><strong>Premium:</strong> &ge;2% of stock</span>
+      <span class="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg"><strong>Exit:</strong> Hold to expiry</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  async function runScan() {
+    const btn = document.getElementById('scanBtn');
+    btn.textContent = '⏳ Scanning...';
+    btn.disabled = true;
+    try {
+      // TODO: Call /api/playbook/cc-scan when service is built
+      await new Promise(r => setTimeout(r, 1000));
+      btn.textContent = '✅ Scan Complete';
+      setTimeout(() => { btn.textContent = '🔄 Run Scan'; btn.disabled = false; }, 2000);
+    } catch(e) {
+      btn.textContent = '❌ Scan Failed';
+      setTimeout(() => { btn.textContent = '🔄 Run Scan'; btn.disabled = false; }, 2000);
+    }
+  }
+</script>
+{% endblock %}

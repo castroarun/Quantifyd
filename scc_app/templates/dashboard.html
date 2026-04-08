@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SCC{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <!-- Page header -->
+  <div>
+    <h2 class="text-xl font-bold">Dashboard</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400">Everything critical at a glance</p>
+  </div>
+
+  <!-- Metric Cards Row -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" data-privacy>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Today P&L</p>
+      <p class="text-lg font-bold font-mono mt-1" id="metricTodayPnl">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total P&L</p>
+      <p class="text-lg font-bold font-mono mt-1" id="metricTotalPnl">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Deployed</p>
+      <p class="text-lg font-bold font-mono mt-1 text-sky-600 dark:text-sky-400" id="metricDeployed">—</p>
+      <p class="text-[10px] text-slate-400 mt-0.5" id="metricCapUtil"></p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Free Cash</p>
+      <p class="text-lg font-bold font-mono mt-1 text-emerald-600 dark:text-emerald-400" id="metricFreeCash">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Strategies</p>
+      <p class="text-lg font-bold mt-1" id="metricStrategies">—</p>
+      <p class="text-[10px] text-slate-400 mt-0.5" id="metricStrategiesSub"></p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Positions</p>
+      <p class="text-lg font-bold mt-1" id="metricPositions">—</p>
+      <p class="text-[10px] text-slate-400 mt-0.5">open</p>
+    </div>
+  </div>
+
+  <!-- Capital Deployment Bar -->
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4" data-privacy>
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-sm font-semibold">Capital Deployment</p>
+      <span class="text-xs font-mono text-slate-500" id="capUtilPct">—</span>
+    </div>
+    <div class="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+      <div id="capUtilBar" class="h-full rounded-full transition-all duration-500 bg-emerald-500" style="width:0%"></div>
+    </div>
+    <!-- Per-strategy mini bars -->
+    <div class="mt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2" id="strategyMiniBars"></div>
+  </div>
+
+  <!-- Strategy Cards -->
+  <div>
+    <h3 class="text-sm font-semibold mb-3">Active Strategies</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="strategyCards">
+      {% for sid, meta in strategies.items() %}
+      <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-400" id="dot-{{ sid }}"></span>
+            <h4 class="text-sm font-bold">{{ meta.name }}</h4>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500" id="status-{{ sid }}">—</span>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{ meta.type }} · {{ meta.system_type }}</p>
+        <div class="flex items-center justify-between" data-privacy>
+          <div>
+            <p class="text-[10px] text-slate-400">Today</p>
+            <p class="text-sm font-bold font-mono" id="pnl-{{ sid }}">—</p>
+          </div>
+          <a href="/strategy/{{ sid }}" class="text-xs text-sky-600 dark:text-sky-400 font-semibold hover:underline">View →</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-privacy>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+      <h3 class="text-sm font-semibold mb-3">Weekly P&L</h3>
+      <div style="height:180px"><canvas id="weeklyPnlChart"></canvas></div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+      <h3 class="text-sm font-semibold mb-3">Monthly P&L (6M)</h3>
+      <div style="height:180px"><canvas id="monthlyPnlChart"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Auto-refresh dashboard data
+  async function refreshDashboard() {
+    try {
+      const resp = await fetch('/api/scc/dashboard');
+      const data = await resp.json();
+      // Update metrics when data available
+      if (data.total_pnl_today !== undefined) {
+        const el = document.getElementById('metricTodayPnl');
+        el.textContent = fmt(data.total_pnl_today);
+        el.className = 'text-lg font-bold font-mono mt-1 ' + pnlColor(data.total_pnl_today);
+      }
+    } catch(e) {
+      console.log('Dashboard refresh error:', e);
+    }
+  }
+
+  // Fetch positions count
+  async function refreshPositions() {
+    try {
+      const resp = await fetch('/api/scc/positions');
+      const data = await resp.json();
+      document.getElementById('metricPositions').textContent = data.positions ? data.positions.length : 0;
+    } catch(e) {}
+  }
+
+  // Initialize placeholder charts
+  function initCharts() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.05)';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+
+    const chartOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 } } },
+        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 }, callback: v => '₹' + (v/1000).toFixed(0) + 'K' } }
+      }
+    };
+
+    // Weekly P&L placeholder
+    new Chart(document.getElementById('weeklyPnlChart'), {
+      type: 'bar',
+      data: {
+        labels: ['W1', 'W2', 'W3', 'W4', 'W5'],
+        datasets: [{
+          data: [12400, -3200, 8700, 15600, -1800],
+          backgroundColor: ctx => ctx.raw >= 0 ? (isDark ? '#34d399' : '#10b981') : (isDark ? '#f87171' : '#ef4444'),
+          borderRadius: 6,
+        }]
+      },
+      options: chartOpts
+    });
+
+    // Monthly P&L placeholder
+    new Chart(document.getElementById('monthlyPnlChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
+        datasets: [{
+          data: [45000, 32000, -12000, 58000, 41000, 19000],
+          backgroundColor: ctx => ctx.raw >= 0 ? (isDark ? '#34d399' : '#10b981') : (isDark ? '#f87171' : '#ef4444'),
+          borderRadius: 6,
+        }]
+      },
+      options: chartOpts
+    });
+  }
+
+  initCharts();
+  refreshDashboard();
+  refreshPositions();
+  setInterval(refreshDashboard, 10000);
+  setInterval(refreshPositions, 10000);
+</script>
+{% endblock %}

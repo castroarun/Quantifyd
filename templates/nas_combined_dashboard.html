@@ -76,6 +76,7 @@
         border: 1px solid var(--bs-border-color);
         background: rgba(22,27,34,0.5);
         overflow: hidden;
+        margin-bottom: 12px;
     }
     .system-header-otm {
         background: linear-gradient(135deg, rgba(163,113,247,0.12) 0%, rgba(22,27,34,0.9) 100%);
@@ -156,7 +157,7 @@
                 <a href="/strategies" class="text-muted text-decoration-none">
                     <i class="bi bi-arrow-left me-1"></i>Back to Strategies
                 </a>
-                &nbsp;|&nbsp; Shared 5-min ATR Squeeze &rarr; OTM (premium-based) + ATM (30% SL cascading)
+                &nbsp;|&nbsp; Squeeze + 9:16 AM dual entry &rarr; OTM, ATM, ATM2, ATM4
                 &nbsp;|&nbsp;
                 <a href="/nas/report" class="text-decoration-none" style="color: #a371f7;">
                     <i class="bi bi-graph-up me-1"></i>Report
@@ -171,7 +172,7 @@
         </div>
     </div>
 
-    <!-- Shared ATR Squeeze State -->
+    <!-- Shared ATR Squeeze State + Combined P&L -->
     <div class="row g-2 mb-3">
         <div class="col-md-2">
             <div class="stat-card">
@@ -179,15 +180,15 @@
                 <div class="stat-label mt-1">ATR Squeeze</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
             <div class="stat-card">
-                <div id="squeezeCount" class="stat-value" style="color: #f59e0b;">0 / 1</div>
+                <div id="squeezeCount" class="stat-value" style="color: #f59e0b; font-size:1.1rem;">0 / 1</div>
                 <div class="stat-label">Squeeze Bars</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
             <div class="stat-card">
-                <div id="spotPrice" class="stat-value" style="color: #c9d1d9;">--</div>
+                <div id="spotPrice" class="stat-value" style="color: #c9d1d9; font-size:1.1rem;">--</div>
                 <div class="stat-label">Nifty Spot</div>
             </div>
         </div>
@@ -199,25 +200,38 @@
         </div>
         <div class="col-md-2">
             <div class="stat-card">
-                <div id="combinedDayPnl" class="stat-value positive">--</div>
-                <div class="stat-label">Combined Day P&L</div>
+                <div id="squeezeDayPnl" class="stat-value positive" style="font-size:1.1rem;">--</div>
+                <div class="stat-label">Squeeze Day P&L</div>
             </div>
         </div>
         <div class="col-md-2">
             <div class="stat-card">
-                <div id="combinedTotalPnl" class="stat-value positive">--</div>
+                <div id="s916DayPnl" class="stat-value positive" style="font-size:1.1rem;">--</div>
+                <div class="stat-label">9:16 Day P&L</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="combinedTotalPnl" class="stat-value positive" style="font-size:1.1rem;">--</div>
                 <div class="stat-label">Combined Cumulative P&L</div>
             </div>
         </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- Two-Column: OTM (left) vs ATM (right) -->
+    <!-- Two-Column: ATR Squeeze (left) vs 9:16 AM Entry (right) -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="row g-3 mb-3">
 
-        <!-- ─── NAS OTM Panel ─────────────────────────────── -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- LEFT COLUMN: ATR Squeeze Entry Systems                 -->
+        <!-- ═══════════════════════════════════════════════════════ -->
         <div class="col-lg-6">
+            <h6 style="color:#a371f7;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #a371f7;padding-bottom:6px;">
+                <i class="bi bi-graph-down-arrow me-1"></i> ATR Squeeze Entry
+            </h6>
+
+            <!-- ─── NAS OTM Panel ─────────────────────────────── -->
             <div class="system-panel">
                 <div class="system-header-otm d-flex justify-content-between align-items-center">
                     <div>
@@ -295,18 +309,16 @@
                     <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
                         <summary style="cursor:pointer;color:#a371f7;font-weight:600;">Rules</summary>
                         <div style="margin-top:4px;line-height:1.6;">
-                            <b>Entry:</b> ATR(14) &lt; SMA(ATR,50) on 5-min → SELL OTM CE+PE @ ~Rs20 premium<br>
-                            <b>Adjustment:</b> Cross-leg imbalance ≥ 2x → ROLL_OUT/ROLL_IN alternating to match other leg's premium<br>
-                            <b>Bounds:</b> Target premium [4-24], both fail → close both legs<br>
+                            <b>Entry:</b> ATR(14) &lt; SMA(ATR,50) on 5-min &rarr; SELL OTM CE+PE @ ~Rs20 premium<br>
+                            <b>Adjustment:</b> Cross-leg imbalance &ge; 2x &rarr; ROLL_OUT/ROLL_IN alternating to match other leg's premium<br>
+                            <b>Bounds:</b> Target premium [4-24], both fail &rarr; close both legs<br>
                             <b>Exit:</b> Time exit 14:45 / EOD squareoff 15:15
                         </div>
                     </details>
                 </div>
             </div>
-        </div>
 
-        <!-- ─── NAS ATM Panel ─────────────────────────────── -->
-        <div class="col-lg-6">
+            <!-- ─── NAS ATM Panel ─────────────────────────────── -->
             <div class="system-panel">
                 <div class="system-header-atm d-flex justify-content-between align-items-center">
                     <div>
@@ -384,7 +396,7 @@
                     <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
                         <summary style="cursor:pointer;color:#38a6f7;font-weight:600;">Rules</summary>
                         <div style="margin-top:4px;line-height:1.6;">
-                            <b>Entry:</b> ATR squeeze → SELL ATM CE+PE, SL = entry × 1.3 (30%)<br>
+                            <b>Entry:</b> ATR squeeze &rarr; SELL ATM CE+PE, SL = entry x 1.3 (30%)<br>
                             <b>1st SL:</b> Close stopped leg. Hold surviving leg naked<br>
                             <b>Naked exit:</b> SuperTrend(7,2) on option premium — exit when candle closes above ST<br>
                             <b>Exit:</b> EOD squareoff 15:15
@@ -392,10 +404,8 @@
                     </details>
                 </div>
             </div>
-        </div>
 
-        <!-- ─── NAS ATM2 Panel ────────────────────────────── -->
-        <div class="col-lg-6">
+            <!-- ─── NAS ATM2 Panel ────────────────────────────── -->
             <div class="system-panel">
                 <div class="system-header-atm2 d-flex justify-content-between align-items-center">
                     <div>
@@ -473,7 +483,7 @@
                     <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
                         <summary style="cursor:pointer;color:#f59e0b;font-weight:600;">Rules</summary>
                         <div style="margin-top:4px;line-height:1.6;">
-                            <b>Entry:</b> ATR squeeze → SELL ATM CE+PE, SL = entry × 1.3 (30%)<br>
+                            <b>Entry:</b> ATR squeeze &rarr; SELL ATM CE+PE, SL = entry x 1.3 (30%)<br>
                             <b>Any SL:</b> Close BOTH legs immediately, then re-enter new ATM straddle<br>
                             <b>Max re-entries:</b> 5 per day<br>
                             <b>Exit:</b> EOD squareoff 15:15
@@ -481,10 +491,8 @@
                     </details>
                 </div>
             </div>
-        </div>
 
-        <!-- ─── NAS ATM4 Panel ────────────────────────────── -->
-        <div class="col-lg-6">
+            <!-- ─── NAS ATM4 Panel ────────────────────────────── -->
             <div class="system-panel">
                 <div class="system-header-atm4 d-flex justify-content-between align-items-center">
                     <div>
@@ -562,7 +570,7 @@
                     <details class="mt-2" style="font-size:0.7rem;color:#8b949e;">
                         <summary style="cursor:pointer;color:#10b981;font-weight:600;">Rules</summary>
                         <div style="margin-top:4px;line-height:1.6;">
-                            <b>Entry:</b> ATR squeeze → SELL ATM CE+PE, SL = entry × 1.3 (30%)<br>
+                            <b>Entry:</b> ATR squeeze &rarr; SELL ATM CE+PE, SL = entry x 1.3 (30%)<br>
                             <b>1st SL:</b> Roll stopped leg to match surviving leg's CMP. Both get new 30% SLs<br>
                             <b>2nd SL:</b> Close stopped leg. Hold surviving leg naked<br>
                             <b>Naked exit:</b> SuperTrend(7,2) on option premium — exit when candle closes above ST<br>
@@ -571,8 +579,242 @@
                     </details>
                 </div>
             </div>
-        </div>
-    </div>
+        </div><!-- end left column -->
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- RIGHT COLUMN: 9:16 AM Entry Systems                    -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <div class="col-lg-6" style="border-left: 2px dashed #30363d;">
+            <h6 style="color:#f59e0b;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f59e0b;padding-bottom:6px;">
+                <i class="bi bi-clock me-1"></i> 9:16 AM Entry
+            </h6>
+
+            <!-- ─── 916 OTM Panel ─────────────────────────────── -->
+            <div class="system-panel">
+                <div class="system-header-otm d-flex justify-content-between align-items-center">
+                    <div>
+                        <span style="color: #a371f7; font-weight: 700; font-size: 1rem;">
+                            <i class="bi bi-clock me-1"></i>916 OTM
+                        </span>
+                        <small class="text-muted ms-2">9:16 AM auto-entry</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span id="s916OtmModeBadge" class="mode-badge mode-PAPER" style="font-size:0.7rem;">PAPER</span>
+                        <span id="s916OtmEnabledBadge" class="mode-badge" style="font-size:0.7rem; background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;">ON</span>
+                    </div>
+                </div>
+                <div class="system-body">
+                    <div class="row g-1 mb-2">
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916OtmPositions" style="color:#a371f7;">0</div>
+                            <div class="lbl">Positions</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916OtmStrangles" style="color:#a371f7;">0/5</div>
+                            <div class="lbl">RE-ENTRIES</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val positive" id="s916OtmDayPnl">--</div>
+                            <div class="lbl">Day P&L</div>
+                        </div></div>
+                    </div>
+                    <div class="d-flex gap-1 mb-2">
+                        <button class="btn btn-outline-danger action-btn-sm" onclick="s916OtmKill()">
+                            <i class="bi bi-exclamation-octagon me-1"></i>Kill
+                        </button>
+                        <button class="btn btn-outline-warning action-btn-sm" onclick="s916OtmToggleMode()">
+                            <i class="bi bi-toggles me-1"></i>Mode
+                        </button>
+                        <button class="btn btn-outline-secondary action-btn-sm" onclick="s916OtmToggleEnabled()">
+                            <i class="bi bi-power me-1"></i>Enable
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-dark table-nas table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
+                                    <th>LTP</th><th>P&L</th><th>Adj</th><th>Status</th><th>Exit</th><th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s916OtmPositionsBody">
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── 916 ATM Panel ─────────────────────────────── -->
+            <div class="system-panel">
+                <div class="system-header-atm d-flex justify-content-between align-items-center">
+                    <div>
+                        <span style="color: #38a6f7; font-weight: 700; font-size: 1rem;">
+                            <i class="bi bi-clock me-1"></i>916 ATM
+                        </span>
+                        <small class="text-muted ms-2">9:16 AM auto-entry</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span id="s916AtmModeBadge" class="mode-badge mode-PAPER" style="font-size:0.7rem;">PAPER</span>
+                        <span id="s916AtmEnabledBadge" class="mode-badge" style="font-size:0.7rem; background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;">ON</span>
+                    </div>
+                </div>
+                <div class="system-body">
+                    <div class="row g-1 mb-2">
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916AtmPositions" style="color:#38a6f7;">0</div>
+                            <div class="lbl">Positions</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916AtmStrangles" style="color:#38a6f7;">0/5</div>
+                            <div class="lbl">RE-ENTRIES</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val positive" id="s916AtmDayPnl">--</div>
+                            <div class="lbl">Day P&L</div>
+                        </div></div>
+                    </div>
+                    <div class="d-flex gap-1 mb-2">
+                        <button class="btn btn-outline-danger action-btn-sm" onclick="s916AtmKill()">
+                            <i class="bi bi-exclamation-octagon me-1"></i>Kill
+                        </button>
+                        <button class="btn btn-outline-warning action-btn-sm" onclick="s916AtmToggleMode()">
+                            <i class="bi bi-toggles me-1"></i>Mode
+                        </button>
+                        <button class="btn btn-outline-secondary action-btn-sm" onclick="s916AtmToggleEnabled()">
+                            <i class="bi bi-power me-1"></i>Enable
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-dark table-nas table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>S#</th><th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
+                                    <th>SL</th><th>LTP</th><th>P&L</th><th>Exit</th><th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s916AtmPositionsBody">
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── 916 ATM2 Panel ────────────────────────────── -->
+            <div class="system-panel">
+                <div class="system-header-atm2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span style="color: #f59e0b; font-weight: 700; font-size: 1rem;">
+                            <i class="bi bi-clock me-1"></i>916 ATM 2.0
+                        </span>
+                        <small class="text-muted ms-2">9:16 AM auto-entry</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span id="s916Atm2ModeBadge" class="mode-badge mode-PAPER" style="font-size:0.7rem;">PAPER</span>
+                        <span id="s916Atm2EnabledBadge" class="mode-badge" style="font-size:0.7rem; background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;">ON</span>
+                    </div>
+                </div>
+                <div class="system-body">
+                    <div class="row g-1 mb-2">
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916Atm2Positions" style="color:#f59e0b;">0</div>
+                            <div class="lbl">Positions</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916Atm2Strangles" style="color:#f59e0b;">0/5</div>
+                            <div class="lbl">RE-ENTRIES</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val positive" id="s916Atm2DayPnl">--</div>
+                            <div class="lbl">Day P&L</div>
+                        </div></div>
+                    </div>
+                    <div class="d-flex gap-1 mb-2">
+                        <button class="btn btn-outline-danger action-btn-sm" onclick="s916Atm2Kill()">
+                            <i class="bi bi-exclamation-octagon me-1"></i>Kill
+                        </button>
+                        <button class="btn btn-outline-warning action-btn-sm" onclick="s916Atm2ToggleMode()">
+                            <i class="bi bi-toggles me-1"></i>Mode
+                        </button>
+                        <button class="btn btn-outline-secondary action-btn-sm" onclick="s916Atm2ToggleEnabled()">
+                            <i class="bi bi-power me-1"></i>Enable
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-dark table-nas table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>S#</th><th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
+                                    <th>SL</th><th>LTP</th><th>P&L</th><th>Exit</th><th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s916Atm2PositionsBody">
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── 916 ATM4 Panel ────────────────────────────── -->
+            <div class="system-panel">
+                <div class="system-header-atm4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span style="color: #10b981; font-weight: 700; font-size: 1rem;">
+                            <i class="bi bi-clock me-1"></i>916 ATM V4
+                        </span>
+                        <small class="text-muted ms-2">9:16 AM auto-entry</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span id="s916Atm4ModeBadge" class="mode-badge mode-PAPER" style="font-size:0.7rem;">PAPER</span>
+                        <span id="s916Atm4EnabledBadge" class="mode-badge" style="font-size:0.7rem; background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;">ON</span>
+                    </div>
+                </div>
+                <div class="system-body">
+                    <div class="row g-1 mb-2">
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916Atm4Positions" style="color:#10b981;">0</div>
+                            <div class="lbl">Positions</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val" id="s916Atm4Strangles" style="color:#10b981;">0/5</div>
+                            <div class="lbl">RE-ENTRIES</div>
+                        </div></div>
+                        <div class="col-4"><div class="mini-stat">
+                            <div class="val positive" id="s916Atm4DayPnl">--</div>
+                            <div class="lbl">Day P&L</div>
+                        </div></div>
+                    </div>
+                    <div class="d-flex gap-1 mb-2">
+                        <button class="btn btn-outline-danger action-btn-sm" onclick="s916Atm4Kill()">
+                            <i class="bi bi-exclamation-octagon me-1"></i>Kill
+                        </button>
+                        <button class="btn btn-outline-warning action-btn-sm" onclick="s916Atm4ToggleMode()">
+                            <i class="bi bi-toggles me-1"></i>Mode
+                        </button>
+                        <button class="btn btn-outline-secondary action-btn-sm" onclick="s916Atm4ToggleEnabled()">
+                            <i class="bi bi-power me-1"></i>Enable
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-dark table-nas table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>S#</th><th>Leg</th><th>Symbol</th><th>Lots</th><th>Entry</th>
+                                    <th>SL</th><th>LTP</th><th>P&L</th><th>Exit</th><th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s916Atm4PositionsBody">
+                                <tr><td colspan="10" class="text-center text-muted">No positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div><!-- end right column -->
+
+    </div><!-- end row -->
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- What's Next (combined) -->
@@ -654,6 +896,7 @@
 
     <!-- Config info -->
     <div class="text-muted text-center mt-3" style="font-size: 0.75rem;">
+        <strong style="color:#a371f7;">Squeeze:</strong>
         <span id="configInfoOTM">OTM: --</span>
         &nbsp;|&nbsp;
         <span id="configInfoATM">ATM: --</span>
@@ -661,6 +904,15 @@
         <span id="configInfoATM2">ATM2: --</span>
         &nbsp;|&nbsp;
         <span id="configInfoATM4">ATM4: --</span>
+        <br>
+        <strong style="color:#f59e0b;">9:16:</strong>
+        <span id="configInfoS916OTM">916-OTM: --</span>
+        &nbsp;|&nbsp;
+        <span id="configInfoS916ATM">916-ATM: --</span>
+        &nbsp;|&nbsp;
+        <span id="configInfoS916ATM2">916-ATM2: --</span>
+        &nbsp;|&nbsp;
+        <span id="configInfoS916ATM4">916-ATM4: --</span>
     </div>
 </div>
 
@@ -689,6 +941,10 @@ let _liveAtmLegs = {};
 let _liveAtm2Legs = {};
 let _liveAtm4Legs = {};
 
+// 916 data variables
+let _s916OtmData = null, _s916AtmData = null, _s916Atm2Data = null, _s916Atm4Data = null;
+let _liveS916OtmLegs = {}, _liveS916AtmLegs = {}, _liveS916Atm2Legs = {}, _liveS916Atm4Legs = {};
+
 // ─── Formatters ──────────────────────────────────────────
 function fmtRs(val) {
     if (val === null || val === undefined) return '--';
@@ -701,7 +957,7 @@ function setColor(id, positive) {
     if (el) el.className = el.className.replace(/positive|negative/g, '').trim() + ' ' + (positive ? 'positive' : 'negative');
 }
 
-// ─── API Calls ──────────────────────────────────────────
+// ─── API Calls (Squeeze) ────────────────────────────────
 async function fetchOTM() {
     try { return await (await fetch('/api/nas/state')).json(); }
     catch(e) { return null; }
@@ -719,7 +975,25 @@ async function fetchATM4() {
     catch(e) { return null; }
 }
 
-// OTM actions
+// ─── API Calls (916) ────────────────────────────────────
+async function fetchS916Otm() {
+    try { return await (await fetch('/api/nas-916-otm/state')).json(); }
+    catch(e) { return null; }
+}
+async function fetchS916Atm() {
+    try { return await (await fetch('/api/nas-916-atm/state')).json(); }
+    catch(e) { return null; }
+}
+async function fetchS916Atm2() {
+    try { return await (await fetch('/api/nas-916-atm2/state')).json(); }
+    catch(e) { return null; }
+}
+async function fetchS916Atm4() {
+    try { return await (await fetch('/api/nas-916-atm4/state')).json(); }
+    catch(e) { return null; }
+}
+
+// ─── Squeeze OTM actions ────────────────────────────────
 async function otmScan() {
     document.getElementById('scanOverlay').style.display = 'flex';
     document.getElementById('scanTitle').textContent = 'Running OTM Scan...';
@@ -745,7 +1019,7 @@ async function otmKill() {
     refreshAll();
 }
 
-// ATM actions
+// ─── Squeeze ATM actions ────────────────────────────────
 async function atmScan() {
     document.getElementById('scanOverlay').style.display = 'flex';
     document.getElementById('scanTitle').textContent = 'Running ATM Scan...';
@@ -771,7 +1045,7 @@ async function atmKill() {
     refreshAll();
 }
 
-// ATM2 actions
+// ─── Squeeze ATM2 actions ───────────────────────────────
 async function atm2Scan() {
     document.getElementById('scanOverlay').style.display = 'flex';
     document.getElementById('scanTitle').textContent = 'Running ATM2 Scan...';
@@ -797,7 +1071,7 @@ async function atm2Kill() {
     refreshAll();
 }
 
-// ATM4 actions
+// ─── Squeeze ATM4 actions ───────────────────────────────
 async function atm4Scan() {
     document.getElementById('scanOverlay').style.display = 'flex';
     document.getElementById('scanTitle').textContent = 'Running ATM4 Scan...';
@@ -820,6 +1094,70 @@ async function atm4ToggleEnabled() {
 async function atm4Kill() {
     if (!confirm('EMERGENCY: Close ALL ATM4 positions?')) return;
     await fetch('/api/nas-atm4/kill-switch', {method: 'POST'});
+    refreshAll();
+}
+
+// ─── 916 OTM actions ────────────────────────────────────
+async function s916OtmKill() {
+    if (!confirm('EMERGENCY: Close ALL 916-OTM positions?')) return;
+    await fetch('/api/nas-916-otm/kill-switch', {method: 'POST'});
+    refreshAll();
+}
+async function s916OtmToggleMode() {
+    if (!confirm('Switch 916-OTM between PAPER and LIVE?')) return;
+    await fetch('/api/nas-916-otm/toggle-mode', {method: 'POST'});
+    refreshAll();
+}
+async function s916OtmToggleEnabled() {
+    await fetch('/api/nas-916-otm/toggle-enabled', {method: 'POST'});
+    refreshAll();
+}
+
+// ─── 916 ATM actions ────────────────────────────────────
+async function s916AtmKill() {
+    if (!confirm('EMERGENCY: Close ALL 916-ATM positions?')) return;
+    await fetch('/api/nas-916-atm/kill-switch', {method: 'POST'});
+    refreshAll();
+}
+async function s916AtmToggleMode() {
+    if (!confirm('Switch 916-ATM between PAPER and LIVE?')) return;
+    await fetch('/api/nas-916-atm/toggle-mode', {method: 'POST'});
+    refreshAll();
+}
+async function s916AtmToggleEnabled() {
+    await fetch('/api/nas-916-atm/toggle-enabled', {method: 'POST'});
+    refreshAll();
+}
+
+// ─── 916 ATM2 actions ───────────────────────────────────
+async function s916Atm2Kill() {
+    if (!confirm('EMERGENCY: Close ALL 916-ATM2 positions?')) return;
+    await fetch('/api/nas-916-atm2/kill-switch', {method: 'POST'});
+    refreshAll();
+}
+async function s916Atm2ToggleMode() {
+    if (!confirm('Switch 916-ATM2 between PAPER and LIVE?')) return;
+    await fetch('/api/nas-916-atm2/toggle-mode', {method: 'POST'});
+    refreshAll();
+}
+async function s916Atm2ToggleEnabled() {
+    await fetch('/api/nas-916-atm2/toggle-enabled', {method: 'POST'});
+    refreshAll();
+}
+
+// ─── 916 ATM4 actions ───────────────────────────────────
+async function s916Atm4Kill() {
+    if (!confirm('EMERGENCY: Close ALL 916-ATM4 positions?')) return;
+    await fetch('/api/nas-916-atm4/kill-switch', {method: 'POST'});
+    refreshAll();
+}
+async function s916Atm4ToggleMode() {
+    if (!confirm('Switch 916-ATM4 between PAPER and LIVE?')) return;
+    await fetch('/api/nas-916-atm4/toggle-mode', {method: 'POST'});
+    refreshAll();
+}
+async function s916Atm4ToggleEnabled() {
+    await fetch('/api/nas-916-atm4/toggle-enabled', {method: 'POST'});
     refreshAll();
 }
 
@@ -1267,6 +1605,319 @@ function renderATM4Positions(data) {
     return dayPnl;
 }
 
+// ─── 916 OTM Positions (simplified — uses shared OTM ticker) ──
+function renderS916OtmPositions(data) {
+    if (!data) return 0;
+    const ceList = (data.positions || {}).ce || [];
+    const peList = (data.positions || {}).pe || [];
+    const closedToday = (data.positions || {}).closed_today || [];
+    const allActive = [...ceList, ...peList];
+    const body = document.getElementById('s916OtmPositionsBody');
+
+    let totalPnl = 0;
+    let closedPnl = 0;
+    closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
+
+    if (allActive.length === 0 && closedToday.length === 0) {
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
+        document.getElementById('s916OtmDayPnl').textContent = fmtRs(0);
+        return 0;
+    }
+
+    const rows = allActive.map(p => {
+        const ltp = _liveOtmLegs[p.tradingsymbol] || _liveS916OtmLegs[p.tradingsymbol];
+        const entry = p.entry_price || 0;
+        const qty = p.qty || LOT_SIZE;
+        const lots = Math.round(qty / 75) || 1;
+        let ltpText = '--', pnlText = '--', pnlStyle = '';
+        if (ltp != null && ltp > 0) {
+            ltpText = ltp.toFixed(1);
+            const pnl = (entry - ltp) * qty;
+            totalPnl += pnl;
+            pnlStyle = pnl >= 0 ? 'color:#3fb950' : 'color:#f85149';
+            pnlText = (pnl >= 0 ? '+' : '') + pnl.toFixed(0);
+        }
+        return `<tr>
+            <td><span class="leg-${p.leg}">${p.leg}</span></td>
+            <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+            <td style="color:#8b949e;">${lots}L</td>
+            <td>${entry}</td><td>${ltpText}</td>
+            <td style="${pnlStyle};font-weight:600">${pnlText}</td>
+            <td>${p.adjustment_count || 0}</td>
+            <td><span class="badge bg-success" style="font-size:0.65rem;">ACTIVE</span></td>
+            <td>--</td><td>--</td>
+        </tr>`;
+    }).join('');
+
+    const dayPnl = totalPnl + closedPnl;
+    let dayRow = `<tr style="border-top:2px solid #8b949e">
+        <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
+        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
+        <td colspan="2"></td></tr>`;
+
+    let closedRows = '';
+    if (closedToday.length > 0) {
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows += closedToday.map(p => {
+            const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
+            const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
+            return `<tr style="opacity:0.4">
+                <td><span class="leg-${p.leg}">${p.leg}</span></td>
+                <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+                <td style="color:#8b949e;">${lots}L</td>
+                <td>${p.entry_price}</td><td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
+                <td>${p.adjustment_count||0}</td>
+                <td><span class="badge bg-secondary" style="font-size:0.6rem;">${(p.exit_reason||'').substring(0,10)}</span></td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    body.innerHTML = rows + dayRow + closedRows;
+    document.getElementById('s916OtmDayPnl').textContent = fmtRs(dayPnl);
+    document.getElementById('s916OtmDayPnl').style.color = dayPnl >= 0 ? '#3fb950' : '#f85149';
+    return dayPnl;
+}
+
+// ─── 916 ATM Positions (simplified — uses shared ATM ticker) ──
+function renderS916AtmPositions(data) {
+    if (!data) return 0;
+    const ceList = (data.positions || {}).ce || [];
+    const peList = (data.positions || {}).pe || [];
+    const closedToday = (data.positions || {}).closed_today || [];
+    const allActive = [...ceList, ...peList];
+    const body = document.getElementById('s916AtmPositionsBody');
+
+    let totalPnl = 0;
+    let closedPnl = 0;
+    closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
+
+    if (allActive.length === 0 && closedToday.length === 0) {
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
+        document.getElementById('s916AtmDayPnl').textContent = fmtRs(0);
+        return 0;
+    }
+
+    const rows = allActive.map(p => {
+        const ltp = _liveAtmLegs[p.tradingsymbol] || _liveS916AtmLegs[p.tradingsymbol];
+        const entry = p.entry_price || 0;
+        const sl = p.sl_price || 0;
+        const qty = p.qty || LOT_SIZE;
+        const lots = Math.round(qty / 75) || 1;
+        let ltpText = '--', pnlText = '--', pnlStyle = '';
+        if (ltp != null && ltp > 0) {
+            ltpText = ltp.toFixed(1);
+            const pnl = (entry - ltp) * qty;
+            totalPnl += pnl;
+            pnlStyle = pnl >= 0 ? 'color:#3fb950' : 'color:#f85149';
+            pnlText = (pnl >= 0 ? '+' : '') + pnl.toFixed(0);
+        }
+        const slStyle = sl > 0 && sl < 900000 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
+        return `<tr>
+            <td style="color:#38a6f7;">${p.strangle_id||'--'}</td>
+            <td><span class="leg-${p.leg}">${p.leg}</span></td>
+            <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+            <td style="color:#8b949e;">${lots}L</td>
+            <td>${entry}</td>
+            <td style="${slStyle}">${sl > 0 && sl < 900000 ? sl.toFixed(1) : '--'}</td>
+            <td>${ltpText}</td>
+            <td style="${pnlStyle};font-weight:600">${pnlText}</td>
+            <td>--</td><td>--</td>
+        </tr>`;
+    }).join('');
+
+    const dayPnl = totalPnl + closedPnl;
+    let dayRow = `<tr style="border-top:2px solid #8b949e">
+        <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
+        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
+        <td colspan="2"></td></tr>`;
+
+    let closedRows = '';
+    if (closedToday.length > 0) {
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows += closedToday.map(p => {
+            const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
+            const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
+            return `<tr style="opacity:0.4">
+                <td style="color:#38a6f7;">${p.strangle_id||'--'}</td>
+                <td><span class="leg-${p.leg}">${p.leg}</span></td>
+                <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+                <td style="color:#8b949e;">${lots}L</td>
+                <td>${p.entry_price}</td><td>--</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    body.innerHTML = rows + dayRow + closedRows;
+    document.getElementById('s916AtmDayPnl').textContent = fmtRs(dayPnl);
+    document.getElementById('s916AtmDayPnl').style.color = dayPnl >= 0 ? '#3fb950' : '#f85149';
+    return dayPnl;
+}
+
+// ─── 916 ATM2 Positions (simplified — uses shared ATM2 ticker) ──
+function renderS916Atm2Positions(data) {
+    if (!data) return 0;
+    const ceList = (data.positions || {}).ce || [];
+    const peList = (data.positions || {}).pe || [];
+    const closedToday = (data.positions || {}).closed_today || [];
+    const allActive = [...ceList, ...peList];
+    const body = document.getElementById('s916Atm2PositionsBody');
+
+    let totalPnl = 0;
+    let closedPnl = 0;
+    closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
+
+    if (allActive.length === 0 && closedToday.length === 0) {
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
+        document.getElementById('s916Atm2DayPnl').textContent = fmtRs(0);
+        return 0;
+    }
+
+    const rows = allActive.map(p => {
+        const ltp = _liveAtm2Legs[p.tradingsymbol] || _liveS916Atm2Legs[p.tradingsymbol];
+        const entry = p.entry_price || 0;
+        const sl = p.sl_price || 0;
+        const qty = p.qty || LOT_SIZE;
+        const lots = Math.round(qty / 75) || 1;
+        let ltpText = '--', pnlText = '--', pnlStyle = '';
+        if (ltp != null && ltp > 0) {
+            ltpText = ltp.toFixed(1);
+            const pnl = (entry - ltp) * qty;
+            totalPnl += pnl;
+            pnlStyle = pnl >= 0 ? 'color:#3fb950' : 'color:#f85149';
+            pnlText = (pnl >= 0 ? '+' : '') + pnl.toFixed(0);
+        }
+        const slStyle = sl > 0 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
+        return `<tr>
+            <td style="color:#f59e0b;">${p.strangle_id||'--'}</td>
+            <td><span class="leg-${p.leg}">${p.leg}</span></td>
+            <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+            <td style="color:#8b949e;">${lots}L</td>
+            <td>${entry}</td>
+            <td style="${slStyle}">${sl > 0 ? sl.toFixed(1) : '--'}</td>
+            <td>${ltpText}</td>
+            <td style="${pnlStyle};font-weight:600">${pnlText}</td>
+            <td>--</td><td>--</td>
+        </tr>`;
+    }).join('');
+
+    const dayPnl = totalPnl + closedPnl;
+    let dayRow = `<tr style="border-top:2px solid #8b949e">
+        <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
+        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
+        <td colspan="2"></td></tr>`;
+
+    let closedRows = '';
+    if (closedToday.length > 0) {
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows += closedToday.map(p => {
+            const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
+            const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
+            return `<tr style="opacity:0.4">
+                <td style="color:#f59e0b;">${p.strangle_id||'--'}</td>
+                <td><span class="leg-${p.leg}">${p.leg}</span></td>
+                <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+                <td style="color:#8b949e;">${lots}L</td>
+                <td>${p.entry_price}</td><td>--</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    body.innerHTML = rows + dayRow + closedRows;
+    document.getElementById('s916Atm2DayPnl').textContent = fmtRs(dayPnl);
+    document.getElementById('s916Atm2DayPnl').style.color = dayPnl >= 0 ? '#3fb950' : '#f85149';
+    return dayPnl;
+}
+
+// ─── 916 ATM4 Positions (simplified — uses shared ATM4 ticker) ──
+function renderS916Atm4Positions(data) {
+    if (!data) return 0;
+    const ceList = (data.positions || {}).ce || [];
+    const peList = (data.positions || {}).pe || [];
+    const closedToday = (data.positions || {}).closed_today || [];
+    const allActive = [...ceList, ...peList];
+    const body = document.getElementById('s916Atm4PositionsBody');
+
+    let totalPnl = 0;
+    let closedPnl = 0;
+    closedToday.forEach(p => { closedPnl += (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE); });
+
+    if (allActive.length === 0 && closedToday.length === 0) {
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions</td></tr>';
+        document.getElementById('s916Atm4DayPnl').textContent = fmtRs(0);
+        return 0;
+    }
+
+    const rows = allActive.map(p => {
+        const ltp = _liveAtm4Legs[p.tradingsymbol] || _liveS916Atm4Legs[p.tradingsymbol];
+        const entry = p.entry_price || 0;
+        const sl = p.sl_price || 0;
+        const qty = p.qty || LOT_SIZE;
+        const lots = Math.round(qty / 75) || 1;
+        let ltpText = '--', pnlText = '--', pnlStyle = '';
+        if (ltp != null && ltp > 0) {
+            ltpText = ltp.toFixed(1);
+            const pnl = (entry - ltp) * qty;
+            totalPnl += pnl;
+            pnlStyle = pnl >= 0 ? 'color:#3fb950' : 'color:#f85149';
+            pnlText = (pnl >= 0 ? '+' : '') + pnl.toFixed(0);
+        }
+        const slStyle = sl > 0 && sl < 900000 && ltp && ltp >= sl * 0.9 ? 'color:#f85149;font-weight:700' : 'color:#8b949e';
+        return `<tr>
+            <td style="color:#10b981;">${p.strangle_id||'--'}</td>
+            <td><span class="leg-${p.leg}">${p.leg}</span></td>
+            <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+            <td style="color:#8b949e;">${lots}L</td>
+            <td>${entry}</td>
+            <td style="${slStyle}">${sl > 0 && sl < 900000 ? sl.toFixed(1) : '--'}</td>
+            <td>${ltpText}</td>
+            <td style="${pnlStyle};font-weight:600">${pnlText}</td>
+            <td>--</td><td>--</td>
+        </tr>`;
+    }).join('');
+
+    const dayPnl = totalPnl + closedPnl;
+    let dayRow = `<tr style="border-top:2px solid #8b949e">
+        <td colspan="7" style="font-weight:700;color:#c9d1d9;">DAY P&L</td>
+        <td style="font-weight:800;${dayPnl>=0?'color:#3fb950':'color:#f85149'}">${fmtRs(dayPnl)}</td>
+        <td colspan="2"></td></tr>`;
+
+    let closedRows = '';
+    if (closedToday.length > 0) {
+        closedRows = `<tr><td colspan="10" style="color:#6e7681;font-size:0.72rem;border-top:1px dashed #30363d;">Closed</td></tr>`;
+        closedRows += closedToday.map(p => {
+            const pnl = (p.entry_price - (p.exit_price || 0)) * (p.qty || LOT_SIZE);
+            const lots = Math.round((p.qty || LOT_SIZE) / 75) || 1;
+            return `<tr style="opacity:0.4">
+                <td style="color:#10b981;">${p.strangle_id||'--'}</td>
+                <td><span class="leg-${p.leg}">${p.leg}</span></td>
+                <td style="font-size:0.75rem;">${p.tradingsymbol}</td>
+                <td style="color:#8b949e;">${lots}L</td>
+                <td>${p.entry_price}</td><td>--</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="${pnl>=0?'color:#3fb950':'color:#f85149'};font-weight:600">${(pnl>=0?'+':'')+pnl.toFixed(0)}</td>
+                <td>${(p.exit_price||0).toFixed(1)}</td>
+                <td style="font-size:0.68rem;color:#8b949e;">${p.exit_time ? p.exit_time.substring(11,16) : '--'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    body.innerHTML = rows + dayRow + closedRows;
+    document.getElementById('s916Atm4DayPnl').textContent = fmtRs(dayPnl);
+    document.getElementById('s916Atm4DayPnl').style.color = dayPnl >= 0 ? '#3fb950' : '#f85149';
+    return dayPnl;
+}
+
 // ─── What's Next (Combined) ─────────────────────────────
 function buildWhatsNext() {
     const rows = [];
@@ -1429,12 +2080,20 @@ function renderTrades() {
     const atmTrades = (_atmData || {}).recent_trades || [];
     const atm2Trades = (_atm2Data || {}).recent_trades || [];
     const atm4Trades = (_atm4Data || {}).recent_trades || [];
+    const s916OtmTrades = (_s916OtmData || {}).recent_trades || [];
+    const s916AtmTrades = (_s916AtmData || {}).recent_trades || [];
+    const s916Atm2Trades = (_s916Atm2Data || {}).recent_trades || [];
+    const s916Atm4Trades = (_s916Atm4Data || {}).recent_trades || [];
 
     const all = [
         ...otmTrades.map(t => ({...t, _sys: 'OTM', _color: '#a371f7'})),
         ...atmTrades.map(t => ({...t, _sys: 'ATM', _color: '#38a6f7'})),
         ...atm2Trades.map(t => ({...t, _sys: 'ATM2', _color: '#f59e0b'})),
         ...atm4Trades.map(t => ({...t, _sys: 'ATM4', _color: '#10b981'})),
+        ...s916OtmTrades.map(t => ({...t, _sys: '916-OTM', _color: '#a371f7'})),
+        ...s916AtmTrades.map(t => ({...t, _sys: '916-ATM', _color: '#38a6f7'})),
+        ...s916Atm2Trades.map(t => ({...t, _sys: '916-ATM2', _color: '#f59e0b'})),
+        ...s916Atm4Trades.map(t => ({...t, _sys: '916-ATM4', _color: '#10b981'})),
     ].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
     const container = document.getElementById('tradesAccordion');
@@ -1460,11 +2119,9 @@ function renderTrades() {
         const pnlColor = dayPnl >= 0 ? '#3fb950' : '#f85149';
         const isToday = day === today;
         const collapsed = idx > 0 ? 'collapsed' : '';
-        const otmCount = trades.filter(t => t._sys === 'OTM').length;
-        const atmCount = trades.filter(t => t._sys === 'ATM').length;
-        const atm2Count = trades.filter(t => t._sys === 'ATM2').length;
-        const atm4Count = trades.filter(t => t._sys === 'ATM4').length;
-        const sysMeta = [otmCount ? `${otmCount} OTM` : '', atmCount ? `${atmCount} ATM` : '', atm2Count ? `${atm2Count} ATM2` : '', atm4Count ? `${atm4Count} ATM4` : ''].filter(Boolean).join(', ');
+        const sysCounts = {};
+        trades.forEach(t => { sysCounts[t._sys] = (sysCounts[t._sys] || 0) + 1; });
+        const sysMeta = Object.entries(sysCounts).map(([s, c]) => `${c} ${s}`).join(', ');
 
         const dayLabel = isToday ? `Today (${day})` : day;
 
@@ -1526,12 +2183,20 @@ function renderSignals() {
     const atmSigs = (_atmData || {}).recent_signals || [];
     const atm2Sigs = (_atm2Data || {}).recent_signals || [];
     const atm4Sigs = (_atm4Data || {}).recent_signals || [];
+    const s916OtmSigs = (_s916OtmData || {}).recent_signals || [];
+    const s916AtmSigs = (_s916AtmData || {}).recent_signals || [];
+    const s916Atm2Sigs = (_s916Atm2Data || {}).recent_signals || [];
+    const s916Atm4Sigs = (_s916Atm4Data || {}).recent_signals || [];
 
     const all = [
         ...otmSigs.map(s => ({...s, _sys: 'OTM', _color: '#a371f7'})),
         ...atmSigs.map(s => ({...s, _sys: 'ATM', _color: '#38a6f7'})),
         ...atm2Sigs.map(s => ({...s, _sys: 'ATM2', _color: '#f59e0b'})),
         ...atm4Sigs.map(s => ({...s, _sys: 'ATM4', _color: '#10b981'})),
+        ...s916OtmSigs.map(s => ({...s, _sys: '916-OTM', _color: '#a371f7'})),
+        ...s916AtmSigs.map(s => ({...s, _sys: '916-ATM', _color: '#38a6f7'})),
+        ...s916Atm2Sigs.map(s => ({...s, _sys: '916-ATM2', _color: '#f59e0b'})),
+        ...s916Atm4Sigs.map(s => ({...s, _sys: '916-ATM4', _color: '#10b981'})),
     ].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
     const body = document.getElementById('signalsBody');
@@ -1550,7 +2215,7 @@ function renderSignals() {
     </tr>`).join('');
 }
 
-// ─── Equity Chart (overlay both) ────────────────────────
+// ─── Equity Chart (overlay all systems) ─────────────────
 async function loadEquityCurve() {
     try {
         const [otmEq, atmEq, atm2Eq, atm4Eq] = await Promise.all([
@@ -1657,7 +2322,7 @@ function updateUI() {
     document.getElementById('spotPrice').textContent = st.spot_price ? st.spot_price.toFixed(1) : '--';
     document.getElementById('atrValues').textContent = `${(st.atr_value||0).toFixed(1)} / ${(st.atr_ma||0).toFixed(1)}`;
 
-    // OTM panel
+    // ── Squeeze OTM panel ──
     if (_otmData && !_otmData.error) {
         const cfg = _otmData.config || {};
         const stats = _otmData.stats || {};
@@ -1681,7 +2346,7 @@ function updateUI() {
             `OTM: ${cfg.lots_per_leg||10}L | Cross-leg adj | Target Rs ${cfg.target_entry_premium||20}`;
     }
 
-    // ATM panel
+    // ── Squeeze ATM panel ──
     if (_atmData && !_atmData.error) {
         const cfg = _atmData.config || {};
         const stats = _atmData.stats || {};
@@ -1709,7 +2374,7 @@ function updateUI() {
             `ATM: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}% per leg | Max ${cfg.max_reentries||5} re-entries`;
     }
 
-    // ATM2 panel
+    // ── Squeeze ATM2 panel ──
     if (_atm2Data && !_atm2Data.error) {
         const cfg = _atm2Data.config || {};
         const stats = _atm2Data.stats || {};
@@ -1736,7 +2401,7 @@ function updateUI() {
             `ATM2: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}% both legs | Max ${cfg.max_reentries||5} re-entries`;
     }
 
-    // ATM4 panel
+    // ── Squeeze ATM4 panel ──
     if (_atm4Data && !_atm4Data.error) {
         const cfg = _atm4Data.config || {};
         const stats = _atm4Data.stats || {};
@@ -1763,23 +2428,125 @@ function updateUI() {
             `ATM4: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}% roll-to-match`;
     }
 
-    // Render positions
+    // ── 916 OTM panel ──
+    if (_s916OtmData && !_s916OtmData.error) {
+        const cfg = _s916OtmData.config || {};
+        const pos = _s916OtmData.positions || {};
+        document.getElementById('s916OtmPositions').textContent = pos.total_active || 0;
+        const closedToday = (pos.closed_today || []);
+        document.getElementById('s916OtmStrangles').textContent = `${closedToday.length}`;
+
+        const modeEl = document.getElementById('s916OtmModeBadge');
+        modeEl.textContent = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+        modeEl.className = 'mode-badge ' + (cfg.paper_trading_mode ? 'mode-PAPER' : 'mode-LIVE');
+        const enEl = document.getElementById('s916OtmEnabledBadge');
+        enEl.textContent = cfg.enabled !== false ? 'ON' : 'OFF';
+        enEl.style.cssText = cfg.enabled !== false
+            ? 'font-size:0.7rem;background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;'
+            : 'font-size:0.7rem;background:rgba(248,81,73,0.2);color:#f85149;border:1px solid #f85149;';
+
+        document.getElementById('configInfoS916OTM').textContent =
+            `916-OTM: ${cfg.lots_per_leg||10}L | 9:16 AM entry`;
+    }
+
+    // ── 916 ATM panel ──
+    if (_s916AtmData && !_s916AtmData.error) {
+        const cfg = _s916AtmData.config || {};
+        const pos = _s916AtmData.positions || {};
+        document.getElementById('s916AtmPositions').textContent = pos.total_active || 0;
+        const closedToday = (pos.closed_today || []);
+        const slReentries = closedToday.filter(p => (p.exit_reason || '') === 'SL_HIT').length;
+        document.getElementById('s916AtmStrangles').textContent = `${slReentries}/${cfg.max_reentries||5}`;
+
+        const modeEl = document.getElementById('s916AtmModeBadge');
+        modeEl.textContent = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+        modeEl.className = 'mode-badge ' + (cfg.paper_trading_mode ? 'mode-PAPER' : 'mode-LIVE');
+        const enEl = document.getElementById('s916AtmEnabledBadge');
+        enEl.textContent = cfg.enabled !== false ? 'ON' : 'OFF';
+        enEl.style.cssText = cfg.enabled !== false
+            ? 'font-size:0.7rem;background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;'
+            : 'font-size:0.7rem;background:rgba(248,81,73,0.2);color:#f85149;border:1px solid #f85149;';
+
+        document.getElementById('configInfoS916ATM').textContent =
+            `916-ATM: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}%`;
+    }
+
+    // ── 916 ATM2 panel ──
+    if (_s916Atm2Data && !_s916Atm2Data.error) {
+        const cfg = _s916Atm2Data.config || {};
+        const pos = _s916Atm2Data.positions || {};
+        document.getElementById('s916Atm2Positions').textContent = pos.total_active || 0;
+        const closedToday = (pos.closed_today || []);
+        const slReentries = closedToday.filter(p => (p.exit_reason || '') === 'SL_HIT').length;
+        document.getElementById('s916Atm2Strangles').textContent = `${slReentries}/${cfg.max_reentries||5}`;
+
+        const modeEl = document.getElementById('s916Atm2ModeBadge');
+        modeEl.textContent = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+        modeEl.className = 'mode-badge ' + (cfg.paper_trading_mode ? 'mode-PAPER' : 'mode-LIVE');
+        const enEl = document.getElementById('s916Atm2EnabledBadge');
+        enEl.textContent = cfg.enabled !== false ? 'ON' : 'OFF';
+        enEl.style.cssText = cfg.enabled !== false
+            ? 'font-size:0.7rem;background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;'
+            : 'font-size:0.7rem;background:rgba(248,81,73,0.2);color:#f85149;border:1px solid #f85149;';
+
+        document.getElementById('configInfoS916ATM2').textContent =
+            `916-ATM2: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}%`;
+    }
+
+    // ── 916 ATM4 panel ──
+    if (_s916Atm4Data && !_s916Atm4Data.error) {
+        const cfg = _s916Atm4Data.config || {};
+        const pos = _s916Atm4Data.positions || {};
+        document.getElementById('s916Atm4Positions').textContent = pos.total_active || 0;
+        const closedToday = (pos.closed_today || []);
+        const rollCount = closedToday.filter(p => (p.exit_reason || '').includes('ROLL')).length;
+        document.getElementById('s916Atm4Strangles').textContent = `${rollCount}/${cfg.max_reentries||5}`;
+
+        const modeEl = document.getElementById('s916Atm4ModeBadge');
+        modeEl.textContent = cfg.paper_trading_mode ? 'PAPER' : 'LIVE';
+        modeEl.className = 'mode-badge ' + (cfg.paper_trading_mode ? 'mode-PAPER' : 'mode-LIVE');
+        const enEl = document.getElementById('s916Atm4EnabledBadge');
+        enEl.textContent = cfg.enabled !== false ? 'ON' : 'OFF';
+        enEl.style.cssText = cfg.enabled !== false
+            ? 'font-size:0.7rem;background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid #3fb950;'
+            : 'font-size:0.7rem;background:rgba(248,81,73,0.2);color:#f85149;border:1px solid #f85149;';
+
+        document.getElementById('configInfoS916ATM4').textContent =
+            `916-ATM4: ${cfg.lots_per_leg||5}L | SL ${((cfg.leg_sl_pct||0.30)*100).toFixed(0)}%`;
+    }
+
+    // Render squeeze positions
     const otmDayPnl = renderOTMPositions(_otmData) || 0;
     const atmDayPnl = renderATMPositions(_atmData) || 0;
     const atm2DayPnl = renderATM2Positions(_atm2Data) || 0;
     const atm4DayPnl = renderATM4Positions(_atm4Data) || 0;
 
-    // Combined day P&L
-    const combinedDay = otmDayPnl + atmDayPnl + atm2DayPnl + atm4DayPnl;
-    document.getElementById('combinedDayPnl').textContent = fmtRs(combinedDay);
-    document.getElementById('combinedDayPnl').style.color = combinedDay >= 0 ? '#3fb950' : '#f85149';
+    // Render 916 positions
+    const s916OtmDayPnl = renderS916OtmPositions(_s916OtmData) || 0;
+    const s916AtmDayPnl = renderS916AtmPositions(_s916AtmData) || 0;
+    const s916Atm2DayPnl = renderS916Atm2Positions(_s916Atm2Data) || 0;
+    const s916Atm4DayPnl = renderS916Atm4Positions(_s916Atm4Data) || 0;
 
-    // Combined total P&L
+    // Squeeze Day P&L
+    const squeezeDayTotal = otmDayPnl + atmDayPnl + atm2DayPnl + atm4DayPnl;
+    document.getElementById('squeezeDayPnl').textContent = fmtRs(squeezeDayTotal);
+    document.getElementById('squeezeDayPnl').style.color = squeezeDayTotal >= 0 ? '#3fb950' : '#f85149';
+
+    // 916 Day P&L
+    const s916DayTotal = s916OtmDayPnl + s916AtmDayPnl + s916Atm2DayPnl + s916Atm4DayPnl;
+    document.getElementById('s916DayPnl').textContent = fmtRs(s916DayTotal);
+    document.getElementById('s916DayPnl').style.color = s916DayTotal >= 0 ? '#3fb950' : '#f85149';
+
+    // Combined total cumulative P&L
     const otmTotal = ((_otmData || {}).stats || {}).total_pnl || 0;
     const atmTotal = ((_atmData || {}).stats || {}).total_pnl || 0;
     const atm2Total = ((_atm2Data || {}).stats || {}).total_pnl || 0;
     const atm4Total = ((_atm4Data || {}).stats || {}).total_pnl || 0;
-    const combinedTotal = otmTotal + atmTotal + atm2Total + atm4Total;
+    const s916OtmTotal = ((_s916OtmData || {}).stats || {}).total_pnl || 0;
+    const s916AtmTotal = ((_s916AtmData || {}).stats || {}).total_pnl || 0;
+    const s916Atm2Total = ((_s916Atm2Data || {}).stats || {}).total_pnl || 0;
+    const s916Atm4Total = ((_s916Atm4Data || {}).stats || {}).total_pnl || 0;
+    const combinedTotal = otmTotal + atmTotal + atm2Total + atm4Total + s916OtmTotal + s916AtmTotal + s916Atm2Total + s916Atm4Total;
     document.getElementById('combinedTotalPnl').textContent = fmtRs(combinedTotal);
     document.getElementById('combinedTotalPnl').style.color = combinedTotal >= 0 ? '#3fb950' : '#f85149';
 
@@ -1789,14 +2556,21 @@ function updateUI() {
     renderSignals();
 }
 
-// ─── Refresh All ────────────────────────────────────────
+// ─── Refresh All (8 systems in parallel) ────────────────
 async function refreshAll() {
     await refreshTickerStatus();
-    const [otm, atm, atm2, atm4] = await Promise.all([fetchOTM(), fetchATM(), fetchATM2(), fetchATM4()]);
+    const [otm, atm, atm2, atm4, s916otm, s916atm, s916atm2, s916atm4] = await Promise.all([
+        fetchOTM(), fetchATM(), fetchATM2(), fetchATM4(),
+        fetchS916Otm(), fetchS916Atm(), fetchS916Atm2(), fetchS916Atm4()
+    ]);
     _otmData = otm;
     _atmData = atm;
     _atm2Data = atm2;
     _atm4Data = atm4;
+    _s916OtmData = s916otm;
+    _s916AtmData = s916atm;
+    _s916Atm2Data = s916atm2;
+    _s916Atm4Data = s916atm4;
     updateUI();
     loadEquityCurve();
 }
@@ -1809,6 +2583,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function startPremiumStream() {
+    // OTM stream (shared with 916-OTM)
     const evtSource = new EventSource('/api/nas/ticker/stream');
     evtSource.onmessage = function(event) {
         try {
@@ -1827,6 +2602,7 @@ function startPremiumStream() {
                 if (_atmData) renderATMPositions(_atmData);
                 if (_atm2Data) renderATM2Positions(_atm2Data);
                 if (_atm4Data) renderATM4Positions(_atm4Data);
+                if (_s916OtmData) renderS916OtmPositions(_s916OtmData);
             }
         } catch(e) {}
     };
@@ -1835,7 +2611,7 @@ function startPremiumStream() {
         setTimeout(startPremiumStream, 5000);
     };
 
-    // Also listen to ATM stream for ATM leg premiums
+    // ATM stream (shared with 916-ATM)
     const atmSource = new EventSource('/api/nas-atm/ticker/stream');
     atmSource.onmessage = function(event) {
         try {
@@ -1845,6 +2621,7 @@ function startPremiumStream() {
                     _liveAtmLegs[tsym] = leg.ltp;
                 }
                 if (_atmData) renderATMPositions(_atmData);
+                if (_s916AtmData) renderS916AtmPositions(_s916AtmData);
             }
         } catch(e) {}
     };
@@ -1857,7 +2634,7 @@ function startPremiumStream() {
         }, 5000);
     };
 
-    // Also listen to ATM2 stream for ATM2 leg premiums
+    // ATM2 stream (shared with 916-ATM2)
     const atm2Source = new EventSource('/api/nas-atm2/ticker/stream');
     atm2Source.onmessage = function(event) {
         try {
@@ -1867,6 +2644,7 @@ function startPremiumStream() {
                     _liveAtm2Legs[tsym] = leg.ltp;
                 }
                 if (_atm2Data) renderATM2Positions(_atm2Data);
+                if (_s916Atm2Data) renderS916Atm2Positions(_s916Atm2Data);
             }
         } catch(e) {}
     };
@@ -1879,7 +2657,7 @@ function startPremiumStream() {
         }, 5000);
     };
 
-    // Also listen to ATM4 stream for ATM4 leg premiums
+    // ATM4 stream (shared with 916-ATM4)
     const atm4Source = new EventSource('/api/nas-atm4/ticker/stream');
     atm4Source.onmessage = function(event) {
         try {
@@ -1889,6 +2667,7 @@ function startPremiumStream() {
                     _liveAtm4Legs[tsym] = leg.ltp;
                 }
                 if (_atm4Data) renderATM4Positions(_atm4Data);
+                if (_s916Atm4Data) renderS916Atm4Positions(_s916Atm4Data);
             }
         } catch(e) {}
     };
@@ -1898,6 +2677,94 @@ function startPremiumStream() {
             const s = new EventSource('/api/nas-atm4/ticker/stream');
             s.onmessage = atm4Source.onmessage;
             s.onerror = atm4Source.onerror;
+        }, 5000);
+    };
+
+    // 916-OTM stream
+    const s916OtmSource = new EventSource('/api/nas-916-otm/ticker/stream');
+    s916OtmSource.onmessage = function(event) {
+        try {
+            const d = JSON.parse(event.data);
+            if (d.type === 'tick' && d.legs) {
+                for (const [tsym, leg] of Object.entries(d.legs)) {
+                    _liveS916OtmLegs[tsym] = leg.ltp;
+                }
+                if (_s916OtmData) renderS916OtmPositions(_s916OtmData);
+            }
+        } catch(e) {}
+    };
+    s916OtmSource.onerror = function() {
+        s916OtmSource.close();
+        setTimeout(() => {
+            const s = new EventSource('/api/nas-916-otm/ticker/stream');
+            s.onmessage = s916OtmSource.onmessage;
+            s.onerror = s916OtmSource.onerror;
+        }, 5000);
+    };
+
+    // 916-ATM stream
+    const s916AtmSource = new EventSource('/api/nas-916-atm/ticker/stream');
+    s916AtmSource.onmessage = function(event) {
+        try {
+            const d = JSON.parse(event.data);
+            if (d.type === 'tick' && d.legs) {
+                for (const [tsym, leg] of Object.entries(d.legs)) {
+                    _liveS916AtmLegs[tsym] = leg.ltp;
+                }
+                if (_s916AtmData) renderS916AtmPositions(_s916AtmData);
+            }
+        } catch(e) {}
+    };
+    s916AtmSource.onerror = function() {
+        s916AtmSource.close();
+        setTimeout(() => {
+            const s = new EventSource('/api/nas-916-atm/ticker/stream');
+            s.onmessage = s916AtmSource.onmessage;
+            s.onerror = s916AtmSource.onerror;
+        }, 5000);
+    };
+
+    // 916-ATM2 stream
+    const s916Atm2Source = new EventSource('/api/nas-916-atm2/ticker/stream');
+    s916Atm2Source.onmessage = function(event) {
+        try {
+            const d = JSON.parse(event.data);
+            if (d.type === 'tick' && d.legs) {
+                for (const [tsym, leg] of Object.entries(d.legs)) {
+                    _liveS916Atm2Legs[tsym] = leg.ltp;
+                }
+                if (_s916Atm2Data) renderS916Atm2Positions(_s916Atm2Data);
+            }
+        } catch(e) {}
+    };
+    s916Atm2Source.onerror = function() {
+        s916Atm2Source.close();
+        setTimeout(() => {
+            const s = new EventSource('/api/nas-916-atm2/ticker/stream');
+            s.onmessage = s916Atm2Source.onmessage;
+            s.onerror = s916Atm2Source.onerror;
+        }, 5000);
+    };
+
+    // 916-ATM4 stream
+    const s916Atm4Source = new EventSource('/api/nas-916-atm4/ticker/stream');
+    s916Atm4Source.onmessage = function(event) {
+        try {
+            const d = JSON.parse(event.data);
+            if (d.type === 'tick' && d.legs) {
+                for (const [tsym, leg] of Object.entries(d.legs)) {
+                    _liveS916Atm4Legs[tsym] = leg.ltp;
+                }
+                if (_s916Atm4Data) renderS916Atm4Positions(_s916Atm4Data);
+            }
+        } catch(e) {}
+    };
+    s916Atm4Source.onerror = function() {
+        s916Atm4Source.close();
+        setTimeout(() => {
+            const s = new EventSource('/api/nas-916-atm4/ticker/stream');
+            s.onmessage = s916Atm4Source.onmessage;
+            s.onerror = s916Atm4Source.onerror;
         }, 5000);
     };
 }

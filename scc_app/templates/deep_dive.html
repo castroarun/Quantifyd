@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Day Deep Dive — SCC{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-xl font-bold">Day Deep Dive</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Historical day-level trade snapshots</p>
+    </div>
+    <!-- Day Navigator -->
+    <div class="flex items-center gap-2">
+      <button onclick="prevDay()" id="prevBtn" class="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-bold">←</button>
+      <span class="text-sm font-mono font-semibold px-3" id="currentDate">{{ selected_date or 'Today' }}</span>
+      <button onclick="nextDay()" id="nextBtn" class="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-bold">→</button>
+      <span class="text-xs text-slate-400 ml-2" id="dayIndex"></span>
+    </div>
+  </div>
+
+  <!-- Day Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" data-privacy>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase">Day P&L</p>
+      <p class="text-lg font-bold font-mono mt-1" id="ddPnl">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase">Trades</p>
+      <p class="text-lg font-bold mt-1" id="ddTrades">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase">Win Rate</p>
+      <p class="text-lg font-bold mt-1" id="ddWinRate">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase">Best Trade</p>
+      <p class="text-lg font-bold font-mono mt-1 text-emerald-600" id="ddBest">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase">Worst Trade</p>
+      <p class="text-lg font-bold font-mono mt-1 text-red-600" id="ddWorst">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase">Capital Used</p>
+      <p class="text-lg font-bold font-mono mt-1" id="ddCapital">—</p>
+    </div>
+  </div>
+
+  <!-- Strategy P&L Breakdown -->
+  <div class="flex gap-2 overflow-x-auto pb-1" id="ddStratBreakdown" data-privacy>
+    <p class="text-sm text-slate-400 py-2">Strategy breakdown will appear here</p>
+  </div>
+
+  <!-- Trade List -->
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden" data-privacy>
+    <div class="p-4 border-b border-slate-100 dark:border-slate-800">
+      <h3 class="text-sm font-semibold">Trades</h3>
+    </div>
+    <div id="ddTradeList" class="divide-y divide-slate-50 dark:divide-slate-800">
+      <div class="px-4 py-8 text-center text-sm text-slate-400">Select a date to view trades</div>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-400 text-center">← → keys or buttons to navigate days</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let _dayOffset = 0;
+  function prevDay() { _dayOffset++; loadDay(); }
+  function nextDay() { if (_dayOffset > 0) { _dayOffset--; loadDay(); } }
+  function loadDay() {
+    const d = new Date();
+    d.setDate(d.getDate() - _dayOffset);
+    document.getElementById('currentDate').textContent = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('nextBtn').disabled = _dayOffset === 0;
+    document.getElementById('nextBtn').style.opacity = _dayOffset === 0 ? 0.25 : 1;
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') prevDay();
+    if (e.key === 'ArrowRight') nextDay();
+  });
+  loadDay();
+</script>
+{% endblock %}

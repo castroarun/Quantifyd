@@ -90,3 +90,6 @@ secrets.json
 # Sweep logs (verbose output)
 *_sweep_log.txt
 *_log.txt
+scc/.next/
+scc/node_modules/
+*.db

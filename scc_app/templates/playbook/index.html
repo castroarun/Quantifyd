@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Options Playbook — SCC{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-xl font-bold">Options Playbook</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400">Covered Calls + Wide Strangles — scanning, positions, and risk</p>
+  </div>
+
+  <!-- Portfolio Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" data-privacy>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Premium Collected</p>
+      <p class="text-lg font-bold font-mono mt-1 text-emerald-600" id="pbPremium">—</p>
+      <p class="text-[10px] text-slate-400">this month</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Realized P&L</p>
+      <p class="text-lg font-bold font-mono mt-1" id="pbRealizedPnl">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Unrealized P&L</p>
+      <p class="text-lg font-bold font-mono mt-1" id="pbUnrealizedPnl">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Win Rate</p>
+      <p class="text-lg font-bold mt-1" id="pbWinRate">—</p>
+      <p class="text-[10px] text-slate-400">rolling 3 months</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Capital Deployed</p>
+      <p class="text-lg font-bold font-mono mt-1 text-sky-600" id="pbCapital">—</p>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">India VIX</p>
+      <p class="text-lg font-bold font-mono mt-1" id="pbVix">—</p>
+      <p class="text-[10px] text-slate-400" id="pbVixRegime"></p>
+    </div>
+  </div>
+
+  <!-- Scanner Cards -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Covered Call Scanner Card -->
+    <a href="/playbook/cc-scanner" class="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center text-xl">🎯</div>
+        <div>
+          <h3 class="text-base font-bold group-hover:text-emerald-600 transition-colors">Covered Call Scanner</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">7-layer conviction scoring for your 8 held stocks</p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" id="ccGreenCount">— GREEN</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400" id="ccAmberCount">— AMBER</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400" id="ccRedCount">— RED</span>
+      </div>
+      <p class="text-xs text-slate-400 mt-3">Last scan: <span id="ccLastScan">—</span></p>
+    </a>
+
+    <!-- Wide Strangle Scanner Card -->
+    <a href="/playbook/strangle-scanner" class="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:border-purple-300 dark:hover:border-purple-700 transition-all">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-xl">🔗</div>
+        <div>
+          <h3 class="text-base font-bold group-hover:text-purple-600 transition-colors">Wide Strangle Scanner</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">7-factor range-squeeze scoring for Nifty 50</p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400" id="strTopCount">— candidates</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500" id="strSqueezeCount">— in squeeze</span>
+      </div>
+      <p class="text-xs text-slate-400 mt-3">Last scan: <span id="strLastScan">—</span></p>
+    </a>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a href="/playbook/positions" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:border-sky-300 dark:hover:border-sky-700 transition-all">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">💼</span>
+        <div>
+          <h4 class="text-sm font-bold">Active Positions</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400" id="pbPosCount">— open CC/strangle positions</p>
+        </div>
+      </div>
+    </a>
+    <a href="/playbook/alerts" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:border-amber-300 dark:hover:border-amber-700 transition-all">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">🔔</span>
+        <div>
+          <h4 class="text-sm font-bold">Alerts & Exits</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400" id="pbAlertCount">— active alerts</p>
+        </div>
+      </div>
+    </a>
+    <a href="/playbook/cc-scanner" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">📊</span>
+        <div>
+          <h4 class="text-sm font-bold">Next Earnings</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400" id="pbNextEarnings">Check scanner for dates</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}

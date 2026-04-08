@@ -423,5 +423,28 @@ NAS_ATM4_DEFAULTS = {
     're_enter_on_sl': False,
 }
 
+# --- 916 Variants: Same strategies, mandatory 9:16 AM entry (no squeeze wait) ---
+
+NAS_916_OTM_DEFAULTS = {
+    **NAS_DEFAULTS,
+    'entry_start_time': '09:16',
+    'skip_squeeze': True,           # Enter at 9:16 regardless of ATR squeeze
+}
+
+NAS_916_ATM_DEFAULTS = {
+    **NAS_ATM_DEFAULTS,
+    'entry_start_time': '09:16',
+}
+
+NAS_916_ATM2_DEFAULTS = {
+    **NAS_ATM2_DEFAULTS,
+    'entry_start_time': '09:16',
+}
+
+NAS_916_ATM4_DEFAULTS = {
+    **NAS_ATM4_DEFAULTS,
+    'entry_start_time': '09:16',
+}
+
 # Nifty 500 Universe
 NIFTY500_CSV = DATA_DIR.parent / 'data' / 'nifty500_list.csv'

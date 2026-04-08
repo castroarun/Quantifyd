@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Blueprints — SCC{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-xl font-bold">Strategy Blueprints</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400">Standardized rules for every trading system</p>
+  </div>
+
+  <!-- Strategy Selector Pills -->
+  <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">
+    {% for bp in blueprints %}
+    <a href="/blueprints/{{ bp.id }}"
+       class="shrink-0 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all border
+              {% if active_bp.id == bp.id %}bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 shadow-sm
+              {% else %}text-slate-500 dark:text-slate-400 border-transparent hover:border-slate-200 dark:hover:border-slate-700{% endif %}">
+      {{ bp.name }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Blueprint Content -->
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <!-- Header -->
+    <div class="p-5 border-b border-slate-100 dark:border-slate-800">
+      <div class="flex items-center gap-3 mb-2">
+        <h3 class="text-lg font-bold">{{ active_bp.name }}</h3>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">{{ active_bp.version }}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 font-semibold">{{ active_bp.system_type }}</span>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400">{{ active_bp.description }}</p>
+      <div class="flex gap-4 mt-3 text-xs text-slate-400">
+        <span>⏱ {{ active_bp.holding_period }}</span>
+        <span>📊 {{ active_bp.timeframe }}</span>
+        <span>🎯 {{ active_bp.instruments }}</span>
+        <span>💰 ₹{{ active_bp.capital }}</span>
+      </div>
+    </div>
+
+    <!-- Rules & Criteria View -->
+    <div class="p-5" data-privacy>
+      <!-- View toggle -->
+      <div class="flex gap-2 mb-5">
+        <button onclick="showBpView('rules')" id="bpRulesBtn" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">📋 Rules & Criteria</button>
+        <button onclick="showBpView('backtest')" id="bpBacktestBtn" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 border border-transparent">📊 Backtest Metrics</button>
+      </div>
+
+      <!-- RULES VIEW -->
+      <div id="bpRulesView" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Entry Rules -->
+        <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-900 p-4">
+          <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-3">✅ Entry Rules</h4>
+          <ol class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            {% for rule in active_bp.entry %}
+            <li class="flex gap-2">
+              <span class="text-emerald-500 font-bold shrink-0">{{ loop.index }}.</span>
+              <span>{{ rule }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+        </div>
+
+        <!-- Exit Rules -->
+        <div class="rounded-xl border-2 border-sky-200 dark:border-sky-900 p-4">
+          <h4 class="text-sm font-bold text-sky-600 dark:text-sky-400 mb-3">🔵 Exit Rules</h4>
+          <ol class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            {% for rule in active_bp.exit %}
+            <li class="flex gap-2">
+              <span class="text-sky-500 font-bold shrink-0">{{ loop.index }}.</span>
+              <span>{{ rule }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+        </div>
+
+        <!-- Stop Loss Rules -->
+        <div class="rounded-xl border-2 border-red-200 dark:border-red-900 p-4">
+          <h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3">🔴 Stop Loss Rules</h4>
+          <ol class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            {% for rule in active_bp.stop_loss %}
+            <li class="flex gap-2">
+              <span class="text-red-500 font-bold shrink-0">{{ loop.index }}.</span>
+              <span>{{ rule }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+        </div>
+      </div>
+
+      <!-- Position Sizing & Indicators -->
+      <div class="mt-4 space-y-3">
+        <div class="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-3 border border-amber-200 dark:border-amber-900">
+          <p class="text-xs font-semibold text-amber-700 dark:text-amber-400">Position Sizing</p>
+          <p class="text-sm text-amber-800 dark:text-amber-300 mt-1">{{ active_bp.position_sizing }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {% for ind in active_bp.indicators %}
+          <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-mono text-slate-600 dark:text-slate-300">{{ ind }}</span>
+          {% endfor %}
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          {% for tag in active_bp.tags %}
+          <span class="px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/30 text-xs font-semibold text-purple-600 dark:text-purple-400">#{{ tag }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- BACKTEST VIEW -->
+      <div id="bpBacktestView" class="hidden">
+        {% if active_bp.backtest %}
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Trades</p>
+            <p class="text-lg font-bold font-mono">{{ active_bp.backtest.total_trades }}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Win Rate</p>
+            <p class="text-lg font-bold font-mono text-emerald-600">{{ active_bp.backtest.win_rate }}%</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Profit Factor</p>
+            <p class="text-lg font-bold font-mono">{{ active_bp.backtest.profit_factor }}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Sharpe</p>
+            <p class="text-lg font-bold font-mono">{{ active_bp.backtest.sharpe }}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Max DD</p>
+            <p class="text-lg font-bold font-mono text-red-600">{{ active_bp.backtest.max_dd }}%</p>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-sm text-slate-400 text-center py-8">No backtest data available for this strategy</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function showBpView(view) {
+    document.getElementById('bpRulesView').classList.toggle('hidden', view !== 'rules');
+    document.getElementById('bpBacktestView').classList.toggle('hidden', view !== 'backtest');
+    const rb = document.getElementById('bpRulesBtn');
+    const bb = document.getElementById('bpBacktestBtn');
+    if (view === 'rules') {
+      rb.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm';
+      bb.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 border border-transparent';
+    } else {
+      bb.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm';
+      rb.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 border border-transparent';
+    }
+  }
+</script>
+{% endblock %}

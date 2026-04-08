@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Strategy Command Center{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'Segoe UI', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: { 850: '#172033', 950: '#0b1120' },
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    .blur-it { filter: blur(8px); user-select: none; pointer-events: none; }
+    .kill-btn { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+    .kill-btn:hover { background: linear-gradient(135deg, #b91c1c, #991b1b); }
+    @keyframes fu { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .fu { animation: fu .2s ease-out; }
+    .flag-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+    /* Sidebar */
+    .sidebar-link { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0.75rem; border-radius:0.5rem; font-size:0.875rem; font-weight:500; transition:all 0.15s; text-decoration:none; }
+    .sidebar-link:not(.active) { color:#94a3b8; }
+    .dark .sidebar-link:not(.active) { color:#64748b; }
+    .sidebar-link:hover { background:#f1f5f9; }
+    .dark .sidebar-link:hover { background:#1e293b; }
+    .sidebar-link.active { background:#fff; color:#0f172a; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
+    .dark .sidebar-link.active { background:#1e293b; color:#f1f5f9; }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans min-h-screen">
+
+  <!-- HEADER -->
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2.5 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs" style="background:linear-gradient(135deg,#0f172a,#334155)">SC</div>
+      <h1 class="text-base font-bold tracking-tight">Strategy Command Center</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Live clock -->
+      <span class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="font-mono" id="headerClock">--:--:--</span>
+      </span>
+      <!-- Theme toggle -->
+      <button onclick="toggleTheme()" id="themeToggle" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Toggle dark/light mode">
+        <span id="themeIcon">🌙</span>
+      </button>
+      <!-- Privacy toggle -->
+      <button onclick="togglePrivacy()" id="privacyToggle" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700">🔓</button>
+      <!-- Alert indicator -->
+      <span id="alertDot" class="w-2 h-2 rounded-full bg-red-500 flag-pulse hidden"></span>
+      <!-- Kill All -->
+      <button onclick="showKillModal()" class="kill-btn text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:scale-105 transition-transform">✕ KILL ALL</button>
+    </div>
+  </header>
+
+  <!-- Alert Banner (hidden by default) -->
+  <div id="alertBanner" class="hidden mx-4 mt-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2.5 flex items-start gap-3">
+    <span class="text-base mt-0.5">🚨</span>
+    <div id="alertContent" class="flex-1 space-y-1 text-xs text-red-700 dark:text-red-400"></div>
+  </div>
+
+  <div class="flex">
+    <!-- SIDEBAR -->
+    <aside class="w-56 shrink-0 h-[calc(100vh-49px)] sticky top-[49px] bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 p-3 space-y-1 overflow-y-auto hidden lg:block">
+      <!-- Main nav -->
+      <a href="/" class="sidebar-link {{ 'active' if active_tab == 'dashboard' }}">
+        <span class="text-base">📈</span> Dashboard
+      </a>
+      <a href="/positions" class="sidebar-link {{ 'active' if active_tab == 'positions' }}">
+        <span class="text-base">📊</span> Positions & Trades
+      </a>
+      <a href="/blueprints" class="sidebar-link {{ 'active' if active_tab == 'blueprints' }}">
+        <span class="text-base">📐</span> Blueprints
+      </a>
+      <a href="/deep-dive" class="sidebar-link {{ 'active' if active_tab == 'deep_dive' }}">
+        <span class="text-base">🔍</span> Day Deep Dive
+      </a>
+
+      <!-- Strategies section -->
+      <div class="pt-3 pb-1">
+        <p class="px-3 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Strategies</p>
+      </div>
+      <a href="/strategy/maruthi" class="sidebar-link {{ 'active' if active_strategy == 'maruthi' }}">
+        <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span> Maruthi ST
+      </a>
+      <a href="/strategy/kc6" class="sidebar-link {{ 'active' if active_strategy == 'kc6' }}">
+        <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span> KC6
+      </a>
+      <a href="/strategy/nas" class="sidebar-link {{ 'active' if active_strategy == 'nas' }}">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span> NAS
+      </a>
+      <a href="/strategy/nas_atm" class="sidebar-link {{ 'active' if active_strategy == 'nas_atm' }}">
+        <span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span> NAS ATM
+      </a>
+      <a href="/strategy/bnf" class="sidebar-link {{ 'active' if active_strategy == 'bnf' }}">
+        <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span> BNF
+      </a>
+      <a href="/strategy/trident" class="sidebar-link {{ 'active' if active_strategy == 'trident' }}">
+        <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span> Trident
+      </a>
+
+      <!-- Playbook section -->
+      <div class="pt-3 pb-1">
+        <p class="px-3 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Options Playbook</p>
+      </div>
+      <a href="/playbook" class="sidebar-link {{ 'active' if active_tab == 'playbook' and not active_section }}">
+        <span class="text-base">📋</span> Overview
+      </a>
+      <a href="/playbook/cc-scanner" class="sidebar-link {{ 'active' if active_section == 'cc' }}">
+        <span class="text-base">🎯</span> CC Scanner
+      </a>
+      <a href="/playbook/strangle-scanner" class="sidebar-link {{ 'active' if active_section == 'strangle' }}">
+        <span class="text-base">🔗</span> Strangle Scanner
+      </a>
+      <a href="/playbook/positions" class="sidebar-link {{ 'active' if active_section == 'positions' }}">
+        <span class="text-base">💼</span> Positions
+      </a>
+      <a href="/playbook/alerts" class="sidebar-link {{ 'active' if active_section == 'alerts' }}">
+        <span class="text-base">🔔</span> Alerts & Exits
+      </a>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-4 lg:p-6 min-h-[calc(100vh-49px)] fu">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Kill All Modal -->
+  <div id="killModal" class="hidden fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl p-7 max-w-sm w-full shadow-2xl fu border border-slate-200 dark:border-slate-700">
+      <h3 class="text-lg font-bold mb-2">⚠️ Emergency Kill All</h3>
+      <div class="bg-red-50 dark:bg-red-950/30 rounded-xl p-3 mb-5 text-sm text-red-700 dark:text-red-400">
+        Close <strong>all</strong> positions and stop <strong>all</strong> strategies. This cannot be undone.
+      </div>
+      <div class="flex gap-3">
+        <button onclick="hideKillModal()" class="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+        <button onclick="executeKillAll()" class="flex-1 kill-btn text-white px-4 py-2 rounded-xl font-bold text-sm">Confirm Kill All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile nav (bottom) -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around py-2 z-40">
+    <a href="/" class="flex flex-col items-center gap-0.5 text-xs {{ 'text-slate-900 dark:text-white font-bold' if active_tab == 'dashboard' else 'text-slate-400' }}">
+      <span class="text-lg">📈</span> Home
+    </a>
+    <a href="/positions" class="flex flex-col items-center gap-0.5 text-xs {{ 'text-slate-900 dark:text-white font-bold' if active_tab == 'positions' else 'text-slate-400' }}">
+      <span class="text-lg">📊</span> Positions
+    </a>
+    <a href="/blueprints" class="flex flex-col items-center gap-0.5 text-xs {{ 'text-slate-900 dark:text-white font-bold' if active_tab == 'blueprints' else 'text-slate-400' }}">
+      <span class="text-lg">📐</span> Rules
+    </a>
+    <a href="/playbook" class="flex flex-col items-center gap-0.5 text-xs {{ 'text-slate-900 dark:text-white font-bold' if active_tab == 'playbook' else 'text-slate-400' }}">
+      <span class="text-lg">📋</span> Playbook
+    </a>
+  </nav>
+
+  <script>
+    // ── Theme Toggle ──
+    function getTheme() { return localStorage.getItem('scc-theme') || 'dark'; }
+    function applyTheme(t) {
+      document.documentElement.classList.toggle('dark', t === 'dark');
+      document.getElementById('themeIcon').textContent = t === 'dark' ? '🌙' : '☀️';
+      localStorage.setItem('scc-theme', t);
+    }
+    function toggleTheme() { applyTheme(getTheme() === 'dark' ? 'light' : 'dark'); }
+    applyTheme(getTheme());
+
+    // ── Privacy Mode ──
+    let _privacy = false;
+    function togglePrivacy() {
+      _privacy = !_privacy;
+      document.querySelectorAll('[data-privacy]').forEach(el => el.classList.toggle('blur-it', _privacy));
+      document.getElementById('privacyToggle').textContent = _privacy ? '🔒' : '🔓';
+    }
+
+    // ── Clock ──
+    setInterval(() => {
+      document.getElementById('headerClock').textContent = new Date().toLocaleTimeString('en-IN', { hour12: false });
+    }, 1000);
+    document.getElementById('headerClock').textContent = new Date().toLocaleTimeString('en-IN', { hour12: false });
+
+    // ── Kill All Modal ──
+    function showKillModal() { document.getElementById('killModal').classList.remove('hidden'); }
+    function hideKillModal() { document.getElementById('killModal').classList.add('hidden'); }
+    function executeKillAll() {
+      fetch('/api/scc/kill-all', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => { hideKillModal(); alert(d.message || 'Kill-all executed'); location.reload(); })
+        .catch(e => alert('Kill-all failed: ' + e));
+    }
+
+    // ── Number Formatting ──
+    function fmt(n) {
+      if (Math.abs(n) >= 1e7) return '₹' + (n / 1e7).toFixed(2) + ' Cr';
+      if (Math.abs(n) >= 1e5) return '₹' + (n / 1e5).toFixed(2) + ' L';
+      if (Math.abs(n) >= 1e3) return '₹' + (n / 1e3).toFixed(1) + 'K';
+      return '₹' + n.toLocaleString('en-IN');
+    }
+    function pnlColor(v) { return v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'; }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

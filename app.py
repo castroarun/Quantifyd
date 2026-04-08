@@ -50,6 +50,8 @@ from config import (
     STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
     MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS, NAS_DEFAULTS, NAS_ATM_DEFAULTS,
     NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
+    NAS_916_OTM_DEFAULTS, NAS_916_ATM_DEFAULTS,
+    NAS_916_ATM2_DEFAULTS, NAS_916_ATM4_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -4447,6 +4449,86 @@ def api_nas_atm2_ticker_status():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/nas-atm2/ticker/stream')
+def api_nas_atm2_ticker_stream():
+    """SSE stream for NAS ATM2 tick-by-tick updates."""
+    import time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_spot = 0
+        while True:
+            _time.sleep(1)
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'status', 'running': False})}\n\n"
+                continue
+            spot = ticker._last_ltp
+            if spot != last_spot and spot > 0:
+                last_spot = spot
+                atm2_legs = {}
+                for token, info in ticker._atm2_option_tokens.items():
+                    tsym = info['tradingsymbol']
+                    ltp = ticker._atm2_option_ltps.get(token)
+                    if ltp is not None:
+                        atm2_legs[tsym] = {'ltp': ltp, 'sl': info.get('sl_price', 0)}
+                yield f"data: {json.dumps({'type': 'tick', 'spot': round(spot, 2), 'legs': atm2_legs})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+# ---- NAS ATM2 Scheduled Jobs ----
+
+def _nas_atm2_eod_squareoff():
+    """3:15 PM — EOD squareoff for NAS ATM2."""
+    if not NAS_ATM2_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.nas_atm2_executor import NasAtm2Executor
+        executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
+        exits = executor.eod_squareoff()
+        logger.info(f"[NAS-ATM2] EOD squareoff: {len(exits)} positions closed")
+
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.subscribe_atm2_option_legs([])
+    except Exception as e:
+        logger.error(f"[NAS-ATM2] EOD squareoff error: {e}")
+
+
+def _nas_atm2_daily_summary():
+    """3:20 PM — Daily summary for NAS ATM2."""
+    if not NAS_ATM2_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.nas_atm2_db import get_nas_atm2_db
+        db = get_nas_atm2_db()
+        stats = db.get_stats()
+        logger.info(f"[NAS-ATM2] Daily summary: {stats.get('total_trades', 0)} total trades, "
+                     f"P&L: Rs {stats.get('total_pnl', 0):.0f}")
+    except Exception as e:
+        logger.error(f"[NAS-ATM2] Daily summary error: {e}")
+
+
+try:
+    scheduler.add_job(
+        _nas_atm2_eod_squareoff,
+        'cron', hour=15, minute=15, day_of_week='mon-fri',
+        id='nas_atm2_eod_squareoff', replace_existing=True,
+    )
+    scheduler.add_job(
+        _nas_atm2_daily_summary,
+        'cron', hour=15, minute=20, day_of_week='mon-fri',
+        id='nas_atm2_daily_summary', replace_existing=True,
+    )
+    logger.info(
+        "NAS ATM2 scheduled jobs registered: EOD squareoff(15:15), daily summary(15:20)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register NAS ATM2 scheduled jobs: {e}")
+
+
 # =============================================================================
 # NAS ATM4 — Nifty ATM Strangle V4 (Variant config)
 # =============================================================================
@@ -4600,6 +4682,636 @@ def api_nas_atm4_ticker_status():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/nas-atm4/ticker/stream')
+def api_nas_atm4_ticker_stream():
+    """SSE stream for NAS ATM4 tick-by-tick updates."""
+    import time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_spot = 0
+        while True:
+            _time.sleep(1)
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'status', 'running': False})}\n\n"
+                continue
+            spot = ticker._last_ltp
+            if spot != last_spot and spot > 0:
+                last_spot = spot
+                atm4_legs = {}
+                for token, info in ticker._atm4_option_tokens.items():
+                    tsym = info['tradingsymbol']
+                    ltp = ticker._atm4_option_ltps.get(token)
+                    if ltp is not None:
+                        atm4_legs[tsym] = {'ltp': ltp, 'sl': info.get('sl_price', 0)}
+                yield f"data: {json.dumps({'type': 'tick', 'spot': round(spot, 2), 'legs': atm4_legs})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+# ---- NAS ATM4 Scheduled Jobs ----
+
+def _nas_atm4_eod_squareoff():
+    """3:15 PM — EOD squareoff for NAS ATM4."""
+    if not NAS_ATM4_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.nas_atm4_executor import NasAtm4Executor
+        executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
+        exits = executor.eod_squareoff()
+        logger.info(f"[NAS-ATM4] EOD squareoff: {len(exits)} positions closed")
+
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ticker.subscribe_atm4_option_legs([])
+    except Exception as e:
+        logger.error(f"[NAS-ATM4] EOD squareoff error: {e}")
+
+
+def _nas_atm4_daily_summary():
+    """3:20 PM — Daily summary for NAS ATM4."""
+    if not NAS_ATM4_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.nas_atm4_db import get_nas_atm4_db
+        db = get_nas_atm4_db()
+        stats = db.get_stats()
+        logger.info(f"[NAS-ATM4] Daily summary: {stats.get('total_trades', 0)} total trades, "
+                     f"P&L: Rs {stats.get('total_pnl', 0):.0f}")
+    except Exception as e:
+        logger.error(f"[NAS-ATM4] Daily summary error: {e}")
+
+
+try:
+    scheduler.add_job(
+        _nas_atm4_eod_squareoff,
+        'cron', hour=15, minute=15, day_of_week='mon-fri',
+        id='nas_atm4_eod_squareoff', replace_existing=True,
+    )
+    scheduler.add_job(
+        _nas_atm4_daily_summary,
+        'cron', hour=15, minute=20, day_of_week='mon-fri',
+        id='nas_atm4_daily_summary', replace_existing=True,
+    )
+    logger.info(
+        "NAS ATM4 scheduled jobs registered: EOD squareoff(15:15), daily summary(15:20)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register NAS ATM4 scheduled jobs: {e}")
+
+
+# =============================================================================
+# NAS 916 — All 4 strategies with mandatory 9:16 AM entry (no squeeze wait)
+# =============================================================================
+
+_nas_916_tasks = {}  # Shared task dict for all 916 scan polling
+
+
+# ---- 916 OTM ----
+
+@app.route('/api/nas-916-otm/state')
+def api_nas_916_otm_state():
+    try:
+        from services.nas_916_executors import Nas916OtmExecutor
+        executor = Nas916OtmExecutor(config=NAS_916_OTM_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"[NAS-916-OTM] state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-otm/scan', methods=['POST'])
+def api_nas_916_otm_scan():
+    task_id = f"nas_916_otm_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_916_tasks[task_id] = {'status': 'running'}
+
+    def _run(tid):
+        try:
+            from services.nas_916_executors import Nas916OtmExecutor
+            executor = Nas916OtmExecutor(config=NAS_916_OTM_DEFAULTS)
+            result = executor.run_scan()
+            entries = result.get('entries', [])
+            sid = entries[0]['strangle_id'] if entries else None
+            _nas_916_tasks[tid] = {'status': 'completed', 'result': {'strangle_id': sid, 'message': 'OK' if sid else 'No entry'}}
+        except Exception as e:
+            logger.error(f"[NAS-916-OTM] scan error: {e}")
+            _nas_916_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run, args=[task_id], id=f'nas_916_otm_scan_{task_id}', replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas-916-otm/scan/status/<task_id>')
+def api_nas_916_otm_scan_status(task_id):
+    return jsonify(_nas_916_tasks.get(task_id, {'status': 'unknown'}))
+
+
+@app.route('/api/nas-916-otm/kill-switch', methods=['POST'])
+def api_nas_916_otm_kill():
+    try:
+        from services.nas_916_executors import Nas916OtmExecutor
+        executor = Nas916OtmExecutor(config=NAS_916_OTM_DEFAULTS)
+        exits = executor.exit_all_positions('KILL_SWITCH', {})
+        return jsonify({'status': 'killed', 'positions_closed': len(exits)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-otm/trades')
+def api_nas_916_otm_trades():
+    try:
+        from services.nas_916_db import get_nas_916_otm_db
+        db = get_nas_916_otm_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-otm/equity-curve')
+def api_nas_916_otm_equity_curve():
+    try:
+        from services.nas_916_db import get_nas_916_otm_db
+        db = get_nas_916_otm_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-otm/toggle-mode', methods=['POST'])
+def api_nas_916_otm_toggle_mode():
+    try:
+        current = NAS_916_OTM_DEFAULTS.get('paper_trading_mode', True)
+        NAS_916_OTM_DEFAULTS['paper_trading_mode'] = not current
+        return jsonify({'mode': 'PAPER' if NAS_916_OTM_DEFAULTS['paper_trading_mode'] else 'LIVE'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-otm/toggle-enabled', methods=['POST'])
+def api_nas_916_otm_toggle_enabled():
+    try:
+        current = NAS_916_OTM_DEFAULTS.get('enabled', True)
+        NAS_916_OTM_DEFAULTS['enabled'] = not current
+        return jsonify({'enabled': NAS_916_OTM_DEFAULTS['enabled']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-otm/ticker/stream')
+def api_nas_916_otm_ticker_stream():
+    """SSE stream — reuses OTM ticker tokens (same strategy, different DB)."""
+    import time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_spot = 0
+        while True:
+            _time.sleep(1)
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'status', 'running': False})}\n\n"
+                continue
+            spot = ticker._last_ltp
+            if spot != last_spot and spot > 0:
+                last_spot = spot
+                legs = {}
+                for token, info in ticker._option_tokens.items():
+                    tsym = info['tradingsymbol']
+                    ltp = ticker._option_ltps.get(token)
+                    if ltp is not None:
+                        legs[tsym] = {'ltp': ltp, 'sl': info.get('sl_price', 0)}
+                yield f"data: {json.dumps({'type': 'tick', 'spot': round(spot, 2), 'legs': legs})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+# ---- 916 ATM ----
+
+@app.route('/api/nas-916-atm/state')
+def api_nas_916_atm_state():
+    try:
+        from services.nas_916_executors import Nas916AtmExecutor
+        executor = Nas916AtmExecutor(config=NAS_916_ATM_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"[NAS-916-ATM] state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm/scan', methods=['POST'])
+def api_nas_916_atm_scan():
+    task_id = f"nas_916_atm_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_916_tasks[task_id] = {'status': 'running'}
+
+    def _run(tid):
+        try:
+            from services.nas_916_executors import Nas916AtmExecutor
+            executor = Nas916AtmExecutor(config=NAS_916_ATM_DEFAULTS)
+            sid, msg = executor.execute_strangle_entry()
+            _nas_916_tasks[tid] = {'status': 'completed', 'result': {'strangle_id': sid, 'message': msg}}
+        except Exception as e:
+            logger.error(f"[NAS-916-ATM] scan error: {e}")
+            _nas_916_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run, args=[task_id], id=f'nas_916_atm_scan_{task_id}', replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas-916-atm/scan/status/<task_id>')
+def api_nas_916_atm_scan_status(task_id):
+    return jsonify(_nas_916_tasks.get(task_id, {'status': 'unknown'}))
+
+
+@app.route('/api/nas-916-atm/kill-switch', methods=['POST'])
+def api_nas_916_atm_kill():
+    try:
+        from services.nas_916_executors import Nas916AtmExecutor
+        executor = Nas916AtmExecutor(config=NAS_916_ATM_DEFAULTS)
+        exits = executor.emergency_exit_all()
+        return jsonify({'status': 'killed', 'positions_closed': exits})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm/trades')
+def api_nas_916_atm_trades():
+    try:
+        from services.nas_916_db import get_nas_916_atm_db
+        db = get_nas_916_atm_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm/equity-curve')
+def api_nas_916_atm_equity_curve():
+    try:
+        from services.nas_916_db import get_nas_916_atm_db
+        db = get_nas_916_atm_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm/toggle-mode', methods=['POST'])
+def api_nas_916_atm_toggle_mode():
+    try:
+        current = NAS_916_ATM_DEFAULTS.get('paper_trading_mode', True)
+        NAS_916_ATM_DEFAULTS['paper_trading_mode'] = not current
+        return jsonify({'mode': 'PAPER' if NAS_916_ATM_DEFAULTS['paper_trading_mode'] else 'LIVE'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm/toggle-enabled', methods=['POST'])
+def api_nas_916_atm_toggle_enabled():
+    try:
+        current = NAS_916_ATM_DEFAULTS.get('enabled', True)
+        NAS_916_ATM_DEFAULTS['enabled'] = not current
+        return jsonify({'enabled': NAS_916_ATM_DEFAULTS['enabled']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm/ticker/stream')
+def api_nas_916_atm_ticker_stream():
+    import time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_spot = 0
+        while True:
+            _time.sleep(1)
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'status', 'running': False})}\n\n"
+                continue
+            spot = ticker._last_ltp
+            if spot != last_spot and spot > 0:
+                last_spot = spot
+                legs = {}
+                for token, info in ticker._atm_option_tokens.items():
+                    tsym = info['tradingsymbol']
+                    ltp = ticker._atm_option_ltps.get(token)
+                    if ltp is not None:
+                        legs[tsym] = {'ltp': ltp, 'sl': info.get('sl_price', 0)}
+                yield f"data: {json.dumps({'type': 'tick', 'spot': round(spot, 2), 'legs': legs})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+# ---- 916 ATM2 ----
+
+@app.route('/api/nas-916-atm2/state')
+def api_nas_916_atm2_state():
+    try:
+        from services.nas_916_executors import Nas916Atm2Executor
+        executor = Nas916Atm2Executor(config=NAS_916_ATM2_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"[NAS-916-ATM2] state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm2/scan', methods=['POST'])
+def api_nas_916_atm2_scan():
+    task_id = f"nas_916_atm2_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_916_tasks[task_id] = {'status': 'running'}
+
+    def _run(tid):
+        try:
+            from services.nas_916_executors import Nas916Atm2Executor
+            executor = Nas916Atm2Executor(config=NAS_916_ATM2_DEFAULTS)
+            sid, msg = executor.execute_strangle_entry()
+            _nas_916_tasks[tid] = {'status': 'completed', 'result': {'strangle_id': sid, 'message': msg}}
+        except Exception as e:
+            logger.error(f"[NAS-916-ATM2] scan error: {e}")
+            _nas_916_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run, args=[task_id], id=f'nas_916_atm2_scan_{task_id}', replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas-916-atm2/scan/status/<task_id>')
+def api_nas_916_atm2_scan_status(task_id):
+    return jsonify(_nas_916_tasks.get(task_id, {'status': 'unknown'}))
+
+
+@app.route('/api/nas-916-atm2/kill-switch', methods=['POST'])
+def api_nas_916_atm2_kill():
+    try:
+        from services.nas_916_executors import Nas916Atm2Executor
+        executor = Nas916Atm2Executor(config=NAS_916_ATM2_DEFAULTS)
+        exits = executor.emergency_exit_all()
+        return jsonify({'status': 'killed', 'positions_closed': exits})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm2/trades')
+def api_nas_916_atm2_trades():
+    try:
+        from services.nas_916_db import get_nas_916_atm2_db
+        db = get_nas_916_atm2_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm2/equity-curve')
+def api_nas_916_atm2_equity_curve():
+    try:
+        from services.nas_916_db import get_nas_916_atm2_db
+        db = get_nas_916_atm2_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm2/toggle-mode', methods=['POST'])
+def api_nas_916_atm2_toggle_mode():
+    try:
+        current = NAS_916_ATM2_DEFAULTS.get('paper_trading_mode', True)
+        NAS_916_ATM2_DEFAULTS['paper_trading_mode'] = not current
+        return jsonify({'mode': 'PAPER' if NAS_916_ATM2_DEFAULTS['paper_trading_mode'] else 'LIVE'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm2/toggle-enabled', methods=['POST'])
+def api_nas_916_atm2_toggle_enabled():
+    try:
+        current = NAS_916_ATM2_DEFAULTS.get('enabled', True)
+        NAS_916_ATM2_DEFAULTS['enabled'] = not current
+        return jsonify({'enabled': NAS_916_ATM2_DEFAULTS['enabled']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm2/ticker/stream')
+def api_nas_916_atm2_ticker_stream():
+    import time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_spot = 0
+        while True:
+            _time.sleep(1)
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'status', 'running': False})}\n\n"
+                continue
+            spot = ticker._last_ltp
+            if spot != last_spot and spot > 0:
+                last_spot = spot
+                legs = {}
+                for token, info in ticker._atm2_option_tokens.items():
+                    tsym = info['tradingsymbol']
+                    ltp = ticker._atm2_option_ltps.get(token)
+                    if ltp is not None:
+                        legs[tsym] = {'ltp': ltp, 'sl': info.get('sl_price', 0)}
+                yield f"data: {json.dumps({'type': 'tick', 'spot': round(spot, 2), 'legs': legs})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+# ---- 916 ATM4 ----
+
+@app.route('/api/nas-916-atm4/state')
+def api_nas_916_atm4_state():
+    try:
+        from services.nas_916_executors import Nas916Atm4Executor
+        executor = Nas916Atm4Executor(config=NAS_916_ATM4_DEFAULTS)
+        return jsonify(executor.get_full_state())
+    except Exception as e:
+        logger.error(f"[NAS-916-ATM4] state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm4/scan', methods=['POST'])
+def api_nas_916_atm4_scan():
+    task_id = f"nas_916_atm4_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _nas_916_tasks[task_id] = {'status': 'running'}
+
+    def _run(tid):
+        try:
+            from services.nas_916_executors import Nas916Atm4Executor
+            executor = Nas916Atm4Executor(config=NAS_916_ATM4_DEFAULTS)
+            sid, msg = executor.execute_strangle_entry()
+            _nas_916_tasks[tid] = {'status': 'completed', 'result': {'strangle_id': sid, 'message': msg}}
+        except Exception as e:
+            logger.error(f"[NAS-916-ATM4] scan error: {e}")
+            _nas_916_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run, args=[task_id], id=f'nas_916_atm4_scan_{task_id}', replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/nas-916-atm4/scan/status/<task_id>')
+def api_nas_916_atm4_scan_status(task_id):
+    return jsonify(_nas_916_tasks.get(task_id, {'status': 'unknown'}))
+
+
+@app.route('/api/nas-916-atm4/kill-switch', methods=['POST'])
+def api_nas_916_atm4_kill():
+    try:
+        from services.nas_916_executors import Nas916Atm4Executor
+        executor = Nas916Atm4Executor(config=NAS_916_ATM4_DEFAULTS)
+        exits = executor.emergency_exit_all()
+        return jsonify({'status': 'killed', 'positions_closed': exits})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm4/trades')
+def api_nas_916_atm4_trades():
+    try:
+        from services.nas_916_db import get_nas_916_atm4_db
+        db = get_nas_916_atm4_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm4/equity-curve')
+def api_nas_916_atm4_equity_curve():
+    try:
+        from services.nas_916_db import get_nas_916_atm4_db
+        db = get_nas_916_atm4_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm4/toggle-mode', methods=['POST'])
+def api_nas_916_atm4_toggle_mode():
+    try:
+        current = NAS_916_ATM4_DEFAULTS.get('paper_trading_mode', True)
+        NAS_916_ATM4_DEFAULTS['paper_trading_mode'] = not current
+        return jsonify({'mode': 'PAPER' if NAS_916_ATM4_DEFAULTS['paper_trading_mode'] else 'LIVE'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm4/toggle-enabled', methods=['POST'])
+def api_nas_916_atm4_toggle_enabled():
+    try:
+        current = NAS_916_ATM4_DEFAULTS.get('enabled', True)
+        NAS_916_ATM4_DEFAULTS['enabled'] = not current
+        return jsonify({'enabled': NAS_916_ATM4_DEFAULTS['enabled']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas-916-atm4/ticker/stream')
+def api_nas_916_atm4_ticker_stream():
+    import time as _time
+
+    def generate():
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        last_spot = 0
+        while True:
+            _time.sleep(1)
+            if not ticker.is_running:
+                yield f"data: {json.dumps({'type': 'status', 'running': False})}\n\n"
+                continue
+            spot = ticker._last_ltp
+            if spot != last_spot and spot > 0:
+                last_spot = spot
+                legs = {}
+                for token, info in ticker._atm4_option_tokens.items():
+                    tsym = info['tradingsymbol']
+                    ltp = ticker._atm4_option_ltps.get(token)
+                    if ltp is not None:
+                        legs[tsym] = {'ltp': ltp, 'sl': info.get('sl_price', 0)}
+                yield f"data: {json.dumps({'type': 'tick', 'spot': round(spot, 2), 'legs': legs})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+# ---- NAS 916 Scheduled Jobs ----
+
+def _nas_916_auto_entry():
+    """9:16 AM Mon-Wed,Fri — Auto-enter all 4 x 916 systems."""
+    systems = [
+        ('NAS-916-OTM', NAS_916_OTM_DEFAULTS, 'services.nas_916_executors', 'Nas916OtmExecutor', 'run_scan'),
+        ('NAS-916-ATM', NAS_916_ATM_DEFAULTS, 'services.nas_916_executors', 'Nas916AtmExecutor', 'execute_strangle_entry'),
+        ('NAS-916-ATM2', NAS_916_ATM2_DEFAULTS, 'services.nas_916_executors', 'Nas916Atm2Executor', 'execute_strangle_entry'),
+        ('NAS-916-ATM4', NAS_916_ATM4_DEFAULTS, 'services.nas_916_executors', 'Nas916Atm4Executor', 'execute_strangle_entry'),
+    ]
+    for name, cfg, mod_path, cls_name, method in systems:
+        if not cfg.get('enabled', True):
+            logger.info(f"[{name}] disabled, skipping auto-entry")
+            continue
+        try:
+            import importlib
+            mod = importlib.import_module(mod_path)
+            cls = getattr(mod, cls_name)
+            executor = cls(config=cfg)
+            if method == 'run_scan':
+                result = executor.run_scan()
+                entries = result.get('entries', [])
+                logger.info(f"[{name}] 9:16 auto-entry: {len(entries)} entries")
+            else:
+                sid, msg = getattr(executor, method)()
+                logger.info(f"[{name}] 9:16 auto-entry: sid={sid}, {msg}")
+        except Exception as e:
+            logger.error(f"[{name}] 9:16 auto-entry error: {e}")
+
+
+def _nas_916_eod_squareoff():
+    """3:15 PM — EOD squareoff for all 916 systems."""
+    systems = [
+        ('NAS-916-OTM', NAS_916_OTM_DEFAULTS, 'services.nas_916_executors', 'Nas916OtmExecutor', 'exit_all_positions'),
+        ('NAS-916-ATM', NAS_916_ATM_DEFAULTS, 'services.nas_916_executors', 'Nas916AtmExecutor', 'eod_squareoff'),
+        ('NAS-916-ATM2', NAS_916_ATM2_DEFAULTS, 'services.nas_916_executors', 'Nas916Atm2Executor', 'eod_squareoff'),
+        ('NAS-916-ATM4', NAS_916_ATM4_DEFAULTS, 'services.nas_916_executors', 'Nas916Atm4Executor', 'eod_squareoff'),
+    ]
+    for name, cfg, mod_path, cls_name, method in systems:
+        if not cfg.get('enabled', True):
+            continue
+        try:
+            import importlib
+            mod = importlib.import_module(mod_path)
+            cls = getattr(mod, cls_name)
+            executor = cls(config=cfg)
+            if method == 'exit_all_positions':
+                exits = executor.exit_all_positions('EOD_SQUAREOFF', {})
+                logger.info(f"[{name}] EOD squareoff: {len(exits)} positions closed")
+            else:
+                exits = executor.eod_squareoff()
+                logger.info(f"[{name}] EOD squareoff: {len(exits)} positions closed")
+        except Exception as e:
+            logger.error(f"[{name}] EOD squareoff error: {e}")
+
+
+try:
+    # Auto-entry at 9:16 AM
+    scheduler.add_job(
+        _nas_916_auto_entry,
+        'cron', day_of_week='mon-wed,fri', hour=9, minute=16,
+        id='nas_916_auto_entry', replace_existing=True,
+    )
+    # EOD squareoff at 3:15 PM
+    scheduler.add_job(
+        _nas_916_eod_squareoff,
+        'cron', hour=15, minute=15, day_of_week='mon-wed,fri',
+        id='nas_916_eod_squareoff', replace_existing=True,
+    )
+    logger.info(
+        "NAS 916 scheduled jobs registered: auto-entry(9:16), EOD squareoff(15:15) — Mon-Wed,Fri"
+    )
+except Exception as e:
+    logger.warning(f"Could not register NAS 916 scheduled jobs: {e}")
+
+
 # --- NAS Performance Report ---------------------------------------------------
 
 @app.route('/nas/report')
@@ -4622,6 +5334,10 @@ def api_nas_report_data():
         'ATM':  'backtest_data/nas_atm_trading.db',
         'ATM2': 'backtest_data/nas_atm2_trading.db',
         'ATM4': 'backtest_data/nas_atm4_trading.db',
+        '916-OTM':  'backtest_data/nas_916_otm_trading.db',
+        '916-ATM':  'backtest_data/nas_916_atm_trading.db',
+        '916-ATM2': 'backtest_data/nas_916_atm2_trading.db',
+        '916-ATM4': 'backtest_data/nas_916_atm4_trading.db',
     }
 
     result = {'systems': {}, 'daily_snapshots': {}}

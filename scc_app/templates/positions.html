@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Positions & Trades — SCC{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-xl font-bold">Positions & Trades</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Live positions and trade history</p>
+    </div>
+    <!-- Live / History toggle -->
+    <div class="inline-flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-0.5">
+      <button onclick="showView('live')" id="btn-live" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm">Live</button>
+      <button onclick="showView('history')" id="btn-history" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all text-slate-500 dark:text-slate-400">History</button>
+    </div>
+  </div>
+
+  <!-- LIVE VIEW -->
+  <div id="view-live" data-privacy>
+    <!-- Strategy P&L Summary Strip -->
+    <div class="flex gap-2 mb-4 overflow-x-auto pb-1" id="stratPnlStrip">
+      <div class="shrink-0 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2">
+        <p class="text-[10px] text-slate-400 uppercase">All Strategies</p>
+        <p class="text-sm font-bold font-mono" id="stripTotalPnl">—</p>
+      </div>
+    </div>
+
+    <!-- Positions Table -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-100 dark:border-slate-800">
+            <th class="text-left px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Symbol</th>
+            <th class="text-left px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Exchange</th>
+            <th class="text-right px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Qty</th>
+            <th class="text-right px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Avg Price</th>
+            <th class="text-right px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">LTP</th>
+            <th class="text-right px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">P&L</th>
+            <th class="text-center px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Action</th>
+          </tr>
+        </thead>
+        <tbody id="positionsBody" class="divide-y divide-slate-50 dark:divide-slate-800">
+          <tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">Loading positions...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div id="view-history" class="hidden" data-privacy>
+    <!-- Filter tabs -->
+    <div class="flex gap-2 mb-4">
+      <button onclick="filterTrades('all')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">All</button>
+      <button onclick="filterTrades('wins')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">Wins</button>
+      <button onclick="filterTrades('losses')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">Losses</button>
+    </div>
+
+    <!-- Trade Cards -->
+    <div class="space-y-3" id="tradeCards">
+      <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <p class="text-sm text-slate-400 text-center">Trade history will appear here</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function showView(view) {
+    document.getElementById('view-live').classList.toggle('hidden', view !== 'live');
+    document.getElementById('view-history').classList.toggle('hidden', view !== 'history');
+    document.getElementById('btn-live').classList.toggle('bg-white', view === 'live');
+    document.getElementById('btn-live').classList.toggle('dark:bg-slate-700', view === 'live');
+    document.getElementById('btn-live').classList.toggle('text-slate-900', view === 'live');
+    document.getElementById('btn-live').classList.toggle('dark:text-white', view === 'live');
+    document.getElementById('btn-live').classList.toggle('shadow-sm', view === 'live');
+    document.getElementById('btn-live').classList.toggle('text-slate-500', view !== 'live');
+    document.getElementById('btn-history').classList.toggle('bg-white', view === 'history');
+    document.getElementById('btn-history').classList.toggle('dark:bg-slate-700', view === 'history');
+    document.getElementById('btn-history').classList.toggle('text-slate-900', view === 'history');
+    document.getElementById('btn-history').classList.toggle('dark:text-white', view === 'history');
+    document.getElementById('btn-history').classList.toggle('shadow-sm', view === 'history');
+    document.getElementById('btn-history').classList.toggle('text-slate-500', view !== 'history');
+  }
+  function filterTrades(f) { /* TODO */ }
+
+  async function loadPositions() {
+    try {
+      const resp = await fetch('/api/scc/positions');
+      const data = await resp.json();
+      const body = document.getElementById('positionsBody');
+      if (!data.positions || data.positions.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No open positions</td></tr>';
+        return;
+      }
+      let totalPnl = 0;
+      body.innerHTML = data.positions.map(p => {
+        totalPnl += p.pnl || 0;
+        const pnl = p.pnl || 0;
+        const clr = pnl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
+        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+          <td class="px-4 py-3 font-semibold">${p.symbol}</td>
+          <td class="px-4 py-3 text-slate-500">${p.exchange}</td>
+          <td class="px-4 py-3 text-right font-mono ${p.qty < 0 ? 'text-red-500' : ''}">${p.qty}</td>
+          <td class="px-4 py-3 text-right font-mono">₹${p.avg_price.toFixed(1)}</td>
+          <td class="px-4 py-3 text-right font-mono">₹${p.ltp.toFixed(1)}</td>
+          <td class="px-4 py-3 text-right font-mono font-semibold ${clr}">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+          <td class="px-4 py-3 text-center">
+            <button class="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">Close</button>
+          </td>
+        </tr>`;
+      }).join('');
+      document.getElementById('stripTotalPnl').textContent = fmt(totalPnl);
+      document.getElementById('stripTotalPnl').className = 'text-sm font-bold font-mono ' + pnlColor(totalPnl);
+    } catch(e) {
+      console.error('Failed to load positions:', e);
+    }
+  }
+
+  loadPositions();
+  setInterval(loadPositions, 10000);
+</script>
+{% endblock %}
