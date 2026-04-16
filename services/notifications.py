@@ -186,7 +186,7 @@ class EmailProvider:
             if rows:
                 details_html = f'<table style="margin-top:12px;">{rows}</table>'
 
-        subject = f"{icon} {title}"
+        subject = f"[Quantifyd] {icon} {title}"
 
         html = f"""
         <div style="font-family:'Inter',system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#0d1117;border-radius:12px;overflow:hidden;border:1px solid #30363d;">
@@ -278,7 +278,7 @@ class EmailProvider:
                 {error_rows}
             </div>"""
 
-        subject = f"\U0001f4ca ORB {weekday}: {pnl_sign}Rs {abs(day_pnl):,.0f} | {total_trades} trades ({len(winners)}W {len(losers)}L)"
+        subject = f"[Quantifyd] \U0001f4ca ORB {weekday}: {pnl_sign}Rs {abs(day_pnl):,.0f} | {total_trades} trades ({len(winners)}W {len(losers)}L)"
 
         html = f"""
         <div style="font-family:'Inter',system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;background:#0d1117;border-radius:12px;overflow:hidden;border:1px solid #30363d;">
