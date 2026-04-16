@@ -205,7 +205,7 @@
         <div class="col-4 col-md-2">
             <div class="stat-card" style="border-color: #3fb950;">
                 <div id="statAvailable" class="stat-value" style="color:#3fb950; font-size:1.1rem;">--</div>
-                <div class="stat-label">Available Margin</div>
+                <div class="stat-label">Available Cash</div>
             </div>
         </div>
         <div class="col-4 col-md-2">
@@ -724,11 +724,12 @@ function updateStats(state) {
 
     const margin = state.margin;
     if (margin) {
-        document.getElementById('statAvailable').textContent = 'Rs ' + Math.round(margin.available).toLocaleString('en-IN');
-        document.getElementById('statMarginUsed').textContent = 'Rs ' + Math.round(margin.used).toLocaleString('en-IN');
-        // Color available margin
+        const cash = margin.cash || 0;
+        document.getElementById('statAvailable').textContent = 'Rs ' + Math.round(cash).toLocaleString('en-IN');
+        document.getElementById('statMarginUsed').textContent = 'Rs ' + Math.round(margin.used || 0).toLocaleString('en-IN');
+        const minReq = cfg.min_margin_for_trade || 40000;
         const avEl = document.getElementById('statAvailable');
-        avEl.style.color = margin.available > 50000 ? '#3fb950' : margin.available > 20000 ? '#f59e0b' : '#f85149';
+        avEl.style.color = cash > minReq ? '#3fb950' : cash > minReq * 0.5 ? '#f59e0b' : '#f85149';
     }
 
     // Compute deployed capital + total SL risk from stock data

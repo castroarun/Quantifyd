@@ -84,20 +84,19 @@ class ORBLiveEngine:
         return self.allocation_per_trade * self.cfg.get('margin_buffer_multiplier', 1.2)
 
     def _get_available_margin(self):
-        """Fetch available intraday margin from Kite. Returns Rs amount or None on error."""
+        """Fetch available CASH from Kite. For MIS equity, cash is what gets blocked."""
         try:
             kite = self._get_kite()
             margins = kite.margins()
             eq = margins.get('equity', {})
-            # live_balance = what Kite Funds page shows as "Available margin"
-            available = eq.get('available', {}).get('live_balance', 0)
+            cash = eq.get('available', {}).get('cash', 0)
             self._last_margin = {
-                'available': round(available, 2),
-                'cash': round(eq.get('available', {}).get('cash', 0), 2),
+                'cash': round(cash, 2),
+                'live_balance': round(eq.get('available', {}).get('live_balance', 0), 2),
                 'used': round(eq.get('utilised', {}).get('debits', 0), 2),
                 'updated_at': datetime.now().isoformat(),
             }
-            return available
+            return cash
         except Exception as e:
             logger.warning(f"[ORB] Margin check failed: {e}")
             return None

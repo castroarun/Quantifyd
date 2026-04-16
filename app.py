@@ -5361,28 +5361,25 @@ def orb_dashboard():
 
 
 def _orb_get_margin():
-    """Fetch available margin from Kite for ORB dashboard."""
+    """Fetch margin from Kite. For MIS equity, cash is what matters (not collateral)."""
     try:
         kite = get_kite()
         margins = kite.margins()
         eq = margins.get('equity', {})
-        # available.live_balance = what Kite Funds page shows as "Available margin"
-        available = eq.get('available', {}).get('live_balance', 0)
-        cash = eq.get('available', {}).get('cash', 0)
-        opening = eq.get('available', {}).get('opening_balance', 0)
-        used = eq.get('utilised', {}).get('debits', 0)
+        avail = eq.get('available', {})
         return {
-            'available': round(available, 2),
-            'cash': round(cash, 2),
-            'opening_balance': round(opening, 2),
-            'used': round(used, 2),
+            'cash': round(avail.get('cash', 0), 2),           # Liquid cash for MIS orders
+            'live_balance': round(avail.get('live_balance', 0), 2),  # Total incl. collateral
+            'opening_balance': round(avail.get('opening_balance', 0), 2),
+            'collateral': round(avail.get('collateral', 0), 2),
+            'used': round(eq.get('utilised', {}).get('debits', 0), 2),
         }
     except Exception:
         return None
 
 
 def _orb_check_fund_alert():
-    """Check if funds are below 1.2x per-trade allocation."""
+    """Check if CASH is below 1.2x per-trade allocation."""
     margin = _orb_get_margin()
     if not margin:
         return None
@@ -5391,12 +5388,12 @@ def _orb_check_fund_alert():
     buffer = ORB_DEFAULTS.get('margin_buffer_multiplier', 1.2)
     alloc = capital / max_trades
     min_required = alloc * buffer
-    available = margin.get('available', 0)
-    if available < min_required:
+    cash = margin.get('cash', 0)
+    if cash < min_required:
         return {
             'type': 'warning',
-            'message': f'Low funds: Rs {available:,.0f} available, need Rs {min_required:,.0f} (1.2x of Rs {alloc:,.0f} per-trade alloc)',
-            'available': available,
+            'message': f'Low cash: Rs {cash:,.0f} available, need Rs {min_required:,.0f} (1.2x of Rs {alloc:,.0f} per-trade alloc)',
+            'cash': cash,
             'required': min_required,
         }
     return None
