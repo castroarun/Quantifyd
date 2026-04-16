@@ -254,13 +254,18 @@
         </div>
     </details>
 
-    <!-- 7-Stock Grid -->
-    <div class="row g-2 mb-3" id="stockGrid">
+    <!-- Stock Grid (collapsible) -->
+    <details class="mb-3" open>
+        <summary style="cursor:pointer; color:#06b6d4; font-weight:600; font-size:0.85rem; margin-bottom:0.5rem;">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Stock Cards
+        </summary>
+    <div class="row g-2" id="stockGrid">
         <!-- Rendered by JS -->
         <div class="col-12 text-center text-muted py-4">
             <i class="bi bi-hourglass-split me-2"></i>Loading stock data...
         </div>
     </div>
+    </details>
 
     <!-- Open Positions Table -->
     <div class="system-panel">
@@ -536,11 +541,7 @@ function renderStockGrid(stocks, universe, openPositions) {
                     ${filterIcon(rsiOk)}<span class="text-muted ms-1">RSI${rsiVal ? '(' + rsiVal + ')' : ''}</span>
                     ${filterIcon(cprDirOk)}<span class="text-muted ms-1">CPR${cprDirOk === true ? (ltp > cprTc ? '↑' : '↓') : ''}</span>
                 </div>
-                <div class="stock-sizing mb-1" style="font-size:0.68rem; color:#8b949e;">
-                    ${data.qty ? 'Qty:<span style="color:#c9d1d9;">' + data.qty + '</span> ' : ''}
-                    ${data.capital_per_trade ? 'Cap:<span style="color:#06b6d4;">Rs ' + Math.round(data.capital_per_trade).toLocaleString('en-IN') + '</span> ' : ''}
-                    ${data.sl_risk_inr ? 'SL:<span style="color:#f85149;">Rs ' + Math.round(data.sl_risk_inr).toLocaleString('en-IN') + '</span>' : ''}
-                </div>
+                ${data.sl_risk_inr ? '<div class="stock-sizing mb-1" style="font-size:0.68rem;color:#8b949e;">SL Risk: <span style="color:#f85149;">Rs ' + Math.round(data.sl_risk_inr).toLocaleString('en-IN') + '</span></div>' : ''}
                 <div class="mt-1">${signalHtml}</div>
                 ${posLine}
             </div>
