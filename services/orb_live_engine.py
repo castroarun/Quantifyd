@@ -60,6 +60,7 @@ class ORBLiveEngine:
         self._vwap_state = {}    # {sym: {'cum_pv': float, 'cum_vol': float}}
         self._positions = {}     # {sym: position_dict}  -- open position cache
         self._tokens_resolved = False
+        self._last_margin = None  # cached margin info from Kite
 
     # ===================================================================
     # Kite helpers
@@ -69,6 +70,31 @@ class ORBLiveEngine:
         """Get authenticated Kite instance. Import deferred to avoid circular."""
         from services.kite_service import get_kite
         return get_kite()
+
+    def _get_available_margin(self):
+        """Fetch available intraday margin from Kite. Returns Rs amount or None on error."""
+        try:
+            kite = self._get_kite()
+            margins = kite.margins()
+            eq = margins.get('equity', {})
+            available = eq.get('available', {}).get('live_balance', 0)
+            # Also check intraday available (net - used)
+            net = eq.get('net', 0)
+            used = eq.get('utilised', {}).get('debits', 0)
+            free = net - used
+            # Use the more conservative of live_balance and free
+            result = min(available, free) if available > 0 else free
+            self._last_margin = {
+                'available': round(result, 2),
+                'net': round(net, 2),
+                'used': round(used, 2),
+                'live_balance': round(available, 2),
+                'updated_at': datetime.now().isoformat(),
+            }
+            return result
+        except Exception as e:
+            logger.warning(f"[ORB] Margin check failed: {e}")
+            return None
 
     def _resolve_tokens(self):
         """Resolve NSE instrument tokens for all stocks. Call once per day."""
@@ -652,11 +678,29 @@ class ORBLiveEngine:
                     logger.info(f"[ORB] {sym} {direction} signal BLOCKED: {action_taken}")
                     continue
 
-                # --- Place entry order ---
+                # --- Check available funds before placing ---
                 qty = self.stocks[sym].get('qty', 1)
                 if qty <= 0:
                     logger.warning(f"[ORB] {sym}: qty=0, skipping entry")
                     continue
+
+                required_capital = qty * entry_price
+                available = self._get_available_margin()
+                if available is not None and required_capital > available:
+                    old_qty = qty
+                    qty = int(available // entry_price)
+                    if qty <= 0:
+                        logger.warning(f"[ORB] {sym}: insufficient funds. Need Rs {required_capital:.0f}, have Rs {available:.0f}. Skipping.")
+                        self.db.log_signal(
+                            instrument=sym, signal_time=now.isoformat(),
+                            direction=direction, entry_price=entry_price,
+                            sl_price=sl_price, target_price=target_price,
+                            or_high=or_high, or_low=or_low,
+                            action_taken=f'BLOCKED_NO_FUNDS (need {required_capital:.0f}, have {available:.0f})',
+                        )
+                        continue
+                    logger.info(f"[ORB] {sym}: reduced qty {old_qty}->{qty} (available Rs {available:.0f})")
+                    self.stocks[sym]['qty'] = qty
 
                 kite_order_id = self.place_entry_order(sym, direction, qty, entry_price)
                 if kite_order_id is None:
@@ -1015,6 +1059,14 @@ class ORBLiveEngine:
             with self._lock:
                 or_s = self._or_state.get(sym, {})
 
+            qty = self.stocks[sym].get('qty', 0)
+            today_open = daily.get('today_open') or 0
+            capital_per_trade = round(qty * today_open, 0) if today_open > 0 else 0
+            sl_risk = 0
+            if daily.get('or_high') and daily.get('or_low') and today_open > 0:
+                or_range = (daily['or_high'] or 0) - (daily['or_low'] or 0)
+                sl_risk = round(or_range * qty, 0)
+
             stocks_state[sym] = {
                 'daily_state': daily,
                 'or_finalized': or_s.get('finalized', daily.get('or_finalized', 0)),
@@ -1023,7 +1075,10 @@ class ORBLiveEngine:
                 'position': sym_open[0] if sym_open else None,
                 'closed_today': sym_closed,
                 'token': self.stocks[sym].get('token'),
-                'qty': self.stocks[sym].get('qty', 0),
+                'qty': qty,
+                'capital_per_trade': capital_per_trade,
+                'sl_risk_inr': sl_risk,
+                'price': today_open,
             }
 
         return {
@@ -1055,6 +1110,7 @@ class ORBLiveEngine:
             'recent_signals': recent_signals,
             'recent_trades': recent_trades,
             'equity_curve': equity_curve,
+            'margin': self._last_margin,
         }
 
     # ===================================================================

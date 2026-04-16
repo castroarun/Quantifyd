@@ -179,6 +179,46 @@
         </div>
     </div>
 
+    <!-- Capital & Position Sizing Row -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-2">
+            <div class="stat-card" style="border-color: #06b6d4;">
+                <div id="statCapital" class="stat-value" style="color:#06b6d4; font-size:1.1rem;">Rs 1,00,000</div>
+                <div class="stat-label">Configured Capital</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card" style="border-color: #3fb950;">
+                <div id="statAvailable" class="stat-value" style="color:#3fb950; font-size:1.1rem;">--</div>
+                <div class="stat-label">Available Margin</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statAllocPerStock" class="stat-value" style="color:#c9d1d9; font-size:1.1rem;">Rs 14,286</div>
+                <div class="stat-label">Per Stock Alloc</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statDeployed" class="stat-value" style="color:#f59e0b; font-size:1.1rem;">Rs 0</div>
+                <div class="stat-label">Deployed Today</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statTotalRisk" class="stat-value" style="color:#f85149; font-size:1.1rem;">Rs 0</div>
+                <div class="stat-label">Max SL Risk</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div id="statMarginUsed" class="stat-value" style="color:#8b949e; font-size:1.1rem;">--</div>
+                <div class="stat-label">Margin Used</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="d-flex gap-2 mb-3">
         <button class="btn btn-outline-info btn-sm" onclick="initializeDay()">
@@ -452,6 +492,11 @@ function renderStockGrid(stocks, universe, openPositions) {
                     &nbsp;${filterIcon(rsiVal != null)} <span class="text-muted">RSI${rsiVal ? '(' + rsiVal + ')' : ''}</span>
                     &nbsp;${filterIcon(ds.cpr_tc != null)} <span class="text-muted">CPR Dir</span>
                 </div>
+                <div class="stock-sizing mb-1" style="font-size:0.68rem; color:#8b949e;">
+                    Qty: <span style="color:#c9d1d9;">${data.qty || '--'}</span>
+                    &nbsp;Capital: <span style="color:#06b6d4;">Rs ${data.capital_per_trade ? Math.round(data.capital_per_trade).toLocaleString('en-IN') : '--'}</span>
+                    &nbsp;SL Risk: <span style="color:#f85149;">Rs ${data.sl_risk_inr ? Math.round(data.sl_risk_inr).toLocaleString('en-IN') : '--'}</span>
+                </div>
                 <div class="mt-1">${signalHtml}</div>
                 ${posLine}
             </div>
@@ -627,6 +672,34 @@ function updateStats(state) {
 
     const openCount = (state.open_positions || []).length;
     document.getElementById('statOpenPos').textContent = openCount;
+
+    // Capital & Position Sizing stats
+    const cfg = state.config || {};
+    document.getElementById('statCapital').textContent = 'Rs ' + (cfg.capital || 100000).toLocaleString('en-IN');
+    document.getElementById('statAllocPerStock').textContent = 'Rs ' + (cfg.allocation_per_stock || 14286).toLocaleString('en-IN');
+
+    const margin = state.margin;
+    if (margin) {
+        document.getElementById('statAvailable').textContent = 'Rs ' + Math.round(margin.available).toLocaleString('en-IN');
+        document.getElementById('statMarginUsed').textContent = 'Rs ' + Math.round(margin.used).toLocaleString('en-IN');
+        // Color available margin
+        const avEl = document.getElementById('statAvailable');
+        avEl.style.color = margin.available > 50000 ? '#3fb950' : margin.available > 20000 ? '#f59e0b' : '#f85149';
+    }
+
+    // Compute deployed capital + total SL risk from stock data
+    const stocks = state.stocks || {};
+    let deployed = 0, totalRisk = 0;
+    for (const sym of (state.universe || [])) {
+        const sd = stocks[sym] || {};
+        if (sd.position) {
+            deployed += sd.capital_per_trade || 0;
+            totalRisk += sd.sl_risk_inr || 0;
+        }
+    }
+    document.getElementById('statDeployed').textContent = 'Rs ' + Math.round(deployed).toLocaleString('en-IN');
+    document.getElementById('statDeployed').style.color = deployed > 0 ? '#f59e0b' : '#8b949e';
+    document.getElementById('statTotalRisk').textContent = 'Rs ' + Math.round(totalRisk).toLocaleString('en-IN');
 
     // Enable/Disable badge
     const enabled = state.enabled;

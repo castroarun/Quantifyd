@@ -5371,12 +5371,23 @@ def api_orb_state():
 
         # Build per-stock summary from daily states + positions
         stocks = {}
+        alloc = ORB_DEFAULTS.get('allocation_per_stock', 14286)
         for ds in state.get('daily_states', []):
             sym = ds['instrument']
+            today_open = ds.get('today_open') or 0
+            qty = int(alloc // today_open) if today_open > 0 else 0
+            capital_per_trade = round(qty * today_open) if today_open > 0 else 0
+            or_high = ds.get('or_high') or 0
+            or_low = ds.get('or_low') or 0
+            sl_risk = round(abs(or_high - or_low) * qty) if or_high and or_low else 0
             stocks[sym] = {
                 'daily_state': ds,
                 'position': None,
                 'today_result': None,
+                'qty': qty,
+                'capital_per_trade': capital_per_trade,
+                'sl_risk_inr': sl_risk,
+                'price': today_open,
             }
 
         for pos in state.get('open_positions', []):
@@ -5405,6 +5416,8 @@ def api_orb_state():
             'today_pnl': round(today_pnl, 2),
             'stats': stats,
             'config': {
+                'capital': ORB_DEFAULTS.get('capital', 100000),
+                'allocation_per_stock': ORB_DEFAULTS.get('allocation_per_stock', 14286),
                 'or_minutes': ORB_DEFAULTS.get('or_minutes', 15),
                 'r_multiple': ORB_DEFAULTS.get('r_multiple', 1.5),
                 'sl_type': ORB_DEFAULTS.get('sl_type', 'or_opposite'),
