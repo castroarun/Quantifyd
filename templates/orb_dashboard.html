@@ -105,6 +105,22 @@
     .gap-small { color: #3fb950; }
     .gap-medium { color: #f59e0b; }
     .gap-large { color: #f85149; }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        .stock-name { font-size: 0.85rem; }
+        .stock-ltp { font-size: 0.95rem; }
+        .stock-or { font-size: 0.72rem; }
+        .stock-filter { font-size: 0.65rem; }
+        .stock-filter .bi { font-size: 0.6rem; }
+        .stock-filter span { margin-right: 0.3rem !important; }
+        .stock-sizing { font-size: 0.62rem !important; }
+        .stock-card { padding: 0.5rem; }
+        .stat-card { padding: 0.5rem 0.3rem; }
+        .stat-value { font-size: 1rem; }
+        .stat-label { font-size: 0.6rem; }
+        .stock-signal { font-size: 0.72rem !important; }
+    }
 </style>
 {% endblock %}
 
@@ -113,17 +129,17 @@
 
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h4 class="mb-0">
-                <i class="bi bi-sunrise me-2 orb-accent"></i>
-                ORB — Opening Range Breakout
-            </h4>
-            <small class="text-muted">
-                <a href="/strategies" class="text-muted text-decoration-none">
-                    <i class="bi bi-arrow-left me-1"></i>Back to Strategies
-                </a>
-                &nbsp;|&nbsp; Cash Equity MIS &nbsp;|&nbsp; 7 Stocks
-            </small>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="/strategies" class="text-muted text-decoration-none" style="font-size:0.8rem;">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h5 class="mb-0">
+                <i class="bi bi-sunrise me-1 orb-accent"></i>ORB
+            </h5>
+            <span class="text-muted" style="font-size:0.72rem;">Cash MIS | 7 Stocks</span>
+            <span id="marketStatus" style="font-size: 0.72rem;">
+                <i class="bi bi-circle-fill" style="color:#8b949e;font-size:0.45rem;vertical-align:middle;"></i>
+            </span>
         </div>
         <div class="d-flex align-items-center gap-2">
             <button id="btnEnable" class="btn action-btn-sm" onclick="toggleEnabled()">
@@ -135,43 +151,42 @@
             <span id="modeBadge" class="mode-badge mode-LIVE">
                 <i class="bi bi-broadcast me-1"></i>LIVE
             </span>
-            <span id="lastUpdated" class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">--</span>
         </div>
     </div>
 
     <!-- Combined Stats Row -->
     <div class="row g-2 mb-3">
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statTrades" class="stat-value orb-accent">0</div>
                 <div class="stat-label">Total Trades</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statWinRate" class="stat-value" style="color: #3fb950;">0%</div>
                 <div class="stat-label">Win Rate</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statPF" class="stat-value" style="color: #58a6ff;">0</div>
                 <div class="stat-label">Profit Factor</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statDayPnl" class="stat-value pnl-zero">Rs 0</div>
                 <div class="stat-label">Day P&L</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statTotalPnl" class="stat-value pnl-zero">Rs 0</div>
                 <div class="stat-label">Total P&L</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statOpenPos" class="stat-value" style="color: #f59e0b;">0</div>
                 <div class="stat-label">Open Positions</div>
@@ -181,37 +196,37 @@
 
     <!-- Capital & Position Sizing Row -->
     <div class="row g-2 mb-3">
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card" style="border-color: #06b6d4;">
                 <div id="statCapital" class="stat-value" style="color:#06b6d4; font-size:1.1rem;">Rs 1,00,000</div>
                 <div class="stat-label">Configured Capital</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card" style="border-color: #3fb950;">
                 <div id="statAvailable" class="stat-value" style="color:#3fb950; font-size:1.1rem;">--</div>
                 <div class="stat-label">Available Margin</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statAllocPerStock" class="stat-value" style="color:#c9d1d9; font-size:1.1rem;">Rs 14,286</div>
                 <div class="stat-label">Per Stock Alloc</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statDeployed" class="stat-value" style="color:#f59e0b; font-size:1.1rem;">Rs 0</div>
                 <div class="stat-label">Deployed Today</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statTotalRisk" class="stat-value" style="color:#f85149; font-size:1.1rem;">Rs 0</div>
                 <div class="stat-label">Max SL Risk</div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statMarginUsed" class="stat-value" style="color:#8b949e; font-size:1.1rem;">--</div>
                 <div class="stat-label">Margin Used</div>
@@ -219,18 +234,20 @@
         </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="d-flex gap-2 mb-3">
-        <button class="btn btn-outline-info btn-sm" onclick="initializeDay()">
-            <i class="bi bi-calendar-check me-1"></i>Initialize Day
-        </button>
-        <button class="btn btn-outline-info btn-sm" onclick="manualScan()">
-            <i class="bi bi-search me-1"></i>Scan Signals
-        </button>
-        <span id="marketStatus" class="ms-auto text-muted" style="font-size: 0.78rem;">
-            <i class="bi bi-clock me-1"></i>--
-        </span>
-    </div>
+    <!-- Admin Tools (collapsed) -->
+    <details class="mb-3" style="font-size:0.78rem;">
+        <summary style="cursor:pointer; color:#06b6d4; font-weight:600;">
+            <i class="bi bi-gear me-1"></i>Admin Tools
+        </summary>
+        <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-outline-info btn-sm" onclick="initializeDay()">
+                <i class="bi bi-calendar-check me-1"></i>Initialize Day
+            </button>
+            <button class="btn btn-outline-info btn-sm" onclick="manualScan()">
+                <i class="bi bi-search me-1"></i>Scan Signals
+            </button>
+        </div>
+    </details>
 
     <!-- 7-Stock Grid -->
     <div class="row g-2 mb-3" id="stockGrid">
@@ -337,6 +354,18 @@
         </div>
     </div>
 
+    <!-- System Rules & Config (collapsed) -->
+    <details style="font-size:0.7rem; color:#8b949e;">
+        <summary style="cursor:pointer; color:#06b6d4; font-weight:600;">System Rules & Config</summary>
+        <div style="margin-top:4px; line-height:1.6;">
+            <b>Entry:</b> OR15 breakout (close-based), OR window 09:15-09:30<br>
+            <b>Filters:</b> VWAP + RSI(14)>60/&lt;40 + CPR Dir + CPR Width&lt;0.5% + No longs on gap-up>0.3%<br>
+            <b>SL:</b> OR Opposite | <b>Target:</b> 1.5x Risk | <b>EOD:</b> 15:20 squareoff<br>
+            <b>Max:</b> 1 trade/stock/day | <b>Capital:</b> Rs 1L / 7 stocks<br>
+            <b>Stocks:</b> ADANIENT, TATASTEEL, BEL, VEDL, BPCL, M&M, BAJFINANCE
+        </div>
+    </details>
+
 </div>
 {% endblock %}
 
@@ -348,7 +377,7 @@ let equityChart = null;
 let refreshTimer = null;
 
 // --- Helpers ---
-function fmt(v, d=2) { return v != null ? Number(v).toFixed(d) : '--'; }
+function fmt(v, d=2) { return v != null ? Number(v).toFixed(d) : ''; }
 function fmtRs(v) {
     if (v == null) return 'Rs 0';
     const n = Number(v);
@@ -366,9 +395,9 @@ function gapClass(g) {
     return 'gap-large';
 }
 function filterIcon(pass) {
-    if (pass === true) return '<i class="bi bi-check-circle-fill filter-pass"></i>';
-    if (pass === false) return '<i class="bi bi-x-circle-fill filter-fail"></i>';
-    return '<i class="bi bi-dash-circle filter-na"></i>';
+    if (pass === true) return '<i class="bi bi-check-circle-fill filter-pass" style="font-size:0.6rem;"></i>';
+    if (pass === false) return '<i class="bi bi-x-circle-fill filter-fail" style="font-size:0.6rem;"></i>';
+    return '<i class="bi bi-dash-circle filter-na" style="font-size:0.6rem;"></i>';
 }
 function timeStr(ts) {
     if (!ts) return '--';
@@ -392,9 +421,11 @@ function isMarketHours() {
 function updateMarketStatus() {
     const el = document.getElementById('marketStatus');
     if (isMarketHours()) {
-        el.innerHTML = '<i class="bi bi-circle-fill me-1" style="color:#3fb950;font-size:0.6rem;"></i>Market Open';
+        el.innerHTML = '<i class="bi bi-circle-fill" style="color:#3fb950;font-size:0.45rem;vertical-align:middle;"></i>';
+        el.title = 'Market Open';
     } else {
-        el.innerHTML = '<i class="bi bi-circle-fill me-1" style="color:#8b949e;font-size:0.6rem;"></i>Market Closed';
+        el.innerHTML = '<i class="bi bi-circle-fill" style="color:#8b949e;font-size:0.45rem;vertical-align:middle;"></i>';
+        el.title = 'Market Closed';
     }
 }
 
@@ -421,20 +452,20 @@ function renderStockGrid(stocks, universe, openPositions) {
         if (ds.is_wide_cpr_day) cardClass += ' wide-cpr';
 
         // LTP (from position or placeholder)
-        const ltp = pos ? pos.entry_price : '--';
+        const ltp = pos ? pos.entry_price : null;
 
         // OR display
-        const orHigh = ds.or_high ? fmt(ds.or_high) : '--';
-        const orLow = ds.or_low ? fmt(ds.or_low) : '--';
-        const orRange = ds.or_range ? fmt(ds.or_range) : '--';
+        const orHigh = ds.or_high ? fmt(ds.or_high) : '';
+        const orLow = ds.or_low ? fmt(ds.or_low) : '';
+        const orRange = ds.or_range ? fmt(ds.or_range) : '';
         const orFinalized = ds.or_finalized ? true : false;
 
         // CPR
-        const cprWidth = ds.cpr_width_pct != null ? fmt(ds.cpr_width_pct, 3) + '%' : '--';
+        const cprWidth = ds.cpr_width_pct != null ? fmt(ds.cpr_width_pct, 3) + '%' : '';
         const cprOk = ds.cpr_width_pct != null && !ds.is_wide_cpr_day;
 
         // Gap
-        const gapPct = ds.gap_pct != null ? fmt(ds.gap_pct, 2) + '%' : '--';
+        const gapPct = ds.gap_pct != null ? fmt(ds.gap_pct, 2) + '%' : '';
 
         // Filters (we show available data; real-time values need live engine)
         const vwapOk = ds.vwap != null;
@@ -470,32 +501,31 @@ function renderStockGrid(stocks, universe, openPositions) {
                 </div>`;
         }
 
+        const orStatusHtml = orFinalized
+            ? '<span class="ms-1 filter-pass" style="font-size:0.6rem;">FINAL</span>'
+            : (orLow ? '<span class="ms-1 filter-na" style="font-size:0.6rem;"><span class="spinner-border spinner-border-sm" style="width:0.5rem;height:0.5rem;border-width:1px;"></span></span>' : '');
+
         html += `
         <div class="col-xl-3 col-lg-4 col-md-6 col-12">
             <div class="${cardClass}">
                 <div class="d-flex justify-content-between align-items-start mb-1">
                     <span class="stock-name">${sym}</span>
-                    <span class="stock-ltp orb-accent">${ltp !== '--' ? fmt(ltp) : '--'}</span>
+                    ${ltp ? '<span class="stock-ltp orb-accent">' + fmt(ltp) + '</span>' : ''}
                 </div>
-                <div class="stock-or mb-1">
-                    OR: ${orLow} - ${orHigh}
-                    <span class="ms-1 ${orFinalized ? 'filter-pass' : 'filter-na'}" style="font-size:0.65rem;">
-                        ${orFinalized ? 'FINAL' : 'BUILDING'}
-                    </span>
+                ${orLow ? '<div class="stock-or mb-1">OR: ' + orLow + ' - ' + orHigh + orStatusHtml + '</div>' : ''}
+                <div class="stock-filter mb-1">
+                    ${cprWidth ? '<span title="CPR Width">CPR:' + cprWidth + ' ' + filterIcon(cprOk) + '</span>' : ''}
+                    ${gapPct ? '<span class="ms-1 ' + gapClass(ds.gap_pct) + '" title="Gap %">Gap:' + gapPct + '</span>' : ''}
                 </div>
                 <div class="stock-filter mb-1">
-                    <span title="CPR Width">CPR: ${cprWidth} ${filterIcon(cprOk)}</span>
-                    <span class="ms-2 ${gapClass(ds.gap_pct)}" title="Gap %">Gap: ${gapPct}</span>
-                </div>
-                <div class="stock-filter mb-1">
-                    ${filterIcon(vwapOk)} <span class="text-muted">VWAP</span>
-                    &nbsp;${filterIcon(rsiVal != null)} <span class="text-muted">RSI${rsiVal ? '(' + rsiVal + ')' : ''}</span>
-                    &nbsp;${filterIcon(ds.cpr_tc != null)} <span class="text-muted">CPR Dir</span>
+                    ${filterIcon(vwapOk)}<span class="text-muted ms-1">VW</span>
+                    ${filterIcon(rsiVal != null)}<span class="text-muted ms-1">RSI${rsiVal ? '(' + rsiVal + ')' : ''}</span>
+                    ${filterIcon(ds.cpr_tc != null)}<span class="text-muted ms-1">CPR</span>
                 </div>
                 <div class="stock-sizing mb-1" style="font-size:0.68rem; color:#8b949e;">
-                    Qty: <span style="color:#c9d1d9;">${data.qty || '--'}</span>
-                    &nbsp;Capital: <span style="color:#06b6d4;">Rs ${data.capital_per_trade ? Math.round(data.capital_per_trade).toLocaleString('en-IN') : '--'}</span>
-                    &nbsp;SL Risk: <span style="color:#f85149;">Rs ${data.sl_risk_inr ? Math.round(data.sl_risk_inr).toLocaleString('en-IN') : '--'}</span>
+                    ${data.qty ? 'Qty:<span style="color:#c9d1d9;">' + data.qty + '</span> ' : ''}
+                    ${data.capital_per_trade ? 'Cap:<span style="color:#06b6d4;">Rs ' + Math.round(data.capital_per_trade).toLocaleString('en-IN') + '</span> ' : ''}
+                    ${data.sl_risk_inr ? 'SL:<span style="color:#f85149;">Rs ' + Math.round(data.sl_risk_inr).toLocaleString('en-IN') + '</span>' : ''}
                 </div>
                 <div class="mt-1">${signalHtml}</div>
                 ${posLine}
@@ -746,9 +776,6 @@ async function refreshAll() {
         renderSignals(signals.error ? [] : signals);
         renderTrades(trades.error ? [] : trades);
         renderEquityCurve(curve.error ? [] : curve);
-
-        document.getElementById('lastUpdated').textContent =
-            'Updated: ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
 
     } catch (err) {
         console.error('Refresh error:', err);
