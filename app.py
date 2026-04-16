@@ -5439,61 +5439,28 @@ def api_orb_state():
 
 @app.route('/api/orb/initialize', methods=['POST'])
 def api_orb_initialize():
-    """Manually trigger day initialization — compute CPR, reset OR state for all stocks."""
+    """Manually trigger day initialization — uses Kite API for prev day HLC + CPR."""
     try:
-        import sqlite3 as _sqlite3
-        from datetime import date as _date, timedelta
+        from services.orb_live_engine import ORBLiveEngine
+        engine = ORBLiveEngine(ORB_DEFAULTS)
+        engine.initialize_day()
 
+        # Return the computed state
         db = _get_orb_db()
-        today = _date.today()
+        today = date.today().isoformat()
         results = {}
-
         for sym in ORB_DEFAULTS.get('universe', []):
-            try:
-                # Initialize daily state row
-                ds = db.get_or_create_daily_state(sym, today)
-
-                # Fetch previous day data for CPR calculation
-                conn = _sqlite3.connect(str(DATA_DIR / 'market_data.db'))
-                conn.row_factory = _sqlite3.Row
-                prev_row = conn.execute("""
-                    SELECT date, high, low, close, open
-                    FROM market_data_unified
-                    WHERE symbol=? AND timeframe='day' AND date < ?
-                    ORDER BY date DESC LIMIT 1
-                """, (sym, today.isoformat())).fetchone()
-
-                if prev_row:
-                    prev_h = prev_row['high']
-                    prev_l = prev_row['low']
-                    prev_c = prev_row['close']
-                    pivot = (prev_h + prev_l + prev_c) / 3
-                    bc = (prev_h + prev_l) / 2
-                    tc = (pivot - bc) + pivot
-                    cpr_width_pct = abs(tc - bc) / pivot * 100 if pivot else 0
-                    is_wide = 1 if cpr_width_pct > ORB_DEFAULTS.get('cpr_width_threshold_pct', 0.5) else 0
-
-                    db.update_daily_state(sym, today,
-                        cpr_pivot=round(pivot, 2),
-                        cpr_tc=round(tc, 2),
-                        cpr_bc=round(bc, 2),
-                        cpr_width_pct=round(cpr_width_pct, 4),
-                        is_wide_cpr_day=is_wide,
-                        prev_day_high=prev_h,
-                        prev_day_low=prev_l,
-                        prev_day_close=prev_c,
-                        prev_day_date=prev_row['date'],
-                    )
-                    results[sym] = {
-                        'pivot': round(pivot, 2), 'tc': round(tc, 2), 'bc': round(bc, 2),
-                        'cpr_width_pct': round(cpr_width_pct, 4), 'is_wide': bool(is_wide),
-                    }
-                else:
-                    results[sym] = {'error': 'No previous day data'}
-                conn.close()
-            except Exception as se:
-                results[sym] = {'error': str(se)}
-                logger.error(f"[ORB] Init error for {sym}: {se}")
+            ds = db.get_or_create_daily_state(sym, today)
+            results[sym] = {
+                'pivot': ds.get('cpr_pivot'),
+                'tc': ds.get('cpr_tc'),
+                'bc': ds.get('cpr_bc'),
+                'cpr_width_pct': ds.get('cpr_width_pct'),
+                'is_wide': bool(ds.get('is_wide_cpr_day')),
+                'prev_day_date': ds.get('prev_day_date'),
+                'gap_pct': ds.get('gap_pct'),
+                'today_open': ds.get('today_open'),
+            }
 
         return jsonify({'status': 'initialized', 'results': results})
     except Exception as e:
@@ -5662,57 +5629,14 @@ def api_orb_equity_curve():
 
 
 def _orb_initialize_day():
-    """9:14 AM Mon-Fri: Compute CPR, reset OR state for all 7 stocks."""
+    """9:14 AM Mon-Fri: Compute CPR from Kite API, reset OR state for all 7 stocks."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
-        import sqlite3 as _sqlite3
-        from datetime import date as _date
-
-        db = _get_orb_db()
-        today = _date.today()
-        logger.info("[ORB] Day initialization starting...")
-
-        for sym in ORB_DEFAULTS.get('universe', []):
-            try:
-                db.get_or_create_daily_state(sym, today)
-
-                conn = _sqlite3.connect(str(DATA_DIR / 'market_data.db'))
-                conn.row_factory = _sqlite3.Row
-                prev_row = conn.execute("""
-                    SELECT date, high, low, close, open
-                    FROM market_data_unified
-                    WHERE symbol=? AND timeframe='day' AND date < ?
-                    ORDER BY date DESC LIMIT 1
-                """, (sym, today.isoformat())).fetchone()
-
-                if prev_row:
-                    prev_h = prev_row['high']
-                    prev_l = prev_row['low']
-                    prev_c = prev_row['close']
-                    pivot = (prev_h + prev_l + prev_c) / 3
-                    bc = (prev_h + prev_l) / 2
-                    tc = (pivot - bc) + pivot
-                    cpr_width_pct = abs(tc - bc) / pivot * 100 if pivot else 0
-                    is_wide = 1 if cpr_width_pct > ORB_DEFAULTS.get('cpr_width_threshold_pct', 0.5) else 0
-
-                    db.update_daily_state(sym, today,
-                        cpr_pivot=round(pivot, 2),
-                        cpr_tc=round(tc, 2),
-                        cpr_bc=round(bc, 2),
-                        cpr_width_pct=round(cpr_width_pct, 4),
-                        is_wide_cpr_day=is_wide,
-                        prev_day_high=prev_h,
-                        prev_day_low=prev_l,
-                        prev_day_close=prev_c,
-                        prev_day_date=prev_row['date'],
-                    )
-                conn.close()
-                logger.info(f"[ORB] {sym} CPR initialized")
-            except Exception as se:
-                logger.error(f"[ORB] Init error for {sym}: {se}")
-
-        logger.info("[ORB] Day initialization complete")
+        from services.orb_live_engine import ORBLiveEngine
+        engine = ORBLiveEngine(ORB_DEFAULTS)
+        engine.initialize_day()
+        logger.info("[ORB] Day initialization complete (via Kite API)")
     except Exception as e:
         logger.error(f"[ORB] Day init error: {e}")
 
