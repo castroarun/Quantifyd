@@ -5361,16 +5361,19 @@ def orb_dashboard():
 
 
 def _orb_get_margin():
-    """Fetch margin from Kite. For MIS equity, cash is what matters (not collateral)."""
+    """Fetch margin from Kite. live_balance = real-time available after all debits."""
     try:
         kite = get_kite()
         margins = kite.margins()
         eq = margins.get('equity', {})
         avail = eq.get('available', {})
+        # live_balance = opening_balance - used + intraday_payin + collateral adjustments
+        # This is the REAL available amount for placing new MIS orders
+        live = avail.get('live_balance', 0)
         return {
-            'cash': round(avail.get('cash', 0), 2),           # Liquid cash for MIS orders
-            'live_balance': round(avail.get('live_balance', 0), 2),  # Total incl. collateral
+            'available': round(live, 2),              # Real-time available for new orders
             'opening_balance': round(avail.get('opening_balance', 0), 2),
+            'cash': round(avail.get('cash', 0), 2),   # Raw cash component
             'collateral': round(avail.get('collateral', 0), 2),
             'used': round(eq.get('utilised', {}).get('debits', 0), 2),
         }
@@ -5379,7 +5382,7 @@ def _orb_get_margin():
 
 
 def _orb_check_fund_alert():
-    """Check if CASH is below 1.2x per-trade allocation."""
+    """Check if available margin is below 1.2x per-trade allocation."""
     margin = _orb_get_margin()
     if not margin:
         return None
@@ -5388,12 +5391,12 @@ def _orb_check_fund_alert():
     buffer = ORB_DEFAULTS.get('margin_buffer_multiplier', 1.2)
     alloc = capital / max_trades
     min_required = alloc * buffer
-    cash = margin.get('cash', 0)
-    if cash < min_required:
+    available = margin.get('available', 0)
+    if available < min_required:
         return {
             'type': 'warning',
-            'message': f'Low cash: Rs {cash:,.0f} available, need Rs {min_required:,.0f} (1.2x of Rs {alloc:,.0f} per-trade alloc)',
-            'cash': cash,
+            'message': f'Low funds: Rs {available:,.0f} available, need Rs {min_required:,.0f} (1.2x of Rs {alloc:,.0f} per-trade alloc)',
+            'available': available,
             'required': min_required,
         }
     return None
