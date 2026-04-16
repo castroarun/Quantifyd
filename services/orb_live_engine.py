@@ -27,15 +27,10 @@ logger = logging.getLogger(__name__)
 # Universe
 # ---------------------------------------------------------------------------
 
-ORB_STOCKS = {
-    'ADANIENT':   {'lot': 1, 'token': None},
-    'TATASTEEL':  {'lot': 1, 'token': None},
-    'BEL':        {'lot': 1, 'token': None},
-    'VEDL':       {'lot': 1, 'token': None},
-    'BPCL':       {'lot': 1, 'token': None},
-    'M&M':        {'lot': 1, 'token': None},
-    'BAJFINANCE': {'lot': 1, 'token': None},
-}
+def _build_stocks_from_config(config):
+    """Build stocks dict from config universe list."""
+    universe = config.get('universe', [])
+    return {sym: {'lot': 1, 'token': None} for sym in universe}
 
 
 class ORBLiveEngine:
@@ -54,7 +49,7 @@ class ORBLiveEngine:
     def __init__(self, config: dict):
         self.cfg = config
         self.db = get_orb_db()
-        self.stocks = {k: dict(v) for k, v in ORB_STOCKS.items()}
+        self.stocks = _build_stocks_from_config(config)
         self._lock = threading.Lock()
         self._or_state = {}      # {sym: {'high': float, 'low': float, 'finalized': bool}}
         self._vwap_state = {}    # {sym: {'cum_pv': float, 'cum_vol': float}}

@@ -449,20 +449,22 @@ NAS_916_ATM4_DEFAULTS = {
 # --- ORB: Opening Range Breakout (Cash Equity Intraday) ---
 
 ORB_DEFAULTS = {
-    # Universe — 7 high-beta F&O stocks
-    'universe': ['ADANIENT', 'TATASTEEL', 'BEL', 'VEDL', 'BPCL', 'M&M', 'BAJFINANCE'],
+    # Universe — 15 high-beta F&O stocks
+    'universe': [
+        'ADANIENT', 'TATASTEEL', 'BEL', 'VEDL', 'BPCL', 'M&M', 'BAJFINANCE',
+        'TRENT', 'HAL', 'IRCTC', 'GRASIM', 'GODREJPROP', 'RELIANCE', 'AXISBANK', 'APOLLOHOSP',
+    ],
 
     # System Control
     'enabled': True,
     'live_trading_enabled': True,      # Direct live (MIS), no paper mode
 
     # Capital & Position Sizing
-    # Logic: capital / max_concurrent_trades = per-trade allocation
-    # Min margin to enter = per-trade allocation * margin_buffer_multiplier
+    # 15 stocks, avg 2.9 trades/day, P75=5. Size for 5 concurrent trades.
+    # Per-trade = capital / max_concurrent = 100K/5 = Rs 20,000
+    # Min margin = 1.2x per-trade = Rs 24,000
     'capital': 100_000,                # Total fund — change this to scale up
-    'max_concurrent_trades': 3,        # Expect ~2.4 trades/day, size for 3
-    # Derived: allocation_per_trade = capital / max_concurrent_trades = 33,333
-    # Derived: min_margin_for_trade = allocation_per_trade * margin_buffer = 40,000
+    'max_concurrent_trades': 5,        # P75 of daily trades for 15-stock universe
     'margin_buffer_multiplier': 1.2,   # Need 1.2x per-trade alloc as available margin
 
     # Opening Range
