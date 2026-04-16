@@ -5360,6 +5360,47 @@ def orb_dashboard():
     )
 
 
+def _orb_get_margin():
+    """Fetch available margin from Kite for ORB dashboard."""
+    try:
+        kite = get_kite()
+        margins = kite.margins()
+        eq = margins.get('equity', {})
+        available = eq.get('available', {}).get('live_balance', 0)
+        net = eq.get('net', 0)
+        used = eq.get('utilised', {}).get('debits', 0)
+        free = net - used
+        result = min(available, free) if available > 0 else free
+        return {
+            'available': round(result, 2),
+            'net': round(net, 2),
+            'used': round(used, 2),
+        }
+    except Exception:
+        return None
+
+
+def _orb_check_fund_alert():
+    """Check if funds are below 1.2x per-trade allocation."""
+    margin = _orb_get_margin()
+    if not margin:
+        return None
+    capital = ORB_DEFAULTS.get('capital', 100000)
+    max_trades = ORB_DEFAULTS.get('max_concurrent_trades', 3)
+    buffer = ORB_DEFAULTS.get('margin_buffer_multiplier', 1.2)
+    alloc = capital / max_trades
+    min_required = alloc * buffer
+    available = margin.get('available', 0)
+    if available < min_required:
+        return {
+            'type': 'warning',
+            'message': f'Low funds: Rs {available:,.0f} available, need Rs {min_required:,.0f} (1.2x of Rs {alloc:,.0f} per-trade alloc)',
+            'available': available,
+            'required': min_required,
+        }
+    return None
+
+
 @app.route('/api/orb/state')
 def api_orb_state():
     """Full state dump for ORB dashboard: daily states, positions, stats."""
@@ -5371,7 +5412,7 @@ def api_orb_state():
 
         # Build per-stock summary from daily states + positions
         stocks = {}
-        alloc = ORB_DEFAULTS.get('allocation_per_stock', 14286)
+        alloc = round(ORB_DEFAULTS.get('capital', 100000) / ORB_DEFAULTS.get('max_concurrent_trades', 3))
         for ds in state.get('daily_states', []):
             sym = ds['instrument']
             today_open = ds.get('today_open') or 0
@@ -5415,9 +5456,14 @@ def api_orb_state():
             'today_closed': today_closed,
             'today_pnl': round(today_pnl, 2),
             'stats': stats,
+            'margin': _orb_get_margin(),
+            'fund_alert': _orb_check_fund_alert(),
             'config': {
                 'capital': ORB_DEFAULTS.get('capital', 100000),
-                'allocation_per_stock': ORB_DEFAULTS.get('allocation_per_stock', 14286),
+                'max_concurrent_trades': ORB_DEFAULTS.get('max_concurrent_trades', 3),
+                'allocation_per_trade': round(ORB_DEFAULTS.get('capital', 100000) / ORB_DEFAULTS.get('max_concurrent_trades', 3)),
+                'min_margin_for_trade': round(ORB_DEFAULTS.get('capital', 100000) / ORB_DEFAULTS.get('max_concurrent_trades', 3) * ORB_DEFAULTS.get('margin_buffer_multiplier', 1.2)),
+                'margin_buffer': ORB_DEFAULTS.get('margin_buffer_multiplier', 1.2),
                 'or_minutes': ORB_DEFAULTS.get('or_minutes', 15),
                 'r_multiple': ORB_DEFAULTS.get('r_multiple', 1.5),
                 'sl_type': ORB_DEFAULTS.get('sl_type', 'or_opposite'),

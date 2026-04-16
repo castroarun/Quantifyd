@@ -71,6 +71,18 @@ class ORBLiveEngine:
         from services.kite_service import get_kite
         return get_kite()
 
+    @property
+    def allocation_per_trade(self):
+        """Derived: capital / max_concurrent_trades."""
+        capital = self.cfg.get('capital', 100000)
+        max_trades = self.cfg.get('max_concurrent_trades', 3)
+        return capital / max_trades
+
+    @property
+    def min_margin_for_trade(self):
+        """Derived: allocation_per_trade * margin_buffer_multiplier."""
+        return self.allocation_per_trade * self.cfg.get('margin_buffer_multiplier', 1.2)
+
     def _get_available_margin(self):
         """Fetch available intraday margin from Kite. Returns Rs amount or None on error."""
         try:
@@ -100,8 +112,8 @@ class ORBLiveEngine:
         """Check if available margin is below 1.2x allocation threshold."""
         if not self._last_margin:
             return None
-        alloc = self.cfg.get('allocation_per_stock', 15000)
-        min_required = alloc * 1.2
+        alloc = self.allocation_per_trade
+        min_required = self.min_margin_for_trade
         available = self._last_margin.get('available', 0)
         if available < min_required:
             return {
@@ -371,7 +383,7 @@ class ORBLiveEngine:
                     gap_pct = round((today_open - prev_close) / prev_close * 100.0, 4)
 
                 # 6. Qty per stock
-                allocation = cfg.get('allocation_per_stock', 14286)
+                allocation = self.allocation_per_trade
                 if today_open and today_open > 0:
                     qty = int(allocation // today_open)
                 else:
@@ -700,8 +712,8 @@ class ORBLiveEngine:
                     logger.warning(f"[ORB] {sym}: qty=0, skipping entry")
                     continue
 
-                alloc = cfg.get('allocation_per_stock', 15000)
-                min_balance_required = alloc * 1.2  # 1.2x buffer
+                alloc = self.allocation_per_trade
+                min_balance_required = self.min_margin_for_trade
                 required_capital = qty * entry_price
                 available = self._get_available_margin()
 
@@ -1120,7 +1132,10 @@ class ORBLiveEngine:
             'config': {
                 'enabled': self.cfg.get('enabled', True),
                 'capital': self.cfg.get('capital', 100000),
-                'allocation_per_stock': self.cfg.get('allocation_per_stock', 14286),
+                'allocation_per_trade': round(self.allocation_per_trade),
+                'max_concurrent_trades': self.cfg.get('max_concurrent_trades', 3),
+                'min_margin_for_trade': round(self.min_margin_for_trade),
+                'margin_buffer': self.cfg.get('margin_buffer_multiplier', 1.2),
                 'or_minutes': self.cfg.get('or_minutes', 15),
                 'last_entry_time': self.cfg.get('last_entry_time', '14:00'),
                 'eod_exit_time': self.cfg.get('eod_exit_time', '15:20'),

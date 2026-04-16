@@ -211,7 +211,7 @@
         <div class="col-4 col-md-2">
             <div class="stat-card">
                 <div id="statAllocPerStock" class="stat-value" style="color:#c9d1d9; font-size:1.1rem;">Rs 14,286</div>
-                <div class="stat-label">Per Stock Alloc</div>
+                <div class="stat-label">Per Trade Alloc</div>
             </div>
         </div>
         <div class="col-4 col-md-2">
@@ -720,7 +720,7 @@ function updateStats(state) {
     // Capital & Position Sizing stats
     const cfg = state.config || {};
     document.getElementById('statCapital').textContent = 'Rs ' + (cfg.capital || 100000).toLocaleString('en-IN');
-    document.getElementById('statAllocPerStock').textContent = 'Rs ' + (cfg.allocation_per_stock || 14286).toLocaleString('en-IN');
+    document.getElementById('statAllocPerStock').textContent = 'Rs ' + (cfg.allocation_per_trade || 33333).toLocaleString('en-IN');
 
     const margin = state.margin;
     if (margin) {

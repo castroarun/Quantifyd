@@ -457,8 +457,13 @@ ORB_DEFAULTS = {
     'live_trading_enabled': True,      # Direct live (MIS), no paper mode
 
     # Capital & Position Sizing
-    'capital': 100_000,                # Rs 1L total capital
-    'allocation_per_stock': 14_286,    # ~14.3K per stock (1L / 7)
+    # Logic: capital / max_concurrent_trades = per-trade allocation
+    # Min margin to enter = per-trade allocation * margin_buffer_multiplier
+    'capital': 100_000,                # Total fund — change this to scale up
+    'max_concurrent_trades': 3,        # Expect ~2.4 trades/day, size for 3
+    # Derived: allocation_per_trade = capital / max_concurrent_trades = 33,333
+    # Derived: min_margin_for_trade = allocation_per_trade * margin_buffer = 40,000
+    'margin_buffer_multiplier': 1.2,   # Need 1.2x per-trade alloc as available margin
 
     # Opening Range
     'or_minutes': 15,                  # 09:15 - 09:30
