@@ -5442,12 +5442,13 @@ def api_orb_initialize():
     """Manually trigger day initialization — uses Kite API for prev day HLC + CPR."""
     try:
         from services.orb_live_engine import ORBLiveEngine
+        from datetime import date as _date
         engine = ORBLiveEngine(ORB_DEFAULTS)
         engine.initialize_day()
 
         # Return the computed state
         db = _get_orb_db()
-        today = date.today().isoformat()
+        today = _date.today().isoformat()
         results = {}
         for sym in ORB_DEFAULTS.get('universe', []):
             ds = db.get_or_create_daily_state(sym, today)
