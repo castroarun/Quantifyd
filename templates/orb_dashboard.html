@@ -456,8 +456,8 @@ function renderStockGrid(stocks, universe, openPositions) {
         else if (result) cardClass += ' trade-closed';
         if (ds.is_wide_cpr_day) cardClass += ' wide-cpr';
 
-        // LTP (from position or placeholder)
-        const ltp = pos ? pos.entry_price : null;
+        // LTP: from position entry, or today_open as fallback
+        const ltp = pos ? pos.entry_price : (data.price || ds.today_open || null);
 
         // OR display
         const orHigh = ds.or_high ? fmt(ds.or_high) : '';
@@ -472,9 +472,18 @@ function renderStockGrid(stocks, universe, openPositions) {
         // Gap
         const gapPct = ds.gap_pct != null ? fmt(ds.gap_pct, 2) + '%' : '';
 
-        // Filters (we show available data; real-time values need live engine)
-        const vwapOk = ds.vwap != null;
+        // Filters — evaluate actual conditions, not just "data exists"
+        const vwap = ds.vwap;
+        const vwapOk = vwap != null && ltp != null ? ltp !== vwap : null; // true if price != vwap (directional)
         const rsiVal = ds.rsi_15m != null ? fmt(ds.rsi_15m, 1) : null;
+        const rsiOk = ds.rsi_15m != null ? (ds.rsi_15m > 60 || ds.rsi_15m < 40) : null; // passes if trending
+        // CPR direction: Long needs price > TC, Short needs price < BC
+        const cprTc = ds.cpr_tc;
+        const cprBc = ds.cpr_bc;
+        let cprDirOk = null;
+        if (cprTc != null && cprBc != null && ltp != null) {
+            cprDirOk = (ltp > cprTc || ltp < cprBc); // outside CPR zone = directional
+        }
 
         // Signal status
         let signalHtml = '';
@@ -524,8 +533,8 @@ function renderStockGrid(stocks, universe, openPositions) {
                 </div>
                 <div class="stock-filter mb-1">
                     ${filterIcon(vwapOk)}<span class="text-muted ms-1">VW</span>
-                    ${filterIcon(rsiVal != null)}<span class="text-muted ms-1">RSI${rsiVal ? '(' + rsiVal + ')' : ''}</span>
-                    ${filterIcon(ds.cpr_tc != null)}<span class="text-muted ms-1">CPR</span>
+                    ${filterIcon(rsiOk)}<span class="text-muted ms-1">RSI${rsiVal ? '(' + rsiVal + ')' : ''}</span>
+                    ${filterIcon(cprDirOk)}<span class="text-muted ms-1">CPR${cprDirOk === true ? (ltp > cprTc ? '↑' : '↓') : ''}</span>
                 </div>
                 <div class="stock-sizing mb-1" style="font-size:0.68rem; color:#8b949e;">
                     ${data.qty ? 'Qty:<span style="color:#c9d1d9;">' + data.qty + '</span> ' : ''}
