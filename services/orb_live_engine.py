@@ -20,6 +20,7 @@ import pandas as pd
 from datetime import datetime, date, timedelta
 
 from services.orb_db import get_orb_db
+from services.notifications import get_notification_service
 
 logger = logging.getLogger(__name__)
 
@@ -414,6 +415,17 @@ class ORBLiveEngine:
             except Exception as e:
                 logger.error(f"[ORB] Init failed for {sym}: {e}", exc_info=True)
 
+        # --- Startup notification ---
+        if self.cfg.get('notify_on_system', True):
+            try:
+                ns = get_notification_service(self.cfg)
+                wide_cpr = [s for s in self.stocks
+                            if self.db.get_or_create_daily_state(s, today_str).get('is_wide_cpr_day')]
+                ns.send_alert('login_success', 'ORB Day Initialized',
+                    f'{len(self.stocks)} stocks ready | Wide CPR (skipped): {len(wide_cpr)}')
+            except Exception as e:
+                logger.warning(f"[ORB] Startup notification failed: {e}")
+
         logger.info("[ORB] Day initialization complete")
 
     # ===================================================================
@@ -717,6 +729,18 @@ class ORBLiveEngine:
                         or_high=or_high, or_low=or_low,
                         action_taken=f'BLOCKED_LOW_FUNDS (available Rs {available:.0f} < 1.2x Rs {min_balance_required:.0f})',
                     )
+
+                    # --- Low funds notification ---
+                    if self.cfg.get('notify_on_risk', True):
+                        try:
+                            ns = get_notification_service(self.cfg)
+                            ns.send_alert('margin_alert', f'Low funds — {sym} trade skipped',
+                                f'Available: Rs {available:.0f} | Required: Rs {min_balance_required:.0f}',
+                                data={'symbol': sym, 'available_margin': available, 'required_margin': min_balance_required},
+                                priority='high')
+                        except Exception as e:
+                            logger.warning(f"[ORB] Low funds notification failed: {e}")
+
                     continue
 
                 if available is not None and required_capital > available:
@@ -777,6 +801,17 @@ class ORBLiveEngine:
                     f"SL={sl_price:.2f} TGT={target_price:.2f} "
                     f"order={kite_order_id} pos_id={position_id}"
                 )
+
+                # --- Entry notification ---
+                if self.cfg.get('notify_on_entry', True):
+                    try:
+                        ns = get_notification_service(self.cfg)
+                        ns.send_alert('trade_entry', f'{direction} {sym} @ {entry_price:.2f}',
+                            f'Qty: {qty} | SL: {sl_price:.2f} | TGT: {target_price:.2f} | OR: {or_low:.2f}-{or_high:.2f}',
+                            data={'symbol': sym, 'direction': direction, 'entry_price': entry_price,
+                                  'sl_price': sl_price, 'target_price': target_price, 'qty': qty})
+                    except Exception as e:
+                        logger.warning(f"[ORB] Entry notification failed: {e}")
 
             except Exception as e:
                 logger.error(f"[ORB] Signal eval failed for {sym}: {e}", exc_info=True)
@@ -1034,6 +1069,30 @@ class ORBLiveEngine:
             f"({exit_reason}) P&L={pnl_label}"
         )
 
+        # --- Exit notification ---
+        if self.cfg.get('notify_on_exit', True):
+            try:
+                ns = get_notification_service(self.cfg)
+                # Map exit_reason to alert type
+                reason_upper = (exit_reason or '').upper()
+                if 'SL' in reason_upper:
+                    alert_type = 'sl_hit'
+                elif 'TARGET' in reason_upper:
+                    alert_type = 'target_hit'
+                elif 'EOD' in reason_upper or 'SQUAREOFF' in reason_upper:
+                    alert_type = 'eod_close'
+                else:
+                    alert_type = 'trade_exit'
+                ns.send_alert(alert_type, f'{exit_reason} — {instrument} {direction}',
+                    f'Exit @ {exit_price:.2f} | Entry @ {entry_price:.2f} | P&L: {pnl_label}',
+                    data={'symbol': instrument, 'direction': direction,
+                          'entry_price': entry_price, 'exit_price': exit_price,
+                          'exit_reason': exit_reason, 'pnl_pts': pnl_pts,
+                          'pnl_inr': pnl_inr, 'qty': qty},
+                    priority='high' if 'SL' in reason_upper else 'normal')
+            except Exception as e:
+                logger.warning(f"[ORB] Exit notification failed: {e}")
+
     def _verify_order(self, kite, order_id, instrument, order_type_label):
         """
         Check order status after placement. Log warning if rejected/cancelled.
@@ -1149,6 +1208,37 @@ class ORBLiveEngine:
             'margin': self._last_margin,
             'fund_alert': self._check_fund_alert(),
         }
+
+    # ===================================================================
+    # EOD report
+    # ===================================================================
+
+    def generate_eod_report(self):
+        """Generate and send EOD summary report."""
+        ns = get_notification_service(self.cfg)
+        today_str = date.today().isoformat()
+
+        closed = self.db.get_today_closed()
+        stats = self.db.get_stats()
+
+        # Collect blocked signals
+        signals = self.db.get_recent_signals(limit=100)
+        today_signals = [s for s in signals if (s.get('signal_time') or '')[:10] == today_str]
+        blocked = [s for s in today_signals if s.get('action_taken', '').startswith('BLOCKED')]
+
+        # Margin info
+        margin = self._last_margin or {}
+
+        report_data = {
+            'trades': closed,
+            'cumulative_pnl': stats.get('total_pnl', 0),
+            'blocked_signals': [{'instrument': s.get('instrument'), 'reason': s.get('action_taken')} for s in blocked],
+            'errors': [],
+            'margin': margin,
+            'capital': self.cfg.get('capital', 100000),
+        }
+
+        ns.send_eod_report(report_data)
 
     # ===================================================================
     # Emergency

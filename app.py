@@ -5459,6 +5459,7 @@ def api_orb_state():
             'stats': stats,
             'margin': _orb_get_margin(),
             'fund_alert': _orb_check_fund_alert(),
+            'unread_notifications': db.get_unread_count(),
             'config': {
                 'capital': ORB_DEFAULTS.get('capital', 100000),
                 'max_concurrent_trades': ORB_DEFAULTS.get('max_concurrent_trades', 3),
@@ -5673,6 +5674,35 @@ def api_orb_equity_curve():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/orb/notifications')
+def api_orb_notifications():
+    """Get recent notifications for the notifications tab."""
+    try:
+        db = _get_orb_db()
+        limit = request.args.get('limit', 50, type=int)
+        unread_only = request.args.get('unread', 'false').lower() == 'true'
+        notifications = db.get_notifications(limit=limit, unread_only=unread_only)
+        unread_count = db.get_unread_count()
+        return jsonify({'notifications': notifications, 'unread_count': unread_count})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/notifications/read', methods=['POST'])
+def api_orb_mark_read():
+    """Mark notification(s) as read."""
+    try:
+        db = _get_orb_db()
+        nid = request.json.get('id')
+        if nid == 'all':
+            db.mark_all_read()
+        elif nid:
+            db.mark_read(nid)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # ORB Scheduled Jobs ----------------------------------------------------------
 
 
@@ -5861,6 +5891,19 @@ def _orb_eod_squareoff():
         logger.error(f"[ORB] EOD squareoff error: {e}")
 
 
+def _orb_eod_report():
+    """15:25 PM Mon-Fri: Send daily EOD summary report."""
+    if not ORB_DEFAULTS.get('enabled', True) or not ORB_DEFAULTS.get('notify_eod_report', True):
+        return
+    try:
+        from services.orb_live_engine import ORBLiveEngine
+        engine = ORBLiveEngine(ORB_DEFAULTS)
+        engine.generate_eod_report()
+        logger.info("[ORB] EOD report sent")
+    except Exception as e:
+        logger.error(f"[ORB] EOD report error: {e}")
+
+
 # Register ORB scheduled jobs
 try:
     scheduler.add_job(
@@ -5888,10 +5931,15 @@ try:
         'cron', day_of_week='mon-fri', hour=15, minute=20,
         id='orb_eod_squareoff', replace_existing=True,
     )
+    scheduler.add_job(
+        _orb_eod_report,
+        'cron', day_of_week='mon-fri', hour=15, minute=25,
+        id='orb_eod_report', replace_existing=True,
+    )
     logger.info(
         "ORB scheduled jobs registered: "
         "init(9:14), OR update(9:15-9:29), signal eval(5min), "
-        "position monitor(30s), EOD squareoff(15:20)"
+        "position monitor(30s), EOD squareoff(15:20), EOD report(15:25)"
     )
 except Exception as e:
     logger.warning(f"Could not register ORB scheduled jobs: {e}")

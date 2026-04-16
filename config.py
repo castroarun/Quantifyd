@@ -497,6 +497,23 @@ ORB_DEFAULTS = {
 
     # Risk Management
     'daily_loss_limit': 3_000,         # Rs 3K daily loss cap (3% of capital)
+
+    # Notifications
+    'email_enabled': True,
+    'email_from': 'arun.castromin@gmail.com',
+    'email_to': 'arun.castromin@gmail.com',
+    'email_app_password': os.getenv('GMAIL_APP_PASSWORD', ''),
+    'smtp_host': 'smtp.gmail.com',
+    'smtp_port': 587,
+    'whatsapp_enabled': False,
+    'notify_on_entry': True,
+    'notify_on_exit': True,
+    'notify_on_sl': True,
+    'notify_on_target': True,
+    'notify_on_blocked': False,        # Too many, keep quiet
+    'notify_on_risk': True,
+    'notify_on_system': True,
+    'notify_eod_report': True,
 }
 
 # Nifty 500 Universe

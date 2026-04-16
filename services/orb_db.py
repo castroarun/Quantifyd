@@ -147,6 +147,22 @@ class OrbDB:
 
                     CREATE INDEX IF NOT EXISTS idx_orb_orders_pos
                         ON orb_orders(position_id);
+
+                    CREATE TABLE IF NOT EXISTS orb_notifications (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        type TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        message TEXT,
+                        data TEXT,
+                        priority TEXT DEFAULT 'normal',
+                        read INTEGER DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_orb_notif_read
+                        ON orb_notifications(read);
+                    CREATE INDEX IF NOT EXISTS idx_orb_notif_created
+                        ON orb_notifications(created_at);
                 """)
                 conn.commit()
                 logger.info(f"[ORB] Database initialized at {self.db_path}")
@@ -466,6 +482,74 @@ class OrbDB:
                 return curve
             finally:
                 conn.close()
+
+    # --- Notifications ---------------------------------------------------
+
+    def log_notification(self, type, title, message='', data='', priority='normal'):
+        """Insert a notification record. Returns notification id."""
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                cur = conn.execute(
+                    "INSERT INTO orb_notifications (type, title, message, data, priority) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (type, title, message, data, priority)
+                )
+                conn.commit()
+                return cur.lastrowid
+            finally:
+                conn.close()
+
+    def get_notifications(self, limit=50, unread_only=False):
+        """Get recent notifications, newest first."""
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                sql = "SELECT * FROM orb_notifications"
+                if unread_only:
+                    sql += " WHERE read=0"
+                sql += " ORDER BY created_at DESC LIMIT ?"
+                rows = conn.execute(sql, (limit,)).fetchall()
+                return [dict(r) for r in rows]
+            finally:
+                conn.close()
+
+    def mark_read(self, notification_id):
+        """Mark a single notification as read."""
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                conn.execute(
+                    "UPDATE orb_notifications SET read=1 WHERE id=?",
+                    (notification_id,)
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+    def mark_all_read(self):
+        """Mark all notifications as read."""
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                conn.execute("UPDATE orb_notifications SET read=1 WHERE read=0")
+                conn.commit()
+            finally:
+                conn.close()
+
+    def get_unread_count(self):
+        """Return count of unread notifications."""
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM orb_notifications WHERE read=0"
+                ).fetchone()
+                return row['cnt'] if row else 0
+            finally:
+                conn.close()
+
+    # --- State -------------------------------------------------------------
 
     def get_state(self):
         """
