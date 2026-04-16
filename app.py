@@ -5366,14 +5366,15 @@ def _orb_get_margin():
         kite = get_kite()
         margins = kite.margins()
         eq = margins.get('equity', {})
+        # available.live_balance = what Kite Funds page shows as "Available margin"
         available = eq.get('available', {}).get('live_balance', 0)
-        net = eq.get('net', 0)
+        cash = eq.get('available', {}).get('cash', 0)
+        opening = eq.get('available', {}).get('opening_balance', 0)
         used = eq.get('utilised', {}).get('debits', 0)
-        free = net - used
-        result = min(available, free) if available > 0 else free
         return {
-            'available': round(result, 2),
-            'net': round(net, 2),
+            'available': round(available, 2),
+            'cash': round(cash, 2),
+            'opening_balance': round(opening, 2),
             'used': round(used, 2),
         }
     except Exception:

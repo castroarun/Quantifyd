@@ -89,21 +89,15 @@ class ORBLiveEngine:
             kite = self._get_kite()
             margins = kite.margins()
             eq = margins.get('equity', {})
+            # live_balance = what Kite Funds page shows as "Available margin"
             available = eq.get('available', {}).get('live_balance', 0)
-            # Also check intraday available (net - used)
-            net = eq.get('net', 0)
-            used = eq.get('utilised', {}).get('debits', 0)
-            free = net - used
-            # Use the more conservative of live_balance and free
-            result = min(available, free) if available > 0 else free
             self._last_margin = {
-                'available': round(result, 2),
-                'net': round(net, 2),
-                'used': round(used, 2),
-                'live_balance': round(available, 2),
+                'available': round(available, 2),
+                'cash': round(eq.get('available', {}).get('cash', 0), 2),
+                'used': round(eq.get('utilised', {}).get('debits', 0), 2),
                 'updated_at': datetime.now().isoformat(),
             }
-            return result
+            return available
         except Exception as e:
             logger.warning(f"[ORB] Margin check failed: {e}")
             return None
