@@ -446,5 +446,51 @@ NAS_916_ATM4_DEFAULTS = {
     'entry_start_time': '09:16',
 }
 
+# --- ORB: Opening Range Breakout (Cash Equity Intraday) ---
+
+ORB_DEFAULTS = {
+    # Universe — 7 high-beta F&O stocks
+    'universe': ['ADANIENT', 'TATASTEEL', 'BEL', 'VEDL', 'BPCL', 'M&M', 'BAJFINANCE'],
+
+    # System Control
+    'enabled': True,
+    'live_trading_enabled': True,      # Direct live (MIS), no paper mode
+
+    # Capital & Position Sizing
+    'capital': 100_000,                # Rs 1L total capital
+    'allocation_per_stock': 14_286,    # ~14.3K per stock (1L / 7)
+
+    # Opening Range
+    'or_minutes': 15,                  # 09:15 - 09:30
+
+    # Entry Rules
+    'last_entry_time': '14:00',        # No entries after 2 PM
+    'eod_exit_time': '15:20',          # Mandatory squareoff
+    'max_trades_per_day': 1,           # Per stock per day
+
+    # Exit Rules
+    'sl_type': 'or_opposite',          # SL at OR opposite boundary
+    'target_type': 'r_multiple',
+    'r_multiple': 1.5,                 # 1.5x risk:reward
+
+    # Filters
+    'use_vwap_filter': True,
+    'use_rsi_filter': True,
+    'rsi_long_threshold': 60,
+    'rsi_short_threshold': 40,
+    'use_cpr_dir_filter': True,
+    'use_cpr_width_filter': True,
+    'cpr_width_threshold_pct': 0.5,
+    'use_gap_filter': True,
+    'gap_long_block_pct': 0.3,         # Block longs if gap-up > 0.3%
+
+    # Direction control
+    'allow_longs': True,
+    'allow_shorts': True,
+
+    # Risk Management
+    'daily_loss_limit': 3_000,         # Rs 3K daily loss cap (3% of capital)
+}
+
 # Nifty 500 Universe
 NIFTY500_CSV = DATA_DIR.parent / 'data' / 'nifty500_list.csv'

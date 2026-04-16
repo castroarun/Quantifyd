@@ -2680,93 +2680,9 @@ function startPremiumStream() {
         }, 5000);
     };
 
-    // 916-OTM stream
-    const s916OtmSource = new EventSource('/api/nas-916-otm/ticker/stream');
-    s916OtmSource.onmessage = function(event) {
-        try {
-            const d = JSON.parse(event.data);
-            if (d.type === 'tick' && d.legs) {
-                for (const [tsym, leg] of Object.entries(d.legs)) {
-                    _liveS916OtmLegs[tsym] = leg.ltp;
-                }
-                if (_s916OtmData) renderS916OtmPositions(_s916OtmData);
-            }
-        } catch(e) {}
-    };
-    s916OtmSource.onerror = function() {
-        s916OtmSource.close();
-        setTimeout(() => {
-            const s = new EventSource('/api/nas-916-otm/ticker/stream');
-            s.onmessage = s916OtmSource.onmessage;
-            s.onerror = s916OtmSource.onerror;
-        }, 5000);
-    };
-
-    // 916-ATM stream
-    const s916AtmSource = new EventSource('/api/nas-916-atm/ticker/stream');
-    s916AtmSource.onmessage = function(event) {
-        try {
-            const d = JSON.parse(event.data);
-            if (d.type === 'tick' && d.legs) {
-                for (const [tsym, leg] of Object.entries(d.legs)) {
-                    _liveS916AtmLegs[tsym] = leg.ltp;
-                }
-                if (_s916AtmData) renderS916AtmPositions(_s916AtmData);
-            }
-        } catch(e) {}
-    };
-    s916AtmSource.onerror = function() {
-        s916AtmSource.close();
-        setTimeout(() => {
-            const s = new EventSource('/api/nas-916-atm/ticker/stream');
-            s.onmessage = s916AtmSource.onmessage;
-            s.onerror = s916AtmSource.onerror;
-        }, 5000);
-    };
-
-    // 916-ATM2 stream
-    const s916Atm2Source = new EventSource('/api/nas-916-atm2/ticker/stream');
-    s916Atm2Source.onmessage = function(event) {
-        try {
-            const d = JSON.parse(event.data);
-            if (d.type === 'tick' && d.legs) {
-                for (const [tsym, leg] of Object.entries(d.legs)) {
-                    _liveS916Atm2Legs[tsym] = leg.ltp;
-                }
-                if (_s916Atm2Data) renderS916Atm2Positions(_s916Atm2Data);
-            }
-        } catch(e) {}
-    };
-    s916Atm2Source.onerror = function() {
-        s916Atm2Source.close();
-        setTimeout(() => {
-            const s = new EventSource('/api/nas-916-atm2/ticker/stream');
-            s.onmessage = s916Atm2Source.onmessage;
-            s.onerror = s916Atm2Source.onerror;
-        }, 5000);
-    };
-
-    // 916-ATM4 stream
-    const s916Atm4Source = new EventSource('/api/nas-916-atm4/ticker/stream');
-    s916Atm4Source.onmessage = function(event) {
-        try {
-            const d = JSON.parse(event.data);
-            if (d.type === 'tick' && d.legs) {
-                for (const [tsym, leg] of Object.entries(d.legs)) {
-                    _liveS916Atm4Legs[tsym] = leg.ltp;
-                }
-                if (_s916Atm4Data) renderS916Atm4Positions(_s916Atm4Data);
-            }
-        } catch(e) {}
-    };
-    s916Atm4Source.onerror = function() {
-        s916Atm4Source.close();
-        setTimeout(() => {
-            const s = new EventSource('/api/nas-916-atm4/ticker/stream');
-            s.onmessage = s916Atm4Source.onmessage;
-            s.onerror = s916Atm4Source.onerror;
-        }, 5000);
-    };
+    // NOTE: 916 systems share the same ticker tokens as their squeeze counterparts.
+    // The 4 squeeze SSE streams above already re-render 916 positions on each tick.
+    // No separate 916 SSE connections needed (avoids browser 6-connection limit).
 }
 </script>
 {% endblock %}

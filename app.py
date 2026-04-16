@@ -47,11 +47,12 @@ from services.cpr_covered_call_service import CPRCoveredCallEngine, CPRBacktestC
 from services.intraday_data_bridge import get_intraday_bridge
 from config import (
     FLASK_SECRET_KEY, KITE_API_KEY, KITE_API_SECRET,
-    STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE,
+    STRIKE_METHODS, EXIT_RULES, RISK_FREE_RATE, DATA_DIR,
     MQ_DEFAULTS, KC6_DEFAULTS, MARUTHI_DEFAULTS, BNF_DEFAULTS, NAS_DEFAULTS, NAS_ATM_DEFAULTS,
     NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
     NAS_916_OTM_DEFAULTS, NAS_916_ATM_DEFAULTS,
     NAS_916_ATM2_DEFAULTS, NAS_916_ATM4_DEFAULTS,
+    ORB_DEFAULTS,
 )
 
 # MQ Agent imports (lazy-loaded in route handlers to avoid startup overhead)
@@ -221,6 +222,18 @@ def _start_all_tickers():
             logger.info("[Auth] Maruthi ticker already connected")
     except Exception as e:
         logger.warning(f"[Auth] Maruthi ticker start failed: {e}")
+
+    # NAS ticker (shared across OTM, ATM, ATM2, ATM4, and 916 variants)
+    try:
+        from services.nas_ticker import get_nas_ticker
+        nas_ticker = get_nas_ticker(NAS_DEFAULTS)
+        if not nas_ticker.is_connected:
+            nas_ticker.restart()
+            logger.info("[Auth] NAS ticker started after login")
+        else:
+            logger.info("[Auth] NAS ticker already connected")
+    except Exception as e:
+        logger.warning(f"[Auth] NAS ticker start failed: {e}")
 
 
 @app.route('/api/auth/status')
@@ -3194,6 +3207,16 @@ _nas_tasks = {}
 @app.route('/nas')
 def nas_dashboard():
     """NAS Combined Dashboard (OTM + ATM side-by-side)."""
+    # Auto-start NAS ticker when visiting dashboard (if authenticated)
+    if is_authenticated():
+        try:
+            from services.nas_ticker import get_nas_ticker
+            ticker = get_nas_ticker(NAS_DEFAULTS)
+            if not ticker.is_connected:
+                ticker.restart()
+                logger.info("[NAS] Ticker auto-started on dashboard visit")
+        except Exception as e:
+            logger.warning(f"[NAS] Ticker auto-start on visit failed: {e}")
     return render_template(
         'nas_combined_dashboard.html',
         authenticated=is_authenticated(),
@@ -5310,6 +5333,583 @@ try:
     )
 except Exception as e:
     logger.warning(f"Could not register NAS 916 scheduled jobs: {e}")
+
+
+# =============================================================================
+# ORB — Opening Range Breakout (Cash Equity Intraday)
+# =============================================================================
+
+_orb_tasks = {}
+
+
+def _get_orb_db():
+    """Lazy singleton for ORB database."""
+    from services.orb_db import OrbDB
+    if not hasattr(_get_orb_db, '_instance'):
+        _get_orb_db._instance = OrbDB()
+    return _get_orb_db._instance
+
+
+@app.route('/orb')
+def orb_dashboard():
+    """ORB Dashboard — Opening Range Breakout on 7 high-beta F&O stocks."""
+    return render_template(
+        'orb_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/orb/state')
+def api_orb_state():
+    """Full state dump for ORB dashboard: daily states, positions, stats."""
+    try:
+        db = _get_orb_db()
+        state = db.get_state()
+        stats = db.get_stats()
+        today_closed = db.get_today_closed()
+
+        # Build per-stock summary from daily states + positions
+        stocks = {}
+        for ds in state.get('daily_states', []):
+            sym = ds['instrument']
+            stocks[sym] = {
+                'daily_state': ds,
+                'position': None,
+                'today_result': None,
+            }
+
+        for pos in state.get('open_positions', []):
+            sym = pos['instrument']
+            if sym in stocks:
+                stocks[sym]['position'] = pos
+
+        for pos in today_closed:
+            sym = pos['instrument']
+            if sym in stocks:
+                stocks[sym]['today_result'] = pos
+
+        # Today's P&L from open + closed positions
+        today_pnl = sum(p.get('pnl_inr', 0) or 0 for p in today_closed)
+        # Open position unrealized P&L (needs LTP — set from frontend)
+
+        return jsonify({
+            'enabled': ORB_DEFAULTS.get('enabled', True),
+            'live_trading': ORB_DEFAULTS.get('live_trading_enabled', False),
+            'universe': ORB_DEFAULTS.get('universe', []),
+            'capital': ORB_DEFAULTS.get('capital', 100_000),
+            'daily_loss_limit': ORB_DEFAULTS.get('daily_loss_limit', 3_000),
+            'stocks': stocks,
+            'open_positions': state.get('open_positions', []),
+            'today_closed': today_closed,
+            'today_pnl': round(today_pnl, 2),
+            'stats': stats,
+            'config': {
+                'or_minutes': ORB_DEFAULTS.get('or_minutes', 15),
+                'r_multiple': ORB_DEFAULTS.get('r_multiple', 1.5),
+                'sl_type': ORB_DEFAULTS.get('sl_type', 'or_opposite'),
+                'last_entry_time': ORB_DEFAULTS.get('last_entry_time', '14:00'),
+                'eod_exit_time': ORB_DEFAULTS.get('eod_exit_time', '15:20'),
+                'use_vwap_filter': ORB_DEFAULTS.get('use_vwap_filter', True),
+                'use_rsi_filter': ORB_DEFAULTS.get('use_rsi_filter', True),
+                'use_cpr_dir_filter': ORB_DEFAULTS.get('use_cpr_dir_filter', True),
+                'use_cpr_width_filter': ORB_DEFAULTS.get('use_cpr_width_filter', True),
+                'cpr_width_threshold_pct': ORB_DEFAULTS.get('cpr_width_threshold_pct', 0.5),
+                'use_gap_filter': ORB_DEFAULTS.get('use_gap_filter', True),
+                'gap_threshold_pct': ORB_DEFAULTS.get('gap_threshold_pct', 0.3),
+            },
+        })
+    except Exception as e:
+        logger.error(f"ORB state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/initialize', methods=['POST'])
+def api_orb_initialize():
+    """Manually trigger day initialization — compute CPR, reset OR state for all stocks."""
+    try:
+        import sqlite3 as _sqlite3
+        from datetime import date as _date, timedelta
+
+        db = _get_orb_db()
+        today = _date.today()
+        results = {}
+
+        for sym in ORB_DEFAULTS.get('universe', []):
+            try:
+                # Initialize daily state row
+                ds = db.get_or_create_daily_state(sym, today)
+
+                # Fetch previous day data for CPR calculation
+                conn = _sqlite3.connect(str(DATA_DIR / 'market_data.db'))
+                conn.row_factory = _sqlite3.Row
+                prev_row = conn.execute("""
+                    SELECT date, high, low, close, open
+                    FROM market_data_unified
+                    WHERE symbol=? AND timeframe='day' AND date < ?
+                    ORDER BY date DESC LIMIT 1
+                """, (sym, today.isoformat())).fetchone()
+
+                if prev_row:
+                    prev_h = prev_row['high']
+                    prev_l = prev_row['low']
+                    prev_c = prev_row['close']
+                    pivot = (prev_h + prev_l + prev_c) / 3
+                    bc = (prev_h + prev_l) / 2
+                    tc = (pivot - bc) + pivot
+                    cpr_width_pct = abs(tc - bc) / pivot * 100 if pivot else 0
+                    is_wide = 1 if cpr_width_pct > ORB_DEFAULTS.get('cpr_width_threshold_pct', 0.5) else 0
+
+                    db.update_daily_state(sym, today,
+                        cpr_pivot=round(pivot, 2),
+                        cpr_tc=round(tc, 2),
+                        cpr_bc=round(bc, 2),
+                        cpr_width_pct=round(cpr_width_pct, 4),
+                        is_wide_cpr_day=is_wide,
+                        prev_day_high=prev_h,
+                        prev_day_low=prev_l,
+                        prev_day_close=prev_c,
+                        prev_day_date=prev_row['date'],
+                    )
+                    results[sym] = {
+                        'pivot': round(pivot, 2), 'tc': round(tc, 2), 'bc': round(bc, 2),
+                        'cpr_width_pct': round(cpr_width_pct, 4), 'is_wide': bool(is_wide),
+                    }
+                else:
+                    results[sym] = {'error': 'No previous day data'}
+                conn.close()
+            except Exception as se:
+                results[sym] = {'error': str(se)}
+                logger.error(f"[ORB] Init error for {sym}: {se}")
+
+        return jsonify({'status': 'initialized', 'results': results})
+    except Exception as e:
+        logger.error(f"[ORB] Initialize error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/scan', methods=['POST'])
+def api_orb_scan():
+    """Manually trigger signal evaluation across all stocks."""
+    task_id = f"orb_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    _orb_tasks[task_id] = {'status': 'running'}
+
+    def _run_scan(tid):
+        try:
+            db = _get_orb_db()
+            from datetime import date as _date
+            today = _date.today()
+            signals = []
+            for sym in ORB_DEFAULTS.get('universe', []):
+                ds = db.get_or_create_daily_state(sym, today)
+                # Check if OR is finalized and no trade taken yet
+                if ds.get('or_finalized') and ds.get('trades_taken', 0) < ORB_DEFAULTS.get('max_trades_per_day', 1):
+                    signals.append({
+                        'instrument': sym,
+                        'or_high': ds.get('or_high'),
+                        'or_low': ds.get('or_low'),
+                        'cpr_width_pct': ds.get('cpr_width_pct'),
+                        'is_wide_cpr_day': ds.get('is_wide_cpr_day'),
+                        'status': 'ready_for_signal',
+                    })
+                else:
+                    signals.append({
+                        'instrument': sym,
+                        'status': 'not_ready' if not ds.get('or_finalized') else 'trade_taken',
+                    })
+            _orb_tasks[tid] = {'status': 'completed', 'signals': signals}
+        except Exception as e:
+            logger.error(f"[ORB] Scan error: {e}")
+            _orb_tasks[tid] = {'status': 'error', 'error': str(e)}
+
+    scheduler.add_job(_run_scan, args=[task_id], id=f'orb_scan_{task_id}',
+                      replace_existing=True)
+    return jsonify({'task_id': task_id, 'status': 'queued'})
+
+
+@app.route('/api/orb/scan/status/<task_id>')
+def api_orb_scan_status(task_id):
+    """Poll ORB scan status."""
+    task = _orb_tasks.get(task_id, {'status': 'unknown'})
+    return jsonify(task)
+
+
+@app.route('/api/orb/kill-switch', methods=['POST'])
+def api_orb_kill_switch():
+    """Emergency close all open ORB positions."""
+    try:
+        db = _get_orb_db()
+        open_positions = db.get_open_positions()
+        closed = []
+
+        if is_authenticated() and ORB_DEFAULTS.get('live_trading_enabled', False):
+            # Live: place market sell orders via Kite
+            try:
+                dm = get_data_manager()
+                kite = dm.kite
+                for pos in open_positions:
+                    tx_type = 'SELL' if pos['direction'] == 'LONG' else 'BUY'
+                    try:
+                        order_id = kite.place_order(
+                            variety=kite.VARIETY_REGULAR,
+                            exchange=kite.EXCHANGE_NSE,
+                            tradingsymbol=pos['instrument'],
+                            transaction_type=tx_type,
+                            quantity=pos['qty'],
+                            product=kite.PRODUCT_MIS,
+                            order_type=kite.ORDER_TYPE_MARKET,
+                        )
+                        db.close_position(
+                            pos['id'],
+                            exit_price=pos.get('entry_price', 0),  # Approximate; real price from order
+                            exit_time=datetime.now().isoformat(),
+                            exit_reason='KILL_SWITCH',
+                            pnl_pts=0,
+                            pnl_inr=0,
+                            kite_exit_order_id=str(order_id),
+                        )
+                        closed.append({'instrument': pos['instrument'], 'order_id': order_id})
+                    except Exception as oe:
+                        logger.error(f"[ORB] Kill switch order error {pos['instrument']}: {oe}")
+                        closed.append({'instrument': pos['instrument'], 'error': str(oe)})
+            except Exception as ke:
+                logger.error(f"[ORB] Kill switch Kite error: {ke}")
+                # Fall back to DB-only close
+                for pos in open_positions:
+                    db.close_position(
+                        pos['id'],
+                        exit_price=pos.get('entry_price', 0),
+                        exit_time=datetime.now().isoformat(),
+                        exit_reason='KILL_SWITCH',
+                        pnl_pts=0, pnl_inr=0,
+                    )
+                    closed.append({'instrument': pos['instrument'], 'status': 'db_closed'})
+        else:
+            # DB-only close (no Kite)
+            for pos in open_positions:
+                db.close_position(
+                    pos['id'],
+                    exit_price=pos.get('entry_price', 0),
+                    exit_time=datetime.now().isoformat(),
+                    exit_reason='KILL_SWITCH',
+                    pnl_pts=0, pnl_inr=0,
+                )
+                closed.append({'instrument': pos['instrument'], 'status': 'db_closed'})
+
+        return jsonify({'closed': closed, 'count': len(closed), 'status': 'EMERGENCY_EXIT'})
+    except Exception as e:
+        logger.error(f"[ORB] Kill switch error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/toggle-enabled', methods=['POST'])
+def api_orb_toggle_enabled():
+    """Enable/disable ORB system."""
+    try:
+        current = ORB_DEFAULTS.get('enabled', True)
+        ORB_DEFAULTS['enabled'] = not current
+        new_status = 'ENABLED' if ORB_DEFAULTS['enabled'] else 'DISABLED'
+        logger.info(f"[ORB] System {new_status}")
+        return jsonify({'enabled': ORB_DEFAULTS['enabled'], 'status': new_status})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/trades')
+def api_orb_trades():
+    """Recent ORB closed trades."""
+    try:
+        db = _get_orb_db()
+        return jsonify(db.get_recent_trades(limit=50))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/signals')
+def api_orb_signals():
+    """ORB signal history."""
+    try:
+        db = _get_orb_db()
+        return jsonify(db.get_recent_signals(limit=30))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/equity-curve')
+def api_orb_equity_curve():
+    """ORB daily P&L equity curve."""
+    try:
+        db = _get_orb_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ORB Scheduled Jobs ----------------------------------------------------------
+
+
+def _orb_initialize_day():
+    """9:14 AM Mon-Fri: Compute CPR, reset OR state for all 7 stocks."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        import sqlite3 as _sqlite3
+        from datetime import date as _date
+
+        db = _get_orb_db()
+        today = _date.today()
+        logger.info("[ORB] Day initialization starting...")
+
+        for sym in ORB_DEFAULTS.get('universe', []):
+            try:
+                db.get_or_create_daily_state(sym, today)
+
+                conn = _sqlite3.connect(str(DATA_DIR / 'market_data.db'))
+                conn.row_factory = _sqlite3.Row
+                prev_row = conn.execute("""
+                    SELECT date, high, low, close, open
+                    FROM market_data_unified
+                    WHERE symbol=? AND timeframe='day' AND date < ?
+                    ORDER BY date DESC LIMIT 1
+                """, (sym, today.isoformat())).fetchone()
+
+                if prev_row:
+                    prev_h = prev_row['high']
+                    prev_l = prev_row['low']
+                    prev_c = prev_row['close']
+                    pivot = (prev_h + prev_l + prev_c) / 3
+                    bc = (prev_h + prev_l) / 2
+                    tc = (pivot - bc) + pivot
+                    cpr_width_pct = abs(tc - bc) / pivot * 100 if pivot else 0
+                    is_wide = 1 if cpr_width_pct > ORB_DEFAULTS.get('cpr_width_threshold_pct', 0.5) else 0
+
+                    db.update_daily_state(sym, today,
+                        cpr_pivot=round(pivot, 2),
+                        cpr_tc=round(tc, 2),
+                        cpr_bc=round(bc, 2),
+                        cpr_width_pct=round(cpr_width_pct, 4),
+                        is_wide_cpr_day=is_wide,
+                        prev_day_high=prev_h,
+                        prev_day_low=prev_l,
+                        prev_day_close=prev_c,
+                        prev_day_date=prev_row['date'],
+                    )
+                conn.close()
+                logger.info(f"[ORB] {sym} CPR initialized")
+            except Exception as se:
+                logger.error(f"[ORB] Init error for {sym}: {se}")
+
+        logger.info("[ORB] Day initialization complete")
+    except Exception as e:
+        logger.error(f"[ORB] Day init error: {e}")
+
+
+def _orb_update_or():
+    """Every 1 min from 9:15-9:30: Update OR high/low from latest 5-min candles."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from datetime import date as _date, time as _time
+        import sqlite3 as _sqlite3
+
+        db = _get_orb_db()
+        today = _date.today()
+        now = datetime.now().time()
+
+        for sym in ORB_DEFAULTS.get('universe', []):
+            try:
+                conn = _sqlite3.connect(str(DATA_DIR / 'market_data.db'))
+                conn.row_factory = _sqlite3.Row
+                # Get 5-min candles for today between 09:15 and 09:30
+                rows = conn.execute("""
+                    SELECT high, low, open, close
+                    FROM market_data_unified
+                    WHERE symbol=? AND timeframe='5minute'
+                      AND date >= ? AND date < ?
+                    ORDER BY date
+                """, (sym,
+                      f"{today.isoformat()} 09:15:00",
+                      f"{today.isoformat()} 09:30:00")).fetchall()
+                conn.close()
+
+                if rows:
+                    or_high = max(r['high'] for r in rows)
+                    or_low = min(r['low'] for r in rows)
+                    or_range = or_high - or_low
+                    finalized = 1 if now >= _time(9, 30) else 0
+
+                    # Get today's open from first candle for gap calculation
+                    today_open = rows[0]['open']
+                    ds = db.get_or_create_daily_state(sym, today)
+                    prev_close = ds.get('prev_day_close')
+                    gap_pct = ((today_open - prev_close) / prev_close * 100) if prev_close else 0
+
+                    db.update_daily_state(sym, today,
+                        or_high=round(or_high, 2),
+                        or_low=round(or_low, 2),
+                        or_range=round(or_range, 2),
+                        or_finalized=finalized,
+                        today_open=round(today_open, 2),
+                        gap_pct=round(gap_pct, 4),
+                    )
+            except Exception as se:
+                logger.error(f"[ORB] OR update error for {sym}: {se}")
+    except Exception as e:
+        logger.error(f"[ORB] OR update error: {e}")
+
+
+def _orb_evaluate_signals():
+    """Every 5 min from 9:30-14:00: Check for breakout signals on all stocks."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from datetime import date as _date, time as _time
+        db = _get_orb_db()
+        today = _date.today()
+        now = datetime.now()
+
+        # Check daily loss limit
+        today_closed = db.get_today_closed()
+        day_pnl = sum(p.get('pnl_inr', 0) or 0 for p in today_closed)
+        if day_pnl <= -ORB_DEFAULTS.get('daily_loss_limit', 3_000):
+            logger.info(f"[ORB] Daily loss limit hit ({day_pnl:.0f}), skipping signal eval")
+            return
+
+        for sym in ORB_DEFAULTS.get('universe', []):
+            try:
+                ds = db.get_or_create_daily_state(sym, today)
+                if not ds.get('or_finalized'):
+                    continue
+                if ds.get('is_wide_cpr_day'):
+                    continue
+                if (ds.get('trades_taken', 0) or 0) >= ORB_DEFAULTS.get('max_trades_per_day', 1):
+                    continue
+
+                # Check for existing open position
+                open_pos = db.get_open_positions(instrument=sym)
+                if open_pos:
+                    continue
+
+                logger.debug(f"[ORB] Signal eval for {sym}: OR={ds.get('or_high')}-{ds.get('or_low')}")
+                # Actual breakout detection would use live 5-min candle data
+                # (implemented in the live engine, placeholder here for scheduled job)
+            except Exception as se:
+                logger.error(f"[ORB] Signal eval error for {sym}: {se}")
+    except Exception as e:
+        logger.error(f"[ORB] Signal eval error: {e}")
+
+
+def _orb_monitor_positions():
+    """Every 30 sec from 9:30-15:20: Check SL/target on open positions."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        db = _get_orb_db()
+        open_positions = db.get_open_positions()
+        if not open_positions:
+            return
+
+        # For live monitoring, we'd check LTP against SL/target
+        # This would be replaced by WebSocket tick handler in production
+        for pos in open_positions:
+            logger.debug(f"[ORB] Monitoring {pos['instrument']} "
+                        f"({pos['direction']}): Entry={pos['entry_price']}, "
+                        f"SL={pos['sl_price']}, Tgt={pos['target_price']}")
+    except Exception as e:
+        logger.error(f"[ORB] Position monitor error: {e}")
+
+
+def _orb_eod_squareoff():
+    """15:20 sharp: Close all open ORB positions at market."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        db = _get_orb_db()
+        open_positions = db.get_open_positions()
+        if not open_positions:
+            logger.info("[ORB] EOD squareoff: No open positions")
+            return
+
+        logger.info(f"[ORB] EOD squareoff: {len(open_positions)} positions to close")
+
+        if is_authenticated() and ORB_DEFAULTS.get('live_trading_enabled', False):
+            try:
+                dm = get_data_manager()
+                kite = dm.kite
+                for pos in open_positions:
+                    tx_type = 'SELL' if pos['direction'] == 'LONG' else 'BUY'
+                    try:
+                        order_id = kite.place_order(
+                            variety=kite.VARIETY_REGULAR,
+                            exchange=kite.EXCHANGE_NSE,
+                            tradingsymbol=pos['instrument'],
+                            transaction_type=tx_type,
+                            quantity=pos['qty'],
+                            product=kite.PRODUCT_MIS,
+                            order_type=kite.ORDER_TYPE_MARKET,
+                        )
+                        # Approximate — real fill from order check
+                        db.close_position(
+                            pos['id'],
+                            exit_price=pos['entry_price'],
+                            exit_time=datetime.now().isoformat(),
+                            exit_reason='EOD_SQUAREOFF',
+                            pnl_pts=0, pnl_inr=0,
+                            kite_exit_order_id=str(order_id),
+                        )
+                        logger.info(f"[ORB] EOD closed {pos['instrument']} order_id={order_id}")
+                    except Exception as oe:
+                        logger.error(f"[ORB] EOD order error {pos['instrument']}: {oe}")
+            except Exception as ke:
+                logger.error(f"[ORB] EOD Kite error: {ke}")
+        else:
+            for pos in open_positions:
+                db.close_position(
+                    pos['id'],
+                    exit_price=pos['entry_price'],
+                    exit_time=datetime.now().isoformat(),
+                    exit_reason='EOD_SQUAREOFF',
+                    pnl_pts=0, pnl_inr=0,
+                )
+            logger.info(f"[ORB] EOD squareoff (DB-only): {len(open_positions)} closed")
+    except Exception as e:
+        logger.error(f"[ORB] EOD squareoff error: {e}")
+
+
+# Register ORB scheduled jobs
+try:
+    scheduler.add_job(
+        _orb_initialize_day,
+        'cron', day_of_week='mon-fri', hour=9, minute=14,
+        id='orb_init_day', replace_existing=True,
+    )
+    scheduler.add_job(
+        _orb_update_or,
+        'cron', day_of_week='mon-fri', hour=9, minute='15-29',
+        id='orb_update_or', replace_existing=True,
+    )
+    scheduler.add_job(
+        _orb_evaluate_signals,
+        'interval', minutes=5,
+        id='orb_eval_signals', replace_existing=True,
+    )
+    scheduler.add_job(
+        _orb_monitor_positions,
+        'interval', seconds=30,
+        id='orb_monitor_pos', replace_existing=True,
+    )
+    scheduler.add_job(
+        _orb_eod_squareoff,
+        'cron', day_of_week='mon-fri', hour=15, minute=20,
+        id='orb_eod_squareoff', replace_existing=True,
+    )
+    logger.info(
+        "ORB scheduled jobs registered: "
+        "init(9:14), OR update(9:15-9:29), signal eval(5min), "
+        "position monitor(30s), EOD squareoff(15:20)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register ORB scheduled jobs: {e}")
 
 
 # --- NAS Performance Report ---------------------------------------------------

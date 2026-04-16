@@ -1,0 +1,277 @@
+//@version=5
+// =====================================================================
+// ORB + VWAP + RSI + CPR Filter [Indian Market] — v2.1
+// ---------------------------------------------------------------------
+// CHANGELOG v2.1:
+//   - FIXED: CPR fetch now uses lookahead-safe pattern.
+//     Previously: request.security(..., [high[1], low[1], close[1]],
+//                 lookahead=barmerge.lookahead_on) — could return wrong
+//                 daily candle reference on first bar of new session,
+//                 causing CPR-direction filter to evaluate against
+//                 incorrect TC/BC values.
+//     Now: fetch today's developing daily HLC with lookahead_off,
+//          then take [1] on the result to get yesterday's completed
+//          HLC. Standard, safe, deterministic.
+//
+// Opening Range Breakout strategy with four independently-toggleable
+// confirmation filters:
+//   1. VWAP direction         - long only above VWAP, short only below
+//   2. Higher-TF RSI          - long only RSI>60, short only RSI<40
+//   3. CPR direction          - long only above TC, short only below BC
+//   4. CPR width              - skip wide-CPR (range-bound) days
+// =====================================================================
+
+strategy("ORB + VWAP + RSI + CPR [Indian Market] v2.1",
+     overlay=true,
+     initial_capital=200000,
+     default_qty_type=strategy.fixed,
+     default_qty_value=1,
+     commission_type=strategy.commission.cash_per_order,
+     commission_value=40,
+     slippage=2,
+     calc_on_every_tick=false,
+     process_orders_on_close=true,
+     pyramiding=0)
+
+// =================== INPUTS ===================
+grpOR = "▶ Opening Range"
+orMinutes        = input.int(15, "OR Window (mins)", minval=5, maxval=60, step=5, group=grpOR,
+     tooltip="First N minutes of session. 15 / 30 / 60 most common.")
+sessionStartHour = input.int(9,  "Session Start Hour (IST)", minval=0, maxval=23, group=grpOR)
+sessionStartMin  = input.int(15, "Session Start Minute (IST)", minval=0, maxval=59, group=grpOR)
+lastEntryHour    = input.int(14, "Last Entry Hour (IST)", minval=10, maxval=15, group=grpOR)
+lastEntryMin     = input.int(0,  "Last Entry Minute (IST)", minval=0, maxval=59, group=grpOR)
+exitHour         = input.int(15, "Square-off Hour (IST)", minval=14, maxval=15, group=grpOR)
+exitMin          = input.int(20, "Square-off Minute (IST)", minval=0, maxval=29, group=grpOR)
+
+grpFilters = "▶ VWAP & RSI Filters"
+useVwapFilter     = input.bool(true, "VWAP Direction Filter", group=grpFilters,
+     tooltip="Long only when price > VWAP; short only when price < VWAP.")
+useRsiFilter      = input.bool(true, "RSI Confirmation Filter", group=grpFilters)
+rsiTf             = input.timeframe("15", "RSI Timeframe", group=grpFilters)
+rsiLength         = input.int(14, "RSI Length", minval=2, maxval=50, group=grpFilters)
+rsiLongThreshold  = input.int(60, "RSI Long Threshold (>)", minval=50, maxval=80, group=grpFilters)
+rsiShortThreshold = input.int(40, "RSI Short Threshold (<)", minval=20, maxval=50, group=grpFilters)
+
+grpCPR = "▶ CPR Filters"
+useCprDirFilter   = input.bool(true, "CPR Direction Filter", group=grpCPR,
+     tooltip="Long only when price > Top Central (TC); short only when price < Bottom Central (BC). When price is inside CPR (accumulation zone), neither direction triggers.")
+useCprWidthFilter = input.bool(true, "Skip Wide CPR Days", group=grpCPR,
+     tooltip="Skip trading on days where CPR width exceeds threshold % of price. Wide CPR = range-bound day expected, where breakouts often fail.")
+cprWidthThreshold = input.float(0.5, "Wide CPR Threshold (% of price)", minval=0.05, maxval=2.0, step=0.05, group=grpCPR,
+     tooltip="CPR width as % of close. 0.5% default for Nifty/Bank Nifty. Lower = stricter (fewer trade days). Typical band: 0.3-0.5%.")
+
+grpRisk = "▶ Risk Management"
+slType        = input.string("OR Opposite", "Stop Loss Type", options=["OR Opposite", "Fixed Points", "ATR Multiple"], group=grpRisk)
+slPoints      = input.float(50.0, "Fixed SL (points)", minval=1.0, group=grpRisk)
+atrLength     = input.int(14, "ATR Length", minval=1, group=grpRisk)
+atrMultSL     = input.float(1.5, "ATR SL Multiple", minval=0.1, step=0.1, group=grpRisk)
+
+targetType    = input.string("R Multiple", "Target Type", options=["R Multiple", "Fixed Points", "OR Range Multiple"], group=grpRisk)
+rMultiple     = input.float(1.5, "R Multiple", minval=0.5, step=0.1, group=grpRisk)
+targetPoints  = input.float(100.0, "Fixed Target (points)", minval=1.0, group=grpRisk)
+orRangeMult   = input.float(1.0, "OR Range Multiple", minval=0.1, step=0.1, group=grpRisk)
+
+useTrailing   = input.bool(false, "Use Trailing SL", group=grpRisk)
+trailPoints   = input.float(20.0, "Trail Points", minval=1.0, group=grpRisk)
+trailOffset   = input.float(10.0, "Trail Offset", minval=1.0, group=grpRisk)
+
+grpDirection = "▶ Direction Control"
+allowLongs     = input.bool(true, "Allow Longs", group=grpDirection)
+allowShorts    = input.bool(true, "Allow Shorts", group=grpDirection)
+oneTradePerDay = input.bool(true, "One Trade Per Day", group=grpDirection,
+     tooltip="Recommended for ORB. Multiple re-entries usually destroy edge.")
+
+grpVisual = "▶ Visualization"
+showOR        = input.bool(true, "Show OR High/Low", group=grpVisual)
+showVwap      = input.bool(true, "Show VWAP", group=grpVisual)
+showCpr       = input.bool(true, "Show CPR (Pivot, TC, BC)", group=grpVisual)
+showSignals   = input.bool(true, "Show Signal Markers", group=grpVisual)
+showInfoTable = input.bool(true, "Show Info Table", group=grpVisual)
+
+// =================== TIME LOGIC ===================
+istHour = hour(time, "Asia/Kolkata")
+istMin  = minute(time, "Asia/Kolkata")
+sessionStartTotalMins = sessionStartHour * 60 + sessionStartMin
+currentTotalMins      = istHour * 60 + istMin
+minsFromOpen          = currentTotalMins - sessionStartTotalMins
+
+lastEntryTotalMins = lastEntryHour * 60 + lastEntryMin
+exitTotalMins      = exitHour * 60 + exitMin
+
+inSession        = minsFromOpen >= 0 and currentTotalMins <= exitTotalMins
+inORWindow       = inSession and minsFromOpen < orMinutes
+afterORWindow    = inSession and minsFromOpen >= orMinutes
+beforeLastEntry  = currentTotalMins < lastEntryTotalMins
+isExitTime       = currentTotalMins >= exitTotalMins
+newSession       = ta.change(dayofmonth(time, "Asia/Kolkata")) != 0
+
+// =================== OPENING RANGE STATE ===================
+var float orHigh      = na
+var float orLow       = na
+var bool  orFinalized = false
+var int   tradesToday = 0
+
+if newSession
+    orHigh      := na
+    orLow       := na
+    orFinalized := false
+    tradesToday := 0
+
+if inORWindow
+    orHigh := na(orHigh) ? high : math.max(orHigh, high)
+    orLow  := na(orLow)  ? low  : math.min(orLow,  low)
+
+if afterORWindow and not orFinalized and not na(orHigh)
+    orFinalized := true
+
+// =================== CPR CALCULATION (v2.1 LOOKAHEAD-SAFE FIX) ===================
+// Fetch today's developing daily HLC with lookahead_off (no future leak),
+// then take [1] on the result to access yesterday's completed daily HLC.
+// This is deterministic across the very first bar of a new session.
+[dayHigh, dayLow, dayClose] = request.security(syminfo.tickerid, "D",
+     [high, low, close], lookahead=barmerge.lookahead_off)
+
+prevDayHigh  = dayHigh[1]
+prevDayLow   = dayLow[1]
+prevDayClose = dayClose[1]
+
+cprPivot     = (prevDayHigh + prevDayLow + prevDayClose) / 3
+cprBC        = (prevDayHigh + prevDayLow) / 2
+cprTC        = (cprPivot - cprBC) + cprPivot
+cprWidth     = math.abs(cprTC - cprBC)
+cprWidthPct  = (cprWidth / close) * 100
+isWideCpr    = cprWidthPct > cprWidthThreshold
+
+priceAboveCpr  = close > cprTC
+priceBelowCpr  = close < cprBC
+priceInsideCpr = close >= cprBC and close <= cprTC
+
+// =================== FILTERS ===================
+vwapValue      = ta.vwap(hlc3)
+priceAboveVwap = close > vwapValue
+priceBelowVwap = close < vwapValue
+
+rsiHTF = request.security(syminfo.tickerid, rsiTf, ta.rsi(close, rsiLength), barmerge.gaps_off, barmerge.lookahead_off)
+
+vwapLongOK  = not useVwapFilter or priceAboveVwap
+vwapShortOK = not useVwapFilter or priceBelowVwap
+rsiLongOK   = not useRsiFilter  or rsiHTF > rsiLongThreshold
+rsiShortOK  = not useRsiFilter  or rsiHTF < rsiShortThreshold
+cprLongOK   = not useCprDirFilter or priceAboveCpr
+cprShortOK  = not useCprDirFilter or priceBelowCpr
+cprWidthOK  = not useCprWidthFilter or not isWideCpr
+
+atrVal = ta.atr(atrLength)
+
+// =================== BREAKOUT DETECTION ===================
+longBreakout  = orFinalized and close > orHigh and close[1] <= orHigh
+shortBreakout = orFinalized and close < orLow  and close[1] >= orLow
+
+canTradeMore = not oneTradePerDay or tradesToday < 1
+flat         = strategy.position_size == 0
+
+longSignal  = allowLongs  and longBreakout  and vwapLongOK  and rsiLongOK  and cprLongOK  and cprWidthOK and beforeLastEntry and canTradeMore and flat
+shortSignal = allowShorts and shortBreakout and vwapShortOK and rsiShortOK and cprShortOK and cprWidthOK and beforeLastEntry and canTradeMore and flat
+
+// =================== SL / TARGET CALCULATION ===================
+calcSL(isLong, entryPrice) =>
+    float sl = na
+    if slType == "OR Opposite"
+        sl := isLong ? orLow : orHigh
+    else if slType == "Fixed Points"
+        sl := isLong ? entryPrice - slPoints : entryPrice + slPoints
+    else
+        sl := isLong ? entryPrice - atrVal * atrMultSL : entryPrice + atrVal * atrMultSL
+    sl
+
+calcTarget(isLong, entryPrice, slPrice) =>
+    float tgt = na
+    risk = math.abs(entryPrice - slPrice)
+    if targetType == "R Multiple"
+        tgt := isLong ? entryPrice + risk * rMultiple : entryPrice - risk * rMultiple
+    else if targetType == "Fixed Points"
+        tgt := isLong ? entryPrice + targetPoints : entryPrice - targetPoints
+    else
+        orRange = orHigh - orLow
+        tgt := isLong ? entryPrice + orRange * orRangeMult : entryPrice - orRange * orRangeMult
+    tgt
+
+// =================== ORDER EXECUTION ===================
+if longSignal
+    sl  = calcSL(true, close)
+    tgt = calcTarget(true, close, sl)
+    strategy.entry("Long", strategy.long)
+    if useTrailing
+        strategy.exit("Long X", from_entry="Long", stop=sl, limit=tgt, trail_points=trailPoints, trail_offset=trailOffset)
+    else
+        strategy.exit("Long X", from_entry="Long", stop=sl, limit=tgt)
+    tradesToday += 1
+
+if shortSignal
+    sl  = calcSL(false, close)
+    tgt = calcTarget(false, close, sl)
+    strategy.entry("Short", strategy.short)
+    if useTrailing
+        strategy.exit("Short X", from_entry="Short", stop=sl, limit=tgt, trail_points=trailPoints, trail_offset=trailOffset)
+    else
+        strategy.exit("Short X", from_entry="Short", stop=sl, limit=tgt)
+    tradesToday += 1
+
+if isExitTime and strategy.position_size != 0
+    strategy.close_all(comment="EOD")
+
+// =================== VISUALIZATION ===================
+plot(showOR and orFinalized ? orHigh : na, "OR High", color=color.new(color.green, 0), linewidth=2, style=plot.style_linebr)
+plot(showOR and orFinalized ? orLow  : na, "OR Low",  color=color.new(color.red,   0), linewidth=2, style=plot.style_linebr)
+plot(showVwap and inSession ? vwapValue : na, "VWAP", color=color.new(color.blue, 0), linewidth=2)
+
+plot(showCpr ? cprPivot : na, "Pivot", color=color.new(color.yellow, 0), linewidth=1, style=plot.style_circles)
+tcPlot = plot(showCpr ? cprTC : na, "TC", color=color.new(color.orange, 30), linewidth=1)
+bcPlot = plot(showCpr ? cprBC : na, "BC", color=color.new(color.orange, 30), linewidth=1)
+fill(tcPlot, bcPlot, color=color.new(color.orange, 92), title="CPR Zone")
+
+bgcolor(inORWindow ? color.new(color.yellow, 92) : na, title="OR Window")
+bgcolor(useCprWidthFilter and isWideCpr ? color.new(color.purple, 95) : na, title="Wide CPR Day (skipped)")
+
+plotshape(showSignals and longSignal,  "Long Entry",  shape.triangleup,   location.belowbar, color.new(color.green, 0), size=size.small)
+plotshape(showSignals and shortSignal, "Short Entry", shape.triangledown, location.abovebar, color.new(color.red,   0), size=size.small)
+
+// =================== INFO TABLE ===================
+var table infoTable = table.new(position.top_right, 2, 12, bgcolor=color.new(color.black, 75), border_width=1, border_color=color.gray)
+if showInfoTable and barstate.islast
+    table.cell(infoTable, 0, 0, "ORB+VWAP+RSI+CPR v2.1", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(infoTable, 1, 0, "STATUS", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(infoTable, 0, 1, "OR High", text_color=color.silver)
+    table.cell(infoTable, 1, 1, na(orHigh) ? "—" : str.tostring(orHigh, "#.##"), text_color=color.lime)
+    table.cell(infoTable, 0, 2, "OR Low", text_color=color.silver)
+    table.cell(infoTable, 1, 2, na(orLow) ? "—" : str.tostring(orLow, "#.##"), text_color=color.red)
+    table.cell(infoTable, 0, 3, "VWAP", text_color=color.silver)
+    table.cell(infoTable, 1, 3, str.tostring(vwapValue, "#.##"), text_color=color.aqua)
+    table.cell(infoTable, 0, 4, "RSI " + rsiTf + "m", text_color=color.silver)
+    rsiColor = rsiHTF > rsiLongThreshold ? color.lime : rsiHTF < rsiShortThreshold ? color.red : color.silver
+    table.cell(infoTable, 1, 4, str.tostring(rsiHTF, "#.#"), text_color=rsiColor)
+    table.cell(infoTable, 0, 5, "CPR Pivot", text_color=color.silver)
+    table.cell(infoTable, 1, 5, str.tostring(cprPivot, "#.##"), text_color=color.yellow)
+    table.cell(infoTable, 0, 6, "CPR TC / BC", text_color=color.silver)
+    table.cell(infoTable, 1, 6, str.tostring(cprTC, "#.##") + " / " + str.tostring(cprBC, "#.##"), text_color=color.orange)
+    table.cell(infoTable, 0, 7, "CPR Width %", text_color=color.silver)
+    cprWidthColor = isWideCpr ? color.red : color.lime
+    cprWidthLabel = str.tostring(cprWidthPct, "#.###") + "%" + (isWideCpr ? " WIDE" : " OK")
+    table.cell(infoTable, 1, 7, cprWidthLabel, text_color=cprWidthColor)
+    table.cell(infoTable, 0, 8, "Price vs CPR", text_color=color.silver)
+    cprPosLabel = priceAboveCpr ? "ABOVE TC" : priceBelowCpr ? "BELOW BC" : "INSIDE CPR"
+    cprPosColor = priceAboveCpr ? color.lime : priceBelowCpr ? color.red : color.gray
+    table.cell(infoTable, 1, 8, cprPosLabel, text_color=cprPosColor)
+    table.cell(infoTable, 0, 9, "Long Filter", text_color=color.silver)
+    longFiltOK = vwapLongOK and rsiLongOK and cprLongOK and cprWidthOK
+    table.cell(infoTable, 1, 9, longFiltOK ? "✓ OK" : "✗ BLOCK", text_color=longFiltOK ? color.lime : color.red)
+    table.cell(infoTable, 0, 10, "Short Filter", text_color=color.silver)
+    shortFiltOK = vwapShortOK and rsiShortOK and cprShortOK and cprWidthOK
+    table.cell(infoTable, 1, 10, shortFiltOK ? "✓ OK" : "✗ BLOCK", text_color=shortFiltOK ? color.lime : color.red)
+    table.cell(infoTable, 0, 11, "Trades Today", text_color=color.silver)
+    table.cell(infoTable, 1, 11, str.tostring(tradesToday), text_color=color.white)
+
+// =================== ALERTS ===================
+alertcondition(longSignal,  "ORB Long",  "ORB Long: above OR High with VWAP+RSI+CPR confirmation")
+alertcondition(shortSignal, "ORB Short", "ORB Short: below OR Low with VWAP+RSI+CPR confirmation")
