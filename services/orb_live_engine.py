@@ -96,6 +96,22 @@ class ORBLiveEngine:
             logger.warning(f"[ORB] Margin check failed: {e}")
             return None
 
+    def _check_fund_alert(self):
+        """Check if available margin is below 1.2x allocation threshold."""
+        if not self._last_margin:
+            return None
+        alloc = self.cfg.get('allocation_per_stock', 15000)
+        min_required = alloc * 1.2
+        available = self._last_margin.get('available', 0)
+        if available < min_required:
+            return {
+                'type': 'warning',
+                'message': f'Low funds: Rs {available:,.0f} available, need Rs {min_required:,.0f} (1.2x per-stock alloc) for next trade',
+                'available': available,
+                'required': min_required,
+            }
+        return None
+
     def _resolve_tokens(self):
         """Resolve NSE instrument tokens for all stocks. Call once per day."""
         if self._tokens_resolved:
@@ -684,13 +700,30 @@ class ORBLiveEngine:
                     logger.warning(f"[ORB] {sym}: qty=0, skipping entry")
                     continue
 
+                alloc = cfg.get('allocation_per_stock', 15000)
+                min_balance_required = alloc * 1.2  # 1.2x buffer
                 required_capital = qty * entry_price
                 available = self._get_available_margin()
+
+                if available is not None and available < min_balance_required:
+                    logger.warning(
+                        f"[ORB] {sym}: LOW FUNDS — available Rs {available:.0f} < "
+                        f"required Rs {min_balance_required:.0f} (1.2x of {alloc}). SKIPPING TRADE."
+                    )
+                    self.db.log_signal(
+                        instrument=sym, signal_time=now.isoformat(),
+                        direction=direction, entry_price=entry_price,
+                        sl_price=sl_price, target_price=target_price,
+                        or_high=or_high, or_low=or_low,
+                        action_taken=f'BLOCKED_LOW_FUNDS (available Rs {available:.0f} < 1.2x Rs {min_balance_required:.0f})',
+                    )
+                    continue
+
                 if available is not None and required_capital > available:
                     old_qty = qty
                     qty = int(available // entry_price)
                     if qty <= 0:
-                        logger.warning(f"[ORB] {sym}: insufficient funds. Need Rs {required_capital:.0f}, have Rs {available:.0f}. Skipping.")
+                        logger.warning(f"[ORB] {sym}: insufficient funds for even 1 share. Skipping.")
                         self.db.log_signal(
                             instrument=sym, signal_time=now.isoformat(),
                             direction=direction, entry_price=entry_price,
@@ -1111,6 +1144,7 @@ class ORBLiveEngine:
             'recent_trades': recent_trades,
             'equity_curve': equity_curve,
             'margin': self._last_margin,
+            'fund_alert': self._check_fund_alert(),
         }
 
     # ===================================================================

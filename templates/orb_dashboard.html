@@ -234,6 +234,11 @@
         </div>
     </div>
 
+    <!-- Fund Alert Banner -->
+    <div id="fundAlert" class="alert alert-warning d-none mb-3 py-2 px-3" style="font-size:0.8rem; border-radius:8px;">
+        <i class="bi bi-exclamation-triangle me-2"></i><span id="fundAlertMsg"></span>
+    </div>
+
     <!-- Admin Tools (collapsed) -->
     <details class="mb-3" style="font-size:0.78rem;">
         <summary style="cursor:pointer; color:#06b6d4; font-weight:600;">
@@ -730,6 +735,17 @@ function updateStats(state) {
     document.getElementById('statDeployed').textContent = 'Rs ' + Math.round(deployed).toLocaleString('en-IN');
     document.getElementById('statDeployed').style.color = deployed > 0 ? '#f59e0b' : '#8b949e';
     document.getElementById('statTotalRisk').textContent = 'Rs ' + Math.round(totalRisk).toLocaleString('en-IN');
+
+    // Fund alert
+    const fundAlert = state.fund_alert;
+    const alertEl = document.getElementById('fundAlert');
+    const alertMsg = document.getElementById('fundAlertMsg');
+    if (fundAlert && fundAlert.message) {
+        alertMsg.textContent = fundAlert.message;
+        alertEl.classList.remove('d-none');
+    } else {
+        alertEl.classList.add('d-none');
+    }
 
     // Enable/Disable badge
     const enabled = state.enabled;
