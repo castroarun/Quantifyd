@@ -5727,117 +5727,43 @@ def _orb_initialize_day():
         logger.error(f"[ORB] Day init error: {e}")
 
 
+def _get_orb_engine():
+    """Get a shared ORBLiveEngine instance."""
+    if not hasattr(_get_orb_engine, '_instance'):
+        from services.orb_live_engine import ORBLiveEngine
+        _get_orb_engine._instance = ORBLiveEngine(ORB_DEFAULTS)
+    return _get_orb_engine._instance
+
+
 def _orb_update_or():
-    """Every 1 min from 9:15-9:30: Update OR high/low from latest 5-min candles."""
+    """Every 1 min from 9:15-9:30: Update OR high/low from Kite API."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
-        from datetime import date as _date, time as _time
-        import sqlite3 as _sqlite3
-
-        db = _get_orb_db()
-        today = _date.today()
-        now = datetime.now().time()
-
-        for sym in ORB_DEFAULTS.get('universe', []):
-            try:
-                conn = _sqlite3.connect(str(DATA_DIR / 'market_data.db'))
-                conn.row_factory = _sqlite3.Row
-                # Get 5-min candles for today between 09:15 and 09:30
-                rows = conn.execute("""
-                    SELECT high, low, open, close
-                    FROM market_data_unified
-                    WHERE symbol=? AND timeframe='5minute'
-                      AND date >= ? AND date < ?
-                    ORDER BY date
-                """, (sym,
-                      f"{today.isoformat()} 09:15:00",
-                      f"{today.isoformat()} 09:30:00")).fetchall()
-                conn.close()
-
-                if rows:
-                    or_high = max(r['high'] for r in rows)
-                    or_low = min(r['low'] for r in rows)
-                    or_range = or_high - or_low
-                    finalized = 1 if now >= _time(9, 30) else 0
-
-                    # Get today's open from first candle for gap calculation
-                    today_open = rows[0]['open']
-                    ds = db.get_or_create_daily_state(sym, today)
-                    prev_close = ds.get('prev_day_close')
-                    gap_pct = ((today_open - prev_close) / prev_close * 100) if prev_close else 0
-
-                    db.update_daily_state(sym, today,
-                        or_high=round(or_high, 2),
-                        or_low=round(or_low, 2),
-                        or_range=round(or_range, 2),
-                        or_finalized=finalized,
-                        today_open=round(today_open, 2),
-                        gap_pct=round(gap_pct, 4),
-                    )
-            except Exception as se:
-                logger.error(f"[ORB] OR update error for {sym}: {se}")
+        engine = _get_orb_engine()
+        engine.update_or()
     except Exception as e:
         logger.error(f"[ORB] OR update error: {e}")
 
 
 def _orb_evaluate_signals():
-    """Every 5 min from 9:30-14:00: Check for breakout signals on all stocks."""
+    """Every 5 min from 9:30-14:00: Check for breakout signals via Kite API."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
-        from datetime import date as _date, time as _time
-        db = _get_orb_db()
-        today = _date.today()
-        now = datetime.now()
-
-        # Check daily loss limit
-        today_closed = db.get_today_closed()
-        day_pnl = sum(p.get('pnl_inr', 0) or 0 for p in today_closed)
-        if day_pnl <= -ORB_DEFAULTS.get('daily_loss_limit', 3_000):
-            logger.info(f"[ORB] Daily loss limit hit ({day_pnl:.0f}), skipping signal eval")
-            return
-
-        for sym in ORB_DEFAULTS.get('universe', []):
-            try:
-                ds = db.get_or_create_daily_state(sym, today)
-                if not ds.get('or_finalized'):
-                    continue
-                if ds.get('is_wide_cpr_day'):
-                    continue
-                if (ds.get('trades_taken', 0) or 0) >= ORB_DEFAULTS.get('max_trades_per_day', 1):
-                    continue
-
-                # Check for existing open position
-                open_pos = db.get_open_positions(instrument=sym)
-                if open_pos:
-                    continue
-
-                logger.debug(f"[ORB] Signal eval for {sym}: OR={ds.get('or_high')}-{ds.get('or_low')}")
-                # Actual breakout detection would use live 5-min candle data
-                # (implemented in the live engine, placeholder here for scheduled job)
-            except Exception as se:
-                logger.error(f"[ORB] Signal eval error for {sym}: {se}")
+        engine = _get_orb_engine()
+        engine.evaluate_signals()
     except Exception as e:
         logger.error(f"[ORB] Signal eval error: {e}")
 
 
 def _orb_monitor_positions():
-    """Every 30 sec from 9:30-15:20: Check SL/target on open positions."""
+    """Every 30 sec: Check SL/target on open positions via Kite LTP."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
-        db = _get_orb_db()
-        open_positions = db.get_open_positions()
-        if not open_positions:
-            return
-
-        # For live monitoring, we'd check LTP against SL/target
-        # This would be replaced by WebSocket tick handler in production
-        for pos in open_positions:
-            logger.debug(f"[ORB] Monitoring {pos['instrument']} "
-                        f"({pos['direction']}): Entry={pos['entry_price']}, "
-                        f"SL={pos['sl_price']}, Tgt={pos['target_price']}")
+        engine = _get_orb_engine()
+        engine.monitor_positions()
     except Exception as e:
         logger.error(f"[ORB] Position monitor error: {e}")
 
@@ -5847,54 +5773,8 @@ def _orb_eod_squareoff():
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
-        db = _get_orb_db()
-        open_positions = db.get_open_positions()
-        if not open_positions:
-            logger.info("[ORB] EOD squareoff: No open positions")
-            return
-
-        logger.info(f"[ORB] EOD squareoff: {len(open_positions)} positions to close")
-
-        if is_authenticated() and ORB_DEFAULTS.get('live_trading_enabled', False):
-            try:
-                dm = get_data_manager()
-                kite = dm.kite
-                for pos in open_positions:
-                    tx_type = 'SELL' if pos['direction'] == 'LONG' else 'BUY'
-                    try:
-                        order_id = kite.place_order(
-                            variety=kite.VARIETY_REGULAR,
-                            exchange=kite.EXCHANGE_NSE,
-                            tradingsymbol=pos['instrument'],
-                            transaction_type=tx_type,
-                            quantity=pos['qty'],
-                            product=kite.PRODUCT_MIS,
-                            order_type=kite.ORDER_TYPE_MARKET,
-                        )
-                        # Approximate — real fill from order check
-                        db.close_position(
-                            pos['id'],
-                            exit_price=pos['entry_price'],
-                            exit_time=datetime.now().isoformat(),
-                            exit_reason='EOD_SQUAREOFF',
-                            pnl_pts=0, pnl_inr=0,
-                            kite_exit_order_id=str(order_id),
-                        )
-                        logger.info(f"[ORB] EOD closed {pos['instrument']} order_id={order_id}")
-                    except Exception as oe:
-                        logger.error(f"[ORB] EOD order error {pos['instrument']}: {oe}")
-            except Exception as ke:
-                logger.error(f"[ORB] EOD Kite error: {ke}")
-        else:
-            for pos in open_positions:
-                db.close_position(
-                    pos['id'],
-                    exit_price=pos['entry_price'],
-                    exit_time=datetime.now().isoformat(),
-                    exit_reason='EOD_SQUAREOFF',
-                    pnl_pts=0, pnl_inr=0,
-                )
-            logger.info(f"[ORB] EOD squareoff (DB-only): {len(open_positions)} closed")
+        engine = _get_orb_engine()
+        engine.eod_squareoff()
     except Exception as e:
         logger.error(f"[ORB] EOD squareoff error: {e}")
 
