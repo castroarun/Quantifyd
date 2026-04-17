@@ -5360,33 +5360,47 @@ def orb_dashboard():
     )
 
 
-_orb_margin_cache = {'data': None, 'ts': 0}
+_orb_cache = {'margin': None, 'margin_ts': 0, 'ltps': {}, 'ltp_ts': 0}
 
 def _orb_get_margin():
-    """Fetch margin from Kite with 60s cache to avoid blocking the dashboard."""
-    import time as _time
-    now = _time.time()
-    # Return cached if less than 60 seconds old
-    if _orb_margin_cache['data'] and (now - _orb_margin_cache['ts']) < 300:  # 5 min cache
-        return _orb_margin_cache['data']
-    try:
-        kite = get_kite()
-        margins = kite.margins()
-        eq = margins.get('equity', {})
-        avail = eq.get('available', {})
-        live = avail.get('live_balance', 0)
-        result = {
-            'available': round(live, 2),
-            'opening_balance': round(avail.get('opening_balance', 0), 2),
-            'cash': round(avail.get('cash', 0), 2),
-            'collateral': round(avail.get('collateral', 0), 2),
-            'used': round(eq.get('utilised', {}).get('debits', 0), 2),
-        }
-        _orb_margin_cache['data'] = result
-        _orb_margin_cache['ts'] = now
-        return result
-    except Exception:
-        return _orb_margin_cache['data']  # return stale cache on error
+    """Return cached margin. Background refresh every 5 min."""
+    import time as _t, threading
+    now = _t.time()
+    if now - _orb_cache['margin_ts'] > 300:
+        _orb_cache['margin_ts'] = now  # prevent parallel fetches
+        def _bg():
+            try:
+                kite = get_kite()
+                eq = kite.margins().get('equity', {}).get('available', {})
+                _orb_cache['margin'] = {
+                    'available': round(eq.get('live_balance', 0), 2),
+                    'cash': round(eq.get('cash', 0), 2),
+                    'used': round(kite.margins().get('equity', {}).get('utilised', {}).get('debits', 0), 2),
+                }
+            except Exception:
+                pass
+        threading.Thread(target=_bg, daemon=True).start()
+    return _orb_cache['margin']
+
+
+def _orb_get_ltps(symbols):
+    """Return cached LTPs. Background refresh every 10 sec."""
+    import time as _t, threading
+    now = _t.time()
+    if now - _orb_cache['ltp_ts'] > 10:
+        _orb_cache['ltp_ts'] = now
+        def _bg():
+            try:
+                kite = get_kite()
+                ltps = kite.ltp(['NSE:' + s for s in symbols])
+                for s in symbols:
+                    ltp = ltps.get('NSE:' + s, {}).get('last_price')
+                    if ltp:
+                        _orb_cache['ltps'][s] = round(ltp, 2)
+            except Exception:
+                pass
+        threading.Thread(target=_bg, daemon=True).start()
+    return _orb_cache['ltps']
 
 
 def _orb_check_fund_alert():
@@ -5440,30 +5454,19 @@ def api_orb_state():
                 'price': today_open,
             }
 
-        # Fetch live LTP for open positions (with timeout protection)
+        # Enrich open positions with cached LTP (non-blocking)
         open_positions = state.get('open_positions', [])
-        if open_positions and is_authenticated():
-            try:
-                import concurrent.futures
-                def _fetch_ltps():
-                    k = get_kite()
-                    return k.ltp(['NSE:' + p['instrument'] for p in open_positions])
-                with concurrent.futures.ThreadPoolExecutor() as ex:
-                    future = ex.submit(_fetch_ltps)
-                    ltps = future.result(timeout=5)  # 5 sec max
-                for pos in open_positions:
-                    ltp = ltps.get('NSE:' + pos['instrument'], {}).get('last_price')
-                    if ltp:
-                        pos['ltp'] = round(ltp, 2)
-                        entry = pos['entry_price']
-                        qty = pos['qty']
-                        if pos['direction'] == 'LONG':
-                            pos['pnl_pts'] = round(ltp - entry, 2)
-                        else:
-                            pos['pnl_pts'] = round(entry - ltp, 2)
-                        pos['pnl_inr'] = round(pos['pnl_pts'] * qty, 2)
-            except Exception:
-                pass
+        if open_positions:
+            ltp_syms = [p['instrument'] for p in open_positions]
+            ltps = _orb_get_ltps(ltp_syms)
+            for pos in open_positions:
+                ltp = ltps.get(pos['instrument'])
+                if ltp:
+                    pos['ltp'] = ltp
+                    entry = pos['entry_price']
+                    qty = pos['qty']
+                    pos['pnl_pts'] = round((ltp - entry) if pos['direction'] == 'LONG' else (entry - ltp), 2)
+                    pos['pnl_inr'] = round(pos['pnl_pts'] * qty, 2)
 
         for pos in open_positions:
             sym = pos['instrument']
