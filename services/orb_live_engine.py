@@ -464,6 +464,9 @@ class ORBLiveEngine:
                         c_dt = c_time
                     else:
                         c_dt = pd.Timestamp(c_time)
+                    # Strip timezone for comparison (Kite returns tz-aware)
+                    if hasattr(c_dt, 'tzinfo') and c_dt.tzinfo is not None:
+                        c_dt = c_dt.replace(tzinfo=None)
                     # Include candles that opened within the OR window
                     if c_dt < or_end:
                         or_candles.append(c)
