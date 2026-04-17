@@ -488,8 +488,8 @@ ORB_DEFAULTS = {
     'use_cpr_dir_filter': True,
     'use_cpr_width_filter': True,
     'cpr_width_threshold_pct': 0.5,
-    'use_gap_filter': True,
-    'gap_long_block_pct': 0.3,         # Block longs if gap-up > 0.3%
+    'use_gap_filter': False,             # Disabled — gap calc unreliable on re-init
+    'gap_long_block_pct': 1.0,         # If re-enabled: block longs only on large gap-ups (>1%)
 
     # Direction control
     'allow_longs': True,

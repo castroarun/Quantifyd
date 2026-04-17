@@ -362,11 +362,21 @@ class ORBLiveEngine:
                 cpr_width_pct = abs(tc - bc) / pivot * 100.0 if pivot > 0 else 0
                 is_wide = 1 if cpr_width_pct > cfg.get('cpr_width_threshold_pct', 0.5) else 0
 
-                # 4. Today's open (from LTP at this time, or first candle later)
-                ltps = self.get_live_ltp([sym])
-                today_open = ltps.get(sym)
+                # 4. Today's open — use first 5-min candle open (9:15), NOT current LTP
+                existing_state = self.db.get_or_create_daily_state(sym, today_str)
+                today_open = existing_state.get('today_open')
+                if not today_open:
+                    # Fetch first 5-min candle for today
+                    session_start = datetime.now().replace(hour=9, minute=15, second=0, microsecond=0)
+                    first_candles = self.fetch_5min_candles(sym, session_start, session_start + timedelta(minutes=5))
+                    if first_candles:
+                        today_open = first_candles[0]['open']
+                    else:
+                        # Fallback to LTP if market hasn't opened yet (pre-9:15 init)
+                        ltps = self.get_live_ltp([sym])
+                        today_open = ltps.get(sym)
 
-                # 5. Gap
+                # 5. Gap (from actual opening price, not current LTP)
                 gap_pct = None
                 if today_open and prev_close and prev_close > 0:
                     gap_pct = round((today_open - prev_close) / prev_close * 100.0, 4)
@@ -944,7 +954,8 @@ class ORBLiveEngine:
                 transaction_type=transaction_type,
                 quantity=qty,
                 product='MIS',
-                order_type='MARKET',
+                order_type='LIMIT',
+                price=round(price * (1.002 if transaction_type == 'BUY' else 0.998), 1),  # 0.2% buffer for fill
             )
             order_id_str = str(order_id)
 
@@ -955,7 +966,7 @@ class ORBLiveEngine:
                 tradingsymbol=instrument,
                 transaction_type=transaction_type,
                 qty=qty,
-                order_type='MARKET',
+                order_type='LIMIT',
                 price=price,
                 kite_order_id=order_id_str,
                 status='PLACED',
@@ -978,7 +989,7 @@ class ORBLiveEngine:
                 tradingsymbol=instrument,
                 transaction_type=transaction_type,
                 qty=qty,
-                order_type='MARKET',
+                order_type='LIMIT',
                 price=price,
                 kite_order_id=None,
                 status='REJECTED',
@@ -1018,7 +1029,8 @@ class ORBLiveEngine:
                 transaction_type=transaction_type,
                 quantity=qty,
                 product='MIS',
-                order_type='MARKET',
+                order_type='LIMIT',
+                price=round(price * (1.002 if transaction_type == 'BUY' else 0.998), 1),  # 0.2% buffer for fill
             )
             kite_exit_order_id = str(order_id)
 
