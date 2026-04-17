@@ -575,6 +575,16 @@ class ORBLiveEngine:
                 close_price = latest['close']
                 prev_close = prev_candle['close']
 
+                # --- Compute indicators (always, for dashboard display) ---
+                vwap = self.compute_vwap(candles)
+                rsi = self.compute_rsi_15m(sym)
+
+                # Persist to DB so dashboard can show them
+                self.db.update_daily_state(sym, today_str,
+                    vwap=vwap,
+                    rsi_15m=rsi,
+                )
+
                 # --- Breakout detection (close-based, with confirmation) ---
                 direction = None
                 if close_price > or_high and prev_close <= or_high:
@@ -584,16 +594,6 @@ class ORBLiveEngine:
 
                 if direction is None:
                     continue
-
-                # --- Compute indicators ---
-                vwap = self.compute_vwap(candles)
-                rsi = self.compute_rsi_15m(sym)
-
-                # Update daily state with latest indicators
-                self.db.update_daily_state(sym, today_str,
-                    vwap=vwap,
-                    rsi_15m=rsi,
-                )
 
                 # --- Filter checks ---
                 filters = {}
