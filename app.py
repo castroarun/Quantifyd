@@ -5367,7 +5367,7 @@ def _orb_get_margin():
     import time as _time
     now = _time.time()
     # Return cached if less than 60 seconds old
-    if _orb_margin_cache['data'] and (now - _orb_margin_cache['ts']) < 60:
+    if _orb_margin_cache['data'] and (now - _orb_margin_cache['ts']) < 300:  # 5 min cache
         return _orb_margin_cache['data']
     try:
         kite = get_kite()
@@ -5440,13 +5440,17 @@ def api_orb_state():
                 'price': today_open,
             }
 
-        # Fetch live LTP for open positions
+        # Fetch live LTP for open positions (with timeout protection)
         open_positions = state.get('open_positions', [])
-        if open_positions:
+        if open_positions and is_authenticated():
             try:
-                kite = get_kite()
-                ltp_keys = ['NSE:' + p['instrument'] for p in open_positions]
-                ltps = kite.ltp(ltp_keys)
+                import concurrent.futures
+                def _fetch_ltps():
+                    k = get_kite()
+                    return k.ltp(['NSE:' + p['instrument'] for p in open_positions])
+                with concurrent.futures.ThreadPoolExecutor() as ex:
+                    future = ex.submit(_fetch_ltps)
+                    ltps = future.result(timeout=5)  # 5 sec max
                 for pos in open_positions:
                     ltp = ltps.get('NSE:' + pos['instrument'], {}).get('last_price')
                     if ltp:
