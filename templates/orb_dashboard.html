@@ -565,6 +565,9 @@ function renderOpenPositions(positions) {
     let html = '';
     positions.forEach((p, i) => {
         const dirClass = p.direction === 'LONG' ? 'pnl-positive' : 'pnl-negative';
+        const ltp = p.ltp ? fmt(p.ltp) : '--';
+        const pnl = p.pnl_inr != null ? fmtRs(p.pnl_inr) : '--';
+        const pnlClass = p.pnl_inr > 0 ? 'pnl-positive' : (p.pnl_inr < 0 ? 'pnl-negative' : '');
         html += `
         <tr>
             <td>${i + 1}</td>
@@ -574,8 +577,8 @@ function renderOpenPositions(positions) {
             <td>${fmt(p.entry_price)}</td>
             <td>${fmt(p.sl_price)}</td>
             <td>${fmt(p.target_price)}</td>
-            <td>--</td>
-            <td>--</td>
+            <td>${ltp}</td>
+            <td class="${pnlClass}" style="font-weight:700;">${pnl}</td>
         </tr>`;
     });
     body.innerHTML = html;
@@ -701,7 +704,9 @@ function renderEquityCurve(data) {
 // --- Update Stats ---
 function updateStats(state) {
     const stats = state.stats || {};
-    document.getElementById('statTrades').textContent = stats.total_trades || 0;
+    const openCount = (state.open_positions || []).length;
+    const totalTrades = (stats.total_trades || 0) + openCount;
+    document.getElementById('statTrades').textContent = totalTrades + (openCount ? ' (' + openCount + ' open)' : '');
     document.getElementById('statWinRate').textContent = (stats.win_rate || 0) + '%';
     document.getElementById('statPF').textContent = fmt(stats.profit_factor || 0);
 

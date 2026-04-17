@@ -5440,7 +5440,28 @@ def api_orb_state():
                 'price': today_open,
             }
 
-        for pos in state.get('open_positions', []):
+        # Fetch live LTP for open positions
+        open_positions = state.get('open_positions', [])
+        if open_positions:
+            try:
+                kite = get_kite()
+                ltp_keys = ['NSE:' + p['instrument'] for p in open_positions]
+                ltps = kite.ltp(ltp_keys)
+                for pos in open_positions:
+                    ltp = ltps.get('NSE:' + pos['instrument'], {}).get('last_price')
+                    if ltp:
+                        pos['ltp'] = round(ltp, 2)
+                        entry = pos['entry_price']
+                        qty = pos['qty']
+                        if pos['direction'] == 'LONG':
+                            pos['pnl_pts'] = round(ltp - entry, 2)
+                        else:
+                            pos['pnl_pts'] = round(entry - ltp, 2)
+                        pos['pnl_inr'] = round(pos['pnl_pts'] * qty, 2)
+            except Exception:
+                pass
+
+        for pos in open_positions:
             sym = pos['instrument']
             if sym in stocks:
                 stocks[sym]['position'] = pos
@@ -5451,8 +5472,9 @@ def api_orb_state():
                 stocks[sym]['today_result'] = pos
 
         # Today's P&L from open + closed positions
-        today_pnl = sum(p.get('pnl_inr', 0) or 0 for p in today_closed)
-        # Open position unrealized P&L (needs LTP — set from frontend)
+        closed_pnl = sum(p.get('pnl_inr', 0) or 0 for p in today_closed)
+        open_pnl = sum(p.get('pnl_inr', 0) or 0 for p in open_positions if p.get('pnl_inr'))
+        today_pnl = closed_pnl + open_pnl
 
         return jsonify({
             'enabled': ORB_DEFAULTS.get('enabled', True),
