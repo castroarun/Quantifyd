@@ -5360,25 +5360,33 @@ def orb_dashboard():
     )
 
 
+_orb_margin_cache = {'data': None, 'ts': 0}
+
 def _orb_get_margin():
-    """Fetch margin from Kite. live_balance = real-time available after all debits."""
+    """Fetch margin from Kite with 60s cache to avoid blocking the dashboard."""
+    import time as _time
+    now = _time.time()
+    # Return cached if less than 60 seconds old
+    if _orb_margin_cache['data'] and (now - _orb_margin_cache['ts']) < 60:
+        return _orb_margin_cache['data']
     try:
         kite = get_kite()
         margins = kite.margins()
         eq = margins.get('equity', {})
         avail = eq.get('available', {})
-        # live_balance = opening_balance - used + intraday_payin + collateral adjustments
-        # This is the REAL available amount for placing new MIS orders
         live = avail.get('live_balance', 0)
-        return {
-            'available': round(live, 2),              # Real-time available for new orders
+        result = {
+            'available': round(live, 2),
             'opening_balance': round(avail.get('opening_balance', 0), 2),
-            'cash': round(avail.get('cash', 0), 2),   # Raw cash component
+            'cash': round(avail.get('cash', 0), 2),
             'collateral': round(avail.get('collateral', 0), 2),
             'used': round(eq.get('utilised', {}).get('debits', 0), 2),
         }
+        _orb_margin_cache['data'] = result
+        _orb_margin_cache['ts'] = now
+        return result
     except Exception:
-        return None
+        return _orb_margin_cache['data']  # return stale cache on error
 
 
 def _orb_check_fund_alert():
