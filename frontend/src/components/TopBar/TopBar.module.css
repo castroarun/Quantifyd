@@ -16,7 +16,8 @@
 
 .stamp {
   font-size: var(--text-xs);
-  color: var(--ink-faint);
+  color: var(--brand-amber);
+  font-variant-numeric: tabular-nums;
 }
 
 .right {

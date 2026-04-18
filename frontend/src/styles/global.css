@@ -40,7 +40,7 @@ body {
 .page-title {
   font-size: var(--text-xl);
   font-weight: var(--weight-medium);
-  color: var(--ink);
+  color: var(--brand-navy);
   letter-spacing: var(--tracking-tight);
   margin-bottom: 4px;
 }

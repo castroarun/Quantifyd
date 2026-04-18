@@ -35,12 +35,12 @@
 
 .active {
   background: var(--nav-active-bg);
-  color: var(--ink);
+  color: var(--brand-navy);
   font-weight: var(--weight-medium);
 }
 
 .active .icon {
-  color: var(--ink);
+  color: var(--brand-navy);
 }
 
 .collapsed {

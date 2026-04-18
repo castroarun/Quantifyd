@@ -21,9 +21,16 @@
   --accent-pos: #0F6E56;
   --accent-neg: #A32D2D;
 
+  /* Brand accents — Option C: Navy primary + Amber warm */
+  --brand-navy: #1E3A8A;
+  --brand-navy-hover: #1E40AF;
+  --brand-navy-soft: #EFF3FA;
+  --brand-amber: #B45309;
+  --brand-amber-soft: #FEF3C7;
+
   /* Active nav state */
-  --nav-active-bg: rgba(0, 0, 0, 0.04);
-  --nav-active-ink: var(--ink);
+  --nav-active-bg: var(--brand-navy-soft);
+  --nav-active-ink: var(--brand-navy);
   --nav-hover-bg: rgba(0, 0, 0, 0.03);
 
   /* Status dot */
@@ -31,13 +38,17 @@
   --status-disconnected: #B4B2A9;
   --status-warning: #C97B20;
 
-  /* Pill/chip backgrounds */
+  /* Pill/chip backgrounds (default ink chip) */
   --chip-bg: #F1EFE8;
   --chip-ink: var(--ink-muted);
 
-  /* Avatar */
-  --avatar-bg: #E1F5EE;
-  --avatar-ink: #0F6E56;
+  /* Accent chip (navy) for informational pills */
+  --chip-accent-bg: var(--brand-navy-soft);
+  --chip-accent-ink: var(--brand-navy);
+
+  /* Avatar — uses navy tint */
+  --avatar-bg: var(--brand-navy-soft);
+  --avatar-ink: var(--brand-navy);
 
   /* Radii */
   --radius-control: 6px;

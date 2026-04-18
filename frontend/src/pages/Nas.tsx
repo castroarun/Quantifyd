@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './Nas.module.css';
 import { apiGet } from '../api/client';
-import { useSSE } from '../api/sse';
-import type { NASState, NASPosition, NASTickPayload } from '../api/types';
+import type { NASState, NASPosition } from '../api/types';
 import StatusDot from '../components/StatusDot/StatusDot';
 import Chip from '../components/Chip/Chip';
 import MetricCard from '../components/Cards/MetricCard';
@@ -341,14 +340,14 @@ interface PanelProps {
 function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
   const [state, setState] = useState<NASState | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [ticks, setTicks] = useState<Record<string, number>>({});
-  const [streamAlive, setStreamAlive] = useState(false);
-  const [spot, setSpot] = useState<number | null>(null);
+  const ticks: Record<string, number> = {};
+  // SSE disabled — was causing worker starvation. Polling state every 10s instead.
+  const streamAlive = false;
+  const spot: number | null = null;
 
   const stateUrl = `/api/${def.key}/state`;
-  const streamUrl = `/api/${def.key}/ticker/stream`;
 
-  // Poll state every 10s
+  // Poll state every 10s (includes positions + LTP via cached margin/ltps)
   useEffect(() => {
     let cancelled = false;
     const load = () => {
@@ -374,23 +373,6 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateUrl]);
-
-  // SSE for live tick updates
-  useSSE<NASTickPayload>(streamUrl, (payload) => {
-    if (payload.type === 'offline') {
-      setStreamAlive(false);
-      return;
-    }
-    setStreamAlive(true);
-    if (typeof payload.spot === 'number') setSpot(payload.spot);
-    if (payload.legs) {
-      const next: Record<string, number> = {};
-      for (const [tsym, info] of Object.entries(payload.legs)) {
-        next[tsym] = info.ltp;
-      }
-      setTicks((prev) => ({ ...prev, ...next }));
-    }
-  });
 
   const positions: NASPosition[] = [
     ...(state?.positions?.ce ?? []),
