@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Mock D — Category hints</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Option D — Minimal ink + category accents (most spec-adherent) */
+  :root {
+    --accent: #1B1B1A;
+    --accent-soft: rgba(0,0,0,0.04);
+    --nav-active-bg: rgba(0,0,0,0.04);
+    /* Per-category accents — only used as tiny dots/borders */
+    --accent-orb: #0F6E56;      /* emerald for ORB cash */
+    --accent-sq: #4F46E5;       /* indigo for NAS squeeze */
+    --accent-916: #B45309;      /* amber for NAS 9:16 */
+  }
+  .nav-item.active { color: var(--ink); }
+  .nav-item.active .icon { color: var(--ink); }
+  .chip { background: var(--chip-bg); color: var(--chip-ink); }
+  .stock-status { background: rgba(0,0,0,0.04); color: var(--ink-secondary); }
+  .option-bar {
+    background: var(--ink); color: #fff;
+    padding: 8px 24px; font-size: 12px; font-weight: 500;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .option-bar a { color: #fff; text-decoration: underline; font-size: 11px; }
+  /* Nav category dots already applied via .cat-accent in shared.css */
+</style>
+</head><body>
+<div class="option-bar">
+  <span>Option D — Category hints (recommended, most spec-adherent)</span>
+  <a href="index.html">← Back to options</a>
+</div>
+<div id="mount"></div>
+<script>
+  fetch('_body.html').then(r => r.text()).then(html => { document.getElementById('mount').innerHTML = html; });
+</script>
+</body></html>

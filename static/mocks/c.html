@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Mock C — Navy + Amber</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Option C — Dual navy + amber (Bloomberg terminal feel) */
+  :root {
+    --accent: #1E3A8A;
+    --accent-hover: #1E40AF;
+    --accent-warm: #B45309;
+    --accent-warm-soft: #FEF3C7;
+    --accent-soft: #EFF3FA;
+    --nav-active-bg: #EFF3FA;
+    --accent-orb: #1E3A8A;
+    --accent-sq: #1E3A8A;
+    --accent-916: #B45309;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item.active .icon { color: var(--accent); }
+  .chip { background: var(--accent-soft); color: var(--accent); }
+  .stock-status { background: var(--accent-warm-soft); color: var(--accent-warm); }
+  .stamp { color: var(--accent-warm); }
+  .page-title { color: var(--accent); }
+  .metric-card { border-color: rgba(30,58,138,0.12); }
+  .option-bar {
+    background: var(--accent); color: #fff;
+    padding: 8px 24px; font-size: 12px; font-weight: 500;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .option-bar a { color: #fff; text-decoration: underline; font-size: 11px; }
+</style>
+</head><body>
+<div class="option-bar">
+  <span>Option C — Navy + Amber dual-accent</span>
+  <a href="index.html">← Back to options</a>
+</div>
+<div id="mount"></div>
+<script>
+  fetch('_body.html').then(r => r.text()).then(html => { document.getElementById('mount').innerHTML = html; });
+</script>
+</body></html>
