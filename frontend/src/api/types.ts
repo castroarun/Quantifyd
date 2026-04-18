@@ -157,18 +157,42 @@ export interface NASStats {
   total_pnl?: number;
   today_pnl?: number;
   total_reentries?: number;
+  win_rate?: number;
+  profit_factor?: number;
+  sl_hits_today?: number;
+  [k: string]: unknown;
+}
+
+export interface NASCoreState {
+  atr_value?: number | null;
+  atr_ma?: number | null;
+  is_squeezing?: number | boolean | null;
+  squeeze_count?: number | null;
+  spot_price?: number | null;
+  day_open?: number | null;
+  daily_atr?: number | null;
+  daily_pnl?: number | null;
+  [k: string]: unknown;
+}
+
+export interface NASConfigShape {
+  paper_trading_mode?: boolean;
+  enabled?: boolean;
+  lots_per_leg?: number;
+  min_squeeze_bars?: number;
+  entry_start_time?: string;
+  entry_end_time?: string;
+  time_exit?: string;
+  eod_squareoff_time?: string;
+  target_entry_premium?: number;
+  max_daily_loss?: number;
   [k: string]: unknown;
 }
 
 export interface NASState {
-  state?: Record<string, unknown>;
+  state?: NASCoreState;
   stats: NASStats;
-  config?: {
-    paper_trading_mode?: boolean;
-    enabled?: boolean;
-    lots_per_leg?: number;
-    [k: string]: unknown;
-  };
+  config?: NASConfigShape;
   positions: {
     ce: NASPosition[];
     pe: NASPosition[];
@@ -184,4 +208,44 @@ export interface NASTickPayload {
   spot?: number;
   legs?: Record<string, { ltp: number; entry: number; leg: 'CE' | 'PE' }>;
   ts?: number;
+}
+
+/* ---------- NAS Report ---------- */
+
+export interface NASReportSystem {
+  total_trades?: number;
+  total_pnl?: number;
+  avg_pnl?: number;
+  win_rate?: number;
+  winners?: number;
+  losers?: number;
+  max_win?: number;
+  max_loss?: number;
+  profit_factor?: number;
+  error?: string;
+}
+
+export interface NASReportDayPosition {
+  id?: number;
+  strangle_id?: number;
+  leg?: string;
+  tradingsymbol?: string;
+  qty?: number;
+  entry_price?: number;
+  exit_price?: number | null;
+  entry_time?: string;
+  exit_time?: string | null;
+  status?: string;
+}
+
+export interface NASReportDaySystem {
+  positions: NASReportDayPosition[];
+  trades: Record<string, unknown>[];
+  day_pnl: number;
+  trade_count: number;
+}
+
+export interface NASReportData {
+  systems: Record<string, NASReportSystem>;
+  daily_snapshots: Record<string, Record<string, NASReportDaySystem>>;
 }

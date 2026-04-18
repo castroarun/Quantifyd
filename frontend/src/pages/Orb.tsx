@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './Orb.module.css';
-import { apiGet, apiPost } from '../api/client';
+import { apiGet } from '../api/client';
 import type {
   ORBState,
   ORBStockSummary,
@@ -20,7 +20,7 @@ import {
   pnlClass,
 } from '../utils/format';
 import { formatTime } from '../utils/time';
-import { IconPlay, IconRefresh, IconPower } from '../components/Icons';
+// action buttons removed — header is title/subtitle only, consistent across pages
 
 /* ---------- helpers ---------- */
 
@@ -88,9 +88,7 @@ export default function Orb() {
   const [state, setState] = useState<ORBState | null>(null);
   const [signals, setSignals] = useState<ORBSignal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,49 +115,6 @@ export default function Orb() {
       clearInterval(id);
     };
   }, []);
-
-  async function onInitialize() {
-    setBusy('init');
-    setErr(null);
-    try {
-      await apiPost('/api/orb/initialize');
-      setToast('Day initialized');
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Initialize failed');
-    } finally {
-      setBusy(null);
-      setTimeout(() => setToast(null), 2500);
-    }
-  }
-
-  async function onScan() {
-    setBusy('scan');
-    setErr(null);
-    try {
-      await apiPost('/api/orb/scan');
-      setToast('Scan queued');
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Scan failed');
-    } finally {
-      setBusy(null);
-      setTimeout(() => setToast(null), 2500);
-    }
-  }
-
-  async function onKill() {
-    if (!confirm('Close all open ORB positions now?')) return;
-    setBusy('kill');
-    setErr(null);
-    try {
-      await apiPost('/api/orb/kill-switch');
-      setToast('Kill switch triggered');
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Kill switch failed');
-    } finally {
-      setBusy(null);
-      setTimeout(() => setToast(null), 2500);
-    }
-  }
 
   const stocksArr = useMemo(() => {
     if (!state?.stocks) return [];
@@ -348,32 +303,9 @@ export default function Orb() {
             {state?.live_trading ? 'Live trading' : 'Paper trading'}
           </div>
         </div>
-        <div className={styles.actions}>
-          <button
-            className={styles.btn}
-            onClick={onInitialize}
-            disabled={busy !== null}
-          >
-            <IconRefresh size={14} />
-            <span>Initialize day</span>
-          </button>
-          <button className={styles.btn} onClick={onScan} disabled={busy !== null}>
-            <IconPlay size={14} />
-            <span>Scan now</span>
-          </button>
-          <button
-            className={`${styles.btn} ${styles.btnDanger}`}
-            onClick={onKill}
-            disabled={busy !== null}
-          >
-            <IconPower size={14} />
-            <span>Kill switch</span>
-          </button>
-        </div>
       </div>
 
       {err ? <div className={styles.error}>{err}</div> : null}
-      {toast ? <div className={styles.toast}>{toast}</div> : null}
 
       {/* summary metrics */}
       <div className={styles.metrics}>
@@ -419,6 +351,15 @@ export default function Orb() {
         />
       </section>
 
+      {/* current indicators */}
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">Current indicators</div>
+          <Chip>Config</Chip>
+        </div>
+        <CurrentIndicators state={state} />
+      </section>
+
       {/* stock scan grid */}
       <section className={styles.section}>
         <div className={styles.sectionHead}>
@@ -435,6 +376,15 @@ export default function Orb() {
             </div>
           ) : null}
         </div>
+      </section>
+
+      {/* whats next */}
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">What's next</div>
+          <Chip>Today's schedule</Chip>
+        </div>
+        <WhatsNext state={state} />
       </section>
 
       {/* signals */}
@@ -464,6 +414,232 @@ export default function Orb() {
           rowKey={(t, i) => `${t.instrument}-${t.exit_time ?? i}`}
         />
       </section>
+
+      {/* system rules */}
+      <section className={styles.section}>
+        <details className={styles.rulesBlock}>
+          <summary className={styles.rulesSummary}>System rules</summary>
+          <div className={styles.rulesBody}>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Universe</span>
+              <span>15 high-beta cash equity stocks</span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Opening range</span>
+              <span>
+                First 15 min (9:15-9:30). Entry on close above OR high (long) or
+                close below OR low (short).
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Filters</span>
+              <span>
+                CPR direction + CPR width below 0.5% + VWAP direction + RSI(15m)
+                above 60 long / below 40 short + gap below 1% for longs.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Stop loss</span>
+              <span>OR opposite</span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Target</span>
+              <span>1.5x risk</span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>EOD</span>
+              <span>15:20 squareoff</span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Position sizing</span>
+              <span>
+                Capital / max concurrent trades. Min margin check: 1.2x
+                allocation.
+              </span>
+            </div>
+          </div>
+        </details>
+      </section>
+    </div>
+  );
+}
+
+/* ---------- Current indicators ---------- */
+
+function CurrentIndicators({ state }: { state: ORBState | null }) {
+  const cfg = state?.config;
+  const items: { label: string; value: React.ReactNode }[] = [
+    {
+      label: 'Allocation per trade',
+      value: cfg ? formatRs(cfg.allocation_per_trade) : '—',
+    },
+    {
+      label: 'Min margin',
+      value: cfg ? formatRs(cfg.min_margin_for_trade) : '—',
+    },
+    {
+      label: 'Max concurrent',
+      value: cfg ? formatInt(cfg.max_concurrent_trades) : '—',
+    },
+    {
+      label: 'R-multiple',
+      value: cfg ? `${cfg.r_multiple}x` : '—',
+    },
+    {
+      label: 'SL type',
+      value: cfg?.sl_type ?? '—',
+    },
+    {
+      label: 'Target type',
+      value: cfg ? `${cfg.r_multiple}x risk` : '—',
+    },
+    {
+      label: 'OR minutes',
+      value: cfg ? `${cfg.or_minutes}m` : '—',
+    },
+    {
+      label: 'Last entry',
+      value: cfg?.last_entry_time ?? '—',
+    },
+    {
+      label: 'EOD exit',
+      value: cfg?.eod_exit_time ?? '—',
+    },
+  ];
+  return (
+    <div className={styles.indicatorsGrid}>
+      {items.map((it) => (
+        <div key={it.label} className={styles.indicatorItem}>
+          <div className={styles.indicatorLabel}>{it.label}</div>
+          <div className={styles.indicatorValue}>{it.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Whats next ---------- */
+
+interface NextEvent {
+  event: string;
+  scheduled: string;
+  status: string;
+  tone: 'pos' | 'neg' | 'neutral';
+  relative: string;
+  sortKey: number;
+}
+
+function minutesFromNowIST(hhmm: string): number {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Kolkata',
+  })
+    .format(now)
+    .split(':');
+  const nowMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  const [h, m] = hhmm.split(':').map((x) => parseInt(x, 10));
+  return h * 60 + m - nowMin;
+}
+
+function relativeLabel(diffMin: number): string {
+  if (diffMin < 0) return 'passed';
+  if (diffMin === 0) return 'now';
+  const h = Math.floor(diffMin / 60);
+  const m = diffMin % 60;
+  if (h === 0) return `in ${m}m`;
+  return `in ${h}h ${m}m`;
+}
+
+function WhatsNext({ state }: { state: ORBState | null }) {
+  // Determine current statuses based on state
+  const stocksArr = Object.values(state?.stocks ?? {});
+  const anyOrFinalized = stocksArr.some((s) => s.daily_state?.or_finalized);
+  const anyTodayOpen = stocksArr.some((s) => s.daily_state?.today_open);
+  const openPositions = state?.open_positions?.length ?? 0;
+
+  // ORB init 9:14
+  const initDiff = minutesFromNowIST('09:14');
+  // OR tracking 9:15-9:30
+  const orStartDiff = minutesFromNowIST('09:15');
+  const orEndDiff = minutesFromNowIST('09:30');
+  const orInProgress = orStartDiff <= 0 && orEndDiff > 0;
+  // Signal eval 9:30 to 14:00
+  const sigStartDiff = minutesFromNowIST('09:30');
+  const sigEndDiff = minutesFromNowIST('14:00');
+  const sigActive = sigStartDiff <= 0 && sigEndDiff > 0;
+  // EOD 15:20
+  const eodDiff = minutesFromNowIST('15:20');
+
+  const events: NextEvent[] = [
+    {
+      event: 'ORB initialize',
+      scheduled: '09:14',
+      status: anyTodayOpen ? 'Done' : initDiff < 0 ? 'Missed' : 'Pending',
+      tone: anyTodayOpen ? 'neutral' : initDiff < 0 ? 'neg' : 'pos',
+      relative: initDiff < 0 ? 'passed' : relativeLabel(initDiff),
+      sortKey: initDiff < 0 ? 9999 : initDiff,
+    },
+    {
+      event: 'OR tracking (9:15-9:30)',
+      scheduled: '09:15-09:30',
+      status: anyOrFinalized ? 'Done' : orInProgress ? 'In progress' : orEndDiff < 0 ? 'Done' : 'Pending',
+      tone: anyOrFinalized || orEndDiff < 0 ? 'neutral' : orInProgress ? 'pos' : 'pos',
+      relative: orInProgress ? 'active' : orStartDiff > 0 ? relativeLabel(orStartDiff) : 'passed',
+      sortKey: orInProgress ? -1 : orStartDiff > 0 ? orStartDiff : 9999,
+    },
+    {
+      event: 'Signal eval (every 5 min)',
+      scheduled: '09:30-14:00',
+      status: sigActive ? 'Active' : sigEndDiff < 0 ? 'Done' : 'Pending',
+      tone: sigActive ? 'pos' : 'neutral',
+      relative: sigActive ? 'active' : sigStartDiff > 0 ? relativeLabel(sigStartDiff) : 'passed',
+      sortKey: sigActive ? -1 : sigStartDiff > 0 ? sigStartDiff : 9999,
+    },
+    {
+      event: 'Position monitor (every 30s)',
+      scheduled: 'Continuous',
+      status: openPositions > 0 ? 'Active' : 'Idle',
+      tone: openPositions > 0 ? 'pos' : 'neutral',
+      relative: openPositions > 0 ? `${openPositions} open` : 'no positions',
+      sortKey: openPositions > 0 ? -1 : 0,
+    },
+    {
+      event: 'EOD squareoff',
+      scheduled: '15:20',
+      status: eodDiff < 0 ? 'Done' : 'Pending',
+      tone: eodDiff < 0 ? 'neutral' : 'pos',
+      relative: relativeLabel(eodDiff),
+      sortKey: eodDiff < 0 ? 9999 : eodDiff,
+    },
+  ];
+
+  events.sort((a, b) => a.sortKey - b.sortKey);
+
+  return (
+    <div className={styles.eventsTable}>
+      <div className={styles.eventsHead}>
+        <div>Event</div>
+        <div>Scheduled</div>
+        <div>Status</div>
+        <div className={styles.eventsHeadRight}>In</div>
+      </div>
+      {events.map((ev, i) => (
+        <div key={i} className={styles.eventsRow}>
+          <div className={styles.eventsEvent}>{ev.event}</div>
+          <div className={styles.eventsTime}>{ev.scheduled}</div>
+          <div>
+            <span className={`${styles.eventStatus} ${styles[`eventStatus_${ev.tone}`]}`}>
+              {ev.status}
+            </span>
+          </div>
+          <div className={styles.eventsHeadRight}>
+            <span className={styles.mute}>{ev.relative}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

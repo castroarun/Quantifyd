@@ -43,6 +43,12 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             label="NAS options"
             active={active === 'nas'}
           />
+          <NavItem
+            to="/report"
+            icon={<IconBarChart />}
+            label="Performance"
+            active={active === 'reports'}
+          />
         </nav>
       </div>
 

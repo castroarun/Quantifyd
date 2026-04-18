@@ -1,0 +1,221 @@
+.root {
+  max-width: 1200px;
+}
+
+.loading {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  padding: 24px 0;
+}
+
+.error {
+  margin: 16px 0;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  color: var(--accent-neg);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
+
+.secondaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.bold {
+  font-weight: var(--weight-medium);
+}
+
+.mute {
+  color: var(--ink-secondary);
+  font-size: var(--text-xs);
+}
+
+.errTag {
+  font-size: var(--text-xxs);
+  color: var(--accent-neg);
+}
+
+.empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+}
+
+/* ---------- day of week ---------- */
+
+.dowCard {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dowRow {
+  display: grid;
+  grid-template-columns: 60px 1fr 140px 100px;
+  gap: 12px;
+  align-items: center;
+}
+
+.dowName {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+}
+
+.dowTrack {
+  height: 10px;
+  background: var(--canvas);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dowFill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 6px;
+  transition: width 200ms ease;
+}
+
+.dowFillPos {
+  background: var(--accent-pos);
+  opacity: 0.75;
+}
+
+.dowFillNeg {
+  background: var(--accent-neg);
+  opacity: 0.75;
+}
+
+.dowValue {
+  text-align: right;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.dowCount {
+  text-align: right;
+}
+
+/* ---------- daily snapshots ---------- */
+
+.daysList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dayBlock {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.daySummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.daySummary::-webkit-details-marker {
+  display: none;
+}
+
+.daySummary::before {
+  content: '+';
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  width: 10px;
+}
+
+.dayBlock[open] > .daySummary::before {
+  content: '-';
+}
+
+.dayName {
+  font-weight: var(--weight-medium);
+}
+
+.dayDate {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.daySpacer {
+  flex: 1;
+}
+
+.dayPnl {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.daySystems {
+  border-top: 0.5px solid var(--hairline-soft);
+  padding: 8px 0;
+}
+
+.daySystemRow {
+  display: grid;
+  grid-template-columns: 1.5fr 100px 120px;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: var(--text-xs);
+  align-items: center;
+}
+
+.daySystemRow:not(:last-child) {
+  border-bottom: 0.5px solid var(--hairline-softest);
+}
+
+.daySystemName {
+  color: var(--ink);
+}
+
+.daySystemTrades {
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+.daySystemPnl {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

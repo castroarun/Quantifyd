@@ -1,93 +1,245 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styles from './Nas.module.css';
 import { apiGet } from '../api/client';
 import { useSSE } from '../api/sse';
 import type { NASState, NASPosition, NASTickPayload } from '../api/types';
 import StatusDot from '../components/StatusDot/StatusDot';
 import Chip from '../components/Chip/Chip';
-import { formatInt, formatNumber, formatPnl, pnlClass } from '../utils/format';
+import MetricCard from '../components/Cards/MetricCard';
+import {
+  formatInt,
+  formatNumber,
+  formatPnl,
+  formatPct,
+  pnlClass,
+} from '../utils/format';
 
 /* ---------- system definitions ---------- */
 
 interface SystemDef {
   id: string;
+  key: string; // used for API paths /api/{key}/...
   label: string;
   subtitle: string;
-  stateUrl: string;
-  streamUrl?: string; // not all 916 variants have streams, but we'll still try
+  rules: string;
+  configNote: string;
+  group: 'squeeze' | '916';
 }
 
 const SQUEEZE_SYSTEMS: SystemDef[] = [
   {
     id: 'nas',
+    key: 'nas',
     label: 'Squeeze · OTM',
     subtitle: 'Original 1.5 ATR OTM strangle',
-    stateUrl: '/api/nas/state',
-    streamUrl: '/api/nas/ticker/stream',
+    rules:
+      'Entry: ATR(14) < SMA(ATR,50) on 5-min → SELL OTM CE+PE at approx Rs 20. Adj: Cross-leg imbalance >= 2x → ROLL_OUT or ROLL_IN alternating. Exit: Time 14:45, EOD 15:15.',
+    configNote: 'OTM: 10L | Premium Rs 20-24',
+    group: 'squeeze',
   },
   {
     id: 'nas-atm',
+    key: 'nas-atm',
     label: 'Squeeze · ATM',
     subtitle: 'ATM strangle with alternating adjustment',
-    stateUrl: '/api/nas-atm/state',
-    streamUrl: '/api/nas-atm/ticker/stream',
+    rules:
+      'Entry: ATR squeeze → SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,2) exit. EOD 15:15.',
+    configNote: 'ATM: 5L | 30% SL',
+    group: 'squeeze',
   },
   {
     id: 'nas-atm2',
+    key: 'nas-atm2',
     label: 'Squeeze · ATM 2.0',
     subtitle: 'Cascading ATM, 4-24 premium bounds',
-    stateUrl: '/api/nas-atm2/state',
-    streamUrl: '/api/nas-atm2/ticker/stream',
+    rules:
+      'Entry: ATR squeeze → SELL ATM CE+PE, SL = 1.3x. Any SL closes BOTH legs and re-enters a new ATM strangle. Max 5 re-entries. EOD 15:15.',
+    configNote: 'ATM 2.0: 5L | 1.3x SL | 5 re-entries',
+    group: 'squeeze',
   },
   {
     id: 'nas-atm4',
+    key: 'nas-atm4',
     label: 'Squeeze · ATM V4',
     subtitle: 'ATM V4 with cross-leg topup',
-    stateUrl: '/api/nas-atm4/state',
-    streamUrl: '/api/nas-atm4/ticker/stream',
+    rules:
+      'Entry: ATR squeeze → SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP (both re-get 30% SLs). 2nd SL: Close stopped leg, naked surviving leg uses ST(7,2) exit. EOD 15:15.',
+    configNote: 'ATM V4: 5L | 1.3x SL | Roll-to-match',
+    group: 'squeeze',
   },
 ];
 
 const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-otm',
+    key: 'nas-916-otm',
     label: '9:16 · OTM',
     subtitle: 'Time-based 9:16 entry, OTM legs',
-    stateUrl: '/api/nas-916-otm/state',
-    streamUrl: '/api/nas-916-otm/ticker/stream',
+    rules:
+      'Entry: Auto-enter at 9:16 AM. SELL OTM CE+PE at approx Rs 20. Adj: Cross-leg imbalance >= 2x → ROLL_OUT or ROLL_IN alternating. Exit: Time 14:45, EOD 15:15.',
+    configNote: '916 OTM: 10L | Premium Rs 20-24',
+    group: '916',
   },
   {
     id: 'nas-916-atm',
+    key: 'nas-916-atm',
     label: '9:16 · ATM',
     subtitle: 'Time-based 9:16 entry, ATM legs',
-    stateUrl: '/api/nas-916-atm/state',
-    streamUrl: '/api/nas-916-atm/ticker/stream',
+    rules:
+      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,2) exit. EOD 15:15.',
+    configNote: '916 ATM: 5L | 30% SL',
+    group: '916',
   },
   {
     id: 'nas-916-atm2',
+    key: 'nas-916-atm2',
     label: '9:16 · ATM 2.0',
     subtitle: '9:16 entry, cascading ATM 2.0',
-    stateUrl: '/api/nas-916-atm2/state',
-    streamUrl: '/api/nas-916-atm2/ticker/stream',
+    rules:
+      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE, SL = 1.3x. Any SL closes BOTH legs and re-enters a new ATM strangle. Max 5 re-entries. EOD 15:15.',
+    configNote: '916 ATM 2.0: 5L | 1.3x SL | 5 re-entries',
+    group: '916',
   },
   {
     id: 'nas-916-atm4',
+    key: 'nas-916-atm4',
     label: '9:16 · ATM V4',
     subtitle: '9:16 entry, ATM V4 cross-leg',
-    stateUrl: '/api/nas-916-atm4/state',
-    streamUrl: '/api/nas-916-atm4/ticker/stream',
+    rules:
+      'Entry: Auto-enter at 9:16 AM. SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP. 2nd SL: Close stopped leg, naked surviving leg uses ST(7,2) exit. EOD 15:15.',
+    configNote: '916 ATM V4: 5L | 1.3x SL | Roll-to-match',
+    group: '916',
   },
 ];
 
+const ALL_SYSTEMS: SystemDef[] = [...SQUEEZE_SYSTEMS, ...ENTRY_916_SYSTEMS];
+
 /* ---------- page ---------- */
 
+interface SystemStateRecord {
+  state: NASState | null;
+  err: string | null;
+}
+
 export default function Nas() {
+  const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
+  const [toast, setToast] = useState<string | null>(null);
+
+  function updateState(id: string, rec: SystemStateRecord) {
+    setStates((prev) => ({ ...prev, [id]: rec }));
+  }
+
+  const squeezeSystems = SQUEEZE_SYSTEMS.map((s) => states[s.id]?.state).filter(
+    Boolean,
+  ) as NASState[];
+  const nineSixteenSystems = ENTRY_916_SYSTEMS.map((s) => states[s.id]?.state).filter(
+    Boolean,
+  ) as NASState[];
+
+  // Pick the first squeeze state that has ATR/squeeze data for the shared header.
+  const headerState: NASState | null = useMemo(() => {
+    for (const s of SQUEEZE_SYSTEMS) {
+      const rec = states[s.id]?.state;
+      if (rec?.state && typeof rec.state.atr_value === 'number') return rec;
+    }
+    return states[SQUEEZE_SYSTEMS[0].id]?.state ?? null;
+  }, [states]);
+
+  const squeezeDayPnl = squeezeSystems.reduce(
+    (acc, s) => acc + ((s.stats?.today_pnl as number | undefined) ?? 0),
+    0,
+  );
+  const nineSixteenDayPnl = nineSixteenSystems.reduce(
+    (acc, s) => acc + ((s.stats?.today_pnl as number | undefined) ?? 0),
+    0,
+  );
+
+  const core = headerState?.state ?? {};
+  const isSqueezing = !!core.is_squeezing;
+  const squeezeCount = (core.squeeze_count as number | undefined) ?? 0;
+  const minBars =
+    (headerState?.config?.min_squeeze_bars as number | undefined) ?? 1;
+  const spot = core.spot_price as number | undefined;
+  const atr = core.atr_value as number | undefined;
+  const atrMa = core.atr_ma as number | undefined;
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }
+
+  /* ---------- whats next schedule ---------- */
+
+  const nextEvents = useMemo(() => buildNextEvents(states), [states]);
+
   return (
     <div className={styles.root}>
       <div className="page-title">NAS options</div>
       <div className="page-subtitle">
         Eight Nifty options systems running in parallel. ATR squeeze entries on the
         left, time-based 9:16 entries on the right.
+      </div>
+
+      {toast ? <div className={styles.toast}>{toast}</div> : null}
+
+      {/* Shared ATR squeeze header */}
+      <div className={styles.headerMetrics}>
+        <MetricCard
+          label="ATR squeeze"
+          value={
+            <span className={styles.squeezeValue}>
+              <StatusDot
+                kind={isSqueezing ? 'connected' : 'disconnected'}
+                className={styles.squeezeDot}
+              />
+              <span>{isSqueezing ? 'Squeeze' : 'Normal'}</span>
+            </span>
+          }
+          hint="ATR(14) vs SMA(ATR,50)"
+        />
+        <MetricCard
+          label="Squeeze bars"
+          value={`${squeezeCount} / ${minBars}`}
+          hint="Consecutive bars"
+        />
+        <MetricCard
+          label="Nifty spot"
+          value={spot !== undefined ? formatNumber(spot) : '—'}
+          hint="Live index price"
+        />
+        <MetricCard
+          label="ATR / ATR MA"
+          value={
+            atr !== undefined && atrMa !== undefined
+              ? `${formatNumber(atr)} / ${formatNumber(atrMa)}`
+              : '—'
+          }
+          hint={
+            atr !== undefined && atrMa !== undefined
+              ? atr < atrMa
+                ? 'Compressed'
+                : 'Expanded'
+              : '—'
+          }
+        />
+        <MetricCard
+          label="Squeeze day P&L"
+          value={
+            <span className={pnlClass(squeezeDayPnl)}>
+              {formatPnl(squeezeDayPnl)}
+            </span>
+          }
+          hint="OTM + ATM + ATM 2.0 + ATM V4"
+        />
+        <MetricCard
+          label="9:16 day P&L"
+          value={
+            <span className={pnlClass(nineSixteenDayPnl)}>
+              {formatPnl(nineSixteenDayPnl)}
+            </span>
+          }
+          hint="All four 9:16 systems"
+        />
       </div>
 
       <div className={styles.columns}>
@@ -98,7 +250,12 @@ export default function Nas() {
           </div>
           <div className={styles.panelList}>
             {SQUEEZE_SYSTEMS.map((s) => (
-              <SystemPanel key={s.id} def={s} />
+              <SystemPanel
+                key={s.id}
+                def={s}
+                onStateChange={(rec) => updateState(s.id, rec)}
+                onToast={showToast}
+              />
             ))}
           </div>
         </div>
@@ -112,37 +269,101 @@ export default function Nas() {
           </div>
           <div className={styles.panelList}>
             {ENTRY_916_SYSTEMS.map((s) => (
-              <SystemPanel key={s.id} def={s} />
+              <SystemPanel
+                key={s.id}
+                def={s}
+                onStateChange={(rec) => updateState(s.id, rec)}
+                onToast={showToast}
+              />
             ))}
           </div>
         </div>
       </div>
+
+      {/* What's next */}
+      <section className={styles.sectionBlock}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">What's next</div>
+          <Chip>{nextEvents.length} events</Chip>
+        </div>
+        <div className={styles.eventsTable}>
+          <div className={styles.eventsHead}>
+            <div>System</div>
+            <div>Event</div>
+            <div>Scheduled</div>
+            <div>Status</div>
+            <div className={styles.eventsHeadRight}>In</div>
+          </div>
+          {nextEvents.map((ev, i) => (
+            <div key={`${ev.system}-${ev.event}-${i}`} className={styles.eventsRow}>
+              <div className={styles.eventsSystem}>{ev.system}</div>
+              <div>{ev.event}</div>
+              <div className={styles.eventsTime}>{ev.scheduled}</div>
+              <div>
+                <span className={`${styles.status} ${styles[`status_${ev.tone}`]}`}>
+                  {ev.status}
+                </span>
+              </div>
+              <div className={styles.eventsHeadRight}>
+                <span className={styles.mute}>{ev.relative}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Config footer */}
+      <section className={styles.sectionBlock}>
+        <div className={styles.configFooter}>
+          <div className={styles.configTitle}>Config overview</div>
+          <div className={styles.configList}>
+            {ALL_SYSTEMS.map((s) => (
+              <div key={s.id} className={styles.configItem}>
+                <span className={styles.configSysLabel}>{s.label}</span>
+                <span className={styles.configSysNote}>{s.configNote}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
 /* ---------- panel per system ---------- */
 
-function SystemPanel({ def }: { def: SystemDef }) {
+interface PanelProps {
+  def: SystemDef;
+  onStateChange: (rec: SystemStateRecord) => void;
+  onToast: (msg: string) => void;
+}
+
+function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
   const [state, setState] = useState<NASState | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [ticks, setTicks] = useState<Record<string, number>>({}); // tradingsymbol → ltp
+  const [ticks, setTicks] = useState<Record<string, number>>({});
   const [streamAlive, setStreamAlive] = useState(false);
   const [spot, setSpot] = useState<number | null>(null);
+
+  const stateUrl = `/api/${def.key}/state`;
+  const streamUrl = `/api/${def.key}/ticker/stream`;
 
   // Poll state every 10s
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      apiGet<NASState>(def.stateUrl)
+      apiGet<NASState>(stateUrl)
         .then((s) => {
-          if (!cancelled) {
-            setState(s);
-            setErr(null);
-          }
+          if (cancelled) return;
+          setState(s);
+          setErr(null);
+          onStateChange({ state: s, err: null });
         })
         .catch((e) => {
-          if (!cancelled) setErr(e instanceof Error ? e.message : 'Load failed');
+          if (cancelled) return;
+          const msg = e instanceof Error ? e.message : 'Load failed';
+          setErr(msg);
+          onStateChange({ state: null, err: msg });
         });
     };
     load();
@@ -151,10 +372,11 @@ function SystemPanel({ def }: { def: SystemDef }) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [def.stateUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateUrl]);
 
   // SSE for live tick updates
-  useSSE<NASTickPayload>(def.streamUrl ?? null, (payload) => {
+  useSSE<NASTickPayload>(streamUrl, (payload) => {
     if (payload.type === 'offline') {
       setStreamAlive(false);
       return;
@@ -175,13 +397,11 @@ function SystemPanel({ def }: { def: SystemDef }) {
     ...(state?.positions?.pe ?? []),
   ];
 
-  // Merge live ticks into open positions for display P&L
   const enriched = positions.map((p) => {
     const live = p.tradingsymbol ? ticks[p.tradingsymbol] : undefined;
     const ltp = live ?? p.ltp;
     let pnl = p.pnl_inr;
     if (live !== undefined && p.entry_premium !== undefined && p.qty) {
-      // Short premium: profit = (entry − ltp) × qty
       pnl = Math.round((p.entry_premium - live) * p.qty * 100) / 100;
     }
     return { ...p, ltp, pnl_inr: pnl };
@@ -190,16 +410,31 @@ function SystemPanel({ def }: { def: SystemDef }) {
   const totalPnl = enriched.reduce((acc, p) => acc + (p.pnl_inr ?? 0), 0);
   const dayPnl = (state?.stats?.today_pnl as number | undefined) ?? totalPnl;
   const reentries = (state?.stats?.total_reentries as number | undefined) ?? 0;
+  const winRate = state?.stats?.win_rate as number | undefined;
+  const pf = state?.stats?.profit_factor as number | undefined;
+  const slHits = state?.stats?.sl_hits_today as number | undefined;
 
   const enabled = !!state?.config?.enabled;
   const paper = !!state?.config?.paper_trading_mode;
 
+  // action buttons removed — header is title/subtitle only, consistent across pages
+
   return (
     <div className={styles.panel}>
       <div className={styles.panelHead}>
-        <div>
+        <div className={styles.panelHeadLeft}>
           <div className={styles.panelTitle}>{def.label}</div>
           <div className={styles.panelSub}>{def.subtitle}</div>
+          <div className={styles.badgeRow}>
+            <span className={`${styles.modeBadge} ${paper ? styles.modePaper : styles.modeLive}`}>
+              {paper ? 'Paper' : 'Live'}
+            </span>
+            <span
+              className={`${styles.modeBadge} ${enabled ? styles.modeOn : styles.modeOff}`}
+            >
+              {enabled ? 'On' : 'Off'}
+            </span>
+          </div>
         </div>
         <div className={styles.panelStatus}>
           <StatusDot
@@ -224,10 +459,7 @@ function SystemPanel({ def }: { def: SystemDef }) {
           label="Active"
           value={formatInt(state?.positions?.total_active ?? 0)}
         />
-        <MiniMetric
-          label="Re-entries"
-          value={formatInt(reentries)}
-        />
+        <MiniMetric label="Re-entries" value={formatInt(reentries)} />
         <MiniMetric
           label="Day P&L"
           value={
@@ -250,6 +482,23 @@ function SystemPanel({ def }: { def: SystemDef }) {
           enriched.map((p, i) => <LegRow key={(p.tradingsymbol ?? '') + i} leg={p} />)
         )}
       </div>
+
+      <div className={styles.statsMiniRow}>
+        <MiniMetric
+          label="Win rate"
+          value={winRate !== undefined ? formatPct(winRate, 1) : '—'}
+        />
+        <MiniMetric
+          label="Profit factor"
+          value={pf !== undefined ? formatNumber(pf, 2) : '—'}
+        />
+        <MiniMetric label="SL hits today" value={formatInt(slHits ?? 0)} />
+      </div>
+
+      <details className={styles.rules}>
+        <summary className={styles.rulesSummary}>Rules</summary>
+        <div className={styles.rulesBody}>{def.rules}</div>
+      </details>
 
       {err ? <div className={styles.errRow}>{err}</div> : null}
     </div>
@@ -299,3 +548,128 @@ function LegRow({ leg }: { leg: NASPosition }) {
   );
 }
 
+/* ---------- next events helper ---------- */
+
+interface NextEvent {
+  system: string;
+  event: string;
+  scheduled: string;
+  status: string;
+  tone: 'pos' | 'neg' | 'neutral';
+  relative: string;
+  sortKey: number;
+}
+
+function minutesFromNowIST(hhmm: string): number {
+  // IST current time
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Kolkata',
+  })
+    .format(now)
+    .split(':');
+  const nowMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  const [h, m] = hhmm.split(':').map((x) => parseInt(x, 10));
+  const targetMin = h * 60 + m;
+  return targetMin - nowMin;
+}
+
+function relativeLabel(diffMin: number): string {
+  if (diffMin < 0) return 'passed';
+  if (diffMin === 0) return 'now';
+  const h = Math.floor(diffMin / 60);
+  const m = diffMin % 60;
+  if (h === 0) return `in ${m}m`;
+  return `in ${h}h ${m}m`;
+}
+
+function buildNextEvents(
+  states: Record<string, SystemStateRecord>,
+): NextEvent[] {
+  const events: NextEvent[] = [];
+
+  for (const def of ALL_SYSTEMS) {
+    const rec = states[def.id];
+    const enabled = !!rec?.state?.config?.enabled;
+    const cfg = rec?.state?.config ?? {};
+
+    // Entry event — for 9:16 systems only
+    if (def.group === '916') {
+      const diff = minutesFromNowIST('09:16');
+      events.push({
+        system: def.label,
+        event: 'Auto-entry at 9:16',
+        scheduled: '09:16',
+        status: diff < 0 ? 'Done' : enabled ? 'Pending' : 'Disabled',
+        tone: diff < 0 ? 'neutral' : enabled ? 'pos' : 'neutral',
+        relative: relativeLabel(diff),
+        sortKey: diff < 0 ? 9999 : diff,
+      });
+    } else {
+      // Squeeze entry — continuous during entry window
+      const startHHMM =
+        (cfg.entry_start_time as string | undefined) ?? '09:30';
+      const endHHMM =
+        (cfg.entry_end_time as string | undefined) ?? '14:30';
+      const startDiff = minutesFromNowIST(startHHMM);
+      const endDiff = minutesFromNowIST(endHHMM);
+      const active = startDiff <= 0 && endDiff > 0;
+      events.push({
+        system: def.label,
+        event: 'Re-enter on squeeze',
+        scheduled: `${startHHMM}-${endHHMM}`,
+        status: !enabled ? 'Disabled' : active ? 'Active' : endDiff <= 0 ? 'Done' : 'Pending',
+        tone: !enabled ? 'neutral' : active ? 'pos' : 'neutral',
+        relative: active ? 'active' : startDiff > 0 ? relativeLabel(startDiff) : 'passed',
+        sortKey: active ? -1 : startDiff > 0 ? startDiff : 9999,
+      });
+    }
+
+    // Time exit (14:45) for OTM-flavoured systems
+    if (def.id === 'nas' || def.id === 'nas-916-otm') {
+      const t = (cfg.time_exit as string | undefined) ?? '14:45';
+      const diff = minutesFromNowIST(t);
+      events.push({
+        system: def.label,
+        event: 'Time exit',
+        scheduled: t,
+        status: diff < 0 ? 'Done' : 'Pending',
+        tone: diff < 0 ? 'neutral' : 'pos',
+        relative: relativeLabel(diff),
+        sortKey: diff < 0 ? 9999 : diff,
+      });
+    }
+
+    // EOD squareoff
+    const eod = (cfg.eod_squareoff_time as string | undefined) ?? '15:15';
+    const diff = minutesFromNowIST(eod);
+    events.push({
+      system: def.label,
+      event: 'EOD squareoff',
+      scheduled: eod,
+      status: diff < 0 ? 'Done' : 'Pending',
+      tone: diff < 0 ? 'neutral' : 'pos',
+      relative: relativeLabel(diff),
+      sortKey: diff < 0 ? 9999 : diff,
+    });
+  }
+
+  // Daily summary at 15:20
+  const diff = minutesFromNowIST('15:20');
+  events.push({
+    system: 'All systems',
+    event: 'Daily summary',
+    scheduled: '15:20',
+    status: diff < 0 ? 'Done' : 'Pending',
+    tone: 'neutral',
+    relative: relativeLabel(diff),
+    sortKey: diff < 0 ? 9999 : diff,
+  });
+
+  // Sort by nearest event first, past events at end
+  events.sort((a, b) => a.sortKey - b.sortKey);
+  return events;
+}

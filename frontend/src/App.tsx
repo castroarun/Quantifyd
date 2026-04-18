@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Strategies from './pages/Strategies';
 import Orb from './pages/Orb';
 import Nas from './pages/Nas';
+import Report from './pages/Report';
 import NotFound from './pages/NotFound';
 
 type AuthState = 'unknown' | 'auth' | 'noauth';
@@ -89,6 +90,16 @@ export default function App() {
           <Protected>
             <AppLayout active="nas">
               <Nas />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/report"
+        element={
+          <Protected>
+            <AppLayout active="reports">
+              <Report />
             </AppLayout>
           </Protected>
         }
