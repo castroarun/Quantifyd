@@ -14,11 +14,18 @@
 }
 
 .value {
-  font-size: var(--text-lg);
+  font-size: 18px;
   font-weight: var(--weight-medium);
   color: var(--ink);
   letter-spacing: var(--tracking-tight);
-  line-height: 1.2;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 640px) {
+  .value { font-size: 16px; }
 }
 
 .hint {

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quantifyd — color mocks</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B1B1A'/%3E%3Ctext x='16' y='23' font-family='Inter,system-ui,sans-serif' font-size='20' font-weight='500' fill='%23FAFAF9' text-anchor='middle'%3EQ%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #FAFAF9; color: #1B1B1A; padding: 56px 48px; min-height: 100vh; }
+  h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 8px; }
+  p { font-size: 13px; color: #888780; margin-bottom: 40px; max-width: 560px; line-height: 1.6; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 900px; }
+  .card {
+    background: #fff;
+    border: 0.5px solid rgba(0,0,0,0.10);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #1B1B1A;
+    display: block;
+    transition: border-color 150ms ease;
+  }
+  .card:hover { border-color: rgba(0,0,0,0.15); }
+  .card h2 { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .card .desc { font-size: 12px; color: #888780; line-height: 1.5; margin-bottom: 12px; }
+  .swatches { display: flex; gap: 8px; }
+  .swatch { width: 18px; height: 18px; border-radius: 4px; border: 0.5px solid rgba(0,0,0,0.10); }
+</style>
+</head>
+<body>
+  <h1>Quantifyd — color mock options</h1>
+  <p>Four ways to introduce professional color splashes. Open each, then tell me which feels right. The base monochrome design stays the same; only the accent color changes.</p>
+
+  <div class="grid">
+    <a class="card" href="a.html">
+      <h2>A — Emerald accent</h2>
+      <div class="desc">Deep emerald for active states and highlights. Trustworthy, financial, Zoom/Stripe feel.</div>
+      <div class="swatches">
+        <div class="swatch" style="background:#FAFAF9"></div>
+        <div class="swatch" style="background:#FFFFFF"></div>
+        <div class="swatch" style="background:#0F6E56"></div>
+        <div class="swatch" style="background:#E1F5EE"></div>
+      </div>
+    </a>
+
+    <a class="card" href="b.html">
+      <h2>B — Indigo accent</h2>
+      <div class="desc">Modern indigo for active states. Linear/Notion feel — tech-professional, slightly playful.</div>
+      <div class="swatches">
+        <div class="swatch" style="background:#FAFAF9"></div>
+        <div class="swatch" style="background:#FFFFFF"></div>
+        <div class="swatch" style="background:#4F46E5"></div>
+        <div class="swatch" style="background:#EEF2FF"></div>
+      </div>
+    </a>
+
+    <a class="card" href="c.html">
+      <h2>C — Dual navy + amber</h2>
+      <div class="desc">Deep navy for structure, amber for highlights/timestamps. Serious financial-terminal feel.</div>
+      <div class="swatches">
+        <div class="swatch" style="background:#FAFAF9"></div>
+        <div class="swatch" style="background:#FFFFFF"></div>
+        <div class="swatch" style="background:#1E3A8A"></div>
+        <div class="swatch" style="background:#B45309"></div>
+      </div>
+    </a>
+
+    <a class="card" href="d.html">
+      <h2>D — Category hints (recommended)</h2>
+      <div class="desc">Minimal ink base, tiny colored dots/borders to distinguish strategies. Most spec-adherent.</div>
+      <div class="swatches">
+        <div class="swatch" style="background:#FAFAF9"></div>
+        <div class="swatch" style="background:#0F6E56"></div>
+        <div class="swatch" style="background:#4F46E5"></div>
+        <div class="swatch" style="background:#B45309"></div>
+      </div>
+    </a>
+  </div>
+</body>
+</html>

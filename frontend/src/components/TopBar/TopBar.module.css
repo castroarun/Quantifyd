@@ -28,4 +28,13 @@
 .user {
   font-size: var(--text-xs);
   color: var(--ink-secondary);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .bar { padding: 10px 14px; }
+  .user { display: none; }
+  .right { gap: 10px; }
 }

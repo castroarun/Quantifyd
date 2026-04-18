@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Mock A — Emerald</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Option A — Emerald accent */
+  :root {
+    --accent: #0F6E56;
+    --accent-hover: #0A5242;
+    --accent-soft: #E1F5EE;
+    --nav-active-bg: #E1F5EE;
+    --accent-orb: #0F6E56;
+    --accent-sq: #0F6E56;
+    --accent-916: #0F6E56;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item.active .icon { color: var(--accent); }
+  .chip { background: var(--accent-soft); color: var(--accent); }
+  .stock-status { background: var(--accent-soft); color: var(--accent); }
+  .page-title { color: var(--ink); }
+  .metric-card { border-color: rgba(15,110,86,0.12); }
+  .strategy-card.orb { border-left: 2px solid var(--accent-orb); }
+  .option-bar {
+    background: var(--accent); color: #fff;
+    padding: 8px 24px; font-size: 12px; font-weight: 500;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .option-bar a { color: #fff; text-decoration: underline; font-size: 11px; }
+</style>
+</head><body>
+<div class="option-bar">
+  <span>Option A — Emerald accent</span>
+  <a href="index.html">← Back to options</a>
+</div>
+<div id="mount"></div>
+<script>
+  fetch('_body.html').then(r => r.text()).then(html => { document.getElementById('mount').innerHTML = html; });
+</script>
+</body></html>

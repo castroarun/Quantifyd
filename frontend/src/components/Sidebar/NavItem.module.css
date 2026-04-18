@@ -42,3 +42,9 @@
 .active .icon {
   color: var(--ink);
 }
+
+.collapsed {
+  justify-content: center;
+  padding: 9px 0;
+  gap: 0;
+}

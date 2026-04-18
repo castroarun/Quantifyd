@@ -80,6 +80,12 @@
   gap: 12px;
   margin-bottom: 32px;
 }
+@media (max-width: 900px) {
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .metrics { grid-template-columns: 1fr; gap: 8px; }
+}
 
 .section { margin-bottom: 32px; }
 
