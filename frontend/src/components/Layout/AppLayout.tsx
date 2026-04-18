@@ -29,7 +29,7 @@ export default function AppLayout({ active, children, topBarRight }: Props) {
     <div className={styles.root}>
       <Sidebar active={active} userName={userName} />
       <div className={styles.main}>
-        <TopBar right={topBarRight} />
+        <TopBar userName={userName} right={topBarRight} />
         <div className={styles.content}>{children}</div>
       </div>
     </div>

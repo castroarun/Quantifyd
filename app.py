@@ -5387,7 +5387,12 @@ def orb_dashboard():
 _orb_cache = {'margin': None, 'margin_ts': 0, 'ltps': {}, 'ltp_ts': 0}
 
 def _orb_get_margin():
-    """Return cached margin. Background refresh every 5 min."""
+    """Return cached margin. Background refresh every 5 min.
+
+    For MIS equity intraday, the actual usable amount is 'cash' component
+    (what Zerodha blocks for new MIS orders). 'live_balance' can go negative
+    when holdings/FnO margin exceeds cash+collateral — not useful for new trades.
+    """
     import time as _t, threading
     now = _t.time()
     if now - _orb_cache['margin_ts'] > 300:
@@ -5395,11 +5400,21 @@ def _orb_get_margin():
         def _bg():
             try:
                 kite = get_kite()
-                eq = kite.margins().get('equity', {}).get('available', {})
+                margins = kite.margins()
+                eq = margins.get('equity', {})
+                avail = eq.get('available', {})
+                used = eq.get('utilised', {}).get('debits', 0)
+                cash = avail.get('cash', 0)
+                live_balance = avail.get('live_balance', 0)
+                # Use max(cash, 0) as the "available" figure — this is what's
+                # actually free for placing new MIS equity orders. live_balance
+                # can be misleading when holdings/FnO margin is high.
+                available_for_mis = max(cash, 0)
                 _orb_cache['margin'] = {
-                    'available': round(eq.get('live_balance', 0), 2),
-                    'cash': round(eq.get('cash', 0), 2),
-                    'used': round(kite.margins().get('equity', {}).get('utilised', {}).get('debits', 0), 2),
+                    'available': round(available_for_mis, 2),
+                    'cash': round(cash, 2),
+                    'live_balance': round(live_balance, 2),
+                    'used': round(used, 2),
                 }
             except Exception:
                 pass

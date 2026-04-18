@@ -6,10 +6,11 @@ import { nowStamp } from '../../utils/time';
 interface Props {
   connected?: boolean;
   connectedLabel?: string;
+  userName?: string;
   right?: React.ReactNode;
 }
 
-export default function TopBar({ connected = true, connectedLabel, right }: Props) {
+export default function TopBar({ connected = true, connectedLabel, userName, right }: Props) {
   const [stamp, setStamp] = useState(nowStamp());
   useEffect(() => {
     const id = setInterval(() => setStamp(nowStamp()), 1000);
@@ -22,6 +23,7 @@ export default function TopBar({ connected = true, connectedLabel, right }: Prop
         <span className={styles.stamp}>{stamp}</span>
       </div>
       <div className={styles.right}>
+        {userName ? <span className={styles.user}>{userName}</span> : null}
         <StatusDot
           kind={connected ? 'connected' : 'disconnected'}
           label={connectedLabel ?? (connected ? 'Connected to Kite' : 'Disconnected')}
