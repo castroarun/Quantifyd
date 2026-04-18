@@ -17,13 +17,25 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiGet<AuthStatus>('/api/auth/status')
-      .then((r) => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiGet<AuthStatus>('/api/auth/status');
+        if (cancelled) return;
         setStatus(r);
-        if (r.authenticated) navigate('/strategies', { replace: true });
-      })
-      .catch(() => setStatus({ authenticated: false }));
-  }, [navigate]);
+        if (r.authenticated) {
+          navigate('/strategies', { replace: true });
+          return;
+        }
+        // Not authenticated — auto-trigger TOTP login
+        await handleLogin();
+      } catch {
+        if (!cancelled) setStatus({ authenticated: false });
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleLogin() {
     setBusy(true);
@@ -64,7 +76,7 @@ export default function Login() {
         </div>
 
         <button className={styles.btn} onClick={handleLogin} disabled={busy}>
-          {busy ? 'Signing in…' : 'Login via TOTP'}
+          {busy ? 'Signing in…' : 'Retry login'}
         </button>
 
         {error ? <div className={styles.error}>{error}</div> : null}
