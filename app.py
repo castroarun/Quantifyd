@@ -113,6 +113,30 @@ def login_required(f):
 # Authentication Routes
 # =============================================================================
 
+
+# =============================================================================
+# Quantifyd v2 — React SPA (new design system)
+# Serves the React app at /app/* — client-side routing handled by React Router
+# =============================================================================
+from flask import send_from_directory
+
+@app.route('/app')
+@app.route('/app/')
+@app.route('/app/<path:subpath>')
+def serve_react_app(subpath=''):
+    """Serve React SPA. All /app/* routes return index.html for client-side routing.
+    Assets under /app/assets/* are served directly."""
+    app_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'app')
+    # Assets are served via /app/assets/* — handle them explicitly
+    if subpath.startswith('assets/'):
+        return send_from_directory(app_dir, subpath)
+    # Favicon or other static files at /app/<file>
+    if subpath and os.path.exists(os.path.join(app_dir, subpath)) and not os.path.isdir(os.path.join(app_dir, subpath)):
+        return send_from_directory(app_dir, subpath)
+    # All other paths: serve index.html (React Router handles routing)
+    return send_from_directory(app_dir, 'index.html')
+
+
 @app.route('/')
 def index():
     """Landing page with login status"""

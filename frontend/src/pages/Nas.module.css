@@ -1,0 +1,192 @@
+.root {
+  max-width: 1200px;
+}
+
+.columns {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  margin-top: 16px;
+}
+
+.col {
+  flex: 1;
+  min-width: 0;
+}
+
+.colHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.divider {
+  width: 0.5px;
+  background: var(--hairline-soft);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.panelList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- panel ---------- */
+
+.panel {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: 2px;
+}
+
+.panelSub {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.panelStatus {
+  flex-shrink: 0;
+}
+
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--hairline-soft);
+}
+
+.mini {
+  min-width: 0;
+}
+
+.miniLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-bottom: 3px;
+}
+
+.miniValue {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.spotRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--canvas);
+  border-radius: var(--radius-control);
+  font-variant-numeric: tabular-nums;
+}
+
+.spotLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+}
+
+.spotValue {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+}
+
+.legs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--hairline-soft);
+}
+
+.noLegs {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  padding: 4px 0;
+}
+
+.leg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.legMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.legSide {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  background: var(--chip-bg);
+  padding: 2px 6px;
+  border-radius: var(--radius-control);
+  flex-shrink: 0;
+}
+
+.legSym {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legNums {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.legSmall {
+  font-size: var(--text-xs);
+  color: var(--ink);
+}
+
+.legArrow {
+  font-size: var(--text-xxs);
+  color: var(--ink-faint);
+}
+
+.errRow {
+  font-size: var(--text-xxs);
+  color: var(--accent-neg);
+  padding-top: 6px;
+  border-top: 0.5px solid var(--hairline-soft);
+}

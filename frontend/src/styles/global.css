@@ -1,0 +1,63 @@
+/* Global extras on top of design-tokens.css */
+
+body {
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+/* Section title — used across pages */
+.section-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  margin-bottom: 12px;
+  letter-spacing: var(--tracking-tight);
+}
+
+.section-sub {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+
+.page-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  margin-bottom: 32px;
+}
+
+.stack-32 > * + * { margin-top: 32px; }
+.stack-24 > * + * { margin-top: 24px; }
+.stack-16 > * + * { margin-top: 16px; }
+.stack-12 > * + * { margin-top: 12px; }
+.stack-8  > * + * { margin-top: 8px; }
+
+.row { display: flex; align-items: center; }
+.row-gap-8 { display: flex; align-items: center; gap: 8px; }
+.row-gap-12 { display: flex; align-items: center; gap: 12px; }
+.spacer { flex: 1; }

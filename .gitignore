@@ -93,3 +93,8 @@ secrets.json
 scc/.next/
 scc/node_modules/
 *.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/

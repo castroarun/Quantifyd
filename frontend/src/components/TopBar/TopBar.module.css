@@ -1,0 +1,26 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 0.5px solid var(--hairline-soft);
+  background: var(--canvas);
+  min-height: 48px;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stamp {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}

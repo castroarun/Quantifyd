@@ -1,0 +1,218 @@
+.root {
+  max-width: 1200px;
+}
+
+.loading {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  padding: 24px 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  color: var(--ink);
+  transition: border-color 150ms ease, background 100ms ease;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  color: var(--accent-neg);
+}
+
+.btnDanger:hover:not(:disabled) {
+  border-color: var(--accent-neg);
+}
+
+.error {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  color: var(--accent-neg);
+}
+
+.toast {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  color: var(--accent-pos);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.section { margin-bottom: 32px; }
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  grid-column: 1 / -1;
+}
+
+/* ---------- stock grid ---------- */
+
+.stockGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.stockCard {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stockHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stockSym {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+}
+
+.stockLtp {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.stockRanges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.range { min-width: 0; }
+
+.rangeLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-bottom: 2px;
+}
+
+.rangeValue {
+  font-size: var(--text-xs);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stockDots {
+  display: flex;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.dotItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+}
+
+.fdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot_pos { background: var(--accent-pos); }
+.dot_neg { background: var(--accent-neg); }
+.dot_neutral { background: var(--ink-faint); }
+
+.stockFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--hairline-soft);
+}
+
+.status {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+}
+
+.status_pos { color: var(--ink-secondary); }
+.status_neg { color: var(--accent-neg); }
+.status_neutral { color: var(--ink-muted); }
+
+/* ---------- table cell helpers ---------- */
+
+.bold {
+  font-weight: var(--weight-medium);
+}
+
+.mute {
+  color: var(--ink-secondary);
+  font-size: var(--text-xs);
+}
+
+.dirLong { color: var(--ink); }
+.dirShort { color: var(--ink-secondary); }

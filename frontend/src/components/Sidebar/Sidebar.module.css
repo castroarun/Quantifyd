@@ -1,0 +1,61 @@
+.sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: var(--canvas);
+  border-right: 0.5px solid var(--hairline-soft);
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  margin-bottom: 18px;
+}
+
+.logoIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--canvas);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-normal);
+}
+
+.section + .section { margin-top: 18px; }
+
+.sectionLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  padding: 4px 10px 6px;
+  letter-spacing: 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.foot {
+  margin-top: auto;
+  padding: 10px;
+  border-top: 0.5px solid var(--hairline-soft);
+  padding-top: 14px;
+}

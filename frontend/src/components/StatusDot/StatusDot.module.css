@@ -1,0 +1,22 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.connected { background: var(--status-connected); }
+.warning { background: var(--status-warning); }
+.disconnected { background: var(--status-disconnected); }
+
+.label {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+}
