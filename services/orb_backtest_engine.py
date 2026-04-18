@@ -439,18 +439,23 @@ class ORBBacktestEngine:
         daily_dates = daily_df['date'].dt.normalize().values  # numpy datetime64 array
         daily_rows = daily_df.to_dict('records')
 
-        # Prepare 15-min RSI if needed
-        rsi_15min_series = None
+        # Prepare RSI on configured timeframe (5min or 15min)
+        rsi_series = None
         if cfg.use_rsi_filter:
-            df_15min = _resample_5min_to_15min(df_5min)
-            rsi_15min_series = _calc_rsi_wilder(df_15min['close'], cfg.rsi_period)
-            df_15min['rsi'] = rsi_15min_series
+            if cfg.rsi_timeframe == '5min':
+                # Compute RSI directly on 5-min data
+                df_rsi = df_5min.copy()
+                df_rsi['rsi'] = _calc_rsi_wilder(df_rsi['close'], cfg.rsi_period)
+            else:
+                # Default: 15-min RSI resampled from 5-min
+                df_rsi = _resample_5min_to_15min(df_5min)
+                df_rsi['rsi'] = _calc_rsi_wilder(df_rsi['close'], cfg.rsi_period)
             # Build lookup: timestamp -> RSI value
             rsi_lookup = {}
-            for idx, row in df_15min.iterrows():
+            for idx, row in df_rsi.iterrows():
                 rsi_lookup[row['date']] = row['rsi']
             self._rsi_lookup = rsi_lookup
-            self._rsi_15min_df = df_15min
+            self._rsi_15min_df = df_rsi
 
         # Group 5-min bars by trading day
         df_5min['trade_date'] = df_5min['date'].dt.normalize()
@@ -735,7 +740,7 @@ class ORBBacktestEngine:
 
             # ---- Compute SL and Target ----
             sl, target = self._compute_sl_target(
-                cfg, direction, entry_price, or_high, or_low, or_range, daily_atr
+                cfg, direction, entry_price, or_high, or_low, or_range, daily_atr, prev_daily
             )
 
             position = {
@@ -891,7 +896,8 @@ class ORBBacktestEngine:
         or_high: float,
         or_low: float,
         or_range: float,
-        daily_atr: float
+        daily_atr: float,
+        daily_row: dict = None
     ) -> Tuple[float, float]:
         """
         Compute stop loss and target price for a trade.
@@ -932,6 +938,24 @@ class ORBBacktestEngine:
         elif cfg.target_type == 'or_range_multiple':
             offset = or_range * cfg.or_range_multiple
             target = entry_price + offset if is_long else entry_price - offset
+        elif cfg.target_type == 'pivot_smart':
+            # Target = nearest pivot R/S level if it's within acceptable range
+            # Fallback to R-multiple if pivot is too close, too far, or missing
+            daily = daily_row or {}
+            fallback_target = entry_price + risk * cfg.r_multiple if is_long else entry_price - risk * cfg.r_multiple
+            # Min target = 1R (at least as much as risk), Max target = 3R (too far = miss)
+            min_dist = risk * 1.0
+            max_dist = risk * 3.0
+            if is_long:
+                candidates = [daily.get('r1'), daily.get('r2'), daily.get('r3')]
+                candidates = [c for c in candidates if c and c > entry_price]
+                valid = [c for c in candidates if min_dist <= (c - entry_price) <= max_dist]
+                target = min(valid) if valid else fallback_target
+            else:
+                candidates = [daily.get('s1'), daily.get('s2'), daily.get('s3')]
+                candidates = [c for c in candidates if c and c < entry_price]
+                valid = [c for c in candidates if min_dist <= (entry_price - c) <= max_dist]
+                target = max(valid) if valid else fallback_target
         else:
             target = entry_price + risk * 1.5 if is_long else entry_price - risk * 1.5
 
