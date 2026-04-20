@@ -6227,7 +6227,8 @@ def api_orb_backtest_run():
     try:
         from services.orb_daily_backtest import run_backtest
         from datetime import date as _date
-        date_arg = request.args.get('date') or (request.json or {}).get('date')
+        body = request.get_json(silent=True) or {}
+        date_arg = request.args.get('date') or body.get('date')
         run_date = _date.fromisoformat(date_arg) if date_arg else None
         out = run_backtest(run_date=run_date)
         return jsonify({
