@@ -547,21 +547,29 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         )}
       </div>
 
-      <div className={styles.statsMiniRow}>
-        <MiniMetric
-          label="Win rate (all-time)"
-          value={winRate !== undefined ? formatPct(winRate, 1) : '—'}
-        />
-        <MiniMetric
-          label="Profit factor"
-          value={pf !== undefined ? formatNumber(pf, 2) : '—'}
-        />
-        <MiniMetric label="SL hits today" value={formatInt(slHits ?? 0)} />
-      </div>
-
       <details className={styles.rules}>
-        <summary className={styles.rulesSummary}>Rules</summary>
-        <div className={styles.rulesBody}>{def.rules}</div>
+        <summary className={styles.rulesSummary}>Rules &amp; snapshot</summary>
+        <div className={styles.rulesBody}>
+          <div className={styles.snapshotRow}>
+            <div className={styles.snapshotItem}>
+              <span className={styles.snapshotLabel}>Win rate (all-time)</span>
+              <span className={styles.snapshotValue}>
+                {winRate !== undefined ? formatPct(winRate, 1) : '—'}
+              </span>
+            </div>
+            <div className={styles.snapshotItem}>
+              <span className={styles.snapshotLabel}>Profit factor</span>
+              <span className={styles.snapshotValue}>
+                {pf !== undefined ? formatNumber(pf, 2) : '—'}
+              </span>
+            </div>
+            <div className={styles.snapshotItem}>
+              <span className={styles.snapshotLabel}>SL hits today</span>
+              <span className={styles.snapshotValue}>{formatInt(slHits ?? 0)}</span>
+            </div>
+          </div>
+          <div className={styles.rulesText}>{def.rules}</div>
+        </div>
       </details>
 
       {err ? <div className={styles.errRow}>{err}</div> : null}
