@@ -3249,12 +3249,48 @@ def nas_dashboard():
 
 
 @app.route('/api/nas/state')
+def _enrich_nas_positions_with_ltp(state, ticker_attr='_option_ltps', token_attr='_option_tokens'):
+    """Enrich position dicts with live LTP + pnl_inr from NAS ticker cache.
+
+    ticker_attr / token_attr select which system's cached LTPs to use.
+    """
+    try:
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker()
+        ltps_by_token = getattr(ticker, ticker_attr, {}) or {}
+        tokens_by_tsym = {
+            info.get('tradingsymbol'): token
+            for token, info in getattr(ticker, token_attr, {}).items()
+        }
+        positions = state.get('positions') or {}
+        for leg_key in ('ce', 'pe'):
+            for p in positions.get(leg_key, []) or []:
+                tsym = p.get('tradingsymbol')
+                if not tsym:
+                    continue
+                token = tokens_by_tsym.get(tsym)
+                ltp = ltps_by_token.get(token) if token else None
+                if ltp is None or ltp <= 0:
+                    continue
+                p['ltp'] = round(ltp, 2)
+                entry = p.get('entry_price') or p.get('entry_premium')
+                qty = p.get('qty') or p.get('lots') or 0
+                if entry is not None and qty:
+                    # NAS sells options — profit when LTP falls below entry
+                    p['pnl_inr'] = round((entry - ltp) * qty, 2)
+    except Exception:
+        pass
+    return state
+
+
 def api_nas_state():
     """Full state dump for NAS dashboard."""
     try:
         from services.nas_executor import NasExecutor
         executor = NasExecutor(config=NAS_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_option_ltps', '_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"NAS state error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -4119,7 +4155,9 @@ def api_nas_atm_state():
     try:
         from services.nas_atm_executor import NasAtmExecutor
         executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_atm_option_ltps', '_atm_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"NAS-ATM state error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -4354,7 +4392,9 @@ def api_nas_atm2_state():
     try:
         from services.nas_atm2_executor import NasAtm2Executor
         executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_atm2_option_ltps', '_atm2_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"[NAS-ATM2] state error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -4587,7 +4627,9 @@ def api_nas_atm4_state():
     try:
         from services.nas_atm4_executor import NasAtm4Executor
         executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_atm4_option_ltps', '_atm4_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"[NAS-ATM4] state error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -4823,7 +4865,9 @@ def api_nas_916_otm_state():
     try:
         from services.nas_916_executors import Nas916OtmExecutor
         executor = Nas916OtmExecutor(config=NAS_916_OTM_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_option_ltps', '_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"[NAS-916-OTM] state error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -4942,7 +4986,9 @@ def api_nas_916_atm_state():
     try:
         from services.nas_916_executors import Nas916AtmExecutor
         executor = Nas916AtmExecutor(config=NAS_916_ATM_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_atm_option_ltps', '_atm_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"[NAS-916-ATM] state error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -5058,7 +5104,9 @@ def api_nas_916_atm2_state():
     try:
         from services.nas_916_executors import Nas916Atm2Executor
         executor = Nas916Atm2Executor(config=NAS_916_ATM2_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_atm2_option_ltps', '_atm2_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"[NAS-916-ATM2] state error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -5174,7 +5222,9 @@ def api_nas_916_atm4_state():
     try:
         from services.nas_916_executors import Nas916Atm4Executor
         executor = Nas916Atm4Executor(config=NAS_916_ATM4_DEFAULTS)
-        return jsonify(executor.get_full_state())
+        state = executor.get_full_state()
+        state = _enrich_nas_positions_with_ltp(state, '_atm4_option_ltps', '_atm4_option_tokens')
+        return jsonify(state)
     except Exception as e:
         logger.error(f"[NAS-916-ATM4] state error: {e}")
         return jsonify({'error': str(e)}), 500
