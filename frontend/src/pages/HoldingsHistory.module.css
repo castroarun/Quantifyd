@@ -1,0 +1,269 @@
+.root {
+  max-width: 1200px;
+}
+
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.backLink {
+  font-size: var(--text-xs);
+  color: var(--brand-navy, var(--ink));
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.dateStrip {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dateNavBtn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.dateNavBtn:hover:not(:disabled) {
+  background: var(--canvas);
+}
+
+.dateNavBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dateDropdownWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.dateSelect {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  font-family: inherit;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* ---------- Snapshot card ---------- */
+
+.snapshotCard {
+  margin-top: 16px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 20px 24px;
+  touch-action: pan-y;
+}
+
+.emptyCard {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.snapHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 0.5px solid var(--hairline-soft);
+}
+
+.snapDay {
+  font-size: 16px;
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.snapTime {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.snapHeadMetrics {
+  display: flex;
+  gap: 24px;
+}
+
+.snapMetric {
+  text-align: right;
+  min-width: 100px;
+}
+
+.snapMetricLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+}
+
+.snapMetricVal {
+  font-size: 16px;
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.snapGrid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 720px) {
+  .snapGrid { grid-template-columns: 1fr; }
+  .snapHead { flex-direction: column; align-items: stretch; }
+  .snapHeadMetrics { gap: 12px; }
+  .snapMetric { text-align: left; }
+}
+
+.subHead {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.moverBlock,
+.extremesBlock {
+  margin-bottom: 14px;
+}
+
+.moverBlockLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+
+.moverRow,
+.extremeRow {
+  display: grid;
+  grid-template-columns: 1fr 70px 90px;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  align-items: baseline;
+}
+
+.moverRowSym {
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moverRowPct {
+  text-align: right;
+  font-weight: var(--weight-medium);
+}
+
+.moverRowPnl {
+  text-align: right;
+  font-size: var(--text-xxs);
+}
+
+.pnlPos { color: var(--accent-pos); }
+.pnlNeg { color: var(--accent-neg); }
+
+.extremeTag {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+.extremeLtp {
+  text-align: right;
+  color: var(--ink);
+}
+
+.noneText {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  padding: 8px 0;
+}
+
+/* ---------- Mini strip ---------- */
+
+.miniSection {
+  margin-top: 32px;
+}
+
+.miniStrip {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.miniStrip::-webkit-scrollbar { height: 6px; }
+.miniStrip::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 3px; }
+
+.miniItem {
+  min-width: 88px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+}
+
+.miniItem:hover {
+  border-color: var(--ink-faint);
+}
+
+.miniActive {
+  border-color: var(--brand-navy, var(--ink));
+  background: var(--brand-navy-soft, var(--accent-soft, #EFF3FA));
+}
+
+.miniDate {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.miniPnl {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}

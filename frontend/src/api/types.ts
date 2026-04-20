@@ -287,3 +287,79 @@ export interface ORBBacktestRun {
   net_pnl_inr: number;
   signals?: ORBBacktestSignal[];
 }
+
+/* ---------- Holdings ---------- */
+
+export interface HoldingsRecord {
+  tradingsymbol: string;
+  qty: number;
+  avg_price: number;
+  ltp: number;
+  prev_close?: number | null;
+  day_pct: number;
+  day_pnl_inr: number;
+  invested: number;
+  current: number;
+  total_pnl_inr: number;
+  total_pnl_pct: number;
+  week52_high?: number | null;
+  week52_high_date?: string | null;
+  week52_low?: number | null;
+  week52_low_date?: string | null;
+  all_time_high?: number | null;
+  pct_from_52h?: number | null;
+  pct_from_52l?: number | null;
+  pct_from_ath?: number | null;
+  change_5d_pct?: number | null;
+  change_20d_pct?: number | null;
+  tag?: string; // in extremes payloads only
+}
+
+export interface HoldingsSummary {
+  count: number;
+  invested: number;
+  current: number;
+  day_pnl: number;
+  day_pct: number;
+  total_pnl: number;
+  total_pct: number;
+}
+
+export interface HoldingsEvent {
+  id?: number;
+  tradingsymbol: string;
+  event_date: string;
+  event_type: 'results' | 'dividend' | 'split' | 'bonus' | 'buyback' | 'meeting';
+  purpose?: string | null;
+  detail?: string | null;
+  record_date?: string | null;
+}
+
+export interface HoldingsDigest {
+  summary: HoldingsSummary;
+  holdings: HoldingsRecord[];
+  movers_today: { gainers: HoldingsRecord[]; losers: HoldingsRecord[] };
+  movers_weekly: { gainers: HoldingsRecord[]; losers: HoldingsRecord[] };
+  extremes: { high: HoldingsRecord[]; low: HoldingsRecord[] };
+  events: HoldingsEvent[];
+  next_event: HoldingsEvent | null;
+}
+
+export interface HoldingsSnapshot {
+  snap_date: string;
+  generated_at: string;
+  summary: HoldingsSummary;
+  movers_today: { gainers: HoldingsRecord[]; losers: HoldingsRecord[] };
+  extremes: { high: HoldingsRecord[]; low: HoldingsRecord[] };
+  holdings: HoldingsRecord[];
+}
+
+export interface HoldingsSnapshotSummary {
+  snap_date: string;
+  generated_at: string;
+  day_pnl: number;
+  day_pct: number;
+  total_pnl: number;
+  current: number;
+  count: number;
+}
