@@ -30,10 +30,11 @@ UNIVERSE = [
     'APOLLOHOSP',
 ]
 
-# Filter thresholds — keep in sync with config.ORB_DEFAULTS
+# Filter thresholds — keep in sync with config.ORB_DEFAULTS.
+# Live engine uses SL at the opposite OR boundary (not a fixed %) and a
+# 1.5R target. If neither hits, the position exits at EOD squareoff (15:20).
 CAPITAL_PER_TRADE = 20_000
-SL_PCT = 0.005
-R_MULTIPLE = 1.0
+R_MULTIPLE = 1.5
 GAP_LONG_BLOCK_PCT = 1.0
 RSI_LONG_MIN = 60
 RSI_SHORT_MAX = 40
@@ -167,13 +168,20 @@ class Signal:
     rsi_15m: Optional[float] = None
 
 
-def _simulate_trade(candles, idx, entry, direction):
+def _simulate_trade(candles, idx, entry, direction, or_high, or_low):
+    """SL at the opposite OR boundary, target = entry ± R_MULTIPLE × risk
+    (matches live engine's sl_type='or_opposite', target_type='r_multiple').
+    If neither hits, exit at EOD squareoff (15:20)."""
     if direction == 'LONG':
-        sl = entry * (1 - SL_PCT)
-        tgt = entry + (entry - sl) * R_MULTIPLE
+        sl = or_low
+        risk = entry - sl
+        tgt = entry + risk * R_MULTIPLE
     else:
-        sl = entry * (1 + SL_PCT)
-        tgt = entry - (sl - entry) * R_MULTIPLE
+        sl = or_high
+        risk = sl - entry
+        tgt = entry - risk * R_MULTIPLE
+    sl_pct = -risk / entry * 100 if entry else 0
+    tgt_pct = risk * R_MULTIPLE / entry * 100 if entry else 0
     eod_time = datetime.strptime('15:20', '%H:%M').time()
     for j in range(idx + 1, len(candles)):
         c = candles[j]
@@ -184,14 +192,14 @@ def _simulate_trade(candles, idx, entry, direction):
             return t, c['close'], 'EOD', pnl_pct
         if direction == 'LONG':
             if c['low'] <= sl:
-                return t, sl, 'SL', -SL_PCT * 100
+                return t, sl, 'SL', sl_pct
             if c['high'] >= tgt:
-                return t, tgt, 'TGT', SL_PCT * 100 * R_MULTIPLE
+                return t, tgt, 'TGT', tgt_pct
         else:
             if c['high'] >= sl:
-                return t, sl, 'SL', -SL_PCT * 100
+                return t, sl, 'SL', sl_pct
             if c['low'] <= tgt:
-                return t, tgt, 'TGT', SL_PCT * 100 * R_MULTIPLE
+                return t, tgt, 'TGT', tgt_pct
     last = candles[-1]
     t = _naive(last['date'])
     pnl_pct = ((last['close'] - entry) / entry * 100
@@ -328,7 +336,7 @@ def run_backtest(run_date: Optional[date] = None,
                     block_reason = f'RSI {rsi_val if rsi_val is None else f"{rsi_val:.1f}"}>40'
 
             exit_t, exit_px, exit_reason, pnl_pct = _simulate_trade(
-                candles, idx, entry, direction)
+                candles, idx, entry, direction, or_high, or_low)
             qty = max(1, int(CAPITAL_PER_TRADE / entry))
             pnl_inr = round((exit_px - entry) * qty if direction == 'LONG'
                              else (entry - exit_px) * qty, 2)
