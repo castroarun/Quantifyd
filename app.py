@@ -267,6 +267,34 @@ def _start_all_tickers():
         logger.warning(f"[Auth] NAS ticker start failed: {e}")
 
 
+def _bootstrap_tickers_on_startup():
+    """On gunicorn boot, if access token is already valid, start tickers
+    immediately. This covers `systemctl restart` where the token was cached
+    from a prior login — without this, tickers only start on the next TOTP
+    login flow."""
+    try:
+        from services.kite_service import get_access_token
+        if not get_access_token():
+            logger.info("[Bootstrap] No cached access token — tickers will start after next login")
+            return
+        # Verify token is actually valid by calling profile()
+        try:
+            kite = get_kite()
+            kite.profile()
+        except Exception as e:
+            logger.info(f"[Bootstrap] Cached token invalid ({e}) — skipping ticker start")
+            return
+        logger.info("[Bootstrap] Valid access token found — starting tickers")
+        _start_all_tickers()
+    except Exception as e:
+        logger.warning(f"[Bootstrap] Ticker bootstrap failed: {e}")
+
+
+# Fire once at module load, in a background thread so gunicorn boot isn't blocked
+import threading as _bootstrap_threading
+_bootstrap_threading.Thread(target=_bootstrap_tickers_on_startup, daemon=True).start()
+
+
 @app.route('/api/auth/status')
 def api_auth_status():
     """Check if Kite is authenticated."""
