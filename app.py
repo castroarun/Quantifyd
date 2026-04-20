@@ -3248,7 +3248,6 @@ def nas_dashboard():
     )
 
 
-@app.route('/api/nas/state')
 def _enrich_nas_positions_with_ltp(state, ticker_attr='_option_ltps', token_attr='_option_tokens'):
     """Enrich position dicts with live LTP + pnl_inr from NAS ticker cache.
 
@@ -3283,6 +3282,7 @@ def _enrich_nas_positions_with_ltp(state, ticker_attr='_option_ltps', token_attr
     return state
 
 
+@app.route('/api/nas/state')
 def api_nas_state():
     """Full state dump for NAS dashboard."""
     try:
