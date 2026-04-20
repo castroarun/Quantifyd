@@ -382,9 +382,11 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
   const enriched = positions.map((p) => {
     const live = p.tradingsymbol ? ticks[p.tradingsymbol] : undefined;
     const ltp = live ?? p.ltp;
+    const entry = p.entry_price ?? p.entry_premium;
     let pnl = p.pnl_inr;
-    if (live !== undefined && p.entry_premium !== undefined && p.qty) {
-      pnl = Math.round((p.entry_premium - live) * p.qty * 100) / 100;
+    if (live !== undefined && entry !== undefined && p.qty) {
+      // NAS systems short options → profit when LTP drops below entry
+      pnl = Math.round((entry - live) * p.qty * 100) / 100;
     }
     return { ...p, ltp, pnl_inr: pnl };
   });
@@ -504,8 +506,8 @@ function MiniMetric({
 
 function LegRow({ leg }: { leg: NASPosition }) {
   const tsym = leg.tradingsymbol ?? '—';
-  const entry = leg.entry_premium;
-  const ltp = leg.ltp;
+  const entry = leg.entry_price ?? leg.entry_premium;
+  const ltp = leg.ltp ?? leg.exit_price;
   const pnl = leg.pnl_inr;
 
   return (

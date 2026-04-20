@@ -131,12 +131,17 @@ export interface NASPosition {
   leg: 'CE' | 'PE';
   tradingsymbol?: string;
   strike?: number;
-  entry_premium?: number;
+  entry_price?: number;
+  entry_premium?: number; // legacy alias
+  exit_price?: number;
+  sl_price?: number;
   ltp?: number;
   qty?: number;
   lots?: number;
   pnl_inr?: number;
   entry_time?: string;
+  exit_time?: string;
+  exit_reason?: string;
   system?: string;
   status?: string;
 }
