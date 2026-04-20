@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './Report.module.css';
 import { apiGet } from '../api/client';
-import type { NASReportData, NASReportSystem } from '../api/types';
+import type { NASReportData, NASReportSystem, ORBBacktestRun, ORBBacktestSignal } from '../api/types';
 import MetricCard from '../components/Cards/MetricCard';
 import DataTable from '../components/DataTable/DataTable';
 import type { Column } from '../components/DataTable/DataTable';
@@ -56,6 +56,9 @@ export default function Report() {
   const [data, setData] = useState<NASReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [orb, setOrb] = useState<ORBBacktestRun | null>(null);
+  const [orbHistory, setOrbHistory] = useState<ORBBacktestRun[]>([]);
+  const [orbErr, setOrbErr] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +74,21 @@ export default function Report() {
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+      });
+    // Load ORB backtest — latest run + history
+    apiGet<ORBBacktestRun>('/api/orb/backtest')
+      .then((r) => {
+        if (!cancelled) setOrb(r);
+      })
+      .catch((e) => {
+        if (!cancelled) setOrbErr(e instanceof Error ? e.message : 'ORB load failed');
+      });
+    apiGet<ORBBacktestRun[]>('/api/orb/backtest?list=1')
+      .then((list) => {
+        if (!cancelled) setOrbHistory(list);
+      })
+      .catch(() => {
+        /* no history available yet */
       });
     return () => {
       cancelled = true;
@@ -380,6 +398,156 @@ export default function Report() {
           )}
         </div>
       </section>
+
+      <OrbBacktestSection latest={orb} history={orbHistory} error={orbErr} />
+    </div>
+  );
+}
+
+function OrbBacktestSection({
+  latest,
+  history,
+  error,
+}: {
+  latest: ORBBacktestRun | null;
+  history: ORBBacktestRun[];
+  error: string | null;
+}) {
+  if (error && !latest) {
+    return (
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">ORB daily backtest</div>
+        </div>
+        <div className={styles.error}>
+          {error.includes('404') || error.includes('no backtest') ? (
+            <>No ORB backtest runs stored yet. The scheduler runs daily at 15:45 IST.</>
+          ) : (
+            error
+          )}
+        </div>
+      </section>
+    );
+  }
+  if (!latest) {
+    return null;
+  }
+  const signals = latest.signals ?? [];
+  const taken = signals.filter((s) => s.signal_type === 'TAKEN');
+  const blocked = signals.filter((s) => s.signal_type === 'BLOCKED');
+  const noBreakout = signals.filter((s) => s.signal_type === 'NO_BREAKOUT');
+  const wideCpr = signals.filter((s) => s.signal_type === 'SKIP_WIDE_CPR');
+
+  return (
+    <section className={styles.section}>
+      <div className={styles.sectionHead}>
+        <div className="section-title">ORB daily backtest</div>
+        <Chip>{history.length || 1} runs</Chip>
+      </div>
+      <div className={styles.subtitle}>
+        Simulated live-equivalent run (Rs 20k/trade · OR15 · 0.5% SL · 1R target).
+        Latest: {latest.run_date}
+      </div>
+
+      <div className={styles.metrics}>
+        <MetricCard
+          label="Trades taken"
+          value={formatInt(latest.trades_taken)}
+          hint="Passed CPR + RSI + gap filters"
+        />
+        <MetricCard
+          label="Net P&L"
+          value={
+            <span className={pnlClass(latest.net_pnl_inr)}>
+              {formatPnl(latest.net_pnl_inr)}
+            </span>
+          }
+          hint={`Across ${latest.trades_taken} trades`}
+        />
+        <MetricCard
+          label="Blocked by filters"
+          value={formatInt(latest.signals_blocked)}
+          hint="Breakout but filter vetoed"
+        />
+        <MetricCard
+          label="No breakout"
+          value={formatInt(noBreakout.length)}
+          hint={`${wideCpr.length} wide CPR skip`}
+        />
+      </div>
+
+      <OrbSignalTable title="Trades taken" rows={taken} />
+      {blocked.length > 0 && (
+        <OrbSignalTable title="Blocked by filters" rows={blocked} blocked />
+      )}
+
+      {history.length > 1 && (
+        <>
+          <div className={styles.sectionHead} style={{ marginTop: 24 }}>
+            <div className="section-title">Daily history</div>
+          </div>
+          <div className={styles.orbHistory}>
+            {history.map((h) => (
+              <div key={h.run_date} className={styles.orbHistoryRow}>
+                <span className={styles.orbHistoryDate}>{h.run_date}</span>
+                <span className={styles.orbHistoryMeta}>
+                  {h.trades_taken} taken · {h.signals_blocked} blocked
+                </span>
+                <span className={`${styles.orbHistoryPnl} ${pnlClass(h.net_pnl_inr)}`}>
+                  {formatPnl(h.net_pnl_inr)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function OrbSignalTable({
+  title,
+  rows,
+  blocked = false,
+}: {
+  title: string;
+  rows: ORBBacktestSignal[];
+  blocked?: boolean;
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className={styles.orbEmpty}>No {title.toLowerCase()}.</div>
+    );
+  }
+  return (
+    <div className={styles.orbTable}>
+      <div className={styles.orbHead}>{title} · {rows.length}</div>
+      <div className={styles.orbTableHead}>
+        <div>Stock</div>
+        <div>Dir</div>
+        <div>Entry</div>
+        <div>Exit</div>
+        <div>Reason</div>
+        <div className={styles.orbRight}>P&amp;L</div>
+      </div>
+      {rows.map((r, i) => (
+        <div key={i} className={styles.orbTableRow}>
+          <div className={styles.orbStock}>{r.instrument}</div>
+          <div className={styles.orbDir}>{r.direction ?? '—'}</div>
+          <div className={styles.orbCell}>
+            {r.entry_time ?? '—'} @ {r.entry_price?.toFixed(1) ?? '—'}
+          </div>
+          <div className={styles.orbCell}>
+            {r.exit_time ?? '—'} @ {r.exit_price?.toFixed(1) ?? '—'}
+          </div>
+          <div className={styles.orbReason}>
+            {blocked ? r.block_reason ?? '—' : r.exit_reason ?? '—'}
+          </div>
+          <div className={`${styles.orbRight} ${pnlClass(r.pnl_inr ?? 0)}`}>
+            {formatPnl(r.pnl_inr ?? 0)}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -6000,6 +6000,22 @@ def _orb_eod_report():
         logger.error(f"[ORB] EOD report error: {e}")
 
 
+def _orb_daily_backtest():
+    """15:45 PM Mon-Fri: Re-simulate today's ORB signals from raw Kite data
+    and persist to orb_backtest.db for the Performance page."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        from services.orb_daily_backtest import run_backtest
+        out = run_backtest()
+        logger.info(
+            f"[ORB-BT] {out['run_date']} stored: taken={out['trades_taken']} "
+            f"blocked={out['signals_blocked']} net=Rs{out['net_pnl_inr']:+.0f}"
+        )
+    except Exception as e:
+        logger.error(f"[ORB-BT] daily backtest error: {e}", exc_info=True)
+
+
 # Register ORB scheduled jobs
 try:
     scheduler.add_job(
@@ -6032,10 +6048,16 @@ try:
         'cron', day_of_week='mon-fri', hour=15, minute=25,
         id='orb_eod_report', replace_existing=True,
     )
+    scheduler.add_job(
+        _orb_daily_backtest,
+        'cron', day_of_week='mon-fri', hour=15, minute=45,
+        id='orb_daily_backtest', replace_existing=True,
+    )
     logger.info(
         "ORB scheduled jobs registered: "
         "init(9:14), OR update(9:15-9:29), signal eval(5min), "
-        "position monitor(30s), EOD squareoff(15:20), EOD report(15:25)"
+        "position monitor(30s), EOD squareoff(15:20), EOD report(15:25), "
+        "daily backtest(15:45)"
     )
 except Exception as e:
     logger.warning(f"Could not register ORB scheduled jobs: {e}")
@@ -6175,6 +6197,49 @@ def api_nas_report_data():
         result['systems'][sys_name].pop('trades', None)
 
     return jsonify(result)
+
+
+@app.route('/api/orb/backtest')
+def api_orb_backtest():
+    """Return stored ORB daily backtest results.
+
+    Query params:
+      - date=YYYY-MM-DD    specific run, latest if omitted
+      - list=1             return [summary, summary, ...] for recent runs instead
+    """
+    try:
+        from services.orb_daily_backtest import get_backtest_run, list_backtest_runs
+        if request.args.get('list'):
+            return jsonify(list_backtest_runs(limit=60))
+        d = request.args.get('date') or None
+        run = get_backtest_run(run_date=d)
+        if not run:
+            return jsonify({'error': 'no backtest runs yet'}), 404
+        return jsonify(run)
+    except Exception as e:
+        logger.error(f"[API] /api/orb/backtest error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/backtest/run', methods=['POST'])
+def api_orb_backtest_run():
+    """Trigger an ORB backtest for today (or provided date) and store results."""
+    try:
+        from services.orb_daily_backtest import run_backtest
+        from datetime import date as _date
+        date_arg = request.args.get('date') or (request.json or {}).get('date')
+        run_date = _date.fromisoformat(date_arg) if date_arg else None
+        out = run_backtest(run_date=run_date)
+        return jsonify({
+            'status': 'ok',
+            'run_date': out['run_date'],
+            'trades_taken': out['trades_taken'],
+            'signals_blocked': out['signals_blocked'],
+            'net_pnl_inr': out['net_pnl_inr'],
+        })
+    except Exception as e:
+        logger.error(f"[API] /api/orb/backtest/run error: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 # =============================================================================

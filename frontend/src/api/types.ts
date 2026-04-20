@@ -255,3 +255,34 @@ export interface NASReportData {
   systems: Record<string, NASReportSystem>;
   daily_snapshots: Record<string, Record<string, NASReportDaySystem>>;
 }
+
+/* ---------- ORB Backtest ---------- */
+
+export interface ORBBacktestSignal {
+  instrument: string;
+  direction?: 'LONG' | 'SHORT' | null;
+  signal_type: 'TAKEN' | 'BLOCKED' | 'NO_BREAKOUT' | 'SKIP_WIDE_CPR' | 'NO_DATA' | 'ERROR';
+  block_reason?: string | null;
+  entry_time?: string | null;
+  entry_price?: number | null;
+  exit_time?: string | null;
+  exit_price?: number | null;
+  exit_reason?: string | null;
+  pnl_pct?: number | null;
+  pnl_inr?: number | null;
+  or_high?: number | null;
+  or_low?: number | null;
+  gap_pct?: number | null;
+  cpr_width_pct?: number | null;
+  rsi_15m?: number | null;
+}
+
+export interface ORBBacktestRun {
+  run_date: string;
+  generated_at?: string;
+  universe_size?: number;
+  trades_taken: number;
+  signals_blocked: number;
+  net_pnl_inr: number;
+  signals?: ORBBacktestSignal[];
+}
