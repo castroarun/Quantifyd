@@ -45,11 +45,28 @@ interface SystemRow {
   error?: string;
 }
 
+interface DayTrade {
+  systemKey: string;
+  systemLabel: string;
+  leg: string;           // 'CE' | 'PE'
+  tradingsymbol: string;
+  strike: number | null;
+  entryTime: string;     // "HH:MM"
+  entryPrice: number;
+  exitTime: string;      // "HH:MM" or ''
+  exitPrice: number | null;
+  exitReason: string | null;
+  pnl: number;
+  qty: number;
+  status: string;
+}
+
 interface DaySummary {
   date: string;
   dayName: string;
   totalPnl: number;
   perSystem: Array<{ key: string; label: string; pnl: number; trades: number }>;
+  trades: DayTrade[];
 }
 
 export default function Report() {
@@ -148,8 +165,45 @@ export default function Report() {
           trades: sd.trade_count ?? 0,
         };
       });
+      // Build flat trade log: one row per position (leg), sorted ASC by entry_time
+      const trades: DayTrade[] = [];
+      for (const k of SYS_KEYS) {
+        const sd = daySys[k];
+        if (!sd?.positions) continue;
+        for (const p of sd.positions) {
+          const entryPrice = (p.entry_price as number | undefined) ?? 0;
+          const exitPrice = (p.exit_price as number | null | undefined) ?? null;
+          const qty = (p.qty as number | undefined) ?? 0;
+          const pnl =
+            exitPrice != null && entryPrice != null && qty
+              ? Math.round((entryPrice - exitPrice) * qty * 100) / 100
+              : 0;
+          const tsym = (p.tradingsymbol as string | undefined) ?? '';
+          // Extract strike: last digits before CE/PE suffix
+          const m = tsym.match(/(\d+)(CE|PE)$/);
+          const strike = m ? parseInt(m[1], 10) : null;
+          const toHM = (s: string | undefined | null) =>
+            s ? s.slice(11, 16) : '';
+          trades.push({
+            systemKey: k,
+            systemLabel: SYS_LABEL[k] ?? k,
+            leg: (p.leg as string | undefined) ?? '',
+            tradingsymbol: tsym,
+            strike,
+            entryTime: toHM(p.entry_time),
+            entryPrice,
+            exitTime: toHM(p.exit_time),
+            exitPrice,
+            exitReason: (p.exit_reason as string | undefined) ?? null,
+            pnl,
+            qty,
+            status: (p.status as string | undefined) ?? '',
+          });
+        }
+      }
+      trades.sort((a, b) => a.entryTime.localeCompare(b.entryTime));
       const totalPnl = perSystem.reduce((a, p) => a + p.pnl, 0);
-      out.push({ date, dayName, totalPnl, perSystem });
+      out.push({ date, dayName, totalPnl, perSystem, trades });
     }
     // newest first
     out.sort((a, b) => b.date.localeCompare(a.date));
@@ -559,23 +613,70 @@ function DayBlock({ day }: { day: DaySummary }) {
         <span className={styles.dayName}>{day.dayName}</span>
         <span className={styles.dayDate}>{day.date}</span>
         <span className={styles.daySpacer} />
+        <span className={styles.dayMeta}>{day.trades.length} legs</span>
         <span className={`${styles.dayPnl} ${pnlClass(day.totalPnl)}`}>
           {formatPnl(day.totalPnl)}
         </span>
       </summary>
       <div className={styles.daySystems}>
-        {day.perSystem.map((ps) => (
-          <div key={ps.key} className={styles.daySystemRow}>
-            <span className={styles.daySystemName}>{ps.label}</span>
-            <span className={styles.daySystemTrades}>
-              {ps.trades} {ps.trades === 1 ? 'trade' : 'trades'}
-            </span>
-            <span className={`${styles.daySystemPnl} ${pnlClass(ps.pnl)}`}>
-              {formatPnl(ps.pnl)}
-            </span>
-          </div>
-        ))}
+        {day.perSystem.map((ps) =>
+          ps.trades === 0 && ps.pnl === 0 ? null : (
+            <div key={ps.key} className={styles.daySystemRow}>
+              <span className={styles.daySystemName}>{ps.label}</span>
+              <span className={styles.daySystemTrades}>
+                {ps.trades} {ps.trades === 1 ? 'trade' : 'trades'}
+              </span>
+              <span className={`${styles.daySystemPnl} ${pnlClass(ps.pnl)}`}>
+                {formatPnl(ps.pnl)}
+              </span>
+            </div>
+          ),
+        )}
       </div>
+      {day.trades.length > 0 ? (
+        <div className={styles.tradeLog}>
+          <div className={styles.tradeLogHead}>
+            <div>Time</div>
+            <div>System</div>
+            <div>Side</div>
+            <div>Leg</div>
+            <div>Strike</div>
+            <div>Entry</div>
+            <div>Exit</div>
+            <div>Reason</div>
+            <div className={styles.tradeRight}>P&amp;L</div>
+          </div>
+          {day.trades.map((t, i) => (
+            <div key={i} className={styles.tradeLogRow}>
+              <div className={styles.tradeTime}>
+                {t.entryTime}
+                {t.exitTime ? <span className={styles.tradeArrow}>→ {t.exitTime}</span> : null}
+              </div>
+              <div className={styles.tradeSystem}>{t.systemLabel}</div>
+              <div>
+                <span className={styles.tradeSell}>S</span>
+                {t.exitPrice != null ? (
+                  <span className={styles.tradeBuy}>B</span>
+                ) : null}
+              </div>
+              <div className={styles.tradeLeg}>{t.leg}</div>
+              <div className={styles.tradeStrike}>
+                {t.strike != null ? t.strike : '—'}
+              </div>
+              <div className={styles.tradeCell}>{formatNumber(t.entryPrice, 2)}</div>
+              <div className={styles.tradeCell}>
+                {t.exitPrice != null ? formatNumber(t.exitPrice, 2) : '—'}
+              </div>
+              <div className={styles.tradeReason}>
+                {t.exitReason ?? (t.status === 'ACTIVE' ? 'open' : '—')}
+              </div>
+              <div className={`${styles.tradeRight} ${pnlClass(t.pnl)}`}>
+                {formatPnl(t.pnl)}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </details>
   );
 }

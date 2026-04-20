@@ -241,6 +241,7 @@ export interface NASReportDayPosition {
   exit_price?: number | null;
   entry_time?: string;
   exit_time?: string | null;
+  exit_reason?: string | null;
   status?: string;
 }
 

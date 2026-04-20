@@ -339,3 +339,109 @@
 .orbHistoryPnl {
   text-align: right;
 }
+
+/* ---------- Trade log inside day block ---------- */
+
+.dayMeta {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-right: 12px;
+}
+
+.tradeLog {
+  margin-top: 12px;
+  border-top: 0.5px solid var(--hairline-soft);
+  padding-top: 8px;
+}
+
+.tradeLogHead,
+.tradeLogRow {
+  display: grid;
+  grid-template-columns: 110px 1.4fr 0.5fr 0.4fr 0.7fr 0.8fr 0.8fr 1fr 0.9fr;
+  gap: 6px;
+  padding: 6px 4px;
+  font-size: var(--text-xxs);
+  font-variant-numeric: tabular-nums;
+  align-items: center;
+}
+
+.tradeLogHead {
+  color: var(--ink-muted);
+  border-bottom: 0.5px solid var(--hairline-softest);
+}
+
+.tradeLogRow {
+  border-bottom: 0.5px solid var(--hairline-softest);
+  color: var(--ink);
+}
+
+.tradeLogRow:last-child {
+  border-bottom: none;
+}
+
+.tradeTime {
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.tradeArrow {
+  color: var(--ink-faint);
+  margin-left: 4px;
+}
+
+.tradeSystem {
+  color: var(--ink-secondary);
+  font-size: var(--text-xxs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeSell,
+.tradeBuy {
+  display: inline-block;
+  width: 18px;
+  text-align: center;
+  font-weight: var(--weight-medium);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-right: 2px;
+  font-size: var(--text-xxs);
+}
+
+.tradeSell {
+  background: rgba(199, 52, 60, 0.1);
+  color: var(--accent-neg);
+}
+
+.tradeBuy {
+  background: rgba(15, 110, 86, 0.12);
+  color: var(--accent-pos);
+}
+
+.tradeLeg {
+  color: var(--ink-muted);
+  font-size: var(--text-xxs);
+}
+
+.tradeStrike {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.tradeCell {
+  color: var(--ink);
+}
+
+.tradeReason {
+  color: var(--ink-muted);
+  font-size: var(--text-xxs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeRight {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

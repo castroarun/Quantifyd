@@ -6,28 +6,79 @@ import { apiGet } from '../api/client';
 import type { ORBState, NASState } from '../api/types';
 import { formatInt, formatPnl, pnlClass } from '../utils/format';
 
+// All 8 NAS sub-system endpoints so the Strategies card reflects the whole
+// NAS footprint, not just OTM.
+const NAS_SYSTEMS = [
+  'nas',
+  'nas-atm',
+  'nas-atm2',
+  'nas-atm4',
+  'nas-916-otm',
+  'nas-916-atm',
+  'nas-916-atm2',
+  'nas-916-atm4',
+] as const;
+
+type NasAgg = {
+  activeLegs: number;
+  dayPnl: number;       // realized + unrealized across all 8 systems
+  totalPnl: number;     // all-time
+  anyEnabled: boolean;
+  anyLive: boolean;
+};
+
+function aggregateNas(states: (NASState | null)[]): NasAgg {
+  let activeLegs = 0;
+  let dayPnl = 0;
+  let totalPnl = 0;
+  let anyEnabled = false;
+  let anyLive = false;
+  for (const s of states) {
+    if (!s) continue;
+    activeLegs += s.positions?.total_active ?? 0;
+    // Realized (stats.today_pnl computed server-side from closed_today)
+    dayPnl += (s.stats?.today_pnl as number | undefined) ?? 0;
+    // Unrealized (open legs live P&L from polled LTPs)
+    const legs = [...(s.positions?.ce ?? []), ...(s.positions?.pe ?? [])];
+    for (const p of legs) {
+      const entry = p.entry_price ?? p.entry_premium;
+      const ltp = p.ltp;
+      const qty = p.qty ?? 0;
+      if (entry != null && ltp != null && qty) {
+        dayPnl += (entry - ltp) * qty;
+      }
+    }
+    totalPnl += (s.stats?.total_pnl as number | undefined) ?? 0;
+    if (s.config?.enabled) anyEnabled = true;
+    if (s.config?.enabled && !s.config?.paper_trading_mode) anyLive = true;
+  }
+  return { activeLegs, dayPnl: Math.round(dayPnl * 100) / 100, totalPnl, anyEnabled, anyLive };
+}
+
 export default function Strategies() {
   const [orb, setOrb] = useState<ORBState | null>(null);
-  const [nas, setNas] = useState<NASState | null>(null);
+  const [nasStates, setNasStates] = useState<(NASState | null)[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const [o, n] = await Promise.all([
+        const [o, ...ns] = await Promise.all([
           apiGet<ORBState>('/api/orb/state').catch(() => null),
-          apiGet<NASState>('/api/nas/state').catch(() => null),
+          ...NAS_SYSTEMS.map((s) =>
+            apiGet<NASState>(`/api/${s}/state`).catch(() => null),
+          ),
         ]);
         if (cancelled) return;
         setOrb(o);
-        setNas(n);
+        setNasStates(ns);
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Failed to load');
       }
     };
     load();
-    const id = setInterval(load, 15_000);
+    const id = setInterval(load, 5_000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -40,10 +91,11 @@ export default function Strategies() {
   const orbEnabled = !!orb?.enabled;
   const orbLive = !!orb?.live_trading;
 
-  const nasOpen = nas?.positions?.total_active ?? 0;
-  const nasPnl = (nas?.stats?.today_pnl as number | undefined) ?? 0;
-  const nasEnabled = !!nas?.config?.enabled;
-  const nasPaper = !!nas?.config?.paper_trading_mode;
+  const nasAgg = aggregateNas(nasStates);
+  const nasOpen = nasAgg.activeLegs;
+  const nasPnl = nasAgg.dayPnl;
+  const nasEnabled = nasAgg.anyEnabled;
+  const nasPaper = nasAgg.anyEnabled && !nasAgg.anyLive;
 
   return (
     <div className={styles.root}>
@@ -85,8 +137,8 @@ export default function Strategies() {
             {
               label: 'Total P&L',
               value: (
-                <span className={pnlClass(nas?.stats?.total_pnl as number | undefined)}>
-                  {formatPnl(nas?.stats?.total_pnl as number | undefined)}
+                <span className={pnlClass(nasAgg.totalPnl)}>
+                  {formatPnl(nasAgg.totalPnl)}
                 </span>
               ),
             },
