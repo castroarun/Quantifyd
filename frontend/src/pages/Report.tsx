@@ -336,17 +336,14 @@ export default function Report() {
         <MetricCard
           label="Total trades"
           value={formatInt(summary.totalTrades)}
-          hint="Across all 8 systems"
         />
         <MetricCard
           label="Overall win rate"
           value={formatPct(summary.overallWinRate, 1)}
-          hint="Weighted by trades"
         />
         <MetricCard
           label="Avg profit factor"
           value={summary.avgPf ? formatNumber(summary.avgPf, 2) : '—'}
-          hint="Mean across systems"
         />
         <MetricCard
           label="Total P&L"
@@ -355,10 +352,10 @@ export default function Report() {
               {formatPnl(summary.totalPnl)}
             </span>
           }
-          hint="Sum of 8 systems"
         />
         <MetricCard
           label="Best day"
+          labelRight={bestWorst.best?.dayName}
           value={
             bestWorst.best ? (
               <span className={pnlClass(bestWorst.best.totalPnl)}>
@@ -368,10 +365,10 @@ export default function Report() {
               '—'
             )
           }
-          hint={bestWorst.best?.dayName ?? '—'}
         />
         <MetricCard
           label="Worst day"
+          labelRight={bestWorst.worst?.dayName}
           value={
             bestWorst.worst ? (
               <span className={pnlClass(bestWorst.worst.totalPnl)}>
@@ -381,7 +378,6 @@ export default function Report() {
               '—'
             )
           }
-          hint={bestWorst.worst?.dayName ?? '—'}
         />
       </div>
 
@@ -389,7 +385,6 @@ export default function Report() {
         <MetricCard
           label="Active trading days"
           value={formatInt(daily.length)}
-          hint="Days with at least one trade"
         />
       </div>
 

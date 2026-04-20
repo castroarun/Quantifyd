@@ -6,11 +6,31 @@
   min-width: 0;
 }
 
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .label {
   font-size: var(--text-xxs);
   color: var(--ink-muted);
-  margin-bottom: 6px;
   line-height: 1.3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.labelRight {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .value {
