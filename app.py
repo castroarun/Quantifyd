@@ -6244,6 +6244,113 @@ def api_orb_backtest_run():
 
 
 # =============================================================================
+# Holdings dashboard — live digest, daily snapshots, nightly meta / events crons
+# =============================================================================
+
+@app.route('/api/holdings/digest')
+def api_holdings_digest():
+    """Live digest — summary + movers + extremes + weekly + events + next event."""
+    try:
+        from services.holdings_dashboard import get_digest
+        return jsonify(get_digest())
+    except Exception as e:
+        logger.error(f"[API] /api/holdings/digest error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/holdings/snapshot')
+def api_holdings_snapshot():
+    """Return a stored daily snapshot. ?date=YYYY-MM-DD or latest if omitted."""
+    try:
+        from services.holdings_dashboard import get_snapshot
+        d = request.args.get('date') or None
+        snap = get_snapshot(snap_date=d)
+        if not snap:
+            return jsonify({'error': 'no snapshot'}), 404
+        return jsonify(snap)
+    except Exception as e:
+        logger.error(f"[API] /api/holdings/snapshot error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/holdings/snapshots')
+def api_holdings_snapshots():
+    """List recent snapshot summaries, newest first."""
+    try:
+        from services.holdings_dashboard import list_snapshots
+        limit = int(request.args.get('limit', 120))
+        return jsonify(list_snapshots(limit=limit))
+    except Exception as e:
+        logger.error(f"[API] /api/holdings/snapshots error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/holdings/refresh', methods=['POST'])
+def api_holdings_refresh():
+    """Trigger meta + events + snapshot refresh on demand (admin)."""
+    try:
+        from services.holdings_dashboard import (
+            refresh_holdings_meta, refresh_corporate_actions,
+            capture_daily_snapshot,
+        )
+        body = request.get_json(silent=True) or {}
+        parts = body.get('parts') or ['meta', 'events', 'snapshot']
+        result = {}
+        if 'meta' in parts:
+            result['meta'] = refresh_holdings_meta()
+        if 'events' in parts:
+            result['events'] = refresh_corporate_actions()
+        if 'snapshot' in parts:
+            result['snapshot'] = capture_daily_snapshot()
+        return jsonify({'status': 'ok', **result})
+    except Exception as e:
+        logger.error(f"[API] /api/holdings/refresh error: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+def _holdings_refresh_meta_job():
+    """06:30 Mon-Fri — Refresh per-symbol 52w hi/lo + 5d/20d moves."""
+    try:
+        from services.holdings_dashboard import refresh_holdings_meta
+        refresh_holdings_meta()
+    except Exception as e:
+        logger.error(f"[Holdings-cron] meta error: {e}", exc_info=True)
+
+
+def _holdings_refresh_events_job():
+    """07:00 Mon-Fri — Fetch upcoming corporate actions from NSE."""
+    try:
+        from services.holdings_dashboard import refresh_corporate_actions
+        refresh_corporate_actions()
+    except Exception as e:
+        logger.error(f"[Holdings-cron] events error: {e}", exc_info=True)
+
+
+def _holdings_capture_snapshot_job():
+    """16:00 Mon-Fri — Capture post-close daily snapshot for history view."""
+    try:
+        from services.holdings_dashboard import capture_daily_snapshot
+        capture_daily_snapshot()
+    except Exception as e:
+        logger.error(f"[Holdings-cron] snapshot error: {e}", exc_info=True)
+
+
+try:
+    scheduler.add_job(_holdings_refresh_meta_job,
+                      'cron', day_of_week='mon-fri', hour=6, minute=30,
+                      id='holdings_meta', replace_existing=True)
+    scheduler.add_job(_holdings_refresh_events_job,
+                      'cron', day_of_week='mon-fri', hour=7, minute=0,
+                      id='holdings_events', replace_existing=True)
+    scheduler.add_job(_holdings_capture_snapshot_job,
+                      'cron', day_of_week='mon-fri', hour=16, minute=0,
+                      id='holdings_snapshot', replace_existing=True)
+    logger.info("Holdings cron jobs registered: meta(06:30), events(07:00), snapshot(16:00)")
+except Exception as e:
+    logger.warning(f"Could not register Holdings cron jobs: {e}")
+
+
+# =============================================================================
 # Options Data Manager — Index Option Chain Downloader
 # =============================================================================
 
