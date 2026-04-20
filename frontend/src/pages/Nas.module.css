@@ -326,6 +326,33 @@
   color: var(--ink);
 }
 
+.closedLegs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--hairline-soft);
+}
+
+.closedHead {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-bottom: 2px;
+}
+
+.legClosed {
+  opacity: 0.75;
+}
+
+.legReason {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  background: var(--chip-bg);
+  padding: 1px 6px;
+  border-radius: var(--radius-control);
+  flex-shrink: 0;
+}
+
 .legArrow {
   font-size: var(--text-xxs);
   color: var(--ink-faint);

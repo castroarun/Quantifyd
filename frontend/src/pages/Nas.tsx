@@ -490,6 +490,20 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
 
   const totalPnl = enriched.reduce((acc, p) => acc + (p.pnl_inr ?? 0), 0);
   const dayPnl = (state?.stats?.today_pnl as number | undefined) ?? totalPnl;
+
+  // Closed-today legs (sorted newest first), with pnl computed from entry/exit.
+  const closedLegs = (state?.positions?.closed_today ?? [])
+    .map((p) => {
+      const entry = p.entry_price ?? p.entry_premium;
+      const exit = p.exit_price;
+      const qty = p.qty ?? 0;
+      const pnl =
+        entry != null && exit != null && qty
+          ? Math.round((entry - exit) * qty * 100) / 100
+          : undefined;
+      return { ...p, pnl_inr: pnl };
+    })
+    .sort((a, b) => (b.exit_time ?? '').localeCompare(a.exit_time ?? ''));
   const reentries = (state?.stats?.total_reentries as number | undefined) ?? 0;
   const winRate = state?.stats?.win_rate as number | undefined;
   const pf = state?.stats?.profit_factor as number | undefined;
@@ -546,6 +560,22 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         )}
       </div>
 
+      {closedLegs.length > 0 ? (
+        <div className={styles.closedLegs}>
+          <div className={styles.closedHead}>
+            Closed today · {closedLegs.length}
+          </div>
+          {closedLegs.map((p, i) => (
+            <LegRow
+              key={'c' + (p.tradingsymbol ?? '') + i}
+              leg={p}
+              closed
+              reason={p.exit_reason}
+            />
+          ))}
+        </div>
+      ) : null}
+
       <details className={styles.rules}>
         <summary className={styles.rulesSummary}>Rules &amp; snapshot</summary>
         <div className={styles.rulesBody}>
@@ -587,17 +617,28 @@ function MiniMetric({
   );
 }
 
-function LegRow({ leg }: { leg: NASPosition }) {
+function LegRow({
+  leg,
+  closed = false,
+  reason,
+}: {
+  leg: NASPosition;
+  closed?: boolean;
+  reason?: string;
+}) {
   const tsym = leg.tradingsymbol ?? '—';
   const entry = leg.entry_price ?? leg.entry_premium;
   const ltp = leg.ltp ?? leg.exit_price;
   const pnl = leg.pnl_inr;
 
   return (
-    <div className={styles.leg}>
+    <div className={`${styles.leg} ${closed ? styles.legClosed : ''}`}>
       <div className={styles.legMain}>
         <span className={styles.legSide}>{leg.leg}</span>
         <span className={styles.legSym}>{tsym}</span>
+        {closed && reason ? (
+          <span className={styles.legReason}>{reason}</span>
+        ) : null}
       </div>
       <div className={styles.legNums}>
         <span className={styles.legSmall}>
