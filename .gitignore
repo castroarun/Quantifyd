@@ -121,3 +121,7 @@ frontend/.vite/
 
 # Local-only helper scripts (may contain credentials)
 scripts/_vps_helper.py
+
+# Scheduled tasks personal state
+.claude/scheduled_tasks.lock
+scc/tsconfig.tsbuildinfo
