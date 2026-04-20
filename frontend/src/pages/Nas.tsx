@@ -506,16 +506,6 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         <div className={styles.panelHeadLeft}>
           <div className={styles.panelTitle}>{def.label}</div>
           <div className={styles.panelSub}>{def.subtitle}</div>
-          <div className={styles.badgeRow}>
-            <span className={`${styles.modeBadge} ${paper ? styles.modePaper : styles.modeLive}`}>
-              {paper ? 'Paper' : 'Live'}
-            </span>
-            <span
-              className={`${styles.modeBadge} ${enabled ? styles.modeOn : styles.modeOff}`}
-            >
-              {enabled ? 'On' : 'Off'}
-            </span>
-          </div>
         </div>
         <div className={styles.panelStatus}>
           <StatusDot
