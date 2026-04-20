@@ -549,13 +549,6 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         />
       </div>
 
-      {liveTicks.spot !== null ? (
-        <div className={styles.spotRow}>
-          <span className={styles.spotLabel}>Nifty spot</span>
-          <span className={styles.spotValue}>{formatNumber(liveTicks.spot)}</span>
-        </div>
-      ) : null}
-
       <div className={styles.legs}>
         {enriched.length === 0 ? (
           <div className={styles.noLegs}>No open legs</div>
@@ -566,7 +559,7 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
 
       <div className={styles.statsMiniRow}>
         <MiniMetric
-          label="Win rate"
+          label="Win rate (all-time)"
           value={winRate !== undefined ? formatPct(winRate, 1) : '—'}
         />
         <MiniMetric
