@@ -1,0 +1,490 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Return multiples · fund-allocation treatments</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --ink: #0f172a;
+    --ink-muted: #64748b;
+    --ink-faint: #94a3b8;
+    --hair: #e4e1d7;
+    --hair-soft: #eeebe1;
+    --pos: #0f6e56;
+    --posLight: #34d399;
+    --neg: #a32d2d;
+    --negLight: #f87171;
+    --hot: #b45309;
+    --hotLight: #f59e0b;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: -apple-system, Segoe UI, sans-serif; margin: 0; padding: 32px 48px; font-size: 14px; }
+  h1 { font-weight: 500; letter-spacing: -0.02em; }
+  h2 { margin: 48px 0 6px; font-weight: 500; font-size: 18px; letter-spacing: -0.01em; }
+  h3 { color: var(--ink-muted); font-weight: 400; font-size: 13px; margin: 0 0 18px; line-height: 1.5; max-width: 720px; }
+  .mock { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 18px 22px; margin-bottom: 26px; }
+  .note { color: var(--ink-muted); font-size: 12px; margin-top: 14px; line-height: 1.5; padding-top: 12px; border-top: 1px solid var(--hair-soft); }
+
+  .row {
+    display: grid;
+    align-items: center;
+    column-gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--hair-soft);
+  }
+  .row:last-child { border-bottom: none; }
+  .label { font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 500; }
+  .bar {
+    height: 20px;
+    background: #eee9dc;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .bar-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    border-radius: 3px;
+  }
+  .bar-count {
+    position: absolute;
+    right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .fill-hot { background: linear-gradient(90deg, #f59e0b, #b45309); }
+  .fill-mid { background: linear-gradient(90deg, #34d399, #0f6e56); }
+  .fill-cold { background: linear-gradient(90deg, #f87171, #a32d2d); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #faf8f1; border: 0.5px solid var(--hair); border-radius: 3px;
+    padding: 2px 7px; font-size: 11px; font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .chip .pct { color: var(--ink-muted); font-size: 10px; }
+  .chips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+  /* ========= A: Inline numeric block ========= */
+  .rowA { grid-template-columns: 80px 120px 1fr 170px; }
+  .funds-text {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .funds-text .big { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .funds-text .small { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+  .funds-text .gain-pos { color: var(--pos); }
+  .funds-text .gain-neg { color: var(--neg); }
+
+  /* ========= B: Donut + amount ========= */
+  .rowB { grid-template-columns: 80px 120px 1fr 150px; }
+  .donut-block { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+  .donut { width: 34px; height: 34px; }
+  .donut-track { fill: none; stroke: var(--hair); stroke-width: 4; }
+  .donut-val { fill: none; stroke-width: 4; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
+  .donut-val-hot { stroke: var(--hot); }
+  .donut-val-mid { stroke: var(--pos); }
+  .donut-val-cold { stroke: var(--neg); }
+  .donut-label { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-anchor: middle; }
+  .donut-side { text-align: right; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .donut-side .big { font-size: 12px; }
+  .donut-side .small { font-size: 10px; color: var(--ink-muted); }
+
+  /* ========= C: Before → After arrow ========= */
+  .rowC { grid-template-columns: 80px 120px 1fr 220px; }
+  .ba-block { display: flex; align-items: center; gap: 4px; justify-content: flex-end; font-variant-numeric: tabular-nums; font-size: 11px; }
+  .ba-box {
+    padding: 3px 7px;
+    border-radius: 2px;
+    background: #f0ede2;
+    color: var(--ink-muted);
+    font-size: 11px;
+  }
+  .ba-box.now {
+    background: none;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .ba-arrow { color: var(--ink-faint); }
+  .ba-gain { color: var(--pos); font-weight: 500; }
+  .ba-gain.neg { color: var(--neg); }
+
+  /* ========= D: Stacked micro-bar at row end ========= */
+  .rowD { grid-template-columns: 80px 120px 1fr 180px; }
+  .stack-block {
+    display: flex; flex-direction: column; gap: 3px;
+    text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .stack-row { display: flex; align-items: center; gap: 6px; justify-content: flex-end; font-size: 11px; }
+  .stack-pill {
+    height: 5px; border-radius: 3px; min-width: 8px; max-width: 60px;
+  }
+  .stack-pill.inv { background: #d1ccbd; }
+  .stack-pill.cur { background: var(--pos); }
+  .stack-pill.cur-hot { background: var(--hot); }
+  .stack-pill.cur-cold { background: var(--neg); }
+  .stack-label { color: var(--ink-muted); width: 30px; text-align: left; font-size: 10px; }
+  .stack-val { color: var(--ink); font-weight: 500; }
+
+  /* ========= E: Hero number, right aligned ========= */
+  .rowE { grid-template-columns: 80px 120px 1fr 150px; }
+  .hero-block { text-align: right; font-variant-numeric: tabular-nums; }
+  .hero-num { font-size: 20px; font-weight: 500; letter-spacing: -0.01em; line-height: 1; }
+  .hero-hot { color: var(--hot); }
+  .hero-mid { color: var(--pos); }
+  .hero-cold { color: var(--neg); }
+  .hero-sub { font-size: 11px; color: var(--ink-muted); margin-top: 4px; line-height: 1.3; }
+
+  /* ========= F: Compact chip at end of chips row ========= */
+  .rowF { grid-template-columns: 80px 120px 1fr; }
+  .fund-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: 1px dashed var(--hair);
+    border-radius: 3px; padding: 3px 8px; font-size: 11px;
+    font-variant-numeric: tabular-nums; color: var(--ink-muted);
+    margin-left: auto;
+  }
+  .fund-chip .val { color: var(--ink); font-weight: 500; }
+  .fund-chip .hot { color: var(--hot); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<h1>Return multiples · fund allocation — right-side treatments</h1>
+<p style="color: var(--ink-muted); max-width: 760px; line-height: 1.5;">
+  Five ways to surface fund allocation per bucket in the right-side space, <b>without</b> adding a second progress bar.
+  Same data — you pick one.
+</p>
+
+<!-- MOCK A: inline two-line numeric block -->
+<h2>A · Two-line numeric block</h2>
+<h3>Big current value, small invested/share/gain underneath. Most information, most space.</h3>
+<div class="mock">
+  <div class="row rowA">
+    <div class="label">+400%</div>
+    <div class="bar"><div class="bar-fill fill-hot" style="width: 0%"></div><div class="bar-count">—</div></div>
+    <div class="chips"></div>
+    <div class="funds-text"><div class="big">Rs 0</div><div class="small">0% of fund</div></div>
+  </div>
+  <div class="row rowA">
+    <div class="label">+200%</div>
+    <div class="bar"><div class="bar-fill fill-hot" style="width: 29%"></div><div class="bar-count">5</div></div>
+    <div class="chips">
+      <span class="chip">HAL <span class="pct">390%</span></span>
+      <span class="chip">LUMAXTECH <span class="pct">334%</span></span>
+      <span class="chip">RECLTD <span class="pct">318%</span></span>
+    </div>
+    <div class="funds-text">
+      <div class="big">Rs 44.6L</div>
+      <div class="small">11% → 25% · <span class="gain-pos">+286%</span></div>
+    </div>
+  </div>
+  <div class="row rowA">
+    <div class="label">+100%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">POLYCAB <span class="pct">183%</span></span>
+      <span class="chip">GUJTHEM <span class="pct">180%</span></span>
+      <span class="chip">PRUDENT <span class="pct">179%</span></span>
+    </div>
+    <div class="funds-text">
+      <div class="big">Rs 27.6L</div>
+      <div class="small">9% → 16% · <span class="gain-pos">+181%</span></div>
+    </div>
+  </div>
+  <div class="row rowA">
+    <div class="label">+0%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 100%"></div><div class="bar-count">17</div></div>
+    <div class="chips">
+      <span class="chip">PERSISTENT <span class="pct">46%</span></span>
+      <span class="chip">APLAPOLLO <span class="pct">41%</span></span>
+      <span class="chip">+15 more</span>
+    </div>
+    <div class="funds-text">
+      <div class="big">Rs 83.0L</div>
+      <div class="small">63% → 47% · <span class="gain-pos">+25%</span></div>
+    </div>
+  </div>
+  <div class="row rowA">
+    <div class="label">underwater</div>
+    <div class="bar"><div class="bar-fill fill-cold" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">CAMS <span class="pct">−1%</span></span>
+      <span class="chip">CDSL <span class="pct">−2%</span></span>
+    </div>
+    <div class="funds-text">
+      <div class="big">Rs 8.35L</div>
+      <div class="small">8% → 5% · <span class="gain-neg">−2%</span></div>
+    </div>
+  </div>
+  <div class="note">3 facts per row (current value, share-then-now, gain) stacked. Most information, reads as a small metric card.</div>
+</div>
+
+<!-- MOCK B: donut + amount -->
+<h2>B · Mini donut + side amount</h2>
+<h3>Tiny donut conveys "share of fund" at a glance; amount sits beside it.</h3>
+<div class="mock">
+  <div class="row rowB">
+    <div class="label">+200%</div>
+    <div class="bar"><div class="bar-fill fill-hot" style="width: 29%"></div><div class="bar-count">5</div></div>
+    <div class="chips">
+      <span class="chip">HAL <span class="pct">390%</span></span>
+      <span class="chip">LUMAXTECH <span class="pct">334%</span></span>
+      <span class="chip">RECLTD <span class="pct">318%</span></span>
+    </div>
+    <div class="donut-block">
+      <svg class="donut" viewBox="0 0 40 40">
+        <circle class="donut-track" cx="20" cy="20" r="16"/>
+        <circle class="donut-val donut-val-hot" cx="20" cy="20" r="16" stroke-dasharray="25 100"/>
+        <text class="donut-label" x="20" y="24">25%</text>
+      </svg>
+      <div class="donut-side"><div class="big">Rs 44.6L</div><div class="small">from Rs 11.6L</div></div>
+    </div>
+  </div>
+  <div class="row rowB">
+    <div class="label">+100%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">POLYCAB <span class="pct">183%</span></span>
+      <span class="chip">GUJTHEM <span class="pct">180%</span></span>
+    </div>
+    <div class="donut-block">
+      <svg class="donut" viewBox="0 0 40 40">
+        <circle class="donut-track" cx="20" cy="20" r="16"/>
+        <circle class="donut-val donut-val-mid" cx="20" cy="20" r="16" stroke-dasharray="16 100"/>
+        <text class="donut-label" x="20" y="24">16%</text>
+      </svg>
+      <div class="donut-side"><div class="big">Rs 27.6L</div><div class="small">from Rs 9.8L</div></div>
+    </div>
+  </div>
+  <div class="row rowB">
+    <div class="label">+0%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 100%"></div><div class="bar-count">17</div></div>
+    <div class="chips">
+      <span class="chip">PERSISTENT <span class="pct">46%</span></span>
+      <span class="chip">+15 more</span>
+    </div>
+    <div class="donut-block">
+      <svg class="donut" viewBox="0 0 40 40">
+        <circle class="donut-track" cx="20" cy="20" r="16"/>
+        <circle class="donut-val donut-val-mid" cx="20" cy="20" r="16" stroke-dasharray="47 100"/>
+        <text class="donut-label" x="20" y="24">47%</text>
+      </svg>
+      <div class="donut-side"><div class="big">Rs 83.0L</div><div class="small">from Rs 66.4L</div></div>
+    </div>
+  </div>
+  <div class="note">Donut is novel, glanceable. "Share of current fund" is the hero number; invested sits as context. Reads well on mobile too.</div>
+</div>
+
+<!-- MOCK C: before → after arrow -->
+<h2>C · Before → after with gain</h2>
+<h3>Shows the money's story: "this much went in, this much is here now". Color-codes the delta.</h3>
+<div class="mock">
+  <div class="row rowC">
+    <div class="label">+200%</div>
+    <div class="bar"><div class="bar-fill fill-hot" style="width: 29%"></div><div class="bar-count">5</div></div>
+    <div class="chips">
+      <span class="chip">HAL <span class="pct">390%</span></span>
+      <span class="chip">LUMAXTECH <span class="pct">334%</span></span>
+    </div>
+    <div class="ba-block">
+      <span class="ba-box">11.6L</span>
+      <span class="ba-arrow">→</span>
+      <span class="ba-box now">44.6L</span>
+      <span class="ba-gain">+286%</span>
+    </div>
+  </div>
+  <div class="row rowC">
+    <div class="label">+100%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">POLYCAB <span class="pct">183%</span></span>
+    </div>
+    <div class="ba-block">
+      <span class="ba-box">9.8L</span>
+      <span class="ba-arrow">→</span>
+      <span class="ba-box now">27.6L</span>
+      <span class="ba-gain">+181%</span>
+    </div>
+  </div>
+  <div class="row rowC">
+    <div class="label">+0%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 100%"></div><div class="bar-count">17</div></div>
+    <div class="chips">
+      <span class="chip">PERSISTENT <span class="pct">46%</span></span>
+      <span class="chip">+15 more</span>
+    </div>
+    <div class="ba-block">
+      <span class="ba-box">66.4L</span>
+      <span class="ba-arrow">→</span>
+      <span class="ba-box now">83.0L</span>
+      <span class="ba-gain">+25%</span>
+    </div>
+  </div>
+  <div class="row rowC">
+    <div class="label">underwater</div>
+    <div class="bar"><div class="bar-fill fill-cold" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">CAMS <span class="pct">−1%</span></span>
+    </div>
+    <div class="ba-block">
+      <span class="ba-box">8.5L</span>
+      <span class="ba-arrow">→</span>
+      <span class="ba-box now">8.4L</span>
+      <span class="ba-gain neg">−2%</span>
+    </div>
+  </div>
+  <div class="note">Narrative pattern. Works well because the gain% is the "why" behind every bucket. Visual beat: invested (grey) → current (bold) → gain (colored).</div>
+</div>
+
+<!-- MOCK D: stacked micro pills -->
+<h2>D · Paired micro bars (invested vs current)</h2>
+<h3>Two ultra-thin bars scaled consistently: invested on top, current below. The gap IS the gain.</h3>
+<div class="mock">
+  <div class="row rowD">
+    <div class="label">+200%</div>
+    <div class="bar"><div class="bar-fill fill-hot" style="width: 29%"></div><div class="bar-count">5</div></div>
+    <div class="chips">
+      <span class="chip">HAL <span class="pct">390%</span></span>
+      <span class="chip">LUMAXTECH <span class="pct">334%</span></span>
+    </div>
+    <div class="stack-block">
+      <div class="stack-row"><span class="stack-label">inv</span><div class="stack-pill inv" style="width: 14px"></div><span class="stack-val">11.6L</span></div>
+      <div class="stack-row"><span class="stack-label">now</span><div class="stack-pill cur-hot" style="width: 54px"></div><span class="stack-val">44.6L</span></div>
+    </div>
+  </div>
+  <div class="row rowD">
+    <div class="label">+100%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">POLYCAB <span class="pct">183%</span></span>
+    </div>
+    <div class="stack-block">
+      <div class="stack-row"><span class="stack-label">inv</span><div class="stack-pill inv" style="width: 12px"></div><span class="stack-val">9.8L</span></div>
+      <div class="stack-row"><span class="stack-label">now</span><div class="stack-pill cur" style="width: 34px"></div><span class="stack-val">27.6L</span></div>
+    </div>
+  </div>
+  <div class="row rowD">
+    <div class="label">+0%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 100%"></div><div class="bar-count">17</div></div>
+    <div class="chips">
+      <span class="chip">PERSISTENT <span class="pct">46%</span></span>
+      <span class="chip">+15 more</span>
+    </div>
+    <div class="stack-block">
+      <div class="stack-row"><span class="stack-label">inv</span><div class="stack-pill inv" style="width: 58px"></div><span class="stack-val">66.4L</span></div>
+      <div class="stack-row"><span class="stack-label">now</span><div class="stack-pill cur" style="width: 60px"></div><span class="stack-val">83.0L</span></div>
+    </div>
+  </div>
+  <div class="note">The visual "gap" between inv and now bars tells the story — big gap = big multiple. Works best when fund sizes vary widely across buckets.</div>
+</div>
+
+<!-- MOCK E: hero number -->
+<h2>E · Hero % (share of current fund)</h2>
+<h3>Single big number on the right — how much of your portfolio lives in this bucket. Amounts sit small below.</h3>
+<div class="mock">
+  <div class="row rowE">
+    <div class="label">+200%</div>
+    <div class="bar"><div class="bar-fill fill-hot" style="width: 29%"></div><div class="bar-count">5</div></div>
+    <div class="chips">
+      <span class="chip">HAL <span class="pct">390%</span></span>
+      <span class="chip">LUMAXTECH <span class="pct">334%</span></span>
+    </div>
+    <div class="hero-block">
+      <div class="hero-num hero-hot">25%</div>
+      <div class="hero-sub">Rs 44.6L now · Rs 11.6L in</div>
+    </div>
+  </div>
+  <div class="row rowE">
+    <div class="label">+100%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">POLYCAB <span class="pct">183%</span></span>
+    </div>
+    <div class="hero-block">
+      <div class="hero-num hero-mid">16%</div>
+      <div class="hero-sub">Rs 27.6L now · Rs 9.8L in</div>
+    </div>
+  </div>
+  <div class="row rowE">
+    <div class="label">+0%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 100%"></div><div class="bar-count">17</div></div>
+    <div class="chips">
+      <span class="chip">PERSISTENT <span class="pct">46%</span></span>
+      <span class="chip">+15 more</span>
+    </div>
+    <div class="hero-block">
+      <div class="hero-num hero-mid">47%</div>
+      <div class="hero-sub">Rs 83.0L now · Rs 66.4L in</div>
+    </div>
+  </div>
+  <div class="row rowE">
+    <div class="label">underwater</div>
+    <div class="bar"><div class="bar-fill fill-cold" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">CAMS <span class="pct">−1%</span></span>
+    </div>
+    <div class="hero-block">
+      <div class="hero-num hero-cold">5%</div>
+      <div class="hero-sub">Rs 8.4L now · Rs 8.5L in</div>
+    </div>
+  </div>
+  <div class="note">Simplest. Hero % catches the eye ("47% of my fund is in 0–50% returners"). Most honest hierarchy — the concentration IS the headline.</div>
+</div>
+
+<!-- MOCK F: fund chip trailing the regular chips -->
+<h2>F · Fund chip trailing the stock chips</h2>
+<h3>Lives on the same row, stays in the chip row's rhythm. Dashed border sets it apart.</h3>
+<div class="mock">
+  <div class="row rowF">
+    <div class="label">+200%</div>
+    <div class="bar"><div class="bar-fill fill-hot" style="width: 29%"></div><div class="bar-count">5</div></div>
+    <div class="chips">
+      <span class="chip">HAL <span class="pct">390%</span></span>
+      <span class="chip">LUMAXTECH <span class="pct">334%</span></span>
+      <span class="chip">RECLTD <span class="pct">318%</span></span>
+      <span class="chip">KEI <span class="pct">242%</span></span>
+      <span class="chip">BEL <span class="pct">231%</span></span>
+      <span class="fund-chip"><span class="val hot">25%</span> of fund · <span class="val">Rs 44.6L</span></span>
+    </div>
+  </div>
+  <div class="row rowF">
+    <div class="label">+100%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 18%"></div><div class="bar-count">3</div></div>
+    <div class="chips">
+      <span class="chip">POLYCAB <span class="pct">183%</span></span>
+      <span class="chip">GUJTHEM <span class="pct">180%</span></span>
+      <span class="chip">PRUDENT <span class="pct">179%</span></span>
+      <span class="fund-chip"><span class="val">16%</span> of fund · <span class="val">Rs 27.6L</span></span>
+    </div>
+  </div>
+  <div class="row rowF">
+    <div class="label">+0%</div>
+    <div class="bar"><div class="bar-fill fill-mid" style="width: 100%"></div><div class="bar-count">17</div></div>
+    <div class="chips">
+      <span class="chip">PERSISTENT <span class="pct">46%</span></span>
+      <span class="chip">APLAPOLLO <span class="pct">41%</span></span>
+      <span class="chip">+15</span>
+      <span class="fund-chip"><span class="val">47%</span> of fund · <span class="val">Rs 83.0L</span></span>
+    </div>
+  </div>
+  <div class="note">Zero layout disruption — one more chip in the chip row (dashed border to signal "meta"). Best if you want minimal visual change vs current live.</div>
+</div>
+
+<h2 style="margin-top: 48px;">My ranking</h2>
+<ol style="line-height: 1.8; max-width: 680px; color: var(--ink);">
+  <li><b>E (hero %)</b> — the one number that actually matters (concentration) gets the visual weight. Cleanest.</li>
+  <li><b>C (before → after)</b> — most "interesting" — tells the story of each bucket.</li>
+  <li><b>A (two-line block)</b> — most info-dense if you want all facts visible.</li>
+  <li>B (donut) — novel but donut feels redundant with the bar on the left.</li>
+  <li>F (trailing chip) — minimal but easy to miss amid the stock chips.</li>
+</ol>
+
+<p style="color: var(--ink-muted); max-width: 680px; line-height: 1.5;">
+  Tell me which one (or a mix, e.g., "E but with arrow from C") and I'll wire it into the live page.
+</p>
+
+</body>
+</html>

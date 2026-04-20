@@ -43,9 +43,21 @@ CREATE TABLE IF NOT EXISTS holdings_meta (
     all_time_high REAL, all_time_high_date TEXT,
     change_5d_pct REAL, change_5d_abs REAL, change_5d_from_price REAL,
     change_20d_pct REAL, change_20d_abs REAL, change_20d_from_price REAL,
+    sparkline_json TEXT,
     refreshed_at TEXT
 );
 """
+
+
+def _ensure_sparkline_column(c: sqlite3.Connection) -> None:
+    """Best-effort migration for DBs created before the sparkline column."""
+    try:
+        cols = {r[1] for r in c.execute('PRAGMA table_info(holdings_meta)').fetchall()}
+        if 'sparkline_json' not in cols:
+            c.execute('ALTER TABLE holdings_meta ADD COLUMN sparkline_json TEXT')
+            c.commit()
+    except sqlite3.OperationalError:
+        pass
 
 EVENTS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS holdings_events (
@@ -79,6 +91,8 @@ def _conn(path: str, schema: str) -> sqlite3.Connection:
     c = sqlite3.connect(path)
     c.row_factory = sqlite3.Row
     c.executescript(schema)
+    if path == META_DB:
+        _ensure_sparkline_column(c)
     return c
 
 
@@ -90,7 +104,13 @@ def _kite_holdings() -> list[dict]:
     raw = kite.holdings() or []
     out = []
     for h in raw:
-        qty = (h.get('quantity') or 0) + (h.get('t1_quantity') or 0)
+        # Include pledged shares (collateral_quantity) — they are still owned,
+        # just locked as margin. Kite UI counts them in Qty, Invested and Current.
+        qty = (
+            (h.get('quantity') or 0)
+            + (h.get('t1_quantity') or 0)
+            + (h.get('collateral_quantity') or 0)
+        )
         if qty <= 0:
             continue
         out.append({
@@ -100,6 +120,10 @@ def _kite_holdings() -> list[dict]:
             'qty': qty,
             'avg_price': h.get('average_price'),
             'last_price': h.get('last_price'),
+            # Kite-computed day P&L — server-side, handles splits/bonuses correctly
+            'close_price': h.get('close_price'),
+            'day_change': h.get('day_change'),
+            'day_change_percentage': h.get('day_change_percentage'),
         })
     return out
 
@@ -171,6 +195,9 @@ def refresh_holdings_meta() -> int:
 
                 c5p, c5a, c5f = _chg(5)
                 c20p, c20a, c20f = _chg(20)
+                # Sparkline: last 252 closes (≈1 trading year), rounded.
+                spark = [round(x['close'], 2) for x in completed[-252:]]
+                spark_json = json.dumps(spark)
                 c.execute(
                     '''INSERT INTO holdings_meta(
                         tradingsymbol, exchange, instrument_token,
@@ -180,8 +207,8 @@ def refresh_holdings_meta() -> int:
                         all_time_high, all_time_high_date,
                         change_5d_pct, change_5d_abs, change_5d_from_price,
                         change_20d_pct, change_20d_abs, change_20d_from_price,
-                        refreshed_at
-                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        sparkline_json, refreshed_at
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     ON CONFLICT(tradingsymbol) DO UPDATE SET
                         last_close=excluded.last_close,
                         last_close_date=excluded.last_close_date,
@@ -197,6 +224,7 @@ def refresh_holdings_meta() -> int:
                         change_20d_pct=excluded.change_20d_pct,
                         change_20d_abs=excluded.change_20d_abs,
                         change_20d_from_price=excluded.change_20d_from_price,
+                        sparkline_json=excluded.sparkline_json,
                         refreshed_at=excluded.refreshed_at
                     ''',
                     (sym, h['exchange'], tok,
@@ -205,7 +233,7 @@ def refresh_holdings_meta() -> int:
                      round(lo['low'], 2), _d(lo),
                      round(ath['high'], 2), _d(ath),
                      c5p, c5a, c5f, c20p, c20a, c20f,
-                     datetime.now().isoformat()))
+                     spark_json, datetime.now().isoformat()))
                 written += 1
                 _t.sleep(0.35)
             c.commit()
@@ -280,32 +308,59 @@ def refresh_corporate_actions(days_ahead: int = 45) -> int:
     today = date.today()
     from_d = today.strftime('%d-%m-%Y')
     to_d = (today + timedelta(days=days_ahead)).strftime('%d-%m-%Y')
-    url = (
+    # Endpoint 1 — corporate actions (dividend/bonus/split ex-dates)
+    url_ca = (
         'https://www.nseindia.com/api/corporates-corporateActions?'
         f'index=equities&from_date={from_d}&to_date={to_d}'
     )
-    try:
-        rows = _nse_fetch(url)
-    except Exception as e:
-        logger.warning(f'[Holdings] NSE fetch failed: {e}')
-        return 0
+    # Endpoint 2 — board meetings (result announcements, AGMs)
+    url_bm = (
+        'https://www.nseindia.com/api/corporate-board-meetings?'
+        f'index=equities&from_date={from_d}&to_date={to_d}'
+    )
+    rows_all: list = []
+    for url in (url_ca, url_bm):
+        try:
+            r = _nse_fetch(url)
+            if r:
+                rows_all.extend(r)
+        except Exception as e:
+            logger.warning(f'[Holdings] NSE fetch failed ({url}): {e}')
+    rows = rows_all
     written = 0
     with _lock:
         c = _conn(EVENTS_DB, EVENTS_SCHEMA)
         try:
             c.execute('DELETE FROM holdings_events WHERE event_date >= ?',
                       (today.isoformat(),))
+            seen_keys: set = set()
             for r in rows:
-                sym = r.get('symbol')
+                sym = r.get('symbol') or r.get('bm_symbol')
                 if not sym or sym not in symbols:
                     continue
-                purpose = r.get('subject') or r.get('purpose') or ''
+                purpose = (
+                    r.get('subject')
+                    or r.get('purpose')
+                    or r.get('bm_purpose')
+                    or r.get('bm_desc')
+                    or ''
+                )
                 evt, detail = _parse_event(purpose)
-                edate = _norm_date(r.get('exDate') or r.get('ex_date')
-                                    or r.get('bcEndDate') or r.get('bcStartDate') or '')
+                edate = _norm_date(
+                    r.get('exDate')
+                    or r.get('ex_date')
+                    or r.get('bm_date')  # board meeting date
+                    or r.get('bcEndDate')
+                    or r.get('bcStartDate')
+                    or ''
+                )
                 if not edate:
                     continue
                 rdate = _norm_date(r.get('recDate') or '')
+                key = (sym, edate, evt, purpose[:60])
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
                 c.execute(
                     '''INSERT INTO holdings_events(
                         tradingsymbol, event_date, event_type, purpose,
@@ -363,6 +418,8 @@ def _tag_hi(r: dict) -> Optional[str]:
     p52 = r.get('pct_from_52h')
     if pa is not None and pa >= -0.5:
         return 'at_ath'
+    if pa is not None and pa >= -3:
+        return 'near_ath'
     if p52 is not None and p52 >= -1:
         return 'at_52h'
     if p52 is not None and p52 >= -3:
@@ -388,7 +445,11 @@ def _enrich(holdings, ltps, meta) -> list:
         q = ltps.get(sym, {})
         ltp = q.get('last_price') or h.get('last_price') or 0
         ohlc = q.get('ohlc', {}) or {}
-        prev_close = ohlc.get('close') or 0
+        # Day P&L uses QUOTE ltp vs QUOTE ohlc.close. Avoid holdings.day_change
+        # because Kite's holdings response returns a stale internal last_price
+        # post-market, which produces large phantom deltas against ohlc.close.
+        # Quote's last_price is fresher and matches Kite UI's per-stock day %.
+        prev_close = ohlc.get('close') or h.get('close_price') or 0
         day_pct = ((ltp - prev_close) / prev_close * 100) if prev_close else 0
         day_abs = (ltp - prev_close) * qty if prev_close else 0
         invested = avg * qty
@@ -402,6 +463,14 @@ def _enrich(holdings, ltps, meta) -> list:
         p52h = ((ltp - w52h) / w52h * 100) if w52h else None
         p52l = ((ltp - w52l) / w52l * 100) if w52l else None
         pa = ((ltp - ath) / ath * 100) if ath else None
+        # Sparkline: stored JSON string of last 252 closes; pass through as list.
+        spark = None
+        sj = m.get('sparkline_json')
+        if sj:
+            try:
+                spark = json.loads(sj)
+            except Exception:
+                spark = None
         out.append({
             'tradingsymbol': sym,
             'qty': qty,
@@ -422,6 +491,7 @@ def _enrich(holdings, ltps, meta) -> list:
             'pct_from_ath': round(pa, 2) if pa is not None else None,
             'change_5d_pct': m.get('change_5d_pct'),
             'change_20d_pct': m.get('change_20d_pct'),
+            'sparkline': spark,
         })
     return out
 

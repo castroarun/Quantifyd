@@ -12,6 +12,7 @@ import { formatInt, formatNumber, formatPct, formatPnl, pnlClass } from '../util
 
 const EXTREME_LABELS: Record<string, string> = {
   at_ath: 'at all-time high',
+  near_ath: 'near all-time high',
   at_52h: 'at 52wk high',
   near_52h: 'near 52wk high',
   at_52l: 'at 52wk low',
@@ -89,7 +90,7 @@ export default function Holdings() {
   }
   if (!data) return null;
 
-  const { summary, movers_today, movers_weekly, extremes, events, next_event } = data;
+  const { summary, movers_today, movers_weekly, extremes, events, next_event, holdings } = data;
 
   return (
     <div className={styles.root}>
@@ -100,24 +101,6 @@ export default function Holdings() {
 
       {/* Hero (B) */}
       <HeroSummary summary={summary} next={next_event} />
-
-      {/* 52-week extremes (A, with rail bars) */}
-      {(extremes.high.length > 0 || extremes.low.length > 0) ? (
-        <section className={styles.section}>
-          <div className={styles.sectionHead}>
-            <div className="section-title">52-week extremes</div>
-            <Chip>{extremes.high.length + extremes.low.length} signals</Chip>
-          </div>
-          <div className={styles.extremesCard}>
-            {extremes.high.length > 0 ? (
-              <ExtremesGroup title="At / near 52wk high" rows={extremes.high} side="hi" />
-            ) : null}
-            {extremes.low.length > 0 ? (
-              <ExtremesGroup title="At / near 52wk low" rows={extremes.low} side="lo" />
-            ) : null}
-          </div>
-        </section>
-      ) : null}
 
       {/* Today's movers (B) */}
       <section className={styles.section}>
@@ -135,6 +118,29 @@ export default function Holdings() {
           </div>
           <MoversGrid gainers={movers_weekly.gainers} losers={movers_weekly.losers} metricKey="change_5d_pct" />
         </section>
+      ) : null}
+
+      {/* Price extremes — stocks at/near ATH or 52-week high/low */}
+      {(extremes.high.length > 0 || extremes.low.length > 0) ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <div className="section-title">Price extremes</div>
+            <Chip>{extremes.high.length + extremes.low.length} signals</Chip>
+          </div>
+          <div className={styles.extremesCard}>
+            {extremes.high.length > 0 ? (
+              <ExtremesGroup title="At / near highs" rows={extremes.high} side="hi" />
+            ) : null}
+            {extremes.low.length > 0 ? (
+              <ExtremesGroup title="At / near lows" rows={extremes.low} side="lo" />
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Return multiples: bucket all holdings by unrealized P&L % */}
+      {holdings && holdings.length > 0 ? (
+        <ReturnMultiplesSection holdings={holdings} />
       ) : null}
 
       {/* Upcoming events (B) */}
@@ -228,46 +234,281 @@ function ExtremesGroup({ title, rows, side }: { title: string; rows: HoldingsRec
 }
 
 function ExtremeRow({ r }: { r: HoldingsRecord }) {
-  const low = r.week52_low ?? 0;
-  const high = r.week52_high ?? 0;
-  // Marker position 0..100
-  const range = high > low ? high - low : 1;
-  const pos = high > low ? Math.max(0, Math.min(100, ((r.ltp - low) / range) * 100)) : 50;
+  const tag = r.tag ?? '';
+  const atAth = tag === 'at_ath';
+  const nearAth = tag === 'near_ath';
+  const athRow = atAth || nearAth;
+  const atHi = tag === 'at_52h' || tag === 'near_52h';
+  const atLo = tag === 'at_52l' || tag === 'near_52l';
 
-  const atAth = r.tag === 'at_ath';
-  const atHi = r.tag === 'at_52h' || atAth;
-  const atLo = r.tag === 'at_52l';
-  const markerClass = atAth
-    ? styles.markerAth
-    : atHi
-    ? styles.markerHi
-    : atLo
-    ? styles.markerLo
-    : styles.markerMid;
+  const tagClass = atAth
+    ? styles.tagAth
+    : nearAth
+    ? styles.tagNearAth
+    : tag === 'at_52h'
+    ? styles.tagHi
+    : tag === 'near_52h'
+    ? styles.tagNearHi
+    : tag === 'at_52l'
+    ? styles.tagLo
+    : tag === 'near_52l'
+    ? styles.tagNearLo
+    : styles.tagNearHi;
 
-  const distLabel = r.tag?.includes('_52l')
-    ? `+${(r.pct_from_52l ?? 0).toFixed(1)}% above low`
-    : atAth
-    ? `at ATH`
-    : `${(r.pct_from_52h ?? 0).toFixed(1)}% from 52wH`;
+  const distLabel = (() => {
+    if (atAth) return 'at ATH';
+    if (nearAth) {
+      const p = r.pct_from_ath ?? 0;
+      return `${p >= 0 ? '+' : ''}${p.toFixed(1)}% from ATH`;
+    }
+    if (atLo) {
+      const p = r.pct_from_52l ?? 0;
+      return `+${p.toFixed(1)}% from 52wL`;
+    }
+    const p = r.pct_from_52h ?? 0;
+    return `${p >= 0 ? '+' : ''}${p.toFixed(1)}% from 52wH`;
+  })();
+
+  const spark = r.sparkline ?? [];
 
   return (
     <div className={styles.extremeRow}>
       <div className={styles.extremeSym}>{r.tradingsymbol}</div>
       <div className={styles.extremeTagCol}>
-        <span className={`${styles.tag} ${atAth ? styles.tagAth : atHi ? styles.tagHi : styles.tagLo}`}>
-          {EXTREME_LABELS[r.tag ?? ''] ?? r.tag ?? ''}
+        <span className={`${styles.tag} ${tagClass}`}>
+          {EXTREME_LABELS[tag] ?? tag}
         </span>
       </div>
-      <div className={styles.extremeRail}>
-        <div className={styles.railBar} />
-        <div className={`${styles.railMarker} ${markerClass}`} style={{ left: `${pos}%` }} />
-        <div className={styles.railLo}>{formatNumber(low, 2)}</div>
-        <div className={styles.railHi}>{formatNumber(high, 2)}</div>
-      </div>
+      <Sparkline
+        values={spark}
+        ltp={r.ltp}
+        high={r.week52_high ?? null}
+        low={r.week52_low ?? null}
+        ath={r.all_time_high ?? null}
+        highlight={athRow ? 'ath' : atHi ? 'hi' : atLo ? 'lo' : 'mid'}
+      />
       <div className={styles.extremeLtp}>{formatNumber(r.ltp, 2)}</div>
       <div className={styles.extremeDist}>{distLabel}</div>
     </div>
+  );
+}
+
+function Sparkline({
+  values,
+  ltp,
+  high,
+  low,
+  ath,
+  highlight,
+}: {
+  values: number[];
+  ltp: number;
+  high: number | null;
+  low: number | null;
+  ath: number | null;
+  highlight: 'ath' | 'hi' | 'lo' | 'mid';
+}) {
+  // Guard: need at least 2 points to draw a line. Fall back to a flat rail.
+  if (!values || values.length < 2) {
+    return <div className={styles.sparkEmpty}>—</div>;
+  }
+  const W = 300;
+  const H = 36;
+  const pad = 3;
+  // Clamp wide y-range so the line uses most of the vertical space.
+  const dataMin = Math.min(...values, ltp);
+  const dataMax = Math.max(...values, ltp);
+  const range = dataMax > dataMin ? dataMax - dataMin : 1;
+  const x = (i: number) => pad + (i / (values.length - 1)) * (W - 2 * pad);
+  const y = (v: number) => H - pad - ((v - dataMin) / range) * (H - 2 * pad);
+
+  const pathD =
+    `M ${x(0)} ${y(values[0])} ` +
+    values.slice(1).map((v, i) => `L ${x(i + 1)} ${y(v)}`).join(' ');
+  const fillD = `${pathD} L ${x(values.length - 1)} ${H} L ${x(0)} ${H} Z`;
+
+  // 20-day SMA overlay — adds depth without height
+  const sma: Array<[number, number]> = [];
+  const win = 20;
+  for (let i = win - 1; i < values.length; i++) {
+    let s = 0;
+    for (let j = i - win + 1; j <= i; j++) s += values[j];
+    sma.push([i, s / win]);
+  }
+  const smaD = sma.length > 1
+    ? `M ${x(sma[0][0])} ${y(sma[0][1])} ` +
+      sma.slice(1).map(([i, v]) => `L ${x(i)} ${y(v)}`).join(' ')
+    : '';
+
+  const isUp = values[values.length - 1] >= values[0];
+  const strokeClass = isUp ? styles.sparkStrokeUp : styles.sparkStrokeDown;
+  const fillId = `sf-${Math.abs(Math.round(values[0] * 1000))}-${Math.round(ltp * 100)}`;
+
+  const maxI = values.indexOf(dataMax);
+  const minI = values.indexOf(dataMin);
+
+  const nowMarkerColor =
+    highlight === 'ath'
+      ? '#B45309'
+      : highlight === 'hi'
+      ? 'var(--accent-pos)'
+      : highlight === 'lo'
+      ? 'var(--accent-neg)'
+      : 'var(--ink)';
+
+  const athY = ath != null && ath >= dataMin && ath <= dataMax ? y(ath) : null;
+  const hiY = high != null && high >= dataMin && high <= dataMax && high !== ath ? y(high) : null;
+  const loY = low != null && low >= dataMin && low <= dataMax ? y(low) : null;
+
+  return (
+    <div className={styles.sparkWrap}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={fillId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={isUp ? 'var(--accent-pos)' : 'var(--accent-neg)'} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={isUp ? 'var(--accent-pos)' : 'var(--accent-neg)'} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {athY !== null ? (
+          <line x1="0" x2={W} y1={athY} y2={athY} className={styles.sparkAthLine} strokeDasharray="3 3" />
+        ) : null}
+        {hiY !== null ? (
+          <line x1="0" x2={W} y1={hiY} y2={hiY} className={styles.sparkHiLine} strokeDasharray="2 3" />
+        ) : null}
+        {loY !== null ? (
+          <line x1="0" x2={W} y1={loY} y2={loY} className={styles.sparkLoLine} strokeDasharray="2 3" />
+        ) : null}
+        <path d={fillD} fill={`url(#${fillId})`} />
+        {smaD ? <path d={smaD} className={styles.sparkSma} /> : null}
+        <path d={pathD} className={`${styles.sparkPath} ${strokeClass}`} />
+        <circle cx={x(maxI)} cy={y(values[maxI])} r="2" className={styles.sparkMarkerHi} />
+        <circle cx={x(minI)} cy={y(values[minI])} r="2" className={styles.sparkMarkerLo} />
+        <circle
+          cx={x(values.length - 1)}
+          cy={y(ltp)}
+          r="3.5"
+          fill={nowMarkerColor}
+          stroke="var(--surface)"
+          strokeWidth="1.5"
+        />
+      </svg>
+    </div>
+  );
+}
+
+// ========= Return multiples bucket ==========
+
+type MultiplesBucket = { label: string; min: number; max: number | null; rows: HoldingsRecord[] };
+
+function bucketizeByMultiple(holdings: HoldingsRecord[]): MultiplesBucket[] {
+  const defs: Array<Omit<MultiplesBucket, 'rows'>> = [
+    { label: '+400%', min: 400, max: null },
+    { label: '+200%', min: 200, max: 400 },
+    { label: '+100%', min: 100, max: 200 },
+    { label: '+50%', min: 50, max: 100 },
+    { label: '+0%', min: 0, max: 50 },
+    { label: 'underwater', min: -Infinity, max: 0 },
+  ];
+  const buckets: MultiplesBucket[] = defs.map((d) => ({ ...d, rows: [] }));
+  for (const h of holdings) {
+    const p = h.total_pnl_pct ?? 0;
+    for (const b of buckets) {
+      if (p >= b.min && (b.max === null || p < b.max)) {
+        b.rows.push(h);
+        break;
+      }
+    }
+  }
+  return buckets;
+}
+
+function ReturnMultiplesSection({ holdings }: { holdings: HoldingsRecord[] }) {
+  const allBuckets = bucketizeByMultiple(holdings);
+  // Drop empty buckets at the top — start from the first bucket that has stocks.
+  const firstNonEmpty = allBuckets.findIndex((b) => b.rows.length > 0);
+  const buckets = firstNonEmpty === -1 ? allBuckets : allBuckets.slice(firstNonEmpty);
+  const maxCount = Math.max(1, ...buckets.map((b) => b.rows.length));
+  const totalCurrent = holdings.reduce((s, h) => s + (h.current ?? 0), 0);
+  return (
+    <section className={styles.section}>
+      <div className={styles.sectionHead}>
+        <div className="section-title">Return multiples</div>
+        <Chip>{holdings.length} positions</Chip>
+      </div>
+      <div className={styles.bucketsCard}>
+        {buckets.map((b) => {
+          const pctWidth = (b.rows.length / maxCount) * 100;
+          const hot = b.min >= 200;
+          const underwater = b.max === 0;
+          const invested = b.rows.reduce((s, r) => s + (r.invested ?? 0), 0);
+          const current = b.rows.reduce((s, r) => s + (r.current ?? 0), 0);
+          const shareOfFund = totalCurrent > 0 ? (current / totalCurrent) * 100 : 0;
+          const donutTone: 'hot' | 'mid' | 'cold' = hot ? 'hot' : underwater ? 'cold' : 'mid';
+          return (
+            <div key={b.label} className={styles.bucketRow}>
+              <div className={styles.bucketLabel}>{b.label}</div>
+              <div className={styles.bucketBar}>
+                <div
+                  className={`${styles.bucketBarFill} ${hot ? styles.bucketBarFillHot : underwater ? styles.bucketBarFillCold : styles.bucketBarFillMid}`}
+                  style={{ width: `${pctWidth}%` }}
+                />
+                <div className={styles.bucketBarCount}>{b.rows.length > 0 ? b.rows.length : '—'}</div>
+              </div>
+              <div className={styles.bucketChips}>
+                {b.rows
+                  .slice()
+                  .sort((a, c) => (c.total_pnl_pct ?? 0) - (a.total_pnl_pct ?? 0))
+                  .slice(0, 6)
+                  .map((r) => (
+                    <span key={r.tradingsymbol} className={styles.bucketChip}>
+                      {r.tradingsymbol}
+                      <span className={styles.bucketChipPct}>{formatPct(r.total_pnl_pct, 0)}</span>
+                    </span>
+                  ))}
+                {b.rows.length > 6 ? (
+                  <span className={styles.bucketChipMore}>+{b.rows.length - 6}</span>
+                ) : null}
+              </div>
+              <div className={styles.bucketFund}>
+                <BucketDonut pct={shareOfFund} tone={donutTone} />
+                <div className={styles.bucketFundText}>
+                  <div className={styles.bucketFundNow}>{formatRs(current)}</div>
+                  <div className={styles.bucketFundIn}>from {formatRs(invested)}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function BucketDonut({ pct, tone }: { pct: number; tone: 'hot' | 'mid' | 'cold' }) {
+  const r = 16;
+  const circ = 2 * Math.PI * r;
+  const filled = Math.max(0, Math.min(100, pct));
+  const dash = (filled / 100) * circ;
+  const stroke =
+    tone === 'hot' ? '#B45309' : tone === 'cold' ? 'var(--accent-neg)' : 'var(--accent-pos)';
+  return (
+    <svg className={styles.bucketDonut} viewBox="0 0 40 40" width="36" height="36">
+      <circle cx="20" cy="20" r={r} className={styles.bucketDonutTrack} />
+      <circle
+        cx="20"
+        cy="20"
+        r={r}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${circ}`}
+        transform="rotate(-90 20 20)"
+      />
+      <text x="20" y="24" className={styles.bucketDonutLabel}>
+        {filled.toFixed(0)}%
+      </text>
+    </svg>
   );
 }
 

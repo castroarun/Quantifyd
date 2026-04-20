@@ -312,6 +312,7 @@ export interface HoldingsRecord {
   pct_from_ath?: number | null;
   change_5d_pct?: number | null;
   change_20d_pct?: number | null;
+  sparkline?: number[] | null; // last ~252 daily closes
   tag?: string; // in extremes payloads only
 }
 

@@ -1,0 +1,449 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Holdings · 52-week extremes — visual explorations</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #172033;
+    --ink: #e5e7eb;
+    --ink-muted: #94a3b8;
+    --ink-faint: #64748b;
+    --hair: #334155;
+    --pos: #22c55e;
+    --neg: #ef4444;
+    --ath: #f59e0b;
+    --nearath: #fbbf24;
+    --warn: #f97316;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: -apple-system, Segoe UI, sans-serif; margin: 0; padding: 32px 48px; }
+  h1 { font-weight: 500; letter-spacing: -0.02em; }
+  h2 { margin: 48px 0 16px; font-weight: 500; border-bottom: 1px solid var(--hair); padding-bottom: 8px; }
+  h3 { color: var(--ink-muted); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 12px; }
+  .mock { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 24px; margin-bottom: 32px; }
+  .note { color: var(--ink-muted); font-size: 13px; margin-top: 12px; line-height: 1.5; }
+  .legend { display: inline-flex; gap: 14px; margin-bottom: 14px; font-size: 12px; color: var(--ink-muted); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .dot-ath { background: var(--ath); }
+  .dot-nearath { background: var(--nearath); }
+  .dot-hi { background: var(--pos); }
+  .dot-lo { background: var(--neg); }
+
+  /* ============ A: Heat strip (compact row with gradient fill) ============ */
+  .strip-row { display: grid; grid-template-columns: 130px 100px 1fr 90px; gap: 16px; align-items: center; padding: 10px 0; border-bottom: 1px solid #24324a; }
+  .strip-row:last-child { border: none; }
+  .strip-sym { font-weight: 500; font-size: 14px; }
+  .strip-tag { font-size: 11px; padding: 2px 8px; border-radius: 3px; display: inline-block; }
+  .tag-ath { background: rgba(245,158,11,0.15); color: var(--ath); }
+  .tag-nearath { background: rgba(251,191,36,0.13); color: var(--nearath); }
+  .tag-hi { background: rgba(34,197,94,0.13); color: var(--pos); }
+  .tag-lo { background: rgba(239,68,68,0.13); color: var(--neg); }
+  .strip-bar { position: relative; height: 28px; background: linear-gradient(90deg, rgba(239,68,68,0.08) 0%, rgba(100,116,139,0.05) 50%, rgba(34,197,94,0.08) 100%); border-radius: 4px; overflow: hidden; }
+  .strip-bar .fill { position: absolute; top: 0; bottom: 0; left: 0; background: linear-gradient(90deg, var(--ath) 0%, var(--pos) 100%); opacity: 0.25; border-radius: 4px 0 0 4px; }
+  .strip-bar .marker { position: absolute; top: 50%; width: 2px; height: 28px; background: var(--ink); transform: translate(-50%, -50%); }
+  .strip-bar .label-lo { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .strip-bar .label-hi { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .strip-bar .label-ltp { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: 500; color: var(--ink); background: var(--surface); padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; }
+  .strip-meta { font-size: 11px; color: var(--ink-muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ============ B: Vertical gauge (thermometer-style) ============ */
+  .gauge-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .gauge-card { background: var(--surface2); border: 1px solid var(--hair); border-radius: 8px; padding: 14px; position: relative; }
+  .gauge-card.ath { border-color: rgba(245,158,11,0.4); box-shadow: inset 0 0 0 1px rgba(245,158,11,0.15); }
+  .gauge-sym { font-weight: 500; font-size: 13px; margin-bottom: 2px; }
+  .gauge-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .gauge-body { display: flex; gap: 10px; align-items: flex-end; }
+  .gauge-rail { position: relative; width: 12px; height: 90px; background: linear-gradient(180deg, rgba(34,197,94,0.2) 0%, rgba(100,116,139,0.1) 50%, rgba(239,68,68,0.2) 100%); border-radius: 6px; }
+  .gauge-marker { position: absolute; left: -4px; width: 20px; height: 3px; background: var(--ink); border-radius: 2px; }
+  .gauge-hi-line { position: absolute; left: -2px; right: -2px; height: 1px; background: var(--pos); }
+  .gauge-ath-line { position: absolute; left: -2px; right: -2px; height: 1px; background: var(--ath); }
+  .gauge-vals { font-variant-numeric: tabular-nums; font-size: 11px; color: var(--ink-muted); line-height: 1.6; }
+  .gauge-vals b { color: var(--ink); font-weight: 500; font-size: 13px; }
+
+  /* ============ C: Bucketed counts with stack ============ */
+  .bucket-row { display: grid; grid-template-columns: 180px 1fr 80px; gap: 14px; align-items: center; padding: 16px 0; border-bottom: 1px solid #24324a; }
+  .bucket-row:last-child { border: none; }
+  .bucket-label { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .bucket-bar { position: relative; height: 32px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bucket-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; padding-left: 10px; font-size: 11px; color: var(--bg); font-weight: 500; }
+  .bucket-symbols { padding-left: 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .bucket-chip { background: var(--surface2); border: 1px solid var(--hair); border-radius: 3px; padding: 2px 7px; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .bucket-count { text-align: right; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* ============ D: Quadrant scatter ============ */
+  .scatter-wrap { position: relative; width: 100%; max-width: 720px; height: 320px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--hair); margin: 0 auto; }
+  .scatter-axes { position: absolute; inset: 0; }
+  .axis-v { position: absolute; top: 20px; bottom: 20px; left: 50%; width: 1px; background: var(--hair); }
+  .axis-h { position: absolute; left: 20px; right: 20px; top: 50%; height: 1px; background: var(--hair); }
+  .axis-label { position: absolute; font-size: 10px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+  .al-tr { right: 30px; top: 8px; color: var(--pos); }
+  .al-tl { left: 30px; top: 8px; color: var(--ink-muted); }
+  .al-br { right: 30px; bottom: 8px; color: var(--neg); }
+  .al-bl { left: 30px; bottom: 8px; color: var(--ink-muted); }
+  .scatter-pt { position: absolute; transform: translate(-50%, -50%); }
+  .scatter-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-muted); border: 2px solid var(--surface2); }
+  .scatter-dot.ath { background: var(--ath); box-shadow: 0 0 0 2px rgba(245,158,11,0.3); width: 12px; height: 12px; }
+  .scatter-dot.nearath { background: var(--nearath); }
+  .scatter-dot.hi { background: var(--pos); }
+  .scatter-dot.lo { background: var(--neg); }
+  .scatter-lbl { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--ink-muted); white-space: nowrap; }
+  .scatter-legend { display: flex; gap: 16px; margin-top: 14px; font-size: 11px; color: var(--ink-muted); justify-content: center; }
+
+  /* ============ E: Candle-style mini chart per row ============ */
+  .spark-row { display: grid; grid-template-columns: 120px 90px 1fr 80px 90px; gap: 16px; align-items: center; padding: 10px 0; border-bottom: 1px solid #24324a; }
+  .spark-row:last-child { border: none; }
+  .spark-wrap { position: relative; height: 32px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .spark-path { stroke: var(--ink-muted); stroke-width: 1.5; fill: none; }
+  .spark-path.up { stroke: var(--pos); }
+  .spark-path.down { stroke: var(--neg); }
+  .spark-fill { fill: var(--pos); opacity: 0.1; }
+  .spark-marker-hi { fill: var(--ath); }
+  .spark-marker-lo { fill: var(--neg); }
+  .spark-marker-now { fill: var(--ink); }
+
+</style>
+</head>
+<body>
+
+<h1>Holdings · 52-week extremes — visual explorations</h1>
+<p style="color: var(--ink-muted); max-width: 720px; line-height: 1.5;">
+  Five visual treatments for the "52-week extremes" section. All use the same holdings: TDPOWERSYS, CORONA, POWERGRID, NMDC, ANANDRATHI, BSE. Pick one (or mix). I'll build the chosen design into the React page.
+</p>
+
+<!-- ============ MOCK A: Heat strip (evolution of current) ============ -->
+<div class="mock">
+  <h2>A · Heat strip (evolution of the current rail)</h2>
+  <h3>Idea — gradient-filled band from low to current, with clear LTP marker floating on the bar</h3>
+  <div class="legend">
+    <span><i class="dot dot-ath"></i>at ATH</span>
+    <span><i class="dot dot-nearath"></i>near ATH</span>
+    <span><i class="dot dot-hi"></i>at/near 52wH</span>
+  </div>
+
+  <div class="strip-row">
+    <div class="strip-sym">TDPOWERSYS</div>
+    <div><span class="strip-tag tag-ath">at ATH</span></div>
+    <div class="strip-bar">
+      <div class="fill" style="width: 100%;"></div>
+      <div class="marker" style="left: 100%;"></div>
+      <span class="label-lo">378.15</span>
+      <span class="label-ltp" style="left: 96%;">1,030.70</span>
+      <span class="label-hi">1,030.70</span>
+    </div>
+    <div class="strip-meta">+0.0% from ATH<br/>new ATH today</div>
+  </div>
+
+  <div class="strip-row">
+    <div class="strip-sym">CORONA</div>
+    <div><span class="strip-tag tag-ath">at ATH</span></div>
+    <div class="strip-bar">
+      <div class="fill" style="width: 98%;"></div>
+      <div class="marker" style="left: 98%;"></div>
+      <span class="label-lo">1,336.95</span>
+      <span class="label-ltp" style="left: 95%;">1,698.30</span>
+      <span class="label-hi">1,712.00</span>
+    </div>
+    <div class="strip-meta">−0.8% from ATH</div>
+  </div>
+
+  <div class="strip-row">
+    <div class="strip-sym">POWERGRID</div>
+    <div><span class="strip-tag tag-hi">at 52wk high</span></div>
+    <div class="strip-bar">
+      <div class="fill" style="width: 96%;"></div>
+      <div class="marker" style="left: 96%;"></div>
+      <span class="label-lo">250.00</span>
+      <span class="label-ltp" style="left: 92%;">319.70</span>
+      <span class="label-hi">322.00</span>
+    </div>
+    <div class="strip-meta">−0.7% from 52wH</div>
+  </div>
+
+  <div class="strip-row">
+    <div class="strip-sym">NMDC</div>
+    <div><span class="strip-tag tag-hi">near 52wk high</span></div>
+    <div class="strip-bar">
+      <div class="fill" style="width: 96%;"></div>
+      <div class="marker" style="left: 96%;"></div>
+      <span class="label-lo">57.81</span>
+      <span class="label-ltp" style="left: 92%;">88.90</span>
+      <span class="label-hi">90.11</span>
+    </div>
+    <div class="strip-meta">−1.3% from 52wH</div>
+  </div>
+
+  <div class="note">
+    The gradient fill instantly communicates "position in range". LTP label floats on the bar — no separate column needed. Hides data behind a single interaction: hover shows days since the anchor was set.
+  </div>
+</div>
+
+<!-- ============ MOCK B: Vertical gauges (thermometer grid) ============ -->
+<div class="mock">
+  <h2>B · Thermometer grid</h2>
+  <h3>Idea — scannable cards where each stock is a vertical gauge with its position inside the 52w range</h3>
+  <div class="gauge-grid">
+    <div class="gauge-card ath">
+      <div class="gauge-sym">TDPOWERSYS</div>
+      <div class="gauge-tag tag-ath" style="color: var(--ath);">AT ATH</div>
+      <div class="gauge-body">
+        <div class="gauge-rail">
+          <div class="gauge-ath-line" style="top: 0;"></div>
+          <div class="gauge-hi-line" style="top: 2%;"></div>
+          <div class="gauge-marker" style="top: 0;"></div>
+        </div>
+        <div class="gauge-vals">
+          <b>1,030.70</b><br/>ATH 1,030.70<br/>lo 378.15
+        </div>
+      </div>
+    </div>
+
+    <div class="gauge-card ath">
+      <div class="gauge-sym">CORONA</div>
+      <div class="gauge-tag" style="color: var(--ath);">AT ATH</div>
+      <div class="gauge-body">
+        <div class="gauge-rail">
+          <div class="gauge-ath-line" style="top: 0;"></div>
+          <div class="gauge-hi-line" style="top: 3%;"></div>
+          <div class="gauge-marker" style="top: 3%;"></div>
+        </div>
+        <div class="gauge-vals">
+          <b>1,698.30</b><br/>ATH 1,712<br/>lo 1,336.95
+        </div>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <div class="gauge-sym">POWERGRID</div>
+      <div class="gauge-tag" style="color: var(--pos);">AT 52wH</div>
+      <div class="gauge-body">
+        <div class="gauge-rail">
+          <div class="gauge-hi-line" style="top: 0;"></div>
+          <div class="gauge-marker" style="top: 3%;"></div>
+        </div>
+        <div class="gauge-vals">
+          <b>319.70</b><br/>hi 322<br/>lo 250
+        </div>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <div class="gauge-sym">NMDC</div>
+      <div class="gauge-tag" style="color: var(--pos);">NEAR 52wH</div>
+      <div class="gauge-body">
+        <div class="gauge-rail">
+          <div class="gauge-hi-line" style="top: 0;"></div>
+          <div class="gauge-marker" style="top: 6%;"></div>
+        </div>
+        <div class="gauge-vals">
+          <b>88.90</b><br/>hi 90.11<br/>lo 57.81
+        </div>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <div class="gauge-sym">ANANDRATHI</div>
+      <div class="gauge-tag" style="color: var(--pos);">NEAR 52wH</div>
+      <div class="gauge-body">
+        <div class="gauge-rail">
+          <div class="gauge-hi-line" style="top: 0;"></div>
+          <div class="gauge-marker" style="top: 8%;"></div>
+        </div>
+        <div class="gauge-vals">
+          <b>3,663.90</b><br/>hi 3,735<br/>lo 1,641
+        </div>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <div class="gauge-sym">BSE</div>
+      <div class="gauge-tag" style="color: var(--pos);">NEAR 52wH</div>
+      <div class="gauge-body">
+        <div class="gauge-rail">
+          <div class="gauge-hi-line" style="top: 0;"></div>
+          <div class="gauge-marker" style="top: 9%;"></div>
+        </div>
+        <div class="gauge-vals">
+          <b>3,470.70</b><br/>hi 3,550<br/>lo 1,802
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    Grid scales to any holding count — 12 cards fit easily on desktop. The amber top line = ATH; green line = 52w high. Marker position instantly shows how compressed the stock is.
+  </div>
+</div>
+
+<!-- ============ MOCK C: Bucketed with chip list ============ -->
+<div class="mock">
+  <h2>C · Bucketed counts + inline chips</h2>
+  <h3>Idea — headline at a glance (how many stocks in each bucket), drill-in via chips</h3>
+
+  <div class="bucket-row">
+    <div class="bucket-label"><i class="dot dot-ath"></i>At all-time high</div>
+    <div class="bucket-bar">
+      <div class="bucket-bar-fill" style="width: 8%; background: var(--ath);">2</div>
+    </div>
+    <div class="bucket-count">2 stocks</div>
+  </div>
+  <div style="padding: 0 0 12px 196px;">
+    <div class="bucket-symbols">
+      <span class="bucket-chip">TDPOWERSYS · 1,030.70 · new ATH</span>
+      <span class="bucket-chip">CORONA · 1,698.30 · −0.8%</span>
+    </div>
+  </div>
+
+  <div class="bucket-row">
+    <div class="bucket-label"><i class="dot dot-nearath"></i>Near all-time high</div>
+    <div class="bucket-bar">
+      <div class="bucket-bar-fill" style="width: 4%; background: var(--nearath);">1</div>
+    </div>
+    <div class="bucket-count">1 stock</div>
+  </div>
+  <div style="padding: 0 0 12px 196px;">
+    <div class="bucket-symbols">
+      <span class="bucket-chip">LUMAXTECH · 1,795 · −2.1%</span>
+    </div>
+  </div>
+
+  <div class="bucket-row">
+    <div class="bucket-label"><i class="dot dot-hi"></i>At/near 52wk high</div>
+    <div class="bucket-bar">
+      <div class="bucket-bar-fill" style="width: 20%; background: var(--pos);">4</div>
+    </div>
+    <div class="bucket-count">4 stocks</div>
+  </div>
+  <div style="padding: 0 0 12px 196px;">
+    <div class="bucket-symbols">
+      <span class="bucket-chip">POWERGRID · 319.70 · −0.7%</span>
+      <span class="bucket-chip">NMDC · 88.90 · −1.3%</span>
+      <span class="bucket-chip">ANANDRATHI · 3,663 · −1.9%</span>
+      <span class="bucket-chip">BSE · 3,470 · −2.2%</span>
+    </div>
+  </div>
+
+  <div class="bucket-row">
+    <div class="bucket-label"><i class="dot dot-lo"></i>Near 52wk low</div>
+    <div class="bucket-bar">
+      <div class="bucket-bar-fill" style="width: 0%; background: var(--neg);">0</div>
+    </div>
+    <div class="bucket-count">0 stocks</div>
+  </div>
+
+  <div class="note">
+    Best when you want a "dashboard at a glance" feel. The bar width is proportional to the bucket count. Chips hold the meat and are scannable at row density. Scales: if a bucket has 12+ stocks, chips wrap to second line or truncate with "+N more".
+  </div>
+</div>
+
+<!-- ============ MOCK D: Quadrant scatter ============ -->
+<div class="mock">
+  <h2>D · Momentum quadrant</h2>
+  <h3>Idea — x-axis: % from 52w low · y-axis: day change %. Spot "at 52wH AND ripping today" vs "at 52wH AND selling off".</h3>
+
+  <div class="scatter-wrap">
+    <div class="axis-v"></div>
+    <div class="axis-h"></div>
+    <span class="axis-label al-tl">up today</span>
+    <span class="axis-label al-tr">up + near hi</span>
+    <span class="axis-label al-bl">down today</span>
+    <span class="axis-label al-br">down + near hi</span>
+
+    <!-- TDPOWERSYS: 100% from low, +3.4% day -->
+    <div class="scatter-pt" style="left: 95%; top: 15%;"><div class="scatter-dot ath"></div><span class="scatter-lbl">TDPOWERSYS</span></div>
+    <!-- CORONA: ~98% from low, +4.2% day -->
+    <div class="scatter-pt" style="left: 92%; top: 8%;"><div class="scatter-dot ath"></div><span class="scatter-lbl">CORONA</span></div>
+    <!-- POWERGRID: ~96%, +0.5% -->
+    <div class="scatter-pt" style="left: 88%; top: 45%;"><div class="scatter-dot hi"></div><span class="scatter-lbl">POWERGRID</span></div>
+    <!-- NMDC: 96%, -1.3% -->
+    <div class="scatter-pt" style="left: 87%; top: 62%;"><div class="scatter-dot hi"></div><span class="scatter-lbl">NMDC</span></div>
+    <!-- ANANDRATHI: 98%, -0.8% -->
+    <div class="scatter-pt" style="left: 90%; top: 55%;"><div class="scatter-dot hi"></div><span class="scatter-lbl">ANANDRATHI</span></div>
+    <!-- BSE: 97%, -0.4% -->
+    <div class="scatter-pt" style="left: 88%; top: 52%;"><div class="scatter-dot hi"></div><span class="scatter-lbl">BSE</span></div>
+  </div>
+
+  <div class="scatter-legend">
+    <span><i class="dot dot-ath"></i>at ATH</span>
+    <span><i class="dot dot-nearath"></i>near ATH</span>
+    <span><i class="dot dot-hi"></i>at/near 52wH</span>
+    <span>x: % from 52w low · y: day change %</span>
+  </div>
+
+  <div class="note">
+    Most actionable view for a trader. A stock at ATH that's SELLING OFF today is a very different signal from one at ATH that's ripping — this view separates them at a glance. Trade-off: needs real coords / tooltip to read precise values.
+  </div>
+</div>
+
+<!-- ============ MOCK E: Mini 52w sparklines ============ -->
+<div class="mock">
+  <h2>E · Rows with 52w sparkline</h2>
+  <h3>Idea — show the actual 52w shape of the price. A stock "at ATH after round trip" looks different from "at ATH up-and-to-the-right".</h3>
+
+  <div class="spark-row">
+    <div class="strip-sym">TDPOWERSYS</div>
+    <div><span class="strip-tag tag-ath">at ATH</span></div>
+    <div class="spark-wrap">
+      <svg viewBox="0 0 400 32" width="100%" height="32" preserveAspectRatio="none">
+        <path class="spark-fill" d="M0,28 L10,25 L20,27 L40,22 L60,18 L90,23 L110,15 L140,20 L170,12 L200,18 L230,10 L260,14 L290,8 L320,6 L350,4 L380,3 L400,2 L400,32 L0,32 Z"/>
+        <path class="spark-path up" d="M0,28 L10,25 L20,27 L40,22 L60,18 L90,23 L110,15 L140,20 L170,12 L200,18 L230,10 L260,14 L290,8 L320,6 L350,4 L380,3 L400,2"/>
+        <circle class="spark-marker-hi" cx="400" cy="2" r="3"/>
+        <circle class="spark-marker-now" cx="400" cy="2" r="4" stroke="var(--ink)" stroke-width="1" fill="var(--ath)"/>
+      </svg>
+    </div>
+    <div style="text-align: right; font-variant-numeric: tabular-nums;"><b>1,030.70</b></div>
+    <div class="strip-meta">at ATH<br/>+172% 52w</div>
+  </div>
+
+  <div class="spark-row">
+    <div class="strip-sym">POWERGRID</div>
+    <div><span class="strip-tag tag-hi">at 52wk high</span></div>
+    <div class="spark-wrap">
+      <svg viewBox="0 0 400 32" width="100%" height="32" preserveAspectRatio="none">
+        <path class="spark-fill" d="M0,14 L40,18 L80,22 L120,26 L160,28 L200,24 L240,22 L280,18 L320,14 L360,8 L400,4 L400,32 L0,32 Z"/>
+        <path class="spark-path up" d="M0,14 L40,18 L80,22 L120,26 L160,28 L200,24 L240,22 L280,18 L320,14 L360,8 L400,4"/>
+        <circle class="spark-marker-lo" cx="160" cy="28" r="2.5"/>
+        <circle class="spark-marker-now" cx="400" cy="4" r="4" stroke="var(--ink)" stroke-width="1" fill="var(--pos)"/>
+      </svg>
+    </div>
+    <div style="text-align: right; font-variant-numeric: tabular-nums;"><b>319.70</b></div>
+    <div class="strip-meta">−0.7% from 52wH<br/>+27% 52w</div>
+  </div>
+
+  <div class="spark-row">
+    <div class="strip-sym">NMDC</div>
+    <div><span class="strip-tag tag-hi">near 52wk high</span></div>
+    <div class="spark-wrap">
+      <svg viewBox="0 0 400 32" width="100%" height="32" preserveAspectRatio="none">
+        <path class="spark-fill" d="M0,22 L40,26 L80,28 L120,20 L160,16 L200,18 L240,14 L280,10 L320,6 L360,4 L400,6 L400,32 L0,32 Z"/>
+        <path class="spark-path up" d="M0,22 L40,26 L80,28 L120,20 L160,16 L200,18 L240,14 L280,10 L320,6 L360,4 L400,6"/>
+        <circle class="spark-marker-hi" cx="360" cy="4" r="2.5"/>
+        <circle class="spark-marker-now" cx="400" cy="6" r="4" stroke="var(--ink)" stroke-width="1" fill="var(--pos)"/>
+      </svg>
+    </div>
+    <div style="text-align: right; font-variant-numeric: tabular-nums;"><b>88.90</b></div>
+    <div class="strip-meta">−1.3% from 52wH<br/>+54% 52w</div>
+  </div>
+
+  <div class="note">
+    Sparklines add the missing dimension: <em>how did the stock get here?</em> Smooth up-trend vs whippy round-trip vs V-recovery are all distinct signals. Needs backend to return 52w close series (daily) — an API addition.
+  </div>
+</div>
+
+<h2 style="margin-top: 64px; border: none;">Which one?</h2>
+<p style="color: var(--ink-muted); line-height: 1.6; max-width: 720px;">
+  My picks in order:
+</p>
+<ol style="color: var(--ink); line-height: 1.8; max-width: 720px;">
+  <li><b>A (Heat strip)</b> — most information-dense, closest to what's live, minimal API changes.</li>
+  <li><b>E (Sparklines)</b> — the most "interesting" visually and adds real trading context (shape of the move), but needs a backend addition (52w daily closes per holding).</li>
+  <li><b>C (Buckets + chips)</b> — the most dashboard-feeling; great when you have 20+ holdings to sort through.</li>
+  <li>B (gauges) and D (scatter) are nice but niche — B takes space, D is advanced.</li>
+</ol>
+<p style="color: var(--ink-muted); line-height: 1.6; max-width: 720px;">
+  Tell me which (or combination) and I'll wire it into <code>Holdings.tsx</code>. For <b>E</b> I'd also add a <code>/api/holdings/sparkline</code> endpoint returning daily closes per symbol.
+</p>
+
+</body>
+</html>
