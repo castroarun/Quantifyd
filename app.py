@@ -6042,7 +6042,7 @@ try:
     )
     scheduler.add_job(
         _orb_eod_squareoff,
-        'cron', day_of_week='mon-fri', hour=15, minute=18,
+        'cron', day_of_week='mon-fri', hour=14, minute=30,
         id='orb_eod_squareoff', replace_existing=True,
     )
     scheduler.add_job(
@@ -6058,7 +6058,7 @@ try:
     logger.info(
         "ORB scheduled jobs registered: "
         "init(9:14), OR update(9:15-9:29), signal eval(5min), "
-        "position monitor(30s), EOD squareoff(15:18), EOD report(15:25), "
+        "position monitor(30s), EOD squareoff(14:30), EOD report(15:25), "
         "daily backtest(15:45)"
     )
 except Exception as e:
