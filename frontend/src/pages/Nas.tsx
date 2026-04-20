@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Nas.module.css';
 import { apiGet } from '../api/client';
 import type { NASState, NASPosition } from '../api/types';
@@ -13,6 +13,16 @@ import {
   formatRs,
   pnlClass,
 } from '../utils/format';
+
+/* ---------- live ticks context ---------- */
+
+interface LiveTicks {
+  spot: number | null;
+  legs: Record<string, number>; // tradingsymbol → ltp
+  connected: boolean;
+}
+const LiveTicksContext = createContext<LiveTicks>({ spot: null, legs: {}, connected: false });
+const useLiveTicks = () => useContext(LiveTicksContext);
 
 /* ---------- system definitions ---------- */
 
@@ -124,10 +134,71 @@ interface SystemStateRecord {
 export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
+  const [liveTicks, setLiveTicks] = useState<LiveTicks>({
+    spot: null,
+    legs: {},
+    connected: false,
+  });
+  const evtRef = useRef<EventSource | null>(null);
 
   function updateState(id: string, rec: SystemStateRecord) {
     setStates((prev) => ({ ...prev, [id]: rec }));
   }
+
+  // One SSE connection for the entire dashboard — pushes spot + all option
+  // leg LTPs across 8 systems in a single stream. Reconnects on error.
+  useEffect(() => {
+    let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const open = () => {
+      if (cancelled) return;
+      const es = new EventSource('/api/nas/stream');
+      evtRef.current = es;
+      es.onopen = () => {
+        if (!cancelled) setLiveTicks((prev) => ({ ...prev, connected: true }));
+      };
+      es.onmessage = (ev) => {
+        if (cancelled) return;
+        try {
+          const d = JSON.parse(ev.data);
+          if (d.type === 'tick') {
+            const legs: Record<string, number> = {};
+            for (const [tsym, info] of Object.entries(d.legs || {})) {
+              const ltp = (info as { ltp?: number }).ltp;
+              if (typeof ltp === 'number') legs[tsym] = ltp;
+            }
+            setLiveTicks({
+              spot: typeof d.spot === 'number' && d.spot > 0 ? d.spot : null,
+              legs,
+              connected: true,
+            });
+          } else if (d.type === 'offline') {
+            setLiveTicks((prev) => ({ ...prev, connected: false }));
+          }
+        } catch {
+          /* ignore malformed payload */
+        }
+      };
+      es.onerror = () => {
+        if (cancelled) return;
+        setLiveTicks((prev) => ({ ...prev, connected: false }));
+        es.close();
+        evtRef.current = null;
+        reconnectTimer = setTimeout(open, 3000);
+      };
+    };
+
+    open();
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (evtRef.current) {
+        evtRef.current.close();
+        evtRef.current = null;
+      }
+    };
+  }, []);
 
   const squeezeSystems = SQUEEZE_SYSTEMS.map((s) => states[s.id]?.state).filter(
     Boolean,
@@ -147,13 +218,15 @@ export default function Nas() {
 
   // Per-system day P&L = DB-persisted today_pnl (closed trades) + live open-leg P&L.
   // Open-leg P&L = sum of (entry_price - ltp) * qty across CE + PE legs (we short).
+  // Prefer live SSE tick LTP over polled state LTP when available.
   const liveSystemPnl = (s: NASState | undefined | null): number => {
     if (!s) return 0;
     const persisted = (s.stats?.today_pnl as number | undefined) ?? 0;
     const legs = [...(s.positions?.ce ?? []), ...(s.positions?.pe ?? [])];
     const open = legs.reduce((acc, p) => {
       const entry = p.entry_price ?? p.entry_premium;
-      const ltp = p.ltp;
+      const liveLtp = p.tradingsymbol ? liveTicks.legs[p.tradingsymbol] : undefined;
+      const ltp = liveLtp ?? p.ltp;
       const qty = p.qty ?? 0;
       if (entry == null || ltp == null || !qty) return acc;
       return acc + (entry - ltp) * qty;
@@ -165,7 +238,9 @@ export default function Nas() {
 
   const core = headerState?.state ?? {};
   const isSqueezing = !!core.is_squeezing;
-  const spot = core.spot_price as number | undefined;
+  // Prefer live SSE spot over polled state spot when the stream is up.
+  const pollSpot = core.spot_price as number | undefined;
+  const spot = liveTicks.spot ?? pollSpot;
   const atr = core.atr_value as number | undefined;
   const atrMa = core.atr_ma as number | undefined;
 
@@ -199,6 +274,7 @@ export default function Nas() {
   const nextEvents = useMemo(() => buildNextEvents(states), [states]);
 
   return (
+    <LiveTicksContext.Provider value={liveTicks}>
     <div className={styles.root}>
       <div className="page-title">NAS options</div>
       <div className="page-subtitle">
@@ -345,6 +421,7 @@ export default function Nas() {
         </div>
       </section>
     </div>
+    </LiveTicksContext.Provider>
   );
 }
 
@@ -359,14 +436,15 @@ interface PanelProps {
 function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
   const [state, setState] = useState<NASState | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const ticks: Record<string, number> = {};
-  // SSE disabled — was causing worker starvation. Polling state every 10s instead.
-  const streamAlive = false;
-  const spot: number | null = null;
+  // Live tick prices from the parent SSE stream — keyed by tradingsymbol.
+  const liveTicks = useLiveTicks();
+  const ticks = liveTicks.legs;
+  const streamAlive = liveTicks.connected;
 
   const stateUrl = `/api/${def.key}/state`;
 
-  // Poll state every 10s (includes positions + LTP via cached margin/ltps)
+  // Poll state every 5s as a safety net — positions, config, stats. Live
+  // leg LTPs come from the shared SSE stream in the parent component.
   useEffect(() => {
     let cancelled = false;
     const load = () => {
@@ -385,7 +463,7 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         });
     };
     load();
-    const id = setInterval(load, 2_000);
+    const id = setInterval(load, 5_000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -471,10 +549,10 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         />
       </div>
 
-      {spot !== null ? (
+      {liveTicks.spot !== null ? (
         <div className={styles.spotRow}>
           <span className={styles.spotLabel}>Nifty spot</span>
-          <span className={styles.spotValue}>{formatNumber(spot)}</span>
+          <span className={styles.spotValue}>{formatNumber(liveTicks.spot)}</span>
         </div>
       ) : null}
 

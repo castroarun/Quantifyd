@@ -3578,8 +3578,15 @@ def api_nas_ticker_status():
 
 
 @app.route('/api/nas/ticker/stream')
+@app.route('/api/nas/stream')
 def api_nas_ticker_stream():
-    """SSE stream of live option premiums — tick-by-tick updates."""
+    """SSE stream of live spot + option premiums across ALL NAS systems.
+
+    Single connection per dashboard — v2 React pages should open ONE EventSource
+    here. Payload shape:
+        {type: 'tick', spot: 24473.25, legs: {TSYM: {ltp, entry, leg}}, ts: ...}
+        {type: 'offline'}  — emitted when ticker isn't running
+    """
     import json, time as _time
 
     def generate():
@@ -3587,39 +3594,59 @@ def api_nas_ticker_stream():
         ticker = get_nas_ticker(NAS_DEFAULTS)
         last_snapshot = {}
 
+        # Initial keepalive so clients know the stream is live even before
+        # the first meaningful tick arrives.
+        yield ": connected\n\n"
+
         while True:
             if not ticker.is_running:
                 yield f"data: {json.dumps({'type': 'offline'})}\n\n"
                 _time.sleep(5)
                 continue
 
-            # Build current snapshot
-            snapshot = {
-                'spot': ticker._last_ltp,
-                'legs': {},
-            }
-            for token, info in ticker._option_tokens.items():
-                tsym = info['tradingsymbol']
-                ltp = ticker._option_ltps.get(token)
-                if ltp is not None:
-                    snapshot['legs'][tsym] = {
-                        'ltp': round(ltp, 2),
-                        'entry': info['entry_premium'],
-                        'leg': info['leg'],
-                    }
+            # Merge option tokens from all 4 systems (OTM, ATM, ATM2, ATM4).
+            # Both squeeze and 9:16 variants share the same ticker instance, so
+            # these four dicts cover all 8 dashboard systems.
+            all_tokens = {}
+            for attr in ('_option_tokens', '_atm_option_tokens',
+                         '_atm2_option_tokens', '_atm4_option_tokens'):
+                all_tokens.update(getattr(ticker, attr, {}) or {})
+            all_ltps = {}
+            for attr in ('_option_ltps', '_atm_option_ltps',
+                         '_atm2_option_ltps', '_atm4_option_ltps'):
+                all_ltps.update(getattr(ticker, attr, {}) or {})
 
-            # Only send if something changed
+            legs = {}
+            for token, info in all_tokens.items():
+                tsym = info.get('tradingsymbol')
+                if not tsym:
+                    continue
+                ltp = all_ltps.get(token)
+                if ltp is None or ltp <= 0:
+                    continue
+                legs[tsym] = {
+                    'ltp': round(ltp, 2),
+                    'entry': info.get('entry_premium') or info.get('entry_price'),
+                    'leg': info.get('leg'),
+                }
+
+            snapshot = {
+                'spot': round(ticker._last_ltp, 2) if ticker._last_ltp else 0,
+                'legs': legs,
+            }
+
+            # Push only when something changed (plus periodic keepalive)
             if snapshot != last_snapshot:
-                last_snapshot = snapshot.copy()
+                last_snapshot = snapshot
                 payload = {
                     'type': 'tick',
-                    'spot': round(snapshot['spot'], 2),
+                    'spot': snapshot['spot'],
                     'legs': snapshot['legs'],
                     'ts': _time.time(),
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
 
-            _time.sleep(0.3)  # ~3 updates/sec max
+            _time.sleep(0.3)  # cap ~3 pushes/sec
 
     return app.response_class(
         generate(),
