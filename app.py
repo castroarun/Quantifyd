@@ -5977,7 +5977,9 @@ def _orb_monitor_positions():
 
 
 def _orb_eod_squareoff():
-    """15:20 sharp: Close all open ORB positions at market."""
+    """15:18 sharp: Close all open ORB positions at market — runs 2 min
+    before Zerodha's MIS auto-squareoff (15:20-15:25) to leave a safety
+    buffer in case of network/fill delays."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
@@ -6040,7 +6042,7 @@ try:
     )
     scheduler.add_job(
         _orb_eod_squareoff,
-        'cron', day_of_week='mon-fri', hour=15, minute=20,
+        'cron', day_of_week='mon-fri', hour=15, minute=18,
         id='orb_eod_squareoff', replace_existing=True,
     )
     scheduler.add_job(
@@ -6056,7 +6058,7 @@ try:
     logger.info(
         "ORB scheduled jobs registered: "
         "init(9:14), OR update(9:15-9:29), signal eval(5min), "
-        "position monitor(30s), EOD squareoff(15:20), EOD report(15:25), "
+        "position monitor(30s), EOD squareoff(15:18), EOD report(15:25), "
         "daily backtest(15:45)"
     )
 except Exception as e:

@@ -472,7 +472,7 @@ ORB_DEFAULTS = {
 
     # Entry Rules
     'last_entry_time': '14:00',        # No entries after 2 PM
-    'eod_exit_time': '15:20',          # Mandatory squareoff
+    'eod_exit_time': '15:18',          # Mandatory squareoff (2 min before Zerodha MIS auto-sq)
     'max_trades_per_day': 1,           # Per stock per day
 
     # Exit Rules
