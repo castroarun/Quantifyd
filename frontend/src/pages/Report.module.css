@@ -397,8 +397,10 @@
 .tradeLogHead,
 .tradeLogRow {
   display: grid;
-  grid-template-columns: 110px 0.5fr 0.4fr 0.7fr 0.8fr 0.8fr 1fr 0.9fr;
-  gap: 6px;
+  /* Fixed px columns so rows align uniformly across every day / system,
+     regardless of content length. Reason is the only flex column. */
+  grid-template-columns: 110px 56px 40px 70px 80px 80px 1fr 90px;
+  gap: 8px;
   padding: 6px 10px;
   font-size: var(--text-xxs);
   font-variant-numeric: tabular-nums;

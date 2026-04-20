@@ -632,10 +632,6 @@ function DayBlock({ day }: { day: DaySummary }) {
       </div>
       {day.trades.length > 0 ? (
         <div className={styles.tradeLog}>
-          <div className={styles.tradeLogLegend}>
-            <span className={styles.tradeSell}>S</span> sold to open ·{' '}
-            <span className={styles.tradeBuy}>B</span> bought to close
-          </div>
           {groupTradesBySystem(day.trades).map((group) => (
             <div key={group.systemKey} className={styles.tradeGroup}>
               <div className={styles.tradeGroupHead}>
