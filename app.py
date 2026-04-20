@@ -3262,6 +3262,12 @@ def _enrich_nas_positions_with_ltp(state, ticker_attr='_option_ltps', token_attr
             st = state.setdefault('state', {})
             st['spot_price'] = round(live_spot, 2)
 
+        # Attach available margin (shared with ORB via _orb_cache, 5-min refresh)
+        try:
+            state['margin'] = _orb_get_margin() or {}
+        except Exception:
+            pass
+
         ltps_by_token = getattr(ticker, ticker_attr, {}) or {}
         tokens_by_tsym = {
             info.get('tradingsymbol'): token

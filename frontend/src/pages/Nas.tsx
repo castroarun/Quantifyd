@@ -10,6 +10,7 @@ import {
   formatNumber,
   formatPnl,
   formatPct,
+  formatRs,
   pnlClass,
 } from '../utils/format';
 
@@ -155,12 +156,29 @@ export default function Nas() {
 
   const core = headerState?.state ?? {};
   const isSqueezing = !!core.is_squeezing;
-  const squeezeCount = (core.squeeze_count as number | undefined) ?? 0;
-  const minBars =
-    (headerState?.config?.min_squeeze_bars as number | undefined) ?? 1;
   const spot = core.spot_price as number | undefined;
   const atr = core.atr_value as number | undefined;
   const atrMa = core.atr_ma as number | undefined;
+
+  // Market hours check (IST 09:15-15:30)
+  const nowIst = new Date();
+  const mins = nowIst.getHours() * 60 + nowIst.getMinutes();
+  const marketOpen = mins >= 9 * 60 + 15 && mins <= 15 * 60 + 30;
+  const hasData = atr !== undefined && atrMa !== undefined;
+
+  // Squeeze dot kind: green if active + has data, red if no squeeze + has data, grey if no data/market closed
+  let squeezeDotKind: 'connected' | 'disconnected' | 'warning' = 'warning';
+  if (!hasData || !marketOpen) {
+    squeezeDotKind = 'warning'; // grey
+  } else if (isSqueezing) {
+    squeezeDotKind = 'connected'; // green
+  } else {
+    squeezeDotKind = 'disconnected'; // red
+  }
+
+  // Available margin (from any state's margin field, served by backend)
+  const margin = headerState?.margin as { available?: number } | undefined;
+  const availableMargin = margin?.available;
 
   function showToast(msg: string) {
     setToast(msg);
@@ -187,19 +205,21 @@ export default function Nas() {
           label="ATR squeeze"
           value={
             <span className={styles.squeezeValue}>
-              <StatusDot
-                kind={isSqueezing ? 'connected' : 'disconnected'}
-                className={styles.squeezeDot}
-              />
-              <span>{isSqueezing ? 'Squeeze' : 'Normal'}</span>
+              <StatusDot kind={squeezeDotKind} className={styles.squeezeDot} />
+              <span>
+                {!hasData || !marketOpen
+                  ? '—'
+                  : isSqueezing
+                  ? 'Squeeze'
+                  : 'Normal'}
+              </span>
             </span>
           }
-          hint="ATR(14) vs SMA(ATR,50)"
-        />
-        <MetricCard
-          label="Squeeze bars"
-          value={`${squeezeCount} / ${minBars}`}
-          hint="Consecutive bars"
+          hint={
+            hasData
+              ? `ATR ${formatNumber(atr)} / MA ${formatNumber(atrMa)}`
+              : 'ATR(14) vs SMA(ATR,50)'
+          }
         />
         <MetricCard
           label="Nifty spot"
@@ -207,19 +227,9 @@ export default function Nas() {
           hint="Live index price"
         />
         <MetricCard
-          label="ATR / ATR MA"
-          value={
-            atr !== undefined && atrMa !== undefined
-              ? `${formatNumber(atr)} / ${formatNumber(atrMa)}`
-              : '—'
-          }
-          hint={
-            atr !== undefined && atrMa !== undefined
-              ? atr < atrMa
-                ? 'Compressed'
-                : 'Expanded'
-              : '—'
-          }
+          label="Available margin"
+          value={availableMargin !== undefined ? formatRs(availableMargin) : '—'}
+          hint="Cash for MIS orders"
         />
         <MetricCard
           label="Squeeze day P&L"

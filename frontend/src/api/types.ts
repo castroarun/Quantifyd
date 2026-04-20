@@ -206,6 +206,7 @@ export interface NASState {
   };
   recent_signals?: unknown[];
   recent_trades?: NASTrade[];
+  margin?: { available?: number; used?: number; [k: string]: unknown };
 }
 
 export interface NASTickPayload {
