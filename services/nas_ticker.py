@@ -2,9 +2,8 @@
 NAS — Nifty ATR Strangle — WebSocket Ticker
 =============================================
 
-Receives NIFTY 50 ticks forwarded from Maruthi's KiteTicker (avoids
-Twisted reactor conflict — only one KiteTicker per process) and aggregates
-them into 5-minute OHLCV candles. On each candle close:
+Owns a KiteTicker WebSocket that subscribes to NIFTY 50 spot and active
+option leg tokens. On each 5-min NIFTY candle close:
   1. Computes ATR squeeze indicators
   2. Checks exits on active positions (combined SL, profit target)
   3. Checks adjustments (premium 2x / 0.5x)
@@ -14,15 +13,19 @@ Also monitors option leg premiums in real-time for instant SL triggers
 (premium doubles = combined SL breach detected between candles).
 
 Architecture:
-    MaruthiTicker._on_ticks() → forward NIFTY ticks → NasTicker._on_ticks()
+    KiteTicker._on_ticks() → NasTicker._on_ticks()
                                      ↓
                               CandleAggregator (5-min OHLCV)
                                      ↓ on candle close
                               NasScanner.scan() → NasExecutor.run_scan()
 
-    MaruthiTicker._on_ticks() → forward option ticks → _check_premium_tick()
+    KiteTicker._on_ticks() → option tick → _check_premium_tick()
                                      ↓ cross-leg imbalance
                               NasExecutor.execute_adjustment(ROLL_OUT / ROLL_IN)
+
+Note: only one KiteTicker can exist per process (Twisted reactor constraint).
+NAS owns the singleton; other strategies that need ticks should subscribe
+through this ticker rather than spawning their own.
 """
 
 import logging
@@ -32,6 +35,7 @@ from datetime import datetime, date, time as dtime, timedelta
 from typing import Callable, Dict, List, Optional
 from collections import deque
 
+from kiteconnect import KiteTicker
 from services.kite_service import get_access_token, KITE_API_KEY
 
 logger = logging.getLogger(__name__)
@@ -200,6 +204,10 @@ class NasTicker:
         self._last_ltp: float = 0.0
         self._lock = threading.Lock()
 
+        # KiteTicker WebSocket (owned by this class)
+        self.kws: Optional[KiteTicker] = None
+        self._thread: Optional[threading.Thread] = None
+
         # Option leg monitoring (NAS OTM)
         self._option_tokens: Dict[int, dict] = {}  # token → {tradingsymbol, entry_premium, leg}
         self._option_ltps: Dict[int, float] = {}   # token → last price
@@ -308,31 +316,25 @@ class NasTicker:
 
     # ─── Option Leg Monitoring ───────────────────────────────
 
-    def _get_maruthi_kws(self):
-        """Get Maruthi ticker's KiteTicker WebSocket for subscribing option tokens."""
-        try:
-            from services.maruthi_ticker import get_maruthi_ticker
-            mt = get_maruthi_ticker()
-            if mt and mt.kws and mt.is_connected:
-                return mt.kws
-        except Exception:
-            pass
+    def _get_kws(self):
+        """Return the KiteTicker WebSocket if connected, else None."""
+        if self.kws and self.is_connected:
+            return self.kws
         return None
 
     def subscribe_option_legs(self, positions: List[dict]):
         """
         Subscribe to option leg tokens for real-time premium monitoring.
 
-        Uses Maruthi ticker's WebSocket to subscribe (avoids Twisted conflict).
         Called after entry or adjustment — updates the subscription.
 
         Args:
             positions: list of active position dicts from NasDB
                        (must have 'tradingsymbol', 'entry_price', 'leg', 'instrument_type')
         """
-        kws = self._get_maruthi_kws()
+        kws = self._get_kws()
         if not kws:
-            logger.warning("[NAS] Cannot subscribe option legs — Maruthi ticker not connected")
+            logger.warning("[NAS] Cannot subscribe option legs — ticker not connected")
             return
 
         with self._lock:
@@ -670,9 +672,9 @@ class NasTicker:
         Subscribe to NAS ATM option leg tokens for per-leg SL monitoring.
         Each position must have: tradingsymbol, sl_price, id, strangle_id, entry_price, leg.
         """
-        kws = self._get_maruthi_kws()
+        kws = self._get_kws()
         if not kws:
-            logger.warning("[NAS-ATM] Cannot subscribe option legs — Maruthi ticker not connected")
+            logger.warning("[NAS-ATM] Cannot subscribe option legs — ticker not connected")
             return
 
         with self._lock:
@@ -905,9 +907,9 @@ class NasTicker:
         Subscribe to NAS ATM2 option leg tokens for per-leg SL monitoring.
         Each position must have: tradingsymbol, sl_price, id, strangle_id, entry_price, leg.
         """
-        kws = self._get_maruthi_kws()
+        kws = self._get_kws()
         if not kws:
-            logger.warning("[NAS-ATM2] Cannot subscribe option legs — Maruthi ticker not connected")
+            logger.warning("[NAS-ATM2] Cannot subscribe option legs — ticker not connected")
             return
 
         with self._lock:
@@ -1025,9 +1027,9 @@ class NasTicker:
         Subscribe to NAS ATM4 option leg tokens for per-leg SL monitoring.
         Each position must have: tradingsymbol, sl_price, id, strangle_id, entry_price, leg.
         """
-        kws = self._get_maruthi_kws()
+        kws = self._get_kws()
         if not kws:
-            logger.warning("[NAS-ATM4] Cannot subscribe option legs — Maruthi ticker not connected")
+            logger.warning("[NAS-ATM4] Cannot subscribe option legs — ticker not connected")
             return
 
         with self._lock:
@@ -1454,11 +1456,33 @@ class NasTicker:
 
     # ─── Lifecycle (piggybacks on Maruthi's KiteTicker) ──────
 
+    def _on_connect(self, ws, response):
+        """KiteTicker connected — subscribe to NIFTY spot + re-subscribe active option legs."""
+        logger.info("[NAS] KiteTicker connected")
+        self.is_connected = True
+        try:
+            ws.subscribe([NIFTY_INSTRUMENT_TOKEN])
+            ws.set_mode(ws.MODE_FULL, [NIFTY_INSTRUMENT_TOKEN])
+            logger.info(f"[NAS] Subscribed NIFTY 50 (token={NIFTY_INSTRUMENT_TOKEN})")
+        except Exception as e:
+            logger.error(f"[NAS] Failed to subscribe NIFTY on connect: {e}")
+        # Re-subscribe any active option legs (in case of reconnect)
+        threading.Thread(target=self._subscribe_active_legs, daemon=True).start()
+
+    def _on_close(self, ws, code, reason):
+        logger.warning(f"[NAS] KiteTicker disconnected: {code} - {reason}")
+        self.is_connected = False
+
+    def _on_error(self, ws, code, reason):
+        logger.error(f"[NAS] KiteTicker error: {code} - {reason}")
+
+    def _on_reconnect(self, ws, attempts):
+        logger.info(f"[NAS] KiteTicker reconnecting... attempt {attempts}")
+
     def start(self):
         """
-        Start NAS ticker — loads historical data and marks running.
-        Does NOT create its own KiteTicker WebSocket. NIFTY ticks are
-        forwarded from Maruthi's ticker via _on_ticks().
+        Start NAS ticker — creates its own KiteTicker WebSocket and subscribes
+        to NIFTY spot + active option legs.
         """
         if self.is_running:
             logger.warning("[NAS] Ticker already running")
@@ -1468,18 +1492,41 @@ class NasTicker:
         if not access_token:
             logger.error("[NAS] No access token — run Kite login first")
             return
+        if not KITE_API_KEY:
+            logger.error("[NAS] KITE_API_KEY not set")
+            return
 
         # Load historical candles for ATR warmup
         self._load_historical_candles()
         self._load_daily_candles()
 
-        self.is_running = True
-        self.is_connected = True  # Connected via Maruthi's WebSocket
-        logger.info("[NAS] Ticker started — receiving ticks via Maruthi ticker")
+        # Initialize KiteTicker
+        self.kws = KiteTicker(KITE_API_KEY, access_token)
+        self.kws.on_ticks = self._on_ticks
+        self.kws.on_connect = self._on_connect
+        self.kws.on_close = self._on_close
+        self.kws.on_error = self._on_error
+        self.kws.on_reconnect = self._on_reconnect
 
-        # Cleanup stale positions, then subscribe active legs
+        self.is_running = True
+
+        # Cleanup stale positions before connecting
         self._cleanup_stale_positions()
-        threading.Thread(target=self._subscribe_active_legs, daemon=True).start()
+
+        # Run WebSocket connect loop in background thread
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+        logger.info("[NAS] Ticker started — connecting own KiteTicker WebSocket")
+
+    def _run(self):
+        """Background loop — connects the KiteTicker (blocking until closed)."""
+        try:
+            self.kws.connect(threaded=False)
+        except Exception as e:
+            logger.error(f"[NAS] KiteTicker connection error: {e}")
+        finally:
+            self.is_running = False
+            self.is_connected = False
 
     def _cleanup_stale_positions(self):
         """Close any active positions from previous days or expired options on startup."""
@@ -1594,8 +1641,13 @@ class NasTicker:
             logger.warning(f"[NAS-ATM4] Could not subscribe active legs: {e}")
 
     def stop(self):
-        """Stop NAS ticker — stop processing ticks."""
+        """Stop NAS ticker — close WebSocket and stop processing ticks."""
         self.is_running = False
+        if self.kws:
+            try:
+                self.kws.close()
+            except Exception:
+                pass
         self.is_connected = False
         logger.info("[NAS] Ticker stopped")
 
@@ -1603,7 +1655,7 @@ class NasTicker:
         """Restart the ticker (e.g., after daily re-login)."""
         self.stop()
         import time
-        time.sleep(1)
+        time.sleep(2)
         self.start()
 
     def _get_atm_st_value(self) -> Optional[float]:
@@ -1626,19 +1678,10 @@ class NasTicker:
 
     def get_status(self) -> dict:
         """Get ticker status for dashboard."""
-        # Check if Maruthi ticker is actually connected
-        maruthi_connected = False
-        try:
-            from services.maruthi_ticker import get_maruthi_ticker
-            mt = get_maruthi_ticker()
-            maruthi_connected = mt is not None and mt.is_connected
-        except Exception:
-            pass
-
         return {
             'is_running': self.is_running,
-            'is_connected': self.is_running and maruthi_connected,
-            'connection_via': 'maruthi_ticker',
+            'is_connected': self.is_connected,
+            'connection_via': 'nas_ticker',
             'last_ltp': self._last_ltp,
             'completed_candles': len(self.aggregator.completed_candles),
             'current_candle': self.aggregator.current_candle,

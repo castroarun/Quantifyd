@@ -235,19 +235,26 @@ def api_auto_login():
 
 def _start_all_tickers():
     """Start all strategy tickers/connections after authentication."""
-    # Maruthi ticker
-    try:
-        from services.maruthi_ticker import get_maruthi_ticker
-        ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
-        if not ticker.is_connected:
-            ticker.restart()
-            logger.info("[Auth] Maruthi ticker started after login")
-        else:
-            logger.info("[Auth] Maruthi ticker already connected")
-    except Exception as e:
-        logger.warning(f"[Auth] Maruthi ticker start failed: {e}")
+    # Maruthi ticker — DISABLED. Strategy is paused (see memory: 9 known bugs).
+    # Leaving this branch in place, gated on MARUTHI_DEFAULTS['enabled'], so the
+    # ticker only starts if the strategy is re-enabled. When disabled, NAS owns
+    # the process's KiteTicker singleton.
+    if MARUTHI_DEFAULTS.get('enabled', False):
+        try:
+            from services.maruthi_ticker import get_maruthi_ticker
+            ticker = get_maruthi_ticker(MARUTHI_DEFAULTS)
+            if not ticker.is_connected:
+                ticker.restart()
+                logger.info("[Auth] Maruthi ticker started after login")
+            else:
+                logger.info("[Auth] Maruthi ticker already connected")
+        except Exception as e:
+            logger.warning(f"[Auth] Maruthi ticker start failed: {e}")
+    else:
+        logger.info("[Auth] Maruthi ticker skipped — strategy disabled")
 
-    # NAS ticker (shared across OTM, ATM, ATM2, ATM4, and 916 variants)
+    # NAS ticker (shared across OTM, ATM, ATM2, ATM4, and 916 variants) —
+    # now owns its own KiteTicker WebSocket, no longer depends on Maruthi.
     try:
         from services.nas_ticker import get_nas_ticker
         nas_ticker = get_nas_ticker(NAS_DEFAULTS)
