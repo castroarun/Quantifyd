@@ -24,6 +24,17 @@ export function formatPnl(value: number | null | undefined, decimals = 0): strin
   return `Rs${formatted}`;
 }
 
+/** P&L formatting without currency: "+18,420", "−2,062", "0".
+ *  Use when the Rs is already shown in a column header or section label. */
+export function formatPnlBare(value: number | null | undefined, decimals = 0): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  const abs = Math.abs(value);
+  const formatted = decimals === 2 ? inrFmt2.format(abs) : inrFmt.format(abs);
+  if (value > 0) return `+${formatted}`;
+  if (value < 0) return `\u2212${formatted}`;
+  return formatted;
+}
+
 export function pnlClass(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return 'pnl-zero';
   if (value > 0) return 'pnl-pos';

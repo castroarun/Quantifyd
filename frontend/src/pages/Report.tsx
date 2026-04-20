@@ -6,7 +6,7 @@ import MetricCard from '../components/Cards/MetricCard';
 import DataTable from '../components/DataTable/DataTable';
 import type { Column } from '../components/DataTable/DataTable';
 import Chip from '../components/Chip/Chip';
-import { formatInt, formatNumber, formatPct, formatPnl, pnlClass } from '../utils/format';
+import { formatInt, formatNumber, formatPct, formatPnl, formatPnlBare, pnlClass } from '../utils/format';
 
 const SYS_KEYS = [
   'OTM',
@@ -282,38 +282,38 @@ export default function Report() {
     },
     {
       key: 'total',
-      header: 'Total P&L',
+      header: 'Total P&L (Rs)',
       width: '1.1fr',
       align: 'right',
       render: (r) => (
-        <span className={pnlClass(r.total_pnl)}>{formatPnl(r.total_pnl)}</span>
+        <span className={pnlClass(r.total_pnl)}>{formatPnlBare(r.total_pnl)}</span>
       ),
     },
     {
       key: 'avg',
-      header: 'Avg P&L',
+      header: 'Avg P&L (Rs)',
       width: '1fr',
       align: 'right',
       render: (r) => (
-        <span className={pnlClass(r.avg_pnl)}>{formatPnl(r.avg_pnl)}</span>
+        <span className={pnlClass(r.avg_pnl)}>{formatPnlBare(r.avg_pnl)}</span>
       ),
     },
     {
       key: 'mw',
-      header: 'Max win',
+      header: 'Max win (Rs)',
       width: '1fr',
       align: 'right',
       render: (r) => (
-        <span className={pnlClass(r.max_win)}>{formatPnl(r.max_win)}</span>
+        <span className={pnlClass(r.max_win)}>{formatPnlBare(r.max_win)}</span>
       ),
     },
     {
       key: 'ml',
-      header: 'Max loss',
+      header: 'Max loss (Rs)',
       width: '1fr',
       align: 'right',
       render: (r) => (
-        <span className={pnlClass(r.max_loss)}>{formatPnl(r.max_loss)}</span>
+        <span className={pnlClass(r.max_loss)}>{formatPnlBare(r.max_loss)}</span>
       ),
     },
   ];
@@ -346,20 +346,20 @@ export default function Report() {
           value={summary.avgPf ? formatNumber(summary.avgPf, 2) : '—'}
         />
         <MetricCard
-          label="Total P&L"
+          label="Total P&L (Rs)"
           value={
             <span className={pnlClass(summary.totalPnl)}>
-              {formatPnl(summary.totalPnl)}
+              {formatPnlBare(summary.totalPnl)}
             </span>
           }
         />
         <MetricCard
-          label="Best day"
+          label="Best day (Rs)"
           labelRight={bestWorst.best?.dayName}
           value={
             bestWorst.best ? (
               <span className={pnlClass(bestWorst.best.totalPnl)}>
-                {formatPnl(bestWorst.best.totalPnl)}
+                {formatPnlBare(bestWorst.best.totalPnl)}
               </span>
             ) : (
               '—'
@@ -367,12 +367,12 @@ export default function Report() {
           }
         />
         <MetricCard
-          label="Worst day"
+          label="Worst day (Rs)"
           labelRight={bestWorst.worst?.dayName}
           value={
             bestWorst.worst ? (
               <span className={pnlClass(bestWorst.worst.totalPnl)}>
-                {formatPnl(bestWorst.worst.totalPnl)}
+                {formatPnlBare(bestWorst.worst.totalPnl)}
               </span>
             ) : (
               '—'
