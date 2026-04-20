@@ -1,0 +1,476 @@
+{
+  "ADANIENT|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 78.8,
+    "finished_at": "2026-03-16T22:13:52.548945"
+  },
+  "ADANIPORTS|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.9,
+    "finished_at": "2026-03-16T22:14:44.446092"
+  },
+  "AMBUJACEM|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.0,
+    "finished_at": "2026-03-16T22:15:36.476012"
+  },
+  "APOLLOHOSP|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 54.4,
+    "finished_at": "2026-03-16T22:16:30.863335"
+  },
+  "ASIANPAINT|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.2,
+    "finished_at": "2026-03-16T22:17:23.063465"
+  },
+  "AXISBANK|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.9,
+    "finished_at": "2026-03-16T22:18:14.936750"
+  },
+  "BAJAJ-AUTO|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 54.3,
+    "finished_at": "2026-03-16T22:19:09.271482"
+  },
+  "BAJAJFINSV|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 53.6,
+    "finished_at": "2026-03-16T22:20:02.903301"
+  },
+  "BAJFINANCE|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.5,
+    "finished_at": "2026-03-16T22:20:53.400765"
+  },
+  "BANKBARODA|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 53.1,
+    "finished_at": "2026-03-16T22:21:46.900778"
+  },
+  "BEL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 60.8,
+    "finished_at": "2026-03-16T22:22:47.807819"
+  },
+  "BHARTIARTL|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 12.1,
+    "finished_at": "2026-03-16T22:23:00.603626"
+  },
+  "BPCL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 58.1,
+    "finished_at": "2026-03-16T22:23:58.670302"
+  },
+  "BRITANNIA|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 54.0,
+    "finished_at": "2026-03-16T22:24:52.719184"
+  },
+  "CHOLAFIN|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.4,
+    "finished_at": "2026-03-16T22:25:43.150109"
+  },
+  "CIPLA|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.0,
+    "finished_at": "2026-03-16T22:26:34.141866"
+  },
+  "COALINDIA|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 53.6,
+    "finished_at": "2026-03-16T22:27:27.831031"
+  },
+  "COFORGE|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 57.4,
+    "finished_at": "2026-03-16T22:28:25.386489"
+  },
+  "COLPAL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.3,
+    "finished_at": "2026-03-16T22:29:17.695867"
+  },
+  "CUMMINSIND|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 48.6,
+    "finished_at": "2026-03-16T22:30:06.376314"
+  },
+  "DABUR|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 47.4,
+    "finished_at": "2026-03-16T22:30:53.790863"
+  },
+  "DELHIVERY|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 56.1,
+    "finished_at": "2026-03-16T22:31:49.848423"
+  },
+  "DIVISLAB|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 56.9,
+    "finished_at": "2026-03-16T22:32:46.742221"
+  },
+  "DLF|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 74.5,
+    "finished_at": "2026-03-16T22:34:01.267574"
+  },
+  "DRREDDY|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 59.4,
+    "finished_at": "2026-03-16T22:35:00.726861"
+  },
+  "EICHERMOT|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 55.7,
+    "finished_at": "2026-03-16T22:35:56.450040"
+  },
+  "FEDERALBNK|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.6,
+    "finished_at": "2026-03-16T22:36:49.015140"
+  },
+  "GAIL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 55.8,
+    "finished_at": "2026-03-16T22:37:44.869207"
+  },
+  "GODREJPROP|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 55.3,
+    "finished_at": "2026-03-16T22:38:40.191365"
+  },
+  "GRASIM|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 53.2,
+    "finished_at": "2026-03-16T22:39:33.437597"
+  },
+  "HAL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 48.3,
+    "finished_at": "2026-03-16T22:40:21.772502"
+  },
+  "HAVELLS|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 48.0,
+    "finished_at": "2026-03-16T22:41:09.799916"
+  },
+  "HCLTECH|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.1,
+    "finished_at": "2026-03-16T22:42:00.970721"
+  },
+  "HDFCBANK|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 10.6,
+    "finished_at": "2026-03-16T22:42:12.128564"
+  },
+  "HDFCLIFE|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.1,
+    "finished_at": "2026-03-16T22:43:04.254221"
+  },
+  "HEROMOTOCO|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 47.1,
+    "finished_at": "2026-03-16T22:43:51.349541"
+  },
+  "HINDALCO|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 46.5,
+    "finished_at": "2026-03-16T22:44:37.896824"
+  },
+  "HINDUNILVR|5minute": {
+    "complete": true,
+    "candles": 6221,
+    "duration_sec": 9.3,
+    "finished_at": "2026-03-16T22:44:47.457585"
+  },
+  "ICICIBANK|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 12.0,
+    "finished_at": "2026-03-16T22:44:59.718587"
+  },
+  "IDFCFIRSTB|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 55.2,
+    "finished_at": "2026-03-16T22:45:54.950747"
+  },
+  "INDUSINDBK|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 59.1,
+    "finished_at": "2026-03-16T22:46:54.303294"
+  },
+  "INFY|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 11.8,
+    "finished_at": "2026-03-16T22:47:07.695220"
+  },
+  "IOC|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 55.5,
+    "finished_at": "2026-03-16T22:48:03.536116"
+  },
+  "IRCTC|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.1,
+    "finished_at": "2026-03-16T22:48:55.828415"
+  },
+  "ITC|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 10.8,
+    "finished_at": "2026-03-16T22:49:06.873799"
+  },
+  "JINDALSTEL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 49.4,
+    "finished_at": "2026-03-16T22:49:56.334369"
+  },
+  "JSWSTEEL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 49.8,
+    "finished_at": "2026-03-16T22:50:46.132486"
+  },
+  "KOTAKBANK|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 10.4,
+    "finished_at": "2026-03-16T22:50:56.840441"
+  },
+  "LT|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.5,
+    "finished_at": "2026-03-16T22:51:48.335359"
+  },
+  "M&M|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 54.0,
+    "finished_at": "2026-03-16T22:52:42.352209"
+  },
+  "MARICO|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.1,
+    "finished_at": "2026-03-16T22:53:32.469963"
+  },
+  "MARUTI|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 49.2,
+    "finished_at": "2026-03-16T22:54:21.732136"
+  },
+  "MCX|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.4,
+    "finished_at": "2026-03-16T22:55:12.119823"
+  },
+  "MUTHOOTFIN|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.0,
+    "finished_at": "2026-03-16T22:56:02.175151"
+  },
+  "NESTLEIND|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 53.2,
+    "finished_at": "2026-03-16T22:56:55.426852"
+  },
+  "NTPC|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.6,
+    "finished_at": "2026-03-16T22:57:46.021608"
+  },
+  "ONGC|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.4,
+    "finished_at": "2026-03-16T22:58:36.444065"
+  },
+  "PAYTM|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.9,
+    "finished_at": "2026-03-16T22:59:28.410261"
+  },
+  "PERSISTENT|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.1,
+    "finished_at": "2026-03-16T23:00:18.519405"
+  },
+  "PIDILITIND|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.3,
+    "finished_at": "2026-03-16T23:01:09.887109"
+  },
+  "PNB|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 50.4,
+    "finished_at": "2026-03-16T23:02:00.344425"
+  },
+  "POWERGRID|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 60.0,
+    "finished_at": "2026-03-16T23:03:00.412440"
+  },
+  "RELIANCE|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 12.4,
+    "finished_at": "2026-03-16T23:03:13.406694"
+  },
+  "SBILIFE|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 56.4,
+    "finished_at": "2026-03-16T23:04:09.874468"
+  },
+  "SBIN|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 10.1,
+    "finished_at": "2026-03-16T23:04:20.278935"
+  },
+  "SHREECEM|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.3,
+    "finished_at": "2026-03-16T23:05:11.542035"
+  },
+  "SIEMENS|5minute": {
+    "complete": true,
+    "candles": 31923,
+    "duration_sec": 50.5,
+    "finished_at": "2026-03-16T23:06:02.098153"
+  },
+  "SUNPHARMA|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.6,
+    "finished_at": "2026-03-16T23:06:54.729717"
+  },
+  "TATACONSUM|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 51.2,
+    "finished_at": "2026-03-16T23:07:46.010899"
+  },
+  "TATAPOWER|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 49.0,
+    "finished_at": "2026-03-16T23:08:35.013559"
+  },
+  "TATASTEEL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 48.7,
+    "finished_at": "2026-03-16T23:09:23.754881"
+  },
+  "TCS|5minute": {
+    "complete": true,
+    "candles": 6225,
+    "duration_sec": 9.7,
+    "finished_at": "2026-03-16T23:09:33.750985"
+  },
+  "TECHM|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 48.3,
+    "finished_at": "2026-03-16T23:10:22.130580"
+  },
+  "TITAN|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 48.2,
+    "finished_at": "2026-03-16T23:11:10.299047"
+  },
+  "TRENT|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 54.6,
+    "finished_at": "2026-03-16T23:12:04.932669"
+  },
+  "ULTRACEMCO|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 57.5,
+    "finished_at": "2026-03-16T23:13:03.482794"
+  },
+  "VEDL|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.1,
+    "finished_at": "2026-03-16T23:13:55.636329"
+  },
+  "VOLTAS|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.1,
+    "finished_at": "2026-03-16T23:14:47.751085"
+  },
+  "WIPRO|5minute": {
+    "complete": true,
+    "candles": 31926,
+    "duration_sec": 52.5,
+    "finished_at": "2026-03-16T23:15:40.328938"
+  }
+}

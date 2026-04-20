@@ -38,13 +38,34 @@ data/*.h5
 data/fundamentals_cache/
 !data/.gitkeep
 
-# SQLite databases (large, local only)
-*.db
+# Backtest data: ignore everything by default, then un-ignore small files we
+# want committed for disaster recovery. Large files go to GitHub Releases via
+# scripts/backup_to_github_release.sh.
+backtest_data/*
 !backtest_data/.gitkeep
 
-# Backtest data (SQLite databases, session files)
-backtest_data/
-!backtest_data/.gitkeep
+# Small trading-state SQLite DBs — safe to commit (~100 KB each, total ~1.5 MB)
+!backtest_data/*_trading.db
+!backtest_data/backtest_results.db
+!backtest_data/mq_agent.db
+!backtest_data/tactical_pool.db
+
+# Static config / result JSONs (backtest artifacts, instrument tokens)
+!backtest_data/*.json
+
+# Never commit secrets, even with the allow-lists above
+backtest_data/access_token.json
+
+# Big data files that must never hit git (use GitHub Releases instead)
+backtest_data/market_data.db
+backtest_data/options_data.db
+backtest_data/*.pkl
+backtest_data/fundamentals_cache/
+
+# SQLite journals / WAL files
+*.db-journal
+*.db-wal
+*.db-shm
 
 # Flask session files
 flask_session/
@@ -92,7 +113,6 @@ secrets.json
 *_log.txt
 scc/.next/
 scc/node_modules/
-*.db
 
 # Frontend
 frontend/node_modules/
