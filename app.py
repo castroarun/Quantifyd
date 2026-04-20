@@ -3303,6 +3303,22 @@ def _enrich_nas_positions_with_ltp(state, ticker_attr='_option_ltps', token_attr
         except Exception:
             pass
 
+        # Realized P&L from positions closed today — survives after EOD squareoff.
+        # Sums (entry - exit) * qty across all closed-today legs (NAS shorts options).
+        try:
+            closed_today = (state.get('positions') or {}).get('closed_today') or []
+            realized = 0.0
+            for p in closed_today:
+                entry = p.get('entry_price') or p.get('entry_premium') or 0
+                exit_price = p.get('exit_price') or 0
+                qty = p.get('qty') or 0
+                if exit_price and qty:
+                    realized += (entry - exit_price) * qty
+            stats = state.setdefault('stats', {})
+            stats['today_pnl'] = round(realized, 2)
+        except Exception:
+            pass
+
         ltps_by_token = getattr(ticker, ticker_attr, {}) or {}
         tokens_by_tsym = {
             info.get('tradingsymbol'): token
