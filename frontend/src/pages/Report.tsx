@@ -179,9 +179,11 @@ export default function Report() {
               ? Math.round((entryPrice - exitPrice) * qty * 100) / 100
               : 0;
           const tsym = (p.tradingsymbol as string | undefined) ?? '';
-          // Extract strike: last digits before CE/PE suffix
-          const m = tsym.match(/(\d+)(CE|PE)$/);
-          const strike = m ? parseInt(m[1], 10) : null;
+          // Tradingsymbol format: UNDERLYING + YY + M + DD + STRIKE + CE/PE
+          // e.g. NIFTY 26 4 21 24750 CE  ->  strike = 24750
+          // Skip the 5-char expiry (YY/M/DD) that appears after the underlying.
+          const m = tsym.match(/^[A-Z]+(\d{2}[A-Z0-9]\d{2})(\d+)(CE|PE)$/);
+          const strike = m ? parseInt(m[2], 10) : null;
           const toHM = (s: string | undefined | null) =>
             s ? s.slice(11, 16) : '';
           trades.push({
@@ -635,48 +637,98 @@ function DayBlock({ day }: { day: DaySummary }) {
       </div>
       {day.trades.length > 0 ? (
         <div className={styles.tradeLog}>
-          <div className={styles.tradeLogHead}>
-            <div>Time</div>
-            <div>System</div>
-            <div>Side</div>
-            <div>Leg</div>
-            <div>Strike</div>
-            <div>Entry</div>
-            <div>Exit</div>
-            <div>Reason</div>
-            <div className={styles.tradeRight}>P&amp;L</div>
+          <div className={styles.tradeLogLegend}>
+            <span className={styles.tradeSell}>S</span> sold to open ·{' '}
+            <span className={styles.tradeBuy}>B</span> bought to close
           </div>
-          {day.trades.map((t, i) => (
-            <div key={i} className={styles.tradeLogRow}>
-              <div className={styles.tradeTime}>
-                {t.entryTime}
-                {t.exitTime ? <span className={styles.tradeArrow}>→ {t.exitTime}</span> : null}
+          {groupTradesBySystem(day.trades).map((group) => (
+            <div key={group.systemKey} className={styles.tradeGroup}>
+              <div className={styles.tradeGroupHead}>
+                <span className={styles.tradeGroupName}>{group.systemLabel}</span>
+                <span className={styles.tradeGroupMeta}>
+                  {group.trades.length} {group.trades.length === 1 ? 'leg' : 'legs'}
+                </span>
+                <span
+                  className={`${styles.tradeGroupPnl} ${pnlClass(group.pnl)}`}
+                >
+                  {formatPnl(group.pnl)}
+                </span>
               </div>
-              <div className={styles.tradeSystem}>{t.systemLabel}</div>
-              <div>
-                <span className={styles.tradeSell}>S</span>
-                {t.exitPrice != null ? (
-                  <span className={styles.tradeBuy}>B</span>
-                ) : null}
+              <div className={styles.tradeLogHead}>
+                <div>Time</div>
+                <div>Side</div>
+                <div>Leg</div>
+                <div>Strike</div>
+                <div>Entry</div>
+                <div>Exit</div>
+                <div>Reason</div>
+                <div className={styles.tradeRight}>P&amp;L</div>
               </div>
-              <div className={styles.tradeLeg}>{t.leg}</div>
-              <div className={styles.tradeStrike}>
-                {t.strike != null ? t.strike : '—'}
-              </div>
-              <div className={styles.tradeCell}>{formatNumber(t.entryPrice, 2)}</div>
-              <div className={styles.tradeCell}>
-                {t.exitPrice != null ? formatNumber(t.exitPrice, 2) : '—'}
-              </div>
-              <div className={styles.tradeReason}>
-                {t.exitReason ?? (t.status === 'ACTIVE' ? 'open' : '—')}
-              </div>
-              <div className={`${styles.tradeRight} ${pnlClass(t.pnl)}`}>
-                {formatPnl(t.pnl)}
-              </div>
+              {group.trades.map((t, i) => (
+                <div key={i} className={styles.tradeLogRow}>
+                  <div className={styles.tradeTime}>
+                    {t.entryTime}
+                    {t.exitTime ? (
+                      <span className={styles.tradeArrow}>→ {t.exitTime}</span>
+                    ) : null}
+                  </div>
+                  <div>
+                    <span className={styles.tradeSell}>S</span>
+                    {t.exitPrice != null ? (
+                      <span className={styles.tradeBuy}>B</span>
+                    ) : null}
+                  </div>
+                  <div className={styles.tradeLeg}>{t.leg}</div>
+                  <div className={styles.tradeStrike}>
+                    {t.strike != null ? t.strike : '—'}
+                  </div>
+                  <div className={styles.tradeCell}>
+                    {formatNumber(t.entryPrice, 2)}
+                  </div>
+                  <div className={styles.tradeCell}>
+                    {t.exitPrice != null ? formatNumber(t.exitPrice, 2) : '—'}
+                  </div>
+                  <div className={styles.tradeReason}>
+                    {t.exitReason ?? (t.status === 'ACTIVE' ? 'open' : '—')}
+                  </div>
+                  <div className={`${styles.tradeRight} ${pnlClass(t.pnl)}`}>
+                    {formatPnl(t.pnl)}
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
       ) : null}
     </details>
   );
+}
+
+function groupTradesBySystem(trades: DayTrade[]) {
+  const bucket = new Map<string, { systemKey: string; systemLabel: string; trades: DayTrade[]; pnl: number }>();
+  for (const t of trades) {
+    const g = bucket.get(t.systemKey);
+    if (g) {
+      g.trades.push(t);
+      g.pnl += t.pnl;
+    } else {
+      bucket.set(t.systemKey, {
+        systemKey: t.systemKey,
+        systemLabel: t.systemLabel,
+        trades: [t],
+        pnl: t.pnl,
+      });
+    }
+  }
+  // Order groups by the SYS_KEYS order so the view is consistent across days
+  const order = new Map(SYS_KEYS.map((k, i) => [k, i] as const));
+  const groups = Array.from(bucket.values()).sort(
+    (a, b) => (order.get(a.systemKey) ?? 99) - (order.get(b.systemKey) ?? 99),
+  );
+  // Within each group, sort by entry time ASC
+  for (const g of groups) {
+    g.trades.sort((a, b) => a.entryTime.localeCompare(b.entryTime));
+    g.pnl = Math.round(g.pnl * 100) / 100;
+  }
+  return groups;
 }

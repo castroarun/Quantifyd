@@ -354,12 +354,52 @@
   padding-top: 8px;
 }
 
+.tradeLogLegend {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+
+.tradeGroup {
+  margin-top: 8px;
+  border: 0.5px solid var(--hairline-softest);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.tradeGroupHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--canvas);
+  font-size: var(--text-xs);
+  border-bottom: 0.5px solid var(--hairline-softest);
+}
+
+.tradeGroupName {
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  flex: 1;
+}
+
+.tradeGroupMeta {
+  color: var(--ink-muted);
+  font-size: var(--text-xxs);
+}
+
+.tradeGroupPnl {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+}
+
 .tradeLogHead,
 .tradeLogRow {
   display: grid;
-  grid-template-columns: 110px 1.4fr 0.5fr 0.4fr 0.7fr 0.8fr 0.8fr 1fr 0.9fr;
+  grid-template-columns: 110px 0.5fr 0.4fr 0.7fr 0.8fr 0.8fr 1fr 0.9fr;
   gap: 6px;
-  padding: 6px 4px;
+  padding: 6px 10px;
   font-size: var(--text-xxs);
   font-variant-numeric: tabular-nums;
   align-items: center;
