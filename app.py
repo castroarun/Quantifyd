@@ -3249,13 +3249,19 @@ def nas_dashboard():
 
 
 def _enrich_nas_positions_with_ltp(state, ticker_attr='_option_ltps', token_attr='_option_tokens'):
-    """Enrich position dicts with live LTP + pnl_inr from NAS ticker cache.
+    """Enrich position dicts with live LTP + pnl_inr + live spot from NAS ticker cache.
 
     ticker_attr / token_attr select which system's cached LTPs to use.
     """
     try:
         from services.nas_ticker import get_nas_ticker
         ticker = get_nas_ticker()
+        # Live Nifty spot from ticker WebSocket (updates every tick)
+        live_spot = getattr(ticker, '_last_ltp', None)
+        if live_spot and live_spot > 0:
+            st = state.setdefault('state', {})
+            st['spot_price'] = round(live_spot, 2)
+
         ltps_by_token = getattr(ticker, ticker_attr, {}) or {}
         tokens_by_tsym = {
             info.get('tradingsymbol'): token
