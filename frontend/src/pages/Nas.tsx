@@ -145,14 +145,23 @@ export default function Nas() {
     return states[SQUEEZE_SYSTEMS[0].id]?.state ?? null;
   }, [states]);
 
-  const squeezeDayPnl = squeezeSystems.reduce(
-    (acc, s) => acc + ((s.stats?.today_pnl as number | undefined) ?? 0),
-    0,
-  );
-  const nineSixteenDayPnl = nineSixteenSystems.reduce(
-    (acc, s) => acc + ((s.stats?.today_pnl as number | undefined) ?? 0),
-    0,
-  );
+  // Per-system day P&L = DB-persisted today_pnl (closed trades) + live open-leg P&L.
+  // Open-leg P&L = sum of (entry_price - ltp) * qty across CE + PE legs (we short).
+  const liveSystemPnl = (s: NASState | undefined | null): number => {
+    if (!s) return 0;
+    const persisted = (s.stats?.today_pnl as number | undefined) ?? 0;
+    const legs = [...(s.positions?.ce ?? []), ...(s.positions?.pe ?? [])];
+    const open = legs.reduce((acc, p) => {
+      const entry = p.entry_price ?? p.entry_premium;
+      const ltp = p.ltp;
+      const qty = p.qty ?? 0;
+      if (entry == null || ltp == null || !qty) return acc;
+      return acc + (entry - ltp) * qty;
+    }, 0);
+    return persisted + open;
+  };
+  const squeezeDayPnl = squeezeSystems.reduce((acc, s) => acc + liveSystemPnl(s), 0);
+  const nineSixteenDayPnl = nineSixteenSystems.reduce((acc, s) => acc + liveSystemPnl(s), 0);
 
   const core = headerState?.state ?? {};
   const isSqueezing = !!core.is_squeezing;
@@ -376,7 +385,7 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         });
     };
     load();
-    const id = setInterval(load, 10_000);
+    const id = setInterval(load, 2_000);
     return () => {
       cancelled = true;
       clearInterval(id);
