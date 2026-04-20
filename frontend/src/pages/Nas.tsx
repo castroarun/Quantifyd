@@ -522,21 +522,20 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
                 : 'Standby'
             }
           />
+          <div className={styles.panelStatusMeta}>
+            {formatInt(state?.positions?.total_active ?? 0)} active · {formatInt(reentries)} re-entry
+          </div>
         </div>
       </div>
 
       <div className={styles.metricsRow}>
-        <MiniMetric
-          label="Active"
-          value={formatInt(state?.positions?.total_active ?? 0)}
-        />
-        <MiniMetric label="Re-entries" value={formatInt(reentries)} />
         <MiniMetric
           label="Day P&L"
           value={
             <span className={pnlClass(dayPnl)}>{formatPnl(dayPnl)}</span>
           }
         />
+        <MiniMetric label="SL hits today" value={formatInt(slHits ?? 0)} />
       </div>
 
       <div className={styles.legs}>
@@ -562,10 +561,6 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
               <span className={styles.snapshotValue}>
                 {pf !== undefined ? formatNumber(pf, 2) : '—'}
               </span>
-            </div>
-            <div className={styles.snapshotItem}>
-              <span className={styles.snapshotLabel}>SL hits today</span>
-              <span className={styles.snapshotValue}>{formatInt(slHits ?? 0)}</span>
             </div>
           </div>
           <div className={styles.rulesText}>{def.rules}</div>

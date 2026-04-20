@@ -161,11 +161,21 @@
 
 .panelStatus {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.panelStatusMeta {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .metricsRow {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding-top: 10px;
   border-top: 0.5px solid var(--hairline-soft);
@@ -359,7 +369,7 @@
 
 .snapshotRow {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding: 4px 0 10px;
 }
