@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Holdings A — compact insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root {
+    --accent: #1E3A8A;
+    --accent-warm: #B45309;
+    --accent-warm-soft: #FEF3C7;
+    --accent-soft: #EFF3FA;
+    --nav-active-bg: #EFF3FA;
+  }
+  .nav-item.active { color: var(--accent); }
+  .chip { background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 6px; font-size: 11px; }
+  .stamp { color: var(--accent-warm); }
+  .page-title { color: var(--accent); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+  .page-subtitle { color: var(--ink-muted); font-size: 13px; margin: 4px 0 24px; }
+  .metric-card { border: 0.5px solid var(--hairline); border-radius: 10px; padding: 14px 16px; background: var(--surface); }
+  .metric-label { font-size: 11px; color: var(--ink-muted); margin-bottom: 4px; }
+  .metric-value { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .metric-hint { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+  .pnl-pos { color: var(--pnl-pos); }
+  .pnl-neg { color: var(--pnl-neg); }
+
+  .option-bar { background: var(--accent); color:#fff; padding: 6px 24px; font-size: 12px; }
+
+  .summary-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+
+  .section { margin-bottom: 28px; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+
+  .two-col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+
+  /* Movers */
+  .movers-card { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; padding: 16px; }
+  .movers-group + .movers-group { margin-top: 16px; border-top: 0.5px solid var(--hairline-soft); padding-top: 16px; }
+  .movers-group-label { font-size: 11px; color: var(--ink-muted); margin-bottom: 8px; }
+  .mover-row { display: grid; grid-template-columns: 110px 60px 1fr 70px; gap: 10px; align-items: center; padding: 6px 0; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .mover-sym { font-weight: 500; }
+  .mover-pct { font-size: 12px; }
+  .mover-bar { height: 6px; background: var(--hairline-softest); border-radius: 3px; overflow: hidden; position: relative; }
+  .mover-bar-fill { height: 100%; border-radius: 3px; }
+  .mover-bar-fill.pos { background: var(--pnl-pos); }
+  .mover-bar-fill.neg { background: var(--pnl-neg); }
+  .mover-pnl { text-align: right; font-size: 12px; color: var(--ink-muted); }
+
+  /* Extremes */
+  .extremes-card { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; padding: 16px; }
+  .extremes-group { padding: 10px 0; }
+  .extremes-group + .extremes-group { border-top: 0.5px solid var(--hairline-soft); }
+  .extremes-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-muted); margin-bottom: 6px; }
+  .extremes-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 4px; letter-spacing: 0.02em; font-weight: 500; }
+  .extremes-badge.hi { background: rgba(15,110,86,0.12); color: var(--pnl-pos); }
+  .extremes-badge.lo { background: rgba(163,45,45,0.10); color: var(--pnl-neg); }
+  .extreme-row { display: grid; grid-template-columns: 110px 1fr 80px 60px; gap: 10px; padding: 4px 0; font-size: 13px; font-variant-numeric: tabular-nums; align-items: center; }
+  .extreme-sym { font-weight: 500; }
+  .extreme-ltp { color: var(--ink-secondary); text-align: right; }
+  .extreme-dist { text-align: right; font-size: 11px; color: var(--ink-muted); }
+  .extreme-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; text-align: center; }
+  .extreme-tag.ath { background: var(--accent-warm-soft); color: var(--accent-warm); }
+  .extreme-tag.near { background: var(--accent-soft); color: var(--accent); }
+
+  /* Events */
+  .events-card { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; overflow: hidden; }
+  .events-row { display: grid; grid-template-columns: 90px 140px 1fr 140px; gap: 12px; padding: 10px 16px; border-top: 0.5px solid var(--hairline-softest); font-size: 13px; align-items: center; }
+  .events-row:first-child { border-top: none; }
+  .events-date { color: var(--accent-warm); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .events-sym { font-weight: 500; }
+  .events-kind { color: var(--ink); }
+  .events-detail { color: var(--ink-muted); font-size: 11px; text-align: right; }
+  .events-tag { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px; margin-right: 8px; text-transform: capitalize; }
+  .events-tag.results { background: var(--accent-soft); color: var(--accent); }
+  .events-tag.dividend { background: rgba(15,110,86,0.12); color: var(--pnl-pos); }
+  .events-tag.split { background: var(--accent-warm-soft); color: var(--accent-warm); }
+  .events-tag.bonus { background: rgba(180, 83, 9, 0.10); color: var(--accent-warm); }
+  .events-tag.buyback { background: rgba(30,58,138,0.08); color: var(--accent); }
+
+  /* LTCG card */
+  .ltcg-card { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; padding: 16px; }
+  .ltcg-bar { height: 8px; background: var(--hairline-softest); border-radius: 4px; overflow: hidden; display: flex; margin: 8px 0 10px; }
+  .ltcg-bar .ltcg { background: var(--pnl-pos); }
+  .ltcg-bar .stcg { background: var(--accent-warm); }
+  .ltcg-legend { display: flex; gap: 16px; font-size: 11px; color: var(--ink-muted); }
+  .ltcg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+  /* Weekly collapsible */
+  details.weekly { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; }
+  details.weekly summary { padding: 14px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; list-style: none; }
+  details.weekly summary::-webkit-details-marker { display: none; }
+  details.weekly summary::before { content: '+'; color: var(--ink-muted); margin-right: 8px; font-weight: 500; }
+  details.weekly[open] summary::before { content: '−'; }
+  .weekly-body { padding: 0 16px 16px; }
+</style>
+</head><body>
+<div class="option-bar">
+  Holdings A — compact insights · <a style="color:#fff;text-decoration:underline;" href="index.html">← back to option picker</a>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">Q</div>
+      <div class="brand-name">Quantifyd</div>
+    </div>
+    <div class="nav-section">Workspace</div>
+    <a class="nav-item"><span>Strategies</span></a>
+    <a class="nav-item"><span>ORB</span></a>
+    <a class="nav-item"><span>NAS options</span></a>
+    <a class="nav-item"><span>Performance</span></a>
+    <a class="nav-item active"><span>Holdings</span></a>
+    <div class="avatar-block">
+      <div class="avatar">S</div>
+      <div class="avatar-name">Stanly</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="stamp">20 Apr 2026, 19:45:12 IST</span>
+      <div class="topbar-right">
+        <span class="user-name">Stanly Castromin Lawrance Arun</span>
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1D9E75;margin:0 6px 0 12px;"></span>
+        <span style="color:var(--ink-muted);font-size:12px;">Connected to Kite</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1 class="page-title">Holdings</h1>
+      <div class="page-subtitle">31 stocks · signals Kite doesn't flag — movers, extremes, upcoming events</div>
+
+      <!-- Summary strip -->
+      <div class="summary-strip">
+        <div class="metric-card">
+          <div class="metric-label">Current value</div>
+          <div class="metric-value">Rs 2,17,31,216</div>
+          <div class="metric-hint">Invested Rs 1,22,31,999</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Day P&amp;L</div>
+          <div class="metric-value pnl-pos">+Rs 4,643</div>
+          <div class="metric-hint">+0.02%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total P&amp;L</div>
+          <div class="metric-value pnl-pos">+Rs 94,99,217</div>
+          <div class="metric-hint">+77.66% since buy</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">LTCG eligible</div>
+          <div class="metric-value">Rs 1.82cr</div>
+          <div class="metric-hint">12 of 31 held &gt;1 year</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Upcoming events</div>
+          <div class="metric-value">4</div>
+          <div class="metric-hint">Next 30 days</div>
+        </div>
+      </div>
+
+      <!-- Movers + Extremes side by side -->
+      <div class="section">
+        <div class="two-col">
+          <div>
+            <div class="section-head">
+              <div class="section-title">Today's movers</div>
+              <span class="chip">30 stocks traded</span>
+            </div>
+            <div class="movers-card">
+              <div class="movers-group">
+                <div class="movers-group-label">Top gainers</div>
+                <div class="mover-row">
+                  <span class="mover-sym">APLAPOLLO</span>
+                  <span class="mover-pct pnl-pos">+1.81%</span>
+                  <span class="mover-bar"><span class="mover-bar-fill pos" style="width:100%"></span></span>
+                  <span class="mover-pnl pnl-pos">+Rs 10,810</span>
+                </div>
+                <div class="mover-row">
+                  <span class="mover-sym">ANANDRATHI</span>
+                  <span class="mover-pct pnl-pos">+0.92%</span>
+                  <span class="mover-bar"><span class="mover-bar-fill pos" style="width:51%"></span></span>
+                  <span class="mover-pnl pnl-pos">+Rs 6,552</span>
+                </div>
+                <div class="mover-row">
+                  <span class="mover-sym">ACCENTMIC</span>
+                  <span class="mover-pct pnl-pos">+0.42%</span>
+                  <span class="mover-bar"><span class="mover-bar-fill pos" style="width:23%"></span></span>
+                  <span class="mover-pnl pnl-pos">+Rs 880</span>
+                </div>
+              </div>
+              <div class="movers-group">
+                <div class="movers-group-label">Top losers</div>
+                <div class="mover-row">
+                  <span class="mover-sym">BANCOINDIA</span>
+                  <span class="mover-pct pnl-neg">−1.86%</span>
+                  <span class="mover-bar"><span class="mover-bar-fill neg" style="width:100%"></span></span>
+                  <span class="mover-pnl pnl-neg">−Rs 6,585</span>
+                </div>
+                <div class="mover-row">
+                  <span class="mover-sym">BSE</span>
+                  <span class="mover-pct pnl-neg">−1.72%</span>
+                  <span class="mover-bar"><span class="mover-bar-fill neg" style="width:92%"></span></span>
+                  <span class="mover-pnl pnl-neg">−Rs 11,431</span>
+                </div>
+                <div class="mover-row">
+                  <span class="mover-sym">CDSL</span>
+                  <span class="mover-pct pnl-neg">−1.64%</span>
+                  <span class="mover-bar"><span class="mover-bar-fill neg" style="width:88%"></span></span>
+                  <span class="mover-pnl pnl-neg">−Rs 4,384</span>
+                </div>
+                <div class="mover-row">
+                  <span class="mover-sym">BEL</span>
+                  <span class="mover-pct pnl-neg">−1.12%</span>
+                  <span class="mover-bar"><span class="mover-bar-fill neg" style="width:60%"></span></span>
+                  <span class="mover-pnl pnl-neg">−Rs 15,579</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-head">
+              <div class="section-title">52-week extremes</div>
+              <span class="chip">4 signals</span>
+            </div>
+            <div class="extremes-card">
+              <div class="extremes-group">
+                <div class="extremes-label"><span class="extremes-badge hi">at/near high</span>3 stocks</div>
+                <div class="extreme-row">
+                  <span class="extreme-sym">BEL</span>
+                  <span class="extreme-tag ath">At ATH</span>
+                  <span class="extreme-ltp">457.55</span>
+                  <span class="extreme-dist">0.0%</span>
+                </div>
+                <div class="extreme-row">
+                  <span class="extreme-sym">APLAPOLLO</span>
+                  <span class="extreme-tag near">Near hi</span>
+                  <span class="extreme-ltp">2,143.90</span>
+                  <span class="extreme-dist">−1.8%</span>
+                </div>
+                <div class="extreme-row">
+                  <span class="extreme-sym">APOLLOHOSP</span>
+                  <span class="extreme-tag near">Near hi</span>
+                  <span class="extreme-ltp">7,624.50</span>
+                  <span class="extreme-dist">−3.4%</span>
+                </div>
+              </div>
+              <div class="extremes-group">
+                <div class="extremes-label"><span class="extremes-badge lo">at/near low</span>1 stock</div>
+                <div class="extreme-row">
+                  <span class="extreme-sym">CAMS</span>
+                  <span class="extreme-tag near">Near lo</span>
+                  <span class="extreme-ltp">749.25</span>
+                  <span class="extreme-dist">+4.1%</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:16px;">
+              <div class="section-head">
+                <div class="section-title">Tax split</div>
+              </div>
+              <div class="ltcg-card">
+                <div class="ltcg-bar">
+                  <div class="ltcg" style="width:62%"></div>
+                  <div class="stcg" style="width:38%"></div>
+                </div>
+                <div class="ltcg-legend">
+                  <span><span class="ltcg-dot" style="background:var(--pnl-pos)"></span>LTCG — Rs 1.82cr (12 stocks)</span>
+                  <span><span class="ltcg-dot" style="background:var(--accent-warm)"></span>STCG — Rs 35.5L (19 stocks)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly collapsible -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Weekly movers · 5 trading days</div>
+        </div>
+        <details class="weekly">
+          <summary><span>Week of 14 Apr – 20 Apr 2026</span><span class="chip">tap to expand</span></summary>
+          <div class="weekly-body">
+            <div class="two-col">
+              <div>
+                <div class="movers-group-label">Top 5 gainers</div>
+                <div class="mover-row"><span class="mover-sym">APLAPOLLO</span><span class="mover-pct pnl-pos">+8.2%</span><span class="mover-bar"><span class="mover-bar-fill pos" style="width:100%"></span></span><span class="mover-pnl pnl-pos">+Rs 45,680</span></div>
+                <div class="mover-row"><span class="mover-sym">BEL</span><span class="mover-pct pnl-pos">+5.9%</span><span class="mover-bar"><span class="mover-bar-fill pos" style="width:72%"></span></span><span class="mover-pnl pnl-pos">+Rs 77,820</span></div>
+                <div class="mover-row"><span class="mover-sym">ANANDRATHI</span><span class="mover-pct pnl-pos">+3.4%</span><span class="mover-bar"><span class="mover-bar-fill pos" style="width:41%"></span></span><span class="mover-pnl pnl-pos">+Rs 23,106</span></div>
+                <div class="mover-row"><span class="mover-sym">APOLLOHOSP</span><span class="mover-pct pnl-pos">+2.1%</span><span class="mover-bar"><span class="mover-bar-fill pos" style="width:26%"></span></span><span class="mover-pnl pnl-pos">+Rs 18,910</span></div>
+                <div class="mover-row"><span class="mover-sym">ACCENTMIC</span><span class="mover-pct pnl-pos">+1.8%</span><span class="mover-bar"><span class="mover-bar-fill pos" style="width:22%"></span></span><span class="mover-pnl pnl-pos">+Rs 3,768</span></div>
+              </div>
+              <div>
+                <div class="movers-group-label">Top 5 losers</div>
+                <div class="mover-row"><span class="mover-sym">CAMS</span><span class="mover-pct pnl-neg">−4.2%</span><span class="mover-bar"><span class="mover-bar-fill neg" style="width:100%"></span></span><span class="mover-pnl pnl-neg">−Rs 9,751</span></div>
+                <div class="mover-row"><span class="mover-sym">BSE</span><span class="mover-pct pnl-neg">−3.1%</span><span class="mover-bar"><span class="mover-bar-fill neg" style="width:74%"></span></span><span class="mover-pnl pnl-neg">−Rs 20,622</span></div>
+                <div class="mover-row"><span class="mover-sym">BANCOINDIA</span><span class="mover-pct pnl-neg">−2.6%</span><span class="mover-bar"><span class="mover-bar-fill neg" style="width:62%"></span></span><span class="mover-pnl pnl-neg">−Rs 9,201</span></div>
+                <div class="mover-row"><span class="mover-sym">CDSL</span><span class="mover-pct pnl-neg">−2.1%</span><span class="mover-bar"><span class="mover-bar-fill neg" style="width:50%"></span></span><span class="mover-pnl pnl-neg">−Rs 5,611</span></div>
+                <div class="mover-row"><span class="mover-sym">AIRTEL</span><span class="mover-pct pnl-neg">−0.9%</span><span class="mover-bar"><span class="mover-bar-fill neg" style="width:22%"></span></span><span class="mover-pnl pnl-neg">−Rs 2,110</span></div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Events -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Upcoming events · next 30 days</div>
+          <span class="chip">4 events</span>
+        </div>
+        <div class="events-card">
+          <div class="events-row">
+            <span class="events-date">24 Apr</span>
+            <span class="events-sym">BEL</span>
+            <span class="events-kind"><span class="events-tag results">results</span> Q4 FY26</span>
+            <span class="events-detail">pre-market, est. EPS Rs 4.2</span>
+          </div>
+          <div class="events-row">
+            <span class="events-date">28 Apr</span>
+            <span class="events-sym">RELIANCE</span>
+            <span class="events-kind"><span class="events-tag dividend">dividend</span> Rs 10 / share</span>
+            <span class="events-detail">ex-date, record 30 Apr</span>
+          </div>
+          <div class="events-row">
+            <span class="events-date">03 May</span>
+            <span class="events-sym">APLAPOLLO</span>
+            <span class="events-kind"><span class="events-tag results">results</span> Q4 FY26</span>
+            <span class="events-detail">post-market</span>
+          </div>
+          <div class="events-row">
+            <span class="events-date">12 May</span>
+            <span class="events-sym">TITAN</span>
+            <span class="events-kind"><span class="events-tag split">split</span> 1:2</span>
+            <span class="events-detail">ex-split date</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body></html>

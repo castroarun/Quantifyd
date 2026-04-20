@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Holdings B — visual hero</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root {
+    --accent: #1E3A8A;
+    --accent-warm: #B45309;
+    --accent-warm-soft: #FEF3C7;
+    --accent-soft: #EFF3FA;
+    --nav-active-bg: #EFF3FA;
+  }
+  .nav-item.active { color: var(--accent); }
+  .chip { background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 6px; font-size: 11px; }
+  .stamp { color: var(--accent-warm); }
+  .page-title { color: var(--accent); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+  .page-subtitle { color: var(--ink-muted); font-size: 13px; margin: 4px 0 24px; }
+  .pnl-pos { color: var(--pnl-pos); }
+  .pnl-neg { color: var(--pnl-neg); }
+  .option-bar { background: var(--accent); color:#fff; padding: 6px 24px; font-size: 12px; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(180deg, #FFFFFF 0%, var(--accent-soft) 100%);
+    border: 0.5px solid var(--hairline);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: 24px;
+  }
+  .hero-block-label { font-size: 11px; color: var(--ink-muted); margin-bottom: 4px; }
+  .hero-current { font-size: 32px; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .hero-invested { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+  .hero-metric-value { font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .hero-mini { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+
+  .section { margin-bottom: 28px; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+
+  /* Movers — visual bars, side-by-side */
+  .movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .mover-card { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; padding: 16px; }
+  .mover-card-title { font-size: 12px; color: var(--ink-muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: baseline; }
+  .mover-card-sub { font-size: 10px; color: var(--ink-faint); }
+  .mover-item { display: grid; grid-template-columns: 120px 1fr 90px; gap: 10px; align-items: center; padding: 7px 0; }
+  .mover-item + .mover-item { border-top: 0.5px solid var(--hairline-softest); }
+  .mover-item-sym { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .mover-item-bar-wrap { position: relative; height: 8px; background: var(--hairline-softest); border-radius: 4px; overflow: hidden; }
+  .mover-item-bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+  .mover-item-bar.pos { background: linear-gradient(90deg, #1D9E75, #0F6E56); }
+  .mover-item-bar.neg { background: linear-gradient(90deg, #E88B8B, #A32D2D); }
+  .mover-item-right { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .mover-item-pct { font-size: 12px; font-weight: 500; }
+  .mover-item-rupee { font-size: 10px; color: var(--ink-muted); display: block; }
+
+  /* Extremes as inline cards */
+  .extremes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .extreme-card { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; padding: 14px 16px; }
+  .extreme-card.hi { border-left: 3px solid var(--pnl-pos); }
+  .extreme-card.lo { border-left: 3px solid var(--pnl-neg); }
+  .extreme-card.ath { border-left: 3px solid var(--accent-warm); background: linear-gradient(90deg, rgba(254,243,199,0.4), var(--surface) 40%); }
+  .extreme-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; letter-spacing: 0.02em; }
+  .extreme-tag.ath { background: var(--accent-warm-soft); color: var(--accent-warm); }
+  .extreme-tag.hi { background: rgba(15,110,86,0.12); color: var(--pnl-pos); }
+  .extreme-tag.lo { background: rgba(163,45,45,0.10); color: var(--pnl-neg); }
+  .extreme-sym { font-size: 14px; font-weight: 500; margin-top: 6px; }
+  .extreme-ltp { font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .extreme-dist { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+
+  /* Events timeline */
+  .events-timeline { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; padding: 20px 24px; }
+  .timeline-item { display: grid; grid-template-columns: 70px 1fr; gap: 16px; position: relative; padding: 10px 0; }
+  .timeline-item + .timeline-item { border-top: 0.5px solid var(--hairline-softest); }
+  .timeline-date { text-align: right; padding-right: 16px; border-right: 2px solid var(--accent-soft); position: relative; }
+  .timeline-date::after { content: ''; position: absolute; right: -5px; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .timeline-day { font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--accent); line-height: 1; }
+  .timeline-month { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .timeline-body { padding-left: 8px; }
+  .timeline-sym { font-size: 13px; font-weight: 500; }
+  .timeline-kind { font-size: 12px; color: var(--ink); margin-top: 2px; }
+  .timeline-detail { font-size: 11px; color: var(--ink-muted); margin-top: 3px; }
+  .timeline-tag { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 4px; margin-right: 6px; }
+  .timeline-tag.results { background: var(--accent-soft); color: var(--accent); }
+  .timeline-tag.dividend { background: rgba(15,110,86,0.12); color: var(--pnl-pos); }
+  .timeline-tag.split { background: var(--accent-warm-soft); color: var(--accent-warm); }
+
+  /* Weekly */
+  .weekly-wrap { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 10px; padding: 16px; }
+</style>
+</head><body>
+<div class="option-bar">
+  Holdings B — visual hero · <a style="color:#fff;text-decoration:underline;" href="index.html">← back to option picker</a>
+  · <a style="color:#fff;text-decoration:underline;" href="holdings-a.html">compare with A</a>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">Q</div>
+      <div class="brand-name">Quantifyd</div>
+    </div>
+    <div class="nav-section">Workspace</div>
+    <a class="nav-item"><span>Strategies</span></a>
+    <a class="nav-item"><span>ORB</span></a>
+    <a class="nav-item"><span>NAS options</span></a>
+    <a class="nav-item"><span>Performance</span></a>
+    <a class="nav-item active"><span>Holdings</span></a>
+    <div class="avatar-block">
+      <div class="avatar">S</div>
+      <div class="avatar-name">Stanly</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="stamp">20 Apr 2026, 19:45:12 IST</span>
+      <div class="topbar-right">
+        <span class="user-name">Stanly Castromin Lawrance Arun</span>
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1D9E75;margin:0 6px 0 12px;"></span>
+        <span style="color:var(--ink-muted);font-size:12px;">Connected to Kite</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1 class="page-title">Holdings</h1>
+      <div class="page-subtitle">31 stocks · insights Kite doesn't surface — movers, extremes, events</div>
+
+      <!-- Hero -->
+      <div class="hero">
+        <div>
+          <div class="hero-block-label">Current value</div>
+          <div class="hero-current">Rs 2,17,31,216</div>
+          <div class="hero-invested">
+            Invested Rs 1,22,31,999 · unrealized
+            <span class="pnl-pos">+Rs 94,99,217</span>
+            <span class="pnl-pos">(+77.66%)</span>
+          </div>
+        </div>
+        <div>
+          <div class="hero-block-label">Day P&amp;L</div>
+          <div class="hero-metric-value pnl-pos">+Rs 4,643</div>
+          <div class="hero-mini">+0.02% · 30 / 31 stocks traded</div>
+        </div>
+        <div>
+          <div class="hero-block-label">Next event</div>
+          <div class="hero-metric-value">BEL · Q4 results</div>
+          <div class="hero-mini">in 4 days · 24 Apr</div>
+        </div>
+      </div>
+
+      <!-- 52-week extremes as prominent cards -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">52-week extremes</div>
+          <span class="chip">4 signals</span>
+        </div>
+        <div class="extremes-grid">
+          <div class="extreme-card ath">
+            <span class="extreme-tag ath">at ATH</span>
+            <div class="extreme-sym">BEL</div>
+            <div class="extreme-ltp">457.55</div>
+            <div class="extreme-dist">+230.99% total · 3,043 qty</div>
+          </div>
+          <div class="extreme-card hi">
+            <span class="extreme-tag hi">near 52wk hi</span>
+            <div class="extreme-sym">APLAPOLLO</div>
+            <div class="extreme-ltp">2,143.90</div>
+            <div class="extreme-dist">−1.8% from hi · +40.67% total</div>
+          </div>
+          <div class="extreme-card hi">
+            <span class="extreme-tag hi">near 52wk hi</span>
+            <div class="extreme-sym">APOLLOHOSP</div>
+            <div class="extreme-ltp">7,624.50</div>
+            <div class="extreme-dist">−3.4% from hi · +21.5% total</div>
+          </div>
+          <div class="extreme-card lo">
+            <span class="extreme-tag lo">near 52wk lo</span>
+            <div class="extreme-sym">CAMS</div>
+            <div class="extreme-ltp">749.25</div>
+            <div class="extreme-dist">+4.1% above lo · −0.69% total</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's movers — side by side -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Today's movers</div>
+        </div>
+        <div class="movers-grid">
+          <div class="mover-card">
+            <div class="mover-card-title">
+              <span>Top gainers</span>
+              <span class="mover-card-sub">vs previous close</span>
+            </div>
+            <div class="mover-item">
+              <span class="mover-item-sym">APLAPOLLO</span>
+              <span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:100%"></span></span>
+              <span class="mover-item-right pnl-pos mover-item-pct">+1.81%<span class="mover-item-rupee">+Rs 10,810</span></span>
+            </div>
+            <div class="mover-item">
+              <span class="mover-item-sym">ANANDRATHI</span>
+              <span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:51%"></span></span>
+              <span class="mover-item-right pnl-pos mover-item-pct">+0.92%<span class="mover-item-rupee">+Rs 6,552</span></span>
+            </div>
+            <div class="mover-item">
+              <span class="mover-item-sym">ACCENTMIC</span>
+              <span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:23%"></span></span>
+              <span class="mover-item-right pnl-pos mover-item-pct">+0.42%<span class="mover-item-rupee">+Rs 880</span></span>
+            </div>
+          </div>
+          <div class="mover-card">
+            <div class="mover-card-title">
+              <span>Top losers</span>
+              <span class="mover-card-sub">vs previous close</span>
+            </div>
+            <div class="mover-item">
+              <span class="mover-item-sym">BANCOINDIA</span>
+              <span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:100%"></span></span>
+              <span class="mover-item-right pnl-neg mover-item-pct">−1.86%<span class="mover-item-rupee">−Rs 6,585</span></span>
+            </div>
+            <div class="mover-item">
+              <span class="mover-item-sym">BSE</span>
+              <span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:92%"></span></span>
+              <span class="mover-item-right pnl-neg mover-item-pct">−1.72%<span class="mover-item-rupee">−Rs 11,431</span></span>
+            </div>
+            <div class="mover-item">
+              <span class="mover-item-sym">CDSL</span>
+              <span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:88%"></span></span>
+              <span class="mover-item-right pnl-neg mover-item-pct">−1.64%<span class="mover-item-rupee">−Rs 4,384</span></span>
+            </div>
+            <div class="mover-item">
+              <span class="mover-item-sym">BEL</span>
+              <span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:60%"></span></span>
+              <span class="mover-item-right pnl-neg mover-item-pct">−1.12%<span class="mover-item-rupee">−Rs 15,579</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Weekly movers · 14 – 20 Apr 2026</div>
+        </div>
+        <div class="weekly-wrap">
+          <div class="movers-grid">
+            <div>
+              <div class="mover-card-title"><span>Top 5 gainers (week)</span></div>
+              <div class="mover-item"><span class="mover-item-sym">BEL</span><span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:100%"></span></span><span class="mover-item-right pnl-pos mover-item-pct">+5.9%<span class="mover-item-rupee">+Rs 77,820</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">APLAPOLLO</span><span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:83%"></span></span><span class="mover-item-right pnl-pos mover-item-pct">+8.2%<span class="mover-item-rupee">+Rs 45,680</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">ANANDRATHI</span><span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:30%"></span></span><span class="mover-item-right pnl-pos mover-item-pct">+3.4%<span class="mover-item-rupee">+Rs 23,106</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">APOLLOHOSP</span><span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:24%"></span></span><span class="mover-item-right pnl-pos mover-item-pct">+2.1%<span class="mover-item-rupee">+Rs 18,910</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">ACCENTMIC</span><span class="mover-item-bar-wrap"><span class="mover-item-bar pos" style="width:5%"></span></span><span class="mover-item-right pnl-pos mover-item-pct">+1.8%<span class="mover-item-rupee">+Rs 3,768</span></span></div>
+            </div>
+            <div>
+              <div class="mover-card-title"><span>Top 5 losers (week)</span></div>
+              <div class="mover-item"><span class="mover-item-sym">BSE</span><span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:100%"></span></span><span class="mover-item-right pnl-neg mover-item-pct">−3.1%<span class="mover-item-rupee">−Rs 20,622</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">CAMS</span><span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:47%"></span></span><span class="mover-item-right pnl-neg mover-item-pct">−4.2%<span class="mover-item-rupee">−Rs 9,751</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">BANCOINDIA</span><span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:45%"></span></span><span class="mover-item-right pnl-neg mover-item-pct">−2.6%<span class="mover-item-rupee">−Rs 9,201</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">CDSL</span><span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:27%"></span></span><span class="mover-item-right pnl-neg mover-item-pct">−2.1%<span class="mover-item-rupee">−Rs 5,611</span></span></div>
+              <div class="mover-item"><span class="mover-item-sym">AIRTEL</span><span class="mover-item-bar-wrap"><span class="mover-item-bar neg" style="width:10%"></span></span><span class="mover-item-right pnl-neg mover-item-pct">−0.9%<span class="mover-item-rupee">−Rs 2,110</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events as timeline -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Upcoming events · next 30 days</div>
+          <span class="chip">4 events</span>
+        </div>
+        <div class="events-timeline">
+          <div class="timeline-item">
+            <div class="timeline-date">
+              <div class="timeline-day">24</div>
+              <div class="timeline-month">Apr</div>
+            </div>
+            <div class="timeline-body">
+              <div class="timeline-sym">BEL</div>
+              <div class="timeline-kind"><span class="timeline-tag results">results</span>Q4 FY26 earnings</div>
+              <div class="timeline-detail">Pre-market · est. EPS Rs 4.2 · 3,043 qty held</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">
+              <div class="timeline-day">28</div>
+              <div class="timeline-month">Apr</div>
+            </div>
+            <div class="timeline-body">
+              <div class="timeline-sym">RELIANCE</div>
+              <div class="timeline-kind"><span class="timeline-tag dividend">dividend</span>Rs 10 / share</div>
+              <div class="timeline-detail">Ex-date · record 30 Apr · est. Rs 2,040 payout</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">
+              <div class="timeline-day">03</div>
+              <div class="timeline-month">May</div>
+            </div>
+            <div class="timeline-body">
+              <div class="timeline-sym">APLAPOLLO</div>
+              <div class="timeline-kind"><span class="timeline-tag results">results</span>Q4 FY26 earnings</div>
+              <div class="timeline-detail">Post-market · 280 qty held</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">
+              <div class="timeline-day">12</div>
+              <div class="timeline-month">May</div>
+            </div>
+            <div class="timeline-body">
+              <div class="timeline-sym">TITAN</div>
+              <div class="timeline-kind"><span class="timeline-tag split">split</span>1 : 2 stock split</div>
+              <div class="timeline-detail">Ex-split date · qty will double</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body></html>
