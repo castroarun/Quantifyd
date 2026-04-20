@@ -5976,10 +5976,21 @@ def _orb_monitor_positions():
         logger.error(f"[ORB] Position monitor error: {e}")
 
 
+def _orb_midmorning_status():
+    """10:30 Mon-Fri: Send snapshot of open positions, day P&L, margin.
+    Routes through NotificationService so both email and WhatsApp fire."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        engine = _get_orb_engine()
+        engine.send_midmorning_status()
+    except Exception as e:
+        logger.error(f"[ORB] midmorning status error: {e}")
+
+
 def _orb_eod_squareoff():
-    """15:18 sharp: Close all open ORB positions at market — runs 2 min
-    before Zerodha's MIS auto-squareoff (15:20-15:25) to leave a safety
-    buffer in case of network/fill delays."""
+    """14:30 sharp: Close all open ORB positions at market (V9 rule).
+    Replaces previous 15:18 squareoff — V9 finding cuts MaxDD in half."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
@@ -6041,6 +6052,11 @@ try:
         id='orb_monitor_pos', replace_existing=True,
     )
     scheduler.add_job(
+        _orb_midmorning_status,
+        'cron', day_of_week='mon-fri', hour=10, minute=30,
+        id='orb_midmorning_status', replace_existing=True,
+    )
+    scheduler.add_job(
         _orb_eod_squareoff,
         'cron', day_of_week='mon-fri', hour=14, minute=30,
         id='orb_eod_squareoff', replace_existing=True,
@@ -6058,7 +6074,8 @@ try:
     logger.info(
         "ORB scheduled jobs registered: "
         "init(9:14), OR update(9:15-9:29), signal eval(5min), "
-        "position monitor(30s), EOD squareoff(14:30), EOD report(15:25), "
+        "position monitor(30s), midmorning status(10:30), "
+        "EOD squareoff(14:30), EOD report(15:25), "
         "daily backtest(15:45)"
     )
 except Exception as e:

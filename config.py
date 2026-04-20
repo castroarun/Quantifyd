@@ -505,7 +505,11 @@ ORB_DEFAULTS = {
     'email_app_password': os.getenv('GMAIL_APP_PASSWORD', ''),
     'smtp_host': 'smtp.gmail.com',
     'smtp_port': 587,
-    'whatsapp_enabled': False,
+    'whatsapp_enabled': True,
+    'twilio_account_sid': os.getenv('TWILIO_ACCOUNT_SID', ''),
+    'twilio_auth_token': os.getenv('TWILIO_AUTH_TOKEN', ''),
+    'twilio_whatsapp_from': os.getenv('TWILIO_FROM_WHATSAPP', 'whatsapp:+14155238886'),
+    'twilio_whatsapp_to': os.getenv('TWILIO_TO_WHATSAPP', ''),
     'notify_on_entry': True,
     'notify_on_exit': True,
     'notify_on_sl': True,
@@ -514,6 +518,7 @@ ORB_DEFAULTS = {
     'notify_on_risk': True,
     'notify_on_system': True,
     'notify_eod_report': True,
+    'notify_midmorning_status': True,   # 10:30 mid-morning status (email + WhatsApp)
 }
 
 # Nifty 500 Universe

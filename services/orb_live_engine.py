@@ -1256,6 +1256,44 @@ class ORBLiveEngine:
         ns.send_eod_report(report_data)
 
     # ===================================================================
+    # Mid-morning status (10:30)
+    # ===================================================================
+
+    def send_midmorning_status(self):
+        """Send a snapshot of the day's progress at 10:30 IST — email + WhatsApp."""
+        if not self.cfg.get('notify_midmorning_status', True):
+            return
+        from services.notifications import get_notification_service
+        ns = get_notification_service(self.cfg)
+        try:
+            open_positions = self.db.get_open_positions() or []
+            closed = self.db.get_today_closed() or []
+            day_pnl = sum((t.get('pnl_inr') or 0) for t in closed)
+            day_pnl += sum((p.get('pnl_inr') or 0) for p in open_positions)
+            margin = self._last_margin or {}
+            # Compact status line
+            msg = (
+                f"Open: {len(open_positions)} · Closed today: {len(closed)} · "
+                f"Day P&L: {'+'if day_pnl>=0 else ''}Rs {day_pnl:,.0f}"
+            )
+            if margin.get('cash') is not None:
+                msg += f" · Margin: Rs {margin['cash']:,.0f}"
+            ns.send_alert(
+                'system_alert',
+                'ORB mid-morning status (10:30)',
+                msg,
+                data={
+                    'open_positions': len(open_positions),
+                    'closed_today': len(closed),
+                    'day_pnl': day_pnl,
+                    'available_margin': margin.get('cash', 0),
+                },
+                priority='low',
+            )
+        except Exception as e:
+            logger.error(f"[ORB] midmorning status error: {e}", exc_info=True)
+
+    # ===================================================================
     # Emergency
     # ===================================================================
 
