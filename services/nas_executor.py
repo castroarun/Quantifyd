@@ -295,22 +295,35 @@ class NasExecutor:
             min_prem_guard, adj_max_prem, min_otm)
 
         if new_strike is None:
-            # Fallback to ATR-based
-            daily_atr = scan_result.get('daily_atr') or 100
-            distance = cfg.get('strike_distance_atr', 1.5)
-            if pos['instrument_type'] == 'CE':
-                new_strike = round_strike(spot + distance * daily_atr, 'up')
-            else:
-                new_strike = round_strike(spot - distance * daily_atr, 'down')
-            iv = scan_result.get('iv', 0.15)
-            dte = scan_result.get('dte', 3)
-            T = max(dte, 0.5) / 365.0
-            if pos['instrument_type'] == 'CE':
-                new_prem = bs_call(spot, new_strike, T, 0.065, iv)
-            else:
-                new_prem = bs_put(spot, new_strike, T, 0.065, iv)
-            logger.warning(f"[NAS] Premium-based strike failed, ATR fallback: "
-                           f"{new_strike}{pos['instrument_type']} @{new_prem:.1f}")
+            # NO BS fallback — fabricated premiums lead to phantom positions
+            # (observed 2026-04-21: expiry-day with all OTM strikes <Rs 5, target
+            # was Rs 17; BS fallback invented 17 and opened 9 phantom 24750CE
+            # positions in 60 seconds). If no live strike matches target, treat
+            # as an "adj_boundary_exit" and close the strangle entirely.
+            logger.warning(
+                f"[NAS] No live strike found for {pos['instrument_type']} "
+                f"target_prem={target_prem:.1f} range=[{min_prem_guard}, {adj_max_prem:.1f}]. "
+                f"Closing strangle via emergency exit to avoid phantom positions."
+            )
+            # Close both legs of this strangle
+            try:
+                sid = pos.get('strangle_id')
+                active = self.db.get_active_positions()
+                strangle_legs = [p for p in active if p.get('strangle_id') == sid]
+                for leg in strangle_legs:
+                    tsym = leg.get('tradingsymbol', '')
+                    live_ltp = self.scanner.get_live_option_premium(tsym) if tsym else None
+                    close_px = live_ltp if live_ltp is not None else leg.get('entry_price', 0)
+                    self._close_leg(leg, close_px, 'adj_boundary_exit_no_strike')
+                self.db.log_signal(
+                    signal_type='adj_boundary_exit_no_strike',
+                    spot_price=spot,
+                    action_taken=f'No live strike for {pos["instrument_type"]} target={target_prem:.1f} — '
+                                 f'closed strangle #{sid}',
+                )
+            except Exception as e:
+                logger.error(f"[NAS] Emergency exit during adjustment failed: {e}", exc_info=True)
+            return None, 'no_live_strike_closed_strangle'
 
         # Place new leg
         new_symbol = self._build_tradingsymbol(pos['instrument_type'], new_strike, expiry)
