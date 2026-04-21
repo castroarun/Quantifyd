@@ -1374,6 +1374,213 @@ class ORBLiveEngine:
         }
 
     # ===================================================================
+    # Catch-up: take trades for breakouts we missed earlier today
+    # ===================================================================
+
+    def catchup_missed_breakouts(self) -> dict:
+        """Recovery helper — if the engine was offline/broken when breakouts
+        fired earlier, walk today's 5-min candles and take entries for stocks
+        whose first post-OR candle closed decisively past OR and are STILL
+        beyond OR right now. Uses current LTP as entry price.
+
+        Respects last_entry_time and all standard filters (VWAP, RSI, CPR
+        direction, gap, funds, qty). Returns a dict of what it did.
+        """
+        import json as _json
+        now = datetime.now()
+        today_str = date.today().isoformat()
+        cfg = self.cfg
+        result = {'entered': [], 'skipped': [], 'as_of': now.isoformat(timespec='seconds')}
+
+        last_entry = cfg.get('last_entry_time', '14:00')
+        if now.strftime('%H:%M') > last_entry:
+            result['error'] = f'past last_entry_time {last_entry}'
+            return result
+
+        session_start = now.replace(hour=9, minute=15, second=0, microsecond=0)
+        ltps = self.get_live_ltp(list(self.stocks.keys()))
+
+        for sym in self.stocks:
+            try:
+                with self._lock:
+                    or_s = self._or_state.get(sym) or {}
+                or_high = or_s.get('high')
+                or_low = or_s.get('low')
+                if not or_s.get('finalized') or or_high is None or or_low is None:
+                    result['skipped'].append({'sym': sym, 'reason': 'or_not_finalized'})
+                    continue
+                with self._lock:
+                    if sym in self._positions:
+                        result['skipped'].append({'sym': sym, 'reason': 'in_position'})
+                        continue
+                daily_state = self.db.get_or_create_daily_state(sym, today_str) or {}
+                if (daily_state.get('trades_taken') or 0) >= cfg.get('max_trades_per_day', 1):
+                    result['skipped'].append({'sym': sym, 'reason': 'traded_today'})
+                    continue
+                if daily_state.get('is_wide_cpr_day'):
+                    result['skipped'].append({'sym': sym, 'reason': 'wide_cpr'})
+                    continue
+
+                candles = self.fetch_5min_candles(sym, session_start, now)
+                if not candles or len(candles) < 4:
+                    result['skipped'].append({'sym': sym, 'reason': 'insufficient_candles'})
+                    continue
+
+                # Find the FIRST post-OR breakout candle (transition)
+                or_end = session_start + timedelta(minutes=cfg.get('or_minutes', 15))
+                def _ctime(c):
+                    t = c['date']
+                    if hasattr(t, 'tzinfo') and t.tzinfo is not None:
+                        t = t.replace(tzinfo=None)
+                    return t
+                post = [c for c in candles if _ctime(c) >= or_end]
+                direction = None
+                first_breakout = None
+                for i in range(1, len(post)):
+                    prev_c = post[i - 1]
+                    cur = post[i]
+                    if cur['close'] > or_high and prev_c['close'] <= or_high:
+                        direction = 'LONG'
+                        first_breakout = cur
+                        break
+                    if cur['close'] < or_low and prev_c['close'] >= or_low:
+                        direction = 'SHORT'
+                        first_breakout = cur
+                        break
+                if direction is None or first_breakout is None:
+                    result['skipped'].append({'sym': sym, 'reason': 'no_breakout_found'})
+                    continue
+
+                # Current LTP must still be beyond OR level in the same direction
+                ltp = ltps.get(sym) or 0
+                if direction == 'LONG' and ltp <= or_high:
+                    result['skipped'].append({'sym': sym, 'reason': f'ltp_back_inside_OR ({ltp} <= {or_high})'})
+                    continue
+                if direction == 'SHORT' and ltp >= or_low:
+                    result['skipped'].append({'sym': sym, 'reason': f'ltp_back_inside_OR ({ltp} >= {or_low})'})
+                    continue
+
+                # Reuse filter checks — need VWAP + RSI now, CPR and gap from daily_state
+                vwap = self.compute_vwap(candles)
+                rsi = self.compute_rsi_15m(sym)
+                self.db.update_daily_state(sym, today_str, vwap=vwap, rsi_15m=rsi)
+
+                filters = {}
+                all_passed = True
+                if direction == 'LONG' and not cfg.get('allow_longs', True):
+                    filters['allow_longs'] = False; all_passed = False
+                if direction == 'SHORT' and not cfg.get('allow_shorts', True):
+                    filters['allow_shorts'] = False; all_passed = False
+                if cfg.get('use_vwap_filter', True) and vwap is not None:
+                    if direction == 'LONG' and ltp <= vwap:
+                        filters['vwap'] = False; all_passed = False
+                    elif direction == 'SHORT' and ltp >= vwap:
+                        filters['vwap'] = False; all_passed = False
+                    else:
+                        filters['vwap'] = True
+                if cfg.get('use_rsi_filter', True) and rsi is not None:
+                    rsi_long = cfg.get('rsi_long_threshold', 60)
+                    rsi_short = cfg.get('rsi_short_threshold', 40)
+                    if direction == 'LONG' and rsi < rsi_long:
+                        filters['rsi'] = False; all_passed = False
+                    elif direction == 'SHORT' and rsi > rsi_short:
+                        filters['rsi'] = False; all_passed = False
+                    else:
+                        filters['rsi'] = True
+                cpr_tc = daily_state.get('cpr_tc')
+                cpr_bc = daily_state.get('cpr_bc')
+                if cfg.get('use_cpr_dir_filter', True) and cpr_tc and cpr_bc:
+                    if direction == 'LONG' and ltp <= cpr_tc:
+                        filters['cpr_dir'] = False; all_passed = False
+                    elif direction == 'SHORT' and ltp >= cpr_bc:
+                        filters['cpr_dir'] = False; all_passed = False
+                    else:
+                        filters['cpr_dir'] = True
+                gap_pct = daily_state.get('gap_pct')
+                gap_block_pct = cfg.get('gap_long_block_pct', 0.3)
+                if cfg.get('use_gap_filter', True) and gap_pct is not None:
+                    if direction == 'LONG' and gap_pct > gap_block_pct:
+                        filters['gap'] = False; all_passed = False
+                    else:
+                        filters['gap'] = True
+
+                if not all_passed:
+                    result['skipped'].append({
+                        'sym': sym, 'reason': 'filters_blocked',
+                        'direction': direction, 'filters': filters,
+                    })
+                    continue
+
+                # Compute SL/target from entry = current LTP
+                entry_price = ltp
+                if direction == 'LONG':
+                    sl_price = or_low
+                    risk = entry_price - sl_price
+                else:
+                    sl_price = or_high
+                    risk = sl_price - entry_price
+                if risk <= 0:
+                    result['skipped'].append({'sym': sym, 'reason': 'zero_risk'})
+                    continue
+                r_multiple = cfg.get('r_multiple', 1.5)
+                target_price = entry_price + (r_multiple * risk) if direction == 'LONG' \
+                    else entry_price - (r_multiple * risk)
+
+                qty = self.stocks[sym].get('qty', 1)
+                if qty <= 0:
+                    result['skipped'].append({'sym': sym, 'reason': 'qty_zero'})
+                    continue
+
+                available = self._get_available_margin()
+                min_balance_required = self.min_margin_for_trade
+                if available is not None and available < min_balance_required:
+                    result['skipped'].append({
+                        'sym': sym, 'reason': 'low_funds',
+                        'available': available, 'required': min_balance_required,
+                    })
+                    continue
+                required_capital = qty * entry_price
+                if available is not None and required_capital > available:
+                    qty = int(available // entry_price)
+                    if qty <= 0:
+                        result['skipped'].append({'sym': sym, 'reason': 'insufficient_funds_zero_qty'})
+                        continue
+
+                # Log the "catchup" signal
+                self.db.log_signal(
+                    instrument=sym, signal_time=now.isoformat(),
+                    direction=direction, entry_price=round(entry_price, 2),
+                    sl_price=round(sl_price, 2), target_price=round(target_price, 2),
+                    or_high=round(or_high, 2), or_low=round(or_low, 2),
+                    gap_pct=gap_pct, vwap=vwap, rsi_15m=rsi,
+                    cpr_pivot=daily_state.get('cpr_pivot'),
+                    cpr_tc=cpr_tc, cpr_bc=cpr_bc,
+                    cpr_width_pct=daily_state.get('cpr_width_pct'),
+                    filters_passed=_json.dumps(filters),
+                    action_taken='CATCHUP_ENTRY',
+                )
+
+                kite_order_id = self.place_entry_order(sym, direction, qty, entry_price)
+                first_bt = _ctime(first_breakout)
+                logger.info(
+                    f'[ORB-CATCHUP] {sym} {direction} missed breakout at '
+                    f'{first_bt.strftime("%H:%M")} (close {first_breakout["close"]:.2f}) — '
+                    f'entered now at {entry_price:.2f}'
+                )
+                result['entered'].append({
+                    'sym': sym, 'direction': direction,
+                    'first_breakout_time': first_bt.strftime('%H:%M'),
+                    'first_breakout_close': first_breakout['close'],
+                    'entry_price': entry_price,
+                    'sl_price': sl_price, 'target_price': target_price,
+                    'qty': qty, 'kite_order_id': kite_order_id,
+                })
+            except Exception as e:
+                logger.error(f'[ORB-CATCHUP] {sym} error: {e}', exc_info=True)
+                result['skipped'].append({'sym': sym, 'reason': f'error: {e}'})
+        return result
+
+    # ===================================================================
     # Mid-morning status (10:30)
     # ===================================================================
 

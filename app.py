@@ -5733,6 +5733,21 @@ def api_orb_initialize():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/orb/catchup', methods=['POST'])
+def api_orb_catchup():
+    """Recovery-only: take trades for breakouts missed earlier today if still valid.
+    Walks today's 5-min candles, finds first post-OR breakout per stock, and
+    places entries for stocks whose current LTP is still beyond OR. Respects
+    all standard filters. Safer than auto — kept behind a manual POST."""
+    try:
+        engine = _get_orb_engine()
+        result = engine.catchup_missed_breakouts()
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[ORB] catchup error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/orb/candidates')
 def api_orb_candidates():
     """Live candidate snapshot: broken_out, watching inside OR, excluded."""
