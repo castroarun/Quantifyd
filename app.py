@@ -5479,12 +5479,93 @@ def _nas_916_eod_squareoff():
             logger.error(f"[{name}] EOD squareoff error: {e}")
 
 
+def _nas_916_sl_monitor():
+    """Poll each 9:16 system's active positions every 10s and run its own
+    check_and_handle_sl(). Fixes the gap where nas_ticker.py only wires SL
+    handling for Squeeze variants — 9:16 positions had no SL enforcement
+    until this job was added (discovered 2026-04-21: 9:16 ATM V4 CE went
+    from entry 59 to 122.55 without SL at 76.70 firing)."""
+    variants = [
+        ('NAS-916-OTM',  'NAS_916_OTM_DEFAULTS',  'Nas916OtmExecutor'),
+        ('NAS-916-ATM',  'NAS_916_ATM_DEFAULTS',  'Nas916AtmExecutor'),
+        ('NAS-916-ATM2', 'NAS_916_ATM2_DEFAULTS', 'Nas916Atm2Executor'),
+        ('NAS-916-ATM4', 'NAS_916_ATM4_DEFAULTS', 'Nas916Atm4Executor'),
+    ]
+    # Only run during market hours (9:15-15:30 IST)
+    now = datetime.now()
+    if not (now.weekday() < 5 and (9, 15) <= (now.hour, now.minute) <= (15, 30)):
+        return
+
+    from services.nas_916_executors import (
+        Nas916OtmExecutor, Nas916AtmExecutor,
+        Nas916Atm2Executor, Nas916Atm4Executor,
+    )
+    from services.kite_service import get_kite
+
+    name_to_cls = {
+        'Nas916OtmExecutor': Nas916OtmExecutor,
+        'Nas916AtmExecutor': Nas916AtmExecutor,
+        'Nas916Atm2Executor': Nas916Atm2Executor,
+        'Nas916Atm4Executor': Nas916Atm4Executor,
+    }
+    name_to_cfg = {
+        'NAS_916_OTM_DEFAULTS': NAS_916_OTM_DEFAULTS,
+        'NAS_916_ATM_DEFAULTS': NAS_916_ATM_DEFAULTS,
+        'NAS_916_ATM2_DEFAULTS': NAS_916_ATM2_DEFAULTS,
+        'NAS_916_ATM4_DEFAULTS': NAS_916_ATM4_DEFAULTS,
+    }
+
+    try:
+        kite = get_kite()
+    except Exception as e:
+        logger.warning(f"[NAS-916-SL] Kite not available: {e}")
+        return
+
+    for label, cfg_name, cls_name in variants:
+        try:
+            cfg = name_to_cfg[cfg_name]
+            if not cfg.get('enabled', True):
+                continue
+            executor = name_to_cls[cls_name](config=cfg)
+            active = executor.db.get_active_positions() or []
+            if not active:
+                continue
+            # Batch LTP fetch for all active tradingsymbols
+            syms = list({p['tradingsymbol'] for p in active if p.get('tradingsymbol')})
+            if not syms:
+                continue
+            ltp_map = {}
+            try:
+                keys = [f'NFO:{s}' for s in syms]
+                quote_resp = kite.ltp(keys) or {}
+                for s in syms:
+                    v = quote_resp.get(f'NFO:{s}')
+                    if v and v.get('last_price'):
+                        ltp_map[s] = v['last_price']
+            except Exception as e:
+                logger.warning(f"[{label}] ltp fetch failed: {e}")
+                continue
+            if not ltp_map:
+                continue
+            actions = executor.check_and_handle_sl(positions=active, live_ltps=ltp_map)
+            if actions:
+                logger.info(f"[{label}] SL monitor: {len(actions)} actions")
+        except Exception as e:
+            logger.error(f"[{label}] SL monitor error: {e}", exc_info=True)
+
+
 try:
     # Auto-entry at 9:16 AM
     scheduler.add_job(
         _nas_916_auto_entry,
         'cron', day_of_week='mon-wed,fri', hour=9, minute=16,
         id='nas_916_auto_entry', replace_existing=True,
+    )
+    # SL monitor — poll every 10s during market hours (fills the gap in nas_ticker)
+    scheduler.add_job(
+        _nas_916_sl_monitor,
+        'interval', seconds=10,
+        id='nas_916_sl_monitor', replace_existing=True,
     )
     # EOD squareoff at 3:15 PM
     scheduler.add_job(
@@ -5493,7 +5574,8 @@ try:
         id='nas_916_eod_squareoff', replace_existing=True,
     )
     logger.info(
-        "NAS 916 scheduled jobs registered: auto-entry(9:16), EOD squareoff(15:15) — Mon-Wed,Fri"
+        "NAS 916 scheduled jobs registered: auto-entry(9:16), SL monitor(10s poll), "
+        "EOD squareoff(15:15) — Mon-Wed,Fri"
     )
 except Exception as e:
     logger.warning(f"Could not register NAS 916 scheduled jobs: {e}")
