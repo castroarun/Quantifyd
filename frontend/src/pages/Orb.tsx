@@ -94,17 +94,16 @@ export default function Orb() {
 
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
+    // Heavy load (state + signals) — refreshed slowly (10s).
+    const loadHeavy = async () => {
       try {
-        const [s, sig, cand] = await Promise.all([
+        const [s, sig] = await Promise.all([
           apiGet<ORBState>('/api/orb/state'),
           apiGet<ORBSignal[]>('/api/orb/signals').catch(() => [] as ORBSignal[]),
-          apiGet<ORBCandidates>('/api/orb/candidates').catch(() => null),
         ]);
         if (cancelled) return;
         setState(s);
         setSignals(Array.isArray(sig) ? sig : []);
-        setCandidates(cand);
         setErr(null);
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Failed to load ORB state');
@@ -112,11 +111,23 @@ export default function Orb() {
         if (!cancelled) setLoading(false);
       }
     };
-    load();
-    const id = setInterval(load, 10_000);
+    // Light load (candidates) — tick every 3s so LTP / %s feel live.
+    const loadCandidates = async () => {
+      try {
+        const cand = await apiGet<ORBCandidates>('/api/orb/candidates');
+        if (!cancelled) setCandidates(cand);
+      } catch {
+        /* silent — keep last candidates snapshot */
+      }
+    };
+    loadHeavy();
+    loadCandidates();
+    const idHeavy = setInterval(loadHeavy, 10_000);
+    const idLight = setInterval(loadCandidates, 3_000);
     return () => {
       cancelled = true;
-      clearInterval(id);
+      clearInterval(idHeavy);
+      clearInterval(idLight);
     };
   }, []);
 
@@ -712,6 +723,28 @@ function StockCard({ stock }: { stock: ORBStockSummary }) {
 
 /* ---------- Candidates section ---------- */
 
+function riskTone(pct: number | undefined): string {
+  // Risk (OR width as % of price): <0.5% tight (green), 0.5–1% ok, >1% wide (red)
+  const p = pct ?? 0;
+  if (p < 0.5) return styles.riskTight;
+  if (p < 1.0) return styles.riskOk;
+  return styles.riskWide;
+}
+
+function cprTone(pct: number | undefined, wide: boolean | undefined): string {
+  if (wide) return styles.cprWide;
+  const p = pct ?? 0;
+  if (p < 0.3) return styles.cprNarrow;
+  return styles.cprOk;
+}
+
+function rsiTone(rsi: number | null | undefined): string {
+  if (rsi == null) return styles.rsiMute;
+  if (rsi >= 60) return styles.rsiLong;
+  if (rsi <= 40) return styles.rsiShort;
+  return styles.rsiDead;
+}
+
 function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
   const { broken_out, watching, excluded, as_of } = candidates;
   const wideCpr = excluded.filter((e) => e.reason.startsWith('wide_cpr'));
@@ -724,6 +757,7 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
       return iso.slice(11, 19);
     }
   };
+
   return (
     <section className={styles.section}>
       <div className={styles.sectionHead}>
@@ -731,10 +765,42 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
         <Chip>as of {fmtTime(as_of)}</Chip>
       </div>
       <div className={styles.candidatesCard}>
+        {/* Header (shared across groups) */}
+        <div className={styles.candHeader}>
+          <span>Symbol</span>
+          <span>Status</span>
+          <span>LTP</span>
+          <span>OR range</span>
+          <span title="OR width as % of LTP — ≈ SL risk if the trade fires">Risk %</span>
+          <span title="CPR width % — narrow = clean setup, wide = skip">CPR %</span>
+          <span title="15-min RSI — ≥60 allows LONG, ≤40 allows SHORT">RSI</span>
+          <span>Signal</span>
+        </div>
+
+        {/* Rubric explainer (collapsed) */}
+        <details className={styles.candRubric}>
+          <summary className={styles.candRubricSummary}>
+            How conviction grade is calculated (A+ / A / B / C)
+          </summary>
+          <div className={styles.candRubricBody}>
+            <div className={styles.candRubricIntro}>
+              Broken-out candidates earn 1 star for each quality criterion hit. Total stars → grade:{' '}
+              <b>4★ A+</b> · <b>3★ A</b> · <b>2★ B</b> · <b>1★ C</b> · 0★ hidden.
+            </div>
+            <div className={styles.candRubricTable}>
+              <div className={styles.candRubricRow}><span>🎯 CPR narrow</span><span>CPR width &lt; 0.3%</span><span>Clean prior-day compression → stronger setup</span></div>
+              <div className={styles.candRubricRow}><span>📏 Tight risk</span><span>Risk % &lt; 0.8</span><span>Small SL → better R/R on the 1.5R target</span></div>
+              <div className={styles.candRubricRow}><span>💪 RSI conviction</span><span>LONG RSI ≥ 65 · SHORT ≤ 35</span><span>Momentum clearly confirms, not borderline</span></div>
+              <div className={styles.candRubricRow}><span>✅ Clean past %</span><span>0.2% ≤ past % ≤ 0.7%</span><span>Past enough to confirm, not so far you're chasing</span></div>
+            </div>
+          </div>
+        </details>
+
         {/* Broken-out */}
         <div className={styles.candGroup}>
-          <div className={styles.candGroupHead}>
-            <span className={styles.candGroupTitle}>Broken out — awaiting signal eval</span>
+          <div className={`${styles.candGroupHead} ${styles.broken}`}>
+            <span className={`${styles.candGroupDot} ${styles.candGroupDotBroken}`} />
+            <span className={styles.candGroupTitle}>Broken out · awaiting signal eval</span>
             <span className={styles.candCount}>{broken_out.length}</span>
           </div>
           {broken_out.length === 0 ? (
@@ -744,15 +810,37 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
               {broken_out.map((r) => (
                 <div key={r.sym} className={styles.candRow}>
                   <span className={styles.candSym}>{r.sym}</span>
-                  <span className={r.side === 'LONG' ? styles.sideLong : styles.sideShort}>
+                  <span className={`${styles.statusPill} ${r.side === 'LONG' ? styles.statusLong : styles.statusShort}`}>
                     {r.side === 'LONG' ? '▲' : '▼'} {r.side}
                   </span>
                   <span className={styles.candLtp}>{formatNumber(r.ltp)}</span>
                   <span className={styles.candOr}>
-                    OR {formatNumber(r.or_low)}–{formatNumber(r.or_high)}
+                    {formatNumber(r.or_low)}–{formatNumber(r.or_high)}
                   </span>
-                  <span className={r.side === 'LONG' ? styles.pastPos : styles.pastNeg}>
-                    {r.past_pct >= 0 ? '+' : ''}{r.past_pct.toFixed(2)}% past
+                  <span className={riskTone(r.or_width_pct)}>{(r.or_width_pct ?? 0).toFixed(2)}%</span>
+                  <span className={cprTone(r.cpr_width_pct, r.cpr_is_wide)}>{r.cpr_width_pct.toFixed(2)}%</span>
+                  <span className={rsiTone(r.rsi_15m)}>{r.rsi_15m != null ? r.rsi_15m.toFixed(0) : '—'}</span>
+                  <span className={styles.candSignal}>
+                    <span className={r.side === 'LONG' ? styles.pastPos : styles.pastNeg}>
+                      {r.past_pct >= 0 ? '+' : ''}{r.past_pct.toFixed(2)}% past
+                    </span>
+                    {r.conviction_grade ? (
+                      <span
+                        className={`${styles.convBadge} ${
+                          r.conviction_grade === 'A+' ? styles.convApp
+                          : r.conviction_grade === 'A'  ? styles.convA
+                          : r.conviction_grade === 'B'  ? styles.convB
+                          : styles.convC
+                        }`}
+                        title={
+                          (r.conviction_stars ?? [])
+                            .map((s) => `${s.hit ? '✓' : '·'}  ${s.desc}`)
+                            .join('\n')
+                        }
+                      >
+                        {r.conviction_grade}
+                      </span>
+                    ) : null}
                   </span>
                 </div>
               ))}
@@ -762,8 +850,9 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
 
         {/* Watching */}
         <div className={styles.candGroup}>
-          <div className={styles.candGroupHead}>
-            <span className={styles.candGroupTitle}>Watching — inside OR</span>
+          <div className={`${styles.candGroupHead} ${styles.watching}`}>
+            <span className={`${styles.candGroupDot} ${styles.candGroupDotWatching}`} />
+            <span className={styles.candGroupTitle}>Watching · inside OR</span>
             <span className={styles.candCount}>{watching.length}</span>
           </div>
           {watching.length === 0 ? (
@@ -775,27 +864,30 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
                   Math.abs(r.dist_up_pct ?? 99),
                   Math.abs(r.dist_dn_pct ?? 99),
                 );
-                const hintTone =
+                const statusClass =
                   r.side_hint === 'both'
-                    ? styles.hintBoth
+                    ? styles.statusBoth
                     : r.side_hint === 'long'
-                    ? styles.hintLong
+                    ? styles.statusLong
                     : r.side_hint === 'short'
-                    ? styles.hintShort
-                    : styles.hintBlocked;
+                    ? styles.statusShort
+                    : styles.statusBlocked;
                 return (
                   <div key={r.sym} className={styles.candRow}>
                     <span className={styles.candSym}>{r.sym}</span>
-                    <span className={`${styles.candHint} ${hintTone}`}>{r.side_hint}</span>
+                    <span className={`${styles.statusPill} ${statusClass}`}>
+                      {r.side_hint.toUpperCase()}
+                    </span>
                     <span className={styles.candLtp}>{formatNumber(r.ltp)}</span>
                     <span className={styles.candOr}>
-                      OR {formatNumber(r.or_low)}–{formatNumber(r.or_high)}
+                      {formatNumber(r.or_low)}–{formatNumber(r.or_high)}
                     </span>
+                    <span className={riskTone(r.or_width_pct)}>{(r.or_width_pct ?? 0).toFixed(2)}%</span>
+                    <span className={cprTone(r.cpr_width_pct, r.cpr_is_wide)}>{r.cpr_width_pct.toFixed(2)}%</span>
+                    <span className={rsiTone(r.rsi_15m)}>{r.rsi_15m != null ? r.rsi_15m.toFixed(0) : '—'}</span>
                     <span className={styles.candDist}>
-                      ↑{(r.dist_up_pct ?? 0).toFixed(2)}% · ↓{(r.dist_dn_pct ?? 0).toFixed(2)}%
-                    </span>
-                    <span className={styles.candDistNearest}>
-                      nearest {nearest.toFixed(2)}%
+                      ↑{(r.dist_up_pct ?? 0).toFixed(2)}% · ↓{(r.dist_dn_pct ?? 0).toFixed(2)}% · nearest{' '}
+                      <b>{nearest.toFixed(2)}%</b>
                     </span>
                   </div>
                 );
@@ -807,7 +899,8 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
         {/* Excluded */}
         {(wideCpr.length > 0 || otherExcl.length > 0) ? (
           <div className={styles.candGroup}>
-            <div className={styles.candGroupHead}>
+            <div className={`${styles.candGroupHead} ${styles.excluded}`}>
+              <span className={`${styles.candGroupDot} ${styles.candGroupDotExcluded}`} />
               <span className={styles.candGroupTitle}>Excluded</span>
               <span className={styles.candCount}>{excluded.length}</span>
             </div>
@@ -815,7 +908,12 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
               <div className={styles.candExclRow}>
                 <span className={styles.candExclLabel}>Wide CPR</span>
                 <span className={styles.candExclList}>
-                  {wideCpr.map((e) => `${e.sym} (${(e.cpr ?? 0).toFixed(2)}%)`).join(' · ')}
+                  {wideCpr.map((e) => (
+                    <span key={e.sym} className={styles.exclChip}>
+                      {e.sym}
+                      <span className={styles.exclChipPct}>{(e.cpr ?? 0).toFixed(2)}%</span>
+                    </span>
+                  ))}
                 </span>
               </div>
             ) : null}
@@ -823,7 +921,12 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
               <div className={styles.candExclRow}>
                 <span className={styles.candExclLabel}>Other</span>
                 <span className={styles.candExclList}>
-                  {otherExcl.map((e) => `${e.sym} (${e.reason})`).join(' · ')}
+                  {otherExcl.map((e) => (
+                    <span key={e.sym} className={styles.exclChip}>
+                      {e.sym}
+                      <span className={styles.exclChipPct}>{e.reason}</span>
+                    </span>
+                  ))}
                 </span>
               </div>
             ) : null}

@@ -1030,7 +1030,7 @@ class ORBLiveEngine:
                 quantity=qty,
                 product='MIS',
                 order_type='LIMIT',
-                price=round(price * (1.002 if transaction_type == 'BUY' else 0.998), 1),  # 0.2% buffer for fill
+                price=round(exit_price * (1.002 if transaction_type == 'BUY' else 0.998), 1),  # 0.2% buffer for fill
             )
             kite_exit_order_id = str(order_id)
 
@@ -1043,9 +1043,41 @@ class ORBLiveEngine:
         except Exception as e:
             logger.error(
                 f"[ORB] Exit order FAILED for {instrument}: {e}. "
-                f"Position may remain open on Kite!",
+                f"Position remains OPEN on Kite — DB will NOT mark closed.",
                 exc_info=True
             )
+            # Log the failed order attempt so we can see what went wrong
+            try:
+                self.db.log_order(
+                    position_id=position['id'],
+                    instrument=instrument, tradingsymbol=instrument,
+                    transaction_type=transaction_type, qty=qty,
+                    order_type='LIMIT', price=round(exit_price, 2),
+                    kite_order_id=None, status='FAILED',
+                    exchange='NSE', product='MIS',
+                    notes=f'EXIT {exit_reason} FAILED: {str(e)[:200]}',
+                )
+            except Exception as e2:
+                logger.error(f"[ORB] Failed to log failed exit order: {e2}")
+            # Critical alert — operator must intervene before MIS auto-squareoff at 15:20
+            try:
+                ns = get_notification_service(self.cfg)
+                ns.send_alert(
+                    'risk_alert',
+                    f'EXIT FAILED — {instrument} {direction} still open on Kite',
+                    f"Exit order failed ({exit_reason}): {str(e)[:150]}. "
+                    f"Position qty={qty} entry={entry_price:.2f}. "
+                    f"Place manual BUY/SELL before 15:20 MIS auto-squareoff.",
+                    data={'symbol': instrument, 'direction': direction, 'qty': qty,
+                          'entry_price': entry_price, 'exit_price': exit_price,
+                          'exit_reason': exit_reason, 'error': str(e)[:200]},
+                    priority='critical',
+                )
+            except Exception as e2:
+                logger.error(f"[ORB] Exit-fail alert dispatch error: {e2}")
+            # CRITICAL: do NOT mark position closed in DB. Return early.
+            # Position stays OPEN in DB so next monitor/eod tick can retry.
+            return
 
         # Log order
         self.db.log_order(
@@ -1326,11 +1358,17 @@ class ORBLiveEngine:
             long_rsi_ok = rsi is None or rsi >= rsi_long
             short_rsi_ok = rsi is None or rsi <= rsi_short
 
+            # OR width as % of LTP — proxy for the risk size if the trade
+            # fires (SL sits at OR-opposite, so risk ≈ OR range).
+            or_width_abs = (or_h - or_l) if (or_h and or_l) else 0
+            or_width_pct = (or_width_abs / ltp * 100) if ltp else 0
             row = {
                 'sym': sym,
                 'ltp': round(ltp, 2),
                 'or_high': or_h, 'or_low': or_l,
+                'or_width_pct': round(or_width_pct, 2),
                 'cpr_width_pct': round(cpr, 3),
+                'cpr_is_wide': bool(is_wide),
                 'gap_pct': round(gap, 2),
                 'rsi_15m': round(rsi, 1) if rsi is not None else None,
                 'dist_up_pct': round(dist_up_pct, 2) if dist_up_pct is not None else None,
@@ -1340,12 +1378,38 @@ class ORBLiveEngine:
                 'short_rsi_ok': short_rsi_ok,
             }
 
+            def _conviction(side: str, past_pct: float) -> dict:
+                """4-star rubric: CPR<0.3% · Risk<0.8% · RSI conviction ·
+                Past% clean (0.2%-0.7%)."""
+                stars = []
+                stars.append({'key': 'cpr_narrow', 'hit': cpr < 0.3,
+                              'desc': 'CPR < 0.3% (clean setup)'})
+                stars.append({'key': 'tight_risk', 'hit': or_width_pct < 0.8,
+                              'desc': 'Risk % < 0.8 (tight SL)'})
+                if side == 'LONG':
+                    rsi_ok = rsi is not None and rsi >= 65
+                else:
+                    rsi_ok = rsi is not None and rsi <= 35
+                stars.append({'key': 'rsi_conviction', 'hit': bool(rsi_ok),
+                              'desc': 'RSI ≥65 (long) / ≤35 (short)'})
+                stars.append({'key': 'clean_past', 'hit': 0.2 <= past_pct <= 0.7,
+                              'desc': 'Past % in 0.2–0.7 (not chasing)'})
+                score = sum(1 for s in stars if s['hit'])
+                grade = 'A+' if score == 4 else 'A' if score == 3 else 'B' if score == 2 else 'C'
+                return {'conviction_score': score,
+                        'conviction_grade': grade,
+                        'conviction_stars': stars}
+
             if ltp > or_h and long_gap_ok and long_rsi_ok:
                 past_pct = (ltp - or_h) / or_h * 100
-                broken_out.append({**row, 'side': 'LONG', 'past_pct': round(past_pct, 2)})
+                broken_out.append({**row, 'side': 'LONG',
+                                   'past_pct': round(past_pct, 2),
+                                   **_conviction('LONG', past_pct)})
             elif ltp < or_l and short_rsi_ok:
                 past_pct = (or_l - ltp) / or_l * 100
-                broken_out.append({**row, 'side': 'SHORT', 'past_pct': round(past_pct, 2)})
+                broken_out.append({**row, 'side': 'SHORT',
+                                   'past_pct': round(past_pct, 2),
+                                   **_conviction('SHORT', past_pct)})
             else:
                 side_hint = None
                 if long_gap_ok and long_rsi_ok and short_rsi_ok:
@@ -1458,6 +1522,28 @@ class ORBLiveEngine:
                     continue
                 if direction == 'SHORT' and ltp >= or_low:
                     result['skipped'].append({'sym': sym, 'reason': f'ltp_back_inside_OR ({ltp} >= {or_low})'})
+                    continue
+
+                # Slippage cap: reject if LTP has run too far past the breakout close.
+                # Measured in R-multiples (R = initial risk from the breakout candle).
+                # If the move has already eaten ~X R, a late entry has bad R:R.
+                br_close = first_breakout['close']
+                if direction == 'LONG':
+                    r0 = br_close - or_low
+                    slippage = ltp - br_close
+                else:
+                    r0 = or_high - br_close
+                    slippage = br_close - ltp
+                slip_cap_r = cfg.get('catchup_max_slippage_r', 0.5)
+                if r0 > 0 and slippage / r0 > slip_cap_r:
+                    result['skipped'].append({
+                        'sym': sym,
+                        'reason': f'slippage_too_far ({slippage/r0:.2f}R > {slip_cap_r}R cap)',
+                        'direction': direction,
+                        'first_breakout_close': br_close,
+                        'ltp': ltp,
+                        'slippage_r': round(slippage / r0, 2),
+                    })
                     continue
 
                 # Reuse filter checks — need VWAP + RSI now, CPR and gap from daily_state

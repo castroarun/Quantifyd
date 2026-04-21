@@ -487,7 +487,7 @@ ORB_DEFAULTS = {
     'rsi_short_threshold': 40,
     'use_cpr_dir_filter': True,
     'use_cpr_width_filter': True,
-    'cpr_width_threshold_pct': 0.5,
+    'cpr_width_threshold_pct': 0.65,   # 250-day sweep 2026-04-21: 0.65 beats 0.5 on Calmar 263 vs 230 (+161 trades, DD flat). See docs/ORB-VARIANTS-FINDINGS.md
     'use_gap_filter': True,
     'gap_long_block_pct': 1.0,         # Block longs only on large gap-ups (>1%)
 
@@ -519,6 +519,12 @@ ORB_DEFAULTS = {
     'notify_on_system': True,
     'notify_eod_report': True,
     'notify_midmorning_status': True,   # 10:30 mid-morning status (email + WhatsApp)
+
+    # Catchup (recovery-only) config
+    # If LTP has run more than this many R past the first breakout candle close,
+    # skip — the move has extended too far and R:R is now unfavourable.
+    # R = the initial OR-based risk (breakout_close - or_low for long).
+    'catchup_max_slippage_r': 0.5,      # default: half the intended risk
 }
 
 # Nifty 500 Universe

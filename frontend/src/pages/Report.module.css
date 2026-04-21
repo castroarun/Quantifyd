@@ -487,3 +487,56 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* ==================== Mobile responsive ==================== */
+
+/* Metric cards collapse 6 → 3 → 2 */
+@media (max-width: 1100px) {
+  .metrics, .secondaryMetrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .metrics, .secondaryMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+
+/* Day-of-week row: hide bar on very narrow; label + counts only */
+@media (max-width: 720px) {
+  .dowRow { grid-template-columns: 60px 1fr 90px; row-gap: 4px; }
+  .dowRow .dowTrack { grid-column: 1 / -1; order: 99; }
+}
+
+/* Per-day systems row (3 cols): stay readable on narrow */
+@media (max-width: 640px) {
+  .daySystemRow { grid-template-columns: 1fr 80px; gap: 6px; }
+  .daySystemRow > :nth-child(3) { grid-column: 1 / -1; text-align: right; font-size: 11px; }
+}
+
+/* ORB breakdown row (6 cols): drop tail columns on mobile */
+@media (max-width: 900px) {
+  .orbTableHead, .orbTableRow { grid-template-columns: 1.2fr 0.6fr 1fr 1fr; }
+  .orbTableHead > :nth-child(n+5), .orbTableRow > :nth-child(n+5) { display: none; }
+}
+@media (max-width: 640px) {
+  .orbTableHead, .orbTableRow { grid-template-columns: 1fr 70px 80px; gap: 6px; }
+  .orbTableHead > :nth-child(n+4), .orbTableRow > :nth-child(n+4) { display: none; }
+}
+
+/* ORB history row (3 cols): stack at narrow */
+@media (max-width: 640px) {
+  .orbHistoryRow { grid-template-columns: 1fr 80px; row-gap: 2px; }
+  .orbHistoryRow > :nth-child(2) { grid-column: 1 / -1; font-size: 11px; color: var(--ink-muted); }
+}
+
+/* Trade log row (8 cols): aggressively collapse */
+@media (max-width: 900px) {
+  .tradeLogHead, .tradeLogRow {
+    grid-template-columns: 90px 50px 60px 70px 1fr 80px;
+  }
+  .tradeLogHead > :nth-child(n+7), .tradeLogRow > :nth-child(n+7) { display: none; }
+}
+@media (max-width: 640px) {
+  .tradeLogHead, .tradeLogRow {
+    grid-template-columns: 1fr 60px 80px;
+    gap: 6px;
+  }
+  .tradeLogHead > :nth-child(n+4), .tradeLogRow > :nth-child(n+4) { display: none; }
+}

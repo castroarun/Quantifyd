@@ -1,0 +1,726 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>ORB · Live candidates — visual explorations</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --ink: #0f172a;
+    --ink-muted: #64748b;
+    --ink-faint: #94a3b8;
+    --hair: #e4e1d7;
+    --hair-soft: #eeebe1;
+    --hair-softest: #f3f0e5;
+    --pos: #0f6e56;
+    --pos-tint: rgba(15,110,86,0.12);
+    --pos-bg: #ecfdf5;
+    --neg: #a32d2d;
+    --neg-tint: rgba(163,45,45,0.12);
+    --neg-bg: #fef2f2;
+    --hot: #b45309;
+    --hot-tint: rgba(180,83,9,0.14);
+    --warn: #ca8a04;
+    --warn-tint: rgba(202,138,4,0.12);
+  }
+  body { background: var(--bg); color: var(--ink); font-family: -apple-system, Inter, Segoe UI, Roboto, sans-serif; margin: 0; padding: 32px 48px; font-size: 13px; }
+  h1 { font-weight: 500; letter-spacing: -0.02em; font-size: 22px; margin: 0 0 6px; }
+  h1 + p { color: var(--ink-muted); max-width: 760px; line-height: 1.5; margin: 0 0 32px; }
+  h2 { margin: 48px 0 4px; font-weight: 500; font-size: 17px; letter-spacing: -0.01em; }
+  h3 { color: var(--ink-muted); font-weight: 400; font-size: 12px; margin: 0 0 18px; line-height: 1.5; max-width: 720px; }
+  .mono { font-variant-numeric: tabular-nums; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace; }
+  .note { color: var(--ink-muted); font-size: 11px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--hair-soft); max-width: 900px; line-height: 1.5; }
+  .wrap { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 0; overflow: hidden; }
+
+  /* ==================== A — Terminal density ==================== */
+  .a-card { padding: 14px 20px 4px; background: #0f172a; color: #e5e7eb; border-radius: 12px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .a-card h4 { margin: 0 0 10px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: 0.1em; color: #94a3b8; font-size: 10px; text-transform: uppercase; font-weight: 500; display: flex; justify-content: space-between; }
+  .a-groupHead {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 0 6px;
+    color: #cbd5e1; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .a-accent { width: 3px; height: 14px; background: var(--pos); border-radius: 1px; }
+  .a-accent.b { background: #ca8a04; }
+  .a-accent.c { background: #475569; }
+  .a-count { margin-left: auto; color: #475569; font-size: 10px; font-weight: 400; }
+  .a-header, .a-row {
+    display: grid;
+    grid-template-columns: 110px 90px 90px 170px 70px 70px 50px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 12px;
+  }
+  .a-header { border-top: 1px solid #1e293b; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; padding: 8px 0; }
+  .a-row { border-bottom: 1px solid #172033; }
+  .a-row:last-child { border-bottom: none; }
+  .a-row.hot { background: rgba(180,83,9,0.08); }
+  .a-sym { color: #f8fafc; font-weight: 500; }
+  .a-ltp { color: #f8fafc; }
+  .a-range { color: #64748b; font-size: 11px; }
+  .a-pos { color: #4ade80; }
+  .a-neg { color: #f87171; }
+  .a-mid { color: #9ca3af; }
+  .a-warn { color: #facc15; }
+  .a-blocked { color: #64748b; }
+  .a-pill { font-size: 10px; padding: 2px 7px; border-radius: 2px; font-weight: 600; letter-spacing: 0.05em; }
+  .a-pill-long { background: rgba(74,222,128,0.2); color: #4ade80; }
+  .a-pill-short { background: rgba(248,113,113,0.2); color: #f87171; }
+  .a-pill-blk { background: rgba(100,116,139,0.2); color: #94a3b8; }
+  .a-footer { padding: 10px 0 14px; color: #475569; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ==================== B — Card hero ==================== */
+  .b-card { padding: 18px 22px; }
+  .b-groupHead { display: flex; align-items: center; gap: 8px; margin: 18px 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); }
+  .b-groupHead:first-child { margin-top: 0; }
+  .b-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .b-dot.green { background: var(--pos); }
+  .b-dot.yellow { background: var(--warn); }
+  .b-dot.grey { background: var(--ink-faint); }
+  .b-heroGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .b-hero {
+    background: linear-gradient(135deg, var(--pos-bg) 0%, #ffffff 60%);
+    border: 1px solid var(--pos-tint);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .b-hero.short { background: linear-gradient(135deg, var(--neg-bg) 0%, #ffffff 60%); border-color: var(--neg-tint); }
+  .b-hero::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--pos); }
+  .b-hero.short::before { background: var(--neg); }
+  .b-heroHead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .b-heroSym { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+  .b-heroSide { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 3px; background: var(--pos); color: #fff; }
+  .b-hero.short .b-heroSide { background: var(--neg); }
+  .b-heroLtp { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; margin: 2px 0 4px; }
+  .b-heroMeta { font-size: 11px; color: var(--ink-muted); font-variant-numeric: tabular-nums; line-height: 1.5; }
+  .b-heroMeter { display: grid; grid-template-columns: 60px 1fr 60px; gap: 8px; align-items: center; margin-top: 10px; font-size: 10px; color: var(--ink-faint); }
+  .b-heroMeterBar { height: 4px; background: var(--hair-softest); border-radius: 2px; position: relative; }
+  .b-heroMeterBar::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, var(--pos), var(--hot)); border-radius: 2px; }
+  .b-pastChip { position: absolute; top: 14px; right: 16px; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--pos); font-weight: 600; }
+  .b-hero.short .b-pastChip { color: var(--neg); }
+
+  .b-table { display: grid; grid-template-columns: 110px 80px 70px 140px 65px 55px 45px 1fr; gap: 10px; align-items: center; padding: 7px 12px; font-size: 12px; font-variant-numeric: tabular-nums; border-radius: 4px; }
+  .b-table.header { background: var(--hair-softest); color: var(--ink-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; padding: 8px 12px; }
+  .b-table + .b-table:not(.header) { border-top: 1px solid var(--hair-softest); border-radius: 0; }
+
+  /* ==================== C — Flowtrack ==================== */
+  .c-card { padding: 18px 22px; }
+  .c-groupHead { display: flex; align-items: center; gap: 8px; margin: 20px 0 12px; font-size: 12px; font-weight: 600; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em; }
+  .c-groupHead:first-child { margin-top: 0; }
+  .c-line { width: 32px; height: 2px; border-radius: 1px; }
+  .c-line.green { background: var(--pos); }
+  .c-line.yellow { background: var(--warn); }
+  .c-line.grey { background: var(--ink-faint); }
+  .c-count { margin-left: auto; font-size: 10px; color: var(--ink-faint); font-weight: 400; }
+  .c-track {
+    position: relative;
+    height: 80px;
+    margin: 4px 0 22px;
+    background: linear-gradient(90deg, var(--neg-tint) 0%, var(--hair-softest) 50%, var(--pos-tint) 100%);
+    border-radius: 6px;
+    border: 1px solid var(--hair-soft);
+  }
+  .c-trackCenter { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--ink-faint); }
+  .c-trackLabel { position: absolute; top: -16px; font-size: 10px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .c-chip {
+    position: absolute;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 1px solid var(--hair);
+    border-radius: 16px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.06);
+    white-space: nowrap;
+  }
+  .c-chip.long { border-color: var(--pos); color: var(--pos); }
+  .c-chip.short { border-color: var(--neg); color: var(--neg); }
+  .c-chip.blocked { color: var(--ink-faint); }
+  .c-chipMeta { font-size: 9px; color: var(--ink-faint); font-weight: 400; margin-left: 4px; }
+
+  .c-excluded { display: flex; gap: 8px; flex-wrap: wrap; }
+  .c-excChip { font-size: 11px; background: var(--hair-softest); padding: 3px 10px; border-radius: 3px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  /* ==================== E — Terminal density, light theme ==================== */
+  .e-card { padding: 14px 20px; font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .e-topBar { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--hair-soft); }
+  .e-title { font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); text-transform: uppercase; font-weight: 600; }
+  .e-ts { font-size: 11px; color: var(--ink-faint); }
+  .e-groupHead {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 0 6px;
+    color: var(--ink); font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .e-accent { width: 3px; height: 14px; border-radius: 1px; }
+  .e-accent.long { background: var(--pos); }
+  .e-accent.watch { background: var(--warn); }
+  .e-accent.excl { background: var(--ink-faint); }
+  .e-count { margin-left: auto; color: var(--ink-faint); font-size: 11px; font-weight: 400; letter-spacing: 0.04em; }
+  .e-header, .e-row {
+    display: grid;
+    grid-template-columns: 110px 90px 90px 170px 70px 70px 50px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 12px;
+  }
+  .e-header {
+    border-top: 1px solid var(--hair-soft);
+    border-bottom: 1px solid var(--hair-soft);
+    color: var(--ink-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+    padding: 8px 0;
+  }
+  .e-row { border-bottom: 1px solid var(--hair-softest); }
+  .e-row:last-child { border-bottom: none; }
+  .e-row.hotLong { background: rgba(15,110,86,0.06); }
+  .e-row.hotShort { background: rgba(163,45,45,0.06); }
+  .e-sym { color: var(--ink); font-weight: 600; }
+  .e-ltp { color: var(--ink); font-weight: 500; }
+  .e-range { color: var(--ink-muted); font-size: 11px; }
+  .e-pos { color: var(--pos); }
+  .e-neg { color: var(--neg); }
+  .e-mid { color: var(--ink-muted); }
+  .e-warn { color: var(--hot); }
+  .e-blocked { color: var(--ink-faint); }
+  .e-status { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; }
+  .e-status.long { color: var(--pos); }
+  .e-status.short { color: var(--neg); }
+  .e-status.blocked { color: var(--ink-faint); font-weight: 500; }
+  .e-excFooter { padding: 12px 0 4px; color: var(--ink-muted); font-size: 11px; }
+  .e-excFooter b { color: var(--ink); font-weight: 600; }
+
+  /* ==================== D — Conviction heat ==================== */
+  .d-card { padding: 0; }
+  .d-groupHead { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: linear-gradient(90deg, rgba(15,110,86,0.06), transparent 70%); border-left: 3px solid var(--pos); font-size: 12px; font-weight: 600; color: var(--ink); }
+  .d-groupHead.watching { background: linear-gradient(90deg, rgba(202,138,4,0.06), transparent 70%); border-left-color: var(--warn); }
+  .d-groupHead.excluded { background: linear-gradient(90deg, rgba(100,116,139,0.06), transparent 70%); border-left-color: var(--ink-faint); }
+  .d-groupTitle { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .d-count { margin-left: auto; font-size: 10px; color: var(--ink-muted); font-weight: 500; padding: 2px 7px; background: rgba(0,0,0,0.04); border-radius: 10px; }
+  .d-header {
+    display: grid;
+    grid-template-columns: 110px 80px 80px 150px 65px 65px 50px 1fr;
+    gap: 12px;
+    padding: 10px 20px;
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--hair);
+  }
+  .d-row {
+    display: grid;
+    grid-template-columns: 110px 80px 80px 150px 65px 65px 50px 1fr;
+    gap: 12px;
+    padding: 10px 20px;
+    align-items: center;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid var(--hair-softest);
+    transition: background 200ms;
+  }
+  .d-row:last-child { border-bottom: none; }
+  .d-row.conv-hi { background: linear-gradient(90deg, rgba(15,110,86,0.08), transparent 40%); }
+  .d-row.conv-short { background: linear-gradient(90deg, rgba(163,45,45,0.08), transparent 40%); }
+  .d-row.conv-med { background: rgba(202,138,4,0.03); }
+  .d-row.conv-lo { opacity: 0.6; }
+  .d-sym { font-weight: 600; }
+  .d-pill { font-size: 10px; padding: 3px 8px; border-radius: 3px; font-weight: 600; letter-spacing: 0.05em; text-align: center; }
+  .d-pill.long { background: var(--pos); color: #fff; }
+  .d-pill.short { background: var(--neg); color: #fff; }
+  .d-pill.both { background: var(--pos-tint); color: var(--pos); border: 1px solid var(--pos); }
+  .d-pill.blocked { background: var(--hair-soft); color: var(--ink-faint); }
+  .d-mini { font-size: 10px; color: var(--ink-faint); }
+  .d-convBadge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--ink-muted); padding: 2px 7px; border-radius: 3px; background: var(--hair-softest); font-variant-numeric: tabular-nums; margin-left: auto; }
+  .d-conv-hi .d-convBadge { background: var(--pos-tint); color: var(--pos); font-weight: 600; }
+
+  .posClr { color: var(--pos); font-weight: 500; }
+  .negClr { color: var(--neg); font-weight: 500; }
+  .hotClr { color: var(--hot); font-weight: 500; }
+  .mutedClr { color: var(--ink-muted); }
+  .faintClr { color: var(--ink-faint); }
+
+</style>
+</head>
+<body>
+
+<h1>ORB · Live candidates — 4 visual explorations</h1>
+<p>
+  Same framework (Broken-out / Watching / Excluded with Symbol · Status · LTP · OR range · Risk% · CPR% · RSI · Signal)
+  — four different aesthetic directions. Uses the same snapshot: BEL short, APOLLOHOSP/GODREJPROP/AXISBANK long broken out;
+  M&M long-ready inside OR; others blocked.
+</p>
+
+<!-- ============ A — TERMINAL DENSITY ============ -->
+<h2>A · Terminal density</h2>
+<h3>
+  Bloomberg-style: dark, monospace, high-density. Color-coded text (no pills).
+  Subtle highlight on broken-out rows. Best if you want to scan many symbols at speed.
+</h3>
+<div class="a-card">
+  <h4><span>ORB · LIVE CANDIDATES</span><span>13:47:22</span></h4>
+  <div class="a-header">
+    <span>SYMBOL</span><span>STATUS</span><span>LTP</span><span>OR RANGE</span>
+    <span>RISK%</span><span>CPR%</span><span>RSI</span><span>SIGNAL</span>
+  </div>
+
+  <div class="a-groupHead"><span class="a-accent"></span>BROKEN OUT <span class="a-count">4</span></div>
+  <div class="a-row hot">
+    <span class="a-sym">BEL</span><span class="a-pill a-pill-short">▼ SHORT</span>
+    <span class="a-ltp">451.30</span><span class="a-range">454.15 – 459.80</span>
+    <span class="a-mid">1.25</span><span class="a-pos">0.39</span><span class="a-neg">34</span>
+    <span class="a-neg">+0.63% past</span>
+  </div>
+  <div class="a-row hot">
+    <span class="a-sym">APOLLOHOSP</span><span class="a-pill a-pill-long">▲ LONG</span>
+    <span class="a-ltp">7 753.00</span><span class="a-range">7 667.50 – 7 710.00</span>
+    <span class="a-pos">0.55</span><span class="a-pos">0.17</span><span class="a-pos">64</span>
+    <span class="a-pos">+0.56% past</span>
+  </div>
+  <div class="a-row hot">
+    <span class="a-sym">GODREJPROP</span><span class="a-pill a-pill-long">▲ LONG</span>
+    <span class="a-ltp">1 817.20</span><span class="a-range">1 770.20 – 1 809.50</span>
+    <span class="a-warn">2.16</span><span class="a-pos">0.25</span><span class="a-pos">65</span>
+    <span class="a-pos">+0.43% past</span>
+  </div>
+  <div class="a-row hot">
+    <span class="a-sym">AXISBANK</span><span class="a-pill a-pill-long">▲ LONG</span>
+    <span class="a-ltp">1 375.00</span><span class="a-range">1 354.70 – 1 374.00</span>
+    <span class="a-mid">1.40</span><span class="a-pos">0.31</span><span class="a-pos">62</span>
+    <span class="a-pos">+0.07% past</span>
+  </div>
+
+  <div class="a-groupHead"><span class="a-accent b"></span>WATCHING <span class="a-count">5</span></div>
+  <div class="a-row">
+    <span class="a-sym">M&M</span><span class="a-pill a-pill-long">LONG</span>
+    <span class="a-ltp">3 249.50</span><span class="a-range">3 212.00 – 3 251.00</span>
+    <span class="a-mid">1.20</span><span class="a-pos">0.47</span><span class="a-pos">62</span>
+    <span class="a-mid">↑0.05 · ↓1.15 · near <b>0.05</b></span>
+  </div>
+  <div class="a-row">
+    <span class="a-sym">ADANIENT</span><span class="a-pill a-pill-blk">BLOCKED</span>
+    <span class="a-ltp">2 228.50</span><span class="a-range">2 225.80 – 2 253.60</span>
+    <span class="a-mid">1.25</span><span class="a-pos">0.34</span><span class="a-blocked">49</span>
+    <span class="a-mid">↑1.13 · ↓0.12 · near <b>0.12</b></span>
+  </div>
+  <div class="a-row">
+    <span class="a-sym">HAL</span><span class="a-pill a-pill-blk">BLOCKED</span>
+    <span class="a-ltp">4 368.60</span><span class="a-range">4 335.50 – 4 380.00</span>
+    <span class="a-mid">1.02</span><span class="a-pos">0.26</span><span class="a-blocked">49</span>
+    <span class="a-mid">↑0.26 · ↓0.76 · near <b>0.26</b></span>
+  </div>
+  <div class="a-row">
+    <span class="a-sym">TATASTEEL</span><span class="a-pill a-pill-blk">BLOCKED</span>
+    <span class="a-ltp">212.00</span><span class="a-range">211.08 – 214.49</span>
+    <span class="a-neg">1.61</span><span class="a-pos">0.04</span><span class="a-blocked">55</span>
+    <span class="a-mid">↑1.17 · ↓0.43 · near <b>0.43</b></span>
+  </div>
+  <div class="a-row">
+    <span class="a-sym">VEDL</span><span class="a-pill a-pill-blk">BLOCKED</span>
+    <span class="a-ltp">766.60</span><span class="a-range">784.00 – 795.00</span>
+    <span class="a-neg">1.43</span><span class="a-pos">0.39</span><span class="a-blocked">46</span>
+    <span class="a-mid">↑3.70 · ↓-2.27 · near <b>2.27</b></span>
+  </div>
+
+  <div class="a-groupHead"><span class="a-accent c"></span>EXCLUDED · WIDE CPR <span class="a-count">5</span></div>
+  <div class="a-footer">BPCL 0.65 · BAJFINANCE 0.61 · TRENT 0.64 · IRCTC 0.59 · GRASIM 0.62</div>
+</div>
+<div class="note">
+  <b>Why it works:</b> color IS the meta. Row-hover subtle tint draws the eye to broken-out rows instantly.
+  Mono font keeps columns locked. Works well on ultrawide monitors and in long watchlists.
+  <b>Downside:</b> dark card on a light page stands out too hard unless the whole app goes dark.
+</div>
+
+<!-- ============ B — CARD HERO ============ -->
+<h2>B · Card hero + table</h2>
+<h3>
+  Broken-out stocks get the spotlight (hero cards with tint + past% overlay + risk meter), watching rows stay as a
+  compact table. Best if breakouts are the actionable signal.
+</h3>
+<div class="wrap b-card">
+  <div class="b-groupHead"><span class="b-dot green"></span>Broken out · awaiting signal eval <span class="d-count" style="margin-left:auto;">4</span></div>
+  <div class="b-heroGrid">
+    <div class="b-hero short">
+      <span class="b-pastChip">+0.63% past</span>
+      <div class="b-heroHead"><span class="b-heroSym">BEL</span><span class="b-heroSide">▼ SHORT</span></div>
+      <div class="b-heroLtp mono">451.30</div>
+      <div class="b-heroMeta">OR 454.15 – 459.80 · RSI <b>34</b> · CPR 0.39%</div>
+      <div class="b-heroMeter"><span>Risk</span><div class="b-heroMeterBar"></div><span class="mono">1.25%</span></div>
+    </div>
+    <div class="b-hero">
+      <span class="b-pastChip">+0.56% past</span>
+      <div class="b-heroHead"><span class="b-heroSym">APOLLOHOSP</span><span class="b-heroSide">▲ LONG</span></div>
+      <div class="b-heroLtp mono">7,753.00</div>
+      <div class="b-heroMeta">OR 7,667.50 – 7,710.00 · RSI <b>64</b> · CPR 0.17%</div>
+      <div class="b-heroMeter"><span>Risk</span><div class="b-heroMeterBar"><div style="position:absolute;left:0;top:0;bottom:0;width:30%;background:var(--pos);border-radius:2px;"></div></div><span class="posClr mono">0.55%</span></div>
+    </div>
+    <div class="b-hero">
+      <span class="b-pastChip">+0.43% past</span>
+      <div class="b-heroHead"><span class="b-heroSym">GODREJPROP</span><span class="b-heroSide">▲ LONG</span></div>
+      <div class="b-heroLtp mono">1,817.20</div>
+      <div class="b-heroMeta">OR 1,770.20 – 1,809.50 · RSI <b>65</b> · CPR 0.25%</div>
+      <div class="b-heroMeter"><span>Risk</span><div class="b-heroMeterBar"><div style="position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--hot);border-radius:2px;"></div></div><span class="hotClr mono">2.16%</span></div>
+    </div>
+    <div class="b-hero">
+      <span class="b-pastChip">+0.07% past</span>
+      <div class="b-heroHead"><span class="b-heroSym">AXISBANK</span><span class="b-heroSide">▲ LONG</span></div>
+      <div class="b-heroLtp mono">1,375.00</div>
+      <div class="b-heroMeta">OR 1,354.70 – 1,374.00 · RSI <b>62</b> · CPR 0.31%</div>
+      <div class="b-heroMeter"><span>Risk</span><div class="b-heroMeterBar"><div style="position:absolute;left:0;top:0;bottom:0;width:70%;background:var(--warn);border-radius:2px;"></div></div><span class="mutedClr mono">1.40%</span></div>
+    </div>
+  </div>
+
+  <div class="b-groupHead" style="margin-top:24px;"><span class="b-dot yellow"></span>Watching · inside OR <span class="d-count" style="margin-left:auto;">5</span></div>
+  <div class="b-table header">
+    <span>Symbol</span><span>Status</span><span>LTP</span><span>OR range</span><span>Risk</span><span>CPR</span><span>RSI</span><span>Signal</span>
+  </div>
+  <div class="b-table">
+    <span style="font-weight:600;">M&M</span>
+    <span><span class="d-pill long">LONG</span></span>
+    <span class="mono">3,249.50</span><span class="mono mutedClr">3,212–3,251</span>
+    <span class="mono mutedClr">1.20%</span><span class="mono posClr">0.47%</span><span class="mono posClr">62</span>
+    <span class="mutedClr mono">↑0.05 · ↓1.15 · near <b>0.05</b></span>
+  </div>
+  <div class="b-table">
+    <span style="font-weight:600;">ADANIENT</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span class="mono">2,228.50</span><span class="mono mutedClr">2,225.80–2,253.60</span>
+    <span class="mono mutedClr">1.25%</span><span class="mono posClr">0.34%</span><span class="mono faintClr">49</span>
+    <span class="mutedClr mono">↑1.13 · ↓0.12 · near <b>0.12</b></span>
+  </div>
+  <div class="b-table">
+    <span style="font-weight:600;">HAL</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span class="mono">4,368.60</span><span class="mono mutedClr">4,335.50–4,380.00</span>
+    <span class="mono mutedClr">1.02%</span><span class="mono posClr">0.26%</span><span class="mono faintClr">49</span>
+    <span class="mutedClr mono">↑0.26 · ↓0.76 · near <b>0.26</b></span>
+  </div>
+  <div class="b-table">
+    <span style="font-weight:600;">TATASTEEL</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span class="mono">212.00</span><span class="mono mutedClr">211.08–214.49</span>
+    <span class="mono negClr">1.61%</span><span class="mono posClr">0.04%</span><span class="mono faintClr">55</span>
+    <span class="mutedClr mono">↑1.17 · ↓0.43 · near <b>0.43</b></span>
+  </div>
+  <div class="b-table">
+    <span style="font-weight:600;">VEDL</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span class="mono">766.60</span><span class="mono mutedClr">784–795</span>
+    <span class="mono negClr">1.43%</span><span class="mono posClr">0.39%</span><span class="mono faintClr">46</span>
+    <span class="mutedClr mono">↑3.70 · ↓-2.27 · near <b>2.27</b></span>
+  </div>
+
+  <div class="b-groupHead" style="margin-top:20px;"><span class="b-dot grey"></span>Excluded · wide CPR <span class="d-count" style="margin-left:auto;">5</span></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;">
+    <span class="c-excChip">BPCL <b>0.65%</b></span>
+    <span class="c-excChip">BAJFINANCE <b>0.61%</b></span>
+    <span class="c-excChip">TRENT <b>0.64%</b></span>
+    <span class="c-excChip">IRCTC <b>0.59%</b></span>
+    <span class="c-excChip">GRASIM <b>0.62%</b></span>
+  </div>
+</div>
+<div class="note">
+  <b>Why it works:</b> the hero cards pull visual weight proportional to importance — a broken-out stock
+  deserves more pixels than an idle one. The risk-meter on each card helps you triage in one glance
+  (green = tight, amber = stretch, red = wide). Watching reverts to compact table for density.
+  <b>Trade-off:</b> more visual real estate for broken-out — on days with 10+ broken-out, the hero grid gets long.
+</div>
+
+<!-- ============ C — FLOWTRACK ============ -->
+<h2>C · Breakout flow track</h2>
+<h3>
+  Positional view — horizontal axis = distance to breakout (−2% to +2%). Stocks sit on the axis at their current
+  position relative to OR. Zero line = at OR boundary. Broken out = right of zero, watching = left.
+  Gives you instant spatial intuition ("who's closest to firing").
+</h3>
+<div class="wrap c-card">
+  <div class="c-groupHead"><span class="c-line green"></span>Broken out · long side <span class="c-count">3</span></div>
+  <div class="c-track">
+    <div class="c-trackCenter"></div>
+    <span class="c-trackLabel" style="left:2px;">−2%</span>
+    <span class="c-trackLabel" style="left:50%;transform:translateX(-50%);">OR high</span>
+    <span class="c-trackLabel" style="right:2px;">+2%</span>
+    <div class="c-chip long" style="left:62%; top:12px;">APOLLOHOSP<span class="c-chipMeta">+0.56% · R64</span></div>
+    <div class="c-chip long" style="left:60%; top:38px;">GODREJPROP<span class="c-chipMeta">+0.43% · R65</span></div>
+    <div class="c-chip long" style="left:52%; top:62px;">AXISBANK<span class="c-chipMeta">+0.07% · R62</span></div>
+  </div>
+
+  <div class="c-groupHead"><span class="c-line green"></span>Broken out · short side <span class="c-count">1</span></div>
+  <div class="c-track">
+    <div class="c-trackCenter"></div>
+    <span class="c-trackLabel" style="left:2px;">+2%</span>
+    <span class="c-trackLabel" style="left:50%;transform:translateX(-50%);">OR low</span>
+    <span class="c-trackLabel" style="right:2px;">−2%</span>
+    <div class="c-chip short" style="left:60%; top:28px;">BEL<span class="c-chipMeta">+0.63% past · R34</span></div>
+  </div>
+
+  <div class="c-groupHead"><span class="c-line yellow"></span>Watching · distance to nearest break <span class="c-count">5</span></div>
+  <div class="c-track">
+    <div class="c-trackCenter"></div>
+    <span class="c-trackLabel" style="left:2px;">−2%</span>
+    <span class="c-trackLabel" style="left:50%;transform:translateX(-50%);">at OR</span>
+    <span class="c-trackLabel" style="right:2px;">+2%</span>
+    <div class="c-chip long" style="left:49%; top:8px;">M&M<span class="c-chipMeta">0.05% · R62</span></div>
+    <div class="c-chip blocked" style="left:47%; top:28px;">ADANIENT<span class="c-chipMeta">0.12% · R49</span></div>
+    <div class="c-chip blocked" style="left:43%; top:48px;">HAL<span class="c-chipMeta">0.26% · R49</span></div>
+    <div class="c-chip blocked" style="left:35%; top:62px;">TATASTEEL<span class="c-chipMeta">0.43% · R55</span></div>
+    <div class="c-chip blocked" style="left:25%; top:30px;">VEDL<span class="c-chipMeta">2.27% · R46</span></div>
+  </div>
+
+  <div class="c-groupHead"><span class="c-line grey"></span>Excluded · wide CPR <span class="c-count">5</span></div>
+  <div class="c-excluded">
+    <span class="c-excChip">BPCL · 0.65%</span>
+    <span class="c-excChip">BAJFINANCE · 0.61%</span>
+    <span class="c-excChip">TRENT · 0.64%</span>
+    <span class="c-excChip">IRCTC · 0.59%</span>
+    <span class="c-excChip">GRASIM · 0.62%</span>
+  </div>
+</div>
+<div class="note">
+  <b>Why it works:</b> you see at a glance "who's RIGHT at the OR line" — M&M sitting almost exactly at
+  zero tells you it's seconds from firing. Spatial positioning is far more intuitive than a column of numbers.
+  <b>Trade-off:</b> less info per row (no OR range etc) — might need a hover tooltip.
+  Also chips can crowd if many stocks cluster at the same distance.
+</div>
+
+<!-- ============ D — CONVICTION HEAT ============ -->
+<h2>D · Conviction heat-row (recommended)</h2>
+<h3>
+  Classical table kept — but each row's background tint reflects conviction: broken-out rows get a strong
+  directional gradient (green for long, red for short), watching rows get amber if close to trigger, blocked
+  rows fade. A "conviction chip" on the right distills all filters into a single signal. Keeps density, adds
+  a visual hierarchy that says "look here first."
+</h3>
+<div class="wrap d-card">
+  <div class="d-groupHead"><span class="d-groupTitle">Broken out · awaiting signal eval</span><span class="d-count">4</span></div>
+  <div class="d-header">
+    <span>Symbol</span><span>Status</span><span>LTP</span><span>OR range</span>
+    <span>Risk%</span><span>CPR%</span><span>RSI</span><span>Signal</span>
+  </div>
+  <div class="d-row conv-short">
+    <span class="d-sym">BEL</span>
+    <span><span class="d-pill short">▼ SHORT</span></span>
+    <span>451.30</span><span class="d-mini">454.15 – 459.80</span>
+    <span class="mutedClr">1.25</span><span class="posClr">0.39</span><span class="negClr">34</span>
+    <span class="negClr">+0.63% past <span class="d-convBadge" style="background:var(--neg-tint);color:var(--neg);">A+</span></span>
+  </div>
+  <div class="d-row conv-hi">
+    <span class="d-sym">APOLLOHOSP</span>
+    <span><span class="d-pill long">▲ LONG</span></span>
+    <span>7,753.00</span><span class="d-mini">7,667.50 – 7,710.00</span>
+    <span class="posClr">0.55</span><span class="posClr">0.17</span><span class="posClr">64</span>
+    <span class="posClr">+0.56% past <span class="d-convBadge">A+</span></span>
+  </div>
+  <div class="d-row conv-hi">
+    <span class="d-sym">GODREJPROP</span>
+    <span><span class="d-pill long">▲ LONG</span></span>
+    <span>1,817.20</span><span class="d-mini">1,770.20 – 1,809.50</span>
+    <span class="hotClr">2.16</span><span class="posClr">0.25</span><span class="posClr">65</span>
+    <span class="posClr">+0.43% past <span class="d-convBadge" style="background:var(--warn-tint);color:var(--warn);">B</span></span>
+  </div>
+  <div class="d-row conv-hi">
+    <span class="d-sym">AXISBANK</span>
+    <span><span class="d-pill long">▲ LONG</span></span>
+    <span>1,375.00</span><span class="d-mini">1,354.70 – 1,374.00</span>
+    <span class="mutedClr">1.40</span><span class="posClr">0.31</span><span class="posClr">62</span>
+    <span class="posClr">+0.07% past <span class="d-convBadge">A</span></span>
+  </div>
+
+  <div class="d-groupHead watching"><span class="d-groupTitle">Watching · inside OR</span><span class="d-count">5</span></div>
+  <div class="d-row conv-med">
+    <span class="d-sym">M&M</span>
+    <span><span class="d-pill long">LONG</span></span>
+    <span>3,249.50</span><span class="d-mini">3,212.00 – 3,251.00</span>
+    <span class="mutedClr">1.20</span><span class="posClr">0.47</span><span class="posClr">62</span>
+    <span class="mutedClr">↑0.05 · ↓1.15 · near <b>0.05</b></span>
+  </div>
+  <div class="d-row conv-lo">
+    <span class="d-sym">ADANIENT</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span>2,228.50</span><span class="d-mini">2,225.80 – 2,253.60</span>
+    <span class="mutedClr">1.25</span><span class="posClr">0.34</span><span class="faintClr">49</span>
+    <span class="mutedClr">↑1.13 · ↓0.12 · near <b>0.12</b></span>
+  </div>
+  <div class="d-row conv-lo">
+    <span class="d-sym">HAL</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span>4,368.60</span><span class="d-mini">4,335.50 – 4,380.00</span>
+    <span class="mutedClr">1.02</span><span class="posClr">0.26</span><span class="faintClr">49</span>
+    <span class="mutedClr">↑0.26 · ↓0.76 · near <b>0.26</b></span>
+  </div>
+  <div class="d-row conv-lo">
+    <span class="d-sym">TATASTEEL</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span>212.00</span><span class="d-mini">211.08 – 214.49</span>
+    <span class="negClr">1.61</span><span class="posClr">0.04</span><span class="faintClr">55</span>
+    <span class="mutedClr">↑1.17 · ↓0.43 · near <b>0.43</b></span>
+  </div>
+  <div class="d-row conv-lo">
+    <span class="d-sym">VEDL</span>
+    <span><span class="d-pill blocked">BLOCKED</span></span>
+    <span>766.60</span><span class="d-mini">784.00 – 795.00</span>
+    <span class="negClr">1.43</span><span class="posClr">0.39</span><span class="faintClr">46</span>
+    <span class="mutedClr">↑3.70 · ↓-2.27 · near <b>2.27</b></span>
+  </div>
+
+  <div class="d-groupHead excluded"><span class="d-groupTitle">Excluded · wide CPR</span><span class="d-count">5</span></div>
+  <div style="padding: 12px 20px; display:flex; gap:6px; flex-wrap:wrap;">
+    <span class="c-excChip">BPCL <b>0.65%</b></span>
+    <span class="c-excChip">BAJFINANCE <b>0.61%</b></span>
+    <span class="c-excChip">TRENT <b>0.64%</b></span>
+    <span class="c-excChip">IRCTC <b>0.59%</b></span>
+    <span class="c-excChip">GRASIM <b>0.62%</b></span>
+  </div>
+</div>
+<div class="note">
+  <b>Why it works:</b> doesn't break the existing framework — same columns, same groups. Adds two things:
+  (1) <b>row tint</b> — signals the whole row's "state" at a glance (green-for-long-broken, red-for-short-broken,
+  amber-for-near-fire, faded-for-blocked). (2) <b>conviction badge</b> (A+/A/B/C) summarizing filter passage.
+  Group headers use directional accent stripe on the left. Everything else stays familiar.
+  <b>My pick</b> — it's evolutionary (minimal learning curve), keeps density, adds intentional visual hierarchy.
+</div>
+
+<!-- ============ E — TERMINAL DENSITY · LIGHT THEME ============ -->
+<h2>E · Terminal density — app theme (recommended for density + light aesthetic)</h2>
+<h3>
+  Same principles as A — monospace, color IS the meta, no pills, subtle row-tint on broken-out — but using
+  the app's existing cream / ink / pos / neg palette. Fits on the current page without a theme switch.
+</h3>
+<div class="wrap e-card">
+  <div class="e-topBar">
+    <span class="e-title">ORB · LIVE CANDIDATES</span>
+    <span class="e-ts">13:47:22 · 15 stocks</span>
+  </div>
+  <div class="e-header">
+    <span>SYMBOL</span><span>STATUS</span><span>LTP</span><span>OR RANGE</span>
+    <span>RISK%</span><span>CPR%</span><span>RSI</span><span>SIGNAL</span>
+  </div>
+
+  <div class="e-groupHead"><span class="e-accent long"></span>Broken out<span class="e-count">4</span></div>
+  <div class="e-row hotShort">
+    <span class="e-sym">BEL</span><span class="e-status short">▼ SHORT</span>
+    <span class="e-ltp">451.30</span><span class="e-range">454.15 – 459.80</span>
+    <span class="e-mid">1.25</span><span class="e-pos">0.39</span><span class="e-neg">34</span>
+    <span class="e-neg">+0.63% past</span>
+  </div>
+  <div class="e-row hotLong">
+    <span class="e-sym">APOLLOHOSP</span><span class="e-status long">▲ LONG</span>
+    <span class="e-ltp">7,753.00</span><span class="e-range">7,667.50 – 7,710.00</span>
+    <span class="e-pos">0.55</span><span class="e-pos">0.17</span><span class="e-pos">64</span>
+    <span class="e-pos">+0.56% past</span>
+  </div>
+  <div class="e-row hotLong">
+    <span class="e-sym">GODREJPROP</span><span class="e-status long">▲ LONG</span>
+    <span class="e-ltp">1,817.20</span><span class="e-range">1,770.20 – 1,809.50</span>
+    <span class="e-warn">2.16</span><span class="e-pos">0.25</span><span class="e-pos">65</span>
+    <span class="e-pos">+0.43% past</span>
+  </div>
+  <div class="e-row hotLong">
+    <span class="e-sym">AXISBANK</span><span class="e-status long">▲ LONG</span>
+    <span class="e-ltp">1,375.00</span><span class="e-range">1,354.70 – 1,374.00</span>
+    <span class="e-mid">1.40</span><span class="e-pos">0.31</span><span class="e-pos">62</span>
+    <span class="e-pos">+0.07% past</span>
+  </div>
+
+  <div class="e-groupHead"><span class="e-accent watch"></span>Watching<span class="e-count">5</span></div>
+  <div class="e-row">
+    <span class="e-sym">M&M</span><span class="e-status long">LONG</span>
+    <span class="e-ltp">3,249.50</span><span class="e-range">3,212.00 – 3,251.00</span>
+    <span class="e-mid">1.20</span><span class="e-pos">0.47</span><span class="e-pos">62</span>
+    <span class="e-mid">↑0.05 · ↓1.15 · near <b style="color:var(--ink);">0.05</b></span>
+  </div>
+  <div class="e-row">
+    <span class="e-sym">ADANIENT</span><span class="e-status blocked">BLOCKED</span>
+    <span class="e-ltp">2,228.50</span><span class="e-range">2,225.80 – 2,253.60</span>
+    <span class="e-mid">1.25</span><span class="e-pos">0.34</span><span class="e-blocked">49</span>
+    <span class="e-mid">↑1.13 · ↓0.12 · near <b style="color:var(--ink);">0.12</b></span>
+  </div>
+  <div class="e-row">
+    <span class="e-sym">HAL</span><span class="e-status blocked">BLOCKED</span>
+    <span class="e-ltp">4,368.60</span><span class="e-range">4,335.50 – 4,380.00</span>
+    <span class="e-mid">1.02</span><span class="e-pos">0.26</span><span class="e-blocked">49</span>
+    <span class="e-mid">↑0.26 · ↓0.76 · near <b style="color:var(--ink);">0.26</b></span>
+  </div>
+  <div class="e-row">
+    <span class="e-sym">TATASTEEL</span><span class="e-status blocked">BLOCKED</span>
+    <span class="e-ltp">212.00</span><span class="e-range">211.08 – 214.49</span>
+    <span class="e-neg">1.61</span><span class="e-pos">0.04</span><span class="e-blocked">55</span>
+    <span class="e-mid">↑1.17 · ↓0.43 · near <b style="color:var(--ink);">0.43</b></span>
+  </div>
+  <div class="e-row">
+    <span class="e-sym">VEDL</span><span class="e-status blocked">BLOCKED</span>
+    <span class="e-ltp">766.60</span><span class="e-range">784.00 – 795.00</span>
+    <span class="e-neg">1.43</span><span class="e-pos">0.39</span><span class="e-blocked">46</span>
+    <span class="e-mid">↑3.70 · ↓-2.27 · near <b style="color:var(--ink);">2.27</b></span>
+  </div>
+
+  <div class="e-groupHead"><span class="e-accent excl"></span>Excluded · wide CPR<span class="e-count">5</span></div>
+  <div class="e-excFooter">
+    <b>BPCL</b> 0.65 · <b>BAJFINANCE</b> 0.61 · <b>TRENT</b> 0.64 · <b>IRCTC</b> 0.59 · <b>GRASIM</b> 0.62
+  </div>
+</div>
+<div class="note">
+  <b>Why it works:</b> keeps Mockup A's information density and direct-color encoding (you scan colors, not parse pills)
+  — but sits naturally on the cream / ivory page. Green tint on a broken-out long row, red tint on a broken-out short.
+  Uppercase column header and small group-accent bar anchor the hierarchy without shouting.
+  <b>My pick</b> if you liked A's information density — this keeps it, dressed for the app.
+</div>
+
+<h2 style="margin-top:56px;border-top:1px solid var(--hair);padding-top:32px;">Quick comparison</h2>
+<table style="width:100%;border-collapse:collapse;font-size:12px;max-width:900px;">
+  <tr style="border-bottom:1px solid var(--hair-soft);">
+    <th style="text-align:left;padding:8px 0;color:var(--ink-muted);font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:0.06em;">Variant</th>
+    <th style="text-align:left;padding:8px 0;color:var(--ink-muted);font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:0.06em;">Best for</th>
+    <th style="text-align:left;padding:8px 0;color:var(--ink-muted);font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:0.06em;">Trade-off</th>
+    <th style="text-align:left;padding:8px 0;color:var(--ink-muted);font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:0.06em;">Effort</th>
+  </tr>
+  <tr style="border-bottom:1px solid var(--hair-softest);">
+    <td style="padding:10px 0;">A · Terminal</td>
+    <td style="color:var(--ink-muted);">Pro trader speed-scanning</td>
+    <td style="color:var(--ink-muted);">Dark card clashes with light theme</td>
+    <td style="color:var(--ink-muted);">Low — CSS-only</td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--hair-softest);">
+    <td style="padding:10px 0;">B · Card hero</td>
+    <td style="color:var(--ink-muted);">Breakout-first workflow</td>
+    <td style="color:var(--ink-muted);">Takes more real-estate on busy days</td>
+    <td style="color:var(--ink-muted);">Medium</td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--hair-softest);">
+    <td style="padding:10px 0;">C · Flow track</td>
+    <td style="color:var(--ink-muted);">Spatial intuition / "who's close"</td>
+    <td style="color:var(--ink-muted);">Lower info density; chips can collide</td>
+    <td style="color:var(--ink-muted);">High — new layout model</td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--hair-softest);">
+    <td style="padding:10px 0;">D · Conviction heat</td>
+    <td style="color:var(--ink-muted);">Evolution of current view</td>
+    <td style="color:var(--ink-muted);">Conservative — no wow factor</td>
+    <td style="color:var(--ink-muted);">Low — closest to live code</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0;"><b>E · Terminal (light theme)</b></td>
+    <td style="color:var(--ink-muted);">Density + fits app theme</td>
+    <td style="color:var(--ink-muted);">Relies on color not pills — colorblind users lose direction</td>
+    <td style="color:var(--ink-muted);">Low</td>
+  </tr>
+</table>
+
+<p style="color:var(--ink-muted);max-width:720px;line-height:1.5;margin-top:40px;">
+  Tell me which one (or combo — e.g., "D's row tints + C's track for broken-out only") and I'll wire it into
+  <code>Orb.tsx</code>.
+</p>
+
+</body>
+</html>

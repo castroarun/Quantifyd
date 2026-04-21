@@ -130,13 +130,18 @@ export interface ORBCandidateBrokenOut {
   ltp: number;
   or_high: number;
   or_low: number;
+  or_width_pct?: number;
   cpr_width_pct: number;
+  cpr_is_wide?: boolean;
   gap_pct: number;
   rsi_15m?: number | null;
   dist_up_pct?: number | null;
   dist_dn_pct?: number | null;
   side: 'LONG' | 'SHORT';
   past_pct: number;
+  conviction_score?: number;
+  conviction_grade?: 'A+' | 'A' | 'B' | 'C';
+  conviction_stars?: Array<{ key: string; hit: boolean; desc: string }>;
 }
 
 export interface ORBCandidateWatching {
@@ -144,7 +149,9 @@ export interface ORBCandidateWatching {
   ltp: number;
   or_high: number;
   or_low: number;
+  or_width_pct?: number;
   cpr_width_pct: number;
+  cpr_is_wide?: boolean;
   gap_pct: number;
   rsi_15m?: number | null;
   dist_up_pct?: number | null;
