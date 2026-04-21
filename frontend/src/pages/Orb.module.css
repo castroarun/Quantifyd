@@ -370,3 +370,120 @@
 .ruleLabel {
   color: var(--ink-muted);
 }
+
+/* ---------- Candidates section ---------- */
+
+.candidatesCard {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 4px 18px;
+}
+.candGroup {
+  padding: 14px 0;
+}
+.candGroup + .candGroup {
+  border-top: 0.5px solid var(--hairline-softest);
+}
+.candGroupHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.candGroupTitle {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.candCount {
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.candEmpty {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  padding: 4px 0;
+}
+.candRows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.candRow {
+  display: grid;
+  grid-template-columns: 100px 80px 80px 1fr 120px 120px;
+  gap: 12px;
+  align-items: baseline;
+  padding: 5px 0;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.candRow:hover {
+  background: var(--hairline-softest);
+  border-radius: 3px;
+}
+.candSym {
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+.candLtp {
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+.candOr {
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+.candDist {
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+.candDistNearest {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+}
+.sideLong { color: var(--accent-pos); font-weight: var(--weight-medium); }
+.sideShort { color: var(--accent-neg); font-weight: var(--weight-medium); }
+.pastPos { color: var(--accent-pos); font-weight: var(--weight-medium); }
+.pastNeg { color: var(--accent-neg); font-weight: var(--weight-medium); }
+.candHint {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  text-align: center;
+}
+.hintBoth { background: rgba(15, 110, 86, 0.12); color: var(--accent-pos); border: 0.5px solid rgba(15,110,86,0.3); }
+.hintLong { background: rgba(15, 110, 86, 0.10); color: var(--accent-pos); }
+.hintShort { background: rgba(163, 45, 45, 0.10); color: var(--accent-neg); }
+.hintBlocked { background: var(--chip-bg, var(--hairline-soft)); color: var(--ink-faint); }
+
+.candExclRow {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 11px;
+}
+.candExclLabel {
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+}
+.candExclList {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .candRow { grid-template-columns: 90px 70px 70px 1fr 100px; }
+  .candRow .candDistNearest { display: none; }
+}

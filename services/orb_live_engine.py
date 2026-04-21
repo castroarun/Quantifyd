@@ -1256,11 +1256,130 @@ class ORBLiveEngine:
         ns.send_eod_report(report_data)
 
     # ===================================================================
+    # Candidates snapshot
+    # ===================================================================
+
+    def get_candidates(self) -> dict:
+        """Return a structured snapshot of all stocks showing who's eligible,
+        who already broke out (awaiting signal eval), who's watching inside OR,
+        and who's excluded by wide-CPR. Also flags stocks already in a position
+        or that have traded today.
+
+        Returns:
+          {
+            'broken_out': [ { sym, ltp, or_high, or_low, side, past_pct, ... } ],
+            'watching':   [ { sym, ltp, or_high, or_low, dist_up_pct, dist_dn_pct, ... } ],
+            'excluded':   [ { sym, ltp, reason } ],
+            'in_position':[ syms ],
+            'traded_today':[ syms ],
+            'as_of': iso_timestamp,
+          }
+        """
+        today_str = date.today().isoformat()
+        cpr_th = self.cfg.get('cpr_width_threshold_pct', 0.5)
+        gap_th = self.cfg.get('gap_threshold_pct', 1.0)
+        rsi_long = self.cfg.get('rsi_long_threshold', 60)
+        rsi_short = self.cfg.get('rsi_short_threshold', 40)
+
+        # Positions + closed trades today
+        open_positions = self.db.get_open_positions() or []
+        in_pos = {p['instrument'] for p in open_positions}
+        closed = self.db.get_today_closed() or []
+        traded_today = {t['instrument'] for t in closed}
+
+        # Current LTPs for the universe
+        symbols = list(self.stocks.keys())
+        ltps = self.get_live_ltp(symbols)
+
+        broken_out = []
+        watching = []
+        excluded = []
+
+        for sym in symbols:
+            state = self.db.get_or_create_daily_state(sym, today_str) or {}
+            or_h = state.get('or_high')
+            or_l = state.get('or_low')
+            cpr = state.get('cpr_width_pct') or 0
+            gap = state.get('gap_pct') or 0
+            rsi = state.get('rsi_15m') or state.get('rsi')
+            ltp = ltps.get(sym) or 0
+            is_wide = cpr > cpr_th
+            has_or = or_h is not None and or_l is not None
+
+            if sym in in_pos:
+                excluded.append({'sym': sym, 'ltp': round(ltp, 2), 'reason': 'in_position'})
+                continue
+            if sym in traded_today:
+                excluded.append({'sym': sym, 'ltp': round(ltp, 2), 'reason': 'traded_today'})
+                continue
+            if is_wide:
+                excluded.append({'sym': sym, 'ltp': round(ltp, 2), 'cpr': round(cpr, 3),
+                                 'reason': f'wide_cpr_{cpr:.2f}pct'})
+                continue
+            if not has_or:
+                excluded.append({'sym': sym, 'ltp': round(ltp, 2), 'reason': 'no_or_yet'})
+                continue
+
+            dist_up_pct = ((or_h - ltp) / ltp * 100) if ltp else None
+            dist_dn_pct = ((ltp - or_l) / ltp * 100) if ltp else None
+            long_gap_ok = gap <= gap_th
+            long_rsi_ok = rsi is None or rsi >= rsi_long
+            short_rsi_ok = rsi is None or rsi <= rsi_short
+
+            row = {
+                'sym': sym,
+                'ltp': round(ltp, 2),
+                'or_high': or_h, 'or_low': or_l,
+                'cpr_width_pct': round(cpr, 3),
+                'gap_pct': round(gap, 2),
+                'rsi_15m': round(rsi, 1) if rsi is not None else None,
+                'dist_up_pct': round(dist_up_pct, 2) if dist_up_pct is not None else None,
+                'dist_dn_pct': round(dist_dn_pct, 2) if dist_dn_pct is not None else None,
+                'long_gap_ok': long_gap_ok,
+                'long_rsi_ok': long_rsi_ok,
+                'short_rsi_ok': short_rsi_ok,
+            }
+
+            if ltp > or_h and long_gap_ok and long_rsi_ok:
+                past_pct = (ltp - or_h) / or_h * 100
+                broken_out.append({**row, 'side': 'LONG', 'past_pct': round(past_pct, 2)})
+            elif ltp < or_l and short_rsi_ok:
+                past_pct = (or_l - ltp) / or_l * 100
+                broken_out.append({**row, 'side': 'SHORT', 'past_pct': round(past_pct, 2)})
+            else:
+                side_hint = None
+                if long_gap_ok and long_rsi_ok and short_rsi_ok:
+                    side_hint = 'both'
+                elif long_gap_ok and long_rsi_ok:
+                    side_hint = 'long'
+                elif short_rsi_ok:
+                    side_hint = 'short'
+                else:
+                    side_hint = 'blocked'
+                watching.append({**row, 'side_hint': side_hint})
+
+        # Sort: broken_out by how far past (most decisive first),
+        # watching by closest-to-breakout (smallest min distance)
+        broken_out.sort(key=lambda r: -abs(r.get('past_pct') or 0))
+        watching.sort(key=lambda r: min(
+            abs(r.get('dist_up_pct') or 99), abs(r.get('dist_dn_pct') or 99)))
+
+        return {
+            'broken_out': broken_out,
+            'watching': watching,
+            'excluded': excluded,
+            'in_position': sorted(in_pos),
+            'traded_today': sorted(traded_today),
+            'as_of': datetime.now().isoformat(timespec='seconds'),
+        }
+
+    # ===================================================================
     # Mid-morning status (10:30)
     # ===================================================================
 
     def send_midmorning_status(self):
-        """Send a snapshot of the day's progress at 10:30 IST — email + WhatsApp."""
+        """Send a snapshot of the day's progress at 10:30 IST — email + WhatsApp.
+        Includes candidate breakdown (broken out, watching, excluded)."""
         if not self.cfg.get('notify_midmorning_status', True):
             return
         from services.notifications import get_notification_service
@@ -1271,13 +1390,48 @@ class ORBLiveEngine:
             day_pnl = sum((t.get('pnl_inr') or 0) for t in closed)
             day_pnl += sum((p.get('pnl_inr') or 0) for p in open_positions)
             margin = self._last_margin or {}
-            # Compact status line
-            msg = (
+
+            # Pull candidates snapshot
+            cand = self.get_candidates()
+            broken = cand.get('broken_out', [])
+            watching = cand.get('watching', [])
+            excluded = cand.get('excluded', [])
+
+            lines = [
                 f"Open: {len(open_positions)} · Closed today: {len(closed)} · "
                 f"Day P&L: {'+'if day_pnl>=0 else ''}Rs {day_pnl:,.0f}"
-            )
+            ]
             if margin.get('cash') is not None:
-                msg += f" · Margin: Rs {margin['cash']:,.0f}"
+                lines[0] += f" · Margin: Rs {margin['cash']:,.0f}"
+
+            if broken:
+                lines.append('')
+                lines.append(f"Broken out ({len(broken)}) — awaiting signal eval:")
+                for r in broken[:10]:
+                    arrow = '▲' if r['side'] == 'LONG' else '▼'
+                    lines.append(
+                        f"  {arrow} {r['sym']} {r['side']} @ {r['ltp']} "
+                        f"(OR {r['or_low']}-{r['or_high']}, {r['past_pct']:+.2f}% past)"
+                    )
+            if watching:
+                lines.append('')
+                lines.append(f"Watching ({len(watching)}) — inside OR:")
+                for r in watching[:10]:
+                    nearest = min((r.get('dist_up_pct') or 99), (r.get('dist_dn_pct') or 99))
+                    lines.append(
+                        f"  · {r['sym']} {r['ltp']} "
+                        f"(OR {r['or_low']}-{r['or_high']}, nearest {nearest:.2f}%)"
+                    )
+            if excluded:
+                wide = [e for e in excluded if str(e.get('reason','')).startswith('wide_cpr')]
+                if wide:
+                    lines.append('')
+                    lines.append(
+                        f"Excluded ({len(wide)}) — wide CPR: "
+                        + ', '.join(e['sym'] for e in wide)
+                    )
+
+            msg = '\n'.join(lines)
             ns.send_alert(
                 'system_alert',
                 'ORB mid-morning status (10:30)',
@@ -1287,6 +1441,9 @@ class ORBLiveEngine:
                     'closed_today': len(closed),
                     'day_pnl': day_pnl,
                     'available_margin': margin.get('cash', 0),
+                    'broken_out_count': len(broken),
+                    'watching_count': len(watching),
+                    'excluded_wide_cpr': [e['sym'] for e in excluded if str(e.get('reason','')).startswith('wide_cpr')],
                 },
                 priority='low',
             )

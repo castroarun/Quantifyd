@@ -7,6 +7,7 @@ import type {
   ORBPosition,
   ORBClosedTrade,
   ORBSignal,
+  ORBCandidates,
 } from '../api/types';
 import MetricCard from '../components/Cards/MetricCard';
 import DataTable from '../components/DataTable/DataTable';
@@ -87,6 +88,7 @@ function filterDots(s: ORBStockSummary): FilterDot[] {
 export default function Orb() {
   const [state, setState] = useState<ORBState | null>(null);
   const [signals, setSignals] = useState<ORBSignal[]>([]);
+  const [candidates, setCandidates] = useState<ORBCandidates | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -94,13 +96,15 @@ export default function Orb() {
     let cancelled = false;
     const load = async () => {
       try {
-        const [s, sig] = await Promise.all([
+        const [s, sig, cand] = await Promise.all([
           apiGet<ORBState>('/api/orb/state'),
           apiGet<ORBSignal[]>('/api/orb/signals').catch(() => [] as ORBSignal[]),
+          apiGet<ORBCandidates>('/api/orb/candidates').catch(() => null),
         ]);
         if (cancelled) return;
         setState(s);
         setSignals(Array.isArray(sig) ? sig : []);
+        setCandidates(cand);
         setErr(null);
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Failed to load ORB state');
@@ -350,6 +354,9 @@ export default function Orb() {
           rowKey={(p) => p.instrument + (p.entry_time ?? '')}
         />
       </section>
+
+      {/* live candidates */}
+      {candidates ? <CandidatesSection candidates={candidates} /> : null}
 
       {/* current indicators */}
       <section className={styles.section}>
@@ -700,5 +707,129 @@ function StockCard({ stock }: { stock: ORBStockSummary }) {
         ) : null}
       </div>
     </div>
+  );
+}
+
+/* ---------- Candidates section ---------- */
+
+function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
+  const { broken_out, watching, excluded, as_of } = candidates;
+  const wideCpr = excluded.filter((e) => e.reason.startsWith('wide_cpr'));
+  const otherExcl = excluded.filter((e) => !e.reason.startsWith('wide_cpr'));
+  const fmtTime = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+    } catch {
+      return iso.slice(11, 19);
+    }
+  };
+  return (
+    <section className={styles.section}>
+      <div className={styles.sectionHead}>
+        <div className="section-title">Live candidates</div>
+        <Chip>as of {fmtTime(as_of)}</Chip>
+      </div>
+      <div className={styles.candidatesCard}>
+        {/* Broken-out */}
+        <div className={styles.candGroup}>
+          <div className={styles.candGroupHead}>
+            <span className={styles.candGroupTitle}>Broken out — awaiting signal eval</span>
+            <span className={styles.candCount}>{broken_out.length}</span>
+          </div>
+          {broken_out.length === 0 ? (
+            <div className={styles.candEmpty}>No breakouts past OR levels right now.</div>
+          ) : (
+            <div className={styles.candRows}>
+              {broken_out.map((r) => (
+                <div key={r.sym} className={styles.candRow}>
+                  <span className={styles.candSym}>{r.sym}</span>
+                  <span className={r.side === 'LONG' ? styles.sideLong : styles.sideShort}>
+                    {r.side === 'LONG' ? '▲' : '▼'} {r.side}
+                  </span>
+                  <span className={styles.candLtp}>{formatNumber(r.ltp)}</span>
+                  <span className={styles.candOr}>
+                    OR {formatNumber(r.or_low)}–{formatNumber(r.or_high)}
+                  </span>
+                  <span className={r.side === 'LONG' ? styles.pastPos : styles.pastNeg}>
+                    {r.past_pct >= 0 ? '+' : ''}{r.past_pct.toFixed(2)}% past
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Watching */}
+        <div className={styles.candGroup}>
+          <div className={styles.candGroupHead}>
+            <span className={styles.candGroupTitle}>Watching — inside OR</span>
+            <span className={styles.candCount}>{watching.length}</span>
+          </div>
+          {watching.length === 0 ? (
+            <div className={styles.candEmpty}>No stocks inside OR right now.</div>
+          ) : (
+            <div className={styles.candRows}>
+              {watching.map((r) => {
+                const nearest = Math.min(
+                  Math.abs(r.dist_up_pct ?? 99),
+                  Math.abs(r.dist_dn_pct ?? 99),
+                );
+                const hintTone =
+                  r.side_hint === 'both'
+                    ? styles.hintBoth
+                    : r.side_hint === 'long'
+                    ? styles.hintLong
+                    : r.side_hint === 'short'
+                    ? styles.hintShort
+                    : styles.hintBlocked;
+                return (
+                  <div key={r.sym} className={styles.candRow}>
+                    <span className={styles.candSym}>{r.sym}</span>
+                    <span className={`${styles.candHint} ${hintTone}`}>{r.side_hint}</span>
+                    <span className={styles.candLtp}>{formatNumber(r.ltp)}</span>
+                    <span className={styles.candOr}>
+                      OR {formatNumber(r.or_low)}–{formatNumber(r.or_high)}
+                    </span>
+                    <span className={styles.candDist}>
+                      ↑{(r.dist_up_pct ?? 0).toFixed(2)}% · ↓{(r.dist_dn_pct ?? 0).toFixed(2)}%
+                    </span>
+                    <span className={styles.candDistNearest}>
+                      nearest {nearest.toFixed(2)}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Excluded */}
+        {(wideCpr.length > 0 || otherExcl.length > 0) ? (
+          <div className={styles.candGroup}>
+            <div className={styles.candGroupHead}>
+              <span className={styles.candGroupTitle}>Excluded</span>
+              <span className={styles.candCount}>{excluded.length}</span>
+            </div>
+            {wideCpr.length > 0 ? (
+              <div className={styles.candExclRow}>
+                <span className={styles.candExclLabel}>Wide CPR</span>
+                <span className={styles.candExclList}>
+                  {wideCpr.map((e) => `${e.sym} (${(e.cpr ?? 0).toFixed(2)}%)`).join(' · ')}
+                </span>
+              </div>
+            ) : null}
+            {otherExcl.length > 0 ? (
+              <div className={styles.candExclRow}>
+                <span className={styles.candExclLabel}>Other</span>
+                <span className={styles.candExclList}>
+                  {otherExcl.map((e) => `${e.sym} (${e.reason})`).join(' · ')}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }

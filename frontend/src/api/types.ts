@@ -125,6 +125,52 @@ export interface ORBSignal {
   status?: string;
 }
 
+export interface ORBCandidateBrokenOut {
+  sym: string;
+  ltp: number;
+  or_high: number;
+  or_low: number;
+  cpr_width_pct: number;
+  gap_pct: number;
+  rsi_15m?: number | null;
+  dist_up_pct?: number | null;
+  dist_dn_pct?: number | null;
+  side: 'LONG' | 'SHORT';
+  past_pct: number;
+}
+
+export interface ORBCandidateWatching {
+  sym: string;
+  ltp: number;
+  or_high: number;
+  or_low: number;
+  cpr_width_pct: number;
+  gap_pct: number;
+  rsi_15m?: number | null;
+  dist_up_pct?: number | null;
+  dist_dn_pct?: number | null;
+  side_hint: 'both' | 'long' | 'short' | 'blocked';
+  long_gap_ok?: boolean;
+  long_rsi_ok?: boolean;
+  short_rsi_ok?: boolean;
+}
+
+export interface ORBCandidateExcluded {
+  sym: string;
+  ltp: number;
+  cpr?: number;
+  reason: string;
+}
+
+export interface ORBCandidates {
+  broken_out: ORBCandidateBrokenOut[];
+  watching: ORBCandidateWatching[];
+  excluded: ORBCandidateExcluded[];
+  in_position: string[];
+  traded_today: string[];
+  as_of: string;
+}
+
 /* ---------- NAS ---------- */
 
 export interface NASPosition {

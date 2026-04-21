@@ -5733,6 +5733,17 @@ def api_orb_initialize():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/orb/candidates')
+def api_orb_candidates():
+    """Live candidate snapshot: broken_out, watching inside OR, excluded."""
+    try:
+        engine = _get_orb_engine()
+        return jsonify(engine.get_candidates())
+    except Exception as e:
+        logger.error(f"[ORB] candidates error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/orb/update-or', methods=['POST'])
 def api_orb_update_or():
     """Manually trigger OR-window update on the singleton engine.
