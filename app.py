@@ -6033,9 +6033,22 @@ def _orb_midmorning_status():
         logger.error(f"[ORB] midmorning status error: {e}")
 
 
+def _orb_activate_trail():
+    """14:30: V9t_lock50 — lock 50% of profit on each open position
+    (move SL to entry + 0.5*gain). Positions ride until SL hit or 15:18 hard EOD.
+    Backtest winner: Calmar 676 vs force-close baseline 281."""
+    if not ORB_DEFAULTS.get('enabled', True):
+        return
+    try:
+        engine = _get_orb_engine()
+        engine.activate_trail_lock50()
+    except Exception as e:
+        logger.error(f"[ORB] 14:30 trail activation error: {e}")
+
+
 def _orb_eod_squareoff():
-    """14:30 sharp: Close all open ORB positions at market (V9 rule).
-    Replaces previous 15:18 squareoff — V9 finding cuts MaxDD in half."""
+    """15:18 sharp: Hard close any remaining open ORB positions.
+    Runs ~2 min before Zerodha MIS auto-squareoff at 15:20-15:25."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
@@ -6102,8 +6115,13 @@ try:
         id='orb_midmorning_status', replace_existing=True,
     )
     scheduler.add_job(
-        _orb_eod_squareoff,
+        _orb_activate_trail,
         'cron', day_of_week='mon-fri', hour=14, minute=30,
+        id='orb_activate_trail', replace_existing=True,
+    )
+    scheduler.add_job(
+        _orb_eod_squareoff,
+        'cron', day_of_week='mon-fri', hour=15, minute=18,
         id='orb_eod_squareoff', replace_existing=True,
     )
     scheduler.add_job(
@@ -6120,8 +6138,8 @@ try:
         "ORB scheduled jobs registered: "
         "init(9:14), OR update(9:15-9:29), signal eval(5min), "
         "position monitor(30s), midmorning status(10:30), "
-        "EOD squareoff(14:30), EOD report(15:25), "
-        "daily backtest(15:45)"
+        "V9t_lock50 trail(14:30), hard EOD squareoff(15:18), "
+        "EOD report(15:25), daily backtest(15:45)"
     )
 except Exception as e:
     logger.warning(f"Could not register ORB scheduled jobs: {e}")

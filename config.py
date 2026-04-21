@@ -472,7 +472,7 @@ ORB_DEFAULTS = {
 
     # Entry Rules
     'last_entry_time': '14:00',        # No entries after 2 PM
-    'eod_exit_time': '14:30',          # V9 finding: close at 14:30 halves MaxDD with ~no P&L loss (see docs/ORB-VARIANTS-FINDINGS.md)
+    'eod_exit_time': '15:18',          # Hard EOD backup. V9t_lock50 (Calmar 676): at 14:30 lock 50% profit + ride to 15:18 hard squareoff. See docs/ORB-VARIANTS-FINDINGS.md
     'max_trades_per_day': 1,           # Per stock per day
 
     # Exit Rules

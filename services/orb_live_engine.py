@@ -896,11 +896,109 @@ class ORBLiveEngine:
                 logger.error(f"[ORB] Monitor failed for {sym}: {e}", exc_info=True)
 
     # ===================================================================
-    # EOD squareoff (call at 15:20)
+    # 14:30 trail activation — V9t_lock50 (lock half the profit)
+    # ===================================================================
+
+    def activate_trail_lock50(self):
+        """At 14:30, for each open position lock 50% of the current profit
+        by moving SL up (for longs) / down (for shorts) to entry + 0.5 * (LTP - entry).
+        Only moves SL tighter, never looser. Loss-making positions keep their
+        original OR-opposite SL. Final hard-EOD at 15:18 (separate cron).
+
+        Backtest (250 days): V9t_lock50 -> Calmar 676 vs baseline V9 force-close 281
+        (MaxDD 1.0% vs 2.1%, +70% P&L). See docs/ORB-VARIANTS-FINDINGS.md."""
+        logger.info("[ORB] === 14:30 V9t_lock50: activating trail ===")
+        open_positions = self.db.get_open_positions()
+        if not open_positions:
+            logger.info("[ORB] No open positions — trail activation no-op")
+            return []
+
+        syms = list({p['instrument'] for p in open_positions})
+        ltps = self.get_live_ltp(syms)
+        now = datetime.now()
+        adjusted = []
+
+        for pos in open_positions:
+            try:
+                sym = pos['instrument']
+                direction = pos['direction']
+                entry_price = pos['entry_price']
+                current_sl = pos['sl_price']
+                ltp = ltps.get(sym)
+                if ltp is None:
+                    logger.warning(f"[ORB] {sym} no LTP, skipping trail")
+                    continue
+
+                # Lock 50% of profit — only if position is profitable
+                if direction == 'LONG':
+                    gain = ltp - entry_price
+                    new_sl = entry_price + 0.5 * gain if gain > 0 else current_sl
+                    # Tighten only (new_sl > current_sl)
+                    if new_sl > current_sl:
+                        # Update DB + in-memory
+                        self.db.update_position(pos['id'], sl_price=round(new_sl, 2))
+                        with self._lock:
+                            if sym in self._positions:
+                                self._positions[sym]['sl_price'] = round(new_sl, 2)
+                        adjusted.append({
+                            'symbol': sym, 'direction': direction,
+                            'old_sl': current_sl, 'new_sl': round(new_sl, 2),
+                            'ltp': ltp, 'locked_pnl': round(0.5 * gain * pos['qty'], 2),
+                        })
+                        logger.info(
+                            f"[ORB] {sym} LONG trail: SL {current_sl:.2f} -> {new_sl:.2f} "
+                            f"(locks 50% of +{gain:.2f} gain per share, "
+                            f"~Rs {0.5 * gain * pos['qty']:.0f} total)"
+                        )
+                    else:
+                        logger.info(f"[ORB] {sym} LONG not in profit (or new_sl <= current), keeping SL")
+                else:  # SHORT
+                    gain = entry_price - ltp
+                    new_sl = entry_price - 0.5 * gain if gain > 0 else current_sl
+                    if new_sl < current_sl:
+                        self.db.update_position(pos['id'], sl_price=round(new_sl, 2))
+                        with self._lock:
+                            if sym in self._positions:
+                                self._positions[sym]['sl_price'] = round(new_sl, 2)
+                        adjusted.append({
+                            'symbol': sym, 'direction': direction,
+                            'old_sl': current_sl, 'new_sl': round(new_sl, 2),
+                            'ltp': ltp, 'locked_pnl': round(0.5 * gain * pos['qty'], 2),
+                        })
+                        logger.info(
+                            f"[ORB] {sym} SHORT trail: SL {current_sl:.2f} -> {new_sl:.2f} "
+                            f"(locks 50% of +{gain:.2f} gain per share, "
+                            f"~Rs {0.5 * gain * pos['qty']:.0f} total)"
+                        )
+                    else:
+                        logger.info(f"[ORB] {sym} SHORT not in profit (or new_sl >= current), keeping SL")
+            except Exception as e:
+                logger.error(f"[ORB] Trail activation failed for {pos.get('instrument')}: {e}", exc_info=True)
+
+        logger.info(f"[ORB] Trail activation complete: {len(adjusted)} positions trailed")
+        # Notification
+        if adjusted and self.cfg.get('notify_on_system', True):
+            try:
+                ns = get_notification_service(self.cfg)
+                lines = [f"{a['symbol']} {a['direction']}: SL {a['old_sl']} -> {a['new_sl']} (lock Rs {a['locked_pnl']:.0f})"
+                         for a in adjusted]
+                ns.send_alert(
+                    'system_alert',
+                    f'ORB 14:30 trail activated on {len(adjusted)} position(s)',
+                    '\n'.join(lines),
+                    data={'adjusted': adjusted},
+                    priority='normal',
+                )
+            except Exception as e:
+                logger.warning(f"[ORB] Trail notification failed: {e}")
+        return adjusted
+
+    # ===================================================================
+    # Hard EOD squareoff (call at 15:18)
     # ===================================================================
 
     def eod_squareoff(self):
-        """Close ALL open positions at market. Called at 15:20 sharp."""
+        """Close ALL open positions at market. Called at 15:18 sharp."""
         logger.info("[ORB] === EOD Squareoff ===")
         open_positions = self.db.get_open_positions()
         if not open_positions:
