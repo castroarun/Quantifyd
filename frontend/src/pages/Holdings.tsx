@@ -403,7 +403,8 @@ type MultiplesBucket = { label: string; min: number; max: number | null; rows: H
 function bucketizeByMultiple(holdings: HoldingsRecord[]): MultiplesBucket[] {
   const defs: Array<Omit<MultiplesBucket, 'rows'>> = [
     { label: '+400%', min: 400, max: null },
-    { label: '+200%', min: 200, max: 400 },
+    { label: '+300%', min: 300, max: 400 },
+    { label: '+200%', min: 200, max: 300 },
     { label: '+100%', min: 100, max: 200 },
     { label: '+50%', min: 50, max: 100 },
     { label: '+0%', min: 0, max: 50 },
