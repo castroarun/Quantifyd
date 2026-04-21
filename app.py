@@ -5703,11 +5703,11 @@ def api_orb_state():
 
 @app.route('/api/orb/initialize', methods=['POST'])
 def api_orb_initialize():
-    """Manually trigger day initialization — uses Kite API for prev day HLC + CPR."""
+    """Manually trigger day initialization — uses Kite API for prev day HLC + CPR.
+    Uses the shared singleton so state is visible to scheduled update_or/evaluate_signals."""
     try:
-        from services.orb_live_engine import ORBLiveEngine
         from datetime import date as _date
-        engine = ORBLiveEngine(ORB_DEFAULTS)
+        engine = _get_orb_engine()
         engine.initialize_day()
 
         # Return the computed state
@@ -5730,6 +5730,20 @@ def api_orb_initialize():
         return jsonify({'status': 'initialized', 'results': results})
     except Exception as e:
         logger.error(f"[ORB] Initialize error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/update-or', methods=['POST'])
+def api_orb_update_or():
+    """Manually trigger OR-window update on the singleton engine.
+    Useful for recovery after a mid-morning restart so or_high/or_low can be
+    computed from already-completed 5-min candles (9:15, 9:20, 9:25)."""
+    try:
+        engine = _get_orb_engine()
+        engine.update_or()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        logger.error(f"[ORB] manual update_or error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -5923,12 +5937,17 @@ def api_orb_mark_read():
 
 
 def _orb_initialize_day():
-    """9:14 AM Mon-Fri: Compute CPR from Kite API, reset OR state for all 7 stocks."""
+    """9:14 AM Mon-Fri: Compute CPR from Kite API, reset OR state for all 15 stocks.
+
+    CRITICAL: MUST use the singleton via _get_orb_engine(), NOT a fresh
+    ORBLiveEngine instance. update_or() reads from the singleton's
+    _or_state dict — a throwaway instance would populate in-memory state
+    that the scheduled update_or never sees, causing silent skip of all
+    symbols (observed 2026-04-21 — 0 trades despite scheduler firing)."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
-        from services.orb_live_engine import ORBLiveEngine
-        engine = ORBLiveEngine(ORB_DEFAULTS)
+        engine = _get_orb_engine()
         engine.initialize_day()
         logger.info("[ORB] Day initialization complete (via Kite API)")
     except Exception as e:
