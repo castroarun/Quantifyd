@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ORB Open Positions — Design mocks</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --ink: #111111;
+    --ink-muted: #6b6b66;
+    --ink-faint: #9a9a94;
+    --hairline: rgba(0,0,0,0.08);
+    --hairline-soft: rgba(0,0,0,0.05);
+    --green-600: #16a34a;
+    --green-700: #15803d;
+    --red-600: #dc2626;
+    --red-700: #b91c1c;
+    --amber-600: #d97706;
+    --accent: #2d6a4f;
+    --chip-bg: rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Inter", system-ui, sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  .page { max-width: 1240px; margin: 0 auto; padding: 40px 24px 80px; }
+  .pageTitle { font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+  .pageSub { color: var(--ink-muted); margin-bottom: 32px; font-size: 14px; }
+  .mock {
+    margin-top: 36px;
+    background: var(--surface);
+    border: 0.5px solid var(--hairline);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .mockHead {
+    padding: 14px 20px 10px;
+    border-bottom: 0.5px solid var(--hairline);
+  }
+  .mockLabel {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .mockTitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 3px;
+  }
+  .mockDesc {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  thead th {
+    text-align: left;
+    font-weight: 500;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    padding: 12px 14px;
+    border-bottom: 0.5px solid var(--hairline);
+  }
+  tbody td {
+    padding: 13px 14px;
+    border-bottom: 0.5px solid var(--hairline-soft);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-muted); }
+  .bold { font-weight: 600; }
+  .dirLong,
+  .dirShort {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+  }
+  .dirLong { background: rgba(22,163,74,0.12); color: var(--green-700); }
+  .dirShort { background: rgba(220,38,38,0.12); color: var(--red-700); }
+  .pnlPos { color: var(--green-700); font-weight: 500; }
+  .pnlNeg { color: var(--red-700); font-weight: 500; }
+  .grade {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    min-width: 24px;
+    display: inline-block;
+    text-align: center;
+  }
+  .gA  { background: rgba(22,163,74,0.12);  color: var(--green-700); }
+  .gAp { background: var(--green-700);       color: #fff; }
+  .gB  { background: rgba(217,119,6,0.15);  color: var(--amber-600); }
+  .gC  { background: var(--chip-bg);         color: var(--ink-muted); }
+
+  /* ======== MOCK A: % chips between cells ======== */
+  .chipPct {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 500;
+    gap: 3px;
+  }
+  .chipSl  { background: rgba(220,38,38,0.08); color: var(--red-600); }
+  .chipTgt { background: rgba(22,163,74,0.08); color: var(--green-600); }
+
+  /* ======== MOCK B: mini gauge bar ======== */
+  .gaugeCell { min-width: 180px; }
+  .gaugeTrack {
+    position: relative;
+    height: 6px;
+    background: linear-gradient(
+      to right,
+      rgba(220,38,38,0.35) 0%,
+      rgba(220,38,38,0.15) 15%,
+      rgba(0,0,0,0.06) 45%,
+      rgba(0,0,0,0.06) 55%,
+      rgba(22,163,74,0.15) 85%,
+      rgba(22,163,74,0.35) 100%
+    );
+    border-radius: 999px;
+    margin: 6px 0 2px;
+  }
+  .gaugeMark {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 14px;
+    background: rgba(0,0,0,0.25);
+  }
+  .gaugeLtp {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+  }
+  .gaugeCap {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+
+  /* ======== MOCK C: R-multiple ======== */
+  .rBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .rGreenStrong { background: rgba(22,163,74,0.18); color: var(--green-700); }
+  .rGreen       { background: rgba(22,163,74,0.10); color: var(--green-700); }
+  .rNeutral     { background: var(--chip-bg);       color: var(--ink-muted); }
+  .rRed         { background: rgba(220,38,38,0.10); color: var(--red-700); }
+  .rRedStrong   { background: rgba(220,38,38,0.18); color: var(--red-700); }
+
+  /* ======== MOCK D: dot-bar with anchors ======== */
+  .proxCell { min-width: 200px; }
+  .proxBar {
+    position: relative;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(to right, #f7c5c5 0%, #f4f4f0 50%, #b9e3c7 100%);
+    overflow: hidden;
+  }
+  .proxMark {
+    position: absolute;
+    top: -2px; bottom: -2px;
+    width: 12px; height: 12px;
+    margin-left: -6px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 2px solid var(--surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .proxAnchors {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    margin-top: 4px;
+  }
+  .proxSl  { color: var(--red-700);  font-weight: 500; }
+  .proxTgt { color: var(--green-700); font-weight: 500; }
+
+  .legend {
+    font-size: 12px;
+    color: var(--ink-muted);
+    padding: 10px 20px 16px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .legend b { color: var(--ink); font-weight: 500; }
+
+  .pick {
+    margin-top: 40px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 0.5px dashed var(--hairline);
+    border-radius: 12px;
+    font-size: 14px;
+  }
+  .pick b { color: var(--green-700); }
+
+  @media (max-width: 900px) {
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 10px 8px; }
+    .gaugeCell, .proxCell { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="pageTitle">ORB · Open positions — distance-to-SL / distance-to-target</div>
+    <div class="pageSub">
+      Same three live positions rendered four ways. Columns reordered: <b>Qty · Entry · SL · LTP · Target</b>.
+      The visual cue sits between SL↔LTP and LTP↔Target.
+    </div>
+
+    <!-- =====================  MOCK A  ===================== -->
+    <div class="mock">
+      <div class="mockHead">
+        <div class="mockLabel">Mock A</div>
+        <div class="mockTitle">Percent chips (most compact)</div>
+        <div class="mockDesc">% distance between SL↔LTP (red chip) and LTP↔Target (green chip). Everything else stays plain-text.</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Stock</th><th>Dir</th><th class="num">Qty</th><th class="num">Entry</th>
+          <th class="num">SL</th><th></th><th class="num">LTP</th><th></th><th class="num">Target</th>
+          <th class="num">P&amp;L</th><th>Time</th><th>Grade</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="bold">M&amp;M</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">6</td>
+            <td class="num">3,208.00</td>
+            <td class="num">3,249.90</td>
+            <td><span class="chipPct chipSl">← 2.1%</span></td>
+            <td class="num">3,183.40</td>
+            <td><span class="chipPct chipTgt">1.2% →</span></td>
+            <td class="num">3,145.15</td>
+            <td class="num pnlPos">+Rs 148</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">HAL</td>
+            <td><span class="dirLong">Long</span></td>
+            <td class="num">4</td>
+            <td class="num">4,408.80</td>
+            <td class="num">4,331.00</td>
+            <td><span class="chipPct chipSl">← 1.4%</span></td>
+            <td class="num">4,394.60</td>
+            <td><span class="chipPct chipTgt">2.9% →</span></td>
+            <td class="num">4,521.50</td>
+            <td class="num pnlNeg">−Rs 57</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">BEL</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">44</td>
+            <td class="num">447.40</td>
+            <td class="num">451.85</td>
+            <td><span class="chipPct chipSl">← 1.0%</span></td>
+            <td class="num">447.20</td>
+            <td><span class="chipPct chipTgt">0.9% →</span></td>
+            <td class="num">443.15</td>
+            <td class="num pnlPos">+Rs 9</td>
+            <td class="muted">13:06</td>
+            <td><span class="grade gA">A</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="legend">
+        <span><b>←</b> distance to SL</span>
+        <span><b>→</b> distance to Target</span>
+        <span>Red = closer to SL · Green = closer to Target</span>
+      </div>
+    </div>
+
+    <!-- =====================  MOCK B  ===================== -->
+    <div class="mock">
+      <div class="mockHead">
+        <div class="mockLabel">Mock B</div>
+        <div class="mockTitle">Micro gauge bar</div>
+        <div class="mockDesc">One narrow track per row. Red end = SL, green end = Target, black dot = live LTP. Instantly shows where in the R:R range you sit.</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Stock</th><th>Dir</th><th class="num">Qty</th><th class="num">Entry</th>
+          <th class="num">SL</th><th class="num">LTP</th><th class="num">Target</th>
+          <th>SL ───── TGT</th>
+          <th class="num">P&amp;L</th><th>Time</th><th>Grade</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="bold">M&amp;M</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">6</td>
+            <td class="num">3,208.00</td>
+            <td class="num">3,249.90</td>
+            <td class="num">3,183.40</td>
+            <td class="num">3,145.15</td>
+            <td class="gaugeCell">
+              <div class="gaugeTrack">
+                <div class="gaugeMark" style="left: 40%"></div>
+                <div class="gaugeLtp"  style="left: 63%"></div>
+              </div>
+              <div class="gaugeCap"><span>SL</span><span>Entry</span><span>TGT</span></div>
+            </td>
+            <td class="num pnlPos">+Rs 148</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">HAL</td>
+            <td><span class="dirLong">Long</span></td>
+            <td class="num">4</td>
+            <td class="num">4,408.80</td>
+            <td class="num">4,331.00</td>
+            <td class="num">4,394.60</td>
+            <td class="num">4,521.50</td>
+            <td class="gaugeCell">
+              <div class="gaugeTrack">
+                <div class="gaugeMark" style="left: 40%"></div>
+                <div class="gaugeLtp"  style="left: 33%"></div>
+              </div>
+              <div class="gaugeCap"><span>SL</span><span>Entry</span><span>TGT</span></div>
+            </td>
+            <td class="num pnlNeg">−Rs 57</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">BEL</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">44</td>
+            <td class="num">447.40</td>
+            <td class="num">451.85</td>
+            <td class="num">447.20</td>
+            <td class="num">443.15</td>
+            <td class="gaugeCell">
+              <div class="gaugeTrack">
+                <div class="gaugeMark" style="left: 40%"></div>
+                <div class="gaugeLtp"  style="left: 52%"></div>
+              </div>
+              <div class="gaugeCap"><span>SL</span><span>Entry</span><span>TGT</span></div>
+            </td>
+            <td class="num pnlPos">+Rs 9</td>
+            <td class="muted">13:06</td>
+            <td><span class="grade gA">A</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="legend">
+        <span>Scale: SL at 0 · Entry at ~40% · Target at 100% (1.5R)</span>
+      </div>
+    </div>
+
+    <!-- =====================  MOCK C  ===================== -->
+    <div class="mock">
+      <div class="mockHead">
+        <div class="mockLabel">Mock C &nbsp;·&nbsp; <b style="color:var(--green-700)">RECOMMENDED</b></div>
+        <div class="mockTitle">R-multiple progress</div>
+        <div class="mockDesc">One column, one number. +1.5R = target, -1R = SL, 0 = break-even. Most information-dense and the language traders actually think in.</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Stock</th><th>Dir</th><th class="num">Qty</th><th class="num">Entry</th>
+          <th class="num">SL</th><th class="num">LTP</th><th class="num">Target</th>
+          <th class="num">R-prog</th><th class="num">P&amp;L</th><th>Time</th><th>Grade</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="bold">M&amp;M</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">6</td>
+            <td class="num">3,208.00</td>
+            <td class="num">3,249.90</td>
+            <td class="num">3,183.40</td>
+            <td class="num">3,145.15</td>
+            <td class="num"><span class="rBadge rGreenStrong">+0.59R</span></td>
+            <td class="num pnlPos">+Rs 148</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">HAL</td>
+            <td><span class="dirLong">Long</span></td>
+            <td class="num">4</td>
+            <td class="num">4,408.80</td>
+            <td class="num">4,331.00</td>
+            <td class="num">4,394.60</td>
+            <td class="num">4,521.50</td>
+            <td class="num"><span class="rBadge rRed">−0.18R</span></td>
+            <td class="num pnlNeg">−Rs 57</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">BEL</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">44</td>
+            <td class="num">447.40</td>
+            <td class="num">451.85</td>
+            <td class="num">447.20</td>
+            <td class="num">443.15</td>
+            <td class="num"><span class="rBadge rGreen">+0.04R</span></td>
+            <td class="num pnlPos">+Rs 9</td>
+            <td class="muted">13:06</td>
+            <td><span class="grade gA">A</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="legend">
+        <span><span class="rBadge rRedStrong">−1R</span> = SL hit</span>
+        <span><span class="rBadge rNeutral">0</span> = break-even</span>
+        <span><span class="rBadge rGreenStrong">+1.5R</span> = Target</span>
+      </div>
+    </div>
+
+    <!-- =====================  MOCK D  ===================== -->
+    <div class="mock">
+      <div class="mockHead">
+        <div class="mockLabel">Mock D</div>
+        <div class="mockTitle">Proximity dot-bar (most visual, widest)</div>
+        <div class="mockDesc">Red anchor = SL, green anchor = Target. Dot is LTP. Gradient bar colour cues the zone. Good on large screens, can feel heavy on mobile.</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Stock</th><th>Dir</th><th class="num">Qty</th><th class="num">Entry</th>
+          <th class="num">SL</th><th class="num">LTP</th><th class="num">Target</th>
+          <th>Proximity</th>
+          <th class="num">P&amp;L</th><th>Time</th><th>Grade</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="bold">M&amp;M</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">6</td>
+            <td class="num">3,208.00</td>
+            <td class="num">3,249.90</td>
+            <td class="num">3,183.40</td>
+            <td class="num">3,145.15</td>
+            <td class="proxCell">
+              <div class="proxBar"><div class="proxMark" style="left: 63%"></div></div>
+              <div class="proxAnchors"><span class="proxSl">SL 3249.90</span><span class="proxTgt">TGT 3145.15</span></div>
+            </td>
+            <td class="num pnlPos">+Rs 148</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">HAL</td>
+            <td><span class="dirLong">Long</span></td>
+            <td class="num">4</td>
+            <td class="num">4,408.80</td>
+            <td class="num">4,331.00</td>
+            <td class="num">4,394.60</td>
+            <td class="num">4,521.50</td>
+            <td class="proxCell">
+              <div class="proxBar"><div class="proxMark" style="left: 33%"></div></div>
+              <div class="proxAnchors"><span class="proxSl">SL 4331.00</span><span class="proxTgt">TGT 4521.50</span></div>
+            </td>
+            <td class="num pnlNeg">−Rs 57</td>
+            <td class="muted">11:51</td>
+            <td><span class="grade gB">B</span></td>
+          </tr>
+          <tr>
+            <td class="bold">BEL</td>
+            <td><span class="dirShort">Short</span></td>
+            <td class="num">44</td>
+            <td class="num">447.40</td>
+            <td class="num">451.85</td>
+            <td class="num">447.20</td>
+            <td class="num">443.15</td>
+            <td class="proxCell">
+              <div class="proxBar"><div class="proxMark" style="left: 52%"></div></div>
+              <div class="proxAnchors"><span class="proxSl">SL 451.85</span><span class="proxTgt">TGT 443.15</span></div>
+            </td>
+            <td class="num pnlPos">+Rs 9</td>
+            <td class="muted">13:06</td>
+            <td><span class="grade gA">A</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="legend">
+        <span>Red bar-end = SL side · Green bar-end = Target side · Dot = live LTP</span>
+      </div>
+    </div>
+
+    <div class="pick">
+      Pick one: <b>A</b> (compact %), <b>B</b> (micro gauge), <b>C</b> (R-multiple — recommended), or <b>D</b> (proximity dot-bar).
+      Tell me the letter and I'll wire it into the live dashboard.
+    </div>
+  </div>
+</body>
+</html>
