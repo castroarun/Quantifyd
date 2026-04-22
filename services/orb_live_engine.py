@@ -1745,12 +1745,58 @@ class ORBLiveEngine:
                 )
 
                 kite_order_id = self.place_entry_order(sym, direction, qty, entry_price)
+                if kite_order_id is None:
+                    result['skipped'].append({'sym': sym, 'reason': 'order_placement_failed'})
+                    continue
+
+                # Persist position (without this, monitor_positions will never
+                # see it and SL/target will never fire). Matches the normal
+                # signal flow in evaluate_signals().
+                position_id = self.db.add_position(
+                    instrument=sym, trade_date=today_str, direction=direction,
+                    qty=qty, entry_price=round(entry_price, 2),
+                    entry_time=now.isoformat(),
+                    sl_price=round(sl_price, 2), target_price=round(target_price, 2),
+                    or_high=round(or_high, 2), or_low=round(or_low, 2),
+                    kite_entry_order_id=kite_order_id, status='OPEN',
+                    gap_pct=gap_pct, vwap_at_entry=vwap, rsi_at_entry=rsi,
+                    cpr_tc=cpr_tc, cpr_bc=cpr_bc,
+                    cpr_width_pct=daily_state.get('cpr_width_pct'),
+                    notes='CATCHUP_ENTRY',
+                )
+                self.db.update_daily_state(sym, today_str,
+                    trades_taken=(daily_state.get('trades_taken') or 0) + 1,
+                )
+                pos = self.db.get_open_positions(instrument=sym)
+                with self._lock:
+                    if pos:
+                        self._positions[sym] = pos[0]
+
                 first_bt = _ctime(first_breakout)
                 logger.info(
-                    f'[ORB-CATCHUP] {sym} {direction} missed breakout at '
-                    f'{first_bt.strftime("%H:%M")} (close {first_breakout["close"]:.2f}) — '
-                    f'entered now at {entry_price:.2f}'
+                    f'[ORB-CATCHUP] {sym} {direction} qty={qty} @{entry_price:.2f} '
+                    f'SL={sl_price:.2f} TGT={target_price:.2f} order={kite_order_id} '
+                    f'pos_id={position_id} (missed breakout at {first_bt.strftime("%H:%M")} '
+                    f'close {first_breakout["close"]:.2f})'
                 )
+
+                # Entry notification — route through NotificationService
+                if self.cfg.get('notify_on_entry', True):
+                    try:
+                        ns = get_notification_service(self.cfg)
+                        ns.send_alert(
+                            'trade_entry',
+                            f'CATCHUP {direction} {sym} @ {entry_price:.2f}',
+                            f'Qty: {qty} | SL: {sl_price:.2f} | TGT: {target_price:.2f} | '
+                            f'Missed breakout {first_bt.strftime("%H:%M")}',
+                            data={'symbol': sym, 'direction': direction,
+                                  'entry_price': entry_price, 'sl_price': sl_price,
+                                  'target_price': target_price, 'qty': qty,
+                                  'catchup': True},
+                        )
+                    except Exception as e:
+                        logger.warning(f'[ORB-CATCHUP] Entry notification failed: {e}')
+
                 result['entered'].append({
                     'sym': sym, 'direction': direction,
                     'first_breakout_time': first_bt.strftime('%H:%M'),
@@ -1758,6 +1804,7 @@ class ORBLiveEngine:
                     'entry_price': entry_price,
                     'sl_price': sl_price, 'target_price': target_price,
                     'qty': qty, 'kite_order_id': kite_order_id,
+                    'position_id': position_id,
                 })
             except Exception as e:
                 logger.error(f'[ORB-CATCHUP] {sym} error: {e}', exc_info=True)

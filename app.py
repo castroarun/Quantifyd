@@ -5547,6 +5547,10 @@ def _nas_916_sl_monitor():
                 continue
             if not ltp_map:
                 continue
+            # OTM (NasExecutor base) has no check_and_handle_sl — OTM uses
+            # cross-leg adjustment, not per-leg SL. Skip it silently.
+            if not hasattr(executor, 'check_and_handle_sl'):
+                continue
             actions = executor.check_and_handle_sl(positions=active, live_ltps=ltp_map)
             if actions:
                 logger.info(f"[{label}] SL monitor: {len(actions)} actions")
