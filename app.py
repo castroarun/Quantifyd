@@ -6178,7 +6178,7 @@ try:
     )
     scheduler.add_job(
         _orb_update_or,
-        'cron', day_of_week='mon-fri', hour=9, minute='15-29',
+        'cron', day_of_week='mon-fri', hour=9, minute='15-32',
         id='orb_update_or', replace_existing=True,
     )
     scheduler.add_job(
@@ -6650,6 +6650,103 @@ try:
     )
 except Exception as e:
     logger.warning(f"Could not register options capture job: {e}")
+
+
+# ---- Daily Options Capture EOD Summary ----
+
+def _options_eod_summary():
+    """15:35 Mon-Fri: Acknowledge today's capture + cumulative DB stats.
+    Sends email + WhatsApp via NotificationService. Priority 'critical' if 0 rows today."""
+    now = datetime.now()
+    if now.weekday() >= 5:
+        return
+    try:
+        import os
+        from services.options_data_manager import get_options_db, OPTIONS_DB_PATH
+        from services.notifications import get_notification_service
+
+        db = get_options_db()
+        today_str = now.strftime('%Y-%m-%d')
+
+        with db.db_lock:
+            conn = db._get_conn()
+            try:
+                today_rows = conn.execute(
+                    "SELECT COUNT(*) FROM option_chain WHERE DATE(snapshot_time)=?",
+                    (today_str,)
+                ).fetchone()[0]
+                today_syms = conn.execute(
+                    "SELECT COUNT(DISTINCT tradingsymbol) FROM option_chain WHERE DATE(snapshot_time)=?",
+                    (today_str,)
+                ).fetchone()[0]
+                today_range = conn.execute(
+                    "SELECT MIN(snapshot_time), MAX(snapshot_time) FROM option_chain WHERE DATE(snapshot_time)=?",
+                    (today_str,)
+                ).fetchone()
+                total_rows = conn.execute("SELECT COUNT(*) FROM option_chain").fetchone()[0]
+                total_syms = conn.execute("SELECT COUNT(DISTINCT tradingsymbol) FROM option_chain").fetchone()[0]
+                date_range = conn.execute(
+                    "SELECT MIN(DATE(snapshot_time)), MAX(DATE(snapshot_time)), "
+                    "COUNT(DISTINCT DATE(snapshot_time)) FROM option_chain"
+                ).fetchone()
+                spot_rows = conn.execute("SELECT COUNT(*) FROM underlying_spot").fetchone()[0]
+                try:
+                    ohlc_rows = conn.execute("SELECT COUNT(*) FROM option_ohlc").fetchone()[0]
+                except Exception:
+                    ohlc_rows = 0
+                per_index = conn.execute(
+                    "SELECT symbol, COUNT(*) n FROM option_chain "
+                    "WHERE DATE(snapshot_time)=? GROUP BY symbol ORDER BY n DESC",
+                    (today_str,)
+                ).fetchall()
+            finally:
+                conn.close()
+
+        size_mb = os.path.getsize(OPTIONS_DB_PATH) / (1024 * 1024) if os.path.exists(OPTIONS_DB_PATH) else 0
+
+        if today_rows == 0:
+            title = f'Options Capture FAILED -- {today_str}'
+            priority = 'critical'
+        else:
+            title = f'Options Capture OK {today_str} -- {today_rows:,} rows / {today_syms} symbols'
+            priority = 'normal'
+
+        per_idx_str = ', '.join(f'{dict(r)["symbol"]}={dict(r)["n"]:,}' for r in per_index) or '-'
+        lines = [
+            f'Today ({today_str}):',
+            f'  rows        : {today_rows:,}',
+            f'  symbols     : {today_syms:,}',
+            f'  time range  : {today_range[0] or "-"}  to  {today_range[1] or "-"}',
+            f'  per-index   : {per_idx_str}',
+            '',
+            'Cumulative DB:',
+            f'  option_chain    : {total_rows:,} rows, {total_syms:,} distinct symbols',
+            f'  underlying_spot : {spot_rows:,} rows',
+            f'  option_ohlc     : {ohlc_rows:,} rows',
+            f'  date coverage   : {date_range[0]} to {date_range[1]}  ({date_range[2]} sessions)',
+            f'  granularity     : 1-min snapshots (option_chain + underlying_spot)',
+            f'  file size       : {size_mb:.1f} MB',
+        ]
+        message = '\n'.join(lines)
+
+        ns = get_notification_service()
+        ns.send_alert('options_capture_summary', title, message, priority=priority)
+        logger.info(
+            f'[OPTIONS] EOD summary sent: today={today_rows:,} rows, '
+            f'total={total_rows:,} rows, {size_mb:.1f}MB, {date_range[2]} sessions'
+        )
+    except Exception as e:
+        logger.error(f'[OPTIONS] EOD summary error: {e}', exc_info=True)
+
+try:
+    scheduler.add_job(
+        _options_eod_summary,
+        'cron', day_of_week='mon-fri', hour=15, minute=35,
+        id='options_eod_summary', replace_existing=True,
+    )
+    logger.info('Options capture EOD summary scheduled: 15:35 Mon-Fri')
+except Exception as e:
+    logger.warning(f'Could not register options EOD summary job: {e}')
 
 
 # ---- Daily Instrument Dump (for historical backfill) ----
