@@ -5754,7 +5754,11 @@ def api_orb_state():
 
         # Build per-stock summary from daily states + positions
         stocks = {}
-        alloc = round(ORB_DEFAULTS.get('capital', 100000) / ORB_DEFAULTS.get('max_concurrent_trades', 3))
+        alloc = round(
+            ORB_DEFAULTS.get('capital', 100000)
+            * ORB_DEFAULTS.get('mis_leverage', 1)
+            / ORB_DEFAULTS.get('max_concurrent_trades', 3)
+        )
         for ds in state.get('daily_states', []):
             sym = ds['instrument']
             today_open = ds.get('today_open') or 0
@@ -5837,7 +5841,11 @@ def api_orb_state():
             'config': {
                 'capital': ORB_DEFAULTS.get('capital', 100000),
                 'max_concurrent_trades': ORB_DEFAULTS.get('max_concurrent_trades', 3),
-                'allocation_per_trade': round(ORB_DEFAULTS.get('capital', 100000) / ORB_DEFAULTS.get('max_concurrent_trades', 3)),
+                'allocation_per_trade': round(
+                    ORB_DEFAULTS.get('capital', 100000)
+                    * ORB_DEFAULTS.get('mis_leverage', 1)
+                    / ORB_DEFAULTS.get('max_concurrent_trades', 3)
+                ),
                 'min_margin_for_trade': round(ORB_DEFAULTS.get('capital', 100000) / ORB_DEFAULTS.get('max_concurrent_trades', 3) * ORB_DEFAULTS.get('margin_buffer_multiplier', 1.2)),
                 'margin_buffer': ORB_DEFAULTS.get('margin_buffer_multiplier', 1.2),
                 'or_minutes': ORB_DEFAULTS.get('or_minutes', 15),
