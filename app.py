@@ -5809,12 +5809,21 @@ def api_orb_state():
         open_pnl = sum(p.get('pnl_inr', 0) or 0 for p in open_positions if p.get('pnl_inr'))
         today_pnl = closed_pnl + open_pnl
 
+        # Resolve daily loss limit (pct-of-capital unless override is set)
+        _cap = ORB_DEFAULTS.get('capital', 100_000)
+        _dll_override = ORB_DEFAULTS.get('daily_loss_limit')
+        if _dll_override:
+            _dll = float(_dll_override)
+        else:
+            _dll = round(_cap * float(ORB_DEFAULTS.get('daily_loss_limit_pct', 0.03)), 2)
+
         return jsonify({
             'enabled': ORB_DEFAULTS.get('enabled', True),
             'live_trading': ORB_DEFAULTS.get('live_trading_enabled', False),
             'universe': ORB_DEFAULTS.get('universe', []),
             'capital': ORB_DEFAULTS.get('capital', 100_000),
-            'daily_loss_limit': ORB_DEFAULTS.get('daily_loss_limit', 3_000),
+            'daily_loss_limit': _dll,
+            'daily_loss_limit_pct': ORB_DEFAULTS.get('daily_loss_limit_pct', 0.03),
             'stocks': stocks,
             'open_positions': state.get('open_positions', []),
             'today_closed': today_closed,

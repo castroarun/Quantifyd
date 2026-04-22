@@ -540,6 +540,18 @@
 .convB   { background: rgba(202,138,4,0.14); color: #B45309; }
 .convC   { background: rgba(100,116,139,0.12); color: var(--ink-faint); }
 
+/* Subtle LTP pill in Open positions — uses brand-navy (primary) so it
+   reads as "live value" without competing with green/red P&L semantics. */
+.ltpCell {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: var(--brand-navy-soft);
+  color: var(--brand-navy);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Micro gauge bar on Open positions row: SL ── Entry ── Target, LTP = dot */
 .gaugeCell {
   min-width: 140px;

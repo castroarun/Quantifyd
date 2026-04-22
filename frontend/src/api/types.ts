@@ -111,6 +111,7 @@ export interface ORBState {
   universe: string[];
   capital: number;
   daily_loss_limit: number;
+  daily_loss_limit_pct?: number;
   stocks: Record<string, ORBStockSummary>;
   open_positions: ORBPosition[];
   today_closed: ORBClosedTrade[];

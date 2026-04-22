@@ -218,7 +218,7 @@ export default function Orb() {
       header: 'LTP',
       width: '1fr',
       align: 'right',
-      render: (p) => formatNumber(p.ltp),
+      render: (p) => <span className={styles.ltpCell}>{formatNumber(p.ltp)}</span>,
     },
     {
       key: 'target',
@@ -581,7 +581,13 @@ export default function Orb() {
             </div>
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Daily loss limit</span>
-              <span>Rs 3,000. Further entries blocked once breached.</span>
+              <span>
+                {state?.daily_loss_limit_pct != null
+                  ? `${(state.daily_loss_limit_pct * 100).toFixed(1)}% of capital = ${formatRs(state.daily_loss_limit)}`
+                  : `${formatRs(state?.daily_loss_limit ?? 3000)}`}
+                {' '}— realized loss at cap <b>blocks new entries</b>; MTM loss at
+                1.5× cap triggers <b>panic force-close of all open positions</b>.
+              </span>
             </div>
           </div>
         </details>

@@ -75,6 +75,64 @@ class ORBLiveEngine:
         return capital / max_trades
 
     @property
+    def daily_loss_limit_inr(self) -> float:
+        """Resolved daily loss cap in Rs.
+        Falls back to pct x capital if explicit Rs override is not set."""
+        override = self.cfg.get('daily_loss_limit')
+        if override is not None and override != 0:
+            return float(override)
+        pct = self.cfg.get('daily_loss_limit_pct', 0.03)
+        capital = self.cfg.get('capital', 100000)
+        return round(float(capital) * float(pct), 2)
+
+    def compute_day_pnl(self, include_open: bool = True) -> tuple[float, float]:
+        """Return (realized, unrealized) P&L for today.
+        Realized = closed trades today · Unrealized = open positions MTM."""
+        realized = 0.0
+        for t in (self.db.get_today_closed() or []):
+            realized += float(t.get('pnl_inr') or 0)
+        unrealized = 0.0
+        if include_open:
+            open_pos = self.db.get_open_positions() or []
+            if open_pos:
+                try:
+                    ltps = self.get_live_ltp([p['instrument'] for p in open_pos])
+                except Exception:
+                    ltps = {}
+                for p in open_pos:
+                    ltp = ltps.get(p['instrument'])
+                    if ltp is None:
+                        continue
+                    entry = p['entry_price']
+                    qty = p['qty']
+                    pts = (ltp - entry) if p['direction'] == 'LONG' else (entry - ltp)
+                    unrealized += pts * qty
+        return round(realized, 2), round(unrealized, 2)
+
+    def daily_loss_gate(self) -> dict:
+        """Evaluate the two-tier loss gate.
+        - block_new_entries: realized loss ≥ daily_loss_limit
+        - force_close_all:  realized + unrealized ≥ daily_loss_limit × panic_multiplier
+
+        Returns dict with booleans + numbers. Safe to call frequently."""
+        realized, unrealized = self.compute_day_pnl(include_open=True)
+        cap = self.daily_loss_limit_inr
+        panic_mult = float(self.cfg.get('daily_loss_panic_multiplier', 1.5))
+        # realized is typically negative when loss; convert to positive loss amount
+        realized_loss = max(0.0, -realized)
+        total_loss = max(0.0, -(realized + unrealized))
+        return {
+            'realized': realized,
+            'unrealized': unrealized,
+            'realized_loss': realized_loss,
+            'total_loss': total_loss,
+            'cap': cap,
+            'panic_cap': round(cap * panic_mult, 2),
+            'block_new_entries': realized_loss >= cap,
+            'force_close_all': total_loss >= cap * panic_mult,
+        }
+
+    @property
     def min_margin_for_trade(self):
         """Derived: allocation_per_trade * margin_buffer_multiplier."""
         return self.allocation_per_trade * self.cfg.get('margin_buffer_multiplier', 1.2)
@@ -545,6 +603,29 @@ class ORBLiveEngine:
         if current_time > last_entry:
             return
 
+        # Daily loss gate: once realized loss hits the cap, block new entries.
+        gate = self.daily_loss_gate()
+        if gate['block_new_entries']:
+            if not getattr(self, '_loss_gate_notified', False):
+                self._loss_gate_notified = True
+                logger.warning(
+                    f"[ORB] Daily loss cap breached (realized loss Rs {gate['realized_loss']:,.0f} "
+                    f"≥ cap Rs {gate['cap']:,.0f}) — blocking new entries"
+                )
+                try:
+                    ns = get_notification_service(self.cfg)
+                    ns.send_alert(
+                        'risk_alert',
+                        f'Daily loss cap breached — new ORB entries blocked',
+                        f"Realized loss Rs {gate['realized_loss']:,.0f} ≥ cap Rs {gate['cap']:,.0f} "
+                        f"({self.cfg.get('daily_loss_limit_pct', 0.03)*100:.1f}% of capital). "
+                        f"Existing open positions continue with their SLs.",
+                        data=gate, priority='critical',
+                    )
+                except Exception:
+                    pass
+            return
+
         session_start = now.replace(hour=9, minute=15, second=0, microsecond=0)
 
         for sym in self.stocks:
@@ -878,6 +959,42 @@ class ORBLiveEngine:
             open_syms = list(self._positions.keys())
 
         if not open_syms:
+            return
+
+        # --- Step 0: panic tier — force-close all if MTM loss blew past 1.5x cap ---
+        gate = self.daily_loss_gate()
+        if gate['force_close_all'] and not getattr(self, '_loss_panic_fired', False):
+            self._loss_panic_fired = True
+            logger.critical(
+                f"[ORB] PANIC: MTM loss Rs {gate['total_loss']:,.0f} ≥ panic cap "
+                f"Rs {gate['panic_cap']:,.0f} — force-closing all open positions"
+            )
+            try:
+                ns = get_notification_service(self.cfg)
+                ns.send_alert(
+                    'risk_alert',
+                    f"PANIC: Force-closing ALL ORB positions",
+                    f"MTM loss Rs {gate['total_loss']:,.0f} has breached "
+                    f"{self.cfg.get('daily_loss_panic_multiplier', 1.5):.1f}× the daily cap "
+                    f"(Rs {gate['panic_cap']:,.0f}). Closing {len(open_syms)} open positions now.",
+                    data=gate, priority='critical',
+                )
+            except Exception:
+                pass
+            try:
+                panic_ltps = self.get_live_ltp(open_syms)
+            except Exception:
+                panic_ltps = {}
+            for sym_p in list(open_syms):
+                with self._lock:
+                    pos_p = self._positions.get(sym_p)
+                if not pos_p:
+                    continue
+                px = panic_ltps.get(sym_p) or pos_p.get('entry_price')
+                try:
+                    self.place_exit_order(pos_p, px, 'DAILY_LOSS_PANIC')
+                except Exception as e:
+                    logger.error(f"[ORB] Panic exit failed for {sym_p}: {e}")
             return
 
         # --- Step 1: exchange-SL reconciliation (before anything else) ---
@@ -1856,6 +1973,15 @@ class ORBLiveEngine:
         last_entry = cfg.get('last_entry_time', '14:00')
         if now.strftime('%H:%M') > last_entry:
             result['error'] = f'past last_entry_time {last_entry}'
+            return result
+
+        gate = self.daily_loss_gate()
+        if gate['block_new_entries']:
+            result['error'] = (
+                f"daily_loss_cap_breached "
+                f"(realized loss Rs {gate['realized_loss']:,.0f} ≥ cap Rs {gate['cap']:,.0f})"
+            )
+            result['gate'] = gate
             return result
 
         session_start = now.replace(hour=9, minute=15, second=0, microsecond=0)

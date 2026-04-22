@@ -496,7 +496,15 @@ ORB_DEFAULTS = {
     'allow_shorts': True,
 
     # Risk Management
-    'daily_loss_limit': 3_000,         # Rs 3K daily loss cap (3% of capital)
+    # Expressed as % of `capital`. Computed at runtime so scaling the ORB
+    # capital auto-scales the loss cap. daily_loss_limit (Rs) overrides
+    # the pct if set — kept for back-compat, leave None for pct-based.
+    'daily_loss_limit_pct': 0.03,      # 3% of capital (Rs 3K at 1L capital)
+    'daily_loss_limit': None,          # Rs override (None -> use pct above)
+    # Panic threshold: if realized + unrealized loss exceeds this multiple
+    # of daily_loss_limit, force-close ALL open positions (not just block
+    # new entries). Two-tier: 1.0x blocks new entries, 1.5x closes open.
+    'daily_loss_panic_multiplier': 1.5,
 
     # Notifications
     'email_enabled': True,
