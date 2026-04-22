@@ -69,10 +69,14 @@ class ORBLiveEngine:
 
     @property
     def allocation_per_trade(self):
-        """Derived: capital / max_concurrent_trades."""
+        """Derived notional allocation per trade.
+        For MIS intraday Zerodha gives ~5x leverage on Nifty 500 cash.
+        per-trade notional = capital × mis_leverage / max_concurrent_trades
+        (mis_leverage=1 disables leverage — pure deposit-based sizing)."""
         capital = self.cfg.get('capital', 100000)
+        lev = self.cfg.get('mis_leverage', 1)
         max_trades = self.cfg.get('max_concurrent_trades', 3)
-        return capital / max_trades
+        return (capital * lev) / max_trades
 
     @property
     def daily_loss_limit_inr(self) -> float:
@@ -114,11 +118,13 @@ class ORBLiveEngine:
         - block_new_entries: realized loss ≥ daily_loss_limit
         - force_close_all:  realized + unrealized ≥ daily_loss_limit × panic_multiplier
 
-        Returns dict with booleans + numbers. Safe to call frequently."""
+        Returns dict with booleans + numbers. Safe to call frequently.
+        If enforce_daily_loss_cap=False, booleans always False (still computes
+        numbers so the UI can show the running loss total)."""
         realized, unrealized = self.compute_day_pnl(include_open=True)
         cap = self.daily_loss_limit_inr
         panic_mult = float(self.cfg.get('daily_loss_panic_multiplier', 1.5))
-        # realized is typically negative when loss; convert to positive loss amount
+        enforce = bool(self.cfg.get('enforce_daily_loss_cap', True))
         realized_loss = max(0.0, -realized)
         total_loss = max(0.0, -(realized + unrealized))
         return {
@@ -128,8 +134,9 @@ class ORBLiveEngine:
             'total_loss': total_loss,
             'cap': cap,
             'panic_cap': round(cap * panic_mult, 2),
-            'block_new_entries': realized_loss >= cap,
-            'force_close_all': total_loss >= cap * panic_mult,
+            'enforce': enforce,
+            'block_new_entries': enforce and realized_loss >= cap,
+            'force_close_all': enforce and total_loss >= cap * panic_mult,
         }
 
     @property

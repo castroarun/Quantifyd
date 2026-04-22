@@ -47,6 +47,8 @@ export interface ORBPosition {
   pnl_pts?: number;
   entry_reason?: string;
   kite_sl_order_id?: string;
+  or_high?: number;
+  or_low?: number;
   conviction_grade?: 'A+' | 'A' | 'B' | 'C';
   conviction_score?: number;
   conviction_stars?: Array<{ key: string; hit: boolean; desc: string }>;
@@ -112,6 +114,8 @@ export interface ORBState {
   capital: number;
   daily_loss_limit: number;
   daily_loss_limit_pct?: number;
+  enforce_daily_loss_cap?: boolean;
+  mis_leverage?: number;
   stocks: Record<string, ORBStockSummary>;
   open_positions: ORBPosition[];
   today_closed: ORBClosedTrade[];

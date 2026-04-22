@@ -463,7 +463,11 @@ ORB_DEFAULTS = {
     # 15 stocks, avg 2.9 trades/day, P75=5. Size for 5 concurrent trades.
     # Per-trade = capital / max_concurrent = 100K/5 = Rs 20,000
     # Min margin = 1.2x per-trade = Rs 24,000
-    'capital': 100_000,                # Total fund — change this to scale up
+    'capital': 100_000,                # Total DEPOSIT — change this to scale up
+    'mis_leverage': 5,                 # Zerodha MIS leverage on Nifty 500 cash ~5x.
+                                       # per-trade notional = capital × lev / max_concurrent
+                                       # = 1L × 5 / 5 = Rs 1,00,000 notional per trade.
+                                       # Set to 1 to disable leverage (pure deposit-based).
     'max_concurrent_trades': 5,        # P75 of daily trades for 15-stock universe
     'margin_buffer_multiplier': 1.2,   # Need 1.2x per-trade alloc as available margin
 
@@ -505,6 +509,10 @@ ORB_DEFAULTS = {
     # of daily_loss_limit, force-close ALL open positions (not just block
     # new entries). Two-tier: 1.0x blocks new entries, 1.5x closes open.
     'daily_loss_panic_multiplier': 1.5,
+    # Enforcement toggle — when False the gate still computes numbers for
+    # the UI but never blocks entries or force-closes. Useful while scaling
+    # up position size via leverage and the cap hasn't been re-tuned yet.
+    'enforce_daily_loss_cap': False,
 
     # Notifications
     'email_enabled': True,

@@ -580,6 +580,17 @@
   background: rgba(0,0,0,0.35);
   border-radius: 1px;
 }
+.gaugeTrailedSl {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 12px;
+  background: var(--accent-pos, #0F6E56);
+  border-radius: 1px;
+  box-shadow: 0 0 0 2px rgba(15, 110, 86, 0.18);
+  cursor: help;
+}
 .gaugeLtp {
   position: absolute;
   top: 50%;

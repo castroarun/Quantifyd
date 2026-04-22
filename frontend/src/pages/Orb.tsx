@@ -25,32 +25,53 @@ import { formatTime } from '../utils/time';
 
 /* ---------- helpers ---------- */
 
-/** Micro gauge bar: red end = SL, green end = Target, tick = entry, dot = LTP.
- * Works for both LONG (SL < Entry < TGT) and SHORT (SL > Entry > TGT). */
+/** Micro gauge bar: red end = original SL (OR edge), green end = Target.
+ * Entry tick stays at its natural ~40% position even after the 14:30 trail.
+ * Current SL (after trail) renders as a secondary marker that moves toward
+ * target as profit is locked. Dot = live LTP. */
 function PositionGauge({ p }: { p: ORBPosition }) {
-  const sl = p.sl_price ?? p.stop_loss;
   const tgt = p.target_price ?? p.target;
   const entry = p.entry_price;
   const ltp = p.ltp;
+  // Anchor to the ORIGINAL SL (the OR edge). For LONG this is or_low,
+  // for SHORT it's or_high. This never moves, so the gauge scale stays
+  // fixed for the life of the trade. Falls back to live sl_price if the
+  // OR edges aren't available (should be rare).
+  const origSl =
+    p.direction === 'LONG'
+      ? (p.or_low ?? p.sl_price ?? p.stop_loss)
+      : (p.or_high ?? p.sl_price ?? p.stop_loss);
+  const liveSl = p.sl_price ?? p.stop_loss;
 
-  if (sl == null || tgt == null || entry == null) {
+  if (origSl == null || tgt == null || entry == null) {
     return <span className={styles.mute}>—</span>;
   }
 
-  // Normalize a price to 0..100 along the SL→Target axis
+  // Normalize a price to 0..100 along origSL → Target.
   const toPct = (price: number) => {
-    const span = tgt - sl;
+    const span = tgt - origSl;
     if (span === 0) return 50;
-    return Math.max(0, Math.min(100, ((price - sl) / span) * 100));
+    return Math.max(0, Math.min(100, ((price - origSl) / span) * 100));
   };
 
   const entryPct = toPct(entry);
   const ltpPct = ltp != null ? toPct(ltp) : null;
+  // Show trailed-SL marker only if the live SL has moved away from
+  // the original SL (profit locked). Tolerance = 0.05.
+  const trailed = liveSl != null && Math.abs(liveSl - origSl) > 0.05;
+  const trailedSlPct = trailed && liveSl != null ? toPct(liveSl) : null;
 
   return (
     <div className={styles.gaugeCell}>
       <div className={styles.gaugeTrack}>
         <div className={styles.gaugeMark} style={{ left: `${entryPct}%` }} />
+        {trailedSlPct != null && (
+          <div
+            className={styles.gaugeTrailedSl}
+            style={{ left: `${trailedSlPct}%` }}
+            title={`Trailed SL: ${liveSl?.toFixed(2)}`}
+          />
+        )}
         {ltpPct != null && (
           <div className={styles.gaugeLtp} style={{ left: `${ltpPct}%` }} />
         )}
@@ -516,7 +537,12 @@ export default function Orb() {
               <span className={styles.ruleLabel}>Setup</span>
               <span>
                 15 Nifty 500 stocks · MIS cash · OR = 09:15–09:30 (15 min) ·
-                Rs 20,000 per trade · max 5 concurrent · 1.2× margin buffer.
+                deposit {formatRs(state?.capital)}
+                {state?.mis_leverage && state.mis_leverage > 1
+                  ? ` × ${state.mis_leverage}× MIS leverage`
+                  : ''}
+                {' '} → {formatRs(state?.config?.allocation_per_trade)} per trade ·
+                max 5 concurrent · 1.2× margin buffer.
               </span>
             </div>
             <div className={styles.ruleItem}>
@@ -585,8 +611,17 @@ export default function Orb() {
                 {state?.daily_loss_limit_pct != null
                   ? `${(state.daily_loss_limit_pct * 100).toFixed(1)}% of capital = ${formatRs(state.daily_loss_limit)}`
                   : `${formatRs(state?.daily_loss_limit ?? 3000)}`}
-                {' '}— realized loss at cap <b>blocks new entries</b>; MTM loss at
-                1.5× cap triggers <b>panic force-close of all open positions</b>.
+                {state?.enforce_daily_loss_cap === false ? (
+                  <>
+                    {' '}· <b style={{ color: 'var(--accent-neg)' }}>Enforcement OFF</b>{' '}
+                    — cap is displayed but does not block entries or force-close.
+                  </>
+                ) : (
+                  <>
+                    {' '}— realized loss at cap <b>blocks new entries</b>; MTM loss at
+                    1.5× cap triggers <b>panic force-close of all open positions</b>.
+                  </>
+                )}
               </span>
             </div>
           </div>
