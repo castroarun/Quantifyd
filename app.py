@@ -6635,6 +6635,90 @@ def api_options_stats():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/options/coverage')
+def api_options_coverage():
+    """Per-session summary of captured options data. Returns:
+    - cumulative stats (size, rows, date range, sessions)
+    - per-day breakdown: date, rows, symbols, first/last snapshot, per-index"""
+    try:
+        import os
+        from services.options_data_manager import get_options_db, OPTIONS_DB_PATH
+        db = get_options_db()
+        with db.db_lock:
+            conn = db._get_conn()
+            try:
+                daily_rows = conn.execute("""
+                    SELECT DATE(snapshot_time) d,
+                           COUNT(*) n,
+                           COUNT(DISTINCT tradingsymbol) syms,
+                           MIN(snapshot_time) first_ts,
+                           MAX(snapshot_time) last_ts
+                    FROM option_chain
+                    GROUP BY d
+                    ORDER BY d DESC
+                """).fetchall()
+                per_idx_by_day = conn.execute("""
+                    SELECT DATE(snapshot_time) d, symbol, COUNT(*) n
+                    FROM option_chain
+                    GROUP BY d, symbol
+                """).fetchall()
+                cum = conn.execute("""
+                    SELECT COUNT(*), COUNT(DISTINCT tradingsymbol),
+                           COUNT(DISTINCT DATE(snapshot_time)),
+                           MIN(DATE(snapshot_time)), MAX(DATE(snapshot_time))
+                    FROM option_chain
+                """).fetchone()
+                spot_rows = conn.execute("SELECT COUNT(*) FROM underlying_spot").fetchone()[0]
+                try:
+                    ohlc_rows = conn.execute("SELECT COUNT(*) FROM option_ohlc").fetchone()[0]
+                except Exception:
+                    ohlc_rows = 0
+            finally:
+                conn.close()
+
+        # Build per-index map by day
+        by_day_idx: dict = {}
+        for r in per_idx_by_day:
+            d = dict(r)
+            by_day_idx.setdefault(d['d'], {})[d['symbol']] = d['n']
+
+        size_mb = os.path.getsize(OPTIONS_DB_PATH) / (1024 * 1024) if os.path.exists(OPTIONS_DB_PATH) else 0
+
+        sessions = []
+        for r in daily_rows:
+            d = dict(r)
+            first_t = (d['first_ts'] or '')[11:19]
+            last_t = (d['last_ts'] or '')[11:19]
+            sessions.append({
+                'date': d['d'],
+                'rows': d['n'],
+                'symbols': d['syms'],
+                'first_snapshot': first_t,
+                'last_snapshot': last_t,
+                'per_index': by_day_idx.get(d['d'], {}),
+                'status': 'ok' if d['n'] > 0 else 'failed',
+            })
+
+        return jsonify({
+            'cumulative': {
+                'rows': cum[0],
+                'symbols': cum[1],
+                'sessions': cum[2],
+                'date_min': cum[3],
+                'date_max': cum[4],
+                'spot_rows': spot_rows,
+                'ohlc_rows': ohlc_rows,
+                'size_mb': round(size_mb, 2),
+            },
+            'sessions': sessions,
+            'granularity': '1-min snapshots (option_chain + underlying_spot)',
+            'capture_window': '09:20 - 15:30 IST Mon-Fri',
+        })
+    except Exception as e:
+        logger.error(f"[OPTIONS] coverage error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/options/chain/<symbol>')
 def api_options_chain(symbol):
     """Get latest option chain for a symbol (NIFTY/BANKNIFTY/SENSEX)."""
