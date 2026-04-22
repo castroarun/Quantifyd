@@ -413,8 +413,14 @@ export default function Orb() {
         />
         <MetricCard
           label="Trades today"
-          value={formatInt(state?.today_closed?.length ?? 0)}
-          hint={`${state?.universe?.length ?? 0} stocks scanning`}
+          value={formatInt(
+            (state?.today_closed?.length ?? 0) + (state?.open_positions?.length ?? 0)
+          )}
+          hint={
+            state?.open_positions?.length
+              ? `${state.open_positions.length} open · ${state?.today_closed?.length ?? 0} closed`
+              : `${state?.universe?.length ?? 0} stocks scanning`
+          }
         />
       </div>
 
