@@ -521,6 +521,55 @@
 .convA   { background: rgba(15,110,86,0.14); color: var(--accent-pos); border: 0.5px solid rgba(15,110,86,0.35); }
 .convB   { background: rgba(202,138,4,0.14); color: #B45309; }
 .convC   { background: rgba(100,116,139,0.12); color: var(--ink-faint); }
+
+/* Micro gauge bar on Open positions row: SL ── Entry ── Target, LTP = dot */
+.gaugeCell {
+  min-width: 140px;
+  padding: 2px 0;
+}
+.gaugeTrack {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(220,38,38,0.35) 0%,
+    rgba(220,38,38,0.12) 18%,
+    rgba(0,0,0,0.06) 45%,
+    rgba(0,0,0,0.06) 55%,
+    rgba(22,163,74,0.12) 82%,
+    rgba(22,163,74,0.35) 100%
+  );
+}
+.gaugeMark {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 12px;
+  background: rgba(0,0,0,0.35);
+  border-radius: 1px;
+}
+.gaugeLtp {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ink, #111);
+  border: 2px solid var(--surface, #fff);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+}
+.gaugeCap {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .candEmpty {
   font-size: var(--text-xs);
   color: var(--ink-faint);

@@ -25,6 +25,45 @@ import { formatTime } from '../utils/time';
 
 /* ---------- helpers ---------- */
 
+/** Micro gauge bar: red end = SL, green end = Target, tick = entry, dot = LTP.
+ * Works for both LONG (SL < Entry < TGT) and SHORT (SL > Entry > TGT). */
+function PositionGauge({ p }: { p: ORBPosition }) {
+  const sl = p.sl_price ?? p.stop_loss;
+  const tgt = p.target_price ?? p.target;
+  const entry = p.entry_price;
+  const ltp = p.ltp;
+
+  if (sl == null || tgt == null || entry == null) {
+    return <span className={styles.mute}>—</span>;
+  }
+
+  // Normalize a price to 0..100 along the SL→Target axis
+  const toPct = (price: number) => {
+    const span = tgt - sl;
+    if (span === 0) return 50;
+    return Math.max(0, Math.min(100, ((price - sl) / span) * 100));
+  };
+
+  const entryPct = toPct(entry);
+  const ltpPct = ltp != null ? toPct(ltp) : null;
+
+  return (
+    <div className={styles.gaugeCell}>
+      <div className={styles.gaugeTrack}>
+        <div className={styles.gaugeMark} style={{ left: `${entryPct}%` }} />
+        {ltpPct != null && (
+          <div className={styles.gaugeLtp} style={{ left: `${ltpPct}%` }} />
+        )}
+      </div>
+      <div className={styles.gaugeCap}>
+        <span>SL</span>
+        <span>Entry</span>
+        <span>TGT</span>
+      </div>
+    </div>
+  );
+}
+
 function stockStatus(s: ORBStockSummary): string {
   if (s.position) return 'In position';
   if (s.today_result) return 'Traded';
@@ -169,10 +208,17 @@ export default function Orb() {
     },
     {
       key: 'sl',
-      header: 'Stop',
+      header: 'SL',
       width: '1fr',
       align: 'right',
       render: (p) => formatNumber(p.sl_price ?? p.stop_loss),
+    },
+    {
+      key: 'ltp',
+      header: 'LTP',
+      width: '1fr',
+      align: 'right',
+      render: (p) => formatNumber(p.ltp),
     },
     {
       key: 'target',
@@ -182,11 +228,10 @@ export default function Orb() {
       render: (p) => formatNumber(p.target_price ?? p.target),
     },
     {
-      key: 'ltp',
-      header: 'LTP',
-      width: '1fr',
-      align: 'right',
-      render: (p) => formatNumber(p.ltp),
+      key: 'gauge',
+      header: 'SL ── TGT',
+      width: '160px',
+      render: (p) => <PositionGauge p={p} />,
     },
     {
       key: 'pnl',
