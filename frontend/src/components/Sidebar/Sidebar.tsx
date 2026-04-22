@@ -11,7 +11,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'reports' | 'holdings' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'reports' | 'holdings' | 'options-data' | 'settings';
   userName?: string;
 }
 
@@ -22,6 +22,17 @@ function IconBriefcase() {
       <rect x="3" y="7" width="18" height="13" rx="2" />
       <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
       <path d="M3 13h18" />
+    </svg>
+  );
+}
+
+// Database/cylinder icon for options-data — represents captured market data
+function IconDatabase() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
+      <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" />
     </svg>
   );
 }
@@ -105,6 +116,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconBriefcase />}
             label="Holdings"
             active={active === 'holdings'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/options-data"
+            icon={<IconDatabase />}
+            label="Options data"
+            active={active === 'options-data'}
             collapsed={collapsed}
           />
         </nav>

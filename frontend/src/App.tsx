@@ -10,6 +10,7 @@ import Nas from './pages/Nas';
 import Report from './pages/Report';
 import Holdings from './pages/Holdings';
 import HoldingsHistory from './pages/HoldingsHistory';
+import OptionsData from './pages/OptionsData';
 import NotFound from './pages/NotFound';
 
 type AuthState = 'unknown' | 'auth' | 'noauth';
@@ -122,6 +123,16 @@ export default function App() {
           <Protected>
             <AppLayout active="holdings">
               <HoldingsHistory />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/options-data"
+        element={
+          <Protected>
+            <AppLayout active="options-data">
+              <OptionsData />
             </AppLayout>
           </Protected>
         }

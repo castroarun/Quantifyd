@@ -879,25 +879,6 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
           <span>Signal</span>
         </div>
 
-        {/* Rubric explainer (collapsed) */}
-        <details className={styles.candRubric}>
-          <summary className={styles.candRubricSummary}>
-            How conviction grade is calculated (A+ / A / B / C)
-          </summary>
-          <div className={styles.candRubricBody}>
-            <div className={styles.candRubricIntro}>
-              Broken-out candidates earn 1 star for each quality criterion hit. Total stars → grade:{' '}
-              <b>4★ A+</b> · <b>3★ A</b> · <b>2★ B</b> · <b>1★ C</b> · 0★ hidden.
-            </div>
-            <div className={styles.candRubricTable}>
-              <div className={styles.candRubricRow}><span>🎯 CPR narrow</span><span>CPR width &lt; 0.3%</span><span>Clean prior-day compression → stronger setup</span></div>
-              <div className={styles.candRubricRow}><span>📏 Tight risk</span><span>Risk % &lt; 0.8</span><span>Small SL → better R/R on the 1.5R target</span></div>
-              <div className={styles.candRubricRow}><span>💪 RSI conviction</span><span>LONG RSI ≥ 65 · SHORT ≤ 35</span><span>Momentum clearly confirms, not borderline</span></div>
-              <div className={styles.candRubricRow}><span>✅ Clean past %</span><span>0.2% ≤ past % ≤ 0.7%</span><span>Past enough to confirm, not so far you're chasing</span></div>
-            </div>
-          </div>
-        </details>
-
         {/* Broken-out */}
         <div className={styles.candGroup}>
           <div className={`${styles.candGroupHead} ${styles.broken}`}>
@@ -1034,6 +1015,25 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
             ) : null}
           </div>
         ) : null}
+
+        {/* Rubric explainer (collapsed, footer of Live candidates) */}
+        <details className={styles.candRubric}>
+          <summary className={styles.candRubricSummary}>
+            How conviction grade is calculated (A+ / A / B / C)
+          </summary>
+          <div className={styles.candRubricBody}>
+            <div className={styles.candRubricIntro}>
+              Broken-out candidates earn 1 star for each quality criterion hit. Total stars → grade:{' '}
+              <b>4★ A+</b> · <b>3★ A</b> · <b>2★ B</b> · <b>1★ C</b> · 0★ hidden.
+            </div>
+            <div className={styles.candRubricTable}>
+              <div className={styles.candRubricRow}><span>🎯 CPR narrow</span><span>CPR width &lt; 0.3%</span><span>Clean prior-day compression → stronger setup</span></div>
+              <div className={styles.candRubricRow}><span>📏 Tight risk</span><span>Risk % &lt; 0.8</span><span>Small SL → better R/R on the 1.5R target</span></div>
+              <div className={styles.candRubricRow}><span>💪 RSI conviction</span><span>LONG RSI ≥ 65 · SHORT ≤ 35</span><span>Momentum clearly confirms, not borderline</span></div>
+              <div className={styles.candRubricRow}><span>✅ Clean past %</span><span>0.2% ≤ past % ≤ 0.7%</span><span>Past enough to confirm, not so far you're chasing</span></div>
+            </div>
+          </div>
+        </details>
       </div>
     </section>
   );
