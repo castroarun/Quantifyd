@@ -459,44 +459,78 @@ export default function Orb() {
       {/* system rules */}
       <section className={styles.section}>
         <details className={styles.rulesBlock}>
-          <summary className={styles.rulesSummary}>System rules</summary>
+          <summary className={styles.rulesSummary}>Strategy rules · V9t_lock50</summary>
           <div className={styles.rulesBody}>
             <div className={styles.ruleItem}>
-              <span className={styles.ruleLabel}>Universe</span>
-              <span>15 high-beta cash equity stocks</span>
-            </div>
-            <div className={styles.ruleItem}>
-              <span className={styles.ruleLabel}>Opening range</span>
+              <span className={styles.ruleLabel}>Setup</span>
               <span>
-                First 15 min (9:15-9:30). Entry on close above OR high (long) or
-                close below OR low (short).
+                15 Nifty 500 stocks · MIS cash · OR = 09:15–09:30 (15 min) ·
+                Rs 20,000 per trade · max 5 concurrent · 1.2× margin buffer.
               </span>
             </div>
             <div className={styles.ruleItem}>
-              <span className={styles.ruleLabel}>Filters</span>
+              <span className={styles.ruleLabel}>Entry trigger</span>
               <span>
-                CPR direction + CPR width below 0.5% + VWAP direction + RSI(15m)
-                above 60 long / below 40 short + gap below 1% for longs.
+                5-min candle closes beyond OR. <b>LONG</b>: close &gt; OR_high AND prev_close ≤ OR_high ·
+                <b> SHORT</b>: close &lt; OR_low AND prev_close ≥ OR_low. LIMIT order with 0.2% buffer.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Filters (all must pass)</span>
+              <span>
+                CPR width &lt; 0.65% · CPR direction (LONG if gap opens ≥ TC, SHORT if ≤ BC) ·
+                Gap ≤ +0.3% for LONG · VWAP direction (close above for LONG / below for SHORT) ·
+                RSI(15m) ≥ 50 for LONG, ≤ 50 for SHORT · Wide-CPR days skipped entirely ·
+                Max 1 trade/stock/day · Last entry 14:00.
               </span>
             </div>
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Stop loss</span>
-              <span>OR opposite</span>
+              <span>
+                OR opposite edge (LONG = OR_low, SHORT = OR_high). Risk R = |entry − SL|.
+                Placed as <b>exchange SL order</b> (trigger=SL, limit=SL±0.5%) immediately after
+                entry fill — survives restarts and crashes.
+              </span>
             </div>
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Target</span>
-              <span>1.5x risk</span>
+              <span>1.5 × R. LONG = entry + 1.5R · SHORT = entry − 1.5R. Monitored by 30s LTP poll; on hit, cancels exchange SL then market exits.</span>
             </div>
             <div className={styles.ruleItem}>
-              <span className={styles.ruleLabel}>EOD</span>
-              <span>15:20 squareoff</span>
+              <span className={styles.ruleLabel}>14:30 · V9t_lock50 trail</span>
+              <span>
+                For each profitable position, tighten SL to <code>entry + 0.5 × gain</code> (locks half the unrealized P&amp;L).
+                Only tightens, never loosens. Modifies the exchange SL trigger too.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>EOD squareoff</span>
+              <span>15:18 sharp · hard close all remaining positions at market (2 min before Zerodha's 15:20 MIS auto-squareoff).</span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Recovery (catchup)</span>
+              <span>
+                If OR-finalize fails or service restarts after 09:30, <code>/api/orb/catchup</code> walks post-OR candles,
+                picks the <b>latest</b> transition still consistent with LTP, applies all filters, enters only if slippage ≤ 0.5R.
+              </span>
             </div>
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Position sizing</span>
               <span>
-                Capital / max concurrent trades. Min margin check: 1.2x
-                allocation.
+                <code>qty = floor(Rs 20,000 / entry_price)</code>, reduced if risk × qty would breach daily loss limit.
               </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Conviction grade</span>
+              <span>
+                4-star rubric at entry (persisted on position): ⭐ CPR &lt; 0.3% · ⭐ OR width &lt; 0.8% ·
+                ⭐ RSI ≥ 65 (LONG) / ≤ 35 (SHORT) · ⭐ Past% in 0.2–0.7.
+                A+ = 4/4, A = 3/4, B = 2/4, C = ≤1/4.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Daily loss limit</span>
+              <span>Rs 3,000. Further entries blocked once breached.</span>
             </div>
           </div>
         </details>
