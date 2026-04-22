@@ -1131,8 +1131,17 @@ class ORBLiveEngine:
         position_id = position['id']
 
         transaction_type = 'SELL' if direction == 'LONG' else 'BUY'
-        # Round trigger to nearest 0.05 (NSE tick size for most equities)
-        trigger_price = round(round(sl_price / 0.05) * 0.05, 2)
+        # Round to NSE tick (0.05). Use SL (stop-loss LIMIT) not SL-M —
+        # Kite API rejects SL-M without market_protection, and the limit
+        # variant gives deterministic fills. Accept 0.5% worse-case slip
+        # on the limit price so fills still go through on gaps.
+        def _tick(v):
+            return round(round(v / 0.05) * 0.05, 2)
+        trigger_price = _tick(sl_price)
+        if transaction_type == 'SELL':  # LONG being stopped out -> sell
+            limit_price = _tick(sl_price * 0.995)
+        else:  # SHORT being stopped out -> buy to cover
+            limit_price = _tick(sl_price * 1.005)
 
         try:
             kite = self._get_kite()
@@ -1143,8 +1152,9 @@ class ORBLiveEngine:
                 transaction_type=transaction_type,
                 quantity=qty,
                 product='MIS',
-                order_type='SL-M',
+                order_type='SL',
                 trigger_price=trigger_price,
+                price=limit_price,
                 validity='DAY',
             )
             order_id_str = str(order_id)
@@ -1153,14 +1163,14 @@ class ORBLiveEngine:
                 position_id=position_id,
                 instrument=instrument, tradingsymbol=instrument,
                 transaction_type=transaction_type, qty=qty,
-                order_type='SL-M', price=trigger_price,
+                order_type='SL', price=limit_price,
                 kite_order_id=order_id_str, status='PLACED',
                 exchange='NSE', product='MIS',
-                notes=f'SL-M trigger={trigger_price}',
+                notes=f'SL trigger={trigger_price} limit={limit_price}',
             )
             logger.info(
-                f"[ORB] SL-M placed: {transaction_type} {qty} {instrument} "
-                f"trigger={trigger_price} order_id={order_id_str}"
+                f"[ORB] SL placed: {transaction_type} {qty} {instrument} "
+                f"trigger={trigger_price} limit={limit_price} order_id={order_id_str}"
             )
             return order_id_str
         except Exception as e:
@@ -1212,10 +1222,17 @@ class ORBLiveEngine:
             return False
 
     def modify_sl_m_order(self, position, new_trigger_price):
-        """Update the SL-M trigger (used by V9t_lock50 trail). Re-places if
-        the order was already consumed or doesn't exist."""
+        """Update the SL trigger + limit (used by V9t_lock50 trail). Re-places
+        if the order was already consumed or doesn't exist."""
         sl_order_id = position.get('kite_sl_order_id')
-        trigger_price = round(round(float(new_trigger_price) / 0.05) * 0.05, 2)
+        def _tick(v):
+            return round(round(float(v) / 0.05) * 0.05, 2)
+        trigger_price = _tick(new_trigger_price)
+        direction = position['direction']
+        if direction == 'LONG':
+            limit_price = _tick(float(new_trigger_price) * 0.995)
+        else:
+            limit_price = _tick(float(new_trigger_price) * 1.005)
         if not sl_order_id:
             return self.place_sl_m_order({**position, 'sl_price': new_trigger_price})
         try:
@@ -1223,17 +1240,17 @@ class ORBLiveEngine:
             kite.modify_order(
                 variety='regular', order_id=sl_order_id,
                 trigger_price=trigger_price,
+                price=limit_price,
             )
             logger.info(
-                f"[ORB] SL-M modified: {position['instrument']} "
-                f"new trigger={trigger_price} order={sl_order_id}"
+                f"[ORB] SL modified: {position['instrument']} "
+                f"new trigger={trigger_price} limit={limit_price} order={sl_order_id}"
             )
             return sl_order_id
         except Exception as e:
             logger.warning(
-                f"[ORB] SL-M modify failed ({e}); re-placing with new trigger"
+                f"[ORB] SL modify failed ({e}); re-placing with new trigger"
             )
-            # Try cancel + re-place
             self.cancel_sl_m_order(position)
             return self.place_sl_m_order({**position, 'sl_price': new_trigger_price})
 
