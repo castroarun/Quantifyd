@@ -126,7 +126,53 @@ try:
 except Exception as e:
     print(f'  ✗ unexpected: {e}')
 
-# ---------- 7. Summary ----------
+# ---------- 7. SEBI market_protection wrapper — isolated tests ----------
+# Our live code only uses LIMIT / SL (no market_protection required),
+# so the previous steps don't exercise the kite_service wrapper. Run
+# the wrapper against a fake Kite client so we can inspect exactly what
+# would be sent to the real API.
+print(f'\n[7] SEBI market_protection wrapper (isolated)')
+from services.kite_service import _wrap_place_order
+
+class _FakeKite:
+    def __init__(self):
+        self.last = None
+    def place_order(self, **kwargs):
+        self.last = kwargs
+        return 'FAKE_ORDER_ID'
+
+def _run(exchange, order_type, **extra):
+    fk = _FakeKite()
+    _wrap_place_order(fk).place_order(
+        variety='regular', exchange=exchange, tradingsymbol=TEST_SYM,
+        transaction_type='BUY', quantity=1, product='MIS',
+        order_type=order_type, **extra,
+    )
+    return fk.last
+
+cases = [
+    ('NSE equity MARKET (no MP)',  _run('NSE', 'MARKET'),              2),
+    ('NSE equity SL-M (no MP)',    _run('NSE', 'SL-M', trigger_price=500),  2),
+    ('NFO option MARKET (no MP)',  _run('NFO', 'MARKET'),              5),
+    ('BFO option SL-M (no MP)',    _run('BFO', 'SL-M', trigger_price=100),  5),
+    ('NSE LIMIT (should NOT add)', _run('NSE', 'LIMIT', price=500),    None),
+    ('NSE SL (should NOT add)',    _run('NSE', 'SL', trigger_price=500, price=500), None),
+    ('NSE MARKET explicit MP=9',   _run('NSE', 'MARKET', market_protection=9), 9),
+]
+all_pass = True
+for label, sent, expected_mp in cases:
+    actual = sent.get('market_protection')
+    ok = (actual == expected_mp)
+    all_pass = all_pass and ok
+    mark = '✓' if ok else '✗'
+    print(f'  {mark} {label:<36}  got market_protection={actual}  expected={expected_mp}')
+
+if all_pass:
+    print('  → wrapper is SEBI-compliant for all order types')
+else:
+    print('  → wrapper FAILED compliance check')
+
+# ---------- 8. Summary ----------
 print('\n' + '=' * 60)
 print('SMOKE TEST DONE')
 print('Expected pattern after market close:')
