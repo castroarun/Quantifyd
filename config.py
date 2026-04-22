@@ -525,6 +525,12 @@ ORB_DEFAULTS = {
     # skip — the move has extended too far and R:R is now unfavourable.
     # R = the initial OR-based risk (breakout_close - or_low for long).
     'catchup_max_slippage_r': 0.5,      # default: half the intended risk
+
+    # Exchange-side SL-M (hard stop at Kite). When True, every ORB entry
+    # is immediately followed by an SL-M order on the exchange, surviving
+    # service restarts / crashes. Monitor still polls for target + tightens
+    # the SL-M via modify_order on 14:30 trail.
+    'use_exchange_sl_m': True,
 }
 
 # Nifty 500 Universe

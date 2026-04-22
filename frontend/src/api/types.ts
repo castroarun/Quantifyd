@@ -42,6 +42,9 @@ export interface ORBPosition {
   pnl_inr?: number;
   pnl_pts?: number;
   entry_reason?: string;
+  conviction_grade?: 'A+' | 'A' | 'B' | 'C';
+  conviction_score?: number;
+  conviction_stars?: Array<{ key: string; hit: boolean; desc: string }>;
 }
 
 export interface ORBClosedTrade {

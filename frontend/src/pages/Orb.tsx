@@ -206,6 +206,29 @@ export default function Orb() {
         <span className={styles.mute}>{formatTime(p.entry_time)}</span>
       ),
     },
+    {
+      key: 'grade',
+      header: 'Grade',
+      width: '60px',
+      align: 'right',
+      render: (p) => p.conviction_grade ? (
+        <span
+          className={
+            p.conviction_grade === 'A+' ? styles.convApp
+            : p.conviction_grade === 'A'  ? styles.convA
+            : p.conviction_grade === 'B'  ? styles.convB
+            : styles.convC
+          }
+          title={
+            (p.conviction_stars ?? [])
+              .map((s) => `${s.hit ? '✓' : '·'} ${s.desc}`)
+              .join('\n')
+          }
+        >
+          {p.conviction_grade}
+        </span>
+      ) : <span className={styles.mute}>—</span>,
+    },
   ];
 
   const tradeCols: Column<ORBClosedTrade>[] = [

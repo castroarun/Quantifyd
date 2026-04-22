@@ -776,6 +776,17 @@ class ORBLiveEngine:
                 if kite_order_id is None:
                     continue
 
+                # Compute conviction (same rubric as dashboard candidates).
+                import json as _json_conv
+                past_pct = ((entry_price - or_high) / or_high * 100) if direction == 'LONG' \
+                    else ((or_low - entry_price) / or_low * 100)
+                or_width_pct = ((or_high - or_low) / entry_price * 100) if entry_price else None
+                conv = self._compute_conviction(
+                    side=direction, past_pct=past_pct,
+                    cpr_pct=daily_state.get('cpr_width_pct'),
+                    or_width_pct=or_width_pct, rsi=rsi,
+                )
+
                 # --- Record position ---
                 position_id = self.db.add_position(
                     instrument=sym,
@@ -796,6 +807,9 @@ class ORBLiveEngine:
                     cpr_tc=cpr_tc,
                     cpr_bc=cpr_bc,
                     cpr_width_pct=daily_state.get('cpr_width_pct'),
+                    conviction_grade=conv['conviction_grade'],
+                    conviction_score=conv['conviction_score'],
+                    conviction_stars=_json_conv.dumps(conv['conviction_stars']),
                 )
 
                 # Update trades_taken
@@ -808,6 +822,16 @@ class ORBLiveEngine:
                 with self._lock:
                     if pos:
                         self._positions[sym] = pos[0]
+
+                # Place on-exchange SL-M so the position is protected even if
+                # the service crashes between monitor polls. Refresh the
+                # in-memory cache afterwards so kite_sl_order_id is populated.
+                if pos and self.cfg.get('use_exchange_sl_m', True):
+                    self.place_sl_m_order(pos[0])
+                    pos = self.db.get_open_positions(instrument=sym)
+                    with self._lock:
+                        if pos:
+                            self._positions[sym] = pos[0]
 
                 logger.info(
                     f"[ORB] ENTRY {sym} {direction} qty={qty} @{entry_price:.2f} "
@@ -933,45 +957,34 @@ class ORBLiveEngine:
                 if direction == 'LONG':
                     gain = ltp - entry_price
                     new_sl = entry_price + 0.5 * gain if gain > 0 else current_sl
-                    # Tighten only (new_sl > current_sl)
-                    if new_sl > current_sl:
-                        # Update DB + in-memory
-                        self.db.update_position(pos['id'], sl_price=round(new_sl, 2))
-                        with self._lock:
-                            if sym in self._positions:
-                                self._positions[sym]['sl_price'] = round(new_sl, 2)
-                        adjusted.append({
-                            'symbol': sym, 'direction': direction,
-                            'old_sl': current_sl, 'new_sl': round(new_sl, 2),
-                            'ltp': ltp, 'locked_pnl': round(0.5 * gain * pos['qty'], 2),
-                        })
-                        logger.info(
-                            f"[ORB] {sym} LONG trail: SL {current_sl:.2f} -> {new_sl:.2f} "
-                            f"(locks 50% of +{gain:.2f} gain per share, "
-                            f"~Rs {0.5 * gain * pos['qty']:.0f} total)"
-                        )
-                    else:
-                        logger.info(f"[ORB] {sym} LONG not in profit (or new_sl <= current), keeping SL")
+                    tightened = new_sl > current_sl
                 else:  # SHORT
                     gain = entry_price - ltp
                     new_sl = entry_price - 0.5 * gain if gain > 0 else current_sl
-                    if new_sl < current_sl:
-                        self.db.update_position(pos['id'], sl_price=round(new_sl, 2))
-                        with self._lock:
-                            if sym in self._positions:
-                                self._positions[sym]['sl_price'] = round(new_sl, 2)
-                        adjusted.append({
-                            'symbol': sym, 'direction': direction,
-                            'old_sl': current_sl, 'new_sl': round(new_sl, 2),
-                            'ltp': ltp, 'locked_pnl': round(0.5 * gain * pos['qty'], 2),
-                        })
-                        logger.info(
-                            f"[ORB] {sym} SHORT trail: SL {current_sl:.2f} -> {new_sl:.2f} "
-                            f"(locks 50% of +{gain:.2f} gain per share, "
-                            f"~Rs {0.5 * gain * pos['qty']:.0f} total)"
-                        )
-                    else:
-                        logger.info(f"[ORB] {sym} SHORT not in profit (or new_sl >= current), keeping SL")
+                    tightened = new_sl < current_sl
+
+                if tightened:
+                    self.db.update_position(pos['id'], sl_price=round(new_sl, 2))
+                    with self._lock:
+                        if sym in self._positions:
+                            self._positions[sym]['sl_price'] = round(new_sl, 2)
+                    # Sync the on-exchange SL-M trigger to the new (tighter) SL
+                    if self.cfg.get('use_exchange_sl_m', True):
+                        fresh = self.db.get_open_positions(instrument=sym)
+                        if fresh:
+                            self.modify_sl_m_order(fresh[0], new_sl)
+                    adjusted.append({
+                        'symbol': sym, 'direction': direction,
+                        'old_sl': current_sl, 'new_sl': round(new_sl, 2),
+                        'ltp': ltp, 'locked_pnl': round(0.5 * gain * pos['qty'], 2),
+                    })
+                    logger.info(
+                        f"[ORB] {sym} {direction} trail: SL {current_sl:.2f} -> {new_sl:.2f} "
+                        f"(locks 50% of +{gain:.2f} gain per share, "
+                        f"~Rs {0.5 * gain * pos['qty']:.0f} total)"
+                    )
+                else:
+                    logger.info(f"[ORB] {sym} {direction} not in profit (or new_sl doesn't tighten), keeping SL")
             except Exception as e:
                 logger.error(f"[ORB] Trail activation failed for {pos.get('instrument')}: {e}", exc_info=True)
 
@@ -1097,6 +1110,197 @@ class ORBLiveEngine:
             )
             return None
 
+    # ===================================================================
+    # Exchange-side SL-M orders (hard stop)
+    # ===================================================================
+
+    def place_sl_m_order(self, position):
+        """Place an on-exchange SL-M order for an open position.
+        Protects the position if the service crashes between monitor polls.
+
+        For LONG entry: SELL SL-M with trigger_price = sl_price (fires when LTP drops).
+        For SHORT entry: BUY SL-M with trigger_price = sl_price (fires when LTP rises).
+
+        Returns kite_order_id string or None on failure. Stores the id on the
+        position row via self.db.update_position(kite_sl_order_id=...).
+        """
+        direction = position['direction']
+        instrument = position['instrument']
+        qty = position['qty']
+        sl_price = float(position['sl_price'])
+        position_id = position['id']
+
+        transaction_type = 'SELL' if direction == 'LONG' else 'BUY'
+        # Round trigger to nearest 0.05 (NSE tick size for most equities)
+        trigger_price = round(round(sl_price / 0.05) * 0.05, 2)
+
+        try:
+            kite = self._get_kite()
+            order_id = kite.place_order(
+                variety='regular',
+                exchange='NSE',
+                tradingsymbol=instrument,
+                transaction_type=transaction_type,
+                quantity=qty,
+                product='MIS',
+                order_type='SL-M',
+                trigger_price=trigger_price,
+                validity='DAY',
+            )
+            order_id_str = str(order_id)
+            self.db.update_position(position_id, kite_sl_order_id=order_id_str)
+            self.db.log_order(
+                position_id=position_id,
+                instrument=instrument, tradingsymbol=instrument,
+                transaction_type=transaction_type, qty=qty,
+                order_type='SL-M', price=trigger_price,
+                kite_order_id=order_id_str, status='PLACED',
+                exchange='NSE', product='MIS',
+                notes=f'SL-M trigger={trigger_price}',
+            )
+            logger.info(
+                f"[ORB] SL-M placed: {transaction_type} {qty} {instrument} "
+                f"trigger={trigger_price} order_id={order_id_str}"
+            )
+            return order_id_str
+        except Exception as e:
+            logger.error(
+                f"[ORB] SL-M FAILED for {instrument}: {e}. "
+                f"Position relies on soft monitor only.",
+                exc_info=True
+            )
+            try:
+                ns = get_notification_service(self.cfg)
+                ns.send_alert(
+                    'risk_alert',
+                    f'SL-M placement failed — {instrument} on soft SL only',
+                    f'Could not place exchange SL-M for {direction} {instrument} '
+                    f'(trigger {trigger_price}): {str(e)[:150]}. '
+                    f'Position now depends on 30s LTP monitor.',
+                    data={'symbol': instrument, 'direction': direction,
+                          'trigger_price': trigger_price, 'qty': qty,
+                          'error': str(e)[:200]},
+                    priority='high',
+                )
+            except Exception:
+                pass
+            return None
+
+    def cancel_sl_m_order(self, position):
+        """Cancel the SL-M order for a position if it exists and is still open.
+        Returns True if cancelled or already inactive, False on error.
+        Safe to call even when no SL-M was placed."""
+        sl_order_id = position.get('kite_sl_order_id')
+        if not sl_order_id:
+            return True
+        try:
+            kite = self._get_kite()
+            # Check current status — skip cancel if already complete/cancelled/rejected
+            try:
+                history = kite.order_history(sl_order_id) or []
+                last_status = (history[-1].get('status') if history else '').upper()
+                if last_status in ('COMPLETE', 'CANCELLED', 'REJECTED'):
+                    logger.info(f"[ORB] SL-M {sl_order_id} already {last_status} — skip cancel")
+                    return True
+            except Exception:
+                pass
+            kite.cancel_order(variety='regular', order_id=sl_order_id)
+            logger.info(f"[ORB] SL-M cancelled: {sl_order_id} ({position['instrument']})")
+            return True
+        except Exception as e:
+            logger.error(f"[ORB] SL-M cancel FAILED for {position['instrument']}: {e}")
+            return False
+
+    def modify_sl_m_order(self, position, new_trigger_price):
+        """Update the SL-M trigger (used by V9t_lock50 trail). Re-places if
+        the order was already consumed or doesn't exist."""
+        sl_order_id = position.get('kite_sl_order_id')
+        trigger_price = round(round(float(new_trigger_price) / 0.05) * 0.05, 2)
+        if not sl_order_id:
+            return self.place_sl_m_order({**position, 'sl_price': new_trigger_price})
+        try:
+            kite = self._get_kite()
+            kite.modify_order(
+                variety='regular', order_id=sl_order_id,
+                trigger_price=trigger_price,
+            )
+            logger.info(
+                f"[ORB] SL-M modified: {position['instrument']} "
+                f"new trigger={trigger_price} order={sl_order_id}"
+            )
+            return sl_order_id
+        except Exception as e:
+            logger.warning(
+                f"[ORB] SL-M modify failed ({e}); re-placing with new trigger"
+            )
+            # Try cancel + re-place
+            self.cancel_sl_m_order(position)
+            return self.place_sl_m_order({**position, 'sl_price': new_trigger_price})
+
+    @staticmethod
+    def _compute_conviction(side, past_pct, cpr_pct, or_width_pct, rsi):
+        """4-star rubric: CPR<0.3% · Risk<0.8% · RSI conviction ·
+        Past% clean (0.2%-0.7%). Returns {conviction_score, conviction_grade,
+        conviction_stars}."""
+        stars = []
+        stars.append({'key': 'cpr_narrow',
+                      'hit': cpr_pct is not None and cpr_pct < 0.3,
+                      'desc': 'CPR < 0.3% (clean setup)'})
+        stars.append({'key': 'tight_risk',
+                      'hit': or_width_pct is not None and or_width_pct < 0.8,
+                      'desc': 'Risk % < 0.8 (tight SL)'})
+        if side == 'LONG':
+            rsi_ok = rsi is not None and rsi >= 65
+        else:
+            rsi_ok = rsi is not None and rsi <= 35
+        stars.append({'key': 'rsi_conviction', 'hit': bool(rsi_ok),
+                      'desc': 'RSI ≥65 (long) / ≤35 (short)'})
+        stars.append({'key': 'clean_past',
+                      'hit': past_pct is not None and 0.2 <= past_pct <= 0.7,
+                      'desc': 'Past % in 0.2–0.7 (not chasing)'})
+        score = sum(1 for s in stars if s['hit'])
+        grade = 'A+' if score == 4 else 'A' if score == 3 else 'B' if score == 2 else 'C'
+        return {'conviction_score': score,
+                'conviction_grade': grade,
+                'conviction_stars': stars}
+
+    def ensure_sl_orders_placed(self):
+        """Scan all OPEN positions and place SL-M on any that lack one.
+        Safe to call repeatedly. Returns a summary dict."""
+        if not self.cfg.get('use_exchange_sl_m', True):
+            return {'placed': 0, 'skipped': 0, 'reason': 'use_exchange_sl_m=False'}
+
+        placed, skipped = [], []
+        for pos in self.db.get_open_positions() or []:
+            if pos.get('kite_sl_order_id'):
+                # Verify still active on Kite — if cancelled/rejected, re-place.
+                sid = pos['kite_sl_order_id']
+                try:
+                    kite = self._get_kite()
+                    hist = kite.order_history(sid) or []
+                    last_status = (hist[-1].get('status') if hist else '').upper()
+                    if last_status in ('TRIGGER PENDING', 'OPEN'):
+                        skipped.append({'sym': pos['instrument'], 'reason': f'active ({last_status})'})
+                        continue
+                    if last_status == 'COMPLETE':
+                        skipped.append({'sym': pos['instrument'], 'reason': 'already_triggered'})
+                        continue
+                    logger.info(
+                        f"[ORB] SL-M {sid} for {pos['instrument']} is {last_status} — re-placing"
+                    )
+                except Exception as e:
+                    logger.warning(f"[ORB] SL-M history check failed for {pos['instrument']}: {e}")
+
+            new_id = self.place_sl_m_order(pos)
+            if new_id:
+                placed.append({'sym': pos['instrument'], 'order_id': new_id,
+                               'trigger': pos['sl_price']})
+            else:
+                skipped.append({'sym': pos['instrument'], 'reason': 'place_failed'})
+
+        logger.info(f"[ORB] ensure_sl_orders_placed: placed={len(placed)} skipped={len(skipped)}")
+        return {'placed': placed, 'skipped': skipped}
+
     def place_exit_order(self, position, exit_price, exit_reason):
         """
         Close position: SELL for LONG, BUY for SHORT. MIS market order.
@@ -1116,6 +1320,10 @@ class ORBLiveEngine:
             pnl_pts = entry_price - exit_price
         pnl_inr = round(pnl_pts * qty, 2)
         pnl_pts = round(pnl_pts, 2)
+
+        # Cancel the on-exchange SL-M first — otherwise both could execute
+        # and we'd oversell. Safe no-op if no SL-M was placed.
+        self.cancel_sl_m_order(position)
 
         kite_exit_order_id = None
         try:
@@ -1477,26 +1685,10 @@ class ORBLiveEngine:
             }
 
             def _conviction(side: str, past_pct: float) -> dict:
-                """4-star rubric: CPR<0.3% · Risk<0.8% · RSI conviction ·
-                Past% clean (0.2%-0.7%)."""
-                stars = []
-                stars.append({'key': 'cpr_narrow', 'hit': cpr < 0.3,
-                              'desc': 'CPR < 0.3% (clean setup)'})
-                stars.append({'key': 'tight_risk', 'hit': or_width_pct < 0.8,
-                              'desc': 'Risk % < 0.8 (tight SL)'})
-                if side == 'LONG':
-                    rsi_ok = rsi is not None and rsi >= 65
-                else:
-                    rsi_ok = rsi is not None and rsi <= 35
-                stars.append({'key': 'rsi_conviction', 'hit': bool(rsi_ok),
-                              'desc': 'RSI ≥65 (long) / ≤35 (short)'})
-                stars.append({'key': 'clean_past', 'hit': 0.2 <= past_pct <= 0.7,
-                              'desc': 'Past % in 0.2–0.7 (not chasing)'})
-                score = sum(1 for s in stars if s['hit'])
-                grade = 'A+' if score == 4 else 'A' if score == 3 else 'B' if score == 2 else 'C'
-                return {'conviction_score': score,
-                        'conviction_grade': grade,
-                        'conviction_stars': stars}
+                return self._compute_conviction(
+                    side=side, past_pct=past_pct, cpr_pct=cpr,
+                    or_width_pct=or_width_pct, rsi=rsi,
+                )
 
             if ltp > or_h and long_gap_ok and long_rsi_ok:
                 past_pct = (ltp - or_h) / or_h * 100
@@ -1588,7 +1780,10 @@ class ORBLiveEngine:
                     result['skipped'].append({'sym': sym, 'reason': 'insufficient_candles'})
                     continue
 
-                # Find the FIRST post-OR breakout candle (transition)
+                # Walk post-OR candles and collect ALL direction transitions.
+                # Pick the LATEST transition whose side is still consistent
+                # with current LTP (so a SHORT that reversed into a LONG later
+                # catches the LONG, not the stale SHORT).
                 or_end = session_start + timedelta(minutes=cfg.get('or_minutes', 15))
                 def _ctime(c):
                     t = c['date']
@@ -1596,30 +1791,35 @@ class ORBLiveEngine:
                         t = t.replace(tzinfo=None)
                     return t
                 post = [c for c in candles if _ctime(c) >= or_end]
+                ltp = ltps.get(sym) or 0
                 direction = None
-                first_breakout = None
+                first_breakout = None  # name kept for schema compat — actually the LATEST valid breakout
+                all_transitions = []   # for debug logging only
                 for i in range(1, len(post)):
                     prev_c = post[i - 1]
                     cur = post[i]
                     if cur['close'] > or_high and prev_c['close'] <= or_high:
-                        direction = 'LONG'
-                        first_breakout = cur
-                        break
-                    if cur['close'] < or_low and prev_c['close'] >= or_low:
-                        direction = 'SHORT'
-                        first_breakout = cur
-                        break
+                        all_transitions.append(('LONG', cur))
+                        if ltp > or_high:
+                            direction = 'LONG'
+                            first_breakout = cur
+                    elif cur['close'] < or_low and prev_c['close'] >= or_low:
+                        all_transitions.append(('SHORT', cur))
+                        if ltp < or_low:
+                            direction = 'SHORT'
+                            first_breakout = cur
                 if direction is None or first_breakout is None:
-                    result['skipped'].append({'sym': sym, 'reason': 'no_breakout_found'})
-                    continue
-
-                # Current LTP must still be beyond OR level in the same direction
-                ltp = ltps.get(sym) or 0
-                if direction == 'LONG' and ltp <= or_high:
-                    result['skipped'].append({'sym': sym, 'reason': f'ltp_back_inside_OR ({ltp} <= {or_high})'})
-                    continue
-                if direction == 'SHORT' and ltp >= or_low:
-                    result['skipped'].append({'sym': sym, 'reason': f'ltp_back_inside_OR ({ltp} >= {or_low})'})
+                    if all_transitions:
+                        last_dir, last_c = all_transitions[-1]
+                        result['skipped'].append({
+                            'sym': sym,
+                            'reason': f'ltp_back_inside_OR (latest transition {last_dir} '
+                                      f'at {_ctime(last_c).strftime("%H:%M")} reversed)',
+                            'ltp': ltp, 'or_high': or_high, 'or_low': or_low,
+                            'transitions': len(all_transitions),
+                        })
+                    else:
+                        result['skipped'].append({'sym': sym, 'reason': 'no_breakout_found'})
                     continue
 
                 # Slippage cap: reject if LTP has run too far past the breakout close.
@@ -1749,6 +1949,16 @@ class ORBLiveEngine:
                     result['skipped'].append({'sym': sym, 'reason': 'order_placement_failed'})
                     continue
 
+                # Compute conviction (same rubric as dashboard candidates).
+                past_pct_conv = ((entry_price - or_high) / or_high * 100) if direction == 'LONG' \
+                    else ((or_low - entry_price) / or_low * 100)
+                or_width_pct_conv = ((or_high - or_low) / entry_price * 100) if entry_price else None
+                conv = self._compute_conviction(
+                    side=direction, past_pct=past_pct_conv,
+                    cpr_pct=daily_state.get('cpr_width_pct'),
+                    or_width_pct=or_width_pct_conv, rsi=rsi,
+                )
+
                 # Persist position (without this, monitor_positions will never
                 # see it and SL/target will never fire). Matches the normal
                 # signal flow in evaluate_signals().
@@ -1762,6 +1972,9 @@ class ORBLiveEngine:
                     gap_pct=gap_pct, vwap_at_entry=vwap, rsi_at_entry=rsi,
                     cpr_tc=cpr_tc, cpr_bc=cpr_bc,
                     cpr_width_pct=daily_state.get('cpr_width_pct'),
+                    conviction_grade=conv['conviction_grade'],
+                    conviction_score=conv['conviction_score'],
+                    conviction_stars=_json.dumps(conv['conviction_stars']),
                     notes='CATCHUP_ENTRY',
                 )
                 self.db.update_daily_state(sym, today_str,
@@ -1771,6 +1984,13 @@ class ORBLiveEngine:
                 with self._lock:
                     if pos:
                         self._positions[sym] = pos[0]
+
+                if pos and self.cfg.get('use_exchange_sl_m', True):
+                    self.place_sl_m_order(pos[0])
+                    pos = self.db.get_open_positions(instrument=sym)
+                    with self._lock:
+                        if pos:
+                            self._positions[sym] = pos[0]
 
                 first_bt = _ctime(first_breakout)
                 logger.info(

@@ -630,12 +630,16 @@ function LegRow({
   const entry = leg.entry_price ?? leg.entry_premium;
   const ltp = leg.ltp ?? leg.exit_price;
   const pnl = leg.pnl_inr;
+  const qty = leg.qty;
+  const entryTime = formatLegTime(leg.entry_time);
+  const exitTime = closed ? formatLegTime(leg.exit_time) : undefined;
 
   return (
     <div className={`${styles.leg} ${closed ? styles.legClosed : ''}`}>
       <div className={styles.legMain}>
         <span className={styles.legSide}>{leg.leg}</span>
         <span className={styles.legSym}>{tsym}</span>
+        {qty ? <span className={styles.legQty}>×{qty}</span> : null}
         {closed && reason ? (
           <span className={styles.legReason}>{reason}</span>
         ) : null}
@@ -643,10 +647,12 @@ function LegRow({
       <div className={styles.legNums}>
         <span className={styles.legSmall}>
           {entry !== undefined ? formatNumber(entry) : '—'}
+          {entryTime ? <span className={styles.legTime}> @{entryTime}</span> : null}
         </span>
         <span className={styles.legArrow}>→</span>
         <span className={styles.legSmall}>
           {ltp !== undefined ? formatNumber(ltp) : '—'}
+          {exitTime ? <span className={styles.legTime}> @{exitTime}</span> : null}
         </span>
         <span className={pnlClass(pnl)} style={{ fontSize: 'var(--text-xs)' }}>
           {formatPnl(pnl)}
@@ -654,6 +660,13 @@ function LegRow({
       </div>
     </div>
   );
+}
+
+function formatLegTime(iso?: string | null): string | null {
+  if (!iso) return null;
+  // Extract HH:MM from either ISO ("2026-04-22T11:51:42") or "11:51" fallback.
+  const m = /T(\d{2}:\d{2})/.exec(iso) || /^(\d{2}:\d{2})/.exec(iso);
+  return m ? m[1] : null;
 }
 
 /* ---------- next events helper ---------- */

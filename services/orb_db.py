@@ -164,6 +164,19 @@ class OrbDB:
                     CREATE INDEX IF NOT EXISTS idx_orb_notif_created
                         ON orb_notifications(created_at);
                 """)
+
+                # Migrations: add columns if missing (SQLite has no IF NOT EXISTS for ALTER).
+                def _add_col(table, col, decl):
+                    try:
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
+                    except Exception:
+                        pass  # already exists
+
+                _add_col('orb_positions', 'kite_sl_order_id', 'TEXT')
+                _add_col('orb_positions', 'conviction_grade', 'TEXT')
+                _add_col('orb_positions', 'conviction_score', 'INTEGER')
+                _add_col('orb_positions', 'conviction_stars', 'TEXT')
+
                 conn.commit()
                 logger.info(f"[ORB] Database initialized at {self.db_path}")
             finally:

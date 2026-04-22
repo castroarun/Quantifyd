@@ -3609,6 +3609,8 @@ def api_nas_ticker_stream():
         from services.nas_ticker import get_nas_ticker
         ticker = get_nas_ticker(NAS_DEFAULTS)
         last_snapshot = {}
+        last_916_fetch = 0.0
+        last_916_legs: dict = {}
 
         # Initial keepalive so clients know the stream is live even before
         # the first meaningful tick arrives.
@@ -3645,6 +3647,58 @@ def api_nas_ticker_stream():
                     'entry': info.get('entry_premium') or info.get('entry_price'),
                     'leg': info.get('leg'),
                 }
+
+            # The WebSocket ticker only subscribes to Squeeze variant legs.
+            # 9:16 positions need LTP via REST kite.ltp(). Throttle to ~2s.
+            now_ts = _time.time()
+            if now_ts - last_916_fetch >= 2.0:
+                last_916_fetch = now_ts
+                try:
+                    from services.nas_916_db import (
+                        get_nas_916_otm_db, get_nas_916_atm_db,
+                        get_nas_916_atm2_db, get_nas_916_atm4_db,
+                    )
+                    from services.kite_service import get_kite
+                    positions_916 = []
+                    for _dbf in (get_nas_916_otm_db, get_nas_916_atm_db,
+                                 get_nas_916_atm2_db, get_nas_916_atm4_db):
+                        try:
+                            positions_916.extend(_dbf().get_active_positions() or [])
+                        except Exception:
+                            continue
+                    tsyms = list({p['tradingsymbol'] for p in positions_916
+                                  if p.get('tradingsymbol')})
+                    ltp_map: dict = {}
+                    if tsyms:
+                        try:
+                            kite = get_kite()
+                            q = kite.ltp([f'NFO:{s}' for s in tsyms]) or {}
+                            for s in tsyms:
+                                v = q.get(f'NFO:{s}')
+                                if v and v.get('last_price'):
+                                    ltp_map[s] = v['last_price']
+                        except Exception:
+                            pass
+                    last_916_legs = {}
+                    for p in positions_916:
+                        tsym = p.get('tradingsymbol')
+                        if not tsym:
+                            continue
+                        ltp = ltp_map.get(tsym)
+                        if ltp is None or ltp <= 0:
+                            continue
+                        last_916_legs[tsym] = {
+                            'ltp': round(ltp, 2),
+                            'entry': p.get('entry_price') or p.get('entry_premium'),
+                            'leg': p.get('leg'),
+                        }
+                except Exception:
+                    pass
+
+            # Ticker legs (Squeeze) take precedence; 9:16 legs fill the gap.
+            for tsym, info in last_916_legs.items():
+                if tsym not in legs:
+                    legs[tsym] = info
 
             snapshot = {
                 'spot': round(ticker._last_ltp, 2) if ticker._last_ltp else 0,
@@ -5719,11 +5773,12 @@ def api_orb_state():
                 'price': today_open,
             }
 
-        # Enrich open positions with cached LTP (non-blocking)
+        # Enrich open positions with cached LTP (non-blocking) + parse conviction_stars JSON
         open_positions = state.get('open_positions', [])
         if open_positions:
             ltp_syms = [p['instrument'] for p in open_positions]
             ltps = _orb_get_ltps(ltp_syms)
+            import json as _json_pos
             for pos in open_positions:
                 ltp = ltps.get(pos['instrument'])
                 if ltp:
@@ -5732,6 +5787,12 @@ def api_orb_state():
                     qty = pos['qty']
                     pos['pnl_pts'] = round((ltp - entry) if pos['direction'] == 'LONG' else (entry - ltp), 2)
                     pos['pnl_inr'] = round(pos['pnl_pts'] * qty, 2)
+                stars = pos.get('conviction_stars')
+                if isinstance(stars, str) and stars:
+                    try:
+                        pos['conviction_stars'] = _json_pos.loads(stars)
+                    except Exception:
+                        pass
 
         for pos in open_positions:
             sym = pos['instrument']
@@ -5842,6 +5903,19 @@ def api_orb_candidates():
         return jsonify(engine.get_candidates())
     except Exception as e:
         logger.error(f"[ORB] candidates error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/ensure-sl-orders', methods=['POST'])
+def api_orb_ensure_sl_orders():
+    """Place exchange SL-M orders for any OPEN position that lacks one.
+    Also re-places if an existing SL-M was cancelled/rejected/invalid."""
+    try:
+        engine = _get_orb_engine()
+        result = engine.ensure_sl_orders_placed()
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[ORB] ensure_sl_orders error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 

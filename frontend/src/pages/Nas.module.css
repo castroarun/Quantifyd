@@ -358,6 +358,19 @@
   color: var(--ink-faint);
 }
 
+.legTime {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  margin-left: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.legQty {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .rules {
   padding-top: 4px;
   border-top: 0.5px solid var(--hairline-soft);
