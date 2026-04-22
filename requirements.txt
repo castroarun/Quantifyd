@@ -10,7 +10,7 @@ python-socketio>=5.10.0
 python-engineio>=4.8.0
 
 # Zerodha API
-kiteconnect==5.0.1
+kiteconnect>=5.1.0  # 5.1.0 added market_protection (SEBI algo rule effective 2026-04-01)
 pyotp>=2.9.0
 
 # Data Processing

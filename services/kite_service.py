@@ -167,6 +167,45 @@ def invalidate_and_refresh(request_token: str = None) -> str:
     return new_token
 
 
+# SEBI algo rules (effective 2026-04-01, Zerodha): every MARKET and SL-M
+# order placed via API must carry a non-zero market_protection. Missing
+# or zero market_protection = order rejected. See
+# https://kite.trade/forum/discussion/15912
+# Values: non-zero % (e.g. 2 = 2% band around LTP, typical for equity);
+# -1 = let Zerodha pick default. We wrap place_order once here so every
+# call site (ORB, NAS, BNF, Maruthi, KC6, Trident) is covered and we
+# never have to remember to pass it manually.
+MARKET_PROTECTION_PCT_EQUITY = 2    # NSE/BSE equity cash
+MARKET_PROTECTION_PCT_DERIV  = 5    # NFO/BFO options + futures (wider spreads)
+
+
+def _wrap_place_order(kite: KiteConnect) -> KiteConnect:
+    """Monkey-wrap kite.place_order to inject market_protection on
+    MARKET / SL-M orders if the caller didn't set it. Idempotent — no
+    effect if already wrapped (tagged via _qfd_wrapped sentinel)."""
+    if getattr(kite, '_qfd_wrapped', False):
+        return kite
+    _orig_place_order = kite.place_order
+
+    def _place_order_safe(*args, **kwargs):
+        order_type = kwargs.get('order_type', '')
+        if order_type in ('MARKET', 'SL-M') and kwargs.get('market_protection') is None:
+            exch = (kwargs.get('exchange') or '').upper()
+            if exch in ('NFO', 'BFO', 'MCX', 'CDS'):
+                kwargs['market_protection'] = MARKET_PROTECTION_PCT_DERIV
+            else:
+                kwargs['market_protection'] = MARKET_PROTECTION_PCT_EQUITY
+            logger.debug(
+                f"[Kite] Auto-added market_protection={kwargs['market_protection']} "
+                f"for {order_type} order on {exch or 'NSE'}"
+            )
+        return _orig_place_order(*args, **kwargs)
+
+    kite.place_order = _place_order_safe
+    kite._qfd_wrapped = True
+    return kite
+
+
 def get_kite() -> KiteConnect:
     """Get KiteConnect instance with current access token"""
     if not KITE_API_KEY:
@@ -175,7 +214,7 @@ def get_kite() -> KiteConnect:
     access_token = get_access_token()
     if access_token:
         kite.set_access_token(access_token)
-    return kite
+    return _wrap_place_order(kite)
 
 
 def get_kite_with_refresh() -> KiteConnect:
@@ -209,6 +248,7 @@ def get_kite_with_refresh() -> KiteConnect:
                 # Create new Kite instance with fresh token
                 new_kite = KiteConnect(api_key=KITE_API_KEY)
                 new_kite.set_access_token(new_token)
+                new_kite = _wrap_place_order(new_kite)
 
                 # Verify it works
                 try:
