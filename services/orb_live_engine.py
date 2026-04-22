@@ -139,6 +139,51 @@ class ORBLiveEngine:
             'force_close_all': enforce and total_loss >= cap * panic_mult,
         }
 
+    def compute_risk_based_qty(self, entry_price: float, sl_price: float) -> dict:
+        """Risk-first sizing: risk exactly risk_per_trade_pct × capital on this
+        trade (down to SL). Qty is trimmed if notional would blow past
+        max_notional_per_trade. Falls back to the legacy notional-based rule
+        if use_risk_based_sizing is False.
+
+        Returns dict with qty + diagnostics so the caller can log/notify."""
+        if entry_price is None or entry_price <= 0:
+            return {'qty': 0, 'reason': 'invalid_entry_price'}
+        R = abs(float(entry_price) - float(sl_price))
+        if R <= 0:
+            return {'qty': 0, 'reason': 'zero_risk_per_share'}
+
+        if not self.cfg.get('use_risk_based_sizing', True):
+            # Legacy: fixed-notional allocation
+            qty = int(self.allocation_per_trade // entry_price)
+            return {
+                'qty': max(qty, 0),
+                'mode': 'notional',
+                'R_per_share': R,
+                'risk_rs_target': round(qty * R, 2),
+                'notional': round(qty * entry_price, 2),
+            }
+
+        capital = self.cfg.get('capital', 100000)
+        risk_pct = float(self.cfg.get('risk_per_trade_pct', 0.008))
+        risk_rs_target = capital * risk_pct
+        raw_qty = int(risk_rs_target // R)
+
+        max_notional = self.cfg.get('max_notional_per_trade', capital)
+        cap_qty = int(max_notional // entry_price)
+        capped = raw_qty > cap_qty
+        final_qty = min(raw_qty, cap_qty)
+
+        return {
+            'qty': max(final_qty, 0),
+            'mode': 'risk',
+            'R_per_share': round(R, 4),
+            'risk_rs_target': round(risk_rs_target, 2),
+            'risk_rs_actual': round(final_qty * R, 2),
+            'notional': round(final_qty * entry_price, 2),
+            'notional_cap_hit': capped,
+            'raw_qty_uncapped': raw_qty,
+        }
+
     @property
     def min_margin_for_trade(self):
         """Derived: allocation_per_trade * margin_buffer_multiplier."""
@@ -807,11 +852,20 @@ class ORBLiveEngine:
                     logger.info(f"[ORB] {sym} {direction} signal BLOCKED: {action_taken}")
                     continue
 
-                # --- Check available funds before placing ---
-                qty = self.stocks[sym].get('qty', 1)
+                # --- Risk-based position sizing (uses the OR-opposite SL) ---
+                sizing = self.compute_risk_based_qty(entry_price, sl_price)
+                qty = sizing['qty']
                 if qty <= 0:
-                    logger.warning(f"[ORB] {sym}: qty=0, skipping entry")
+                    logger.warning(f"[ORB] {sym}: qty=0 ({sizing.get('reason', 'n/a')}), skipping entry")
                     continue
+                self.stocks[sym]['qty'] = qty  # cache so dashboard reflects post-sizing qty
+                logger.info(
+                    f"[ORB] {sym} sizing: mode={sizing.get('mode')} "
+                    f"R={sizing.get('R_per_share')} qty={qty} "
+                    f"risk=Rs {sizing.get('risk_rs_actual', 0):.0f} "
+                    f"notional=Rs {sizing.get('notional', 0):.0f}"
+                    f"{' (capped at ' + str(self.cfg.get('max_notional_per_trade')) + ')' if sizing.get('notional_cap_hit') else ''}"
+                )
 
                 alloc = self.allocation_per_trade
                 min_balance_required = self.min_margin_for_trade
@@ -2150,10 +2204,16 @@ class ORBLiveEngine:
                 target_price = entry_price + (r_multiple * risk) if direction == 'LONG' \
                     else entry_price - (r_multiple * risk)
 
-                qty = self.stocks[sym].get('qty', 1)
+                # Risk-based sizing (same helper as live eval) — uses the
+                # OR-opposite SL we just computed.
+                sizing = self.compute_risk_based_qty(entry_price, sl_price)
+                qty = sizing['qty']
                 if qty <= 0:
-                    result['skipped'].append({'sym': sym, 'reason': 'qty_zero'})
+                    result['skipped'].append({
+                        'sym': sym, 'reason': sizing.get('reason', 'qty_zero'),
+                    })
                     continue
+                self.stocks[sym]['qty'] = qty
 
                 available = self._get_available_margin()
                 min_balance_required = self.min_margin_for_trade

@@ -116,6 +116,9 @@ export interface ORBState {
   daily_loss_limit_pct?: number;
   enforce_daily_loss_cap?: boolean;
   mis_leverage?: number;
+  use_risk_based_sizing?: boolean;
+  risk_per_trade_pct?: number;
+  max_notional_per_trade?: number;
   stocks: Record<string, ORBStockSummary>;
   open_positions: ORBPosition[];
   today_closed: ORBClosedTrade[];

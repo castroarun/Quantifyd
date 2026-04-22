@@ -541,8 +541,7 @@ export default function Orb() {
                 {state?.mis_leverage && state.mis_leverage > 1
                   ? ` × ${state.mis_leverage}× MIS leverage`
                   : ''}
-                {' '} → {formatRs(state?.config?.allocation_per_trade)} per trade ·
-                max 5 concurrent · 1.2× margin buffer.
+                {' '}· max 5 concurrent · 1.2× margin buffer.
               </span>
             </div>
             <div className={styles.ruleItem}>
@@ -594,7 +593,17 @@ export default function Orb() {
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Position sizing</span>
               <span>
-                <code>qty = floor(Rs 20,000 / entry_price)</code>, reduced if risk × qty would breach daily loss limit.
+                {state?.use_risk_based_sizing ? (
+                  <>
+                    <b>Risk-based</b>:
+                    {' '}<code>qty = floor((capital × {(state.risk_per_trade_pct ?? 0) * 100}%) / |entry − SL|)</code>,
+                    {' '}capped at notional {formatRs(state.max_notional_per_trade)}.
+                    {' '}Target risk ≈ {formatRs((state.capital ?? 0) * (state.risk_per_trade_pct ?? 0))} per trade regardless
+                    of which stock fires. Same SL rule (OR-opposite) — tight OR → bigger qty, wide OR → smaller qty.
+                  </>
+                ) : (
+                  <code>qty = floor({formatRs(state?.config?.allocation_per_trade)} / entry_price)</code>
+                )}
               </span>
             </div>
             <div className={styles.ruleItem}>

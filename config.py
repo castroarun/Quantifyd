@@ -463,13 +463,18 @@ ORB_DEFAULTS = {
     # 15 stocks, avg 2.9 trades/day, P75=5. Size for 5 concurrent trades.
     # Per-trade = capital / max_concurrent = 100K/5 = Rs 20,000
     # Min margin = 1.2x per-trade = Rs 24,000
-    'capital': 100_000,                # Total DEPOSIT — change this to scale up
-    'mis_leverage': 5,                 # Zerodha MIS leverage on Nifty 500 cash ~5x.
-                                       # per-trade notional = capital × lev / max_concurrent
-                                       # = 1L × 5 / 5 = Rs 1,00,000 notional per trade.
-                                       # Set to 1 to disable leverage (pure deposit-based).
+    'capital': 200_000,                # Total DEPOSIT allocated to ORB (2L)
+    'mis_leverage': 5,                 # Zerodha MIS leverage on Nifty 500 cash ~5x
     'max_concurrent_trades': 5,        # P75 of daily trades for 15-stock universe
     'margin_buffer_multiplier': 1.2,   # Need 1.2x per-trade alloc as available margin
+
+    # Risk-based sizing (overrides the old "qty = floor(alloc / entry)" rule).
+    # qty = floor((capital × risk_per_trade_pct) / |entry - SL|), capped by
+    # max_notional_per_trade so a very tight OR doesn't size silly on a
+    # high-priced stock. SL stays OR-opposite — only the sizing changes.
+    'use_risk_based_sizing': True,
+    'risk_per_trade_pct': 0.008,       # 0.8% of capital = Rs 1,600 per trade at 2L
+    'max_notional_per_trade': 200_000, # Rs 2L ceiling per position
 
     # Opening Range
     'or_minutes': 15,                  # 09:15 - 09:30
