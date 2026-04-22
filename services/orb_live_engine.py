@@ -1058,9 +1058,36 @@ class ORBLiveEngine:
                     logger.error(f"[ORB] Panic exit failed for {sym_p}: {e}")
             return
 
-        # --- Step 1: exchange-SL reconciliation (before anything else) ---
-        # If the SL order fired on Kite, close the position in DB so the
-        # monitor doesn't try to re-exit at market (which would oversell).
+        # --- Step 1a: general Kite-DB reconciliation -------------------
+        # If the Kite net qty is already flat for any DB-open position
+        # (manual close, SL fill, any external intervention), mark it
+        # closed in DB so we never place a phantom exit at EOD/target.
+        # Fetch positions once per cycle to keep API usage bounded.
+        kite_positions = self.fetch_kite_mis_positions()
+        if kite_positions:
+            for sym in list(open_syms):
+                try:
+                    with self._lock:
+                        pos = self._positions.get(sym)
+                    if not pos:
+                        continue
+                    kite_state = kite_positions.get(sym, {
+                        'qty': 0, 'buy_price': 0, 'sell_price': 0,
+                        'buy_qty': 0, 'sell_qty': 0, 'source': 'kite',
+                    })
+                    if self.reconcile_position_with_kite(pos, kite_state=kite_state):
+                        if sym in open_syms:
+                            open_syms.remove(sym)
+                except Exception as e:
+                    logger.error(f"[ORB] Kite reconcile failed for {sym}: {e}")
+
+        if not open_syms:
+            return
+
+        # --- Step 1b: exchange-SL order reconciliation -----------------
+        # If the SL order specifically fired on Kite, close the DB position
+        # with the precise SL fill price (more accurate than the generic
+        # Step 1a path which uses avg buy/sell across all fills).
         for sym in list(open_syms):
             try:
                 with self._lock:
@@ -1549,6 +1576,110 @@ class ORBLiveEngine:
                 'conviction_grade': grade,
                 'conviction_stars': stars}
 
+    def fetch_kite_mis_positions(self) -> dict:
+        """One-shot fetch of all Kite MIS NSE net positions keyed by
+        tradingsymbol. Returns empty dict on failure so callers treat it as
+        'no Kite data — proceed with normal flow'."""
+        result: dict = {}
+        try:
+            kite = self._get_kite()
+            pos_resp = kite.positions() or {}
+            for p in pos_resp.get('net', []) or []:
+                if p.get('product') == 'MIS' and p.get('exchange') == 'NSE':
+                    result[p.get('tradingsymbol')] = {
+                        'qty': int(p.get('quantity') or 0),
+                        'buy_price': float(p.get('buy_price') or 0),
+                        'sell_price': float(p.get('sell_price') or 0),
+                        'buy_qty': int(p.get('buy_quantity') or 0),
+                        'sell_qty': int(p.get('sell_quantity') or 0),
+                    }
+        except Exception as e:
+            logger.warning(f"[ORB] Kite positions fetch failed: {e}")
+        return result
+
+    def get_kite_net_qty(self, instrument: str) -> dict:
+        """Per-instrument wrapper (still useful for one-off callers).
+        Returns {'qty': None, 'source': 'error'} if fetch fails so caller
+        falls back to normal flow."""
+        all_pos = self.fetch_kite_mis_positions()
+        if instrument in all_pos:
+            return {**all_pos[instrument], 'source': 'kite'}
+        # Explicit fetch failed vs instrument simply not held — without
+        # richer signal, assume qty 0 only if the fetch succeeded (empty
+        # dict here could mean both). Safer to return None on empty.
+        if not all_pos:
+            return {'qty': None, 'source': 'error'}
+        return {'qty': 0, 'source': 'kite', 'buy_price': 0, 'sell_price': 0,
+                'buy_qty': 0, 'sell_qty': 0}
+
+    def reconcile_position_with_kite(self, position: dict, kite_state: dict | None = None) -> bool:
+        """If the Kite net qty is already flat (e.g. manual close or an SL
+        fill we haven't picked up yet), close the DB position with the
+        Kite-derived exit price and return True. Otherwise return False —
+        caller should proceed with placing the exit order.
+
+        Expected direction-consistent qty for an OPEN position:
+            LONG  → kite qty > 0
+            SHORT → kite qty < 0
+        Any other state (qty==0, or flipped sign) means Kite is no longer
+        holding what our DB thinks it is; don't double-exit."""
+        direction = position['direction']
+        qty = position['qty']
+        instrument = position['instrument']
+        if kite_state is None:
+            kite_state = self.get_kite_net_qty(instrument)
+        kite_qty = kite_state.get('qty')
+        if kite_qty is None:
+            return False  # couldn't reach Kite — let caller proceed
+        expected_sign = 1 if direction == 'LONG' else -1
+        expected_abs = int(qty)
+        if kite_qty == expected_sign * expected_abs:
+            return False  # Kite position matches DB — normal exit path
+
+        logger.warning(
+            f"[ORB] RECONCILE {instrument} {direction}: DB says open qty={qty} "
+            f"but Kite net qty={kite_qty}. Closing DB without a new order to "
+            f"avoid reopening the position."
+        )
+        # Derive exit price from Kite fills. For LONG the closing leg is a
+        # SELL so use avg sell_price. For SHORT the closing leg is a BUY so
+        # use avg buy_price.
+        if direction == 'LONG':
+            exit_price = kite_state.get('sell_price') or position['entry_price']
+        else:
+            exit_price = kite_state.get('buy_price') or position['entry_price']
+        entry_price = position['entry_price']
+        pnl_pts = (exit_price - entry_price) if direction == 'LONG' else (entry_price - exit_price)
+        pnl_inr = round(pnl_pts * qty, 2)
+        self.db.close_position(
+            position_id=position['id'],
+            exit_price=round(float(exit_price), 2),
+            exit_time=datetime.now().isoformat(),
+            exit_reason='RECONCILED_KITE_FLAT',
+            pnl_pts=round(pnl_pts, 2),
+            pnl_inr=pnl_inr,
+        )
+        with self._lock:
+            self._positions.pop(instrument, None)
+        # Also cancel any lingering SL order
+        self.cancel_sl_m_order(position)
+        try:
+            ns = get_notification_service(self.cfg)
+            ns.send_alert(
+                'system_alert',
+                f'ORB reconcile — {instrument} DB closed (Kite already flat)',
+                f"DB thought {direction} {qty} @ {entry_price:.2f} was still open, "
+                f"but Kite net qty was {kite_qty}. Closed DB at exit {exit_price:.2f} "
+                f"(P&L Rs {pnl_inr:.0f}) without placing a new order.",
+                data={'symbol': instrument, 'direction': direction,
+                      'db_qty': qty, 'kite_qty': kite_qty,
+                      'exit_price': exit_price, 'pnl_inr': pnl_inr},
+                priority='normal',
+            )
+        except Exception:
+            pass
+        return True
+
     def ensure_sl_orders_placed(self):
         """Scan all OPEN positions and place SL-M on any that lack one.
         Safe to call repeatedly. Returns a summary dict."""
@@ -1605,6 +1736,12 @@ class ORBLiveEngine:
             pnl_pts = entry_price - exit_price
         pnl_inr = round(pnl_pts * qty, 2)
         pnl_pts = round(pnl_pts, 2)
+
+        # Pre-flight: reconcile with Kite. If the position is already flat
+        # there (manual close, SL fill we haven't seen yet), close DB and
+        # return — placing a new exit would reopen a reverse position.
+        if self.reconcile_position_with_kite(position):
+            return
 
         # Cancel the on-exchange SL-M first — otherwise both could execute
         # and we'd oversell. Safe no-op if no SL-M was placed.
