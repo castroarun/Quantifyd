@@ -1,0 +1,269 @@
+.page {
+  padding: var(--space-page, 32px) var(--space-page, 32px) 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: var(--text-2xl, 22px);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: var(--text-sm, 13px);
+  color: var(--ink-muted);
+}
+
+.subtitle code {
+  background: var(--chip-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.loading,
+.error {
+  padding: 48px;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+.error {
+  color: var(--accent-neg);
+}
+
+/* ---------- Collapsible plan card ---------- */
+
+.plan {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card, 10px);
+  overflow: hidden;
+  transition: box-shadow 150ms ease;
+}
+.plan[open] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.planHead {
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  user-select: none;
+}
+.planHead::-webkit-details-marker { display: none; }
+.planHead:hover {
+  background: var(--hairline-softest);
+}
+
+.planArrow {
+  display: inline-block;
+  transform: rotate(0deg);
+  transition: transform 150ms ease;
+  color: var(--ink-muted);
+  font-size: 18px;
+  line-height: 1;
+  padding-top: 2px;
+}
+.plan[open] .planArrow {
+  transform: rotate(90deg);
+}
+
+.planHeadMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.planTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.planTitle {
+  font-size: var(--text-lg, 16px);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.planSubtitle {
+  font-size: var(--text-sm, 13px);
+  color: var(--ink-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.planMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: var(--text-xs, 11px);
+  color: var(--ink-faint);
+  flex-wrap: wrap;
+}
+
+.metaDate {
+  font-variant-numeric: tabular-nums;
+}
+
+.tagList {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: var(--chip-bg);
+  color: var(--ink-muted);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Status chips ---------- */
+
+.statusChip {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+.status_idea        { background: rgba(30, 58, 138, 0.12);  color: #1E3A8A; }
+.status_designing   { background: rgba(202, 138, 4, 0.14);  color: #B45309; }
+.status_backtesting { background: rgba(147, 51, 234, 0.12); color: #7C3AED; }
+.status_building    { background: rgba(15, 110, 86, 0.14);  color: var(--accent-pos); }
+.status_live        { background: var(--accent-pos);         color: #F0FDF4; }
+.status_parked      { background: rgba(100, 116, 139, 0.12); color: var(--ink-faint); }
+
+/* ---------- Plan body ---------- */
+
+.planBody {
+  padding: 6px 20px 22px 42px;
+  border-top: 0.5px solid var(--hairline-soft);
+}
+
+.section {
+  margin-top: 20px;
+}
+.section:first-child {
+  margin-top: 14px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-pos, #0F6E56);
+  margin-bottom: 8px;
+}
+
+.sectionBody {
+  font-size: var(--text-sm, 13px);
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.itemLine {
+  display: flex;
+  gap: 8px;
+  font-size: var(--text-sm, 13px);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.bullet {
+  color: var(--ink-faint);
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.itemCard {
+  background: var(--canvas, rgba(0, 0, 0, 0.02));
+  border: 0.5px solid var(--hairline-soft);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.itemLabel {
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.itemBody {
+  font-size: var(--text-sm, 13px);
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* Pros / Cons two-column layout inside an item card */
+
+.pcWrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.pcCol {
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.pcHead {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.pcHeadPos { color: var(--accent-pos); }
+.pcHeadNeg { color: var(--accent-neg); }
+
+.pcList {
+  margin: 0;
+  padding-left: 16px;
+  font-size: var(--text-xs, 12px);
+  line-height: 1.55;
+  color: var(--ink);
+}
+.pcList li + li {
+  margin-top: 3px;
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .page { padding: 20px 16px 40px; }
+  .planHead { padding: 14px 14px; gap: 8px; }
+  .planBody { padding: 4px 14px 18px 30px; }
+  .pcWrap { grid-template-columns: 1fr; gap: 8px; }
+}

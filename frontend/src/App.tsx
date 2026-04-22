@@ -11,6 +11,7 @@ import Report from './pages/Report';
 import Holdings from './pages/Holdings';
 import HoldingsHistory from './pages/HoldingsHistory';
 import OptionsData from './pages/OptionsData';
+import FuturePlans from './pages/FuturePlans';
 import NotFound from './pages/NotFound';
 
 type AuthState = 'unknown' | 'auth' | 'noauth';
@@ -133,6 +134,16 @@ export default function App() {
           <Protected>
             <AppLayout active="options-data">
               <OptionsData />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/future-plans"
+        element={
+          <Protected>
+            <AppLayout active="future-plans">
+              <FuturePlans />
             </AppLayout>
           </Protected>
         }

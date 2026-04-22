@@ -1,0 +1,92 @@
+{
+  "plans": [
+    {
+      "id": "orb-directional-options",
+      "title": "ORB Directional Options — Nifty",
+      "subtitle": "5-min directional options overlay on the existing ORB cash signal",
+      "status": "idea",
+      "created": "2026-04-23",
+      "tags": ["options", "directional", "orb-overlay", "nifty"],
+      "sections": [
+        {
+          "title": "Goal",
+          "body": "When the ORB signal fires on any of the 15 cash stocks, mirror that directional view on NIFTY via options. Exploit the already-computed ORB conviction to size an options trade without taking separate directional risk on the index. Paper-only until backtest confirms edge."
+        },
+        {
+          "title": "Entry — three variants to evaluate",
+          "items": [
+            {
+              "label": "Variant A · Pure naked option sell",
+              "body": "On SHORT signal → SELL ATM or slightly-OTM NIFTY CE. On LONG signal → SELL ATM or slightly-OTM NIFTY PE.",
+              "pros": ["Collect full premium if direction is right", "Simple 1-leg management", "Maximum theta capture"],
+              "cons": ["Unbounded risk on the wrong-side tail", "Margin intensive"]
+            },
+            {
+              "label": "Variant B · Directional strangle",
+              "body": "On SHORT signal → SELL closer-ATM CE + SELL far-OTM PE. On LONG signal → SELL closer-ATM PE + SELL far-OTM CE. Far-leg acts as tail hedge and improves margin.",
+              "pros": ["Covers both tails partially", "Lower net margin via spread benefit", "Extra premium from the hedge leg"],
+              "cons": ["Two-leg management overhead", "Caps upside vs naked"]
+            },
+            {
+              "label": "Variant C · Conviction-ranked router",
+              "body": "Route grade A+/A signals to Variant A (naked — high conviction) · Route B/C to Variant B (hedged) · Skip anything with no stars.",
+              "pros": ["Uses existing conviction rubric already saved on positions", "Right risk profile for each signal quality"],
+              "cons": ["Adds complexity", "Needs sample size to confirm grade-vs-outcome correlation"]
+            }
+          ]
+        },
+        {
+          "title": "Exit — A/B test these",
+          "items": [
+            {
+              "label": "1. Hard SL at 2× entry premium",
+              "body": "Classic short-premium rule. Max loss = initial premium collected. Place as exchange SL-L with trigger at 2× entry, limit at 2.1× entry."
+            },
+            {
+              "label": "2. SuperTrend trail on NIFTY spot",
+              "body": "Exit the option when NIFTY spot SuperTrend flips against the trade. Test ST(7, 2.0) and ST(7, 3.0) — narrower band (2.0) catches smaller reversals but may whipsaw."
+            },
+            {
+              "label": "3. Time-based exit",
+              "body": "Candidates: 14:30 (aggressive) · 15:15 (standard EOD) · 15:20 (Zerodha MIS auto-squareoff). Test whether 14:30 loses the late-afternoon intrinsic decay edge."
+            },
+            {
+              "label": "4. Partial scale-out",
+              "body": "Mirror the ORB R-multiple style: exit 50% of lots at +30% premium decay (i.e. option value drops to 0.7× entry) · let remainder ride till SL or ST-flip."
+            }
+          ]
+        },
+        {
+          "title": "Open design questions",
+          "items": [
+            "Strike selection: fixed-offset from spot? LTP-based search targeting premium ~Rs 80? Delta-based (e.g. short the 0.30 delta)?",
+            "Capital allocation: 1 lot per ORB signal? Scaled by conviction grade? Capped by current MIS margin headroom?",
+            "Concurrent cap: how many parallel option positions? 1? 3? 5?",
+            "Expiry choice: current-week for max theta + max gamma, or next-week for smoother decay?",
+            "SL placement: exchange-side SL-L on the option leg, or monitor-driven 2× check every tick?",
+            "Direction conflict: what if two ORB stocks give opposite signals? Take both (opposing NIFTY options), net out, or pick by conviction?"
+          ]
+        },
+        {
+          "title": "Prerequisites before backtesting",
+          "items": [
+            "Need 20+ trading days of captured 1-min options data (currently 3 sessions)",
+            "Reconstruct 5-min NIFTY candles from 1-min data for the ST calculation",
+            "Wire the ORB signal bus to emit signals to a second consumer (options engine)",
+            "Build a simple backtester using the captured option_chain snapshots"
+          ]
+        },
+        {
+          "title": "Integration notes",
+          "items": [
+            "Reuses the existing ORB signal engine 1:1 — no new signal logic",
+            "Fires at the same moment the cash ORB trade fires (so same filters apply)",
+            "Conviction grade already saved on orb_positions — direct lookup",
+            "New DB: backtest_data/orb_options.db (positions / orders / pnl)",
+            "Keep in paper mode (nas-style) until backtest shows edge"
+          ]
+        }
+      ]
+    }
+  ]
+}

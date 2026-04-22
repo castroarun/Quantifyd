@@ -6657,6 +6657,24 @@ def api_options_stats():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/plans/future')
+def api_future_plans():
+    """Serve the structured future-plans log from data/future_plans.json.
+    File is editable without code changes — plan authors just append to
+    the plans[] array."""
+    import json as _json_fp
+    from pathlib import Path
+    try:
+        path = Path(__file__).resolve().parent / 'data' / 'future_plans.json'
+        if not path.exists():
+            return jsonify({'plans': []})
+        with open(path, 'r', encoding='utf-8') as f:
+            return jsonify(_json_fp.load(f))
+    except Exception as e:
+        logger.error(f'[PLANS] load error: {e}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/options/coverage')
 def api_options_coverage():
     """Per-session summary of captured options data. Returns:
