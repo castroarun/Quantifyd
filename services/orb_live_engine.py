@@ -868,13 +868,78 @@ class ORBLiveEngine:
         """
         Called every 30 seconds.
         For each open position:
-        1. Get current LTP
-        2. Check SL hit
-        3. Check target hit
-        4. If hit: place exit order, close position in DB
+        1. Check if on-exchange SL order has completed (fast path — no soft re-exit)
+        2. Get current LTP
+        3. Check soft SL hit (fallback if exchange SL missing/failed)
+        4. Check target hit
+        5. If hit: place exit order, close position in DB
         """
         with self._lock:
             open_syms = list(self._positions.keys())
+
+        if not open_syms:
+            return
+
+        # --- Step 1: exchange-SL reconciliation (before anything else) ---
+        # If the SL order fired on Kite, close the position in DB so the
+        # monitor doesn't try to re-exit at market (which would oversell).
+        for sym in list(open_syms):
+            try:
+                with self._lock:
+                    pos = self._positions.get(sym)
+                if not pos:
+                    continue
+                sl_order_id = pos.get('kite_sl_order_id')
+                if not sl_order_id:
+                    continue
+                kite = self._get_kite()
+                hist = kite.order_history(sl_order_id) or []
+                if not hist:
+                    continue
+                last = hist[-1]
+                if (last.get('status') or '').upper() != 'COMPLETE':
+                    continue
+                # Filled at exchange. Close the DB position with the actual fill price.
+                fill_price = last.get('average_price') or pos['sl_price']
+                direction = pos['direction']
+                entry_price = pos['entry_price']
+                qty = pos['qty']
+                pnl_pts = fill_price - entry_price if direction == 'LONG' \
+                    else entry_price - fill_price
+                pnl_inr = round(pnl_pts * qty, 2)
+                self.db.close_position(
+                    position_id=pos['id'],
+                    exit_price=round(float(fill_price), 2),
+                    exit_time=datetime.now().isoformat(),
+                    exit_reason='SL_HIT_EXCHANGE',
+                    pnl_pts=round(pnl_pts, 2),
+                    pnl_inr=pnl_inr,
+                    kite_exit_order_id=sl_order_id,
+                )
+                with self._lock:
+                    self._positions.pop(sym, None)
+                open_syms.remove(sym)
+                pnl_label = f"+Rs {pnl_inr:.0f}" if pnl_inr >= 0 else f"-Rs {abs(pnl_inr):.0f}"
+                logger.info(
+                    f"[ORB] SL-exchange CLOSED {sym} {direction} @{fill_price:.2f} "
+                    f"P&L={pnl_label} (order={sl_order_id})"
+                )
+                # Exit notification
+                try:
+                    ns = get_notification_service(self.cfg)
+                    ns.send_alert(
+                        'sl_hit',
+                        f'SL-EXCHANGE hit — {sym} {direction} @ {float(fill_price):.2f}',
+                        f'P&L {pnl_label} · filled via Kite SL order {sl_order_id}',
+                        data={'symbol': sym, 'direction': direction,
+                              'entry_price': entry_price, 'exit_price': float(fill_price),
+                              'qty': qty, 'pnl_inr': pnl_inr,
+                              'exit_reason': 'SL_HIT_EXCHANGE'},
+                    )
+                except Exception as e2:
+                    logger.warning(f"[ORB] SL-exchange notify failed: {e2}")
+            except Exception as e:
+                logger.error(f"[ORB] SL reconciliation failed for {sym}: {e}")
 
         if not open_syms:
             return

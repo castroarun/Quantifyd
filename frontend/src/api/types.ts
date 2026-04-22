@@ -35,13 +35,18 @@ export interface ORBPosition {
   direction: 'LONG' | 'SHORT';
   qty: number;
   entry_price: number;
+  sl_price?: number;
+  target_price?: number;
+  /** @deprecated use sl_price (kept for any legacy consumer) */
   stop_loss?: number;
+  /** @deprecated use target_price */
   target?: number;
   entry_time?: string;
   ltp?: number;
   pnl_inr?: number;
   pnl_pts?: number;
   entry_reason?: string;
+  kite_sl_order_id?: string;
   conviction_grade?: 'A+' | 'A' | 'B' | 'C';
   conviction_score?: number;
   conviction_stars?: Array<{ key: string; hit: boolean; desc: string }>;

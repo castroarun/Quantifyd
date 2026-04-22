@@ -172,14 +172,14 @@ export default function Orb() {
       header: 'Stop',
       width: '1fr',
       align: 'right',
-      render: (p) => formatNumber(p.stop_loss),
+      render: (p) => formatNumber(p.sl_price ?? p.stop_loss),
     },
     {
       key: 'target',
       header: 'Target',
       width: '1fr',
       align: 'right',
-      render: (p) => formatNumber(p.target),
+      render: (p) => formatNumber(p.target_price ?? p.target),
     },
     {
       key: 'ltp',
