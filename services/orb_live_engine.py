@@ -1131,12 +1131,10 @@ class ORBLiveEngine:
         position_id = position['id']
 
         transaction_type = 'SELL' if direction == 'LONG' else 'BUY'
-        # Round to NSE tick (0.05). Use SL (stop-loss LIMIT) not SL-M —
-        # Kite API rejects SL-M without market_protection, and the limit
-        # variant gives deterministic fills. Accept 0.5% worse-case slip
-        # on the limit price so fills still go through on gaps.
+        # Round to this instrument's tick size (0.05 for most, 0.10 for some).
+        tick = self._get_tick_size(instrument)
         def _tick(v):
-            return round(round(v / 0.05) * 0.05, 2)
+            return round(round(v / tick) * tick, 2)
         trigger_price = _tick(sl_price)
         if transaction_type == 'SELL':  # LONG being stopped out -> sell
             limit_price = _tick(sl_price * 0.995)
@@ -1221,12 +1219,39 @@ class ORBLiveEngine:
             logger.error(f"[ORB] SL-M cancel FAILED for {position['instrument']}: {e}")
             return False
 
+    def _get_tick_size(self, instrument: str) -> float:
+        """Fetch instrument tick size (cached). Defaults to 0.05 if unknown."""
+        cache = getattr(self, '_tick_size_cache', None)
+        if cache is None:
+            cache = {}
+            self._tick_size_cache = cache
+        if instrument in cache:
+            return cache[instrument]
+        try:
+            kite = self._get_kite()
+            q = kite.quote([f'NSE:{instrument}']) or {}
+            info = q.get(f'NSE:{instrument}', {})
+            # Kite quote() doesn't always return tick_size — fall back to instruments()
+            ts = info.get('tick_size')
+            if not ts:
+                insts = kite.instruments('NSE') or []
+                for r in insts:
+                    if r.get('tradingsymbol') == instrument and r.get('segment') == 'NSE':
+                        ts = r.get('tick_size')
+                        break
+            cache[instrument] = float(ts) if ts else 0.05
+        except Exception as e:
+            logger.warning(f"[ORB] tick_size lookup failed for {instrument}: {e}")
+            cache[instrument] = 0.05
+        return cache[instrument]
+
     def modify_sl_m_order(self, position, new_trigger_price):
         """Update the SL trigger + limit (used by V9t_lock50 trail). Re-places
         if the order was already consumed or doesn't exist."""
         sl_order_id = position.get('kite_sl_order_id')
+        tick = self._get_tick_size(position['instrument'])
         def _tick(v):
-            return round(round(float(v) / 0.05) * 0.05, 2)
+            return round(round(float(v) / tick) * tick, 2)
         trigger_price = _tick(new_trigger_price)
         direction = position['direction']
         if direction == 'LONG':
