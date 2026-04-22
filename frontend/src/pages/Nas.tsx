@@ -489,7 +489,11 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
   });
 
   const totalPnl = enriched.reduce((acc, p) => acc + (p.pnl_inr ?? 0), 0);
-  const dayPnl = (state?.stats?.today_pnl as number | undefined) ?? totalPnl;
+  // Day P&L = closed trades today (persisted) + live open-leg P&L.
+  // Old code used `??` which preferred 0 (no closed trades) over the open-leg
+  // MTM, so system-level Day P&L stuck at Rs 0 even when legs were profitable.
+  const persistedTodayPnl = (state?.stats?.today_pnl as number | undefined) ?? 0;
+  const dayPnl = persistedTodayPnl + totalPnl;
 
   // Closed-today legs (sorted newest first), with pnl computed from entry/exit.
   const closedLegs = (state?.positions?.closed_today ?? [])
