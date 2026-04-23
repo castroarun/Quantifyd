@@ -714,9 +714,7 @@ class ORBLiveEngine:
                     continue
 
                 latest = candles[-1]
-                prev_candle = candles[-2]
                 close_price = latest['close']
-                prev_close = prev_candle['close']
 
                 # --- Compute indicators (always, for dashboard display) ---
                 vwap = self.compute_vwap(candles)
@@ -728,12 +726,38 @@ class ORBLiveEngine:
                     rsi_15m=rsi,
                 )
 
-                # --- Breakout detection (close-based, with confirmation) ---
+                # --- Breakout detection ---
+                # Walk ALL candles in order, find every OR boundary crossing.
+                # Start the walk from the first post-OR candle so a transition
+                # that lands on the 9:30 candle itself (common — move begins
+                # right at OR end) is compared against the last pre-OR candle.
+                # We take the LATEST valid transition that is still consistent
+                # with the current 5-min close (so a SHORT that reversed into
+                # a LONG later this morning catches the LONG, not the stale
+                # SHORT). Stops the "already-past-OR" blind spot that missed
+                # TRENT SHORT on 2026-04-23 (close 4380.10 vs OR_low 4380.20).
+                def _ctime(c):
+                    t = c['date']
+                    if hasattr(t, 'tzinfo') and t.tzinfo is not None:
+                        t = t.replace(tzinfo=None)
+                    return t
+                or_end = session_start + timedelta(minutes=cfg.get('or_minutes', 15))
+                or_end_idx = next(
+                    (i for i, c in enumerate(candles) if _ctime(c) >= or_end),
+                    len(candles)
+                )
                 direction = None
-                if close_price > or_high and prev_close <= or_high:
-                    direction = 'LONG'
-                elif close_price < or_low and prev_close >= or_low:
-                    direction = 'SHORT'
+                for i in range(or_end_idx, len(candles)):
+                    if i == 0:
+                        continue
+                    prev_c = candles[i - 1]
+                    cur = candles[i]
+                    if cur['close'] > or_high and prev_c['close'] <= or_high:
+                        if close_price > or_high:
+                            direction = 'LONG'
+                    elif cur['close'] < or_low and prev_c['close'] >= or_low:
+                        if close_price < or_low:
+                            direction = 'SHORT'
 
                 if direction is None:
                     continue
@@ -2211,24 +2235,34 @@ class ORBLiveEngine:
                     result['skipped'].append({'sym': sym, 'reason': 'insufficient_candles'})
                     continue
 
-                # Walk post-OR candles and collect ALL direction transitions.
-                # Pick the LATEST transition whose side is still consistent
-                # with current LTP (so a SHORT that reversed into a LONG later
-                # catches the LONG, not the stale SHORT).
+                # Walk candles from the first post-OR candle onward. Start
+                # comparisons at or_end_idx but use candles[i-1] (which may
+                # be the last PRE-OR candle) as the prev — otherwise a
+                # transition that lands on the very first post-OR candle
+                # (TRENT 2026-04-23: 9:30 close 4380.10 vs OR_low 4380.20)
+                # has no prior post-OR candle to compare against and is
+                # lost. Pick the LATEST transition still consistent with
+                # current LTP (so a SHORT that reversed to LONG catches
+                # the LONG, not the stale SHORT).
                 or_end = session_start + timedelta(minutes=cfg.get('or_minutes', 15))
                 def _ctime(c):
                     t = c['date']
                     if hasattr(t, 'tzinfo') and t.tzinfo is not None:
                         t = t.replace(tzinfo=None)
                     return t
-                post = [c for c in candles if _ctime(c) >= or_end]
+                or_end_idx = next(
+                    (i for i, c in enumerate(candles) if _ctime(c) >= or_end),
+                    len(candles)
+                )
                 ltp = ltps.get(sym) or 0
                 direction = None
                 first_breakout = None  # name kept for schema compat — actually the LATEST valid breakout
                 all_transitions = []   # for debug logging only
-                for i in range(1, len(post)):
-                    prev_c = post[i - 1]
-                    cur = post[i]
+                for i in range(or_end_idx, len(candles)):
+                    if i == 0:
+                        continue
+                    prev_c = candles[i - 1]
+                    cur = candles[i]
                     if cur['close'] > or_high and prev_c['close'] <= or_high:
                         all_transitions.append(('LONG', cur))
                         if ltp > or_high:
