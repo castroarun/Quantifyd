@@ -685,6 +685,75 @@ export default function Orb() {
           </div>
         </details>
       </section>
+
+      {/* backtest baseline — 250-day variants sweep */}
+      <section className={styles.section}>
+        <details className={styles.rulesBlock}>
+          <summary className={styles.rulesSummary}>Backtest baseline · 250-day variants sweep</summary>
+          <div className={styles.rulesBody}>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Window</span>
+              <span>
+                2025-05-05 → 2026-04-17 · 250 trading days · 1,160 trades/variant · 15-stock universe
+                · 7.7% of 15,000 stock-days triggered a filtered breakout.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>V9 headline (live base)</span>
+              <span>
+                <b>Calmar 282.60</b> · Win rate <b>76.3%</b> · PF <b>7.87</b> · Return on 1L <b>+120.2%</b> · MaxDD Rs 425.
+                <br /><span className={styles.mute}>Ranks #1 in both 60-day (Calmar 124) and 250-day (Calmar 283) windows.</span>
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Variant comparison (cash · 1L capital)</span>
+              <span>
+                <table className={styles.allocTable}>
+                  <tbody>
+                    <tr>
+                      <td><b style={{ color: 'var(--accent-pos)' }}>#1 V9 close@14:30</b></td>
+                      <td>WR 76.3% · PF 7.87 · +Rs 1,20,216 (+120.2%) · DD Rs 425 · <b>Calmar 282.60</b></td>
+                    </tr>
+                    <tr>
+                      <td>#2 V0 baseline</td>
+                      <td>WR 73.9% · PF 6.07 · +Rs 1,23,117 (+123.1%) · DD Rs 825 · Calmar 149.22</td>
+                    </tr>
+                    <tr>
+                      <td>#3 V5 trail-BE @ 1R</td>
+                      <td>WR 71.5% · PF 6.47 · +Rs 1,22,021 (+122.0%) · DD Rs 825 · Calmar 147.84</td>
+                    </tr>
+                    <tr>
+                      <td>#4 V6 partial 50% + BE</td>
+                      <td>WR 75.8% · PF 6.37 · +Rs 1,19,700 (+119.7%) · DD Rs 825 · Calmar 145.02</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Live config derivations</span>
+              <span>
+                <b>CPR width 0.65%</b> — 250-day CPR sweep: 0.65 beats 0.5 on Calmar (263 vs 230), +161 trades, flat DD.
+                {' · '}
+                <b>V9t_lock50 hybrid</b> — 14:30 lock 50% profit + ride to 15:18 (strict Calmar 3,152 in 60-d strict-vs-lenient test, &gt; pure V9 close@14:30).
+                {' · '}
+                <b>RSI 60/40, VWAP, CPR-dir, gap &lt; 1%</b> — filter stack from 126-config optimization (PF 1.64, Sharpe 1.28).
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>60-d vs 250-d stability</span>
+              <span>
+                V9 rank: #1 in both windows (Calmar 124 → 283).
+                {' · '}
+                V6 &gt; V0 at 60d → V0 &gt; V6 at 250d — partial-50% concedes P&amp;L long-run.
+                {' · '}
+                DD range: 1.0–2.1% (60d) → 2.1–4.1% (250d) — worse episodes show up in the 1-yr sample.
+                <br /><span className={styles.mute}>Source: docs/ORB-VARIANTS-FINDINGS.md · artifacts on VPS at /home/arun/quantifyd/variants_top3_*.csv</span>
+              </span>
+            </div>
+          </div>
+        </details>
+      </section>
     </div>
   );
 }
