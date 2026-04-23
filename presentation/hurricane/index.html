@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>The Hurricane · A field guide to investing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-soft: #0f0f0f;
+      --text: #eaeaea;
+      --muted: #8a8a8a;
+      --dim: #2a2a2a;
+      --rule: #1f1f1f;
+      --accent: #c9a86b;
+      --good: #7aa87a;
+      --warn: #c9a86b;
+      --bad: #a56f6f;
+      --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+      --sans: "Inter", system-ui, -apple-system, sans-serif;
+      --mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+    }
+
+    html, body { background: var(--bg); }
+
+    .reveal {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      font-size: 26px;
+      letter-spacing: -0.005em;
+    }
+
+    .reveal .slides { text-align: left; }
+
+    .reveal .slides > section {
+      padding: 58px 130px 70px 130px;
+      top: 0 !important;
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-family: var(--serif);
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: -0.015em;
+      text-transform: none;
+      line-height: 1.02;
+      margin: 0 0 0.35em;
+    }
+    .reveal h1 { font-size: 4.2em; }
+    .reveal h2 { font-size: 2.8em; }
+    .reveal h3 { font-size: 1.6em; line-height: 1.2; }
+
+    .reveal p { font-size: 0.95em; line-height: 1.55; margin: 0 0 0.8em; color: var(--text); }
+    .reveal em { font-style: italic; color: var(--text); }
+    .reveal strong { font-weight: 500; color: var(--text); }
+
+    .eyebrow {
+      font-family: var(--sans);
+      font-size: 0.6em;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2.4em;
+      display: block;
+    }
+
+    .reveal .muted { color: var(--muted); }
+    .reveal .accent { color: var(--accent); }
+    .reveal .good { color: var(--good); }
+    .reveal .bad  { color: var(--bad); }
+    .reveal .mono { font-family: var(--mono); }
+    .reveal .serif { font-family: var(--serif); }
+    .reveal .small { font-size: 0.82em; }
+    .reveal .caption { color: var(--muted); font-size: 0.78em; letter-spacing: 0.02em; }
+
+    .hero-num {
+      font-family: var(--serif);
+      font-size: 7.5em;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+    .hero-num .unit { font-size: 0.3em; color: var(--muted); letter-spacing: 0.04em; margin-left: 0.25em; }
+
+    .reveal ul { list-style: none; padding: 0; margin: 0 0 0.8em 0; }
+    .reveal ul.rule li { padding: 0.55em 0; border-bottom: 1px solid var(--rule); color: var(--text); font-size: 0.95em; }
+    .reveal ul.rule li:last-child { border-bottom: none; }
+    .reveal ul.numbered { counter-reset: step; }
+    .reveal ul.numbered li {
+      padding: 0.55em 0 0.55em 2.5em;
+      position: relative;
+      border-bottom: 1px solid var(--rule);
+      font-size: 0.9em;
+    }
+    .reveal ul.numbered li:last-child { border-bottom: none; }
+    .reveal ul.numbered li::before {
+      counter-increment: step;
+      content: counter(step, decimal-leading-zero);
+      position: absolute; left: 0; top: 0.55em;
+      font-family: var(--mono);
+      font-size: 0.7em;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* Three-response grid */
+    .response-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2em;
+      margin-top: 1.5em;
+    }
+    .response-card {
+      padding: 1em 0 0 0;
+      border-top: 2px solid var(--dim);
+    }
+    .response-card .label {
+      font-family: var(--mono);
+      font-size: 0.6em;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5em;
+    }
+    .response-card .title {
+      font-family: var(--serif);
+      font-size: 1.7em;
+      line-height: 1.05;
+      margin-bottom: 0.4em;
+    }
+    .response-card .detail {
+      color: var(--muted);
+      font-size: 0.82em;
+      line-height: 1.5;
+    }
+    .response-card.good { border-top-color: var(--good); }
+    .response-card.good .title { color: var(--good); }
+    .response-card.good .label { color: var(--good); }
+    .response-card.bad { border-top-color: var(--bad); }
+    .response-card.bad .title { color: var(--bad); }
+    .response-card.bad .label { color: var(--bad); }
+    .response-card.warn { border-top-color: var(--warn); }
+    .response-card.warn .title { color: var(--warn); }
+    .response-card.warn .label { color: var(--warn); }
+
+    /* Two-column lists */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 4em;
+    }
+
+    /* Drawdown table */
+    .reveal table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 0.78em; }
+    .reveal table th, .reveal table td { text-align: left; padding: 0.7em 1.2em 0.7em 0; border: none; border-bottom: 1px solid var(--rule); }
+    .reveal table th { color: var(--muted); font-weight: 400; font-size: 0.82em; letter-spacing: 0.14em; text-transform: uppercase; }
+    .reveal table td.num { font-variant-numeric: tabular-nums; }
+    .reveal table td.recovered { color: var(--good); }
+
+    /* Compounding SVG */
+    .growth-chart { width: 100%; max-width: 1050px; max-height: 440px; display: block; margin: 0.4em auto 0; }
+    .growth-chart text { font-family: var(--mono); font-size: 14px; letter-spacing: 0.04em; }
+
+    /* India pyramid */
+    .pyramid-chart { width: 100%; max-width: 920px; max-height: 210px; display: block; margin: 0.4em auto 0; }
+
+    /* Allocation bar */
+    .alloc-bar { display: flex; width: 100%; max-width: 800px; margin: 0.6em 0 0.3em 0; }
+    .alloc-bar .seg { padding: 1em 0.8em; font-family: var(--mono); font-size: 0.7em; letter-spacing: 0.1em; }
+    .alloc-bar .seg.equity { background: #c9a86b; color: #0a0a0a; }
+    .alloc-bar .seg.debt   { background: #3d3d3d; color: #eaeaea; }
+    .alloc-bar .seg.sat    { background: #7aa87a; color: #0a0a0a; }
+    .alloc-row {
+      display: grid;
+      grid-template-columns: 6em 1fr;
+      padding: 0.9em 0;
+      border-bottom: 1px solid var(--rule);
+      align-items: center;
+      column-gap: 2em;
+    }
+    .alloc-row:last-child { border-bottom: none; }
+    .alloc-row .age { font-family: var(--mono); font-size: 0.8em; color: var(--muted); letter-spacing: 0.1em; }
+
+    /* Split columns */
+    .split { display: grid; grid-template-columns: 1fr 1fr; column-gap: 4em; }
+    .split.uneven { grid-template-columns: 1.1fr 1fr; }
+
+    /* Footer */
+    .footer {
+      position: absolute;
+      bottom: 3.5vh; left: 10vw; right: 10vw;
+      display: flex; justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 0.52em;
+      color: var(--dim);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .reveal .progress { color: var(--accent); height: 2px; }
+    .reveal .progress span { background: var(--accent); }
+    .reveal .controls { display: none !important; }
+
+    /* Title slide */
+    .title-block .mark { font-family: var(--mono); font-size: 0.7em; letter-spacing: 0.3em; color: var(--accent); text-transform: uppercase; margin-bottom: 3em; }
+    .title-block h1 { font-size: 5.6em; }
+    .title-block .sub { font-family: var(--serif); font-style: italic; font-size: 1.5em; color: var(--muted); margin-top: 0.3em; }
+    .title-block .byline { margin-top: 4em; font-size: 0.8em; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+    /* Pull quote */
+    .pull-quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 3em;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      max-width: 22ch;
+    }
+    .pull-quote + .attr { margin-top: 2em; color: var(--muted); font-size: 0.85em; letter-spacing: 0.12em; text-transform: uppercase; }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center;
+      margin: 1.8em 0;
+      gap: 1.4em;
+    }
+    .divider .line { flex: 1; height: 1px; background: var(--rule); }
+    .divider .tag {
+      font-family: var(--sans);
+      font-size: 0.6em;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Disclosure box */
+    .layer {
+      padding: 1em 1.2em;
+      border-left: 2px solid var(--accent);
+      margin: 0.8em 0;
+    }
+    .layer .head { font-family: var(--mono); font-size: 0.65em; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.3em; }
+    .layer .body { color: var(--text); font-size: 0.88em; line-height: 1.5; }
+    .layer.quiet { border-left-color: var(--dim); }
+    .layer.quiet .head { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- 1 · Opening stat -->
+      <section>
+        <div>
+          <div class="hero-num">927<span class="unit">hours</span></div>
+          <p class="caption mono" style="margin-top: 0.6em; letter-spacing: 0.22em;">AIR FORCE RESERVE · 53RD WEATHER RECONNAISSANCE SQUADRON · 2025</p>
+        </div>
+
+        <p class="serif" style="font-size: 1.8em; line-height: 1.3; margin-top: 2em; max-width: 32ch; font-style: italic;">
+          Pilots flew 927 hours directly into the eyewalls of Category 5 hurricanes.
+        </p>
+        <p class="serif" style="font-size: 1.5em; margin-top: 0.7em; color: var(--accent); font-style: italic;">
+          Not to beat them.<br/>
+          To measure them.
+        </p>
+
+        <div class="footer"><span>01 &middot; Opening</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 2 · Title -->
+      <section>
+        <div class="title-block">
+          <div class="mark">A field guide &middot; April 2026</div>
+          <h1>The Hurricane.</h1>
+          <div class="sub">How to think about investing &mdash; for people who'd rather not.</div>
+          <div class="byline">Arun Castro</div>
+        </div>
+        <div class="footer"><span>02</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 3 · The route you have to take -->
+      <section>
+        <span class="eyebrow">The route</span>
+        <h2>The ocean you have to cross<br/><span class="muted">is time.</span></h2>
+        <p style="margin-top: 1.2em; max-width: 42ch;">A house down-payment. Your kids' college. Forty years of retirement with no salary.</p>
+        <p class="muted" style="max-width: 42ch;">Every one of those destinations is on the other side of the market. You can't sail around it. You can't wait for calm weather — the weather never stops.</p>
+        <p class="serif accent" style="font-size: 1.5em; font-style: italic; margin-top: 1.4em;">
+          The only question is how you fly.
+        </p>
+        <div class="footer"><span>03 &middot; The route</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 4 · Why you can't stay home — inflation -->
+      <section>
+        <span class="eyebrow">Why you can't stay home</span>
+        <h2>Inflation is the invisible current.<br/><span class="muted">It takes you backwards while you sit still.</span></h2>
+        <div style="margin-top: 1.4em; max-width: 44ch;">
+          <p>Rs. 1 lakh in your savings account today.</p>
+          <p class="serif accent" style="font-size: 1.6em; font-style: italic; margin: 0.3em 0;">In 12 years at 6% inflation, it buys Rs. 50,000 worth of things.</p>
+          <p class="muted">FDs at 7% → ~5% post-tax ≈ inflation. You're treading water. Not arriving anywhere.</p>
+        </div>
+        <p class="caption" style="margin-top: 1.2em;">Staying home feels safe. It isn't — it's just slow.</p>
+        <div class="footer"><span>04 &middot; Inflation</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 5 · Three responses -->
+      <section>
+        <span class="eyebrow">Three responses to the same storm</span>
+        <h3 class="serif" style="margin-bottom: 0.5em;">People do one of three things when they see the weather.</h3>
+
+        <div class="response-grid">
+          <div class="response-card bad">
+            <div class="label">● Stay home</div>
+            <div class="title">Cash &middot; FD &middot; real estate only.</div>
+            <div class="detail">Feels safe. Inflation eats it quietly over 20 years. You retire with less than you saved.</div>
+          </div>
+          <div class="response-card warn">
+            <div class="label">● Fly around</div>
+            <div class="title">Time it. Chase it. Panic out.</div>
+            <div class="detail">Get hit by turbulence anyway. Miss the best ten days of each decade. Arrive late, if at all.</div>
+          </div>
+          <div class="response-card good">
+            <div class="label">● Fly through</div>
+            <div class="title">Systematic. Diversified. Long.</div>
+            <div class="detail">Carry instruments. Keep flying on red days. Arrive — with compounded returns and sleep.</div>
+          </div>
+        </div>
+        <svg viewBox="0 0 1000 230" class="pyramid-chart" xmlns="http://www.w3.org/2000/svg" aria-label="Indian investor pyramid 2025">
+          <!-- Bottom: Stay home (~85%) -->
+          <polygon points="250,150 750,150 950,215 50,215"
+                   fill="#a56f6f" fill-opacity="0.08" stroke="#a56f6f" stroke-width="1.2"/>
+          <text x="500" y="188" text-anchor="middle" font-family="Instrument Serif" font-size="26" font-style="italic" fill="#eaeaea">~85%</text>
+          <text x="500" y="208" text-anchor="middle" font-family="Inter" font-size="11" fill="#8a8a8a" letter-spacing="0.18em">STAY HOME &middot; NO EQUITY EXPOSURE</text>
+
+          <!-- Middle: Fly around (~10%) -->
+          <polygon points="350,80 650,80 750,150 250,150"
+                   fill="#c9a86b" fill-opacity="0.1" stroke="#c9a86b" stroke-width="1.2"/>
+          <text x="500" y="115" text-anchor="middle" font-family="Instrument Serif" font-size="22" font-style="italic" fill="#eaeaea">~10%</text>
+          <text x="500" y="135" text-anchor="middle" font-family="Inter" font-size="11" fill="#8a8a8a" letter-spacing="0.18em">FLY AROUND &middot; TIMING, CHASING</text>
+
+          <!-- Top: Fly through (~5%) -->
+          <polygon points="460,15 540,15 650,80 350,80"
+                   fill="#7aa87a" fill-opacity="0.14" stroke="#7aa87a" stroke-width="1.4"/>
+          <text x="500" y="50" text-anchor="middle" font-family="Instrument Serif" font-size="18" font-style="italic" fill="#eaeaea">~5%</text>
+          <text x="500" y="70" text-anchor="middle" font-family="Inter" font-size="10" fill="#8a8a8a" letter-spacing="0.18em">FLY THROUGH &middot; SYSTEMATIC</text>
+        </svg>
+
+        <p class="caption" style="margin-top: 0.6em; text-align: center;">INDIA 2025 &middot; 21 cr demat accounts (13.6 cr unique investors) &middot; 9.45 cr SIP accounts &middot; ~85 cr adults with no equity &middot; <span class="muted">SEBI &middot; AMFI &middot; RBI</span></p>
+        <div class="footer"><span>05 &middot; Three responses</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 6 · What the hunters carry (5 instruments) -->
+      <section>
+        <span class="eyebrow">What the hunters carry</span>
+        <h2>Five instruments.<br/><span class="muted">That's the whole kit.</span></h2>
+        <ul class="numbered" style="margin-top: 1em;">
+          <li><span class="serif accent" style="font-size: 1.15em;">Time horizon.</span> &nbsp; The one advantage retail has over institutions. Compounding works when you own decades.</li>
+          <li><span class="serif accent" style="font-size: 1.15em;">Diversification.</span> &nbsp; Spread across 50+ stocks via an index. Not 5 tickers you read about on Twitter.</li>
+          <li><span class="serif accent" style="font-size: 1.15em;">SIP.</span> &nbsp; Monthly buys, automated, same date. Let the market time you.</li>
+          <li><span class="serif accent" style="font-size: 1.15em;">Index core.</span> &nbsp; 70% of your equity in a broad index — Nifty 50, Nifty Next 50, or total-market. The core nobody fires you from.</li>
+          <li><span class="serif accent" style="font-size: 1.15em;">Rebalance.</span> &nbsp; Once a year. Trim winners, top up losers. Boring. Effective. Two hours of work for one of the biggest wins.</li>
+        </ul>
+        <div class="footer"><span>06 &middot; Instruments</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 7 · What the hunters don't do (5 traps) -->
+      <section>
+        <span class="eyebrow">What the hunters don't do</span>
+        <h2>Five traps.<br/><span class="muted">Most portfolios die in one of these.</span></h2>
+        <ul class="numbered" style="margin-top: 1em;">
+          <li><span class="serif bad" style="font-size: 1.1em;">Market timing.</span> &nbsp; Missing the 10 best days in a decade cuts long-run return by roughly half. You won't be right more than wrong.</li>
+          <li><span class="serif bad" style="font-size: 1.1em;">Gurus.</span> &nbsp; Anyone with a target price and no skin in your outcome is selling you dreams. Including on YouTube.</li>
+          <li><span class="serif bad" style="font-size: 1.1em;">FOMO.</span> &nbsp; The trend you're hearing about is two months old. By the time it reaches your feed, the early money is getting out.</li>
+          <li><span class="serif bad" style="font-size: 1.1em;">F&amp;O without a system.</span> &nbsp; Leverage magnifies your worst month. Without written rules, you'll find it.</li>
+          <li><span class="serif bad" style="font-size: 1.1em;">All-in on one stock.</span> &nbsp; The stock you love will betray you. Every era has a Yes Bank, a DHFL, a Vodafone-Idea.</li>
+        </ul>
+        <div class="footer"><span>07 &middot; Traps</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 8 · Volatility vs risk -->
+      <section>
+        <span class="eyebrow">The most misunderstood word in investing</span>
+        <h2>Volatility is the weather.<br/><span class="muted">Risk is not arriving.</span></h2>
+        <div style="margin-top: 1.4em; max-width: 46ch;">
+          <p>A 30% drawdown in year 2 of a 20-year plan is <em>weather</em>.</p>
+          <p>Selling because of that 30% drawdown is <em class="bad">risk</em>.</p>
+        </div>
+        <p class="serif accent" style="font-size: 1.5em; font-style: italic; margin-top: 1.4em; max-width: 38ch;">
+          The hunters don't fear turbulence. They fear the pilot who turns back.
+        </p>
+        <div class="footer"><span>08 &middot; Volatility vs risk</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 9 · Drawdowns recovered -->
+      <section>
+        <span class="eyebrow">Storm reports that recovered</span>
+        <h3 class="serif">Every time the sky turned black,<br/><span class="muted">Nifty 50 came back — and kept climbing.</span></h3>
+        <table style="margin-top: 1.6em;">
+          <thead>
+            <tr>
+              <th>Storm</th>
+              <th>Drawdown</th>
+              <th>Duration</th>
+              <th>Recovered by</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2000–03 · Dot-com bust</td>
+              <td class="num bad">−55%</td>
+              <td class="num">~3 years</td>
+              <td class="num recovered">2004</td>
+            </tr>
+            <tr>
+              <td>2008–09 · Global Financial Crisis</td>
+              <td class="num bad">−61%</td>
+              <td class="num">~15 months</td>
+              <td class="num recovered">2010</td>
+            </tr>
+            <tr>
+              <td>2020 · COVID crash</td>
+              <td class="num bad">−38%</td>
+              <td class="num">~4 weeks</td>
+              <td class="num recovered">Jan 2021</td>
+            </tr>
+            <tr>
+              <td>2022 · Inflation &amp; war</td>
+              <td class="num bad">−18%</td>
+              <td class="num">~6 months</td>
+              <td class="num recovered">Late 2022</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="caption" style="margin-top: 1.4em;">Drawdowns aren't bugs in the market. They're features. The investor who didn't sell each time is the one who compounded.</p>
+        <div class="footer"><span>09 &middot; Drawdowns</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 10 · SIP as instrument -->
+      <section>
+        <span class="eyebrow">The hunter's instrument</span>
+        <h2>A SIP doesn't have moods.<br/><span class="muted">That's the whole point.</span></h2>
+        <div class="split" style="margin-top: 1.4em;">
+          <div>
+            <p class="caption">WHEN THE MARKET IS GREEN</p>
+            <p>Your SIP buys <em>fewer</em> units at a higher price.</p>
+          </div>
+          <div>
+            <p class="caption">WHEN THE MARKET IS RED</p>
+            <p>Your SIP buys <em>more</em> units at a lower price.</p>
+          </div>
+        </div>
+        <p class="serif accent" style="font-size: 1.3em; font-style: italic; margin-top: 1.8em; max-width: 48ch;">
+          The worst months for discretionary traders are the best months for a SIP.
+        </p>
+        <p class="caption" style="margin-top: 0.6em;">Red days are not panic. They are buying opportunities you already committed to taking.</p>
+        <div class="footer"><span>10 &middot; SIP</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 11 · Compounding — in two lives -->
+      <section>
+        <span class="eyebrow">Compounding &middot; in two lives</span>
+        <h2 style="font-size: 2.2em; margin-bottom: 0.3em;">Raju invested one-third.<br/><span class="muted">Raju ended with twice as much.</span></h2>
+
+        <svg viewBox="0 0 1260 500" class="growth-chart" xmlns="http://www.w3.org/2000/svg" aria-label="Raju vs Shyam compounding comparison">
+          <!-- axes -->
+          <line x1="110" y1="430" x2="1210" y2="430" stroke="#3a3a3a" stroke-width="1"/>
+          <line x1="110" y1="30" x2="110" y2="430" stroke="#3a3a3a" stroke-width="1"/>
+
+          <!-- gridlines -->
+          <line x1="110" y1="108" x2="1210" y2="108" stroke="#1a1a1a" stroke-width="1"/>
+          <line x1="110" y1="215" x2="1210" y2="215" stroke="#1a1a1a" stroke-width="1"/>
+          <line x1="110" y1="322" x2="1210" y2="322" stroke="#1a1a1a" stroke-width="1"/>
+
+          <!-- y-axis labels -->
+          <text x="105" y="113" fill="#6a6a6a" text-anchor="end">Rs 6 Cr</text>
+          <text x="105" y="220" fill="#6a6a6a" text-anchor="end">Rs 4 Cr</text>
+          <text x="105" y="327" fill="#6a6a6a" text-anchor="end">Rs 2 Cr</text>
+          <text x="105" y="434" fill="#6a6a6a" text-anchor="end">0</text>
+          <text x="125" y="22" fill="#6a6a6a" letter-spacing="0.15em">RS CRORE</text>
+
+          <!-- x-axis age labels -->
+          <text x="110" y="455" fill="#6a6a6a" text-anchor="middle">25</text>
+          <text x="385" y="455" fill="#6a6a6a" text-anchor="middle">35</text>
+          <text x="660" y="455" fill="#6a6a6a" text-anchor="middle">45</text>
+          <text x="935" y="455" fill="#6a6a6a" text-anchor="middle">55</text>
+          <text x="1210" y="455" fill="#6a6a6a" text-anchor="middle">65</text>
+          <text x="660" y="485" fill="#6a6a6a" text-anchor="middle" letter-spacing="0.18em">AGE →</text>
+
+          <!-- divider at age 35 -->
+          <line x1="385" y1="30" x2="385" y2="430" stroke="#3a3a3a" stroke-width="0.5" stroke-dasharray="3,4"/>
+          <text x="385" y="22" fill="#6a6a6a" text-anchor="middle" font-size="11" letter-spacing="0.2em">AGE 35</text>
+
+          <!-- SHYAM curve (muted red, waits until 35 then SIPs until 65) -->
+          <!-- flat from 25 to 35, then accumulates to Rs 3.5 Cr at 65 -->
+          <path d="M 110 430 L 385 430
+                   C 500 427, 600 417, 730 395
+                   C 860 365, 970 320, 1080 260
+                   C 1150 220, 1190 200, 1210 190"
+                fill="none" stroke="#a56f6f" stroke-width="2.2"/>
+
+          <!-- RAJU curve (accent gold, SIPs 25-35 then compounds to 65) -->
+          <!-- from 25 to 35: slowly accumulates to Rs 23L. Then compounds powerfully to Rs 7 Cr at 65 -->
+          <path d="M 110 430
+                   C 180 428, 260 423, 385 418
+                   C 500 412, 600 402, 720 380
+                   C 830 355, 920 310, 1010 240
+                   C 1090 170, 1160 115, 1210 85"
+                fill="none" stroke="#c9a86b" stroke-width="2.6"/>
+
+          <!-- endpoint markers -->
+          <circle cx="1210" cy="85" r="5.5" fill="#c9a86b"/>
+          <circle cx="1210" cy="190" r="5" fill="#a56f6f"/>
+
+          <!-- endpoint labels -->
+          <text x="1195" y="74" fill="#c9a86b" text-anchor="end" font-family="Instrument Serif" font-size="26" font-style="italic">Raju &middot; Rs 7 Cr</text>
+          <text x="1195" y="180" fill="#a56f6f" text-anchor="end" font-family="Instrument Serif" font-size="22" font-style="italic">Shyam &middot; Rs 3.5 Cr</text>
+
+          <!-- Raju stop annotation -->
+          <circle cx="385" cy="418" r="3.5" fill="#c9a86b"/>
+          <text x="395" y="412" fill="#c9a86b" font-size="11" letter-spacing="0.15em">RAJU STOPS HERE</text>
+        </svg>
+
+        <div class="split" style="column-gap: 3em; margin-top: 0.5em;">
+          <div>
+            <p class="caption accent mono" style="margin-bottom: 0.3em;">● RAJU &middot; STARTED AT 25</p>
+            <p class="small">Rs 10k/month SIP for ten years. Stopped at 35. Never touched the money again. <span class="mono caption">Put in Rs 12 L total.</span></p>
+          </div>
+          <div>
+            <p class="caption bad mono" style="margin-bottom: 0.3em;">● SHYAM &middot; STARTED AT 35</p>
+            <p class="small">Rs 10k/month SIP for thirty years straight. Never missed a month. <span class="mono caption">Put in Rs 36 L total.</span></p>
+          </div>
+        </div>
+
+        <p class="caption" style="margin-top: 0.8em;">12% CAGR &middot; monthly compounding. Raju's 10 years of early contributions out-compound Shyam's entire investing life — because they had 40 years to grow, not 30.</p>
+        <div class="footer"><span>11 &middot; Compounding</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 12 · Behavior gap -->
+      <section>
+        <span class="eyebrow">The weakest instrument in the cockpit is the pilot</span>
+        <div class="split uneven">
+          <div>
+            <h2 style="font-size: 2.4em;">The gap between<br/>what the market gives<br/><span class="muted">and what the average investor takes.</span></h2>
+            <p class="caption mono" style="margin-top: 1.4em;">DALBAR &middot; 20-year study</p>
+          </div>
+          <div style="padding-top: 0.5em;">
+            <div style="display: flex; align-items: baseline; border-bottom: 1px solid var(--rule); padding: 0.8em 0;">
+              <div style="font-family: var(--serif); font-size: 2.4em; color: var(--text);">9.9<span class="caption">%/yr</span></div>
+              <div class="muted small" style="margin-left: auto; text-align: right;">S&amp;P 500 index<br/>return</div>
+            </div>
+            <div style="display: flex; align-items: baseline; border-bottom: 1px solid var(--rule); padding: 0.8em 0;">
+              <div style="font-family: var(--serif); font-size: 2.4em; color: var(--bad);">3.5<span class="caption">%/yr</span></div>
+              <div class="muted small" style="margin-left: auto; text-align: right;">what the average<br/>investor actually got</div>
+            </div>
+            <p class="accent serif" style="font-size: 1.3em; font-style: italic; margin-top: 1.2em;">The gap is behavior.<br/>Buying high, selling low.</p>
+          </div>
+        </div>
+        <p class="caption" style="margin-top: 1.4em;">Build a system that doesn't ask your opinion when the storm gets loud.</p>
+        <div class="footer"><span>12 &middot; Behavior</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 13 · Asset allocation -->
+      <section>
+        <span class="eyebrow">The simplest working portfolio</span>
+        <h3 class="serif" style="margin-bottom: 0.6em;">One number per age. Rebalance once a year.</h3>
+
+        <div style="margin-top: 1em;">
+          <div class="alloc-row">
+            <div class="age">Age 25–40</div>
+            <div class="alloc-bar" style="max-width: 100%;">
+              <div class="seg equity" style="width: 70%;">70% &nbsp; EQUITY INDEX</div>
+              <div class="seg debt"   style="width: 20%;">20% &nbsp; DEBT</div>
+              <div class="seg sat"    style="width: 10%;">10% &nbsp; SATELLITE</div>
+            </div>
+          </div>
+          <div class="alloc-row">
+            <div class="age">Age 40–55</div>
+            <div class="alloc-bar" style="max-width: 100%;">
+              <div class="seg equity" style="width: 60%;">60%</div>
+              <div class="seg debt"   style="width: 30%;">30%</div>
+              <div class="seg sat"    style="width: 10%;">10%</div>
+            </div>
+          </div>
+          <div class="alloc-row">
+            <div class="age">Age 55+</div>
+            <div class="alloc-bar" style="max-width: 100%;">
+              <div class="seg equity" style="width: 40%;">40%</div>
+              <div class="seg debt"   style="width: 50%;">50%</div>
+              <div class="seg sat"    style="width: 10%;">10%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="split" style="margin-top: 1.4em; column-gap: 3em;">
+          <p class="caption"><span class="mono accent">EQUITY INDEX</span> &nbsp; Nifty 50 / Nifty Next 50 / US total-market (for international exposure)</p>
+          <p class="caption"><span class="mono accent">DEBT</span> &nbsp; PF, PPF, debt mutual funds, G-Secs</p>
+        </div>
+        <p class="caption"><span class="mono accent">SATELLITE</span> &nbsp; Gold, specific stocks, international, alternative strategies — the 10% you're allowed to be clever with</p>
+
+        <div class="footer"><span>13 &middot; Allocation</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 14 · Monday morning checklist -->
+      <section>
+        <span class="eyebrow">Your flight plan &middot; what you do Monday</span>
+        <h3 class="serif">Seven steps. Four of them take one hour total.<br/><span class="muted">The other three are discipline, not action.</span></h3>
+        <ul class="numbered" style="margin-top: 1.2em;">
+          <li>Open a demat + MF account &middot; <span class="mono muted">Zerodha · Groww · ICICI Direct · Kuvera</span></li>
+          <li>Automate a SIP into an index fund &middot; monthly &middot; same date every month</li>
+          <li>Write down your allocation (70/20/10 or whatever fits your age). Keep the paper.</li>
+          <li>Turn off daily P/L notifications &middot; delete the tracker app from the home screen</li>
+          <li>Review quarterly &middot; not daily, not weekly, <em>quarterly</em></li>
+          <li>Rebalance once a year &middot; put a date on the calendar &middot; two hours of work</li>
+          <li><span class="accent">Never stop the SIP.</span> &nbsp; Not in March 2020. Not in 2008. Not in the next crash. Never.</li>
+        </ul>
+        <div class="footer"><span>14 &middot; Flight plan</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 15 · One-stock trap -->
+      <section>
+        <span class="eyebrow">The single-stock temptation</span>
+        <h2>The one stock you love<br/><span class="muted">will eventually betray you.</span></h2>
+        <p style="margin-top: 1em; max-width: 46ch;">For every Infosys story your uncle tells, there's a <span class="bad">Yes Bank</span>, a <span class="bad">DHFL</span>, a <span class="bad">Vodafone-Idea</span> he doesn't.</p>
+
+        <p class="serif accent" style="font-size: 1.4em; font-style: italic; margin-top: 1.4em; max-width: 42ch;">
+          Concentration is a lever. It can 10× your return. It can also 10× your regret.
+        </p>
+
+        <p class="caption" style="margin-top: 1em; max-width: 50ch;">If you must pick stocks, do it with the 10% satellite. The other 90% belongs to the index. That way your best idea can shine, and your worst idea can't sink you.</p>
+
+        <div class="footer"><span>15 &middot; One stock</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 16 · Where I put my own money -->
+      <section>
+        <span class="eyebrow">Full disclosure &middot; where I put my own money</span>
+        <h3 class="serif">I practice this.<br/><span class="muted">In two layers.</span></h3>
+
+        <div class="layer quiet" style="margin-top: 1.2em;">
+          <div class="head">Layer 1 &middot; the base · 70% of my equity</div>
+          <div class="body">Nifty index funds. Monthly SIP. Automated. I haven't missed a month in years. This is the part I recommend to you without any caveats.</div>
+        </div>
+
+        <div class="layer" style="margin-top: 0.6em;">
+          <div class="head">Layer 2 &middot; the satellite · 10-15% only</div>
+          <div class="body">An automated trading stack I built myself — <span class="accent">Quantifyd</span>. Seven strategies, tested across 15,740 configurations. One live on a VPS, one in paper mode, one disabled after finding 9 bugs.</div>
+        </div>
+
+        <p class="caption" style="margin-top: 1.2em; max-width: 50ch;">I run the second layer because I enjoy the engineering and I have the discipline for it. Most of you don't need to — and shouldn't. <em class="accent">Copy Layer 1. Skip Layer 2.</em></p>
+
+        <div class="footer"><span>16 &middot; Disclosure</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 17 · The eye — rebalancing -->
+      <section>
+        <span class="eyebrow">The eye of the storm</span>
+        <h2>The calmest moments<br/><span class="muted">are when the work actually happens.</span></h2>
+
+        <p style="margin-top: 1.2em; max-width: 50ch;">The eye is the quiet circle at the center of the hurricane — between two walls of storm. The hunters don't celebrate. They take readings and prepare for the next wall.</p>
+
+        <div class="split" style="margin-top: 1.4em;">
+          <div>
+            <p class="caption">AFTER A BULL RUN</p>
+            <p>Equity has drifted above its target. Trim it. Top up debt.</p>
+          </div>
+          <div>
+            <p class="caption">AFTER A CRASH</p>
+            <p>Equity has dropped below its target. Trim debt. Top up equity.</p>
+          </div>
+        </div>
+
+        <p class="serif accent" style="font-size: 1.3em; font-style: italic; margin-top: 1.4em;">
+          Mechanical. Unemotional. Two hours of work for one of the biggest wins you'll ever book.
+        </p>
+
+        <div class="footer"><span>17 &middot; The eye</span><span>The Hurricane</span></div>
+      </section>
+
+      <!-- 18 · Close -->
+      <section>
+        <div style="margin: auto 0;">
+          <p class="pull-quote">The hunters don't beat the storm.<br/>They fly through it<br/><span class="accent">with instruments.</span></p>
+          <p class="attr">A field guide for the rest of us.</p>
+        </div>
+        <div class="footer"><span>18 &middot; The Hurricane</span><span>Arun Castro</span></div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: false,
+      progress: true,
+      transition: 'fade',
+      transitionSpeed: 'slow',
+      center: false,
+      width: 1440,
+      height: 900,
+      margin: 0.04,
+      minScale: 0.4,
+      maxScale: 1.6,
+    });
+  </script>
+</body>
+</html>

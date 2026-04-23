@@ -198,6 +198,9 @@
     .kc-chart { width: 100%; max-width: 1000px; height: auto; display: block; margin: 0.4em 0 0 0; }
     .kc-chart text { font-family: var(--mono); font-size: 14px; letter-spacing: 0.04em; }
 
+    /* Effort curve chart */
+    .effort-chart { width: 100%; max-width: 1050px; max-height: 440px; display: block; margin: 0.4em auto 0; }
+
     /* Screenshot placeholder */
     .ph {
       border: 1px dashed #3a3a3a;
@@ -378,7 +381,28 @@
   <div class="reveal">
     <div class="slides">
 
-      <!-- 1 · Title -->
+      <!-- 1 · Opening quote -->
+      <section>
+        <p class="pull-quote" style="font-size: 2.3em; max-width: none; line-height: 1.25; font-style: italic;">
+          &ldquo;A healthy person has a thousand wishes.<br/>
+          A sick person has only one.&rdquo;
+        </p>
+
+        <div style="display: flex; align-items: center; margin: 2em 0; gap: 1.4em;">
+          <div style="flex: 1; height: 1px; background: var(--rule);"></div>
+          <span class="caption" style="letter-spacing: 0.3em;">IN TRADING</span>
+          <div style="flex: 1; height: 1px; background: var(--rule);"></div>
+        </div>
+
+        <p class="serif" style="font-size: 1.55em; line-height: 1.35; color: var(--accent); font-style: italic; max-width: 44ch;">
+          Financial independence has a thousand wishes.<br/>
+          Manual trading &mdash; yielding to greed, chasing yield, losing sleep &mdash; has only one.
+        </p>
+
+        <div class="footer"><span>01 &middot; Opening</span><span>Quantifyd</span></div>
+      </section>
+
+      <!-- 2 · Title -->
       <section>
         <div class="title-block">
           <div class="mark">Quantifyd &middot; April 2026</div>
@@ -386,7 +410,7 @@
           <div class="sub">Progress &amp; roadmap.</div>
           <div class="byline">Arun Castro</div>
         </div>
-        <div class="footer"><span>01</span><span>Quantifyd</span></div>
+        <div class="footer"><span>02</span><span>Quantifyd</span></div>
       </section>
 
       <!-- 2 · Core principles -->
@@ -421,45 +445,83 @@
 
         <p class="pull-quote" style="font-size: 2em; text-align: center; max-width: none; margin: 0.6em auto 0; line-height: 1.2;">Build the system. Let the system trade.</p>
 
-        <div class="footer"><span>02 &middot; Core principles</span><span>Quantifyd</span></div>
+        <div class="footer"><span>03 &middot; Core principles</span><span>Quantifyd</span></div>
       </section>
 
-      <!-- 3 · At a glance -->
+      <!-- 3 · Why automate at all -->
       <section>
-        <span class="eyebrow">At a glance</span>
-        <h2>One operator. One stack.<br/><span class="muted">Seven strategies across the pipeline.</span></h2>
-        <div style="margin-top: 1.5em;">
-          <div class="stat-row"><div class="n">112</div><div class="label">days of active development &middot; <span class="mono">2026-01-01 → 2026-04-23</span></div></div>
-          <div class="stat-row"><div class="n">155</div><div class="label">commits &middot; ~1.4 per day</div></div>
-          <div class="stat-row"><div class="n">58,830</div><div class="label">lines of Python &middot; <span class="mono">services/</span> 51k &middot; <span class="mono">app.py</span> 7.8k</div></div>
-          <div class="stat-row"><div class="n">15,740</div><div class="label">backtest runs tracked across optimization sweeps</div></div>
-        </div>
-        <div class="footer"><span>03 &middot; At a glance</span><span>Quantifyd</span></div>
+        <span class="eyebrow">Why automate at all</span>
+        <h2 style="font-size: 2.2em; margin-bottom: 0.3em;">Pay once. Run forever.<br/><span class="muted">And earn more for the trouble.</span></h2>
+
+        <svg viewBox="0 0 1260 560" class="effort-chart" xmlns="http://www.w3.org/2000/svg" aria-label="Effort and return: with vs without a system">
+          <!-- axes -->
+          <line x1="80" y1="500" x2="1080" y2="500" stroke="#3a3a3a" stroke-width="1"/>
+          <line x1="80" y1="40" x2="80" y2="500" stroke="#3a3a3a" stroke-width="1"/>
+
+          <!-- axis labels -->
+          <text x="95" y="35" fill="#6a6a6a" font-family="JetBrains Mono" font-size="14" letter-spacing="0.15em">EFFORT</text>
+          <text x="1075" y="525" fill="#6a6a6a" font-family="JetBrains Mono" font-size="14" letter-spacing="0.15em" text-anchor="end">TIME →</text>
+
+          <!-- no-system baseline -->
+          <path d="M 80 330 L 1080 330" stroke="#a56f6f" stroke-width="1.5" opacity="0.8"/>
+
+          <!-- with-system curve: starts at baseline, spikes up for BUILD, drops far below baseline and stays -->
+          <path d="M 80 330 C 180 325, 230 180, 310 100 C 390 60, 420 190, 500 280 C 600 400, 800 472, 1080 482"
+                fill="none" stroke="#c9a86b" stroke-width="2.2"/>
+
+          <!-- BUILD peak marker -->
+          <circle cx="310" cy="100" r="3.5" fill="#c9a86b"/>
+          <text x="310" y="80" fill="#c9a86b" text-anchor="middle" font-family="JetBrains Mono" font-size="14" letter-spacing="0.22em">BUILD</text>
+
+          <!-- no-system terminal: $$ at baseline end -->
+          <text x="1100" y="325" fill="#a56f6f" font-family="Instrument Serif" font-size="38" font-weight="500" letter-spacing="-0.02em">$$</text>
+          <text x="1100" y="350" fill="#a56f6f" font-family="Instrument Serif" font-style="italic" font-size="17">No system</text>
+
+          <!-- with-system terminal: $$$$$ at curve end -->
+          <text x="1100" y="480" fill="#c9a86b" font-family="Instrument Serif" font-size="38" font-weight="500" letter-spacing="-0.02em">$$$$$</text>
+          <text x="1100" y="505" fill="#c9a86b" font-family="Instrument Serif" font-style="italic" font-size="17">With system</text>
+        </svg>
+
+        <p class="caption" style="margin-top: 0.4em; max-width: 60ch;">Without a system, every trade is a decision — steady effort, steady returns. With one, you pay a mountain of effort up front, then the effort drops below the baseline and stays there — while the return keeps compounding.</p>
+
+        <div class="footer"><span>04 &middot; Why automate</span><span>Quantifyd</span></div>
       </section>
 
-      <!-- 3 · Stack -->
+      <!-- 4 · Built with -->
       <section>
-        <span class="eyebrow">The stack</span>
-        <div class="split">
+        <span class="eyebrow">The toolkit</span>
+        <h2 style="font-size: 2.3em; margin-bottom: 0.7em;">Nothing exotic.<br/><span class="muted">One premium line item.</span></h2>
+
+        <div class="split" style="column-gap: 4em; align-items: start;">
           <div>
-            <h2>Boringly<br/>off-the-shelf.</h2>
-            <p class="muted" style="max-width: 24ch;">Nothing exotic. The edge is in the rules, the data, and the reconciliation — not the plumbing.</p>
+            <p class="caption" style="margin-bottom: 0.5em; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent);">The one I pay for</p>
+            <h3 class="serif" style="font-size: 2em; color: var(--accent); margin-bottom: 0.35em; line-height: 1.05;">Claude Max</h3>
+            <ul class="rule small">
+              <li><span class="mono muted">model</span> &nbsp; Opus 4.7 &middot; 1 M context</li>
+              <li><span class="mono muted">tools</span> &nbsp; Claude Code CLI &middot; MCP connectors (Kite, Jira)</li>
+              <li><span class="mono muted">access</span> &nbsp; web, desktop, IDE &middot; everything unlocked</li>
+            </ul>
+            <p style="margin-top: 0.8em; font-family: var(--serif); font-style: italic; color: var(--accent); font-size: 1.05em;">Highest model, every time.<br/>No downgrade for cost.</p>
           </div>
           <div>
-            <ul class="rule">
-              <li><span class="mono muted">runtime</span> &nbsp; Python 3.12 · Flask · APScheduler</li>
-              <li><span class="mono muted">broker</span> &nbsp; Zerodha Kite Connect · WebSocket ticker</li>
-              <li><span class="mono muted">data</span> &nbsp; SQLite · pandas · <span class="mono">ta</span></li>
-              <li><span class="mono muted">ui</span> &nbsp; Bootstrap 5 dark · Chart.js</li>
-              <li><span class="mono muted">host</span> &nbsp; Contabo VPS · Ubuntu 24.04</li>
-              <li><span class="mono muted">storage</span> &nbsp; 3.8 GB market data · 19 SQLite files</li>
+            <p class="caption" style="margin-bottom: 0.5em; letter-spacing: 0.25em; text-transform: uppercase;">Everything else</p>
+            <ul class="rule small" style="margin-top: 0.25em;">
+              <li><span class="mono muted">editor</span> &nbsp; VSCode &middot; free</li>
+              <li><span class="mono muted">versioning</span> &nbsp; GitHub &middot; private repo</li>
+              <li><span class="mono muted">host</span> &nbsp; Contabo VPS &middot; Ubuntu 24.04</li>
+              <li><span class="mono muted">broker</span> &nbsp; Zerodha &middot; Kite Connect API</li>
+              <li><span class="mono muted">laptop</span> &nbsp; Lenovo &middot; 8 GB &middot; 5 years old &middot; refurbished</li>
             </ul>
           </div>
         </div>
-        <div class="footer"><span>04 &middot; Stack</span><span>Quantifyd</span></div>
+
+        <p class="pull-quote" style="font-size: 1.4em; text-align: center; margin: 1em auto 0.3em; max-width: none; color: var(--text); font-style: italic; line-height: 1.2;">The laptop was cheap. The thinking wasn't.</p>
+        <p class="caption mono" style="text-align: center; color: var(--accent); letter-spacing: 0.15em; font-size: 0.72em;">112 DAYS &middot; 155 COMMITS &middot; 58,830 LINES &middot; 15,740 BACKTEST RUNS</p>
+
+        <div class="footer"><span>05 &middot; Built with</span><span>Quantifyd</span></div>
       </section>
 
-      <!-- 4 · How to read a backtest -->
+      <!-- 6 · How to read a backtest -->
       <section>
         <span class="eyebrow" style="margin-bottom: 1.6em;">How to read a backtest</span>
         <h2 style="font-size: 2.1em; margin-bottom: 0.4em;">P/L is the hook. <span class="muted">The numbers below decide if you can live with it.</span></h2>
@@ -490,7 +552,7 @@
           </div>
         </div>
         <p class="caption" style="margin-top: 0.9em;">The same +100% means very different things with 10% max DD and 60% max DD.</p>
-        <div class="footer"><span>05 &middot; How to read</span><span>Quantifyd</span></div>
+        <div class="footer"><span>06 &middot; How to read</span><span>Quantifyd</span></div>
       </section>
 
       <!-- 5 · Strategy matrix -->
@@ -555,7 +617,7 @@
             <div class="num-cell off">9 bugs logged</div>
           </div>
         </div>
-        <div class="footer"><span>06 &middot; Strategies</span><span>Quantifyd</span></div>
+        <div class="footer"><span>07 &middot; Strategies</span><span>Quantifyd</span></div>
       </section>
 
       <!-- 5 · ORB hero -->
@@ -579,7 +641,7 @@
             <span class="pine-tag"><span class="dot"></span>Pine Script parity &middot; <span class="mono">ORB_VWAP_RSI_CPR_v2.1</span></span>
           </div>
         </div>
-        <div class="footer"><span>07 &middot; ORB — Rules</span><span>Quantifyd</span></div>
+        <div class="footer"><span>08 &middot; ORB — Rules</span><span>Quantifyd</span></div>
       </section>
 
       <!-- 6 · ORB variant sweep -->
@@ -648,26 +710,10 @@
           </tbody>
         </table>
         <p class="caption" style="margin-top: 1.6em;">Half the drawdown. Same hit-rate. Twice the Calmar.</p>
-        <div class="footer"><span>08 &middot; ORB — Variants</span><span>Quantifyd</span></div>
+        <div class="footer"><span>09 &middot; ORB — Variants</span><span>Quantifyd</span></div>
       </section>
 
-      <!-- 7 · ORB daily timeline -->
-      <section>
-        <span class="eyebrow">ORB &middot; a trading day</span>
-        <h3 class="serif">Seven stages. Nothing manual on a normal day.<br/><span class="muted">Part of seventeen scheduled jobs running across the stack.</span></h3>
-        <div class="timeline" style="margin-top: 1.8em;">
-          <div class="step"><div class="t">08:55</div><div class="what">Kite auto-login · TOTP · 3 retries · logged</div></div>
-          <div class="step"><div class="t">09:14</div><div class="what">Initialize day · load candles · compute CPR · reset OR</div></div>
-          <div class="step"><div class="t">09:15 → 09:30</div><div class="what">Update OR high/low every minute from live ticks</div></div>
-          <div class="step"><div class="t">09:30 → 14:00</div><div class="what">Evaluate signals every 5 minutes · place orders when filters pass</div></div>
-          <div class="step"><div class="t">every 30s</div><div class="what">Monitor open positions · SL / TP hits</div></div>
-          <div class="step"><div class="t">14:30</div><div class="what">Force exit · lock 50% of running profit</div></div>
-          <div class="step"><div class="t">post-close</div><div class="what">Smoke test · reconcile DB state against Kite holdings</div></div>
-        </div>
-        <div class="footer"><span>09 &middot; ORB — Daily cron</span><span>Quantifyd</span></div>
-      </section>
-
-      <!-- 8 · KC6 hero -->
+      <!-- 10 · KC6 hero -->
       <section>
         <span class="eyebrow"><span class="accent">● Paper</span> &nbsp;·&nbsp; KC6</span>
         <div class="split uneven">
@@ -894,7 +940,7 @@
       <section>
         <span class="eyebrow">The platform &middot; seven dashboards, one app</span>
         <h3 class="serif" style="margin-bottom: 0.3em;">One Flask app. One VPS. <span class="muted">253 routes.</span></h3>
-        <p class="caption" style="margin-bottom: 0.6em;">Every strategy has its own view. Every view talks to the same scheduler, logger, and kill switch.</p>
+        <p class="caption" style="margin-bottom: 0.6em;">Python + Flask on a Contabo VPS · Kite Connect for orders · SQLite for everything else. Every strategy has its own view; they all share the same scheduler, logger, and kill switch.</p>
 
         <div class="dash-grid">
           <div class="ph">
