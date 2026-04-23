@@ -1643,16 +1643,20 @@ class ORBLiveEngine:
                 'buy_qty': 0, 'sell_qty': 0}
 
     def reconcile_position_with_kite(self, position: dict, kite_state: dict | None = None) -> bool:
-        """If the Kite net qty is already flat (e.g. manual close or an SL
-        fill we haven't picked up yet), close the DB position with the
-        Kite-derived exit price and return True. Otherwise return False —
-        caller should proceed with placing the exit order.
+        """Close the DB position only when Kite is genuinely 'gone':
+            kite_qty == 0                    → flat (manual close / SL fill)
+            sign(kite_qty) != expected_sign  → flipped (position reversed)
 
-        Expected direction-consistent qty for an OPEN position:
-            LONG  → kite qty > 0
-            SHORT → kite qty < 0
-        Any other state (qty==0, or flipped sign) means Kite is no longer
-        holding what our DB thinks it is; don't double-exit."""
+        Same-direction qty LARGER than DB expected (user manually ADDED to the
+        position) is NOT a reason to close. Previous implementation closed on
+        any mismatch, which wrongly marked IRCTC CLOSED on 2026-04-23 after
+        the user manually added 360 more shorts to a 360 SHORT position
+        (kite_qty -720 vs DB expected -360). Now the engine leaves DB alone
+        in that case — user keeps managing the extra qty manually.
+
+        Returns True if DB was closed (caller should return early without
+        placing new orders). Returns False if Kite still matches (or we
+        couldn't reach Kite) — caller proceeds with normal exit flow."""
         direction = position['direction']
         qty = position['qty']
         instrument = position['instrument']
@@ -1661,11 +1665,19 @@ class ORBLiveEngine:
         kite_qty = kite_state.get('qty')
         if kite_qty is None:
             return False  # couldn't reach Kite — let caller proceed
+
         expected_sign = 1 if direction == 'LONG' else -1
         expected_abs = int(qty)
+        # Match: exact expected qty (normal) OR same direction with MORE qty
+        # (user added — leave alone, engine manages its share only).
         if kite_qty == expected_sign * expected_abs:
-            return False  # Kite position matches DB — normal exit path
+            return False
+        if expected_sign > 0 and kite_qty >= expected_abs:
+            return False  # LONG and Kite has >= expected → user added more longs
+        if expected_sign < 0 and kite_qty <= -expected_abs:
+            return False  # SHORT and Kite has <= -expected → user added more shorts
 
+        # Genuine divergence: flat, opposite side, or partial close detected.
         logger.warning(
             f"[ORB] RECONCILE {instrument} {direction}: DB says open qty={qty} "
             f"but Kite net qty={kite_qty}. Closing DB without a new order to "
