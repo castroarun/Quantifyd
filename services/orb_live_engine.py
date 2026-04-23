@@ -1247,14 +1247,20 @@ class ORBLiveEngine:
                     logger.warning(f"[ORB] {sym} no LTP, skipping trail")
                     continue
 
-                # Lock 50% of profit — only if position is profitable
+                # V9t_lock50 STRICT (matches the 60-day backtest: Calmar 3,152 vs
+                # 466 for lenient on 2026-04-23 sweep):
+                #   profitable → SL = entry ± 0.5 × gain  (lock half profit)
+                #   losing     → SL = entry              (breakeven — cuts afternoon
+                #                                         drawdowns that the wide
+                #                                         OR-opposite SL would miss)
+                # The `tightened` check still prevents any SL loosening.
                 if direction == 'LONG':
                     gain = ltp - entry_price
-                    new_sl = entry_price + 0.5 * gain if gain > 0 else current_sl
+                    new_sl = (entry_price + 0.5 * gain) if gain > 0 else entry_price
                     tightened = new_sl > current_sl
                 else:  # SHORT
                     gain = entry_price - ltp
-                    new_sl = entry_price - 0.5 * gain if gain > 0 else current_sl
+                    new_sl = (entry_price - 0.5 * gain) if gain > 0 else entry_price
                     tightened = new_sl < current_sl
 
                 if tightened:

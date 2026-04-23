@@ -373,6 +373,32 @@
   gap: 10px;
 }
 
+/* Allocation & risk summary table inside the rules panel */
+.allocTable {
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+  width: 100%;
+  max-width: 600px;
+  font-variant-numeric: tabular-nums;
+}
+.allocTable td {
+  padding: 4px 10px 4px 0;
+  border-bottom: 0.5px solid var(--hairline-softest);
+  vertical-align: top;
+}
+.allocTable td:first-child {
+  color: var(--ink-muted);
+  width: 180px;
+  white-space: nowrap;
+}
+.allocTable td:last-child {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+.allocTable tr:last-child td {
+  border-bottom: none;
+}
+
 .ruleItem {
   display: grid;
   grid-template-columns: 140px 1fr;

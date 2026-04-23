@@ -536,12 +536,48 @@ export default function Orb() {
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Setup</span>
               <span>
-                15 Nifty 500 stocks · MIS cash · OR = 09:15–09:30 (15 min) ·
-                deposit {formatRs(state?.capital)}
-                {state?.mis_leverage && state.mis_leverage > 1
-                  ? ` × ${state.mis_leverage}× MIS leverage`
-                  : ''}
-                {' '}· max 5 concurrent · 1.2× margin buffer.
+                15 Nifty 500 stocks · MIS cash · OR = 09:15–09:30 (15 min) · max 5 concurrent · 1.2× margin buffer.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Allocation &amp; risk (live)</span>
+              <span>
+                <table className={styles.allocTable}>
+                  <tbody>
+                    <tr>
+                      <td>Capital (deposit)</td>
+                      <td>{formatRs(state?.capital)}</td>
+                    </tr>
+                    <tr>
+                      <td>MIS leverage</td>
+                      <td>{state?.mis_leverage ?? 1}× · buying power {formatRs((state?.capital ?? 0) * (state?.mis_leverage ?? 1))}</td>
+                    </tr>
+                    <tr>
+                      <td>Per-trade notional cap</td>
+                      <td>{formatRs(state?.max_notional_per_trade)} (= capital × leverage ÷ max_concurrent)</td>
+                    </tr>
+                    <tr>
+                      <td>Risk per trade</td>
+                      <td>{((state?.risk_per_trade_pct ?? 0) * 100).toFixed(1)}% of capital = {formatRs((state?.capital ?? 0) * (state?.risk_per_trade_pct ?? 0))}</td>
+                    </tr>
+                    <tr>
+                      <td>Max DD if 5 SLs hit</td>
+                      <td>
+                        {formatRs((state?.capital ?? 0) * (state?.risk_per_trade_pct ?? 0) * 5)}
+                        {' '}({((state?.risk_per_trade_pct ?? 0) * 5 * 100).toFixed(1)}% of capital)
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Daily loss cap (display)</td>
+                      <td>
+                        {formatRs(state?.daily_loss_limit)} ({((state?.daily_loss_limit_pct ?? 0) * 100).toFixed(1)}%)
+                        {state?.enforce_daily_loss_cap === false
+                          ? <span className={styles.mute}> · <b style={{ color: 'var(--accent-neg)' }}>enforcement OFF</b></span>
+                          : null}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </span>
             </div>
             <div className={styles.ruleItem}>
@@ -573,10 +609,12 @@ export default function Orb() {
               <span>1.5 × R. LONG = entry + 1.5R · SHORT = entry − 1.5R. Monitored by 30s LTP poll; on hit, cancels exchange SL then market exits.</span>
             </div>
             <div className={styles.ruleItem}>
-              <span className={styles.ruleLabel}>14:30 · V9t_lock50 trail</span>
+              <span className={styles.ruleLabel}>14:30 · V9t_lock50 trail (strict)</span>
               <span>
-                For each profitable position, tighten SL to <code>entry + 0.5 × gain</code> (locks half the unrealized P&amp;L).
-                Only tightens, never loosens. Modifies the exchange SL trigger too.
+                <b>Profitable</b> → SL = <code>entry ± 0.5 × gain</code> (locks half the unrealized P&amp;L).
+                <b> Losing</b> → SL = <code>entry</code> (breakeven — cuts afternoon drawdowns).
+                Only tightens, never loosens. Modifies the exchange SL trigger to match. Frozen thereafter until SL hits or 15:18 EOD.
+                <br /><span className={styles.mute}>Backtest 60-day: strict Calmar 3,152 vs lenient (profitable-only) 466 · strict beats lenient by Rs 6.2K/day.</span>
               </span>
             </div>
             <div className={styles.ruleItem}>
