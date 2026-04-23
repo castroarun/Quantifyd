@@ -8,6 +8,94 @@
   margin-bottom: 24px;
 }
 
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Live capture indicator */
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: var(--text-xs, 11px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border: 0.5px solid var(--hairline);
+  cursor: help;
+  user-select: none;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.liveDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.liveLabel {
+  font-variant-numeric: tabular-nums;
+}
+
+/* LIVE — pulsing green */
+.live_live {
+  color: var(--accent-pos, #0F6E56);
+  background: color-mix(in srgb, var(--accent-pos, #0F6E56) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent-pos, #0F6E56) 30%, transparent);
+}
+.live_live .liveDot {
+  background: var(--accent-pos, #0F6E56);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-pos, #0F6E56) 70%, transparent);
+  animation: livePulse 1.6s ease-out infinite;
+}
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0   color-mix(in srgb, var(--accent-pos, #0F6E56) 70%, transparent); }
+  70%  { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent-pos, #0F6E56)  0%, transparent); }
+  100% { box-shadow: 0 0 0 0   color-mix(in srgb, var(--accent-pos, #0F6E56)  0%, transparent); }
+}
+
+/* STALLED — solid red, no pulse */
+.live_stalled {
+  color: var(--accent-neg, #A32D2D);
+  background: color-mix(in srgb, var(--accent-neg, #A32D2D) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent-neg, #A32D2D) 35%, transparent);
+}
+.live_stalled .liveDot {
+  background: var(--accent-neg, #A32D2D);
+}
+
+/* NO DATA (today, in market hours, but no rows yet) — amber */
+.live_no_data {
+  color: #B45309;
+  background: rgba(202, 138, 4, 0.10);
+  border-color: rgba(202, 138, 4, 0.35);
+}
+.live_no_data .liveDot {
+  background: #CA8A04;
+}
+
+/* IDLE states — muted grey */
+.live_idle_pre,
+.live_idle_post,
+.live_idle_weekend {
+  color: var(--ink-muted);
+  background: var(--chip-bg);
+  border-color: var(--hairline);
+}
+.live_idle_pre .liveDot,
+.live_idle_post .liveDot,
+.live_idle_weekend .liveDot {
+  background: var(--ink-faint);
+}
+
 .title {
   font-size: var(--text-2xl, 22px);
   font-weight: 600;

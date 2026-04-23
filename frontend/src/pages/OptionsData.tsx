@@ -49,10 +49,79 @@ function fmtSize(mb: number): string {
   return `${mb.toFixed(1)} MB`;
 }
 
+/** Today's IST date as YYYY-MM-DD (avoids timezone drift when the browser
+ * is outside IST — the capture job runs on the IST server). */
+function todayIST(now: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    timeZone: 'Asia/Kolkata',
+  }).formatToParts(now);
+  const map: Record<string, string> = {};
+  parts.forEach((p) => { if (p.type !== 'literal') map[p.type] = p.value; });
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+/** Minute-of-day in IST (9:20 = 560, 15:30 = 930). */
+function istMinuteOfDay(now: Date): number {
+  const s = new Intl.DateTimeFormat('en-IN', {
+    hour: '2-digit', minute: '2-digit', hour12: false,
+    timeZone: 'Asia/Kolkata',
+  }).format(now);
+  const [h, m] = s.split(':').map((x) => parseInt(x, 10));
+  return h * 60 + m;
+}
+
+type LiveState = 'live' | 'stalled' | 'idle_pre' | 'idle_post' | 'idle_weekend' | 'no_data';
+
+function computeLiveState(todaySession: SessionRow | undefined, now: Date): {
+  state: LiveState;
+  label: string;
+  detail: string;
+  ageSec: number | null;
+} {
+  const minOfDay = istMinuteOfDay(now);
+  const marketStart = 9 * 60 + 20;
+  const marketEnd = 15 * 60 + 30;
+  const istDow = new Intl.DateTimeFormat('en-IN', {
+    weekday: 'short', timeZone: 'Asia/Kolkata',
+  }).format(now);
+  const isWeekend = istDow === 'Sat' || istDow === 'Sun';
+
+  if (isWeekend) {
+    return { state: 'idle_weekend', label: 'Idle · weekend',
+             detail: 'Capture runs Mon–Fri only', ageSec: null };
+  }
+  if (minOfDay < marketStart) {
+    return { state: 'idle_pre', label: 'Idle · pre-market',
+             detail: `Capture starts at 09:20 IST`, ageSec: null };
+  }
+  if (minOfDay > marketEnd) {
+    return { state: 'idle_post', label: 'Idle · market closed',
+             detail: `Capture ran 09:20 – 15:30 IST`, ageSec: null };
+  }
+  // Market hours: need a session row for today + recent snapshot
+  if (!todaySession || !todaySession.last_snapshot) {
+    return { state: 'no_data', label: 'No capture today',
+             detail: 'No snapshots written yet', ageSec: null };
+  }
+  const lastIso = `${todaySession.date}T${todaySession.last_snapshot}+05:30`;
+  const lastMs = new Date(lastIso).getTime();
+  const ageSec = Math.max(0, Math.round((now.getTime() - lastMs) / 1000));
+  if (ageSec < 120) {
+    return { state: 'live', label: 'Capturing · live',
+             detail: `Last snapshot ${ageSec}s ago · job fires every minute`,
+             ageSec };
+  }
+  return { state: 'stalled', label: `Stalled · ${ageSec}s since last`,
+           detail: 'No snapshot in > 2 min during market hours — check VPS',
+           ageSec };
+}
+
 export default function OptionsData() {
   const [data, setData] = useState<CoverageResp | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
     let cancelled = false;
@@ -71,10 +140,12 @@ export default function OptionsData() {
         });
     };
     load();
-    const timer = setInterval(load, 60_000);  // refresh every 60s
+    const dataTimer = setInterval(load, 30_000);   // refresh coverage every 30s
+    const clockTimer = setInterval(() => setNow(new Date()), 1000);  // "Xs ago" ticker
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      clearInterval(dataTimer);
+      clearInterval(clockTimer);
     };
   }, []);
 
@@ -99,13 +170,27 @@ export default function OptionsData() {
   const dateRange = cumulative.date_min && cumulative.date_max
     ? `${fmtDate(cumulative.date_min)} – ${fmtDate(cumulative.date_max)}`
     : '—';
+  const today = todayIST(now);
+  const todaySession = sessions.find((s) => s.date === today);
+  const live = computeLiveState(todaySession, now);
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <div className={styles.title}>Options data capture</div>
-        <div className={styles.subtitle}>
-          1-min snapshots of NIFTY + BANKNIFTY + SENSEX option chains · {capture_window}
+        <div className={styles.headerRow}>
+          <div>
+            <div className={styles.title}>Options data capture</div>
+            <div className={styles.subtitle}>
+              1-min snapshots of NIFTY + BANKNIFTY + SENSEX option chains · {capture_window}
+            </div>
+          </div>
+          <div
+            className={`${styles.liveBadge} ${styles[`live_${live.state}`]}`}
+            title={live.detail}
+          >
+            <span className={styles.liveDot} />
+            <span className={styles.liveLabel}>{live.label}</span>
+          </div>
         </div>
       </div>
 
