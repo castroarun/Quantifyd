@@ -14,6 +14,8 @@ interface Props<T> {
   rows: T[];
   emptyText?: string;
   rowKey?: (row: T, idx: number) => string | number;
+  /** Optional per-row class (e.g. dim closed positions). */
+  rowClassName?: (row: T, idx: number) => string | undefined;
 }
 
 export default function DataTable<T>({
@@ -21,6 +23,7 @@ export default function DataTable<T>({
   rows,
   emptyText = 'No data',
   rowKey,
+  rowClassName,
 }: Props<T>) {
   const template = columns.map((c) => c.width ?? 'minmax(0, 1fr)').join(' ');
 
@@ -44,23 +47,26 @@ export default function DataTable<T>({
       {rows.length === 0 ? (
         <div className={styles.empty}>{emptyText}</div>
       ) : (
-        rows.map((row, idx) => (
-          <div
-            key={rowKey ? rowKey(row, idx) : idx}
-            className={styles.row}
-            style={{ display: 'grid', gridTemplateColumns: template }}
-          >
-            {columns.map((c) => (
-              <div
-                key={c.key}
-                className={styles.cell}
-                style={{ textAlign: c.align ?? 'left' }}
-              >
-                {c.render(row, idx)}
-              </div>
-            ))}
-          </div>
-        ))
+        rows.map((row, idx) => {
+          const extra = rowClassName ? rowClassName(row, idx) : undefined;
+          return (
+            <div
+              key={rowKey ? rowKey(row, idx) : idx}
+              className={extra ? `${styles.row} ${extra}` : styles.row}
+              style={{ display: 'grid', gridTemplateColumns: template }}
+            >
+              {columns.map((c) => (
+                <div
+                  key={c.key}
+                  className={styles.cell}
+                  style={{ textAlign: c.align ?? 'left' }}
+                >
+                  {c.render(row, idx)}
+                </div>
+              ))}
+            </div>
+          );
+        })
       )}
     </div>
   );

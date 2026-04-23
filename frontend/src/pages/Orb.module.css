@@ -566,6 +566,32 @@
 .convB   { background: rgba(202,138,4,0.14); color: #B45309; }
 .convC   { background: rgba(100,116,139,0.12); color: var(--ink-faint); }
 
+/* Closed-row variant for the unified Positions table — dimmed + strikethrough-feel
+   so the user sees the row is historical while still having the full context. */
+.closedRow {
+  opacity: 0.58;
+  background: color-mix(in srgb, var(--canvas, rgba(0,0,0,0.02)) 60%, transparent);
+}
+.closedRow:hover {
+  opacity: 0.78;
+}
+.exitCell {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--chip-bg, rgba(0,0,0,0.04));
+  color: var(--ink-muted);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+}
+.exitReasonTag {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
 /* Subtle LTP pill in Open positions — uses brand-navy (primary) so it
    reads as "live value" without competing with green/red P&L semantics. */
 .ltpCell {

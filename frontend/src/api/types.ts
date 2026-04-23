@@ -52,6 +52,11 @@ export interface ORBPosition {
   conviction_grade?: 'A+' | 'A' | 'B' | 'C';
   conviction_score?: number;
   conviction_stars?: Array<{ key: string; hit: boolean; desc: string }>;
+  // Closed-row fields (present when the Positions table is showing history)
+  status?: 'OPEN' | 'CLOSED';
+  exit_price?: number;
+  exit_time?: string;
+  exit_reason?: string;
 }
 
 export interface ORBClosedTrade {

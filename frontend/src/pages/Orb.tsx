@@ -236,10 +236,19 @@ export default function Orb() {
     },
     {
       key: 'ltp',
-      header: 'LTP',
+      header: 'LTP / Exit',
       width: '1fr',
       align: 'right',
-      render: (p) => <span className={styles.ltpCell}>{formatNumber(p.ltp)}</span>,
+      render: (p) => {
+        if (p.status === 'CLOSED' && p.exit_price != null) {
+          return (
+            <span className={styles.exitCell} title={p.exit_reason || ''}>
+              {formatNumber(p.exit_price)}
+            </span>
+          );
+        }
+        return <span className={styles.ltpCell}>{formatNumber(p.ltp)}</span>;
+      },
     },
     {
       key: 'target',
@@ -265,12 +274,22 @@ export default function Orb() {
     },
     {
       key: 'time',
-      header: 'Entry time',
-      width: '90px',
+      header: 'Time',
+      width: '110px',
       align: 'right',
-      render: (p) => (
-        <span className={styles.mute}>{formatTime(p.entry_time)}</span>
-      ),
+      render: (p) => {
+        if (p.status === 'CLOSED') {
+          return (
+            <span className={styles.mute}>
+              {formatTime(p.entry_time)}
+              <span className={styles.exitReasonTag}>
+                {' '}· {p.exit_reason || 'closed'}
+              </span>
+            </span>
+          );
+        }
+        return <span className={styles.mute}>{formatTime(p.entry_time)}</span>;
+      },
     },
     {
       key: 'grade',
@@ -445,19 +464,23 @@ export default function Orb() {
         />
       </div>
 
-      {/* open positions */}
+      {/* positions — open + closed today (closed are dimmed in place) */}
       <section className={styles.section}>
         <div className={styles.sectionHead}>
-          <div className="section-title">Open positions</div>
+          <div className="section-title">Positions</div>
           <Chip>
-            {state?.open_positions?.length ?? 0} active
+            {state?.open_positions?.length ?? 0} open · {state?.today_closed?.length ?? 0} closed
           </Chip>
         </div>
         <DataTable
           columns={positionCols}
-          rows={state?.open_positions ?? []}
-          emptyText="No open positions"
+          rows={[
+            ...(state?.open_positions ?? []).map((p) => ({ ...p, status: 'OPEN' as const })),
+            ...(state?.today_closed ?? []).map((p) => ({ ...p, status: 'CLOSED' as const })),
+          ]}
+          emptyText="No positions today"
           rowKey={(p) => p.instrument + (p.entry_time ?? '')}
+          rowClassName={(p) => (p.status === 'CLOSED' ? styles.closedRow : undefined)}
         />
       </section>
 
@@ -514,19 +537,7 @@ export default function Orb() {
         />
       </section>
 
-      {/* recent trades */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <div className="section-title">Today's trades</div>
-          <Chip>{state?.today_closed?.length ?? 0} closed</Chip>
-        </div>
-        <DataTable
-          columns={tradeCols}
-          rows={state?.today_closed ?? []}
-          emptyText="No trades closed today"
-          rowKey={(t, i) => `${t.instrument}-${t.exit_time ?? i}`}
-        />
-      </section>
+      {/* Today's trades merged into the unified Positions table above. */}
 
       {/* system rules */}
       <section className={styles.section}>
