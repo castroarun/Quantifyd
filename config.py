@@ -473,7 +473,7 @@ ORB_DEFAULTS = {
     # max_notional_per_trade so a very tight OR doesn't size silly on a
     # high-priced stock. SL stays OR-opposite — only the sizing changes.
     'use_risk_based_sizing': True,
-    'risk_per_trade_pct': 0.008,       # 0.8% of capital = Rs 2,400 per trade at 3L
+    'risk_per_trade_pct': 0.010,       # 1.0% of capital = Rs 3,000 per trade at 3L
     'max_notional_per_trade': 300_000, # Rs 3L ceiling per position (matches capital × lev / max_concurrent)
 
     # Opening Range
