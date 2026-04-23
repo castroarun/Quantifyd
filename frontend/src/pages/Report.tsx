@@ -496,8 +496,9 @@ function OrbBacktestSection({
         <Chip>{history.length || 1} runs</Chip>
       </div>
       <div className={styles.subtitle}>
-        Simulated live-equivalent run (Rs 20k/trade · OR15 · 0.5% SL · 1R target).
-        Latest: {latest.run_date}
+        Legacy daily backtest — simpler rules than live (Rs 20k/trade · OR15 · 0.5% SL · 1R target).
+        Retained for historical day-by-day reference. Latest: {latest.run_date}.
+        See the V9t_lock50 250-day backtest above for the current live strategy.
       </div>
 
       <div className={styles.metrics}>
