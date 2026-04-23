@@ -5803,7 +5803,16 @@ def api_orb_state():
             if sym in stocks:
                 stocks[sym]['position'] = pos
 
+        # Parse conviction_stars JSON on closed trades too (frontend unified
+        # Positions table iterates conviction_stars on every row).
+        import json as _json_closed
         for pos in today_closed:
+            stars = pos.get('conviction_stars')
+            if isinstance(stars, str) and stars:
+                try:
+                    pos['conviction_stars'] = _json_closed.loads(stars)
+                except Exception:
+                    pos['conviction_stars'] = []
             sym = pos['instrument']
             if sym in stocks:
                 stocks[sym]['today_result'] = pos
