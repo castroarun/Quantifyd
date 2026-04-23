@@ -239,6 +239,129 @@
         <i class="bi bi-exclamation-triangle me-2"></i><span id="fundAlertMsg"></span>
     </div>
 
+    <!-- Backtest Baseline (250-day variants sweep) -->
+    <details class="mb-3">
+        <summary style="cursor:pointer; color:#06b6d4; font-weight:600; font-size:0.85rem;">
+            <i class="bi bi-clipboard-data me-1"></i>Backtest Baseline
+            <span class="text-muted" style="font-weight:400; font-size:0.75rem;">
+                — 250-day variants sweep (2025-05-05 → 2026-04-17, 1,160 trades/variant)
+            </span>
+        </summary>
+        <div class="system-panel mt-2">
+            <div class="p-3">
+                <div class="row g-2 mb-3">
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:#3fb950; font-size:1.15rem;">282.60</div>
+                            <div class="stat-label">V9 Calmar (live)</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:#58a6ff; font-size:1.15rem;">+120.2%</div>
+                            <div class="stat-label">Return on 1L (V9)</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:#f59e0b; font-size:1.15rem;">76.3%</div>
+                            <div class="stat-label">Win Rate (V9)</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:#c9d1d9; font-size:1.15rem;">7.87</div>
+                            <div class="stat-label">Profit Factor (V9)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-orb mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Variant</th>
+                                <th class="text-end">Trades</th>
+                                <th class="text-end">WR</th>
+                                <th class="text-end">PF</th>
+                                <th class="text-end">Return (1L)</th>
+                                <th class="text-end">MaxDD</th>
+                                <th class="text-end">Calmar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="background:rgba(63,185,80,0.08);">
+                                <td>1</td>
+                                <td><strong style="color:#3fb950;">V9 close@14:30</strong> <span class="text-muted" style="font-size:0.7rem;">(live base)</span></td>
+                                <td class="text-end">1,160</td>
+                                <td class="text-end">76.3%</td>
+                                <td class="text-end">7.87</td>
+                                <td class="text-end pnl-positive">+Rs 1,20,216</td>
+                                <td class="text-end">Rs 425</td>
+                                <td class="text-end"><strong>282.60</strong></td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>V0 baseline</td>
+                                <td class="text-end">1,160</td>
+                                <td class="text-end">73.9%</td>
+                                <td class="text-end">6.07</td>
+                                <td class="text-end pnl-positive">+Rs 1,23,117</td>
+                                <td class="text-end">Rs 825</td>
+                                <td class="text-end">149.22</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>V5 trail-BE @ 1R</td>
+                                <td class="text-end">1,160</td>
+                                <td class="text-end">71.5%</td>
+                                <td class="text-end">6.47</td>
+                                <td class="text-end pnl-positive">+Rs 1,22,021</td>
+                                <td class="text-end">Rs 825</td>
+                                <td class="text-end">147.84</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>V6 partial 50% + BE</td>
+                                <td class="text-end">1,160</td>
+                                <td class="text-end">75.8%</td>
+                                <td class="text-end">6.37</td>
+                                <td class="text-end pnl-positive">+Rs 1,19,700</td>
+                                <td class="text-end">Rs 825</td>
+                                <td class="text-end">145.02</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="stat-card" style="text-align:left;">
+                            <div class="stat-label mb-1">Live config derivations</div>
+                            <ul style="font-size:0.78rem; color:#c9d1d9; padding-left:1.1rem; margin:0;">
+                                <li><strong>CPR width 0.65%</strong> — 250-day CPR sweep: 0.65 beats 0.5 on Calmar (263 vs 230), +161 trades, flat DD</li>
+                                <li><strong>V9t_lock50 hybrid</strong> — 14:30 lock 50% profit + ride to 15:18 (Calmar 676 in follow-up test, &gt; pure V9 close@14:30)</li>
+                                <li><strong>RSI 60/40, VWAP, CPR-dir, gap &lt; 1%</strong> — filter stack from 126-config optimization (PF 1.64, Sharpe 1.28)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card" style="text-align:left;">
+                            <div class="stat-label mb-1">60-day vs 250-day stability</div>
+                            <ul style="font-size:0.78rem; color:#c9d1d9; padding-left:1.1rem; margin:0;">
+                                <li>V9 rank: #1 in both windows (Calmar 124 → 283)</li>
+                                <li>V6 &gt; V0 at 60d → V0 &gt; V6 at 250d — partial-50% concedes P&amp;L long-run</li>
+                                <li>DD range: 1.0–2.1% (60d) → 2.1–4.1% (250d) — worse episodes in the 1-yr sample</li>
+                                <li class="text-muted" style="font-size:0.72rem;">Source: docs/ORB-VARIANTS-FINDINGS.md</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </details>
+
     <!-- Admin Tools (collapsed) -->
     <details class="mb-3" style="font-size:0.78rem;">
         <summary style="cursor:pointer; color:#06b6d4; font-weight:600;">
