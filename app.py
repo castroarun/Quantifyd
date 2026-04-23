@@ -5659,12 +5659,10 @@ def _get_orb_db():
 
 @app.route('/orb')
 def orb_dashboard():
-    """ORB Dashboard — Opening Range Breakout on 7 high-beta F&O stocks."""
-    return render_template(
-        'orb_dashboard.html',
-        authenticated=is_authenticated(),
-        user_name=session.get('user_name', 'User'),
-    )
+    # Legacy Jinja page retired — redirect to React SPA at /app/orb.
+    # Template templates/orb_dashboard.html kept in repo as backup; swap
+    # this body back to render_template('orb_dashboard.html', ...) to restore.
+    return redirect('/app/orb', code=302)
 
 
 _orb_cache = {'margin': None, 'margin_ts': 0, 'ltps': {}, 'ltp_ts': 0}
