@@ -1264,6 +1264,37 @@ class ORBLiveEngine:
                     tightened = new_sl < current_sl
 
                 if tightened:
+                    # Kite rejects SL orders whose trigger is already on the
+                    # wrong side of LTP (would fire immediately):
+                    #   LONG  SL (SELL): trigger must be BELOW LTP
+                    #   SHORT SL (BUY):  trigger must be ABOVE LTP
+                    # For losing positions at 14:30, the strict rule sets
+                    # new_sl = entry, and 'losing' means LTP has crossed
+                    # entry in the unfavourable direction — so the new SL
+                    # would be on the wrong side, Kite rejects, leaving
+                    # the position unprotected. The backtest models this
+                    # as 'SL fires at entry → instant breakeven stop'; the
+                    # live equivalent is a MARKET EXIT now at LTP.
+                    would_fire_immediately = (
+                        (direction == 'LONG' and new_sl >= ltp) or
+                        (direction == 'SHORT' and new_sl <= ltp)
+                    )
+                    if would_fire_immediately:
+                        logger.info(
+                            f"[ORB] {sym} {direction} trail: new_sl {new_sl:.2f} on wrong "
+                            f"side of LTP {ltp:.2f} — market-exit now instead of SL-modify"
+                        )
+                        fresh_pos = self.db.get_open_positions(instrument=sym)
+                        if fresh_pos:
+                            self.place_exit_order(fresh_pos[0], ltp, 'V9T_LOCK50_BE')
+                        adjusted.append({
+                            'symbol': sym, 'direction': direction,
+                            'old_sl': current_sl, 'new_sl': round(new_sl, 2),
+                            'ltp': ltp, 'locked_pnl': 0,
+                            'action': 'MARKET_EXIT_BE',
+                        })
+                        continue
+
                     self.db.update_position(pos['id'], sl_price=round(new_sl, 2))
                     with self._lock:
                         if sym in self._positions:
