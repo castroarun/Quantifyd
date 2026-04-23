@@ -4246,15 +4246,18 @@ def _nas_daily_summary():
 
 try:
     # Auto-start ticker at 9:16 AM (after market open)
+    # NOTE 2026-04-23: was 'mon-wed,fri' (skip NIFTY weekly expiry Thursday).
+    # Switched to 'mon-fri' — since these are paper-mode strategies, user
+    # wants Thursday data captured too for apples-to-apples comparison.
     scheduler.add_job(
         _nas_ticker_autostart,
-        'cron', day_of_week='mon-wed,fri', hour=9, minute=16,
+        'cron', day_of_week='mon-fri', hour=9, minute=16,
         id='nas_ticker_autostart', replace_existing=True,
     )
     # EOD squareoff at 3:15 PM
     scheduler.add_job(
         _nas_eod_squareoff,
-        'cron', day_of_week='mon-wed,fri', hour=15, minute=15,
+        'cron', day_of_week='mon-fri', hour=15, minute=15,
         id='nas_eod_squareoff', replace_existing=True,
     )
     # Force close candle at 3:30 PM
@@ -4266,13 +4269,13 @@ try:
     # Daily summary at 3:20 PM
     scheduler.add_job(
         _nas_daily_summary,
-        'cron', day_of_week='mon-wed,fri', hour=15, minute=20,
+        'cron', day_of_week='mon-fri', hour=15, minute=20,
         id='nas_daily_summary', replace_existing=True,
     )
     logger.info(
         "NAS scheduled jobs registered: "
         "ticker autostart(9:16), EOD squareoff(15:15), "
-        "market close(15:30), daily summary(15:20) — Mon-Wed,Fri only"
+        "market close(15:30), daily summary(15:20) — Mon-Fri"
     )
 except Exception as e:
     logger.warning(f"Could not register NAS scheduled jobs: {e}")
@@ -5613,10 +5616,10 @@ def _nas_916_sl_monitor():
 
 
 try:
-    # Auto-entry at 9:16 AM
+    # Auto-entry at 9:16 AM (all weekdays — Thursday included for paper data)
     scheduler.add_job(
         _nas_916_auto_entry,
-        'cron', day_of_week='mon-wed,fri', hour=9, minute=16,
+        'cron', day_of_week='mon-fri', hour=9, minute=16,
         id='nas_916_auto_entry', replace_existing=True,
     )
     # SL monitor — poll every 10s during market hours (fills the gap in nas_ticker)
@@ -5628,12 +5631,12 @@ try:
     # EOD squareoff at 3:15 PM
     scheduler.add_job(
         _nas_916_eod_squareoff,
-        'cron', hour=15, minute=15, day_of_week='mon-wed,fri',
+        'cron', hour=15, minute=15, day_of_week='mon-fri',
         id='nas_916_eod_squareoff', replace_existing=True,
     )
     logger.info(
         "NAS 916 scheduled jobs registered: auto-entry(9:16), SL monitor(10s poll), "
-        "EOD squareoff(15:15) — Mon-Wed,Fri"
+        "EOD squareoff(15:15) — Mon-Fri"
     )
 except Exception as e:
     logger.warning(f"Could not register NAS 916 scheduled jobs: {e}")
