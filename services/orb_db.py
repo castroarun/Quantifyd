@@ -296,6 +296,24 @@ class OrbDB:
             finally:
                 conn.close()
 
+    def get_position_by_id(self, position_id):
+        """Get a single position by its primary key. Returns dict or None.
+
+        Safer than get_open_positions(instrument=sym) right after add_position,
+        because it targets a known PK and doesn't depend on the status filter or
+        on WAL-reader snapshot timing across separate connections.
+        """
+        with self.db_lock:
+            conn = self._get_conn()
+            try:
+                row = conn.execute(
+                    "SELECT * FROM orb_positions WHERE id=?",
+                    (position_id,)
+                ).fetchone()
+                return dict(row) if row else None
+            finally:
+                conn.close()
+
     def get_open_positions(self, instrument=None):
         """Get all OPEN positions, optionally filtered by instrument."""
         with self.db_lock:

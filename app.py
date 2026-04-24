@@ -6295,11 +6295,13 @@ try:
         _orb_evaluate_signals,
         'interval', minutes=5,
         id='orb_eval_signals', replace_existing=True,
+        max_instances=1,
     )
     scheduler.add_job(
         _orb_monitor_positions,
         'interval', seconds=30,
         id='orb_monitor_pos', replace_existing=True,
+        max_instances=1,
     )
     scheduler.add_job(
         _orb_midmorning_status,

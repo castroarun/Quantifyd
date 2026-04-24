@@ -978,26 +978,71 @@ class ORBLiveEngine:
                     conviction_stars=_json_conv.dumps(conv['conviction_stars']),
                 )
 
-                # Update trades_taken
-                self.db.update_daily_state(sym, today_str,
-                    trades_taken=(daily_state.get('trades_taken') or 0) + 1,
-                )
+                # Update trades_taken FIRST so the DB-level dedup is in place
+                # before anything downstream can fail. This is the backstop if
+                # the in-memory cache update below somehow races.
+                try:
+                    self.db.update_daily_state(sym, today_str,
+                        trades_taken=(daily_state.get('trades_taken') or 0) + 1,
+                    )
+                except Exception as e:
+                    logger.error(f"[ORB] {sym}: update_daily_state failed: {e}")
 
-                # Cache in memory
-                pos = self.db.get_open_positions(instrument=sym)
+                # Fetch the row we just created by PK (not by instrument filter).
+                # Fall back to building a minimal dict from values we wrote, so
+                # the in-memory cache is populated even if the DB read fails —
+                # otherwise the next scanner tick would see no position and
+                # re-enter the same symbol.
+                pos_row = None
+                try:
+                    pos_row = self.db.get_position_by_id(position_id)
+                except Exception as e:
+                    logger.error(f"[ORB] {sym}: get_position_by_id({position_id}) failed: {e}")
+
+                if pos_row is None:
+                    logger.error(
+                        f"[ORB] {sym}: position {position_id} vanished after add_position — "
+                        "falling back to in-memory dict for dedup/SL"
+                    )
+                    pos_row = {
+                        'id': position_id,
+                        'instrument': sym,
+                        'trade_date': today_str,
+                        'direction': direction,
+                        'qty': qty,
+                        'entry_price': round(entry_price, 2),
+                        'entry_time': now.isoformat(),
+                        'sl_price': round(sl_price, 2),
+                        'target_price': round(target_price, 2),
+                        'or_high': round(or_high, 2),
+                        'or_low': round(or_low, 2),
+                        'kite_entry_order_id': kite_order_id,
+                        'status': 'OPEN',
+                    }
+
+                # Cache in memory UNCONDITIONALLY — this is the primary dedup
+                # for the next scanner tick. Never skip this step.
                 with self._lock:
-                    if pos:
-                        self._positions[sym] = pos[0]
+                    self._positions[sym] = pos_row
 
                 # Place on-exchange SL-M so the position is protected even if
-                # the service crashes between monitor polls. Refresh the
-                # in-memory cache afterwards so kite_sl_order_id is populated.
-                if pos and self.cfg.get('use_exchange_sl_m', True):
-                    self.place_sl_m_order(pos[0])
-                    pos = self.db.get_open_positions(instrument=sym)
-                    with self._lock:
-                        if pos:
-                            self._positions[sym] = pos[0]
+                # the service crashes between monitor polls. Any failure here
+                # must NOT skip the cache update above, otherwise the next tick
+                # re-enters. The 30s monitor will enforce SL from memory as a
+                # fallback while we alert loudly.
+                if self.cfg.get('use_exchange_sl_m', True):
+                    try:
+                        self.place_sl_m_order(pos_row)
+                        refreshed = self.db.get_position_by_id(position_id)
+                        if refreshed:
+                            with self._lock:
+                                self._positions[sym] = refreshed
+                    except Exception as e:
+                        logger.critical(
+                            f"[ORB] {sym}: EXCHANGE SL-M PLACEMENT FAILED for position "
+                            f"{position_id} — position is UNPROTECTED on the exchange. "
+                            f"30s monitor will enforce SL from memory. Error: {e}"
+                        )
 
                 logger.info(
                     f"[ORB] ENTRY {sym} {direction} qty={qty} @{entry_price:.2f} "
