@@ -8,7 +8,8 @@ LIVE TRADING -- REAL MONEY. No paper mode.
 
 Universe: 7 high-beta F&O stocks on NSE.
 Strategy: 15-min opening range breakout with VWAP, RSI, CPR filters.
-Exits: OR opposite (SL), 1.5R target, or 15:20 EOD squareoff.
+Exits: OR opposite (SL), 1.5R target, or 15:16 EOD squareoff (our
+own LIMIT, 4 min before Zerodha auto-squareoff to skip Rs 59/trade fee).
 """
 
 import json
@@ -44,7 +45,7 @@ class ORBLiveEngine:
         09:30  update_or() finalizes OR
         09:35-14:00  evaluate_signals()  [every 5-min candle close]
         continuous   monitor_positions()  [every 30 seconds]
-        15:20  eod_squareoff()
+        15:16  eod_squareoff()    # before Zerodha 15:20-15:25 auto-cut
     """
 
     def __init__(self, config: dict):
@@ -1579,7 +1580,7 @@ class ORBLiveEngine:
         """At 14:30, for each open position lock 50% of the current profit
         by moving SL up (for longs) / down (for shorts) to entry + 0.5 * (LTP - entry).
         Only moves SL tighter, never looser. Loss-making positions keep their
-        original OR-opposite SL. Final hard-EOD at 15:18 (separate cron).
+        original OR-opposite SL. Final hard-EOD at 15:16 (separate cron).
 
         Backtest (250 days): V9t_lock50 -> Calmar 676 vs baseline V9 force-close 281
         (MaxDD 1.0% vs 2.1%, +70% P&L). See docs/ORB-VARIANTS-FINDINGS.md."""
@@ -1696,11 +1697,13 @@ class ORBLiveEngine:
         return adjusted
 
     # ===================================================================
-    # Hard EOD squareoff (call at 15:18)
+    # Hard EOD squareoff (call at 15:16)
     # ===================================================================
 
     def eod_squareoff(self):
-        """Close ALL open positions at market. Called at 15:18 sharp."""
+        """Close ALL open positions at market. Called at 15:16 sharp —
+        4 min before Zerodha's MIS auto-squareoff at 15:20-15:25 so we
+        avoid the Rs 59/trade broker auto-squareoff fee."""
         logger.info("[ORB] === EOD Squareoff ===")
         open_positions = self.db.get_open_positions()
         if not open_positions:

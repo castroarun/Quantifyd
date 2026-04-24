@@ -6348,8 +6348,11 @@ def _orb_activate_trail():
 
 
 def _orb_eod_squareoff():
-    """15:18 sharp: Hard close any remaining open ORB positions.
-    Runs ~2 min before Zerodha MIS auto-squareoff at 15:20-15:25."""
+    """15:16 sharp: Hard close any remaining open ORB positions via our
+    own LIMIT orders. Runs ~4 min before Zerodha MIS auto-squareoff
+    (15:20-15:25) to avoid the Rs 59/trade auto-squareoff charge.
+    With 11 positions that fee is Rs 649/day — over a year on 60-70
+    triggered days it adds up to ~Rs 45K, meaningful versus day P&L."""
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
@@ -6424,7 +6427,7 @@ try:
     )
     scheduler.add_job(
         _orb_eod_squareoff,
-        'cron', day_of_week='mon-fri', hour=15, minute=18,
+        'cron', day_of_week='mon-fri', hour=15, minute=16,
         id='orb_eod_squareoff', replace_existing=True,
     )
     scheduler.add_job(
@@ -6441,7 +6444,7 @@ try:
         "ORB scheduled jobs registered: "
         "init(9:14), OR update(9:15-9:29), signal eval(5min), "
         "position monitor(30s), midmorning status(10:30), "
-        "V9t_lock50 trail(14:30), hard EOD squareoff(15:18), "
+        "V9t_lock50 trail(14:30), hard EOD squareoff(15:16), "
         "EOD report(15:25), daily backtest(15:45)"
     )
 except Exception as e:
