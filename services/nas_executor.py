@@ -92,6 +92,7 @@ class NasExecutor:
         """
         cfg = self.cfg
         now = datetime.now().isoformat()
+        mode = 'paper' if cfg.get('paper_trading_mode', True) else 'live'
 
         position_id = self.db.add_position(
             strangle_id=strangle_id,
@@ -108,6 +109,7 @@ class NasExecutor:
             sl_price=sl_price,
             signal_type=signal_type,
             status='ACTIVE' if cfg.get('paper_trading_mode', True) else 'PENDING',
+            mode=mode,
         )
 
         order_status = 'PAPER' if cfg.get('paper_trading_mode', True) else 'PLACED'
@@ -120,6 +122,7 @@ class NasExecutor:
             status=order_status,
             position_id=position_id,
             signal_type=signal_type,
+            mode=mode,
         )
 
         # Live mode: place on Kite
@@ -177,6 +180,7 @@ class NasExecutor:
             status='PAPER' if cfg.get('paper_trading_mode', True) else 'PLACED',
             position_id=pos['id'],
             signal_type=exit_reason,
+            mode='paper' if cfg.get('paper_trading_mode', True) else 'live',
         )
 
         logger.info(f"[EXIT] {pos['tradingsymbol']} — {exit_reason} @ {exit_price:.2f}")

@@ -175,6 +175,19 @@ class NasAtmDB:
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
+                # Idempotent migration: add `mode` column ('paper'|'live') to
+                # positions + orders so reports can filter by trade mode.
+                # Safe to run on every startup — duplicate-column errors are
+                # swallowed. Old rows stay NULL (pre-migration tagging).
+                for stmt in (
+                    "ALTER TABLE nas_atm_positions ADD COLUMN mode VARCHAR(10)",
+                    "ALTER TABLE nas_atm_orders ADD COLUMN mode VARCHAR(10)",
+                ):
+                    try:
+                        conn.execute(stmt)
+                    except sqlite3.OperationalError as e:
+                        if 'duplicate column' not in str(e).lower():
+                            raise
                 conn.commit()
                 logger.info(f"[NAS-ATM] Database initialized at {self.db_path}")
             finally:

@@ -195,6 +195,17 @@ class NasDB:
                     CREATE INDEX IF NOT EXISTS idx_nas_snapshots_time
                         ON nas_option_snapshots(snapshot_time);
                 """)
+                # Idempotent migration: tag rows as paper|live so reports
+                # can filter. Old rows stay NULL. See nas_atm_db for detail.
+                for stmt in (
+                    "ALTER TABLE nas_positions ADD COLUMN mode VARCHAR(10)",
+                    "ALTER TABLE nas_orders ADD COLUMN mode VARCHAR(10)",
+                ):
+                    try:
+                        conn.execute(stmt)
+                    except sqlite3.OperationalError as e:
+                        if 'duplicate column' not in str(e).lower():
+                            raise
                 conn.commit()
                 logger.info(f"NAS database initialized at {self.db_path}")
             finally:

@@ -12,6 +12,45 @@ Indian stock market backtesting system: Momentum + Quality (MQ) portfolio strate
 
 ---
 
+## NO BACKEND RESTART DURING MARKET HOURS
+
+NSE cash + F&O session: **09:15 – 15:30 IST, Mon–Fri**. During this window,
+`sudo systemctl restart quantifyd` on the VPS is **prohibited**.
+
+**Why**
+- NAS executors (all 8 squeeze/916 variants currently in paper mode) hold
+  intraday state in memory. A restart loses today's open legs, closed-today
+  records, and daily P&L from the NAS page until the next entry cycle.
+- ORB open positions are exchange-safe (SL-M orders survive restart), but
+  in-memory state (OR levels, catchup bookkeeping) still hiccups.
+- Gunicorn worker teardown on SIGTERM can leave SQLite WAL inconsistent
+  mid-trade, with silent data loss on the rollback.
+
+**What this means in practice**
+- **Python / Flask / service changes** → deploy after 15:30 IST only.
+- **Frontend-only changes** (`frontend/src/**/*.tsx`, `templates/*.html`,
+  static assets) → safe any time. Pull on VPS without restart; Flask serves
+  updated static files on the next request. Hard-refresh the browser to
+  pick up a new bundle hash.
+- **Config tweaks** (`config.py` constants like `ORB_DEFAULTS['risk_per_trade_pct']`)
+  → technically requires restart to take effect. Queue for after-close
+  unless the change is strictly needed before the next trading session.
+- **Emergency exceptions** (prod bug actively losing money, stuck order,
+  kill-switch needed): restart is acceptable — prefer `/api/<strategy>/kill-switch`
+  first if available.
+
+**Deployment cheatsheet** (during market):
+```
+# Frontend only — no restart, safe
+git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/master'
+
+# Backend — wait until after 15:30 IST
+git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/master &&
+                     sudo systemctl restart quantifyd'
+```
+
+---
+
 ## ACTIVE TASK: MQ Strategy Optimization
 
 ### Context
