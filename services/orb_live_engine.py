@@ -125,6 +125,198 @@ class ORBLiveEngine:
                     unrealized += pts * qty
         return round(realized, 2), round(unrealized, 2)
 
+    def _check_book_drawdown_cut(self, open_syms):
+        """Two-tier drawdown protection on aggregate unrealized P&L.
+
+        Runs every 30s from monitor_positions(). Both tiers are one-shot
+        per session — once fired, they do not re-arm even if the book
+        swings back into profit and back out.
+
+        Soft tier: halve qty on every losing position. Winners untouched.
+        Hard tier: flatten every open position.
+        """
+        soft_thr = float(self.cfg.get('book_drawdown_soft_inr', -7500))
+        hard_thr = float(self.cfg.get('book_drawdown_hard_inr', -15000))
+
+        # Fast exit if both tiers already fired for today
+        if self._soft_cut_fired_today and self._hard_cut_fired_today:
+            return
+
+        # Snapshot open positions
+        open_pos_list = []
+        with self._lock:
+            for sym in open_syms:
+                p = self._positions.get(sym)
+                if p:
+                    open_pos_list.append(dict(p))
+        if not open_pos_list:
+            return
+
+        # Get LTPs for all in one batch
+        try:
+            ltps = self.get_live_ltp([p['instrument'] for p in open_pos_list])
+        except Exception as e:
+            logger.warning(f"[ORB] drawdown-cut LTP fetch failed: {e}")
+            return
+
+        # Compute per-position unrealized + book total
+        total_pnl = 0.0
+        per_pos = []  # [(pos, ltp, pnl_inr), ...]
+        for p in open_pos_list:
+            ltp = ltps.get(p['instrument'])
+            if ltp is None:
+                continue
+            pts = (ltp - p['entry_price']) if p['direction'] == 'LONG' \
+                else (p['entry_price'] - ltp)
+            pnl = pts * p['qty']
+            total_pnl += pnl
+            per_pos.append((p, ltp, pnl))
+
+        if not per_pos:
+            return
+
+        # Hard tier (precedence over soft)
+        if total_pnl <= hard_thr and not self._hard_cut_fired_today:
+            self._hard_cut_fired_today = True
+            self._soft_cut_fired_today = True  # implies soft too (shadow)
+            logger.critical(
+                f"[ORB] BOOK DRAWDOWN HARD: total_pnl=Rs {total_pnl:,.0f} "
+                f"<= Rs {hard_thr:,.0f} — flattening {len(per_pos)} positions"
+            )
+            try:
+                ns = get_notification_service(self.cfg)
+                ns.send_alert(
+                    'risk_alert',
+                    'ORB HARD drawdown cut — flattening book',
+                    f"Total unrealized Rs {total_pnl:,.0f} ≤ hard threshold "
+                    f"Rs {hard_thr:,.0f}. Closing all {len(per_pos)} open "
+                    f"positions at market.",
+                    data={'total_pnl': total_pnl, 'hard_threshold': hard_thr,
+                          'positions': len(per_pos)},
+                    priority='critical',
+                )
+            except Exception:
+                pass
+            for pos, ltp, _ in per_pos:
+                try:
+                    self.place_exit_order(pos, ltp, 'BOOK_DD_HARD')
+                except Exception as e:
+                    logger.error(f"[ORB] hard-cut exit failed for {pos['instrument']}: {e}")
+            return
+
+        # Soft tier — halve qty on losers only
+        if total_pnl <= soft_thr and not self._soft_cut_fired_today:
+            self._soft_cut_fired_today = True
+            losers = [(p, ltp, pnl) for (p, ltp, pnl) in per_pos if pnl < 0]
+            logger.critical(
+                f"[ORB] BOOK DRAWDOWN SOFT: total_pnl=Rs {total_pnl:,.0f} "
+                f"<= Rs {soft_thr:,.0f} — halving {len(losers)} losing positions "
+                f"(winners untouched)"
+            )
+            try:
+                ns = get_notification_service(self.cfg)
+                ns.send_alert(
+                    'risk_alert',
+                    'ORB SOFT drawdown cut — halving losers',
+                    f"Total unrealized Rs {total_pnl:,.0f} ≤ soft threshold "
+                    f"Rs {soft_thr:,.0f}. Halving qty on {len(losers)} losing "
+                    f"positions. Winners continue to run.",
+                    data={'total_pnl': total_pnl, 'soft_threshold': soft_thr,
+                          'losers': len(losers), 'winners': len(per_pos) - len(losers)},
+                    priority='high',
+                )
+            except Exception:
+                pass
+            for pos, ltp, _ in losers:
+                try:
+                    self._halve_losing_position(pos, ltp)
+                except Exception as e:
+                    logger.error(
+                        f"[ORB] halve failed for {pos['instrument']}: {e}",
+                        exc_info=True,
+                    )
+
+    def _halve_losing_position(self, position, current_ltp):
+        """Close HALF of `position`'s qty at market, update DB qty + SL-M
+        for the remaining half. Falls back to full close if qty is 1 (no
+        meaningful halving).
+        """
+        instrument = position['instrument']
+        direction = position['direction']
+        full_qty = int(position['qty'])
+        if full_qty <= 1:
+            # Nothing to halve meaningfully — just close it
+            self.place_exit_order(position, current_ltp, 'BOOK_DD_SOFT')
+            return
+
+        exit_qty = full_qty // 2
+        remaining_qty = full_qty - exit_qty
+        transaction_type = 'SELL' if direction == 'LONG' else 'BUY'
+
+        # Place market order for half qty
+        try:
+            kite = self._get_kite()
+            price_buffer = 1.002 if transaction_type == 'BUY' else 0.998
+            order_id = kite.place_order(
+                variety='regular', exchange='NSE',
+                tradingsymbol=instrument,
+                transaction_type=transaction_type,
+                quantity=exit_qty, product='MIS',
+                order_type='LIMIT',
+                price=round(current_ltp * price_buffer, 1),
+            )
+            logger.info(
+                f"[ORB] HALVE {instrument} {direction}: exit {exit_qty}/{full_qty} "
+                f"@ ~{current_ltp:.2f}, remaining {remaining_qty}, order_id={order_id}"
+            )
+        except Exception as e:
+            logger.error(f"[ORB] halve order failed for {instrument}: {e}")
+            raise
+
+        # Update DB qty on the position row
+        try:
+            self.db.update_position(position['id'], qty=remaining_qty)
+        except Exception as e:
+            logger.error(f"[ORB] DB qty update failed for pos {position['id']}: {e}")
+
+        # Update in-memory cache
+        with self._lock:
+            if instrument in self._positions:
+                self._positions[instrument]['qty'] = remaining_qty
+
+        # Resize the exchange SL-M to cover only the remaining half.
+        # Safest: cancel existing SL-M and place a new one for remaining_qty.
+        try:
+            self.cancel_sl_m_order(position)
+            refreshed = self.db.get_position_by_id(position['id'])
+            if refreshed and self.cfg.get('use_exchange_sl_m', True):
+                self.place_sl_m_order(refreshed)
+                # Re-sync in-memory with new SL-M id
+                refreshed2 = self.db.get_position_by_id(position['id'])
+                if refreshed2:
+                    with self._lock:
+                        self._positions[instrument] = refreshed2
+        except Exception as e:
+            logger.error(
+                f"[ORB] halve: SL-M resize failed for {instrument}: {e}. "
+                f"Remaining qty is UNPROTECTED on exchange until next monitor tick."
+            )
+
+        # Log the partial exit as an order row
+        try:
+            self.db.log_order(
+                position_id=position['id'],
+                instrument=instrument, tradingsymbol=instrument,
+                transaction_type=transaction_type, qty=exit_qty,
+                order_type='LIMIT', price=round(current_ltp, 2),
+                kite_order_id=str(order_id), status='PLACED',
+                exchange='NSE', product='MIS',
+                notes=f'BOOK_DD_SOFT halve: exited {exit_qty}/{full_qty}, '
+                      f'remaining {remaining_qty}',
+            )
+        except Exception as e:
+            logger.warning(f"[ORB] halve log_order failed: {e}")
+
     def daily_loss_gate(self) -> dict:
         """Evaluate the two-tier loss gate.
         - block_new_entries: realized loss ≥ daily_loss_limit
@@ -1213,6 +1405,20 @@ class ORBLiveEngine:
                 except Exception as e:
                     logger.error(f"[ORB] Panic exit failed for {sym_p}: {e}")
             return
+
+        # --- Step 0.5: book-level drawdown cut (two-tier) ---
+        # Aggregate unrealized P&L across ALL open positions. Independent
+        # from the daily-loss gate above (which is opt-in via
+        # `enforce_daily_loss_cap`). Two one-shot flags per day:
+        #   soft: halve qty on every losing position (winners untouched)
+        #   hard: flatten everything
+        # Both fire at most once each per day — even if the book swings
+        # back into profit and back out, the soft tier will not re-arm.
+        if self.cfg.get('enforce_book_drawdown', True):
+            try:
+                self._check_book_drawdown_cut(open_syms)
+            except Exception as e:
+                logger.error(f"[ORB] Book drawdown check failed: {e}", exc_info=True)
 
         # --- Step 1a: general Kite-DB reconciliation -------------------
         # If the Kite net qty is already flat for any DB-open position
