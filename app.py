@@ -8061,6 +8061,245 @@ except Exception as e:
 
 
 # =============================================================================
+# NWV - Nifty Weekly View (Phase 0: view-only, no orders)
+# =============================================================================
+
+def _nwv_build_weekly_state():
+    """Sunday 22:00 IST: compute this-coming-week's CPR + pivots from last
+    week's NIFTY HLC. Also refresh monthly CPR when entering a new month.
+    Runs before Monday morning so the weekly state is pre-populated.
+    """
+    try:
+        from datetime import date as _d, timedelta as _td
+        from services.nwv_engine import get_nwv_engine
+        from services.nwv_data import fetch_weekly_hlc, fetch_monthly_hlc, fetch_monday_open
+
+        today = _d.today()
+        # Next Monday from today (or today if it's a Monday evening run).
+        days_until_mon = (7 - today.weekday()) % 7
+        if days_until_mon == 0 and today.weekday() == 0:
+            week_start = today
+        else:
+            week_start = today + _td(days=days_until_mon or 1)
+
+        weekly = fetch_weekly_hlc(week_start)
+        if not weekly:
+            logger.warning("[NWV] weekly HLC unavailable - skip state build")
+            return
+
+        monthly = fetch_monthly_hlc(week_start)
+        monthly_cpr = None
+        if monthly:
+            from services.nwv_engine import compute_cpr, compute_pivots
+            m = compute_cpr(monthly['high'], monthly['low'], monthly['close'])
+            monthly_cpr = {'tc': m['tc'], 'bc': m['bc'], 'pp': m['pp']}
+
+        engine = get_nwv_engine()
+        row = engine.build_weekly_state(
+            week_start=week_start,
+            prev_high=weekly['high'], prev_low=weekly['low'],
+            prev_close=weekly['close'],
+            prev_fri_close=weekly['prev_fri_close'],
+            spot_ref=weekly['close'],
+            monthly=monthly_cpr,
+            notes='auto-built Sunday 22:00 job',
+        )
+        logger.info(
+            f"[NWV] weekly_state built for {week_start}: bucket={row['cpr_bucket']} "
+            f"width={row['cpr_width_pct']:.3f}% PP={row['pivot_pp']:.1f} "
+            f"S1={row['pivot_s1']:.1f} R1={row['pivot_r1']:.1f}"
+        )
+    except Exception as e:
+        logger.error(f"[NWV] weekly_state build failed: {e}", exc_info=True)
+
+
+def _nwv_compute_view():
+    """Monday 09:46 IST: after the first 30-min candle closes, compute
+    the view and fire the WhatsApp notification. No Kite orders.
+    """
+    try:
+        from datetime import date as _d
+        from services.nwv_engine import get_nwv_engine
+        from services.nwv_data import (
+            fetch_first_30min_candle, fetch_monday_open,
+            fetch_vix_and_percentile, compute_adx_daily, fetch_daily_pivots,
+        )
+
+        today = _d.today()
+        # Find this week's Monday
+        week_start = today - timedelta(days=today.weekday())
+
+        engine = get_nwv_engine()
+        weekly_state = engine.db.get_weekly_state(week_start)
+        if not weekly_state:
+            # Best-effort on-demand build for today
+            _nwv_build_weekly_state()
+            weekly_state = engine.db.get_weekly_state(week_start)
+            if not weekly_state:
+                logger.error("[NWV] no weekly_state available - cannot compute view")
+                return
+
+        first_candle = fetch_first_30min_candle()
+        if not first_candle:
+            logger.warning("[NWV] first 30-min candle unavailable - skip")
+            return
+
+        mon_open = first_candle['open']  # 09:15 open is the candle open
+        prev_fri_close = weekly_state.get('prev_fri_close') or weekly_state.get('prev_week_close')
+
+        vix_val, vix_rank = fetch_vix_and_percentile()
+        adx_d = compute_adx_daily()
+        daily_pivots = fetch_daily_pivots()
+
+        view = engine.compute_view(
+            week_start=week_start,
+            weekly_state=weekly_state,
+            mon_open=mon_open,
+            prev_fri_close=prev_fri_close,
+            first_candle=first_candle,
+            daily_pivots=daily_pivots,
+            vix_value=vix_val,
+            vix_pct_rank=vix_rank,
+            adx_daily=adx_d,
+            spot=first_candle['close'],
+        )
+
+        logger.info(
+            f"[NWV] {week_start} FINAL VIEW={view['final_view']} "
+            f"conviction={view['conviction']}/5 instrument={view['instrument_choice']} "
+            f"gap={view['gap_pct']:.2f}% cpr_bucket={view['cpr_bucket']}"
+        )
+
+        # WhatsApp / email notification
+        try:
+            from services.notifications import get_notification_service
+            ns = get_notification_service({
+                'whatsapp_enabled': True, 'email_enabled': True,
+                'twilio_account_sid': os.getenv('TWILIO_ACCOUNT_SID', ''),
+                'twilio_auth_token': os.getenv('TWILIO_AUTH_TOKEN', ''),
+                'twilio_whatsapp_from': os.getenv('TWILIO_FROM_WHATSAPP', 'whatsapp:+14155238886'),
+                'twilio_whatsapp_to': os.getenv('TWILIO_TO_WHATSAPP', ''),
+                'email_from': os.getenv('EMAIL_FROM', 'arun.castromin@gmail.com'),
+                'email_to': os.getenv('EMAIL_TO', 'arun.castromin@gmail.com'),
+                'email_app_password': os.getenv('GMAIL_APP_PASSWORD', ''),
+                'smtp_host': 'smtp.gmail.com', 'smtp_port': 587,
+            })
+            # Compact ≤ 500-char message
+            exp_lo = view.get('expected_range_low')
+            exp_hi = view.get('expected_range_high')
+            if exp_lo is not None and exp_hi is not None:
+                rng = f"{exp_lo:.0f}-{exp_hi:.0f}"
+            elif exp_lo is not None:
+                rng = f">{exp_lo:.0f}"
+            elif exp_hi is not None:
+                rng = f"<{exp_hi:.0f}"
+            else:
+                rng = "-"
+            body = (
+                f"NIFTY Weekly View - {week_start}\n"
+                f"View: {view['final_view']}  conviction {view['conviction']}/5\n"
+                f"CPR {view['cpr_bucket']} {view.get('cpr_width_pct', 0):.2f}%\n"
+                f"1st 30m: {view['first_candle_body']}, {view['first_candle_pos']}\n"
+                f"Gap: {view['gap_pct']:+.2f}% ({view['gap_tier']})\n"
+                f"VIX: {view.get('vix_value') or '-'} ({view.get('vix_pct_rank') or '-'}%ile)  "
+                f"ADX: {view.get('adx_daily') or '-'}\n"
+                f"Trade: {view['instrument_choice']}  Range: {rng}\n"
+                f"Time stop: {view['time_stop']}\n"
+                f"http://94.136.185.54:5000/app/nwv"
+            )
+            ns.send_alert('system', 'NWV Monday View', body, data=None, priority='high')
+        except Exception as e:
+            logger.warning(f"[NWV] notification dispatch failed: {e}")
+    except Exception as e:
+        logger.error(f"[NWV] view compute failed: {e}", exc_info=True)
+
+
+try:
+    scheduler.add_job(
+        _nwv_build_weekly_state,
+        'cron', day_of_week='sun', hour=22, minute=0,
+        id='nwv_weekly_state', replace_existing=True,
+    )
+    scheduler.add_job(
+        _nwv_compute_view,
+        'cron', day_of_week='mon', hour=9, minute=46,
+        id='nwv_compute_view', replace_existing=True, max_instances=1,
+    )
+    logger.info("NWV scheduled jobs registered: weekly_state(Sun 22:00), compute_view(Mon 09:46)")
+except Exception as e:
+    logger.warning(f"Could not register NWV scheduled jobs: {e}")
+
+
+# ─── NWV API endpoints ─────────────────────────────────────
+
+@app.route('/api/nwv/view')
+def api_nwv_view():
+    """Latest NWV view row (joined with its weekly_state)."""
+    try:
+        from services.nwv_engine import get_nwv_engine
+        import json as _json
+        engine = get_nwv_engine()
+        v = engine.db.latest_view()
+        if not v:
+            return jsonify({'view': None, 'weekly_state': None,
+                             'message': 'No view computed yet. Next fire: Monday 09:46 IST.'})
+        ws = engine.db.get_weekly_state(v.get('week_start'))
+        # Deserialize JSON text columns for convenience
+        for k in ('stacked_supports', 'stacked_resistances'):
+            if v.get(k):
+                try:
+                    v[k] = _json.loads(v[k])
+                except Exception:
+                    pass
+        return jsonify({'view': v, 'weekly_state': ws})
+    except Exception as e:
+        logger.error(f"[API] /api/nwv/view error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nwv/weekly-state')
+def api_nwv_weekly_state():
+    """Current week's CPR + pivots row."""
+    try:
+        from services.nwv_engine import get_nwv_engine
+        ws = get_nwv_engine().db.latest_weekly_state()
+        return jsonify({'weekly_state': ws})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nwv/views-history')
+def api_nwv_views_history():
+    """Recent NWV views — up to `n` entries."""
+    try:
+        from services.nwv_engine import get_nwv_engine
+        import json as _json
+        n = int(request.args.get('n', 20))
+        rows = get_nwv_engine().db.recent_views(n=n)
+        for r in rows:
+            for k in ('stacked_supports', 'stacked_resistances'):
+                if r.get(k):
+                    try:
+                        r[k] = _json.loads(r[k])
+                    except Exception:
+                        pass
+        return jsonify({'views': rows})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nwv/recompute', methods=['POST'])
+def api_nwv_recompute():
+    """Manual trigger — useful for re-testing after data updates or when
+    Monday morning has already passed and we want to see the view."""
+    try:
+        _nwv_compute_view()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
 # Error Handlers
 # =============================================================================
 
