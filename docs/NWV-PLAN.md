@@ -162,32 +162,40 @@ Symbols: 🔴 not started · 🟡 in progress · 🟢 done
 **Status:** 🟡 (this file)
 
 ### F1 — `services/nwv_db.py`
-**Status:** 🔴
+**Status:** 🟢 done · commit `67eb2b5`
 Tables:
 - `nwv_weekly_state` — one row per week: prev-week H/L/C, weekly pivots, CPR levels, CPR width bucket, week_start, generated_at
 - `nwv_views` — one row per Monday: first-candle data, gap metrics, all enhancement inputs, final view, conviction, expected range, notes
 
 ### F2 — `services/nwv_engine.py`
-**Status:** 🔴
+**Status:** 🟢 done · commit `67eb2b5` · 24 sanity tests pass
 Classes: `NwvEngine` with methods:
 - `compute_weekly_state(week_start_date)` → populates `nwv_weekly_state`
 - `compute_view()` → reads last-Friday's close, today's first 30-min, VIX, ADX etc., returns full view dict and persists to `nwv_views`
 - `get_latest_view()` → retrieves for dashboard/API
 
-### F3 — scheduled jobs in `app.py`
-**Status:** 🔴
+### F3 — scheduled jobs in `app.py` + data-source helpers
+**Status:** 🟢 done · commit `af8493c`
+Also introduced `services/nwv_data.py` with Kite/yfinance adapters
+(weekly + monthly HLC, first 30-min candle, VIX + percentile, daily
+pivots, ADX Wilder 14).
 - Sunday 22:00 IST cron: compute next week's weekly state (CPR + pivots from last week)
 - Monday 09:46 IST cron: compute and persist view; fire WhatsApp notification
 - Monthly-start cron: compute monthly CPR (reused across 4-5 weekly views)
 
 ### F4 — API endpoints
-**Status:** 🔴
+**Status:** 🟢 done · commit `af8493c`
+  - `GET  /api/nwv/view`
+  - `GET  /api/nwv/weekly-state`
+  - `GET  /api/nwv/views-history?n=20`
+  - `POST /api/nwv/recompute` (manual trigger)
 - `GET /api/nwv/view` → latest view JSON
 - `GET /api/nwv/weekly-state` → current week's pivots, CPR, stacked-level candidates
 - `GET /api/nwv/views-history?n=20` → recent views log
 
 ### F5 — React page `/app/nwv`
-**Status:** 🔴
+**Status:** 🟢 done · commit `8e73636`
+Route + sidebar entry wired. No new npm deps. Typecheck clean.
 Simple single-page component showing the view breakdown in the exact layout
 user approved:
 
@@ -214,7 +222,10 @@ Time stop           Fri 15:15
 ```
 
 ### F6 — WhatsApp notification
-**Status:** 🔴
+**Status:** 🟢 done · commit `af8493c` (bundled with F3)
+Fires at end of `_nwv_compute_view()`. Compact card with CPR bucket,
+gap tier, 1st candle, VIX/ADX, instrument + expected range + time
+stop + dashboard URL. `send_alert` priority=high.
 Reuse `services/notifications.py`. Fires once at 09:46 Monday with compact
 view card (≤ 500 chars) pointing to `/app/nwv` for full breakdown.
 
@@ -242,5 +253,15 @@ Same as ORB bundle — `git reset --hard <commit-before-nwv>`, restart.
 - User approved the Phase 0 dashboard layout.
 - Locked soft Monthly override, Friday 15:15 time stop (Tuesday expiry).
 - Plan doc landed. Starting F1 (DB layer).
+- `18:30 IST` F1 + F2 landed · `67eb2b5`. Engine with 24 tests passing.
+- `18:45 IST` F3 + F4 + F6 landed · `af8493c`. Sunday-22:00 weekly
+  state build, Monday-09:46 view compute + WhatsApp, 4 API endpoints.
+- `19:00 IST` F5 landed · `8e73636`. `/app/nwv` React dashboard +
+  sidebar entry. Typecheck clean.
+- **All Phase 0 deliverables complete.** Ready to push + deploy.
+
+Deploy next — user to pull on VPS outside market hours and rebuild
+the frontend. Sunday 22:00 cron will pre-populate the next week's
+state; Monday 09:46 will fire the first live view.
 
 <!-- APPEND FUTURE ENTRIES BELOW -->
