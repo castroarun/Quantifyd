@@ -271,6 +271,48 @@ Do NOT deploy any of this to Contabo during market hours (09:15–15:30 IST).
    the first post-restart tick. No positions should be entered that cycle.
 9. Watch the next market open; verify staleness guards fire in the logs.
 
+### Shadow-week review — Sat 2026-05-02
+
+After 5 trading sessions (2026-04-27 Mon → 2026-05-01 Fri) with the
+hedge in paper mode, review the paper log and decide whether to keep
+thresholds or tighten before flipping off paper mode.
+
+**Query paper-hedge entries on VPS:**
+```
+ssh arun@94.136.185.54
+cd /home/arun/quantifyd
+venv/bin/python3 -c "
+import sqlite3
+conn = sqlite3.connect('backtest_data/orb_trading.db')
+conn.row_factory = sqlite3.Row
+rows = list(conn.execute('''
+    SELECT trade_date, fire_time, direction, net_side, skew, positions_count,
+           spot, strike, tradingsymbol, entry_premium, exit_premium, pnl_inr,
+           status, paper_mode
+    FROM orb_hedges
+    WHERE trade_date >= '2026-04-27'
+    ORDER BY trade_date
+'''))
+print(f'Paper hedges fired: {len(rows)}')
+for r in rows:
+    print(dict(r))
+"
+```
+
+**Decision matrix:**
+
+| Paper-hedge outcome | Action |
+|---|---|
+| 0 triggers in 5 days | Thresholds too tight → lower `hedge_skew_threshold` to 0.60, keep count ≥ 10. Next shadow week. |
+| 1–2 triggers, net P&L positive on triggered days | Keep defaults → flip `hedge_paper_mode: False` in config.py, redeploy. |
+| 1–2 triggers, net P&L negative (hedge lost more than saved) | Raise threshold to 0.80 OR increase OTM to 2%. Another shadow week. |
+| 3+ triggers | Thresholds too loose → keep at 0.70 but increase `hedge_min_positions` to 12. Shadow again. |
+
+Also review:
+- F1 staleness blocks — should remain low (< 5% of entries)
+- F2 drawdown-cut firings — should be rare (0 expected in normal week)
+- F7 in-app chart behaviour — did it render through session correctly?
+
 ### Rollback if anything goes wrong
 ```
 cd /home/arun/quantifyd
@@ -314,5 +356,15 @@ sudo systemctl restart quantifyd.service
   every monitor tick. Polls every 10s client-side.
 - All 7 features complete. Nothing deployed to VPS. Rollback
   instructions below still apply if anything goes wrong post-deploy.
+- `17:45 IST` Deploy complete. Commits `bea9123..899956c` pushed to
+  origin/main. VPS pulled cleanly (DBs preserved post .gitignore
+  change). `quantifyd.service` restarted. Config verified live:
+  hedge paper mode on, skew 0.70, count 10, drawdown soft -7500 /
+  hard -15000, staleness age 15m / cutoff 14:00.
+- `18:00 IST` Retrofit over 134 days (58 with Kite data) — F3 hedge
+  fired 0 times, F2 drawdown cut fired 0 times in the backtest.
+  Today's book (skew 1.00, 11 shorts) is the first day that would
+  have triggered. Decision: keep defaults for a shadow week
+  (Mon 2026-04-27 → Fri 2026-05-01), then review (see below).
 
 <!-- APPEND FUTURE ENTRIES BELOW -->
