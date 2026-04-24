@@ -57,6 +57,18 @@ class ORBLiveEngine:
         self._positions = {}     # {sym: position_dict}  -- open position cache
         self._tokens_resolved = False
         self._last_margin = None  # cached margin info from Kite
+        # Engine-start timestamp for post-restart cooldown gate. Set once,
+        # never reset during process lifetime. initialize_day() does not
+        # touch this — cooldown protects against restart-induced stale
+        # signal entries, not daily init.
+        self._engine_started_at = datetime.now()
+        # Per-day drawdown-cut tier flags (reset in initialize_day()).
+        self._soft_cut_fired_today = False
+        self._hard_cut_fired_today = False
+        # Per-day tail-hedge flag (reset in initialize_day()).
+        self._hedge_fired_today = False
+        # Current-day hedge position record (set when hedge placed).
+        self._hedge_record = None
 
     # ===================================================================
     # Kite helpers
@@ -426,6 +438,11 @@ class ORBLiveEngine:
             self._or_state = {}
             self._vwap_state = {}
             self._positions = {}
+            # Per-day circuit-breaker + hedge flags
+            self._soft_cut_fired_today = False
+            self._hard_cut_fired_today = False
+            self._hedge_fired_today = False
+            self._hedge_record = None
 
         # Reload any open positions from DB (server restart recovery)
         open_pos = self.db.get_open_positions()
@@ -747,6 +764,7 @@ class ORBLiveEngine:
                     len(candles)
                 )
                 direction = None
+                breakout_candle = None  # the 5-min candle that first closed outside OR
                 for i in range(or_end_idx, len(candles)):
                     if i == 0:
                         continue
@@ -755,9 +773,11 @@ class ORBLiveEngine:
                     if cur['close'] > or_high and prev_c['close'] <= or_high:
                         if close_price > or_high:
                             direction = 'LONG'
+                            breakout_candle = cur
                     elif cur['close'] < or_low and prev_c['close'] >= or_low:
                         if close_price < or_low:
                             direction = 'SHORT'
+                            breakout_candle = cur
 
                 if direction is None:
                     continue
@@ -830,6 +850,73 @@ class ORBLiveEngine:
                         filters['gap'] = True
                 else:
                     filters['gap'] = 'disabled'
+
+                # =========================================================
+                # STALENESS GUARDS — prevent entering on old breakouts
+                # (post-restart or slow-scanner scenarios).
+                # These four guards are independent of filter quality; a
+                # breakout can have perfect VWAP/RSI/CPR and still be too
+                # old or too far from current price to be a valid entry.
+                # =========================================================
+
+                # 1) Signal age: breakout candle must be recent
+                max_age_mins = cfg.get('signal_age_max_mins', 15)
+                breakout_time = _ctime(breakout_candle) if breakout_candle else None
+                if breakout_time is not None:
+                    age_mins = (now - breakout_time).total_seconds() / 60.0
+                    if age_mins > max_age_mins:
+                        filters['signal_age'] = False
+                        filters['_signal_age_mins'] = round(age_mins, 1)
+                        all_passed = False
+                    else:
+                        filters['signal_age'] = True
+                else:
+                    filters['signal_age'] = 'no_breakout_candle'
+
+                # 2) Price drift: current close must be near breakout close
+                max_drift_pct = cfg.get('signal_drift_max_pct', 0.005)
+                if breakout_candle is not None:
+                    breakout_close = breakout_candle['close']
+                    if breakout_close > 0:
+                        drift = abs(close_price - breakout_close) / breakout_close
+                        if drift > max_drift_pct:
+                            filters['signal_drift'] = False
+                            filters['_signal_drift_pct'] = round(drift * 100, 3)
+                            all_passed = False
+                        else:
+                            filters['signal_drift'] = True
+                    else:
+                        filters['signal_drift'] = 'invalid_close'
+                else:
+                    filters['signal_drift'] = 'no_breakout_candle'
+
+                # 3) Entry cutoff time: no fresh entries after this
+                entry_end_str = cfg.get('entry_end_time', '14:00')
+                try:
+                    cutoff_h, cutoff_m = [int(x) for x in entry_end_str.split(':')]
+                    cutoff_dt = now.replace(hour=cutoff_h, minute=cutoff_m,
+                                            second=0, microsecond=0)
+                    if now >= cutoff_dt:
+                        filters['entry_cutoff'] = False
+                        all_passed = False
+                    else:
+                        filters['entry_cutoff'] = True
+                except Exception:
+                    filters['entry_cutoff'] = 'parse_error'
+
+                # 4) Post-restart cooldown: first N minutes after engine
+                # start, we do NOT enter. This protects against replaying
+                # stale breakouts from earlier in the session on a mid-day
+                # restart. We still run the full signal eval and log it —
+                # just don't place orders.
+                cooldown_mins = cfg.get('post_restart_cooldown_mins', 5)
+                uptime_mins = (now - self._engine_started_at).total_seconds() / 60.0
+                if uptime_mins < cooldown_mins:
+                    filters['restart_cooldown'] = False
+                    filters['_uptime_mins'] = round(uptime_mins, 1)
+                    all_passed = False
+                else:
+                    filters['restart_cooldown'] = True
 
                 # --- Compute SL and target ---
                 entry_price = close_price

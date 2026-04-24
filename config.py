@@ -326,7 +326,9 @@ NAS_DEFAULTS = {
     'max_strangles': 1,         # Only 1 strangle at a time
 
     # Adjustment Rules
-    'premium_double_trigger': 2.0,   # Cross-leg imbalance trigger (leg1 >= 2x leg2)
+    'premium_double_trigger': 2.0,       # Same-leg trigger: losing leg >= 2.0x its OWN entry premium
+    'premium_half_trigger': 0.5,         # Same-leg trigger: winning leg <= 0.5x its own entry premium
+    'premium_cross_leg_trigger': 2.5,    # Cross-leg trigger: losing leg >= 2.5x the OTHER leg's CURRENT premium
     'adj_min_premium': 4.0,          # Target premium floor — below this, close both
     'adj_max_premium': 24.0,         # Target premium ceiling — above this, flip direction
     'max_adjustments_per_leg': 999,  # No limit
@@ -503,6 +505,34 @@ ORB_DEFAULTS = {
     # Direction control
     'allow_longs': True,
     'allow_shorts': True,
+
+    # Staleness guards — reject entries on stale signals that can otherwise
+    # fire post-restart (service comes back mid-session and walks all
+    # post-OR candles, taking the latest valid breakout even if it is
+    # hours old). See 2026-04-24 VEDL/TRENT incident and
+    # docs/MONDAY-WORK-PLAN.md.
+    'signal_age_max_mins': 15,         # breakout candle cannot be older than this
+    'signal_drift_max_pct': 0.005,     # 0.5% max drift between breakout close and current close
+    'entry_end_time': '14:00',         # no fresh entries after this IST
+    'post_restart_cooldown_mins': 5,   # log-only pass during the first N min after engine start
+
+    # Book-level drawdown cut — two-tier aggregate stop on unrealized P&L.
+    # Computed in monitor_positions() every 30s. One-shot per day each.
+    'book_drawdown_soft_inr': -7500,   # soft: halve qty on every losing position
+    'book_drawdown_hard_inr': -15000,  # hard: flatten the entire book
+    'enforce_book_drawdown': True,
+
+    # Tail hedge — buy NIFTY OTM option when book is heavily one-sided.
+    # Triggered once/day during eval window; held till `hedge_exit_time`.
+    'hedge_enabled': True,
+    'hedge_paper_mode': True,          # log-only for v1; flip to False after shadow week
+    'hedge_skew_threshold': 0.70,      # |short-long|/total notional ≥ this
+    'hedge_min_positions': 10,         # active ORB positions ≥ this
+    'hedge_otm_pct': 0.015,            # 1.5% OTM from spot
+    'hedge_lots': 1,
+    'hedge_eval_start': '10:00',
+    'hedge_eval_end': '14:00',
+    'hedge_exit_time': '15:15',        # square off 5 min before ORB EOD squareoff
 
     # Risk Management
     # Expressed as % of `capital`. Computed at runtime so scaling the ORB
