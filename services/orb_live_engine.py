@@ -1420,6 +1420,26 @@ class ORBLiveEngine:
             except Exception as e:
                 logger.error(f"[ORB] Book drawdown check failed: {e}", exc_info=True)
 
+        # --- Step 0.6: NIFTY tail hedge (paper or live) ---
+        # Skew + count trigger; one-shot per day; exit at 15:15.
+        if self.cfg.get('hedge_enabled', True):
+            try:
+                if not hasattr(self, '_hedge'):
+                    from services.orb_hedge import OrbTailHedge
+                    self._hedge = OrbTailHedge(self)
+                now_hedge = datetime.now()
+                # Snapshot open positions for hedge calc
+                with self._lock:
+                    open_pos_snap = [dict(p) for p in self._positions.values()]
+                try:
+                    ltps_for_hedge = self.get_live_ltp([p['instrument'] for p in open_pos_snap])
+                except Exception:
+                    ltps_for_hedge = {}
+                self._hedge.check_and_place(open_pos_snap, ltps_for_hedge, now=now_hedge)
+                self._hedge.check_and_exit(now=now_hedge)
+            except Exception as e:
+                logger.error(f"[ORB] Hedge check failed: {e}", exc_info=True)
+
         # --- Step 1a: general Kite-DB reconciliation -------------------
         # If the Kite net qty is already flat for any DB-open position
         # (manual close, SL fill, any external intervention), mark it
