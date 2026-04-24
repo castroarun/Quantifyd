@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Strategies from './pages/Strategies';
 import Orb from './pages/Orb';
 import Nas from './pages/Nas';
+import Nwv from './pages/Nwv';
 import Report from './pages/Report';
 import Holdings from './pages/Holdings';
 import HoldingsHistory from './pages/HoldingsHistory';
@@ -94,6 +95,16 @@ export default function App() {
           <Protected>
             <AppLayout active="nas">
               <Nas />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/nwv"
+        element={
+          <Protected>
+            <AppLayout active="nwv">
+              <Nwv />
             </AppLayout>
           </Protected>
         }
