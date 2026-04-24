@@ -38,17 +38,14 @@ data/*.h5
 data/fundamentals_cache/
 !data/.gitkeep
 
-# Backtest data: ignore everything by default, then un-ignore small files we
-# want committed for disaster recovery. Large files go to GitHub Releases via
+# Backtest data: ignore ALL binary artifacts. Live trading state (SQLite DBs)
+# must NEVER be tracked — a `git pull` that touches a tracked DB will
+# overwrite live runtime data. 2026-04-24 incident: git reset wiped
+# orb_positions table mid-session.
+# Large files and any snapshot-worthy artifacts go to GitHub Releases via
 # scripts/backup_to_github_release.sh.
 backtest_data/*
 !backtest_data/.gitkeep
-
-# Small trading-state SQLite DBs — safe to commit (~100 KB each, total ~1.5 MB)
-!backtest_data/*_trading.db
-!backtest_data/backtest_results.db
-!backtest_data/mq_agent.db
-!backtest_data/tactical_pool.db
 
 # Static config / result JSONs (backtest artifacts, instrument tokens)
 !backtest_data/*.json
