@@ -1,0 +1,113 @@
+.card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--card-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 14px 16px 4px;
+  margin-top: 14px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-strong, #1f2937);
+  letter-spacing: -0.01em;
+}
+
+.currentRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.85rem;
+}
+
+.current {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+}
+
+.pnlPos { color: var(--pnl-pos, #059669); }
+.pnlNeg { color: var(--pnl-neg, #dc2626); }
+
+.stamp,
+.points {
+  color: var(--text-muted, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
+.svg {
+  width: 100%;
+  height: 220px;
+  display: block;
+  overflow: visible;
+}
+
+.loading,
+.waiting,
+.errMsg {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+.errMsg { color: var(--pnl-neg, #dc2626); }
+
+.bandLoss {
+  fill: rgba(220, 38, 38, 0.06);
+}
+
+.gridMinor {
+  stroke: var(--grid-minor, rgba(0,0,0,0.05));
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.gridZero {
+  stroke: var(--grid-zero, #9ca3af);
+  stroke-width: 1;
+}
+
+.gridSoft {
+  stroke: var(--pnl-soft, #f59e0b);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.gridHard {
+  stroke: var(--pnl-neg, #dc2626);
+  stroke-width: 1.3;
+}
+
+.yLabel,
+.xLabel {
+  font-size: 10px;
+  fill: var(--text-muted, #6b7280);
+  font-variant-numeric: tabular-nums;
+  font-family: 'DM Mono', ui-monospace, monospace;
+}
+
+.lineGreen {
+  fill: none;
+  stroke: var(--pnl-pos, #059669);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lineRed {
+  fill: none;
+  stroke: var(--pnl-neg, #dc2626);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

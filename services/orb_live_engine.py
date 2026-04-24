@@ -70,6 +70,10 @@ class ORBLiveEngine:
         self._hedge_fired_today = False
         # Current-day hedge position record (set when hedge placed).
         self._hedge_record = None
+        # Rolling buffer of {ts_iso, pnl_inr} samples for the in-app
+        # live book-P&L chart. Populated inside monitor_positions.
+        # Capped at ~7 hours at 30s cadence. Reset in initialize_day().
+        self._book_pnl_history = []
 
     # ===================================================================
     # Kite helpers
@@ -636,6 +640,7 @@ class ORBLiveEngine:
             self._hard_cut_fired_today = False
             self._hedge_fired_today = False
             self._hedge_record = None
+            self._book_pnl_history = []
 
         # Reload any open positions from DB (server restart recovery)
         open_pos = self.db.get_open_positions()
@@ -1365,6 +1370,25 @@ class ORBLiveEngine:
         4. Check target hit
         5. If hit: place exit order, close position in DB
         """
+        # Always record a book-P&L sample at the top of the tick so the
+        # in-app live chart has a continuous series, even on ticks that
+        # return early (no open positions).
+        try:
+            realized_snap, unrealized_snap = self.compute_day_pnl(include_open=True)
+            sample = {
+                'ts': datetime.now().isoformat(),
+                'pnl_inr': round(realized_snap + unrealized_snap, 2),
+                'realized': round(realized_snap, 2),
+                'unrealized': round(unrealized_snap, 2),
+            }
+            with self._lock:
+                self._book_pnl_history.append(sample)
+                # Cap at ~7 hours of 30s samples
+                if len(self._book_pnl_history) > 850:
+                    self._book_pnl_history = self._book_pnl_history[-850:]
+        except Exception:
+            pass
+
         with self._lock:
             open_syms = list(self._positions.keys())
 

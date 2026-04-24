@@ -13,6 +13,7 @@ import MetricCard from '../components/Cards/MetricCard';
 import DataTable from '../components/DataTable/DataTable';
 import type { Column } from '../components/DataTable/DataTable';
 import Chip from '../components/Chip/Chip';
+import BookPnLChart from '../components/BookPnLChart/BookPnLChart';
 import {
   formatInt,
   formatNumber,
@@ -463,6 +464,9 @@ export default function Orb() {
           }
         />
       </div>
+
+      {/* live book-P&L chart with soft/hard drawdown bands */}
+      <BookPnLChart />
 
       {/* positions — open + closed today (closed are dimmed in place) */}
       <section className={styles.section}>

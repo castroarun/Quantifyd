@@ -6151,6 +6151,36 @@ def api_orb_mark_read():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/orb/book-pnl-series')
+def api_orb_book_pnl_series():
+    """Return the engine's rolling book-P&L samples for the in-app chart.
+
+    The engine appends one {ts, pnl_inr, realized, unrealized} sample
+    per monitor tick (~30s). Series resets at 09:14 initialize_day().
+
+    Response:
+      {
+        "series": [{"ts": "...", "pnl_inr": ...}, ...],
+        "threshold_soft_inr": -7500,
+        "threshold_hard_inr": -15000,
+        "current": <last pnl or null>,
+      }
+    """
+    try:
+        engine = _get_orb_engine()
+        series = list(getattr(engine, '_book_pnl_history', []) or [])
+        cfg = ORB_DEFAULTS
+        return jsonify({
+            'series': series,
+            'threshold_soft_inr': int(cfg.get('book_drawdown_soft_inr', -7500)),
+            'threshold_hard_inr': int(cfg.get('book_drawdown_hard_inr', -15000)),
+            'current': series[-1]['pnl_inr'] if series else None,
+        })
+    except Exception as e:
+        logger.error(f"[API] /api/orb/book-pnl-series error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/orb/tv-pine')
 def api_orb_tv_pine():
     """Generate a ready-to-paste Pine Script v5 indicator that plots the
