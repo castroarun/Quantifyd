@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './Strategies.module.css';
 import StrategyCard from '../components/Cards/StrategyCard';
 import { IconBarChart, IconLayers } from '../components/Icons';
@@ -27,7 +27,16 @@ type NasAgg = {
   anyLive: boolean;
 };
 
-function aggregateNas(states: (NASState | null)[]): NasAgg {
+// Polled /api/{key}/state returns p.ltp=None for some open legs (the 916
+// executors write to separate ticker caches that _enrich_nas_positions_with_ltp
+// doesn't see). The NAS page masks this by reading LTPs from /api/nas/stream
+// SSE, so its per-card + top-line totals reconcile. This aggregator must do
+// the same or the Strategies card under-reports unrealized on those legs,
+// leaving only the realized loss visible (e.g. −Rs 66K after morning SLs).
+function aggregateNas(
+  states: (NASState | null)[],
+  liveLegLtps: Record<string, number>,
+): NasAgg {
   let activeLegs = 0;
   let dayPnl = 0;
   let totalPnl = 0;
@@ -38,11 +47,12 @@ function aggregateNas(states: (NASState | null)[]): NasAgg {
     activeLegs += s.positions?.total_active ?? 0;
     // Realized (stats.today_pnl computed server-side from closed_today)
     dayPnl += (s.stats?.today_pnl as number | undefined) ?? 0;
-    // Unrealized (open legs live P&L from polled LTPs)
+    // Unrealized — prefer live SSE tick, fall back to polled p.ltp
     const legs = [...(s.positions?.ce ?? []), ...(s.positions?.pe ?? [])];
     for (const p of legs) {
       const entry = p.entry_price ?? p.entry_premium;
-      const ltp = p.ltp;
+      const liveLtp = p.tradingsymbol ? liveLegLtps[p.tradingsymbol] : undefined;
+      const ltp = liveLtp ?? p.ltp;
       const qty = p.qty ?? 0;
       if (entry != null && ltp != null && qty) {
         dayPnl += (entry - ltp) * qty;
@@ -58,7 +68,9 @@ function aggregateNas(states: (NASState | null)[]): NasAgg {
 export default function Strategies() {
   const [orb, setOrb] = useState<ORBState | null>(null);
   const [nasStates, setNasStates] = useState<(NASState | null)[]>([]);
+  const [liveLegLtps, setLiveLegLtps] = useState<Record<string, number>>({});
   const [err, setErr] = useState<string | null>(null);
+  const evtRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,13 +97,56 @@ export default function Strategies() {
     };
   }, []);
 
+  // Subscribe to the NAS SSE tick stream so the aggregator has live LTPs for
+  // every open leg — matches what the NAS dashboard already consumes.
+  useEffect(() => {
+    let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    const open = () => {
+      if (cancelled) return;
+      const es = new EventSource('/api/nas/stream');
+      evtRef.current = es;
+      es.onmessage = (ev) => {
+        if (cancelled) return;
+        try {
+          const d = JSON.parse(ev.data);
+          if (d.type === 'tick' && d.legs) {
+            const next: Record<string, number> = {};
+            for (const [tsym, info] of Object.entries(d.legs)) {
+              const ltp = (info as { ltp?: number }).ltp;
+              if (typeof ltp === 'number') next[tsym] = ltp;
+            }
+            setLiveLegLtps(next);
+          }
+        } catch {
+          /* ignore malformed payload */
+        }
+      };
+      es.onerror = () => {
+        if (cancelled) return;
+        es.close();
+        evtRef.current = null;
+        reconnectTimer = setTimeout(open, 3000);
+      };
+    };
+    open();
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (evtRef.current) {
+        evtRef.current.close();
+        evtRef.current = null;
+      }
+    };
+  }, []);
+
   const orbOpen = orb?.open_positions?.length ?? 0;
   const orbClosed = orb?.today_closed?.length ?? 0;
   const orbPnl = orb?.today_pnl ?? 0;
   const orbEnabled = !!orb?.enabled;
   const orbLive = !!orb?.live_trading;
 
-  const nasAgg = aggregateNas(nasStates);
+  const nasAgg = aggregateNas(nasStates, liveLegLtps);
   const nasOpen = nasAgg.activeLegs;
   const nasPnl = nasAgg.dayPnl;
   const nasEnabled = nasAgg.anyEnabled;
