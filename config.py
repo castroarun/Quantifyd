@@ -200,6 +200,41 @@ KC6_DEFAULTS = {
     'max_daily_loss_pct': 3.0,
 }
 
+# Collar Strategy Defaults (KC6 signal on F&O stocks, 3-leg options collar)
+# Long Fut + Long OTM Put (protection) + Short OTM Call (premium cap)
+COLLAR_DEFAULTS = {
+    # Signal source — reuses KC6 config for indicator params
+    # (KC6 entry: close < KC6_lower AND close > SMA200)
+
+    # Strike selection (% OTM from entry spot)
+    'put_otm_pct': 5.0,     # Put strike at spot * (1 - put_otm_pct/100), rounded DOWN to interval
+    'call_otm_pct': 5.0,    # Call strike at spot * (1 + call_otm_pct/100), rounded UP to interval
+
+    # Exit rules (mirror KC6 on underlying spot)
+    'sl_pct': 5.0,          # underlying falls 5% from entry -> force exit all 3 legs
+    'tp_pct': 15.0,         # underlying rises 15% from entry -> force exit all 3 legs
+    'max_hold_days': 15,
+    'min_expiry_days': 7,   # Roll to next month if <7 days to current-month expiry
+    'expiry_exit_days': 3,  # Force exit if <3 days to expiry (avoid gamma risk)
+
+    # Universe: Nifty 500 ∩ F&O universe (intersection computed at scan time)
+
+    # Position sizing (1 lot per collar)
+    'max_positions': 5,
+
+    # Black-Scholes paper-pricing assumptions
+    'iv_assumed': 0.25,     # Flat 25% IV for both entry and exit pricing
+    'risk_free_rate': 0.065,
+
+    # Crash filter (same KC6 threshold on universe ATR ratio)
+    'atr_ratio_threshold': 1.3,
+
+    # Safety (paper only)
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+}
+
 # Maruthi Always-On Strategy Defaults
 MARUTHI_DEFAULTS = {
     # Instrument

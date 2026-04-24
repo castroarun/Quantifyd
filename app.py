@@ -2361,6 +2361,189 @@ except Exception as e:
 
 
 # =============================================================================
+# Collar Paper-Trading (KC6 signal + 3-leg options overlay)
+# =============================================================================
+
+@app.route('/collar')
+@login_required
+def collar_dashboard():
+    """Collar (KC6 + options) paper-trading dashboard."""
+    return render_template(
+        'collar_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+@app.route('/api/collar/state')
+def api_collar_state():
+    """Dashboard state: open collars (with legs + live MTM), signals, stats."""
+    try:
+        from services.collar_db import get_collar_db
+        from services.collar_engine import CollarEngine
+        from config import COLLAR_DEFAULTS
+
+        db = get_collar_db()
+        engine = CollarEngine(config=COLLAR_DEFAULTS)
+
+        positions = db.get_open_positions_with_legs()
+        # Attach MTM snapshot to each position
+        for pos in positions:
+            try:
+                pos['mtm'] = engine.mark_to_market(pos)
+            except Exception as e:
+                logger.warning(f"[COLLAR] MTM failed for {pos.get('symbol')}: {e}")
+                pos['mtm'] = {}
+
+        daily_state = db.get_daily_state()
+        stats = db.get_stats()
+        recent_trades = db.get_trade_history(limit=20)
+
+        last_scan = {}
+        for tid, ts in list(task_status.items()):
+            if tid.startswith('collar_scan_') and ts.get('status') == 'completed':
+                last_scan = ts.get('result', {}) or {}
+                break
+
+        return jsonify({
+            'positions': positions,
+            'daily_state': daily_state,
+            'stats': stats,
+            'recent_trades': recent_trades,
+            'last_scan': last_scan,
+            'config': {
+                'paper_trading_mode': COLLAR_DEFAULTS.get('paper_trading_mode', True),
+                'enabled': COLLAR_DEFAULTS.get('enabled', True),
+                'max_positions': COLLAR_DEFAULTS.get('max_positions', 5),
+                'put_otm_pct': COLLAR_DEFAULTS.get('put_otm_pct', 5.0),
+                'call_otm_pct': COLLAR_DEFAULTS.get('call_otm_pct', 5.0),
+                'sl_pct': COLLAR_DEFAULTS.get('sl_pct', 5.0),
+                'tp_pct': COLLAR_DEFAULTS.get('tp_pct', 15.0),
+                'max_hold_days': COLLAR_DEFAULTS.get('max_hold_days', 15),
+                'iv_assumed': COLLAR_DEFAULTS.get('iv_assumed', 0.25),
+            },
+        })
+    except Exception as e:
+        logger.error(f"Collar state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/collar/scan', methods=['POST'])
+@login_required
+def api_collar_manual_scan():
+    """Kick off a manual collar scan (exits + entries, paper-mode)."""
+    try:
+        task_id = f"collar_scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        task_status[task_id] = {
+            'status': 'running',
+            'progress': 0,
+            'message': 'Starting collar scan...',
+            'result': None,
+        }
+        scheduler.add_job(
+            _execute_collar_scan,
+            args=[task_id],
+            id=task_id,
+        )
+        return jsonify({'task_id': task_id, 'status': 'started'})
+    except Exception as e:
+        logger.error(f"Collar scan start error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def _execute_collar_scan(task_id: str):
+    try:
+        from services.collar_engine import CollarEngine
+        from config import COLLAR_DEFAULTS
+
+        task_status[task_id]['message'] = 'Loading data and computing indicators...'
+        task_status[task_id]['progress'] = 10
+
+        engine = CollarEngine(config=COLLAR_DEFAULTS)
+        result = engine.run_full_scan()
+
+        task_status[task_id]['status'] = 'completed'
+        task_status[task_id]['progress'] = 100
+        task_status[task_id]['message'] = (
+            f"Collar scan complete: {result.get('symbols_loaded', 0)} symbols | "
+            f"ATR={result.get('universe_atr_ratio', 'N/A')} | "
+            f"Entries={len(result.get('entries_taken', []))} | "
+            f"Exits={len(result.get('exits_taken', []))}"
+        )
+        task_status[task_id]['result'] = result
+    except Exception as e:
+        logger.error(f"Collar scan error: {e}")
+        task_status[task_id]['status'] = 'failed'
+        task_status[task_id]['message'] = str(e)
+
+
+@app.route('/api/collar/scan/status/<task_id>')
+@login_required
+def api_collar_scan_status(task_id: str):
+    if task_id not in task_status:
+        return jsonify({'error': 'Task not found'}), 404
+    return jsonify(task_status[task_id])
+
+
+@app.route('/api/collar/trades')
+@login_required
+def api_collar_trades():
+    try:
+        from services.collar_db import get_collar_db
+        db = get_collar_db()
+        limit = request.args.get('limit', 50, type=int)
+        return jsonify(db.get_trade_history(limit=limit))
+    except Exception as e:
+        logger.error(f"Collar trades error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/collar/equity-curve')
+@login_required
+def api_collar_equity_curve():
+    try:
+        from services.collar_db import get_collar_db
+        db = get_collar_db()
+        return jsonify(db.get_equity_curve())
+    except Exception as e:
+        logger.error(f"Collar equity curve error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ---- Scheduler job ----------------------------------------------------------
+
+def _collar_full_scan():
+    """3:25 PM Mon-Fri: full collar scan (exits + entries, paper-mode)."""
+    try:
+        from services.collar_engine import CollarEngine
+        from config import COLLAR_DEFAULTS
+        if not COLLAR_DEFAULTS.get('enabled', True):
+            logger.info("[Collar Scheduler] Disabled — skipping scheduled scan")
+            return
+        logger.info("[Collar Scheduler] Running full scan...")
+        engine = CollarEngine(config=COLLAR_DEFAULTS)
+        result = engine.run_full_scan()
+        logger.info(
+            f"[Collar Scheduler] Scan done: "
+            f"entries={len(result.get('entries_taken', []))} "
+            f"exits={len(result.get('exits_taken', []))}"
+        )
+    except Exception as e:
+        logger.error(f"[Collar Scheduler] Full scan failed: {e}")
+
+
+try:
+    scheduler.add_job(
+        _collar_full_scan,
+        'cron', day_of_week='mon-fri', hour=15, minute=25,
+        id='collar_full_scan', replace_existing=True,
+    )
+    logger.info("Collar scheduled job registered: full_scan(15:25 Mon-Fri)")
+except Exception as e:
+    logger.warning(f"Could not register Collar scheduled job: {e}")
+
+
+# =============================================================================
 # Maruthi Always-On Strategy
 # =============================================================================
 
