@@ -1,0 +1,4 @@
+variant,trades,wins,losses,win_rate_pct,avg_win,avg_loss,profit_factor,net_pnl,sharpe,max_dd_pct
+direct_trail,1294,262,1032,20.25,1736.0,-931.0,0.47,-506172.0,-6.45,170.09
+reverse_on_flip,1523,320,1203,21.01,1675.0,-930.0,0.48,-582642.0,-6.43,196.08
+wait_for_st,1292,274,1018,21.21,1707.0,-920.0,0.5,-469318.0,-6.1,158.94

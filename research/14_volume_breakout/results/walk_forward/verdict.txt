@@ -1,0 +1,6 @@
+train_period: 2024-03-18 -> 2025-03-15
+test_period: 2025-03-16 -> 2026-03-12
+curated_universe: ['MARUTI', 'HEROMOTOCO', 'EICHERMOT', 'TITAN', 'ASIANPAINT', 'HINDALCO', 'LT']
+in_sample_metrics: {'trades': 53, 'wins': 29, 'losses': 24, 'win_rate_pct': 54.72, 'avg_win': 2689.0, 'avg_loss': -1525.0, 'profit_factor': 2.13, 'net_pnl': 41385.0, 'sharpe': 3.72, 'max_dd': 6612.0, 'max_dd_pct': 2.2, 'cagr_pct': 13.8, 'calmar': 6.26}
+oos_metrics: {'trades': 17, 'wins': 5, 'losses': 12, 'win_rate_pct': 29.41, 'avg_win': 2659.0, 'avg_loss': -1409.0, 'profit_factor': 0.79, 'net_pnl': -3614.0, 'sharpe': -1.56, 'max_dd': 11664.0, 'max_dd_pct': 3.89, 'cagr_pct': -1.2, 'calmar': -0.31}
+pass: False
