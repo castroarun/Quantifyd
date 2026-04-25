@@ -12,6 +12,52 @@ Indian stock market backtesting system: Momentum + Quality (MQ) portfolio strate
 
 ---
 
+## LIVE-STATUS MD CONVENTION (long-running tasks)
+
+For any task that runs longer than ~5 minutes, spawns background processes,
+or could be interrupted mid-flight (sweeps, backtests, deployments,
+migrations, multi-step ops), maintain a **live-status MD file** that lets
+the user resume independently if Claude crashes or context is lost.
+
+**Naming:** never call it `PROGRESS.md` — use a name that signals the
+*nature* of the running work, ending in `-STATUS.md`. Examples:
+
+| Task type | File name |
+|---|---|
+| Backtest sweep | `SWEEP-STATUS.md` |
+| Multi-step deployment | `DEPLOY-STATUS.md` |
+| Schema migration | `MIGRATION-STATUS.md` |
+| Forensic investigation | `FORENSIC-STATUS.md` |
+| Long live-trading run | `RUN-STATUS.md` |
+
+Keep the file in the same folder as the artifacts it tracks (e.g., the
+research/ subfolder, or `docs/` for cross-cutting work).
+
+**Required sections:**
+
+1. **Goal + scope** — one paragraph: what we're doing, what success looks
+   like, what universe / period / parameters.
+2. **Plan** — the variants / steps / configurations in a table or list,
+   including any cells already known to be skipped and why.
+3. **Status** — per-task or per-cell state (RUNNING / COMPLETED / FAILED),
+   with bash background process IDs, log paths, heartbeat file paths,
+   and last-known progress line.
+4. **Crash recovery** — full instructions for the *human* to resume
+   without Claude:
+   - How to check what finished (heartbeat / summary files)
+   - How to check whether background processes are still alive
+   - How to restart any missing/killed step (full commands)
+   - How to aggregate partial results
+   - Which files NOT to touch
+5. **Final aggregation** — what artifacts get produced when everything
+   completes, where to look, ranking criteria.
+
+Update the file at every meaningful state transition (launch, per-step
+progress, completion, failure) — not just at the very end. The file is
+the authoritative source if Claude's context is unavailable.
+
+---
+
 ## NO BACKEND RESTART DURING MARKET HOURS
 
 NSE cash + F&O session: **09:15 – 15:30 IST, Mon–Fri**. During this window,
