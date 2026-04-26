@@ -86,10 +86,10 @@ const BACKTEST_RESULTS: Record<SystemId, {
     oos_trades: 305, pass: true,
   },
   fno: {
-    variant: 'vol_3x (research/21 — pending agent)',
-    is_pf: 0, is_sharpe: 0, is_maxdd: 0, is_cagr: 0,
-    oos_pf: 0, oos_sharpe: 0, oos_maxdd: 0, oos_cagr: 0,
-    oos_trades: 0, pass: false,
+    variant: 'vol_3x (research/21)',
+    is_pf: 2.06, is_sharpe: 1.18, is_maxdd: 20.03, is_cagr: 11.22,
+    oos_pf: 1.91, oos_sharpe: 1.04, oos_maxdd: 9.11, oos_cagr: 10.25,
+    oos_trades: 134, pass: true,
   },
 };
 
