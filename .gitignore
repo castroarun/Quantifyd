@@ -37,6 +37,7 @@ data/*.pkl
 data/*.h5
 data/fundamentals_cache/
 !data/.gitkeep
+!data/nifty500_list.csv
 
 # Backtest data: ignore ALL binary artifacts. Live trading state (SQLite DBs)
 # must NEVER be tracked — a `git pull` that touches a tracked DB will
