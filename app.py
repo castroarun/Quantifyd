@@ -6921,7 +6921,8 @@ def api_nas_report_data():
             conn.row_factory = _sqlite3.Row
 
             # Table prefix
-            prefix = 'nas_' if sys_name == 'OTM' else 'nas_atm_'
+            # OTM variants use nas_* tables; ATM variants use nas_atm_* tables.
+            prefix = 'nas_' if sys_name in ('OTM', '916-OTM') else 'nas_atm_'
 
             # Get all positions
             positions = conn.execute(

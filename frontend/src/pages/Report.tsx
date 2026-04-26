@@ -537,23 +537,82 @@ function OrbBacktestSection({
         <>
           <div className={styles.sectionHead} style={{ marginTop: 24 }}>
             <div className="section-title">Daily history</div>
+            <Chip>{history.length} days</Chip>
           </div>
-          <div className={styles.orbHistory}>
+          <div className={styles.daysList}>
             {history.map((h) => (
-              <div key={h.run_date} className={styles.orbHistoryRow}>
-                <span className={styles.orbHistoryDate}>{h.run_date}</span>
-                <span className={styles.orbHistoryMeta}>
-                  {h.trades_taken} taken · {h.signals_blocked} blocked
-                </span>
-                <span className={`${styles.orbHistoryPnl} ${pnlClass(h.net_pnl_inr)}`}>
-                  {formatPnl(h.net_pnl_inr)}
-                </span>
-              </div>
+              <OrbDayBlock key={h.run_date} summary={h} />
             ))}
           </div>
         </>
       )}
     </section>
+  );
+}
+
+function OrbDayBlock({ summary }: { summary: ORBBacktestRun }) {
+  const [details, setDetails] = useState<ORBBacktestRun | null>(
+    summary.signals && summary.signals.length > 0 ? summary : null,
+  );
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const dt = new Date(summary.run_date + 'T00:00:00');
+  const dayName = dt.toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  const onToggle = (ev: React.SyntheticEvent<HTMLDetailsElement>) => {
+    if (!ev.currentTarget.open) return;
+    if (details || loading) return;
+    setLoading(true);
+    apiGet<ORBBacktestRun>(`/api/orb/backtest?date=${summary.run_date}`)
+      .then((r) => setDetails(r))
+      .catch((e) => setErr(e instanceof Error ? e.message : 'load failed'))
+      .finally(() => setLoading(false));
+  };
+
+  const signals = details?.signals ?? [];
+  const taken = signals.filter((s) => s.signal_type === 'TAKEN');
+  const blocked = signals.filter((s) => s.signal_type === 'BLOCKED');
+
+  return (
+    <details className={styles.dayBlock} onToggle={onToggle}>
+      <summary className={styles.daySummary}>
+        <span className={styles.dayName}>{dayName}</span>
+        <span className={styles.dayDate}>{summary.run_date}</span>
+        <span className={styles.daySpacer} />
+        <span className={styles.dayMeta}>
+          {summary.trades_taken} taken · {summary.signals_blocked} blocked
+        </span>
+        <span className={`${styles.dayPnl} ${pnlClass(summary.net_pnl_inr)}`}>
+          {formatPnl(summary.net_pnl_inr)}
+        </span>
+      </summary>
+      {loading ? (
+        <div className={styles.orbEmpty}>Loading…</div>
+      ) : err ? (
+        <div className={styles.error}>{err}</div>
+      ) : details ? (
+        <div style={{ padding: '0 12px 12px' }}>
+          {taken.length === 0 && blocked.length === 0 ? (
+            <div className={styles.orbEmpty}>No signals on this day.</div>
+          ) : (
+            <>
+              {taken.length > 0 && (
+                <OrbSignalTable title="Trades taken" rows={taken} />
+              )}
+              {blocked.length > 0 && (
+                <OrbSignalTable title="Blocked by filters" rows={blocked} blocked />
+              )}
+            </>
+          )}
+        </div>
+      ) : null}
+    </details>
   );
 }
 
