@@ -3,8 +3,8 @@
     {
       "id": "smallcap-daily-ath-breakout",
       "title": "Small/Micro-Cap Daily ATH/52w Breakout System",
-      "subtitle": "Daily-bar event-driven breakout scanner on quality-filtered small/micro-caps — same family as research/17 EOD scanner, different universe",
-      "status": "designing",
+      "subtitle": "Walk-forward VALIDATED. OOS: PF 1.46 / Sharpe 1.43 / MaxDD 12.85% / CAGR +26.8% on 117 quality-filtered small/micro-caps. Sister to research/17.",
+      "status": "backtesting",
       "created": "2026-04-26",
       "tags": ["smallcap", "microcap", "daily-bars", "ath-breakout", "52w-high", "event-driven"],
       "sections": [
