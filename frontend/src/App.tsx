@@ -14,6 +14,7 @@ import Holdings from './pages/Holdings';
 import HoldingsHistory from './pages/HoldingsHistory';
 import OptionsData from './pages/OptionsData';
 import FuturePlans from './pages/FuturePlans';
+import EodBreakout from './pages/EodBreakout';
 import NotFound from './pages/NotFound';
 
 type AuthState = 'unknown' | 'auth' | 'noauth';
@@ -166,6 +167,16 @@ export default function App() {
           <Protected>
             <AppLayout active="future-plans">
               <FuturePlans />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/eod-breakout"
+        element={
+          <Protected>
+            <AppLayout active="eod-breakout">
+              <EodBreakout />
             </AppLayout>
           </Protected>
         }

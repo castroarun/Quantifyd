@@ -8535,6 +8535,166 @@ def server_error(e):
 
 
 # =============================================================================
+# EOD Breakout Scanner — daily-bar paper trading service
+# =============================================================================
+
+@app.route('/api/eod/state')
+def api_eod_state():
+    """Combined state for the EOD breakout multi-system page."""
+    try:
+        from services.eod_breakout_db import get_eod_breakout_db, ALL_SYSTEMS
+        from services.eod_breakout_scanner import SYSTEM_CONFIG, UNIVERSE_LOADERS
+        db = get_eod_breakout_db()
+        systems = []
+        for sys_id in ALL_SYSTEMS:
+            cfg = SYSTEM_CONFIG[sys_id]
+            stats = db.get_stats(sys_id)
+            try:
+                universe_size = len(UNIVERSE_LOADERS[sys_id]())
+            except Exception:
+                universe_size = 0
+            today_iso = datetime.now().date().isoformat()
+            today_state = db.get_daily_state(sys_id, today_iso) or {}
+            systems.append({
+                'system_id': sys_id,
+                'description': cfg['description'],
+                'capital': cfg['capital'],
+                'risk_per_trade_pct': cfg['risk_per_trade_pct'],
+                'max_concurrent': cfg['max_concurrent'],
+                'cost_pct': cfg['cost_pct'],
+                'vol_threshold_mult': cfg['vol_threshold_mult'],
+                'target_pct': cfg['target_pct'],
+                'initial_hard_stop_pct': cfg['initial_hard_stop_pct'],
+                'universe_size': universe_size,
+                'open_positions': stats.get('open_positions', 0),
+                'total_trades': stats.get('total_trades', 0),
+                'win_rate': stats.get('win_rate', 0),
+                'profit_factor': stats.get('profit_factor', 0),
+                'total_pnl': round(stats.get('total_pnl', 0) or 0, 2),
+                'avg_days_held': round(stats.get('avg_days_held', 0) or 0, 1),
+                'today_signals': today_state.get('signals_generated', 0),
+                'today_fills': today_state.get('fills_today', 0),
+                'today_exits': today_state.get('exits_today', 0),
+            })
+        return jsonify({'systems': systems})
+    except Exception as e:
+        logger.error(f"[EOD] state error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/eod/<system_id>/positions')
+def api_eod_positions(system_id):
+    try:
+        from services.eod_breakout_db import get_eod_breakout_db
+        db = get_eod_breakout_db()
+        return jsonify({'positions': db.get_open_positions(system_id)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/eod/<system_id>/signals')
+def api_eod_signals(system_id):
+    try:
+        from services.eod_breakout_db import get_eod_breakout_db
+        db = get_eod_breakout_db()
+        return jsonify({'signals': db.get_recent_signals(system_id, limit=100)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/eod/<system_id>/trades')
+def api_eod_trades(system_id):
+    try:
+        from services.eod_breakout_db import get_eod_breakout_db
+        db = get_eod_breakout_db()
+        return jsonify({'trades': db.get_recent_trades(system_id, limit=200)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/eod/<system_id>/equity-curve')
+def api_eod_equity_curve(system_id):
+    try:
+        from services.eod_breakout_db import get_eod_breakout_db
+        db = get_eod_breakout_db()
+        return jsonify({'curve': db.get_equity_curve(system_id)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/eod/<action>', methods=['POST'])
+def api_eod_manual(action):
+    """Manual triggers — useful for testing or catch-up runs."""
+    try:
+        from services.eod_breakout_scanner import scan_eod, record_morning_fills, check_exits, run_full_daily_cycle
+        if action == 'scan':
+            return jsonify(scan_eod())
+        elif action == 'fill':
+            return jsonify(record_morning_fills())
+        elif action == 'exit-check':
+            return jsonify(check_exits())
+        elif action == 'full-cycle':
+            return jsonify(run_full_daily_cycle())
+        else:
+            return jsonify({'error': f'unknown action: {action}'}), 400
+    except Exception as e:
+        logger.error(f"[EOD-MANUAL] {action} error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+# Scheduled EOD breakout jobs
+def _eod_breakout_scan_job():
+    """16:00 IST Mon-Fri — generate breakout signals from today's daily bars."""
+    try:
+        from services.eod_breakout_scanner import scan_eod
+        result = scan_eod()
+        logger.info(f"[EOD-BREAKOUT] daily scan: {result}")
+    except Exception as e:
+        logger.error(f"[EOD-BREAKOUT] scan job error: {e}", exc_info=True)
+
+
+def _eod_breakout_fill_job():
+    """09:20 IST Mon-Fri — fill PENDING signals at today's open."""
+    try:
+        from services.eod_breakout_scanner import record_morning_fills
+        result = record_morning_fills()
+        logger.info(f"[EOD-BREAKOUT] morning fills: {result}")
+    except Exception as e:
+        logger.error(f"[EOD-BREAKOUT] fill job error: {e}", exc_info=True)
+
+
+def _eod_breakout_exit_job():
+    """16:05 IST Mon-Fri — check open positions for target/stop/max-hold."""
+    try:
+        from services.eod_breakout_scanner import check_exits
+        result = check_exits()
+        logger.info(f"[EOD-BREAKOUT] exit check: {result}")
+    except Exception as e:
+        logger.error(f"[EOD-BREAKOUT] exit job error: {e}", exc_info=True)
+
+
+try:
+    scheduler.add_job(
+        _eod_breakout_fill_job,
+        'cron', day_of_week='mon-fri', hour=9, minute=20,
+        id='eod_breakout_fill', replace_existing=True,
+    )
+    scheduler.add_job(
+        _eod_breakout_scan_job,
+        'cron', day_of_week='mon-fri', hour=16, minute=0,
+        id='eod_breakout_scan', replace_existing=True,
+    )
+    scheduler.add_job(
+        _eod_breakout_exit_job,
+        'cron', day_of_week='mon-fri', hour=16, minute=5,
+        id='eod_breakout_exit', replace_existing=True,
+    )
+    logger.info("EOD Breakout scheduled jobs registered: fill (9:20), scan (16:00), exit-check (16:05)")
+except Exception as e:
+    logger.warning(f"Could not register EOD Breakout scheduled jobs: {e}")
+
+
+# =============================================================================
 # Main Entry Point
 # =============================================================================
 
