@@ -23,36 +23,87 @@ import {
 interface VariantDef {
   id: string;
   subtitle: string;
+  rules: string;
 }
 
 const GROUP_TF: VariantDef[] = [
-  { id: 'or60-std', subtitle: 'OR60 Standard. Phase 1e champion baseline.' },
-  { id: 'or45-std', subtitle: 'OR45 Standard. Earlier entry, ~same WR.' },
-  { id: 'or30-std', subtitle: 'OR30 Standard. More theta time, lower WR.' },
-  { id: 'or15-std', subtitle: 'OR15 Standard. High frequency, tighter SL.' },
-  { id: 'or5-std', subtitle: 'OR5 Standard. Max theta runway, signal noise.' },
+  {
+    id: 'or60-std',
+    subtitle: 'OR60 Standard. Phase 1e champion baseline.',
+    rules:
+      'Entry: 60-min OR break (close > OR_high or < OR_low) after 10:15 IST + 5-min RSI > 60 (long) / < 40 (short). Sell PE @ -0.22δ + CE @ +0.10δ on nearest weekly Tuesday expiry (incl DTE=0). SL: opposite OR boundary (wick-based, OR-width × 1.0). Skip Q4 days (OR width > 0.67% of spot). EOD square-off 15:25.',
+  },
+  {
+    id: 'or45-std',
+    subtitle: 'OR45 Standard. Earlier entry, ~same WR.',
+    rules:
+      'Entry: 45-min OR break after 10:00 + 5-min RSI 60/40. Same delta-skewed strangle (PE -0.22δ + CE +0.10δ) on nearest weekly Tuesday. SL = opposite OR (wick). Skip Q4. EOD 15:25.',
+  },
+  {
+    id: 'or30-std',
+    subtitle: 'OR30 Standard. More theta time, lower WR.',
+    rules:
+      'Entry: 30-min OR break after 9:45 + 5-min RSI 60/40. Same strikes (PE -0.22δ + CE +0.10δ) / SL / exit / Q4 filter as OR60-Std.',
+  },
+  {
+    id: 'or15-std',
+    subtitle: 'OR15 Standard. High frequency, tighter SL.',
+    rules:
+      'Entry: 15-min OR break after 9:30 + 5-min RSI 60/40. Same strikes / SL / exit / Q4 filter as OR60-Std. SL distance scales with the day\'s OR15 width.',
+  },
+  {
+    id: 'or5-std',
+    subtitle: 'OR5 Standard. Max theta runway, signal noise.',
+    rules:
+      'Entry: 5-min OR break after 9:20 + 5-min RSI 60/40. Same strikes / SL / exit / Q4 filter. Earliest signal — captures most intraday theta but on a noisy 1-bar OR.',
+  },
 ];
 
 const GROUP_OR60_ALT: VariantDef[] = [
-  { id: 'or60-norsi', subtitle: 'OR60 No-RSI. Tests if RSI confirmation is necessary.' },
-  { id: 'or60-tight', subtitle: 'OR60 Tight RSI. RSI 65/35 — fewer better signals.' },
-  { id: 'or60-calm',  subtitle: 'OR60 Calm-Only. Skip days where OR width >= 0.40% of spot.' },
+  {
+    id: 'or60-norsi',
+    subtitle: 'OR60 No-RSI. Tests if RSI confirmation is necessary.',
+    rules:
+      'Entry: 60-min OR break after 10:15 — NO RSI filter, take any first break in either direction. Same strikes (PE -0.22δ + CE +0.10δ) / SL / exit / Q4 filter as OR60-Std.',
+  },
+  {
+    id: 'or60-tight',
+    subtitle: 'OR60 Tight RSI. RSI 65/35 — fewer better signals.',
+    rules:
+      'Entry: 60-min OR break + 5-min RSI > 65 (long) / < 35 (short) — tighter than std 60/40. Same strikes / SL / exit / Q4 filter. Trades fewer signals at slightly higher WR.',
+  },
+  {
+    id: 'or60-calm',
+    subtitle: 'OR60 Calm-Only. Skip days where OR width >= 0.40% of spot.',
+    rules:
+      'Entry: 60-min OR break + 5-min RSI 60/40, ONLY on calm days where OR60 width < 0.40% of spot (additional filter on top of universal Q4). Same strikes / SL / exit. Targets the high-WR Q1 quartile from the backtest — fewer trades, much higher WR.',
+  },
 ];
 
 const GROUP_CPR: VariantDef[] = [
   {
     id: 'or60-cpr-against',
     subtitle:
-      'OR60 CPR-Against. Take only signals that have NOT cleared CPR (tame breakouts → friendlier theta capture). Backtest 95.5% WR.',
+      'OR60 CPR-Against. Take only signals that have NOT cleared CPR (tame breakouts → friendlier theta capture).',
+    rules:
+      'Entry: 60-min OR break + 5-min RSI 60/40 + entry close has NOT cleared the CPR zone in its direction. For LONG: close ≤ CPR_high. For SHORT: close ≥ CPR_low. CPR computed from prior trading day\'s daily HLC (P=(H+L+C)/3, BC=(H+L)/2, TC=2P-BC). Hypothesis: tame breakouts that haven\'t escaped CPR are friendlier to short-strangle theta than fully extended trend breaks. Same strikes / SL / exit / Q4 filter.',
   },
   {
     id: 'or30-cpr-against',
-    subtitle: 'OR30 CPR-Against. Earlier entry version. Backtest 93.1% WR.',
+    subtitle: 'OR30 CPR-Against. Earlier entry version.',
+    rules:
+      'Entry: 30-min OR break + 5-min RSI 60/40 + entry close has NOT cleared CPR zone (against-CPR filter, same logic as V9 but on the 30-min OR). Same strikes / SL / exit / Q4 filter.',
   },
 ];
 
+const ALL_VARIANTS = [...GROUP_TF, ...GROUP_OR60_ALT, ...GROUP_CPR];
+
 const SUBTITLE_BY_ID: Record<string, string> = Object.fromEntries(
-  [...GROUP_TF, ...GROUP_OR60_ALT, ...GROUP_CPR].map((v) => [v.id, v.subtitle]),
+  ALL_VARIANTS.map((v) => [v.id, v.subtitle]),
+);
+
+const RULES_BY_ID: Record<string, string> = Object.fromEntries(
+  ALL_VARIANTS.map((v) => [v.id, v.rules]),
 );
 
 /* ---------- page ---------- */
@@ -234,6 +285,7 @@ export default function Strangle() {
               key={v.id}
               defId={v.id}
               subtitle={SUBTITLE_BY_ID[v.id]}
+              rules={RULES_BY_ID[v.id]}
               summary={summaryById[v.id]}
               detail={details[v.id]}
               onAction={() => void loadAll()}
@@ -260,6 +312,7 @@ export default function Strangle() {
               key={v.id}
               defId={v.id}
               subtitle={SUBTITLE_BY_ID[v.id]}
+              rules={RULES_BY_ID[v.id]}
               summary={summaryById[v.id]}
               detail={details[v.id]}
               onAction={() => void loadAll()}
@@ -287,6 +340,7 @@ export default function Strangle() {
               key={v.id}
               defId={v.id}
               subtitle={SUBTITLE_BY_ID[v.id]}
+              rules={RULES_BY_ID[v.id]}
               summary={summaryById[v.id]}
               detail={details[v.id]}
               onAction={() => void loadAll()}
@@ -315,6 +369,7 @@ export default function Strangle() {
 interface VariantCardProps {
   defId: string;
   subtitle: string;
+  rules: string;
   summary: StrangleVariantSummary | undefined;
   detail: StrangleVariantDetail | null | undefined;
   onAction: () => void;
@@ -324,6 +379,7 @@ interface VariantCardProps {
 function VariantCard({
   defId,
   subtitle,
+  rules,
   summary,
   detail,
   onAction,
@@ -346,10 +402,6 @@ function VariantCard({
   const configNote = cfg
     ? buildConfigNote(cfg)
     : `OR${summary?.or_min ?? '?'}m`;
-
-  const backtestNote = cfg
-    ? `Backtest: WR ${cfg.backtest_wr_pct}% · ${cfg.backtest_wins_per_year} wins/yr · ${cfg.backtest_trades_per_year} trades/yr`
-    : '';
 
   async function runScan() {
     setBusy('scan');
@@ -386,9 +438,6 @@ function VariantCard({
           <div className={styles.cardTitle}>{cfg?.name ?? summary?.name ?? defId}</div>
           <div className={styles.cardSub}>{subtitle}</div>
           <div className={styles.cardConfig}>{configNote}</div>
-          {backtestNote ? (
-            <div className={styles.cardBacktest}>{backtestNote}</div>
-          ) : null}
         </div>
         <div className={styles.cardStatus}>
           <StatusChip status={status} />
@@ -463,6 +512,45 @@ function VariantCard({
           {busy === 'close' ? 'Closing…' : 'Force Close'}
         </button>
       </div>
+
+      <details className={styles.rules}>
+        <summary className={styles.rulesSummary}>Rules &amp; backtest</summary>
+        <div className={styles.rulesBody}>
+          <div className={styles.snapshotRow}>
+            <div className={styles.snapshotItem}>
+              <span className={styles.snapshotLabel}>Backtest WR</span>
+              <span className={styles.snapshotValue}>
+                {cfg?.backtest_wr_pct != null ? `${cfg.backtest_wr_pct}%` : '—'}
+              </span>
+            </div>
+            <div className={styles.snapshotItem}>
+              <span className={styles.snapshotLabel}>Wins / year</span>
+              <span className={styles.snapshotValue}>
+                {cfg?.backtest_wins_per_year != null
+                  ? formatInt(cfg.backtest_wins_per_year)
+                  : '—'}
+              </span>
+            </div>
+            <div className={styles.snapshotItem}>
+              <span className={styles.snapshotLabel}>Trades / year</span>
+              <span className={styles.snapshotValue}>
+                {cfg?.backtest_trades_per_year != null
+                  ? formatInt(cfg.backtest_trades_per_year)
+                  : '—'}
+              </span>
+            </div>
+            <div className={styles.snapshotItem}>
+              <span className={styles.snapshotLabel}>Live WR</span>
+              <span className={styles.snapshotValue}>
+                {detail?.stats?.win_rate != null
+                  ? formatPct(detail.stats.win_rate, 1)
+                  : '—'}
+              </span>
+            </div>
+          </div>
+          <div className={styles.rulesText}>{rules}</div>
+        </div>
+      </details>
     </div>
   );
 }
