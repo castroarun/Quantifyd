@@ -70,11 +70,14 @@ PRIORITY_SYSTEMS = [
 # Pre-market check fails if any are missing or have no next-run.
 EXPECTED_JOBS = {
     # ORB cash
-    'orb_initialize_day':           'ORB cash daily init',
-    'orb_evaluate_signals':         'ORB cash signal evaluator',
-    'orb_monitor_positions':        'ORB cash position monitor',
+    'orb_init_day':                 'ORB cash daily init',
+    'orb_update_or':                'ORB cash OR update',
+    'orb_eval_signals':             'ORB cash signal evaluator',
+    'orb_monitor_pos':              'ORB cash position monitor',
+    'orb_activate_trail':           'ORB cash V9t_lock50 trail',
     'orb_eod_squareoff':            'ORB cash EOD squareoff',
     'orb_eod_report':               'ORB cash EOD report',
+    'orb_daily_backtest':           'ORB cash daily backtest',
     # NAS shared
     'nas_ticker_autostart':         'NAS WebSocket ticker autostart',
     'nas_eod_squareoff':            'NAS OTM EOD squareoff',
