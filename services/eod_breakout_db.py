@@ -385,18 +385,22 @@ class EodBreakoutDB:
                         COALESCE(AVG(days_held), 0) AS avg_days_held
                     FROM eod_trades WHERE system_id=?
                 """, (system_id,)).fetchone()
-
                 stats = dict(row) if row else {}
-                tt = stats.get('total_trades', 0) or 0
-                stats['win_rate'] = round(100 * (stats.get('wins') or 0) / tt, 2) if tt else 0
-                gw = stats.get('gross_wins') or 0
-                gl = stats.get('gross_losses') or 0
-                stats['profit_factor'] = round(gw / abs(gl), 2) if gl else 0
-                # Open positions
-                stats['open_positions'] = self.count_open_positions(system_id)
-                return stats
+                # Open positions count — same connection so no re-entrant lock deadlock
+                pos_row = conn.execute(
+                    "SELECT COUNT(*) AS n FROM eod_positions WHERE status='OPEN' AND system_id=?",
+                    (system_id,)
+                ).fetchone()
+                stats['open_positions'] = pos_row['n'] if pos_row else 0
             finally:
                 conn.close()
+        # Compute derived metrics outside the lock
+        tt = stats.get('total_trades', 0) or 0
+        stats['win_rate'] = round(100 * (stats.get('wins') or 0) / tt, 2) if tt else 0
+        gw = stats.get('gross_wins') or 0
+        gl = stats.get('gross_losses') or 0
+        stats['profit_factor'] = round(gw / abs(gl), 2) if gl else 0
+        return stats
 
 
 _instance = None
