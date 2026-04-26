@@ -438,3 +438,167 @@ export interface HoldingsSnapshotSummary {
   current: number;
   count: number;
 }
+
+/* ---------- Nifty ORB Strangle ---------- */
+
+// Compact per-variant view returned by GET /api/strangle/state.
+export interface StrangleVariantSummary {
+  id: string;
+  name: string;
+  or_min: number;
+  enabled: boolean;
+  today_status: 'Idle' | 'Watching' | 'Open' | 'Closed' | 'Skip' | string;
+  today_pnl: number;
+  open_positions: number;
+}
+
+export interface StrangleState {
+  today: string;
+  spot_ltp: number | null;
+  variants: StrangleVariantSummary[];
+}
+
+// Variant config row from STRANGLE_VARIANTS (echoed back by GET /api/strangle/variant/<id>).
+export interface StrangleVariantConfig {
+  id: string;
+  name: string;
+  or_min: number;
+  rsi_lo_long: number | null;
+  rsi_hi_short: number | null;
+  apply_q4_filter: boolean;
+  q4_threshold_pct?: number;
+  apply_calm_filter: boolean;
+  calm_threshold_pct?: number;
+  apply_cpr_against_filter: boolean;
+  pe_delta_target_long?: number;
+  ce_delta_target_long?: number;
+  pe_delta_target_short?: number;
+  ce_delta_target_short?: number;
+  lot_size: number;
+  enabled: boolean;
+  backtest_wr_pct: number;
+  backtest_wins_per_year: number;
+  backtest_trades_per_year: number;
+}
+
+export interface StrangleLeg {
+  id?: number;
+  position_id?: number;
+  variant_id?: string;
+  leg_type: 'PE' | 'CE';
+  side?: string;            // 'SELL'
+  tradingsymbol?: string | null;
+  strike: number;
+  expiry_date?: string;
+  qty: number;
+  entry_price: number;
+  delta_at_entry?: number | null;
+  iv_at_entry?: number | null;
+  exit_price?: number | null;
+  leg_pnl?: number | null;
+  mtm_now?: number | null;
+}
+
+export interface StranglePosition {
+  id: number;
+  variant_id: string;
+  symbol?: string;
+  entry_date: string;
+  entry_ts: string;
+  direction: 'LONG' | 'SHORT';
+  spot_at_entry: number;
+  or_high: number;
+  or_low: number;
+  or_width_pct: number;
+  sl_price: number;
+  expiry_date: string;
+  pe_strike: number;
+  ce_strike: number;
+  pe_entry_price: number;
+  ce_entry_price: number;
+  pe_delta_at_entry?: number | null;
+  ce_delta_at_entry?: number | null;
+  lot_size: number;
+  qty: number;
+  status: 'OPEN' | 'CLOSED';
+  exit_date?: string | null;
+  exit_ts?: string | null;
+  pe_exit_price?: number | null;
+  ce_exit_price?: number | null;
+  spot_at_exit?: number | null;
+  gross_pnl?: number | null;
+  net_pnl?: number | null;
+  exit_reason?: string | null;
+  legs?: StrangleLeg[];
+}
+
+export interface StrangleMtm {
+  pe_now: number | null;
+  ce_now: number | null;
+  pe_mtm: number | null;
+  ce_mtm: number | null;
+  net_mtm: number | null;
+}
+
+export interface StrangleDailyState {
+  id?: number;
+  variant_id: string;
+  trade_date: string;
+  or_high?: number | null;
+  or_low?: number | null;
+  or_width_pct?: number | null;
+  day_filter_passed?: number;
+  signal_seen?: number;
+  rsi_confirmed?: number;
+  entry_taken?: number;
+  exit_taken?: number;
+  exit_reason?: string | null;
+  daily_pnl?: number;
+  notes?: string | null;
+  last_event_ts?: string | null;
+}
+
+export interface StrangleStats {
+  total_trades: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  total_pnl: number;
+  avg_pnl: number;
+  profit_factor: number | string;  // 'inf' when no losses
+}
+
+export interface StrangleTrade {
+  id?: number;
+  position_id?: number;
+  variant_id: string;
+  entry_date: string;
+  exit_date: string;
+  entry_ts?: string;
+  exit_ts?: string;
+  direction?: 'LONG' | 'SHORT';
+  spot_at_entry?: number;
+  spot_at_exit?: number;
+  pe_strike?: number;
+  ce_strike?: number;
+  pe_entry?: number;
+  ce_entry?: number;
+  pe_exit?: number;
+  ce_exit?: number;
+  gross_pnl?: number;
+  net_pnl: number;
+  costs?: number;
+  exit_reason?: string;
+  hold_minutes?: number | null;
+}
+
+export interface StrangleVariantDetail {
+  variant: StrangleVariantConfig;
+  today_status: string;
+  today_pnl: number;
+  stats: StrangleStats;
+  recent_trades: StrangleTrade[];
+  open_position: StranglePosition | null;
+  mtm: StrangleMtm | null;
+  daily_state: StrangleDailyState | Record<string, never>;
+}

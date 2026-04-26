@@ -12,6 +12,48 @@ Indian stock market backtesting system: Momentum + Quality (MQ) portfolio strate
 
 ---
 
+## ALL NEW PAGES GO IN THE REACT APP AT `/app/*` — NOT JINJA
+
+**Default convention as of 2026-04-26:** any new strategy page, dashboard, or
+user-facing UI must be built inside the React SPA at `frontend/`, served at
+`/app/<route>`. The legacy Jinja templates at root paths (`/orb`, `/nas`,
+`/collar`, `/kc6`, `/strangle`, etc.) are *frozen* — do not add new ones.
+
+**Stack & layout:**
+- Source root: `frontend/src/`
+- Pages: `frontend/src/pages/<Name>.tsx` + `<Name>.module.css` (CSS modules, one per page)
+- Shared components: `frontend/src/components/{Avatar,Cards,Chip,DataTable,Layout,Sidebar,StatusDot,TopBar,Icons}/...`
+- Routing: React Router v6 in `frontend/src/App.tsx`. Add new routes there.
+- Backend mount: `app.py` serves the SPA at `/app/*` (catch-all to `index.html`); JSON APIs live at `/api/<strategy>/*`.
+- Design language: **dark theme**, CSS modules, no Bootstrap, no Chart.js CDN.
+  Match the existing `Nas.tsx` / `Orb.tsx` / `Nwv.tsx` patterns for cards,
+  tables, status chips, and metric tiles. Re-use `MetricCard`, `StrategyCard`,
+  `Chip`, `DataTable`, `StatusDot` rather than rolling new ones.
+- Build: `cd frontend && npm run build` produces `frontend/dist/` which Flask
+  serves under `/app/*`. Frontend-only changes do NOT require a backend
+  restart (Flask serves new static files on next request; user just hard-refreshes).
+
+**When migrating an existing Jinja page:**
+1. Build the React equivalent under `frontend/src/pages/`.
+2. Add the route in `App.tsx` and a sidebar entry in `Sidebar.tsx`.
+3. Retire the old Jinja page by replacing its handler with
+   `return redirect('/app/<route>', code=302)` (precedent: the old `/orb` →
+   `/app/orb` redirect at app.py around line 6069).
+4. Keep the JSON API endpoints (`/api/<strategy>/*`) unchanged so the React
+   page can talk to the same backend without refactoring services.
+
+**Reference pages to copy from:**
+- `frontend/src/pages/Nas.tsx` — multi-variant strategy page (closest pattern
+  for any new variant-based dashboard like Strangle, Collar v2).
+- `frontend/src/pages/Orb.tsx` — single-strategy with rich tables + chart.
+- `frontend/src/pages/Nwv.tsx` — recent build, uses the latest patterns.
+
+**Standing migration debt:** `/collar`, `/kc6` were built in Jinja before
+this convention. Migrate to `/app/collar`, `/app/kc6` when their roadmap
+allows. (`/strangle` migrated to `/app/strangle` on 2026-04-26.)
+
+---
+
 ## LIVE-STATUS MD CONVENTION (long-running tasks)
 
 For any task that runs longer than ~5 minutes, spawns background processes,
