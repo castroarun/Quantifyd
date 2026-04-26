@@ -59,6 +59,7 @@ class EodBreakoutDB:
                         system_id TEXT NOT NULL,
                         signal_date DATE NOT NULL,
                         symbol TEXT NOT NULL,
+                        direction TEXT DEFAULT 'LONG',
                         signal_close REAL NOT NULL,
                         breakout_high REAL,
                         vol_ratio REAL,
@@ -67,6 +68,7 @@ class EodBreakoutDB:
                         rank_score REAL,
                         status TEXT DEFAULT 'PENDING',
                         position_id INTEGER,
+                        spread_structure TEXT,
                         notes TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(system_id, signal_date, symbol)
@@ -146,6 +148,18 @@ class EodBreakoutDB:
                     CREATE INDEX IF NOT EXISTS idx_eod_equity_system
                         ON eod_equity_curve(system_id, date);
                 """)
+                # Idempotent migration: add columns to eod_signals for direction
+                # and spread structure JSON. CREATE TABLE IF NOT EXISTS won't
+                # add new columns to an existing table.
+                for stmt in (
+                    "ALTER TABLE eod_signals ADD COLUMN direction TEXT DEFAULT 'LONG'",
+                    "ALTER TABLE eod_signals ADD COLUMN spread_structure TEXT",
+                ):
+                    try:
+                        conn.execute(stmt)
+                    except sqlite3.OperationalError as e:
+                        if 'duplicate column' not in str(e).lower():
+                            raise
                 conn.commit()
                 logger.info(f"[EOD-BREAKOUT] Database initialized at {self.db_path}")
             finally:

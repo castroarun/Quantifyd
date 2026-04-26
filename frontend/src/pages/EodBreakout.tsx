@@ -41,15 +41,35 @@ interface Position {
   notional_inr: number;
 }
 
+interface SpreadStructure {
+  strategy: string;
+  spot_at_signal: number;
+  long_strike: number;
+  short_strike: number;
+  spread_width: number;
+  debit_estimate: number;
+  max_profit: number;
+  max_loss: number;
+  breakeven: number;
+  risk_reward: number;
+  target_pct_at_short_strike: number;
+  breakeven_pct: number;
+  dte: number;
+  iv_assumption: number;
+  notes: string;
+}
+
 interface Signal {
   id: number;
   signal_date: string;
   symbol: string;
+  direction?: string;
   signal_close: number;
   breakout_high: number | null;
   vol_ratio: number | null;
   status: string;
   notes: string | null;
+  spread_structure: string | null;   // JSON string
 }
 
 interface Trade {
@@ -195,12 +215,46 @@ export default function EodBreakout() {
     { key: 'notional', header: 'Notional', width: '1fr', align: 'right', render: (p) => formatRs(p.notional_inr) },
   ];
 
+  const parseSpread = (s: string | null): SpreadStructure | null => {
+    if (!s) return null;
+    try { return JSON.parse(s) as SpreadStructure; } catch { return null; }
+  };
+
   const signalCols: Column<Signal>[] = [
-    { key: 'date', header: 'Date', width: '1fr', render: (s) => s.signal_date },
-    { key: 'symbol', header: 'Symbol', width: '1.2fr', render: (s) => s.symbol },
-    { key: 'close', header: 'Close', width: '1fr', align: 'right', render: (s) => `Rs ${s.signal_close.toFixed(2)}` },
-    { key: 'vol', header: 'Vol×', width: '0.8fr', align: 'right', render: (s) => s.vol_ratio ? `${s.vol_ratio.toFixed(1)}×` : '—' },
-    { key: 'status', header: 'Status', width: '1fr', render: (s) => <Chip>{s.status}</Chip> },
+    { key: 'date', header: 'Date', width: '0.9fr', render: (s) => s.signal_date },
+    { key: 'symbol', header: 'Symbol', width: '1fr', render: (s) => s.symbol },
+    { key: 'dir', header: 'Dir', width: '0.5fr', render: (s) =>
+      <span className={s.direction === 'SHORT' ? styles.neg : styles.pos}>{s.direction || 'LONG'}</span>
+    },
+    { key: 'close', header: 'Spot', width: '0.9fr', align: 'right', render: (s) => `Rs ${s.signal_close.toFixed(2)}` },
+    { key: 'vol', header: 'Vol×', width: '0.6fr', align: 'right', render: (s) => s.vol_ratio ? `${s.vol_ratio.toFixed(1)}×` : '—' },
+    { key: 'spread', header: 'Spread (long → short)', width: '1.6fr', render: (s) => {
+        const sp = parseSpread(s.spread_structure);
+        if (!sp) return <span className={styles.muted}>—</span>;
+        const tag = sp.strategy === 'bull_call_spread' ? 'CE' : 'PE';
+        return (
+          <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>
+            <strong>{sp.long_strike}</strong>{tag} → <strong>{sp.short_strike}</strong>{tag}
+          </span>
+        );
+      },
+    },
+    { key: 'debit', header: 'Debit', width: '0.7fr', align: 'right', render: (s) => {
+        const sp = parseSpread(s.spread_structure);
+        return sp ? `Rs ${sp.debit_estimate.toFixed(1)}` : '—';
+      },
+    },
+    { key: 'maxprofit', header: 'Max P', width: '0.7fr', align: 'right', render: (s) => {
+        const sp = parseSpread(s.spread_structure);
+        return sp ? <span className={styles.pos}>Rs {sp.max_profit.toFixed(0)}</span> : '—';
+      },
+    },
+    { key: 'rr', header: 'R:R', width: '0.6fr', align: 'right', render: (s) => {
+        const sp = parseSpread(s.spread_structure);
+        return sp ? `${sp.risk_reward.toFixed(1)}×` : '—';
+      },
+    },
+    { key: 'status', header: 'Status', width: '0.8fr', render: (s) => <Chip>{s.status}</Chip> },
   ];
 
   const tradeCols: Column<Trade>[] = [
@@ -382,6 +436,74 @@ export default function EodBreakout() {
                 </span>
               </div>
             </div>
+          </section>
+
+          {/* Spread structure & adjustment playbook */}
+          <section className={styles.section}>
+            <div className={styles.sectionHead}>
+              <div className="section-title">Debit-spread structure</div>
+              <Chip>30-day DTE · 30% IV assumption</Chip>
+            </div>
+            <div className={styles.rulesBlock}>
+              <div className={styles.rulesGrid}>
+                <span className={styles.ruleLabel}>LONG signals</span>
+                <span className={styles.ruleVal}>
+                  <strong>Bull Call Spread</strong> — long ATM call + short call at +25% strike.
+                  Debit ≈ 15% of spread width on a 30-day, 30% IV stock.
+                  Max profit hits when spot ≥ short strike at expiry.
+                  Capped reward, capped loss = the debit.
+                </span>
+                <span className={styles.ruleLabel}>SHORT signals</span>
+                <span className={styles.ruleVal}>
+                  <strong>Bear Put Spread</strong> — long ATM put + short put at -25% strike.
+                  Mirror of bull call. Same R:R structure, opposite direction.
+                </span>
+                <span className={styles.ruleLabel}>Strike rounding</span>
+                <span className={styles.ruleVal}>
+                  Auto-detected per price: Rs 5 steps below 250, Rs 10 below 500, Rs 20 below 1000,
+                  Rs 50 below 2500, Rs 100 above (NSE convention).
+                </span>
+                <span className={styles.ruleLabel}>Why debit (not credit)</span>
+                <span className={styles.ruleVal}>
+                  Defined risk = the debit paid. No assignment risk.
+                  Lower margin than naked. Less theta drag than long single options.
+                  R:R typically 4-6× on 30-day +25% structure.
+                </span>
+              </div>
+            </div>
+
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', color: 'var(--ink-muted)', fontSize: 'var(--text-sm)' }}>
+                Adjustment playbook (click to expand)
+              </summary>
+              <div className={styles.rulesBlock} style={{ marginTop: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'max-content max-content 1fr', gap: '8px 16px', fontSize: 'var(--text-sm)' }}>
+                  <span className={styles.ruleLabel} style={{ fontWeight: 500 }}>Situation</span>
+                  <span className={styles.ruleLabel} style={{ fontWeight: 500 }}>Adjustment</span>
+                  <span className={styles.ruleLabel} style={{ fontWeight: 500 }}>When</span>
+
+                  <span className={styles.ruleLabel}>Stalls between BE and target</span>
+                  <span className={styles.ruleVal}><strong>Roll short leg up</strong></span>
+                  <span className={styles.ruleVal} style={{ color: 'var(--ink-muted)' }}>RSI &lt; 50 in expected uptrend</span>
+
+                  <span className={styles.ruleLabel}>Approaches target before expiry</span>
+                  <span className={styles.ruleVal}><strong>Convert to butterfly</strong></span>
+                  <span className={styles.ruleVal} style={{ color: 'var(--ink-muted)' }}>Spot 80%+ to short strike, 14+ DTE left</span>
+
+                  <span className={styles.ruleLabel}>Breaks down below long strike</span>
+                  <span className={styles.ruleVal}><strong>Convert to back spread</strong></span>
+                  <span className={styles.ruleVal} style={{ color: 'var(--ink-muted)' }}>Reaches breakeven adverse, trend reversal</span>
+
+                  <span className={styles.ruleLabel}>Volatility spikes mid-trade</span>
+                  <span className={styles.ruleVal}><strong>Roll out one cycle</strong></span>
+                  <span className={styles.ruleVal} style={{ color: 'var(--ink-muted)' }}>IV percentile &gt;75 pre-event (earnings/RBI)</span>
+
+                  <span className={styles.ruleLabel}>Partial profit + reversal threat</span>
+                  <span className={styles.ruleVal}><strong>Sell short put below long strike</strong></span>
+                  <span className={styles.ruleVal} style={{ color: 'var(--ink-muted)' }}>50%+ max profit, signal weakening</span>
+                </div>
+              </div>
+            </details>
           </section>
 
           {/* Backtest summary — full walk-forward metrics */}

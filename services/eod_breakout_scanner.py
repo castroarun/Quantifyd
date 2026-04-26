@@ -42,6 +42,8 @@ import pandas as pd
 from services.eod_breakout_db import (
     get_eod_breakout_db, SYSTEM_NIFTY500, SYSTEM_SMALLCAP, SYSTEM_FNO, ALL_SYSTEMS,
 )
+from services.spread_structure import build_spread_for_signal
+import json as _json
 
 logger = logging.getLogger(__name__)
 
@@ -216,14 +218,32 @@ def scan_eod(scan_date: Optional[date] = None) -> dict:
 
                 if signal:
                     rank_score = float(row['volume'] / row['vol_avg'])
+                    spot = float(row['close'])
+                    atr_val = float(row['atr']) if pd.notna(row['atr']) else None
+                    # Build the bull call spread structure for this LONG signal.
+                    # Theoretical pricing via Black-Scholes (30% IV, 30 DTE).
+                    try:
+                        spread = build_spread_for_signal(
+                            direction='LONG',
+                            spot_price=spot,
+                            atr=atr_val,
+                            target_pct=cfg.get('target_pct', 0.25),
+                        )
+                        spread_json = _json.dumps(spread.to_dict())
+                    except Exception as se:
+                        logger.warning(f"[EOD-SCAN] {sys_id} {sym} spread build failed: {se}")
+                        spread_json = None
+
                     db.add_signal(
                         sys_id, scan_date.isoformat(), sym,
-                        signal_close=float(row['close']),
+                        direction='LONG',
+                        signal_close=spot,
                         breakout_high=float(row['high_252d']),
                         vol_ratio=rank_score,
-                        atr=float(row['atr']) if pd.notna(row['atr']) else None,
+                        atr=atr_val,
                         sma_200=float(row['sma_200']),
                         rank_score=rank_score,
+                        spread_structure=spread_json,
                         status='PENDING',
                     )
                     summary[sys_id]['signals_found'] += 1
