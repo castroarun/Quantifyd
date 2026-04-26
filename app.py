@@ -4684,6 +4684,21 @@ except Exception as e:
     logger.warning(f"Could not register NAS scheduled jobs: {e}")
 
 
+# DB integrity watchdog — checks all NAS + ORB DBs every 5 min during market
+# hours. Born out of the 2026-04-24 NAS table-vanish incident. See
+# services/db_watchdog.py for the watched list + alert dispatch.
+try:
+    from services.db_watchdog import run_watchdog_check
+    scheduler.add_job(
+        run_watchdog_check,
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5',
+        id='db_integrity_watchdog', replace_existing=True,
+    )
+    logger.info("DB integrity watchdog scheduled: every 5 min Mon-Fri 9-15 IST")
+except Exception as e:
+    logger.warning(f"Could not register db_integrity_watchdog: {e}")
+
+
 # =============================================================================
 # NAS ATM — Nifty ATM Strangle (Cascading, per-leg SL)
 # =============================================================================
