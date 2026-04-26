@@ -195,7 +195,7 @@ export default function Strategies() {
           ]}
         />
         <StrategyCard
-          to="/app/strangle"
+          to="/strangle"
           icon={<IconLayers size={15} />}
           title="ORB Index"
           description="ORB break on Nifty index → delta-skewed short strangle (PE -0.22, CE +0.10). 10 variants across 5/15/30/45/60-min OR windows + RSI/calm/CPR-against filters."
