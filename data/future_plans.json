@@ -1,6 +1,72 @@
 {
   "plans": [
     {
+      "id": "fno-multi-signal-expansion",
+      "title": "F&O Multi-Signal Expansion — 3 Walk-Forward-Validated LONG Systems",
+      "subtitle": "Walk-forward PASSED on Donchian 55, ADX>30, RSI<40-pullback (LONG only). All 24 SHORT variants DOA. Spread-structure layer already deployed — winners auto-inherit bull-call generation. Wiring deferred — start observing paper signals first.",
+      "status": "backtesting",
+      "created": "2026-04-26",
+      "tags": ["f&o", "daily-bars", "trend-continuation", "debit-spreads", "multi-signal", "walk-forward"],
+      "sections": [
+        {
+          "title": "Why this is parked, not deployed",
+          "body": "All three winners are LONG trend-continuation breakouts on the same 76-stock F&O universe that research/21 (252-day Donchian, already live as system_id='fno') already trades. Before adding 3 more system_ids and getting up to ~30 paper signals/day, we want a few weeks of data to measure per-day signal overlap with the live FNO system — if Donchian-55 fires on the same day as research/21 on 80% of trades, it's not a separate system, it's just an earlier trigger."
+        },
+        {
+          "title": "What was validated (OOS = 2023-01-01 to 2025-12-31)",
+          "body": "Pass criteria: PF >= 1.20 AND Sharpe >= 0.8 AND MaxDD <= 30%.",
+          "items": [
+            {
+              "label": "Donchian 55 — 55_vol_3x_atr_floor (top pick)",
+              "body": "PF 1.97, Sharpe 1.25, MaxDD 7.74%, CAGR +13.47%, n=175 OOS trades. Best risk-adjusted by a wide margin.",
+              "pros": ["Lowest OOS MaxDD across all winners", "Tighter trigger than research/21's 252-day", "Clean IS->OOS PF (1.88 -> 1.97)"],
+              "cons": ["Likely to overlap heavily with research/21 — both are Donchian-style breakouts on same universe"]
+            },
+            {
+              "label": "ADX trend — adx_30 (highest CAGR)",
+              "body": "PF 1.77, Sharpe 1.30, MaxDD 16.47%, CAGR +15.50%, n=225 OOS trades. Strict ADX>30 — different entry context than fresh breakouts.",
+              "pros": ["Highest OOS CAGR + Sharpe of all winners", "Captures established trends rather than fresh breaks", "Strong IS->OOS Sharpe lift (0.51 -> 1.30) suggests robustness"],
+              "cons": ["adx_25_pure variant overfit badly (IS PF 2.57 -> OOS 1.22) — adx_30 only narrowly survived; small parameter shifts kill it"]
+            },
+            {
+              "label": "Pullback — pb_rsi40 (most non-correlated)",
+              "body": "PF 1.55, Sharpe 1.01, MaxDD 18.19%, CAGR +12.99%, n=233 OOS trades. RSI<40 in established uptrend (50>200 SMA).",
+              "pros": ["Buy-the-dip vs breakout — most non-correlated entry style of the three", "Largest OOS sample of the three", "MACD/confluence variants underperformed — minimal-filter version won, lower overfit risk"],
+              "cons": ["MaxDD 18% is highest of the three winners", "RSI-driven mean-reversion-in-trend is more sensitive to whipsaw than pure breakout"]
+            }
+          ]
+        },
+        {
+          "title": "Hard verdicts from the sweep",
+          "items": [
+            "24 of 24 SHORT-direction variants failed (bearish breakdown 5, death cross 6, ADX-SHORT 5, pullback-SHORT 5, RS-low 3 implicit). F&O 76 universe is structurally long-biased — bear-put debit spreads from these signals lose money. Drop SHORT side entirely.",
+            "Confluence/extra-filter variants underperformed across the board — minimal-filter winners had higher OOS PF in 5 of 6 families. The 'every approach needs supporting filters' hypothesis didn't hold.",
+            "Second-tier passers (RS leadership rs_60d_z2.0, golden cross gc_ema_20_50) are deployable but RS overlaps heavily with Donchian 55 entry context, and gc_ema_20_50 has 24% MaxDD — close to the 30% gate. Skip these.",
+            "OOS regime (2023-25) was a strong Indian bull market. Bear-regime stress (2008-10, 2020-Q1) is the missing test before scaling capital."
+          ]
+        },
+        {
+          "title": "Deploy plan when we revisit",
+          "items": [
+            "Step 1: Run signal-overlap analysis. For each of 3 winners, compute % of trade-days where it co-fires with research/21 fno system. If overlap > 60%, treat it as a filter on existing fno, not a new system.",
+            "Step 2: Add surviving signals as new system_ids in services/eod_breakout_scanner.py. Plumbing precedent: SYSTEM_NIFTY500/SMALLCAP/FNO already wired — same pattern. New ids: 'donchian55', 'adx30', 'pullback_rsi40'.",
+            "Step 3: Each new system_id auto-inherits the spread-structure layer (services/spread_structure.py builds bull-call on signal-fire, scanner persists JSON, EodBreakout.tsx renders strikes/debit/max-profit/RR + adjustment playbook).",
+            "Step 4: Paper-only for 30 trading days. Track per-system PF/Sharpe/DD against backtest expectations.",
+            "Step 5: Promote whichever survives the paper period to live with debit-spread sizing — risk = max_loss = net debit per spread."
+          ]
+        },
+        {
+          "title": "Artifacts",
+          "items": [
+            "Status doc: docs/FNO-SPREAD-DEPLOY-STATUS.md (full result tables)",
+            "Per-signal folders: research/22_fno_bearish_breakdown/ through research/27_fno_pullback_trend/",
+            "Each contains: results/summary.csv (full sweep), results/walk_forward.csv (top variants), results/equity_*.csv, results/trades_<best>.csv, SIGNAL-STATUS.md (verdict)",
+            "Shared engine: research/22_fno_bearish_breakdown/scripts/_shared_engine.py (~430 lines, direction-aware, used by all 6 signal folders)"
+          ]
+        }
+      ]
+    },
+    {
       "id": "smallcap-daily-ath-breakout",
       "title": "Small/Micro-Cap Daily ATH/52w Breakout System",
       "subtitle": "Walk-forward VALIDATED. OOS: PF 1.46 / Sharpe 1.43 / MaxDD 12.85% / CAGR +26.8% on 117 quality-filtered small/micro-caps. Sister to research/17.",

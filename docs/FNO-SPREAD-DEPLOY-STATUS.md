@@ -69,11 +69,54 @@ For SHORT signals — **Bear Put Spread** (mirrored).
 | Spread generator + sanity check | ✅ done | `services/spread_structure.py` |
 | DB schema migration (direction + spread_structure cols) | ✅ done | `services/eod_breakout_db.py` |
 | Scanner imports spread module | ✅ done | `services/eod_breakout_scanner.py` |
-| Scanner persists spread JSON on signals | RUNNING (in progress) | scan_eod() will need update |
-| API surfaces spread JSON | pending | `/api/eod/<sys>/signals` |
-| Frontend renders spread + adjustment playbook | pending | `EodBreakout.tsx` |
-| 6-signal optimization (agent) | RUNNING | `research/22*` through `research/27*` |
-| Aggregate findings + commit | pending | this doc + commit message |
+| Scanner persists spread JSON on signals | ✅ done | scan_eod() builds + writes JSON |
+| API surfaces spread JSON | ✅ done | `/api/eod/<sys>/signals` returns spread_structure |
+| Frontend renders spread + adjustment playbook | ✅ done | `EodBreakout.tsx` (commit `1d31d79`) |
+| 6-signal optimization (agent) | ✅ done | `research/22*` through `research/27*` |
+| Deploy spread layer to VPS | ✅ done | service restarted 2026-04-26 |
+| Wire winning signals into scanner | pending | next code change |
+
+## Final agent findings — walk-forward results (OOS = 2023-01-01 to 2025-12-31)
+
+Pass criteria: PF ≥ 1.20 AND Sharpe ≥ 0.8 AND MaxDD ≤ 30% on OOS.
+
+| Family | Best variant | Dir | OOS PF | Sharpe | MaxDD | CAGR | Trades | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 22 Bearish breakdown | baseline | SHORT | 0.69 | -0.41 | 7.4% | -1.35% | 32 | **DOA** (all 5 fail) |
+| 23 Donchian 55 | **55_vol_3x_atr_floor** | LONG | **1.97** | **1.25** | **7.74%** | **+13.47%** | 175 | **PASS — top pick** |
+| 24 RS leadership | rs_60d_z2.0 | LONG | 1.53 | 0.99 | 9.35% | +11.41% | 217 | PASS |
+| 25 Golden cross | gc_ema_20_50 | LONG | 1.46 | 0.90 | 24.16% | +11.03% | 251 | PASS |
+| 25 Golden cross (alt) | gc_sma_50_200_adx | LONG | 1.82 | 0.81 | 6.02% | +4.41% | 78 | PASS but thin/low CAGR |
+| 25 Death cross | all 6 | SHORT | 0.31-0.76 | <0 | 15-63% | neg | **DOA** |
+| 26 ADX trend | **adx_30** | LONG | **1.77** | **1.30** | 16.47% | **+15.50%** | 225 | **PASS — highest CAGR** |
+| 26 ADX (other) | adx_25_pure | LONG | 1.22 | 0.44 | 15.08% | +4.70% | 260 | overfit (IS 2.57 → OOS 1.22) |
+| 26 ADX trend | all SHORT | SHORT | 0.60-0.67 | <-0.5 | 50-67% | neg | **DOA** |
+| 27 Pullback | **pb_rsi40** | LONG | **1.55** | **1.01** | 18.19% | **+12.99%** | 233 | **PASS — non-correlated** |
+| 27 Pullback (SHORT) | all 5 | SHORT | 0.45-0.78 | <0 | 11-47% | neg | **DOA** |
+
+### Hard verdicts
+- **24 of 24 SHORT-direction variants failed.** Indian F&O 76 universe is structurally long-biased; bear-put spreads from these signals lose money. Drop SHORT side.
+- **All 5 LONG winners are trend-continuation breakouts** that overlap heavily with research/21's 252-day Donchian (already live). True correlation analysis (per-day signal overlap) is the next step before deploying all five.
+- **Confluence filters underperformed** — minimal-filter variants tended to win OOS. The "filters help" hypothesis didn't hold.
+- OOS regime (2023-25) was a strong Indian bull market — bear-regime stress (2008-10, 2020-Q1) is the missing test.
+
+### Recommended deploy ranking
+
+1. **Donchian 55 `55_vol_3x_atr_floor`** — best risk-adjusted (PF 1.97, MaxDD 7.74%). Tighter than research/21 (which uses 252-day breakout).
+2. **ADX `adx_30`** — highest OOS CAGR (15.50%), Sharpe 1.30. Strict ADX>30 — not the same trade as Donchian since it requires established trend strength, not a fresh breakout.
+3. **Pullback `pb_rsi40`** — most non-correlated entry style (buy-the-dip vs breakout). Lower Sharpe but adds diversity.
+
+RS leadership `rs_60d_z2.0` and golden cross `gc_ema_20_50` are deployable but second-tier — RS will likely co-fire with Donchian; cross-system has 24% MaxDD which is on the edge of the 30% gate.
+
+### Per-signal artifacts
+
+For each `research/<NN>/results/` folder:
+- `summary.csv` — full sweep (5-12 variants, IS metrics)
+- `walk_forward.csv` — top 3 variants run train 2018-2022 / test 2023-2025
+- `equity_<variant>.csv` — daily equity curves
+- `trades_<best>.csv` — full trade log for the winner
+- `universe.csv` — F&O symbol list used
+- `SIGNAL-STATUS.md` — verdict + tradable variant (verdicts in Status section since FINDINGS.md was harness-blocked)
 
 ## Crash recovery — for the human
 
