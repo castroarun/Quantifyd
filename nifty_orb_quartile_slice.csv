@@ -1,0 +1,5 @@
+quartile,or_width_pct_min,or_width_pct_max,N,Wins,Losses,WR_pct,Wins_per_yr,Losses_per_yr,Med_loser_travel_in_OR_units,Med_fav_eod_win_pct
+Q1_calm,0.204,0.395,85,80,5,94.1,44.3,2.8,1.476,0.071
+Q2,0.399,0.508,85,67,18,78.8,37.1,10.0,1.08,0.161
+Q3,0.51,0.666,85,60,25,70.6,33.2,13.8,0.906,0.147
+Q4_volatile,0.667,1.734,85,58,27,68.2,32.1,15.0,0.579,0.188

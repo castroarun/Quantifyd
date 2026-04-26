@@ -48,9 +48,10 @@ user-facing UI must be built inside the React SPA at `frontend/`, served at
 - `frontend/src/pages/Orb.tsx` — single-strategy with rich tables + chart.
 - `frontend/src/pages/Nwv.tsx` — recent build, uses the latest patterns.
 
-**Standing migration debt:** `/collar`, `/kc6` were built in Jinja before
-this convention. Migrate to `/app/collar`, `/app/kc6` when their roadmap
-allows. (`/strangle` migrated to `/app/strangle` on 2026-04-26.)
+**Standing migration debt:** `/collar` is built in Jinja and pending
+migration to `/app/collar`. (`/strangle` migrated 2026-04-26. `/kc6` is
+parked — strategy not currently being pursued — re-add to debt list if
+revived.)
 
 ---
 

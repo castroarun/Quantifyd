@@ -1,0 +1,16 @@
+or_min,cpr_mode,N,WR_pct,Tr_per_yr,Wins_per_yr,Losses_per_yr,raw_breaks,skipped_rsi,skipped_cpr,skipped_no_cpr_data,med_min_to_sl,variant
+5,none,246,58.1,136.2,79.2,57.0,437,191,0,6,90.0,OR5m  no CPR filter
+5,aligned,218,57.3,120.7,69.2,51.5,437,191,28,6,100.0,OR5m  CPR-aligned (must clear CPR)
+5,against,28,64.3,15.5,10.0,5.5,437,191,218,6,38.0,OR5m  CPR-against (still inside/wrong-side CPR)
+10,none,254,63.4,140.7,89.2,51.5,432,178,0,6,110.0,OR10m  no CPR filter
+10,aligned,227,62.6,125.7,78.6,47.1,432,178,27,6,110.0,OR10m  CPR-aligned (must clear CPR)
+10,against,27,70.4,15.0,10.5,4.4,432,178,227,6,52.0,OR10m  CPR-against (still inside/wrong-side CPR)
+15,none,267,67.8,147.9,100.2,47.6,427,160,0,6,120.0,OR15m  no CPR filter
+15,aligned,237,66.7,131.3,87.5,43.8,427,160,30,6,120.0,OR15m  CPR-aligned (must clear CPR)
+15,against,30,76.7,16.6,12.7,3.9,427,160,237,6,160.0,OR15m  CPR-against (still inside/wrong-side CPR)
+30,none,293,75.4,162.3,122.4,39.9,400,107,0,6,162.0,OR30m  no CPR filter
+30,aligned,264,73.5,146.2,107.4,38.8,400,107,29,6,162.0,OR30m  CPR-aligned (must clear CPR)
+30,against,29,93.1,16.1,15.0,1.1,400,107,264,6,118.0,OR30m  CPR-against (still inside/wrong-side CPR)
+60,none,317,84.9,175.6,149.0,26.6,376,59,0,6,162.0,OR60m  no CPR filter
+60,aligned,273,83.2,151.2,125.7,25.5,376,59,44,6,162.0,OR60m  CPR-aligned (must clear CPR)
+60,against,44,95.5,24.4,23.3,1.1,376,59,273,6,148.0,OR60m  CPR-against (still inside/wrong-side CPR)

@@ -1,0 +1,4 @@
+variant_name,n_signals_eligible,n_signals_taken,n_skipped_by_filter,wr_pct,mean_credit,median_credit_per_unit,mean_pnl_per_lot,median_pnl_per_lot,total_pnl_lakhs,annualized_pnl_lakhs,max_single_loss,sharpe
+all_days,340,340,0,10.0,3558.98,61.09,-1205.18,-453.18,-4.098,-2.269,-13960.83,-0.5916
+skip_Q4_static,340,257,83,9.34,3423.81,60.75,-1168.67,-441.43,-3.003,-1.663,-11583.81,-0.6019
+skip_Q4_rolling,340,253,87,9.49,3497.21,61.06,-1047.39,-424.83,-2.65,-1.468,-11583.81,-0.6019
