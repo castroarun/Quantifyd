@@ -116,6 +116,7 @@ export interface ORBState {
   enabled: boolean;
   live_trading: boolean;
   universe: string[];
+  watch_universe?: string[];   // display-only candidate stocks (not traded)
   capital: number;
   daily_loss_limit: number;
   daily_loss_limit_pct?: number;

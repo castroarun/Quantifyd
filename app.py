@@ -6238,6 +6238,7 @@ def api_orb_state():
             'enabled': ORB_DEFAULTS.get('enabled', True),
             'live_trading': ORB_DEFAULTS.get('live_trading_enabled', False),
             'universe': ORB_DEFAULTS.get('universe', []),
+            'watch_universe': ORB_DEFAULTS.get('watch_universe', []),
             'capital': ORB_DEFAULTS.get('capital', 100_000),
             'mis_leverage': ORB_DEFAULTS.get('mis_leverage', 1),
             'use_risk_based_sizing': ORB_DEFAULTS.get('use_risk_based_sizing', False),

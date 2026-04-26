@@ -492,6 +492,16 @@ ORB_DEFAULTS = {
         'TRENT', 'HAL', 'IRCTC', 'GRASIM', 'GODREJPROP', 'RELIANCE', 'AXISBANK', 'APOLLOHOSP',
     ],
 
+    # Watch universe — top 10 candidates from research/20 universe-optimization
+    # walk-forward (train 2024-2025 / test 2025-2026, all passed PF>=1 both
+    # periods + Sharpe>=0.5). DISPLAY-ONLY for now — scanner skips these,
+    # frontend renders them greyed out. Promote to 'universe' once the live
+    # 15 stabilize and we're ready to expand. Order = test-Sharpe descending.
+    'watch_universe': [
+        'WIPRO', 'TCS', 'PNB', 'DLF', 'GAIL', 'HINDUNILVR', 'PAYTM',
+        'FEDERALBNK', 'COLPAL', 'NTPC',
+    ],
+
     # System Control
     'enabled': True,
     'live_trading_enabled': True,      # Direct live (MIS), no paper mode

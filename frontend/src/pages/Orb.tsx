@@ -518,6 +518,50 @@ export default function Orb() {
         </div>
       </section>
 
+      {/* watch universe — display-only candidates from research/20 */}
+      {state?.watch_universe && state.watch_universe.length > 0 ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <div className="section-title">Watch universe</div>
+            <Chip>{state.watch_universe.length} candidates · not traded</Chip>
+          </div>
+          <div
+            style={{
+              opacity: 0.45,
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px dashed rgba(255,255,255,0.15)',
+              borderRadius: 8,
+              fontSize: '0.85rem',
+              lineHeight: 1.6,
+            }}
+          >
+            <div style={{ marginBottom: 8, fontWeight: 600 }}>
+              Top 10 candidates from research/20 walk-forward (train 2024-25 / test 2025-26).
+              All passed PF ≥ 1.0 in both periods + Test Sharpe ≥ 0.5.
+              Promote to live universe after the current 15 stabilize.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {state.watch_universe.map((sym) => (
+                <span
+                  key={sym}
+                  style={{
+                    padding: '3px 10px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 4,
+                    fontFamily: 'monospace',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {sym}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {/* whats next */}
       <section className={styles.section}>
         <div className={styles.sectionHead}>
