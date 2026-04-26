@@ -2549,12 +2549,8 @@ except Exception as e:
 
 @app.route('/strangle')
 def strangle_dashboard():
-    """Nifty ORB Strangle multi-variant paper-trading dashboard."""
-    return render_template(
-        'nifty_strangle_dashboard.html',
-        authenticated=is_authenticated(),
-        user_name=session.get('user_name', 'User'),
-    )
+    """Legacy Jinja page retired 2026-04-26 — redirect to React SPA at /app/strangle."""
+    return redirect('/app/strangle', code=302)
 
 
 def _strangle_today_status(daily_state, has_open):
