@@ -7044,6 +7044,132 @@ def api_orb_backtest():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/orb/live-daily')
+def api_orb_live_daily():
+    """Return all closed ORB cash live positions, grouped by trade_date.
+
+    Each entry: { trade_date, trades_count, winners, losers, daily_pnl_inr,
+    trades: [position_dict, ...] }, ordered newest first.
+    """
+    try:
+        from services.orb_db import get_orb_db
+        db = get_orb_db()
+        with db.db_lock:
+            conn = db._get_conn()
+            try:
+                rows = conn.execute(
+                    "SELECT * FROM orb_positions "
+                    "WHERE status='CLOSED' "
+                    "ORDER BY trade_date DESC, exit_time ASC"
+                ).fetchall()
+                rows = [dict(r) for r in rows]
+            finally:
+                conn.close()
+
+        days = {}
+        for r in rows:
+            d = r.get('trade_date') or ''
+            if not d:
+                continue
+            bucket = days.setdefault(d, {
+                'trade_date': d,
+                'trades_count': 0,
+                'winners': 0,
+                'losers': 0,
+                'daily_pnl_inr': 0.0,
+                'trades': [],
+            })
+            pnl = r.get('pnl_inr') or 0
+            bucket['trades_count'] += 1
+            bucket['daily_pnl_inr'] += pnl
+            if pnl > 0:
+                bucket['winners'] += 1
+            else:
+                bucket['losers'] += 1
+            bucket['trades'].append(r)
+
+        out = sorted(days.values(), key=lambda b: b['trade_date'], reverse=True)
+        for b in out:
+            b['daily_pnl_inr'] = round(b['daily_pnl_inr'], 2)
+
+        # Top-level summary across all live closed trades
+        total_pnl = round(sum(b['daily_pnl_inr'] for b in out), 2)
+        total_trades = sum(b['trades_count'] for b in out)
+        total_wins = sum(b['winners'] for b in out)
+
+        return jsonify({
+            'days': out,
+            'summary': {
+                'total_trades': total_trades,
+                'winners': total_wins,
+                'losers': total_trades - total_wins,
+                'win_rate': round(total_wins / total_trades * 100, 1) if total_trades else 0,
+                'total_pnl_inr': total_pnl,
+                'active_days': len(out),
+            },
+        })
+    except Exception as e:
+        logger.error(f"[API] /api/orb/live-daily error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/debug-counts')
+def api_nas_debug_counts():
+    """Quick row-count check across all 8 NAS DBs — for diagnosing empty reports."""
+    import sqlite3 as _sqlite3
+    pairs = [
+        ('OTM', 'backtest_data/nas_trading.db', 'nas_'),
+        ('ATM', 'backtest_data/nas_atm_trading.db', 'nas_atm_'),
+        ('ATM2', 'backtest_data/nas_atm2_trading.db', 'nas_atm_'),
+        ('ATM4', 'backtest_data/nas_atm4_trading.db', 'nas_atm_'),
+        ('916-OTM', 'backtest_data/nas_916_otm_trading.db', 'nas_'),
+        ('916-ATM', 'backtest_data/nas_916_atm_trading.db', 'nas_atm_'),
+        ('916-ATM2', 'backtest_data/nas_916_atm2_trading.db', 'nas_atm_'),
+        ('916-ATM4', 'backtest_data/nas_916_atm4_trading.db', 'nas_atm_'),
+    ]
+    out = {}
+    for name, db, pfx in pairs:
+        try:
+            if not os.path.exists(db):
+                out[name] = {'error': 'MISSING', 'path': db}; continue
+            c = _sqlite3.connect(db)
+            tabs = [r[0] for r in c.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()]
+            tbl = pfx + 'positions'
+            if tbl not in tabs:
+                out[name] = {'error': 'missing-table', 'expected': tbl, 'tables': tabs}
+                c.close(); continue
+            tot = c.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+            cl = c.execute(
+                f"SELECT COUNT(*) FROM {tbl} WHERE status='CLOSED' "
+                f"AND exit_price IS NOT NULL"
+            ).fetchone()[0]
+            statuses = dict(c.execute(
+                f"SELECT status, COUNT(*) FROM {tbl} GROUP BY status"
+            ).fetchall())
+            sample = c.execute(
+                f"SELECT id, status, entry_price, exit_price, qty, entry_time "
+                f"FROM {tbl} ORDER BY id DESC LIMIT 2"
+            ).fetchall()
+            out[name] = {
+                'positions_total': tot,
+                'positions_closed_with_exit': cl,
+                'status_breakdown': statuses,
+                'sample_recent': [
+                    {'id': r[0], 'status': r[1], 'entry_price': r[2],
+                     'exit_price': r[3], 'qty': r[4], 'entry_time': r[5]}
+                    for r in sample
+                ],
+                'db_path': db,
+                'prefix_used': pfx,
+            }
+            c.close()
+        except Exception as e:
+            out[name] = {'error': str(e), 'path': db, 'prefix_used': pfx}
+    return jsonify(out)
+
+
 @app.route('/api/orb/backtest/run', methods=['POST'])
 def api_orb_backtest_run():
     """Trigger an ORB backtest for today (or provided date) and store results."""

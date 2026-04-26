@@ -363,6 +363,51 @@ export interface ORBBacktestRun {
   signals?: ORBBacktestSignal[];
 }
 
+/* ---------- ORB Live (cash) ---------- */
+
+export interface ORBLiveTrade {
+  id: number;
+  instrument: string;
+  trade_date: string;
+  direction: 'LONG' | 'SHORT';
+  qty: number;
+  entry_price: number;
+  entry_time: string | null;
+  sl_price: number | null;
+  target_price: number | null;
+  exit_price: number | null;
+  exit_time: string | null;
+  exit_reason: string | null;
+  pnl_pts: number | null;
+  pnl_inr: number | null;
+  status: string;
+  gap_pct?: number | null;
+  rsi_at_entry?: number | null;
+  cpr_width_pct?: number | null;
+  notes?: string | null;
+}
+
+export interface ORBLiveDay {
+  trade_date: string;
+  trades_count: number;
+  winners: number;
+  losers: number;
+  daily_pnl_inr: number;
+  trades: ORBLiveTrade[];
+}
+
+export interface ORBLiveDailyResponse {
+  days: ORBLiveDay[];
+  summary: {
+    total_trades: number;
+    winners: number;
+    losers: number;
+    win_rate: number;
+    total_pnl_inr: number;
+    active_days: number;
+  };
+}
+
 /* ---------- Holdings ---------- */
 
 export interface HoldingsRecord {

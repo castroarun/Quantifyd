@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './Report.module.css';
 import { apiGet } from '../api/client';
-import type { NASReportData, NASReportSystem, ORBBacktestRun, ORBBacktestSignal } from '../api/types';
+import type {
+  NASReportData,
+  NASReportSystem,
+  ORBBacktestRun,
+  ORBBacktestSignal,
+  ORBLiveDailyResponse,
+  ORBLiveDay,
+  ORBLiveTrade,
+} from '../api/types';
 import MetricCard from '../components/Cards/MetricCard';
 import DataTable from '../components/DataTable/DataTable';
 import type { Column } from '../components/DataTable/DataTable';
@@ -76,6 +84,8 @@ export default function Report() {
   const [orb, setOrb] = useState<ORBBacktestRun | null>(null);
   const [orbHistory, setOrbHistory] = useState<ORBBacktestRun[]>([]);
   const [orbErr, setOrbErr] = useState<string | null>(null);
+  const [orbLive, setOrbLive] = useState<ORBLiveDailyResponse | null>(null);
+  const [orbLiveErr, setOrbLiveErr] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -106,6 +116,13 @@ export default function Report() {
       })
       .catch(() => {
         /* no history available yet */
+      });
+    apiGet<ORBLiveDailyResponse>('/api/orb/live-daily')
+      .then((r) => {
+        if (!cancelled) setOrbLive(r);
+      })
+      .catch((e) => {
+        if (!cancelled) setOrbLiveErr(e instanceof Error ? e.message : 'ORB live load failed');
       });
     return () => {
       cancelled = true;
@@ -450,7 +467,135 @@ export default function Report() {
         </div>
       </section>
 
+      <OrbLiveSection data={orbLive} error={orbLiveErr} />
       <OrbBacktestSection latest={orb} history={orbHistory} error={orbErr} />
+    </div>
+  );
+}
+
+function OrbLiveSection({
+  data,
+  error,
+}: {
+  data: ORBLiveDailyResponse | null;
+  error: string | null;
+}) {
+  if (error && !data) {
+    return (
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">ORB cash · live daily</div>
+        </div>
+        <div className={styles.error}>{error}</div>
+      </section>
+    );
+  }
+  if (!data) {
+    return (
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">ORB cash · live daily</div>
+        </div>
+        <div className={styles.empty}>Loading live trades…</div>
+      </section>
+    );
+  }
+  const s = data.summary;
+  return (
+    <section className={styles.section}>
+      <div className={styles.sectionHead}>
+        <div className="section-title">ORB cash · live daily</div>
+        <Chip>{s.active_days} days</Chip>
+      </div>
+      <div className={styles.subtitle}>
+        Actual fills from the live ORB cash system (paper or live mode). Click
+        any day to see position-level detail.
+      </div>
+
+      <div className={styles.metrics}>
+        <MetricCard label="Live trades" value={formatInt(s.total_trades)} />
+        <MetricCard label="Win rate" value={formatPct(s.win_rate, 1)} />
+        <MetricCard
+          label="Total P&L (Rs)"
+          value={
+            <span className={pnlClass(s.total_pnl_inr)}>
+              {formatPnlBare(s.total_pnl_inr)}
+            </span>
+          }
+        />
+        <MetricCard label="Active days" value={formatInt(s.active_days)} />
+      </div>
+
+      {data.days.length === 0 ? (
+        <div className={styles.empty}>No live ORB trades recorded yet.</div>
+      ) : (
+        <div className={styles.daysList}>
+          {data.days.map((d) => (
+            <OrbLiveDayBlock key={d.trade_date} day={d} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function OrbLiveDayBlock({ day }: { day: ORBLiveDay }) {
+  const dt = new Date(day.trade_date + 'T00:00:00');
+  const dayName = dt.toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  return (
+    <details className={styles.dayBlock}>
+      <summary className={styles.daySummary}>
+        <span className={styles.dayName}>{dayName}</span>
+        <span className={styles.dayDate}>{day.trade_date}</span>
+        <span className={styles.daySpacer} />
+        <span className={styles.dayMeta}>
+          {day.trades_count} {day.trades_count === 1 ? 'trade' : 'trades'} ·{' '}
+          {day.winners}W / {day.losers}L
+        </span>
+        <span className={`${styles.dayPnl} ${pnlClass(day.daily_pnl_inr)}`}>
+          {formatPnl(day.daily_pnl_inr)}
+        </span>
+      </summary>
+      <div className={styles.tradeLog}>
+        <div className={styles.orbTableHead}>
+          <div>Stock</div>
+          <div>Dir</div>
+          <div>Entry</div>
+          <div>Exit</div>
+          <div>Reason</div>
+          <div className={styles.orbRight}>P&amp;L</div>
+        </div>
+        {day.trades.map((t) => (
+          <OrbLiveTradeRow key={t.id} t={t} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function OrbLiveTradeRow({ t }: { t: ORBLiveTrade }) {
+  const entryT = (t.entry_time ?? '').slice(11, 16);
+  const exitT = (t.exit_time ?? '').slice(11, 16);
+  return (
+    <div className={styles.orbTableRow}>
+      <div className={styles.orbStock}>{t.instrument}</div>
+      <div className={styles.orbDir}>{t.direction}</div>
+      <div className={styles.orbCell}>
+        {entryT || '—'} @ {formatNumber(t.entry_price, 2)}
+      </div>
+      <div className={styles.orbCell}>
+        {exitT || '—'} @{' '}
+        {t.exit_price != null ? formatNumber(t.exit_price, 2) : '—'}
+      </div>
+      <div className={styles.orbReason}>{t.exit_reason ?? '—'}</div>
+      <div className={`${styles.orbRight} ${pnlClass(t.pnl_inr ?? 0)}`}>
+        {formatPnl(t.pnl_inr ?? 0)}
+      </div>
     </div>
   );
 }
