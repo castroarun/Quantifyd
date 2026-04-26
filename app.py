@@ -4699,6 +4699,25 @@ except Exception as e:
     logger.warning(f"Could not register db_integrity_watchdog: {e}")
 
 
+# System validator — pre-market checklist (08:50 IST) + EOD report (15:40 IST).
+# Emails the operator and stores in-app. Covers ORB cash, NAS x8, ORB index.
+try:
+    from services.system_validator import run_premarket_check, run_eod_check
+    scheduler.add_job(
+        run_premarket_check,
+        'cron', day_of_week='mon-fri', hour=8, minute=50,
+        id='system_validator_premarket', replace_existing=True,
+    )
+    scheduler.add_job(
+        run_eod_check,
+        'cron', day_of_week='mon-fri', hour=15, minute=40,
+        id='system_validator_eod', replace_existing=True,
+    )
+    logger.info("System validator scheduled: pre-market(08:50), EOD(15:40) Mon-Fri IST")
+except Exception as e:
+    logger.warning(f"Could not register system_validator jobs: {e}")
+
+
 # =============================================================================
 # NAS ATM — Nifty ATM Strangle (Cascading, per-leg SL)
 # =============================================================================
@@ -7183,6 +7202,37 @@ def api_nas_debug_counts():
         except Exception as e:
             out[name] = {'error': str(e), 'path': db, 'prefix_used': pfx}
     return jsonify(out)
+
+
+@app.route('/api/validation/<report_type>/latest')
+def api_validation_latest(report_type):
+    """Return the most recent validator report (premarket | eod) as JSON."""
+    if report_type not in ('premarket', 'eod'):
+        return jsonify({'error': 'report_type must be premarket or eod'}), 400
+    try:
+        from services.system_validator import get_latest
+        rep = get_latest(report_type)
+        if rep is None:
+            return jsonify({'error': f'no {report_type} report yet'}), 404
+        return jsonify(rep)
+    except Exception as e:
+        logger.error(f"[API] /api/validation/{report_type}/latest error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/validation/<report_type>/run', methods=['POST'])
+def api_validation_run(report_type):
+    """Trigger a validator run on demand. Returns the freshly built report."""
+    if report_type not in ('premarket', 'eod'):
+        return jsonify({'error': 'report_type must be premarket or eod'}), 400
+    try:
+        from services.system_validator import run_premarket_check, run_eod_check
+        fn = run_premarket_check if report_type == 'premarket' else run_eod_check
+        rep = fn()
+        return jsonify(rep)
+    except Exception as e:
+        logger.error(f"[API] /api/validation/{report_type}/run error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/orb/backtest/run', methods=['POST'])
