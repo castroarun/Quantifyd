@@ -421,7 +421,7 @@ export default function Orb() {
     <div className={styles.root}>
       <div className={styles.headerRow}>
         <div>
-          <div className="page-title">Opening range breakout</div>
+          <div className="page-title">ORB Cash</div>
           <div className="page-subtitle">
             Cash intraday · {state?.universe?.length ?? 0} stocks ·{' '}
             {state?.live_trading ? 'Live trading' : 'Paper trading'}

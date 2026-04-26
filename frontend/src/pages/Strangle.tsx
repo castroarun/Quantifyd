@@ -155,7 +155,7 @@ export default function Strangle() {
 
   return (
     <div className={styles.root}>
-      <div className="page-title">Nifty ORB Strangle</div>
+      <div className="page-title">ORB Index</div>
       <div className="page-subtitle">
         Ten paper-trading variants of the Nifty ORB short-strangle. One sells PE+CE
         deltas after the OR breakout; exits on spot SL, target, or 15:25 EOD.

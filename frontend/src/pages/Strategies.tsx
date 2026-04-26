@@ -3,7 +3,7 @@ import styles from './Strategies.module.css';
 import StrategyCard from '../components/Cards/StrategyCard';
 import { IconBarChart, IconLayers } from '../components/Icons';
 import { apiGet } from '../api/client';
-import type { ORBState, NASState } from '../api/types';
+import type { ORBState, NASState, StrangleState } from '../api/types';
 import { formatInt, formatPnl, pnlClass } from '../utils/format';
 
 // All 8 NAS sub-system endpoints so the Strategies card reflects the whole
@@ -68,6 +68,7 @@ function aggregateNas(
 export default function Strategies() {
   const [orb, setOrb] = useState<ORBState | null>(null);
   const [nasStates, setNasStates] = useState<(NASState | null)[]>([]);
+  const [strangle, setStrangle] = useState<StrangleState | null>(null);
   const [liveLegLtps, setLiveLegLtps] = useState<Record<string, number>>({});
   const [err, setErr] = useState<string | null>(null);
   const evtRef = useRef<EventSource | null>(null);
@@ -76,14 +77,16 @@ export default function Strategies() {
     let cancelled = false;
     const load = async () => {
       try {
-        const [o, ...ns] = await Promise.all([
+        const [o, st, ...ns] = await Promise.all([
           apiGet<ORBState>('/api/orb/state').catch(() => null),
+          apiGet<StrangleState>('/api/strangle/state').catch(() => null),
           ...NAS_SYSTEMS.map((s) =>
             apiGet<NASState>(`/api/${s}/state`).catch(() => null),
           ),
         ]);
         if (cancelled) return;
         setOrb(o);
+        setStrangle(st);
         setNasStates(ns);
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Failed to load');
@@ -152,6 +155,19 @@ export default function Strategies() {
   const nasEnabled = nasAgg.anyEnabled;
   const nasPaper = nasAgg.anyEnabled && !nasAgg.anyLive;
 
+  // Strangle: aggregate across all 10 variants from a single payload.
+  const strangleVariants = strangle?.variants ?? [];
+  const strangleEnabled = strangleVariants.some((v) => v.enabled);
+  const strangleOpen = strangleVariants.reduce(
+    (s, v) => s + (v.open_positions ?? 0),
+    0,
+  );
+  const strangleTodayPnl = strangleVariants.reduce(
+    (s, v) => s + (v.today_pnl ?? 0),
+    0,
+  );
+  const strangleVariantsCount = strangleVariants.length;
+
   return (
     <div className={styles.root}>
       <div className="page-title">Strategies</div>
@@ -165,7 +181,7 @@ export default function Strategies() {
         <StrategyCard
           to="/orb"
           icon={<IconBarChart size={15} />}
-          title="Opening range breakout"
+          title="ORB Cash"
           description="Cash intraday on 15 stocks. OR15 breakout with VWAP, RSI, CPR filters. Runs 9:14 AM to 3:20 PM."
           status={orbEnabled ? 'connected' : 'disconnected'}
           statusLabel={
@@ -176,6 +192,20 @@ export default function Strategies() {
             { label: 'Open', value: formatInt(orbOpen) },
             { label: 'Closed today', value: formatInt(orbClosed) },
             { label: 'Universe', value: formatInt(orb?.universe?.length) },
+          ]}
+        />
+        <StrategyCard
+          to="/app/strangle"
+          icon={<IconLayers size={15} />}
+          title="ORB Index"
+          description="ORB break on Nifty index → delta-skewed short strangle (PE -0.22, CE +0.10). 10 variants across 5/15/30/45/60-min OR windows + RSI/calm/CPR-against filters."
+          status={strangleEnabled ? 'connected' : 'disconnected'}
+          statusLabel={strangleEnabled ? 'Paper trading' : 'Disabled'}
+          dayPnl={strangleTodayPnl}
+          stats={[
+            { label: 'Open positions', value: formatInt(strangleOpen) },
+            { label: 'Variants', value: formatInt(strangleVariantsCount) },
+            { label: 'Spot', value: formatInt(strangle?.spot_ltp ?? null) },
           ]}
         />
         <StrategyCard
@@ -204,9 +234,19 @@ export default function Strategies() {
       <div className={styles.section}>
         <div className="section-title">Today at a glance</div>
         <div className={styles.miniGrid}>
-          <MiniStat label="ORB day P&L" value={formatPnl(orbPnl)} cls={pnlClass(orbPnl)} />
+          <MiniStat
+            label="ORB Cash day P&L"
+            value={formatPnl(orbPnl)}
+            cls={pnlClass(orbPnl)}
+          />
+          <MiniStat
+            label="ORB Index day P&L"
+            value={formatPnl(strangleTodayPnl)}
+            cls={pnlClass(strangleTodayPnl)}
+          />
           <MiniStat label="NAS day P&L" value={formatPnl(nasPnl)} cls={pnlClass(nasPnl)} />
-          <MiniStat label="ORB open" value={formatInt(orbOpen)} />
+          <MiniStat label="ORB Cash open" value={formatInt(orbOpen)} />
+          <MiniStat label="ORB Index open" value={formatInt(strangleOpen)} />
           <MiniStat label="NAS open legs" value={formatInt(nasOpen)} />
         </div>
       </div>

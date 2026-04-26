@@ -109,6 +109,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
+            to="/app/strangle"
+            icon={<IconLayers />}
+            label="ORB index"
+            active={active === 'strangle'}
+            collapsed={collapsed}
+          />
+          <NavItem
             to="/nas"
             icon={<IconLayers />}
             label="NAS options"
@@ -120,13 +127,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLayers />}
             label="NWV weekly"
             active={active === 'nwv'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/strangle"
-            icon={<IconLayers />}
-            label="Strangle"
-            active={active === 'strangle'}
             collapsed={collapsed}
           />
           <NavItem
