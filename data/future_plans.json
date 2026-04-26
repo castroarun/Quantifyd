@@ -1,89 +1,81 @@
 {
   "plans": [
     {
-      "id": "smallcap-intraday-orb",
-      "title": "Small/Micro-Cap Intraday Breakout System",
-      "subtitle": "Separate cash-delivery system targeting higher-volatility small/micro-cap intraday breakouts (NOT an ORB extension)",
+      "id": "smallcap-daily-ath-breakout",
+      "title": "Small/Micro-Cap Daily ATH/52w Breakout System",
+      "subtitle": "Daily-bar event-driven breakout scanner on quality-filtered small/micro-caps — same family as research/17 EOD scanner, different universe",
       "status": "designing",
       "created": "2026-04-26",
-      "tags": ["smallcap", "microcap", "intraday", "breakout", "cash-delivery", "no-leverage"],
+      "tags": ["smallcap", "microcap", "daily-bars", "ath-breakout", "52w-high", "event-driven"],
       "sections": [
         {
-          "title": "Why a separate system (not an ORB extension)",
-          "body": "Small/micro caps DO move 3-5% intraday vs large caps' 1-2% — the volatility opportunity is real. But adding them to ORB breaks every operational assumption: no F&O = no 5x MIS leverage, wide bid-asks bust the 0.2% LIMIT buffer, frequent circuit filters trap positions, and many 'breakouts' are news-driven (already gapped). A separate system with different rules is the correct frame."
+          "title": "Pivot — daily bars, not intraday",
+          "body": "Earlier intraday version of this plan was BLOCKED by a data gap: local 5-min DB contains only Nifty 500 large/mid-caps, no genuine small/micro-cap 5-min bars. Pivoting to DAILY bars dodges the data problem entirely (we have 1,623 daily-bar symbols since 2018+) and aligns with the research/17 EOD scanner's winning structural pattern (PF 1.44 OOS / Sharpe 0.95 OOS on Nifty 500). This iteration applies the same family of rules to a smaller-cap universe with stricter quality filters."
         },
         {
-          "title": "Operational constraints (vs ORB)",
+          "title": "Entry signal (daily close)",
           "items": [
-            {
-              "label": "Cash delivery only",
-              "body": "Most small/micro caps are NOT in F&O. MIS leverage is 1x at best. No shorting overnight. No futures hedge. Position sizing changes from 1.5L notional (3L × 5x lev / 5 concurrent) down to ~50K cash per stock."
-            },
-            {
-              "label": "Wider entry buffer",
-              "body": "ORB uses 0.2% LIMIT buffer above breakout — fills cleanly on RELIANCE. On a Rs 80 small cap with bid-ask of Rs 1, that buffer is 16 paise (won't fill). Use 1-2% LIMIT buffer or accept market orders with slippage budget."
-            },
-            {
-              "label": "Hard position cap (Rs 50K per stock)",
-              "body": "On Rs 3L capital, max 6 concurrent at Rs 50K each = full deployment. No leverage means a 3% gap-down = Rs 1,500 loss per position vs ORB's Rs 3K risk per trade design — keeps daily-loss math sane."
-            },
-            {
-              "label": "Skip stocks with circuit history",
-              "body": "Pre-filter universe: any stock that hit upper/lower circuit ≥3 times in last 60 trading days is excluded. Once a stock is in circuit, automated exits don't fire and position is stuck for the day."
-            },
-            {
-              "label": "Slower OR (30-min vs ORB's 15-min)",
-              "body": "Small caps need more time to establish a clean range. 15-min OR on illiquid names captures noise. 30-min OR (09:15 to 09:45) gives a more meaningful range and filters opening-print weirdness on thin books."
-            },
-            {
-              "label": "Tighter universe filter (turnover floor)",
-              "body": "Min average daily turnover Rs 50 Cr over last 30 trading days. Filters out genuine micro-caps where execution is impossible. Sweet spot is Rs 50-500 Cr daily turnover — high enough to fill, low enough to retain volatility edge."
-            }
-          ]
-        },
-        {
-          "title": "Entry rules (proposed)",
-          "items": [
-            {
-              "label": "OR window",
-              "body": "09:15 → 09:45 (30 minutes). After 09:45, OR_high and OR_low are locked."
-            },
             {
               "label": "Breakout trigger",
-              "body": "5-min candle CLOSE above OR_high (LONG) or below OR_low (SHORT). Same close-based confirmation as ORB to avoid wick-driven false breakouts."
+              "body": "Today's close > 252-day high (52-week breakout) OR today's close > all-time high in our data window. Both compute identically against rolling-max-excluding-today; use 252-day as primary since most stocks have <8 yrs in DB."
             },
             {
-              "label": "Filters (which to keep, which to drop vs ORB)",
-              "body": "Keep: VWAP alignment, RSI not extreme, gap filter (skip if gap > 2%). Drop: CPR width filter (small caps almost always have 'wide CPR' due to higher daily ATR pct, so this filter would over-reject)."
+              "label": "Volume confirmation",
+              "body": "Today's volume >= 2.5x trailing 50-day average (stricter than research/17's 2.0x — small caps have noisier baseline volume, need higher conviction)."
             },
             {
-              "label": "Last entry time",
-              "body": "13:30 (vs ORB's 14:00) — give intraday move more room before 15:18 EOD squareoff. Small caps' afternoon volatility tends to be higher; tighter cutoff reduces over-trading."
+              "label": "Regime filter",
+              "body": "Today's close > 200-day SMA (only buy in confirmed uptrend on the stock itself; bear-market protection inherits same logic as research/17)."
             },
             {
-              "label": "Max 1 trade per stock per day",
-              "body": "Same as ORB. No re-entries on the same name."
+              "label": "Execution timing",
+              "body": "Signal triggers at EOD close. Enter at NEXT day's open (same operational pattern as research/17)."
             }
           ]
         },
         {
-          "title": "Exit rules (proposed)",
+          "title": "Universe selection — quality filters before backtest",
+          "items": [
+            {
+              "label": "Step 1 — base universe",
+              "body": "All daily-bar symbols in market_data_unified (~1,623). Filter to stocks with >=1500 daily bars since 2018-01-01. Exclude Nifty 500 (already covered by research/17) — focus on small/micro-cap exposure."
+            },
+            {
+              "label": "Step 2 — minimum market cap proxy via turnover",
+              "body": "Min avg daily turnover Rs 5 Cr over trailing 60 days (liquidity floor for actual execution). Below this, even small position sizes face 0.5%+ impact cost."
+            },
+            {
+              "label": "Step 3 — maximum turnover cap (keep it small/micro)",
+              "body": "Max avg daily turnover Rs 100 Cr over trailing 60 days — ensures we're not just re-testing mid-caps already in research/17 universe."
+            },
+            {
+              "label": "Step 4 — circuit / freeze filter (red flag check)",
+              "body": "Exclude stocks where >5% of last 60 trading days hit a daily move >=10% (proxy for circuit hits / news-driven manipulation / illiquid pricing). These stocks have execution risk: positions get stuck when circuit triggers."
+            },
+            {
+              "label": "Step 5 — series filter",
+              "body": "Keep only stocks in the 'EQ' (regular cash) series. Exclude T2T (trade-to-trade), Z series, BE series — these have settlement constraints incompatible with a swing entry/exit pattern."
+            },
+            {
+              "label": "Step 6 — volatility floor",
+              "body": "Min avg ATR-as-pct-of-price >= 1% (exclude completely range-bound dead stocks)."
+            }
+          ]
+        },
+        {
+          "title": "Exit rules (matches research/17 winning spec)",
           "items": [
             {
               "label": "Stop loss",
-              "body": "OR opposite edge (same as ORB). For LONG: stop = OR_low. For SHORT: stop = OR_high."
+              "body": "max(entry - 2 * ATR(14), entry * 0.92) — whichever closer to entry. Caps day-1 risk at 8%."
             },
             {
-              "label": "Target",
-              "body": "1.5R fixed target (same R:R as ORB's V0/V9 base). To be A/B tested vs 2R given small caps' wider intraday range."
+              "label": "Target — fixed 25%",
+              "body": "Entry × 1.25. No trailing stop, no time stop except 60-day max-hold safety. Same logic as research/17 D1_fixed_25_8 (the OOS-validated winner)."
             },
             {
-              "label": "Trail / lock",
-              "body": "At 14:00 (1.25 hours before EOD): if in profit, move SL to entry + 0.5R (lock half the unrealized). If at loss, hold for time-stop. Same V9t_lock50 pattern as live ORB."
-            },
-            {
-              "label": "EOD squareoff",
-              "body": "15:18 hard exit (2 minutes before Zerodha's MIS auto-squareoff at 15:20)."
+              "label": "Why fixed 25% (not trailing)",
+              "body": "Research/17 walk-forward proved fixed targets dominate trailing stops on daily-bar momentum: 41-day avg hold lets winners run to full 25%, trail-based exits get whipped on retracements before the move completes."
             }
           ]
         },
@@ -91,70 +83,39 @@
           "title": "Sizing and risk",
           "items": [
             {
-              "label": "Capital allocation",
-              "body": "Rs 3L initial deployment (matches ORB scale). NO LEVERAGE — full Rs 3L is invested capital."
-            },
-            {
               "label": "Risk per trade",
-              "body": "0.8% of capital = Rs 2,400 per trade. Quantity = floor(2400 / |entry - SL|). Same risk-anchor as ORB."
+              "body": "1% of equity. Quantity = floor((equity * 0.01) / (entry - stop))."
             },
             {
               "label": "Max concurrent positions",
-              "body": "6 concurrent, Rs 50K notional cap per position. So max deployed = 6 × 50K = Rs 3L (full capital)."
+              "body": "10 (same as research/17). On Rs 10L capital, max Rs 1L notional per position."
             },
             {
-              "label": "Daily loss limit",
-              "body": "3% of capital = Rs 9K. Soft block on new entries; force-close all on 1.5x = Rs 13.5K daily MTM loss."
-            }
-          ]
-        },
-        {
-          "title": "Execution challenges to solve before live",
-          "items": [
-            "Bid-ask handling: real-time monitoring of spread vs 1% LIMIT buffer. Reject signals where spread > 0.5% (too thin to trade).",
-            "Slippage budget: 0.5% slippage assumption in backtest (vs ORB's ~0.05%). Stress test at 1% to confirm edge survives.",
-            "Circuit detection: real-time check on entry — if stock hit 4% intraday move already and approaching circuit limit, skip the signal.",
-            "Data quality: Kite 5-min bars on small caps can have gaps when liquidity is thin. Backtest must handle bar gaps without inventing prices.",
-            "Notification noise: small-cap universe of 50-100 stocks can produce 10+ candidate signals/day. Prioritization (turnover, ATR pct, sector concentration) needed."
-          ]
-        },
-        {
-          "title": "Universe selection plan",
-          "items": [
-            {
-              "label": "Step 1 — base universe",
-              "body": "Nifty Smallcap 250 + Nifty Microcap 250 = ~500 candidates. Excludes Nifty 50/Next 50/Midcap 150 (already in ORB territory)."
+              "label": "Costs",
+              "body": "0.30% round-trip (vs research/17's 0.20% — small caps have wider spreads). Stress test at 0.50%."
             },
             {
-              "label": "Step 2 — turnover filter",
-              "body": "Avg daily turnover Rs 50 Cr+ over last 30 trading days. Cuts to ~80-150 names."
-            },
-            {
-              "label": "Step 3 — circuit history filter",
-              "body": "Exclude any name that hit upper/lower circuit ≥3 times in last 60 trading days. Cuts another 20-40."
-            },
-            {
-              "label": "Step 4 — backtest sweep",
-              "body": "Run the 30-min OR breakout rules on remaining ~60-100 stocks for 2024-2026. Train/test split. Keep top 20-30 by per-stock PF and Sharpe."
-            },
-            {
-              "label": "Step 5 — paper trade 4-6 weeks",
-              "body": "Live tick monitoring on the curated 20-30 names. Compare paper P&L distribution to backtest. Validate slippage and circuit assumptions."
+              "label": "Capital allocation",
+              "body": "Rs 10,00,000 initial. Long-only (small-cap shorts via cash impossible; F&O futures unavailable on this universe). Skips short signal handling entirely."
             }
           ]
         },
         {
           "title": "Backtest scope",
-          "body": "Period 2024-03-18 to 2026-03-12 (~500 trading days, matches existing 5-min data window). Bar TF: 5-min. Capital: Rs 3L cash. Costs: 0.5% round-trip (delivery STT + slippage). Walk-forward train 2024-Q2 to 2025-Q1, test 2025-Q2 to 2026-Q1."
+          "body": "Period 2018-01-01 to 2025-12-31 (8 years). Bar TF: daily. Capital: Rs 10L. Walk-forward train 2018-2022 / test 2023-2025 (matches research/17 split for direct comparison)."
         },
         {
           "title": "Pass criteria",
           "items": [
-            "OOS Profit Factor ≥ 1.20",
-            "OOS Sharpe ≥ 0.8",
-            "OOS MaxDD ≤ 15% (lower than ORB's 30% target — small caps demand tighter risk control)",
-            "Avg trade frequency: 2-4 trades/day (sweet spot for active management without overtrading)"
+            "OOS Profit Factor >= 1.20 (same as research/17)",
+            "OOS Sharpe >= 0.8",
+            "OOS MaxDD <= 30% (same as research/17 — small-cap MaxDD will likely be higher than mid-cap, but we accept that for the higher CAGR potential)",
+            "Trade frequency: 30-100 trades/year across the curated universe"
           ]
+        },
+        {
+          "title": "Why this should work (a-priori thesis)",
+          "body": "Research/17 proved daily ATH/52w breakouts + volume + regime filter is structurally edge-positive on Nifty 500. Small-caps amplify the move size when they break out (higher beta of single-stock momentum), but also amplify the noise (worse spreads, more news-driven false breakouts). The strict quality filters (turnover, circuit history, EQ series, volatility floor) should remove enough noise to leave the genuine edge. Net expectation: similar PF/Sharpe to research/17 (1.4 / 0.9), potentially higher CAGR, slightly higher MaxDD."
         }
       ]
     },
