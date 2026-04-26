@@ -621,3 +621,234 @@ ORB_DEFAULTS = {
 
 # Nifty 500 Universe
 NIFTY500_CSV = DATA_DIR.parent / 'data' / 'nifty500_list.csv'
+
+
+# =============================================================================
+# Nifty ORB Strangle (Phase 3 paper-trade build, 8 variants)
+# =============================================================================
+# Cross-leg credit-spread strangle on NIFTY index options driven by an ORB
+# breakout signal on the 5-min NIFTY index. PAPER ONLY. Each variant runs
+# independently — same structural strategy, different OR window / RSI filter.
+#
+# Strategy in plain English:
+#   1. Compute the OR (open-range high/low) over the variant's window.
+#   2. After the OR closes, watch 5-min closes for a break (close > OR_high
+#      = LONG, close < OR_low = SHORT). RSI on 5-min must confirm direction
+#      (variant-configurable thresholds; V6 takes any break).
+#   3. Skip the day if OR_width > 0.67% of spot (Q4 noise).
+#   4. On entry, sell two short legs (PE + CE) with delta targets that skew
+#      toward the break direction. Buy nothing — we're collecting credit on
+#      both sides; the loss leg is wider than the win leg.
+#   5. Exit on (a) underlying breaching its OR-anchored SL, or
+#      (b) 15:25 EOD square-off, whichever comes first.
+
+STRANGLE_DEFAULTS = {
+    # Index + lot
+    'symbol': 'NIFTY',
+    'exchange_index': 'NSE',
+    'exchange_options': 'NFO',
+    'lot_size': 65,                    # Nifty options lot size (65 from 2026)
+    'strike_interval': 50,             # Nifty options strike gap
+
+    # Polling / scheduling
+    'mtm_poll_seconds': 60,            # Master tick interval
+    'eod_squareoff_time': '15:25',     # Force-close all open variants
+    'no_entry_after': '14:00',         # No fresh entries after this IST
+    'session_open': '09:15',
+    'session_close': '15:30',
+
+    # SL math
+    'sl_or_width_multiplier': 1.0,     # SL = OR_high (short break) / OR_low (long break) at multiplier=1.0
+
+    # IV bounds for back-implied vol when chain has no IV field
+    'iv_floor': 0.12,
+    'iv_cap':   0.25,
+    'iv_default': 0.18,                # used when chain is unavailable
+    'risk_free_rate': 0.065,
+
+    # Costs (per leg per side)
+    'slippage_per_leg_per_side': 1.0,  # Rs 1 per option per fill
+    'brokerage_round_trip': 80.0,      # Rs 80 round-trip (4 fills total)
+    'stt_pct_on_credit': 0.0005,       # 0.05% of total notional credit
+
+    # Strike scanning bounds (% of spot)
+    'strike_scan_pct': 0.10,           # ±10% around spot
+
+    # Safety
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+}
+
+# Per-variant configs. ID is the stable key used by the dashboard, DB and routes.
+STRANGLE_VARIANTS = [
+    {
+        'id': 'or60-std',
+        'name': 'OR60 Standard',
+        'or_min': 60,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 84,
+        'backtest_wins_per_year': 150,
+        'backtest_trades_per_year': 180,
+    },
+    {
+        'id': 'or45-std',
+        'name': 'OR45 Standard',
+        'or_min': 45,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 82,
+        'backtest_wins_per_year': 165,
+        'backtest_trades_per_year': 200,
+    },
+    {
+        'id': 'or30-std',
+        'name': 'OR30 Standard',
+        'or_min': 30,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 79,
+        'backtest_wins_per_year': 175,
+        'backtest_trades_per_year': 220,
+    },
+    {
+        'id': 'or15-std',
+        'name': 'OR15 Standard',
+        'or_min': 15,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 75,
+        'backtest_wins_per_year': 180,
+        'backtest_trades_per_year': 240,
+    },
+    {
+        'id': 'or5-std',
+        'name': 'OR5 Standard',
+        'or_min': 5,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 70,
+        'backtest_wins_per_year': 175,
+        'backtest_trades_per_year': 250,
+    },
+    {
+        'id': 'or60-norsi',
+        'name': 'OR60 No-RSI',
+        'or_min': 60,
+        'rsi_lo_long': None, 'rsi_hi_short': None,    # take any break
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 78,
+        'backtest_wins_per_year': 175,
+        'backtest_trades_per_year': 225,
+    },
+    {
+        'id': 'or60-tight',
+        'name': 'OR60 Tight RSI',
+        'or_min': 60,
+        'rsi_lo_long': 65.0, 'rsi_hi_short': 35.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 86,
+        'backtest_wins_per_year': 110,
+        'backtest_trades_per_year': 130,
+    },
+    {
+        'id': 'or60-calm',
+        'name': 'OR60 Calm-Only',
+        'or_min': 60,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': True, 'calm_threshold_pct': 0.40,  # OR60 width < 0.40% of spot
+        'apply_cpr_against_filter': False,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 88,
+        'backtest_wins_per_year': 90,
+        'backtest_trades_per_year': 105,
+    },
+    {
+        # V9: OR60 + CPR-against filter. Hypothesis (validated in
+        # nifty_orb_cpr_filter_results.csv): tame breakouts that haven't cleared
+        # the CPR zone are friendlier to short-strangle theta capture than fully
+        # extended trend breaks. Backtest: 95.5% WR / 24 trades/yr.
+        'id': 'or60-cpr-against',
+        'name': 'OR60 CPR-Against',
+        'or_min': 60,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': True,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 96,
+        'backtest_wins_per_year': 23,
+        'backtest_trades_per_year': 24,
+    },
+    {
+        # V10: OR30 + CPR-against. Earlier entry, more theta runway. Backtest:
+        # 93.1% WR / 15 wins/yr.
+        'id': 'or30-cpr-against',
+        'name': 'OR30 CPR-Against',
+        'or_min': 30,
+        'rsi_lo_long': 60.0, 'rsi_hi_short': 40.0,
+        'apply_q4_filter': True, 'q4_threshold_pct': 0.67,
+        'apply_calm_filter': False, 'calm_threshold_pct': 0.40,
+        'apply_cpr_against_filter': True,
+        'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
+        'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
+        'lot_size': 65,
+        'enabled': True,
+        'backtest_wr_pct': 93,
+        'backtest_wins_per_year': 15,
+        'backtest_trades_per_year': 16,
+    },
+]
+
+# Convenience lookup: id -> variant dict
+STRANGLE_VARIANTS_BY_ID = {v['id']: v for v in STRANGLE_VARIANTS}

@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+
+{% block title %}Nifty ORB Strangle (Paper){% endblock %}
+
+{% block extra_css %}
+<style>
+    .mode-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.7em;
+        border-radius: 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .mode-PAPER { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid #3fb950; }
+
+    .variant-tab-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        background: rgba(22,27,34,0.6);
+        padding: 8px;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 10px;
+        margin-bottom: 16px;
+    }
+    .variant-tab {
+        flex: 1 1 auto;
+        min-width: 130px;
+        text-align: left;
+        padding: 0.55rem 0.75rem;
+        border-radius: 7px;
+        background: rgba(0,0,0,0.25);
+        border: 1px solid transparent;
+        color: #e6edf3;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background .15s, border-color .15s;
+    }
+    .variant-tab:hover { background: rgba(88,166,255,0.10); }
+    .variant-tab.active {
+        background: rgba(88,166,255,0.18);
+        border-color: rgba(88,166,255,0.55);
+    }
+    .variant-tab .name { font-weight: 700; display: block; }
+    .variant-tab .meta { font-size: 0.72rem; color: #8b949e; }
+    .variant-tab .badge-status {
+        font-size: 0.62rem;
+        padding: 1px 6px;
+        border-radius: 4px;
+        margin-left: 4px;
+        vertical-align: middle;
+    }
+    .badge-Idle    { background: rgba(139,148,158,0.2); color: #8b949e; }
+    .badge-Watching{ background: rgba(245,166,35,0.2); color: #f5a623; }
+    .badge-Open    { background: rgba(63,185,80,0.2);  color: #3fb950; }
+    .badge-Closed  { background: rgba(88,166,255,0.2); color: #58a6ff; }
+    .badge-Skip    { background: rgba(248,81,73,0.2);  color: #f85149; }
+
+    .card-header-custom {
+        background: rgba(22,27,34,0.8);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.7rem 1rem;
+        font-weight: 600;
+        font-size: 0.92rem;
+    }
+    .table-strangle th {
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8b949e;
+        border-color: var(--bs-border-color);
+    }
+    .table-strangle td {
+        border-color: var(--bs-border-color);
+        vertical-align: middle;
+        font-size: 0.88rem;
+    }
+
+    .leg-PE  { color: #3fb950; }
+    .leg-CE  { color: #f85149; }
+
+    .exit-SL  { color: #f85149; }
+    .exit-EOD { color: #d29922; }
+
+    .signal-log {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.78rem;
+        background: rgba(0,0,0,0.3);
+        padding: 8px 12px;
+        border-radius: 6px;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+    .signal-log .ts { color: #8b949e; }
+
+    .metric-card-sm {
+        text-align: center;
+        padding: 0.85rem 0.5rem;
+        background: rgba(22,27,34,0.7);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+    }
+    .metric-card-sm .v { font-size: 1.45rem; font-weight: 700; }
+    .metric-card-sm .l { font-size: 0.72rem; text-transform: uppercase;
+                         letter-spacing: 0.5px; color: #8b949e; }
+
+    .bt-card { background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(63,185,80,0.05));
+               border: 1px solid rgba(88,166,255,0.25); border-radius: 8px;
+               padding: 12px; }
+    .bt-card .label { font-size: 0.72rem; color: #8b949e;
+                      text-transform: uppercase; letter-spacing: 0.5px; }
+    .bt-card .value { font-size: 1.05rem; font-weight: 600; color: #e6edf3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-1">
+                <i class="bi bi-broadcast me-2"></i>Nifty ORB Strangle (Paper)
+            </h3>
+            <small class="text-muted">
+                8 ORB-driven cross-leg credit strangles on NIFTY weekly options.
+                Live Kite chain for strikes + mids; SL on the underlying ORB
+                breach; EOD square-off at 15:25.
+            </small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="mode-badge mode-PAPER">PAPER</span>
+            <span class="text-muted small">Spot: <strong id="spotLtp">--</strong></span>
+            <span class="text-muted small">|</span>
+            <span class="text-muted small">Date: <span id="todayDate">--</span></span>
+        </div>
+    </div>
+
+    <!-- Variant tab strip -->
+    <div class="variant-tab-strip" id="variantTabs">
+        <!-- Tabs are rendered from JS -->
+    </div>
+
+    <!-- Active variant section -->
+    <div id="activeVariantPane">
+
+        <!-- Top row: 4 metric cards -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <div class="metric-card-sm">
+                    <div class="v" id="m_status">--</div>
+                    <div class="l">Today's Status</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card-sm">
+                    <div class="v" id="m_today_pnl">--</div>
+                    <div class="l">Today's P/L</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card-sm">
+                    <div class="v" id="m_total_trades">0</div>
+                    <div class="l">Total Trades (paper)</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card-sm">
+                    <div class="v" id="m_total_pnl">--</div>
+                    <div class="l">All-Time Net P/L</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backtest expectation card -->
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="bt-card">
+                    <div class="row text-center align-items-center">
+                        <div class="col-md-3">
+                            <div class="label">Variant</div>
+                            <div class="value" id="bt_variant_name">--</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">Backtest WR</div>
+                            <div class="value" id="bt_wr">--</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">Expected Wins / Yr</div>
+                            <div class="value" id="bt_wpy">--</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">Expected Trades / Yr</div>
+                            <div class="value" id="bt_tpy">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-primary btn-sm" onclick="runScan()">
+                <i class="bi bi-search me-1"></i> Scan now
+            </button>
+            <button class="btn btn-outline-info btn-sm" onclick="refreshAll()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="closePosition()">
+                <i class="bi bi-x-octagon me-1"></i> Kill switch (close open)
+            </button>
+        </div>
+
+        <!-- Open position card -->
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <i class="bi bi-briefcase me-1"></i> Open Position
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-strangle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Leg</th>
+                                <th>Strike / Spot Ref</th>
+                                <th>Entry</th>
+                                <th>Now</th>
+                                <th>Δ at entry</th>
+                                <th>MTM (Rs)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="openPositionBody">
+                            <tr><td colspan="6" class="text-center text-muted py-4">No open position</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signal log + closed trades row -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-journal-text me-1"></i> Today's Signal Log
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="signal-log" id="signalLog">
+                            <span class="ts">--:--:--</span> &nbsp; (waiting)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card">
+                    <div class="card-header-custom d-flex justify-content-between">
+                        <span><i class="bi bi-clock-history me-1"></i> Recent Closed Trades</span>
+                        <span class="text-muted" id="tradesCount">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-strangle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Dir</th>
+                                        <th>PE Strk</th>
+                                        <th>CE Strk</th>
+                                        <th>Net P/L</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tradesBody">
+                                    <tr><td colspan="6" class="text-center text-muted py-4">No trades yet</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equity curve -->
+        <div class="card mb-3">
+            <div class="card-header-custom d-flex justify-content-between">
+                <span><i class="bi bi-graph-up me-1"></i> Daily P/L Curve (variant)</span>
+                <span class="text-muted" id="curveTradeCount">0 trades</span>
+            </div>
+            <div class="card-body" style="height: 280px; position: relative;">
+                <canvas id="equityChart"></canvas>
+                <div id="equityEmpty" class="text-center text-muted py-5" style="display:none;">
+                    No closed trades yet for this variant.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    let activeVariantId = null;
+    let allVariants = [];
+    let equityChart = null;
+
+    function fmtINR(v) {
+        if (v === null || v === undefined || Number.isNaN(v)) return '--';
+        const n = Number(v);
+        return (n >= 0 ? '+' : '') + n.toLocaleString('en-IN', {maximumFractionDigits: 0});
+    }
+    function pnlClass(v) {
+        if (v === null || v === undefined || Number.isNaN(v)) return '';
+        return Number(v) >= 0 ? 'text-success' : 'text-danger';
+    }
+    function fmtTime(iso) {
+        if (!iso) return '--:--:--';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleTimeString('en-IN', {hour12: false});
+        } catch { return iso; }
+    }
+
+    async function fetchAllState() {
+        const r = await fetch('/api/strangle/state');
+        return await r.json();
+    }
+    async function fetchVariantState(vid) {
+        const r = await fetch('/api/strangle/variant/' + vid);
+        return await r.json();
+    }
+    async function fetchEquity(vid) {
+        const r = await fetch('/api/strangle/equity-curve/' + vid);
+        return await r.json();
+    }
+
+    function renderTabs(state) {
+        allVariants = state.variants || [];
+        const div = document.getElementById('variantTabs');
+        if (!allVariants.length) {
+            div.innerHTML = '<div class="text-muted p-2">No variants configured</div>';
+            return;
+        }
+        if (!activeVariantId) activeVariantId = allVariants[0].id;
+        div.innerHTML = allVariants.map(v => {
+            const status = v.today_status || 'Idle';
+            const isActive = v.id === activeVariantId ? 'active' : '';
+            return `<div class="variant-tab ${isActive}" onclick="setActive('${v.id}')">
+                <span class="name">${v.name}</span>
+                <span class="meta">OR${v.or_min}m
+                    <span class="badge-status badge-${status}">${status}</span>
+                </span>
+            </div>`;
+        }).join('');
+    }
+
+    function setActive(vid) {
+        activeVariantId = vid;
+        document.querySelectorAll('.variant-tab').forEach(el => el.classList.remove('active'));
+        const evt = event || window.event;
+        if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+        loadVariantPane();
+    }
+
+    async function loadVariantPane() {
+        if (!activeVariantId) return;
+        try {
+            const data = await fetchVariantState(activeVariantId);
+            renderVariantPane(data);
+            const equity = await fetchEquity(activeVariantId);
+            renderEquity(equity || []);
+        } catch (e) { console.error('Variant pane load error:', e); }
+    }
+
+    function renderVariantPane(data) {
+        const v = data.variant || {};
+        const todayStatus = data.today_status || 'Idle';
+        document.getElementById('m_status').textContent = todayStatus;
+        document.getElementById('m_today_pnl').textContent = fmtINR(data.today_pnl);
+        document.getElementById('m_today_pnl').className = 'v ' + pnlClass(data.today_pnl);
+        const stats = data.stats || {};
+        document.getElementById('m_total_trades').textContent = stats.total_trades || 0;
+        document.getElementById('m_total_pnl').textContent = fmtINR(stats.total_pnl);
+        document.getElementById('m_total_pnl').className = 'v ' + pnlClass(stats.total_pnl);
+
+        document.getElementById('bt_variant_name').textContent = v.name || '--';
+        document.getElementById('bt_wr').textContent = (v.backtest_wr_pct ?? '--') + '%';
+        document.getElementById('bt_wpy').textContent = v.backtest_wins_per_year ?? '--';
+        document.getElementById('bt_tpy').textContent = v.backtest_trades_per_year ?? '--';
+
+        // Open position
+        renderOpenPosition(data.open_position, data.mtm);
+
+        // Signal log
+        renderSignalLog(data.daily_state, data.last_event_log || []);
+
+        // Trades
+        renderTrades(data.recent_trades || []);
+    }
+
+    function renderOpenPosition(pos, mtm) {
+        const tbody = document.getElementById('openPositionBody');
+        if (!pos) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No open position</td></tr>';
+            return;
+        }
+        const m = mtm || {};
+        const rows = [];
+        rows.push(`<tr>
+            <td><strong>UNDERLYING</strong></td>
+            <td>OR=[${Number(pos.or_low).toFixed(1)}, ${Number(pos.or_high).toFixed(1)}]
+                ${pos.direction} break</td>
+            <td>${Number(pos.spot_at_entry).toFixed(2)}</td>
+            <td>SL=${Number(pos.sl_price).toFixed(2)}</td>
+            <td>Width ${Number(pos.or_width_pct).toFixed(2)}%</td>
+            <td>--</td>
+        </tr>`);
+        rows.push(`<tr class="leg-PE">
+            <td><strong>SHORT PE</strong></td>
+            <td>${Number(pos.pe_strike).toFixed(0)}</td>
+            <td>${Number(pos.pe_entry_price).toFixed(2)}</td>
+            <td>${m.pe_now !== null && m.pe_now !== undefined ? Number(m.pe_now).toFixed(2) : '--'}</td>
+            <td>${pos.pe_delta_at_entry !== null && pos.pe_delta_at_entry !== undefined ? Number(pos.pe_delta_at_entry).toFixed(3) : '--'}</td>
+            <td class="${pnlClass(m.pe_mtm)}">${fmtINR(m.pe_mtm)}</td>
+        </tr>`);
+        rows.push(`<tr class="leg-CE">
+            <td><strong>SHORT CE</strong></td>
+            <td>${Number(pos.ce_strike).toFixed(0)}</td>
+            <td>${Number(pos.ce_entry_price).toFixed(2)}</td>
+            <td>${m.ce_now !== null && m.ce_now !== undefined ? Number(m.ce_now).toFixed(2) : '--'}</td>
+            <td>${pos.ce_delta_at_entry !== null && pos.ce_delta_at_entry !== undefined ? Number(pos.ce_delta_at_entry).toFixed(3) : '--'}</td>
+            <td class="${pnlClass(m.ce_mtm)}">${fmtINR(m.ce_mtm)}</td>
+        </tr>`);
+        rows.push(`<tr style="font-weight:700;">
+            <td colspan="5" class="text-end">Net MTM (Rs):</td>
+            <td class="${pnlClass(m.net_mtm)}">${fmtINR(m.net_mtm)}</td>
+        </tr>`);
+        tbody.innerHTML = rows.join('');
+    }
+
+    function renderSignalLog(ds, log) {
+        const div = document.getElementById('signalLog');
+        const lines = [];
+        if (ds) {
+            if (ds.or_high !== null && ds.or_high !== undefined) {
+                lines.push(`<span class="ts">${fmtTime(ds.last_event_ts)}</span> &nbsp; OR closed: high=${Number(ds.or_high).toFixed(2)} low=${Number(ds.or_low).toFixed(2)} width=${Number(ds.or_width_pct).toFixed(2)}%`);
+            }
+            if (ds.day_filter_passed === 0) {
+                lines.push(`<span class="ts">${fmtTime(ds.last_event_ts)}</span> &nbsp; Day filter blocked (Q4 / calm)`);
+            }
+            if (ds.signal_seen) {
+                lines.push(`<span class="ts">${fmtTime(ds.last_event_ts)}</span> &nbsp; Break detected ${ds.rsi_confirmed ? '(RSI confirmed)' : '(RSI rejected)'}`);
+            }
+            if (ds.entry_taken) {
+                lines.push(`<span class="ts">${fmtTime(ds.last_event_ts)}</span> &nbsp; ENTRY taken`);
+            }
+            if (ds.exit_taken) {
+                lines.push(`<span class="ts">${fmtTime(ds.last_event_ts)}</span> &nbsp; EXIT (${ds.exit_reason || '-'})`);
+            }
+        }
+        if (!lines.length) lines.push('<span class="ts">--:--:--</span> &nbsp; (no events yet today)');
+        div.innerHTML = lines.join('<br>');
+    }
+
+    function renderTrades(trades) {
+        const tbody = document.getElementById('tradesBody');
+        document.getElementById('tradesCount').textContent = (trades.length || 0) + ' trades';
+        if (!trades.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No trades yet</td></tr>';
+            return;
+        }
+        tbody.innerHTML = trades.map(t => `<tr>
+            <td>${t.exit_date || '--'}</td>
+            <td>${t.direction || '--'}</td>
+            <td class="leg-PE">${Number(t.pe_strike).toFixed(0)}</td>
+            <td class="leg-CE">${Number(t.ce_strike).toFixed(0)}</td>
+            <td class="${pnlClass(t.net_pnl)}"><strong>${fmtINR(t.net_pnl)}</strong></td>
+            <td><span class="exit-${t.exit_reason}">${t.exit_reason || '--'}</span></td>
+        </tr>`).join('');
+    }
+
+    function renderEquity(curve) {
+        const empty = document.getElementById('equityEmpty');
+        const canvas = document.getElementById('equityChart');
+        const tradeCount = document.getElementById('curveTradeCount');
+        tradeCount.textContent = (curve.length || 0) + ' trades';
+        if (!curve.length) {
+            empty.style.display = 'block';
+            canvas.style.display = 'none';
+            return;
+        }
+        empty.style.display = 'none';
+        canvas.style.display = 'block';
+        const labels = curve.map((d, i) => (d.date || '') + ' #' + (i + 1));
+        const cum = curve.map(d => d.cumulative_pnl);
+        const colors = curve.map(d => (d.pnl || 0) >= 0 ? '#3fb950' : '#f85149');
+        const ctx = canvas.getContext('2d');
+        if (equityChart) equityChart.destroy();
+        equityChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{
+                label: 'Cumulative Net P/L (Rs)',
+                data: cum,
+                borderColor: '#58a6ff',
+                backgroundColor: 'rgba(88,166,255,0.1)',
+                fill: true, tension: 0.3, borderWidth: 2,
+                pointRadius: 4, pointBackgroundColor: colors, pointBorderColor: colors,
+            }]},
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                scales: {
+                    x: { ticks: { color: '#8b949e', maxRotation: 45, maxTicksLimit: 12 },
+                         grid: { color: 'rgba(139,148,158,0.1)' } },
+                    y: { ticks: { color: '#8b949e', callback: v => 'Rs ' + Number(v).toLocaleString('en-IN') },
+                         grid: { color: 'rgba(139,148,158,0.1)' } }
+                }
+            }
+        });
+    }
+
+    async function refreshAll() {
+        try {
+            const state = await fetchAllState();
+            document.getElementById('todayDate').textContent = state.today || '--';
+            const sp = state.spot_ltp;
+            document.getElementById('spotLtp').textContent =
+                sp ? Number(sp).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '--';
+            renderTabs(state);
+            await loadVariantPane();
+        } catch (e) { console.error('Refresh error:', e); }
+    }
+
+    async function runScan() {
+        if (!activeVariantId) return;
+        try {
+            const r = await fetch('/api/strangle/scan/' + activeVariantId, { method: 'POST' });
+            const d = await r.json();
+            console.log('Scan result:', d);
+            await refreshAll();
+        } catch (e) { alert('Scan failed: ' + e.message); }
+    }
+    async function closePosition() {
+        if (!activeVariantId) return;
+        if (!confirm('Force-close any open ' + activeVariantId + ' position?')) return;
+        try {
+            const r = await fetch('/api/strangle/close/' + activeVariantId, { method: 'POST' });
+            const d = await r.json();
+            console.log('Close result:', d);
+            await refreshAll();
+        } catch (e) { alert('Close failed: ' + e.message); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshAll();
+        setInterval(refreshAll, 60000);  // 60s refresh
+    });
+</script>
+{% endblock %}

@@ -2544,6 +2544,230 @@ except Exception as e:
 
 
 # =============================================================================
+# Nifty ORB Strangle (Phase 3 — 8 paper variants)
+# =============================================================================
+
+@app.route('/strangle')
+def strangle_dashboard():
+    """Nifty ORB Strangle multi-variant paper-trading dashboard."""
+    return render_template(
+        'nifty_strangle_dashboard.html',
+        authenticated=is_authenticated(),
+        user_name=session.get('user_name', 'User'),
+    )
+
+
+def _strangle_today_status(daily_state, has_open):
+    """Compute a one-word status badge for today, given a variant's daily-state row."""
+    if has_open:
+        return 'Open'
+    if not daily_state:
+        return 'Idle'
+    if daily_state.get('exit_taken'):
+        return 'Closed'
+    if daily_state.get('day_filter_passed') == 0:
+        return 'Skip'
+    if daily_state.get('signal_seen') and not daily_state.get('rsi_confirmed'):
+        return 'Skip'
+    if daily_state.get('or_high') is not None:
+        return 'Watching'
+    return 'Idle'
+
+
+@app.route('/api/strangle/state')
+def api_strangle_state():
+    """Top-level state for all 8 variants (compact view for tab strip)."""
+    try:
+        from services.nifty_strangle_engine import get_strangle_engine
+        from services.nifty_strangle_db import get_strangle_db
+        from config import STRANGLE_VARIANTS
+        from datetime import date as _date
+
+        engine = get_strangle_engine()
+        db = get_strangle_db()
+        today_str = _date.today().isoformat()
+
+        spot = engine._spot_ltp()
+        out = []
+        for v in STRANGLE_VARIANTS:
+            ds = db.get_daily_state(v['id'], today_str) or {}
+            opens = db.get_open_positions(v['id'])
+            status = _strangle_today_status(ds, bool(opens))
+            out.append({
+                'id': v['id'],
+                'name': v['name'],
+                'or_min': v['or_min'],
+                'enabled': v.get('enabled', True),
+                'today_status': status,
+                'today_pnl': db.get_today_pnl(v['id']),
+                'open_positions': len(opens),
+            })
+        return jsonify({
+            'today': today_str,
+            'spot_ltp': spot,
+            'variants': out,
+        })
+    except Exception as e:
+        logger.error(f"Strangle state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/strangle/variant/<variant_id>')
+def api_strangle_variant_detail(variant_id):
+    """Detailed state for one variant (for the active tab pane)."""
+    try:
+        from services.nifty_strangle_engine import get_strangle_engine
+        from services.nifty_strangle_db import get_strangle_db
+        from config import STRANGLE_VARIANTS_BY_ID
+        from datetime import date as _date
+
+        v = STRANGLE_VARIANTS_BY_ID.get(variant_id)
+        if not v:
+            return jsonify({'error': f'unknown variant: {variant_id}'}), 404
+
+        engine = get_strangle_engine()
+        db = get_strangle_db()
+        today_str = _date.today().isoformat()
+
+        opens = db.get_open_positions(variant_id)
+        open_pos = opens[0] if opens else None
+        mtm = engine.snapshot_position_mtm(open_pos) if open_pos else None
+
+        ds = db.get_daily_state(variant_id, today_str) or {}
+        stats = db.get_stats(variant_id)
+        recent = db.get_trades(variant_id, limit=20)
+        today_pnl = db.get_today_pnl(variant_id)
+
+        status = _strangle_today_status(ds, bool(open_pos))
+
+        return jsonify({
+            'variant': v,
+            'today_status': status,
+            'today_pnl': today_pnl,
+            'stats': stats,
+            'recent_trades': recent,
+            'open_position': open_pos,
+            'mtm': mtm,
+            'daily_state': ds,
+        })
+    except Exception as e:
+        logger.error(f"Strangle variant detail error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/strangle/scan/<variant_id>', methods=['POST'])
+def api_strangle_manual_scan(variant_id):
+    """Manual entry-scan trigger for one variant."""
+    try:
+        from services.nifty_strangle_engine import get_strangle_engine
+        engine = get_strangle_engine()
+        # Run synchronously (entry scan is fast — just one variant)
+        result = engine.run_entry_scan(variant_id)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Strangle manual scan error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/strangle/close/<variant_id>', methods=['POST'])
+def api_strangle_close(variant_id):
+    """Force-close any open position for a variant (kill switch)."""
+    try:
+        from services.nifty_strangle_engine import get_strangle_engine
+        engine = get_strangle_engine()
+        result = engine.run_eod_squareoff(variant_id)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Strangle close error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/strangle/equity-curve/<variant_id>')
+def api_strangle_equity_curve(variant_id):
+    """Per-variant cumulative P/L curve."""
+    try:
+        from services.nifty_strangle_db import get_strangle_db
+        db = get_strangle_db()
+        return jsonify(db.get_equity_curve(variant_id))
+    except Exception as e:
+        logger.error(f"Strangle equity curve error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Master tick scheduler — one cron job that handles all 8 variants
+def _strangle_master_tick():
+    """Runs every 60s during market hours; dispatches to all 8 variants."""
+    try:
+        from services.nifty_strangle_engine import get_strangle_engine
+        from config import STRANGLE_DEFAULTS
+        if not STRANGLE_DEFAULTS.get('enabled', True):
+            return
+        engine = get_strangle_engine()
+        engine.run_master_tick()
+    except Exception as e:
+        logger.warning(f"[Strangle] master tick error: {e}")
+
+
+def _strangle_eod_squareoff():
+    """15:25 Mon-Fri: EOD square-off for all variants (belt-and-suspenders)."""
+    try:
+        from services.nifty_strangle_engine import get_strangle_engine
+        from config import STRANGLE_VARIANTS
+        engine = get_strangle_engine()
+        for v in STRANGLE_VARIANTS:
+            engine.run_eod_squareoff(v['id'])
+    except Exception as e:
+        logger.warning(f"[Strangle] EOD squareoff error: {e}")
+
+
+def _strangle_daily_summary():
+    """16:00 Mon-Fri: log a one-line summary per variant."""
+    try:
+        from services.nifty_strangle_db import get_strangle_db
+        from config import STRANGLE_VARIANTS
+        from datetime import date as _date
+        db = get_strangle_db()
+        today_str = _date.today().isoformat()
+        for v in STRANGLE_VARIANTS:
+            ds = db.get_daily_state(v['id'], today_str) or {}
+            pnl = db.get_today_pnl(v['id'])
+            logger.info(
+                f"[Strangle EOD:{v['id']}] entry_taken={ds.get('entry_taken', 0)} "
+                f"exit_taken={ds.get('exit_taken', 0)} reason={ds.get('exit_reason')} "
+                f"pnl={pnl:+.2f}"
+            )
+    except Exception as e:
+        logger.warning(f"[Strangle] daily summary error: {e}")
+
+
+try:
+    # Master tick: every 60s during 9:15-15:30 IST Mon-Fri
+    scheduler.add_job(
+        _strangle_master_tick,
+        'cron', day_of_week='mon-fri',
+        hour='9-15', minute='*', second='5',
+        id='strangle_master_tick', replace_existing=True,
+    )
+    # Belt-and-suspenders EOD square-off
+    scheduler.add_job(
+        _strangle_eod_squareoff,
+        'cron', day_of_week='mon-fri', hour=15, minute=25,
+        id='strangle_eod_squareoff', replace_existing=True,
+    )
+    scheduler.add_job(
+        _strangle_daily_summary,
+        'cron', day_of_week='mon-fri', hour=16, minute=0,
+        id='strangle_daily_summary', replace_existing=True,
+    )
+    logger.info(
+        "Strangle scheduled jobs registered: master_tick(every 60s 9-15 Mon-Fri), "
+        "eod_squareoff(15:25), daily_summary(16:00)"
+    )
+except Exception as e:
+    logger.warning(f"Could not register Strangle scheduled jobs: {e}")
+
+
+# =============================================================================
 # Maruthi Always-On Strategy
 # =============================================================================
 
