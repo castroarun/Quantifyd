@@ -556,7 +556,7 @@ ORB_DEFAULTS = {
     # post-OR candles, taking the latest valid breakout even if it is
     # hours old). See 2026-04-24 VEDL/TRENT incident and
     # docs/MONDAY-WORK-PLAN.md.
-    'signal_age_max_mins': 15,         # breakout candle cannot be older than this
+    'signal_age_max_mins': 30,         # breakout candle cannot be older than this. 2026-04-27 sweep (research/28): 30 beats 15 on PF (1.62 vs 1.60), Sharpe (4.13 vs 3.94), MaxDD (32.07% vs 34.57%), Calmar (5.33 vs 4.75) on 15-stock 2024-2026 sample.
     'signal_drift_max_pct': 0.005,     # 0.5% max drift between breakout close and current close
     'entry_end_time': '14:00',         # no fresh entries after this IST
     'post_restart_cooldown_mins': 5,   # log-only pass during the first N min after engine start

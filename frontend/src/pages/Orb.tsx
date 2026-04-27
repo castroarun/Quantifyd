@@ -667,13 +667,14 @@ export default function Orb() {
                 a setup blocked by RSI on bar 1 can still fire on bar 2 if RSI catches up. Two outer guards
                 cap that re-check window:
                 <br />
-                <b>signal_age_max_mins = 15</b> — the original breakout candle must be ≤15 min old. After that
+                <b>signal_age_max_mins = 30</b> — the original breakout candle must be ≤30 min old. After that
                 the entry is rejected even if all other filters now pass. ·
                 <b> signal_drift_max_pct = 0.5%</b> — the current close must be within 0.5% of the breakout
                 candle's close (anti-chase guard against entering well after price has extended).
                 <br /><span className={styles.mute}>
                   Both guards were added 2026-04-24 after a post-restart stale-entry incident on VEDL/TRENT.
-                  Currently set empirically — pending sweep against research/20 history (see Future Plans).
+                  Tuned 2026-04-27 (research/28): age extended 15→30 (PF 1.60→1.62, MaxDD 34.6%→32.1%);
+                  drift cap held at 0.5% (sweep showed loosening hurts PF).
                 </span>
               </span>
             </div>
