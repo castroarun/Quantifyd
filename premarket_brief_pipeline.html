@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pre-Market Brief Pipeline · Quantifyd</title>
+<meta name="description" content="A 2-stage pre-market intelligence pipeline: VPS data builder + Claude Code cloud routine for narrative synthesis.">
+<meta property="og:title" content="Pre-Market Brief Pipeline · Quantifyd">
+<meta property="og:description" content="Daily 08:00 IST quant trading brief — yfinance + NSE + holdings events, synthesized by Claude.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-base:#0A0A0F;
+  --bg-surface:#0F1117;
+  --bg-elevated:#161B22;
+  --bg-card:rgba(22,27,34,0.6);
+  --text-primary:#FAFAFA;
+  --text-secondary:#A1A1A1;
+  --text-tertiary:#525252;
+  --accent:#22D3EE;
+  --accent-hover:#06B6D4;
+  --accent-blue:#0EA5E9;
+  --accent-purple:#A78BFA;
+  --accent-subtle:rgba(34,211,238,0.1);
+  --accent-glow:rgba(34,211,238,0.15);
+  --success:#22C55E;
+  --warning:#F59E0B;
+  --error:#EF4444;
+  --border-subtle:rgba(255,255,255,0.05);
+  --border-default:rgba(255,255,255,0.08);
+  --border-strong:rgba(255,255,255,0.12);
+  --grad-primary:linear-gradient(135deg,#22D3EE 0%,#0EA5E9 100%);
+  --grad-stage:linear-gradient(180deg,rgba(34,211,238,0.04) 0%,transparent 100%);
+}
+
+body{
+  font-family:'Inter Tight',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg-base);
+  color:var(--text-primary);
+  line-height:1.55;
+  font-feature-settings:'cv02','cv03','cv04','cv11';
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* Cursor glow effect */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:radial-gradient(800px circle at var(--mouse-x,50%) var(--mouse-y,50%),rgba(34,211,238,0.05),transparent 40%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Subtle grid overlay */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);
+  background-size:60px 60px;
+  pointer-events:none;
+  z-index:0;
+}
+
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+/* ===== NAV ===== */
+.nav{
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:saturate(180%) blur(14px);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);
+  background:rgba(10,10,15,0.65);
+  border-bottom:1px solid var(--border-subtle);
+}
+.nav-inner{max-width:1100px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
+.nav-brand{font-weight:700;font-size:14px;letter-spacing:-0.01em;display:flex;align-items:center;gap:10px}
+.nav-brand .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent-glow)}
+.nav-link{font-size:13px;color:var(--text-secondary);text-decoration:none;transition:color .2s}
+.nav-link:hover{color:var(--accent)}
+
+/* ===== HERO ===== */
+.hero{padding:120px 0 80px}
+.hero-eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;color:var(--accent);
+  letter-spacing:0.15em;text-transform:uppercase;
+  margin-bottom:24px;display:inline-flex;align-items:center;gap:10px;
+}
+.hero-eyebrow .pulse{
+  width:6px;height:6px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 8px var(--accent);animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+.hero h1{
+  font-size:clamp(38px,6vw,68px);
+  font-weight:700;
+  letter-spacing:-0.035em;
+  line-height:1.05;
+  margin-bottom:24px;
+  background:linear-gradient(180deg,#FAFAFA 0%,#A1A1A1 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{
+  font-size:19px;color:var(--text-secondary);
+  max-width:680px;line-height:1.6;
+}
+.hero-meta{
+  margin-top:40px;display:flex;flex-wrap:wrap;gap:32px;
+  padding-top:32px;border-top:1px solid var(--border-subtle);
+}
+.hero-meta-item{display:flex;flex-direction:column;gap:4px}
+.hero-meta-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--text-tertiary);
+  text-transform:uppercase;letter-spacing:0.1em;
+}
+.hero-meta-value{font-size:14px;color:var(--text-primary);font-weight:500}
+
+/* ===== SECTION ===== */
+.section{padding:80px 0;border-top:1px solid var(--border-subtle)}
+.section-eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--accent);
+  letter-spacing:0.15em;text-transform:uppercase;
+  margin-bottom:16px;
+}
+.section h2{
+  font-size:clamp(28px,4vw,40px);
+  font-weight:600;
+  letter-spacing:-0.025em;
+  margin-bottom:20px;line-height:1.15;
+}
+.section-lead{
+  font-size:17px;color:var(--text-secondary);
+  max-width:720px;margin-bottom:48px;
+}
+
+/* ===== TIMELINE ===== */
+.timeline{position:relative;padding-left:36px}
+.timeline::before{
+  content:'';position:absolute;left:11px;top:8px;bottom:8px;
+  width:1px;background:linear-gradient(180deg,var(--accent) 0%,var(--accent-blue) 50%,var(--accent-purple) 100%);
+  opacity:0.4;
+}
+.timeline-step{position:relative;padding:24px 0 32px}
+.timeline-step::before{
+  content:'';position:absolute;left:-30px;top:32px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--bg-base);border:2px solid var(--accent);
+  box-shadow:0 0 0 4px rgba(34,211,238,0.1);
+}
+.timeline-step:last-child::before{background:var(--accent);box-shadow:0 0 12px var(--accent-glow)}
+.timeline-time{
+  font-family:'JetBrains Mono',monospace;font-size:13px;
+  color:var(--accent);font-weight:600;letter-spacing:0.02em;margin-bottom:8px;
+}
+.timeline-title{font-size:21px;font-weight:600;margin-bottom:6px;letter-spacing:-0.015em}
+.timeline-actor{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.1em;
+  margin-bottom:14px;
+}
+.timeline-desc{color:var(--text-secondary);max-width:680px;font-size:15px;line-height:1.65}
+.timeline-tags{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.timeline-tag{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:4px 10px;border-radius:4px;
+  background:var(--accent-subtle);color:var(--accent);
+  border:1px solid var(--border-subtle);
+}
+
+/* ===== ARCHITECTURE GRID ===== */
+.arch-grid{
+  display:grid;grid-template-columns:1fr;gap:16px;margin-top:24px;
+}
+@media(min-width:760px){.arch-grid{grid-template-columns:1fr 1fr}}
+.arch-card{
+  padding:28px;border-radius:12px;
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  transition:all .3s;
+}
+.arch-card:hover{border-color:var(--border-strong);background:rgba(22,27,34,0.8)}
+.arch-card-icon{
+  display:inline-flex;width:42px;height:42px;
+  align-items:center;justify-content:center;border-radius:10px;
+  background:var(--accent-subtle);margin-bottom:18px;
+  font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:13px;font-weight:700;
+}
+.arch-card-title{font-size:18px;font-weight:600;margin-bottom:8px;letter-spacing:-0.01em}
+.arch-card-desc{color:var(--text-secondary);font-size:14px;line-height:1.6}
+.arch-card-tags{margin-top:18px;display:flex;flex-wrap:wrap;gap:6px}
+
+/* ===== DATA SOURCES ===== */
+.sources{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.source-pill{
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  padding:8px 14px;border-radius:6px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  color:var(--text-secondary);
+  display:inline-flex;align-items:center;gap:8px;
+}
+.source-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.source-pill .dot.green{background:var(--success)}
+.source-pill .dot.purple{background:var(--accent-purple)}
+.source-pill .dot.amber{background:var(--warning)}
+
+/* ===== CODE BLOCK ===== */
+.code-block{
+  margin-top:24px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  background:#000;border:1px solid var(--border-subtle);
+  border-radius:10px;padding:20px 24px;
+  color:var(--text-secondary);
+  overflow-x:auto;
+  line-height:1.7;
+}
+.code-block .comment{color:var(--text-tertiary)}
+.code-block .keyword{color:var(--accent-purple)}
+.code-block .string{color:var(--success)}
+.code-block .var{color:var(--accent)}
+
+/* ===== METRICS ROW ===== */
+.metrics-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:32px}
+@media(min-width:640px){.metrics-row{grid-template-columns:repeat(4,1fr)}}
+.metric{
+  padding:20px;border-radius:10px;
+  background:var(--bg-card);border:1px solid var(--border-subtle);
+}
+.metric-label{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;
+}
+.metric-value{font-size:24px;font-weight:600;letter-spacing:-0.02em}
+.metric-sub{font-size:12px;color:var(--text-tertiary);margin-top:4px}
+
+/* ===== FOOTER ===== */
+.footer{
+  padding:60px 0 80px;border-top:1px solid var(--border-subtle);
+  color:var(--text-tertiary);font-size:13px;
+}
+.footer a{color:var(--accent);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+
+/* ===== UTIL ===== */
+.mono{font-family:'JetBrains Mono',monospace}
+.text-accent{color:var(--accent)}
+.text-success{color:var(--success)}
+.text-warning{color:var(--warning)}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand"><span class="dot"></span> quantifyd</div>
+    <a href="https://castronix.dev" class="nav-link">← Back to portfolio</a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span class="pulse"></span> Pipeline · Pre-Market Brief</div>
+    <h1>A morning intelligence brief, written by a cloud agent, sent from a VPS at 08:03 IST.</h1>
+    <p>Each weekday at 08:00 IST, a Python service on the trading VPS pulls live market data, holdings calendar events, and overnight news. A Claude Code routine in the cloud reads it, writes the narrative, and posts back. The VPS sends the email. The whole loop closes in three minutes.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Schedule</div>
+        <div class="hero-meta-value">08:00 IST · Mon–Fri</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">End-to-end latency</div>
+        <div class="hero-meta-value">~3 minutes</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Compute cost</div>
+        <div class="hero-meta-value">₹0 (free tier + plan)</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Stack</div>
+        <div class="hero-meta-value">Python · APScheduler · Claude Code</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ARCHITECTURE OVERVIEW ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section-eyebrow">01 · Architecture</div>
+    <h2>Two halves, one loop.</h2>
+    <p class="section-lead">The VPS handles deterministic work — fetching, persisting, sending. The cloud routine handles the part that benefits from language understanding — sentiment, narrative, judgment. Each side stays in its lane.</p>
+
+    <div class="arch-grid">
+      <div class="arch-card">
+        <div class="arch-card-icon">VPS</div>
+        <div class="arch-card-title">Contabo · Python service</div>
+        <div class="arch-card-desc">Runs APScheduler inside Gunicorn. Pulls structured data from yfinance, NSE, BSE, and the local <span class="mono">holdings_events.db</span>. Persists raw JSON. Owns the SMTP transport because Gmail MCP only exposes <span class="mono">create_draft</span>, not send.</div>
+        <div class="arch-card-tags">
+          <span class="source-pill"><span class="dot green"></span>yfinance</span>
+          <span class="source-pill"><span class="dot green"></span>SQLite</span>
+          <span class="source-pill"><span class="dot green"></span>Gmail SMTP</span>
+        </div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-card-icon">CLD</div>
+        <div class="arch-card-title">Claude Code · cloud routine</div>
+        <div class="arch-card-desc">Spawned daily at 08:02 IST as a fresh sandboxed session. <span class="mono">curl</span>s the VPS for raw data, applies sentiment tags to the day's headlines, drafts the narrative One-Liner, and POSTs the synthesis back. Stateless — no secrets, no SSH key, no persistence.</div>
+        <div class="arch-card-tags">
+          <span class="source-pill"><span class="dot purple"></span>Claude</span>
+          <span class="source-pill"><span class="dot purple"></span>Cloud routine</span>
+          <span class="source-pill"><span class="dot purple"></span>Stateless</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TIMELINE ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section-eyebrow">02 · The 8-minute window</div>
+    <h2>From wake-up to inbox.</h2>
+    <p class="section-lead">Four scheduled events. The fallback at 08:08 is the safety net — the operator always gets a brief, even if the cloud routine fails.</p>
+
+    <div class="timeline">
+      <div class="timeline-step">
+        <div class="timeline-time">08:00 IST</div>
+        <div class="timeline-title">VPS builds the raw brief</div>
+        <div class="timeline-actor">Job · premarket_brief_build · APScheduler</div>
+        <div class="timeline-desc">Parallel fetch from 14 yfinance tickers (GIFT Nifty, S&amp;P 500, US VIX, USDINR, India VIX, Brent, Gold, 10Y UST, DXY, Nikkei, Hang Seng, Kospi). RSS pulls from Moneycontrol, Mint, Reuters India. Reads <span class="mono">holdings_events.db</span> for today's results / ex-div / splits on holdings. Downloads the F&amp;O ban-list CSV from NSE archive. Computes a rule-based bias verdict as a fallback. Writes the JSON to disk.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">14 market quotes</span>
+          <span class="timeline-tag">3 RSS sources</span>
+          <span class="timeline-tag">F&amp;O ban CSV</span>
+          <span class="timeline-tag">Holdings DB</span>
+        </div>
+      </div>
+
+      <div class="timeline-step">
+        <div class="timeline-time">08:02 IST</div>
+        <div class="timeline-title">Cloud routine wakes up</div>
+        <div class="timeline-actor">Claude Code · scheduled routine</div>
+        <div class="timeline-desc"><span class="mono">curl http://&lt;vps&gt;:5000/api/premarket/brief/raw</span>. Receives the structured dict. Applies sentiment tags (<span class="text-success">POS</span> / <span class="text-warning">NEU</span> / <span style="color:var(--error)">NEG</span>) to the top 5 headlines. Drafts a 2-sentence narrative One-Liner that ties GIFT premium, S&amp;P direction, and the day's volatility flags into a single read. POSTs the synthesis back as JSON.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Sentiment tagging</span>
+          <span class="timeline-tag">Narrative synthesis</span>
+          <span class="timeline-tag">Holdings-aware</span>
+        </div>
+      </div>
+
+      <div class="timeline-step">
+        <div class="timeline-time">08:03 IST</div>
+        <div class="timeline-title">VPS dispatches the email</div>
+        <div class="timeline-actor">Endpoint · /api/premarket/brief/synthesized</div>
+        <div class="timeline-desc">Endpoint receives the synthesized JSON, merges it into the persisted brief, renders the locked HTML template (Mock C v5 — KPI tiles, Market Context table, Your Book Today, F&amp;O ban summary, Strategy outlook), dispatches via Gmail SMTP. Marks the brief as <span class="mono">_email_sent: true</span> so the fallback knows to skip.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">HTML render</span>
+          <span class="timeline-tag">SMTP send</span>
+          <span class="timeline-tag">In-app log</span>
+        </div>
+      </div>
+
+      <div class="timeline-step">
+        <div class="timeline-time">08:08 IST</div>
+        <div class="timeline-title">Fallback safety net</div>
+        <div class="timeline-actor">Job · premarket_brief_fallback · APScheduler</div>
+        <div class="timeline-desc">Reads the persisted brief. If <span class="mono">_email_sent</span> is already true, exits silently. Otherwise — cloud routine never fired, or hit an error — the VPS sends the un-synthesized version using its rule-based One-Liner and raw RSS headlines. The operator never wakes up to a missing brief.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Self-healing</span>
+          <span class="timeline-tag">Idempotent</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DATA SOURCES ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section-eyebrow">03 · Data sources</div>
+    <h2>All free. All public.</h2>
+    <p class="section-lead">Every input is either a public exchange API, a syndicated feed, or local trading state — no paid market-data subscriptions. Total bill: zero rupees.</p>
+
+    <div class="sources">
+      <span class="source-pill"><span class="dot green"></span>yfinance · Yahoo Finance</span>
+      <span class="source-pill"><span class="dot"></span>NSE archive · F&amp;O ban CSV</span>
+      <span class="source-pill"><span class="dot"></span>BSE · forthcoming results</span>
+      <span class="source-pill"><span class="dot amber"></span>Moneycontrol · RSS</span>
+      <span class="source-pill"><span class="dot amber"></span>Livemint · RSS</span>
+      <span class="source-pill"><span class="dot amber"></span>Reuters India · RSS</span>
+      <span class="source-pill"><span class="dot green"></span>holdings_events.db · local</span>
+      <span class="source-pill"><span class="dot purple"></span>Claude Code · synthesis</span>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric">
+        <div class="metric-label">yfinance tickers</div>
+        <div class="metric-value">14</div>
+        <div class="metric-sub">indices · FX · commodities · rates</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">RSS items pulled</div>
+        <div class="metric-value">~25</div>
+        <div class="metric-sub">deduped, top 5 to email</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Daily build time</div>
+        <div class="metric-value">~6s</div>
+        <div class="metric-sub">end-to-end on VPS</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total monthly cost</div>
+        <div class="metric-value">₹0</div>
+        <div class="metric-sub">covered by existing plan + free APIs</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EMAIL CONTRACT ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section-eyebrow">04 · The data contract</div>
+    <h2>Structured by the VPS, narrated by the cloud.</h2>
+    <p class="section-lead">The two halves communicate through a single JSON shape. Anything the cloud routine adds is namespaced as <span class="mono">_synthesized</span> — the rule-based fallback works without it.</p>
+
+    <div class="code-block"><span class="comment"># GET /api/premarket/brief/raw</span>
+{
+  <span class="var">"date"</span>: <span class="string">"2026-04-28"</span>,
+  <span class="var">"market"</span>: { <span class="comment"># 14 yfinance tickers, normalized</span>
+    <span class="var">"GIFT_NIFTY"</span>: { <span class="var">"last"</span>: 24920.1, <span class="var">"pct"</span>: 0.42, ... },
+    <span class="var">"SP500"</span>:      { <span class="var">"last"</span>: 5082.4,  <span class="var">"pct"</span>: 0.51, ... },
+    <span class="var">"US_VIX"</span>:     { <span class="var">"last"</span>: 13.4,    <span class="var">"pct"</span>: -2.1, ... },
+    ... <span class="comment"># 11 more</span>
+  },
+  <span class="var">"bias"</span>: { <span class="var">"label"</span>: <span class="string">"POSITIVE"</span>, <span class="var">"score"</span>: 1.89, <span class="var">"summary"</span>: <span class="string">"..."</span> },
+  <span class="var">"holdings"</span>: {
+    <span class="var">"today"</span>:    [{<span class="var">"tradingsymbol"</span>: <span class="string">"COALINDIA"</span>, <span class="var">"event_type"</span>: <span class="string">"results"</span>, ...}],
+    <span class="var">"upcoming"</span>: [...],
+  },
+  <span class="var">"fno_ban"</span>: { <span class="var">"all"</span>: [...], <span class="var">"in_holdings"</span>: [], <span class="var">"count"</span>: 1 },
+  <span class="var">"headlines_raw"</span>: [ <span class="comment"># 25 items deduped</span>
+    {<span class="var">"title"</span>: <span class="string">"..."</span>, <span class="var">"source"</span>: <span class="string">"Moneycontrol"</span>, <span class="var">"link"</span>: <span class="string">"..."</span>}, ...
+  ],
+  <span class="var">"strategy_outlook"</span>: { <span class="var">"orb_cash"</span>: <span class="string">"..."</span>, <span class="var">"nas_strangle"</span>: <span class="string">"..."</span> }
+}</div>
+
+    <div class="code-block" style="margin-top:16px"><span class="comment"># POST /api/premarket/brief/synthesized</span>
+{
+  <span class="var">"narrative_summary"</span>: <span class="string">"Friday's US strength flows into Asia. NIFTY indicated +95 on
+                          GIFT premium. Only flag: Powell at 18:00."</span>,
+  <span class="var">"headlines_synthesized"</span>: [
+    { <span class="var">"tag"</span>: <span class="string">"POS"</span>, <span class="var">"text"</span>: <span class="string">"Fed minutes signal patient rate-cut path..."</span>, <span class="var">"source"</span>: <span class="string">"Bloomberg"</span> },
+    { <span class="var">"tag"</span>: <span class="string">"NEG"</span>, <span class="var">"text"</span>: <span class="string">"Saudi cuts production by 500k bpd..."</span>, <span class="var">"source"</span>: <span class="string">"Reuters"</span> },
+    ... <span class="comment"># 3 more</span>
+  ]
+}</div>
+  </div>
+</section>
+
+<!-- ============ DESIGN PRINCIPLES ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section-eyebrow">05 · Design principles</div>
+    <h2>Three rules.</h2>
+    <p class="section-lead">Every design decision in this pipeline maps to one of these.</p>
+
+    <div class="arch-grid">
+      <div class="arch-card">
+        <div class="arch-card-icon">①</div>
+        <div class="arch-card-title">The operator must always get a brief</div>
+        <div class="arch-card-desc">The 08:08 fallback exists because the cloud routine can fail silently — sandboxed sessions, network issues, model latency. A degraded brief beats no brief. The fallback is idempotent — if the synthesized version already went out, it does nothing.</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-card-icon">②</div>
+        <div class="arch-card-title">Never store secrets in the cloud</div>
+        <div class="arch-card-desc">The cloud routine is stateless. No SMTP credentials, no SSH keys, no Kite tokens, no secrets at all. It can only read public-ish data from the VPS and write back synthesis. Worst case: someone gets the routine's output. They get a forecast.</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-card-icon">③</div>
+        <div class="arch-card-title">Each layer does one thing</div>
+        <div class="arch-card-desc">VPS = data + transport. Cloud = language. Email template = render. Mixing layers (e.g., letting the cloud send email directly via Gmail MCP draft) creates manual-click footguns. Single responsibility per layer keeps the failure modes tiny.</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-card-icon">④</div>
+        <div class="arch-card-title">Make every input observable</div>
+        <div class="arch-card-desc">Every brief is persisted to <span class="mono">backtest_data/premarket_brief_latest.json</span>. The validator at 08:50 IST verifies the build job is registered. The fallback at 08:08 closes the loop. If anything breaks, the operator knows by the next email — at the latest, by EOD report at 15:40.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="container">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px;align-items:baseline">
+      <div>
+        Quantifyd · Pre-Market Brief Pipeline · designed and shipped 2026-04-27<br>
+        <span style="color:var(--text-tertiary);font-size:12px">A small piece of a larger systematic-trading platform.</span>
+      </div>
+      <div class="mono" style="font-size:12px">
+        <a href="https://github.com/castroarun/Quantifyd">github.com/castroarun/Quantifyd</a>
+        <span style="color:var(--text-tertiary);margin:0 8px">·</span>
+        <a href="https://castronix.dev">castronix.dev</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Cursor glow tracking
+document.addEventListener('mousemove', e => {
+  document.body.style.setProperty('--mouse-x', e.clientX + 'px');
+  document.body.style.setProperty('--mouse-y', e.clientY + 'px');
+});
+</script>
+
+</body>
+</html>
