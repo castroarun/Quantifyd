@@ -207,7 +207,7 @@ export default function Orb() {
     {
       key: 'instrument',
       header: 'Stock',
-      width: '1.2fr',
+      width: 'minmax(95px, 1.2fr)',
       render: (p) => <span className={styles.bold}>{p.instrument}</span>,
     },
     {
@@ -224,21 +224,21 @@ export default function Orb() {
     {
       key: 'entry',
       header: 'Entry',
-      width: '1fr',
+      width: 'minmax(85px, 1fr)',
       align: 'right',
       render: (p) => formatNumber(p.entry_price),
     },
     {
       key: 'sl',
       header: 'SL',
-      width: '1fr',
+      width: 'minmax(85px, 1fr)',
       align: 'right',
       render: (p) => formatNumber(p.sl_price ?? p.stop_loss),
     },
     {
       key: 'ltp',
       header: 'LTP / Exit',
-      width: '1fr',
+      width: 'minmax(85px, 1fr)',
       align: 'right',
       render: (p) => {
         if (p.status === 'CLOSED' && p.exit_price != null) {
@@ -254,7 +254,7 @@ export default function Orb() {
     {
       key: 'target',
       header: 'Target',
-      width: '1fr',
+      width: 'minmax(85px, 1fr)',
       align: 'right',
       render: (p) => formatNumber(p.target_price ?? p.target),
     },
@@ -267,7 +267,7 @@ export default function Orb() {
     {
       key: 'pnl',
       header: 'P&L',
-      width: '1.1fr',
+      width: 'minmax(95px, 1.1fr)',
       align: 'right',
       render: (p) => (
         <span className={pnlClass(p.pnl_inr)}>{formatPnl(p.pnl_inr)}</span>
@@ -321,7 +321,7 @@ export default function Orb() {
     {
       key: 'instrument',
       header: 'Stock',
-      width: '1.2fr',
+      width: 'minmax(95px, 1.2fr)',
       render: (t) => <span className={styles.bold}>{t.instrument}</span>,
     },
     {
@@ -334,27 +334,27 @@ export default function Orb() {
     {
       key: 'entry',
       header: 'Entry',
-      width: '1fr',
+      width: 'minmax(85px, 1fr)',
       align: 'right',
       render: (t) => formatNumber(t.entry_price),
     },
     {
       key: 'exit',
       header: 'Exit',
-      width: '1fr',
+      width: 'minmax(85px, 1fr)',
       align: 'right',
       render: (t) => formatNumber(t.exit_price),
     },
     {
       key: 'reason',
       header: 'Exit reason',
-      width: '1.4fr',
+      width: 'minmax(120px, 1.4fr)',
       render: (t) => <span className={styles.mute}>{t.exit_reason || '—'}</span>,
     },
     {
       key: 'pnl',
       header: 'P&L',
-      width: '1.1fr',
+      width: 'minmax(95px, 1.1fr)',
       align: 'right',
       render: (t) => (
         <span className={pnlClass(t.pnl_inr)}>{formatPnl(t.pnl_inr)}</span>
