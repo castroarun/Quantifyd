@@ -208,7 +208,13 @@ def _check_db_integrity() -> dict:
 
 
 def _check_backup_age() -> dict:
-    """Check the latest backup tarball age via local backup.log + GitHub release."""
+    """Check the latest backup tarball age via local backup.log.
+
+    Backups run Mon-Fri 16:00 IST. After a weekend the gap is naturally
+    ~72h, so backup staleness is never a trading-day blocker — surface as
+    WARN at most. Operational follow-up belongs in the EOD report, not
+    pre-market.
+    """
     log_path = REPO_ROOT / 'logs' / 'backup.log'
     if not log_path.exists():
         return _check('Backup pipeline', WARN, 'no logs/backup.log yet')
@@ -217,25 +223,42 @@ def _check_backup_age() -> dict:
     except Exception as e:
         return _check('Backup pipeline', WARN, f'cannot stat log: {e}')
     age_h = (datetime.now() - mtime).total_seconds() / 3600
-    if age_h > 48:
+    today = datetime.now()
+    is_monday = today.weekday() == 0
+    # Mon morning gap of 60-80h is the normal weekend gap (Fri 16:00 → Mon 08:50)
+    if is_monday and age_h <= 80:
+        return _check('Backup pipeline', PASS,
+                      f'last activity {age_h:.0f}h ago (normal weekend gap)')
+    if age_h > 80:
         return _check(
-            'Backup pipeline', FAIL,
-            f'last backup activity {age_h:.0f}h ago',
+            'Backup pipeline', WARN,
+            f'last backup activity {age_h:.0f}h ago — cron may be broken',
             remediation='chmod +x scripts/backup_to_github_release.sh; check cron',
         )
     if age_h > 28:
         return _check(
             'Backup pipeline', WARN,
-            f'last backup activity {age_h:.0f}h ago — verify cron fired yesterday',
+            f'last backup activity {age_h:.0f}h ago — verify yesterday\'s 16:00 cron',
         )
     return _check('Backup pipeline', PASS, f'last activity {age_h:.0f}h ago')
+
+
+def _is_pre_login() -> bool:
+    """True if current IST time is before the 08:55 auto-login slot.
+
+    Anything before that — including the 08:50 pre-market validator — should
+    not FAIL on token issues, since auto-login is literally about to fire.
+    """
+    now = datetime.now()
+    return (now.hour, now.minute) < (8, 55)
 
 
 def _check_kite_token() -> dict:
     p = DATA_DIR / 'access_token.json'
     if not p.exists():
+        sev = WARN if _is_pre_login() else FAIL
         return _check(
-            'Kite access token', FAIL, 'access_token.json missing',
+            'Kite access token', sev, 'access_token.json missing',
             remediation='run auto-login or visit /login on dashboard',
         )
     age_h = (datetime.now() - datetime.fromtimestamp(p.stat().st_mtime))\
@@ -250,14 +273,23 @@ def _check_kite_token() -> dict:
 
 
 def _check_kite_profile() -> dict:
-    """Try a profile() call. WARN (not FAIL) if pre-08:55 since auto-login hasn't fired."""
+    """Try a profile() call.
+
+    Before 08:55 IST: token failures = WARN (auto-login about to fire).
+    After: token failures = FAIL (session genuinely broken).
+    """
+    pre = _is_pre_login()
+    sev_on_fail = WARN if pre else FAIL
+    rem_on_fail = ('auto-login at 08:55 will refresh — only act if it persists past 09:00'
+                   if pre else 'manual TOTP login required at /login')
     try:
         from services.kite_service import get_kite
         kite = get_kite()
         if kite is None or not getattr(kite, 'access_token', None):
             return _check(
-                'Kite API connectivity', WARN,
+                'Kite API connectivity', sev_on_fail,
                 'no kite session yet (auto-login at 08:55 will set one up)',
+                remediation=rem_on_fail if not pre else '',
             )
         prof = kite.profile()
         name = prof.get('user_name', '?')
@@ -265,26 +297,29 @@ def _check_kite_profile() -> dict:
     except Exception as e:
         msg = str(e)[:120]
         return _check(
-            'Kite API connectivity', FAIL, msg,
-            remediation='manual TOTP login required at /login',
+            'Kite API connectivity', sev_on_fail, msg,
+            remediation=rem_on_fail,
         )
 
 
 def _check_kite_quote() -> dict:
+    pre = _is_pre_login()
+    sev_on_fail = WARN if pre else FAIL
     try:
         from services.kite_service import get_kite
         kite = get_kite()
         if kite is None or not getattr(kite, 'access_token', None):
             return _check(
-                'Kite quote (NIFTY 50)', WARN, 'no kite session yet',
+                'Kite quote (NIFTY 50)', sev_on_fail,
+                'no kite session yet',
             )
         q = kite.ltp(['NSE:NIFTY 50'])
         ltp = q.get('NSE:NIFTY 50', {}).get('last_price')
         if ltp:
             return _check('Kite quote (NIFTY 50)', PASS, f'LTP {ltp}')
-        return _check('Kite quote (NIFTY 50)', FAIL, 'empty response')
+        return _check('Kite quote (NIFTY 50)', sev_on_fail, 'empty response')
     except Exception as e:
-        return _check('Kite quote (NIFTY 50)', FAIL, str(e)[:120])
+        return _check('Kite quote (NIFTY 50)', sev_on_fail, str(e)[:120])
 
 
 def _check_scheduled_jobs() -> list[dict]:
