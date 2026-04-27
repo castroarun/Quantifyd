@@ -743,6 +743,91 @@ def _render_headlines_section(brief: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# WhatsApp send (Twilio) — concise plain-text summary of the brief
+# ---------------------------------------------------------------------------
+
+def _whatsapp_text(brief: dict) -> str:
+    """Compact plain-text summary suitable for WhatsApp (≤ 1500 chars)."""
+    bias = brief.get('bias', {})
+    m = brief.get('market', {})
+
+    def _q(k, attr):
+        v = m.get(k) or {}
+        return v.get(attr)
+
+    gift = _q('GIFT_NIFTY', 'pct')
+    sp = _q('SP500', 'pct')
+    invix = _q('INDIA_VIX', 'last')
+    invix_pct = _q('INDIA_VIX', 'pct')
+    brent = _q('BRENT', 'pct')
+
+    lines = [
+        f"*Quantifyd Pre-Market · {brief.get('date', '')}*",
+        f"Bias: *{bias.get('label', '—')}*",
+        '',
+        f"GIFT Nifty: {_fmt_pct(gift, 2)}",
+        f"S&P 500 (Fri): {_fmt_pct(sp, 2)}",
+        f"India VIX: {_fmt_num(invix, 2)} ({_fmt_pct(invix_pct, 1)})",
+        f"Brent: {_fmt_pct(brent, 2)}",
+    ]
+
+    h_today = (brief.get('holdings') or {}).get('today') or []
+    if h_today:
+        lines.append('')
+        lines.append('*Holdings today:*')
+        for ev in h_today[:5]:
+            lines.append(
+                f"• {ev.get('tradingsymbol', '')} — {(ev.get('event_type') or '').upper()} · "
+                f"{(ev.get('purpose') or ev.get('details') or '')[:60]}"
+            )
+
+    ban = (brief.get('fno_ban') or {}).get('in_holdings') or []
+    if ban:
+        lines.append('')
+        lines.append(f"⚠ F&O ban (your holdings): {', '.join(ban)}")
+
+    # Synthesized headlines (top 3)
+    synth = brief.get('headlines_synthesized') or []
+    if synth:
+        lines.append('')
+        lines.append('*Top headlines:*')
+        for h in synth[:3]:
+            tag = h.get('tag', 'NEU')
+            txt = h.get('text', '')
+            lines.append(f"[{tag}] {txt[:120]}")
+
+    lines.append('')
+    lines.append('— full brief in your inbox')
+    return '\n'.join(lines)
+
+
+def _send_whatsapp(brief: dict) -> bool:
+    """Dispatch the brief summary via Twilio WhatsApp using the existing config."""
+    try:
+        from config import ORB_DEFAULTS
+        cfg = ORB_DEFAULTS
+        if not cfg.get('whatsapp_enabled', False):
+            logger.info('[brief] WhatsApp disabled by config')
+            return False
+        sid = cfg.get('twilio_account_sid', '')
+        tok = cfg.get('twilio_auth_token', '')
+        frm = cfg.get('twilio_whatsapp_from', '')
+        to = cfg.get('twilio_whatsapp_to', '')
+        if not all([sid, tok, frm, to]):
+            logger.warning('[brief] WhatsApp config incomplete; skipping')
+            return False
+
+        from twilio.rest import Client
+        client = Client(sid, tok)
+        client.messages.create(body=_whatsapp_text(brief), from_=frm, to=to)
+        logger.info(f"[brief] WhatsApp sent for {brief.get('date')}")
+        return True
+    except Exception as e:
+        logger.error(f'[brief] WhatsApp send failed: {e}', exc_info=True)
+        return False
+
+
+# ---------------------------------------------------------------------------
 # Email send
 # ---------------------------------------------------------------------------
 
@@ -853,6 +938,7 @@ def receive_synthesis_and_send(synthesis: dict) -> dict:
     _persist(brief)
     html = render_html(brief)
     sent = _send_email(brief, html)
+    _send_whatsapp(brief)
     return {'sent': sent, 'brief_date': brief.get('date')}
 
 
@@ -874,6 +960,7 @@ def run_premarket_brief_fallback() -> dict:
     _persist(brief)
     html = render_html(brief)
     sent = _send_email(brief, html)
+    _send_whatsapp(brief)
     return {'sent': sent, 'fallback': True}
 
 
@@ -888,6 +975,7 @@ def run_premarket_brief() -> dict:
     _persist(brief)
     html = render_html(brief)
     _send_email(brief, html)
+    _send_whatsapp(brief)
     logger.info(
         f'[brief] done bias={brief.get("bias", {}).get("label")} '
         f'holdings_today={len(brief.get("holdings", {}).get("today", []))}'
