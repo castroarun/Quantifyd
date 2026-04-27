@@ -29,11 +29,16 @@ SVG = r'''<?xml version="1.0" encoding="UTF-8"?>
   <text x="60" y="80" font-family="Inter, Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#FAFAFA" letter-spacing="-1">Pre-Market Brief Pipeline</text>
   <text x="60" y="115" font-family="JetBrains Mono, Courier, monospace" font-size="16" fill="#22D3EE" letter-spacing="1.5">QUANTIFYD · 08:00 IST · MON-FRI</text>
 
+  <!-- Stage banners (above the diagram) -->
+  <text x="456" y="158" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#22D3EE" letter-spacing="3" font-weight="700">STAGE 1 · BUILD</text>
+  <text x="746" y="158" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#22D3EE" letter-spacing="3" font-weight="700">STAGE 2 · SYNTHESIZE</text>
+  <text x="1240" y="158" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#22D3EE" letter-spacing="3" font-weight="700">STAGE 3 · DELIVER</text>
+
   <!-- Cloud routine box (top center) -->
-  <rect x="540" y="170" width="412" height="120" rx="14" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.5)" stroke-width="2"/>
-  <text x="746" y="208" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#A78BFA" letter-spacing="2">CLAUDE CODE · CLOUD ROUTINE</text>
-  <text x="746" y="240" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="20" font-weight="600" fill="#FAFAFA">Sandboxed · sentiment + narrative</text>
-  <text x="746" y="270" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#A78BFA" font-weight="600">08:02 IST · spawned</text>
+  <rect x="540" y="180" width="412" height="120" rx="14" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.5)" stroke-width="2"/>
+  <text x="746" y="218" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#A78BFA" letter-spacing="2">CLAUDE CODE · CLOUD ROUTINE</text>
+  <text x="746" y="250" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="20" font-weight="600" fill="#FAFAFA">Sandboxed · sentiment + narrative</text>
+  <text x="746" y="280" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#A78BFA" font-weight="600">08:02 IST · spawned</text>
 
   <!-- VPS container -->
   <rect x="60" y="400" width="1372" height="320" rx="16" fill="rgba(22,27,34,0.5)" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
@@ -94,14 +99,14 @@ SVG = r'''<?xml version="1.0" encoding="UTF-8"?>
 
   <!-- Cloud round-trip arrows -->
   <!-- JSON cache → Cloud -->
-  <path d="M 700 510 C 700 410, 700 350, 700 290" fill="none" stroke="#A78BFA" stroke-width="2.5" marker-end="url(#ahP)"/>
-  <text x="540" y="380" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#525252">GET /raw</text>
-  <text x="540" y="400" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#A78BFA" font-weight="600">08:02 IST</text>
+  <path d="M 700 510 C 700 420, 700 360, 700 302" fill="none" stroke="#A78BFA" stroke-width="2.5" marker-end="url(#ahP)"/>
+  <text x="540" y="390" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#525252">GET /raw</text>
+  <text x="540" y="410" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#A78BFA" font-weight="600">08:02 IST</text>
 
   <!-- Cloud → Render -->
-  <path d="M 944 290 C 944 350, 944 410, 944 510" fill="none" stroke="#A78BFA" stroke-width="2.5" marker-end="url(#ahP)"/>
-  <text x="966" y="380" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#525252">POST /synthesized</text>
-  <text x="966" y="400" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#A78BFA" font-weight="600">08:02 - 08:03</text>
+  <path d="M 944 302 C 944 360, 944 420, 944 510" fill="none" stroke="#A78BFA" stroke-width="2.5" marker-end="url(#ahP)"/>
+  <text x="966" y="390" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#525252">POST /synthesized</text>
+  <text x="966" y="410" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#A78BFA" font-weight="600">08:02 - 08:03</text>
 
   <!-- Fallback dashed -->
   <path d="M 700 650 C 700 720, 850 750, 944 720" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#ahW)"/>
