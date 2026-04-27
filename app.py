@@ -7037,16 +7037,14 @@ try:
     )
     scheduler.add_job(
         _orb_evaluate_signals,
-        # Cron-aligned to clean 5-min boundaries with second=1 — fires
-        # ~1s after each 5-min candle close for maximum responsiveness.
-        # Trade-off: Kite's historical_data API typically publishes a
-        # just-closed bar within 1-3s, so on rare ticks the engine may
-        # need to retry/refetch if it sees stale data. If "missed bar"
-        # warnings appear in logs, bump to second=5 (still 25s tighter
-        # than the original :30).
+        # Cron-aligned to clean 5-min boundaries with second=5 — fires
+        # ~5s after each 5-min candle close. Small buffer ensures Kite's
+        # historical_data API has reliably published the just-closed bar
+        # (typical publish latency 1-3s). 25s tighter than the original
+        # :30s grace; first eval per day moves from 09:45:30 to 09:45:05.
         # Restricted to Mon-Fri market hours (9-15) at the cron level;
         # the function itself gates the precise 09:45-15:15 window.
-        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5', second=1,
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5', second=5,
         id='orb_eval_signals', replace_existing=True,
         max_instances=1,
     )
