@@ -103,6 +103,8 @@ EXPECTED_JOBS = {
     # Self
     'system_validator_premarket':   'Pre-market validator',
     'system_validator_eod':         'EOD validator',
+    # Pre-market brief
+    'premarket_brief':              'Pre-market brief (daily 08:00)',
 }
 
 PASS = 'PASS'

@@ -4850,6 +4850,22 @@ except Exception as e:
     logger.warning(f"Could not register system_validator jobs: {e}")
 
 
+# Pre-market brief — daily 08:00 IST email digest with live market data
+# (yfinance), holdings calendar (holdings_events.db), F&O ban list, and
+# rule-based bias verdict. Phase 1: data + bias. Phase 2 will add
+# news headlines + Claude routine for sentiment synthesis.
+try:
+    from services.premarket_brief import run_premarket_brief
+    scheduler.add_job(
+        run_premarket_brief,
+        'cron', day_of_week='mon-fri', hour=8, minute=0,
+        id='premarket_brief', replace_existing=True,
+    )
+    logger.info("Pre-market brief scheduled: 08:00 Mon-Fri IST")
+except Exception as e:
+    logger.warning(f"Could not register premarket_brief job: {e}")
+
+
 # =============================================================================
 # NAS ATM — Nifty ATM Strangle (Cascading, per-leg SL)
 # =============================================================================
@@ -7349,6 +7365,42 @@ def api_validation_latest(report_type):
         return jsonify(rep)
     except Exception as e:
         logger.error(f"[API] /api/validation/{report_type}/latest error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/premarket/brief/latest')
+def api_premarket_brief_latest():
+    """Return the most recent pre-market brief JSON."""
+    try:
+        from services.premarket_brief import get_latest_brief
+        b = get_latest_brief()
+        if b is None:
+            return jsonify({'error': 'no brief generated yet'}), 404
+        return jsonify(b)
+    except Exception as e:
+        logger.error(f"[API] /api/premarket/brief/latest error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/premarket/brief/raw')
+def api_premarket_brief_raw():
+    """Build a fresh brief without sending email — for cloud routine to fetch."""
+    try:
+        from services.premarket_brief import build_brief
+        return jsonify(build_brief())
+    except Exception as e:
+        logger.error(f"[API] /api/premarket/brief/raw error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/premarket/brief/run', methods=['POST'])
+def api_premarket_brief_run():
+    """Trigger a full brief run (build + persist + email) on demand."""
+    try:
+        from services.premarket_brief import run_premarket_brief
+        return jsonify(run_premarket_brief())
+    except Exception as e:
+        logger.error(f"[API] /api/premarket/brief/run error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 
