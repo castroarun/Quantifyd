@@ -4850,20 +4850,30 @@ except Exception as e:
     logger.warning(f"Could not register system_validator jobs: {e}")
 
 
-# Pre-market brief — daily 08:00 IST email digest with live market data
-# (yfinance), holdings calendar (holdings_events.db), F&O ban list, and
-# rule-based bias verdict. Phase 1: data + bias. Phase 2 will add
-# news headlines + Claude routine for sentiment synthesis.
+# Pre-market brief — 2-stage flow:
+#   08:00 IST: VPS builds raw data (yfinance + RSS + holdings + F&O ban)
+#   08:02 IST: Cloud Claude routine fetches /api/premarket/brief/raw,
+#              synthesizes headlines + narrative, POSTs to /synthesized
+#              which dispatches the email
+#   08:08 IST: VPS fallback — if no synthesized email went out yet, sends
+#              the un-synthesized version (so operator always gets one)
 try:
-    from services.premarket_brief import run_premarket_brief
-    scheduler.add_job(
-        run_premarket_brief,
-        'cron', day_of_week='mon-fri', hour=8, minute=0,
-        id='premarket_brief', replace_existing=True,
+    from services.premarket_brief import (
+        run_premarket_brief_build_only, run_premarket_brief_fallback
     )
-    logger.info("Pre-market brief scheduled: 08:00 Mon-Fri IST")
+    scheduler.add_job(
+        run_premarket_brief_build_only,
+        'cron', day_of_week='mon-fri', hour=8, minute=0,
+        id='premarket_brief_build', replace_existing=True,
+    )
+    scheduler.add_job(
+        run_premarket_brief_fallback,
+        'cron', day_of_week='mon-fri', hour=8, minute=8,
+        id='premarket_brief_fallback', replace_existing=True,
+    )
+    logger.info("Pre-market brief scheduled: build(08:00) + fallback(08:08) Mon-Fri IST")
 except Exception as e:
-    logger.warning(f"Could not register premarket_brief job: {e}")
+    logger.warning(f"Could not register premarket_brief jobs: {e}")
 
 
 # =============================================================================
@@ -7401,6 +7411,23 @@ def api_premarket_brief_run():
         return jsonify(run_premarket_brief())
     except Exception as e:
         logger.error(f"[API] /api/premarket/brief/run error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/premarket/brief/synthesized', methods=['POST'])
+def api_premarket_brief_synthesized():
+    """Receive synthesized headlines + narrative from the cloud Claude routine
+    and dispatch the email. Body must be JSON with shape:
+        { "headlines_synthesized": [{"tag": "POS", "text": "...", "source": "..."}, ...],
+          "narrative_summary": "optional 1-2 sentence one-liner override" }
+    """
+    try:
+        from services.premarket_brief import receive_synthesis_and_send
+        body = request.get_json(silent=True) or {}
+        result = receive_synthesis_and_send(body)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[API] /api/premarket/brief/synthesized error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 

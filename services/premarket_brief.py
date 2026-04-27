@@ -254,6 +254,54 @@ def fetch_holdings_symbols() -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# News headlines from RSS feeds
+# ---------------------------------------------------------------------------
+
+NEWS_FEEDS = [
+    ('Moneycontrol Markets', 'https://www.moneycontrol.com/rss/marketreports.xml'),
+    ('Mint Markets',         'https://www.livemint.com/rss/markets'),
+    ('Reuters India Markets', 'https://www.reuters.com/markets/asia/rss'),
+]
+
+
+def fetch_news_headlines(max_per_feed: int = 8, total_cap: int = 25) -> list[dict]:
+    """Pull recent headlines from each RSS feed; dedupe + cap.
+
+    Returns list of {title, link, source, published, summary} dicts ordered
+    newest first. The cloud routine receives this and picks the top 5 with
+    sentiment tags.
+    """
+    try:
+        import feedparser
+    except ImportError:
+        logger.warning('[brief] feedparser missing; news headlines skipped')
+        return []
+
+    seen_titles = set()
+    out = []
+    for src_name, url in NEWS_FEEDS:
+        try:
+            d = feedparser.parse(url)
+            for entry in d.entries[:max_per_feed]:
+                title = (entry.get('title') or '').strip()
+                if not title or title.lower() in seen_titles:
+                    continue
+                seen_titles.add(title.lower())
+                out.append({
+                    'title': title,
+                    'link': entry.get('link', ''),
+                    'source': src_name,
+                    'published': entry.get('published') or entry.get('updated') or '',
+                    'summary': (entry.get('summary') or '')[:300],
+                })
+                if len(out) >= total_cap:
+                    return out
+        except Exception as e:
+            logger.warning(f'[brief] RSS {src_name} failed: {e}')
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Bias verdict (rule-based, until LLM synthesis is wired in)
 # ---------------------------------------------------------------------------
 
@@ -346,8 +394,12 @@ def build_brief() -> dict:
             'in_holdings': ban_in_holdings,
             'count': len(fno_ban),
         },
-        # Phase 2 placeholders
-        'headlines': None,
+        # Phase 2: raw news for cloud routine to synthesize
+        'headlines_raw': fetch_news_headlines(),
+        # Phase 2 placeholders (filled by cloud routine)
+        'headlines_synthesized': None,  # [{'tag': POS|NEG|NEU, 'text': '...', 'source': '...'}, ...]
+        'narrative_summary': None,       # 2-3 paragraph synthesis
+        # Future Phase 2c
         'earnings_today': None,
         'flow': None,
         'strategy_outlook': _strategy_outlook(market, holdings_today, ban_in_holdings),
@@ -615,6 +667,8 @@ def render_html(brief: dict) -> str:
   </table>
 </div>
 
+{_render_headlines_section(brief)}
+
 <!-- STRATEGY OUTLOOK -->
 <div style='padding:0;border-top:1px solid #e5e7eb'>
   <div style='padding:8px 20px;background:#ffffff;color:#1e40af;font-size:11px;font-weight:700;letter-spacing:1.5px;border-bottom:1px solid #e5e7eb'>► STRATEGY OUTLOOK</div>
@@ -643,6 +697,49 @@ def render_html(brief: dict) -> str:
 </div>
 </body>
 </html>"""
+
+
+def _render_headlines_section(brief: dict) -> str:
+    """Render headlines: synthesized (with tags) preferred, else raw list."""
+    synth = brief.get('headlines_synthesized')
+    raw = brief.get('headlines_raw') or []
+
+    rows = ''
+    if synth and isinstance(synth, list):
+        # Synthesized: each item has 'tag' (POS/NEG/NEU) + 'text' + optional 'source'
+        for h in synth[:5]:
+            tag = (h.get('tag') or 'NEU').upper()
+            text = h.get('text') or ''
+            source = h.get('source') or ''
+            tag_color = {'POS': '#16a34a', 'NEG': '#dc2626', 'NEU': '#6b7280'}.get(tag, '#6b7280')
+            rows += (
+                f"<tr style='border-bottom:1px solid #f1f5f9'>"
+                f"<td style='padding:8px 0 8px 20px;width:50px;vertical-align:top'>"
+                f"<span style='color:{tag_color};font-size:10px;font-weight:700'>{tag}</span></td>"
+                f"<td style='padding:8px 20px 8px 0;color:#374151;line-height:1.5;font-size:12px'>"
+                f"{text}{(' <i style=\"color:#9ca3af\">' + source + '</i>') if source else ''}"
+                f"</td></tr>"
+            )
+        sub = ('Synthesized by Claude routine · '
+               + str(len(brief.get('headlines_raw') or [])) + ' raw inputs')
+    elif raw:
+        # Raw fallback: just titles + sources
+        for h in raw[:5]:
+            rows += (
+                f"<tr style='border-bottom:1px solid #f1f5f9'>"
+                f"<td style='padding:8px 20px;color:#374151;line-height:1.5;font-size:12px'>"
+                f"{h.get('title', '')} <i style='color:#9ca3af'>· {h.get('source', '')}</i>"
+                f"</td></tr>"
+            )
+        sub = 'Raw RSS — sentiment synthesis pending'
+    else:
+        return ''  # nothing to show
+
+    return f"""<!-- OVERNIGHT HEADLINES -->
+<div style='padding:0;border-top:1px solid #e5e7eb'>
+  <div style='padding:8px 20px;background:#ffffff;color:#1e40af;font-size:11px;font-weight:700;letter-spacing:1.5px;border-bottom:1px solid #e5e7eb'>► OVERNIGHT · 5 STORIES <span style='color:#9ca3af;font-weight:400;letter-spacing:0;text-transform:none;font-size:10px'>· {sub}</span></div>
+  <table style='width:100%;border-collapse:collapse'>{rows}</table>
+</div>"""
 
 
 # ---------------------------------------------------------------------------
@@ -702,10 +799,92 @@ def get_latest_brief() -> Optional[dict]:
         return None
 
 
-def run_premarket_brief() -> dict:
-    """Scheduler entry point: build + persist + email."""
-    logger.info('[brief] run starting')
+def run_premarket_brief_build_only() -> dict:
+    """08:00 IST scheduler step 1: build raw data, persist. Do NOT email yet.
+
+    The cloud Claude routine fires at 08:02 IST, fetches the raw JSON,
+    synthesizes headlines/narrative, and POSTs back to /api/premarket/
+    brief/synthesized which then renders + sends. If that doesn't happen
+    by 08:08 IST, the fallback step sends the un-synthesized version.
+    """
+    logger.info('[brief] build (no email yet) starting')
     brief = build_brief()
+    brief['_built_at'] = datetime.now().isoformat()
+    brief['_email_sent'] = False
+    _persist(brief)
+    logger.info(
+        f'[brief] built bias={brief.get("bias", {}).get("label")} '
+        f'headlines_raw={len(brief.get("headlines_raw") or [])}'
+    )
+    return brief
+
+
+def receive_synthesis_and_send(synthesis: dict) -> dict:
+    """Called by /api/premarket/brief/synthesized when cloud routine POSTs.
+
+    synthesis dict shape:
+      {
+        'narrative_summary': str,        # optional, replaces One-Liner
+        'headlines_synthesized': [       # required
+          {'tag': 'POS'|'NEG'|'NEU', 'text': str, 'source': str},
+          ... up to 5
+        ]
+      }
+    """
+    brief = get_latest_brief() or {}
+    if not brief:
+        # No build today yet — build now
+        brief = build_brief()
+        brief['_built_at'] = datetime.now().isoformat()
+        brief['_email_sent'] = False
+
+    # Merge synthesis into brief
+    if isinstance(synthesis, dict):
+        if synthesis.get('headlines_synthesized'):
+            brief['headlines_synthesized'] = synthesis['headlines_synthesized']
+        if synthesis.get('narrative_summary'):
+            brief['narrative_summary'] = synthesis['narrative_summary']
+            # Replace the One-Liner with the narrative if provided
+            if brief.get('bias'):
+                brief['bias']['summary'] = synthesis['narrative_summary']
+
+    brief['_synthesized_at'] = datetime.now().isoformat()
+    brief['_email_sent'] = True
+    _persist(brief)
+    html = render_html(brief)
+    sent = _send_email(brief, html)
+    return {'sent': sent, 'brief_date': brief.get('date')}
+
+
+def run_premarket_brief_fallback() -> dict:
+    """08:08 IST scheduler: if no synthesized email went out yet, send the
+    un-synthesized version so the operator always gets a brief."""
+    brief = get_latest_brief() or {}
+    if brief.get('_email_sent'):
+        logger.info('[brief] fallback skipped — already sent (synthesized)')
+        return {'skipped': True, 'reason': 'already sent'}
+    if not brief or brief.get('date') != date.today().isoformat():
+        # No build today yet — build fresh
+        logger.warning('[brief] fallback: no build today, building now')
+        brief = build_brief()
+        brief['_built_at'] = datetime.now().isoformat()
+    logger.info('[brief] fallback sending un-synthesized brief')
+    brief['_email_sent'] = True
+    brief['_fallback'] = True
+    _persist(brief)
+    html = render_html(brief)
+    sent = _send_email(brief, html)
+    return {'sent': sent, 'fallback': True}
+
+
+def run_premarket_brief() -> dict:
+    """Original full-cycle: build + persist + email immediately.
+    Used by /api/premarket/brief/run for manual triggers + when no cloud
+    routine is configured."""
+    logger.info('[brief] full run (build + send) starting')
+    brief = build_brief()
+    brief['_built_at'] = datetime.now().isoformat()
+    brief['_email_sent'] = True
     _persist(brief)
     html = render_html(brief)
     _send_email(brief, html)
