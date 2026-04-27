@@ -762,7 +762,7 @@ def _whatsapp_text(brief: dict) -> str:
     brent = _q('BRENT', 'pct')
 
     lines = [
-        f"*Quantifyd Pre-Market · {brief.get('date', '')}*",
+        f"*The Morning Note · {brief.get('date', '')}*",
         f"Bias: *{bias.get('label', '—')}*",
         '',
         f"GIFT Nifty: {_fmt_pct(gift, 2)}",
@@ -845,7 +845,13 @@ def _send_email(brief: dict, html: str) -> bool:
             logger.warning('[brief] email config incomplete; skipping')
             return False
         verdict = brief.get('bias', {}).get('label', '—')
-        subject = f"[Quantifyd Pre-Market] {verdict} · {brief['date']}"
+        # Format date as DD-MON-YYYY for the subject (per user preference)
+        try:
+            from datetime import datetime as _dt
+            disp_date = _dt.strptime(brief['date'], '%Y-%m-%d').strftime('%d-%b-%Y')
+        except Exception:
+            disp_date = brief.get('date', '')
+        subject = f"[The Morning Note] {verdict} · {disp_date}"
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = f"Quantifyd <{sender}>"

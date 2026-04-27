@@ -1,8 +1,8 @@
 <div align="center">
 
-# Pre-Market Brief Pipeline
+# The Morning Note
 
-**A daily 08:00 IST intelligence brief for systematic trading.**
+**Pre-market intelligence — written by AI, dispatched at 08:00 IST.**
 Three stages, ~3-minute loop, dual-rail delivery (Gmail + WhatsApp).
 
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org)

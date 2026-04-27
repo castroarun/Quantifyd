@@ -26,8 +26,8 @@ SVG = r'''<?xml version="1.0" encoding="UTF-8"?>
   </g>
 
   <!-- Title -->
-  <text x="60" y="80" font-family="Inter, Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#FAFAFA" letter-spacing="-1">Pre-Market Brief Pipeline</text>
-  <text x="60" y="115" font-family="JetBrains Mono, Courier, monospace" font-size="16" fill="#22D3EE" letter-spacing="1.5">QUANTIFYD · 08:00 IST · MON-FRI</text>
+  <text x="60" y="80" font-family="Inter, Helvetica, Arial, sans-serif" font-size="36" font-weight="700" fill="#FAFAFA" letter-spacing="-1">The Morning Note</text>
+  <text x="60" y="115" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#22D3EE" letter-spacing="1.5">QUANTIFYD · 08:00 IST · MON-FRI</text>
 
   <!-- Stage banners (above the diagram) -->
   <text x="456" y="158" text-anchor="middle" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#22D3EE" letter-spacing="3" font-weight="700">STAGE 1 · BUILD</text>
