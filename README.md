@@ -1,3 +1,61 @@
+<div align="center">
+
+# Quantifyd
+
+**Systematic quant trading platform for Indian markets — MQ portfolio, ORB cash, NAS strangles, KC6 mean reversion**
+
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white) ![Flask](https://img.shields.io/badge/Flask-web-000000?logo=flask&logoColor=white) ![Pandas](https://img.shields.io/badge/Pandas-data-150458?logo=pandas&logoColor=white) ![Kite](https://img.shields.io/badge/Kite-Connect-EE3344) ![APScheduler](https://img.shields.io/badge/APScheduler-cron-58a6ff) ![Status](https://img.shields.io/badge/Status-Live-22c55e)
+
+[**Live demo →**](https://castroarun.github.io/Quantifyd/premarket_brief_pipeline.html)
+
+</div>
+
+<!-- LAUNCHPAD:START -->
+```json
+{
+  "stage": "live",
+  "progress": 60,
+  "complexity": "F",
+  "lastUpdated": "2026-04-27",
+  "targetDate": null,
+  "nextAction": "NAS variants \u2192 live (currently paper)",
+  "blocker": null,
+  "demoUrl": "https://castroarun.github.io/Quantifyd/premarket_brief_pipeline.html",
+  "techStack": [
+    "Python",
+    "Flask",
+    "Pandas",
+    "Kite API",
+    "APScheduler"
+  ],
+  "shipped": true,
+  "linkedinPosted": false
+}
+```
+<!-- LAUNCHPAD:END -->
+
+<details>
+<summary>📚 Table of Contents</summary>
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+</details>
+
+## Features
+
+- MQ portfolio (Momentum + Quality) — 36% CAGR, 20-year backtest on Nifty 500
+- ORB cash live trader — 15-stock OR15 breakout, sub-3% daily-loss cap
+- NAS × 8 paper-trading variants — squeeze + 9:16 strangles with adjustment logic
+- Pre-market brief pipeline — Claude Code cloud routine + VPS Gmail/WhatsApp dispatch
+- KC6 mean reversion (65% win rate) + Tactical Capital Pool
+
+## Quick Start
+
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask" />
@@ -34,23 +92,7 @@
   <a href="#project-structure">Structure</a>
 </p>
 
-<!-- LAUNCHPAD:START -->
-```json
-{
-  "stage": "live",
-  "progress": 85,
-  "complexity": "F",
-  "lastUpdated": "2026-02-22",
-  "targetDate": null,
-  "nextAction": "Deploy KC6 live trading on Railway",
-  "blocker": null,
-  "demoUrl": null,
-  "techStack": ["Python", "Flask", "Chart.js", "SQLite", "Zerodha Kite API"],
-  "shipped": true,
-  "linkedinPosted": true
-}
-```
-<!-- LAUNCHPAD:END -->
+
 
 ---
 
@@ -371,3 +413,33 @@ MIT License. See [LICENSE](LICENSE) for details.
 <p align="center">
   <sub>Built by <a href="https://github.com/castroarun">Arun Castro</a> | <a href="https://www.linkedin.com/in/aruncastro/">LinkedIn</a></sub>
 </p>
+
+## Tech Stack
+
+| Component | Tech |
+|---|---|
+| Python | — |
+| Flask | — |
+| Pandas | — |
+| Kite API | — |
+| APScheduler | — |
+
+## Roadmap
+
+- [x] MQ portfolio + KC6 live
+- [x] ORB cash live on Contabo VPS
+- [x] Pre-market brief with Claude synthesis
+- [ ] NAS variants → live (currently paper)
+- [ ] Web UI archive of all strategies
+
+## License
+
+Private — part of the Castronix portfolio.
+
+<div align="center">
+
+---
+
+<sub>Part of the <a href="https://castronix.dev">Castronix</a> portfolio · crafted with care · © 2026 Arun Castromin</sub>
+
+</div>
