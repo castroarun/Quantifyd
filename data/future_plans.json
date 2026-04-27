@@ -1,6 +1,68 @@
 {
   "plans": [
     {
+      "id": "orb-filter-tuning-sweep",
+      "title": "ORB Filter Tuning — Loosen RSI/Age/Drift To Reduce Missed Setups",
+      "subtitle": "Today (2026-04-27) BEL printed a clean SHORT breakdown that the code blocked all morning on the RSI ≤40 hard filter. RELIANCE entered 8 min late because the first eligible bar's 15-min RSI was 50.64 (needs ≥60). All four knobs are already in config.py:542-560 — RSI 60/40 was a baseline assumption (not swept), and signal_age=15min / signal_drift=0.5% were empirical guards added 2026-04-24 after the VEDL/TRENT stale-entry incident. None were formally backtested. This task sweeps them.",
+      "status": "backtesting",
+      "created": "2026-04-27",
+      "tags": ["orb", "live-tuning", "filter-sweep", "rsi", "signal-age", "signal-drift"],
+      "sections": [
+        {
+          "title": "Problems observed live on 2026-04-27",
+          "items": [
+            "BEL — 14 SHORT signals fired between 09:33 and 10:53. Hard RSI filter (≤40) blocked all of them. RSI dropped to 38.52 at 10:43 (would have qualified) but signal_age guard had already expired the original breakout candle (43.5 min stale, max 15). Net: missed an entire clean SHORT setup.",
+            "RELIANCE — Entered 09:58:31 instead of ~09:53. First eligible 5-min bar (09:53:29) had 15-min RSI 50.64 < 60 threshold, blocked. Next bar (09:58:29) RSI 60.04, just barely qualified. ~5 min entry lag, plus higher entry price (1340.50 vs 1332.80).",
+            "VEDL — Multiple LONG signals all blocked by signal_drift (price moved >0.5% from breakout candle close after the gap-and-go). Anti-chase guard correct in principle, but missed a clean trend day."
+          ]
+        },
+        {
+          "title": "Decision — what NOT to change",
+          "items": [
+            "RSI timeframe stays at 15-min (resampled from 5-min). Confirmed by user 2026-04-27 — do not switch to 5-min RSI.",
+            "Conviction-star thresholds (≤35 SHORT / ≥65 LONG) stay. Those are just for the A/B/C grade card, not a hard block — leave alone.",
+            "5-min bar-close confirmation stays. Strategy edge depends on it; intra-bar entries have worse expectancy."
+          ]
+        },
+        {
+          "title": "Sweep plan (run after market close)",
+          "body": "Backtest: research/20 universe (15 ORB stocks), 2024-01-01 to 2026-04-24 (full live data window plus paper history). Pass criteria: PF ≥ today's live PF, MaxDD ≤ today's, more trades than today (= fewer missed setups).",
+          "items": [
+            {
+              "label": "Phase 1 — Loosen RSI hard threshold + age guard (16 cells)",
+              "body": "rsi_short_threshold ∈ {40 (current), 42, 45, 48} × signal_age_max_mins ∈ {15 (current), 20, 30, 45}. Mirror sweep on rsi_long_threshold ∈ {60 (current), 58, 55, 52} (4 cells).",
+              "pros": ["Directly addresses today's BEL miss + RELIANCE lag", "Single-axis sweeps are easy to interpret", "Tunes hard-block dials only — leaves star grading untouched"],
+              "cons": ["RSI ≤45 SHORT may take more chop trades on weak setups", "signal_age_max_mins=45 increases stale-entry risk if breakout has already extended"]
+            },
+            {
+              "label": "Phase 2 — Adjust signal_drift cap (4 cells)",
+              "body": "signal_drift_max_pct ∈ {0.005 (current), 0.0085, 0.012, 0.015}. Only run if Phase 1 doesn't fix VEDL-style misses on its own.",
+              "pros": ["Catches gap-and-go runs after the breakout candle has already moved 0.5-1% past trigger"],
+              "cons": ["Larger drift = paying up for entries; expected value erodes per backtest if too loose"]
+            }
+          ]
+        },
+        {
+          "title": "Where to make the change",
+          "items": [
+            "Hard thresholds: services/orb_live_engine.py:1010-1023 (RSI), :1060-1089 (age/drift). All read from `cfg` at scan-time, defaults baked in via cfg.get(<key>, <default>).",
+            "Live config: config.py ORB_DEFAULTS dict — add `rsi_short_threshold`, `rsi_long_threshold`, `signal_age_max_mins`, `signal_drift_max_pct` keys explicitly with the chosen values.",
+            "Backtest harness: services/orb_backtest_engine.py + services/orb_daily_backtest.py — verify these accept the same cfg keys before sweeping.",
+            "Commits in two phases: (1) sweep results + verdict in research/2X folder, (2) config.py update applied AFTER sweep validates a winner."
+          ]
+        },
+        {
+          "title": "Estimated effort",
+          "items": [
+            "Phase 1 sweep: ~30-45 min compute (16 cells + 4 LONG cells × ~1-2 min each on 15 symbols × ~500 trading days)",
+            "Phase 2 sweep: ~10-15 min if needed",
+            "Aggregation + decision: ~15 min review",
+            "Live config push: ~5 min (post-market only — no restart during 09:15-15:30 IST)"
+          ]
+        }
+      ]
+    },
+    {
       "id": "fno-multi-signal-expansion",
       "title": "F&O Multi-Signal Expansion — 3 Walk-Forward-Validated LONG Systems",
       "subtitle": "Walk-forward PASSED on Donchian 55, ADX>30, RSI<40-pullback (LONG only). All 24 SHORT variants DOA. Spread-structure layer already deployed — winners auto-inherit bull-call generation. Wiring deferred — start observing paper signals first.",
