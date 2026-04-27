@@ -647,12 +647,34 @@ export default function Orb() {
               </span>
             </div>
             <div className={styles.ruleItem}>
-              <span className={styles.ruleLabel}>Filters (all must pass)</span>
+              <span className={styles.ruleLabel}>Hard filters (all must pass)</span>
               <span>
                 CPR width &lt; 0.65% · CPR direction (LONG if gap opens ≥ TC, SHORT if ≤ BC) ·
-                Gap ≤ +0.3% for LONG · VWAP direction (close above for LONG / below for SHORT) ·
-                RSI(15m) ≥ 50 for LONG, ≤ 50 for SHORT · Wide-CPR days skipped entirely ·
-                Max 1 trade/stock/day · Last entry 14:00.
+                Gap ≤ +1.0% for LONG · VWAP direction (close above for LONG / below for SHORT) ·
+                <b> RSI(15m) ≥ 60 for LONG, ≤ 40 for SHORT</b> · Wide-CPR days skipped entirely ·
+                Max 1 trade/stock/day · Last entry 14:00 IST.
+                <br /><span className={styles.mute}>
+                  Note: the conviction-grade RSI thresholds (≥65 LONG / ≤35 SHORT, see Conviction grade row) are
+                  separate — those just decide the A/B/C star count and never block entry.
+                </span>
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Re-evaluation &amp; staleness guards</span>
+              <span>
+                Once an OR boundary is broken on a 5-min close, the scanner re-evaluates every subsequent
+                5-min bar that stays past the boundary — RSI/VWAP/CPR/gap are checked fresh each time, so
+                a setup blocked by RSI on bar 1 can still fire on bar 2 if RSI catches up. Two outer guards
+                cap that re-check window:
+                <br />
+                <b>signal_age_max_mins = 15</b> — the original breakout candle must be ≤15 min old. After that
+                the entry is rejected even if all other filters now pass. ·
+                <b> signal_drift_max_pct = 0.5%</b> — the current close must be within 0.5% of the breakout
+                candle's close (anti-chase guard against entering well after price has extended).
+                <br /><span className={styles.mute}>
+                  Both guards were added 2026-04-24 after a post-restart stale-entry incident on VEDL/TRENT.
+                  Currently set empirically — pending sweep against research/20 history (see Future Plans).
+                </span>
               </span>
             </div>
             <div className={styles.ruleItem}>
