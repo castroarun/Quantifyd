@@ -140,6 +140,52 @@ body::after{
   max-width:720px;margin-bottom:48px;
 }
 
+/* ===== WORKFLOW DIAGRAM ===== */
+.flow-wrap{
+  margin-top:32px;
+  background:linear-gradient(180deg,rgba(34,211,238,0.02) 0%,transparent 100%);
+  border:1px solid var(--border-subtle);
+  border-radius:12px;
+  padding:32px 24px 24px;
+  overflow-x:auto;
+}
+.flow-svg{
+  width:100%;
+  min-width:880px;
+  height:auto;
+  display:block;
+  max-width:980px;
+  margin:0 auto;
+}
+.flow-svg text{
+  font-family:'JetBrains Mono',monospace;
+  fill:var(--text-secondary);
+}
+.flow-svg .label-strong{fill:var(--text-primary);font-weight:600}
+.flow-svg .label-time{fill:var(--accent);font-weight:600;letter-spacing:0.05em}
+.flow-svg .label-mute{fill:var(--text-tertiary)}
+.flow-svg .box-vps{fill:rgba(22,27,34,0.5);stroke:var(--border-subtle);stroke-width:1}
+.flow-svg .box-step{fill:var(--bg-elevated);stroke:var(--border-default);stroke-width:1}
+.flow-svg .box-cloud{fill:rgba(167,139,250,0.06);stroke:rgba(167,139,250,0.4);stroke-width:1.5;stroke-dasharray:0}
+.flow-svg .box-inbox{fill:rgba(34,197,94,0.08);stroke:rgba(34,197,94,0.5);stroke-width:1.5}
+.flow-svg .box-source{fill:transparent;stroke:var(--border-subtle);stroke-width:1}
+.flow-svg .arrow{fill:none;stroke:var(--accent);stroke-width:1.5;marker-end:url(#arrowhead)}
+.flow-svg .arrow-cloud{stroke:var(--accent-purple);marker-end:url(#arrowhead-purple)}
+.flow-svg .arrow-fallback{stroke:var(--warning);stroke-dasharray:5 4;marker-end:url(#arrowhead-warning)}
+.flow-svg .arrow-soft{stroke:var(--text-tertiary);stroke-width:1}
+@keyframes dash-flow{to{stroke-dashoffset:-12}}
+.flow-svg .arrow-flowing{stroke-dasharray:6 6;animation:dash-flow 1.2s linear infinite}
+.flow-legend{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:18px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-tertiary);
+  justify-content:center;
+}
+.flow-legend-item{display:inline-flex;align-items:center;gap:8px}
+.flow-legend-line{width:24px;height:2px;border-radius:2px}
+.flow-legend-line.solid{background:var(--accent)}
+.flow-legend-line.purple{background:var(--accent-purple)}
+.flow-legend-line.dashed{background:repeating-linear-gradient(90deg,var(--warning),var(--warning) 4px,transparent 4px,transparent 8px)}
+
 /* ===== TIMELINE ===== */
 .timeline{position:relative;padding-left:36px}
 .timeline::before{
@@ -325,10 +371,114 @@ body::after{
   </div>
 </section>
 
+<!-- ============ WORKFLOW DIAGRAM ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section-eyebrow">02 · The data flow</div>
+    <h2>One picture.</h2>
+    <p class="section-lead">The whole loop, drawn at scale. Cyan arrows are the happy path. The amber dashed line is the 08:08 fallback that fires only if the synthesized version didn't make it out.</p>
+
+    <div class="flow-wrap">
+      <svg class="flow-svg" viewBox="0 0 980 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pre-market brief data flow diagram">
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#22D3EE"/>
+          </marker>
+          <marker id="arrowhead-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#A78BFA"/>
+          </marker>
+          <marker id="arrowhead-warning" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#F59E0B"/>
+          </marker>
+        </defs>
+
+        <!-- Cloud routine (top) -->
+        <rect class="box-cloud" x="350" y="20" width="280" height="78" rx="10"/>
+        <text x="490" y="45" text-anchor="middle" font-size="11" letter-spacing="1.5" class="label-mute">CLAUDE CODE · CLOUD ROUTINE</text>
+        <text x="490" y="65" text-anchor="middle" font-size="13" class="label-strong">Sandboxed · sentiment + narrative</text>
+        <text x="490" y="84" text-anchor="middle" font-size="11" class="label-time">08:02 IST · spawned</text>
+
+        <!-- VPS containing rect -->
+        <rect class="box-vps" x="20" y="160" width="800" height="180" rx="12"/>
+        <text x="40" y="184" font-size="11" letter-spacing="1.5" class="label-mute">VPS · CONTABO · PYTHON SERVICE</text>
+
+        <!-- Sources (inside VPS, left) -->
+        <rect class="box-source" x="40" y="200" width="140" height="120" rx="6"/>
+        <text x="110" y="222" text-anchor="middle" font-size="11" class="label-mute">SOURCES</text>
+        <text x="110" y="240" text-anchor="middle" font-size="11" class="label-strong">14× yfinance</text>
+        <text x="110" y="256" text-anchor="middle" font-size="11">NSE ban CSV</text>
+        <text x="110" y="272" text-anchor="middle" font-size="11">holdings.db</text>
+        <text x="110" y="288" text-anchor="middle" font-size="11">3× RSS feeds</text>
+        <text x="110" y="306" text-anchor="middle" font-size="11">BSE corp-actions</text>
+
+        <!-- Builder -->
+        <rect class="box-step" x="210" y="220" width="120" height="80" rx="8"/>
+        <text x="270" y="242" text-anchor="middle" font-size="11" class="label-time">08:00 IST</text>
+        <text x="270" y="262" text-anchor="middle" font-size="13" class="label-strong">Builder</text>
+        <text x="270" y="280" text-anchor="middle" font-size="10" class="label-mute">parallel fetch</text>
+        <text x="270" y="294" text-anchor="middle" font-size="10" class="label-mute">~6s end-to-end</text>
+
+        <!-- JSON cache -->
+        <rect class="box-step" x="360" y="220" width="120" height="80" rx="8"/>
+        <text x="420" y="252" text-anchor="middle" font-size="13" class="label-strong">JSON cache</text>
+        <text x="420" y="272" text-anchor="middle" font-size="10" class="label-mute">_latest.json</text>
+        <text x="420" y="288" text-anchor="middle" font-size="10" class="label-mute">/api/.../raw</text>
+
+        <!-- Render -->
+        <rect class="box-step" x="510" y="220" width="120" height="80" rx="8"/>
+        <text x="570" y="252" text-anchor="middle" font-size="13" class="label-strong">Render</text>
+        <text x="570" y="272" text-anchor="middle" font-size="10" class="label-mute">Mock C v5 HTML</text>
+        <text x="570" y="288" text-anchor="middle" font-size="10" class="label-mute">/api/.../synthesized</text>
+
+        <!-- SMTP -->
+        <rect class="box-step" x="660" y="220" width="120" height="80" rx="8"/>
+        <text x="720" y="242" text-anchor="middle" font-size="11" class="label-time">08:03 IST</text>
+        <text x="720" y="262" text-anchor="middle" font-size="13" class="label-strong">SMTP</text>
+        <text x="720" y="280" text-anchor="middle" font-size="10" class="label-mute">Gmail · TLS</text>
+
+        <!-- Inbox -->
+        <rect class="box-inbox" x="840" y="234" width="120" height="58" rx="8"/>
+        <text x="900" y="258" text-anchor="middle" font-size="13" class="label-strong">Inbox</text>
+        <text x="900" y="278" text-anchor="middle" font-size="10" class="label-mute">arun@gmail</text>
+
+        <!-- HORIZONTAL ARROWS (happy path through VPS) -->
+        <path class="arrow" d="M 180 260 L 208 260"/>
+        <path class="arrow" d="M 330 260 L 358 260"/>
+        <path class="arrow" d="M 480 260 L 508 260"/>
+        <path class="arrow" d="M 630 260 L 658 260"/>
+        <path class="arrow" d="M 780 260 L 838 260"/>
+
+        <!-- VERTICAL ARROWS (VPS ↔ Cloud) -->
+        <!-- JSON cache → Cloud (GET /raw, 08:02) -->
+        <path class="arrow arrow-cloud" d="M 420 220 C 420 170, 420 130, 420 100"/>
+        <text x="345" y="160" font-size="10" class="label-mute">GET /raw</text>
+        <text x="345" y="174" font-size="10" class="label-time">08:02</text>
+
+        <!-- Cloud → Render (POST /synthesized, 08:02-03) -->
+        <path class="arrow arrow-cloud" d="M 570 100 C 570 130, 570 170, 570 220"/>
+        <text x="585" y="160" font-size="10" class="label-mute">POST /synthesized</text>
+        <text x="585" y="174" font-size="10" class="label-time">08:02–03</text>
+
+        <!-- Fallback arrow (08:08, JSON cache → Render, bypassing cloud) -->
+        <path class="arrow arrow-fallback" d="M 420 300 C 420 340, 540 360, 570 300"/>
+        <text x="430" y="358" font-size="10" class="label-mute">if no synthesis arrived</text>
+        <text x="430" y="372" font-size="10" style="fill:#F59E0B;font-weight:600;letter-spacing:0.05em">08:08 IST · fallback</text>
+
+      </svg>
+
+      <div class="flow-legend">
+        <div class="flow-legend-item"><span class="flow-legend-line solid"></span> happy path · VPS internal</div>
+        <div class="flow-legend-item"><span class="flow-legend-line purple"></span> cloud round-trip</div>
+        <div class="flow-legend-item"><span class="flow-legend-line dashed"></span> 08:08 fallback (if needed)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ TIMELINE ============ -->
 <section class="section">
   <div class="container">
-    <div class="section-eyebrow">02 · The 8-minute window</div>
+    <div class="section-eyebrow">03 · The 8-minute window</div>
     <h2>From wake-up to inbox.</h2>
     <p class="section-lead">Four scheduled events. The fallback at 08:08 is the safety net — the operator always gets a brief, even if the cloud routine fails.</p>
 
@@ -387,7 +537,7 @@ body::after{
 <!-- ============ DATA SOURCES ============ -->
 <section class="section">
   <div class="container">
-    <div class="section-eyebrow">03 · Data sources</div>
+    <div class="section-eyebrow">04 · Data sources</div>
     <h2>All free. All public.</h2>
     <p class="section-lead">Every input is either a public exchange API, a syndicated feed, or local trading state — no paid market-data subscriptions. Total bill: zero rupees.</p>
 
@@ -430,7 +580,7 @@ body::after{
 <!-- ============ EMAIL CONTRACT ============ -->
 <section class="section">
   <div class="container">
-    <div class="section-eyebrow">04 · The data contract</div>
+    <div class="section-eyebrow">05 · The data contract</div>
     <h2>Structured by the VPS, narrated by the cloud.</h2>
     <p class="section-lead">The two halves communicate through a single JSON shape. Anything the cloud routine adds is namespaced as <span class="mono">_synthesized</span> — the rule-based fallback works without it.</p>
 
@@ -471,7 +621,7 @@ body::after{
 <!-- ============ DESIGN PRINCIPLES ============ -->
 <section class="section">
   <div class="container">
-    <div class="section-eyebrow">05 · Design principles</div>
+    <div class="section-eyebrow">06 · Design principles</div>
     <h2>Three rules.</h2>
     <p class="section-lead">Every design decision in this pipeline maps to one of these.</p>
 
