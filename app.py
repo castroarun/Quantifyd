@@ -7031,7 +7031,11 @@ try:
     )
     scheduler.add_job(
         _orb_evaluate_signals,
-        'interval', minutes=5,
+        # Aligned cron: fires at :30 of every clean 5-min boundary so each
+        # eval lands ~30s after the latest 5-min candle has closed and Kite
+        # has published it. Worst-case candle-close-to-eval lag drops from
+        # ~5 min (interval, offset by service-start time) to ~30s.
+        'cron', minute='*/5', second=30,
         id='orb_eval_signals', replace_existing=True,
         max_instances=1,
     )
