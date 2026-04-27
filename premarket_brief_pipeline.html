@@ -461,15 +461,16 @@ body::after{
         <path class="arrow" d="M 780 275 C 810 275, 810 292, 838 292"/>
 
         <!-- VERTICAL ARROWS (VPS ↔ Cloud) -->
+        <!-- Labels live in the gap between Cloud (y=110) and VPS top (y=160) -->
         <!-- JSON cache → Cloud (GET /raw, 08:02) -->
         <path class="arrow arrow-cloud" d="M 420 220 C 420 180, 420 140, 420 112"/>
-        <text x="345" y="170" font-size="12" class="label-mute">GET /raw</text>
-        <text x="345" y="184" font-size="12" class="label-time">08:02</text>
+        <text x="345" y="135" font-size="12" class="label-mute">GET /raw</text>
+        <text x="345" y="150" font-size="12" class="label-time">08:02</text>
 
         <!-- Cloud → Render (POST /synthesized, 08:02-03) -->
         <path class="arrow arrow-cloud" d="M 570 112 C 570 140, 570 180, 570 220"/>
-        <text x="585" y="170" font-size="12" class="label-mute">POST /synthesized</text>
-        <text x="585" y="184" font-size="12" class="label-time">08:02–03</text>
+        <text x="585" y="135" font-size="12" class="label-mute">POST /synthesized</text>
+        <text x="585" y="150" font-size="12" class="label-time">08:02–03</text>
 
         <!-- Fallback arrow (08:08, JSON cache → Render, bypassing cloud) -->
         <path class="arrow arrow-fallback" d="M 420 300 C 420 360, 540 380, 570 320"/>

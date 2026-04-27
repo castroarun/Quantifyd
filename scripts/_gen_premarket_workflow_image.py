@@ -97,16 +97,16 @@ SVG = r'''<?xml version="1.0" encoding="UTF-8"?>
   <path d="M 1268 552 C 1286 552, 1286 512, 1304 512" fill="none" stroke="#22D3EE" stroke-width="2.5" marker-end="url(#ah)"/>
   <path d="M 1268 608 C 1286 608, 1286 646, 1304 646" fill="none" stroke="#22D3EE" stroke-width="2.5" marker-end="url(#ah)"/>
 
-  <!-- Cloud round-trip arrows -->
+  <!-- Cloud round-trip arrows.  Labels placed cleanly in the gap between cloud bottom (y=300) and VPS top (y=400) -->
   <!-- JSON cache → Cloud -->
   <path d="M 700 510 C 700 420, 700 360, 700 302" fill="none" stroke="#A78BFA" stroke-width="2.5" marker-end="url(#ahP)"/>
-  <text x="540" y="390" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#525252">GET /raw</text>
-  <text x="540" y="410" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#A78BFA" font-weight="600">08:02 IST</text>
+  <text x="540" y="350" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#525252">GET /raw</text>
+  <text x="540" y="372" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#A78BFA" font-weight="600">08:02 IST</text>
 
   <!-- Cloud → Render -->
   <path d="M 944 302 C 944 360, 944 420, 944 510" fill="none" stroke="#A78BFA" stroke-width="2.5" marker-end="url(#ahP)"/>
-  <text x="966" y="390" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#525252">POST /synthesized</text>
-  <text x="966" y="410" font-family="JetBrains Mono, Courier, monospace" font-size="13" fill="#A78BFA" font-weight="600">08:02 - 08:03</text>
+  <text x="966" y="350" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#525252">POST /synthesized</text>
+  <text x="966" y="372" font-family="JetBrains Mono, Courier, monospace" font-size="14" fill="#A78BFA" font-weight="600">08:02 - 08:03</text>
 
   <!-- Fallback dashed -->
   <path d="M 700 650 C 700 720, 850 750, 944 720" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#ahW)"/>
