@@ -17,7 +17,7 @@ Routes:
 import os
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as dtime
 from pathlib import Path
 from functools import wraps
 
@@ -6927,7 +6927,13 @@ def _orb_update_or():
 
 
 def _orb_evaluate_signals():
-    """Every 5 min from 9:30-14:00: Check for breakout signals via Kite API."""
+    """ORB signal evaluation. Cron-aligned to fire at :30 of every clean
+    5-min boundary, but with a time gate so it only does real work between
+    09:45 IST (OR15 closed + first post-OR 15-min RSI bar settled) and
+    15:15 IST (1 minute before _orb_eod_squareoff fires)."""
+    now_t = datetime.now().time()
+    if now_t < dtime(9, 45) or now_t >= dtime(15, 16):
+        return
     if not ORB_DEFAULTS.get('enabled', True):
         return
     try:
@@ -7031,11 +7037,12 @@ try:
     )
     scheduler.add_job(
         _orb_evaluate_signals,
-        # Aligned cron: fires at :30 of every clean 5-min boundary so each
-        # eval lands ~30s after the latest 5-min candle has closed and Kite
-        # has published it. Worst-case candle-close-to-eval lag drops from
-        # ~5 min (interval, offset by service-start time) to ~30s.
-        'cron', minute='*/5', second=30,
+        # Cron-aligned to clean 5-min boundaries + 30s grace. Restricted to
+        # Mon-Fri market hours (9-15) at the cron level; the function itself
+        # gates the precise 09:45-15:15 window so we don't even call the
+        # engine before OR15 has closed + first post-OR candle has formed,
+        # and not after the 15:16 EOD square-off cron has run.
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5', second=30,
         id='orb_eval_signals', replace_existing=True,
         max_instances=1,
     )
