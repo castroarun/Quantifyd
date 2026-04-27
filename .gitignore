@@ -54,6 +54,12 @@ backtest_data/*
 # Never commit secrets, even with the allow-lists above
 backtest_data/access_token.json
 
+# Runtime state written each time a job fires — daily-changing, never
+# meaningful in git history. The validator and pre-market brief publish
+# their latest report here so the API endpoints can serve it.
+backtest_data/validator_latest_*.json
+backtest_data/premarket_brief_latest.json
+
 # Big data files that must never hit git (use GitHub Releases instead)
 backtest_data/market_data.db
 backtest_data/options_data.db
