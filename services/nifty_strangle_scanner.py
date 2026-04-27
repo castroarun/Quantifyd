@@ -139,8 +139,11 @@ def detect_or_window(intraday_5min_df: pd.DataFrame, or_min: int,
     if trade_date is None:
         trade_date = datetime.now().date()
 
-    sess = intraday_5min_df[intraday_5min_df.index.normalize() ==
-                            pd.Timestamp(trade_date)]
+    # Use date-component comparison (tz-agnostic). Kite returns tz-aware
+    # IST timestamps; comparing tz-aware vs tz-naive Timestamp silently
+    # produces False on every row, which manifests as a perpetual
+    # 'or_window_incomplete' status.
+    sess = intraday_5min_df[intraday_5min_df.index.date == trade_date]
     if sess.empty:
         return None
     or_end = _or_end_time(or_min)
@@ -315,8 +318,11 @@ def check_entry_signal(intraday_5min_df: pd.DataFrame,
         return None
 
     # Get post-OR bars for the day
-    sess = intraday_5min_df[intraday_5min_df.index.normalize() ==
-                            pd.Timestamp(trade_date)]
+    # Use date-component comparison (tz-agnostic). Kite returns tz-aware
+    # IST timestamps; comparing tz-aware vs tz-naive Timestamp silently
+    # produces False on every row, which manifests as a perpetual
+    # 'or_window_incomplete' status.
+    sess = intraday_5min_df[intraday_5min_df.index.date == trade_date]
     if sess.empty:
         return None
     or_end_time = _or_end_time(or_min)
