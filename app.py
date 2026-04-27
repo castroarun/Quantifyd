@@ -2690,6 +2690,138 @@ def api_strangle_equity_curve(variant_id):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/strangle/stream')
+def api_strangle_stream():
+    """SSE stream of live spot + per-variant leg LTPs across all open Strangle
+    positions. Mirrors the /api/nas/stream pattern but uses kite.ltp() REST
+    polling (no WebSocket subscription) since position count is small (≤10).
+
+    Payload shape:
+        {type: 'tick', spot: 24042.5, ts: 1714201234.5,
+         variants: {
+           'or5-std': {pe_now, ce_now, pe_mtm, ce_mtm, net_mtm,
+                       pe_tsym, ce_tsym, pe_strike, ce_strike, qty},
+           ...
+         }}
+        {type: 'offline'}  — emitted when Kite isn't authenticated
+    """
+    import json, time as _time
+
+    def generate():
+        from config import STRANGLE_VARIANTS
+        from services.nifty_strangle_db import get_strangle_db
+        from services.kite_service import get_kite, is_authenticated
+
+        last_snapshot: dict = {}
+        yield ": connected\n\n"
+
+        while True:
+            try:
+                if not is_authenticated():
+                    yield f"data: {json.dumps({'type': 'offline'})}\n\n"
+                    _time.sleep(5)
+                    continue
+
+                db = get_strangle_db()
+
+                # Collect open positions across all variants and the leg
+                # tradingsymbols we need quotes for.
+                opens = []         # list of dicts (variant_id, position_dict)
+                tsyms = set()
+                for v in STRANGLE_VARIANTS:
+                    for pos in (db.get_open_positions(v['id']) or []):
+                        # leg rows in pos['legs'] carry the tradingsymbols
+                        pe_tsym = ce_tsym = None
+                        for l in (pos.get('legs') or []):
+                            if l.get('leg_type') == 'PE':
+                                pe_tsym = l.get('tradingsymbol')
+                            elif l.get('leg_type') == 'CE':
+                                ce_tsym = l.get('tradingsymbol')
+                        opens.append({
+                            'variant_id': v['id'],
+                            'pos': pos,
+                            'pe_tsym': pe_tsym,
+                            'ce_tsym': ce_tsym,
+                        })
+                        if pe_tsym:
+                            tsyms.add(pe_tsym)
+                        if ce_tsym:
+                            tsyms.add(ce_tsym)
+
+                # Pull spot + leg LTPs from Kite REST in one round-trip.
+                kite = get_kite()
+                quote_keys = ['NSE:NIFTY 50'] + [f'NFO:{s}' for s in tsyms]
+                ltp_map: dict = {}
+                spot = None
+                if quote_keys:
+                    try:
+                        q = kite.ltp(quote_keys) or {}
+                        nifty = q.get('NSE:NIFTY 50')
+                        if nifty:
+                            spot = nifty.get('last_price')
+                        for s in tsyms:
+                            v = q.get(f'NFO:{s}')
+                            if v and v.get('last_price'):
+                                ltp_map[s] = float(v['last_price'])
+                    except Exception as e:
+                        logger.debug(f"[Strangle stream] kite.ltp failed: {e}")
+
+                # Build per-variant snapshot with computed MTM (pe and ce).
+                variants_snap: dict = {}
+                for o in opens:
+                    pos = o['pos']
+                    qty = int(pos.get('qty') or pos.get('lot_size') or 0)
+                    pe_entry = float(pos.get('pe_entry_price') or 0)
+                    ce_entry = float(pos.get('ce_entry_price') or 0)
+                    pe_now = ltp_map.get(o['pe_tsym'])
+                    ce_now = ltp_map.get(o['ce_tsym'])
+                    pe_mtm = ce_mtm = None
+                    if pe_now is not None and qty:
+                        pe_mtm = round((pe_entry - pe_now) * qty, 2)
+                    if ce_now is not None and qty:
+                        ce_mtm = round((ce_entry - ce_now) * qty, 2)
+                    net = None
+                    if pe_mtm is not None and ce_mtm is not None:
+                        net = round(pe_mtm + ce_mtm, 2)
+                    variants_snap[o['variant_id']] = {
+                        'pe_now': round(pe_now, 2) if pe_now is not None else None,
+                        'ce_now': round(ce_now, 2) if ce_now is not None else None,
+                        'pe_mtm': pe_mtm, 'ce_mtm': ce_mtm, 'net_mtm': net,
+                        'pe_tsym': o['pe_tsym'], 'ce_tsym': o['ce_tsym'],
+                        'pe_strike': pos.get('pe_strike'),
+                        'ce_strike': pos.get('ce_strike'),
+                        'qty': qty,
+                    }
+
+                snapshot = {
+                    'spot': round(spot, 2) if spot else None,
+                    'variants': variants_snap,
+                }
+
+                # Push only when something changed (saves SSE bandwidth)
+                if snapshot != last_snapshot:
+                    last_snapshot = snapshot
+                    payload = {
+                        'type': 'tick',
+                        'spot': snapshot['spot'],
+                        'variants': snapshot['variants'],
+                        'ts': _time.time(),
+                    }
+                    yield f"data: {json.dumps(payload)}\n\n"
+
+                _time.sleep(2)  # poll Kite every 2s
+
+            except Exception as e:
+                logger.warning(f"[Strangle stream] {e}")
+                _time.sleep(5)
+
+    return app.response_class(
+        generate(),
+        mimetype='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
+    )
+
+
 # Master tick scheduler — one cron job that handles all 8 variants
 def _strangle_master_tick():
     """Runs every 60s during market hours; dispatches to all 8 variants."""

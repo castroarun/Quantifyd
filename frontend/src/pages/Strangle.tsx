@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Strangle.module.css';
 import { apiGet, apiPost } from '../api/client';
 import type {
@@ -17,6 +17,22 @@ import {
   formatPct,
   pnlClass,
 } from '../utils/format';
+
+/* ---------- live ticks (SSE) ---------- */
+
+interface LiveVariantTick {
+  pe_now: number | null;
+  ce_now: number | null;
+  pe_mtm: number | null;
+  ce_mtm: number | null;
+  net_mtm: number | null;
+}
+
+interface LiveTicks {
+  spot: number | null;
+  variants: Record<string, LiveVariantTick>;
+  connected: boolean;
+}
 
 /* ---------- variant definitions (UI-side metadata, mirrors config.py) ---------- */
 
@@ -116,6 +132,12 @@ export default function Strangle() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [liveTicks, setLiveTicks] = useState<LiveTicks>({
+    spot: null,
+    variants: {},
+    connected: false,
+  });
+  const evtRef = useRef<EventSource | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -169,6 +191,54 @@ export default function Strangle() {
     return () => clearInterval(id);
   }, [loadAll]);
 
+  // SSE: live tick stream of spot + per-variant leg LTPs/MTM. Mirrors NAS pattern.
+  useEffect(() => {
+    let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const open = () => {
+      if (cancelled) return;
+      const es = new EventSource('/api/strangle/stream');
+      evtRef.current = es;
+      es.onopen = () => {
+        if (!cancelled) setLiveTicks((prev) => ({ ...prev, connected: true }));
+      };
+      es.onmessage = (ev) => {
+        if (cancelled) return;
+        try {
+          const d = JSON.parse(ev.data);
+          if (d.type === 'tick') {
+            setLiveTicks({
+              spot: typeof d.spot === 'number' ? d.spot : null,
+              variants: (d.variants ?? {}) as Record<string, LiveVariantTick>,
+              connected: true,
+            });
+          } else if (d.type === 'offline') {
+            setLiveTicks((p) => ({ ...p, connected: false }));
+          }
+        } catch {
+          /* ignore malformed payload */
+        }
+      };
+      es.onerror = () => {
+        if (cancelled) return;
+        es.close();
+        evtRef.current = null;
+        setLiveTicks((p) => ({ ...p, connected: false }));
+        reconnectTimer = setTimeout(open, 3000);
+      };
+    };
+    open();
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (evtRef.current) {
+        evtRef.current.close();
+        evtRef.current = null;
+      }
+    };
+  }, []);
+
   const summaryById: Record<string, StrangleVariantSummary> = useMemo(() => {
     const m: Record<string, StrangleVariantSummary> = {};
     for (const v of state?.variants ?? []) m[v.id] = v;
@@ -176,9 +246,17 @@ export default function Strangle() {
   }, [state]);
 
   // Aggregate today's P&L across all variants for the header tile.
+  // For variants with an open position we prefer the live SSE net_mtm
+  // (≤2s stale) over the polled today_pnl (≤60s stale, only updates when
+  // master_tick refreshes leg MTM in DB).
   const totalDayPnl = useMemo(() => {
-    return (state?.variants ?? []).reduce((acc, v) => acc + (v.today_pnl ?? 0), 0);
-  }, [state]);
+    return (state?.variants ?? []).reduce((acc, v) => {
+      if (v.open_positions && liveTicks.variants[v.id]?.net_mtm != null) {
+        return acc + (liveTicks.variants[v.id].net_mtm ?? 0);
+      }
+      return acc + (v.today_pnl ?? 0);
+    }, 0);
+  }, [state, liveTicks]);
 
   // Total open positions across all variants.
   const totalOpen = useMemo(() => {
@@ -218,8 +296,20 @@ export default function Strangle() {
       <div className={styles.headerMetrics}>
         <MetricCard
           label="Nifty spot"
-          value={spot != null ? formatNumber(spot) : '—'}
-          hint={today ? `Today ${today}` : 'Live index price'}
+          value={
+            liveTicks.spot != null
+              ? formatNumber(liveTicks.spot)
+              : spot != null
+                ? formatNumber(spot)
+                : '—'
+          }
+          hint={
+            liveTicks.connected
+              ? `Live · ${today}`
+              : today
+                ? `Today ${today}`
+                : 'Live index price'
+          }
         />
         <MetricCard
           label="Open positions"
@@ -288,6 +378,7 @@ export default function Strangle() {
               rules={RULES_BY_ID[v.id]}
               summary={summaryById[v.id]}
               detail={details[v.id]}
+              liveTick={liveTicks.variants[v.id]}
               onAction={() => void loadAll()}
               onToast={showToast}
             />
@@ -315,6 +406,7 @@ export default function Strangle() {
               rules={RULES_BY_ID[v.id]}
               summary={summaryById[v.id]}
               detail={details[v.id]}
+              liveTick={liveTicks.variants[v.id]}
               onAction={() => void loadAll()}
               onToast={showToast}
             />
@@ -343,6 +435,7 @@ export default function Strangle() {
               rules={RULES_BY_ID[v.id]}
               summary={summaryById[v.id]}
               detail={details[v.id]}
+              liveTick={liveTicks.variants[v.id]}
               onAction={() => void loadAll()}
               onToast={showToast}
             />
@@ -372,6 +465,7 @@ interface VariantCardProps {
   rules: string;
   summary: StrangleVariantSummary | undefined;
   detail: StrangleVariantDetail | null | undefined;
+  liveTick: LiveVariantTick | undefined;
   onAction: () => void;
   onToast: (msg: string) => void;
 }
@@ -382,6 +476,7 @@ function VariantCard({
   rules,
   summary,
   detail,
+  liveTick,
   onAction,
   onToast,
 }: VariantCardProps) {
@@ -389,12 +484,17 @@ function VariantCard({
 
   const cfg = detail?.variant;
   const status = summary?.today_status ?? 'Idle';
-  const todayPnl = summary?.today_pnl ?? 0;
   const allTimePnl = detail?.stats?.total_pnl ?? 0;
   const tradeCount = detail?.stats?.total_trades ?? 0;
   const enabled = summary?.enabled ?? true;
   const open = detail?.open_position;
-  const mtm = detail?.mtm;
+  // Prefer live SSE tick (≤2s stale); fall back to polled DB MTM (≤60s stale).
+  const mtm = liveTick ?? detail?.mtm;
+  // Today's P&L: if a live tick is present and a position is open, prefer
+  // live net_mtm so the card updates intra-tick. Otherwise use the polled
+  // summary value (which only refreshes when master_tick or close-position runs).
+  const todayPnl =
+    open && liveTick?.net_mtm != null ? liveTick.net_mtm : summary?.today_pnl ?? 0;
   const todayTradeCount = (detail?.recent_trades ?? []).filter(
     (t) => t.exit_date === detail?.daily_state?.trade_date,
   ).length;
