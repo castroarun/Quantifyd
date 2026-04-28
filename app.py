@@ -4831,6 +4831,56 @@ except Exception as e:
     logger.warning(f"Could not register db_integrity_watchdog: {e}")
 
 
+# NAS ticker watchdog — checks every 5 min during market hours that the
+# NAS WebSocket ticker is alive. If is_running OR is_connected is False,
+# restarts it. Born out of the 2026-04-28 incident: ticker died ~09:19 IST
+# after 9:16 entries+SL hits, no auto-recovery, killed Squeeze ATR
+# detection (zero entries despite squeeze conditions) and froze live LTP
+# feed for 9:16 open legs. The 5-min cadence gives Kite time to clear stale
+# WebSocket slots between attempts, avoiding reconnect storms.
+def _nas_ticker_watchdog():
+    """Restart NAS ticker if down. Only attempts during 09:15-15:25 IST
+    (wraps the trading window with a small safety margin)."""
+    now_t = datetime.now().time()
+    if now_t < dtime(9, 15) or now_t >= dtime(15, 25):
+        return
+    try:
+        from services.nas_ticker import get_nas_ticker, stop_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        if ticker.is_running and ticker.is_connected:
+            return  # healthy
+        # Ticker is down — log + nuke the singleton + start fresh.
+        # stop_nas_ticker() sets _nas_ticker = None so the next get_nas_ticker
+        # creates a brand-new instance, dodging zombie-WebSocket state from
+        # the prior dead instance.
+        logger.warning(
+            f"[NAS-WATCHDOG] Ticker down "
+            f"(running={ticker.is_running}, connected={ticker.is_connected}) "
+            f"— issuing stop + fresh start"
+        )
+        try:
+            ticker.stop()
+        except Exception as e:
+            logger.warning(f"[NAS-WATCHDOG] stop failed (ignoring): {e}")
+        stop_nas_ticker()  # clears the singleton
+        fresh = get_nas_ticker(NAS_DEFAULTS)
+        fresh.start()
+        logger.info("[NAS-WATCHDOG] Restart issued")
+    except Exception as e:
+        logger.error(f"[NAS-WATCHDOG] Error: {e}", exc_info=True)
+
+
+try:
+    scheduler.add_job(
+        _nas_ticker_watchdog,
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5',
+        id='nas_ticker_watchdog', replace_existing=True,
+    )
+    logger.info("NAS ticker watchdog scheduled: every 5 min Mon-Fri 09:15-15:25 IST")
+except Exception as e:
+    logger.warning(f"Could not register nas_ticker_watchdog: {e}")
+
+
 # System validator — pre-market checklist (08:50 IST) + EOD report (15:40 IST).
 # Emails the operator and stores in-app. Covers ORB cash, NAS x8, ORB index.
 try:
