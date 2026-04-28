@@ -137,3 +137,4 @@ scripts/_vps_helper.py
 # Scheduled tasks personal state
 .claude/scheduled_tasks.lock
 scc/tsconfig.tsbuildinfo
+research/29_short_options_signal_sweep/results/pathc_stocks_signals.csv
