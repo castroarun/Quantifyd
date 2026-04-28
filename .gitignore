@@ -2,6 +2,14 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Heavy backtest artifacts (regeneratable from scripts; commit only ranked summary)
+research/29_short_options_signal_sweep/results/phase1_signals.csv
+research/29_short_options_signal_sweep/results/phase1_trajectories.csv
+research/29_short_options_signal_sweep/results/phase2_exits.csv
+
+# Throwaway VPS-probe scripts
+/tmp_*.py
 *.so
 .Python
 build/
