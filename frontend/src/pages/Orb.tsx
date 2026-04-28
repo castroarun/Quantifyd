@@ -595,7 +595,7 @@ export default function Orb() {
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Setup</span>
               <span>
-                15 Nifty 500 stocks · MIS cash · OR = 09:15–09:30 (15 min) · max 5 concurrent · 1.2× margin buffer.
+                15 Nifty 500 stocks · MIS cash · OR = 09:15–09:30 (15 min) · first signal scan at <b>09:35:05 IST</b> (earliest possible post-OR 5-min candle close) · max 5 concurrent · 1.2× margin buffer.
               </span>
             </div>
             <div className={styles.ruleItem}>

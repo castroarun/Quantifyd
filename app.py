@@ -6927,12 +6927,19 @@ def _orb_update_or():
 
 
 def _orb_evaluate_signals():
-    """ORB signal evaluation. Cron-aligned to fire at :30 of every clean
-    5-min boundary, but with a time gate so it only does real work between
-    09:45 IST (OR15 closed + first post-OR 15-min RSI bar settled) and
-    15:15 IST (1 minute before _orb_eod_squareoff fires)."""
+    """ORB signal evaluation. Cron-aligned to fire at second=5 of every clean
+    5-min boundary, gated to the post-OR window. OR15 closes at 09:30;
+    the cron tick at 09:30:05 is a silent no-op (latest closed 5-min candle
+    is 09:25-09:30, still inside OR), and the first real evaluation happens
+    at 09:35:05 on the 09:30-09:35 candle close — the earliest possible
+    post-OR breakout candle. Upper bound is 15:15 (1 min before EOD squareoff).
+    2026-04-28: gate moved from 09:45 to 09:30 — the prior 'wait for first
+    15-min RSI bar to settle' rationale was unnecessary, since RSI(14) on
+    resampled 15-min bars draws from weeks of historical data; partial
+    same-day bars are not a problem (confirmed 2026-04-27 — yesterday's
+    pre-09:45 signals had valid RSI readings)."""
     now_t = datetime.now().time()
-    if now_t < dtime(9, 45) or now_t >= dtime(15, 16):
+    if now_t < dtime(9, 30) or now_t >= dtime(15, 16):
         return
     if not ORB_DEFAULTS.get('enabled', True):
         return
