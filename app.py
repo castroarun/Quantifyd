@@ -4000,6 +4000,94 @@ def api_nas_equity_curve():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/nas/master-mode', methods=['GET', 'POST'])
+def api_nas_master_mode():
+    """One-stop master switch for all 8 NAS systems.
+
+    GET returns the consolidated mode across the 8 variants:
+      'live'   — every variant has enabled=True AND paper_trading_mode=False
+      'paper'  — every variant has enabled=True AND paper_trading_mode=True
+      'off'    — every variant has enabled=False
+      'mixed'  — variants are in a mix of states (e.g. some live, some paper)
+
+    POST {"mode": "live" | "paper" | "off"} forces all 8 variants to that
+    state simultaneously. Returns the resulting consolidated mode.
+
+    Implementation: writes to the in-process *_DEFAULTS dicts directly so
+    each variant's _check_guardrails sees the new state on its next entry
+    attempt. No restart needed.
+    """
+    variants = [
+        ('NAS Squeeze OTM',    NAS_DEFAULTS),
+        ('NAS Squeeze ATM',    NAS_ATM_DEFAULTS),
+        ('NAS Squeeze ATM2',   NAS_ATM2_DEFAULTS),
+        ('NAS Squeeze ATM4',   NAS_ATM4_DEFAULTS),
+        ('NAS 9:16 OTM',       NAS_916_OTM_DEFAULTS),
+        ('NAS 9:16 ATM',       NAS_916_ATM_DEFAULTS),
+        ('NAS 9:16 ATM2',      NAS_916_ATM2_DEFAULTS),
+        ('NAS 9:16 ATM4',      NAS_916_ATM4_DEFAULTS),
+    ]
+
+    def consolidate():
+        states = []
+        for _, cfg in variants:
+            en = bool(cfg.get('enabled', True))
+            paper = bool(cfg.get('paper_trading_mode', True))
+            if not en:
+                states.append('off')
+            elif paper:
+                states.append('paper')
+            else:
+                states.append('live')
+        unique = set(states)
+        if len(unique) == 1:
+            return next(iter(unique))
+        return 'mixed'
+
+    if request.method == 'GET':
+        return jsonify({
+            'mode': consolidate(),
+            'variants': [
+                {
+                    'name': name,
+                    'enabled': bool(cfg.get('enabled', True)),
+                    'paper': bool(cfg.get('paper_trading_mode', True)),
+                }
+                for name, cfg in variants
+            ],
+        })
+
+    # POST
+    try:
+        data = request.get_json(silent=True) or {}
+        mode = (data.get('mode') or '').lower().strip()
+        if mode not in ('off', 'paper', 'live'):
+            return jsonify({'error': 'mode must be one of: off, paper, live'}), 400
+
+        for name, cfg in variants:
+            if mode == 'off':
+                cfg['enabled'] = False
+                # leave paper flag as-is so a future flip to "paper" or "live"
+                # doesn't accidentally lose paper-only safety
+            elif mode == 'paper':
+                cfg['enabled'] = True
+                cfg['paper_trading_mode'] = True
+            elif mode == 'live':
+                cfg['enabled'] = True
+                cfg['paper_trading_mode'] = False
+            logger.info(f"[NAS-MASTER] {name}: enabled={cfg['enabled']} paper={cfg['paper_trading_mode']}")
+
+        result_mode = consolidate()
+        logger.warning(f"[NAS-MASTER] All 8 NAS systems set to '{mode}' (consolidated={result_mode})")
+        return jsonify({
+            'mode': result_mode,
+            'requested': mode,
+        })
+    except Exception as e:
+        logger.error(f"[NAS-MASTER] error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/nas/toggle-mode', methods=['POST'])
 def api_nas_toggle_mode():
     """Toggle NAS paper/live trading mode."""

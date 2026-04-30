@@ -561,3 +561,84 @@
 .configSysNote {
   color: var(--ink-muted);
 }
+
+/* ---------- master mode toggle (OFF / PAPER / LIVE) ---------- */
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.masterToggle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.masterToggleLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.masterToggleGroup {
+  display: inline-flex;
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.masterBtn {
+  border: 0;
+  border-left: 0.5px solid var(--hairline);
+  background: transparent;
+  color: var(--ink-secondary);
+  padding: 6px 14px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  outline: none;
+  transition: background 120ms, color 120ms;
+}
+
+.masterBtn:first-child {
+  border-left: 0;
+}
+
+.masterBtn:hover:not(:disabled) {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.04));
+  color: var(--ink);
+}
+
+.masterBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.masterBtnActive.masterBtnOff {
+  background: rgba(220, 60, 60, 0.18);
+  color: #ff7a7a;
+}
+
+.masterBtnActive.masterBtnPaper {
+  background: rgba(190, 160, 60, 0.18);
+  color: #f0c860;
+}
+
+.masterBtnActive.masterBtnLive {
+  background: rgba(60, 180, 100, 0.20);
+  color: #58d18a;
+}
+
+.masterMixed {
+  font-size: var(--text-xxs);
+  color: var(--accent-warn, #f0c860);
+}

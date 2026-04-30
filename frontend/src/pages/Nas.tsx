@@ -276,10 +276,15 @@ export default function Nas() {
   return (
     <LiveTicksContext.Provider value={liveTicks}>
     <div className={styles.root}>
-      <div className="page-title">NAS options</div>
-      <div className="page-subtitle">
-        Eight Nifty options systems running in parallel. ATR squeeze entries on the
-        left, time-based 9:16 entries on the right.
+      <div className={styles.titleRow}>
+        <div>
+          <div className="page-title">NAS options</div>
+          <div className="page-subtitle">
+            Eight Nifty options systems running in parallel. ATR squeeze entries on the
+            left, time-based 9:16 entries on the right.
+          </div>
+        </div>
+        <MasterModeToggle onToast={setToast} />
       </div>
 
       {toast ? <div className={styles.toast}>{toast}</div> : null}
@@ -602,6 +607,93 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
       </details>
 
       {err ? <div className={styles.errRow}>{err}</div> : null}
+    </div>
+  );
+}
+
+/* ---------- Master mode toggle (OFF / PAPER / LIVE for all 8 systems) ---------- */
+
+interface MasterModeState {
+  mode: 'off' | 'paper' | 'live' | 'mixed' | null;
+  busy: boolean;
+}
+
+function MasterModeToggle({ onToast }: { onToast: (msg: string) => void }) {
+  const [state, setState] = useState<MasterModeState>({ mode: null, busy: false });
+
+  const refresh = async () => {
+    try {
+      const r = await fetch('/api/nas/master-mode');
+      const d = await r.json();
+      setState((p) => ({ ...p, mode: d.mode ?? null }));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  useEffect(() => {
+    void refresh();
+    const id = setInterval(refresh, 10_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const setMode = async (target: 'off' | 'paper' | 'live') => {
+    if (state.busy || state.mode === target) return;
+    if (target === 'live') {
+      const ok = window.confirm(
+        'Switch ALL 8 NAS systems to LIVE trading? Real money will be at risk on the next entry signal.',
+      );
+      if (!ok) return;
+    }
+    setState((p) => ({ ...p, busy: true }));
+    try {
+      const r = await fetch('/api/nas/master-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: target }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        onToast(`Master toggle failed: ${d.error || r.statusText}`);
+      } else {
+        setState({ mode: d.mode ?? target, busy: false });
+        onToast(`All NAS systems → ${target.toUpperCase()}`);
+        return;
+      }
+    } catch (e) {
+      onToast(`Master toggle error: ${e instanceof Error ? e.message : 'unknown'}`);
+    }
+    setState((p) => ({ ...p, busy: false }));
+  };
+
+  const buttons: { id: 'off' | 'paper' | 'live'; label: string; cls: string }[] = [
+    { id: 'off',   label: 'OFF',   cls: styles.masterBtnOff },
+    { id: 'paper', label: 'PAPER', cls: styles.masterBtnPaper },
+    { id: 'live',  label: 'LIVE',  cls: styles.masterBtnLive },
+  ];
+
+  return (
+    <div className={styles.masterToggle}>
+      <div className={styles.masterToggleLabel}>All NAS systems</div>
+      <div className={styles.masterToggleGroup}>
+        {buttons.map((b) => {
+          const active = state.mode === b.id;
+          return (
+            <button
+              key={b.id}
+              type="button"
+              className={`${styles.masterBtn} ${b.cls} ${active ? styles.masterBtnActive : ''}`}
+              disabled={state.busy}
+              onClick={() => void setMode(b.id)}
+            >
+              {b.label}
+            </button>
+          );
+        })}
+      </div>
+      {state.mode === 'mixed' ? (
+        <div className={styles.masterMixed}>mixed — variants in different states</div>
+      ) : null}
     </div>
   );
 }
