@@ -139,3 +139,4 @@ scripts/_vps_helper.py
 scc/tsconfig.tsbuildinfo
 research/29_short_options_signal_sweep/results/pathc_stocks_signals.csv
 research/30_volume_breakout/results/volbreakout_signals.csv
+research/30b_volume_breakout_expanded/results/volbreakout_signals.csv

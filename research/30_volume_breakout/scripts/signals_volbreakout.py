@@ -199,13 +199,17 @@ def vol_breakout_signals(
 def build_first_bars(df_5min: pd.DataFrame, timeframe: str) -> pd.DataFrame:
     """Build a per-session 'first bar' DataFrame on the requested timeframe.
 
-    timeframe in {"5min", "15min"}. Returns a DataFrame indexed by session date
-    (normalized to midnight) with columns: ts, open, high, low, close, volume.
+    timeframe in {"5min", "10min", "15min"}. Returns a DataFrame indexed by
+    session date (normalized to midnight) with columns: ts, open, high, low,
+    close, volume.
 
     For 5min: the first 09:15 candle of each session.
+    For 10min: aggregate the first two 5min candles (09:15, 09:20) into a
+        single bar; ts = end of last constituent (the 09:20 bar timestamp).
     For 15min: aggregate the first three 5min candles (09:15, 09:20, 09:25)
         into a single bar; ts = end of last constituent (i.e., the 09:25 bar
-        timestamp). If any of those three are missing, skip the session.
+        timestamp). If any of the constituent 5-min candles are missing,
+        skip the session.
     """
     if df_5min.empty:
         return df_5min
@@ -217,11 +221,15 @@ def build_first_bars(df_5min: pd.DataFrame, timeframe: str) -> pd.DataFrame:
         first.index = first.index.normalize()
         return first[["ts", "open", "high", "low", "close", "volume"]]
 
-    if timeframe == "15min":
+    if timeframe in ("10min", "15min"):
         from datetime import time as dtime
+        if timeframe == "10min":
+            targets = (dtime(9, 15), dtime(9, 20))
+            n_needed = 2
+        else:  # 15min
+            targets = (dtime(9, 15), dtime(9, 20), dtime(9, 25))
+            n_needed = 3
         rows = []
-        # We need exactly 09:15, 09:20, 09:25 candles.
-        targets = (dtime(9, 15), dtime(9, 20), dtime(9, 25))
         df = df_5min.copy()
         df["_day"] = df.index.normalize()
         for day, day_df in df.groupby("_day", sort=True):
@@ -229,12 +237,12 @@ def build_first_bars(df_5min: pd.DataFrame, timeframe: str) -> pd.DataFrame:
             day_times = set(day_df.index.time)
             if not all(t in day_times for t in targets):
                 continue
-            grp = day_df.loc[[t in targets for t in day_df.index.time]].iloc[:3]
-            if len(grp) < 3:
+            grp = day_df.loc[[t in targets for t in day_df.index.time]].iloc[:n_needed]
+            if len(grp) < n_needed:
                 continue
             rows.append({
                 "_idx": pd.Timestamp(day),
-                "ts": grp.index[-1],   # close of 09:25 bar = end of first 15-min
+                "ts": grp.index[-1],   # close of last constituent 5-min bar
                 "open": float(grp["open"].iloc[0]),
                 "high": float(grp["high"].max()),
                 "low": float(grp["low"].min()),
