@@ -318,8 +318,9 @@ export default function Nas() {
         />
         <MetricCard
           label="Available margin"
+          // Kite UI calls this same field 'Available margin' on the Funds page
           value={availableMargin !== undefined ? formatRs(availableMargin) : '—'}
-          hint="Cash for MIS orders"
+          hint="Net free margin (matches Kite Funds)"
         />
         <MetricCard
           label="Squeeze day P&L"

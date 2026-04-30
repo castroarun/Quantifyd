@@ -6431,9 +6431,19 @@ _orb_cache = {'margin': None, 'margin_ts': 0, 'ltps': {}, 'ltp_ts': 0}
 def _orb_get_margin():
     """Return cached margin. Background refresh every 5 min.
 
-    For MIS equity intraday, the actual usable amount is 'cash' component
-    (what Zerodha blocks for new MIS orders). 'live_balance' can go negative
-    when holdings/FnO margin exceeds cash+collateral — not useful for new trades.
+    Field semantics (verified against Kite Funds page 2026-04-30):
+      eq.net               = the headline 'Available margin' shown in Kite UI
+                             (= cash + collateral - utilised.debits)
+      eq.available.cash    = opening balance (start-of-day cash); does NOT
+                             reflect today's debits — misleading for sizing
+      eq.available.live_bal = instantaneous deployable cash for new MIS;
+                             can go small/negative when FnO margin uses
+                             collateral
+      eq.utilised.debits   = total margin currently blocked
+
+    We expose 'available' = net so the dashboard tile matches what the user
+    sees in Kite's Funds page. 'cash' / 'live_balance' / 'used' kept for
+    detail-level callers.
     """
     import time as _t, threading
     now = _t.time()
@@ -6446,14 +6456,11 @@ def _orb_get_margin():
                 eq = margins.get('equity', {})
                 avail = eq.get('available', {})
                 used = eq.get('utilised', {}).get('debits', 0)
+                net = eq.get('net', 0)
                 cash = avail.get('cash', 0)
                 live_balance = avail.get('live_balance', 0)
-                # Use max(cash, 0) as the "available" figure — this is what's
-                # actually free for placing new MIS equity orders. live_balance
-                # can be misleading when holdings/FnO margin is high.
-                available_for_mis = max(cash, 0)
                 _orb_cache['margin'] = {
-                    'available': round(available_for_mis, 2),
+                    'available': round(net, 2),  # matches Kite UI 'Available margin'
                     'cash': round(cash, 2),
                     'live_balance': round(live_balance, 2),
                     'used': round(used, 2),

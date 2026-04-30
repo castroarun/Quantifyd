@@ -48,7 +48,10 @@ function IconLightbulb() {
   );
 }
 
-const COLLAPSE_KEY = 'qf.sidebar.collapsed';
+// Bumped to v2 on 2026-04-30 so any existing 'collapsed' preference gets
+// reset — labels were re-tuned to short forms (NAS, ORB Cash, ORB Index)
+// and the user prefers seeing names rather than icon-only mode.
+const COLLAPSE_KEY = 'qf.sidebar.collapsed.v2';
 
 export default function Sidebar({ active, userName = 'Trader' }: Props) {
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -104,35 +107,35 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
           <NavItem
             to="/orb"
             icon={<IconBarChart />}
-            label="ORB cash"
+            label="ORB Cash"
             active={active === 'orb'}
             collapsed={collapsed}
           />
           <NavItem
             to="/strangle"
             icon={<IconLayers />}
-            label="ORB index"
+            label="ORB Index"
             active={active === 'strangle'}
             collapsed={collapsed}
           />
           <NavItem
             to="/nas"
             icon={<IconLayers />}
-            label="NAS options"
+            label="NAS"
             active={active === 'nas'}
             collapsed={collapsed}
           />
           <NavItem
             to="/nwv"
             icon={<IconLayers />}
-            label="NWV weekly"
+            label="NWV"
             active={active === 'nwv'}
             collapsed={collapsed}
           />
           <NavItem
             to="/eod-breakout"
             icon={<IconBarChart />}
-            label="EOD breakout"
+            label="EOD"
             active={active === 'eod-breakout'}
             collapsed={collapsed}
           />
