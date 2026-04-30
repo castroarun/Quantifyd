@@ -138,3 +138,4 @@ scripts/_vps_helper.py
 .claude/scheduled_tasks.lock
 scc/tsconfig.tsbuildinfo
 research/29_short_options_signal_sweep/results/pathc_stocks_signals.csv
+research/30_volume_breakout/results/volbreakout_signals.csv
