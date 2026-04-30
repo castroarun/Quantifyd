@@ -357,8 +357,12 @@ NAS_DEFAULTS = {
     'daily_atr_period': 14,        # ATR period on daily bars for strike calc
 
     # Position Sizing
-    'lots_per_leg': 10,         # 10 lots per leg = 750 qty
+    'lots_per_leg': 4,          # GO-LIVE 2026-05-01: dropped 10→4 (300 qty)
     'max_strangles': 1,         # Only 1 strangle at a time
+
+    # Day-of-week filter — skip OTM trading on Wed/Thu (expiry-week trend days
+    # are unkind to range/premium-decay strategies). Mon=0, Tue=1, Wed=2, Thu=3, Fri=4.
+    'skip_weekdays': (2, 3),
 
     # Adjustment Rules
     'premium_double_trigger': 2.0,       # Same-leg trigger: losing leg >= 2.0x its OWN entry premium
@@ -414,7 +418,7 @@ NAS_ATM_DEFAULTS = {
     'strike_mode': 'ATM',           # Always enter at-the-money
 
     # Position Sizing
-    'lots_per_leg': 5,              # 5 lots per leg = 375 qty
+    'lots_per_leg': 1,              # GO-LIVE 2026-05-01: dropped 5→1 (75 qty)
     'max_strangles': 1,             # Only 1 active strangle at a time
     'max_reentries': 5,             # Max 5 SL re-entry cycles per day
 
@@ -451,6 +455,9 @@ NAS_ATM2_DEFAULTS = {
     'trail_to_cost_on_sl': False,
     're_enter_on_sl': True,
     'exit_both_on_sl': True,
+    # Skip Wed/Thu — cascading 5-re-entry geometry is brittle on trending
+    # expiry-week days. Basic ATM (no cascade) stays enabled all weekdays.
+    'skip_weekdays': (2, 3),
 }
 
 NAS_ATM4_DEFAULTS = {
@@ -458,6 +465,9 @@ NAS_ATM4_DEFAULTS = {
     'max_rolls': 1,              # Only 1 roll allowed per strangle
     'trail_to_cost_on_sl': False,
     're_enter_on_sl': False,
+    # Same Wed/Thu skip as ATM 2.0 — roll-to-match also struggles on
+    # strong directional days. Inherited by NAS_916_ATM4_DEFAULTS via spread.
+    'skip_weekdays': (2, 3),
 }
 
 # --- 916 Variants: Same strategies, mandatory 9:16 AM entry (no squeeze wait) ---

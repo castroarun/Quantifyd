@@ -42,10 +42,18 @@ class NasExecutor:
 
     def _check_guardrails(self, is_entry=True):
         """Pre-order safety checks. Returns (passed, reason)."""
+        from datetime import datetime as _dt
         cfg = self.cfg
 
         if not cfg.get('enabled', True):
             return False, 'System disabled'
+
+        # Day-of-week filter: skip entries on configured weekdays
+        # (e.g. OTM and ATM2/V4 systems skip Wed/Thu via NAS_DEFAULTS).
+        if is_entry:
+            skip_days = cfg.get('skip_weekdays') or ()
+            if _dt.now().weekday() in skip_days:
+                return False, f'Skipped today (weekday filter: {skip_days})'
 
         # Daily order limit
         today_orders = self.db.get_today_order_count()

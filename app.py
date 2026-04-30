@@ -6145,7 +6145,14 @@ def api_nas_916_atm4_ticker_stream():
 # ---- NAS 916 Scheduled Jobs ----
 
 def _nas_916_auto_entry():
-    """9:16 AM Mon-Wed,Fri — Auto-enter all 4 x 916 systems."""
+    """9:16 AM Mon-Fri — Auto-enter all 4 x 916 systems.
+
+    Per-system Wed/Thu filter respected via cfg['skip_weekdays']:
+      - 916 OTM: inherits NAS_DEFAULTS.skip_weekdays = (2, 3) → Wed/Thu OFF
+      - 916 ATM: no skip_weekdays → enabled all weekdays
+      - 916 ATM2 / 916 ATM4: inherit (2, 3) → Wed/Thu OFF
+    """
+    today_wd = datetime.now().weekday()
     systems = [
         ('NAS-916-OTM', NAS_916_OTM_DEFAULTS, 'services.nas_916_executors', 'Nas916OtmExecutor', 'run_scan'),
         ('NAS-916-ATM', NAS_916_ATM_DEFAULTS, 'services.nas_916_executors', 'Nas916AtmExecutor', 'execute_strangle_entry'),
@@ -6155,6 +6162,10 @@ def _nas_916_auto_entry():
     for name, cfg, mod_path, cls_name, method in systems:
         if not cfg.get('enabled', True):
             logger.info(f"[{name}] disabled, skipping auto-entry")
+            continue
+        skip_days = cfg.get('skip_weekdays') or ()
+        if today_wd in skip_days:
+            logger.info(f"[{name}] weekday {today_wd} in skip_weekdays={skip_days}, no auto-entry today")
             continue
         try:
             import importlib
