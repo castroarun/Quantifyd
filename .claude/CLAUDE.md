@@ -131,10 +131,10 @@ NSE cash + F&O session: **09:15 – 15:30 IST, Mon–Fri**. During this window,
 **Deployment cheatsheet** (during market):
 ```
 # Frontend only — no restart, safe
-git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/master'
+git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/main'
 
 # Backend — wait until after 15:30 IST
-git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/master &&
+git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/main &&
                      sudo systemctl restart quantifyd'
 ```
 
