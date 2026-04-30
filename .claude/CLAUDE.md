@@ -62,8 +62,35 @@ or could be interrupted mid-flight (sweeps, backtests, deployments,
 migrations, multi-step ops), maintain a **live-status MD file** that lets
 the user resume independently if Claude crashes or context is lost.
 
-**Naming:** never call it `PROGRESS.md` — use a name that signals the
-*nature* of the running work, ending in `-STATUS.md`. Examples:
+**The MD file is the SOLE source of truth for crash recovery.** Treat
+every backtest / long task as if Claude will disappear mid-run. The user
+must be able to open the MD and (a) understand what's being tested,
+(b) see how far it got, (c) resume without Claude — using only the file.
+
+### Folder structure (mandatory before launching any backtest)
+
+Create a research folder up front, then write the STATUS doc BEFORE
+running anything. Standard layout:
+
+```
+research/<NN>_<short-strategy-name>/
+├── <STRATEGY>-STATUS.md        ← live-status doc (REQUIRED, see template below)
+├── scripts/
+│   ├── <runner>.py             ← main sweep runner
+│   └── <helpers>.py            ← signal generators, indicators, etc.
+└── results/
+    ├── *.csv                   ← incremental output (signals, ranking, leaders)
+    ├── *.log                   ← per-cell progress log
+    └── RESULTS.md              ← final findings (written after aggregation)
+```
+
+`<NN>` is the next sequential research number; `<short-strategy-name>`
+is `kebab-case` and signals the *nature* of what's being tested.
+
+### File naming
+
+Never call it `PROGRESS.md` — use a name that signals the *nature* of
+the running work, ending in `-STATUS.md`. Examples:
 
 | Task type | File name |
 |---|---|
@@ -73,31 +100,123 @@ the user resume independently if Claude crashes or context is lost.
 | Forensic investigation | `FORENSIC-STATUS.md` |
 | Long live-trading run | `RUN-STATUS.md` |
 
-Keep the file in the same folder as the artifacts it tracks (e.g., the
-research/ subfolder, or `docs/` for cross-cutting work).
+Keep the file in the same folder as the artifacts it tracks.
 
-**Required sections:**
+### Required structure (all sections, in order)
 
-1. **Goal + scope** — one paragraph: what we're doing, what success looks
-   like, what universe / period / parameters.
-2. **Plan** — the variants / steps / configurations in a table or list,
-   including any cells already known to be skipped and why.
-3. **Status** — per-task or per-cell state (RUNNING / COMPLETED / FAILED),
-   with bash background process IDs, log paths, heartbeat file paths,
-   and last-known progress line.
-4. **Crash recovery** — full instructions for the *human* to resume
-   without Claude:
-   - How to check what finished (heartbeat / summary files)
-   - How to check whether background processes are still alive
-   - How to restart any missing/killed step (full commands)
-   - How to aggregate partial results
-   - Which files NOT to touch
-5. **Final aggregation** — what artifacts get produced when everything
-   completes, where to look, ranking criteria.
+#### 1. Headline (one line at the top)
 
-Update the file at every meaningful state transition (launch, per-step
-progress, completion, failure) — not just at the very end. The file is
-the authoritative source if Claude's context is unavailable.
+Strategy-specific, not generic. NOT "Sweep" or "Backtest". Examples:
+
+- `# Volume-Confirmed First-Candle Breakout — 79 Stocks Across 5/10/15-min`
+- `# Path C Compression-Breakout — Applied to F&O Index Options`
+- `# ORB Filter Tuning — RSI/Age/Drift Sweep on Live Universe`
+
+Include current state next to the headline:
+`STATUS: RUNNING | DONE | STUCK | FAILED`
+
+#### 2. The Ask (the user's request, restated more precisely)
+
+The user's question, re-articulated *better* than they asked. This
+forces clarity on what we're testing and why. Two parts:
+
+- **What you asked:** verbatim or near-verbatim user prompt
+- **What we're actually testing:** the cleaned-up question — universe,
+  period, signal definition, success criterion. Resolve any ambiguity
+  here, not later.
+
+Example:
+> **What you asked:** "scan and narrow down to those special volume loaders"
+> **What we're testing:** Across all 79 stocks with 5-min intraday
+> data, which ones consistently exhibit the volume-confirmed first-
+> candle breakout pattern with a tradable Sharpe-style edge?
+
+#### 3. The Base — what's being tested
+
+Lock the strategy mechanics here. No ambiguity allowed.
+
+- **Signal (entry trigger)** — bar-by-bar definition, exact thresholds
+- **Direction handling** — long-only, short-only, or both treated independently
+- **Filters** — gap / RSI / VWAP / CPR / volume — each as variant grid axis
+- **Exit policies tested** — list each by name with parameters
+- **Universe** — symbol list (or how to derive it)
+- **Period** — start, end, and rationale
+- **Cohorts** if applicable — sub-groups with different histories
+- **Success criterion** — single metric we rank by + the gates a result must clear
+
+#### 4. Plan — variant grid + cell count
+
+Explicit table or list:
+- Each axis with its values
+- Total cell count (multiply axes)
+- Any cells known a priori to be skipped (and why)
+
+#### 5. Status (live running log)
+
+Two parts:
+
+a) **State header** — current phase, started-at, last-completed step,
+   counts, ETA. Update at every state transition.
+
+b) **Event log table** — chronological row per state change:
+
+| Date/time | Event | Notes |
+|---|---|---|
+| 2026-04-30 12:10 IST | Sweep launched (bash bx5ulacha) | 11,376 cells planned |
+| 2026-04-30 14:34 IST | Signal gen done 79/79 (143 min) | 164,327 rows in 168 MB CSV |
+| 2026-04-30 14:35 IST | Aggregation hung on pd.read_csv | killed and replaced |
+| 2026-04-30 14:43 IST | Aggregation done via streaming reader | All output files written |
+
+c) **Live findings during the run** — once even partial results are
+   visible, surface them here. Don't wait for the full run.
+
+#### 6. Crash Recovery — how the human resumes without Claude
+
+Explicit steps:
+- How to check what finished (`tail run.log`, `wc -l signals.csv`,
+  check log mtime, etc.)
+- How to check if background processes are still alive
+- How to resume the sweep (full command, no placeholders)
+- How to run the aggregate-only path if signal-gen finished but
+  aggregation crashed
+- Which files NOT to touch
+- Which files are safe to inspect
+
+This section must be runnable by Arun WITHOUT context from the conversation.
+
+#### 7. Files (output map)
+
+Table mapping each output file to its purpose + whether it's
+committable (small) or gitignored (heavy CSVs, logs):
+
+| File | Purpose | Committable? |
+|---|---|---|
+| `scripts/run_*.py` | Sweep runner | yes |
+| `<STRATEGY>-STATUS.md` | This file | yes |
+| `results/*_signals.csv` | Per-signal output (50-200 MB) | NO — gitignored |
+| `results/*_ranking.csv` | Per-cell aggregate (≤5 MB) | yes if small |
+| `results/RESULTS.md` | Final findings | yes |
+
+#### 8. Findings (during + final)
+
+- During-run partial findings — surface as soon as visible, don't wait
+- Final findings — top picks, surprises, honest read
+- Recommended next steps
+
+### When to update the file
+
+Every state transition. Not just at the end. Specifically:
+
+- BEFORE launching anything (write sections 1-4 first)
+- When the runner starts (add row to event log)
+- At meaningful progress milestones (every N% or per-stock done)
+- When a phase completes / fails
+- When findings emerge (even partial)
+- When aggregation finishes
+- At final commit
+
+The user should be able to open the file at any minute and have a
+complete picture of where we are.
 
 ---
 
