@@ -4152,39 +4152,41 @@ def api_nas_ticker_stream():
         yield ": connected\n\n"
 
         while True:
-            if not ticker.is_running:
-                yield f"data: {json.dumps({'type': 'offline'})}\n\n"
-                _time.sleep(5)
-                continue
-
-            # Merge option tokens from all 4 systems (OTM, ATM, ATM2, ATM4).
-            # Both squeeze and 9:16 variants share the same ticker instance, so
-            # these four dicts cover all 8 dashboard systems.
-            all_tokens = {}
-            for attr in ('_option_tokens', '_atm_option_tokens',
-                         '_atm2_option_tokens', '_atm4_option_tokens'):
-                all_tokens.update(getattr(ticker, attr, {}) or {})
-            all_ltps = {}
-            for attr in ('_option_ltps', '_atm_option_ltps',
-                         '_atm2_option_ltps', '_atm4_option_ltps'):
-                all_ltps.update(getattr(ticker, attr, {}) or {})
-
+            ws_alive = ticker.is_running
             legs = {}
-            for token, info in all_tokens.items():
-                tsym = info.get('tradingsymbol')
-                if not tsym:
-                    continue
-                ltp = all_ltps.get(token)
-                if ltp is None or ltp <= 0:
-                    continue
-                legs[tsym] = {
-                    'ltp': round(ltp, 2),
-                    'entry': info.get('entry_premium') or info.get('entry_price'),
-                    'leg': info.get('leg'),
-                }
+
+            # Squeeze legs come from the WebSocket ticker — only available
+            # when the ticker is alive. 9:16 legs ALWAYS use the REST
+            # kite.ltp() fallback below, irrespective of ticker state.
+            if ws_alive:
+                # Merge option tokens from all 4 systems (OTM, ATM, ATM2, ATM4).
+                all_tokens = {}
+                for attr in ('_option_tokens', '_atm_option_tokens',
+                             '_atm2_option_tokens', '_atm4_option_tokens'):
+                    all_tokens.update(getattr(ticker, attr, {}) or {})
+                all_ltps = {}
+                for attr in ('_option_ltps', '_atm_option_ltps',
+                             '_atm2_option_ltps', '_atm4_option_ltps'):
+                    all_ltps.update(getattr(ticker, attr, {}) or {})
+
+                for token, info in all_tokens.items():
+                    tsym = info.get('tradingsymbol')
+                    if not tsym:
+                        continue
+                    ltp = all_ltps.get(token)
+                    if ltp is None or ltp <= 0:
+                        continue
+                    legs[tsym] = {
+                        'ltp': round(ltp, 2),
+                        'entry': info.get('entry_premium') or info.get('entry_price'),
+                        'leg': info.get('leg'),
+                    }
 
             # The WebSocket ticker only subscribes to Squeeze variant legs.
             # 9:16 positions need LTP via REST kite.ltp(). Throttle to ~2s.
+            # Run this UNCONDITIONALLY — when ticker is down, this is the
+            # only LTP path we have for any active leg, so the dashboard's
+            # 9:16 panels still tick.
             now_ts = _time.time()
             if now_ts - last_916_fetch >= 2.0:
                 last_916_fetch = now_ts
@@ -4235,10 +4237,21 @@ def api_nas_ticker_stream():
                 if tsym not in legs:
                     legs[tsym] = info
 
-            snapshot = {
-                'spot': round(ticker._last_ltp, 2) if ticker._last_ltp else 0,
-                'legs': legs,
-            }
+            # Spot: prefer WebSocket ticker (real-time). When ticker is down,
+            # the SSE consumer can fall back to its polled state for spot.
+            spot = round(ticker._last_ltp, 2) if (ws_alive and ticker._last_ltp) else 0
+
+            # If ticker is offline AND no 9:16 legs to push, send the
+            # offline marker so the client can show a dot. Otherwise push
+            # whatever legs we have (REST 9:16 path even if WebSocket dead).
+            if not ws_alive and not legs:
+                if last_snapshot != {'__offline__': True}:
+                    last_snapshot = {'__offline__': True}
+                    yield f"data: {json.dumps({'type': 'offline'})}\n\n"
+                _time.sleep(5)
+                continue
+
+            snapshot = {'spot': spot, 'legs': legs, 'ws_alive': ws_alive}
 
             # Push only when something changed (plus periodic keepalive)
             if snapshot != last_snapshot:
@@ -4247,11 +4260,15 @@ def api_nas_ticker_stream():
                     'type': 'tick',
                     'spot': snapshot['spot'],
                     'legs': snapshot['legs'],
+                    'ws_alive': ws_alive,
                     'ts': _time.time(),
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
 
-            _time.sleep(0.3)  # cap ~3 pushes/sec
+            # When ticker is alive, push fast (~3/sec). When only REST
+            # 9:16 path is feeding, throttle to one push every ~2s to
+            # match the kite.ltp() fetch cadence.
+            _time.sleep(0.3 if ws_alive else 2.0)
 
     return app.response_class(
         generate(),
