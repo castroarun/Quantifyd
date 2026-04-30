@@ -630,7 +630,7 @@ function LegRow({
   closed?: boolean;
   reason?: string;
 }) {
-  const tsym = leg.tradingsymbol ?? '—';
+  const tsym = shortOptionSymbol(leg.tradingsymbol);
   const entry = leg.entry_price ?? leg.entry_premium;
   const ltp = leg.ltp ?? leg.exit_price;
   const pnl = leg.pnl_inr;
@@ -664,6 +664,15 @@ function LegRow({
       </div>
     </div>
   );
+}
+
+/** Shorten an option tradingsymbol like 'NIFTY2650523800PE' to '23800PE'.
+ *  Drops the underlying + expiry prefix so the strike + CE/PE suffix is
+ *  always visible even on narrow leg rows that would otherwise truncate. */
+function shortOptionSymbol(tsym?: string | null): string {
+  if (!tsym) return '—';
+  const m = /(\d+)(CE|PE)$/.exec(tsym);
+  return m ? `${m[1]}${m[2]}` : tsym;
 }
 
 function formatLegTime(iso?: string | null): string | null {
