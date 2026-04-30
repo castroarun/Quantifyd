@@ -260,9 +260,19 @@ export default function Nas() {
     squeezeDotKind = 'disconnected'; // red
   }
 
-  // Available margin (from any state's margin field, served by backend)
-  const margin = headerState?.margin as { available?: number } | undefined;
-  const availableMargin = margin?.available;
+  // Margin shape (served by backend's _orb_get_margin):
+  //   available  = eq.net (Kite UI 'Available margin', total pool)
+  //   cash_cap   = min(2 × live_balance, net) — actual cap on new F&O margin
+  //                under SEBI's 50:50 cash:collateral rule. This is what
+  //                the trader can ACTUALLY size against today.
+  //   live_balance = real free cash right now
+  const margin = headerState?.margin as
+    | { available?: number; cash_cap?: number; live_balance?: number }
+    | undefined;
+  // Display the cash-constrained cap as the primary number — matches the
+  // trader's sizing intuition. Show total pool in the hint for context.
+  const cashCap = margin?.cash_cap;
+  const totalPool = margin?.available;
 
   function showToast(msg: string) {
     setToast(msg);
@@ -318,9 +328,14 @@ export default function Nas() {
         />
         <MetricCard
           label="Available margin"
-          // Kite UI calls this same field 'Available margin' on the Funds page
-          value={availableMargin !== undefined ? formatRs(availableMargin) : '—'}
-          hint="Net free margin (matches Kite Funds)"
+          // Cash-constrained F&O cap (SEBI 50:50 rule), NOT Kite UI's
+          // 'Available margin' (which is the larger total pool).
+          value={cashCap !== undefined ? formatRs(cashCap) : '—'}
+          hint={
+            totalPool !== undefined
+              ? `Max new F&O margin · 50:50 cash rule (Total pool ${formatRs(totalPool)})`
+              : 'Max new F&O margin (50:50 cash rule)'
+          }
         />
         <MetricCard
           label="Squeeze day P&L"

@@ -6459,8 +6459,14 @@ def _orb_get_margin():
                 net = eq.get('net', 0)
                 cash = avail.get('cash', 0)
                 live_balance = avail.get('live_balance', 0)
+                # Cash-constrained F&O cap: SEBI 50:50 rule says new F&O margin
+                # must be at least 50% cash. Practical max new-position margin is
+                # min(2 × deployable_cash, total_pool). 'live_balance' is real
+                # cash (after today's debits), so 2× of it is the cash cap.
+                cash_cap = max(0, min(2.0 * max(live_balance, 0), max(net, 0)))
                 _orb_cache['margin'] = {
-                    'available': round(net, 2),  # matches Kite UI 'Available margin'
+                    'available': round(net, 2),     # matches Kite UI 'Available margin'
+                    'cash_cap': round(cash_cap, 2), # F&O sizing-relevant cap (50:50 rule)
                     'cash': round(cash, 2),
                     'live_balance': round(live_balance, 2),
                     'used': round(used, 2),
