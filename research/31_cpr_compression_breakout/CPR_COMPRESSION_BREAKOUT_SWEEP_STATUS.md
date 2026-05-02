@@ -162,78 +162,46 @@ Aggregation will use the streaming approach from research/30b
 
 ## 4. Status (live running log)
 
-**State:** PLANNING (about to launch)
-**Started:** —
-**Bash IDs:** —
-**Last update:** 2026-04-30 16:30 IST (sections 1-4 locked, runner being built)
+**State:** AGGREGATING
+**Started:** 2026-05-02 14:41:15
+**Last completed stock:** WIPRO
+**Stocks completed:** 79 / 79  (100.0%)
+**Signals logged:** 447,528
+**Elapsed:** 268.2 min
+**Last update:** 2026-05-02 19:09:26 IST
 
-### Event log
+### Files
 
-| Date/time | Event | Notes |
-|---|---|---|
-| 2026-04-30 16:30 IST | Folder + STATUS doc created (sections 1-4 only) | Per new LIVE-STATUS-MD convention: write STATUS first, run later |
-| 2026-04-30 16:35 IST | (TBD) Runner script being built | Reuse data_loader, indicators from research/29 |
-| | Subagent will fill in subsequent rows | |
+- `results/ccrb_signals.csv` — per-signal x exit-policy rows
+- `results/run.log` — per-stock progress
 
 ---
 
-## 5. Crash Recovery — how to resume without Claude
+## 5. Crash Recovery
 
 ### A) Check what finished
-
 ```bash
-# Last completed stock + log progress:
 tail -5 research/31_cpr_compression_breakout/results/run.log
-
-# Total signal rows:
 wc -l research/31_cpr_compression_breakout/results/ccrb_signals.csv
-
-# Did aggregation finish?
-ls -la research/31_cpr_compression_breakout/results/RESULTS.md \
-       research/31_cpr_compression_breakout/results/ccrb_ranking.csv \
-       research/31_cpr_compression_breakout/results/ccrb_leaders.csv
 ```
 
-### B) Is anything still running?
-
-```bash
-ps -ef | grep run_ccrb | grep -v grep
-ls -la research/31_cpr_compression_breakout/results/run.log
-# stale > 5 min → process likely died
-```
-
-### C) Resume signal generation (resumable)
-
-Runner reads existing `ccrb_signals.csv`, builds skip-set, only computes
-unfinished cells.
-
+### B) Resume signal generation (resumable)
 ```bash
 cd /c/Users/Castro/Documents/Projects/Covered_Calls
 python research/31_cpr_compression_breakout/scripts/run_ccrb.py
 ```
 
-### D) Run aggregation only
-
+### C) Aggregate only
 ```bash
-cd /c/Users/Castro/Documents/Projects/Covered_Calls
 python research/31_cpr_compression_breakout/scripts/aggregate_ccrb.py
 ```
 
-(Uses the streaming pattern from research/30b — does NOT pull CSV
-into pandas; safe on Windows.)
+Runner reads `ccrb_signals.csv`, builds a (symbol,tf,variant,dir,date) skip-set, only computes unfinished cells.
 
-### E) Files NOT to touch during run
-
+### D) Files NOT to touch
 - `results/ccrb_signals.csv`
 - `results/run.log`
-- This `SWEEP-STATUS.md`
-
-### F) Files safe to inspect any time
-
-- `scripts/*.py`
-- `results/RESULTS.md` (only meaningful after aggregation)
-- `results/ccrb_leaders.csv` (only meaningful after aggregation)
-- `results/ccrb_ranking.csv` (only meaningful after aggregation)
+- This file (auto-updated)
 
 ---
 
@@ -241,30 +209,25 @@ into pandas; safe on Windows.)
 
 | File | Purpose | Committable? |
 |---|---|---|
-| `SWEEP-STATUS.md` | This file | ✅ yes |
-| `scripts/run_ccrb.py` | Main sweep runner | ✅ yes |
-| `scripts/signals_ccrb.py` | CCRB signal generator | ✅ yes |
-| `scripts/aggregate_ccrb.py` | Streaming aggregator | ✅ yes |
-| `results/run.log` | Per-stock progress log | ❌ gitignored |
-| `results/ccrb_signals.csv` | Per-signal × per-policy results (large) | ❌ gitignored |
-| `results/ccrb_ranking.csv` | Per-cell aggregate | ❌ gitignored if >5MB else ✅ |
-| `results/ccrb_leaders.csv` | Per-stock leaderboard | ✅ yes |
-| `results/RESULTS.md` | Final report | ✅ yes |
+| SWEEP-STATUS.md | This file | yes |
+| scripts/signals_ccrb.py | Signal generator | yes |
+| scripts/run_ccrb.py | Sweep runner | yes |
+| scripts/aggregate_ccrb.py | Streaming aggregator | yes |
+| results/ccrb_signals.csv | Per-signal rows (large) | gitignored |
+| results/ccrb_ranking.csv | Per-cell aggregate | gitignored if >5MB |
+| results/ccrb_leaders.csv | Per-stock leaderboard | yes |
+| results/RESULTS.md | Final report | yes |
 
 ---
 
 ## 7. Findings (during + final)
 
-_Will populate as the sweep runs._
+_Will populate after aggregation._
 
 ---
 
-## 8. Comparison to research/30b (filled at the end)
+## 8. Comparison to research/30b
 
-_Will compare CCRB winners vs volume-breakout winners — same stocks,
-different stocks, combinable, etc._
+_Will populate after aggregation._
 
----
-
-**Last updated:** 2026-04-30 16:30 IST
-**Update cadence:** at every state transition
+**Last updated:** 2026-05-02 19:09:26 IST
