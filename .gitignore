@@ -146,3 +146,8 @@ research/30b_volume_breakout_expanded/results/volbreakout_ranking.csv
 research/31_cpr_compression_breakout/results/ccrb_signals.csv
 research/31_cpr_compression_breakout/results/run.log
 research/31_cpr_compression_breakout/results/ccrb_ranking.csv
+research/34_nifty500_expansion/results/volbo_signals.csv
+research/34_nifty500_expansion/results/ccrb_signals.csv
+research/34_nifty500_expansion/results/volbo_ranking.csv
+research/34_nifty500_expansion/results/ccrb_ranking.csv
+research/34_nifty500_expansion/results/*.log
