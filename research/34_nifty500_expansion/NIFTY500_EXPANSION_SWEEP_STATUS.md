@@ -145,8 +145,12 @@ Storage projection (verified 2026-05-02): 53 GB free → 10 GB needed → **43 G
 
 ## 4. Status (live running log)
 
-**State:** PLANNING (about to launch Phase A)
-**Last update:** 2026-05-02 (sections 1-4 locked, scripts being built)
+**State:** PHASE A RUNNING (backfill)
+**Last update:** 2026-05-04 22:55:27 IST
+**Stocks downloaded:** 9 / 164  (5.5%)
+**Last completed symbol:** SAIL
+**Elapsed:** 83.7 min
+
 
 ### Event log
 

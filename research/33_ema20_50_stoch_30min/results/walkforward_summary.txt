@@ -1,0 +1,27 @@
+=== WALK-FORWARD SELECTION RESULTS ===
+OOS period: 2024-09-18 -> 2026-03-12
+Lookback: 6mo   Trade: 3mo
+Cost: 0.1% per trade
+
+Rule ranking by Sharpe (annualized):
+        rule  trades  trades_per_yr  win_rate  profit_factor  expectancy_pct  annual_ret_pct  sharpe_ann  calmar  max_dd_pct
+R4_sharpe1.5      55           37.0     30.91          0.961         -0.0277           -1.03       -0.24   -0.06       17.34
+   R5_sticky      57           39.0     31.58          0.953         -0.0321           -1.24       -0.29   -0.07       17.65
+R3_sharpe1.0      66           45.0     30.30          0.893         -0.0703           -3.14       -0.67   -0.15       20.86
+    R2_top20     152          103.0     27.63          0.787         -0.1190          -12.24       -1.40   -0.30       41.29
+    R1_top15     127           86.0     28.35          0.788         -0.1214          -10.43       -1.41   -0.32       32.23
+
+=== Per-quarter basket churn (top rule) ===
+Top rule: R4_sharpe1.5
+  2024-09-18 00:00:00 -> 2024-12-18 00:00:00: 12 stocks, 21 trades
+    Stocks: AXISBANK,BANKBARODA,COLPAL,FEDERALBNK,GODREJPROP,HDFCBANK,HEROMOTOCO,ICICIBANK,IDFCFIRSTB,M&M,SIEMENS,VEDL
+  2024-12-18 00:00:00 -> 2025-03-18 00:00:00: 8 stocks, 7 trades
+    Stocks: AXISBANK,COLPAL,FEDERALBNK,HDFCBANK,INFY,M&M,TATAPOWER,VEDL
+  2025-03-18 00:00:00 -> 2025-06-18 00:00:00: 1 stocks, 2 trades
+    Stocks: M&M
+  2025-06-18 00:00:00 -> 2025-09-18 00:00:00: 3 stocks, 3 trades
+    Stocks: HINDUNILVR,ITC,RELIANCE
+  2025-09-18 00:00:00 -> 2025-12-18 00:00:00: 7 stocks, 17 trades
+    Stocks: BANKBARODA,HINDUNILVR,KOTAKBANK,PERSISTENT,PNB,RELIANCE,TATASTEEL
+  2025-12-18 00:00:00 -> 2026-03-12 00:00:00: 4 stocks, 5 trades
+    Stocks: ASIANPAINT,BANKBARODA,DIVISLAB,HEROMOTOCO

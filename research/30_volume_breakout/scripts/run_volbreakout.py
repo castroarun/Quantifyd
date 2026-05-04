@@ -58,7 +58,7 @@ RESULTS.mkdir(exist_ok=True)
 SIGNAL_CSV = RESULTS / "volbreakout_signals.csv"
 RANKING_CSV = RESULTS / "volbreakout_ranking.csv"
 RESULTS_MD = RESULTS / "RESULTS.md"
-STATUS_MD = ROOT / "SWEEP-STATUS.md"
+STATUS_MD = ROOT / "VOLUME_BREAKOUT_SWEEP_STATUS.md"
 
 STOCKS = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
           "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "HINDUNILVR"]

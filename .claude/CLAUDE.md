@@ -89,16 +89,31 @@ is `kebab-case` and signals the *nature* of what's being tested.
 
 ### File naming
 
-Never call it `PROGRESS.md` — use a name that signals the *nature* of
-the running work, ending in `-STATUS.md`. Examples:
+Never call it `PROGRESS.md`. Convention as of 2026-05-02 (binding):
 
-| Task type | File name |
+```
+<DESCRIPTIVE_NAME>_<TIMEFRAME>_<TASK_KIND>_STATUS.md
+```
+
+- ALL CAPS with underscores (no kebab-case, no dashes)
+- `<DESCRIPTIVE_NAME>` = enough characters to identify the strategy /
+  operation by name alone — strategy params, signal type, etc.
+- `<TIMEFRAME>` = `5MIN` / `15MIN` / `30MIN` / `60MIN` / `DAILY` / `WEEKLY`
+  (omit only if not timeframe-specific, e.g. deploys / migrations)
+- `<TASK_KIND>` = `SWEEP` / `DEPLOY` / `MIGRATION` / `FORENSIC` / `RUN`
+
+Examples:
+
+| Task | File name |
 |---|---|
-| Backtest sweep | `SWEEP-STATUS.md` |
-| Multi-step deployment | `DEPLOY-STATUS.md` |
-| Schema migration | `MIGRATION-STATUS.md` |
-| Forensic investigation | `FORENSIC-STATUS.md` |
-| Long live-trading run | `RUN-STATUS.md` |
+| 20/50 EMA crossover + Stoch sweep on 30-min | `20_50_EMA_CO_30MIN_SWEEP_STATUS.md` |
+| Volume-confirmed first-candle breakout 5-min | `VOLUME_BREAKOUT_5MIN_SWEEP_STATUS.md` |
+| CPR compression breakout on options | `CPR_COMPRESSION_BREAKOUT_SWEEP_STATUS.md` |
+| ORB filter tuning sweep | `ORB_FILTER_TUNING_SWEEP_STATUS.md` |
+| Quantifyd VPS gunicorn restart batch | `QUANTIFYD_GUNICORN_DEPLOY_STATUS.md` |
+| Schema migration to add KC6 tables | `KC6_TABLES_MIGRATION_STATUS.md` |
+| Maruti algo missed-fill investigation | `MARUTI_MISSED_FILL_FORENSIC_STATUS.md` |
+| ORB live-trading paper soak | `ORB_PAPER_SOAK_RUN_STATUS.md` |
 
 Keep the file in the same folder as the artifacts it tracks.
 

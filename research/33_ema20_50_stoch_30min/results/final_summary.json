@@ -1,0 +1,79 @@
+{
+  "period_years": 1.98,
+  "universe_size": 79,
+  "spec": {
+    "side": "long",
+    "stoch": [
+      14,
+      5,
+      3,
+      35.0
+    ],
+    "max_touch_gap": 0,
+    "adx_min": 25.0,
+    "exit_id": "X9_OR_X4",
+    "cost_pct": 0.1
+  },
+  "aggregate_79": {
+    "trades": 1042,
+    "trades_per_yr": 526.0,
+    "win_rate": 27.74,
+    "avg_win_pct": 1.9335,
+    "avg_loss_pct": -0.7836,
+    "profit_factor": 0.947,
+    "expectancy_pct": -0.03,
+    "annual_ret_pct": -15.79,
+    "total_ret_pct": -31.3,
+    "sharpe_ann": -0.27,
+    "sortino_ann": -0.72,
+    "max_dd_pct": 71.53,
+    "calmar": -0.22,
+    "avg_hold": 11.5
+  },
+  "curated_basket": {
+    "sharpe_threshold": 1.5,
+    "stocks": [
+      "HINDUNILVR",
+      "SBIN",
+      "ASIANPAINT",
+      "ICICIBANK",
+      "COLPAL",
+      "HDFCLIFE",
+      "RELIANCE",
+      "SHREECEM",
+      "M&M",
+      "AXISBANK",
+      "HDFCBANK",
+      "BANKBARODA",
+      "BEL",
+      "ITC",
+      "INFY",
+      "MARICO",
+      "PNB",
+      "ADANIPORTS",
+      "KOTAKBANK",
+      "VEDL",
+      "FEDERALBNK",
+      "DIVISLAB",
+      "DABUR",
+      "ULTRACEMCO"
+    ],
+    "n_stocks": 24,
+    "metrics": {
+      "trades": 319,
+      "trades_per_yr": 161.0,
+      "win_rate": 37.93,
+      "avg_win_pct": 2.8383,
+      "avg_loss_pct": -0.6883,
+      "profit_factor": 2.52,
+      "expectancy_pct": 0.6494,
+      "annual_ret_pct": 104.51,
+      "total_ret_pct": 207.16,
+      "sharpe_ann": 3.65,
+      "sortino_ann": 15.11,
+      "max_dd_pct": 13.12,
+      "calmar": 7.96,
+      "avg_hold": 15.1
+    }
+  }
+}
