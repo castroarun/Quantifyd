@@ -83,6 +83,9 @@ export interface MSTConfig {
   min_credit_per_lot: number;
   min_dte_at_entry: number;
   pyramid_max_level: number;
+  pyramid_d_lookback: number;
+  pyramid_d_threshold: number;
+  pyramid_safety_wing_pct: number;
   t_minus_1_close_hour: number;
   t_minus_1_close_minute: number;
 }

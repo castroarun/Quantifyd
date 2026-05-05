@@ -63,7 +63,8 @@ SIGNAL_CSV = RESULTS / "volbo_signals.csv"
 RANKING_CSV = RESULTS / "volbo_ranking.csv"
 RESULTS_MD = RESULTS / "RESULTS.md"
 LEADERS_CSV = RESULTS / "volbo_leaders.csv"
-STATUS_MD = ROOT / "NIFTY500_EXPANSION_SWEEP_STATUS.md"
+# Auto-progress goes to a separate file so it doesn't clobber the master STATUS doc
+STATUS_MD = ROOT / "VOLBO_RUN_PROGRESS.md"
 
 COHORT_A = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
             "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "HINDUNILVR"]

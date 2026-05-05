@@ -299,11 +299,22 @@ export default function Mst() {
               </span>
             </div>
             <div className={styles.ruleItem}>
-              <span className={styles.ruleLabel}>Pyramid trigger D AND B</span>
+              <span className={styles.ruleLabel}>Pyramid trigger (OR of two paths)</span>
               <span>
-                In CONDOR_OPEN_L1: if 2 consecutive 30-min closes beyond CST bar's high/low AND %K back to OB/OS,
-                add a NEW debit spread at current spot's ATM (level 2). Next CST after pyramid adds level-2 hedge.
-                Capped at level {cfg?.pyramid_max_level} — further triggers logged only.
+                In CONDOR_OPEN_L1, pyramid fires on whichever path triggers first:
+                <br />
+                <b>Path 1 — D_cumulative AND B (momentum):</b> within last {cfg?.pyramid_d_lookback ?? 6} bars after CST,
+                {' '}<code>(closes_beyond − closes_against) ≥ {cfg?.pyramid_d_threshold ?? 3}</code> AND current bar closes beyond,
+                {' '}AND %K has left the OB/OS zone and returned to ≥{cfg?.stoch_ob ?? 80}/≤{cfg?.stoch_os ?? 20}.
+                <br />
+                <b>Path 2 — Safety wing-breach (price-based):</b> spot has breached half-way into the wing
+                past the credit-spread short strike — i.e. <code>spot ≥ entry_atm + {((2 + (cfg?.pyramid_safety_wing_pct ?? 0.5)) * (cfg?.spread_width ?? 200)).toFixed(0)}</code> for long
+                {' '}(or <code>≤ entry_atm − {((2 + (cfg?.pyramid_safety_wing_pct ?? 0.5)) * (cfg?.spread_width ?? 200)).toFixed(0)}</code> for short).
+                Backup for the case where directional move continues without classic momentum signal — prevents the condor bleeding out.
+                <br />
+                On either trigger: add a NEW debit spread at current spot's ATM (level 2). Next CST after pyramid adds level-2 hedge.
+                Capped at level {cfg?.pyramid_max_level} — further triggers logged only. Each pyramid event records
+                <code>trigger_kind</code> = "d_cumulative_and_b" / "safety_wing_breach" / "both".
               </span>
             </div>
             <div className={styles.ruleItem}>
@@ -327,8 +338,12 @@ export default function Mst() {
             <div className={styles.ruleItem}>
               <span className={styles.ruleLabel}>Backtest backing</span>
               <span>
-                research/35 (signal selection on 2-yr, 252 ST cells), research/36 (CST continuation + pyramid trigger
-                validated on 6.3-yr extended period: 302 trends, 1495 CSTs). FP rate of D AND B = 19% on extended sample.
+                research/35 (signal selection on 2-yr, 252 ST cells); research/36 (CST continuation + pyramid trigger
+                validated on 6.3-yr extended period: 302 trends, 1495 CSTs).
+                <br />
+                Pyramid: D_cumulative+B FP=13.2% (vs strict's 18.7%) with same 79% coverage of trend continuations.
+                Safety wing-breach validated at <b>0% false-positive rate</b>, +2.1% incremental coverage,
+                fires earlier than D_cumulative+B in 8.6% of cases.
               </span>
             </div>
           </div>

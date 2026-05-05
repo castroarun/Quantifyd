@@ -56,7 +56,8 @@ RESULTS = ROOT / "results"
 RESULTS.mkdir(exist_ok=True)
 SIGNAL_CSV = RESULTS / "ccrb_signals.csv"
 RUN_LOG = RESULTS / "ccrb_run.log"
-STATUS_MD = ROOT / "NIFTY500_EXPANSION_SWEEP_STATUS.md"
+# Auto-progress goes to a separate file so it doesn't clobber the master STATUS doc
+STATUS_MD = ROOT / "CCRB_RUN_PROGRESS.md"
 
 COHORT_A = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
             "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "HINDUNILVR"]
