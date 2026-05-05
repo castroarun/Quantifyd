@@ -4,18 +4,19 @@
 **Status:** SPEC ONLY — do not start coding until user gives explicit go-ahead.
 **Source research:** `research/35_nifty_bnf_master_child_supertrend/` (RESULTS.md has the full backtest evidence)
 **Target app:** Quantifyd (`http://94.136.185.54:5000/app`)
+**Page route:** `/app/mst`
+**Reference page (mirror this exactly):** `/app/orb` ([frontend/src/pages/Orb.tsx](../../frontend/src/pages/Orb.tsx)) — structure, layout, conventions, rules block, metrics, sections all match ORB
 
 ---
 
 ## 1. What this strategy is
 
-An always-on, signal-driven options operator's bias engine on **NIFTY 30-min**.
+An always-on, live-trading options strategy on **NIFTY 30-min** that builds long call condors when the trend is up and long put condors when the trend is down.
 
-- **MST (Master SuperTrend)** sets the directional bias — long or short. Used to enter a debit spread (bull call spread when MST=long, bear put spread when MST=short) at biweekly-to-weekly expiries.
-- **CST (Child Stochastic)** signals exhaustion within the active MST trend. Used to convert the debit spread into an **iron condor** by adding a contra credit spread.
-- Operator places, manages, and rolls the options manually based on these signals. **Phase 1 of this build is signal-only — no order placement.** Order automation is a later phase.
-
-This page is **observational + alerting** — it shows the live MST/CST state, history, and pings the operator at signal events. It does NOT trade.
+- **MST (Master SuperTrend)** sets the directional bias — long or short. On activation, the system enters a **debit spread** (bull call when long, bear put when short) for the next weekly Thursday expiry with at least 6 DTE.
+- **CST (Child Stochastic)** signals exhaustion within the active MST trend. On the **first** CST trigger inside an active weekly expiry cycle, the system adds a **contra credit spread** (bear call when long, bull put when short) to convert the position into a **long condor**. Subsequent CSTs within the same expiry cycle are informational only.
+- All four legs squared off at **T-1 EOD (Wednesday 15:25 IST)** — never carried to expiry day.
+- **Phase 1 is LIVE TRADING with 1 lot.** Not paper. The user wants to validate the system with real money at minimum size from day one.
 
 ---
 
@@ -45,119 +46,368 @@ This is the validated edge: lifts MFE/MAE from 2.13× → 3.62× at the cost of 
 - `%D = SMA(%K, 3)`
 - All computed on close of completed 30-min bars
 
-### 2.4 CST trigger rules
+### 2.4 CST trigger rule (the original cross-from-extreme rule)
 
-| MST state | CST trigger condition (at bar close) | Action |
+| MST state | CST trigger condition (at bar close) |
+|---|---|
+| **LONG (active)** | `%K[i-1] >= %D[i-1]` AND `%K[i] < %D[i]` AND `%K[i-1] >= 80` |
+| **SHORT (active)** | `%K[i-1] <= %D[i-1]` AND `%K[i] > %D[i]` AND `%K[i-1] <= 20` |
+
+**Notes:**
+- The `%K_prev >= 80` (or `<= 20`) gate is what makes this lead the MAE peak (+8.8 bars on NIFTY 30-min) rather than confirm it. Tested alternative ("exit-zone" variant — requires K to also close back below 80) was rejected: lead time turned to −18 bars.
+- **K does NOT need to be below 80 on the trigger bar.** The cross can fire while K is still at 85. That is by design.
+- If MST is "armed but not active" (waiting for breakout), CST events are ignored.
+- If MST flips, any pending CST state and any open position is reset.
+
+### 2.5 Multi-CST policy (one condor per weekly expiry cycle, with pyramiding)
+
+Empirically (research/35, NIFTY 30-min p21,m5.0): **median 4 CSTs per MST trend, mean 5.4, max 24**.
+Empirically (research/36): **67% of FIRST CSTs are false alarms — trend continues after the hedge**.
+
+Single-CST-per-trend policy would over-trade. Plain "build condor on first CST" policy would build hedges at the wrong moment 2/3 of the time. Policy combines both findings:
+
+| Condition | Action |
+|---|---|
+| First CST in an active MST trend, in current weekly expiry cycle | Add contra credit spread → CONDOR_OPEN_L1 |
+| Subsequent CSTs (level 1, no pyramid yet) | Informational — log to events, do nothing to position |
+| **Pyramid trigger fires (D AND B; see §2.6)** | **Add SECOND debit spread (current spot ATM-anchored) → DEBIT_OPEN_L2** |
+| First CST after pyramid (in level 2) | Add SECOND contra credit spread → CONDOR_OPEN_L2 |
+| Subsequent triggers/CSTs after level 2 | Informational only — pyramid capped at level 2 |
+| MST flip (any direction, any level) | Close all open legs, reset state |
+| First CST in a NEW expiry cycle (because we rolled over to next week) | Add contra credit spread for that new week's condor (back to level 1) |
+
+### 2.6 Pyramid trigger — D AND B (research/36)
+
+**Trigger fires when BOTH conditions are true at the same 30-min bar close:**
+
+| Condition | LONG MST | SHORT MST |
 |---|---|---|
-| **LONG (active)** | `%K[i-1] >= %D[i-1]` AND `%K[i] < %D[i]` AND `%K[i-1] >= 80` | Operator alert: ADD bear call spread → debit becomes iron condor |
-| **SHORT (active)** | `%K[i-1] <= %D[i-1]` AND `%K[i] > %D[i]` AND `%K[i-1] <= 20` | Operator alert: ADD bull put spread → debit becomes iron condor |
+| **D** — price action | Two consecutive 30-min closes ABOVE the most recent CST bar's `high` | Two consecutive 30-min closes BELOW the most recent CST bar's `low` |
+| **B** — momentum return | %K has been below 70 since the last CST (left the OB zone) AND has now returned to ≥ 80 | %K has been above 30 since the last CST (left the OS zone) AND has now returned to ≤ 20 |
 
-Notes:
-- The `%K_prev >= 80` (or `<= 20`) gate is what makes this lead the MAE peak — without it, every Stoch cross fires
-- If MST is "armed but not active" (waiting for breakout), CST events are IGNORED
-- If MST flips, any pending CST state is reset
-- A single MST trend can fire the CST multiple times — operator decides whether to roll the credit spread or treat each cross as informational
+Validated (research/36 on 75 trends, 396 CSTs):
+- **Coverage:** 80% of trend continuations correctly flagged
+- **False positive rate:** 13% (1 in 8 fires when trend was actually exhausting — acceptable for pyramiding)
+- **Median lead time:** 36 bars (~18 hours) before the trend's MFE peak after the CST
 
-### 2.5 Bar timing & timezone
-
-- All bars are NSE IST. Session: 09:15 – 15:30
-- 30-min buckets: 09:15, 09:45, 10:15, 10:45, 11:15, 11:45, 12:15, 12:45, 13:15, 13:45, 14:15, 14:45, 15:15
-- 13 bars per regular session. Last bar (15:15) closes at 15:30.
-- All signal evaluation happens **at bar close**. Never act on intra-bar Stoch values — they repaint.
-- For the breakout filter: a stop order at `flip_high`/`flip_low` would fill intra-bar; for the alerting layer, treat the first 30-min close where the break already happened as the activation event.
+The single-trigger D alone catches 99% but with 31% FP rate — too aggressive for pyramiding.
+The single-trigger B alone catches 80% with 20% FP — close to the combo but slightly worse.
+**The AND combination is the right rule for pyramiding** because false-pyramid cost > missed-pyramid cost.
 
 ---
 
-## 3. Implementation phases
+## 3. Position state machine (with pyramid)
 
-### Phase 1 (MVP) — Signal generation + dashboard
+```
+              ┌────────────────────────────┐
+              │ NO_POSITION                │
+              └─────┬──────────────────────┘
+                    │ MST flip + break-of-extreme confirmed
+                    ▼
+              ┌────────────────────────────┐
+              │ ARMED                      │
+              │ Waiting for break of       │
+              │ flip-bar high/low          │
+              └─────┬──────────────────────┘
+                    │ break confirmed
+                    ▼
+              ┌────────────────────────────┐
+              │ DEBIT_OPEN_L1              │
+              │ 1× bull call (or put)      │
+              └─────┬──────────────────────┘
+                    │ first CST in active week
+                    │ (credit ≥ ₹1,000/lot → §4.3)
+                    ▼
+        ┌───────────┴────────────┐
+        │                        │ credit too low
+        │ credit OK              ▼
+        │             ┌──────────────────────────┐
+        │             │ ROLL_PENDING             │
+        │             │ Close debit, open fresh  │
+        │             │ next-week reset condor   │
+        │             │ (per §4.3, back to L1)   │
+        │             └─────┬────────────────────┘
+        ▼                   │
+  ┌──────────────┐          │
+  │ CONDOR_      │          ▼
+  │ OPEN_L1      │     ┌─────────────────────┐
+  │ 1×deb+1×cred │     │ DEBIT_OPEN_L1       │
+  └──────┬───────┘     │ or CONDOR_OPEN_L1   │
+         │             │ (week N+1)          │
+         │             └─────────────────────┘
+         │ pyramid trigger D AND B (§2.6)
+         ▼
+  ┌──────────────────────────────────┐
+  │ DEBIT_OPEN_L2                    │
+  │ 2×deb (level 1 + new at current  │
+  │ ATM) + 1×cred                    │
+  └──────┬───────────────────────────┘
+         │ next CST (credit ≥ ₹1,000/lot)
+         ▼
+  ┌──────────────────────────────────┐
+  │ CONDOR_OPEN_L2                   │
+  │ 2×deb + 2×cred — MAX LEVEL       │
+  │ Further triggers/CSTs: log only  │
+  └──────────────────────────────────┘
 
-In scope:
-1. Backend service that computes MST and CST in real time on 30-min NIFTY bars
-2. SQLite persistence of state and signal history
-3. React page at `/app/mst` showing live state, recent flips, recent CST events, and chart
-4. Telegram/email alert on every MST flip activation and every CST trigger
+Forks (apply to ANY state):
+  MST flips opposite     → close ALL legs → ARMED in new direction
+  Kill switch toggled    → close ALL legs → halted (no new entries)
+  T-1 EOD (Wed 15:25)   → close ALL legs → NO_POSITION (or ARMED if MST still active)
+```
 
-Out of scope:
-- Order placement (manual operator workflow for now)
-- Backtest re-runs from UI (research/35 already has the historical evidence)
-- BANKNIFTY (NIFTY only for Phase 1)
+The pyramid is **capped at level 2**. After CONDOR_OPEN_L2:
+- Further D-AND-B triggers → logged, ignored
+- Further CSTs → logged, ignored
+- Position runs to T-1 EOD or MST flip
 
-### Phase 2 — Optional automation
-
-(Re-spec after Phase 1 runs in paper for ≥ 1 month.)
-
-- Auto-place debit spread on MST activation (Kite API; requires options chain selection logic)
-- Auto-place contra credit spread on CST trigger
-- Position management, P&L tracking, kill switch
+Maximum exposure at level 2:
+- 8 open legs total (4 debit + 4 credit)
+- ~2× margin requirement vs standard condor
+- 2× directional risk vs standard condor (compensated by 2× hedges)
 
 ---
 
-## 4. Data layer
+## 4. Spread structure (live, 1 lot per leg)
 
-### 4.1 Live data source
+NIFTY weekly options · 50-point strike interval · 1 lot = 75 contracts (read from `FNO_LOT_SIZES['NIFTY']`).
 
-**Use the existing Kite WebSocket ticker** (already wired for ORB/NAS — see `services/kite_ws_manager.py` if it exists, else how Maruthi/ORB pull live ticks).
+### 4.1 DTE rule at entry
 
-NIFTY50 instrument token: confirm at runtime via `kite.instruments("NSE")` lookup. NIFTY 50 is an index, not a tradable symbol — historical-data API uses instrument_token of the index.
+Use the nearest weekly Thursday expiry with **≥ 6 DTE** at MST activation time:
 
-For 30-min bars: subscribe to NIFTY ticks → aggregate locally into 30-min OHLC bars at the canonical bucket boundaries (09:15, 09:45, …, 15:15). Close each bar at the bucket end.
+| Activation day | Expiry used | DTE at entry |
+|---|---|---|
+| Monday | Thursday next week | 10 |
+| Tuesday | Thursday next week | 9 |
+| Wednesday | Thursday next week | 8 |
+| Thursday | Thursday next week | 7 |
+| Friday | Thursday next week | 6 |
 
-Alternative if WS subscription to NIFTY index ticks isn't supported: poll `kite.historical_data(instrument_token, from_date, to_date, '30minute')` every 30 minutes at +5s past the bar close. Slightly higher latency (~10s) but simpler.
+Result: median entry DTE ~8. After median CST lag of ~2.2 days, 4-8 DTE remain on the bear call spread — enough theta for meaningful credit (~₹14-22/share).
 
-### 4.2 Historical seed
+### 4.2 Standard spread structure (default — used when credit at CST time meets threshold)
 
-On startup, load the last ~200 30-min bars of NIFTY from `backtest_data/market_data.db` (table `market_data_unified`, symbol=`NIFTY50`, timeframe=`30minute` if present, else resample from `5minute`). 200 bars covers the longest ATR period (50) plus enough warmup for Stoch.
+**Long MST → Long Call Condor (level 1) → optional Pyramid (level 2)**
 
-### 4.3 New SQLite DB / table
+| Step | Trigger | Action | Strike | Notes |
+|---|---|---|---|---|
+| 1a | MST activates LONG | BUY 1 lot CE | ATM (entry-time spot rounded to 50 = `entry_atm`) | DTE rule §4.1 |
+| 1b | MST activates LONG | SELL 1 lot CE | `entry_atm + 200` | same expiry |
+| 2a | First CST in active week (credit ≥ ₹1,000/lot) | SELL 1 lot CE | `entry_atm + 400` | same expiry |
+| 2b | First CST in active week (credit ≥ ₹1,000/lot) | BUY 1 lot CE | `entry_atm + 600` | same expiry |
+| **3a** | **Pyramid (D AND B fires)** | **BUY 1 lot CE** | **current spot rounded to 50 = `pyramid_atm`** | **same expiry** |
+| **3b** | **Pyramid (D AND B fires)** | **SELL 1 lot CE** | **`pyramid_atm + 200`** | **same expiry** |
+| 4a | Next CST after pyramid (credit ≥ ₹1,000/lot) | SELL 1 lot CE | `pyramid_atm + 400` | same expiry |
+| 4b | Next CST after pyramid (credit ≥ ₹1,000/lot) | BUY 1 lot CE | `pyramid_atm + 600` | same expiry |
 
-Add to `backtest_data/mst_signals.db` (new file):
+Level-1 strikes anchored to **MST-entry-time ATM**.
+Level-2 strikes anchored to **spot at pyramid-trigger time** (price has moved up by then; level-2 condor is positioned at the new operative range).
+
+**Short MST → Long Put Condor** (mirror)
+
+| Step | Trigger | Action | Strike |
+|---|---|---|---|
+| 1a | MST activates SHORT | BUY 1 lot PE | `entry_atm` |
+| 1b | MST activates SHORT | SELL 1 lot PE | `entry_atm - 200` |
+| 2a | First CST (credit ≥ ₹1,000/lot) | SELL 1 lot PE | `entry_atm - 400` |
+| 2b | First CST (credit ≥ ₹1,000/lot) | BUY 1 lot PE | `entry_atm - 600` |
+| **3a** | **Pyramid (D AND B fires)** | **BUY 1 lot PE** | **`pyramid_atm`** |
+| **3b** | **Pyramid (D AND B fires)** | **SELL 1 lot PE** | **`pyramid_atm - 200`** |
+| 4a | Next CST after pyramid (credit ≥ ₹1,000/lot) | SELL 1 lot PE | `pyramid_atm - 400` |
+| 4b | Next CST after pyramid (credit ≥ ₹1,000/lot) | BUY 1 lot PE | `pyramid_atm - 600` |
+
+### 4.3 Reset structure — when current-week credit is too low
+
+If at the first CST in the current expiry cycle, the bear call (or bull put) credit at standard strikes is **< ₹1,000/lot total**:
+
+1. **Close** the existing debit spread at market (lock in current week's P&L)
+2. **Open a fresh condor on next week's expiry** (Thursday week N+1, ≥ 6 DTE again)
+3. The fresh condor uses **Reading D — narrow spot-centered structure**:
+
+```
+At reset, current spot = S. Round S to nearest 50 → centered_atm.
+Use 100/100/100 strike spacing (NOT 200/200/200) so the deep-ITM bull call
+cost is bounded.
+
+Long Call Condor strikes (long MST):
+  K1 = centered_atm − 50  (long, slightly ITM)
+  K2 = centered_atm        (short, ATM)
+  K3 = centered_atm + 50   (short, OTM by 50)
+  K4 = centered_atm + 150  (long, OTM by 150)
+
+Long Put Condor strikes (short MST):
+  K1 = centered_atm − 150
+  K2 = centered_atm − 50
+  K3 = centered_atm
+  K4 = centered_atm + 50
+```
+
+Properties of this reset structure (NIFTY at ~22,750 with 8 DTE, IV ~14%):
+- Bull call (K1/K2) cost: ~₹50/share = ~₹3,750/lot
+- Bear call (K3/K4) credit: ~₹20/share = ~₹1,500/lot ✓
+- Profitable zone width: 50 (between K2 and K3) — narrow but spot-centered
+- Spot at midpoint of profitable zone (K2 ≤ S ≤ K3 with S at centered_atm)
+- Risk-reward: max profit ~₹4,875/lot vs max loss ~₹2,250/lot (≈ 1:0.46 against — better than standard structure during reset)
+
+**Recursive guard:** if even the new week's bear call credit is < ₹1,000/lot at standard strikes, the fresh condor is built using the reset structure above — same spot-centered logic, sized for the new week's DTE.
+
+> **Open question for the user:** the reset structure above is "Reading D" from prior conversation — narrow 100/100/100 spot-centered. Confirm before live deploy. Alternatives are Reading A (200/200/200 spot-centered, deep-ITM bull call → bad economics) and Reading C (ATM bull, shifted bear call → asymmetric 200/150/200). Default = Reading D.
+
+### 4.4 Order placement
+
+| Order property | Value |
+|---|---|
+| Type | LIMIT at mid-price |
+| Mid calculation | (bid + ask) / 2 from option chain quote |
+| Fallback | If LIMIT not filled in 30 seconds → cancel & re-place at MARKET |
+| Per-leg quantity | 1 lot = 75 contracts |
+| Total legs at full condor | 4 (2 debit + 2 credit) |
+| Total legs at reset | 6 in sequence (close 2 + open 4) |
+| Order tag | `MST_<state>_<bar_dt>` for traceability |
+
+### 4.5 Exit rules
+
+| Trigger | Action |
+|---|---|
+| **T-1 EOD: Wednesday 15:25 IST** | Close all open legs at market. Mandatory, no exceptions (other than already-closed positions). |
+| MST flips opposite | Close all open legs at market. Re-arm in new direction. |
+| Kill switch toggled | Close all open legs at market. Halt entries. |
+
+No profit-target or stop-loss-based exits. The condor structure self-caps loss; we let it run until T-1 or MST flip.
+
+---
+
+## 5. Data layer
+
+### 5.1 Live tick source — REUSE `services/nas_ticker.py` singleton
+
+Per [services/nas_ticker.py:26-28](../../services/nas_ticker.py#L26-L28): "*only one KiteTicker can exist per process... NAS owns the singleton; other strategies that need ticks should subscribe...*"
+
+The MST engine **does not create its own KiteTicker**. It hooks into NasTicker:
+
+1. NasTicker already subscribes to NIFTY 50 (instrument_token = 256265) and builds 5-min candles via `NiftyCandleAggregator`.
+2. MST engine registers a callback on the 5-min candle close (alongside NAS's existing scan callback).
+3. MST callback aggregates incoming 5-min candles into 30-min buckets (09:15-09:45, 09:45-10:15, …, 15:15-15:30 IST). On 30-min bucket close, fire `MSTEngine.on_new_bar()`.
+
+**Why this matters:** keeps the WebSocket subscription single, avoids duplicate state, ensures NAS and MST see identical NIFTY data.
+
+### 5.2 Historical seed
+
+On startup, load the last ~200 NIFTY 30-min bars from `backtest_data/market_data.db` (table `market_data_unified`, symbol=`NIFTY50`, timeframe=`30minute` if present, else resample from `5minute`). 200 bars covers the longest indicator period (50) plus warmup for Stoch.
+
+If service starts mid-day (after first bar of the day), backfill from Kite via `kite.historical_data(256265, ..., '30minute')` to cover any gap.
+
+### 5.3 New SQLite DB — `backtest_data/mst_trading.db`
+
+Mirrors the KC6 pattern in `services/kc6_db.py`. Five tables:
 
 ```sql
+-- 30-min bars + computed indicators
 CREATE TABLE mst_bars (
-    bar_dt TEXT PRIMARY KEY,        -- ISO 8601 IST
+    bar_dt TEXT PRIMARY KEY,             -- ISO 8601 IST
     open REAL, high REAL, low REAL, close REAL,
-    atr REAL,
+    atr21 REAL,
     st_upper REAL, st_lower REAL,
-    direction INTEGER,              -- +1, -1, or 0 if not seeded
+    direction INTEGER,                    -- +1, -1, 0 if not seeded
     stoch_k REAL, stoch_d REAL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Signal events (separate from positions)
 CREATE TABLE mst_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_type TEXT NOT NULL,       -- 'flip_armed' | 'flip_activated' | 'flip_discarded' | 'cst_trigger'
-    direction INTEGER,              -- +1 (long) or -1 (short)
+    event_type TEXT NOT NULL,             -- 'flip_armed' | 'flip_activated' |
+                                          -- 'flip_discarded' | 'cst_trigger' |
+                                          -- 'condor_built' | 'rolled' |
+                                          -- 't_minus_1_close' | 'mst_flip_close' |
+                                          -- 'kill_switch'
+    direction INTEGER,
     bar_dt TEXT NOT NULL,
-    price REAL,                     -- close at flip, or breakout level for activation, or close at CST
-    flip_high REAL,                 -- only for flip_armed: the level to break
+    price REAL,
+    flip_high REAL,
     flip_low REAL,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Positions (one row per leg)
+CREATE TABLE mst_positions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    week_label TEXT NOT NULL,             -- 'YYYY-MM-DD' = expiry Thursday
+    leg_role TEXT NOT NULL,               -- 'bull_long', 'bull_short', 'bear_short', 'bear_long'
+                                          -- (or 'put_long', 'put_short', 'putw_short', 'putw_long' for short MST)
+    side TEXT NOT NULL,                   -- 'BUY' | 'SELL'
+    instrument_token INTEGER,
+    tradingsymbol TEXT,                   -- e.g. NIFTY26MAY22500CE
+    strike INTEGER,
+    option_type TEXT,                     -- 'CE' | 'PE'
+    qty INTEGER,                          -- 75 for 1 lot
+    entry_price REAL,
+    entry_time TEXT,
+    exit_price REAL,
+    exit_time TEXT,
+    exit_reason TEXT,
+    status TEXT,                          -- 'OPEN' | 'CLOSED'
+    pnl_inr REAL,
+    order_id TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Order audit
+CREATE TABLE mst_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bar_dt TEXT,
+    leg_id INTEGER,                       -- FK to mst_positions.id
+    order_id TEXT,                        -- Zerodha order_id
+    side TEXT,
+    qty INTEGER,
+    price REAL,
+    order_type TEXT,                      -- LIMIT | MARKET
+    status TEXT,                          -- PLACED | FILLED | REJECTED | CANCELLED
+    error_msg TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Daily P&L curve
+CREATE TABLE mst_equity (
+    date TEXT PRIMARY KEY,
+    realized_pnl REAL,
+    unrealized_pnl REAL,
+    total_pnl REAL,
+    open_legs INTEGER,
+    state TEXT,
     notes TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_mst_events_bar ON mst_events(bar_dt);
 CREATE INDEX idx_mst_events_type ON mst_events(event_type);
+CREATE INDEX idx_mst_positions_status ON mst_positions(status);
+CREATE INDEX idx_mst_positions_week ON mst_positions(week_label);
 ```
-
-Persist every completed 30-min bar to `mst_bars`. Persist every state transition to `mst_events`.
 
 ---
 
-## 5. Signal engine — `services/mst_engine.py`
+## 6. Signal & execution engine — `services/mst_engine.py`
 
-Single-class engine, similar pattern to `services/kc6_scanner.py`.
+Pattern reference: `services/kc6_scanner.py` + `services/kc6_executor.py`. Keep MST in a single class with explicit state machine method.
 
 ```python
 class MSTEngine:
-    """NIFTY 30-min Master SuperTrend + Stochastic CST signal engine.
+    """
+    NIFTY 30-min Master SuperTrend + Stochastic CST signal & execution engine.
 
-    State machine:
-      IDLE                              - no MST signal yet (warmup)
-      ARMED_LONG                        - MST flipped long on bar close, waiting for high break
-      ARMED_SHORT                       - MST flipped short on bar close, waiting for low break
-      ACTIVE_LONG                       - MST long & breakout confirmed; CST is being monitored
-      ACTIVE_SHORT                      - MST short & breakout confirmed
+    States:  NO_POSITION → ARMED → DEBIT_OPEN → CONDOR_OPEN
+             (with ROLL_PENDING fork on credit-too-low CST)
+
+    Drivers:
+      - on_5min_candle_close(candle):  called by NasTicker callback;
+                                        aggregate to 30-min, run signals on 30-min close
+      - on_30min_close(bar):           main signal evaluator + state transitions
+      - on_t_minus_1_eod():            scheduled at Wed 15:25 IST; force-close all legs
+      - on_mst_flip():                 mid-state flip handler; close + reset
+      - kill_switch():                 emergency close + halt
     """
     ATR_PERIOD = 21
     MULTIPLIER = 5.0
@@ -166,186 +416,316 @@ class MSTEngine:
     STOCH_SMOOTH = 3
     STOCH_OB = 80
     STOCH_OS = 20
+    MIN_CREDIT_PER_LOT = 1000   # rupees; below → reset path
+    SPREAD_WIDTH = 200           # standard structure points
+    RESET_WIDTH = 100            # reset (Reading D) structure points
+    LOTS = 1                     # Phase 1: 1 lot per leg per level
+    MIN_DTE_AT_ENTRY = 6         # weekly expiry rule
+    PYRAMID_MAX_LEVEL = 2        # max pyramid level (research/36 cap)
+    PYRAMID_TRIGGER_D_BARS = 2   # consecutive closes beyond CST bar (trigger D)
+    PYRAMID_TRIGGER_B_OB = 80    # %K threshold for B (long bias)
+    PYRAMID_TRIGGER_B_OS = 20    # %K threshold for B (short bias)
+    PYRAMID_TRIGGER_B_EXIT = 70  # %K must drop below this before re-entering OB (long)
 
-    def on_new_bar(self, bar):
+    def on_30min_close(self, bar):
         # 1. Append bar to rolling buffer
         # 2. Recompute SuperTrend, ATR, Stoch on the buffer
-        # 3. State transitions:
-        #    a. If direction flipped on this bar's close: emit 'flip_armed', store flip_high/low,
-        #       transition to ARMED_LONG or ARMED_SHORT
-        #    b. If state is ARMED_LONG and bar.high > flip_high: emit 'flip_activated',
-        #       transition to ACTIVE_LONG
-        #    c. Mirror for ARMED_SHORT/ACTIVE_SHORT
-        #    d. If state is ARMED_* and direction flips again: emit 'flip_discarded',
-        #       reset to ARMED_<new direction>
-        #    e. If state is ACTIVE_* and Stoch %K crosses %D from extreme: emit 'cst_trigger'
-        # 4. Persist bar and any events
-        # 5. Return list of events for this bar (for the alerting layer)
+        # 3. Persist bar to mst_bars
+        # 4. State machine transitions:
+        #    - NO_POSITION & MST flip detected → emit 'flip_armed', go ARMED
+        #    - ARMED & break of flip-bar high (long) / low (short) → activate
+        #         → place debit spread (§4.2) → DEBIT_OPEN
+        #    - ARMED & MST re-flips → 'flip_discarded' → re-arm
+        #    - DEBIT_OPEN & first CST → check bear call credit at std strikes
+        #         credit ≥ ₹1,000/lot → place credit spread → CONDOR_OPEN
+        #         credit < ₹1,000/lot → 'rolled' event → close debit, open
+        #                                fresh next-week reset structure (§4.3)
+        #    - CONDOR_OPEN & subsequent CST → log only
+        # 5. Persist any events / positions
+        # 6. Dispatch alerts via NotificationService
 ```
 
-**Reuse**: the SuperTrend and Stochastic implementations from `research/35_nifty_bnf_master_child_supertrend/scripts/supertrend.py` are correct and tested — port them verbatim into `services/mst_engine.py` (or import).
+### 6.1 Order placement helpers
 
-### 5.1 Scheduling
+Reuse the existing Kite order-placement pattern from `services/orb_live_engine.py` (look for `_place_order()`-style helpers). For MST:
+- `place_leg(leg_role, strike, side, qty)` — places LIMIT-at-mid, falls back to MARKET after 30s
+- `close_leg(position_id)` — places MARKET to square off; updates `mst_positions.status = CLOSED`
+- `close_all_legs(reason)` — bulk close for T-1 EOD / MST flip / kill switch
 
-Add to `app.py` near the existing KC6/ORB scheduled jobs:
+Strike → tradingsymbol resolution: use existing `services/options_data_manager.py` patterns (see how NAS / strangle resolve weekly NIFTY strikes).
+
+### 6.2 Scheduling
+
+Add to `app.py` near KC6/ORB scheduled jobs:
 
 ```python
-# 30-min cron at 09:46, 10:16, 10:46, ..., 15:16 IST (1 minute after bar close)
-scheduler.add_job(mst_evaluate_latest_bar, 'cron',
-                  day_of_week='mon-fri', hour='9-15',
-                  minute='16,46', id='mst_30min_eval')
-```
+# 30-min bar close evaluator runs INSIDE NasTicker callback;
+# no separate cron needed for signal generation.
 
-`mst_evaluate_latest_bar()` pulls the just-closed 30-min bar from Kite (or from a WS-aggregated buffer), feeds it to `MSTEngine.on_new_bar()`, persists the result, and dispatches alerts.
+# T-1 EOD square-off — every Wednesday at 15:25 IST
+scheduler.add_job(
+    mst_t_minus_1_close, 'cron',
+    day_of_week='wed', hour=15, minute=25,
+    id='mst_t_minus_1_close',
+)
+
+# Daily equity snapshot at 15:35 IST (after market close, post any T-1 close)
+scheduler.add_job(
+    mst_equity_snapshot, 'cron',
+    day_of_week='mon-fri', hour=15, minute=35,
+    id='mst_equity_snapshot',
+)
+
+# Position reconciliation on startup + every 30 min during market hours
+scheduler.add_job(
+    mst_reconcile_positions, 'cron',
+    day_of_week='mon-fri', hour='9-15', minute='5,35',
+    id='mst_reconcile',
+)
+```
 
 ---
 
-## 6. Backend API — Flask routes in `app.py`
+## 7. Backend API — Flask routes in `app.py`
 
-Match the convention used by `/api/orb/*`, `/api/nas/*`, `/api/kc6/*`.
+Match ORB conventions ([services/orb_live_engine.py](../../services/orb_live_engine.py) + the `/api/orb/*` routes).
 
 | Route | Method | Returns |
 |---|---|---|
-| `/api/mst/state` | GET | `{ state, mst_direction, current_close, last_flip_dt, armed_levels: {high,low}, last_cst_dt, stoch_k, stoch_d, atr }` |
-| `/api/mst/bars?limit=200` | GET | Last N persisted 30-min bars with computed indicators (for chart) |
-| `/api/mst/events?limit=50&type=*` | GET | Recent events from `mst_events` |
-| `/api/mst/scan` | POST | Force a re-evaluation now (debug aid; no production use) |
-| `/api/mst/alerts/test` | POST | Send a test alert through the configured channel |
+| `/api/mst/state` | GET | Full state object (see §7.1) — feeds the dashboard |
+| `/api/mst/bars?limit=200` | GET | Recent 30-min bars with indicators (chart data) |
+| `/api/mst/events?limit=50&type=*` | GET | Recent signal/position events |
+| `/api/mst/positions?status=*` | GET | Open + recently closed legs |
+| `/api/mst/equity-curve?days=30` | GET | Daily P&L for equity curve chart |
+| `/api/mst/scan` | POST | Force re-evaluate latest bar (debug aid) |
+| `/api/mst/kill-switch` | POST | Close all legs + halt new entries |
+| `/api/mst/toggle-mode` | POST | (placeholder; Phase 1 is live-only, no paper toggle) |
 
-All JSON, all behind the existing CORS/session middleware. No auth changes needed beyond what other endpoints already require.
+### 7.1 State object shape (mirrors `ORBState`)
+
+```typescript
+interface MSTState {
+  // High-level state
+  state_machine: 'NO_POSITION' | 'ARMED' | 'DEBIT_OPEN' | 'CONDOR_OPEN' | 'ROLL_PENDING';
+  mst_direction: 1 | -1 | 0;          // 0 = idle
+  armed_since: string | null;          // ISO IST
+  position_since: string | null;
+  current_week_expiry: string | null;  // ISO YYYY-MM-DD
+
+  // Live indicators
+  last_bar_dt: string;
+  last_close: number;
+  atr21: number;
+  st_value: number;
+  stoch_k: number;
+  stoch_d: number;
+  flip_armed_high: number | null;
+  flip_armed_low: number | null;
+
+  // Position summary
+  open_legs: MSTLeg[];                 // 0, 2, or 4 legs
+  closed_today: MSTLeg[];
+
+  // P&L
+  today_pnl: number;
+  unrealized_pnl: number;
+  realized_pnl_today: number;
+
+  // Config
+  config: {
+    atr_period: 21,
+    multiplier: 5.0,
+    stoch: { k: 14, d: 3, smooth: 3, ob: 80, os: 20 },
+    spread_width: 200,
+    reset_width: 100,
+    min_credit_per_lot: 1000,
+    lots: 1,
+    min_dte_at_entry: 6,
+    t_minus_1_close_time: '15:25',
+  };
+
+  // Mode
+  live_trading: true;                  // Phase 1: always live
+  kill_switch_active: boolean;
+}
+```
 
 ---
 
-## 7. Frontend — React page at `/app/mst`
+## 8. Frontend — `/app/mst` (mirror ORB structure exactly)
 
-Per CLAUDE.md project rules (binding from 2026-04-26): all new pages live in `frontend/src/pages/`. Match the design language of `Nas.tsx` / `Orb.tsx` / `Nwv.tsx`.
-
-### 7.1 Files to create
-
+**Files to create:**
 ```
 frontend/src/pages/Mst.tsx
 frontend/src/pages/Mst.module.css
+frontend/src/api/types.ts             # add MSTState, MSTLeg, MSTEvent interfaces
+frontend/src/components/Sidebar/Sidebar.tsx   # add nav entry
+frontend/src/App.tsx                  # add route
 ```
 
-### 7.2 Layout (top to bottom)
+### 8.1 Page layout (top → bottom; matches Orb.tsx section order)
 
-1. **Page header** — "MST · NIFTY 30-min" + subtitle "SuperTrend(21, 5.0) + Stoch(14,3,3)"
+| Section | Mirror of ORB equivalent |
+|---|---|
+| **Header row** — "MST · NIFTY 30-min" + subtitle (state, live trading, current weekly expiry) | Orb.tsx line 422-430 |
+| **Error banner** (if any) | Orb.tsx line 432 |
+| **Metrics row** — 4 `MetricCard`s: (a) Day P&L, (b) State + direction, (c) Stoch reading, (d) Trades today | Orb.tsx line 435-466 |
+| **30-min chart panel** — OHLC with SuperTrend overlay, flip markers, CST markers; Stoch sub-panel below with %K, %D, 80/20 reference lines | Orb.tsx BookPnLChart pattern at line 469 |
+| **Section: Position** — `DataTable` with all 4 condor legs (or 2 debit legs) showing strike, qty, entry, LTP, P&L, status; closed-today legs dimmed in place. | Orb.tsx Positions section line 472-489 (with the same closed-row dim pattern) |
+| **Section: Current state** — visual state-machine indicator + key levels (flip-armed high/low, MST direction, days to expiry, T-1 close countdown if Wed) | Orb.tsx CandidatesSection pattern line 492 |
+| **Section: Current indicators** — config grid showing all rules from §6 constants | Orb.tsx CurrentIndicators line 495-501 + 832-884 |
+| **Section: Today's events** — `DataTable` of MST events (flip_armed, flip_activated, cst_trigger, condor_built, rolled, t_minus_1_close, mst_flip_close) with time, type, direction, price, notes | Orb.tsx Today's signals section line 575-586 |
+| **Section: What's next** — schedule (next 30-min bar evaluation, T-1 close time if Wed, weekly expiry) | Orb.tsx WhatsNext section line 566-572 |
+| **Section: Strategy rules** — collapsed `<details>` block, format-matched to ORB's rules section, with: Setup, MST signal, MST entry filter, CST trigger, Multi-CST policy, Spread structure (standard + reset), DTE rule, Order placement, Exit rules (T-1, MST flip, kill switch) | Orb.tsx Strategy rules section line 591-758 |
+| **Section: Backtest baseline** — collapsed `<details>` block with research/35 numbers (252 cells swept, NIFTY p21,m5.0 winner, MFE/MAE 3.62 with break-of-extreme, multi-CST policy data) | Orb.tsx Backtest baseline section line 761-827 |
 
-2. **Status strip** (4 metric cards in a row, reuse `MetricCard`):
-   - Current MST state (`ACTIVE_LONG` / `ACTIVE_SHORT` / `ARMED_LONG` / `ARMED_SHORT` / `IDLE`) with a colored `StatusDot`
-   - Bias direction with "Long since" / "Short since" timestamp
-   - Last CST trigger ("none yet" or "12m ago at 25,123")
-   - Stoch reading: `%K = 78.4 / %D = 75.1` with a small chip indicating "approaching OB" / "approaching OS" / "neutral"
+### 8.2 Sidebar entry
 
-3. **Chart panel** — single 30-min OHLC chart with overlays:
-   - SuperTrend line (green when long, red when short)
-   - Markers at MST flip-armed events (yellow dot)
-   - Markers at MST flip-activated events (green/red triangle)
-   - Markers at CST triggers (orange diamond)
-   - Stoch panel below the price chart with %K, %D, and 80/20 reference lines
+In [frontend/src/components/Sidebar/Sidebar.tsx:97-171](../../frontend/src/components/Sidebar/Sidebar.tsx#L97-L171):
 
-   Use the same chart library already in use elsewhere in the SPA — check what `Orb.tsx` uses. Do NOT introduce a new charting dep.
+```tsx
+// Add MST entry between NWV and EOD (visually grouped with index strategies)
+<NavItem
+  to="/app/mst"
+  icon={<IconLayers />}                // reuse existing IconLayers like NAS/NWV/strangle
+  label="MST"
+  active={active === 'mst'}
+  collapsed={collapsed}
+/>
+```
 
-4. **Recent events table** (reuse `DataTable`):
-   - Columns: Bar time · Event · Direction · Price · Notes
-   - Filter chips above for: All / Flip activations / CST triggers / Discarded
-   - Default = last 30 events
+Update the `Props.active` union: `'orb' | 'nas' | 'nwv' | 'strangle' | 'mst' | 'eod-breakout' | …`.
 
-5. **Operator playbook panel** (static markdown, no logic):
-   - "When MST activates LONG: enter bull call spread, weekly or biweekly, ~7 DTE"
-   - "When MST activates SHORT: enter bear put spread, weekly or biweekly, ~7 DTE"
-   - "When CST triggers: convert to iron condor by selling contra credit spread"
-   - "When MST flips opposite: close existing condor, place new debit spread in new direction"
-
-   This is just text — the operator runs the trades manually for now.
-
-### 7.3 Sidebar entry
-
-In `frontend/src/components/Sidebar/Sidebar.tsx`, add a new menu item under the Strategies group: "MST" → `/app/mst`. Use a trend-line icon from the existing `Icons` component.
-
-### 7.4 Routing
+### 8.3 Routing
 
 In `frontend/src/App.tsx`:
 ```tsx
 <Route path="/app/mst" element={<Mst />} />
 ```
 
-### 7.5 Build & deploy
+### 8.4 Build & deploy
 
-`cd frontend && npm run build` produces `frontend/dist/` which Flask serves under `/app/*`. Frontend-only changes do NOT require a backend restart — see CLAUDE.md "NO BACKEND RESTART DURING MARKET HOURS" for deploy rules.
+`cd frontend && npm run build` produces `frontend/dist/` which Flask serves under `/app/*`. **Frontend-only changes do NOT require backend restart** — see `CLAUDE.md` "NO BACKEND RESTART DURING MARKET HOURS".
 
-The backend changes (new SQLite DB, new APIs, new scheduler job) DO require a restart and must be deployed after 15:30 IST.
-
----
-
-## 8. Alerting
-
-Use whatever channel is already configured for ORB/NAS/KC6 alerts. Likely Telegram. Two alert types:
-
-### 8.1 MST flip-activated
-
-```
-🟢 MST LONG ACTIVATED
-NIFTY 30m · 11:45 IST · 25,124
-Flip @ 25,098 · break above 25,118 confirmed
-ATR21 = 145
-Action: enter bull call spread (weekly/biweekly, ~7 DTE)
-```
-
-### 8.2 CST trigger
-
-```
-🔶 CST TRIGGER (within active LONG)
-NIFTY 30m · 13:15 IST · 25,189
-%K crossed below %D from above 80 (K=78.2, D=80.4)
-Action: SELL bear call spread above current price → condor
-```
-
-### 8.3 Optional: armed/discarded
-- Armed events: low-priority log line, no push
-- Discarded events: log only
+Backend changes (new SQLite DB, new APIs, new scheduler jobs, MSTEngine, NasTicker callback hook) **DO require a restart** and must be deployed **after 15:30 IST**.
 
 ---
 
-## 9. Testing approach
+## 9. Alerts — `services/notifications.py` (reuse, don't recreate)
 
-Phase 1 has no order placement, so risk is low. Two test layers:
+Per [services/notifications.py:19-90](../../services/notifications.py#L19-L90), the existing `NotificationService` already supports email + in-app, async dispatch. Phase 1 channels per user: **email only** (in-app DB persistence is automatic via `InAppProvider`).
 
-### 9.1 Replay test (offline)
+### 9.1 Wiring
 
-Build `tests/test_mst_engine_replay.py`:
+```python
+from services.notifications import NotificationService
+from config import MST_DEFAULTS
+
+mst_notifier = NotificationService(MST_DEFAULTS)  # reads email_enabled from config
+
+# On state transition:
+mst_notifier.send_alert(
+    alert_type='trade_entry',          # or 'trade_exit', 'cst_trigger', 'system_alert'
+    title='MST · LONG ACTIVATED',
+    message='Bull call spread placed: NIFTY 22500/22700 CE, weekly Thu',
+    data={'direction': 'LONG', 'spot': 22524, 'flip_high': 22518, 'expiry': '2026-05-15'},
+    priority='high',
+)
+```
+
+### 9.2 Alert types
+
+| Event | Alert type | Priority | Subject example |
+|---|---|---|---|
+| `flip_armed` | `system_alert` | low | MST · LONG ARMED — waiting for break above 22518 |
+| `flip_activated` | `trade_entry` | high | MST · LONG ACTIVATED — bull call placed 22500/22700 |
+| `flip_discarded` | `system_alert` | low | MST · flip discarded — re-armed in opposite direction |
+| `cst_trigger` (first, condor built) | `trade_entry` | high | MST · CONDOR BUILT — bear call added 22900/23100 |
+| `cst_trigger` (subsequent) | `system_alert` | low | MST · CST in active week — informational |
+| `rolled` (credit too low → reset to next week) | `trade_entry` | high | MST · ROLLED to next week — fresh condor placed |
+| `mst_flip_close` | `trade_exit` | high | MST · flipped opposite — all legs closed |
+| `t_minus_1_close` | `trade_exit` | normal | MST · T-1 EOD square-off — final P&L: +₹X |
+| `kill_switch` | `system_alert` | critical | MST · KILL SWITCH — all legs closed, halted |
+
+---
+
+## 10. Testing approach
+
+### 10.1 Replay test (offline)
+
+`tests/test_mst_engine_replay.py`:
 - Load NIFTY 30-min bars 2024-03-01 → 2026-03-25 from `market_data.db`
-- Feed each bar to `MSTEngine.on_new_bar()` sequentially
-- Compare emitted events to a frozen golden file generated from `research/35_nifty_bnf_master_child_supertrend/scripts/run_mst_sweep_breakout.py` output for cell `NIFTY50_30min_p21_m5.0`
-- All events (flip_armed, flip_activated, flip_discarded, cst_trigger) must match within ±1 bar
+- Feed each bar to `MSTEngine.on_30min_close()` sequentially
+- Mock the order-placement layer (don't hit Kite)
+- Compare emitted events to a golden file derived from `research/35_.../scripts/run_mst_sweep_breakout.py` for cell `NIFTY50_30min_p21_m5.0`
+- Required: every `flip_armed`, `flip_activated`, `flip_discarded`, `cst_trigger`, `condor_built`, `rolled` event matches within ±1 bar
+- P&L sanity check: simulate fills at mid-price, verify total cycle P&L matches a recomputation from the underlying
 
-### 9.2 Live paper run
+### 10.2 Live paper-shadow run (1-2 weeks before money)
 
-After deploy, monitor `/app/mst` for 4 weeks of live data:
-- Verify alerts fire at expected times (cross-check against TradingView with same indicator settings)
-- Verify state machine never gets stuck
-- Verify DB persistence is consistent across restarts
+Even though Phase 1 is live, run a 1-2 week shadow first where the engine emits all events and would-be-orders to logs but does NOT call `kite.place_order()`. Validate:
+- No state-machine bugs (no stuck states, no double-entries)
+- Alerts arrive on time and with correct content
+- T-1 close fires reliably on Wednesdays
+- Position reconciliation handles service restarts
+
+### 10.3 Live with 1 lot
+
+After shadow passes, flip the order-placement guard to live. Operator monitors:
+- Order fills (LIMIT-at-mid hit rate; how often we fall back to MARKET)
+- Slippage vs expected mid
+- Reconciliation drift (DB vs Kite holdings)
+- Daily P&L accuracy
+
+### 10.4 Kill switch drill
+
+Once before going live: trigger `/api/mst/kill-switch` while a 1-lot test condor is open in a low-risk environment. Verify all 4 legs close at market within 5 seconds, state transitions to halted, no further orders placed.
 
 ---
 
-## 10. Open questions for the user (resolve before coding)
+## 11. Open questions resolved + new ones
 
-1. **Alert channel** — Telegram already in use? Or email? Or both?
-2. **NIFTY ticker source** — does the existing Kite WS infra already subscribe to NIFTY 50 index ticks? Or do we need polling-via-historical-data?
-3. **Phase 2 timing** — when do we revisit auto-order-placement? Default = "after 4 weeks of clean Phase 1 paper signal."
-4. **Sidebar grouping** — is there a "Signals" or "Index Strategies" group, or does it slot into the existing Strategies list?
-5. **BANKNIFTY** — research/35 also recommended a BNF cell. Do you want a `/app/mst-bnf` mirror in Phase 1, or strictly NIFTY only? (Recommendation: strictly NIFTY for Phase 1.)
-6. **Conflict with KC6 on NIFTY?** KC6 doesn't trade indices, so no conflict — confirm.
+### Resolved (from user 2026-05-04)
+
+| Question | Resolution |
+|---|---|
+| Alert channel | Email only (use existing `NotificationService`) |
+| NIFTY ticker source | Reuse `NasTicker` singleton — no new WebSocket |
+| Phase 2 timing | N/A — Phase 1 IS live with 1 lot |
+| Sidebar grouping | Workspace group, between NWV and EOD |
+| BANKNIFTY in Phase 1? | No — NIFTY only |
+| KC6 conflict | None — confirmed, KC6 doesn't trade indices |
+| T-1 EOD square-off | Wednesday 15:25 IST, all legs, mandatory |
+| Multi-CST policy | One condor per weekly expiry cycle, with pyramiding (per research/36) |
+| Credit threshold for reset | ₹1,000/lot total |
+| **CST false-alarm problem** | **Confirmed real — 67% of first CSTs see trend continue (research/36)** |
+| **Pyramid trigger** | **D AND B (research/36): two closes beyond CST bar + Stoch %K back to OB/OS** |
+| **Pyramid cap** | **Max level 2 (single re-double); beyond that, log-only** |
+
+### New — needed before Phase 1 implementation starts
+
+1. **Reset structure choice (Reading A / C / D)** — default in this doc is Reading D (100/100/100 spot-centered). Confirm or override.
+2. **NIFTY lot size** — currently 75 contracts per lot per `FNO_LOT_SIZES`. Verify before live deploy (can change with SEBI/NSE notifications).
+3. **Email subject/body format** — happy with the templates in §9.2, or want them tweaked?
+4. **Order-rejection handling** — if Kite rejects a leg (e.g., margin shortfall, illiquid strike), should the engine: (a) skip that leg and proceed with what filled, (b) close any filled legs and abort, or (c) retry with adjacent strike? Default suggestion: (b) — atomic-or-nothing.
+5. **Margin pre-check** — should we run a `kite.basket_margins()` call before placing the 4 legs to ensure sufficient margin, and alert if not? Recommended: yes.
+6. **Shadow-run duration** — minimum 1 week, my suggestion is 2 weeks before going live with 1 lot. OK?
 
 ---
 
-## 11. References
+## 12. References
 
-- Research artifacts: `research/35_nifty_bnf_master_child_supertrend/RESULTS.md` and the CSV outputs
+- Research artifacts: `research/35_nifty_bnf_master_child_supertrend/RESULTS.md` and CSV outputs
+- Pyramid trigger validation: `research/36_mst_cst_continuation_pyramid/results/RESULTS.md`
 - SuperTrend & Stoch reference impl: `research/35_nifty_bnf_master_child_supertrend/scripts/supertrend.py`
+- Mirror page: `frontend/src/pages/Orb.tsx` and `Orb.module.css`
+- NIFTY tick source: `services/nas_ticker.py` (singleton + 5-min aggregator)
+- Notifications: `services/notifications.py`
+- Order-placement reference: `services/orb_live_engine.py`, `services/kc6_executor.py`
+- Options strike resolution: `services/options_data_manager.py`
+- Sidebar: `frontend/src/components/Sidebar/Sidebar.tsx`
 - App architecture: `docs/Design/ARCHITECTURE.md`, `docs/Design/LIVE-TRADING-ARCHITECTURE.md`
-- React page patterns: `frontend/src/pages/Nas.tsx`, `Orb.tsx`, `Nwv.tsx`
-- CLAUDE.md rules to honor:
+- Project rules to honor:
   - "ALL NEW PAGES GO IN THE REACT APP AT `/app/*` — NOT JINJA"
   - "NO BACKEND RESTART DURING MARKET HOURS" (09:15–15:30 IST)
-  - "LIVE-STATUS MD CONVENTION" (apply if implementation runs >5 min)
+  - "LIVE-STATUS MD CONVENTION" (apply if implementation runs > 5 min)
