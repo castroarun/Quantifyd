@@ -32,7 +32,7 @@ class MSTExecutor:
 
     LIMIT_TIMEOUT_S = 30          # if LIMIT not filled in 30s, fall back to MARKET
     LOTS = 1
-    LOT_SIZE = 75                  # NIFTY current lot size (read from FNO_LOT_SIZES at startup)
+    LOT_SIZE = 65                  # NIFTY current lot size (verified via kite.instruments 2026-05-05)
     SPREAD_WIDTH = 200
     NIFTY_NAME = "NIFTY"
 

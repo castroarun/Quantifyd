@@ -888,7 +888,7 @@ MST_DEFAULTS = {
     "underlying": "NIFTY50",
     "underlying_token": 256265,         # NIFTY 50 index instrument_token (Kite)
     "options_root": "NIFTY",            # Used to filter NFO option contracts
-    "lot_size": 75,                     # Contracts per lot — verify at startup vs FNO_LOT_SIZES
+    "lot_size": 65,                     # Contracts per lot (NIFTY = 65 as of 2026-05-05; verify at startup via kite.instruments)
     "lots_per_leg": 1,                  # Phase 1: 1 lot per leg per pyramid level
 
     # Bar configuration
