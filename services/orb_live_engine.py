@@ -317,9 +317,8 @@ class ORBLiveEngine:
 
         # Place market order for half qty
         try:
-            kite = self._get_kite()
             price_buffer = 1.002 if transaction_type == 'BUY' else 0.998
-            order_id = kite.place_order(
+            order_id = self._kite_place_order(
                 variety='regular', exchange='NSE',
                 tradingsymbol=instrument,
                 transaction_type=transaction_type,
@@ -1561,8 +1560,7 @@ class ORBLiveEngine:
                 sl_order_id = pos.get('kite_sl_order_id')
                 if not sl_order_id:
                     continue
-                kite = self._get_kite()
-                hist = kite.order_history(sl_order_id) or []
+                hist = self._kite_order_history(sl_order_id)
                 if not hist:
                     continue
                 last = hist[-1]
@@ -1830,8 +1828,7 @@ class ORBLiveEngine:
         transaction_type = 'BUY' if direction == 'LONG' else 'SELL'
 
         try:
-            kite = self._get_kite()
-            order_id = kite.place_order(
+            order_id = self._kite_place_order(
                 variety='regular',
                 exchange='NSE',
                 tradingsymbol=instrument,
@@ -1915,8 +1912,7 @@ class ORBLiveEngine:
             limit_price = _tick(sl_price * 1.005)
 
         try:
-            kite = self._get_kite()
-            order_id = kite.place_order(
+            order_id = self._kite_place_order(
                 variety='regular',
                 exchange='NSE',
                 tradingsymbol=instrument,
@@ -1975,17 +1971,16 @@ class ORBLiveEngine:
         if not sl_order_id:
             return True
         try:
-            kite = self._get_kite()
             # Check current status — skip cancel if already complete/cancelled/rejected
             try:
-                history = kite.order_history(sl_order_id) or []
+                history = self._kite_order_history(sl_order_id)
                 last_status = (history[-1].get('status') if history else '').upper()
                 if last_status in ('COMPLETE', 'CANCELLED', 'REJECTED'):
                     logger.info(f"[ORB] SL-M {sl_order_id} already {last_status} — skip cancel")
                     return True
             except Exception:
                 pass
-            kite.cancel_order(variety='regular', order_id=sl_order_id)
+            self._kite_cancel_order(variety='regular', order_id=sl_order_id)
             logger.info(f"[ORB] SL-M cancelled: {sl_order_id} ({position['instrument']})")
             return True
         except Exception as e:
@@ -2034,8 +2029,7 @@ class ORBLiveEngine:
         if not sl_order_id:
             return self.place_sl_m_order({**position, 'sl_price': new_trigger_price})
         try:
-            kite = self._get_kite()
-            kite.modify_order(
+            self._kite_modify_order(
                 variety='regular', order_id=sl_order_id,
                 trigger_price=trigger_price,
                 price=limit_price,
@@ -2207,8 +2201,7 @@ class ORBLiveEngine:
                 # Verify still active on Kite — if cancelled/rejected, re-place.
                 sid = pos['kite_sl_order_id']
                 try:
-                    kite = self._get_kite()
-                    hist = kite.order_history(sid) or []
+                    hist = self._kite_order_history(sid)
                     last_status = (hist[-1].get('status') if hist else '').upper()
                     if last_status in ('TRIGGER PENDING', 'OPEN'):
                         skipped.append({'sym': pos['instrument'], 'reason': f'active ({last_status})'})
@@ -2264,8 +2257,7 @@ class ORBLiveEngine:
 
         kite_exit_order_id = None
         try:
-            kite = self._get_kite()
-            order_id = kite.place_order(
+            order_id = self._kite_place_order(
                 variety='regular',
                 exchange='NSE',
                 tradingsymbol=instrument,
@@ -2277,7 +2269,9 @@ class ORBLiveEngine:
             )
             kite_exit_order_id = str(order_id)
 
-            self._verify_order(kite, kite_exit_order_id, instrument, 'exit')
+            if not self._is_paper():
+                kite = self._get_kite()
+                self._verify_order(kite, kite_exit_order_id, instrument, 'exit')
 
             logger.info(
                 f"[ORB] Exit order placed: {transaction_type} {qty} {instrument} "

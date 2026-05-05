@@ -54,6 +54,18 @@
   border-color: var(--accent-neg);
 }
 
+.btnActive {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+}
+
+.btnActiveLive {
+  background: var(--accent-pos, #1f9d55);
+  color: white;
+  border-color: var(--accent-pos, #1f9d55);
+}
+
 .error {
   margin-bottom: 16px;
   padding: 10px 14px;

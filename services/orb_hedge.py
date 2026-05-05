@@ -219,7 +219,10 @@ class OrbTailHedge:
         lot_size = int(self.cfg.get('lot_size', 75))
         qty = lots * lot_size
 
-        paper_mode = bool(self.cfg.get('hedge_paper_mode', True))
+        # If main ORB is in paper mode, hedge is also paper. Otherwise honor the
+        # hedge-specific flag (default True).
+        paper_mode = bool(self.cfg.get('paper_trading_mode', False)
+                          or self.cfg.get('hedge_paper_mode', True))
         trigger_reason = (
             f"skew={skew:.2f}>={self.cfg.get('hedge_skew_threshold', 0.70):.2f} "
             f"count={positions_count}>={self.cfg.get('hedge_min_positions', 10)}"

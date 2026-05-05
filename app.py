@@ -6608,6 +6608,7 @@ def api_orb_state():
         return jsonify({
             'enabled': ORB_DEFAULTS.get('enabled', True),
             'live_trading': ORB_DEFAULTS.get('live_trading_enabled', False),
+            'paper_trading_mode': ORB_DEFAULTS.get('paper_trading_mode', False),
             'universe': ORB_DEFAULTS.get('universe', []),
             'watch_universe': ORB_DEFAULTS.get('watch_universe', []),
             'capital': ORB_DEFAULTS.get('capital', 100_000),
@@ -6851,6 +6852,46 @@ def api_orb_kill_switch():
         return jsonify({'closed': closed, 'count': len(closed), 'status': 'EMERGENCY_EXIT'})
     except Exception as e:
         logger.error(f"[ORB] Kill switch error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/orb/toggle-mode', methods=['POST'])
+@login_required
+def api_orb_toggle_mode():
+    """Three-way mode switch for ORB: off / paper / live.
+
+    off:   enabled=False
+    paper: enabled=True, paper_trading_mode=True, live_trading_enabled=False
+    live:  enabled=True, paper_trading_mode=False, live_trading_enabled=True
+    """
+    try:
+        data = request.get_json() or {}
+        mode = data.get('mode', 'paper')
+        if mode not in ('off', 'paper', 'live'):
+            return jsonify({'error': f'invalid mode: {mode}'}), 400
+
+        if mode == 'off':
+            ORB_DEFAULTS['enabled'] = False
+            logger.warning("[ORB] Mode → OFF")
+        elif mode == 'paper':
+            ORB_DEFAULTS['enabled'] = True
+            ORB_DEFAULTS['paper_trading_mode'] = True
+            ORB_DEFAULTS['live_trading_enabled'] = False
+            logger.warning("[ORB] Mode → PAPER (signals + DB only, no Kite orders)")
+        elif mode == 'live':
+            ORB_DEFAULTS['enabled'] = True
+            ORB_DEFAULTS['paper_trading_mode'] = False
+            ORB_DEFAULTS['live_trading_enabled'] = True
+            logger.warning("[ORB] Mode → LIVE (real Kite orders)")
+
+        return jsonify({
+            'mode': mode,
+            'enabled': ORB_DEFAULTS['enabled'],
+            'paper_trading_mode': ORB_DEFAULTS.get('paper_trading_mode', False),
+            'live_trading_enabled': ORB_DEFAULTS.get('live_trading_enabled', False),
+        })
+    except Exception as e:
+        logger.error(f"[ORB] toggle-mode error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './Orb.module.css';
-import { apiGet } from '../api/client';
+import { apiGet, apiPost } from '../api/client';
 import type {
   ORBState,
   ORBStockSummary,
@@ -152,6 +152,24 @@ export default function Orb() {
   const [candidates, setCandidates] = useState<ORBCandidates | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const onSetMode = async (mode: 'off' | 'paper' | 'live') => {
+    if (busy) return;
+    if (mode === 'live' && !window.confirm(
+      'Switch ORB to LIVE — real cash MIS orders will be placed on entries. Continue?')) return;
+    setBusy(true);
+    try {
+      await apiPost('/api/orb/toggle-mode', { mode });
+      // refetch state
+      const s = await apiGet<ORBState>('/api/orb/state');
+      setState(s);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -424,8 +442,31 @@ export default function Orb() {
           <div className="page-title">ORB Cash</div>
           <div className="page-subtitle">
             Cash intraday · {state?.universe?.length ?? 0} stocks ·{' '}
-            {state?.live_trading ? 'Live trading' : 'Paper trading'}
+            {!state?.enabled ? 'Disabled' : state?.live_trading ? 'Live trading' : 'Paper trading'}
           </div>
+        </div>
+        <div className={styles.actions}>
+          <button
+            className={`${styles.btn} ${!state?.enabled ? styles.btnActive : ''}`}
+            disabled={busy}
+            onClick={() => onSetMode('off')}
+          >
+            Off
+          </button>
+          <button
+            className={`${styles.btn} ${state?.enabled && !state?.live_trading ? styles.btnActive : ''}`}
+            disabled={busy}
+            onClick={() => onSetMode('paper')}
+          >
+            Paper
+          </button>
+          <button
+            className={`${styles.btn} ${state?.enabled && state?.live_trading ? styles.btnActiveLive : ''}`}
+            disabled={busy}
+            onClick={() => onSetMode('live')}
+          >
+            Live
+          </button>
         </div>
       </div>
 

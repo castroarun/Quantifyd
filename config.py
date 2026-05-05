@@ -516,8 +516,8 @@ ORB_DEFAULTS = {
     # Off:   enabled=False
     # Paper: enabled=True, paper_trading_mode=True, live_trading_enabled=False
     # Live:  enabled=True, paper_trading_mode=False, live_trading_enabled=True
-    'enabled': False,                  # OFF until paper-mode call sites are fully wrapped
-    'paper_trading_mode': True,        # NEW 2026-05-05: simulate orders only — no real Kite calls
+    'enabled': True,                   # 2026-05-05: re-enabled in PAPER mode (call sites wrapped)
+    'paper_trading_mode': True,        # Paper: signals + DB log + reports, no Kite orders
     'live_trading_enabled': False,     # MIS live trading (only when paper_trading_mode=False)
 
     # Capital & Position Sizing
