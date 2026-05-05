@@ -79,19 +79,53 @@ Single-CST-per-trend policy would over-trade. Plain "build condor on first CST" 
 | MST flip (any direction, any level) | Close all open legs, reset state |
 | First CST in a NEW expiry cycle (because we rolled over to next week) | Add contra credit spread for that new week's condor (back to level 1) |
 
-### 2.6 Pyramid trigger — D AND B (research/36)
+### 2.6 Pyramid trigger — (D_cumulative AND B) OR safety_wing_breach (research/36)
 
-**Trigger fires when BOTH conditions are true at the same 30-min bar close:**
+The pyramid fires on **either** of two paths, whichever fires first:
+
+#### Path 1 — D_cumulative AND B (momentum confirmation)
+
+Both conditions must be true at the same 30-min bar close:
 
 | Condition | LONG MST | SHORT MST |
 |---|---|---|
-| **D** — price action | Two consecutive 30-min closes ABOVE the most recent CST bar's `high` | Two consecutive 30-min closes BELOW the most recent CST bar's `low` |
-| **B** — momentum return | %K has been below 70 since the last CST (left the OB zone) AND has now returned to ≥ 80 | %K has been above 30 since the last CST (left the OS zone) AND has now returned to ≤ 20 |
+| **D_cumulative** — price action | Within last 6 bars after the most recent CST: `(closes_above_CST_high − closes_below_CST_high) ≥ 3` AND current bar closes above | Mirror with closes_below / closes_above and current bar closes below |
+| **B** — momentum return | %K has been below 70 since last CST AND has now returned to ≥ 80 | %K has been above 30 since last CST AND has now returned to ≤ 20 |
 
-Validated (research/36 on 6.3-year extended period: 302 trends, 1,495 CSTs):
-- **Coverage:** 80% of trend continuations correctly flagged
-- **False positive rate:** **19%** (1 in 5 fires when trend was actually exhausting — extended-period estimate; the 2-year sample suggested 13%, but the larger sample tightens this to ~19% with 95% CI of 16-21%)
-- **Median lead time:** 36 bars (~18 hours) before the trend's MFE peak after the CST
+Replaces the original "D_strict" rule (2 consecutive closes beyond) per research/36 D-variants test on 6.3-year sample (302 trends, 1,495 CSTs):
+- **Coverage:** 79% of trend continuations correctly flagged (vs 80% strict — essentially unchanged)
+- **False positive rate:** **13.2%** (vs 18.7% strict — a 30% reduction)
+- **Catches staircase patterns** that strict-consecutive missed (where price climbs in 1-up-1-down stair-step fashion — strict required 2-in-a-row which never appears in pure alternation, but cumulative net count handles drifts cleanly)
+- Median lead time: 33 bars (~16.5 hours)
+
+#### Path 2 — Safety wing-breach (price-based fallback)
+
+Triggers when price has breached past the credit-spread short strike and entered halfway into the upper/lower wing.
+
+For LONG MST (long call condor with strikes K1 = entry_atm, K2 = +200, K3 = +400, K4 = +600):
+- **Safety threshold:** spot ≥ entry_atm + 500 (= K3 + 50% × (K4-K3) = midpoint of upper wing)
+- Mirror for SHORT MST: spot ≤ entry_atm − 500
+
+Validated empirically (research/36 safety_trigger_value test on 6.3-year sample):
+- **0% false-positive rate** — never fires when CST was actually correct (price doesn't breach 500 points into the wing in true exhaustion cases)
+- **+2.1% incremental coverage** on TREND_CONTINUED — catches drifts that D_cumulative + B missed
+- **Fires earlier than D_cumulative + B in 8.6% of cases** — captures more upside on those rides
+- Provides a backup specifically for the user's concern: "neutral condor bleeding out" if directional move continues without classic momentum patterns
+
+#### Combined trigger logic in engine
+
+```
+At each 30-min bar close in CONDOR_OPEN_L1:
+  if safety_wing_breach OR (D_cumulative AND B):
+    fire pyramid → DEBIT_OPEN_L2 (add new debit spread at current spot ATM)
+    log trigger_kind: "safety_wing_breach" | "d_cumulative_and_b" | "both"
+```
+
+The two paths are OR'd because they catch different failure modes:
+- Path 1 catches momentum-driven continuations (Stoch returns to OB/OS confirms momentum)
+- Path 2 catches price-action breaches even when momentum signal doesn't return (drift without clear oscillation)
+
+Net combined effect on 6.3-year sample: ~80% coverage of trend continuations, ~13% false-positive rate (only D_cumulative+B contributes FP; safety contributes zero).
 
 The single-trigger D alone catches 99% but with 31% FP rate — too aggressive for pyramiding.
 The single-trigger B alone catches 80% with 20% FP — close to the combo but slightly worse.

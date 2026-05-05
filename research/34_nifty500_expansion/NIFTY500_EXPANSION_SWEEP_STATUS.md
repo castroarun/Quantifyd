@@ -21,11 +21,11 @@ Run the volume-confirmed first-candle breakout signal generator (research/30) ac
 
 ## Status
 
-- State: **RUNNING**
-- Started: 2026-05-05 16:26:33
-- Last completed stock: TVSMOTOR
-- Stocks completed: 95 / 100
-- Signals logged: 223,839
+- State: **COMPLETE**
+- Started: 2026-05-05 19:03:32
+- Last completed stock: YESBANK
+- Stocks completed: 100 / 100
+- Signals logged: 230,180
 
 ## Crash Recovery
 

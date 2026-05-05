@@ -151,7 +151,9 @@ class MSTEngine:
     STOCH_OS = 20
     PYRAMID_OB_EXIT_THRESHOLD = 70  # %K must drop below 70 (long bias) before re-entering OB
     PYRAMID_OS_EXIT_THRESHOLD = 30
-    PYRAMID_D_BARS = 2              # consecutive closes beyond CST bar
+    PYRAMID_D_LOOKBACK = 6          # cumulative count window (bars after CST)
+    PYRAMID_D_THRESHOLD = 3         # net (above-below) within lookback >= threshold
+    PYRAMID_SAFETY_WING_PCT = 0.5    # safety trigger fires at K3 + 0.5 * (K4-K3)
     SPREAD_WIDTH = 200               # standard structure
     RESET_WIDTH = 100                # reset (Reading D) structure
     LOTS = 1
@@ -388,13 +390,22 @@ class MSTEngine:
             elif self.state.mst_direction == -1 and k_now > self.PYRAMID_OS_EXIT_THRESHOLD:
                 self.state.stoch_left_zone_since_cst = True
 
-        # ---- Pyramid trigger D AND B (only fires while in CONDOR_OPEN_L1) ----
-        if self.state.state == "CONDOR_OPEN_L1" and self.state.last_cst_bar is not None:
-            d_fired = self._check_trigger_d(ind, i)
-            b_fired = self._check_trigger_b(k_now, k_prev)
-            if d_fired and b_fired:
-                events.extend(self._fire_pyramid(ind, i, bar))
-                return events  # one event per bar; pyramid done
+        # ---- Pyramid trigger: (D_cumulative AND B) OR safety_wing_breach ----
+        # Only fires while in CONDOR_OPEN_L1 (level 1 condor already built).
+        # Safety has 0% FP rate (validated on 6.3 yrs); D_cumulative+B has 13.2% FP.
+        # The two triggers are OR'd: whichever fires first pyramids.
+        if self.state.state == "CONDOR_OPEN_L1":
+            safety_fired = self._check_safety_trigger(ind, i)
+            db_fired = False
+            if self.state.last_cst_bar is not None:
+                d_fired = self._check_trigger_d(ind, i)
+                b_fired = self._check_trigger_b(k_now, k_prev)
+                db_fired = d_fired and b_fired
+            if safety_fired or db_fired:
+                trigger_kind = "safety_wing_breach" if safety_fired and not db_fired else (
+                    "d_cumulative_and_b" if db_fired and not safety_fired else "both")
+                events.extend(self._fire_pyramid(ind, i, bar, trigger_kind=trigger_kind))
+                return events
 
         # ---- CST trigger ----
         is_cst = self._check_cst(k_now, k_prev, d_now, d_prev)
@@ -435,17 +446,74 @@ class MSTEngine:
         return False
 
     def _check_trigger_d(self, ind, i) -> bool:
-        """D = two consecutive closes beyond CST bar's high (long) / low (short)."""
+        """D_cumulative = within last LOOKBACK bars after CST, net (closes
+        beyond CST level − closes against) >= THRESHOLD AND current bar is
+        beyond. Replaced D_strict (consecutive) per research/36 D-variants test:
+        same coverage, FP rate 18.7% → 13.2% (-30%), catches staircase patterns
+        that strict missed.
+        """
         if self.state.last_cst_high is None or self.state.last_cst_low is None:
             return False
-        if i < 1:
+        if self.state.last_cst_bar is None:
             return False
+        # Find the CST bar's position in the buffer
+        bar_dts = ind["bar_dt"]
+        cst_pos = None
+        for idx in range(len(bar_dts) - 1, -1, -1):
+            if bar_dts[idx] == self.state.last_cst_bar:
+                cst_pos = idx
+                break
+        if cst_pos is None or i <= cst_pos:
+            return False
+        # Lookback window
+        start = max(cst_pos + 1, i - self.PYRAMID_D_LOOKBACK + 1)
+        window = ind["close"][start:i + 1]
         c_now = ind["close"][i]
-        c_prev = ind["close"][i - 1]
         if self.state.mst_direction == 1:
-            return c_now > self.state.last_cst_high and c_prev > self.state.last_cst_high
+            level = self.state.last_cst_high
+            cur_beyond = c_now > level
+            if not cur_beyond:
+                return False
+            above = sum(1 for c in window if c > level)
+            below = sum(1 for c in window if c < level)
+            return (above - below) >= self.PYRAMID_D_THRESHOLD
         if self.state.mst_direction == -1:
-            return c_now < self.state.last_cst_low and c_prev < self.state.last_cst_low
+            level = self.state.last_cst_low
+            cur_beyond = c_now < level
+            if not cur_beyond:
+                return False
+            below = sum(1 for c in window if c < level)
+            above = sum(1 for c in window if c > level)
+            return (below - above) >= self.PYRAMID_D_THRESHOLD
+        return False
+
+    def _check_safety_trigger(self, ind, i) -> bool:
+        """Safety trigger — fires when spot has breached past the credit spread's
+        short strike and entered halfway into the upper/lower wing.
+
+        Long MST condor strikes (entry-anchored): K1 = entry_atm, K2 = entry_atm + W,
+        K3 = entry_atm + 2W, K4 = entry_atm + 3W (W = SPREAD_WIDTH = 200).
+        Upper wing = K3 to K4. Safety threshold = K3 + WING_PCT * (K4 - K3) = entry_atm + 2.5W.
+        Mirror for short MST.
+
+        Empirically validated (research/36 safety_trigger_value test):
+          - 0% FP rate (never fires when CST was correct)
+          - +2.1% incremental coverage on TREND_CONTINUED
+          - Fires before D_cumulative+B in 8.6% of cases (earlier pyramid = more upside)
+        """
+        if self.state.activated_at_atm is None:
+            return False
+        if self.state.state != "CONDOR_OPEN_L1":
+            return False
+        atm = self.state.activated_at_atm
+        offset = (2 + self.PYRAMID_SAFETY_WING_PCT) * self.SPREAD_WIDTH
+        # Use bar high for long (most aggressive), bar low for short
+        bar_high = ind["high"][i]
+        bar_low = ind["low"][i]
+        if self.state.mst_direction == 1:
+            return bar_high >= atm + offset
+        if self.state.mst_direction == -1:
+            return bar_low <= atm - offset
         return False
 
     def _check_trigger_b(self, k_now, k_prev) -> bool:
@@ -458,13 +526,13 @@ class MSTEngine:
             return k_now <= self.STOCH_OS
         return False
 
-    def _fire_pyramid(self, ind, i, bar):
+    def _fire_pyramid(self, ind, i, bar, trigger_kind: str = "d_cumulative_and_b"):
         events = []
         if self.state.pyramid_level >= self.PYRAMID_MAX_LEVEL:
             self.db.log_event("pyramid_capped", direction=self.state.mst_direction,
                               bar_dt=bar["bar_dt"], price=float(ind["close"][i]),
                               pyramid_level=self.state.pyramid_level,
-                              notes=f"Pyramid trigger fired but level already at max (L{self.state.pyramid_level})")
+                              notes=f"Pyramid trigger fired but level already at max (L{self.state.pyramid_level}); kind={trigger_kind}")
             return events
 
         spot = float(ind["close"][i])
@@ -479,9 +547,10 @@ class MSTEngine:
         self.db.log_event("pyramid_fired", direction=self.state.mst_direction,
                           bar_dt=bar["bar_dt"], price=spot,
                           pyramid_level=2,
-                          notes=f"Pyramid (D AND B) confirmed; new debit spread at ATM={new_atm}")
+                          notes=f"Pyramid trigger={trigger_kind}; new debit spread at ATM={new_atm}")
         events.append({"type": "pyramid_fired", "direction": self.state.mst_direction,
-                       "spot": spot, "new_atm": new_atm})
+                       "spot": spot, "new_atm": new_atm,
+                       "trigger_kind": trigger_kind})
 
         # Place the new debit spread (anchored to pyramid-time ATM)
         if self.executor and self.state.current_expiry_dt and self.state.current_t_minus_1:

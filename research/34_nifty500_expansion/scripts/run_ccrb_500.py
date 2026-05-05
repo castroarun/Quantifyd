@@ -33,8 +33,10 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 RESEARCH_ROOT = ROOT.parent
 SCRIPTS_29 = RESEARCH_ROOT / "29_short_options_signal_sweep" / "scripts"
+SCRIPTS_31 = RESEARCH_ROOT / "31_cpr_compression_breakout" / "scripts"
 
 sys.path.insert(0, str(SCRIPTS_29))
+sys.path.insert(0, str(SCRIPTS_31))
 sys.path.insert(0, str(HERE))
 
 from data_loader import load_5min, load_daily, resample  # noqa: E402

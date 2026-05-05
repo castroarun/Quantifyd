@@ -905,11 +905,13 @@ MST_DEFAULTS = {
     "stoch_ob": 80,                     # Long-bias CST fires when K crosses below D from K_prev>=80
     "stoch_os": 20,                     # Short-bias mirror
 
-    # Pyramid trigger (D AND B) — research/36
+    # Pyramid trigger — research/36 (D_cumulative AND B) OR safety_wing_breach
     "pyramid_max_level": 2,             # 1=condor only; 2=condor + pyramid; cap at 2
-    "pyramid_d_consec_closes": 2,       # 2 closes beyond CST bar high/low
+    "pyramid_d_lookback": 6,            # cumulative D: bars after CST to count over
+    "pyramid_d_threshold": 3,           # cumulative D: require net (above-below) >= 3
     "pyramid_ob_exit_threshold": 70,    # %K must drop below this before re-entering OB (long)
     "pyramid_os_exit_threshold": 30,    # mirror for short
+    "pyramid_safety_wing_pct": 0.5,     # safety: fires at K3 + 50% × (K4-K3) breach
 
     # Spread structure
     "spread_width": 200,                # Standard 200/200/200 condor on NIFTY
