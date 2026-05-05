@@ -24,6 +24,10 @@ function directionLabel(d: number): string {
   return '—';
 }
 
+function seedOnlyChip(isSeed: boolean): string {
+  return isSeed ? 'Seed warmup · awaiting first live 30m bar' : 'Live';
+}
+
 export default function Mst() {
   const [state, setState] = useState<MSTState | null>(null);
   const [events, setEvents] = useState<MSTEvent[]>([]);
@@ -182,40 +186,195 @@ export default function Mst() {
 
       {err ? <div className={styles.error}>{err}</div> : null}
 
-      <div className={styles.metrics}>
-        <MetricCard
-          label="Day P&L"
-          value={<span className={pnlClass(state?.today_pnl)}>{formatPnl(state?.today_pnl)}</span>}
-          hint={`${state?.open_legs?.length ?? 0} open · ${state?.closed_today?.length ?? 0} closed today`}
-        />
-        <MetricCard
-          label="State"
-          value={state?.state_machine ?? '—'}
-          hint={`Direction ${directionLabel(dir)} · L${state?.pyramid_level ?? 1}`}
-        />
-        <MetricCard
-          label="Stoch K / D"
-          value={
-            state?.last_bar?.stoch_k != null
-              ? `${state.last_bar.stoch_k.toFixed(1)} / ${(state.last_bar.stoch_d ?? 0).toFixed(1)}`
-              : '—'
-          }
-          hint={
-            state?.last_bar?.stoch_k != null
-              ? state.last_bar.stoch_k >= 80
-                ? 'Overbought zone'
-                : state.last_bar.stoch_k <= 20
-                ? 'Oversold zone'
-                : 'Neutral'
-              : '—'
-          }
-        />
-        <MetricCard
-          label="Spot · ATR"
-          value={state?.last_bar?.close != null ? formatNumber(state.last_bar.close) : '—'}
-          hint={state?.last_bar?.atr21 != null ? `ATR ${state.last_bar.atr21.toFixed(1)}` : '—'}
-        />
-      </div>
+      {(() => {
+        const li = state?.live_indicators;
+        const liveSpot = state?.live_spot;
+        const seedOnly = !!li?.is_seed_only;
+        const k = li?.stoch_k;
+        const d = li?.stoch_d;
+        const stoch = (k != null && d != null) ? `${k.toFixed(1)} / ${d.toFixed(1)}` : '—';
+        const stochZone = state?.proximity?.stoch_zone;
+        const spotShown = liveSpot ?? li?.close ?? null;
+        const stocSubtitle = stochZone
+          ? (stochZone === 'overbought' ? `Overbought · K is ${(k ?? 0) >= (state?.config?.stoch_ob ?? 80) ? 'past' : 'near'} OB` :
+             stochZone === 'oversold'   ? `Oversold · K is ${(k ?? 0) <= (state?.config?.stoch_os ?? 20) ? 'past' : 'near'} OS` :
+             `Neutral · OB ${(state?.config?.stoch_ob ?? 80)} / OS ${(state?.config?.stoch_os ?? 20)}`)
+          : '—';
+        return (
+          <div className={styles.metrics}>
+            <MetricCard
+              label="Day P&L"
+              value={<span className={pnlClass(state?.today_pnl)}>{formatPnl(state?.today_pnl)}</span>}
+              hint={`${state?.open_legs?.length ?? 0} open · ${state?.closed_today?.length ?? 0} closed today`}
+            />
+            <MetricCard
+              label="State"
+              value={state?.state_machine ?? '—'}
+              hint={`Direction ${directionLabel(dir)} · L${state?.pyramid_level ?? 1}`}
+            />
+            <MetricCard
+              label="Stoch K / D"
+              value={stoch}
+              hint={stocSubtitle}
+            />
+            <MetricCard
+              label="NIFTY Spot"
+              value={spotShown != null ? formatNumber(spotShown) : '—'}
+              hint={
+                liveSpot
+                  ? (li?.atr21 ? `Live tick · ATR21 ${li.atr21.toFixed(1)}` : 'Live tick')
+                  : (li?.atr21 ? `${seedOnly ? 'Seed bar' : 'Last 30m close'} · ATR21 ${li.atr21.toFixed(1)}` : '—')
+              }
+            />
+          </div>
+        );
+      })()}
+
+      {/* Proximity to triggers — visual gauges. Always visible; values fill in
+          live as bars stream from NasTicker. */}
+      {(() => {
+        const li = state?.live_indicators;
+        const px = state?.proximity ?? {};
+        const cfg = state?.config;
+        const spot = state?.live_spot ?? li?.close ?? null;
+        if (!li || spot == null) return null;
+        const k = li.stoch_k;
+        const dVal = li.stoch_d;
+        const ob = cfg?.stoch_ob ?? 80;
+        const os = cfg?.stoch_os ?? 20;
+        const kPct = k != null ? Math.max(0, Math.min(100, k)) : null;
+        const stPos = li.st_value != null && li.atr21 ? (spot - li.st_value) / Math.max(li.atr21, 1) : null;  // distance in ATRs
+        return (
+          <section className={styles.section}>
+            <div className={styles.sectionHead}>
+              <div className="section-title">Proximity to triggers</div>
+              <Chip>{seedOnlyChip(li.is_seed_only)}</Chip>
+            </div>
+            <div className={styles.proxGrid}>
+              {/* Spot vs SuperTrend line */}
+              <div className={styles.proxItem}>
+                <div className={styles.proxLabel}>
+                  Spot vs SuperTrend
+                  <span className={styles.proxValue}>
+                    {px.spot_to_st_pts != null
+                      ? `${px.spot_to_st_pts > 0 ? '+' : ''}${px.spot_to_st_pts.toFixed(1)} pts (${px.spot_to_st_pct?.toFixed(2)}%)`
+                      : '—'}
+                  </span>
+                </div>
+                <div className={styles.proxBar}>
+                  <div
+                    className={styles.proxFill}
+                    style={{
+                      left: '50%',
+                      width: stPos != null ? `${Math.min(48, Math.abs(stPos) * 8)}%` : '0%',
+                      transform: stPos != null && stPos < 0 ? 'translateX(-100%)' : undefined,
+                      background: li.direction === 1 ? 'var(--accent-pos)' : 'var(--accent-neg)',
+                    }}
+                  />
+                  <div className={styles.proxMidLine} />
+                </div>
+                <div className={styles.proxScale}>
+                  <span>flip {li.direction === 1 ? 'down' : 'up'}</span>
+                  <span>0</span>
+                  <span>{li.direction === 1 ? '↑ trending up' : '↓ trending down'}</span>
+                </div>
+              </div>
+
+              {/* Stoch K position */}
+              <div className={styles.proxItem}>
+                <div className={styles.proxLabel}>
+                  Stoch %K position
+                  <span className={styles.proxValue}>
+                    {k != null ? `K=${k.toFixed(1)} D=${(dVal != null ? dVal.toFixed(1) : '—')}` : '—'}
+                  </span>
+                </div>
+                <div className={styles.proxStochBar}>
+                  <div className={styles.proxStochOs} style={{ width: `${os}%` }} />
+                  <div className={styles.proxStochOb} style={{ left: `${ob}%`, width: `${100 - ob}%` }} />
+                  {kPct != null && (
+                    <div className={styles.proxStochMarker} style={{ left: `${kPct}%` }} title={`K=${k?.toFixed(1)}`}>K</div>
+                  )}
+                </div>
+                <div className={styles.proxScale}>
+                  <span>0 (OS)</span>
+                  <span>{os}</span>
+                  <span>50</span>
+                  <span>{ob}</span>
+                  <span>100 (OB)</span>
+                </div>
+              </div>
+
+              {/* ARMED state — break-of-extreme distance */}
+              {state?.state_machine === 'ARMED' && px.armed_break_distance_pts != null ? (
+                <div className={styles.proxItem}>
+                  <div className={styles.proxLabel}>
+                    Break of extreme
+                    <span className={styles.proxValue}>
+                      Need {px.armed_break_distance_pts > 0
+                        ? `${px.armed_break_distance_pts.toFixed(1)} more pts`
+                        : 'BREAK CONFIRMED'}
+                    </span>
+                  </div>
+                  <div className={styles.proxBar}>
+                    <div className={styles.proxFill} style={{
+                      left: 0,
+                      width: px.armed_break_distance_pts <= 0 ? '100%' : `${Math.max(0, 100 - Math.min(100, Math.abs(px.armed_break_distance_pts) * 2))}%`,
+                      background: px.armed_break_distance_pts <= 0 ? 'var(--accent-pos)' : 'var(--ink-muted)',
+                    }} />
+                  </div>
+                  <div className={styles.proxScale}>
+                    <span>now {formatNumber(spot)}</span>
+                    <span>target {formatNumber(px.armed_break_target ?? null)}</span>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* CONDOR_OPEN_L1 — distance to safety wing breach */}
+              {state?.state_machine === 'CONDOR_OPEN_L1' && px.safety_distance_pts != null ? (
+                <div className={styles.proxItem}>
+                  <div className={styles.proxLabel}>
+                    Safety wing breach (L2 pyramid trigger)
+                    <span className={styles.proxValue}>
+                      {px.safety_distance_pts > 0
+                        ? `${px.safety_distance_pts.toFixed(1)} pts away`
+                        : 'BREACHED — pyramid imminent'}
+                    </span>
+                  </div>
+                  <div className={styles.proxBar}>
+                    <div className={styles.proxFill} style={{
+                      left: 0,
+                      width: px.safety_distance_pts <= 0 ? '100%' : `${Math.max(0, 100 - Math.min(100, px.safety_distance_pts / 5))}%`,
+                      background: px.safety_distance_pts <= 0 ? 'var(--accent-neg)' : 'var(--ink-muted)',
+                    }} />
+                  </div>
+                  <div className={styles.proxScale}>
+                    <span>spot {formatNumber(spot)}</span>
+                    <span>safety {formatNumber(px.safety_breach_level ?? null)}</span>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* CONDOR_OPEN_L1 — last CST level reference (for D_cumulative) */}
+              {state?.state_machine === 'CONDOR_OPEN_L1' && px.last_cst_level != null ? (
+                <div className={styles.proxItem}>
+                  <div className={styles.proxLabel}>
+                    Last CST bar level (D_cumulative reference)
+                    <span className={styles.proxValue}>
+                      {(px.spot_vs_cst_pts ?? 0) > 0
+                        ? `+${px.spot_vs_cst_pts?.toFixed(1)} pts past CST level`
+                        : `${px.spot_vs_cst_pts?.toFixed(1)} pts (still inside)`}
+                    </span>
+                  </div>
+                  <div className={styles.proxScale}>
+                    <span>CST {formatNumber(px.last_cst_level)}</span>
+                    <span>spot {formatNumber(spot)}</span>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* current state details */}
       {state?.state_machine === 'ARMED' ? (

@@ -9306,8 +9306,12 @@ from config import MST_DEFAULTS
 @app.route('/api/mst/state')
 @login_required
 def api_mst_state():
-    """Full state snapshot — engine state, indicators, open legs, P&L, config."""
+    """Full state snapshot — engine state, live indicators (computed from
+    in-memory buffer including historical seed), live spot from NasTicker,
+    proximity to triggers, open legs, P&L, config."""
     try:
+        import math
+        import numpy as np
         from services import mst_bootstrap, mst_db
         engine = mst_bootstrap.get_engine()
         last_bar = mst_db.get_last_bar()
@@ -9317,9 +9321,112 @@ def api_mst_state():
         equity = mst_db.get_equity_curve(days=1)
 
         snap = engine.get_state_snapshot()
+
+        # ---- Live indicators from in-memory buffer (works even with seed bars only) ----
+        live_ind = None
+        try:
+            ind = engine._compute_indicators()
+            if ind is not None and len(ind["close"]) > 0:
+                i = len(ind["close"]) - 1
+                def _f(arr, idx):
+                    v = arr[idx]
+                    if v is None:
+                        return None
+                    try:
+                        if isinstance(v, float) and math.isnan(v):
+                            return None
+                    except Exception:
+                        pass
+                    return float(v)
+                live_ind = {
+                    "buffer_last_bar_dt": ind["bar_dt"][i],
+                    "close": _f(ind["close"], i),
+                    "st_value": _f(ind["st_line"], i),
+                    "st_upper": _f(ind["upper"], i),
+                    "st_lower": _f(ind["lower"], i),
+                    "direction": int(ind["direction"][i]) if not (isinstance(ind["direction"][i], float) and math.isnan(ind["direction"][i])) else None,
+                    "atr21": _f(ind["atr"], i),
+                    "stoch_k": _f(ind["k"], i),
+                    "stoch_d": _f(ind["d"], i),
+                    "is_seed_only": last_bar is None,  # true if we haven't processed a live bar yet
+                }
+        except Exception as e:
+            logger.warning(f"[MST] live indicators compute failed: {e}")
+
+        # ---- Live spot from NasTicker (most recent tick) ----
+        live_spot = None
+        try:
+            from services.nas_ticker import get_nas_ticker
+            nt = get_nas_ticker()
+            ltp = getattr(nt, "_last_ltp", None)
+            if ltp:
+                live_spot = float(ltp)
+        except Exception:
+            pass
+
+        # ---- Proximity to triggers (computed from live state) ----
+        proximity = {}
+        try:
+            spot = live_spot if live_spot else (live_ind["close"] if live_ind else None)
+            if spot and live_ind:
+                # 1) Distance to MST flip (= active SuperTrend line)
+                st_value = live_ind["st_value"]
+                if st_value is not None:
+                    proximity["spot_to_st_pts"] = round(spot - st_value, 2)
+                    proximity["spot_to_st_pct"] = round((spot - st_value) / st_value * 100, 3)
+                    # If long: a flip happens when close < lower band; if short: when close > upper
+                    proximity["mst_direction"] = live_ind["direction"]
+
+                # 2) Stoch K position (distance to OB/OS triggers)
+                k = live_ind["stoch_k"]
+                if k is not None:
+                    proximity["stoch_k"] = round(k, 1)
+                    proximity["stoch_to_ob_pts"] = round(MST_DEFAULTS["stoch_ob"] - k, 1)  # negative if K already past OB
+                    proximity["stoch_to_os_pts"] = round(k - MST_DEFAULTS["stoch_os"], 1)
+                    if MST_DEFAULTS["stoch_os"] <= k <= MST_DEFAULTS["stoch_ob"]:
+                        proximity["stoch_zone"] = "neutral"
+                    elif k > MST_DEFAULTS["stoch_ob"]:
+                        proximity["stoch_zone"] = "overbought"
+                    else:
+                        proximity["stoch_zone"] = "oversold"
+
+                # 3) If ARMED — distance to break-of-extreme
+                if snap.get("state_machine") == "ARMED":
+                    if snap.get("mst_direction") == 1 and snap.get("armed_high"):
+                        proximity["armed_break_target"] = snap["armed_high"]
+                        proximity["armed_break_distance_pts"] = round(snap["armed_high"] - spot, 2)
+                    elif snap.get("mst_direction") == -1 and snap.get("armed_low"):
+                        proximity["armed_break_target"] = snap["armed_low"]
+                        proximity["armed_break_distance_pts"] = round(spot - snap["armed_low"], 2)
+
+                # 4) If CONDOR_OPEN_L1 — distance to safety wing-breach + last CST level
+                if snap.get("state_machine") == "CONDOR_OPEN_L1":
+                    atm = snap.get("activated_at_atm")
+                    if atm:
+                        offset = (2 + MST_DEFAULTS["pyramid_safety_wing_pct"]) * MST_DEFAULTS["spread_width"]
+                        if snap.get("mst_direction") == 1:
+                            safety_level = atm + offset
+                            proximity["safety_breach_level"] = safety_level
+                            proximity["safety_distance_pts"] = round(safety_level - spot, 2)
+                        elif snap.get("mst_direction") == -1:
+                            safety_level = atm - offset
+                            proximity["safety_breach_level"] = safety_level
+                            proximity["safety_distance_pts"] = round(spot - safety_level, 2)
+                    if snap.get("last_cst_high") and snap.get("mst_direction") == 1:
+                        proximity["last_cst_level"] = snap["last_cst_high"]
+                        proximity["spot_vs_cst_pts"] = round(spot - snap["last_cst_high"], 2)
+                    elif snap.get("last_cst_low") and snap.get("mst_direction") == -1:
+                        proximity["last_cst_level"] = snap["last_cst_low"]
+                        proximity["spot_vs_cst_pts"] = round(snap["last_cst_low"] - spot, 2)
+        except Exception as e:
+            logger.warning(f"[MST] proximity compute failed: {e}")
+
         return jsonify({
             **snap,
             "last_bar": last_bar,
+            "live_indicators": live_ind,
+            "live_spot": live_spot,
+            "proximity": proximity,
             "open_legs": open_positions,
             "closed_today": closed_today,
             "today_pnl": (equity[-1]["total_pnl"] if equity else 0.0),

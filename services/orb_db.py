@@ -176,6 +176,7 @@ class OrbDB:
                 _add_col('orb_positions', 'conviction_grade', 'TEXT')
                 _add_col('orb_positions', 'conviction_score', 'INTEGER')
                 _add_col('orb_positions', 'conviction_stars', 'TEXT')
+                _add_col('orb_positions', 'paper_mode', 'INTEGER DEFAULT 0')
 
                 conn.commit()
                 logger.info(f"[ORB] Database initialized at {self.db_path}")

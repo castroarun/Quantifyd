@@ -512,9 +512,13 @@ ORB_DEFAULTS = {
         'FEDERALBNK', 'COLPAL', 'NTPC',
     ],
 
-    # System Control
-    'enabled': False,                  # DISABLED 2026-05-05 — paused while MST goes live; flip back when ready to resume
-    'live_trading_enabled': True,      # Direct live (MIS), no paper mode
+    # System Control — three-way mode (Off / Paper / Live)
+    # Off:   enabled=False
+    # Paper: enabled=True, paper_trading_mode=True, live_trading_enabled=False
+    # Live:  enabled=True, paper_trading_mode=False, live_trading_enabled=True
+    'enabled': False,                  # OFF until paper-mode call sites are fully wrapped
+    'paper_trading_mode': True,        # NEW 2026-05-05: simulate orders only — no real Kite calls
+    'live_trading_enabled': False,     # MIS live trading (only when paper_trading_mode=False)
 
     # Capital & Position Sizing
     # 15 stocks, avg 2.9 trades/day, P75=5. Size for 5 concurrent trades.

@@ -84,6 +84,63 @@ class ORBLiveEngine:
         from services.kite_service import get_kite
         return get_kite()
 
+    # ---- Paper-mode wrappers (added 2026-05-05) -------------------------
+    # In paper mode, all order operations are simulated:
+    #   - place_order returns a fake "PAPER-{uuid}" order_id and logs the would-be order
+    #   - cancel_order / modify_order are no-ops (logged)
+    #   - order_history returns a synthetic COMPLETE record so existing
+    #     polling logic flows correctly
+    # Kite is NEVER called when paper_trading_mode=True. Fail-closed: if the
+    # flag check itself fails for any reason, we ALSO skip the Kite call.
+
+    def _is_paper(self) -> bool:
+        try:
+            from config import ORB_DEFAULTS
+            return bool(ORB_DEFAULTS.get('paper_trading_mode', False))
+        except Exception:
+            return True  # fail-closed
+
+    def _kite_place_order(self, **kwargs):
+        """Place an order via Kite, OR simulate in paper mode.
+        Returns: order_id (string)."""
+        if self._is_paper():
+            import uuid as _uuid
+            fake_id = f"PAPER-{_uuid.uuid4().hex[:12]}"
+            logger.info(
+                f"[ORB PAPER] would place_order: "
+                f"{kwargs.get('transaction_type')} {kwargs.get('quantity')} "
+                f"{kwargs.get('tradingsymbol')} {kwargs.get('order_type','LIMIT')} "
+                f"price={kwargs.get('price')} trigger={kwargs.get('trigger_price')} "
+                f"product={kwargs.get('product','MIS')} → {fake_id}"
+            )
+            return fake_id
+        kite = self._get_kite()
+        return kite.place_order(**kwargs)
+
+    def _kite_cancel_order(self, *, variety: str, order_id: str, **kwargs):
+        if self._is_paper() or (order_id and str(order_id).startswith("PAPER-")):
+            logger.info(f"[ORB PAPER] would cancel_order: {order_id}")
+            return None
+        kite = self._get_kite()
+        return kite.cancel_order(variety=variety, order_id=order_id, **kwargs)
+
+    def _kite_modify_order(self, *, variety: str, order_id: str, **kwargs):
+        if self._is_paper() or (order_id and str(order_id).startswith("PAPER-")):
+            logger.info(f"[ORB PAPER] would modify_order: {order_id} → {kwargs}")
+            return order_id  # return same id so caller sees "success"
+        kite = self._get_kite()
+        return kite.modify_order(variety=variety, order_id=order_id, **kwargs)
+
+    def _kite_order_history(self, order_id: str):
+        """In paper mode, return a synthetic COMPLETE history so SL-poll loops
+        terminate cleanly. Otherwise call kite.order_history."""
+        if self._is_paper() or (order_id and str(order_id).startswith("PAPER-")):
+            return [{"order_id": order_id, "status": "COMPLETE",
+                     "average_price": None, "filled_quantity": 0,
+                     "_paper": True}]
+        kite = self._get_kite()
+        return kite.order_history(order_id) or []
+
     @property
     def allocation_per_trade(self):
         """Derived notional allocation per trade.

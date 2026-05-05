@@ -90,6 +90,35 @@ export interface MSTConfig {
   t_minus_1_close_minute: number;
 }
 
+export interface MSTLiveIndicators {
+  buffer_last_bar_dt: string;
+  close: number | null;
+  st_value: number | null;
+  st_upper: number | null;
+  st_lower: number | null;
+  direction: number | null;
+  atr21: number | null;
+  stoch_k: number | null;
+  stoch_d: number | null;
+  is_seed_only: boolean;
+}
+
+export interface MSTProximity {
+  spot_to_st_pts?: number;
+  spot_to_st_pct?: number;
+  mst_direction?: number;
+  stoch_k?: number;
+  stoch_to_ob_pts?: number;
+  stoch_to_os_pts?: number;
+  stoch_zone?: 'neutral' | 'overbought' | 'oversold';
+  armed_break_target?: number;
+  armed_break_distance_pts?: number;
+  safety_breach_level?: number;
+  safety_distance_pts?: number;
+  last_cst_level?: number;
+  spot_vs_cst_pts?: number;
+}
+
 export interface MSTState {
   state_machine: MSTStateMachine;
   mst_direction: 1 | -1 | 0;
@@ -110,6 +139,9 @@ export interface MSTState {
   buffer_size: number;
 
   last_bar: MSTBar | null;
+  live_indicators: MSTLiveIndicators | null;
+  live_spot: number | null;
+  proximity: MSTProximity;
   open_legs: MSTPosition[];
   closed_today: MSTPosition[];
   today_pnl: number;

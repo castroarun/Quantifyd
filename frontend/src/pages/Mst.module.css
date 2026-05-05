@@ -138,6 +138,112 @@
   font-weight: var(--weight-medium);
 }
 
+.proxGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+}
+
+.proxItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.proxLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  font-weight: var(--weight-medium);
+}
+
+.proxValue {
+  font-family: var(--mono, ui-monospace, monospace);
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.proxBar {
+  position: relative;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 0.5px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.proxFill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent-pos);
+  transition: width 200ms ease, background 200ms ease;
+}
+
+.proxMidLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.proxStochBar {
+  position: relative;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 0.5px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.proxStochOs {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(220, 53, 69, 0.18);
+}
+
+.proxStochOb {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(31, 157, 85, 0.22);
+}
+
+.proxStochMarker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 22px;
+  margin-left: -11px;
+  background: var(--ink);
+  color: var(--surface);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 200ms ease;
+}
+
+.proxScale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
 .bold {
   font-weight: var(--weight-medium);
   color: var(--ink);
