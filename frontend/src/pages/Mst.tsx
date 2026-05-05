@@ -1,0 +1,339 @@
+import { useEffect, useState } from 'react';
+import styles from './Mst.module.css';
+import { apiGet, apiPost } from '../api/client';
+import type {
+  MSTState, MSTEvent, MSTBar, MSTMode, MSTPosition,
+} from '../api/mst-types';
+import MetricCard from '../components/Cards/MetricCard';
+import DataTable from '../components/DataTable/DataTable';
+import type { Column } from '../components/DataTable/DataTable';
+import Chip from '../components/Chip/Chip';
+import StatusDot from '../components/StatusDot/StatusDot';
+import { formatNumber, formatPnl, formatRs, pnlClass } from '../utils/format';
+import { formatTime } from '../utils/time';
+
+function modeLabel(state: MSTState | null): { label: string; tone: 'pos' | 'neg' | 'neutral' } {
+  if (!state || !state.enabled) return { label: 'Disabled', tone: 'neutral' };
+  if (state.live_trading) return { label: 'Live', tone: 'pos' };
+  return { label: 'Paper', tone: 'neutral' };
+}
+
+function directionLabel(d: number): string {
+  if (d === 1) return 'LONG';
+  if (d === -1) return 'SHORT';
+  return '—';
+}
+
+export default function Mst() {
+  const [state, setState] = useState<MSTState | null>(null);
+  const [events, setEvents] = useState<MSTEvent[]>([]);
+  const [bars, setBars] = useState<MSTBar[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = async () => {
+    try {
+      const [s, e, b] = await Promise.all([
+        apiGet<MSTState>('/api/mst/state'),
+        apiGet<{ events: MSTEvent[] }>('/api/mst/events?limit=50'),
+        apiGet<{ bars: MSTBar[] }>('/api/mst/bars?limit=80'),
+      ]);
+      setState(s);
+      setEvents(e.events || []);
+      setBars(b.bars || []);
+      setErr(null);
+    } catch (ex: unknown) {
+      const msg = ex instanceof Error ? ex.message : String(ex);
+      setErr(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const onSetMode = async (mode: MSTMode) => {
+    if (busy) return;
+    if (mode === 'live' && !window.confirm('Switch MST to LIVE — real orders will be placed. Continue?')) return;
+    setBusy(true);
+    try {
+      await apiPost('/api/mst/toggle-mode', { mode });
+      await refresh();
+    } catch (ex: unknown) {
+      const msg = ex instanceof Error ? ex.message : String(ex);
+      setErr(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onKillSwitch = async () => {
+    if (busy) return;
+    if (!window.confirm('KILL SWITCH — close all open legs at market and halt entries. Continue?')) return;
+    setBusy(true);
+    try {
+      await apiPost('/api/mst/kill-switch', {});
+      await refresh();
+    } catch (ex: unknown) {
+      const msg = ex instanceof Error ? ex.message : String(ex);
+      setErr(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const positionCols: Column<MSTPosition>[] = [
+    { key: 'leg_role', header: 'Role', width: 'minmax(120px, 1.4fr)',
+      render: (p) => <span className={styles.bold}>{p.leg_role}</span> },
+    { key: 'side', header: 'Side', width: '70px',
+      render: (p) => <span className={p.side === 'BUY' ? styles.dirLong : styles.dirShort}>{p.side}</span> },
+    { key: 'tradingsymbol', header: 'Symbol', width: 'minmax(140px, 1.6fr)',
+      render: (p) => <span className={styles.mono}>{p.tradingsymbol}</span> },
+    { key: 'strike', header: 'Strike', width: '80px', align: 'right',
+      render: (p) => `${p.strike} ${p.option_type}` },
+    { key: 'qty', header: 'Qty', width: '60px', align: 'right',
+      render: (p) => p.qty },
+    { key: 'entry_price', header: 'Entry', width: '80px', align: 'right',
+      render: (p) => formatNumber(p.entry_price) },
+    { key: 'pnl_inr', header: 'P&L', width: '90px', align: 'right',
+      render: (p) => <span className={pnlClass(p.pnl_inr)}>{formatPnl(p.pnl_inr)}</span> },
+    { key: 'status', header: 'Status', width: '90px',
+      render: (p) => <Chip>{p.status}</Chip> },
+    { key: 'expiry_date', header: 'Expiry', width: '100px',
+      render: (p) => <span className={styles.mute}>{p.expiry_date}</span> },
+  ];
+
+  const eventCols: Column<MSTEvent>[] = [
+    { key: 'bar_dt', header: 'Time', width: '140px',
+      render: (e) => <span className={styles.mute}>{e.bar_dt.replace('T', ' ').slice(0, 16)}</span> },
+    { key: 'event_type', header: 'Event', width: 'minmax(150px, 1.6fr)',
+      render: (e) => <span className={styles.bold}>{e.event_type}</span> },
+    { key: 'direction', header: 'Dir', width: '60px',
+      render: (e) => directionLabel(e.direction ?? 0) },
+    { key: 'pyramid_level', header: 'L', width: '40px', align: 'right',
+      render: (e) => e.pyramid_level ?? '—' },
+    { key: 'price', header: 'Price', width: '80px', align: 'right',
+      render: (e) => formatNumber(e.price) },
+    { key: 'notes', header: 'Notes', width: 'minmax(200px, 3fr)',
+      render: (e) => <span className={styles.mute}>{e.notes ?? '—'}</span> },
+  ];
+
+  if (loading) return <div className={styles.loading}>Loading MST state…</div>;
+
+  const ml = modeLabel(state);
+  const cfg = state?.config;
+  const dir = state?.mst_direction ?? 0;
+
+  return (
+    <div className={styles.root}>
+      <div className={styles.headerRow}>
+        <div>
+          <div className="page-title">MST · NIFTY 30-min</div>
+          <div className="page-subtitle">
+            SuperTrend({cfg?.atr_period ?? 21}, {cfg?.multiplier ?? 5.0}) +
+            {' '}Stoch({cfg?.stoch_k ?? 14},{cfg?.stoch_d ?? 3},{cfg?.stoch_smooth ?? 3})
+            {' · '}{state?.live_trading ? 'Live trading' : 'Paper trading'}
+            {state?.current_expiry_dt && ` · expiry ${state.current_expiry_dt}`}
+          </div>
+        </div>
+        <div className={styles.headerActions}>
+          <StatusDot
+            kind={state?.enabled ? (state.live_trading ? 'connected' : 'warning') : 'disconnected'}
+            label={ml.label}
+          />
+          <div className={styles.modeSwitch}>
+            <button
+              className={`${styles.modeBtn} ${!state?.enabled ? styles.modeActive : ''}`}
+              disabled={busy}
+              onClick={() => onSetMode('off')}
+            >
+              Off
+            </button>
+            <button
+              className={`${styles.modeBtn} ${state?.enabled && !state.live_trading ? styles.modeActive : ''}`}
+              disabled={busy}
+              onClick={() => onSetMode('paper')}
+            >
+              Paper
+            </button>
+            <button
+              className={`${styles.modeBtn} ${state?.enabled && state.live_trading ? styles.modeActiveLive : ''}`}
+              disabled={busy}
+              onClick={() => onSetMode('live')}
+            >
+              Live
+            </button>
+            <button
+              className={styles.killBtn}
+              disabled={busy}
+              onClick={onKillSwitch}
+              title="Close all legs at market + halt entries"
+            >
+              Kill switch
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {err ? <div className={styles.error}>{err}</div> : null}
+
+      <div className={styles.metrics}>
+        <MetricCard
+          label="Day P&L"
+          value={<span className={pnlClass(state?.today_pnl)}>{formatPnl(state?.today_pnl)}</span>}
+          hint={`${state?.open_legs?.length ?? 0} open · ${state?.closed_today?.length ?? 0} closed today`}
+        />
+        <MetricCard
+          label="State"
+          value={state?.state_machine ?? '—'}
+          hint={`Direction ${directionLabel(dir)} · L${state?.pyramid_level ?? 1}`}
+        />
+        <MetricCard
+          label="Stoch K / D"
+          value={
+            state?.last_bar?.stoch_k != null
+              ? `${state.last_bar.stoch_k.toFixed(1)} / ${(state.last_bar.stoch_d ?? 0).toFixed(1)}`
+              : '—'
+          }
+          hint={
+            state?.last_bar?.stoch_k != null
+              ? state.last_bar.stoch_k >= 80
+                ? 'Overbought zone'
+                : state.last_bar.stoch_k <= 20
+                ? 'Oversold zone'
+                : 'Neutral'
+              : '—'
+          }
+        />
+        <MetricCard
+          label="Spot · ATR"
+          value={state?.last_bar?.close != null ? formatNumber(state.last_bar.close) : '—'}
+          hint={state?.last_bar?.atr21 != null ? `ATR ${state.last_bar.atr21.toFixed(1)}` : '—'}
+        />
+      </div>
+
+      {/* current state details */}
+      {state?.state_machine === 'ARMED' ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <div className="section-title">Armed — waiting for break of extreme</div>
+            <Chip>{directionLabel(dir)}</Chip>
+          </div>
+          <div className={styles.armedDetails}>
+            {dir === 1 ? (
+              <span>Break above <b>{formatNumber(state.armed_high)}</b> to activate</span>
+            ) : (
+              <span>Break below <b>{formatNumber(state.armed_low)}</b> to activate</span>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {/* positions */}
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">Positions</div>
+          <Chip>
+            {state?.open_legs?.length ?? 0} open · {state?.closed_today?.length ?? 0} closed today
+          </Chip>
+        </div>
+        <DataTable
+          columns={positionCols}
+          rows={[
+            ...(state?.open_legs ?? []),
+            ...(state?.closed_today ?? []),
+          ]}
+          emptyText={state?.state_machine === 'NO_POSITION' || state?.state_machine === 'ARMED'
+            ? 'No open positions'
+            : 'Loading positions…'}
+          rowKey={(p) => `${p.id}`}
+        />
+      </section>
+
+      {/* events */}
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">Recent events</div>
+          <Chip>{events.length} events</Chip>
+        </div>
+        <DataTable
+          columns={eventCols}
+          rows={events}
+          emptyText="No events yet"
+          rowKey={(e) => `${e.id}`}
+        />
+      </section>
+
+      {/* strategy rules */}
+      <section className={styles.section}>
+        <details className={styles.rulesBlock}>
+          <summary className={styles.rulesSummary}>Strategy rules · MST + CST + Pyramid</summary>
+          <div className={styles.rulesBody}>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Setup</span>
+              <span>
+                NIFTY 30-min · MST = SuperTrend({cfg?.atr_period},{cfg?.multiplier}) ·
+                {' '}CST = Stoch({cfg?.stoch_k},{cfg?.stoch_d},{cfg?.stoch_smooth}) OB={cfg?.stoch_ob}/OS={cfg?.stoch_os} ·
+                {' '}{cfg?.lots_per_leg} lot ({cfg?.lot_size} contracts) per leg per pyramid level.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>MST entry</span>
+              <span>
+                On ST flip, wait for next bar to break flip-bar's high (long) or low (short).
+                Then enter weekly bull-call (long) or bear-put (short) debit spread, ATM/{cfg?.spread_width} wide,
+                next NIFTY weekly Tuesday expiry with ≥{cfg?.min_dte_at_entry} DTE.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>CST trigger (hedge)</span>
+              <span>
+                LONG bias: %K crosses below %D from K_prev≥{cfg?.stoch_ob}. Add bear-call spread at ATM+{cfg ? 2*cfg.spread_width : 400}/{cfg ? 3*cfg.spread_width : 600} (entry-anchored). Mirror for short.
+                Subsequent CSTs in same week → log only.
+                If credit &lt; ₹{cfg?.min_credit_per_lot}/lot, roll-and-reset to next week (Reading D, {cfg?.reset_width}-wide spot-centered).
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Pyramid trigger D AND B</span>
+              <span>
+                In CONDOR_OPEN_L1: if 2 consecutive 30-min closes beyond CST bar's high/low AND %K back to OB/OS,
+                add a NEW debit spread at current spot's ATM (level 2). Next CST after pyramid adds level-2 hedge.
+                Capped at level {cfg?.pyramid_max_level} — further triggers logged only.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Exits</span>
+              <span>
+                T-1 close (typically Mon {cfg?.t_minus_1_close_hour}:{String(cfg?.t_minus_1_close_minute).padStart(2,'0')} IST)
+                — close all legs, immediately rollover at current ATM if MST still active (level resets to L1).
+                MST flip → close + re-arm. Kill switch → close + halt.
+                T-1 day is computed from NSE trading calendar (handles holidays).
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Mode switch</span>
+              <span>
+                <b>Off</b> = no signal evaluation, no entries.
+                <b> Paper</b> = full signals + alerts + DB logging, simulated orders only.
+                <b> Live</b> = real orders via Kite NRML.
+                Use <b>Kill switch</b> to immediately close all legs at market + halt.
+              </span>
+            </div>
+            <div className={styles.ruleItem}>
+              <span className={styles.ruleLabel}>Backtest backing</span>
+              <span>
+                research/35 (signal selection on 2-yr, 252 ST cells), research/36 (CST continuation + pyramid trigger
+                validated on 6.3-yr extended period: 302 trends, 1495 CSTs). FP rate of D AND B = 19% on extended sample.
+              </span>
+            </div>
+          </div>
+        </details>
+      </section>
+    </div>
+  );
+}

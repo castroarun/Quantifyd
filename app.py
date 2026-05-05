@@ -9297,6 +9297,161 @@ except Exception as e:
 
 
 # =============================================================================
+# MST Index Strategy — routes, scheduler, NasTicker integration
+# Spec: docs/Design/MST-INDEX-STRATEGY-DESIGN.md
+# =============================================================================
+
+from config import MST_DEFAULTS
+
+@app.route('/api/mst/state')
+@login_required
+def api_mst_state():
+    """Full state snapshot — engine state, indicators, open legs, P&L, config."""
+    try:
+        from services import mst_bootstrap, mst_db
+        engine = mst_bootstrap.get_engine()
+        last_bar = mst_db.get_last_bar()
+        open_positions = mst_db.get_open_positions()
+        today = date.today().isoformat()
+        closed_today = mst_db.get_positions_today_closed(today)
+        equity = mst_db.get_equity_curve(days=1)
+
+        snap = engine.get_state_snapshot()
+        return jsonify({
+            **snap,
+            "last_bar": last_bar,
+            "open_legs": open_positions,
+            "closed_today": closed_today,
+            "today_pnl": (equity[-1]["total_pnl"] if equity else 0.0),
+            "config": MST_DEFAULTS,
+            "live_trading": (MST_DEFAULTS.get("enabled") and not MST_DEFAULTS.get("paper_trading_mode")),
+        })
+    except Exception as e:
+        logger.error(f"[MST] state error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/mst/bars')
+@login_required
+def api_mst_bars():
+    """Recent 30-min bars with computed indicators (for chart)."""
+    try:
+        limit = int(request.args.get("limit", 200))
+        from services import mst_db
+        return jsonify({"bars": mst_db.get_recent_bars(limit=limit)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/mst/events')
+@login_required
+def api_mst_events():
+    """Recent signal/position events."""
+    try:
+        limit = int(request.args.get("limit", 50))
+        event_type = request.args.get("type")
+        from services import mst_db
+        return jsonify({"events": mst_db.get_recent_events(limit=limit, event_type=event_type)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/mst/positions')
+@login_required
+def api_mst_positions():
+    try:
+        status = request.args.get("status", "all")
+        from services import mst_db
+        if status == "open":
+            rows = mst_db.get_open_positions()
+        else:
+            rows = mst_db.get_open_positions() + mst_db.get_positions_today_closed(date.today().isoformat())
+        return jsonify({"positions": rows})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/mst/equity-curve')
+@login_required
+def api_mst_equity_curve():
+    try:
+        days = int(request.args.get("days", 30))
+        from services import mst_db
+        return jsonify({"curve": mst_db.get_equity_curve(days=days)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/mst/toggle-mode', methods=['POST'])
+@login_required
+def api_mst_toggle_mode():
+    """Mode switch: off / paper / live."""
+    try:
+        data = request.get_json() or {}
+        mode = data.get("mode", "paper")
+        from services import mst_bootstrap
+        result = mst_bootstrap.set_mode(mode)
+        logger.warning(f"[MST] Mode changed to: {mode} → {result}")
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[MST] toggle-mode error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/mst/kill-switch', methods=['POST'])
+@login_required
+def api_mst_kill_switch():
+    """Emergency: close all open legs + halt entries."""
+    try:
+        from services import mst_bootstrap
+        engine = mst_bootstrap.get_engine()
+        result = engine.kill_switch()
+        # Persist halt state
+        MST_DEFAULTS["enabled"] = False
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"[MST] kill-switch error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/mst/scan', methods=['POST'])
+@login_required
+def api_mst_scan():
+    """Force re-evaluation of the latest 30-min bar (debug aid)."""
+    try:
+        from services import mst_bootstrap, mst_db
+        engine = mst_bootstrap.get_engine()
+        last_bar = mst_db.get_last_bar()
+        if not last_bar:
+            return jsonify({"error": "No bar in buffer yet"}), 400
+        events = engine.on_30min_bar({
+            "bar_dt": last_bar["bar_dt"], "open": last_bar["open"],
+            "high": last_bar["high"], "low": last_bar["low"], "close": last_bar["close"],
+        })
+        return jsonify({"events": events, "state": engine.get_state_snapshot()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Bootstrap MST engine + register subscribers + scheduler at startup
+try:
+    from services import mst_bootstrap
+    mst_bootstrap.get_engine()  # initialize engine + executor + aggregator
+    mst_bootstrap.register_nas_ticker_subscriber()  # hook into NasTicker
+
+    scheduler.add_job(
+        mst_bootstrap.t_minus_1_check_cron, 'cron',
+        day_of_week='mon-fri',
+        hour=MST_DEFAULTS["t_minus_1_close_hour"],
+        minute=MST_DEFAULTS["t_minus_1_close_minute"],
+        id='mst_t_minus_1_check', replace_existing=True,
+    )
+    logger.info("[MST] Scheduler job registered (T-1 check daily 15:25 IST)")
+except Exception as e:
+    logger.warning(f"[MST] Bootstrap failed (non-fatal at startup): {e}", exc_info=True)
+
+
+# =============================================================================
 # Main Entry Point
 # =============================================================================
 

@@ -648,3 +648,4 @@ export interface StrangleVariantDetail {
   mtm: StrangleMtm | null;
   daily_state: StrangleDailyState | Record<string, never>;
 }
+

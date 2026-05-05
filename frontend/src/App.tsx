@@ -15,6 +15,7 @@ import HoldingsHistory from './pages/HoldingsHistory';
 import OptionsData from './pages/OptionsData';
 import FuturePlans from './pages/FuturePlans';
 import EodBreakout from './pages/EodBreakout';
+import Mst from './pages/Mst';
 import NotFound from './pages/NotFound';
 
 type AuthState = 'unknown' | 'auth' | 'noauth';
@@ -117,6 +118,16 @@ export default function App() {
           <Protected>
             <AppLayout active="strangle">
               <Strangle />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/mst"
+        element={
+          <Protected>
+            <AppLayout active="mst">
+              <Mst />
             </AppLayout>
           </Protected>
         }

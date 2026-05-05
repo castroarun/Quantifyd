@@ -513,7 +513,7 @@ ORB_DEFAULTS = {
     ],
 
     # System Control
-    'enabled': True,
+    'enabled': False,                  # DISABLED 2026-05-05 — paused while MST goes live; flip back when ready to resume
     'live_trading_enabled': True,      # Direct live (MIS), no paper mode
 
     # Capital & Position Sizing
@@ -872,3 +872,62 @@ STRANGLE_VARIANTS = [
 
 # Convenience lookup: id -> variant dict
 STRANGLE_VARIANTS_BY_ID = {v['id']: v for v in STRANGLE_VARIANTS}
+
+# =============================================================================
+# MST Index Strategy Defaults (NIFTY 30-min Master/Child SuperTrend + Pyramid)
+# =============================================================================
+# Spec: docs/Design/MST-INDEX-STRATEGY-DESIGN.md
+# Research: research/35_*, research/36_*
+MST_DEFAULTS = {
+    # System control (paper-first; flip to live after shadow validation)
+    "enabled": True,                    # Master switch (off|paper|live in UI maps to enabled+paper_trading_mode)
+    "paper_trading_mode": True,         # When enabled, true=paper, false=live
+    "live_trading_enabled": False,      # Hard guard — also required for orders to actually go to Kite
+
+    # Underlying
+    "underlying": "NIFTY50",
+    "underlying_token": 256265,         # NIFTY 50 index instrument_token (Kite)
+    "options_root": "NIFTY",            # Used to filter NFO option contracts
+    "lot_size": 75,                     # Contracts per lot — verify at startup vs FNO_LOT_SIZES
+    "lots_per_leg": 1,                  # Phase 1: 1 lot per leg per pyramid level
+
+    # Bar configuration
+    "timeframe_min": 30,                # 30-min bars; aggregated from NasTicker 5-min ticks
+
+    # MST signal (SuperTrend) — research/35
+    "atr_period": 21,
+    "multiplier": 5.0,
+
+    # CST signal (Stochastic) — research/35
+    "stoch_k": 14,
+    "stoch_d": 3,
+    "stoch_smooth": 3,
+    "stoch_ob": 80,                     # Long-bias CST fires when K crosses below D from K_prev>=80
+    "stoch_os": 20,                     # Short-bias mirror
+
+    # Pyramid trigger (D AND B) — research/36
+    "pyramid_max_level": 2,             # 1=condor only; 2=condor + pyramid; cap at 2
+    "pyramid_d_consec_closes": 2,       # 2 closes beyond CST bar high/low
+    "pyramid_ob_exit_threshold": 70,    # %K must drop below this before re-entering OB (long)
+    "pyramid_os_exit_threshold": 30,    # mirror for short
+
+    # Spread structure
+    "spread_width": 200,                # Standard 200/200/200 condor on NIFTY
+    "reset_width": 100,                 # Reading D — narrow spot-centered when credit too low
+    "min_credit_per_lot": 1000,         # rupees/lot threshold; below → roll-and-reset
+
+    # DTE rule
+    "min_dte_at_entry": 6,              # Universal — applies to every new entry
+
+    # T-1 close timing
+    "t_minus_1_close_hour": 15,
+    "t_minus_1_close_minute": 25,       # IST — 5 min before market close
+
+    # Order placement
+    "limit_timeout_s": 30,              # Fall back to MARKET if LIMIT not filled
+    "abort_on_leg_rejection": True,     # If any leg fails, close all already-placed legs
+
+    # Notifications (uses services/notifications.py)
+    "email_enabled": True,
+    "whatsapp_enabled": False,
+} 

@@ -83,19 +83,40 @@ COHORT_B = [
     "WIPRO",
 ]
 
-# Nifty 500 universe — read DYNAMICALLY from DB (will pick up backfilled stocks)
+# Trimmed universe: top 100 by recent (Jan-Mar 2026) avg daily turnover.
+# Computed from research/34/results/top_by_turnover.csv. Cuts compute time
+# from ~10h to ~3h while keeping all the actually-tradable names.
+# Threshold: avg daily turnover >= Rs 172 Cr (sets a real liquidity floor).
+TOP_100_BY_TURNOVER = [
+    'HDFCBANK', 'ICICIBANK', 'RELIANCE', 'BSE', 'BHARTIARTL', 'INFY', 'M&M',
+    'SBIN', 'IDEA', 'TCS', 'AXISBANK', 'BAJFINANCE', 'MARUTI', 'ADANIPOWER',
+    'KOTAKBANK', 'LT', 'BEL', 'ITC', 'INDIGO', 'HAL', 'MCX', 'DIXON', 'VEDL',
+    'HEROMOTOCO', 'GMDCLTD', 'HINDALCO', 'PAYTM', 'TATASTEEL', 'TRENT', 'TITAN',
+    'HINDCOPPER', 'HINDZINC', 'SUNPHARMA', 'CANBK', 'RBLBANK', 'HINDUNILVR',
+    'HCLTECH', 'ADANIGREEN', 'POWERGRID', 'BAJAJ-AUTO', 'SUZLON', 'EICHERMOT',
+    'ADANIPORTS', 'ADANIENT', 'INDUSINDBK', 'NTPC', 'CDSL', 'REDINGTON',
+    'GODFRYPHLP', 'NATIONALUM', 'COFORGE', 'PERSISTENT', 'ULTRACEMCO',
+    'DIVISLAB', 'VBL', 'CHENNPETRO', 'BPCL', 'TVSMOTOR', 'SAIL', 'BANKBARODA',
+    'AMBER', 'COCHINSHIP', 'BHEL', 'TECHM', 'RVNL', 'CHOLAFIN', 'YESBANK',
+    'ASHOKLEY', 'COALINDIA', 'ASIANPAINT', 'APOLLOHOSP', 'HDFCAMC', 'DRREDDY',
+    'FORTIS', 'AUBANK', 'BDL', 'WIPRO', 'BAJAJFINSV', 'ONGC', 'HDFCLIFE',
+    'CIPLA', 'BRITANNIA', 'FEDERALBNK', 'INDHOTEL', 'RECLTD', 'PFC',
+    'CUMMINSIND', 'LUPIN', 'MUTHOOTFIN', 'IDFCFIRSTB', 'PNB', 'IOC', 'GODREJCP',
+    'HINDPETRO', 'POLYCAB', 'LAURUSLABS', 'SBILIFE', 'TATAPOWER', 'DLF', 'JSWSTEEL',
+]
+
+
 def _load_universe() -> list[str]:
+    """Top 100 by turnover, intersected with stocks that actually have 5-min data."""
     import sqlite3
     db = ROOT.parent.parent / "backtest_data" / "market_data.db"
     con = sqlite3.connect(db)
-    syms = sorted(
-        r[0] for r in con.execute(
-            "SELECT DISTINCT symbol FROM market_data_unified "
-            "WHERE timeframe='5minute' AND symbol NOT IN ('NIFTY50','BANKNIFTY')"
-        ).fetchall()
-    )
+    have_5m = set(r[0] for r in con.execute(
+        "SELECT DISTINCT symbol FROM market_data_unified WHERE timeframe='5minute'"
+    ).fetchall())
     con.close()
-    return syms
+    return sorted(set(TOP_100_BY_TURNOVER) & have_5m)
+
 
 ALL_STOCKS = _load_universe()
 COHORT_A_SET = set(COHORT_A)

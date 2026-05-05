@@ -11,7 +11,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'strangle' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'strangle' | 'mst' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'settings';
   userName?: string;
 }
 
@@ -130,6 +130,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLayers />}
             label="NWV"
             active={active === 'nwv'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/mst"
+            icon={<IconLayers />}
+            label="MST"
+            active={active === 'mst'}
             collapsed={collapsed}
           />
           <NavItem

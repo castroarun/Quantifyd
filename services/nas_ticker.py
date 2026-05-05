@@ -1359,6 +1359,16 @@ class NasTicker:
         # ── ATM systems: use the SAME scan result for entry ──
         self._on_candle_close_atm_all(scan if 'scan' in locals() else None)
 
+        # ── Additional subscribers (e.g. MST 30-min aggregator) ──
+        # Other strategies that need 5-min candle ticks register via
+        # NasTicker.additional_subscribers. Each is a callable(candle_dict).
+        # Failures in subscribers must NEVER affect NAS itself.
+        for sub in getattr(self, 'additional_subscribers', []):
+            try:
+                sub(candle)
+            except Exception as e:
+                logger.error(f"[NAS] Subscriber {sub} failed: {e}", exc_info=True)
+
     def _on_candle_close_atm_all(self, scan):
         """
         Single scan, shared entry signal for ATM, ATM2, and ATM4.
