@@ -1,6 +1,6 @@
 # MST Index Strategy — Build Status
 
-**STATUS: PHASE 1+2+3+4 COMPLETE — READY TO DEPLOY (after-hours)**
+**STATUS: DEPLOYED ON VPS — LIVE AT http://94.136.185.54:5000/app/mst (paper mode)**
 
 Spec: [docs/Design/MST-INDEX-STRATEGY-DESIGN.md](../Design/MST-INDEX-STRATEGY-DESIGN.md)
 Research backing: `research/35_*` and `research/36_*`
@@ -43,6 +43,12 @@ A complete live-trading + paper-trading + observability system for the MST/CST/P
 | 2026-05-05 20:00 | Phase 4: Mst.tsx + Mst.module.css + types + sidebar entry + route | Three-button mode switch (Off/Paper/Live) + Kill switch button; metrics, positions, events sections; full strategy rules block |
 | 2026-05-05 20:05 | Frontend npm build clean (88 modules, 364 kB JS) | Static bundle written to static/app/, served by Flask under /app/* |
 | 2026-05-05 20:10 | All imports + syntax checks pass | Ready to commit and deploy |
+| 2026-05-05 20:15 | Pushed to GitHub | Commit 5d16249 (143 files, ~400k insertions including research artifacts) |
+| 2026-05-05 20:18 | VPS git pull + restart | Service active; ORB came up with enabled=False per persisted config |
+| 2026-05-05 20:19 | Hot-fix: missing `date` import in app.py for /api/mst/state | Pushed dcdf523, restarted |
+| 2026-05-05 20:25 | NIFTY 30-min downloaded to VPS market_data.db | 39 API calls, 20,372 bars from 2020-01-01 |
+| 2026-05-05 20:26 | Restart + verify: engine seeded with 250 bars, MST page returns HTTP 200 | Mode endpoint toggles paper/live correctly; state machine = NO_POSITION (correct — engine only enters on next live MST flip + break-of-extreme) |
+| 2026-05-05 20:28 | Public URL http://94.136.185.54:5000/app/mst returns 200 | Live for user testing |
 
 ## 4. Crash Recovery
 
