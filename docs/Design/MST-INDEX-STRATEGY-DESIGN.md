@@ -85,9 +85,9 @@ Single-CST-per-trend policy would over-trade. Plain "build condor on first CST" 
 | **D** — price action | Two consecutive 30-min closes ABOVE the most recent CST bar's `high` | Two consecutive 30-min closes BELOW the most recent CST bar's `low` |
 | **B** — momentum return | %K has been below 70 since the last CST (left the OB zone) AND has now returned to ≥ 80 | %K has been above 30 since the last CST (left the OS zone) AND has now returned to ≤ 20 |
 
-Validated (research/36 on 75 trends, 396 CSTs):
+Validated (research/36 on 6.3-year extended period: 302 trends, 1,495 CSTs):
 - **Coverage:** 80% of trend continuations correctly flagged
-- **False positive rate:** 13% (1 in 8 fires when trend was actually exhausting — acceptable for pyramiding)
+- **False positive rate:** **19%** (1 in 5 fires when trend was actually exhausting — extended-period estimate; the 2-year sample suggested 13%, but the larger sample tightens this to ~19% with 95% CI of 16-21%)
 - **Median lead time:** 36 bars (~18 hours) before the trend's MFE peak after the CST
 
 The single-trigger D alone catches 99% but with 31% FP rate — too aggressive for pyramiding.

@@ -50,10 +50,25 @@ def load_60min(symbol: str) -> pd.DataFrame:
     return df.set_index("date")
 
 
+def load_stored_tf(symbol: str, kite_tf: str) -> pd.DataFrame:
+    con = sqlite3.connect(DB)
+    df = pd.read_sql(
+        "SELECT date, open, high, low, close, volume FROM market_data_unified "
+        "WHERE symbol=? AND timeframe=? ORDER BY date",
+        con, params=(symbol, kite_tf), parse_dates=["date"],
+    )
+    con.close()
+    return df.set_index("date")
+
+
 def get_ohlc(symbol: str, tf: str) -> pd.DataFrame:
     if tf == "60min":
-        # Prefer stored 60min if present (covers 2024-03-19 onwards)
         df = load_60min(symbol)
+        if not df.empty:
+            return df
+    elif tf == "30min":
+        # Prefer stored 30minute if present (extended NIFTY history from 2020)
+        df = load_stored_tf(symbol, "30minute")
         if not df.empty:
             return df
     df5 = load_5min(symbol)

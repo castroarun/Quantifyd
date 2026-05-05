@@ -52,7 +52,9 @@ Scoring: composite = coverage × max(0, avg_lead) × (1 − FP_rate).
 | 2026-05-04 | First-pass measurement done | **68% of CSTs are followed by trend continuation. 67% of FIRST CSTs are false alarms** — confirms user's intuition is correct |
 | 2026-05-04 | 7 single triggers scored | D ("two closes beyond CST bar") wins on score (35.1) with 99% coverage and 31% FP |
 | 2026-05-04 | 4 combinations scored | **D AND B wins on FP rate (12.6%)** with 80% coverage — recommended for pyramiding |
-| 2026-05-04 | RESULTS.md written | Recommendation locked |
+| 2026-05-04 | RESULTS.md written | Recommendation locked (2-year sample) |
+| 2026-05-05 | NIFTY 30-min downloaded from 2020-01-01 (39 API calls, 20,372 bars) | Extended sample is 6.3 years, 302 trends, 1,495 CSTs |
+| 2026-05-05 | Extended-period analysis run | Findings: false-alarm rate 64% (vs 67% in 2yr), D AND B FP rate 19% (vs 13%), trigger rank-order unchanged. RESULTS_EXTENDED.md written. |
 
 ## 5. Crash Recovery
 
