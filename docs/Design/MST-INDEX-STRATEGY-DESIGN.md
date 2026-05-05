@@ -3,8 +3,9 @@
 **For: Claude Code, future implementation session**
 **Status:** SPEC ONLY — do not start coding until user gives explicit go-ahead.
 **Source research:** `research/35_nifty_bnf_master_child_supertrend/` (RESULTS.md has the full backtest evidence)
-**Target app:** Quantifyd (`http://94.136.185.54:5000/app`)
-**Page route:** `/app/mst`
+**Target app:** Quantifyd, hosted on Contabo VPS at `http://94.136.185.54:5000/app`
+**Final page URL:** **`http://94.136.185.54:5000/app/mst`**
+**Page route within SPA:** `/app/mst` (React component `Mst.tsx`)
 **Reference page (mirror this exactly):** `/app/orb` ([frontend/src/pages/Orb.tsx](../../frontend/src/pages/Orb.tsx)) — structure, layout, conventions, rules block, metrics, sections all match ORB
 
 ---
@@ -13,10 +14,12 @@
 
 An always-on, live-trading options strategy on **NIFTY 30-min** that builds long call condors when the trend is up and long put condors when the trend is down.
 
-- **MST (Master SuperTrend)** sets the directional bias — long or short. On activation, the system enters a **debit spread** (bull call when long, bear put when short) for the next weekly Thursday expiry with at least 6 DTE.
+- **MST (Master SuperTrend)** sets the directional bias — long or short. On activation, the system enters a **debit spread** (bull call when long, bear put when short) for the next NIFTY weekly **Tuesday** expiry with at least 6 DTE.
 - **CST (Child Stochastic)** signals exhaustion within the active MST trend. On the **first** CST trigger inside an active weekly expiry cycle, the system adds a **contra credit spread** (bear call when long, bull put when short) to convert the position into a **long condor**. Subsequent CSTs within the same expiry cycle are informational only.
-- All four legs squared off at **T-1 EOD (Wednesday 15:25 IST)** — never carried to expiry day.
+- All four legs squared off at **T-1 EOD (Monday 15:25 IST, or Friday 15:25 if Monday is a market holiday)** — never carried to expiry day.
 - **Phase 1 is LIVE TRADING with 1 lot.** Not paper. The user wants to validate the system with real money at minimum size from day one.
+
+> **Expiry day clarification:** As of 2026-05-05 NIFTY weekly options expire on **Tuesday** (per user, who is the live trader on this account). The implementation MUST query Kite at startup (`kite.instruments('NFO')` + filter `name='NIFTY'`, `instrument_type='CE'/'PE'`) to fetch actual exchange-published expiry dates rather than hardcoding "Tuesday" — these are subject to SEBI/NSE regulatory changes and the exchange already shifts expiry dates around holidays.
 
 ---
 
@@ -153,7 +156,12 @@ The single-trigger B alone catches 80% with 20% FP — close to the combo but sl
 Forks (apply to ANY state):
   MST flips opposite     → close ALL legs → ARMED in new direction
   Kill switch toggled    → close ALL legs → halted (no new entries)
-  T-1 EOD (Wed 15:25)   → close ALL legs → NO_POSITION (or ARMED if MST still active)
+  T-1 EOD               → close ALL legs → if MST still active, immediately
+                          rollover to next weekly expiry (≥6 DTE rule, fresh
+                          ATM, L1) → DEBIT_OPEN_L1; else → NO_POSITION/ARMED.
+                          T-1 = previous trading day before each held
+                          position's expiry (typically Monday for Tue expiry,
+                          shifts on holidays; see §4.6).
 ```
 
 The pyramid is **capped at level 2**. After CONDOR_OPEN_L2:
@@ -172,19 +180,23 @@ Maximum exposure at level 2:
 
 NIFTY weekly options · 50-point strike interval · 1 lot = 75 contracts (read from `FNO_LOT_SIZES['NIFTY']`).
 
-### 4.1 DTE rule at entry
+### 4.1 DTE rule at entry — ≥6 DTE, NIFTY weekly Tuesday expiry
 
-Use the nearest weekly Thursday expiry with **≥ 6 DTE** at MST activation time:
+The ≥6 calendar-DTE rule applies to **every new entry** (initial activation, post-MST-flip re-arm, weekly rollover at T-1, pyramid level-2 entry).
 
-| Activation day | Expiry used | DTE at entry |
-|---|---|---|
-| Monday | Thursday next week | 10 |
-| Tuesday | Thursday next week | 9 |
-| Wednesday | Thursday next week | 8 |
-| Thursday | Thursday next week | 7 |
-| Friday | Thursday next week | 6 |
+For Tuesday weekly expiry (no holidays):
 
-Result: median entry DTE ~8. After median CST lag of ~2.2 days, 4-8 DTE remain on the bear call spread — enough theta for meaningful credit (~₹14-22/share).
+| Activation day | DTE to this Tue | DTE to next Tue | DTE to Tue after | Expiry used | DTE at entry |
+|---|---|---|---|---|---|
+| Monday | 1 | 8 | 15 | **next Tuesday** (skip current week) | **8** |
+| Tuesday (post-15:30) | — | 7 | 14 | **next Tuesday** | **7** |
+| Wednesday | — | 6 | 13 | **next Tuesday** | **6** |
+| Thursday | — | 5 (fails) | 12 | **Tuesday after** (skip a week) | **12** |
+| Friday | — | 4 (fails) | 11 | **Tuesday after** | **11** |
+
+Median entry DTE ~7-8 across the week. After median CST lag of ~2.2 days, 4-6 DTE remain on the bear call spread — enough theta for meaningful credit (~₹14-22/share).
+
+**Note on bumpy entry days:** Thursday and Friday entries skip ahead by a week because of the weekend gap. This is the cost of the strict ≥6 DTE rule. Practical impact is small: with ~3.9 MST flips/month, only a few entries per month land on Thu/Fri.
 
 ### 4.2 Standard spread structure (default — used when credit at CST time meets threshold)
 
@@ -222,7 +234,7 @@ Level-2 strikes anchored to **spot at pyramid-trigger time** (price has moved up
 If at the first CST in the current expiry cycle, the bear call (or bull put) credit at standard strikes is **< ₹1,000/lot total**:
 
 1. **Close** the existing debit spread at market (lock in current week's P&L)
-2. **Open a fresh condor on next week's expiry** (Thursday week N+1, ≥ 6 DTE again)
+2. **Open a fresh condor on next week's expiry** (Tuesday week N+1, ≥ 6 DTE again)
 3. The fresh condor uses **Reading D — narrow spot-centered structure**:
 
 ```
@@ -266,15 +278,175 @@ Properties of this reset structure (NIFTY at ~22,750 with 8 DTE, IV ~14%):
 | Total legs at reset | 6 in sequence (close 2 + open 4) |
 | Order tag | `MST_<state>_<bar_dt>` for traceability |
 
-### 4.5 Exit rules
+### 4.5 Exit rules + weekly rollover
 
 | Trigger | Action |
 |---|---|
-| **T-1 EOD: Wednesday 15:25 IST** | Close all open legs at market. Mandatory, no exceptions (other than already-closed positions). |
-| MST flips opposite | Close all open legs at market. Re-arm in new direction. |
+| **T-1 EOD (typically Monday 15:25 IST for Tue expiry; shifts to Friday 15:25 if Monday is a holiday — see §4.6)** | Close all open legs of expiring position at market. Mandatory. THEN: if MST is still active long/short with break confirmed, **immediately open NEW debit spread** for next weekly expiry (≥6 DTE rule), anchored to current spot's ATM. **Pyramid level resets to L1.** |
+| MST flips opposite (any time, any state) | Close all open legs at market. Re-arm in new direction. New entry uses ≥6 DTE rule (i.e., this Tuesday's expiry is too close → skip to next Tuesday). |
 | Kill switch toggled | Close all open legs at market. Halt entries. |
 
-No profit-target or stop-loss-based exits. The condor structure self-caps loss; we let it run until T-1 or MST flip.
+**No profit-target or stop-loss-based exits.** The condor structure self-caps loss; we let it run until T-1, MST flip, or kill switch.
+
+#### 4.5.1 Rollover semantics — the universal ≥6 DTE rule
+
+**The ≥6 DTE rule is universal.** Every new entry — initial activation, re-arm after MST flip, weekly rollover at T-1, pyramid level-2 entry — must use a weekly Tuesday expiry that is at least 6 calendar days away. There are no exceptions.
+
+Concrete example illustrating the user's "MST flips right before T-1" edge case (now restated for Tuesday expiry):
+
+```
+Scenario: MST flips opposite on Monday at 14:30 IST.
+  Today is Monday. T-1 of THIS Tuesday's expiry is today at 15:25.
+
+  14:30  MST flip detected (long → short)
+         → Action: CLOSE all open legs of this Tuesday's positions at market
+         → State: ARMED (short), waiting for break of flip-bar low
+
+  14:30 onwards  System monitors for break-of-extreme.
+
+  15:25  T-1 EOD scheduled fire.
+         → If we're still ARMED: nothing to close (already closed at flip)
+         → Rollover trigger fires regardless. But ARMED means no rollover entry yet.
+
+  Suppose break of extreme confirms at 14:50 IST:
+         → New entry needed. Apply ≥6 DTE rule:
+           - this Tuesday: 1 DTE → fail
+           - next Tuesday: 8 DTE → use this
+         → Place bear put spread for NEXT Tuesday expiry, anchored to current spot ATM.
+         → State: DEBIT_OPEN_L1 (new direction, new week)
+         → T-1 of THIS new position is the FOLLOWING Monday 15:25 (one week from now).
+
+  Suppose break of extreme does NOT confirm before 15:30 close:
+         → State stays ARMED (short) overnight.
+         → Tuesday morning (current week's expiry day): if break confirms, apply
+           ≥6 DTE rule: this Tuesday is 0 DTE → fail; next Tuesday is 7 DTE → use.
+         → New position opens for next Tuesday's expiry.
+```
+
+Key takeaway: the ≥6 DTE rule **always** wins. If a flip or rollover would otherwise force a sub-6-DTE entry, the system skips ahead to the next valid expiry. There's never a scenario where the engine opens a position with <6 DTE.
+
+#### 4.5.2 Pyramid level resets at rollover
+
+When the T-1 close happens with MST still active and immediate rollover fires, the new position is opened at **level 1**, regardless of the previous week's level. To reach level 2 again, the D AND B trigger must fire fresh in the new week.
+
+Rationale: each weekly expiry is an independent validation. Carrying L2 forward would assume continued strong momentum without any new signal in the new week's price action — too aggressive for Phase 1.
+
+### 4.6 Trading-day & holiday handling
+
+NSE has ~10-15 holidays per year. Some fall on Tuesday (the weekly expiry day) and some on Monday (T-1 day). Handling:
+
+#### 4.6.1 Expiry day shifts (NSE rule)
+
+If the regular Tuesday expiry falls on an NSE holiday, the exchange **shifts expiry to the previous trading day** (Monday, or earlier if Monday is also a holiday). The instruments() API returns the actual exchange-published expiry dates, which are already holiday-adjusted.
+
+The implementation must:
+
+```python
+# Query at startup AND when computing next entry's expiry
+instruments = kite.instruments('NFO')
+nifty_weekly_expiries = sorted(set(
+    i['expiry'] for i in instruments
+    if i['name'] == 'NIFTY' and i['instrument_type'] in ('CE', 'PE')
+    and (i['expiry'] - i['expiry'].replace(day=1)).days < 28  # weekly, not monthly
+))
+# Use these dates as the source of truth for "next expiry".
+```
+
+DO NOT hardcode "next Tuesday from today's date" — that would miss exchange shifts.
+
+#### 4.6.2 T-1 calculation (own logic)
+
+T-1 = the **previous trading day before the position's expiry date**. NSE doesn't publish "T-1" — we compute it from the trading-day calendar.
+
+```python
+def t_minus_1(expiry_date: date, calendar: TradingCalendar) -> date:
+    return calendar.previous_trading_day(expiry_date)
+```
+
+Examples:
+
+| Expiry | T-1 (normal) | T-1 (with Monday holiday) |
+|---|---|---|
+| Tuesday May 12 | Monday May 11 | Friday May 8 (if Monday is a holiday) |
+| Tuesday Aug 18 | Monday Aug 17 | Friday Aug 14 (if Monday is Aug 15 — Independence Day shifts the chain too) |
+| Tuesday holiday → expiry shifted to Monday | Friday previous week | Thursday previous week if Friday is also holiday |
+
+#### 4.6.3 Trading calendar service
+
+Add `services/trading_calendar.py` (new file, simple):
+
+```python
+class NSETradingCalendar:
+    """NSE trading-day calendar with holiday awareness."""
+
+    HOLIDAYS_FILE = 'config/nse_holidays_<year>.json'  # update annually
+
+    def __init__(self, year: int = None):
+        self.holidays = self._load_holidays(year or datetime.now().year)
+
+    def is_trading_day(self, d: date) -> bool:
+        if d.weekday() >= 5:  # Sat=5, Sun=6
+            return False
+        return d not in self.holidays
+
+    def previous_trading_day(self, d: date) -> date:
+        prev = d - timedelta(days=1)
+        while not self.is_trading_day(prev):
+            prev -= timedelta(days=1)
+        return prev
+
+    def next_trading_day(self, d: date) -> date:
+        nxt = d + timedelta(days=1)
+        while not self.is_trading_day(nxt):
+            nxt += timedelta(days=1)
+        return nxt
+
+    def trading_days_between(self, start: date, end: date) -> int:
+        n, d = 0, start + timedelta(days=1)
+        while d <= end:
+            if self.is_trading_day(d):
+                n += 1
+            d += timedelta(days=1)
+        return n
+
+    def _load_holidays(self, year: int) -> set[date]:
+        # JSON file with NSE holiday list per year; updated annually
+        with open(self.HOLIDAYS_FILE.replace('<year>', str(year))) as f:
+            return {date.fromisoformat(d) for d in json.load(f)['holidays']}
+```
+
+`config/nse_holidays_2026.json` (operator updates annually from NSE's published calendar):
+
+```json
+{
+  "year": 2026,
+  "holidays": [
+    "2026-01-26",
+    "2026-02-19",
+    "2026-03-04",
+    "2026-03-31",
+    "2026-04-10",
+    "2026-04-14",
+    "2026-05-01",
+    "2026-08-15",
+    "2026-08-27",
+    "2026-10-02",
+    "2026-10-21",
+    "2026-11-04",
+    "2026-12-25"
+  ],
+  "muhurat_session": {"date": "2026-10-21", "time": "18:00-19:00"}
+}
+```
+
+#### 4.6.4 Engine integration
+
+The MST engine consumes the calendar in two places:
+
+1. **At entry / rollover:** `next_expiry_with_min_dte(from_date, min_dte=6)` returns the next weekly expiry from Kite's instruments list that is ≥ 6 calendar days away from `from_date`.
+2. **At T-1 scheduling:** when a position is opened, compute `t_minus_1_dt = calendar.previous_trading_day(position.expiry_dt)` and store it. The daily 15:25 cron checks `if today.date() == any_open_position.t_minus_1_dt` → fire close + rollover.
+
+This replaces the static "every Wednesday at 15:25" cron — the cron now runs every weekday at 15:25, and only acts if today is T-1 for some open position.
 
 ---
 
@@ -334,7 +506,7 @@ CREATE TABLE mst_events (
 -- Positions (one row per leg)
 CREATE TABLE mst_positions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    week_label TEXT NOT NULL,             -- 'YYYY-MM-DD' = expiry Thursday
+    week_label TEXT NOT NULL,             -- 'YYYY-MM-DD' = expiry date (Tuesday, or shifted by holidays)
     leg_role TEXT NOT NULL,               -- 'bull_long', 'bull_short', 'bear_short', 'bear_long'
                                           -- (or 'put_long', 'put_short', 'putw_short', 'putw_long' for short MST)
     side TEXT NOT NULL,                   -- 'BUY' | 'SELL'
@@ -405,7 +577,9 @@ class MSTEngine:
       - on_5min_candle_close(candle):  called by NasTicker callback;
                                         aggregate to 30-min, run signals on 30-min close
       - on_30min_close(bar):           main signal evaluator + state transitions
-      - on_t_minus_1_eod():            scheduled at Wed 15:25 IST; force-close all legs
+      - on_t_minus_1_eod():            fires at 15:25 IST whenever today is the
+                                        T-1 day of an open position; force-close
+                                        and rollover (re-anchored to current ATM)
       - on_mst_flip():                 mid-state flip handler; close + reset
       - kill_switch():                 emergency close + halt
     """
@@ -462,11 +636,14 @@ Add to `app.py` near KC6/ORB scheduled jobs:
 # 30-min bar close evaluator runs INSIDE NasTicker callback;
 # no separate cron needed for signal generation.
 
-# T-1 EOD square-off — every Wednesday at 15:25 IST
+# T-1 EOD check — runs every weekday at 15:25 IST. Inside the handler,
+# checks if today.date() matches any open position's t_minus_1_dt; if so,
+# closes those positions and triggers rollover. This is holiday-aware
+# because t_minus_1_dt is computed via the trading calendar at position open.
 scheduler.add_job(
-    mst_t_minus_1_close, 'cron',
-    day_of_week='wed', hour=15, minute=25,
-    id='mst_t_minus_1_close',
+    mst_t_minus_1_check, 'cron',
+    day_of_week='mon-fri', hour=15, minute=25,
+    id='mst_t_minus_1_check',
 )
 
 # Daily equity snapshot at 15:35 IST (after market close, post any T-1 close)
@@ -572,10 +749,10 @@ frontend/src/App.tsx                  # add route
 | **Metrics row** — 4 `MetricCard`s: (a) Day P&L, (b) State + direction, (c) Stoch reading, (d) Trades today | Orb.tsx line 435-466 |
 | **30-min chart panel** — OHLC with SuperTrend overlay, flip markers, CST markers; Stoch sub-panel below with %K, %D, 80/20 reference lines | Orb.tsx BookPnLChart pattern at line 469 |
 | **Section: Position** — `DataTable` with all 4 condor legs (or 2 debit legs) showing strike, qty, entry, LTP, P&L, status; closed-today legs dimmed in place. | Orb.tsx Positions section line 472-489 (with the same closed-row dim pattern) |
-| **Section: Current state** — visual state-machine indicator + key levels (flip-armed high/low, MST direction, days to expiry, T-1 close countdown if Wed) | Orb.tsx CandidatesSection pattern line 492 |
+| **Section: Current state** — visual state-machine indicator + key levels (flip-armed high/low, MST direction, days to expiry, T-1 close countdown if today is T-1) | Orb.tsx CandidatesSection pattern line 492 |
 | **Section: Current indicators** — config grid showing all rules from §6 constants | Orb.tsx CurrentIndicators line 495-501 + 832-884 |
 | **Section: Today's events** — `DataTable` of MST events (flip_armed, flip_activated, cst_trigger, condor_built, rolled, t_minus_1_close, mst_flip_close) with time, type, direction, price, notes | Orb.tsx Today's signals section line 575-586 |
-| **Section: What's next** — schedule (next 30-min bar evaluation, T-1 close time if Wed, weekly expiry) | Orb.tsx WhatsNext section line 566-572 |
+| **Section: What's next** — schedule (next 30-min bar evaluation, T-1 close time if today/tomorrow is T-1, weekly expiry date, next trading day) | Orb.tsx WhatsNext section line 566-572 |
 | **Section: Strategy rules** — collapsed `<details>` block, format-matched to ORB's rules section, with: Setup, MST signal, MST entry filter, CST trigger, Multi-CST policy, Spread structure (standard + reset), DTE rule, Order placement, Exit rules (T-1, MST flip, kill switch) | Orb.tsx Strategy rules section line 591-758 |
 | **Section: Backtest baseline** — collapsed `<details>` block with research/35 numbers (252 cells swept, NIFTY p21,m5.0 winner, MFE/MAE 3.62 with break-of-extreme, multi-CST policy data) | Orb.tsx Backtest baseline section line 761-827 |
 
@@ -627,7 +804,7 @@ mst_notifier = NotificationService(MST_DEFAULTS)  # reads email_enabled from con
 mst_notifier.send_alert(
     alert_type='trade_entry',          # or 'trade_exit', 'cst_trigger', 'system_alert'
     title='MST · LONG ACTIVATED',
-    message='Bull call spread placed: NIFTY 22500/22700 CE, weekly Thu',
+    message='Bull call spread placed: NIFTY 22500/22700 CE, weekly Tue (12-May-2026)',
     data={'direction': 'LONG', 'spot': 22524, 'flip_high': 22518, 'expiry': '2026-05-15'},
     priority='high',
 )
@@ -666,7 +843,8 @@ mst_notifier.send_alert(
 Even though Phase 1 is live, run a 1-2 week shadow first where the engine emits all events and would-be-orders to logs but does NOT call `kite.place_order()`. Validate:
 - No state-machine bugs (no stuck states, no double-entries)
 - Alerts arrive on time and with correct content
-- T-1 close fires reliably on Wednesdays
+- T-1 close fires reliably (Mondays for normal weeks, shifted Fridays for Monday-holiday weeks)
+- Holiday calendar correctly shifts expiry & T-1 (test against at least one mid-year holiday like Aug 15)
 - Position reconciliation handles service restarts
 
 ### 10.3 Live with 1 lot
@@ -695,7 +873,11 @@ Once before going live: trigger `/api/mst/kill-switch` while a 1-lot test condor
 | Sidebar grouping | Workspace group, between NWV and EOD |
 | BANKNIFTY in Phase 1? | No — NIFTY only |
 | KC6 conflict | None — confirmed, KC6 doesn't trade indices |
-| T-1 EOD square-off | Wednesday 15:25 IST, all legs, mandatory |
+| Weekly expiry day | **Tuesday** (per user 2026-05-05) — query Kite at runtime, don't hardcode |
+| T-1 EOD square-off | **Monday 15:25 IST** for normal Tue expiry; shifts to Fri 15:25 if Mon is holiday. Computed from trading calendar (§4.6) |
+| Trading calendar / holidays | Required service — `services/trading_calendar.py` + `config/nse_holidays_<year>.json` |
+| Rollover at T-1 if MST still active | Yes — open new debit at current spot ATM, next weekly expiry (≥6 DTE), reset to L1 |
+| ≥6 DTE rule | Universal — applies to initial entry, post-MST-flip re-arm, weekly rollover, level-2 pyramid entry. No exceptions. |
 | Multi-CST policy | One condor per weekly expiry cycle, with pyramiding (per research/36) |
 | Credit threshold for reset | ₹1,000/lot total |
 | **CST false-alarm problem** | **Confirmed real — 67% of first CSTs see trend continue (research/36)** |
@@ -705,11 +887,14 @@ Once before going live: trigger `/api/mst/kill-switch` while a 1-lot test condor
 ### New — needed before Phase 1 implementation starts
 
 1. **Reset structure choice (Reading A / C / D)** — default in this doc is Reading D (100/100/100 spot-centered). Confirm or override.
-2. **NIFTY lot size** — currently 75 contracts per lot per `FNO_LOT_SIZES`. Verify before live deploy (can change with SEBI/NSE notifications).
-3. **Email subject/body format** — happy with the templates in §9.2, or want them tweaked?
-4. **Order-rejection handling** — if Kite rejects a leg (e.g., margin shortfall, illiquid strike), should the engine: (a) skip that leg and proceed with what filled, (b) close any filled legs and abort, or (c) retry with adjacent strike? Default suggestion: (b) — atomic-or-nothing.
-5. **Margin pre-check** — should we run a `kite.basket_margins()` call before placing the 4 legs to ensure sufficient margin, and alert if not? Recommended: yes.
-6. **Shadow-run duration** — minimum 1 week, my suggestion is 2 weeks before going live with 1 lot. OK?
+2. **NIFTY lot size verification** — currently 75 contracts per lot per `FNO_LOT_SIZES`. Verify against current Kite contract spec at startup; alert if changed.
+3. **Holiday calendar source** — does the operator maintain `config/nse_holidays_<year>.json` manually each year (NSE publishes it in December for the following year), or do we want to also query Kite/NSE programmatically at startup? Manual JSON is simpler; Kite has no direct holiday API.
+4. **Email subject/body format** — happy with the templates in §9.2, or want them tweaked?
+5. **Order-rejection handling** — if Kite rejects a leg (margin shortfall, illiquid strike), should the engine: (a) skip that leg and proceed with what filled, (b) close any filled legs and abort, or (c) retry with adjacent strike? Default suggestion: (b) — atomic-or-nothing.
+6. **Margin pre-check** — should we run a `kite.basket_margins()` call before placing the 4 legs to ensure sufficient margin, and alert if not? Recommended: yes.
+7. **Shadow-run duration** — research/36 extended-period sample (6.3 yrs, 1,495 CSTs) tightens the confidence intervals enough that 1 week of shadow operation may suffice. Default suggestion: 1 week.
+
+These are clarification questions — none of them are showstoppers. Implementation can start with the defaults proposed.
 
 ---
 

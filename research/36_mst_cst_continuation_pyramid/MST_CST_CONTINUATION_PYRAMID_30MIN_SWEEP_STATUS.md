@@ -55,6 +55,7 @@ Scoring: composite = coverage × max(0, avg_lead) × (1 − FP_rate).
 | 2026-05-04 | RESULTS.md written | Recommendation locked (2-year sample) |
 | 2026-05-05 | NIFTY 30-min downloaded from 2020-01-01 (39 API calls, 20,372 bars) | Extended sample is 6.3 years, 302 trends, 1,495 CSTs |
 | 2026-05-05 | Extended-period analysis run | Findings: false-alarm rate 64% (vs 67% in 2yr), D AND B FP rate 19% (vs 13%), trigger rank-order unchanged. RESULTS_EXTENDED.md written. |
+| 2026-05-05 | Design doc rev: NIFTY weekly expiry corrected to Tuesday (was Thursday — my error) | T-1 = Monday 15:25 (typically). Holiday-aware trading calendar service spec'd in §4.6 of MST-INDEX-STRATEGY-DESIGN.md. ≥6 DTE rule clarified as universal. Pyramid resets to L1 at rollover. |
 
 ## 5. Crash Recovery
 
