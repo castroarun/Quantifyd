@@ -1,0 +1,21 @@
+=== Combined 3-System Portfolio Summary ===
+
+Initial capital:     Rs.1,000,000
+Final NAV:           Rs.1,110,002
+Total return:        11.00%
+CAGR:                12.00%
+Sharpe (daily):      1.82
+Max drawdown:        3.81%
+Calmar:              3.15
+
+Total trades:        842
+Win rate:            56.7%
+Profit factor:       1.19
+Trading days:        232
+Trades per day avg:  3.63
+
+=== By system ===
+ system   n       wr  avg_ret
+LONG_MR 131 0.603053 0.173007
+LONG_TC 195 0.584615 0.157272
+  SHORT 516 0.550388 0.038765

@@ -177,3 +177,14 @@ export function IconClock(p: IconProps) {
     </svg>
   );
 }
+
+export function IconJournal(p: IconProps) {
+  // Open-book glyph for the trader's ledger
+  return (
+    <svg {...base(p)}>
+      <path d="M3 5a2 2 0 0 1 2-2h6v18H5a2 2 0 0 1-2-2V5z" />
+      <path d="M21 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2V5z" />
+      <path d="M7 8h2M7 12h2M15 8h2M15 12h2" />
+    </svg>
+  );
+}

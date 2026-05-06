@@ -1,0 +1,6 @@
+rank,params,tp_pct,sl_pct,max_hold_bars,train_n,train_wr,train_pf,train_dd,train_sharpe,test_n,test_wr,test_pf,test_dd,test_sharpe,drift_wr,test_total_ret,test_tpsy
+1,"{'bar_max': 15, 'pullback_mode': 'ema9_touch', 'rsi_floor': 45, 'gap_min_pct': 1.0, 'nifty_filter': 'nifty_strong_both'}",0.5,1.5,60,71,0.8169,1.672,3.072,5.474,15,0.8,1.971,1.543,4.959,-0.0169,2.957,3.57
+2,"{'bar_max': 24, 'pullback_mode': 'ema9_or_vwap', 'rsi_floor': 50, 'gap_min_pct': 1.0, 'nifty_filter': 'nifty_strong_both'}",0.5,1.5,60,118,0.8051,2.064,3.743,7.523,16,0.875,3.52,1.5,15.554,0.0699,5.011,3.81
+3,"{'bar_max': 15, 'pullback_mode': 'ema9_touch', 'rsi_floor': 50, 'gap_min_pct': 1.0, 'nifty_filter': 'nifty_strong_both'}",0.5,1.5,60,70,0.8143,1.643,3.072,5.329,15,0.8,1.971,1.543,4.959,-0.0143,2.957,3.57
+4,"{'bar_max': 15, 'pullback_mode': 'vwap_within_0p3', 'rsi_floor': 45, 'gap_min_pct': 0.5, 'nifty_filter': 'nifty_strong_both'}",0.5,1.5,60,184,0.8043,1.927,5.456,7.431,51,0.8235,3.107,1.5,9.608,0.0192,14.044,4.34
+5,"{'bar_max': 24, 'pullback_mode': 'ema9_or_vwap', 'rsi_floor': 45, 'gap_min_pct': 1.0, 'nifty_filter': 'nifty_strong_both'}",0.5,1.5,60,119,0.7983,1.935,3.951,7.084,16,0.875,3.52,1.5,15.554,0.0767,5.011,3.81

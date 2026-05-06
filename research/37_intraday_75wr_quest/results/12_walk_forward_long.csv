@@ -1,0 +1,7 @@
+label,params,train_wr,train_n,train_pf,train_dd,train_sharpe,test_wr,test_n,test_pf,test_dd,test_sharpe,wr_drift,passes
+top_wr_75,"{'entry_bar': 6, 'rsi_threshold': 70, 'nifty_filter': 'both', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.7979,193,1.739,4.939,5.325,0.6438,73,1.018,5.745,0.227,0.1541,0
+top_wr_75_first_bull,"{'entry_bar': 6, 'rsi_threshold': 70, 'nifty_filter': 'first_bullish', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.7751,289,1.483,4.627,3.557,0.7025,121,1.284,8.887,3.01,0.0726,0
+top_wr_75_b9,"{'entry_bar': 9, 'rsi_threshold': 70, 'nifty_filter': 'both', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.7588,170,1.511,8.392,4.249,0.7241,58,1.097,5.774,1.344,0.0347,0
+best_pf_60,"{'entry_bar': 9, 'rsi_threshold': 70, 'nifty_filter': 'both', 'tp': 5.0, 'sl': 2.0, 'hold': 60}",0.6059,170,2.248,6.588,6.696,0.569,58,1.227,6.277,2.014,0.0369,0
+best_pf_strict,"{'entry_bar': 9, 'rsi_threshold': 70, 'nifty_filter': 'b3_change_pos_strong', 'tp': 5.0, 'sl': 2.0, 'hold': 60}",0.6234,77,2.719,6.593,7.415,0.5312,32,1.019,9.562,0.218,0.0921,0
+hi_freq_72,"{'entry_bar': 3, 'rsi_threshold': 65, 'nifty_filter': 'above_vwap_b3', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.73,711,1.229,10.501,2.413,0.6907,236,1.138,11.756,1.398,0.0393,0

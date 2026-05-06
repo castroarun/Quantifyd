@@ -1,0 +1,3 @@
+direction,n,avg_gap_pct,pct_open_eq_low,pct_open_eq_high,pct_first_bullish,pct_first_bearish,pct_bar3_above_vwap,pct_bar6_above_vwap,pct_bar9_above_vwap,avg_rsi_bar3,avg_rsi_bar6,avg_rsi_bar9,pct_ema9_above_ema21_bar6,avg_hi_bar,avg_lo_bar
+up,2112,-0.136,0.295,0.076,0.748,0.246,0.72,0.714,0.736,60.2,60.7,60.8,0.739,55.4,2.7
+dn,2328,0.324,0.052,0.338,0.185,0.809,0.207,0.206,0.206,38.9,38.4,38.0,0.221,1.8,58.0

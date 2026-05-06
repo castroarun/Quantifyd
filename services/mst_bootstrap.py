@@ -166,6 +166,8 @@ def _bootstrap():
     _engine.MIN_DTE = cfg["min_dte_at_entry"]
     _engine.MIN_CREDIT_PER_LOT = cfg["min_credit_per_lot"]
     _engine.PYRAMID_MAX_LEVEL = cfg["pyramid_max_level"]
+    _engine.OTM_OFFSET = cfg.get("debit_otm_offset", 50)
+    _engine.STRIKE_INTERVAL = cfg.get("strike_interval", 50)
 
     _aggregator = MST30MinAggregator()
     _aggregator.on_30min_close = _on_30min_close

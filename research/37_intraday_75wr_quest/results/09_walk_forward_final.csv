@@ -1,0 +1,7 @@
+label,params,train_wr,train_n,train_pf,train_dd,train_sharpe,test_wr,test_n,test_pf,test_dd,test_sharpe,wr_drift,passes
+top1_strict,"{'entry_bar': 6, 'rsi_threshold': 35, 'nifty_filter': 'b3_change_neg_strong', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.8565,230,2.223,4.5,7.335,0.8529,68,2.083,2.461,7.353,0.0036,1
+top2_both,"{'entry_bar': 6, 'rsi_threshold': 35, 'nifty_filter': 'both', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.8398,362,2.053,3.819,5.773,0.8408,157,2.372,4.406,8.462,-0.001,1
+top3_neg,"{'entry_bar': 6, 'rsi_threshold': 35, 'nifty_filter': 'b3_change_neg', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.8549,448,2.496,5.5,7.479,0.7946,224,1.729,6.173,6.554,0.0603,1
+loose_rsi40,"{'entry_bar': 6, 'rsi_threshold': 40, 'nifty_filter': 'none', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.7733,1932,1.384,14.931,2.834,0.7511,675,1.433,9.777,4.083,0.0222,0
+loose_rsi40_neg,"{'entry_bar': 6, 'rsi_threshold': 40, 'nifty_filter': 'b3_change_neg', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.8189,668,1.954,7.044,6.629,0.7935,310,1.692,5.344,8.134,0.0253,1
+loose_rsi40_first_bear,"{'entry_bar': 6, 'rsi_threshold': 40, 'nifty_filter': 'first_bearish', 'tp': 0.5, 'sl': 1.5, 'hold': 60}",0.8016,877,1.7,9.089,4.888,0.765,349,1.498,5.694,5.17,0.0366,0

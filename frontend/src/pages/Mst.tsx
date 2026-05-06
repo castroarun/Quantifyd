@@ -445,8 +445,9 @@ export default function Mst() {
               <span className={styles.ruleLabel}>MST entry</span>
               <span>
                 On ST flip, wait for next bar to break flip-bar's high (long) or low (short).
-                Then enter weekly bull-call (long) or bear-put (short) debit spread, ATM/{cfg?.spread_width} wide,
-                next NIFTY weekly Tuesday expiry with ≥{cfg?.min_dte_at_entry} DTE.
+                Then enter weekly bull-call (long) or bear-put (short) debit spread, anchored at <b>1st OTM</b>
+                {' '}(ATM ± {cfg?.debit_otm_offset ?? 50} pts), {cfg?.spread_width} wide.
+                Next NIFTY weekly Tuesday expiry with ≥{cfg?.min_dte_at_entry} DTE.
               </span>
             </div>
             <div className={styles.ruleItem}>

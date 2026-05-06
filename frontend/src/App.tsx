@@ -16,6 +16,10 @@ import OptionsData from './pages/OptionsData';
 import FuturePlans from './pages/FuturePlans';
 import EodBreakout from './pages/EodBreakout';
 import Mst from './pages/Mst';
+import Journal from './pages/Journal';
+import JournalDay from './pages/JournalDay';
+import JournalTrade from './pages/JournalTrade';
+import JournalInsights from './pages/JournalInsights';
 import NotFound from './pages/NotFound';
 
 type AuthState = 'unknown' | 'auth' | 'noauth';
@@ -188,6 +192,46 @@ export default function App() {
           <Protected>
             <AppLayout active="eod-breakout">
               <EodBreakout />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/journal"
+        element={
+          <Protected>
+            <AppLayout active="journal">
+              <Journal />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/journal/insights"
+        element={
+          <Protected>
+            <AppLayout active="journal">
+              <JournalInsights />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/journal/day/:date"
+        element={
+          <Protected>
+            <AppLayout active="journal">
+              <JournalDay />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/journal/trade/:id"
+        element={
+          <Protected>
+            <AppLayout active="journal">
+              <JournalTrade />
             </AppLayout>
           </Protected>
         }

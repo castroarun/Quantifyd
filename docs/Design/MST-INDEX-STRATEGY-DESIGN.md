@@ -212,7 +212,9 @@ Maximum exposure at level 2:
 
 ## 4. Spread structure (live, 1 lot per leg)
 
-NIFTY weekly options · 50-point strike interval · 1 lot = 75 contracts (read from `FNO_LOT_SIZES['NIFTY']`).
+NIFTY weekly options · 50-point strike interval · 1 lot = **65 contracts** (verified 2026-05-05 via `kite.instruments`).
+
+**Anchor convention (revised 2026-05-05):** the debit spread's long leg sits at **1st OTM** (ATM ± 50 points), not ATM. This shifts the entire condor 1 strike OTM relative to spot at entry. Reasoning: 1st OTM debit costs less than ATM and gives more room for the directional move to play out before reaching max profit zone. All four condor strikes shift together — widths and spacing preserved. Set via `MST_DEFAULTS["debit_otm_offset"]` (default 50; set to 0 to revert to ATM-anchored).
 
 ### 4.1 DTE rule at entry — ≥6 DTE, NIFTY weekly Tuesday expiry
 
@@ -234,34 +236,47 @@ Median entry DTE ~7-8 across the week. After median CST lag of ~2.2 days, 4-6 DT
 
 ### 4.2 Standard spread structure (default — used when credit at CST time meets threshold)
 
+`anchor` = `round(spot/50)*50 + 50` for long bias, `round(spot/50)*50 − 50` for short bias.
+This is the **1st OTM strike** — the long leg of the debit spread.
+
 **Long MST → Long Call Condor (level 1) → optional Pyramid (level 2)**
 
 | Step | Trigger | Action | Strike | Notes |
 |---|---|---|---|---|
-| 1a | MST activates LONG | BUY 1 lot CE | ATM (entry-time spot rounded to 50 = `entry_atm`) | DTE rule §4.1 |
-| 1b | MST activates LONG | SELL 1 lot CE | `entry_atm + 200` | same expiry |
-| 2a | First CST in active week (credit ≥ ₹1,000/lot) | SELL 1 lot CE | `entry_atm + 400` | same expiry |
-| 2b | First CST in active week (credit ≥ ₹1,000/lot) | BUY 1 lot CE | `entry_atm + 600` | same expiry |
-| **3a** | **Pyramid (D AND B fires)** | **BUY 1 lot CE** | **current spot rounded to 50 = `pyramid_atm`** | **same expiry** |
-| **3b** | **Pyramid (D AND B fires)** | **SELL 1 lot CE** | **`pyramid_atm + 200`** | **same expiry** |
-| 4a | Next CST after pyramid (credit ≥ ₹1,000/lot) | SELL 1 lot CE | `pyramid_atm + 400` | same expiry |
-| 4b | Next CST after pyramid (credit ≥ ₹1,000/lot) | BUY 1 lot CE | `pyramid_atm + 600` | same expiry |
+| 1a | MST activates LONG | BUY 1 lot CE | **`entry_anchor`** = ATM + 50 (1st OTM CE) | DTE rule §4.1 |
+| 1b | MST activates LONG | SELL 1 lot CE | `entry_anchor + 200` | same expiry |
+| 2a | First CST in active week (credit ≥ ₹1,000/lot) | SELL 1 lot CE | `entry_anchor + 400` | same expiry |
+| 2b | First CST in active week (credit ≥ ₹1,000/lot) | BUY 1 lot CE | `entry_anchor + 600` | same expiry |
+| **3a** | **Pyramid (D AND B / safety fires)** | **BUY 1 lot CE** | **`pyramid_anchor`** = (spot at pyramid time rounded to 50) + 50 | **same expiry** |
+| **3b** | **Pyramid fires** | **SELL 1 lot CE** | **`pyramid_anchor + 200`** | **same expiry** |
+| 4a | Next CST after pyramid (credit ≥ ₹1,000/lot) | SELL 1 lot CE | `pyramid_anchor + 400` | same expiry |
+| 4b | Next CST after pyramid (credit ≥ ₹1,000/lot) | BUY 1 lot CE | `pyramid_anchor + 600` | same expiry |
 
-Level-1 strikes anchored to **MST-entry-time ATM**.
-Level-2 strikes anchored to **spot at pyramid-trigger time** (price has moved up by then; level-2 condor is positioned at the new operative range).
+Example (NIFTY at entry-time spot = 24,032 on long activation):
+- nearest-50 ATM = 24,050 (spot 24,032 is 18 pts below 24,050 vs 32 above 24,000)
+- `entry_anchor = 24,050 + 50 = 24,100` (1st OTM CE)
+- L1 condor strikes: **24,100 / 24,300 / 24,500 / 24,700** (200/200/200 spacing)
+- (Without OTM offset, would have been 24,050 / 24,250 / 24,450 / 24,650)
+- Net debit cost is ~30-40% less than the ATM-anchored version, with max profit zone shifted further from entry spot
 
-**Short MST → Long Put Condor** (mirror)
+**Short MST → Long Put Condor** (mirror — anchor is 1st OTM PE, i.e. ATM − 50)
 
 | Step | Trigger | Action | Strike |
 |---|---|---|---|
-| 1a | MST activates SHORT | BUY 1 lot PE | `entry_atm` |
-| 1b | MST activates SHORT | SELL 1 lot PE | `entry_atm - 200` |
-| 2a | First CST (credit ≥ ₹1,000/lot) | SELL 1 lot PE | `entry_atm - 400` |
-| 2b | First CST (credit ≥ ₹1,000/lot) | BUY 1 lot PE | `entry_atm - 600` |
-| **3a** | **Pyramid (D AND B fires)** | **BUY 1 lot PE** | **`pyramid_atm`** |
-| **3b** | **Pyramid (D AND B fires)** | **SELL 1 lot PE** | **`pyramid_atm - 200`** |
-| 4a | Next CST after pyramid (credit ≥ ₹1,000/lot) | SELL 1 lot PE | `pyramid_atm - 400` |
-| 4b | Next CST after pyramid (credit ≥ ₹1,000/lot) | BUY 1 lot PE | `pyramid_atm - 600` |
+| 1a | MST activates SHORT | BUY 1 lot PE | `entry_anchor` = ATM − 50 (1st OTM PE) |
+| 1b | MST activates SHORT | SELL 1 lot PE | `entry_anchor − 200` |
+| 2a | First CST (credit ≥ ₹1,000/lot) | SELL 1 lot PE | `entry_anchor − 400` |
+| 2b | First CST (credit ≥ ₹1,000/lot) | BUY 1 lot PE | `entry_anchor − 600` |
+| **3a** | **Pyramid fires** | **BUY 1 lot PE** | **`pyramid_anchor` = ATM_at_pyramid − 50** |
+| **3b** | **Pyramid fires** | **SELL 1 lot PE** | **`pyramid_anchor − 200`** |
+| 4a | Next CST after pyramid (credit ≥ ₹1,000/lot) | SELL 1 lot PE | `pyramid_anchor − 400` |
+| 4b | Next CST after pyramid (credit ≥ ₹1,000/lot) | BUY 1 lot PE | `pyramid_anchor − 600` |
+
+**Why 1st OTM and not ATM:**
+- Lower entry premium (1st OTM CE costs ~30-40% less than ATM CE at typical NIFTY IV)
+- More room for the directional move to play out before reaching max profit zone (max profit zone now between anchor+200 and anchor+400, i.e. ATM+250 to ATM+450 for long bias)
+- Slightly higher break-even (small cost) but materially lower max-loss (premium paid is smaller)
+- Works hand-in-hand with break-of-extreme entry: by the time we activate, price is already past the flip-bar's high/low, so the 1st OTM is closer to true "fresh ATM" of the new direction
 
 ### 4.3 Reset structure — when current-week credit is too low
 

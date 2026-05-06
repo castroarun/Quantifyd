@@ -100,7 +100,10 @@ Phase H: Final per-stock STOCK_CONFIGS list          ⏳ PENDING
 | 2026-05-05 19:00 | Phase B DONE | 100/100 stocks, 230K signals, RESULTS.md auto-aggregated |
 | 2026-05-05 19:06 | Phase C CCRB launched on top-100 | bash bzec0c3zn |
 | 2026-05-05 19:30 | Patched runners to use separate progress files | Master STATUS protected for future runs |
-| 2026-05-05 20:42 | Phase C progress check — 28/100 stocks, 261K signals | Last: COCHINSHIP, elapsed 94.6 min, pace 3.4 min/stock, ETA ~4h more |
+| 2026-05-05 20:42 | Phase C progress — 28/100 stocks, 261K signals | Last: COCHINSHIP |
+| 2026-05-05 23:30 | Phase C progress — 59/100 stocks, 619K signals | Last: IOC |
+| 2026-05-06 00:12 | Phase C DIED (laptop suspend) | Last alive at 64/100 stocks, 696K signals (LT done) |
+| 2026-05-06 15:10 | Phase C RESUMED (bash boh1h7gps) | 36 stocks left; resumes from CSV skip-set |
 
 ### Top-15 vol-BO findings (Phase B done)
 

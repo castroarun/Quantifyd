@@ -156,12 +156,29 @@ class MSTEngine:
     PYRAMID_SAFETY_WING_PCT = 0.5    # safety trigger fires at K3 + 0.5 * (K4-K3)
     SPREAD_WIDTH = 200               # standard structure
     RESET_WIDTH = 100                # reset (Reading D) structure
+    OTM_OFFSET = 50                  # debit spread anchor: 1st OTM (50 pts on NIFTY 50-pt strikes)
+    STRIKE_INTERVAL = 50             # NIFTY weekly options strike spacing
     LOTS = 1
     MIN_DTE = 6
     PYRAMID_MAX_LEVEL = 2
     MIN_CREDIT_PER_LOT = 1000        # rupees
 
     BUFFER_SIZE = 250                # rolling bar buffer (covers ATR=50 + Stoch warmup)
+
+    def _compute_anchor(self, spot: float, direction: int) -> int:
+        """Compute the debit spread anchor strike (long leg of the bull-call /
+        bear-put). With OTM_OFFSET=50, this is 1 strike OTM relative to spot.
+        OTM_OFFSET=0 would restore ATM-anchored behavior.
+
+        Long MST: anchor = ATM + offset (1st OTM CE side)
+        Short MST: anchor = ATM - offset (1st OTM PE side)
+        """
+        base_atm = round(spot / self.STRIKE_INTERVAL) * self.STRIKE_INTERVAL
+        if direction == 1:
+            return int(base_atm + self.OTM_OFFSET)
+        if direction == -1:
+            return int(base_atm - self.OTM_OFFSET)
+        return int(base_atm)
 
     def __init__(self, executor=None, calendar=None, paper_mode: bool = True,
                  enabled: bool = True):
@@ -333,8 +350,9 @@ class MSTEngine:
     def _activate_position(self, entry_price, bar, ind, i):
         """Open the level-1 debit spread."""
         spot = float(ind["close"][i])
-        # Use entry-time spot's ATM for level 1 (anchored to current spot at entry, NOT armed level)
-        entry_atm = round(spot / 50) * 50
+        # Anchor the debit spread's long leg at 1st OTM (ATM ± OTM_OFFSET).
+        # The whole condor shifts with this — see _compute_anchor.
+        entry_atm = self._compute_anchor(spot, self.state.mst_direction)
 
         # Compute weekly expiry & T-1
         bar_date = self._bar_date(bar)
@@ -536,7 +554,7 @@ class MSTEngine:
             return events
 
         spot = float(ind["close"][i])
-        new_atm = round(spot / 50) * 50
+        new_atm = self._compute_anchor(spot, self.state.mst_direction)
         self.state.pyramid_atm = new_atm
         self.state.pyramid_level = 2
         self.state.state = "DEBIT_OPEN_L2"
@@ -699,7 +717,7 @@ class MSTEngine:
                 bar_date = self._bar_date(self.bars[-1])
                 new_expiry = self.calendar.next_weekly_expiry(bar_date, min_dte=self.MIN_DTE)
                 new_t_minus_1 = self.calendar.t_minus_1(new_expiry)
-                new_atm = round(spot / 50) * 50
+                new_atm = self._compute_anchor(spot, self.state.mst_direction)
 
                 # Reset state to L1
                 self.state.state = "DEBIT_OPEN_L1"
@@ -747,7 +765,7 @@ class MSTEngine:
         bar_date = self._bar_date(bar)
         new_expiry = self.calendar.next_weekly_expiry(bar_date, min_dte=self.MIN_DTE)
         new_t_minus_1 = self.calendar.t_minus_1(new_expiry)
-        new_atm = round(spot / 50) * 50
+        new_atm = self._compute_anchor(spot, self.state.mst_direction)
 
         self.state.state = "DEBIT_OPEN_L1"
         self.state.activated_at_bar = bar["bar_dt"]

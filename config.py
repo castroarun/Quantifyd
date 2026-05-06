@@ -921,6 +921,11 @@ MST_DEFAULTS = {
     "spread_width": 200,                # Standard 200/200/200 condor on NIFTY
     "reset_width": 100,                 # Reading D — narrow spot-centered when credit too low
     "min_credit_per_lot": 1000,         # rupees/lot threshold; below → roll-and-reset
+    "debit_otm_offset": 50,             # NEW 2026-05-05: 1st OTM anchor (50pt on NIFTY).
+                                        # Long bias: anchor=ATM+50; Short bias: anchor=ATM-50.
+                                        # Whole condor shifts together; widths preserved.
+                                        # Set to 0 to restore original ATM-anchored behavior.
+    "strike_interval": 50,              # NIFTY weekly options strike spacing
 
     # DTE rule
     "min_dte_at_entry": 6,              # Universal — applies to every new entry
@@ -936,4 +941,177 @@ MST_DEFAULTS = {
     # Notifications (uses services/notifications.py)
     "email_enabled": True,
     "whatsapp_enabled": False,
-} 
+}
+
+
+# =============================================================================
+# Intraday 75% WR Quest — three-system live trading engine
+# =============================================================================
+# Source: research/37_intraday_75wr_quest/INTRADAY_75WR_5MIN_SWEEP_RESULTS.md
+#
+# All three default to PAPER MODE (Off / Paper / Live three-state, mirroring
+# ORB_DEFAULTS). Same shape of dict so a generic engine_base can read them.
+#
+#   off:   enabled=False
+#   paper: enabled=True, paper_trading_mode=True,  live_trading_enabled=False
+#   live:  enabled=True, paper_trading_mode=False, live_trading_enabled=True
+#
+# Position sizing is FIXED-Rs risk (risk_per_trade_rs), capped by
+# max_notional_per_trade. Concurrency is enforced ACROSS ALL THREE SYSTEMS
+# combined, not per-system (see intraday_75wr/engine_base.py).
+
+# --- System 1: Diamond Short (25 stocks, 09:45 IST scan) ---------------------
+
+DIAMOND_SHORT_DEFAULTS = {
+    'system_id': 'diamond_short',
+    'system_name': 'Diamond Short',
+    'direction': 'SHORT',
+
+    # Universe — 25 short-bias diamond stocks (research/37 stage 7)
+    'universe': [
+        'ZEEL', 'EDELWEISS', 'ASHOKA', 'CDSL', 'BANDHANBNK',
+        'KNRCON', 'RAIN', 'GMDCLTD', 'HEG', 'NATCOPHARM',
+        'SJVN', 'PRAJIND', 'TIINDIA', 'SUZLON', 'AMBER',
+        'RCF', 'NETWORK18', 'NAM-INDIA', 'BAYERCROP', 'TCIEXP',
+        'AARTIIND', 'NATIONALUM', 'IDEA', 'LTTS', 'NBCC',
+    ],
+
+    # Mode (paper default)
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+
+    # Capital / sizing
+    'capital': 200_000,                 # Rs 2L deposit allocated
+    'mis_leverage': 5,                  # Zerodha MIS leverage
+    'risk_per_trade_rs': 3000,          # Fixed Rs 3K cap per trade (NOT pct)
+    'max_concurrent': 5,                # Per-system cap (combined cap also 5)
+    'max_notional_per_trade': 200_000,
+    'daily_loss_limit_pct': 0.03,       # 3% of capital
+    'enforce_daily_loss_cap': True,
+
+    # Entry timing — single scan at 09:45 IST (bar 6, after first 30 min)
+    'entry_time': '09:45',
+    'entry_window_seconds': 60,         # Allow 60s tolerance around scan time
+
+    # Signal: short when stock < VWAP AND RSI(14) < rsi_threshold AND NIFTY weak
+    'rsi_threshold': 40,                # Volume variant (research): WR 79%
+    'nifty_filter': 'b3_change_neg',    # NIFTY first-30-min change < 0
+    'require_below_vwap': True,
+
+    # Exit
+    'tp_pct': 0.5,                      # 0.5% TP
+    'sl_pct': 1.5,                      # 1.5% SL
+    'max_hold_bars': 60,                # full session hold
+    'eod_squareoff_time': '15:25',
+}
+
+
+# --- System 2: Long Mean-Reversion (15 stocks, continuous 11:15-13:15) -------
+
+LONG_MR_DEFAULTS = {
+    'system_id': 'long_mr',
+    'system_name': 'Long Mean-Reversion',
+    'direction': 'LONG',
+
+    # Universe — 15 long-reversal diamond stocks (research/37 stage 11c)
+    'universe': [
+        'BALRAMCHIN', 'AUROPHARMA', 'DCBBANK', 'CYIENT', 'APLLTD',
+        'CERA', 'CGCL', 'BOSCHLTD', 'EIHOTEL', 'ASTRAL',
+        'CESC', 'CAPLIPOINT', 'AAVAS', 'ALKEM', 'APLAPOLLO',
+    ],
+
+    # Mode (paper default)
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+
+    # Capital / sizing
+    'capital': 200_000,
+    'mis_leverage': 5,
+    'risk_per_trade_rs': 3000,
+    'max_concurrent': 5,
+    'max_notional_per_trade': 200_000,
+    'daily_loss_limit_pct': 0.03,
+    'enforce_daily_loss_cap': True,
+
+    # Entry timing — continuous scan in 11:15-13:15 window (bar 24-48)
+    'entry_window_start': '11:15',
+    'entry_window_end': '13:15',
+    'scan_cadence_minutes': 5,
+
+    # Signal: stock down >= 2% AND RSI bounce 28 -> 35 AND NIFTY not crashing
+    'drop_pct': -2.0,
+    'rsi_oversold': 28,
+    'rsi_lift': 35,
+    'rsi_lookback_bars': 6,
+    'require_3bar_break': True,
+    'require_bullish_bar': True,
+    'nifty_filter': 'b3_not_crashing',  # NIFTY first-30-min > -0.5%
+
+    # Exit
+    'tp_pct': 0.5,
+    'sl_pct': 1.5,
+    'max_hold_bars': 60,
+    'eod_squareoff_time': '15:25',
+}
+
+
+# --- System 3: Long Trend-Continuation (30 stocks, continuous 09:15-10:30) ---
+
+LONG_TC_DEFAULTS = {
+    'system_id': 'long_tc',
+    'system_name': 'Long Trend-Continuation',
+    'direction': 'LONG',
+
+    # Universe — 30 trend-pullback diamond stocks (research/37 stage 11b)
+    'universe': [
+        'MARICO', 'FINEORG', 'CCL', 'ASAHIINDIA', 'GALAXYSURF',
+        'ASTRAZEN', 'JKPAPER', 'M&MFIN', 'JUBLFOOD', 'WHIRLPOOL',
+        'GODREJAGRO', 'INDIANB', 'ZYDUSWELL', 'CHOLAFIN', 'WELCORP',
+        'CUB', 'AMBER', 'INDIACEM', 'PNBHOUSING', 'HINDZINC',
+        'JKCEMENT', 'SOBHA', 'MGL', 'GRINDWELL', 'BAJFINANCE',
+        'DIXON', 'APLAPOLLO', 'DBL', 'BANDHANBNK', 'GODFRYPHLP',
+    ],
+
+    # Mode (paper default)
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+
+    # Capital / sizing
+    'capital': 200_000,
+    'mis_leverage': 5,
+    'risk_per_trade_rs': 3000,
+    'max_concurrent': 5,
+    'max_notional_per_trade': 200_000,
+    'daily_loss_limit_pct': 0.03,
+    'enforce_daily_loss_cap': True,
+
+    # Entry timing — continuous scan first 75 min (09:15-10:30, bar 0-15)
+    'entry_window_start': '09:15',
+    'entry_window_end': '10:30',
+    'scan_cadence_minutes': 5,
+    'bar_min': 7,                       # earliest entry bar (after first hour)
+    'bar_max': 15,                      # latest entry bar (10:30)
+
+    # Signal: gap-up >= 0.5% + first-hour strength + pullback to VWAP within
+    # 0.3% + RSI >= 45 + bullish current bar + NIFTY also gap-up bullish
+    'gap_min_pct': 0.5,
+    'first_hour_strength_pct': 0.5,
+    'pullback_mode': 'vwap_within_0p3', # research/37 11b rank-4 winner
+    'rsi_floor': 45,
+    'nifty_filter': 'nifty_strong_both', # NIFTY gap-up AND bullish at b6
+
+    # Exit
+    'tp_pct': 0.5,
+    'sl_pct': 1.5,
+    'max_hold_bars': 60,
+    'eod_squareoff_time': '15:25',
+}
+
+
+# Combined cap across all three systems (must equal each system's max_concurrent
+# unless we want per-system to be lower; engine_base enforces the COMBINED cap).
+INTRADAY_75WR_COMBINED_MAX_CONCURRENT = 5
+ 

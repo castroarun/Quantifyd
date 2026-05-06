@@ -82,6 +82,8 @@ export interface MSTConfig {
   reset_width: number;
   min_credit_per_lot: number;
   min_dte_at_entry: number;
+  debit_otm_offset: number;
+  strike_interval: number;
   pyramid_max_level: number;
   pyramid_d_lookback: number;
   pyramid_d_threshold: number;

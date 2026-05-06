@@ -1,0 +1,16 @@
+family,params,tp_pct,sl_pct,max_hold_bars,n_stocks,n_trades,win_rate,avg_win,avg_loss,profit_factor,sharpe,max_dd_pct,total_return_pct,trades_per_stock_year,aws,passes_gates
+rsi_extreme,"{'rsi_threshold': 20, 'direction': 'long', 'require_bullish_bar': True}",0.5,0.3,12,30,1294,0.3964,0.3854,-0.2761,0.917,-0.99,25.892,-17.92,24.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 20, 'direction': 'long', 'require_bullish_bar': True}",0.8,0.4,24,30,1294,0.3833,0.5503,-0.3606,0.949,-0.564,26.34,-14.82,24.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 20, 'direction': 'long', 'require_bullish_bar': True}",1.0,0.5,36,30,1294,0.3918,0.6457,-0.4304,0.966,-0.366,21.792,-11.35,24.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 20, 'direction': 'long', 'require_bullish_bar': True}",1.5,0.7,48,30,1294,0.4104,0.7572,-0.5542,0.951,-0.505,38.108,-20.75,24.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 20, 'direction': 'long', 'require_bullish_bar': True}",2.0,1.0,60,30,1294,0.4389,0.8341,-0.701,0.931,-0.704,46.394,-35.18,24.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 25, 'direction': 'long', 'require_bullish_bar': True}",0.5,0.3,12,30,3054,0.389,0.3704,-0.2682,0.879,-1.879,67.102,-60.46,57.8,0.0,0
+rsi_extreme,"{'rsi_threshold': 25, 'direction': 'long', 'require_bullish_bar': True}",0.8,0.4,24,30,3054,0.3703,0.5254,-0.35,0.883,-1.757,88.692,-78.78,57.8,0.0,0
+rsi_extreme,"{'rsi_threshold': 25, 'direction': 'long', 'require_bullish_bar': True}",1.0,0.5,36,30,3054,0.3867,0.6104,-0.4231,0.91,-1.308,91.268,-71.65,57.8,0.0,0
+rsi_extreme,"{'rsi_threshold': 25, 'direction': 'long', 'require_bullish_bar': True}",1.5,0.7,48,30,3054,0.4168,0.7002,-0.5379,0.931,-0.878,98.836,-66.58,57.8,0.0,0
+rsi_extreme,"{'rsi_threshold': 25, 'direction': 'long', 'require_bullish_bar': True}",2.0,1.0,60,30,3054,0.4381,0.7601,-0.6583,0.9,-1.176,147.326,-112.61,57.8,0.0,0
+rsi_extreme,"{'rsi_threshold': 30, 'direction': 'long', 'require_bullish_bar': True}",0.5,0.3,12,30,5675,0.3979,0.3507,-0.2644,0.876,-2.541,123.666,-111.7,107.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 30, 'direction': 'long', 'require_bullish_bar': True}",0.8,0.4,24,30,5675,0.3894,0.4893,-0.3474,0.899,-1.878,139.785,-122.16,107.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 30, 'direction': 'long', 'require_bullish_bar': True}",1.0,0.5,36,30,5675,0.3928,0.5759,-0.4205,0.886,-1.951,188.067,-165.16,107.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 30, 'direction': 'long', 'require_bullish_bar': True}",1.5,0.7,48,30,5675,0.4199,0.658,-0.5307,0.898,-1.502,200.94,-179.02,107.5,0.0,0
+rsi_extreme,"{'rsi_threshold': 30, 'direction': 'long', 'require_bullish_bar': True}",2.0,1.0,60,30,5675,0.4377,0.7144,-0.636,0.874,-1.664,286.632,-255.04,107.5,0.0,0

@@ -1,0 +1,11 @@
+Combined-portfolio walk-forward (label=rs3k)
+Split: 2025-09-30
+
+  n: TRAIN=675.0000 | TEST=238.0000
+  wr: TRAIN=0.7822 | TEST=0.7773
+  pf: TRAIN=1.2904 | TEST=1.2582
+  total_return: TRAIN=9.2818 | TEST=2.9625
+  cagr: TRAIN=13.9744 | TEST=12.8181
+  sharpe: TRAIN=2.5923 | TEST=2.5696
+  max_dd: TRAIN=2.5434 | TEST=1.2158
+  calmar: TRAIN=5.4945 | TEST=10.5426

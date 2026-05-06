@@ -1,0 +1,11 @@
+label,params,tp,sl,hold,train_wr,train_n,train_pf,train_dd,train_sharpe,test_wr,test_n,test_pf,test_dd,test_sharpe,wr_drift,passes
+top1,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 28, 'rsi_lift': 35, 'nifty_filter': 'first_bullish'}",0.5,1.5,60,0.8649,37,2.529,1.5,5.47,0.8,10,7.581,0.13,10.007,0.0649,0
+top2,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 28, 'rsi_lift': 35, 'nifty_filter': 'first_bullish'}",0.5,1.0,60,0.8649,37,3.102,1.0,6.697,0.8,10,7.581,0.13,10.007,0.0649,0
+top3,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 28, 'rsi_lift': 35, 'nifty_filter': 'b3_change_pos'}",0.5,1.5,60,0.8261,23,1.787,1.5,4.788,0.8889,9,10.9,0.0,11.821,-0.0628,0
+top4,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 30, 'rsi_lift': 35, 'nifty_filter': 'b3_change_pos'}",0.5,1.5,60,0.8148,27,1.978,1.76,6.177,0.8889,9,10.9,0.0,11.821,-0.0741,0
+top5,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 28, 'rsi_lift': 35, 'nifty_filter': 'not_below_vwap_b3'}",0.5,1.5,60,0.8103,58,2.57,2.249,6.746,0.9,20,4.58,1.5,9.853,-0.0897,1
+top6,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 30, 'rsi_lift': 35, 'nifty_filter': 'first_bullish'}",0.5,1.0,60,0.8333,54,2.661,3.26,6.267,0.8182,11,8.757,0.13,11.155,0.0152,0
+top7,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 30, 'rsi_lift': 35, 'nifty_filter': 'first_bullish'}",0.5,1.5,60,0.8333,54,2.055,4.158,4.706,0.8182,11,8.757,0.13,11.155,0.0152,0
+top8,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 28, 'rsi_lift': 35, 'nifty_filter': 'first_bullish'}",1.0,1.5,60,0.8378,37,3.636,3.0,7.299,0.8,10,14.633,0.13,10.811,0.0378,0
+top9,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 28, 'rsi_lift': 35, 'nifty_filter': 'first_bullish'}",0.7,1.0,48,0.8378,37,3.233,2.0,7.272,0.8,10,10.402,0.13,10.477,0.0378,0
+top10,"{'drop_pct': -2.0, 'window': (24, 48), 'rsi_oversold': 28, 'rsi_lift': 35, 'nifty_filter': 'b3_not_crashing'}",0.5,1.5,60,0.8246,114,2.097,3.0,5.85,0.8065,31,2.579,1.682,7.14,0.0181,1

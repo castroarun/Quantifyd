@@ -649,3 +649,151 @@ export interface StrangleVariantDetail {
   daily_state: StrangleDailyState | Record<string, never>;
 }
 
+
+/* ---------- Journal ---------- */
+
+export interface JournalTrade {
+  id: number;
+  source_db: string;
+  source_table: string;
+  source_id: number | null;
+  strategy: string;
+  instrument: string;
+  instrument_type: string;
+  direction: 'LONG' | 'SHORT' | string;
+  qty: number;
+  entry_price: number;
+  entry_time: string;
+  exit_price: number | null;
+  exit_time: string | null;
+  exit_reason: string | null;
+  pnl_gross: number | null;
+  pnl_charges: number | null;
+  pnl_net: number | null;
+  r_multiple: number | null;
+  initial_risk: number | null;
+  hold_minutes: number | null;
+  mode: 'PAPER' | 'LIVE' | string;
+  grade: number | null;
+  mistake_flag: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface JournalTag {
+  id: number;
+  name: string;
+  category: 'STRATEGY' | 'SETUP' | 'CONVICTION' | 'MISTAKE' | 'CUSTOM' | string;
+  color_hex: string | null;
+}
+
+export interface JournalTradeDetail extends JournalTrade {
+  context: Record<string, unknown> | null;
+  notes: { body_md: string; updated_at: string } | null;
+  screenshots: { id: number; file_path: string; caption: string | null }[];
+  tags: JournalTag[];
+}
+
+export interface JournalDailyRow {
+  trade_date: string;
+  trades: number;
+  wins: number | null;
+  losses: number | null;
+  pnl_gross: number;
+  pnl_net: number;
+  best: number | null;
+  worst: number | null;
+}
+
+export interface JournalSummaryResponse {
+  from: string;
+  to: string;
+  days: JournalDailyRow[];
+  metrics: {
+    pnl_net: number;
+    pnl_gross: number;
+    trades: number;
+    wins: number;
+    losses: number;
+    win_rate: number;
+    profit_factor: number | null;
+    avg_win: number;
+    avg_loss: number;
+    best_day: JournalDailyRow | null;
+    worst_day: JournalDailyRow | null;
+  };
+}
+
+export interface JournalDayResponse {
+  date: string;
+  trades: JournalTrade[];
+  review: {
+    trade_date: string;
+    pre_market_md: string | null;
+    post_close_md: string | null;
+    rule_violations: number;
+    discipline_score: number | null;
+  } | null;
+  metrics: {
+    pnl_net: number;
+    pnl_gross: number;
+    trades_count: number;
+    wins: number;
+    losses: number;
+  };
+}
+
+export interface JournalEquityPoint {
+  date: string;
+  day_net: number;
+  cum_net: number;
+  trades: number;
+}
+
+export interface JournalDrawdownWindow {
+  start_date: string;
+  trough_date: string;
+  recovery_date: string | null;
+  depth: number;
+  duration_days: number | null;
+}
+
+export interface JournalStrategyAttribution {
+  strategy: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  pnl_net: number;
+  pnl_gross: number;
+  profit_factor: number | null;
+  avg_r: number | null;
+}
+
+export interface JournalTagWinRate {
+  name: string;
+  category: string;
+  color_hex: string | null;
+  trades: number;
+  wins: number;
+  pnl_net: number;
+  win_rate: number;
+}
+
+export interface JournalInsightsResponse {
+  from: string;
+  to: string;
+  metrics: {
+    trades: number;
+    pnl_net: number;
+    win_rate: number;
+    profit_factor: number | null;
+    expectancy_r: number | null;
+    max_drawdown: number;
+  };
+  equity_curve: JournalEquityPoint[];
+  drawdowns: JournalDrawdownWindow[];
+  per_strategy: JournalStrategyAttribution[];
+  r_distribution: { r: number }[];
+  win_rate_by_tag: JournalTagWinRate[];
+}

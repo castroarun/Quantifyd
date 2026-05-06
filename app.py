@@ -137,6 +137,18 @@ def serve_react_app(subpath=''):
     return send_from_directory(app_dir, 'index.html')
 
 
+# Trading Journal blueprint — provides /api/journal/* endpoints over a
+# new SQLite at backtest_data/journal.db. The journal projects every
+# closed trade from existing strategy DBs (ORB, KC6, NAS, Strangle) and
+# adds tags, notes, daily reviews. See docs/Design/TRADING-JOURNAL-DESIGN.md.
+try:
+    from services.journal.api import journal_bp
+    app.register_blueprint(journal_bp)
+    logger.info('[journal] blueprint registered at /api/journal/*')
+except Exception as _journal_err:
+    logger.warning('[journal] blueprint failed to register: %s', _journal_err)
+
+
 @app.route('/')
 def index():
     """Landing page with login status"""

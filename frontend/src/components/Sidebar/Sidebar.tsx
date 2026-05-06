@@ -7,11 +7,12 @@ import {
   IconLayers,
   IconReport,
   IconSettings,
+  IconJournal,
 } from '../Icons';
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'strangle' | 'mst' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'strangle' | 'mst' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -158,6 +159,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconBriefcase />}
             label="Holdings"
             active={active === 'holdings'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/journal"
+            icon={<IconJournal />}
+            label="Journal"
+            active={active === 'journal'}
             collapsed={collapsed}
           />
           <NavItem

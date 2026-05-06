@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Journal · Calendar Overview · Quantifyd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@1,400;1,500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Sampled from frontend/src/tokens/design-tokens.css */
+    --canvas: #FAFAF9;
+    --surface: #FFFFFF;
+    --ink: #1B1B1A;
+    --ink-muted: #888780;
+    --ink-faint: #B4B2A9;
+    --ink-secondary: #5F5E5A;
+    --ink-subtle: #444441;
+    --hairline: rgba(0, 0, 0, 0.10);
+    --hairline-soft: rgba(0, 0, 0, 0.06);
+    --accent-pos: #0F6E56;
+    --accent-neg: #A32D2D;
+    --brand-navy: #1E3A8A;
+    --brand-navy-soft: #EFF3FA;
+    --brand-amber: #B45309;
+    --brand-amber-soft: #FEF3C7;
+    --gold-ink: #8C6A20;       /* journal-only editorial gold */
+    --serif: 'Lora', Georgia, 'Times New Roman', serif;
+    --sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --radius-card: 10px;
+    --radius-control: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--canvas);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* ============ LAYOUT ============ */
+  .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    background: var(--surface);
+    border-right: 0.5px solid var(--hairline);
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 8px 18px;
+    border-bottom: 0.5px solid var(--hairline);
+    margin-bottom: 14px;
+  }
+  .brand-mark {
+    width: 26px; height: 26px;
+    background: var(--ink); color: var(--surface);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+  }
+  .brand-name { font-weight: 500; letter-spacing: -0.02em; font-size: 14px; }
+  .nav-section-label {
+    font-size: 10px; color: var(--ink-faint); text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 12px 8px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 8px; border-radius: 6px;
+    font-size: 13px; color: var(--ink-secondary);
+    cursor: pointer;
+  }
+  .nav-item:hover { background: rgba(0,0,0,0.03); color: var(--ink); }
+  .nav-item.active { background: var(--brand-navy-soft); color: var(--brand-navy); font-weight: 500; }
+  .nav-item .dot {
+    width: 14px; height: 14px; display: inline-flex;
+    align-items: center; justify-content: center; opacity: 0.7;
+  }
+
+  /* ============ MAIN ============ */
+  .main { padding: 28px 36px 60px; max-width: 1380px; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 30px;
+  }
+  .title-block .eyebrow {
+    font-family: var(--serif); font-style: italic;
+    font-size: 13px; color: var(--gold-ink);
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+  }
+  .title-block h1 {
+    font-size: 26px; font-weight: 500;
+    letter-spacing: -0.025em; color: var(--ink);
+  }
+  .title-block .sub {
+    font-size: 13px; color: var(--ink-muted); margin-top: 4px;
+  }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  .chip-filter {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 10px; border: 0.5px solid var(--hairline);
+    border-radius: 6px; font-size: 12px; color: var(--ink-secondary);
+    background: var(--surface); cursor: pointer;
+  }
+  .chip-filter.active { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .btn-primary {
+    padding: 7px 14px; background: var(--ink); color: var(--surface);
+    border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary:hover { background: var(--ink-subtle); }
+
+  /* ============ METRIC STRIP ============ */
+  .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
+  .metric {
+    background: var(--surface);
+    border: 0.5px solid var(--hairline);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+  }
+  .metric-label {
+    font-size: 11px; color: var(--ink-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .metric-value { font-size: 22px; font-weight: 500; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+  .metric-sub { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .pos { color: var(--accent-pos); }
+  .neg { color: var(--accent-neg); }
+
+  /* ============ TWO-COLUMN BODY ============ */
+  .body-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; }
+
+  /* ============ CALENDAR ============ */
+  .panel {
+    background: var(--surface);
+    border: 0.5px solid var(--hairline);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 0.5px solid var(--hairline);
+  }
+  .panel-title { font-size: 15px; font-weight: 500; letter-spacing: -0.02em; }
+  .panel-title .accent { font-family: var(--serif); font-style: italic; color: var(--gold-ink); font-weight: 500; }
+  .month-nav { display: flex; align-items: center; gap: 4px; }
+  .icon-btn {
+    width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0.5px solid var(--hairline); border-radius: 6px;
+    color: var(--ink-secondary); cursor: pointer; background: var(--surface);
+  }
+  .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  .cal-month-name {
+    padding: 0 10px;
+    font-size: 13px; font-weight: 500;
+  }
+
+  .cal {
+    padding: 16px 20px 20px;
+  }
+  .cal-week-headers {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 8px;
+  }
+  .cal-week-headers div {
+    font-size: 10px; color: var(--ink-faint);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    text-align: center; padding: 4px 0;
+  }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-cell {
+    aspect-ratio: 1.05 / 1;
+    border: 0.5px solid var(--hairline-soft);
+    border-radius: 6px;
+    padding: 8px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    background: var(--surface);
+    cursor: pointer;
+    transition: transform 80ms ease;
+  }
+  .cal-cell:hover { transform: translateY(-1px); border-color: var(--ink); }
+  .cal-cell.muted { color: var(--ink-faint); background: transparent; cursor: default; border-style: dashed; }
+  .cal-cell.muted:hover { transform: none; border-color: var(--hairline-soft); }
+  .cal-cell .day-num { font-size: 11px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .cal-cell .day-pnl {
+    font-size: 14px; font-weight: 500;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  }
+  .cal-cell .day-trades {
+    font-size: 10px; color: var(--ink-faint); letter-spacing: 0.04em;
+  }
+
+  /* P&L tints — 5-step scale each side */
+  .pnl-pos-1 { background: #F5FBF8; }
+  .pnl-pos-2 { background: #E6F4EE; }
+  .pnl-pos-3 { background: #CFE8DD; }
+  .pnl-pos-4 { background: #B0DBC8; }
+  .pnl-pos-5 { background: #8DCDB1; }
+  .pnl-neg-1 { background: #FBF5F5; }
+  .pnl-neg-2 { background: #F4E6E6; }
+  .pnl-neg-3 { background: #E8CFCF; }
+  .pnl-neg-4 { background: #D8B0B0; }
+  .pnl-neg-5 { background: #C58A8A; }
+  .pnl-flat { background: #F4F4F2; }
+  .today { outline: 1.5px solid var(--brand-navy); outline-offset: -1.5px; }
+
+  /* legend */
+  .cal-legend {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 16px; font-size: 11px; color: var(--ink-faint);
+    letter-spacing: 0.04em;
+  }
+  .cal-legend .swatch-row { display: flex; gap: 2px; }
+  .cal-legend .swatch {
+    width: 12px; height: 12px; border-radius: 3px;
+    border: 0.5px solid var(--hairline-soft);
+  }
+
+  /* ============ RECENT TRADES PANEL ============ */
+  .recent-list { display: flex; flex-direction: column; }
+  .recent-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 65px 80px 70px;
+    gap: 10px; align-items: center;
+    padding: 12px 20px;
+    border-bottom: 0.5px solid var(--hairline-soft);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .recent-row:hover { background: rgba(0,0,0,0.018); }
+  .recent-row:last-child { border-bottom: none; }
+  .recent-row .time { font-size: 11px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .recent-row .sym {
+    font-weight: 500; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .recent-row .sym .mistake-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent-neg);
+  }
+  .recent-row .strat-chip {
+    font-size: 10px; color: var(--brand-navy); background: var(--brand-navy-soft);
+    padding: 2px 7px; border-radius: 10px; letter-spacing: 0.02em; display: inline-block;
+  }
+  .recent-row .strat-chip.diamond { color: #6B21A8; background: #F4ECFB; }
+  .recent-row .strat-chip.lmr { color: var(--accent-pos); background: #E6F4EE; }
+  .recent-row .strat-chip.ltc { color: var(--brand-amber); background: var(--brand-amber-soft); }
+  .recent-row .strat-chip.kc6 { color: var(--ink-secondary); background: #F1EFE8; }
+  .recent-row .side {
+    font-size: 10px; padding: 1px 6px; border-radius: 4px;
+    border: 0.5px solid var(--hairline);
+    color: var(--ink-secondary);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    display: inline-block; text-align: center; width: 42px;
+  }
+  .recent-row .side.long { color: var(--accent-pos); border-color: var(--accent-pos); }
+  .recent-row .side.short { color: var(--accent-neg); border-color: var(--accent-neg); }
+  .recent-row .pnl { font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; letter-spacing: -0.02em; }
+  .recent-row .r-mult { font-size: 11px; color: var(--ink-muted); font-variant-numeric: tabular-nums; text-align: right; }
+
+  /* ============ EDITORIAL FOOTNOTE ============ */
+  .footnote {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 0.5px solid var(--hairline);
+    border-left: 2px solid var(--gold-ink);
+    border-radius: var(--radius-card);
+    font-family: var(--serif); font-style: italic;
+    color: var(--ink-secondary);
+    line-height: 1.55;
+    font-size: 14px;
+  }
+  .footnote .label {
+    font-family: var(--sans); font-style: normal;
+    font-size: 10px; color: var(--gold-ink);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">Q</div>
+      <div class="brand-name">Quantifyd</div>
+    </div>
+    <div class="nav-section-label">Strategies</div>
+    <a class="nav-item"><span class="dot">▦</span> ORB Cash</a>
+    <a class="nav-item"><span class="dot">▦</span> ORB Index</a>
+    <a class="nav-item"><span class="dot">◬</span> NAS</a>
+    <a class="nav-item"><span class="dot">○</span> KC6</a>
+    <a class="nav-item"><span class="dot">◇</span> MST</a>
+    <a class="nav-item"><span class="dot">◇</span> NWV</a>
+    <div class="nav-section-label">Workspace</div>
+    <a class="nav-item"><span class="dot">▤</span> Holdings</a>
+    <a class="nav-item active"><span class="dot">◐</span> Journal</a>
+    <a class="nav-item"><span class="dot">▤</span> Reports</a>
+    <a class="nav-item"><span class="dot">⚙</span> Settings</a>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="title-block">
+        <div class="eyebrow">The trader's ledger</div>
+        <h1>Journal</h1>
+        <div class="sub">May 2026 · 38 trades · 14 sessions traded · live since 17 Apr</div>
+      </div>
+      <div class="actions">
+        <span class="chip-filter active">All strategies</span>
+        <span class="chip-filter">ORB Cash</span>
+        <span class="chip-filter">Diamond Short</span>
+        <span class="chip-filter">Long-MR</span>
+        <span class="chip-filter">Long-TC</span>
+        <button class="btn-primary">＋ Log manual trade</button>
+      </div>
+    </div>
+
+    <!-- METRIC STRIP -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Month net P&amp;L</div>
+        <div class="metric-value pos">+₹47,820</div>
+        <div class="metric-sub">+4.78% on ₹10L deployed</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Win rate</div>
+        <div class="metric-value">68.4%</div>
+        <div class="metric-sub">26 wins · 12 losses</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Profit factor</div>
+        <div class="metric-value">2.14</div>
+        <div class="metric-sub">Avg win ₹3,124 · loss ₹1,889</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Best day</div>
+        <div class="metric-value pos">+₹14,250</div>
+        <div class="metric-sub">Tue · 28 Apr · 5 trades</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Worst day</div>
+        <div class="metric-value neg">−₹6,440</div>
+        <div class="metric-sub">Wed · 23 Apr · 4 trades</div>
+      </div>
+    </div>
+
+    <!-- TWO-COLUMN BODY -->
+    <div class="body-grid">
+
+      <!-- ============ CALENDAR PANEL ============ -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Calendar · <span class="accent">a month in P&amp;L</span></div>
+          <div class="month-nav">
+            <button class="icon-btn">‹</button>
+            <span class="cal-month-name">May 2026</span>
+            <button class="icon-btn">›</button>
+          </div>
+        </div>
+        <div class="cal">
+          <div class="cal-week-headers">
+            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+          </div>
+          <div class="cal-grid">
+            <!-- Week 1 -->
+            <div class="cal-cell muted"><div class="day-num">28</div></div>
+            <div class="cal-cell muted"><div class="day-num">29</div></div>
+            <div class="cal-cell muted"><div class="day-num">30</div></div>
+            <div class="cal-cell pnl-pos-3">
+              <div class="day-num">1</div>
+              <div class="day-pnl pos">+₹4,820</div>
+              <div class="day-trades">3 trades</div>
+            </div>
+            <div class="cal-cell pnl-neg-2">
+              <div class="day-num">2</div>
+              <div class="day-pnl neg">−₹1,260</div>
+              <div class="day-trades">2 trades</div>
+            </div>
+            <div class="cal-cell muted"><div class="day-num">3</div></div>
+            <div class="cal-cell muted"><div class="day-num">4</div></div>
+
+            <!-- Week 2 -->
+            <div class="cal-cell pnl-pos-2">
+              <div class="day-num">5</div>
+              <div class="day-pnl pos">+₹2,140</div>
+              <div class="day-trades">2 trades</div>
+            </div>
+            <div class="cal-cell pnl-pos-4">
+              <div class="day-num">6</div>
+              <div class="day-pnl pos">+₹8,920</div>
+              <div class="day-trades">5 trades</div>
+            </div>
+            <div class="cal-cell today pnl-pos-5">
+              <div class="day-num">7</div>
+              <div class="day-pnl pos">+₹14,250</div>
+              <div class="day-trades">5 trades · today</div>
+            </div>
+            <div class="cal-cell pnl-flat">
+              <div class="day-num">8</div>
+              <div class="day-pnl">—</div>
+              <div class="day-trades">0 trades</div>
+            </div>
+            <div class="cal-cell pnl-pos-2">
+              <div class="day-num">9</div>
+              <div class="day-pnl pos">+₹2,810</div>
+              <div class="day-trades">3 trades</div>
+            </div>
+            <div class="cal-cell muted"><div class="day-num">10</div></div>
+            <div class="cal-cell muted"><div class="day-num">11</div></div>
+
+            <!-- Week 3 -->
+            <div class="cal-cell pnl-neg-3">
+              <div class="day-num">12</div>
+              <div class="day-pnl neg">−₹3,940</div>
+              <div class="day-trades">4 trades</div>
+            </div>
+            <div class="cal-cell pnl-pos-3">
+              <div class="day-num">13</div>
+              <div class="day-pnl pos">+₹5,610</div>
+              <div class="day-trades">3 trades</div>
+            </div>
+            <div class="cal-cell pnl-pos-2">
+              <div class="day-num">14</div>
+              <div class="day-pnl pos">+₹1,950</div>
+              <div class="day-trades">2 trades</div>
+            </div>
+            <div class="cal-cell pnl-neg-4">
+              <div class="day-num">15</div>
+              <div class="day-pnl neg">−₹6,440</div>
+              <div class="day-trades">4 trades</div>
+            </div>
+            <div class="cal-cell pnl-pos-4">
+              <div class="day-num">16</div>
+              <div class="day-pnl pos">+₹9,180</div>
+              <div class="day-trades">4 trades</div>
+            </div>
+            <div class="cal-cell muted"><div class="day-num">17</div></div>
+            <div class="cal-cell muted"><div class="day-num">18</div></div>
+
+            <!-- Week 4 -->
+            <div class="cal-cell pnl-pos-1">
+              <div class="day-num">19</div>
+              <div class="day-pnl pos">+₹820</div>
+              <div class="day-trades">1 trade</div>
+            </div>
+            <div class="cal-cell pnl-pos-3">
+              <div class="day-num">20</div>
+              <div class="day-pnl pos">+₹4,910</div>
+              <div class="day-trades">3 trades</div>
+            </div>
+            <div class="cal-cell pnl-neg-1">
+              <div class="day-num">21</div>
+              <div class="day-pnl neg">−₹920</div>
+              <div class="day-trades">1 trade</div>
+            </div>
+            <div class="cal-cell pnl-pos-2">
+              <div class="day-num">22</div>
+              <div class="day-pnl pos">+₹3,460</div>
+              <div class="day-trades">2 trades</div>
+            </div>
+            <div class="cal-cell pnl-pos-3">
+              <div class="day-num">23</div>
+              <div class="day-pnl pos">+₹6,250</div>
+              <div class="day-trades">4 trades</div>
+            </div>
+            <div class="cal-cell muted"><div class="day-num">24</div></div>
+            <div class="cal-cell muted"><div class="day-num">25</div></div>
+
+            <!-- Week 5 placeholders -->
+            <div class="cal-cell muted"><div class="day-num">26</div></div>
+            <div class="cal-cell muted"><div class="day-num">27</div></div>
+            <div class="cal-cell muted"><div class="day-num">28</div></div>
+            <div class="cal-cell muted"><div class="day-num">29</div></div>
+            <div class="cal-cell muted"><div class="day-num">30</div></div>
+            <div class="cal-cell muted"><div class="day-num">31</div></div>
+            <div class="cal-cell muted"><div class="day-num">1</div></div>
+          </div>
+
+          <div class="cal-legend">
+            <span>Loss</span>
+            <div class="swatch-row">
+              <div class="swatch pnl-neg-5"></div>
+              <div class="swatch pnl-neg-4"></div>
+              <div class="swatch pnl-neg-3"></div>
+              <div class="swatch pnl-neg-2"></div>
+              <div class="swatch pnl-neg-1"></div>
+            </div>
+            <div class="swatch pnl-flat"></div>
+            <div class="swatch-row">
+              <div class="swatch pnl-pos-1"></div>
+              <div class="swatch pnl-pos-2"></div>
+              <div class="swatch pnl-pos-3"></div>
+              <div class="swatch pnl-pos-4"></div>
+              <div class="swatch pnl-pos-5"></div>
+            </div>
+            <span>Profit</span>
+            <span style="margin-left:auto">click any day to drill in</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ RECENT TRADES PANEL ============ -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Recent trades</div>
+          <a class="chip-filter">View all 38</a>
+        </div>
+        <div class="recent-list">
+
+          <div class="recent-row">
+            <div class="time">14:45</div>
+            <div>
+              <div class="sym">RELIANCE</div>
+              <div><span class="strat-chip">ORB CASH</span></div>
+            </div>
+            <div><span class="side long">Long</span></div>
+            <div class="pnl pos">+₹3,420</div>
+            <div class="r-mult">+1.8R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">13:32</div>
+            <div>
+              <div class="sym">ZEEL</div>
+              <div><span class="strat-chip diamond">DIAMOND SHORT</span></div>
+            </div>
+            <div><span class="side short">Short</span></div>
+            <div class="pnl pos">+₹1,180</div>
+            <div class="r-mult">+0.5R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">12:18</div>
+            <div>
+              <div class="sym">BALRAMCHIN</div>
+              <div><span class="strat-chip lmr">LONG-MR</span></div>
+            </div>
+            <div><span class="side long">Long</span></div>
+            <div class="pnl pos">+₹2,640</div>
+            <div class="r-mult">+0.5R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">11:08</div>
+            <div>
+              <div class="sym">MARICO</div>
+              <div><span class="strat-chip ltc">LONG-TC</span></div>
+            </div>
+            <div><span class="side long">Long</span></div>
+            <div class="pnl pos">+₹4,810</div>
+            <div class="r-mult">+0.5R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">10:24</div>
+            <div>
+              <div class="sym">HDFCBANK <span class="mistake-dot" title="Mistake-tagged: stop moved"></span></div>
+              <div><span class="strat-chip">ORB CASH</span></div>
+            </div>
+            <div><span class="side long">Long</span></div>
+            <div class="pnl neg">−₹2,200</div>
+            <div class="r-mult">−1.5R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">10:18</div>
+            <div>
+              <div class="sym">CDSL</div>
+              <div><span class="strat-chip diamond">DIAMOND SHORT</span></div>
+            </div>
+            <div><span class="side short">Short</span></div>
+            <div class="pnl pos">+₹2,080</div>
+            <div class="r-mult">+0.5R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">14:52 · 06 May</div>
+            <div>
+              <div class="sym">INFY</div>
+              <div><span class="strat-chip">ORB CASH</span></div>
+            </div>
+            <div><span class="side short">Short</span></div>
+            <div class="pnl pos">+₹3,910</div>
+            <div class="r-mult">+2.1R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">11:42 · 06 May</div>
+            <div>
+              <div class="sym">SUZLON</div>
+              <div><span class="strat-chip diamond">DIAMOND SHORT</span></div>
+            </div>
+            <div><span class="side short">Short</span></div>
+            <div class="pnl neg">−₹1,640</div>
+            <div class="r-mult">−1.0R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">09:48 · 06 May</div>
+            <div>
+              <div class="sym">SBI <span class="mistake-dot" title="Override against system"></span></div>
+              <div><span class="strat-chip">ORB CASH</span></div>
+            </div>
+            <div><span class="side long">Long</span></div>
+            <div class="pnl pos">+₹1,420</div>
+            <div class="r-mult">+0.7R</div>
+          </div>
+
+          <div class="recent-row">
+            <div class="time">10:15 · 06 May</div>
+            <div>
+              <div class="sym">CYIENT</div>
+              <div><span class="strat-chip lmr">LONG-MR</span></div>
+            </div>
+            <div><span class="side long">Long</span></div>
+            <div class="pnl pos">+₹2,810</div>
+            <div class="r-mult">+0.5R</div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- EDITORIAL FOOTNOTE -->
+    <div class="footnote">
+      <div class="label">From the journal · 07 May 2026</div>
+      "Best month since live since April. Three new intraday systems shipped — Diamond Short
+      doing the heaviest lifting at 22 trades, 81% WR. ORB Cash steady at 53% WR but
+      profit factor jumped after the trail-stop tightening on 28 Apr.
+      One mistake tag this week: HDFC Bank long where I moved the SL up before the OR
+      tested. Cost a clean stop-out. Worth a mistake-card review on Sunday."
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
