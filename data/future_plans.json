@@ -1,6 +1,131 @@
 {
   "plans": [
     {
+      "id": "nifty500-intraday-momentum-portfolio",
+      "title": "Nifty 500 Intraday Momentum Portfolio — Per-Stock Tuned Vol-BO + CCRB",
+      "subtitle": "Two complementary intraday strategies (volume-breakout + CPR-compression-range-breakout) deployed as a per-stock-tuned portfolio. Each stock gets its own optimal variant (TF, vol_mult, gap, RSI, exit). 15 deployable stocks identified from top-100-by-turnover sweep so far; expanding to ~50-80 stocks via Nifty 500 wider universe to hit 2-3 trades/day target.",
+      "status": "backtesting",
+      "created": "2026-05-06",
+      "tags": ["intraday", "volume-breakout", "cpr-compression", "per-stock-tuning", "nifty500", "paper-scanner", "research-30b", "research-31", "research-34"],
+      "sections": [
+        {
+          "title": "The two signals",
+          "items": [
+            {
+              "label": "Strategy 1 — Volume-Breakout (vol-BO)",
+              "body": "First 5/10/15-min candle of the session closes past prev_day_high (LONG) or prev_day_low (SHORT), with elevated volume. Most stocks favor either LONG or SHORT but rarely both. Origin: research/30 → /30b → /34.",
+              "pros": ["Simple trigger (1 candle close)", "Fires once per day max per stock — easy to sequence", "Cleanest direction-aware setup"],
+              "cons": ["Per-stock variant tuning required (no single rule works broadly)", "Strict promote gate (Sharpe>=0.5 + n>=15) only catches ~16% of liquid stocks"]
+            },
+            {
+              "label": "Strategy 2 — CPR-Compression Range Breakout (CCRB)",
+              "body": "Today's CPR is narrow (volatility expectation low) AND yesterday had wide CPR (decisive move yesterday). When this setup hits, watch intraday for first 5/10/15-min close past prev_day_high (LONG) or prev_day_low (SHORT) between 09:20–14:00 IST. Origin: research/31 → /34. Variant grid trimmed (drop ctxN + ctxW_AND_N — both proved dead in liquid universe per research/32)."
+            }
+          ]
+        },
+        {
+          "title": "Per-stock tuning — the deployable architecture",
+          "body": "There is NO single rule that works across many stocks. Best broad rules max out at avg Sharpe 0.12 (essentially noise). Per-stock tuning gives avg Sharpe 0.74 across the top-15 winners. The strategy fundamentally needs per-stock cells.",
+          "items": [
+            "Each stock gets its own optimal variant: timeframe × vol_mult × gap_pct × RSI × exit_policy",
+            "Implemented as a STOCK_CONFIGS dict keyed by symbol; live scanner iterates and applies stock-specific rules",
+            "Adding/updating a stock = one dict entry change; no maintenance nightmare",
+            "Bucket-generic rules (gap+RSI premium / pure breakout) lose ~30% Sharpe — ruled out"
+          ]
+        },
+        {
+          "title": "Top 15 vol-BO winners (Phase B done — top-100-by-turnover universe)",
+          "body": "Out of 119 stocks tested: 51 with Sharpe >= 0.3, 19 with Sharpe >= 0.5. Top 15 ranked by Sharpe:",
+          "items": [
+            {"label": "1. HAL — Sharpe 1.354", "body": "5m short, vm 1.5x, gap-DOWN >= 0.5%, 5m RSI <= 40, exit T_NO. n=10, WR 90%, mean +1.41%."},
+            {"label": "2. HDFCAMC — Sharpe 0.996", "body": "10m long, vm 1.5x, gap-UP >= 0.5%, RSI >= 60, exit T_NO. n=11, WR 91%, mean +1.46%."},
+            {"label": "3. RBLBANK — Sharpe 0.919", "body": "10m long, vm 2.0x, any positive gap, no RSI, exit T_R_TARGET_1R. n=13, WR 92%, mean +1.08%."},
+            {"label": "4. RELIANCE — Sharpe 0.881", "body": "15m short, vm 3.0x, any negative gap, RSI <= 40, exit T_R_TARGET_1R. n=14, WR 93%, mean +1.17%."},
+            {"label": "5. PERSISTENT — Sharpe 0.796", "body": "5m long, vm 3.0x, no gap, no RSI, exit T_R_TARGET_1R. n=11, WR 82%, mean +1.42%."},
+            {"label": "6. LAURUSLABS — Sharpe 0.772", "body": "10m long, vm 2.0x, no gap, RSI >= 60, exit T_NO. n=13, WR 85%, mean +1.42%."},
+            {"label": "7. COCHINSHIP — Sharpe 0.693", "body": "15m short, vm 1.5x, any negative gap, no RSI, exit T_R_TARGET_1R. n=14, WR 79%, mean +0.70%."},
+            {"label": "8. EICHERMOT — Sharpe 0.653", "body": "5m long, vm 3.0x, no gap, no RSI, exit T_R_TARGET_1R. n=10, WR 80%, mean +0.50%."},
+            {"label": "9. GODFRYPHLP — Sharpe 0.611", "body": "10m long, vm 2.0x, any positive gap, no RSI, exit T_CHANDELIER_1.0. n=10, WR 80%, mean +1.88%. (User chart observation that triggered this whole research thread.)"},
+            {"label": "10. AARTIIND — Sharpe 0.603", "body": "10m short, vm 2.0x, no gap, no RSI, exit T_NO. n=10, WR 80%, mean +1.94%."},
+            {"label": "11. 3MINDIA — Sharpe 0.592", "body": "5m short, vm 1.5x, no gap, no RSI, exit T_R_TARGET_1R. n=13, WR 85%, mean +0.60%."},
+            {"label": "12. ACC — Sharpe 0.574", "body": "5m short, vm 2.0x, no gap, no RSI, exit T_R_TARGET_1R. n=15, WR 87%, mean +0.85%."},
+            {"label": "13. LT — Sharpe 0.574", "body": "15m long, vm 2.0x, gap-UP >= 0.3%, RSI >= 60, exit T_R_TARGET_3R. n=11, WR 82%, mean +0.68%."},
+            {"label": "14. WIPRO — Sharpe 0.572", "body": "10m short, vm 2.0x, gap-DOWN >= 0.3%, RSI <= 40, exit T_R_TARGET_1R. n=12, WR 83%, mean +0.68%."},
+            {"label": "15. ADANIGREEN — Sharpe 0.557", "body": "15m short, vm 1.5x, gap-DOWN >= 0.3%, RSI <= 40, exit T_NO. n=11, WR 82%, mean +2.95%."}
+          ]
+        },
+        {
+          "title": "Universal entry skeleton (per-stock parameters fill the blanks)",
+          "body": "All 15 vol-BO winners share the same trigger structure. Only the parameters differ per stock.",
+          "items": [
+            "1. Wait for the first 5/10/15-min candle of the session to close (TF varies per stock)",
+            "2. Direction-specific level break: LONG = close > prev_day_high; SHORT = close < prev_day_low",
+            "3. Volume confirm: bar volume >= vm × (20-day avg of that bar position) where vm in {1.5, 2.0, 3.0}",
+            "4. Optional gap rule: today_open vs prev_close — see per-stock spec",
+            "5. Optional RSI confirm: 5-min RSI(14) >= 60 (LONG) or <= 40 (SHORT)",
+            "6. If all gates pass: enter at candle's CLOSE price",
+            "7. R = abs(entry − first_bar_opposite_extreme)",
+            "8. Exit per stock-specific policy (T_NO time-only / T_R_TARGET_1R-3R / T_CHANDELIER trail)"
+          ]
+        },
+        {
+          "title": "Position sizing (locked from ORB convention)",
+          "items": [
+            "Risk per trade: Rs 3,000 (= 1% of effective trading capital)",
+            "Position size: floor(3000 / R) where R = SL distance per share",
+            "Max concurrent positions: 5 (matches existing ORB allocator)",
+            "Margin required: ~Rs 15-20 lakh deployed capital for 5 concurrent trades on Rs 3-4 lakh notional each"
+          ]
+        },
+        {
+          "title": "Frequency analysis",
+          "body": "Top-15 portfolio at best-variant only fires ~84 trades/year = ~7/month = ~0.33/day. To reach 2-3 trades/day target (~500-750/year), need wider universe.",
+          "items": [
+            "Current 15-stock portfolio: 84 trades/year",
+            "Top-19 (Sharpe >= 0.5): ~110/year",
+            "Top-51 (Sharpe >= 0.3): ~280/year",
+            "After Phase E expansion (Nifty 500 + Rs 50+ Cr/day liquidity): expected ~50-80 stocks at Sharpe >= 0.5 -> ~400-500 trades/year (~1.6-2.0/day)",
+            "Add top-2 cells per stock: ~600-800 trades/year (~2.4-3.2/day) — TARGET"
+          ]
+        },
+        {
+          "title": "Phase plan (live status)",
+          "items": [
+            "Phase A — Backfill 320 missing Nifty 500 stocks: DONE (380/395 succeeded; 15 lost to corporate-action delistings/renames)",
+            "Phase B — Vol-BO sweep on top-100 by turnover: DONE (230K signals, top 15 above)",
+            "Phase C — CCRB sweep on top-100 (trimmed grid): RUNNING (currently ~65/100 stocks after overnight resume)",
+            "Phase D — Aggregate Phase B+C, build cross-signal comparison: pending Phase C completion",
+            "Phase E — Backfill 135 new stocks (Rs 50+ Cr/day liquidity tier): pending; ~2h Kite API time",
+            "Phase F — Re-run vol-BO on 353-stock universe: pending; ~6h compute",
+            "Phase G — Re-run CCRB on 353-stock universe: pending; ~12h compute (overnight)",
+            "Phase H — Build final STOCK_CONFIGS dict; commit; ready for live paper scanner: pending"
+          ]
+        },
+        {
+          "title": "Hard verdicts (already established)",
+          "items": [
+            "Per-stock tuning beats single-rule and bucket-generic. avg Sharpe 0.74 vs 0.45-0.55 vs 0.12.",
+            "Banking + IT heavyweights (HDFCBANK, ICICIBANK, KOTAKBANK, TCS, INFY, HCLTECH) show NO clean intraday edge — too efficient.",
+            "Mid-caps with tight intraday range are the sweet spot — GODREJPROP, HAL, DELHIVERY, NESTLEIND, GRASIM, ULTRACEMCO etc.",
+            "Volume confirmation HELPS in every sweep that tested it (vm 2.0-3.0 cells beat off variants).",
+            "T_R_TARGET_1R is the most-common winning exit policy; T_STEP_TRAIL is consistently the worst (kills winners early).",
+            "Direction asymmetry is real per stock — argues for direction-aware deployment, not blind both-ways scanning."
+          ]
+        },
+        {
+          "title": "Crash recovery",
+          "body": "All work is in research/34_nifty500_expansion/ with MASTER_STATUS.md as authoritative resume point. Each phase script is resumable via skip-set on existing CSV. Heavy CSVs gitignored, scripts + small leaders.csv + MASTER_STATUS committed.",
+          "items": [
+            "Master status: research/34_nifty500_expansion/MASTER_STATUS.md",
+            "Phase B results: research/34_nifty500_expansion/results/RESULTS.md (vol-BO findings)",
+            "Phase C in flight: research/34_nifty500_expansion/results/ccrb_run.log + ccrb_signals.csv (~700K rows)",
+            "Phase E plan: in MASTER_STATUS.md sections 5+",
+            "Existing stock leaderboards from prior runs: research/30b/results/volume_leaders.csv, research/31/results/ccrb_leaders.csv"
+          ]
+        }
+      ]
+    },
+    {
       "id": "orb-filter-tuning-sweep",
       "title": "ORB Filter Tuning — Loosen RSI/Age/Drift To Reduce Missed Setups",
       "subtitle": "Today (2026-04-27) BEL printed a clean SHORT breakdown that the code blocked all morning on the RSI ≤40 hard filter. RELIANCE entered 8 min late because the first eligible bar's 15-min RSI was 50.64 (needs ≥60). All four knobs are already in config.py:542-560 — RSI 60/40 was a baseline assumption (not swept), and signal_age=15min / signal_drift=0.5% were empirical guards added 2026-04-24 after the VEDL/TRENT stale-entry incident. None were formally backtested. This task sweeps them.",
@@ -331,6 +456,110 @@
             "Conviction grade already saved on orb_positions — direct lookup",
             "New DB: backtest_data/orb_options.db (positions / orders / pnl)",
             "Keep in paper mode (nas-style) until backtest shows edge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intraday-75wr-three-system-portfolio",
+      "title": "Intraday 75%+ WR Three-System Portfolio — 5-min Equity (Long + Short)",
+      "subtitle": "Three walk-forward-validated systems on 67 unique mid-cap stocks. Short does drift-continuation when NIFTY is weak; Long-MR does mean-reversion bounce when only the stock is weak; Long-TC does trend-continuation pullback on gap-up days. Test WR 79–90%, MaxDD ≤ 6%. Paper-trade before scaling. (research/37 closed 2026-05-06.)",
+      "status": "backtesting",
+      "created": "2026-05-06",
+      "tags": ["intraday", "5min", "long-short", "diamond-cohort", "nifty-regime", "walk-forward", "mid-cap"],
+      "sections": [
+        {
+          "title": "Headline — three walk-forward-validated systems",
+          "body": "All three exit on TP 0.5% / SL 1.5% / EOD. RR is 1:3 against, but high WR (79–90%) drives positive expectancy. Out-of-sample period 2025-10-01 → 2026-03-25.",
+          "items": [
+            {
+              "label": "SYSTEM 1 — DIAMOND SHORT (drift continuation, weak market days)",
+              "body": "25-stock cohort: ZEEL, EDELWEISS, ASHOKA, CDSL, BANDHANBNK, KNRCON, RAIN, GMDCLTD, HEG, NATCOPHARM, SJVN, PRAJIND, TIINDIA, SUZLON, AMBER, RCF, NETWORK18, NAM-INDIA, BAYERCROP, TCIEXP, AARTIIND, NATIONALUM, IDEA, LTTS, NBCC. Variant B (volume): test WR 79.4%, n=310, PF 1.69, MaxDD 5.3% — ~705 trades/yr. Variant A (strict): test WR 85.3%, n=68, PF 2.08, MaxDD 2.5% — ~155 trades/yr.",
+              "pros": ["Highest trade frequency of the three (705/yr volume mode)", "Mid-cap shorts have structural drift edge (per Stage 7 screen)", "MaxDD bounded at 5–6%"],
+              "cons": ["Short-only — needs SLB/MIS borrow availability", "1:3 RR is psychologically uncomfortable; one SL eats 3 wins", "NIFTY regime filter is single point of failure"]
+            },
+            {
+              "label": "SYSTEM 2 — LATE-DAY MEAN-REVERSION LONG (stock-weak / market-fine bounces)",
+              "body": "15-stock cohort (zero overlap with short): BALRAMCHIN, AUROPHARMA, DCBBANK, CYIENT, APLLTD, CERA, CGCL, BOSCHLTD, EIHOTEL, ASTRAL, CESC, CAPLIPOINT, AAVAS, ALKEM, APLAPOLLO. top10: test WR 80.6%, n=31, PF 2.58, MaxDD 1.7%, drift +1.8%. ~80 trades/yr. Triggers between 11:15–13:15 IST when stock down ≥2% but NIFTY not crashing further.",
+              "pros": ["Lowest test MaxDD of all three (1.7%)", "Diversifies away from pure-short exposure", "Mean-reversion edge well-documented in Indian mid-caps"],
+              "cons": ["Smaller test sample (n=31) — needs paper validation", "Low frequency (~80 trades/yr) — limited income on its own", "Requires intraday RSI tracking + drop% calc"]
+            },
+            {
+              "label": "SYSTEM 3 — TREND-CONTINUATION PULLBACK LONG (gap-up + first-pullback)",
+              "body": "30-stock cohort (overlaps: AMBER, BANDHANBNK with short; APLAPOLLO with Long-MR): MARICO, FINEORG, CCL, ASAHIINDIA, GALAXYSURF, ASTRAZEN, JKPAPER, M&MFIN, JUBLFOOD, WHIRLPOOL, GODREJAGRO, INDIANB, ZYDUSWELL, CHOLAFIN, WELCORP, CUB, AMBER, INDIACEM, PNBHOUSING, HINDZINC, JKCEMENT, SOBHA, MGL, GRINDWELL, BAJFINANCE, DIXON, APLAPOLLO, DBL, BANDHANBNK, GODFRYPHLP. rank4 variant: test WR 82.4%, n=51, PF 3.11, drift +1.9%. ~110 trades/yr. Triggers in first 75 min on gap-up + pullback to VWAP.",
+              "pros": ["Best long-side test sample (n=51)", "Highest test PF among the three (3.11)", "Trend-following nature catches bull-run sessions the other two miss"],
+              "cons": ["Highest cohort overlap (3 stocks shared)", "First-hour-only window is narrow", "Gap-up requirement (≥0.5%) skews toward bull regimes"]
+            }
+          ]
+        },
+        {
+          "title": "Trigger rules — exact session-by-session logic",
+          "items": [
+            {
+              "label": "SHORT entry — checked once at 09:45 IST (bar 6 close)",
+              "body": "On each of the 25 short-cohort stocks: (1) NIFTY filter passes [Volume: NIFTY at 09:30 below today's 09:15 open, any amount; Strict: NIFTY ≥ 0.3% below today's open]. (2) Stock close (at 09:45) below its own intraday VWAP. (3) Stock RSI(14) < 40 (Volume) or < 35 (Strict). All true → SHORT at next bar's open."
+            },
+            {
+              "label": "LONG-MR entry — scanned continuously 11:15–13:15 IST (bars 24–48)",
+              "body": "On each of the 15 long-MR-cohort stocks: (1) Stock down ≥ 2.0% from today's 09:15 open. (2) RSI(14) was below 28 in the past 6 bars. (3) RSI(14) now above 35. (4) Current 5-min bar bullish (close > open). (5) NIFTY not crashing — NIFTY's 5-min close not below NIFTY's own session VWAP at this bar. All true → LONG at next bar's open."
+            },
+            {
+              "label": "LONG-TC entry — scanned continuously 09:15–10:30 IST (bars 0–15)",
+              "body": "On each of the 30 long-TC-cohort stocks: (1) Stock gapped up ≥ 0.5% (today's 09:15 open ≥ prev close × 1.005). (2) By bar 6, stock's session-high broke today's open by ≥ 0.5%. (3) Current bar's price within 0.3% of intraday VWAP (the pullback). (4) RSI(14) ≥ 45. (5) Current 5-min bar bullish. (6) NIFTY also gap-up + first bar bullish + above own VWAP at bar 6. All true → LONG at next bar's open."
+            },
+            {
+              "label": "Exit rules (all three systems share)",
+              "body": "TP at +0.5% (long) / −0.5% (short). SL at −1.5% (long) / +1.5% (short). Force-exit at 15:25 IST if neither hit. Whichever fires first wins."
+            }
+          ]
+        },
+        {
+          "title": "Combined daily expected behaviour (3 systems together)",
+          "items": [
+            "Volume mode (Short-Variant-B + LongMR-top10 + LongTC-rank4): ~895 trades/year, ~3.6 trades/session average. Capital rotates across regimes — short on weak-NIFTY days, long-TC on gap-up bullish days, long-MR on stock-specific weakness within fine markets.",
+            "Conviction mode (Short-Variant-A + LongMR-top5 + LongTC-rank4): ~305 trades/year, ~1.2 trades/session. Highest WR everywhere, lower frequency.",
+            "Same-day-same-stock conflict is structurally impossible — entry conditions are mutually exclusive (Short fires on weak+weak, Long-TC fires on gap-up+strong, Long-MR fires on stock-weak/NIFTY-not-crashing).",
+            "67 unique stocks across cohorts; only 3 stocks appear in two lists (AMBER, BANDHANBNK in both Short and Long-TC; APLAPOLLO in both Long-MR and Long-TC)."
+          ]
+        },
+        {
+          "title": "Why the 3 mechanisms are different (not redundant)",
+          "items": [
+            "SHORT exploits a structural intraday drift in mid-caps that open weak when the broader tape confirms — herd selling extends; stops cascade; no buyers come in.",
+            "LONG-MR exploits the inverse: when only one stock dumps but the index is fine, the move is usually idiosyncratic (algo, block, news) and snaps back as institutional buyers step in at oversold levels.",
+            "LONG-TC exploits classical trend continuation: a confirmed gap-up + bullish-NIFTY morning is a high-edge regime where the first pullback to VWAP is bought aggressively.",
+            "Together they cover the three intraday regimes that exist in this universe — broad weakness, lone weakness in healthy market, and confirmed bullish trend."
+          ]
+        },
+        {
+          "title": "Production checklist (before going live)",
+          "items": [
+            "Re-confirm all three stock cohorts with 6-month rolling re-screen (cohorts may rotate as macro context shifts).",
+            "Add 0.15% per-trade slippage cost and re-run all three. The TP 0.5% target is small — slippage of 0.1% materially changes net economics.",
+            "Verify SLB/MIS borrow availability daily for short-cohort names — some (NBCC, KRBL-tier) have intermittent constraints.",
+            "Position sizing: per-trade risk ≤ 0.5% of account so a SL hit is bounded.",
+            "Concurrency cap: max 5–7 simultaneous positions across all three systems.",
+            "Codify NIFTY filter as a session-level gate: short filter at 09:45 IST, long-TC filter at 09:45 IST + per-bar check, long-MR filter at each scan bar.",
+            "Daily loss circuit-breaker: if 3 SLs hit on a single session, halt for the day.",
+            "Paper-trade for 2–3 weeks across all three, in mutually-respecting concurrency, before scaling capital."
+          ]
+        },
+        {
+          "title": "Open work / next steps",
+          "items": [
+            "Stage 13 — combined 3-system portfolio backtest with realistic capital constraints, concurrency cap, unified equity curve. Bridges per-system stats to actual account-NAV behaviour. (Pending — script written but function-name mismatch needs reconciling against the 11b/11c sub-agent output before run.)",
+            "Trade journal app feature (separate plan) — to record daily P&L, signal-fires, fills, slippage. Will track this 3-system portfolio in production.",
+            "Paper-trade adapter to feed all 3 systems' signals into the existing app paper-mode infrastructure (similar to ORB paper / NAS paper)."
+          ]
+        },
+        {
+          "title": "Files / references",
+          "items": [
+            "Full research log: research/37_intraday_75wr_quest/INTRADAY_75WR_5MIN_SWEEP_STATUS.md",
+            "Full results writeup: research/37_intraday_75wr_quest/INTRADAY_75WR_5MIN_SWEEP_RESULTS.md",
+            "Cohort lists: results/07_short_diamonds.txt, 11c_long_reversal_diamonds.txt, 11b_trend_pullback_diamonds.txt",
+            "Walk-forward CSVs: results/09_walk_forward_final.csv (short), 11c_walk_forward_long_reversal.csv, 11b_walk_forward.csv",
+            "Strategy scripts: scripts/08_diamond_short_with_nifty.py, 11c_long_late_reversal.py, 11b_long_trend_pullback.py"
           ]
         }
       ]
