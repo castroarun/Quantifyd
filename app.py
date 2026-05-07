@@ -149,6 +149,30 @@ except Exception as _journal_err:
     logger.warning('[journal] blueprint failed to register: %s', _journal_err)
 
 
+# Intraday 75% WR — three-config live trading engine (A, B, C).
+# All three configs default to PAPER MODE (paper_trading_mode=True,
+# live_trading_enabled=False). Engines are singletons; cron jobs registered
+# at the bottom of this file alongside ORB.
+try:
+    from services.intraday_75wr.api import intraday75wr_bp
+    app.register_blueprint(intraday75wr_bp)
+    logger.info('[I75] blueprint registered at /api/intraday75wr/*')
+except Exception as _i75_err:
+    logger.warning('[I75] blueprint failed to register: %s', _i75_err)
+
+
+# Pair-Trading (Config D) — 6-pair cointegrated F&O carry-forward engine.
+# Defaults to PAPER MODE (paper_trading_mode=True, live_trading_enabled=False).
+# Daily 16:00 IST cron job registered below alongside other strategy crons.
+# See research/39_carry_forward_75wr_quest/CARRY_FORWARD_75WR_DAILY_SWEEP_RESULTS.md.
+try:
+    from services.pair_trading.api import pair_trading_bp
+    app.register_blueprint(pair_trading_bp)
+    logger.info('[PairTrading] blueprint registered at /api/pair_trading/*')
+except Exception as _pt_err:
+    logger.warning('[PairTrading] blueprint failed to register: %s', _pt_err)
+
+
 @app.route('/')
 def index():
     """Landing page with login status"""
@@ -7329,6 +7353,178 @@ except Exception as e:
     logger.warning(f"Could not register ORB scheduled jobs: {e}")
 
 
+# ============================================================================
+# Intraday 75% WR (Configs A, B, C) — scheduled jobs
+# ============================================================================
+# All three configs default to PAPER MODE. Cron jobs unconditionally tick;
+# the engine itself short-circuits to no-op if not enabled.
+
+def _i75_apply_overrides(eng):
+    """Pull mode override JSON into the live engine before each scan."""
+    try:
+        from services.intraday_75wr.api import _apply_overrides_to_engine
+        _apply_overrides_to_engine(eng)
+    except Exception as _e:
+        logger.debug(f"[I75] overrides apply skipped: {_e}")
+
+
+def _i75_get(cid):
+    from services.intraday_75wr import get_engine
+    eng = get_engine(cid)
+    _i75_apply_overrides(eng)
+    return eng
+
+
+def _i75_premarket_check():
+    """09:25 IST: re-load mode overrides + reset daily flags for A/B/C."""
+    for _cid in ('A', 'B', 'C'):
+        try:
+            _eng = _i75_get(_cid)
+            _eng._daily_loss_halt = False
+            _eng._kill_switched_today = False
+            _eng._kill_switch_date = None
+            logger.info(
+                f"[I75-{_cid}] premarket check OK "
+                f"(enabled={_eng.is_enabled()}, paper={_eng.is_paper()}, "
+                f"live_authorized={_eng.is_live()})"
+            )
+        except Exception as _e:
+            logger.error(f"[I75-{_cid}] premarket check err: {_e}")
+
+
+def _i75_scan_a1_b1():
+    """09:45 IST: Diamond-Short scan for both Config A and Config B."""
+    for _cid in ('A', 'B'):
+        try:
+            _eng = _i75_get(_cid)
+            if _eng.is_enabled():
+                _eng.scan_a1()
+        except Exception as _e:
+            logger.error(f"[I75-{_cid}1] scan err: {_e}", exc_info=True)
+
+
+def _i75_scan_a3_b3():
+    """09:15-10:30 every 5 min: Long-TC scan for Config A and B."""
+    from datetime import time as _dtime
+    _now_t = datetime.now().time()
+    if _now_t < _dtime(9, 15) or _now_t > _dtime(10, 30):
+        return
+    for _cid in ('A', 'B'):
+        try:
+            _eng = _i75_get(_cid)
+            if _eng.is_enabled():
+                _eng.scan_a3()
+        except Exception as _e:
+            logger.error(f"[I75-{_cid}3] scan err: {_e}", exc_info=True)
+
+
+def _i75_scan_a2_b2():
+    """11:15-13:15 every 5 min: Long-MR scan for Config A and B."""
+    from datetime import time as _dtime
+    _now_t = datetime.now().time()
+    if _now_t < _dtime(11, 15) or _now_t > _dtime(13, 15):
+        return
+    for _cid in ('A', 'B'):
+        try:
+            _eng = _i75_get(_cid)
+            if _eng.is_enabled():
+                _eng.scan_a2()
+        except Exception as _e:
+            logger.error(f"[I75-{_cid}2] scan err: {_e}", exc_info=True)
+
+
+def _i75_scan_c():
+    """09:30-15:00 every 5 min: Multi-bar bounce scan for Config C."""
+    from datetime import time as _dtime
+    _now_t = datetime.now().time()
+    if _now_t < _dtime(9, 30) or _now_t > _dtime(15, 0):
+        return
+    try:
+        _eng = _i75_get('C')
+        if _eng.is_enabled():
+            _eng.scan()
+    except Exception as _e:
+        logger.error(f"[I75-C] scan err: {_e}", exc_info=True)
+
+
+def _i75_monitor_positions():
+    """15:15 IST: TP/SL fills audit + exit check for all 3 configs."""
+    for _cid in ('A', 'B', 'C'):
+        try:
+            _eng = _i75_get(_cid)
+            if _eng.is_enabled():
+                _eng.monitor_positions()
+        except Exception as _e:
+            logger.error(f"[I75-{_cid}] monitor err: {_e}", exc_info=True)
+
+
+def _i75_eod_squareoff():
+    """15:25 IST: square off everything still open for all 3 configs."""
+    for _cid in ('A', 'B', 'C'):
+        try:
+            _eng = _i75_get(_cid)
+            if _eng.is_enabled():
+                _eng.square_off_all('EOD_SQUAREOFF')
+        except Exception as _e:
+            logger.error(f"[I75-{_cid}] EOD squareoff err: {_e}", exc_info=True)
+
+
+try:
+    # 09:25 — premarket reset
+    scheduler.add_job(
+        _i75_premarket_check,
+        'cron', day_of_week='mon-fri', hour=9, minute=25,
+        id='i75_premarket', replace_existing=True,
+    )
+    # 09:45 — Diamond Short single scan (A1 + B1)
+    scheduler.add_job(
+        _i75_scan_a1_b1,
+        'cron', day_of_week='mon-fri', hour=9, minute=45, second=10,
+        id='i75_scan_a1_b1', replace_existing=True,
+    )
+    # 09:15-10:30 every 5 min — Long-TC (A3 + B3); function gates window
+    scheduler.add_job(
+        _i75_scan_a3_b3,
+        'cron', day_of_week='mon-fri', hour='9-10', minute='*/5', second=10,
+        id='i75_scan_a3_b3', replace_existing=True,
+        max_instances=1,
+    )
+    # 11:15-13:15 every 5 min — Long-MR (A2 + B2); function gates window
+    scheduler.add_job(
+        _i75_scan_a2_b2,
+        'cron', day_of_week='mon-fri', hour='11-13', minute='*/5', second=10,
+        id='i75_scan_a2_b2', replace_existing=True,
+        max_instances=1,
+    )
+    # 09:30-15:00 every 5 min — Config C continuous; function gates window
+    scheduler.add_job(
+        _i75_scan_c,
+        'cron', day_of_week='mon-fri', hour='9-14', minute='*/5', second=15,
+        id='i75_scan_c', replace_existing=True,
+        max_instances=1,
+    )
+    # 15:15 — TP/SL audit + exit check (last chance before EOD)
+    scheduler.add_job(
+        _i75_monitor_positions,
+        'cron', day_of_week='mon-fri', hour=15, minute=15,
+        id='i75_monitor_positions', replace_existing=True,
+    )
+    # 15:25 — EOD square-off all open positions
+    scheduler.add_job(
+        _i75_eod_squareoff,
+        'cron', day_of_week='mon-fri', hour=15, minute=25,
+        id='i75_eod_squareoff', replace_existing=True,
+    )
+    logger.info(
+        "I75 scheduled jobs registered: "
+        "premarket(9:25), A1+B1(9:45), A3+B3(9:15-10:30/5min), "
+        "A2+B2(11:15-13:15/5min), C(9:30-15:00/5min), "
+        "monitor(15:15), EOD squareoff(15:25) — Mon-Fri"
+    )
+except Exception as _i75_sched_err:
+    logger.warning(f"Could not register I75 scheduled jobs: {_i75_sched_err}")
+
+
 # --- NAS Performance Report ---------------------------------------------------
 
 @app.route('/nas/report')
@@ -9748,11 +9944,35 @@ def _n500m_monitor():
         logger.exception(f"[N500M Scheduler] monitor failed: {e}")
 
 
+def _market_data_refresh_n500m():
+    """Every 5 min during market hours — keep market_data.db current for N500M.
+
+    Without this, the N500M scanner reads stale data and can't detect
+    today's signals. ORB/MST use Kite WebSocket directly so they don't
+    depend on market_data.db. Added 2026-05-07 when VPS DB became canonical.
+    """
+    try:
+        from services.market_data_refresh import refresh_n500m_universe
+        result = refresh_n500m_universe()
+        if result.get("symbols_processed"):
+            logger.info(
+                f"[N500M Data] refresh: success={result['success']} "
+                f"failed={result['failed']} of {result['symbols_processed']}"
+            )
+    except Exception as e:
+        logger.exception(f"[N500M Data] refresh failed: {e}")
+
+
 try:
     scheduler.add_job(
         _n500m_precompute,
         'cron', day_of_week='mon-fri', hour=9, minute=10,
         id='n500m_precompute', replace_existing=True,
+    )
+    scheduler.add_job(
+        _market_data_refresh_n500m,
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*/5',
+        id='n500m_data_refresh', replace_existing=True,
     )
     scheduler.add_job(
         _n500m_scan_and_execute,
@@ -9764,9 +9984,48 @@ try:
         'cron', day_of_week='mon-fri', hour='9-15', minute='*',
         id='n500m_monitor', replace_existing=True,
     )
-    logger.info("[N500M] Scheduled jobs registered: precompute, scan, monitor")
+    logger.info("[N500M] Scheduled jobs: precompute, data_refresh, scan, monitor")
 except Exception as e:
     logger.warning(f"[N500M] Could not register scheduled jobs: {e}")
+
+
+# =============================================================================
+# Pair-Trading (Config D) — daily EOD scan at 16:00 IST (post F&O close)
+# =============================================================================
+# Single cron job: evaluate all 6 pairs once per day, place entries/exits per
+# z-score signal. Defaults to PAPER MODE (no real Kite orders) until the user
+# flips PAIR_TRADING_DEFAULTS['paper_trading_mode']=False AND
+# PAIR_TRADING_DEFAULTS['live_trading_enabled']=True.
+#
+# F&O futures market closes at 15:30 IST; we run at 16:00 IST so all daily
+# bars are settled and the price source DB has caught up. The scan reads
+# from local backtest_data/market_data.db (canonical on VPS); falls back to
+# Kite historical_data only in live mode if local DB is stale.
+
+def _pair_trading_daily_scan():
+    """APScheduler entry point — runs PairEngine.daily_scan() inside the
+    Flask process so the engine + DB singleton is shared with the API."""
+    try:
+        from services.pair_trading.pair_engine import get_pair_engine
+        engine = get_pair_engine()
+        if not engine._is_enabled():
+            logger.info("[PairTrading Scheduler] engine disabled, skipping scan")
+            return
+        summary = engine.daily_scan()
+        logger.info(f"[PairTrading Scheduler] daily_scan complete: {summary}")
+    except Exception as e:
+        logger.exception(f"[PairTrading Scheduler] daily_scan failed: {e}")
+
+
+try:
+    scheduler.add_job(
+        _pair_trading_daily_scan,
+        'cron', day_of_week='mon-fri', hour=16, minute=0,
+        id='pair_trading_daily_scan', replace_existing=True,
+    )
+    logger.info("[PairTrading] Scheduled jobs registered: daily_scan(16:00 IST)")
+except Exception as e:
+    logger.warning(f"[PairTrading] Could not register scheduled jobs: {e}")
 
 
 # =============================================================================
