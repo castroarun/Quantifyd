@@ -1,5 +1,13 @@
 # Quantifyd - Project Instructions
 
+## CHECK `TODO.md` FIRST when asked "what's pending" / "what's next"
+
+The project root contains a `TODO.md` file that is the single cross-session
+source of truth for pending work. **Before answering "where are we" / "what's
+left" / "is there anything pending" / "what's next", always Read `TODO.md`
+first** — it lists current Pending / In Progress / recently Done items with
+the why and the how-to-resume. Update it when work transitions between states.
+
 ## Project Overview
 
 Indian stock market backtesting system: Momentum + Quality (MQ) portfolio strategy with Breakout V3 overlay. Flask app with Bootstrap 5 dark theme dashboards, Chart.js, SQLite.
