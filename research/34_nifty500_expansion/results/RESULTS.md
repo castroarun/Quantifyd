@@ -1,148 +1,253 @@
-# Volume-Confirmed First-Candle Breakout — EXPANDED (79 stocks)
+# CPR-Compression Range Breakout (CCRB) — Backtest Results
 
 ## Setup
 
-- Universe: 79 stocks (Cohort A = 10 stocks since 2018, Cohort B = 69 stocks since 2024-03-18)
+- Universe: 79 stocks (10 Cohort A since 2018-01-01; 69 Cohort B since 2024-03-18)
 - Period end: 2026-03-25 (data cap)
-- Timeframes: 5min, **10min (NEW)**, 15min — first candle of session
-- Variant grid: vol_mult ∈ {1.5, 2.0, 3.0} × gap_pct ∈ {0%, 0.3%, 0.5%, off} × RSI ∈ {off, on(40/60)}
-- Direction: long & short
+- Timeframes: 5min, 10min, 15min
+- Daily-bar setup filter:
+  - today_cpr_width / today_open <= today_narrow ∈ {0.30%, 0.40%, 0.50%}
+  - yesterday_ctx ∈ {W (wide CPR >= 0.50/0.65/0.80%), N (narrow range <= 0.50/0.70/0.90%), W_OR_N, W_AND_N}
+- Intraday trigger: first fresh transition past prev_day_high (long) / prev_day_low (short), 09:20-14:00 IST
+- Volume filter: off, vm1.5, vm2.0 (vs 20-day same-bar-position avg)
+- Direction: long & short (independent)
 - 13 exit policies tested per signal in parallel
-- Total signals fired: **230,180**
-  - Long: 138,150
-  - Short: 92,030
-  - Cohort A: 58,384
-  - Cohort B: 171,796
+- Total signal rows: **875,493** (long: 470,445, short: 405,048)
+- Cohort A signals: 278,611; Cohort B signals: 596,882
+- Ranked cells (n>=5): **536,471**
+- Per-stock leaders found: **94**
 
-## Top 10 configurations across all stocks (by Sharpe, n>=10, mean>0)
+## Top 10 configurations across all stocks (n>=15, mean>0)
 
-| Symbol | Coh | TF | Variant | Dir | ExitPolicy | n | mean% | WR% | Payoff | Sharpe |
-|---|---|---|---|---|---|---:|---:|---:|---:|---:|
-| HAL | B | 5min | s_vm1.5_gap0.005_rsi40_60 | short | T_NO | 10 | 1.409 | 90.0 | 17.46 | 1.3545 |
-| HAL | B | 5min | s_vm1.5_gap0.005_rsi40_60 | short | T_ATR_SL_1.0 | 10 | 1.409 | 90.0 | 17.46 | 1.3545 |
-| HAL | B | 5min | s_vm1.5_gap0.005_rsi40_60 | short | T_CHANDELIER_2.0 | 10 | 1.409 | 90.0 | 17.46 | 1.3545 |
-| HAL | B | 5min | s_vm1.5_gap0.005_rsi40_60 | short | T_CHANDELIER_1.5 | 10 | 1.405 | 90.0 | 17.42 | 1.3505 |
-| HAL | B | 5min | s_vm1.5_gap0.005_rsi40_60 | short | T_CHANDELIER_1.0 | 10 | 1.471 | 90.0 | 18.23 | 1.2993 |
-| HAL | B | 5min | s_vm1.5_gap0.003_rsi40_60 | short | T_NO | 11 | 1.314 | 90.9 | 16.13 | 1.2691 |
-| HAL | B | 5min | s_vm1.5_gap0.003_rsi40_60 | short | T_ATR_SL_1.0 | 11 | 1.314 | 90.9 | 16.13 | 1.2691 |
-| HAL | B | 5min | s_vm1.5_gap0.003_rsi40_60 | short | T_CHANDELIER_2.0 | 11 | 1.314 | 90.9 | 16.13 | 1.2691 |
-| HAL | B | 5min | s_vm1.5_gap0.003_rsi40_60 | short | T_CHANDELIER_1.5 | 11 | 1.311 | 90.9 | 16.08 | 1.2659 |
-| HAL | B | 5min | s_vm1.5_gap0.003_rsi40_60 | short | T_CHANDELIER_1.0 | 11 | 1.370 | 90.9 | 16.81 | 1.2193 |
+| Symbol | TF | Variant | Dir | Exit | n | mean% | WR% | Payoff | Sharpe |
+|---|---|---|---|---|---:|---:|---:|---:|---:|
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_STEP_TRAIL | 15 | 0.669 | 86.7 | 999.00 | 1.2834 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_NO | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_HARD_SL | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_ATR_SL_0.5 | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_ATR_SL_1.0 | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_CHANDELIER_1.0 | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_CHANDELIER_1.5 | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_CHANDELIER_2.0 | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_R_TARGET_1.5R | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
+| HDFCLIFE | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_R_TARGET_2.0R | 15 | 0.666 | 86.7 | 29.94 | 1.2624 |
 
-## Top 15 Volume Leaders (per-stock best Sharpe, n>=10)
+## Top 15 CPR-Compression Leaders (per-stock best cell, n>=10)
 
-| Rank | Symbol | Coh | TF | Variant | Dir | Exit | n | mean% | WR% | Payoff | Sharpe | HiQ cells | MidQ cells |
-|---:|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|
-| 1 | HAL | B | 5min | s_vm1.5_gap0.005_rsi40_60 | short | T_NO | 10 | 1.409 | 90.0 | 17.46 | 1.3545 | 96 | 155 |
-| 2 | HDFCAMC | B | 10min | l_vm1.5_gap0.005_rsi40_60 | long | T_NO | 11 | 1.461 | 90.9 | 9.38 | 0.9957 | 166 | 271 |
-| 3 | RBLBANK | B | 10min | l_vm2.0_gap0.000_norsi | long | T_R_TARGET_1.0R | 13 | 1.079 | 92.3 | 0.63 | 0.9194 | 20 | 55 |
-| 4 | RELIANCE | A | 15min | s_vm3.0_gap0.000_rsi40_60 | short | T_R_TARGET_1.0R | 14 | 1.166 | 92.9 | 1.84 | 0.8806 | 203 | 400 |
-| 5 | PERSISTENT | B | 5min | l_vm3.0_gapoff_norsi | long | T_R_TARGET_1.0R | 11 | 1.424 | 81.8 | 2.22 | 0.7962 | 8 | 20 |
-| 6 | LAURUSLABS | B | 10min | l_vm2.0_gapoff_rsi40_60 | long | T_NO | 13 | 1.422 | 84.6 | 1.86 | 0.7719 | 83 | 154 |
-| 7 | COCHINSHIP | B | 15min | s_vm1.5_gap0.000_norsi | short | T_R_TARGET_1.0R | 14 | 0.695 | 78.6 | 2.55 | 0.6930 | 22 | 38 |
-| 8 | EICHERMOT | B | 5min | l_vm3.0_gapoff_norsi | long | T_R_TARGET_1.0R | 10 | 0.504 | 80.0 | 1.41 | 0.6530 | 8 | 10 |
-| 9 | GODFRYPHLP | B | 10min | l_vm2.0_gap0.000_norsi | long | T_CHANDELIER_1.0 | 10 | 1.884 | 80.0 | 1.89 | 0.6114 | 75 | 192 |
-| 10 | AARTIIND | B | 10min | s_vm2.0_gapoff_norsi | short | T_NO | 10 | 1.942 | 80.0 | 3.28 | 0.6026 | 28 | 78 |
-| 11 | 3MINDIA | B | 5min | s_vm1.5_gapoff_norsi | short | T_R_TARGET_1.0R | 13 | 0.599 | 84.6 | 0.83 | 0.5924 | 8 | 18 |
-| 12 | ACC | B | 5min | s_vm2.0_gapoff_norsi | short | T_R_TARGET_1.0R | 15 | 0.850 | 86.7 | 1.73 | 0.5743 | 6 | 9 |
-| 13 | LT | B | 15min | l_vm2.0_gap0.003_rsi40_60 | long | T_R_TARGET_3.0R | 11 | 0.676 | 81.8 | 0.94 | 0.5737 | 18 | 59 |
-| 14 | WIPRO | B | 10min | s_vm2.0_gap0.003_rsi40_60 | short | T_R_TARGET_1.0R | 12 | 0.678 | 83.3 | 1.05 | 0.5724 | 14 | 62 |
-| 15 | ADANIGREEN | B | 15min | s_vm1.5_gap0.003_rsi40_60 | short | T_NO | 11 | 2.953 | 81.8 | 1.70 | 0.5566 | 6 | 13 |
+| # | Stock | Cohort | TF | Variant | Dir | Exit | n | mean% | WR% | Payoff | Sharpe | RobustCells | Promote? |
+|---|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|
+| 1 | **DLF** | B | 5min | t0.0030_ctxW_w0.0050_n0.0070_5min_vm2.0_l | long | T_NO | 12 | 0.556 | 100.0 | 999.00 | 4.6593 | 1776 | - |
+| 2 | **HAL** | B | 15min | t0.0030_ctxW_OR_N_w0.0080_n0.0070_15min_off_s | short | T_R_TARGET_1.0R | 10 | 0.702 | 100.0 | 999.00 | 4.6564 | 696 | - |
+| 3 | **APOLLOHOSP** | B | 10min | t0.0040_ctxW_OR_N_w0.0065_n0.0090_10min_vm1.5_l | long | T_NO | 10 | 0.491 | 100.0 | 999.00 | 3.3422 | 490 | - |
+| 4 | **HDFCAMC** | B | 10min | t0.0040_ctxW_w0.0065_n0.0070_10min_vm1.5_s | short | T_STEP_TRAIL | 11 | 0.773 | 90.9 | 999.00 | 1.5299 | 641 | - |
+| 5 | **ASHOKLEY** | B | 15min | t0.0030_ctxW_w0.0050_n0.0070_15min_vm2.0_s | short | T_NO | 10 | 0.586 | 80.0 | 999.00 | 1.3123 | 940 | - |
+| 6 | **HDFCLIFE** | B | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_STEP_TRAIL | 15 | 0.669 | 86.7 | 999.00 | 1.2834 | 352 | YES |
+| 7 | **BDL** | B | 5min | t0.0030_ctxW_w0.0050_n0.0070_5min_vm1.5_l | long | T_NO | 14 | 1.406 | 85.7 | 17.93 | 1.1878 | 945 | - |
+| 8 | **HINDUNILVR** | A | 15min | t0.0040_ctxW_w0.0065_n0.0070_15min_vm1.5_s | short | T_NO | 12 | 0.774 | 83.3 | 999.00 | 1.1017 | 168 | - |
+| 9 | **ADANIGREEN** | B | 15min | t0.0030_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_NO | 14 | 0.751 | 85.7 | 18.51 | 1.0459 | 206 | - |
+| 10 | **ITC** | A | 10min | t0.0030_ctxW_OR_N_w0.0080_n0.0090_10min_vm2.0_s | short | T_ATR_SL_0.3 | 18 | 0.525 | 88.9 | 1.40 | 1.0269 | 296 | YES |
+| 11 | **IDFCFIRSTB** | B | 5min | t0.0030_ctxW_w0.0065_n0.0070_5min_off_l | long | T_R_TARGET_1.0R | 18 | 0.709 | 88.9 | 2.42 | 1.0005 | 1680 | YES |
+| 12 | **CHENNPETRO** | B | 5min | t0.0040_ctxW_w0.0050_n0.0070_5min_vm1.5_s | short | T_NO | 10 | 1.046 | 80.0 | 3.29 | 0.9813 | 439 | - |
+| 13 | **ASIANPAINT** | B | 5min | t0.0030_ctxW_w0.0065_n0.0070_5min_off_s | short | T_NO | 10 | 0.649 | 80.0 | 27.68 | 0.9647 | 266 | - |
+| 14 | **HCLTECH** | B | 10min | t0.0040_ctxW_OR_N_w0.0065_n0.0090_10min_vm1.5_s | short | T_NO | 12 | 0.434 | 83.3 | 82.78 | 0.9616 | 400 | - |
+| 15 | **HDFCBANK** | A | 10min | t0.0050_ctxW_OR_N_w0.0065_n0.0070_10min_vm2.0_l | long | T_NO | 12 | 0.764 | 83.3 | 3.96 | 0.9488 | 572 | - |
 
-## Promote candidates (Sharpe>=0.5, n>=15, MidQ_cells>=3)
+## Promote candidates (9 stocks pass robustness gate)
 
-These pass the robustness gate — best cell strong, n>=15, AND signal consistent across at least 3 different variants (Sharpe>=0.3 each).
+Gate: best-cell Sharpe >= 0.5 AND n >= 15 AND robust across >= 3 cells (Sharpe>=0.3 + mean>0).
 
-| Symbol | Coh | TF | Variant | Dir | Exit | n | mean% | WR% | Sharpe | HiQ | MidQ | LongBestSharpe | ShortBestSharpe |
-|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| ACC | B | 5min | s_vm2.0_gapoff_norsi | short | T_R_TARGET_1.0R | 15 | 0.850 | 86.7 | 0.5743 | 6 | 9 | 0.104 | 0.574 |
-| VEDL | B | 15min | l_vm2.0_gapoff_rsi40_60 | long | T_R_TARGET_1.0R | 18 | 0.689 | 72.2 | 0.5090 | 7 | 15 | 0.509 | 0.184 |
+| Stock | TF | Variant | Dir | Exit | n | mean% | WR% | Sharpe | RobustCells |
+|---|---|---|---|---|---:|---:|---:|---:|---:|
+| **HDFCLIFE** | 15min | t0.0050_ctxW_OR_N_w0.0080_n0.0090_15min_off_s | short | T_STEP_TRAIL | 15 | 0.669 | 86.7 | 1.2834 | 352 |
+| **ITC** | 10min | t0.0030_ctxW_OR_N_w0.0080_n0.0090_10min_vm2.0_s | short | T_ATR_SL_0.3 | 18 | 0.525 | 88.9 | 1.0269 | 296 |
+| **IDFCFIRSTB** | 5min | t0.0030_ctxW_w0.0065_n0.0070_5min_off_l | long | T_R_TARGET_1.0R | 18 | 0.709 | 88.9 | 1.0005 | 1680 |
+| **SUZLON** | 15min | t0.0050_ctxW_w0.0080_n0.0070_15min_off_s | short | T_NO | 16 | 0.863 | 81.2 | 0.6917 | 408 |
+| **RVNL** | 10min | t0.0030_ctxW_OR_N_w0.0050_n0.0090_10min_off_s | short | T_CHANDELIER_2.0 | 15 | 1.152 | 80.0 | 0.6723 | 464 |
+| **BHARTIARTL** | 5min | t0.0030_ctxW_w0.0080_n0.0070_5min_vm2.0_s | short | T_R_TARGET_1.0R | 20 | 1.450 | 80.0 | 0.6672 | 882 |
+| **BAJAJFINSV** | 15min | t0.0030_ctxW_w0.0050_n0.0070_15min_vm1.5_l | long | T_ATR_SL_0.3 | 16 | 0.402 | 87.5 | 0.6396 | 165 |
+| **REDINGTON** | 10min | t0.0050_ctxW_w0.0050_n0.0070_10min_off_s | short | T_NO | 15 | 0.866 | 73.3 | 0.5184 | 164 |
+| **CDSL** | 5min | t0.0030_ctxW_OR_N_w0.0080_n0.0090_5min_off_l | long | T_R_TARGET_1.0R | 18 | 0.701 | 77.8 | 0.5102 | 164 |
 
-## Direction asymmetry (top 20 leaders)
+## Direction comparison (cells with n>=10)
 
-| Symbol | Long_best_Sharpe (n) | Short_best_Sharpe (n) | Bias |
-|---|---:|---:|---|
-| HAL | 0.174 (n=27) | 1.354 (n=10) | SHORT |
-| HDFCAMC | 0.996 (n=11) | 0.197 (n=12) | LONG |
-| RBLBANK | 0.919 (n=13) | 0.174 (n=15) | LONG |
-| RELIANCE | 0.408 (n=14) | 0.881 (n=14) | SHORT |
-| PERSISTENT | 0.796 (n=11) | 0.147 (n=12) | LONG |
-| LAURUSLABS | 0.772 (n=13) | 0.000 (n=0) | LONG |
-| COCHINSHIP | 0.149 (n=24) | 0.693 (n=14) | SHORT |
-| EICHERMOT | 0.653 (n=10) | 0.116 (n=12) | LONG |
-| GODFRYPHLP | 0.611 (n=10) | 0.468 (n=11) | both |
-| AARTIIND | 0.089 (n=12) | 0.603 (n=10) | SHORT |
-| 3MINDIA | 0.385 (n=11) | 0.592 (n=13) | SHORT |
-| ACC | 0.104 (n=18) | 0.574 (n=15) | SHORT |
-| LT | 0.574 (n=11) | 0.138 (n=13) | LONG |
-| WIPRO | 0.043 (n=10) | 0.572 (n=12) | SHORT |
-| ADANIGREEN | 0.111 (n=18) | 0.557 (n=11) | SHORT |
-| COFORGE | 0.553 (n=13) | 0.396 (n=11) | both |
-| BAJAJ-AUTO | 0.526 (n=13) | 0.127 (n=11) | LONG |
-| VEDL | 0.509 (n=18) | 0.184 (n=10) | LONG |
-| BAJFINANCE | 0.160 (n=11) | 0.505 (n=13) | SHORT |
-| ASTRAL | 0.452 (n=14) | 0.496 (n=11) | both |
-
-## Timeframe sweet spot (top 20 leaders)
-
-| Symbol | 5min | 10min | 15min | Best |
-|---|---:|---:|---:|---|
-| HAL | 1.354 | 1.199 | 0.707 | 5min |
-| HDFCAMC | 0.524 | 0.996 | 0.913 | 10min |
-| RBLBANK | 0.448 | 0.919 | 0.177 | 10min |
-| RELIANCE | 0.440 | 0.657 | 0.881 | 15min |
-| PERSISTENT | 0.796 | 0.119 | 0.248 | 5min |
-| LAURUSLABS | 0.337 | 0.772 | 0.745 | 10min |
-| COCHINSHIP | 0.301 | 0.114 | 0.693 | 15min |
-| EICHERMOT | 0.653 | 0.249 | 0.116 | 5min |
-| GODFRYPHLP | 0.565 | 0.611 | 0.412 | 10min |
-| AARTIIND | 0.331 | 0.603 | 0.451 | 10min |
-| 3MINDIA | 0.592 | 0.436 | 0.262 | 5min |
-| ACC | 0.574 | 0.195 | 0.152 | 5min |
-| LT | 0.393 | 0.344 | 0.574 | 15min |
-| WIPRO | 0.223 | 0.572 | 0.521 | 10min |
-| ADANIGREEN | 0.141 | 0.268 | 0.557 | 15min |
-| COFORGE | 0.553 | 0.396 | 0.180 | 5min |
-| BAJAJ-AUTO | 0.321 | 0.526 | 0.467 | 10min |
-| VEDL | 0.240 | 0.231 | 0.509 | 15min |
-| BAJFINANCE | 0.368 | 0.505 | 0.430 | 10min |
-| ASTRAL | 0.496 | 0.459 | 0.000 | 5min |
-
-## Cohort A (10 stocks, 8 yrs) vs Cohort B (69 stocks, 2 yrs)
-
-| Cohort | n_stocks | avg_best_Sharpe | avg_best_mean% |
-|---|---:|---:|---:|
-| A (long history) | 10 | 0.3372 | 0.6565 |
-| B (2-year only)  | 109 | 0.3146 | 0.6906 |
-
-## Exit policy comparison (across cells with n>=10, mean>0)
-
-| ExitPolicy | n_cells | avg_mean% | avg_WR% | avg_capEff | avg_Sharpe |
-|---|---:|---:|---:|---:|---:|
-| T_R_TARGET_1.0R | 4093 | 0.2594 | 54.9 | 0.22 | 0.1178 |
-| T_NO | 3747 | 0.4071 | 53.9 | 0.20 | 0.1125 |
-| T_CHANDELIER_2.0 | 3710 | 0.3925 | 53.9 | 0.19 | 0.1095 |
-| T_CHANDELIER_1.5 | 3782 | 0.3834 | 53.7 | 0.19 | 0.1063 |
-| T_ATR_SL_1.0 | 3812 | 0.3837 | 53.3 | 0.19 | 0.1053 |
-| T_CHANDELIER_1.0 | 3734 | 0.3375 | 53.4 | 0.18 | 0.1051 |
-| T_R_TARGET_1.5R | 4237 | 0.2963 | 49.9 | 0.22 | 0.1011 |
-| T_R_TARGET_2.0R | 4370 | 0.3209 | 47.2 | 0.21 | 0.0935 |
-| T_ATR_SL_0.5 | 4143 | 0.3541 | 48.3 | 0.18 | 0.0918 |
-| T_R_TARGET_3.0R | 4393 | 0.3416 | 44.9 | 0.20 | 0.0893 |
-| T_HARD_SL | 4386 | 0.3652 | 42.4 | 0.20 | 0.0845 |
-| T_ATR_SL_0.3 | 4512 | 0.3460 | 39.6 | 0.20 | 0.0796 |
-| T_STEP_TRAIL | 3361 | 0.2614 | 34.5 | 0.18 | 0.0655 |
+| Direction | n_cells | avg_mean_pct | avg_WR | avg_Sharpe |
+|---|---:|---:|---:|---:|
+| long | 200668 | -0.0199 | 44.7 | 0.0329 |
+| short | 161031 | 0.0206 | 49.0 | 0.0450 |
 
 ## Timeframe comparison (cells with n>=10, mean>0)
 
-| TF | n_cells | avg_mean% | avg_WR% | avg_Sharpe |
+| TF | n_cells | avg_mean_pct | avg_WR | avg_Sharpe |
 |---|---:|---:|---:|---:|
-| 5min | 17216 | 0.3416 | 47.4 | 0.0918 |
-| 10min | 17154 | 0.3441 | 48.7 | 0.0998 |
-| 15min | 17910 | 0.3406 | 48.9 | 0.0990 |
+| 5min | 71601 | 0.3271 | 55.5 | 0.1673 |
+| 10min | 60774 | 0.2946 | 56.0 | 0.1608 |
+| 15min | 52019 | 0.2664 | 55.0 | 0.1504 |
 
-## Comparison to prior 10-stock run (research/30)
+## today_narrow_threshold sweep (cells with n>=10, mean>0)
 
-- RELIANCE best in this expanded run: TF=15min, Variant=s_vm3.0_gap0.000_rsi40_60, Dir=short, Exit=T_R_TARGET_1.0R, n=14, mean%=1.166, Sharpe=0.8806
-- Prior run RELIANCE best: 15min, l_vm2.0_gap0.000_rsi40_60, T_NO, n=11, mean=1.094%, Sharpe=1.0451
-- Stocks beating the RELIANCE prior-best Sharpe (1.045): ['HAL']
+| today_narrow | n_cells | avg_mean_pct | avg_WR | avg_Sharpe |
+|---|---:|---:|---:|---:|
+| 0.30% | 51453 | 0.3206 | 56.5 | 0.1797 |
+| 0.40% | 61636 | 0.2967 | 55.7 | 0.1611 |
+| 0.50% | 71305 | 0.2860 | 54.6 | 0.1458 |
+
+## yesterday_ctx breakdown (cells with n>=10, mean>0)
+
+| ctx | n_cells | avg_mean_pct | avg_WR | avg_Sharpe |
+|---|---:|---:|---:|---:|
+| ctxW | 184394 | 0.2992 | 55.5 | 0.1604 |
+| ctxN | 0 | 0.0000 | 0.0 | 0.0000 |
+| ctxW_OR_N | 140064 | 0.2961 | 55.5 | 0.1594 |
+| ctxW_AND_N | 0 | 0.0000 | 0.0 | 0.0000 |
+
+## Volume mode breakdown (cells with n>=10, mean>0)
+
+| vol_mode | n_cells | avg_mean_pct | avg_WR | avg_Sharpe |
+|---|---:|---:|---:|---:|
+| off | 114190 | 0.2609 | 54.6 | 0.1345 |
+| vm1.5 | 43836 | 0.3538 | 56.8 | 0.2024 |
+| vm2.0 | 26368 | 0.3745 | 57.3 | 0.2026 |
+
+## Exit policy comparison (cells with n>=10, mean>0)
+
+| Exit | n_cells | avg_mean_pct | avg_WR | avg_Sharpe |
+|---|---:|---:|---:|---:|
+| T_NO | 14349 | 0.3134 | 56.2 | 0.1677 |
+| T_HARD_SL | 14125 | 0.3077 | 56.5 | 0.1651 |
+| T_ATR_SL_0.3 | 14719 | 0.2595 | 50.7 | 0.1260 |
+| T_ATR_SL_0.5 | 14316 | 0.2918 | 55.4 | 0.1502 |
+| T_ATR_SL_1.0 | 14236 | 0.3096 | 56.4 | 0.1666 |
+| T_CHANDELIER_1.0 | 14126 | 0.2958 | 56.2 | 0.1624 |
+| T_CHANDELIER_1.5 | 14097 | 0.3045 | 56.6 | 0.1678 |
+| T_CHANDELIER_2.0 | 14280 | 0.3107 | 56.3 | 0.1681 |
+| T_R_TARGET_1.0R | 14473 | 0.2914 | 56.9 | 0.1665 |
+| T_R_TARGET_1.5R | 14324 | 0.3080 | 56.5 | 0.1660 |
+| T_R_TARGET_2.0R | 14366 | 0.3110 | 56.3 | 0.1642 |
+| T_R_TARGET_3.0R | 14172 | 0.3124 | 56.5 | 0.1652 |
+| T_STEP_TRAIL | 12811 | 0.2731 | 51.0 | 0.1492 |
+
+---
+
+## Comparison vs research/30b (volume-breakout)
+
+- Stocks in CCRB leaderboard: **94**
+- Stocks in vol-breakout leaderboard: **78**
+- In both: **57**  |  Only CCRB: 37  |  Only vol-breakout: 21
+
+### Where CCRB beats vol-breakout (43 stocks)
+
+(These are CPR-compression specialists.)
+
+| Symbol | Coh | CCRB TF/Dir/n/Sharpe | Vol TF/Dir/n/Sharpe | SameDir | SameTF | Δ |
+|---|---|---|---|---|---|---:|
+| DLF | B | 5min/long/12/4.659 | 5min/short/14/0.356 | N | Y | +4.304 |
+| HAL | B | 15min/short/10/4.656 | 5min/short/10/1.354 | Y | N | +3.302 |
+| APOLLOHOSP | B | 10min/long/10/3.342 | 10min/short/15/0.114 | N | Y | +3.228 |
+| HDFCLIFE | B | 15min/short/15/1.283 | 10min/short/12/0.174 | Y | N | +1.110 |
+| HDFCBANK | A | 10min/long/12/0.949 | 15min/short/46/0.168 | N | N | +0.781 |
+| HINDUNILVR | A | 15min/short/12/1.102 | 5min/short/24/0.352 | Y | N | +0.749 |
+| IDFCFIRSTB | B | 5min/long/18/1.000 | 5min/long/17/0.273 | Y | Y | +0.728 |
+| ITC | A | 10min/short/18/1.027 | 15min/short/17/0.314 | Y | N | +0.713 |
+| HCLTECH | B | 10min/short/12/0.962 | 10min/short/10/0.249 | Y | Y | +0.713 |
+| AXISBANK | B | 15min/long/12/0.916 | 15min/long/11/0.251 | Y | Y | +0.665 |
+| NTPC | B | 10min/short/10/0.814 | 15min/short/11/0.181 | Y | N | +0.634 |
+| BANKBARODA | B | 10min/short/10/0.778 | 15min/short/11/0.200 | Y | N | +0.578 |
+| DIVISLAB | B | 5min/long/11/0.712 | 10min/long/14/0.173 | Y | N | +0.538 |
+| CIPLA | B | 15min/long/10/0.719 | 15min/short/19/0.184 | N | Y | +0.535 |
+| BRITANNIA | B | 10min/long/10/0.655 | 15min/short/12/0.127 | N | N | +0.528 |
+| ASIANPAINT | B | 5min/short/10/0.965 | 10min/long/13/0.481 | N | N | +0.484 |
+| TITAN | B | 5min/long/10/0.729 | 10min/long/17/0.264 | Y | N | +0.465 |
+| ADANIENT | B | 10min/short/10/0.723 | 15min/short/13/0.261 | Y | N | +0.463 |
+| INFY | A | 10min/long/14/0.664 | 5min/long/29/0.208 | Y | N | +0.457 |
+| BHARTIARTL | A | 5min/short/20/0.667 | 5min/short/24/0.216 | Y | Y | +0.451 |
+| ULTRACEMCO | B | 10min/short/10/0.846 | 5min/short/11/0.399 | Y | N | +0.447 |
+| BEL | B | 5min/short/10/0.732 | 15min/short/11/0.302 | Y | N | +0.429 |
+| KOTAKBANK | A | 10min/short/10/0.732 | 10min/long/22/0.336 | N | Y | +0.396 |
+| TECHM | B | 5min/long/10/0.565 | 5min/long/16/0.184 | Y | Y | +0.382 |
+| HEROMOTOCO | B | 15min/short/20/0.458 | 10min/short/11/0.124 | Y | N | +0.334 |
+| BAJAJFINSV | B | 15min/long/16/0.640 | 15min/long/10/0.333 | Y | Y | +0.307 |
+| FEDERALBNK | B | 5min/long/14/0.591 | 15min/long/14/0.297 | Y | N | +0.294 |
+| ADANIPORTS | B | 10min/long/14/0.610 | 10min/short/12/0.325 | N | Y | +0.285 |
+| MARUTI | B | 15min/long/13/0.668 | 10min/long/24/0.414 | Y | N | +0.254 |
+| ICICIBANK | A | 10min/long/14/0.643 | 15min/short/17/0.393 | N | N | +0.250 |
+
+### Where vol-breakout beats CCRB (14 stocks)
+
+(These are volume specialists.)
+
+| Symbol | Coh | CCRB TF/Dir/n/Sharpe | Vol TF/Dir/n/Sharpe | SameDir | SameTF | Δ |
+|---|---|---|---|---|---|---:|
+| VEDL | B | 5min/long/10/0.126 | 15min/long/18/0.509 | Y | N | -0.383 |
+| RELIANCE | A | 5min/long/10/0.560 | 15min/short/14/0.881 | N | N | -0.321 |
+| LT | B | 10min/long/10/0.258 | 15min/long/11/0.574 | Y | N | -0.315 |
+| PERSISTENT | B | 10min/short/10/0.483 | 5min/long/11/0.796 | N | N | -0.314 |
+| IOC | B | 10min/short/10/0.177 | 5min/short/11/0.461 | Y | N | -0.284 |
+| CHOLAFIN | B | 10min/long/19/0.259 | 10min/long/11/0.434 | Y | Y | -0.176 |
+| BAJAJ-AUTO | B | 10min/short/10/0.376 | 10min/long/13/0.526 | N | Y | -0.150 |
+| SBILIFE | B | 10min/long/14/0.068 | 5min/short/11/0.211 | N | N | -0.143 |
+| M&M | B | 5min/long/14/0.143 | 5min/short/15/0.214 | N | Y | -0.071 |
+| POWERGRID | B | 10min/short/11/0.310 | 10min/long/10/0.359 | N | Y | -0.050 |
+| COFORGE | B | 5min/long/12/0.514 | 5min/long/13/0.553 | Y | Y | -0.039 |
+| DRREDDY | B | 10min/long/34/0.104 | 5min/long/10/0.132 | Y | N | -0.027 |
+| INDUSINDBK | B | 5min/short/46/0.166 | 10min/long/23/0.190 | N | N | -0.024 |
+| SBIN | A | 15min/long/27/0.281 | 15min/long/21/0.284 | Y | Y | -0.003 |
+
+### Stocks robust on BOTH (CCRB Sharpe >= 0.4 AND vol Sharpe >= 0.4): 8
+
+| Symbol | Coh | CCRB Sharpe | Vol Sharpe | SameDir | SameTF |
+|---|---|---:|---:|---|---|
+| **HAL** | B | 4.656 | 1.354 | Y | N |
+| **EICHERMOT** | B | 0.799 | 0.653 | Y | Y |
+| **ASIANPAINT** | B | 0.965 | 0.481 | N | N |
+| **RELIANCE** | A | 0.560 | 0.881 | N | N |
+| **PERSISTENT** | B | 0.483 | 0.796 | N | N |
+| **BAJFINANCE** | B | 0.691 | 0.505 | Y | N |
+| **MARUTI** | B | 0.668 | 0.414 | Y | N |
+| **COFORGE** | B | 0.514 | 0.553 | Y | Y |
+
+### Stocks ONLY found by CCRB (not by vol-breakout): 37
+
+| Symbol | Coh | TF | Dir | n | Sharpe | RobustCells |
+|---|---|---|---|---:|---:|---:|
+| HDFCAMC | B | 10min | short | 11 | 1.5299 | 641 |
+| ASHOKLEY | B | 15min | short | 10 | 1.3123 | 940 |
+| BDL | B | 5min | long | 14 | 1.1878 | 945 |
+| ADANIGREEN | B | 15min | short | 14 | 1.0459 | 206 |
+| CHENNPETRO | B | 5min | short | 10 | 0.9813 | 439 |
+| DIXON | B | 15min | short | 14 | 0.7121 | 197 |
+| GODREJCP | B | 10min | long | 14 | 0.7008 | 1587 |
+| SUZLON | B | 15min | short | 16 | 0.6917 | 408 |
+| INDIGO | B | 15min | long | 14 | 0.6740 | 374 |
+| RVNL | B | 10min | short | 15 | 0.6723 | 464 |
+| BHEL | B | 15min | long | 10 | 0.6521 | 166 |
+| CANBK | B | 5min | long | 10 | 0.6345 | 743 |
+| HINDZINC | B | 10min | short | 10 | 0.6302 | 157 |
+| RECLTD | B | 5min | long | 11 | 0.6141 | 49 |
+| BSE | B | 5min | long | 10 | 0.5935 | 703 |
+| GMDCLTD | B | 5min | short | 10 | 0.5635 | 48 |
+| REDINGTON | B | 10min | short | 15 | 0.5184 | 164 |
+| CDSL | B | 5min | long | 18 | 0.5102 | 164 |
+| AUBANK | B | 15min | long | 10 | 0.4989 | 142 |
+| HINDPETRO | B | 5min | long | 12 | 0.4989 | 9 |
+
+### Stocks ONLY in vol-breakout leaderboard (no CCRB leader): 21
+
+AMBUJACEM, BPCL, COLPAL, DABUR, DELHIVERY, GAIL, GODREJPROP, GRASIM, HAVELLS, IRCTC, JINDALSTEL, MARICO, MCX, NESTLEIND, ONGC, PIDILITIND, SHREECEM, SIEMENS, TATACONSUM, VOLTAS, WIPRO
+
+---
+
+## Honest Read
+
+- Average best-cell Sharpe across stocks in BOTH leaderboards: CCRB=0.746 vs vol-breakout=0.322
+- CCRB beats vol-breakout in 43 / 57 shared stocks (75%).
+- Promote-gate passes: CCRB=9; vol-breakout=1.
+- Direction agreement (same best dir): 37 / 57 stocks.
+- Timeframe agreement (same best TF): 19 / 57 stocks.
+
+Interpretation: CCRB and vol-breakout target different setups. CCRB requires a
+daily-bar geometric filter (CPR compression) that gates the day; vol-breakout
+triggers off the first candle's volume regardless of CPR. Stocks where they
+disagree on direction or timeframe are likely catching different regimes.
+Stocks robust on BOTH are the highest-conviction names — the daily geometric
+filter and the first-bar volume confirmation could be combined as a higher-bar
+entry rule.

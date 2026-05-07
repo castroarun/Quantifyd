@@ -176,8 +176,15 @@ def _bootstrap():
     # are warm at startup.
     _seed_historical_bars()
 
+    # Restore state machine from any OPEN positions in DB (idempotent — handles
+    # gunicorn restarts and manual entries that need to "hand back" to the engine).
+    try:
+        _engine.restore_state_from_open_positions()
+    except Exception as e:
+        logger.exception(f"[MST] state restore failed: {e}")
+
     logger.info(f"[MST] Bootstrapped: enabled={enabled} paper_mode={paper_mode} "
-                f"buffer={len(_engine.bars)} bars")
+                f"buffer={len(_engine.bars)} bars state={_engine.state.state}")
 
 
 def _seed_historical_bars():

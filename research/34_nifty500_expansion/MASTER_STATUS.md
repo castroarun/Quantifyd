@@ -3,7 +3,7 @@
 **THIS IS THE PRIMARY STATUS DOC.** The auto-generated `NIFTY500_EXPANSION_SWEEP_STATUS.md` and `CCRB_RUN_PROGRESS.md` are runner-progress files; this one tracks the full project narrative.
 
 **Created:** 2026-05-02
-**Last updated:** 2026-05-05 (current session)
+**Last updated:** 2026-05-07 (Phase E NO-OP confirmed; Phase F/G runners expanded to 218 stocks)
 **Owner:** Claude (driving) / Arun (deciding)
 
 ---
@@ -75,12 +75,12 @@
 
 ```
 Phase A: Backfill 320 missing Nifty 500 stocks       ✅ DONE  (380/395 succeeded)
-Phase B: Vol-BO sweep on top-100 universe            ✅ DONE  (230K signals, RESULTS.md written)
-Phase C: CCRB sweep on top-100 (trimmed grid)        🔄 RUNNING (bash bzec0c3zn, ~5h remaining)
-Phase D: Phase B+C aggregation + comparison           ⏳ PENDING
-Phase E: Backfill Rs 50+ Cr/day expansion (135 new)   ⏳ PENDING
-Phase F: Re-run vol-BO on 353-stock universe          ⏳ PENDING (~6h)
-Phase G: Re-run CCRB on 353-stock universe            ⏳ PENDING (~12h)
+Phase B: Vol-BO sweep on top-100 universe            ✅ DONE  (230K signals)
+Phase C: CCRB sweep on top-100 (trimmed grid)        ✅ DONE  (876,870 signals, 418 min)
+Phase D: Phase B+C aggregation + comparison          ✅ DONE  (RESULTS.md, RESULTS_VOLBO.md, ccrb_leaders.csv)
+Phase E: Backfill Rs 50+ Cr/day expansion             ✅ NO-OP (all 218 stocks at 50+ Cr/day already have 5m data)
+Phase F: Re-run vol-BO on 218-stock universe          🟡 READY (118 new stocks; ~3-4h locally)
+Phase G: Re-run CCRB on 218-stock universe            🟡 READY (118 new stocks; ~8h locally)
 Phase H: Final per-stock STOCK_CONFIGS list          ⏳ PENDING
 ```
 
@@ -104,6 +104,11 @@ Phase H: Final per-stock STOCK_CONFIGS list          ⏳ PENDING
 | 2026-05-05 23:30 | Phase C progress — 59/100 stocks, 619K signals | Last: IOC |
 | 2026-05-06 00:12 | Phase C DIED (laptop suspend) | Last alive at 64/100 stocks, 696K signals (LT done) |
 | 2026-05-06 15:10 | Phase C RESUMED (bash boh1h7gps) | 36 stocks left; resumes from CSV skip-set |
+| 2026-05-06 22:10 | Phase C DONE | 100/100 stocks, 876,870 signals total (418 min wall) |
+| 2026-05-06 22:14 | Phase D aggregation launched (bash blutogqxc) | aggregate_ccrb.py streams the 904 MB CSV |
+| 2026-05-06 22:17 | Phase D DONE | 536,471 ranked cells; 94 leaders; 9 promote candidates; RESULTS.md written |
+| 2026-05-07 | Phase E confirmed NO-OP | All 218 stocks at Rs 50+ Cr/day already have 5m data (Phase A backfill covered them); skip straight to F/G |
+| 2026-05-07 | Runners expanded to 218 stocks | `_load_universe()` in `run_volbo_500.py` and `run_ccrb_500.py` now reads `top_by_turnover.csv` and selects all symbols at Rs 50+ Cr/day. Smoke-tested. Resumable skip-set means existing 100 are no-ops; only 118 new stocks process. Awaiting launch decision (local vs VPS). |
 
 ### Top-15 vol-BO findings (Phase B done)
 
@@ -238,9 +243,61 @@ When Phase C finishes, lower the liquidity threshold and add 135 new stocks (Rs 
 - Per-stock-best avg Sharpe: 0.74 across top 15
 - Best broad rule across all 119 stocks: 15-min SHORT vm 3.0 gap-off T_NO — works on 14/71 stocks at Sharpe ≥ 0.3, avg Sharpe only 0.12. **Confirms per-stock tuning is the right approach.**
 
-### Phase C (CCRB on top-100) — RUNNING
+### Phase C (CCRB on top-100) — DONE
 
-Will populate after completion.
+- 875,493 signal rows (Cohort A 278,611; Cohort B 596,882)
+- 536,471 ranked cells (n ≥ 5)
+- **94 per-stock leaders** found (vs 78 from research/30b vol-BO)
+- **9 promote candidates** pass the strict gate (Sharpe ≥ 0.5, n ≥ 15, robust ≥ 3 cells) — vs only 1 for vol-BO
+
+#### Top-15 CCRB leaders (per-stock best)
+
+| # | Stock | TF | Dir | Sharpe | WR% | Mean% | n | Promote |
+|---|---|---|---|---|---|---|---|---|
+| 1 | DLF | 5m | long | 4.66 | 100.0 | +0.56 | 12 | — (n<15) |
+| 2 | HAL | 15m | short | 4.66 | 100.0 | +0.70 | 10 | — |
+| 3 | APOLLOHOSP | 10m | long | 3.34 | 100.0 | +0.49 | 10 | — |
+| 4 | HDFCAMC | 10m | short | 1.53 | 90.9 | +0.77 | 11 | — |
+| 5 | ASHOKLEY | 15m | short | 1.31 | 80.0 | +0.59 | 10 | — |
+| 6 | **HDFCLIFE** | 15m | short | 1.28 | 86.7 | +0.67 | 15 | **YES** |
+| 7 | BDL | 5m | long | 1.19 | 85.7 | +1.41 | 14 | — |
+| 8 | HINDUNILVR | 15m | short | 1.10 | 83.3 | +0.77 | 12 | — |
+| 9 | ADANIGREEN | 15m | short | 1.05 | 85.7 | +0.75 | 14 | — |
+| 10 | **ITC** | 10m | short | 1.03 | 88.9 | +0.53 | 18 | **YES** |
+| 11 | **IDFCFIRSTB** | 5m | long | 1.00 | 88.9 | +0.71 | 18 | **YES** |
+| 12 | CHENNPETRO | 5m | short | 0.98 | 80.0 | +1.05 | 10 | — |
+| 13 | ASIANPAINT | 5m | short | 0.96 | 80.0 | +0.65 | 10 | — |
+| 14 | HCLTECH | 10m | short | 0.96 | 83.3 | +0.43 | 12 | — |
+| 15 | HDFCBANK | 10m | long | 0.95 | 83.3 | +0.76 | 12 | — |
+
+#### Promote candidates (9 stocks pass full gate)
+
+HDFCLIFE, ITC, IDFCFIRSTB, SUZLON, RVNL, BHARTIARTL, BAJAJFINSV, REDINGTON, CDSL.
+
+### Phase D (Cross-signal comparison vs research/30b vol-BO) — DONE
+
+- Avg best-cell Sharpe across shared stocks: **CCRB 0.746 vs vol-BO 0.322**
+- CCRB beats vol-BO in **43 of 57 shared stocks (75%)**
+- Promote-gate passes: **CCRB 9 vs vol-BO 1**
+- Direction agreement: 37/57; Timeframe agreement: 19/57
+
+#### Stocks robust on BOTH (CCRB ≥ 0.4 + vol ≥ 0.4) — 8 highest-conviction
+
+HAL (4.66 / 1.35), EICHERMOT (0.80 / 0.65), ASIANPAINT (0.97 / 0.48), RELIANCE (0.56 / 0.88), PERSISTENT (0.48 / 0.80), BAJFINANCE (0.69 / 0.51), MARUTI (0.67 / 0.41), COFORGE (0.51 / 0.55).
+
+#### CCRB-only specialists (top 10) — daily-bar geometry adds edge
+
+HDFCAMC, ASHOKLEY, BDL, ADANIGREEN, CHENNPETRO, DIXON, GODREJCP, SUZLON, INDIGO, RVNL.
+
+#### Vol-only specialists (no CCRB leader) — first-bar volume adds edge
+
+AMBUJACEM, BPCL, COLPAL, DABUR, DELHIVERY, GAIL, GODREJPROP, GRASIM, HAVELLS, IRCTC, JINDALSTEL, MARICO, MCX, NESTLEIND, ONGC, PIDILITIND, SHREECEM, SIEMENS, TATACONSUM, VOLTAS, WIPRO.
+
+#### Honest read
+
+- CCRB and vol-BO target **different setups**. CCRB requires a daily-bar geometric filter (CPR compression + yesterday context); vol-BO triggers off the first candle's volume regardless of CPR.
+- For deployment: a stock should use the strategy variant where it ranks higher. The 8 robust-on-both names get a higher confidence weight (could trigger on either signal, or only when both align).
+- Note: comparison is against research/30b's 79-stock vol-BO leaders. The Phase B vol-BO leaders (top-100 universe) need a separate cross-comparison — pending.
 
 ---
 
@@ -260,6 +317,7 @@ _Will be populated after Phase C finishes — combined vol-BO + CCRB top picks w
 | 2026-05-05 | Per-stock tuning, NOT bucket-generic | Avg Sharpe 0.74 (per-stock-best) vs ~0.5 (bucket-generic) vs 0.12 (single rule) |
 | 2026-05-05 | Phase E expansion to Rs 50 Cr/day liquidity gate | User wants 2-3 trades/day; need wider universe |
 | 2026-05-05 | Auto-progress writes split from master STATUS | Runner kept clobbering master doc — now uses separate VOLBO_RUN_PROGRESS.md / CCRB_RUN_PROGRESS.md |
+| 2026-05-06 | Preserve vol-BO RESULTS.md as RESULTS_VOLBO.md before CCRB overwrite | aggregate_ccrb.py overwrites RESULTS.md; vol-BO copy needed for both-signal comparison |
 
 ---
 

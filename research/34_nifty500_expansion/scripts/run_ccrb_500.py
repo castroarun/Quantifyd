@@ -99,6 +99,13 @@ TOP_100_BY_TURNOVER = [
 
 
 def _load_universe() -> list[str]:
+    """Phase G (2026-05-07): expanded to all stocks at Rs 50+ Cr/day avg turnover.
+
+    Reads research/34/results/top_by_turnover.csv. Resumable skip-set means
+    the 100 stocks already swept in Phase C are skipped immediately and only
+    the 118 new names get processed.
+    """
+    import csv as _csv
     import sqlite3
     db = ROOT.parent.parent / "backtest_data" / "market_data.db"
     con = sqlite3.connect(db)
@@ -106,7 +113,19 @@ def _load_universe() -> list[str]:
         "SELECT DISTINCT symbol FROM market_data_unified WHERE timeframe='5minute'"
     ).fetchall())
     con.close()
-    return sorted(set(TOP_100_BY_TURNOVER) & have_5m)
+
+    turnover_csv = ROOT / "results" / "top_by_turnover.csv"
+    universe_50cr: set[str] = set()
+    with turnover_csv.open("r", encoding="utf-8", newline="") as f:
+        rdr = _csv.DictReader(f)
+        for r in rdr:
+            try:
+                if float(r["avg_turnover_cr"]) >= 50.0:
+                    universe_50cr.add(r["symbol"])
+            except (ValueError, KeyError):
+                continue
+
+    return sorted(universe_50cr & have_5m)
 
 
 ALL_STOCKS = _load_universe()

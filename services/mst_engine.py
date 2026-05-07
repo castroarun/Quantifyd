@@ -200,6 +200,79 @@ class MSTEngine:
         """Append a historical bar to the buffer (used during seeding)."""
         self.bars.append(bar)
 
+    def restore_state_from_open_positions(self) -> None:
+        """If there are OPEN positions in mst_positions DB at engine startup,
+        reconstruct the state machine so the engine continues managing them.
+
+        Idempotent — safe to call on every bootstrap. Examines:
+        - distinct directions / pyramid levels in open legs → infers state
+        - week_label, expiry_date, t_minus_1_date → restores cycle context
+        - leg_roles → infers DEBIT_OPEN_* vs CONDOR_OPEN_* state
+        """
+        try:
+            open_legs = self.db.get_open_positions()
+        except Exception:
+            return
+        if not open_legs:
+            return
+
+        # Group by week_label + direction to find the active cycle
+        directions = sorted({int(p['direction']) for p in open_legs})
+        if len(directions) > 1:
+            logger.warning(f"[MST] Restore: multiple directions in open legs {directions} — leaving state untouched")
+            return
+        direction = directions[0]
+
+        # Identify leg roles to figure out which state we're in
+        roles = {p['leg_role'] for p in open_legs}
+        levels = sorted({int(p.get('pyramid_level', 1)) for p in open_legs})
+        max_level = max(levels)
+
+        debit_l1_roles = {'bull_long', 'bull_short'} if direction == 1 else {'put_long', 'put_short'}
+        credit_l1_roles = {'bear_short', 'bear_long'} if direction == 1 else {'putw_short', 'putw_long'}
+
+        has_l1_debit = debit_l1_roles.issubset({p['leg_role'] for p in open_legs if int(p.get('pyramid_level', 1)) == 1})
+        has_l1_credit = credit_l1_roles.issubset({p['leg_role'] for p in open_legs if int(p.get('pyramid_level', 1)) == 1})
+        has_l2_debit = max_level >= 2 and debit_l1_roles.issubset({p['leg_role'] for p in open_legs if int(p.get('pyramid_level', 1)) == 2})
+        has_l2_credit = max_level >= 2 and credit_l1_roles.issubset({p['leg_role'] for p in open_legs if int(p.get('pyramid_level', 1)) == 2})
+
+        if has_l2_credit:
+            new_state = "CONDOR_OPEN_L2"
+            self.state.pyramid_level = 2
+        elif has_l2_debit:
+            new_state = "DEBIT_OPEN_L2"
+            self.state.pyramid_level = 2
+        elif has_l1_credit:
+            new_state = "CONDOR_OPEN_L1"
+            self.state.pyramid_level = 1
+        elif has_l1_debit:
+            new_state = "DEBIT_OPEN_L1"
+            self.state.pyramid_level = 1
+        else:
+            logger.warning(f"[MST] Restore: open legs but cannot map roles {roles} to a known state — leaving NO_POSITION")
+            return
+
+        # Find the L1 anchor (long leg of the L1 debit spread)
+        l1_long_role = 'bull_long' if direction == 1 else 'put_long'
+        l1_long_leg = next((p for p in open_legs if p['leg_role'] == l1_long_role and int(p.get('pyramid_level', 1)) == 1), None)
+        l2_long_leg = next((p for p in open_legs if p['leg_role'] == l1_long_role and int(p.get('pyramid_level', 1)) == 2), None)
+
+        self.state.state = new_state
+        self.state.mst_direction = direction
+        if l1_long_leg:
+            self.state.activated_at_atm = int(l1_long_leg['strike'])
+            self.state.activated_at_bar = l1_long_leg.get('entry_time')
+            self.state.current_expiry_dt = l1_long_leg['expiry_date']
+            self.state.current_t_minus_1 = l1_long_leg['t_minus_1_date']
+        if l2_long_leg:
+            self.state.pyramid_atm = int(l2_long_leg['strike'])
+
+        logger.warning(
+            f"[MST] State RESTORED from {len(open_legs)} open legs → state={new_state} "
+            f"direction={direction} L1_anchor={self.state.activated_at_atm} "
+            f"expiry={self.state.current_expiry_dt}"
+        )
+
     def _arrays(self):
         """Return numpy arrays for current buffer."""
         if not self.bars:
