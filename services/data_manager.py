@@ -13,9 +13,11 @@ Key Features:
 - Thread-safe operations
 """
 
+import os
 import sqlite3
 import pandas as pd
 import numpy as np
+import socket
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import logging
@@ -32,6 +34,48 @@ DB_PATH = DB_DIR / 'market_data.db'
 
 # Thread lock for database operations
 db_lock = threading.Lock()
+
+
+# =============================================================================
+# VPS-canonical-data guard (binding rule from 2026-05-07)
+# =============================================================================
+# All Kite data downloads must run on the VPS so the canonical
+# `market_data.db` stays on a single host. The laptop's copy is a frozen
+# snapshot. Override only for emergency dev work via env var.
+# =============================================================================
+
+def _is_vps_host() -> bool:
+    """Detect whether we're running on the canonical VPS."""
+    if os.getenv("QUANTIFYD_HOST", "").lower() == "vps":
+        return True
+    try:
+        return socket.gethostname().startswith(("vmi", "contabo"))
+    except Exception:
+        return False
+
+
+def _enforce_vps_only_writes(operation: str = "data download"):
+    """Raises unless running on VPS or `ALLOW_LOCAL_DATA_WRITE=1` is set.
+
+    Convention is binding from 2026-05-07: the VPS is canonical for
+    `market_data.db`. Laptop downloads pollute the snapshot and break
+    the single-source-of-truth model.
+    """
+    if os.getenv("ALLOW_LOCAL_DATA_WRITE") == "1":
+        logger.warning(
+            f"[data_manager] {operation} on non-VPS host allowed via "
+            f"ALLOW_LOCAL_DATA_WRITE=1 override. Laptop snapshot will diverge "
+            f"from VPS canonical state."
+        )
+        return
+    if _is_vps_host():
+        return
+    raise RuntimeError(
+        f"[data_manager] {operation} is restricted to the VPS "
+        f"(94.136.185.54). Run this on VPS via paramiko/ssh, or set "
+        f"ALLOW_LOCAL_DATA_WRITE=1 to override (emergency dev only). "
+        f"See CLAUDE.md → 'VPS IS THE CANONICAL HOST FOR EVERYTHING'."
+    )
 
 # =============================================================================
 # F&O Stock Universe - Stocks eligible for covered calls
@@ -290,6 +334,9 @@ class CentralizedDataManager:
         Returns:
             (successful_count, failed_count, error_list)
         """
+        # VPS-only guard: downloads must not pollute the laptop snapshot.
+        _enforce_vps_only_writes(operation=f"download_data({len(symbols)} syms, {timeframe})")
+
         if not self.kite:
             raise ValueError("Kite connection not set. Call set_kite() first.")
 

@@ -1,10 +1,14 @@
 """
-Intraday Data Bridge - Access 30-minute candle data from quantflow project
+Intraday Data Bridge - Access 30-minute candle data from market_data.db
 
-This module provides a bridge to load intraday data stored in the quantflow
-project's centralized database for use in CPR-based covered call backtesting.
+This module loads intraday data from the project's central market_data.db
+(at backtest_data/market_data.db, resolved relative to the project root).
+Originally bridged to a separate "quantflow" project on the laptop, but
+since 2026-05-07 the canonical store is `services/data_manager.py`'s
+`market_data_unified` table on the VPS — same DB, same schema.
 """
 
+import os
 import sqlite3
 import logging
 from datetime import datetime, time as dtime, timedelta
@@ -18,39 +22,34 @@ logger = logging.getLogger(__name__)
 
 
 class IntradayDataBridge:
+    """Bridge to access intraday data from `backtest_data/market_data.db`.
+
+    Path resolution (in order):
+      1. constructor arg `db_path` (explicit override)
+      2. `QUANTIFYD_MARKET_DATA_DB` env var (e.g. for tests)
+      3. relative to project root: `backtest_data/market_data.db`
+         (works on both VPS and laptop without hardcoded paths)
     """
-    Bridge to access intraday data from quantflow project.
 
-    The quantflow project stores 30-minute candle data in SQLite which is
-    used for CPR-based entry signal detection.
-    """
+    # Resolved at instantiation time — never hardcode laptop paths.
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    DEFAULT_DB_PATH = PROJECT_ROOT / "backtest_data" / "market_data.db"
 
-    # Path to quantflow database
-    QUANTFLOW_DB_PATH = Path("C:/Users/Castro/Documents/Projects/quantflow/kiteconnect01/backtest_data/market_data.db")
-
-    # Local fallback path (if data is copied locally)
-    LOCAL_FALLBACK_PATH = Path("backtest_data/intraday_data.db")
+    # Legacy alias retained for any caller still referencing the old name.
+    LOCAL_FALLBACK_PATH = PROJECT_ROOT / "backtest_data" / "intraday_data.db"
 
     # Market timing (IST)
     MARKET_OPEN_TIME = dtime(9, 15)
     MARKET_CLOSE_TIME = dtime(15, 30)
 
     def __init__(self, db_path: Optional[Path] = None):
-        """
-        Initialize the intraday data bridge.
-
-        Args:
-            db_path: Optional custom path to the database. If not provided,
-                     uses QUANTFLOW_DB_PATH or LOCAL_FALLBACK_PATH.
-        """
+        """Initialize. Resolution: explicit arg > env var > project default."""
         if db_path:
-            self.db_path = db_path
-        elif self.QUANTFLOW_DB_PATH.exists():
-            self.db_path = self.QUANTFLOW_DB_PATH
-        elif self.LOCAL_FALLBACK_PATH.exists():
-            self.db_path = self.LOCAL_FALLBACK_PATH
+            self.db_path = Path(db_path)
+        elif os.getenv("QUANTIFYD_MARKET_DATA_DB"):
+            self.db_path = Path(os.environ["QUANTIFYD_MARKET_DATA_DB"])
         else:
-            self.db_path = self.QUANTFLOW_DB_PATH  # Will fail on access if missing
+            self.db_path = self.DEFAULT_DB_PATH
 
         self._cache: Dict[str, pd.DataFrame] = {}
         logger.info(f"IntradayDataBridge initialized with DB: {self.db_path}")

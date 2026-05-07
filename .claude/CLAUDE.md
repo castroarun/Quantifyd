@@ -12,6 +12,46 @@ Indian stock market backtesting system: Momentum + Quality (MQ) portfolio strate
 
 ---
 
+## VPS IS THE CANONICAL HOST FOR EVERYTHING (binding rule from 2026-05-07)
+
+The Contabo VPS at `94.136.185.54` is the single canonical host for both
+**live trading** and **backtesting**. The laptop is dev-only — code edits
+happen here, then push → pull on VPS.
+
+**Specifically:**
+
+- `backtest_data/market_data.db` lives on the VPS. Code uses relative
+  paths (`Path(__file__).parent.parent / 'backtest_data' / 'market_data.db'`)
+  so `services/*.py` automatically reads the VPS DB when running on VPS,
+  and a stale snapshot when running on laptop.
+- **All Kite data downloads run on VPS only.** `services/data_manager.py`
+  has a guard that refuses to write to the laptop DB unless
+  `ALLOW_LOCAL_DATA_WRITE=1` is set (emergency override).
+- **All backtests run on VPS** — even if they're slower than laptop.
+  No time pressure; Phase F/G demonstrated that laptop sweeps die
+  unpredictably (suspend, OOM). VPS sweeps run uninterrupted.
+- **The laptop's `market_data.db` is a frozen snapshot** as of when it
+  was last scp'd from VPS (or the last time laptop downloaded data, prior
+  to this rule). Refresh it explicitly via
+  `scripts/pull_market_data_from_vps.py` (TODO — write when needed).
+
+**Operational checklist when starting a new strategy:**
+
+1. Build code on laptop, smoke-test against the snapshot DB
+2. Push to GitHub, pull on VPS
+3. Restart `quantifyd.service` (after market close — 15:30 IST)
+4. Live + paper signals fire from VPS
+
+**Operational checklist when starting a backtest:**
+
+1. Write the runner script
+2. Push to GitHub, pull on VPS
+3. ssh to VPS and launch via paramiko or directly:
+   `ssh arun@94.136.185.54 'cd /home/arun/quantifyd && nohup python3 research/<NN>/scripts/<runner>.py > /tmp/run.log 2>&1 &'`
+4. Tail the STATUS_MD file to monitor progress
+
+---
+
 ## ALL NEW PAGES GO IN THE REACT APP AT `/app/*` — NOT JINJA
 
 **Default convention as of 2026-04-26:** any new strategy page, dashboard, or
