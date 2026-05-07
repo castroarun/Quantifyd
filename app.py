@@ -9612,6 +9612,164 @@ except Exception as e:
 
 
 # =============================================================================
+# Nifty 500 Intraday Momentum (N500M) — Routes + Scheduler
+# =============================================================================
+
+@app.route('/api/n500m/state')
+def api_n500m_state():
+    """Return mode, kill switch, today's positions, signals, equity snapshot."""
+    try:
+        from services.n500m_db import get_db
+        from services.n500m_configs import load_all_configs
+        db = get_db()
+        cfgs = load_all_configs()
+        return jsonify({
+            'mode': db.get_mode(),
+            'kill_switch': db.is_kill_switch(),
+            'config_count': len(cfgs),
+            'unique_symbols': sorted({c.symbol for c in cfgs}),
+            'open_positions': db.get_open_positions(),
+            'today_positions': db.get_today_positions(),
+            'today_signals': db.get_today_signals(),
+            'equity_curve': db.get_equity_curve(mode=db.get_mode(), limit=60),
+        })
+    except Exception as e:
+        logger.exception(f"[N500M] /api/n500m/state failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/n500m/configs')
+def api_n500m_configs():
+    """Return the per-stock STOCK_CONFIGS list (top 30 by Sharpe)."""
+    try:
+        from services.n500m_configs import load_all_configs
+        cfgs = load_all_configs()
+        return jsonify({'configs': [c.to_dict() for c in cfgs]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/n500m/toggle-mode', methods=['POST'])
+def api_n500m_toggle_mode():
+    """Set mode to OFF / PAPER / LIVE."""
+    try:
+        from services.n500m_db import get_db
+        data = request.get_json() or {}
+        mode = (data.get('mode') or '').upper()
+        if mode not in ('OFF', 'PAPER', 'LIVE'):
+            return jsonify({'error': f'invalid mode: {mode}'}), 400
+        db = get_db()
+        db.set_mode(mode)
+        if mode != 'OFF':
+            db.set_kill_switch(False)  # auto-release when re-enabling
+        return jsonify({'mode': db.get_mode(), 'kill_switch': db.is_kill_switch()})
+    except Exception as e:
+        logger.exception(f"[N500M] toggle-mode failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/n500m/kill-switch', methods=['POST'])
+def api_n500m_kill_switch():
+    """Engage kill switch — flatten all open positions, lock mode OFF."""
+    try:
+        from services.n500m_executor import get_executor
+        ex = get_executor()
+        n = ex.kill_switch()
+        return jsonify({'flattened': n, 'mode': ex.db.get_mode(),
+                        'kill_switch': ex.db.is_kill_switch()})
+    except Exception as e:
+        logger.exception(f"[N500M] kill-switch failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/n500m/scan', methods=['POST'])
+def api_n500m_scan():
+    """Trigger an immediate scan + execute. Used by the dashboard 'Scan now' button."""
+    try:
+        from services.n500m_scanner import precompute_setup, scan_for_signals
+        from services.n500m_executor import get_executor
+        from datetime import datetime
+        precompute_setup()  # idempotent
+        sigs = scan_for_signals(datetime.now())
+        ex = get_executor()
+        results = []
+        for s in sigs:
+            pid = ex.submit_signal(s)
+            results.append({'symbol': s['symbol'], 'signal_type': s['signal_type'],
+                            'direction': s['direction'], 'entry_price': s['entry_price'],
+                            'position_id': pid})
+        return jsonify({'scanned': len(sigs), 'submitted': results})
+    except Exception as e:
+        logger.exception(f"[N500M] scan failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Scheduled jobs ----------------------------------------------------------
+
+def _n500m_precompute():
+    """09:10 IST Mon-Fri: compute today's setup table for every stock."""
+    try:
+        from services.n500m_scanner import precompute_setup
+        precompute_setup()
+    except Exception as e:
+        logger.exception(f"[N500M Scheduler] precompute failed: {e}")
+
+
+def _n500m_scan_and_execute():
+    """Every minute 09:20-14:00 IST Mon-Fri: scan for fresh signals + submit."""
+    try:
+        from services.n500m_db import get_db
+        from services.n500m_scanner import scan_for_signals
+        from services.n500m_executor import get_executor
+        from datetime import datetime
+        if get_db().get_mode() == 'OFF':
+            return
+        sigs = scan_for_signals(datetime.now())
+        if not sigs:
+            return
+        ex = get_executor()
+        for s in sigs:
+            ex.submit_signal(s)
+    except Exception as e:
+        logger.exception(f"[N500M Scheduler] scan failed: {e}")
+
+
+def _n500m_monitor():
+    """Every minute 09:20-15:30 IST Mon-Fri: monitor open positions for SL/TP/EOD."""
+    try:
+        from services.n500m_db import get_db
+        from services.n500m_executor import get_executor
+        from datetime import datetime
+        if get_db().get_mode() == 'OFF':
+            return
+        ex = get_executor()
+        ex.monitor_open_positions(datetime.now())
+    except Exception as e:
+        logger.exception(f"[N500M Scheduler] monitor failed: {e}")
+
+
+try:
+    scheduler.add_job(
+        _n500m_precompute,
+        'cron', day_of_week='mon-fri', hour=9, minute=10,
+        id='n500m_precompute', replace_existing=True,
+    )
+    scheduler.add_job(
+        _n500m_scan_and_execute,
+        'cron', day_of_week='mon-fri', hour='9-13', minute='*',
+        id='n500m_scan', replace_existing=True,
+    )
+    scheduler.add_job(
+        _n500m_monitor,
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*',
+        id='n500m_monitor', replace_existing=True,
+    )
+    logger.info("[N500M] Scheduled jobs registered: precompute, scan, monitor")
+except Exception as e:
+    logger.warning(f"[N500M] Could not register scheduled jobs: {e}")
+
+
+# =============================================================================
 # Main Entry Point
 # =============================================================================
 

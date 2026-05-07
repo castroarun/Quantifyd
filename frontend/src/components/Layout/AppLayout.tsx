@@ -7,7 +7,7 @@ import { apiGet } from '../../api/client';
 import type { AuthStatus } from '../../api/types';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'strangle' | 'mst' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   children: ReactNode;
   topBarRight?: ReactNode;
 }

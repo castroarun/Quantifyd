@@ -1,0 +1,194 @@
+.root {
+  max-width: 1280px;
+}
+
+.loading {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  padding: 24px 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  transition: border-color 150ms ease, background 100ms ease;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  color: var(--accent-neg);
+}
+
+.btnDanger:hover:not(:disabled) {
+  border-color: var(--accent-neg);
+}
+
+.btnActive {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+}
+
+.btnActiveLive {
+  background: var(--accent-pos, #1f9d55);
+  color: white;
+  border-color: var(--accent-pos, #1f9d55);
+}
+
+.tagOff,
+.tagPaper,
+.tagLive,
+.tagPromote {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-left: 4px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.tagOff   { background: var(--hairline); color: var(--ink-muted); }
+.tagPaper { background: rgba(31, 157, 85, 0.12); color: var(--accent-pos, #1f9d55); }
+.tagLive  { background: var(--accent-pos, #1f9d55); color: white; }
+.tagPromote { background: var(--accent-pos, #1f9d55); color: white; }
+
+.kill {
+  margin-left: 6px;
+  color: var(--accent-neg);
+  font-weight: 600;
+}
+
+.error {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  color: var(--accent-neg);
+}
+
+.toast {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  color: var(--accent-pos);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.metric {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  padding: 14px 16px;
+}
+
+.metricLabel {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+
+.metricValue {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pos { color: var(--accent-pos, #1f9d55); }
+.neg { color: var(--accent-neg, #c33); }
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.empty {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  padding: 14px 0;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.tbl thead th {
+  text-align: left;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 600;
+  color: var(--ink-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tbl tbody td {
+  padding: 8px 10px;
+  border-bottom: 0.5px solid var(--hairline);
+  color: var(--ink);
+}
+
+.tbl tbody tr:hover td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.numr {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

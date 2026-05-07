@@ -8,6 +8,7 @@ import Strategies from './pages/Strategies';
 import Orb from './pages/Orb';
 import Nas from './pages/Nas';
 import Nwv from './pages/Nwv';
+import N500m from './pages/N500m';
 import Strangle from './pages/Strangle';
 import Report from './pages/Report';
 import Holdings from './pages/Holdings';
@@ -112,6 +113,16 @@ export default function App() {
           <Protected>
             <AppLayout active="nwv">
               <Nwv />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/n500m"
+        element={
+          <Protected>
+            <AppLayout active="n500m">
+              <N500m />
             </AppLayout>
           </Protected>
         }
