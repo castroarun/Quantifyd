@@ -256,6 +256,38 @@ confirm or break this.
 
 ---
 
+## Scanner — Final State & Caveats (2026-05-15, commit fd997c7)
+
+Live F&O scanner deployed at **`http://94.136.185.54:5000/app/scanner`**
+(direct gunicorn:5000, no domain; `<Protected>` route — log in via `/app`).
+
+**Corrections applied after user review:**
+1. `clean_candle` now uses the **true opening 30-min candle** from 5-min
+   data (not a daily-bar proxy). (commit e89af5a)
+2. `volume_surge` is now **SPEC-FAITHFUL**: opening 30-min candle volume ÷
+   trailing-20 opening-candle volume baseline (ex#5/6) — **NOT full-day
+   volume**. Verified 79/80 stocks `vol_basis=open30m`; per-row
+   `vol_basis=fullday_fallback` only when a name has no intraday. (fd997c7)
+3. Off-hours `ltp`/`day_change` use the **freshest bar actually in
+   `market_data.db`**; each row carries `as_of` + payload `data_max_asof`.
+
+**BINDING CAVEAT — data staleness (root cause of the "CMP difference"):**
+`market_data.db` daily/intraday is NOT refreshed to "today" for many F&O
+names — e.g. BAJAJ-AUTO ends 2026-05-07 (DB), so the scanner honestly shows
+`as_of 2026-05-07` while TradingView shows the live price. Earlier audit:
+only ~15/79 fresh to 2026-05-15; ~64 lag (Apr–12 May). The scanner cannot
+show prices the DB does not have; off-hours it is an "as-of-last-bar" screen
+and exposes that via `as_of`. **True cure = a market_data.db refresh job on
+the VPS (all Kite downloads run VPS-side per the binding rule)** — separate
+task, not a scanner bug. Live CMP is correct only during market hours
+(kite.quote path).
+
+**Honest framing:** scanner is functional as a discretionary coiled-CPR +
+volume + trend screen; per the backtest verdict it is NOT a mechanical
+signal — no robust automated edge.
+
+---
+
 ## What I need from the examples to lock the spec
 
 As you share more, I'll be extracting these so the system is data-derived:
