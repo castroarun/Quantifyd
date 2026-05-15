@@ -96,6 +96,50 @@ def _weekly_cpr_width_pct(daily_df: pd.DataFrame, today: datetime) -> Optional[f
     return width / pivot * 100.0
 
 
+def _intraday_first_candle_clean(dm, symbol: str, ref_date: datetime,
+                                 tf_minutes: int = 30) -> Optional[str]:
+    """Clean-directional flag for the OPENING `tf_minutes` candle of the most
+    recent trading session in the 5-min data (the real spec trigger, not a
+    daily-bar proxy). Returns 'long' | 'short' | 'none' | None (no intraday)."""
+    try:
+        to_d = ref_date
+        from_d = ref_date - timedelta(days=10)
+        df5 = dm.load_data(symbol, '5minute', from_d, to_d)
+    except Exception:
+        return None
+    if df5 is None or df5.empty:
+        return None
+    df5 = df5.sort_index()
+    idx = df5.index
+    if not isinstance(idx, pd.DatetimeIndex):
+        idx = pd.to_datetime(idx)
+        df5.index = idx
+    # most recent session present in the data
+    last_day = idx[-1].normalize()
+    day_bars = df5[idx.normalize() == last_day]
+    if day_bars.empty:
+        return None
+    # opening tf_minutes window of that session
+    sess_open = day_bars.index[0]
+    win_end = sess_open + pd.Timedelta(minutes=tf_minutes)
+    first = day_bars[day_bars.index < win_end]
+    if first.empty:
+        return None
+    o = float(first['open'].iloc[0])
+    h = float(first['high'].max())
+    lo = float(first['low'].min())
+    c = float(first['close'].iloc[-1])
+    rng = h - lo
+    if rng <= 0:
+        return 'none'
+    body_frac = abs(c - o) / rng
+    if c > o and body_frac >= 0.6:
+        return 'long'
+    if c < o and body_frac >= 0.6:
+        return 'short'
+    return 'none'
+
+
 def _prev_week_range(daily_df: pd.DataFrame, today: datetime):
     week_start = today - timedelta(days=today.weekday())
     week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -166,16 +210,17 @@ class ScannerService:
             isinstance(last_date, (pd.Timestamp, datetime))
             and last_date.date() == today.date()
         )
-        clean_candle = None
-        if is_today_bar:
+        # TRUE opening 30-min candle from 5-min data (real spec trigger);
+        # fall back to the daily-bar proxy only if no intraday available.
+        clean_candle = _intraday_first_candle_clean(self._dm, symbol, today, 30)
+        if clean_candle is None and is_today_bar:
             o = float(df['open'].iloc[-1])
             h = float(df['high'].iloc[-1])
             lo = float(df['low'].iloc[-1])
             c = float(df['close'].iloc[-1])
             rng = h - lo
             if rng > 0:
-                body = abs(c - o)
-                body_frac = body / rng
+                body_frac = abs(c - o) / rng
                 if c > o and body_frac >= 0.6:
                     clean_candle = 'long'
                 elif c < o and body_frac >= 0.6:
@@ -183,10 +228,14 @@ class ScannerService:
                 else:
                     clean_candle = 'none'
 
+        # prior daily close (for a real off-hours day-change %)
+        prev_daily_close = float(close.iloc[-2]) if len(close) >= 2 else None
+
         return {
             'sma50': sma50,
             'sma200': sma200,
             'last_daily_close': last_close,
+            'prev_daily_close': prev_daily_close,
             'avg20_vol': avg20_vol,
             'last_bar_vol': last_bar_vol,
             'prev_day_high': prev_day_high,
@@ -302,7 +351,9 @@ class ScannerService:
             if ltp is None:
                 ltp = facts['last_daily_close']
             if prev_close is None:
-                prev_close = facts['last_daily_close']
+                # off-hours: show last completed session's move
+                # (last daily close vs the prior daily close), not 0
+                prev_close = facts.get('prev_daily_close') or facts['last_daily_close']
 
             day_change_pct = None
             if prev_close:
