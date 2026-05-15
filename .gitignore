@@ -7,6 +7,7 @@ __pycache__/
 research/29_short_options_signal_sweep/results/phase1_signals.csv
 research/29_short_options_signal_sweep/results/phase1_trajectories.csv
 research/29_short_options_signal_sweep/results/phase2_exits.csv
+research/39_carry_forward_75wr_quest/results/04b_pead_trades_master.csv
 
 # Throwaway VPS-probe scripts
 /tmp_*.py
@@ -151,3 +152,8 @@ research/34_nifty500_expansion/results/ccrb_signals.csv
 research/34_nifty500_expansion/results/volbo_ranking.csv
 research/34_nifty500_expansion/results/ccrb_ranking.csv
 research/34_nifty500_expansion/results/*.log
+
+# research/40 sweep outputs — heavy/live, never track (git reset would clobber a running sweep)
+research/40_volsurge_pdr_break_weekly_cpr/results/*.csv
+research/40_volsurge_pdr_break_weekly_cpr/results/*.bak
+research/40_volsurge_pdr_break_weekly_cpr/results/*.log
