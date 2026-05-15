@@ -14,6 +14,147 @@ Update it when work moves between states. When Arun asks "what's pending",
 
 ## Pending (highest-priority first)
 
+### Restart Flask (local + VPS) to activate I75WR + Pair Trading engines
+
+- **What:** Activate the new `services/intraday_75wr/` package (Configs A/B/C)
+  and `services/pair_trading/` package (Config D) — both wired into `app.py`
+  with new blueprints + APScheduler cron jobs, both default to PAPER MODE
+  (`paper_trading_mode=True, live_trading_enabled=False`).
+- **Why:** Backend changes only take effect on Flask restart. Configs sit
+  dormant until then. Single-restart picks up both engines + their cron jobs.
+- **How (post 15:30 IST Mon-Fri only — CLAUDE.md mandate):**
+  ```
+  ssh arun@94.136.185.54 'cd /home/arun/quantifyd && git reset --hard origin/main && sudo systemctl restart quantifyd'
+  ```
+  Local: stop + restart your Flask (`python app.py` or your script).
+- **After restart, verify:**
+  ```
+  curl http://127.0.0.1:5000/api/intraday75wr/state | jq
+  curl http://127.0.0.1:5000/api/pair_trading/state | jq
+  ```
+  Both must show all configs in paper mode. New sidebar entries: **I75WR**
+  (between MST and EOD) and **Pairs** (after I75WR). Hard-refresh browser.
+
+### Paper-trade observation period (2-3 weeks) before any live flip
+
+- **What:** Run all 4 configs in PAPER MODE, daily review against backtest
+  expectations.
+- **Why:** Configs A and B are cost-sensitive — A flips to negative return
+  at 0.10%/side slippage. Validate execution quality on real-time tape
+  before committing capital.
+- **How:**
+  - Each evening review `/app/intraday75wr` and `/app/pair-trading` signal
+    log + synthetic positions
+  - Reconcile against `/app/journal` — paper trades auto-import via
+    `services/journal/sync.py`
+  - Track actual slippage vs entry/exit-bar prices on each paper signal
+  - **Decision rule:** if real slippage exceeds 0.07%/side on the named
+    cohorts, default to **Config B** (cost-resilient) NOT Config A when
+    going live
+  - Log mistake-flags in journal for setups that fired but you wouldn't
+    have taken; track missed-signal cases (live setups the engine didn't
+    catch)
+
+### Live deploy plan (sequential, reduced capital first)
+
+- **What:** Sequential live-flip after paper-trade validation.
+- **Order:** Config B (most cost-resilient) → D (market-neutral, lowest DD)
+  → C (low frequency, high PF) → A (only if execution cost stays <0.05%/side)
+- **Capital ramp per config:**
+  - Week 1-2 live: Rs.2L cap
+  - Week 3-4 live: Rs.5L cap
+  - Week 5+: Rs.10L full
+  Each step contingent on prior-step real-money WR matching paper.
+- **API to flip:**
+  ```
+  curl -X POST .../api/intraday75wr/toggle-mode -d '{"config":"B","mode":"live"}'
+  curl -X POST .../api/pair_trading/toggle-mode -d '{"mode":"live"}'
+  ```
+  Both require BOTH `paper_trading_mode=False` AND `live_trading_enabled=True`
+  for real Kite orders (belt-and-suspenders verified by smoke tests).
+
+### App polish — Phase 4 visual refinements
+
+- **What:** Current I75WR + Pair Trading pages are functional but minimal.
+  Add charts/sparklines/historical views.
+- **Items:**
+  - Equity-curve chart on each page (Recharts; currently no chart at all)
+  - Per-config historical performance chart (last 30 days) on I75WR
+  - Per-pair z-score sparkline (last 60 days) on Pair Trading
+  - Trade-by-trade P&L distribution histogram
+  - Closed-trades table with link to journal entry
+  - Mobile-responsive verification on /app/intraday75wr (cards stack OK on narrow viewports?)
+- **When:** After paper-trade observation begins producing real data to chart.
+
+### Trading Journal Phase 2 (deferred from MVP sub-agent)
+
+- **What:** Items the journal MVP sub-agent explicitly deferred:
+  - Screenshot upload UI + multipart endpoint (placeholder shown today)
+  - 5-min OHLC chart playback on trade page (data is in `market_data_unified`)
+  - Kite tradebook reconciliation cron at 16:30 IST + UI page
+  - MAE/MFE backfill + slippage tracker
+  - NIFTY-regime auto-tagging at trade-open
+  - Manual trade entry form (button currently just shows alert)
+  - Strategy deep-dive page `/app/journal/strategies/:name`
+- **When:** After live trades start flowing; the journal becomes
+  load-bearing then.
+
+### Quarterly cohort refresh (mandatory — first refresh due 2026-08-07)
+
+- **What:** Re-screen Pair Trading cohort every 3 months; intraday cohorts every 6 months.
+- **Why:** Cointegration breaks on corporate actions; per-stock drift decays as macro shifts.
+- **Pair Trading (Config D) — due 2026-08-07:**
+  - Re-run `research/39_carry_forward_75wr_quest/scripts/05_pair_universe_screen.py`
+  - Replace decayed pairs (cointegration p > 0.05) with newly cointegrated
+  - Re-fit alpha/beta on rolling 12-month window
+  - Drop pairs whose hedge ratio drifts >2σ from rolling fit
+  - Update `PAIR_TRADING_DEFAULTS` in `config.py`
+- **Intraday (Configs A/B/C) — due 2026-11-07:**
+  - Re-run `research/37_intraday_75wr_quest/scripts/07_per_stock_drift.py`
+  - Verify 25 short-diamond + 15 long-MR + 30 long-TC cohorts still produce 60%+ baseline WR per stock
+  - Update cohort lists in `results/07_short_diamonds.txt`,
+    `11c_long_reversal_diamonds.txt`, `11b_trend_pullback_diamonds.txt`
+
+### Validation cases to verify on first live signal day
+
+- **What:** Two real-world setups Arun flagged live on 2026-05-07.
+  When the engines start firing in paper mode, verify these would have
+  fired on the relevant historical date:
+  - **BOSCHLTD 2026-05-06 → 07** — late-day vol spike + strong-close +
+    prev-day-high break + overnight gap-up. Should be caught by sub-agent
+    1's BTST detector (research/39).
+  - **GODREJCP 2026-05-07** — first-30-min volume breakdown + below
+    prev-day-high. NOT covered by current pattern set.
+- **Why:** If GODREJCP-style first-30-min breakdowns recur 3+ times in a
+  month and our locked engine misses them, queue **Pattern 7 — first-30-min
+  range-breakdown** as a follow-up sub-agent.
+- **Reference:** `research/39_carry_forward_75wr_quest/CARRY_FORWARD_75WR_DAILY_SWEEP_STATUS.md` section 9.
+
+### CI smoke-test gate
+
+- **What:** Add to CI / pre-commit hook:
+  ```
+  pytest tests/test_intraday75wr_*.py tests/test_pair_trading.py
+  ```
+- **Why:** 20/20 smoke tests pass today and verify the paper-mode safety
+  lock (live orders require BOTH paper=False AND live=True). A regression
+  on these tests would silently break the safety gate. CI catches it.
+
+### Deferred research follow-ups (only if locked configs underperform)
+
+- **PEAD with sector-confluence overlay** — sub-agent 4 hit structural
+  ceiling at 65-69% train WR on PEAD alone with real earnings dates.
+  Sector-confluence (broader sector also up post-earnings) might push WR
+  but is untested. Pursue ONLY if Configs A-D combined underperform paper expectations.
+- **Pattern 7 — first-30-min range-breakdown** — see GODREJCP validation
+  case above. Pursue ONLY if pattern recurs live and engine misses it.
+- **Wider pair-trading universe (Nifty 500 daily)** — current 6-pair Config D
+  works on F&O subset. Wider universe → more pairs → diversification but
+  also higher cost share + borrow constraints. Pursue ONLY if Config D
+  underperforms with the current 6 pairs.
+- **Multi-timeframe confluence** — daily breakout + weekly trend +
+  sector-leader confirmation. Untested. Low priority.
+
 ### Launch Phase F+G research sweeps on VPS
 
 - **What:** Run vol-BO (Phase F) and CCRB (Phase G) sweeps on the 218-stock
@@ -73,7 +214,64 @@ _(Move items here when work begins. Include start date.)_
 
 ## Done — recent (most recent first; trim quarterly)
 
-### 2026-05-07
+### 2026-05-15 — research/41 MidSmallcap400-MQ concentrated RS (COMPLETE)
+
+- ✅ **research/41 closed — validated edge that beats the ~20% MQ100 hurdle.**
+  Status doc: [research/41_midsmall400_mq_concentrated/MIDSMALL400_MQ_CONCENTRATED_DAILY_SWEEP_STATUS.md](research/41_midsmall400_mq_concentrated/MIDSMALL400_MQ_CONCENTRATED_DAILY_SWEEP_STATUS.md);
+  full findings: [results/RESULTS.md](research/41_midsmall400_mq_concentrated/results/RESULTS.md).
+  - **Caught + fixed a benchmark bug** that voided run #1: `NIFTY50` daily
+    only spans 2023→2026 so 8/12 backtest yrs sat in cash. Fixed →
+    `NIFTYBEES` (2005→2026). Run #1 numbers documented as void.
+  - **RS-alone:** 75/75 configs beat 20%; 12 robust ex-top-3 (34–39%).
+    Pick `mid_120d_N15` = 38.4% CAGR / −29.8% DD / Calmar 1.29.
+  - **Phase 03 (drawdown overlays):** winner **`q0.5_dd__v__REG`**
+    (quality≥0.5 + SMA200 regime, volume filter rejected) = 35.3% CAGR /
+    **−24.6% DD (index-level)** / Sharpe 1.53 / Calmar 1.44.
+  - **Phase 04 (OOS + post-tax) PASSED:** edge in both 2014-19 & 2020-26
+    halves; walk-forward lookback selection robust (33.1% vs 35.0% static);
+    **post-tax 28.9% CAGR @20% STCG** — still ~9pp over the 20% hurdle.
+  - **Live deliverable:** [LIVE_TOP15_WITH_FUNDAMENTALS.md](research/41_midsmall400_mq_concentrated/results/LIVE_TOP15_WITH_FUNDAMENTALS.md)
+    — 15 picks + web-sourced ROE/D-E/PAT/ROCE; 11/15 fundamentally Strong.
+  - Residual: LTCG not netted; PIT universe is liquidity proxy; quality
+    leg is price-path not fundamentals; re-run `05_live_top15.py` on VPS
+    for a current-dated list. Real-capital use is a user decision (not
+    auto-deployed; no live wiring added).
+
+### 2026-05-07 (later — research closure + live engines + UI)
+
+- ✅ **research/37 + 38 + 39 closed; 4 walk-forward-validated configs locked.**
+  Final spec: [research/37_intraday_75wr_quest/FINAL_LIVE_SETUP.md](research/37_intraday_75wr_quest/FINAL_LIVE_SETUP.md).
+  - Config A: research/37 3-system at TP 0.5/SL 1.5 → 78% WR / PF 1.28 / DD 4.5%
+  - Config B: same signals at TP 2.0/SL 1.5 → 53% WR / PF 1.26 / DD 4.5% (cost-resilient)
+  - Config C: research/38 multi-bar SHORT bounce at TP 1.5/SL 1.0 → 60% WR / PF 1.69 / DD 3.1%
+  - Config D: research/39 6-pair cointegrated pair trading → **78.7% WR / PF 3.57 / DD 0.06%**
+  - Total: ~1,895 trades/year combined. The user's original "75% WR + favorable RR + meaningful frequency" target is achieved by Config D (the only mathematically-distinct regime — pair-trading mean-reversion).
+- ✅ **Phase 3 Intraday A/B/C live engine built** — `services/intraday_75wr/` package
+  (engine_base, config_a/b/c, signal_lib, nifty_regime, db, api). Flask blueprint at
+  `/api/intraday75wr/*` (8 endpoints). 7 cron jobs in `app.py`. SQLite at
+  `backtest_data/intraday_75wr.db` (5 tables). 10/10 smoke tests pass — verifies
+  paper-mode safety lock (real Kite orders require BOTH `paper=False AND live=True`).
+- ✅ **Phase 3 Pair Trading Config D paper adapter built** — `services/pair_trading/`
+  package (cohort, signal, regime, pair_engine, db, api). Flask blueprint at
+  `/api/pair_trading/*` (10 endpoints). Daily 16:00 IST cron job. SQLite at
+  `backtest_data/pair_trading.db` (7 tables). 10/10 smoke tests pass.
+- ✅ **Phase 4a — Intraday75WR React page** at `/app/intraday75wr` — 3-config cards
+  with Off/Paper/Live toggle, day P&L, open positions, recent signals, kill switch.
+  Sidebar entry "I75WR" between MST and EOD. Default state: PAPER.
+- ✅ **Phase 4b — PairTrading React page** at `/app/pair-trading` — single-toggle
+  dashboard, 4-card metrics row, 6-pair grid with z-score gauge per pair, open-positions
+  + recent-signals tables, manual scan + kill switch. Sidebar entry "Pairs" right
+  after I75WR. Default state: PAPER.
+- ✅ **Trading Journal MVP** built earlier this session (sub-agent) — 8-table SQLite
+  at `backtest_data/journal.db`, 13-endpoint API at `/api/journal/*`, 4 React pages
+  (Calendar, Day, Trade, Insights), seeded with 21 trades from existing strategy DBs.
+- ✅ **future_plans.json updated** with both the locked 4-config spec and the
+  research/39 carry-forward-75wr-quest WINNER status.
+- ✅ **Frontend bundle rebuilt** twice — current hash `index-CSbX8Z55.js` includes
+  Journal + I75WR + PairTrading pages. Hard-refresh required on `/app/*` tabs.
+
+### 2026-05-07 (earlier — VPS data infrastructure + N500M)
+
 - ✅ **VPS-canonical data infrastructure** — scp'd 4.85 GB market_data.db
   from laptop to VPS (sha256 byte-identical). All ~17 production code
   references resolve correctly. Fixed hardcoded laptop path in
