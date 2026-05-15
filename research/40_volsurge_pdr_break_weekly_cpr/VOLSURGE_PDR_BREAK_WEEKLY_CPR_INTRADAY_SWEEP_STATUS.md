@@ -1,9 +1,10 @@
 # Volume-Surge + Prev-Day-Range Break, Gated by Narrow Weekly CPR — System Spec
 
-STATUS: **SPEC LOCKED — RUNNER BUILT & SMOKE-VALIDATED — AWAITING VPS LAUNCH APPROVAL**
-(spec locked from 10 examples 2026-05-15; smoke run 163/163 signals, 0 spec
-violations; full sweep NOT yet launched — needs user go-ahead for VPS run.
-More examples still welcome — append to log; signal_lib re-validates them.)
+STATUS: **RUNNING — FULL SWEEP LIVE ON VPS** (launched 2026-05-15 ~18:5x IST,
+commit e3eee73, pid on VPS, log `/tmp/volsurge.log`). Spec locked from 10
+examples; smoke 163/163 signals 0 violations; resumable (skip-set picked up
+the 163 smoke signals). Scanner deployed (Flask restart for /api/scanner
+pending — see event log). More examples still welcome — append to log.
 
 ---
 
@@ -172,6 +173,12 @@ Runs on VPS (binding); resumable; incremental CSV; resample 5m→TF in-runner.
 | 2026-05-15 ~16:48 IST | Example #4 added: KALYANKJIL 11-May SHORT | Direction param RESOLVED → symmetric, trend-aligned |
 | 2026-05-15 ~16:50 IST | Ex#5 VOLTAS 13-Apr (deliberate skip) | Locked strict AND-gate / precision-over-recall principle |
 | 2026-05-15 ~16:51 IST | Ex#6 VOLTAS 27-Apr — FIRST TRUE FAILURE | Weak volume; volume-surge gate correctly rejects it → filter validated |
+| 2026-05-15 ~17:0x IST | Ex#7–10 added (TMPV ×3, more) | Locked: trigger=any-day-in-week; range must escape PREV-WEEK range; clean candle mandatory; ex#9 full-confluence failure → probabilistic edge |
+| 2026-05-15 ~17:1x IST | Data audit done (local + VPS) | VPS 5-min 79/81 F&O, 0 stale, →2026-05-15. Sufficient. Options not backtestable. |
+| 2026-05-15 ~17:3x IST | Spec LOCKED; runner + scanner built by 2 bg agents | Smoke 163/163 signals, 0 spec violations. Frontend builds clean. |
+| 2026-05-15 ~18:2x IST | Pushed (b1e6b43); autoMode.allow added to unblock push-to-main | Commit scoped to scanner+research/40; unrelated in-flight work excluded |
+| 2026-05-15 ~18:3x IST | VPS deploy hiccups fixed | (a) VPS python3 lacks numpy → use venv/bin/python; (b) runner sys.path missing repo root → fixed e3eee73; (c) reset w/o fetch hit stale ref → fetch+reset |
+| 2026-05-15 ~18:5x IST | **FULL SWEEP LAUNCHED on VPS** (e3eee73) | pid live, `/tmp/volsurge.log`: `universe=79 TFs=[5,10,15,30,60]min already-logged=163` (resume working) |
 
 ### ★ Core conclusion after ex#9 (LOCKED principle)
 
@@ -261,16 +268,17 @@ already logged.
 ### Launch the full sweep on the VPS (canonical host — binding rule)
 
 ```bash
-ssh arun@94.136.185.54 'cd /home/arun/quantifyd && nohup python3 \
+# MUST use venv/bin/python — VPS system python3 has NO numpy/pandas.
+ssh arun@94.136.185.54 'cd /home/arun/quantifyd && nohup venv/bin/python \
   research/40_volsurge_pdr_break_weekly_cpr/scripts/run_volsurge_sweep.py \
   > /tmp/volsurge.log 2>&1 &'
 ```
 
 (First `git push` from laptop, then on VPS
-`cd /home/arun/quantifyd && git reset --hard origin/main` to pull the new
-`research/40` scripts. The DB path is relative — `Path(__file__).parents[3]
-/ backtest_data / market_data.db` — so it reads the VPS canonical
-`market_data.db` unchanged.)
+`cd /home/arun/quantifyd && git fetch origin && git reset --hard origin/main`
+— the `git fetch` is REQUIRED, otherwise reset lands on a stale cached ref.
+The DB path is relative — `Path(__file__).parents[3] / backtest_data /
+market_data.db` — so it reads the VPS canonical `market_data.db` unchanged.)
 
 ### Monitor progress
 
@@ -287,7 +295,7 @@ line the runner refreshes every 5 stocks (state / stocks-done / signals).
 
 ```bash
 # Identical command — it skips everything already in volsurge_signals.csv:
-ssh arun@94.136.185.54 'cd /home/arun/quantifyd && nohup python3 \
+ssh arun@94.136.185.54 'cd /home/arun/quantifyd && nohup venv/bin/python \
   research/40_volsurge_pdr_break_weekly_cpr/scripts/run_volsurge_sweep.py \
   > /tmp/volsurge.log 2>&1 &'
 ```
@@ -295,7 +303,7 @@ ssh arun@94.136.185.54 'cd /home/arun/quantifyd && nohup python3 \
 ### Aggregate-only (signal-gen finished but ranking/RESULTS.md crashed)
 
 ```bash
-ssh arun@94.136.185.54 'cd /home/arun/quantifyd && python3 \
+ssh arun@94.136.185.54 'cd /home/arun/quantifyd && venv/bin/python \
   research/40_volsurge_pdr_break_weekly_cpr/scripts/run_volsurge_sweep.py \
   --aggregate-only'
 ```
