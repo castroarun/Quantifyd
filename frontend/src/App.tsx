@@ -17,6 +17,9 @@ import OptionsData from './pages/OptionsData';
 import FuturePlans from './pages/FuturePlans';
 import EodBreakout from './pages/EodBreakout';
 import Mst from './pages/Mst';
+import Intraday75wr from './pages/Intraday75wr';
+import PairTrading from './pages/PairTrading';
+import Scanner from './pages/Scanner';
 import Journal from './pages/Journal';
 import JournalDay from './pages/JournalDay';
 import JournalTrade from './pages/JournalTrade';
@@ -143,6 +146,36 @@ export default function App() {
           <Protected>
             <AppLayout active="mst">
               <Mst />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/intraday75wr"
+        element={
+          <Protected>
+            <AppLayout active="intraday75wr">
+              <Intraday75wr />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/pair-trading"
+        element={
+          <Protected>
+            <AppLayout active="pair-trading">
+              <PairTrading />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/scanner"
+        element={
+          <Protected>
+            <AppLayout active="scanner">
+              <Scanner />
             </AppLayout>
           </Protected>
         }

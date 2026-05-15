@@ -6692,6 +6692,88 @@ def api_orb_state():
         return jsonify({'error': str(e)}), 500
 
 
+# =============================================================================
+# F&O Live Scanner — React SPA at /app/scanner, JSON at /api/scanner/*
+# =============================================================================
+
+# Module-global latest snapshot, refreshed by the APScheduler poll job during
+# market hours so the endpoint stays fast. {cpr_threshold: snapshot_dict}
+_scanner_cache = {'snapshot': None, 'ts': 0.0, 'cpr': None}
+
+
+def _scanner_compute(cpr_threshold):
+    """Run a full scan; tolerate failures so the endpoint never 500s blank."""
+    from services.scanner_service import get_scanner_service
+    return get_scanner_service().compute_all(cpr_threshold_pct=cpr_threshold)
+
+
+def _scanner_poll():
+    """APScheduler job: recompute the default-threshold snapshot every minute
+    during market hours so /api/scanner/state is instant. No-op off-hours."""
+    import time as _t
+    from services.scanner_service import _is_market_open
+    if not _is_market_open():
+        return
+    try:
+        snap = _scanner_compute(0.5)
+        _scanner_cache['snapshot'] = snap
+        _scanner_cache['ts'] = _t.time()
+        _scanner_cache['cpr'] = 0.5
+        logger.debug("[Scanner] poll refreshed %d rows", snap.get('count', 0))
+    except Exception as e:
+        logger.warning(f"[Scanner] poll failed: {e}")
+
+
+# Register the poll job now that _scanner_poll is defined. add_job needs the
+# real callable at registration time; the cron only fires once the module is
+# fully loaded and the live session is open (job self-guards off-hours).
+try:
+    scheduler.add_job(
+        _scanner_poll,
+        'cron', day_of_week='mon-fri', hour='9-15', minute='*',
+        id='scanner_poll', replace_existing=True,
+    )
+    logger.info("F&O Scanner poll job registered: every 1 min, 09:15-15:30 IST")
+except Exception as e:
+    logger.warning(f"Could not register Scanner poll job: {e}")
+
+
+@app.route('/scanner')
+def scanner_legacy_alias():
+    """Legacy alias — scanner is a React SPA page at /app/scanner."""
+    return redirect('/app/scanner', code=302)
+
+
+@app.route('/api/scanner/state')
+def api_scanner_state():
+    """F&O scanner snapshot. ?cpr=<pct> (default 0.5). 20s cache."""
+    import time as _t
+    try:
+        cpr = float(request.args.get('cpr', 0.5))
+    except (TypeError, ValueError):
+        cpr = 0.5
+    cpr = max(0.1, min(2.0, cpr))
+
+    now = _t.time()
+    cached = _scanner_cache.get('snapshot')
+    if (
+        cached is not None
+        and _scanner_cache.get('cpr') == cpr
+        and (now - _scanner_cache.get('ts', 0)) < 20
+    ):
+        return jsonify(cached)
+
+    try:
+        snap = _scanner_compute(cpr)
+        _scanner_cache['snapshot'] = snap
+        _scanner_cache['ts'] = now
+        _scanner_cache['cpr'] = cpr
+        return jsonify(snap)
+    except Exception as e:
+        logger.error(f"Scanner state error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/orb/initialize', methods=['POST'])
 def api_orb_initialize():
     """Manually trigger day initialization — uses Kite API for prev day HLC + CPR.

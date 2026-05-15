@@ -1,0 +1,352 @@
+.root {
+  padding: 32px 40px 64px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.error {
+  background: var(--surface-error, #fef2f2);
+  color: var(--ink-error, #b91c1c);
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: var(--text-sm);
+}
+
+.bannerInfo {
+  background: #eff7fd;
+  border: 1px solid #a8d4f0;
+  color: #0c4a6e;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.bannerInfo strong { font-weight: 600; }
+
+.eyebrow {
+  font-family: var(--font-serif, 'Lora', Georgia, serif);
+  font-style: italic;
+  color: #c9a23a;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border: 1px solid var(--rule, #e5e5e2);
+  background: var(--surface-2, #fafaf9);
+  color: var(--ink, #2a2a28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn:hover:not(:disabled) { background: #f0efe9; }
+
+.btnActive {
+  background: #fef9e6;
+  border-color: #c9a23a;
+  color: #6b5212;
+  font-weight: 500;
+}
+
+.btnActiveLive {
+  background: #d6f0df;
+  border-color: #4a9d6a;
+  color: #0a5224;
+  font-weight: 600;
+}
+
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.metricCard {
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--rule, #e5e5e2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metricLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted, #6b6b66);
+}
+
+.metricValue {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--ink-emphasis, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+}
+
+.metricHint {
+  font-size: 11px;
+  color: var(--ink-muted, #6b6b66);
+  margin-top: 2px;
+}
+
+.pos { color: #0a8a3a; }
+.neg { color: #b91c1c; }
+.mute { color: var(--ink-muted, #6b6b66); }
+
+.sectionTitle {
+  font-family: var(--font-serif, 'Lora', Georgia, serif);
+  font-style: italic;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--ink-emphasis, #1a1a1a);
+  margin: 0 0 14px;
+}
+
+.pairsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+@media (min-width: 760px) {
+  .pairsGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1100px) {
+  .pairsGrid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.pairCard {
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--rule, #e5e5e2);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pairCardOpen {
+  border-color: #c9a23a;
+  background: #fefcf3;
+}
+
+.pairHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pairName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-emphasis, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.pairSub {
+  font-size: 11px;
+  color: var(--ink-muted, #6b6b66);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.statusChip {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--chip-bg, #f3f3ef);
+  color: var(--ink, #2a2a28);
+  white-space: nowrap;
+}
+
+.statusChipOpen {
+  background: #fef9e6;
+  color: #a17400;
+  border: 1px solid #f3e08a;
+}
+
+.statusChipFlat { background: #f0f0eb; color: #6b6b66; }
+
+/* Z-score gauge — −5 ........... 0 ........... +5
+ * Entry zones at ±2.0 (yellow), stop zones at ±4.0 (red).
+ */
+.zGauge {
+  position: relative;
+  height: 36px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    #fee5e5 0%,
+    #fef0e0 20%,
+    #fcfcf8 40%,
+    #fcfcf8 60%,
+    #fef0e0 80%,
+    #fee5e5 100%
+  );
+  border: 1px solid var(--rule, #e5e5e2);
+}
+
+.zGaugeMid {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0,0,0,0.2);
+}
+
+.zGaugeEntry {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(193,141,30,0.6);
+}
+
+.zGaugeMarker {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  border: 2px solid #fff;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+}
+
+.zGaugeMarkerOpen {
+  background: #c9a23a;
+  box-shadow: 0 0 0 2px rgba(201,162,58,0.3);
+}
+
+.zGaugeLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--ink-muted, #6b6b66);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pairMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  font-size: 12px;
+  border-top: 1px solid var(--rule-soft, #efefea);
+  padding-top: 10px;
+}
+
+.pairMetricLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted, #6b6b66);
+}
+
+.pairMetricValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-emphasis, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+}
+
+.tinyTable {
+  font-size: 12px;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.tinyTable th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink-muted, #6b6b66);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rule, #e5e5e2);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.tinyTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rule-soft, #efefea);
+  font-variant-numeric: tabular-nums;
+}
+
+.tinyTable tr:last-child td { border-bottom: 0; }
+
+.empty {
+  font-size: 13px;
+  color: var(--ink-muted, #6b6b66);
+  font-style: italic;
+  padding: 14px 0;
+  text-align: center;
+}
+
+.tableSection {
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--rule, #e5e5e2);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.killBtn {
+  font-size: 11px;
+  padding: 5px 12px;
+  border: 1px solid #f3c2c2;
+  background: #fef5f5;
+  color: #b91c1c;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.killBtn:hover { background: #fee5e5; }
+
+.scanBtn {
+  font-size: 11px;
+  padding: 5px 12px;
+  border: 1px solid var(--rule, #e5e5e2);
+  background: var(--surface-2, #fafaf9);
+  color: var(--ink, #2a2a28);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.scanBtn:hover { background: #f0efe9; }

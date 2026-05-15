@@ -12,7 +12,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -145,6 +145,27 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLayers />}
             label="MST"
             active={active === 'mst'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/intraday75wr"
+            icon={<IconLayers />}
+            label="I75WR"
+            active={active === 'intraday75wr'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/pair-trading"
+            icon={<IconLayers />}
+            label="Pairs"
+            active={active === 'pair-trading'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/scanner"
+            icon={<IconLayers />}
+            label="F&O Scanner"
+            active={active === 'scanner'}
             collapsed={collapsed}
           />
           <NavItem

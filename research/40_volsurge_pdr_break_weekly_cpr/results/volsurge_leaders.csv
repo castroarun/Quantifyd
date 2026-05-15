@@ -1,0 +1,9 @@
+symbol,best_timeframe,best_variant,best_direction,best_exit_policy,best_n,best_mean_pct,best_wr,best_sharpe,best_payoff,best_expectancy_pct,n_high_quality_cells,n_mid_quality_cells,long_best_sharpe,long_best_n,short_best_sharpe,short_best_n,tf_5min_best_sharpe,tf_10min_best_sharpe,tf_15min_best_sharpe,tf_30min_best_sharpe,tf_60min_best_sharpe
+ICICIBANK,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,long,T_R_TARGET_1.0R,10,1.2649000000000001,90.0,1.01496,13.358,1.2649,11,11,1.01496,10,0.0,0,0.0,0.0,0.0,1.01496,0.0
+SBIN,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,long,T_NO,12,0.4376,83.33,0.23468,0.412,0.4376,0,0,0.23468,12,0.0,0,0.0,0.0,0.0,0.23468,0.0
+RELIANCE,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,long,T_R_TARGET_2.0R,14,0.23739999999999997,57.14,0.11993,1.315,0.2374,0,0,0.11993,14,0.0,0,0.0,0.0,0.0,0.11993,0.0
+KOTAKBANK,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,long,T_R_TARGET_1.0R,10,0.3209,50.0,0.11765,1.773,0.3209,0,0,0.11765,10,0.0,0,0.0,0.0,0.0,0.11765,0.0
+HINDUNILVR,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,short,T_STEP_TRAIL,10,0.15330000000000002,40.0,0.10561,3.599,0.1533,0,0,0.03399,13,0.10561,10,0.0,0.0,0.0,0.10561,0.0
+HDFCBANK,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,long,T_R_TARGET_1.0R,10,0.0961,70.0,0.09807,0.594,0.0961,0,0,0.09807,10,0.0,0,0.0,0.0,0.0,0.09807,0.0
+INFY,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,long,T_ATR_SL_0.3,12,-0.6193,0.0,-0.0,0.0,-0.6193,0,0,-0.0,12,0.0,0,0.0,0.0,0.0,-0.0,0.0
+ITC,30min,30min_sma50_cpr1.00_vm2.0_loose_croff_sameday,long,T_ATR_SL_0.3,15,-0.5277999999999999,0.0,-0.0,0.0,-0.5278,0,0,-0.0,15,0.0,0,0.0,0.0,0.0,-0.0,0.0

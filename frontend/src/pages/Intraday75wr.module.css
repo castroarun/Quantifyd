@@ -1,0 +1,242 @@
+.root {
+  padding: 32px 40px 64px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.error {
+  background: var(--surface-error, #fef2f2);
+  color: var(--ink-error, #b91c1c);
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: var(--text-sm);
+}
+
+.configGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 980px) {
+  .configGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.configCard {
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--rule, #e5e5e2);
+  border-radius: 12px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.configHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.configTitle {
+  font-family: var(--font-serif, 'Lora', Georgia, serif);
+  font-style: italic;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--ink-emphasis, #1a1a1a);
+  margin: 0;
+}
+
+.configSub {
+  font-size: 13px;
+  color: var(--ink-muted, #6b6b66);
+  margin-top: 2px;
+}
+
+.modeBadge {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--chip-bg, #f3f3ef);
+  color: var(--ink, #2a2a28);
+  white-space: nowrap;
+}
+
+.modeBadgeOff {
+  background: #f5f5f2;
+  color: #888;
+}
+
+.modeBadgePaper {
+  background: #fef9e6;
+  color: #a17400;
+  border: 1px solid #f3e08a;
+}
+
+.modeBadgeLive {
+  background: #e8f7ed;
+  color: #0e6b2f;
+  border: 1px solid #a7d8b9;
+}
+
+.toggleRow {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid var(--rule, #e5e5e2);
+  background: var(--surface-2, #fafaf9);
+  color: var(--ink, #2a2a28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:hover:not(:disabled) {
+  background: #f0efe9;
+}
+
+.btnActive {
+  background: #fef9e6;
+  border-color: #c9a23a;
+  color: #6b5212;
+  font-weight: 500;
+}
+
+.btnActiveLive {
+  background: #d6f0df;
+  border-color: #4a9d6a;
+  color: #0a5224;
+  font-weight: 600;
+}
+
+.metricRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  border-top: 1px solid var(--rule-soft, #efefea);
+  padding-top: 14px;
+}
+
+.metricCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metricLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted, #6b6b66);
+}
+
+.metricValue {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink-emphasis, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+}
+
+.pos { color: #0a8a3a; }
+.neg { color: #b91c1c; }
+.mute { color: var(--ink-muted, #6b6b66); }
+
+.tinyTable {
+  font-size: 12px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tinyTable th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink-muted, #6b6b66);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule, #e5e5e2);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.tinyTable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule-soft, #efefea);
+  font-variant-numeric: tabular-nums;
+}
+
+.tinyTable tr:last-child td { border-bottom: 0; }
+
+.empty {
+  font-size: 13px;
+  color: var(--ink-muted, #6b6b66);
+  font-style: italic;
+  padding: 14px 0;
+  text-align: center;
+}
+
+.killRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid var(--rule-soft, #efefea);
+  padding-top: 12px;
+  font-size: 12px;
+  color: var(--ink-muted, #6b6b66);
+}
+
+.killBtn {
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 1px solid #f3c2c2;
+  background: #fef5f5;
+  color: #b91c1c;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.killBtn:hover { background: #fee5e5; }
+
+.bannerInfo {
+  background: #eff7fd;
+  border: 1px solid #a8d4f0;
+  color: #0c4a6e;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.bannerInfo strong { font-weight: 600; }
+
+.eyebrow {
+  font-family: var(--font-serif, 'Lora', Georgia, serif);
+  font-style: italic;
+  color: #c9a23a;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
