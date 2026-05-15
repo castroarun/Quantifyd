@@ -51,7 +51,9 @@ logging.disable(logging.WARNING)
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent  # research/40_volsurge_pdr_break_weekly_cpr
+REPO_ROOT = HERE.parents[2]  # repo root (so `import services...` works as a script)
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(REPO_ROOT))
 
 from signal_lib import (  # noqa: E402
     CLEAN_PRESETS,
