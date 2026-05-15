@@ -10072,6 +10072,50 @@ except Exception as e:
 
 
 # =============================================================================
+# NAS Pipeline Watchdog + EOD Report (paper-shadow safety, added 2026-05-15)
+# =============================================================================
+# Watchdog: every 3 min during market hours, detects a frozen NasTicker
+#   pipeline (the MST-incident failure mode) and emails an alert.
+# EOD report: 15:35 IST each trading day, emails a visual per-system paper
+#   performance + execution-issues summary.
+# Both use the premarket SMTP path (ORB_DEFAULTS). The job functions
+# self-gate on trading-day; the cron is mon-fri.
+try:
+    def _nas_watchdog_tick():
+        try:
+            from services.nas_watchdog import check_pipeline
+            check_pipeline()
+        except Exception as _e:
+            logger.error(f"[NAS-WD] tick error: {_e}")
+
+    def _nas_eod_report_job():
+        try:
+            from services.nas_eod_report import send_eod_report
+            from services.trading_calendar import get_default_calendar
+            from datetime import date as _d
+            if not get_default_calendar().is_trading_day(_d.today()):
+                logger.info("[NAS-EOD] skipped — not a trading day")
+                return
+            send_eod_report()
+        except Exception as _e:
+            logger.error(f"[NAS-EOD] job error: {_e}")
+
+    scheduler.add_job(
+        _nas_watchdog_tick, 'cron',
+        day_of_week='mon-fri', hour='9-15', minute='*/3',
+        id='nas_pipeline_watchdog', replace_existing=True,
+    )
+    scheduler.add_job(
+        _nas_eod_report_job, 'cron',
+        day_of_week='mon-fri', hour=15, minute=35,
+        id='nas_eod_report', replace_existing=True,
+    )
+    logger.info("[NAS] Watchdog (3-min, 9-15) + EOD report (15:35) scheduled")
+except Exception as e:
+    logger.warning(f"[NAS] Could not register watchdog/EOD jobs: {e}")
+
+
+# =============================================================================
 # Pair-Trading (Config D) — daily EOD scan at 16:00 IST (post F&O close)
 # =============================================================================
 # Single cron job: evaluate all 6 pairs once per day, place entries/exits per

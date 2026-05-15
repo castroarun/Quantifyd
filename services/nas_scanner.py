@@ -22,11 +22,37 @@ from scipy.stats import norm
 logger = logging.getLogger(__name__)
 
 # Constants
-LOT_SIZE = 75               # Nifty lot size
+# NIFTY F&O lot size. Corrected 2026-05-15 from stale 75 -> 65 (verified via
+# kite.instruments during the MST work). Kept STATIC (not resolved at import)
+# deliberately: a Kite call at module-import time would add a multi-second
+# boot dependency and a failure mode on a pipeline whose fragility already
+# caused one incident. kite_nifty_lot_size() below lets the watchdog / EOD
+# report ALERT if the exchange value ever diverges — detection, not silent
+# mutation.
+LOT_SIZE = 65               # Nifty lot size (NSE current, 2026-05)
 STRIKE_STEP = 50             # Nifty options strike gap
 RISK_FREE_RATE = 0.065       # India risk-free rate
 TRADING_DAYS_PER_YEAR = 252
-BARS_PER_DAY_5MIN = 75       # 375 min / 5 min = 75 bars
+BARS_PER_DAY_5MIN = 75       # 375 min / 5 min = 75 bars (NOT lot size — do not change)
+
+
+def kite_nifty_lot_size(default: int = LOT_SIZE):
+    """Return the exchange-reported NIFTY option lot size, or `default` on any
+    failure. Used by the watchdog / EOD report to flag a divergence from the
+    LOT_SIZE constant as an execution issue. Never raises."""
+    try:
+        from services.kite_service import get_kite
+        kite = get_kite()
+        inst = kite.instruments('NFO')
+        sizes = {
+            i['lot_size'] for i in inst
+            if i.get('name') == 'NIFTY' and i.get('instrument_type') in ('CE', 'PE')
+        }
+        if len(sizes) == 1:
+            return int(next(iter(sizes)))
+    except Exception:
+        pass
+    return default
 
 
 # ─── Black-Scholes ──────────────────────────────────────────
