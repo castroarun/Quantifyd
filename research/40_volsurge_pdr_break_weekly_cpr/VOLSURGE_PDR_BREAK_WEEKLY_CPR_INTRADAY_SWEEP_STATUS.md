@@ -1,10 +1,11 @@
 # Volume-Surge + Prev-Day-Range Break, Gated by Narrow Weekly CPR — System Spec
 
-STATUS: **RUNNING — FULL SWEEP LIVE ON VPS** (launched 2026-05-15 ~18:5x IST,
-commit e3eee73, pid on VPS, log `/tmp/volsurge.log`). Spec locked from 10
-examples; smoke 163/163 signals 0 violations; resumable (skip-set picked up
-the 163 smoke signals). Scanner deployed (Flask restart for /api/scanner
-pending — see event log). More examples still welcome — append to log.
+STATUS: **RUN #2 RUNNING & VERIFIED PERSISTING (d3b85f7)** — 6,517 rows after
+6/79 stocks (run #1 failed: git-reset clobbered the tracked live CSV → 0 rows;
+fixed by gitignoring sweep outputs). Spec locked from 10 examples; scanner
+deployed & /api/scanner returns 200. **DO NOT `git reset --hard` on the VPS
+while a sweep is live** (RESULTS.md still tracked). No edge findings yet —
+signal-gen phase; metrics computed only at aggregation.
 
 ---
 
@@ -179,6 +180,10 @@ Runs on VPS (binding); resumable; incremental CSV; resample 5m→TF in-runner.
 | 2026-05-15 ~18:2x IST | Pushed (b1e6b43); autoMode.allow added to unblock push-to-main | Commit scoped to scanner+research/40; unrelated in-flight work excluded |
 | 2026-05-15 ~18:3x IST | VPS deploy hiccups fixed | (a) VPS python3 lacks numpy → use venv/bin/python; (b) runner sys.path missing repo root → fixed e3eee73; (c) reset w/o fetch hit stale ref → fetch+reset |
 | 2026-05-15 ~18:5x IST | **FULL SWEEP LAUNCHED on VPS** (e3eee73) | pid live, `/tmp/volsurge.log`: `universe=79 TFs=[5,10,15,30,60]min already-logged=163` (resume working) |
+| 2026-05-15 ~19:5x IST | **RUN #1 FAILED — zero signals persisted (47/79 stocks)** | ROOT CAUSE: `volsurge_signals.csv` was git-TRACKED (committed smoke). Each later deploy `git reset --hard` rewrote it on disk → running process kept appending to the orphaned inode; path showed frozen 164-line git copy. Log advanced but no data landed. Killed at [47/79]. NO data recoverable (orphan inode freed on kill). |
+| 2026-05-15 ~20:0x IST | FIX: untrack + gitignore sweep CSVs (d3b85f7) | `results/*.csv|*.bak|*.log` gitignored + `git rm --cached`. `git reset` can no longer clobber a live run. Stale smoke CSVs purged on VPS. |
+| 2026-05-15 ~20:1x IST | **RUN #2 relaunched clean (d3b85f7)** | Single process, fresh (no false resume). Verifying file grows across a stock boundary before trusting it. |
+| 2026-05-15 ~20:2x IST | **RUN #2 VERIFIED PERSISTING ✅** | After 6/79 stocks: `volsurge_signals.csv` = 6,517 rows and growing (run #1 was 0 after 47). Bug fixed, data landing on disk. Signal-gen in progress, ETA ~50-90 min then aggregation. |
 
 ### ★ Core conclusion after ex#9 (LOCKED principle)
 
