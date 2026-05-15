@@ -884,7 +884,10 @@ STRANGLE_VARIANTS_BY_ID = {v['id']: v for v in STRANGLE_VARIANTS}
 # Research: research/35_*, research/36_*
 MST_DEFAULTS = {
     # System control (paper-first; flip to live after shadow validation)
-    "enabled": True,                    # Master switch (off|paper|live in UI maps to enabled+paper_trading_mode)
+    # DISABLED 2026-05-15 after incident: live-tick pipeline froze May 7 14:45,
+    # spurious credit_too_low rolls, REJECTED real-leg closes, mode reverted to
+    # paper on restart. Do NOT re-enable until root causes fixed + reconciled.
+    "enabled": False,                   # Master switch (off|paper|live in UI maps to enabled+paper_trading_mode)
     "paper_trading_mode": True,         # When enabled, true=paper, false=live
     "live_trading_enabled": False,      # Hard guard — also required for orders to actually go to Kite
 
@@ -945,20 +948,35 @@ MST_DEFAULTS = {
 
 
 # =============================================================================
-# Intraday 75% WR Quest — three-system live trading engine
+# Intraday 75% WR Quest — THREE Configs (A / B / C)
 # =============================================================================
-# Source: research/37_intraday_75wr_quest/INTRADAY_75WR_5MIN_SWEEP_RESULTS.md
+# Source: research/37_intraday_75wr_quest/FINAL_LIVE_SETUP.md
 #
-# All three default to PAPER MODE (Off / Paper / Live three-state, mirroring
-# ORB_DEFAULTS). Same shape of dict so a generic engine_base can read them.
+# CONFIG LAYOUT (locked 2026-05-06):
+#   Config A — "3-System Original":  A1 Diamond Short + A2 Long-MR + A3 Long-TC,
+#              ALL with TP 0.5% / SL 1.5% / EOD 15:25
+#   Config B — "3-System Cost-Resilient": same A1/A2/A3 signals,
+#              wider TP 2.0% / SL 1.5% / EOD 15:25
+#   Config C — "Multi-Bar SHORT Bounce": research/38 walk-forward winner.
+#              4 consecutive bearish 5-min bars + RSI<=55 + below VWAP +
+#              NIFTY < own VWAP, TP 1.5% / SL 1.0% / EOD 15:25
+#
+# All THREE default to PAPER MODE (Off / Paper / Live three-state, mirroring
+# ORB_DEFAULTS). Same shape of dict so engine_base can read them.
 #
 #   off:   enabled=False
 #   paper: enabled=True, paper_trading_mode=True,  live_trading_enabled=False
 #   live:  enabled=True, paper_trading_mode=False, live_trading_enabled=True
 #
 # Position sizing is FIXED-Rs risk (risk_per_trade_rs), capped by
-# max_notional_per_trade. Concurrency is enforced ACROSS ALL THREE SYSTEMS
-# combined, not per-system (see intraday_75wr/engine_base.py).
+# max_notional_per_trade. Concurrency is enforced ACROSS ALL THREE CONFIGS
+# combined (max 5 total open positions), see engine_base.py.
+
+# Cohort file paths (stocks lists computed by research/37 + research/38).
+_RESEARCH_37 = BASE_DIR / 'research' / '37_intraday_75wr_quest' / 'results'
+INTRADAY_75WR_COHORT_SHORT = str(_RESEARCH_37 / '07_short_diamonds.txt')
+INTRADAY_75WR_COHORT_LONG_MR = str(_RESEARCH_37 / '11c_long_reversal_diamonds.txt')
+INTRADAY_75WR_COHORT_LONG_TC = str(_RESEARCH_37 / '11b_trend_pullback_diamonds.txt')
 
 # --- System 1: Diamond Short (25 stocks, 09:45 IST scan) ---------------------
 
@@ -1111,7 +1129,298 @@ LONG_TC_DEFAULTS = {
 }
 
 
-# Combined cap across all three systems (must equal each system's max_concurrent
-# unless we want per-system to be lower; engine_base enforces the COMBINED cap).
+# Combined cap across all three configs (engine_base enforces this across A+B+C).
 INTRADAY_75WR_COMBINED_MAX_CONCURRENT = 5
- 
+
+
+# ============================================================================
+# CONFIG A — 3-System Original (TP 0.5% / SL 1.5%)
+# ============================================================================
+# Container for A1 Diamond Short + A2 Long-MR + A3 Long-TC. Each sub-signal is
+# a separate scan with its own entry window and cohort, but they share Config
+# A's exit profile, capital pool, paper/live flags and concurrency cap.
+
+INTRADAY_CONFIG_A_DEFAULTS = {
+    'config_id': 'A',
+    'config_name': '3-System Original (TP 0.5/SL 1.5)',
+
+    # 3-state mode (PAPER MODE LOCK by default)
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+
+    # Capital / sizing
+    'capital': 300_000,                 # Rs 3L deposit
+    'mis_leverage': 5,
+    'risk_per_trade_rs': 3000,
+    'max_concurrent': 5,                # COMBINED across A+B+C (engine_base enforces)
+    'max_notional_per_trade': 300_000,
+    'daily_loss_limit_rs': 9000,        # 3 SLs at Rs 3K = Rs 9K (research/37 spec)
+    'enforce_daily_loss_cap': True,
+    'cost_per_side_pct': 0.05,          # 0.05% / side (used for paper-mode P&L)
+
+    # Cohort files (resolved at engine init time)
+    'cohort_short_path': INTRADAY_75WR_COHORT_SHORT,
+    'cohort_long_mr_path': INTRADAY_75WR_COHORT_LONG_MR,
+    'cohort_long_tc_path': INTRADAY_75WR_COHORT_LONG_TC,
+
+    # Exit profile (Config A signature: tight TP, asymmetric SL)
+    'tp_pct': 0.5,
+    'sl_pct': 1.5,
+    'eod_squareoff_time': '15:25',
+    'max_hold_bars': 60,                # full session
+
+    # Sub-signal A1 — Diamond Short (single 09:45 IST scan)
+    'a1_enabled': True,
+    'a1_entry_time': '09:45',
+    'a1_entry_window_seconds': 60,
+    'a1_rsi_threshold': 40,
+    'a1_require_below_vwap': True,
+    'a1_nifty_filter': 'b3_change_neg',     # NIFTY first-30-min change < 0
+
+    # Sub-signal A2 — Long Mean-Reversion (continuous 11:15-13:15)
+    'a2_enabled': True,
+    'a2_entry_window_start': '11:15',
+    'a2_entry_window_end': '13:15',
+    'a2_drop_pct': -2.0,
+    'a2_rsi_oversold': 28,
+    'a2_rsi_lift': 35,
+    'a2_rsi_lookback_bars': 6,
+    'a2_require_3bar_break': True,
+    'a2_require_bullish_bar': True,
+    'a2_nifty_filter': 'b3_not_crashing',   # NIFTY first-30-min > -0.5%
+
+    # Sub-signal A3 — Long Trend-Continuation (continuous 09:15-10:30)
+    'a3_enabled': True,
+    'a3_entry_window_start': '09:15',
+    'a3_entry_window_end': '10:30',
+    'a3_bar_min': 7,
+    'a3_bar_max': 15,
+    'a3_gap_min_pct': 0.5,
+    'a3_first_hour_strength_pct': 0.5,
+    'a3_pullback_mode': 'vwap_within_0p3',
+    'a3_rsi_floor': 45,
+    'a3_nifty_filter': 'nifty_strong_both',
+}
+
+
+# ============================================================================
+# CONFIG B — 3-System Cost-Resilient (TP 2.0% / SL 1.5%)
+# ============================================================================
+# Same A1/A2/A3 signals as Config A; only the TP is wider. WR drops (53.5%
+# OOS) but per-trade gain is higher, surviving 0.10%/side cost.
+
+INTRADAY_CONFIG_B_DEFAULTS = {
+    **INTRADAY_CONFIG_A_DEFAULTS,
+    'config_id': 'B',
+    'config_name': '3-System Cost-Resilient (TP 2.0/SL 1.5)',
+
+    # 3-state mode (PAPER MODE LOCK)
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+
+    # Capital / sizing — independent capital pool (separate Rs 3L)
+    'capital': 300_000,
+    'mis_leverage': 5,
+    'risk_per_trade_rs': 3000,
+    'max_concurrent': 5,
+    'max_notional_per_trade': 300_000,
+    'daily_loss_limit_rs': 9000,
+    'enforce_daily_loss_cap': True,
+    'cost_per_side_pct': 0.10,          # B is the cost-resilient profile
+
+    # Exit profile — wider TP is the only delta from A
+    'tp_pct': 2.0,
+    'sl_pct': 1.5,
+    'eod_squareoff_time': '15:25',
+    'max_hold_bars': 60,
+}
+
+
+# ============================================================================
+# CONFIG C — Multi-Bar SHORT Bounce (TP 1.5% / SL 1.0%)
+# ============================================================================
+# research/38 walk-forward winner. Continuous scan looking for 4 consecutive
+# bearish 5-min bars + RSI<=55 + below own VWAP + NIFTY < its own VWAP.
+
+INTRADAY_CONFIG_C_DEFAULTS = {
+    'config_id': 'C',
+    'config_name': 'Multi-Bar SHORT Bounce (TP 1.5/SL 1.0)',
+
+    # 3-state mode (PAPER MODE LOCK)
+    'enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
+
+    # Capital / sizing
+    'capital': 300_000,
+    'mis_leverage': 5,
+    'risk_per_trade_rs': 3000,
+    'max_concurrent': 5,                # COMBINED cap with A+B
+    'max_notional_per_trade': 300_000,
+    'daily_loss_limit_rs': 9000,
+    'enforce_daily_loss_cap': True,
+    'cost_per_side_pct': 0.05,
+
+    # Cohort — same 25 short-diamonds as A1/B1
+    'cohort_short_path': INTRADAY_75WR_COHORT_SHORT,
+
+    # Exit profile (favorable RR 1.5:1)
+    'tp_pct': 1.5,
+    'sl_pct': 1.0,
+    'eod_squareoff_time': '15:25',
+    'max_hold_bars': 60,
+
+    # Continuous scan window (per-bar throughout session)
+    'entry_window_start': '09:30',      # 4 bars need to elapse before signal
+    'entry_window_end': '15:00',        # last entry 30 min before EOD
+    'scan_cadence_minutes': 5,
+
+    # Signal params
+    'n_bars_consecutive': 4,            # 4 consecutive bearish 5-min bars
+    'require_lower_highs': True,        # each bar's high <= prior bar's high
+    'rsi_max': 55,                      # RSI(14) <= 55
+    'require_below_vwap': True,
+    'nifty_below_own_vwap_required': True,
+    'min_bar_idx': 4,
+    'last_bars_skip': 5,                # don't enter in the last 5 bars
+}
+
+
+# Convenience map for engine_base / api lookup
+INTRADAY_75WR_CONFIGS = {
+    'A': INTRADAY_CONFIG_A_DEFAULTS,
+    'B': INTRADAY_CONFIG_B_DEFAULTS,
+    'C': INTRADAY_CONFIG_C_DEFAULTS,
+}
+
+
+# =============================================================================
+# Config D — 6-Pair Cointegrated Pair Trading (carry-forward F&O futures)
+# =============================================================================
+# Source: research/39_carry_forward_75wr_quest/CARRY_FORWARD_75WR_DAILY_SWEEP_RESULTS.md
+# Walk-forward backtest: WR 78.7%, PF 3.57, MaxDD 0.06%, n=108 trades.
+# Daily EOD process at 16:00 IST (post F&O close):
+#   1. Fetch latest daily-close prices for both legs of each pair
+#   2. Compute spread = log(P_a) - alpha - beta * log(P_b)
+#   3. Compute z-score on rolling lookback (20 or 40 days per pair)
+#   4. ENTRY (long spread)  if z <= -entry_z: BUY pair-A futures + SELL pair-B futures
+#   5. ENTRY (short spread) if z >= +entry_z: SELL pair-A futures + BUY pair-B futures
+#   6. EXIT on first of: |z| crosses 0 (mean revert) | |z| >= stop_z | hold-cap days
+#
+# Mode tri-state (mirrors ORB / KC6 / NAS pattern):
+#   off:   enabled=False
+#   paper: enabled=True, paper_trading_mode=True,  live_trading_enabled=False
+#   live:  enabled=True, paper_trading_mode=False, live_trading_enabled=True
+#
+# Position sizing: Rs.6,000 total risk per pair-trade (Rs.3,000 per leg).
+# F&O futures margin ~12-15% notional => ~Rs.40-50K margin per pair.
+# Max concurrent = 5 pairs (out of 6) => peak D-margin ~Rs.2L on Rs.10L base.
+#
+# Concurrency cap is INTERNAL to Config D — does not interact with
+# intraday A/B/C concurrency cap (different account segment, different
+# margin pool: F&O carry-forward NRML vs MIS cash equity).
+
+PAIR_TRADING_DEFAULTS = {
+    # Mode (paper default)
+    'enabled': True,
+    'paper_trading_mode': True,         # PAPER MODE LOCK — no real Kite orders
+    'live_trading_enabled': False,      # Hard guard — also required for live orders
+
+    # Capital + sizing
+    'capital': 1_000_000,               # Rs.10L base capital allocated to D
+    'risk_per_pair_rs': 6000,           # Rs.6K per pair-trade (Rs.3K per leg)
+    'max_concurrent': 5,                # Max 5 of 6 pairs open at any time
+
+    # Cost model (F&O futures, much cheaper than CNC)
+    'cost_per_side_pct': 0.03,          # 0.03% per side per leg => 0.06% RT/leg => 0.12% RT/pair
+    'cost_stress_per_side_pct': 0.10,   # Stress: 0.20%/leg => 0.40%/pair (used for paper-mode reporting)
+
+    # Cohort refresh policy
+    'cohort_refresh_quarterly': True,
+    'rolling_alpha_beta_window_days': 252,  # 12-month rolling re-fit window
+
+    # Daily price-history depth needed for z-score (longest lookback + buffer)
+    'history_lookback_days': 90,            # 60d (max lookback) + 30d buffer
+
+    # The 6 winning cointegrated pairs (alpha/beta from
+    # research/39 results/05_pair_walk_forward_relaxed.csv)
+    # Schema per pair:
+    #   name        — pair label (used as DB key)
+    #   symA, symB  — F&O underlying symbols (futures contract resolved at runtime)
+    #   alpha, beta — TRAIN-FIT regression coefficients
+    #                 spread = log(P_a) - alpha - beta * log(P_b)
+    #   half_life   — empirical mean-reversion half-life in days (from universe screen)
+    #   entry_z     — |z| threshold to open a position
+    #   stop_z      — |z| threshold to stop out (999.0 = no stop)
+    #   hold_days   — hard time-exit (calendar days held)
+    #   lookback    — rolling window for z-score mean/std
+    #   te_wr       — out-of-sample test win rate (informational)
+    #   te_pf       — out-of-sample test profit factor (informational)
+    'pairs': [
+        {
+            'name': 'HAVELLS-MARICO',
+            'symA': 'HAVELLS', 'symB': 'MARICO',
+            'alpha': -2.6023, 'beta': 1.5551,
+            'half_life': 22.44,
+            'entry_z': 2.0, 'stop_z': 4.0,
+            'hold_days': 20, 'lookback': 20,
+            'te_wr': 93.75, 'te_pf': 8.50,
+        },
+        {
+            'name': 'BAJFINANCE-KOTAKBANK',
+            'symA': 'BAJFINANCE', 'symB': 'KOTAKBANK',
+            'alpha': -11.4604, 'beta': 2.3819,
+            'half_life': 25.67,
+            'entry_z': 2.0, 'stop_z': 4.0,
+            'hold_days': 20, 'lookback': 20,
+            'te_wr': 83.33, 'te_pf': 7.05,
+        },
+        {
+            'name': 'DABUR-HINDUNILVR',
+            'symA': 'DABUR', 'symB': 'HINDUNILVR',
+            'alpha': 0.1893, 'beta': 0.7838,
+            'half_life': 23.89,
+            'entry_z': 2.0, 'stop_z': 5.0,
+            'hold_days': 20, 'lookback': 20,
+            'te_wr': 78.95, 'te_pf': 4.71,
+        },
+        {
+            'name': 'COFORGE-HCLTECH',
+            'symA': 'COFORGE', 'symB': 'HCLTECH',
+            'alpha': -4.67, 'beta': 1.6289,
+            'half_life': 24.92,
+            'entry_z': 2.0, 'stop_z': 4.0,
+            'hold_days': 15, 'lookback': 20,
+            'te_wr': 76.19, 'te_pf': 3.39,
+        },
+        {
+            'name': 'DABUR-TCS',
+            'symA': 'DABUR', 'symB': 'TCS',
+            'alpha': 2.1594, 'beta': 0.5126,
+            'half_life': 26.71,
+            'entry_z': 2.0, 'stop_z': 999.0,
+            'hold_days': 10, 'lookback': 20,
+            'te_wr': 71.43, 'te_pf': 3.79,
+        },
+        {
+            'name': 'APOLLOHOSP-COFORGE',
+            'symA': 'APOLLOHOSP', 'symB': 'COFORGE',
+            'alpha': 1.8089, 'beta': 0.9682,
+            'half_life': 22.15,
+            'entry_z': 2.0, 'stop_z': 999.0,
+            'hold_days': 10, 'lookback': 40,
+            'te_wr': 75.00, 'te_pf': 1.93,
+        },
+    ],
+
+    # F&O exchange + product for futures legs
+    'exchange': 'NFO',
+    'product': 'NRML',                  # Carry-forward (NOT MIS)
+    'order_type': 'MARKET',             # Both legs MARKET to ensure simultaneous fill
+
+    # Weekly loss circuit-breaker (D-specific): 3 SL exits in 5 sessions => halt week
+    'weekly_sl_circuit_breaker_count': 3,
+    'weekly_sl_circuit_breaker_window_days': 5,
+}
