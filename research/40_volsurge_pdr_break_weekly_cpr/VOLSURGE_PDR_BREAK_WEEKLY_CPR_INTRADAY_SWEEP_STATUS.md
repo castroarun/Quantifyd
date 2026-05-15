@@ -1,11 +1,14 @@
 # Volume-Surge + Prev-Day-Range Break, Gated by Narrow Weekly CPR — System Spec
 
-STATUS: **RUN #2 RUNNING & VERIFIED PERSISTING (d3b85f7)** — 6,517 rows after
-6/79 stocks (run #1 failed: git-reset clobbered the tracked live CSV → 0 rows;
-fixed by gitignoring sweep outputs). Spec locked from 10 examples; scanner
-deployed & /api/scanner returns 200. **DO NOT `git reset --hard` on the VPS
-while a sweep is live** (RESULTS.md still tracked). No edge findings yet —
-signal-gen phase; metrics computed only at aggregation.
+STATUS: **DONE — COMPLETE (run #2, d3b85f7, 2026-05-15 21:19).** 121,278
+signals / 79 stocks / 84.4 min; 70,148 ranked cells. **VERDICT: no robust
+universe-wide edge** (avg Sharpe ~0.12–0.16; only TCS-60min passes the
+robustness gate — likely multiple-comparison luck; same outcome as
+research/34 VOLBO). Strong LONG bias; shorts have ~no edge. Findings below;
+full tables in `results/RESULTS.md`. Scanner deployed & live (`/api/scanner`
+200). Recommendation: do NOT deploy as an automated strategy — walk-forward
+the TCS cell / "long+sma200+vm1.5+loose+carry" archetype, or keep VOLSURGE as
+the discretionary scanner only.
 
 ---
 
@@ -184,6 +187,31 @@ Runs on VPS (binding); resumable; incremental CSV; resample 5m→TF in-runner.
 | 2026-05-15 ~20:0x IST | FIX: untrack + gitignore sweep CSVs (d3b85f7) | `results/*.csv|*.bak|*.log` gitignored + `git rm --cached`. `git reset` can no longer clobber a live run. Stale smoke CSVs purged on VPS. |
 | 2026-05-15 ~20:1x IST | **RUN #2 relaunched clean (d3b85f7)** | Single process, fresh (no false resume). Verifying file grows across a stock boundary before trusting it. |
 | 2026-05-15 ~20:2x IST | **RUN #2 VERIFIED PERSISTING ✅** | After 6/79 stocks: `volsurge_signals.csv` = 6,517 rows and growing (run #1 was 0 after 47). Bug fixed, data landing on disk. Signal-gen in progress, ETA ~50-90 min then aggregation. |
+| 2026-05-15 21:19 IST | **RUN #2 COMPLETE ✅ — aggregated** | 121,278 signals / 79 stocks / 84.4 min; 70,148 ranked cells, 19 leaders, RESULTS.md written. Monitor loop ended. Findings ↓ |
+
+## FINDINGS (final — run #2, 2026-05-15 21:19)
+
+Full tables: `results/RESULTS.md` (VPS) and the mirror in
+`VOLSURGE_SWEEP_EXECUTION_LOG.md`. **121,278 signals** (long 81,524 /
+short 39,754), 79 F&O stocks, 2018→2026-05-15, 70,148 ranked cells.
+
+**Honest verdict: NO robust universe-wide edge — same as research/34 VOLBO.**
+
+- Aggregate avg Sharpe ≈ **0.12–0.16** across all n≥15 cells; WR ~48–52%.
+  Essentially coin-flip on average — the 10 chart examples were hindsight
+  winners, exactly the ex#9 caveat made concrete.
+- **Only 1/79 stocks clears the robustness gate: TCS** 60min, sma200,
+  cpr≤0.75, vm1.5, loose, carry, long, T_NO — n=18, mean 2.56%, WR 94.4%,
+  Sharpe 1.085, consistent across 54 mid-q variants. But 1-in-79 across
+  70,148 tested cells ≈ multiple-comparison luck → candidate, not proven.
+- **Strong LONG bias**; short side ≈ no edge (contradicts ex#4 symmetry).
+- Loosest filters win: **vm1.5 + loose candle + carry**; stricter
+  volume/candle did NOT help. 15min ~best TF; Chandelier 1.5/2.0 ~best exit.
+
+**Recommendation: do NOT deploy as an automated strategy.** Either
+walk-forward / OOS-validate the TCS-60min cell + the
+"long+sma200+vm1.5+loose+carry+Chandelier" archetype on held-out years, or
+keep VOLSURGE as the discretionary `/app/scanner` screen only.
 
 ### ★ Core conclusion after ex#9 (LOCKED principle)
 
