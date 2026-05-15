@@ -96,15 +96,23 @@ def _weekly_cpr_width_pct(daily_df: pd.DataFrame, today: datetime) -> Optional[f
     return width / pivot * 100.0
 
 
-def _intraday_first_candle_clean(dm, symbol: str, ref_date: datetime,
-                                 tf_minutes: int = 30) -> Optional[str]:
-    """Clean-directional flag for the OPENING `tf_minutes` candle of the most
-    recent trading session in the 5-min data (the real spec trigger, not a
-    daily-bar proxy). Returns 'long' | 'short' | 'none' | None (no intraday)."""
+def _intraday_open_facts(dm, symbol: str, ref_date: datetime,
+                         tf_minutes: int = 30, n_baseline: int = 20) -> Optional[dict]:
+    """Spec-faithful opening-candle facts from 5-min data:
+
+      - clean: 'long'|'short'|'none' for the OPENING `tf_minutes` candle of
+        the most recent session (body >= 60% of range, in that direction)
+      - vol_surge_open: that opening candle's volume / mean of the prior
+        `n_baseline` sessions' OPENING-candle volumes  (this is the spec
+        volume surge — opening-candle vs same-slot baseline, NOT full day)
+      - last_5m_close / asof: freshest intraday price + its timestamp
+        (so a stale name like BAJAJ-AUTO is visibly stale, not faked)
+
+    Returns None when the symbol has no intraday 5-min data.
+    """
     try:
-        to_d = ref_date
-        from_d = ref_date - timedelta(days=10)
-        df5 = dm.load_data(symbol, '5minute', from_d, to_d)
+        df5 = dm.load_data(symbol, '5minute',
+                           ref_date - timedelta(days=60), ref_date)
     except Exception:
         return None
     if df5 is None or df5.empty:
@@ -114,30 +122,52 @@ def _intraday_first_candle_clean(dm, symbol: str, ref_date: datetime,
     if not isinstance(idx, pd.DatetimeIndex):
         idx = pd.to_datetime(idx)
         df5.index = idx
-    # most recent session present in the data
-    last_day = idx[-1].normalize()
-    day_bars = df5[idx.normalize() == last_day]
-    if day_bars.empty:
+
+    # opening tf_minutes volume per session (and OHLC for the last session)
+    day_norm = idx.normalize()
+    sessions = list(pd.unique(day_norm))
+    if not sessions:
         return None
-    # opening tf_minutes window of that session
-    sess_open = day_bars.index[0]
-    win_end = sess_open + pd.Timedelta(minutes=tf_minutes)
-    first = day_bars[day_bars.index < win_end]
-    if first.empty:
+    open_vol_by_session = []
+    last_ohlc = None
+    for d in sessions:
+        sb = df5[day_norm == d]
+        if sb.empty:
+            continue
+        win_end = sb.index[0] + pd.Timedelta(minutes=tf_minutes)
+        first = sb[sb.index < win_end]
+        if first.empty:
+            continue
+        ov = float(first['volume'].sum())
+        open_vol_by_session.append(ov)
+        last_ohlc = (
+            float(first['open'].iloc[0]), float(first['high'].max()),
+            float(first['low'].min()), float(first['close'].iloc[-1]),
+        )
+    if last_ohlc is None or len(open_vol_by_session) < 2:
         return None
-    o = float(first['open'].iloc[0])
-    h = float(first['high'].max())
-    lo = float(first['low'].min())
-    c = float(first['close'].iloc[-1])
+
+    cur_open_vol = open_vol_by_session[-1]
+    prior = open_vol_by_session[-(n_baseline + 1):-1]
+    base = sum(prior) / len(prior) if prior else None
+    vol_surge_open = (round(cur_open_vol / base, 2)
+                      if base and base > 0 else None)
+
+    o, h, lo, c = last_ohlc
     rng = h - lo
     if rng <= 0:
-        return 'none'
-    body_frac = abs(c - o) / rng
-    if c > o and body_frac >= 0.6:
-        return 'long'
-    if c < o and body_frac >= 0.6:
-        return 'short'
-    return 'none'
+        clean = 'none'
+    else:
+        bf = abs(c - o) / rng
+        clean = ('long' if (c > o and bf >= 0.6)
+                 else 'short' if (c < o and bf >= 0.6) else 'none')
+
+    return {
+        'clean': clean,
+        'vol_surge_open': vol_surge_open,
+        'last_5m_close': float(df5['close'].iloc[-1]),
+        'asof': idx[-1].to_pydatetime(),
+    }
 
 
 def _prev_week_range(daily_df: pd.DataFrame, today: datetime):
@@ -210,10 +240,14 @@ class ScannerService:
             isinstance(last_date, (pd.Timestamp, datetime))
             and last_date.date() == today.date()
         )
-        # TRUE opening 30-min candle from 5-min data (real spec trigger);
-        # fall back to the daily-bar proxy only if no intraday available.
-        clean_candle = _intraday_first_candle_clean(self._dm, symbol, today, 30)
-        if clean_candle is None and is_today_bar:
+        # Spec-faithful intraday: opening 30-min candle clean flag +
+        # opening-candle volume surge (NOT full-day) + freshest 5-min price.
+        intra = _intraday_open_facts(self._dm, symbol, today, 30, 20)
+        clean_candle = intra['clean'] if intra else None
+        vol_surge_open = intra['vol_surge_open'] if intra else None
+        last_5m_close = intra['last_5m_close'] if intra else None
+        intra_asof = intra['asof'] if intra else None
+        if clean_candle is None and is_today_bar:  # daily-bar fallback only
             o = float(df['open'].iloc[-1])
             h = float(df['high'].iloc[-1])
             lo = float(df['low'].iloc[-1])
@@ -221,21 +255,23 @@ class ScannerService:
             rng = h - lo
             if rng > 0:
                 body_frac = abs(c - o) / rng
-                if c > o and body_frac >= 0.6:
-                    clean_candle = 'long'
-                elif c < o and body_frac >= 0.6:
-                    clean_candle = 'short'
-                else:
-                    clean_candle = 'none'
+                clean_candle = ('long' if (c > o and body_frac >= 0.6)
+                                else 'short' if (c < o and body_frac >= 0.6)
+                                else 'none')
 
         # prior daily close (for a real off-hours day-change %)
         prev_daily_close = float(close.iloc[-2]) if len(close) >= 2 else None
+        last_daily_date = df.index[-1]
+        if isinstance(last_daily_date, (pd.Timestamp, datetime)):
+            last_daily_date = last_daily_date.to_pydatetime() if hasattr(
+                last_daily_date, 'to_pydatetime') else last_daily_date
 
         return {
             'sma50': sma50,
             'sma200': sma200,
             'last_daily_close': last_close,
             'prev_daily_close': prev_daily_close,
+            'last_daily_date': last_daily_date,
             'avg20_vol': avg20_vol,
             'last_bar_vol': last_bar_vol,
             'prev_day_high': prev_day_high,
@@ -244,6 +280,9 @@ class ScannerService:
             'prev_week_low': pw_low,
             'cpr_width_pct': cpr_w,
             'clean_candle': clean_candle,
+            'vol_surge_open': vol_surge_open,
+            'last_5m_close': last_5m_close,
+            'intra_asof': intra_asof,
             'has_today_bar': is_today_bar,
         }
 
@@ -348,23 +387,42 @@ class ScannerService:
             q = quotes.get(sym, {})
             ltp = q.get('ltp')
             prev_close = (q.get('ohlc') or {}).get('close')
-            if ltp is None:
+            # as-of: live during market, else the freshest bar we actually
+            # have (5-min if newer than the last daily bar) — so a stale
+            # name (e.g. data only to 7-May) shows its true age, not a fake.
+            last_5m_close = facts.get('last_5m_close')
+            intra_asof = facts.get('intra_asof')
+            last_daily_date = facts.get('last_daily_date')
+            if ltp is not None:
+                as_of = now
+            elif (last_5m_close is not None and intra_asof is not None
+                  and (last_daily_date is None or intra_asof >= last_daily_date)):
+                ltp = last_5m_close          # 5-min fresher than daily
+                prev_close = facts['last_daily_close']
+                as_of = intra_asof
+            else:
                 ltp = facts['last_daily_close']
+                prev_close = facts.get('prev_daily_close') or ltp
+                as_of = last_daily_date
             if prev_close is None:
-                # off-hours: show last completed session's move
-                # (last daily close vs the prior daily close), not 0
-                prev_close = facts.get('prev_daily_close') or facts['last_daily_close']
+                prev_close = (q.get('ohlc') or {}).get('close') \
+                    or facts.get('prev_daily_close') or ltp
 
             day_change_pct = None
             if prev_close:
                 day_change_pct = round((ltp - prev_close) / prev_close * 100.0, 2)
 
-            # volume surge: live cumulative vol if available, else last daily bar
-            today_vol = q.get('volume')
-            if today_vol is None:
-                today_vol = facts['last_bar_vol']
-            avg20 = facts['avg20_vol']
-            vol_surge = round(today_vol / avg20, 2) if avg20 and avg20 > 0 else None
+            # volume surge — SPEC-FAITHFUL: opening 30-min candle volume vs
+            # trailing-20 opening-candle baseline (NOT full-day volume).
+            # Falls back to the daily ratio only when no intraday exists.
+            vol_surge = facts.get('vol_surge_open')
+            vol_basis = 'open30m'
+            if vol_surge is None:
+                avg20 = facts['avg20_vol']
+                tv = q.get('volume') if q.get('volume') is not None \
+                    else facts['last_bar_vol']
+                vol_surge = round(tv / avg20, 2) if avg20 and avg20 > 0 else None
+                vol_basis = 'fullday_fallback'
 
             # daily trend
             sma50 = facts['sma50']
@@ -420,14 +478,26 @@ class ScannerService:
                 'clean_candle': facts['clean_candle'],
                 'direction': direction,
                 'score': score,
+                'vol_basis': vol_basis,
+                'as_of': as_of.isoformat() if hasattr(as_of, 'isoformat') else None,
             })
 
         rows.sort(key=lambda r: r['score'], reverse=True)
+        # freshest data point across the universe (staleness indicator)
+        asofs = [r['as_of'] for r in rows if r.get('as_of')]
+        data_max = max(asofs) if asofs else None
         return {
             'generated_at': now.isoformat(),
             'market_open': market_open,
             'cpr_threshold': cpr_threshold_pct,
             'count': len(rows),
+            'data_max_asof': data_max,
+            'vol_surge_basis': 'opening 30-min candle vs trailing-20 '
+                               'opening-candle volume (spec); per-row '
+                               'vol_basis=fullday_fallback when no intraday',
+            'note': 'Off-hours LTP = freshest bar in market_data.db; many '
+                    'F&O names lag (DB not refreshed to today). Check per-row '
+                    'as_of for true age. Live CMP only during market hours.',
             'rows': rows,
         }
 
