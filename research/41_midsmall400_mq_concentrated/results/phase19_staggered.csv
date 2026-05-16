@@ -1,0 +1,5 @@
+config,chunk,cagr,post_tax20,maxdd_daily,sharpe,calmar
+ALL-AT-ONCE (base),1.0,35.0,29.0,-22.8,1.87,1.53
+stagger 50%/wk,0.5,35.1,28.0,-24.2,1.85,1.45
+stagger 33%/wk,0.33,34.6,23.7,-26.8,1.81,1.29
+stagger 25%/wk,0.25,33.9,24.1,-27.6,1.75,1.22

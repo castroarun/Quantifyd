@@ -245,6 +245,25 @@ weekly regime. + a visual timeline (exposure% backdrop, distinct markers
 per event: ENTRY / EXIT_REGIME_CHUNK / EXIT_PERSTOCK_SMA / EXIT_TRAIL12
 / EXIT_RS_ROTATION). Runner `scripts/19_smoothest_staggered.py`.
 
+**Phase 19/20 — staggered exit — DONE. REJECTED (all-at-once wins).**
+
+| Config | CAGR | net20 | dailyDD | Calmar |
+|---|---|---|---|---|
+| ALL-AT-ONCE (current) | 35.0 | **29.0** | **−22.8** | **1.53** |
+| stagger 50%/wk | 35.1 | 28.0 | −24.2 | 1.45 |
+| stagger 33%/wk | 34.6 | 23.7 | −26.8 | 1.29 |
+| stagger 25%/wk | 33.9 | 24.1 | −27.6 | 1.22 |
+
+Slower scale-out = monotonically WORSE (DD −22.8→−27.6, Calmar
+1.53→1.22, post-tax 29.0→24.1). Reason: the 100-SMA gate is already
+lagging; once it fires the market is already falling, so trickling out
+over 1-4 wks just eats more of the decline + adds STCG churn from the
+partial sells. **Verdict: keep abrupt full exit.** Timeline
+(`smoothest_staggered_timeline.png`, 25%/wk) — exposure ~100% with
+sharp drops to 0% in risk-off windows; event counts over 12y: ENTRY
+785, EXIT_RS_ROTATION 331, EXIT_TRAIL12 159, EXIT_PERSTOCK_SMA 109,
+EXIT_REGIME_CHUNK 61.
+
 **Open (user, not started):** protective-put hedge (5% OTM / ITM,
 regime-triggered) — conceptually a better fit than the futures short
 (keeps upside) but needs REAL Nifty options/IV history to backtest
