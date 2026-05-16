@@ -234,6 +234,26 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         ],
         highlightRows: [0],
       },
+      {
+        title: '9. Universe decision: MID vs SMALL vs COMBO (LOCKED: MID)',
+        caption:
+          'Same regime+quality overlay + OOS + post-tax pipeline run on all three PIT bands, apples-to-apples (gated champion, post-tax @20% STCG). MID is the locked recommended system — shallowest drawdown, best Calmar (1.44), far more tradable (22 F&O stocks vs small\'s 1 — small\'s real costs likely exceed the modelled 0.4% RT, so its 30.2% is optimistic; mid\'s 28.9% is trustworthy), and the smallest working universe (150). COMBO is strictly dominated by MID (lower post-tax CAGR AND deeper DD). SMALL is a higher-pain alternative only.',
+        columns: [
+          'Universe (config)',
+          'Post-tax CAGR',
+          'MaxDD',
+          'Sharpe',
+          'Gross Calmar',
+          'OOS H1 / H2',
+          'F&O stocks in band',
+        ],
+        rows: [
+          ['MID  q0.5_dd__v__REG  ✅', '28.9%', '−24.6%', '1.53', '1.44', '32.2 / 37.3', '22 / 150'],
+          ['SMALL q0.5_dd-0.4_REG', '30.2%', '−28 to −30%', '1.56', '1.27', '35.0 / 35.1', '1 / 250 (IRCTC)'],
+          ['COMBO q0.58_dd-0.4_REG', '28.1%', '−30.6%', '1.31', '1.13', '32.0 / 33.8', '23 / 400'],
+        ],
+        highlightRows: [0],
+      },
     ],
 
     results: {
@@ -276,6 +296,27 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           rows: [
             ['Walk-forward (re-pick L yearly)', '33.1%', 'lookback choice robust, not lucky'],
             ['Static L=120', '35.0%', '1.9pp gap within noise'],
+          ],
+        },
+        {
+          title: 'Year-by-year vs Nifty 50 (gross), 2014–2026',
+          caption:
+            'Beat Nifty 50 in 10 of 13 years. CAGR 35.3% gross (28.9% post-tax) vs Nifty 50 13.6% over 12.1y. Returns are gross (pre-STCG; index returns are also pre-tax — fair like-for-like). The 3 lag years (2018/2019/2025) are precisely the regime-gated risk-off years (sat in 6.5% cash through small-cap bears — controlled give-back is the edge). Nifty 100 / Midcap 150 / Smallcap 250 YoY are intentionally NOT shown — that long history is not in our data; pending a real Kite index-history pull on the VPS (not fabricated).',
+          columns: ['Year', 'Strategy gross %', 'Nifty 50 %', 'Excess pp', 'Note'],
+          rows: [
+            ['2014', '133.1', '31.6', '+101.5', 'inception (full-yr midcap rally, 1.0 base)'],
+            ['2015', '−0.8', '−4.3', '+3.5', ''],
+            ['2016', '22.5', '4.0', '+18.5', ''],
+            ['2017', '82.8', '29.9', '+52.9', ''],
+            ['2018', '−1.9', '4.8', '−6.7', 'regime risk-off'],
+            ['2019', '2.7', '13.6', '−10.9', 'regime risk-off'],
+            ['2020', '62.3', '15.4', '+46.9', ''],
+            ['2021', '95.2', '26.0', '+69.2', ''],
+            ['2022', '12.5', '5.5', '+7.0', ''],
+            ['2023', '52.4', '21.0', '+31.4', ''],
+            ['2024', '38.0', '10.4', '+27.6', ''],
+            ['2025', '1.4', '11.7', '−10.3', 'regime risk-off'],
+            ['2026', '−1.3', '−1.5', '+0.2', 'partial year'],
           ],
         },
         {
@@ -344,8 +385,20 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       { label: '04_walkforward.py', href: `${GH}/scripts/04_walkforward.py` },
       { label: '05_live_top15.py', href: `${GH}/scripts/05_live_top15.py` },
       {
-        label: 'MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md',
+        label: 'MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md (§9 universe decision, §10 YoY)',
         href: `${GH}/results/MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md`,
+      },
+      {
+        label: 'MIDCAP_WINNER_YOY_VS_BENCHMARKS.md',
+        href: `${GH}/results/MIDCAP_WINNER_YOY_VS_BENCHMARKS.md`,
+      },
+      {
+        label: 'SMALLCAP_RSBLEND_REGIME_MOMENTUM_RESULTS.md',
+        href: `${GH}/results/SMALLCAP_RSBLEND_REGIME_MOMENTUM_RESULTS.md`,
+      },
+      {
+        label: 'COMBO_RSBLEND_REGIME_MOMENTUM_RESULTS.md',
+        href: `${GH}/results/COMBO_RSBLEND_REGIME_MOMENTUM_RESULTS.md`,
       },
       {
         label: 'MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md',
