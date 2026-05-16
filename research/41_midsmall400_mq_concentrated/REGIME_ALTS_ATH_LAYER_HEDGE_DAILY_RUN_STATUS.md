@@ -306,10 +306,13 @@ cash. → Not worth sourcing paid options data.** Simplest (cash) wins.
 - DONE & committed: Phases 09–21 (verdicts above / in §7–9), app
   fully synced (commit 72b0706), FINAL_MODEL_SPEC.md current incl.
   2025 caveat. Heatmap/chart on app.
-- **PENDING / not yet run:** Phase 22 (`scripts/22_smoothest_variants.py`
+- Phase 20 revised timeline DONE: `smoothest_allatonce_timeline.png`
+  (anti-overplot, per-type strips; all-at-once kept config). Regime
+  exits n=15 over 12y (the staggered config's 61 were chunk sub-events
+  — rejected). Entry 676 / RS-rot 274 / trail12 126 / perSMA 61.
+- **PENDING / running:** Phase 22 (`scripts/22_smoothest_variants.py`
   — A no-regime / B trim-25,50 / C keep-top5,8 / D perstock-SMA80,60;
-  script written, NOT launched). Revised all-at-once timeline
-  (`scripts/20_timeline_allatonce.py` — anti-overplot, NOT run).
+  bg `b2jhhb7x4`, monitor `b2qw5y427`).
 - 3 candidate systems unchanged: SMOOTHEST / MAX-RETURN / FORTIFIED;
   open decision = user picks one + optional live paper-validation.
 - Rejected & recorded: FORTIFIED-B, staggered exit, permanent hedge,
