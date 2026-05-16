@@ -1,0 +1,5 @@
+variant,cagr,post_tax20,maxdd,sharpe,calmar
+base (no ATH layer),35.1,29.5,-16.4,1.66,2.14
++ATH<=10% entry,35.2,29.3,-15.1,1.78,2.32
++20% trail exit,35.1,29.6,-16.4,1.67,2.14
++ATH entry +trail,35.2,29.3,-15.1,1.78,2.33

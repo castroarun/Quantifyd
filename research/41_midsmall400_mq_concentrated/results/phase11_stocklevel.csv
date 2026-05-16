@@ -1,0 +1,11 @@
+config,market_gate,perStockSMA,trail,cagr,post_tax20,maxdd,sharpe,calmar
+SMA100 mkt (Ph09 winner),True,False,0.0,35.2,29.3,-15.1,1.78,2.32
+OFF + trail15,False,False,0.15,33.0,25.0,-32.4,1.33,1.02
+OFF + trail12,False,False,0.12,33.2,25.2,-32.2,1.34,1.03
+OFF + trail10,False,False,0.1,33.4,25.4,-32.0,1.35,1.04
+OFF + perStockSMA100,False,True,0.0,33.2,24.9,-30.2,1.33,1.1
+OFF + perStockSMA + tr12,False,True,0.12,33.3,25.0,-30.1,1.34,1.11
+perStockSMA only (no mkt),False,True,0.0,33.2,24.9,-30.2,1.33,1.1
+SMA100 mkt + perStockSMA,True,True,0.0,35.5,29.6,-15.1,1.8,2.35
+SMA100 mkt + trail12,True,False,0.12,35.4,29.4,-15.1,1.79,2.34
+SMA100 + perStock + tr12,True,True,0.12,35.6,29.6,-15.1,1.8,2.36

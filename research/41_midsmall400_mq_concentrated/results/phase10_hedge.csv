@@ -1,0 +1,8 @@
+config,cagr,post_tax20,maxdd,sharpe,calmar
+SMA100->cash (Ph09 best),35.2,29.3,-15.1,1.78,2.32
+OFF no-hedge (ref),32.7,24.8,-32.8,1.32,1.0
+SMA100->beta hr1.0,42.8,34.0,-22.7,1.83,1.89
+SMA100->beta hr0.5,37.8,29.5,-24.9,1.58,1.52
+always hedge hr0.25,27.8,20.5,-28.8,1.25,0.96
+always hedge hr0.40,24.8,17.9,-27.0,1.19,0.92
+always hedge hr0.60,20.9,14.4,-28.2,1.09,0.74
