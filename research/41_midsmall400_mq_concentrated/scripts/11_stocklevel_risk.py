@@ -153,7 +153,7 @@ def backtest(close, tv, market_gate, per_stock_sma, trail, stcg=0.0):
     py.iloc[0] = n.groupby(n.index.year).last().iloc[0] / 1.0 - 1
     return dict(cagr=cg * 100, dd=dd * 100, sh=sh,
                 cal=(cg / abs(dd)) if dd < 0 else np.nan,
-                py=(py * 100).round(1))
+                py=(py * 100).round(1), nav=n)
 
 
 def main():
