@@ -258,6 +258,59 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         ],
         highlightRows: [0],
       },
+      {
+        title: 'Phase 09: regime-filter alternatives (vs laggy SMA200)',
+        caption:
+          'SMA100 replaces the laggy SMA200 gate — same CAGR, MaxDD −24.6%→−16.4%, Calmar 1.44→2.14. Adding the ATH≤10% entry screen on SMA100 → 35.2/29.3/−15.1/Sharpe 1.78/Calmar 2.33. The 20% trailing stop was inert; ATR/vol-spike regime failed (NIFTYBEES has no true OHLC — c2c ATR proxy, flagged). Core held constant: mid_120d_N15 + q0.5.',
+        columns: ['Regime', 'CAGR %', 'Post-tax @20% %', 'MaxDD %', 'Sharpe', 'Calmar'],
+        rows: [
+          ['OFF', '37.0', '30.9', '−29.6', '1.35', '1.25'],
+          ['SMA200 (old lock)', '35.3', '29.4', '−24.6', '1.53', '1.44'],
+          ['SMA100', '35.1', '29.5', '−16.4', '1.66', '2.14'],
+          ['SMA50', '29.7', '23.6', '−19.1', '1.55', '1.56'],
+          ['cross 50/200', '31.9', '26.5', '−33.3', '1.30', '0.96'],
+          ['DD-from-1yr-high>10%', '31.5', '26.0', '−31.3', '1.24', '1.01'],
+          ['3m-momentum<0', '31.4', '26.1', '−21.9', '1.48', '1.44'],
+          ['volspike (ATR)', '33.9', '27.0', '−33.4', '1.40', '1.02'],
+          ['SMA200+vol', '33.8', '27.6', '−20.9', '1.54', '1.61'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'Phase 10: drawdown-hedge overlay',
+        caption:
+          'In risk-off, holding the stocks and shorting 1× Nifty (vs going to cash) harvests the RS spread as market-neutral alpha → 34.0% post-tax, the project\'s highest. It does NOT reduce drawdown (−22.7 vs cash −15.1; mid-cap β>1 under-hedged) — a return amplifier, not a DD reducer. Permanent hedge bleeds the bull; covered calls rejected (caps the CAGR tail; rotating mid-cap holdings mostly lack liquid options).',
+        columns: ['Config', 'CAGR %', 'Post-tax @20% %', 'MaxDD %', 'Sharpe', 'Calmar'],
+        rows: [
+          ['SMA100→cash (Ph09 best)', '35.2', '29.3', '−15.1', '1.78', '2.32'],
+          ['SMA100→beta-hedge hr1.0', '42.8', '34.0', '−22.7', '1.83', '1.89'],
+          ['SMA100→beta hr0.5', '37.8', '29.5', '−24.9', '1.58', '1.52'],
+          ['OFF no-hedge', '32.7', '24.8', '−32.8', '1.32', '1.00'],
+          ['always-hedge hr0.25', '27.8', '20.5', '−28.8', '1.25', '0.96'],
+          ['always-hedge hr0.40', '24.8', '17.9', '−27.0', '1.19', '0.92'],
+          ['always-hedge hr0.60', '20.9', '14.4', '−28.2', '1.09', '0.74'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'Phase 11: stock-level vs market-level risk control',
+        caption:
+          'Stock-level control ALONE cannot replace the market gate (no-gate variants stuck ~−30/−32% DD, Calmar ~1.0–1.1). On TOP of the gate it adds a small free gain: Calmar 2.32→2.36, +0.3pp post-tax, same −15.1% DD.',
+        columns: ['Config', 'CAGR %', 'Post-tax @20% %', 'MaxDD %', 'Sharpe', 'Calmar'],
+        rows: [
+          ['SMA100 mkt (Ph09 winner)', '35.2', '29.3', '−15.1', '1.78', '2.32'],
+          ['OFF + trail15', '33.0', '25.0', '−32.4', '1.33', '1.02'],
+          ['OFF + trail12', '33.2', '25.2', '−32.2', '1.34', '1.03'],
+          ['OFF + trail10', '33.4', '25.4', '−32.0', '1.35', '1.04'],
+          ['OFF + perStockSMA100', '33.2', '24.9', '−30.2', '1.33', '1.10'],
+          ['OFF + perStockSMA + trail12', '33.3', '25.0', '−30.1', '1.34', '1.11'],
+          ['perStockSMA only (no mkt)', '33.2', '24.9', '−30.2', '1.33', '1.10'],
+          ['SMA100 + perStockSMA', '35.5', '29.6', '−15.1', '1.80', '2.35'],
+          ['SMA100 + trail12', '35.4', '29.4', '−15.1', '1.79', '2.34'],
+          ['SMA100 + perStockSMA + trail12', '35.6', '29.6', '−15.1', '1.80', '2.36'],
+        ],
+        highlightRows: [9],
+      },
     ],
 
     results: {
@@ -367,6 +420,36 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           'Volume-breakout confirmation (v1.0 / v1.2 axis) — REJECTED: every config collapses CAGR to ~17–23% and worsens drawdown (it blocks the very momentum entries RS selects). OFF in the winner.',
           'Short 55d RS lookback — worst drawdown bucket (−54% to −66%); only "won" the void run because that run saw only 2023–26.',
           'Conservative alternative q0.5_dd-0.4_v__REG — not the headline but valid: 30.6% CAGR at −22.5% MaxDD (shallower than the index) for the most risk-averse.',
+          'ATR / vol-spike regime — FAILED (−33% DD, Calmar 1.02). NIFTYBEES has no true OHLC so ATR is a close-to-close proxy — flagged as weak/not implementable.',
+          '20% trailing stop — INERT: the monthly top-22 RS buffer already rotates losers before −20% from peak, so the trail never binds. Don\'t bother.',
+          'Permanent / always-on hedge — REJECTED: a constant short bleeds the bull (CAGR 28%→21%, Calmar <1).',
+          'Beta-hedge hr0.5 — dominated by hr1.0 on every axis (lower CAGR, deeper DD, worse Calmar).',
+          'Covered calls on the 15 holdings — REJECTED (not built): caps the right-tail that is the CAGR; the rotating mid-cap holdings mostly lack liquid options (only ~22 of the whole mid band is F&O).',
+          'Stock-level-only control (trail / per-stock-SMA without the market gate) — cannot replace the market gate: bottom-up stops fire only after each name falls, too late in a broad bear (stuck ~−30/−32% DD, Calmar ~1.0–1.1).',
+        ],
+      },
+      {
+        config: 'SMOOTHEST · mid_120d_N15 + q0.5 + SMA100 regime + ATH≤10% entry + per-stock-SMA100 + 12% trail',
+        summary:
+          'Best risk-adjusted endpoint (Phases 09–11). Supersedes the original SMA200 lock (was 29.4% post-tax / −24.6% MaxDD / Calmar 1.44 — the biggest single project improvement, from the SMA100 + ATH instincts). SMA100 replaces the laggy SMA200 gate (same CAGR, DD −24.6→−16.4); the ATH≤10% entry screen and stock-level per-stock-SMA100 + 12% trail each add a small free gain on top of the market gate. Drawdown roughly halved at near-identical CAGR.',
+        metrics: [
+          { k: 'CAGR (gross)', v: '35.6%' },
+          { k: 'CAGR (post-tax, 20% STCG)', v: '29.6%' },
+          { k: 'MaxDD', v: '−15.1%' },
+          { k: 'Sharpe', v: '1.80' },
+          { k: 'Calmar', v: '2.36' },
+        ],
+      },
+      {
+        config: 'MAX RETURN · …same core + SMA100→beta-hedge hr1.0 (short 1× Nifty in risk-off instead of cash)',
+        summary:
+          'Highest post-tax CAGR of any config in the whole project. In risk-off months, instead of sitting in cash, hold the top-RS stocks and short a 1× Nifty notional — the long/short book harvests the RS spread as market-neutral alpha instead of dead cash (per-year: 2023 +70 vs cash +40; 2020 +108 vs +86; 2024 +63 vs +45). Note: this is a return amplifier, NOT a drawdown reducer — DD is −22.7% (vs the cash variant −15.1%) because mid-cap β>1 leaves it under-hedged; still far better than ungated −33%. Also supersedes the original SMA200 lock (29.4% / −24.6% / Calmar 1.44).',
+        metrics: [
+          { k: 'CAGR (gross)', v: '42.8%' },
+          { k: 'CAGR (post-tax, 20% STCG)', v: '34.0%' },
+          { k: 'MaxDD', v: '−22.7%' },
+          { k: 'Sharpe', v: '1.83' },
+          { k: 'Calmar', v: '1.89' },
         ],
       },
     ],
@@ -412,6 +495,14 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       {
         label: 'LIVE_TOP15_WITH_FUNDAMENTALS.md',
         href: `${GH}/results/LIVE_TOP15_WITH_FUNDAMENTALS.md`,
+      },
+      {
+        label: 'REGIME_HEDGE_STOCKLEVEL_RESULTS.md (Phases 09/10/11 consolidated)',
+        href: `${GH}/results/REGIME_HEDGE_STOCKLEVEL_RESULTS.md`,
+      },
+      {
+        label: 'REGIME_ALTS_ATH_LAYER_HEDGE_DAILY_RUN_STATUS.md (live-status, §7/§8 verdict)',
+        href: `${GH}/REGIME_ALTS_ATH_LAYER_HEDGE_DAILY_RUN_STATUS.md`,
       },
     ],
     projectPaths: [
