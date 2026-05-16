@@ -8,7 +8,15 @@ CAGR / −29.8% DD / Calmar 1.29. **Phase-03 final pick `q0.5_dd__v__REG`**
 (quality≥0.5 + SMA200 regime, volume OFF) = **35.3% CAGR / −24.6% DD
 (index-level) / Sharpe 1.53 / Calmar 1.44** — drawdown objection solved,
 edge kept. Run #1 VOID (NIFTY50 benchmark only 2023→2026 → 8/12 yrs in
-cash); fixed via NIFTYBEES. Remaining: Phase-04 OOS + STCG; live top-15.
+cash); fixed via NIFTYBEES.
+**Phase 06/07 — universe decision LOCKED = MID.** Same pipeline on small
+(`q0.5_dd-0.4_REG`: 30.2% post-tax / −28-30% DD) and combo
+(`q0.58_dd-0.4_REG`: 28.1% post-tax / −30.6% DD — strictly dominated by
+mid). Mid wins risk-adjusted (Calmar 1.44 vs 1.27/1.13) + tradability
+(22 F&O stocks vs small 1). YoY: beat Nifty-50 10/13 yrs, 35.3% gross
+vs 13.6%. See `_DETAILED_REPORT.md` §9/§10, `SMALLCAP_*`, `COMBO_*`,
+`MIDCAP_WINNER_YOY_VS_BENCHMARKS.md`. Nifty100/Mid/Small YoY pending
+Kite index pull on VPS. **research/41 fully closed; nothing live.**
 
 ## 1. The Ask
 

@@ -314,4 +314,47 @@ free sources can't supply as-of-date financials without look-ahead.
 | `results/MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md` | short verdict + caveats |
 | `results/LIVE_TOP15_WITH_FUNDAMENTALS.md` | live picks + fundamentals overlay |
 | `results/MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md` | **this document** |
+| `results/MIDCAP_WINNER_YOY_VS_BENCHMARKS.md` | yearly vs Nifty-50 (§10) |
+| `scripts/06_smallcap_overlay_oos.py` + `SMALLCAP_RSBLEND_REGIME_MOMENTUM_RESULTS.md` | small-cap variant (explored, not preferred) |
+| `scripts/07_combo_overlay_oos.py` + `COMBO_RSBLEND_REGIME_MOMENTUM_RESULTS.md` | combo variant (dominated by mid) |
 | `MIDSMALL400_MQ_CONCENTRATED_DAILY_SWEEP_STATUS.md` | running log / crash recovery |
+
+---
+
+## 9. Universe decision — MID vs SMALL vs COMBO (LOCKED: MID)
+
+Same regime+quality overlay + OOS + post-tax pipeline run on all three
+PIT bands, apples-to-apples. **Mid is the locked recommended system.**
+
+| (gated champion, post-tax @20% STCG) | Post-tax CAGR | MaxDD | Sharpe | Gross Calmar | OOS H1/H2 | F&O stocks in band |
+|---|---|---|---|---|---|---|
+| **MID** `q0.5_dd__v__REG` ✅ | **28.9%** | **−24.6%** | 1.53 | **1.44** | 32.2 / 37.3 | **22 / 150** |
+| SMALL `q0.5_dd-0.4_REG` | 30.2% | −28 to −30% | 1.56 | 1.27 | 35.0 / 35.1 | **1 / 250** (IRCTC) |
+| COMBO `q0.58_dd-0.4_REG` | 28.1% | −30.6% | 1.31 | 1.13 | 32.0 / 33.8 | 23 / 400 |
+
+**Why MID (decisive):**
+1. **Shallowest drawdown** — −24.6% (index-level) vs small −28/−30%,
+   combo −30.6%. Phase-03's whole purpose was DD control; mid wins it.
+2. **Best risk-adjusted** — Calmar 1.44 (small 1.27, combo 1.13).
+3. **COMBO is strictly dominated** — lower post-tax CAGR than mid
+   (28.1 < 28.9) *and* deeper DD. No preference picks combo.
+4. **SMALL's only edge is +1.3pp CAGR**, erased by deeper DD, lower
+   Calmar, a needed extra junk-filter, **and near-zero F&O liquidity
+   (1 vs 22 names)** — small's real costs likely exceed the modelled
+   0.4% RT, so its 30.2% is optimistic; mid's 28.9% is trustworthy.
+5. **Smaller working universe** — 150 names (vs 250 / 400): easier to
+   reconstruct, monitor and reason about.
+
+Verdict: **MID `q0.5_dd__v__REG` is THE system.** Small = a
+higher-pain alternative only for those who will tolerate ~−30% for
+~1pp; combo = never.
+
+## 10. Year-by-year vs Nifty 50 (gross)
+
+Full table + data-honesty note: `MIDCAP_WINNER_YOY_VS_BENCHMARKS.md`.
+Headline: **beat Nifty 50 in 10 of 13 years**; CAGR 35.3% gross
+(28.9% post-tax) vs Nifty 50 13.6% over 12.1y. The 3 lag years
+(2018/2019/2025) are the regime-gated risk-off years (sat in cash
+through small-cap bears — controlled give-back is the edge). Nifty
+100 / Midcap150 / Smallcap250 YoY pending a Kite index-history pull on
+the VPS (not fabricated; columns intentionally blank till real data).
