@@ -183,6 +183,25 @@ track to ~2020 then Max-Return separates (75.2× vs 40.4×; Nifty50
 ~−21% vs ~−14%; 2025 ~−19% vs ~−9%). Visual of the return-for-drawdown
 trade-off.
 
+**Phase 15 — decoupled regime clock — DONE.** Daily-marked engine
+(stricter daily MaxDD; compare WITHIN table only, not vs Ph09-13).
+
+| System | M (Cal/DD) | W (Cal/DD) | D (Cal/DD) | Best |
+|---|---|---|---|---|
+| SMOOTHEST | 1.52 / −24.1 | **1.65 / −22.2** | 1.53 / −23.1 | **WEEKLY** |
+| MAX-RETURN | 1.00 / −32.6 | 1.04 / −30.5 | 0.98 / −34.0 | ~flat (M) |
+| FORTIFIED | 1.02 / −31.7 | 1.06 / −29.6 | 1.00 / −33.2 | ~flat (M) |
+
+flips: M 29 / W 49 / D 105 (all systems). **Verdict:** the month-end
+lag is real **and worth fixing only for SMOOTHEST → use WEEKLY** (DD
+−24.1→−22.2, Calmar 1.52→1.65, CAGR flat; DAILY over-whipsaws — 105
+flips, CAGR 36.7→35.3, no DD gain). For MAX-RETURN/FORTIFIED the
+regime clock is ~irrelevant (Calmar pinned ~1.0 across M/W/D) — their
+drawdown is driven by mid-cap β>1 under-hedging in bears, NOT regime
+timing; faster only adds flip noise. → SMOOTHEST spec updated to a
+**weekly** regime check; MAX/FORT stay month-end.
+`scripts/15_decoupled_regime.py`, `results/phase15_decoupled_regime.csv`.
+
 **Open (user, not started):** protective-put hedge (5% OTM / ITM,
 regime-triggered) — conceptually a better fit than the futures short
 (keeps upside) but needs REAL Nifty options/IV history to backtest
