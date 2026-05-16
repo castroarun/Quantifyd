@@ -407,6 +407,23 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         ],
         highlightRows: [9],
       },
+      {
+        title: 'Phase 22 — SMOOTHEST de-risk variants (daily-marked engine)',
+        caption:
+          "SMOOTHEST risk-off-action variants on the daily-marked engine (stricter than the month-end Calmar in the tables above — compare WITHIN this table only). 'C keep-top8' (in risk-off, keep the 8 highest-RS holdings and cash the weaker 7, refilling to 15 only at a monthly rebalance when risk-on) is the single best refinement found: Calmar 1.60→1.73, MaxDD −22.2→−20.2%, post-tax CAGR ≈ flat. A (no market gate) and B (partial trims) are rejected/dominated; D (tighter per-stock SMA) is a mild positive. Modest, in-sample, single-window — adopting keep-top8 into the locked SMOOTHEST spec is a pending user decision.",
+        columns: ['Config', 'CAGR %', 'Post-tax @20% %', 'MaxDD %', 'Sharpe', 'Calmar', 'Verdict'],
+        rows: [
+          ['BASE SMOOTHEST (all-cash)', '35.4', '29.1', '−22.2', '1.87', '1.60', 'reference'],
+          ['A no-regime', '36.0', '27.3', '−37.6', '1.49', '0.96', 'rejected'],
+          ['B trim-25 (hold 75%)', '36.2', '25.3', '−30.7', '1.65', '1.18', 'dominated'],
+          ['B trim-50 (hold 50%)', '36.1', '22.0', '−26.4', '1.78', '1.37', 'dominated'],
+          ['C keep-top5', '35.5', '29.8', '−22.2', '1.83', '1.60', 'neutral-to-slight+'],
+          ['C keep-top8', '35.0', '29.3', '−20.2', '1.78', '1.73', 'BEST — beats BASE'],
+          ['D perstock-SMA80', '35.9', '29.4', '−22.1', '1.89', '1.62', 'slight+'],
+          ['D perstock-SMA60', '35.8', '29.4', '−21.5', '1.89', '1.66', 'mild+'],
+        ],
+        highlightRows: [5],
+      },
     ],
 
     results: {
