@@ -1,0 +1,5 @@
+variant,rule,cadence,cagr,post_tax20,maxdd_daily,sharpe,calmar,total_sells
+FORTIFIED-B R-M,forced-RS-rot,M,32.1,21.0,-34.4,1.4,0.94,831
+FORTIFIED-B R-W,forced-RS-rot,W,31.4,17.5,-27.1,1.46,1.16,1749
+FORTIFIED-B H-M,hold-til-break,M,33.7,26.6,-35.3,1.48,0.95,473
+FORTIFIED-B H-W,hold-til-break,W,29.8,20.7,-30.8,1.42,0.97,781

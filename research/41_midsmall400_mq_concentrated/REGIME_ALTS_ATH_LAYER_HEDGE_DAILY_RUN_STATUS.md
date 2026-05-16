@@ -202,6 +202,40 @@ timing; faster only adds flip noise. → SMOOTHEST spec updated to a
 **weekly** regime check; MAX/FORT stay month-end.
 `scripts/15_decoupled_regime.py`, `results/phase15_decoupled_regime.csv`.
 
+**Phase 18 — FORTIFIED-B (emergent-cash, no market gate) — RUNNING.**
+User design: NO Nifty regime gate. Sell a holding ONLY if (close < its
+own 100-day SMA) OR (price ≤ 0.88 × peak-since-entry). Refill freed
+slots from fresh RS-ranked names passing q0.5 + ATH≤10% + above own
+100-SMA. NO forced monthly RS rotation (a name is held until it breaks,
+not dropped on RS-rank slip). Emergent de-risk: in a crash, holdings
+hit stops AND nothing is near ATH → cash accumulates organically (6.5%).
+Equal-weight new buys = total/15; survivors not trimmed (winners run).
+Daily-marked engine; cadence swept **monthly vs weekly** (assess best).
+vs SMOOTHEST/MAX-RETURN/FORTIFIED. Runner `scripts/18_fortified_b.py`.
+
+**Phase 18 — FORTIFIED-B — DONE. REJECTED (dominated).** Emergent-cash,
+no market gate; tested R(forced-RS-rot)/H(hold-til-break) × M/W.
+
+| Variant | CAGR | net20 | dailyDD | Calmar | sells |
+|---|---|---|---|---|---|
+| R-M | 32.1 | 21.0 | −34.4 | 0.94 | 831 |
+| R-W | 31.4 | **17.5** | −27.1 | 1.16 | 1749 |
+| H-M | 33.7 | 26.6 | −35.3 | 0.95 | 473 |
+| H-W | 29.8 | 20.7 | −30.8 | 0.97 | 781 |
+
+vs SMOOTHEST(weekly) Cal 1.65 / DD −22.2 / post-tax ~30 (same daily
+engine). Every FORTIFIED-B variant dominated: Calmar 0.94–1.16,
+daily-DD −27 to −35%, post-tax 17–27% (best-Calmar R-W destroyed by
+1749-sell STCG churn → 17.5% post-tax). Per-year: monthly variants bled
+2025 (−20/−21%); weekly tamed it only via tax-ruinous churn. **Core
+reason:** in a crash the damage is in names already held — not buying
+fresh near-ATH names doesn't stop the held book bleeding; only an
+explicit action on the held book (cash / short Nifty) controls DD.
+No good cadence — the mechanism is the flaw, not its timing. **Verdict:
+drop FORTIFIED-B; keep the explicit-gate trio (SMOOTHEST/MAX-RETURN/
+FORTIFIED).** Confirms Phase 11 (stock-level alone can't replace the
+market gate).
+
 **Open (user, not started):** protective-put hedge (5% OTM / ITM,
 regime-triggered) — conceptually a better fit than the futures short
 (keeps upside) but needs REAL Nifty options/IV history to backtest
