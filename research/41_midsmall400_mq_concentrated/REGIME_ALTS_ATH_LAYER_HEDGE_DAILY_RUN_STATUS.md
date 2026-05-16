@@ -158,6 +158,25 @@ beat Smoothest's risk-adjusted return nor Max-Return's post-tax CAGR
 changes drawdown — same inertia finding as the 20% trail). Decision:
 keep the two clean parents; do not ship the hybrid.
 
+**Phase 13 system NAMED = `FORTIFIED`** (user keeps it as a candidate
+despite ~wash vs Max-Return — values the explicit per-stock exits as a
+discipline comfort at near-zero cost).
+
+### THREE CANDIDATE SYSTEMS (decision pending — user will pick later)
+
+| System | Risk-off | Stock stops | CAGR | net20 | MaxDD | Sharpe | Calmar |
+|---|---|---|---|---|---|---|---|
+| **SMOOTHEST** (Ph11) | →cash | perSMA+12%tr | 35.6 | 29.6 | **−15.1** | 1.80 | **2.36** |
+| **MAX-RETURN** (Ph10) | short 1×Nifty | none | 42.8 | **34.0** | −22.7 | 1.83 | 1.89 |
+| **FORTIFIED** (Ph13) | short 1×Nifty | perSMA+12%tr | **43.0** | 33.7 | −22.3 | 1.84 | 1.92 |
+
+Shared core: PIT mid-cap band, RS-120 vs NIFTYBEES, q0.5, ATH≤10% entry,
+N=15, top-22 buffer, monthly, 0.4% RT, 6.5% cash, 2014-2026. Final
+multiples: SMOOTHEST 40.4× / MAX-RETURN 75.2× / FORTIFIED ~75× / Nifty50
+4.7×. **Open**: pick 1 of 3; optional Phase 15 (daily/weekly regime
+gate to cut the month-end lag); optional protective-put hedge (needs
+real options/IV data).
+
 **Phase 14 — equity overlay** (`final_systems_pl_overlay.png`): both
 track to ~2020 then Max-Return separates (75.2× vs 40.4×; Nifty50
 4.7×); drawdown panel shows Max-Return consistently deeper (2018-19
