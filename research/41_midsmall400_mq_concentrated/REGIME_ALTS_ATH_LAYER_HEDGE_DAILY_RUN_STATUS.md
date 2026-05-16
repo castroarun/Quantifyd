@@ -264,6 +264,73 @@ sharp drops to 0% in risk-off windows; event counts over 12y: ENTRY
 785, EXIT_RS_ROTATION 331, EXIT_TRAIL12 159, EXIT_PERSTOCK_SMA 109,
 EXIT_REGIME_CHUNK 61.
 
+**Phase 21 — regime-triggered Nifty-PUT hedge: LABELLED SKETCH (NOT a
+backtest) — RUNNING.** No historical Nifty option/IV data exists
+(verified: 15 days of 2026 only). This is an ASSUMPTION-DRIVEN sketch:
+IV proxied as NIFTYBEES trailing realized vol × stated risk-premium
+markup; 1-month Nifty put priced via Black–Scholes; bought when the
+gate is risk-off (hold stocks, no cash/short), settled vs Nifty's
+realized monthly move, rolled monthly while risk-off, closed when Nifty
+> 100-SMA. SMOOTHEST selection core. Sweep strike {ATM, 5% OTM} ×
+IV-markup {1.0, 1.15, 1.30} vs SMOOTHEST(cash) & MAX-RETURN(short)
+refs. EVERY output captioned "illustrative, modeled-IV, NOT a result".
+Purpose: directional read on whether the premium drag is tolerable /
+whether real options data is worth sourcing. Runner
+`scripts/21_put_hedge_sketch.py`.
+
+**Phase 21 — DONE (sketch verdict, directional only).**
+
+| config (sketch) | CAGR | net20 | DD | Calmar |
+|---|---|---|---|---|
+| SMOOTHEST (cash) ref | 35.6 | 29.2 | −15.1 | **2.36** |
+| MAX-RETURN (short) ref | 29.7 | 21.5 | −26.9 | 1.10 |
+| PUT ATM ivx1.0 | 33.4 | 24.9 | −27.4 | 1.22 |
+| PUT ATM ivx1.3 | 30.8 | 22.6 | −28.8 | 1.07 |
+| PUT 5%OTM ivx1.0 | 33.8 | 25.3 | −27.5 | 1.23 |
+| PUT 5%OTM ivx1.3 | 32.3 | 24.0 | −28.2 | 1.15 |
+
+Directional read (NOT decision-grade — modelled IV): (1) the put
+**does beat the short** (CAGR 33–34 vs 29.7, post-tax 24–25 vs 21.5,
+≈same DD) — your instinct that a put fixes the 2025 short-backfire is
+correct. (2) **But neither put nor short comes anywhere near
+SMOOTHEST-cash** (Calmar ~1.1–1.23 vs **2.36**; DD ~−28% vs −15%) —
+holding falling mid-caps + a 1× under-hedging Nifty put still bleeds;
+cash just sidesteps it. (3) This holds **even at the unrealistically
+cheap ivx1.0** — so the conclusion is robust to the IV assumption:
+**a put improves the hedged systems but does not beat simply going to
+cash. → Not worth sourcing paid options data.** Simplest (cash) wins.
+
+### RESUME STATE (for a fresh session)
+
+- **Sole resume doc = THIS file.** Read it top-to-bottom + `git log`.
+- DONE & committed: Phases 09–21 (verdicts above / in §7–9), app
+  fully synced (commit 72b0706), FINAL_MODEL_SPEC.md current incl.
+  2025 caveat. Heatmap/chart on app.
+- **PENDING / not yet run:** Phase 22 (`scripts/22_smoothest_variants.py`
+  — A no-regime / B trim-25,50 / C keep-top5,8 / D perstock-SMA80,60;
+  script written, NOT launched). Revised all-at-once timeline
+  (`scripts/20_timeline_allatonce.py` — anti-overplot, NOT run).
+- 3 candidate systems unchanged: SMOOTHEST / MAX-RETURN / FORTIFIED;
+  open decision = user picks one + optional live paper-validation.
+- Rejected & recorded: FORTIFIED-B, staggered exit, permanent hedge,
+  covered calls, ATR regime, put-hedge (sketch, loses to cash).
+- To resume: `python scripts/22_smoothest_variants.py`,
+  `python scripts/20_timeline_allatonce.py`; both idempotent, read
+  canonical `backtest_data/market_data.db`; outputs → `results/`.
+
+**Phase 22 — SMOOTHEST de-risk variants — RUNNING.** Daily engine,
+weekly regime, vs SMOOTHEST(weekly all-at-once) base:
+A = NO regime (only 12%trail + own-100SMA + RS rotation; ~Ph11/FORT-B
+    family, re-run for parity);
+B = one-shot partial trim on risk-off (25% → hold 75%; and 50%), NOT
+    staggered-to-zero;
+C = shed weakest: risk-off → keep only top-K RS holdings (K=5, K=8),
+    rest cash; refill on risk-on;
+D = tighter per-stock trend exit: own-SMA length 80 and 60 (vs 100),
+    full SMOOTHEST.
+Each gross + post-tax@20% + per-year + daily-DD. Runner
+`scripts/22_smoothest_variants.py`.
+
 **Open (user, not started):** protective-put hedge (5% OTM / ITM,
 regime-triggered) — conceptually a better fit than the futures short
 (keeps upside) but needs REAL Nifty options/IV history to backtest
