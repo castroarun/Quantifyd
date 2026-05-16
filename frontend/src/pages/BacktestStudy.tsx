@@ -252,12 +252,9 @@ export default function BacktestStudy() {
         {study.results.tables.map((t, i) => (
           <StudyDataTable key={i} t={t} />
         ))}
-        {study.results.chart ? (
-          <StudyFigure
-            src={study.results.chart.src}
-            caption={study.results.chart.caption}
-          />
-        ) : null}
+        {study.results.charts?.map((c, i) => (
+          <StudyFigure key={i} src={c.src} caption={c.caption} />
+        ))}
       </section>
 
       {/* 7. Winners */}

@@ -101,11 +101,12 @@ export interface BacktestStudy {
   results: {
     metrics: StudyMetric[];
     tables: StudyTable[];
-    /** Optional finished figure (e.g. an equity / drawdown overlay PNG).
-     *  `src` is a web path served under /app/ (image lives in
-     *  frontend/public/ → copied to static/app/ at build). Rendered as a
-     *  responsive full-width image with a muted caption beneath. */
-    chart?: { src: string; caption: string };
+    /** Optional finished figures (e.g. an equity/drawdown overlay PNG, a
+     *  returns heatmap PNG). Each `src` is a web path served under /app/
+     *  (image lives in frontend/public/ → copied to static/app/ at
+     *  build). Each is rendered as a responsive full-width image with a
+     *  muted caption beneath, in order. */
+    charts?: { src: string; caption: string }[];
   };
 
   // ---- Section 6: Winners ----
@@ -451,28 +452,6 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ],
         },
         {
-          title: 'Year-by-year vs Nifty 50 (gross), 2014–2026',
-          caption:
-            'Beat Nifty 50 in 10 of 13 years. CAGR 35.3% gross (28.9% post-tax) vs Nifty 50 13.6% over 12.1y. Returns are gross (pre-STCG; index returns are also pre-tax — fair like-for-like). The 3 lag years (2018/2019/2025) are precisely the regime-gated risk-off years (sat in 6.5% cash through small-cap bears — controlled give-back is the edge). Nifty 100 / Midcap 150 / Smallcap 250 YoY are intentionally NOT shown — that long history is not in our data; pending a real Kite index-history pull on the VPS (not fabricated).',
-          columns: ['Year', 'Strategy gross %', 'Nifty 50 %', 'Excess pp', 'Note'],
-          rows: [
-            ['2014', '133.1', '31.6', '+101.5', 'inception (full-yr midcap rally, 1.0 base)'],
-            ['2015', '−0.8', '−4.3', '+3.5', ''],
-            ['2016', '22.5', '4.0', '+18.5', ''],
-            ['2017', '82.8', '29.9', '+52.9', ''],
-            ['2018', '−1.9', '4.8', '−6.7', 'regime risk-off'],
-            ['2019', '2.7', '13.6', '−10.9', 'regime risk-off'],
-            ['2020', '62.3', '15.4', '+46.9', ''],
-            ['2021', '95.2', '26.0', '+69.2', ''],
-            ['2022', '12.5', '5.5', '+7.0', ''],
-            ['2023', '52.4', '21.0', '+31.4', ''],
-            ['2024', '38.0', '10.4', '+27.6', ''],
-            ['2025', '1.4', '11.7', '−10.3', 'regime risk-off'],
-            ['2026', '−1.3', '−1.5', '+0.2', 'partial year'],
-          ],
-          heatmap: true,
-        },
-        {
           title: 'Live Top-15 — q0.5_dd__v__REG (as-of 2026-02-16 laptop snapshot)',
           caption:
             'RS-ranked picks + current fundamentals (web: screener.in, ~Mar-2026 FY) as a post-selection human annotation only. Regime: NIFTYBEES 290.76 ≥ SMA200 285.17 → RISK-ON. 68/91 supplied names passed the quality screen. Re-run scripts/05_live_top15.py on the VPS for a true today-dated list.',
@@ -496,11 +475,18 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ],
         },
       ],
-      chart: {
-        src: '/app/final_systems_pl_overlay.png',
-        caption:
-          'Equity overlay — SMOOTHEST vs MAX-RETURN vs Nifty-50 (log scale, with drawdown panel), PIT mid-cap band, 2014–2026. Engines/rulers differ — see caveats.',
-      },
+      charts: [
+        {
+          src: '/app/final_systems_pl_overlay.png',
+          caption:
+            'Equity overlay — SMOOTHEST vs MAX-RETURN vs Nifty-50 (log scale, with drawdown panel), PIT mid-cap band, 2014–2026. Engines/rulers differ — see caveats; Nifty-50 drawdown now overlaid in the lower panel.',
+        },
+        {
+          src: '/app/yearly_matrix_heatmap.png',
+          caption:
+            'Yearly returns heatmap — SMOOTHEST / MAX-RETURN / FORTIFIED vs Nifty 50 (gross), PIT mid-cap band, 2014–2026. Replaces the prior annual table. Note 2025: MAX-RETURN/FORTIFIED −11.8% / −11.4% vs Nifty 50 +11.7% — the regime-short backfire (long falling mid-caps + short a rising Nifty); SMOOTHEST −0.8% (cash, no short). See caveats.',
+        },
+      ],
     },
 
     winners: [
