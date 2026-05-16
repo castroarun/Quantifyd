@@ -192,33 +192,50 @@ export default function BacktestStudy() {
         </div>
       </div>
 
-      {/* 2. System */}
+      {/* 2. System Rules (optional — the actual traded rules, stated
+          before the System/Conditions narrative and the evidence
+          tables so the rules precede the results). */}
+      {study.systemRules ? (
+        <section className={styles.section}>
+          <SectionHead n={2} label="System Rules" />
+          {study.systemRules.intro ? (
+            <div className={styles.sectionIntro}>{study.systemRules.intro}</div>
+          ) : null}
+          <div className={styles.subHead}>{study.systemRules.sharedCoreTitle}</div>
+          <KVList rows={study.systemRules.sharedCore} />
+          <div className={styles.systemRulesTable}>
+            <StudyDataTable t={study.systemRules.riskLayer} />
+          </div>
+        </section>
+      ) : null}
+
+      {/* 3. System */}
       <section className={styles.section}>
-        <SectionHead n={2} label="System" />
+        <SectionHead n={study.systemRules ? 3 : 2} label="System" />
         <div className={styles.sectionIntro}>{study.system.intro}</div>
         <KVList rows={study.system.rows} />
       </section>
 
-      {/* 3. Conditions */}
+      {/* 4. Conditions */}
       <section className={styles.section}>
-        <SectionHead n={3} label="Conditions" />
+        <SectionHead n={study.systemRules ? 4 : 3} label="Conditions" />
         {study.conditions.intro ? (
           <div className={styles.sectionIntro}>{study.conditions.intro}</div>
         ) : null}
         <KVList rows={study.conditions.rows} />
       </section>
 
-      {/* 4. Comparisons */}
+      {/* 5. Comparisons */}
       <section className={styles.section}>
-        <SectionHead n={4} label="Comparisons" />
+        <SectionHead n={study.systemRules ? 5 : 4} label="Comparisons" />
         {study.comparisons.map((t, i) => (
           <StudyDataTable key={i} t={t} />
         ))}
       </section>
 
-      {/* 5. Results */}
+      {/* 6. Results */}
       <section className={styles.section}>
-        <SectionHead n={5} label="Results" />
+        <SectionHead n={study.systemRules ? 6 : 5} label="Results" />
         <div className={styles.metricGrid}>
           {study.results.metrics.map((m, i) => (
             <MetricCard
@@ -243,9 +260,9 @@ export default function BacktestStudy() {
         ) : null}
       </section>
 
-      {/* 6. Winners */}
+      {/* 7. Winners */}
       <section className={styles.section}>
-        <SectionHead n={6} label="Winners" />
+        <SectionHead n={study.systemRules ? 7 : 6} label="Winners" />
         {study.winners.map((w, i) => (
           <div key={i} className={styles.winnerCallout}>
             <div className={styles.winnerBadge}>WINNER</div>
@@ -273,9 +290,9 @@ export default function BacktestStudy() {
         ))}
       </section>
 
-      {/* 7. Caveats */}
+      {/* 8. Caveats */}
       <section className={styles.section}>
-        <SectionHead n={7} label="Caveats" />
+        <SectionHead n={study.systemRules ? 8 : 7} label="Caveats" />
         <ol className={styles.caveatList}>
           {study.caveats.map((c, i) => (
             <li key={i}>{c}</li>
@@ -283,9 +300,9 @@ export default function BacktestStudy() {
         </ol>
       </section>
 
-      {/* 8. Links */}
+      {/* 9. Links */}
       <section className={styles.section}>
-        <SectionHead n={8} label="Links" />
+        <SectionHead n={study.systemRules ? 9 : 8} label="Links" />
         <div className={styles.linkGrid}>
           <div className={styles.linkCol}>
             <div className={styles.linkColHead}>GitHub</div>

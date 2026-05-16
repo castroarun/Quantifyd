@@ -156,6 +156,23 @@
   line-height: 1.6;
 }
 
+/* ---------- System Rules (shared-core list + risk-layer table) ---------- */
+
+/* The shared-core sub-heading sits just above the KV list. */
+.subHead {
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+/* Keep the risk-layer table from collapsing flush against the KV list
+   (it is the first .tableBlock in the section, so it would otherwise
+   pick up the :first-of-type { margin-top: 0 } rule). */
+.systemRulesTable {
+  margin-top: 22px;
+}
+
 /* ---------- Tables ---------- */
 
 .tableBlock {

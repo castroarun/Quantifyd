@@ -36,6 +36,19 @@ export interface KV {
   v: string;
 }
 
+/** An explicit statement of the actual traded SYSTEM RULES, placed
+ *  early (before the results/comparison tables) so the rules precede
+ *  the evidence. `sharedCore` is the rule-set common to every variant
+ *  (rendered as a key/value list); `riskLayer` is the per-variant
+ *  divergence (rendered as the standard comparison table). Optional —
+ *  studies without distinct variants can omit it. */
+export interface SystemRules {
+  intro?: string;
+  sharedCoreTitle: string;
+  sharedCore: KV[];
+  riskLayer: StudyTable;
+}
+
 export interface WinnerCallout {
   /** e.g. the config label */
   config: string;
@@ -64,7 +77,12 @@ export interface BacktestStudy {
   /** 2-3 headline stats for the index card. */
   cardStats: { label: string; value: string }[];
 
-  // ---- Section 2: System ----
+  // ---- Section: System Rules (optional; rendered early, before
+  //      System/Conditions/Comparisons so the actual traded rules
+  //      precede the evidence) ----
+  systemRules?: SystemRules;
+
+  // ---- Section: System ----
   system: {
     intro: string;
     rows: KV[];
@@ -119,17 +137,80 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       { label: 'MaxDD', value: '−24.6%' },
     ],
 
+    systemRules: {
+      intro:
+        'The actual traded system. Three named candidates share one identical stock-selection core (below) and differ ONLY in the risk layer. The original SMA200 gate (q0.5_dd__v__REG) is the baseline this evolved from — superseded by the SMA100-based variants per Phase 09; the rules here are authoritative, the Phase tables that follow are the evidence trail.',
+      sharedCoreTitle: 'Shared core — identical for all three; evaluated monthly',
+      sharedCore: [
+        {
+          k: 'Universe',
+          v: 'Survivorship-free point-in-time mid-cap liquidity band = rank 101–250 by trailing-6-month median (close × volume), rebuilt every month from ~1,623 NSE daily symbols (not index membership).',
+        },
+        {
+          k: 'Signal',
+          v: 'Relative Strength RSᵢ = (Pᵢ[t] / Pᵢ[t−120]) / (NIFTYBEES[t] / NIFTYBEES[t−120]); rank high→low.',
+        },
+        {
+          k: 'Quality screen (q0.5)',
+          v: 'Take the last 252 trading days, split into 12 consecutive 21-day blocks; keep a stock only if ≥ 6 of the 12 blocks ended higher than they started.',
+        },
+        {
+          k: 'Entry filter',
+          v: 'Price ≥ 90% of its point-in-time all-time high (within 10% of ATH).',
+        },
+        { k: 'Hold', v: 'Top 15, equal-weight.' },
+        {
+          k: 'Rotation',
+          v: 'Monthly; top-22 retention buffer — a holding is sold only when it drops out of the top 22 by RS (low churn).',
+        },
+        {
+          k: 'Costs / cash / tax',
+          v: '0.4% round-trip on turnover; idle/cash 6.5% p.a.; post-tax = net 20% STCG on lots held < 365 days (LTCG not modelled).',
+        },
+        {
+          k: 'Backtest window',
+          v: '2014→2026 (~12.1y, incl. 2018/2020/2022/2025 bears).',
+        },
+      ],
+      riskLayer: {
+        title: 'Per-system risk layer — the only difference between the three',
+        caption:
+          'SMOOTHEST uses a weekly regime check (Phase-15 result: cuts drawdown without whipsaw; daily over-trades). MAX-RETURN/FORTIFIED are indifferent to regime cadence so stay month-end. Caveats: price-path quality ≠ fundamentals; PIT universe is a liquidity proxy; the Nifty short is modelled frictionless and 1× under-hedges mid-cap β>1 (live would be worse); LTCG not netted; nothing wired live.',
+        columns: ['System', 'Regime gate', 'Risk-off action', 'Stock-level exits'],
+        rows: [
+          [
+            'SMOOTHEST',
+            'NIFTYBEES vs its 100-day SMA, checked WEEKLY',
+            'Liquidate entire book to cash @6.5% until risk-on',
+            'per-stock-100-SMA exit + 12% trailing stop (applied at month-ends)',
+          ],
+          [
+            'MAX-RETURN',
+            'NIFTYBEES vs 100-day SMA, checked month-end',
+            'Stay invested + short 1× Nifty notional (rolled monthly while risk-off; removed when risk-on)',
+            'none',
+          ],
+          [
+            'FORTIFIED',
+            'NIFTYBEES vs 100-day SMA, checked month-end',
+            'Stay invested + short 1× Nifty (same as Max-Return)',
+            'per-stock-100-SMA exit + 12% trailing stop',
+          ],
+        ],
+      },
+    },
+
     system: {
       intro:
-        'Out of the Nifty MidSmallcap-400 Momentum-Quality space (NSE index ~20% CAGR), can a concentrated, frequently-rotated stock-selection rule consistently and robustly beat the index — validated survivorship-free, with honest drawdown, tax and out-of-sample treatment? Hurdle = ~20% CAGR.',
+        'Out of the Nifty MidSmallcap-400 Momentum-Quality space (NSE index ~20% CAGR), can a concentrated, frequently-rotated stock-selection rule consistently and robustly beat the index — validated survivorship-free, with honest drawdown, tax and out-of-sample treatment? Hurdle = ~20% CAGR. The exact traded rules are stated up front in System Rules; the system is one shared selection core plus a per-variant risk layer with three named variants (SMOOTHEST / MAX-RETURN / FORTIFIED — see System Rules). The block below describes that shared core. The original SMA200 gate (q0.5_dd__v__REG) is only the baseline this evolved from — superseded by the SMA100-based variants per Phase 09; it is never the current system.',
       rows: [
         {
           k: 'Backtest universe',
-          v: 'Survivorship-free point-in-time (PIT). Source pool = every NSE symbol with daily data in market_data.db (~1,623 symbols, 2000→2026). Ranked monthly (no look-ahead) by trailing 126-day median daily traded value (close × volume) as a liquidity/size proxy. Eligibility ≥ 75 priced bars in the lookback. Top-100 dropped as large-cap.',
+          v: 'Survivorship-free point-in-time (PIT) mid-cap liquidity band = rank 101–250 by trailing-6-month median daily traded value (close × volume), rebuilt every month (no look-ahead) from ~1,623 NSE daily symbols (2000→2026). Not index membership. Eligibility ≥ 75 priced bars in the lookback; top-100 dropped as large-cap.',
         },
         {
-          k: 'Liquidity bands',
-          v: 'mid = rank 101–250 (chosen) · small = 251–500 · combo = 101–500. A separate semi-annual reconstruction sanity-checked the proxy: ~68/100 of today\'s supplied MQ100 fall in the reconstructed 101–500 band.',
+          k: 'Liquidity bands tested',
+          v: 'mid = rank 101–250 (chosen, locked) · small = 251–500 · combo = 101–500. A separate semi-annual reconstruction sanity-checked the proxy: ~68/100 of today\'s supplied MQ100 fall in the reconstructed 101–500 band.',
         },
         {
           k: 'Live-pick universe',
@@ -137,15 +218,23 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         },
         {
           k: 'Core signal — Relative Strength',
-          v: 'RS_i = (P_i[t] / P_i[t-L]) / (BENCH[t] / BENCH[t-L]). BENCH = NIFTYBEES (Nifty-50 ETF, full daily history 2005→2026). RS is a ratio so the ETF price scale cancels. Within the chosen band, sort eligible names by RS descending.',
+          v: 'RSᵢ = (Pᵢ[t] / Pᵢ[t−120]) / (NIFTYBEES[t] / NIFTYBEES[t−120]). BENCH = NIFTYBEES (Nifty-50 ETF, full daily history 2005→2026). RS is a ratio so the ETF price scale cancels. Within the mid band, sort eligible names by RS descending.',
         },
         {
-          k: 'Selection (winning config q0.5_dd__v__REG)',
-          v: '1) PIT mid-band gate. 2) Regime gate: if NIFTYBEES close < its 200-session SMA → hold zero equity, sit in 6.5% cash that month. 3) RS-120 ranking. 4) Quality screen q0.5: keep a name only if ≥50% of its trailing-12m 21-day blocks were positive. 5) Volume-breakout confirm = OFF (tested, rejected). 6) Own-DD cap = OFF in headline. 7) Fill to N=15 equal-weight, applying the top-22 buffer.',
+          k: 'Quality screen (q0.5)',
+          v: 'Last 252 trading days split into 12 consecutive 21-day blocks; keep a name only if ≥ 6 of the 12 blocks ended higher than they started. Price-path proxy — not fundamentals.',
         },
         {
-          k: 'Rotation',
-          v: 'Monthly (rebalance each month-end bar). Portfolio size N=15. Retention buffer = N×1.5 = top-22 hysteresis: a held name is kept while it stays in the top-22 by RS; only names falling out of the top-22 are sold; freed slots refill from the top-15 down. Cuts churn → less cost and less STCG.',
+          k: 'Entry filter',
+          v: 'Price ≥ 90% of its point-in-time all-time high (within 10% of ATH). Volume-breakout confirm = OFF (tested, rejected).',
+        },
+        {
+          k: 'Hold & rotation',
+          v: 'Top 15, equal-weight. Monthly rebalance. Top-22 retention buffer (N × 1.5 hysteresis on RS rank): a held name is kept while it stays in the top 22; only names falling out of the top 22 are sold; freed slots refill from the top 15 down. Cuts churn → less cost and less STCG.',
+        },
+        {
+          k: 'Regime / risk layer',
+          v: 'Selection feeds a market-regime risk layer that can flatten the book or short Nifty. This is the ONLY axis on which the three named variants (SMOOTHEST / MAX-RETURN / FORTIFIED) differ — exact gates, risk-off actions and stock-level exits per variant are in System Rules. The original SMA200→cash gate (q0.5_dd__v__REG) is the superseded baseline only.',
         },
         {
           k: 'Fundamentals',
@@ -155,20 +244,21 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     },
 
     conditions: {
-      intro: 'Exact rules, costs, tax and data window the validated numbers were produced under.',
+      intro:
+        'Exact costs, cash, tax and data window the validated numbers were produced under (shared by all three variants — the per-variant regime/risk differences are in System Rules).',
       rows: [
         { k: 'Frequency', v: 'Monthly rebalance on each month-end bar.' },
         { k: 'Portfolio size N', v: '15 (swept 10/15/20/25/30).' },
         { k: 'Retention buffer', v: 'top-22 (N × 1.5) hysteresis on RS rank.' },
         {
           k: 'Regime check',
-          v: 'Runs first every month; can flatten the whole book to cash irrespective of RS (NIFTYBEES vs its 200-session SMA).',
+          v: 'A market-regime gate runs every period and can flatten the book to cash or short Nifty irrespective of RS. The active variants gate on NIFTYBEES vs its 100-session SMA (SMOOTHEST checks it WEEKLY; MAX-RETURN/FORTIFIED month-end). The 200-session SMA gate is the superseded original baseline (Phase 09). Full per-variant detail in System Rules.',
         },
-        { k: 'Transaction cost', v: '0.4% round-trip applied on the fraction of the book that changes each month (brokerage+STT+impact, small-cap level).' },
+        { k: 'Transaction cost', v: '0.4% round-trip applied on the fraction of the book that changes each period (brokerage+STT+impact, small-cap level).' },
         { k: 'Idle / bear cash', v: '+6.5% p.a. (debt), modelled explicitly — not 0%.' },
         {
           k: 'STCG (held <365d, sold at gain)',
-          v: 'Modelled in Phase 04: 15% (pre-Jul-2024) and 20% (current).',
+          v: 'Modelled in Phase 04: 15% (pre-Jul-2024) and 20% (current). Headline post-tax CAGR uses net 20%.',
         },
         {
           k: 'LTCG',
@@ -176,7 +266,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         },
         {
           k: 'Window',
-          v: '2014-01-01 → 2026 (12.1y); includes the 2018-19 small-cap bear, Mar-2020, 2022, and the 2025 drawdown.',
+          v: '2014-01-01 → 2026 (~12.1y); includes the 2018-19 small-cap bear, Mar-2020, 2022, and the 2025 drawdown.',
         },
         {
           k: 'RS lookback L swept',
