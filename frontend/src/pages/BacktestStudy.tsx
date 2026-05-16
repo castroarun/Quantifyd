@@ -22,15 +22,88 @@ function fmtDate(d: string): string {
 
 type TableRow = { cells: string[]; _hl: boolean };
 
+/** Parse a numeric cell like "+101.5", "−10.3", "35.3%", "—".
+ *  Handles the unicode minus (−, U+2212) used in the data. */
+function parseNum(s: string): number | null {
+  if (s == null) return null;
+  const cleaned = s
+    .replace(/−/g, '-')   // unicode minus → ascii
+    .replace(/[%+,]/g, '')
+    .trim();
+  if (cleaned === '' || cleaned === '-' || /^[—–-]$/.test(s.trim())) return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Diverging red → neutral → green background for a value within a
+ *  symmetric range. Returns a translucent rgba so the dark theme shows
+ *  through, plus a flag for whether the cell is "strong" (needs lighter
+ *  text for contrast). */
+function heatStyle(value: number, maxAbs: number): { background: string; strong: boolean } {
+  if (maxAbs <= 0) return { background: 'transparent', strong: false };
+  // normalized intensity 0..1, clamped
+  const t = Math.min(1, Math.abs(value) / maxAbs);
+  // ease so near-zero stays neutral, extremes pop
+  const a = Math.round(0.65 * Math.pow(t, 0.85) * 100) / 100;
+  const strong = t > 0.55;
+  if (value >= 0) {
+    // green (matches --accent-pos family)
+    return { background: `rgba(31, 168, 122, ${a})`, strong };
+  }
+  // red
+  return { background: `rgba(214, 69, 69, ${a})`, strong };
+}
+
 function StudyDataTable({ t }: { t: StudyTable }) {
+  const hl = new Set(t.highlightRows ?? []);
+  const rows: TableRow[] = t.rows.map((cells, i) => ({ cells, _hl: hl.has(i) }));
+
+  // Which columns are numeric (heatmap-eligible): every column that has
+  // at least one parseable number across the body, excluding column 0.
+  const numericCols = new Set<number>();
+  const colMaxAbs: Record<number, number> = {};
+  if (t.heatmap) {
+    t.columns.forEach((_h, ci) => {
+      if (ci === 0) return;
+      let any = false;
+      let maxAbs = 0;
+      for (const r of t.rows) {
+        const n = parseNum(r[ci]);
+        if (n != null) {
+          any = true;
+          maxAbs = Math.max(maxAbs, Math.abs(n));
+        }
+      }
+      if (any) {
+        numericCols.add(ci);
+        colMaxAbs[ci] = maxAbs;
+      }
+    });
+  }
+
   const columns: Column<TableRow>[] = t.columns.map((header, ci) => ({
     key: String(ci),
     header,
     align: ci === 0 ? 'left' : 'right',
-    render: (row: TableRow) => row.cells[ci],
+    render: (row: TableRow) => {
+      const raw = row.cells[ci];
+      if (t.heatmap && numericCols.has(ci)) {
+        const n = parseNum(raw);
+        if (n != null) {
+          const { background, strong } = heatStyle(n, colMaxAbs[ci]);
+          return (
+            <span
+              className={`${styles.heatCell} ${strong ? styles.heatStrong : ''}`}
+              style={{ background }}
+            >
+              {raw}
+            </span>
+          );
+        }
+      }
+      return raw;
+    },
   }));
-  const hl = new Set(t.highlightRows ?? []);
-  const rows: TableRow[] = t.rows.map((cells, i) => ({ cells, _hl: hl.has(i) }));
 
   return (
     <div className={styles.tableBlock}>
@@ -42,6 +115,13 @@ function StudyDataTable({ t }: { t: StudyTable }) {
         rowKey={(_r, i) => i}
         rowClassName={(r) => (r._hl ? styles.hlRow : undefined)}
       />
+      {t.heatmap ? (
+        <div className={styles.heatLegend}>
+          <span className={styles.heatLegendLabel}>Under-perform</span>
+          <span className={styles.heatLegendBar} aria-hidden="true" />
+          <span className={styles.heatLegendLabel}>Out-perform</span>
+        </div>
+      ) : null}
     </div>
   );
 }

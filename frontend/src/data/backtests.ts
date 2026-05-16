@@ -15,6 +15,10 @@ export interface StudyTable {
   columns: string[];
   rows: string[][];
   highlightRows?: number[];
+  /** When true, numeric body columns are rendered as a diverging
+   *  red→neutral→green heatmap (scaled per-column by its own range).
+   *  Non-numeric columns (e.g. Year, Note) stay plain. */
+  heatmap?: boolean;
 }
 
 /** A single headline metric tile (CAGR / Sharpe / MaxDD / Calmar / …). */
@@ -318,6 +322,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
             ['2025', '1.4', '11.7', '−10.3', 'regime risk-off'],
             ['2026', '−1.3', '−1.5', '+0.2', 'partial year'],
           ],
+          heatmap: true,
         },
         {
           title: 'Live Top-15 — q0.5_dd__v__REG (as-of 2026-02-16 laptop snapshot)',
