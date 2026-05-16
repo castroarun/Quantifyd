@@ -144,6 +144,31 @@ bind (price-path quality not fundamentals; PIT liquidity proxy; LTCG
 not netted; no live wiring).
 
 | 2026-05-16 ~13:3x | **Phases 10 & 11 DONE; consolidated verdict locked** | new best Calmar 2.36; beta-hedge 34% post-tax |
+| 2026-05-16 ~18:0x | **Phase 13 (COMBINED) DONE — dominated middle** | beta-hedge + per-stock-SMA + 12% trail = 43.0 gross / 33.7 net20 / −22.3 DD / Cal 1.92. Fails both ways: < Smoothest Calmar 2.36, < Max-Return net20 34.0 (extra stop churn adds tax drag, barely moves DD). Keep the two clean parents. |
+| 2026-05-16 ~18:0x | **Phase 14 — equity overlay chart** | `results/final_systems_pl_overlay.png` (log-scale NAV + drawdown panel). Final: SMOOTHEST 40.4× / MAX-RETURN 75.2× / Nifty50 4.7× over 2014–2026. |
+
+## 9. Phase 13/14 addendum
+
+**Phase 13 — combining is NOT worth it.** Adding Smoothest's stock-level
+exits onto Max-Return: 43.0% gross / **33.7% post-tax** / −22.3% DD /
+Calmar 1.92. vs SMOOTHEST 35.6/29.6/−15.1/2.36 and MAX-RETURN
+42.8/34.0/−22.7/1.89. The combined is a **dominated middle** — doesn't
+beat Smoothest's risk-adjusted return nor Max-Return's post-tax CAGR
+(the extra per-stock-SMA/12%-trail churn realizes more STCG and barely
+changes drawdown — same inertia finding as the 20% trail). Decision:
+keep the two clean parents; do not ship the hybrid.
+
+**Phase 14 — equity overlay** (`final_systems_pl_overlay.png`): both
+track to ~2020 then Max-Return separates (75.2× vs 40.4×; Nifty50
+4.7×); drawdown panel shows Max-Return consistently deeper (2018-19
+~−21% vs ~−14%; 2025 ~−19% vs ~−9%). Visual of the return-for-drawdown
+trade-off.
+
+**Open (user, not started):** protective-put hedge (5% OTM / ITM,
+regime-triggered) — conceptually a better fit than the futures short
+(keeps upside) but needs REAL Nifty options/IV history to backtest
+honestly; pending an `options_data.db` coverage check. No fabricated
+IV.
 User Qs: (a) the 20% trail was INERT — so test *binding* tighter
 stock-level trailing stops (15/12/10%); can a binding stop REPLACE the
 market SMA100 gate? (b) per-stock SMA100 trend filter (hold only while a
