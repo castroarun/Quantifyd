@@ -1,6 +1,7 @@
 # MidSmallcap400 Momentum-Quality — Concentrated Top-10 Rotation
 
-**STATUS: COMPLETE — RS sweep + Phase-03 overlays + Phase-04 OOS/post-tax all done & passed. See results/RESULTS.md.**
+**STATUS: COMPLETE — RS sweep + Phase-03 overlays + Phase-04 OOS/post-tax all done & passed. See results/MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md
+(+ _DETAILED_REPORT.md).**
 Verdict: RS-concentrated on PIT mid/small **robustly beats the ~20% hurdle**
 (75/75 raw; 12 robust ex-top3 34–39%). RS-alone pick `mid_120d_N15` = 38.4%
 CAGR / −29.8% DD / Calmar 1.29. **Phase-03 final pick `q0.5_dd__v__REG`**
@@ -116,8 +117,9 @@ All read `backtest_data/market_data.db` (canonical on VPS). Idempotent.
 | `scripts/02_factors.py` | momentum + quality-proxy | yes |
 | `scripts/03_rotation_backtest.py` | concentrated top-10 rotation | yes |
 | `scripts/04_walkforward.py` | OOS validation | yes |
-| `scripts/05_live_top10.py` | today's portfolio + quality overlay | yes |
-| `results/RESULTS.md` | findings + honest verdict | yes |
+| `scripts/05_live_top15.py` | today's portfolio + quality overlay | yes |
+| `results/MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md` | findings + honest verdict | yes |
+| `results/MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md` | full methodology + all comparisons | yes |
 
 ## 8. Findings
 
@@ -134,10 +136,13 @@ Do **not** cite run #1 numbers anywhere.
   1.39, MaxDD −29.8%, Calmar 1.29, ex-top3 33.9%, top-3 share 11.9%.
 - 55d lookback = worst DD bucket (−54 to −66%); 6m/blend dominate; mid
   universe best risk-adjusted.
-- Honest caveats locked in RESULTS.md: quality not tested (pure price RS);
-  PIT universe is liquidity-proxy; −30% DD real; STCG NOT netted; no OOS yet.
+- Honest caveats locked in the RESULTS doc: quality not a fundamental
+  screen (price-path proxy); PIT universe is liquidity-proxy; ~−25% DD
+  real (post-regime); STCG netted in Phase 04; OOS passed.
 
-Full findings + recommended config + caveats → **results/RESULTS.md**.
+Full findings + recommended config + caveats →
+**results/MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md**; full methodology +
+every comparison → **results/MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md**.
 
 **Phase 05 (live deliverable) — DONE.** `scripts/05_live_top15.py` →
 today's top-15 from `q0.5_dd__v__REG` on the supplied MQ100 (as-of

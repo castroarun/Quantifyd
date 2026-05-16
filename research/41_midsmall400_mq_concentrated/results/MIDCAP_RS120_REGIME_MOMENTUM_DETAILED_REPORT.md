@@ -1,7 +1,8 @@
 # MidSmallcap400-MQ Concentrated Rotation — Detailed Methodology & Results Report
 
 Single comprehensive reference for the research/41 study. For the short
-verdict see `RESULTS.md`; for live picks see `LIVE_TOP15_WITH_FUNDAMENTALS.md`;
+verdict see `MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md`; for live picks see
+`LIVE_TOP15_WITH_FUNDAMENTALS.md`;
 for the running log see the STATUS-MD. This document is the full detail:
 universe, selection, filtering/ranking, rotation, costs/tax, and every
 comparison run.
@@ -310,7 +311,7 @@ free sources can't supply as-of-date financials without look-ahead.
 | `results/phase03_overlay_sweep.csv` | all 53 overlay results |
 | `results/phase04_walkforward.csv` | walk-forward year-by-year picks |
 | `results/phase04_chosen_gross_nav.csv` | chosen-config NAV curve |
-| `results/RESULTS.md` | short verdict + caveats |
+| `results/MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md` | short verdict + caveats |
 | `results/LIVE_TOP15_WITH_FUNDAMENTALS.md` | live picks + fundamentals overlay |
-| `results/DETAILED_REPORT.md` | **this document** |
+| `results/MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md` | **this document** |
 | `MIDSMALL400_MQ_CONCENTRATED_DAILY_SWEEP_STATUS.md` | running log / crash recovery |

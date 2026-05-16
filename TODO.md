@@ -218,7 +218,8 @@ _(Move items here when work begins. Include start date.)_
 
 - ✅ **research/41 closed — validated edge that beats the ~20% MQ100 hurdle.**
   Status doc: [research/41_midsmall400_mq_concentrated/MIDSMALL400_MQ_CONCENTRATED_DAILY_SWEEP_STATUS.md](research/41_midsmall400_mq_concentrated/MIDSMALL400_MQ_CONCENTRATED_DAILY_SWEEP_STATUS.md);
-  full findings: [results/RESULTS.md](research/41_midsmall400_mq_concentrated/results/RESULTS.md).
+  full findings: [MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md](research/41_midsmall400_mq_concentrated/results/MIDCAP_RS120_REGIME_MOMENTUM_RESULTS.md);
+  full methodology + comparisons: [..._DETAILED_REPORT.md](research/41_midsmall400_mq_concentrated/results/MIDCAP_RS120_REGIME_MOMENTUM_DETAILED_REPORT.md).
   - **Caught + fixed a benchmark bug** that voided run #1: `NIFTY50` daily
     only spans 2023→2026 so 8/12 backtest yrs sat in cash. Fixed →
     `NIFTYBEES` (2005→2026). Run #1 numbers documented as void.
