@@ -121,8 +121,7 @@ def main():
     ax.set_yticks(np.arange(-.5, len(YEARS), 1), minor=True)
     ax.grid(which="minor", color="white", lw=1.4)
     ax.tick_params(which="minor", length=0)
-    cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
-    cb.set_label("Annual return %")
+    # colorbar intentionally omitted (cells are % -annotated + colour-coded)
     fig.tight_layout()
     out = RES / "yearly_matrix_heatmap.png"
     fig.savefig(out, dpi=145); plt.close(fig)

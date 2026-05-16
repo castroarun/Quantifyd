@@ -58,6 +58,17 @@ the index CAGR**.
 3. The Nifty short (Max-Return/Fortified) is modelled **frictionless** —
    no futures roll/basis/margin, and 1× **under-hedges** mid-cap β>1,
    so live results would be somewhat worse than shown.
+3a. **MAX-RETURN / FORTIFIED 2025 cautionary case (verified):** the
+   regime short is **double-edged**. In a "large-cap up / mid-cap down"
+   year where the gate flips risk-off but Nifty then *rises* (2025:
+   Nifty-50 **+11.7%**), these systems are long falling mid-caps **and**
+   short a rising Nifty → **double loss: −11.8% / −11.4% vs Nifty
+   +11.7%** (≈23pp under the index). SMOOTHEST avoided it (cash, no
+   short → −0.8%). The hedge is a huge winner when Nifty crashes after
+   risk-off (2020 +108%) but a significant loser when Nifty rebounds
+   after risk-off (2025). This is the inherent risk of a regime-
+   triggered index short; it directly favours SMOOTHEST for the
+   risk-averse.
 4. LTCG not netted; STCG@20% is.
 5. No walk-forward OOS on the Phase 09–15 refinements (the parent
    RS study was OOS-validated; these overlays were tuned in-sample).

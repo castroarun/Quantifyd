@@ -236,6 +236,15 @@ drop FORTIFIED-B; keep the explicit-gate trio (SMOOTHEST/MAX-RETURN/
 FORTIFIED).** Confirms Phase 11 (stock-level alone can't replace the
 market gate).
 
+**Phase 19/20 — SMOOTHEST STAGGERED EXIT + event timeline — RUNNING.**
+User: liquidating 100% on one weekly risk-off signal is drastic; scale
+out in chunks (25%/wk while Nifty < 100-SMA, re-check weekly; risk-on →
+stop, full redeploy next monthly rebalance). Test chunk {1.0=baseline
+all-at-once, 0.50, 0.33, 0.25} on SMOOTHEST core, daily-marked engine,
+weekly regime. + a visual timeline (exposure% backdrop, distinct markers
+per event: ENTRY / EXIT_REGIME_CHUNK / EXIT_PERSTOCK_SMA / EXIT_TRAIL12
+/ EXIT_RS_ROTATION). Runner `scripts/19_smoothest_staggered.py`.
+
 **Open (user, not started):** protective-put hedge (5% OTM / ITM,
 regime-triggered) — conceptually a better fit than the futures short
 (keeps upside) but needs REAL Nifty options/IV history to backtest
