@@ -126,6 +126,15 @@ function StudyDataTable({ t }: { t: StudyTable }) {
   );
 }
 
+function StudyFigure({ src, caption }: { src: string; caption: string }) {
+  return (
+    <div className={styles.figureBlock}>
+      <img className={styles.figureImg} src={src} alt={caption} loading="lazy" />
+      <div className={styles.tableCaption}>{caption}</div>
+    </div>
+  );
+}
+
 function KVList({ rows }: { rows: KV[] }) {
   return (
     <div className={styles.kvList}>
@@ -226,6 +235,12 @@ export default function BacktestStudy() {
         {study.results.tables.map((t, i) => (
           <StudyDataTable key={i} t={t} />
         ))}
+        {study.results.chart ? (
+          <StudyFigure
+            src={study.results.chart.src}
+            caption={study.results.chart.caption}
+          />
+        ) : null}
       </section>
 
       {/* 6. Winners */}

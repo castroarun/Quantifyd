@@ -83,6 +83,11 @@ export interface BacktestStudy {
   results: {
     metrics: StudyMetric[];
     tables: StudyTable[];
+    /** Optional finished figure (e.g. an equity / drawdown overlay PNG).
+     *  `src` is a web path served under /app/ (image lives in
+     *  frontend/public/ → copied to static/app/ at build). Rendered as a
+     *  responsive full-width image with a muted caption beneath. */
+    chart?: { src: string; caption: string };
   };
 
   // ---- Section 6: Winners ----
@@ -401,6 +406,11 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ],
         },
       ],
+      chart: {
+        src: '/app/final_systems_pl_overlay.png',
+        caption:
+          'Equity overlay — SMOOTHEST vs MAX-RETURN vs Nifty-50 (log scale, with drawdown panel), PIT mid-cap band, 2014–2026. Engines/rulers differ — see caveats.',
+      },
     },
 
     winners: [
