@@ -20,6 +20,8 @@ import Mst from './pages/Mst';
 import Intraday75wr from './pages/Intraday75wr';
 import PairTrading from './pages/PairTrading';
 import Scanner from './pages/Scanner';
+import Backtest from './pages/Backtest';
+import BacktestStudy from './pages/BacktestStudy';
 import Journal from './pages/Journal';
 import JournalDay from './pages/JournalDay';
 import JournalTrade from './pages/JournalTrade';
@@ -176,6 +178,26 @@ export default function App() {
           <Protected>
             <AppLayout active="scanner">
               <Scanner />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/backtest"
+        element={
+          <Protected>
+            <AppLayout active="backtest">
+              <Backtest />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/backtest/:slug"
+        element={
+          <Protected>
+            <AppLayout active="backtest">
+              <BacktestStudy />
             </AppLayout>
           </Protected>
         }

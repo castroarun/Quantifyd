@@ -1,0 +1,353 @@
+.page {
+  padding: var(--space-page, 32px) var(--space-page, 32px) 56px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.back {
+  display: inline-block;
+  font-size: var(--text-sm, 13px);
+  color: var(--ink-muted);
+  margin-bottom: 18px;
+}
+.back:hover { color: var(--ink); }
+
+.notFound {
+  padding: 48px;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- 1. Header ---------- */
+
+.headerCard {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card, 10px);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+
+.headerTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.studyTitle {
+  font-size: var(--text-2xl, 22px);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.verdict {
+  font-size: var(--text-sm, 13px);
+  color: var(--ink);
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: var(--text-xs, 12px);
+  color: var(--ink-faint);
+}
+.dot { color: var(--ink-faint); }
+.slugMono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  background: var(--chip-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ---------- Status chips ---------- */
+
+.statusChip {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.stComplete { background: rgba(15, 110, 86, 0.14);  color: var(--accent-pos, #0F6E56); }
+.stRunning  { background: rgba(202, 138, 4, 0.14);  color: #B45309; }
+.stStuck    { background: rgba(147, 51, 234, 0.12); color: #7C3AED; }
+.stFailed   { background: rgba(190, 18, 60, 0.14);  color: var(--accent-neg, #BE123C); }
+.stParked   { background: rgba(100, 116, 139, 0.12); color: var(--ink-faint); }
+
+/* ---------- Sections ---------- */
+
+.section {
+  margin-top: 34px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 0.5px solid var(--hairline-soft);
+}
+
+.sectionNum {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-pos, #0F6E56);
+}
+
+.sectionIntro {
+  font-size: var(--text-sm, 13px);
+  color: var(--ink);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+/* ---------- Key/value list (System, Conditions) ---------- */
+
+.kvList {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card, 10px);
+  overflow: hidden;
+}
+
+.kvRow {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 16px;
+  padding: 13px 18px;
+  border-bottom: 0.5px solid var(--hairline-softest);
+}
+.kvRow:last-child { border-bottom: none; }
+
+.kvK {
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.kvV {
+  font-size: var(--text-sm, 13px);
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+
+/* ---------- Tables ---------- */
+
+.tableBlock {
+  margin-top: 18px;
+}
+.tableBlock:first-of-type { margin-top: 0; }
+
+.tableTitle {
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.tableCaption {
+  font-size: var(--text-xs, 12px);
+  color: var(--ink-muted);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.hlRow {
+  background: rgba(15, 110, 86, 0.07);
+  box-shadow: inset 2px 0 0 var(--accent-pos, #0F6E56);
+}
+
+/* ---------- Results metrics ---------- */
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.tonePos { color: var(--accent-pos, #0F6E56); }
+.toneNeg { color: var(--accent-neg, #BE123C); }
+
+/* ---------- 6. Winners callout ---------- */
+
+.winnerCallout {
+  position: relative;
+  background: rgba(15, 110, 86, 0.06);
+  border: 1px solid rgba(15, 110, 86, 0.35);
+  border-radius: var(--radius-card, 10px);
+  padding: 20px 22px;
+}
+.winnerCallout + .winnerCallout { margin-top: 14px; }
+
+.winnerBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #F0FDF4;
+  background: var(--accent-pos, #0F6E56);
+  padding: 3px 9px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+}
+
+.winnerConfig {
+  font-size: var(--text-lg, 16px);
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  margin-bottom: 8px;
+}
+
+.winnerSummary {
+  font-size: var(--text-sm, 13px);
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+.winnerMetrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 0.5px solid rgba(15, 110, 86, 0.25);
+}
+
+.winnerMetric { min-width: 0; }
+
+.wmK {
+  font-size: var(--text-xxs, 11px);
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+
+.wmV {
+  font-size: var(--text-lg, 16px);
+  font-weight: 700;
+  color: var(--accent-pos, #0F6E56);
+  font-variant-numeric: tabular-nums;
+}
+
+.rejectedWrap {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 0.5px solid rgba(15, 110, 86, 0.25);
+}
+
+.rejectedHead {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-neg, #BE123C);
+  margin-bottom: 8px;
+}
+
+.rejectedList {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--text-sm, 13px);
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+.rejectedList li + li { margin-top: 6px; }
+
+/* ---------- 7. Caveats ---------- */
+
+.caveatList {
+  margin: 0;
+  padding-left: 20px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card, 10px);
+  padding: 16px 20px 16px 38px;
+  font-size: var(--text-sm, 13px);
+  color: var(--ink);
+  line-height: 1.65;
+}
+.caveatList li + li { margin-top: 8px; }
+
+/* ---------- 8. Links ---------- */
+
+.linkGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.linkCol {
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card, 10px);
+  padding: 16px 20px;
+}
+
+.linkColHead {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+}
+
+.linkList,
+.pathList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.linkList a {
+  font-size: var(--text-sm, 13px);
+  color: var(--accent-pos, #0F6E56);
+  word-break: break-word;
+}
+.linkList a:hover { text-decoration: underline; }
+
+.pathList code {
+  font-size: 12px;
+  color: var(--ink-muted);
+  background: var(--chip-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+@media (max-width: 760px) {
+  .page { padding: 20px 16px 44px; }
+  .kvRow { grid-template-columns: 1fr; gap: 4px; }
+  .metricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .winnerMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .linkGrid { grid-template-columns: 1fr; }
+}
