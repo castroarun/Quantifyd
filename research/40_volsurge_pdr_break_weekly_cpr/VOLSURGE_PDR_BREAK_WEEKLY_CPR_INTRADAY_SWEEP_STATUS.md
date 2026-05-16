@@ -286,6 +286,33 @@ task, not a scanner bug. Live CMP is correct only during market hours
 volume + trend screen; per the backtest verdict it is NOT a mechanical
 signal — no robust automated edge.
 
+### Data-staleness — ROOT CAUSE FOUND & RESOLVED (2026-05-16)
+
+The "CMP differs from TradingView" issue was NOT a scanner bug. Root cause:
+**Kite OAuth `KITE_REDIRECT_URL` is `http://127.0.0.1:5000/zerodha/callback`,
+but the app runs on the VPS (94.136.185.54:5000).** After Zerodha auth the
+browser was redirected to the user's dead local 127.0.0.1, so the VPS
+callback never ran and `access_token.json` never received a fresh token →
+`market_data.db` had not refreshed for ~64 lagging F&O names (BAJAJ-AUTO
+daily/5-min ended 2026-05-07) → scanner honestly showed that stale `as_of`.
+
+**Fix applied (2026-05-16):** completed the Kite callback *against the VPS
+directly* (`http://94.136.185.54:5000/zerodha/callback?request_token=...`)
+→ valid token minted + persisted; standalone `get_kite()` confirmed OK.
+Then ran `scripts/backfill_market_data_vps.py` for **5minute** (done=330)
+and **--timeframe day** (done=1499). Verified: BAJAJ-AUTO/AXISBANK/VOLTAS/
+RELIANCE/HDFCBANK now current to **2026-05-15** for both day & 5-min
+(2026-05-16 is a Saturday). `quantifyd` restarted (Sat, market closed) to
+rebuild the scanner daily-cache. Scanner now: BAJAJ-AUTO ltp 10375 @
+2026-05-15, day% -0.02, data_max_asof 2026-05-15 — matches reality.
+
+**Permanent fix (NOT yet done — user-side, .env + Kite console):** set
+`KITE_REDIRECT_URL=http://94.136.185.54:5000/zerodha/callback` in the VPS
+`.env` and register that redirect in the Kite developer console, so the
+8:55 AM TOTP cron / browser login persists a token without the manual
+VPS-callback workaround. Until then, token refresh needs the VPS-callback
+URL trick after any login.
+
 ---
 
 ## What I need from the examples to lock the spec
