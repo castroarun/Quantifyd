@@ -408,19 +408,19 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [9],
       },
       {
-        title: 'Phase 22 — SMOOTHEST de-risk variants (daily-marked engine)',
+        title: 'Phase 22/24 — SMOOTHEST de-risk variants (locked WEEKLY cadence, daily-marked, fresh VPS data → 2026-05-15)',
         caption:
-          "SMOOTHEST risk-off-action variants on the daily-marked engine (compare WITHIN this table only). On THIS faster (daily/weekly-regime) clock, 'C keep-top8' (in risk-off keep the 8 highest-RS holdings, cash the weaker 7, refill to 15 at a monthly rebalance when risk-on) looked like the single best refinement: Calmar 1.60→1.73, MaxDD −22.2→−20.2%, post-tax flat. CROSS-ENGINE CHECK (Phase 23, 2026-05): re-run on the canonical MONTH-END engine — the one the equity curve + heatmap above use — keep-top8 REVERSES to clearly worse: Calmar 2.33→1.45, MaxDD −15.1→−21.8% on fresh VPS data through 2026-05 (holding 8 falling mid-caps through a bear with only a month-end re-check). KT8's edge is an artifact of the fast regime clock; it does NOT survive on the engine the locked spec runs. Verdict: do NOT adopt keep-top8 into SMOOTHEST — keep risk-off = all-to-cash. A/B rejected/dominated; D mild+.",
+          "This table is on the engine SMOOTHEST ACTUALLY runs: monthly selection, WEEKLY regime check (Phase-15 lock), daily-marked drawdown. Numbers refreshed on VPS canonical data through 2026-05-15. 'C keep-top8' (in risk-off keep the 8 highest-RS holdings, cash the weaker 7, refill to 15 at the next risk-on monthly rebalance) is the single best refinement: Calmar 1.54→1.66, MaxDD −22.2→−20.2%, post-tax essentially flat (28.4→28.3). It still beats base after tax-friction and on fresh data. CORRECTION: an earlier note here claimed keep-top8 'reverses to worse' — that came from re-running it on the MONTH-END engine, which silently also changed the regime clock weekly→monthly (two changes at once) and was not a fair test. Re-tested cadence-matched (this table + the dedicated chart below), keep-top8 is a modest but genuine improvement and is defensible to adopt. Honest caveat: its one weak year is 2025 (−6.9% vs base +5.3% — it holds 8 mid-caps through that risk-off while base sits in cash); the full-period shallower max-drawdown still wins. A no-regime rejected; B trims dominated (tax-ruinous); D tighter per-stock SMA a slight positive.",
         columns: ['Config', 'CAGR %', 'Post-tax @20% %', 'MaxDD %', 'Sharpe', 'Calmar', 'Verdict'],
         rows: [
-          ['BASE SMOOTHEST (all-cash)', '35.4', '29.1', '−22.2', '1.87', '1.60', 'reference'],
-          ['A no-regime', '36.0', '27.3', '−37.6', '1.49', '0.96', 'rejected'],
-          ['B trim-25 (hold 75%)', '36.2', '25.3', '−30.7', '1.65', '1.18', 'dominated'],
-          ['B trim-50 (hold 50%)', '36.1', '22.0', '−26.4', '1.78', '1.37', 'dominated'],
-          ['C keep-top5', '35.5', '29.8', '−22.2', '1.83', '1.60', 'neutral-to-slight+'],
-          ['C keep-top8', '35.0', '29.3', '−20.2', '1.78', '1.73', 'BEST — beats BASE'],
-          ['D perstock-SMA80', '35.9', '29.4', '−22.1', '1.89', '1.62', 'slight+'],
-          ['D perstock-SMA60', '35.8', '29.4', '−21.5', '1.89', '1.66', 'mild+'],
+          ['BASE SMOOTHEST (all-cash)', '34.2', '28.4', '−22.2', '1.82', '1.54', 'reference'],
+          ['A no-regime', '34.3', '26.2', '−37.6', '1.43', '0.91', 'rejected'],
+          ['B trim-25 (hold 75%)', '34.7', '24.5', '−30.7', '1.59', '1.13', 'dominated'],
+          ['B trim-50 (hold 50%)', '34.8', '21.5', '−26.4', '1.73', '1.32', 'dominated'],
+          ['C keep-top5', '34.3', '28.9', '−22.2', '1.78', '1.54', 'neutral (= base)'],
+          ['C keep-top8', '33.6', '28.3', '−20.2', '1.71', '1.66', 'BEST — beats base, defensible'],
+          ['D perstock-SMA80', '34.6', '28.8', '−22.1', '1.84', '1.57', 'slight+'],
+          ['D perstock-SMA60', '34.7', '28.8', '−21.5', '1.84', '1.61', 'mild+'],
         ],
         highlightRows: [5],
       },
@@ -471,7 +471,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         {
           title: "Today's 15 — SMOOTHEST selection (as-of 2026-05-15, VPS canonical data)",
           caption:
-            'The system\'s RS-ranked top-15 from the PIT mid-cap band on the latest trading day, all passing q0.5 + above-own-100SMA + within-10%-of-ATH. REGIME IS RISK-OFF (NIFTYBEES 267.30 < its 100-SMA 280.37) → the locked SMOOTHEST would hold ZERO of these (100% cash); only the rejected SMOOTHEST-KT8 variant would hold the top-8 (✓ KT8 col). This is the would-be book if risk-on. Not a recommendation, no live wiring. % from ATH = distance below all-time-high; PosFrac = share of positive 21-day blocks (quality screen, ≥0.50).',
+            'The system\'s RS-ranked top-15 from the PIT mid-cap band on the latest trading day, all passing q0.5 + above-own-100SMA + within-10%-of-ATH. REGIME IS RISK-OFF (NIFTYBEES 267.30 < its 100-SMA 280.37) → the locked SMOOTHEST base would hold ZERO of these (100% cash); the keep-top8 refinement (the validated risk-off variant — see Phase 22/24) would hold the top-8 (✓ KT8 col). This is the would-be book if risk-on. Not a recommendation, no live wiring. % from ATH = distance below all-time-high; PosFrac = share of positive 21-day blocks (quality screen, ≥0.50).',
           columns: ['#', 'Symbol', 'RS', '% from ATH', 'PosFrac', 'Last close', 'KT8 top-8'],
           rows: [
             ['1', 'MTARTECH', '3.07', '−4.7%', '0.58', '7234.0', '✓'],
@@ -495,14 +495,19 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       ],
       charts: [
         {
+          src: '/app/smoothest_vs_kt8_weekly.png',
+          caption:
+            'keep-top8 vs the base SMOOTHEST, CADENCE-MATCHED — both on the engine the locked system actually runs (monthly selection, WEEKLY regime check, daily-marked drawdown), fresh VPS data through 2026-05-15, log scale + drawdown panel. keep-top8 (green) tracks the base (blue) on return while running visibly shallower drawdowns: Calmar 1.54→1.66, MaxDD −22.2→−20.2%, post-tax flat (28.4→28.3). This is the fair comparison; it supersedes the earlier (withdrawn) month-end-engine chart that judged keep-top8 on the wrong regime clock. One weak year for keep-top8: 2025 (−6.9% vs base +5.3%).',
+        },
+        {
           src: '/app/final_systems_pl_overlay.png',
           caption:
-            'Equity overlay — SMOOTHEST vs SMOOTHEST-KT8 (keep-top8) vs MAX-RETURN vs Nifty-50 (log scale, with drawdown panel), PIT mid-cap band, 2014–2026, same month-end engine. SMOOTHEST-KT8 (green dashed) replaces SMOOTHEST\'s risk-off all-to-cash with "hold the 8 highest-RS names, cash the rest". On THIS month-end engine KT8 ends below SMOOTHEST (≈35× vs 40× wealth; CAGR 34.8% vs 35.6%) — the opposite of Phase 22\'s daily/weekly-engine result. Engines/rulers differ — see caveats.',
+            'Equity overlay — SMOOTHEST vs MAX-RETURN vs Nifty-50 (log scale, with drawdown panel), PIT mid-cap band, 2014–2026, month-end engine. The three named systems; engines/rulers differ — see caveats. (keep-top8 is compared separately above, on its correct weekly cadence.)',
         },
         {
           src: '/app/yearly_matrix_heatmap.png',
           caption:
-            'Yearly returns heatmap — SMOOTHEST / SMOOTHEST-KT8 / MAX-RETURN / FORTIFIED vs Nifty 50 (gross), PIT mid-cap band, 2014–2026, month-end engine. KT8 helps some years (2018 −5.0 vs −11.8; 2021 120.4 vs 108.1; 2023 48.2 vs 40.0) but hurts others (2020 58.0 vs 85.7; 2022 7.6 vs 16.1; 2025 −1.8 vs −0.8) — net WORSE on this engine (Calmar 2.33→1.45 on fresh VPS data through 2026-05). 2025: MAX-RETURN/FORTIFIED −11.8/−11.4% (regime-short backfire) vs SMOOTHEST −0.8% (cash). See caveats.',
+            'Yearly returns heatmap — SMOOTHEST / MAX-RETURN / FORTIFIED vs Nifty 50 (gross), PIT mid-cap band, 2014–2026, month-end engine. Replaces the prior annual table. Note 2025: MAX-RETURN/FORTIFIED −11.8% / −11.4% vs Nifty 50 +11.7% — the regime-short backfire (long falling mid-caps + short a rising Nifty); SMOOTHEST −0.8% (cash, no short). See caveats.',
         },
       ],
     },

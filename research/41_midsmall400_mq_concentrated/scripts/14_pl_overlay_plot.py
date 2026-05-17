@@ -33,9 +33,6 @@ def main():
     close, tv = rs2.load()
     print("Rebuilding SMOOTHEST ...", flush=True)
     sm = p11.backtest(close, tv, True, True, 0.12)["nav"]
-    print("Rebuilding SMOOTHEST-KT8 ...", flush=True)
-    kr = p11.backtest(close, tv, True, True, 0.12, keep_top=8)
-    kt8 = kr["nav"]
     print("Rebuilding MAX-RETURN ...", flush=True)
     mx = p10.backtest(close, tv, "beta", 1.0)["nav"]
 
@@ -56,10 +53,6 @@ def main():
     ax[0].plot(sm.index, sm.values, color="#1f77b4", lw=2,
                label=f"SMOOTHEST  ({sm.iloc[-1]:.0f}x | 35.6% CAGR | "
                      f"-15.1% maxDD)")
-    ax[0].plot(kt8.index, kt8.values, color="#2ca02c", lw=1.7,
-               ls=(0, (5, 1.5)),
-               label=f"SMOOTHEST-KT8 ({kt8.iloc[-1]:.0f}x | "
-                     f"{kr['cagr']:.1f}% CAGR | {kr['dd']:.1f}% maxDD)")
     ax[0].plot(mx.index, mx.values, color="#d62728", lw=2,
                label=f"MAX-RETURN ({mx.iloc[-1]:.0f}x | 42.8% CAGR | "
                      f"-22.7% maxDD)")
@@ -72,21 +65,12 @@ def main():
     ax[0].legend(loc="upper left", fontsize=9, framealpha=0.9)
     ax[0].grid(True, which="both", alpha=0.25)
 
-    ax[1].plot(nb.index, dd(nb).values, color="#888888", lw=1.1,
-               ls="--", label="Nifty 50")
-    ax[1].plot(sm.index, dd(sm).values, color="#1f77b4", lw=1.2,
-               label="SMOOTHEST")
-    ax[1].plot(kt8.index, dd(kt8).values, color="#2ca02c", lw=1.1,
-               ls=(0, (5, 1.5)), label="SMOOTHEST-KT8")
-    ax[1].plot(mx.index, dd(mx).values, color="#d62728", lw=1.2,
-               label="MAX-RETURN")
-    ax[1].fill_between(nb.index, dd(nb).values, 0, color="#888888",
-                       alpha=0.10)
+    ax[1].plot(sm.index, dd(sm).values, color="#1f77b4", lw=1.2)
+    ax[1].plot(mx.index, dd(mx).values, color="#d62728", lw=1.2)
     ax[1].fill_between(sm.index, dd(sm).values, 0, color="#1f77b4",
                        alpha=0.15)
     ax[1].fill_between(mx.index, dd(mx).values, 0, color="#d62728",
                        alpha=0.12)
-    ax[1].legend(loc="lower left", fontsize=8, ncol=3, framealpha=0.9)
     ax[1].set_ylabel("Drawdown %")
     ax[1].set_xlabel("Year")
     ax[1].grid(True, alpha=0.25)

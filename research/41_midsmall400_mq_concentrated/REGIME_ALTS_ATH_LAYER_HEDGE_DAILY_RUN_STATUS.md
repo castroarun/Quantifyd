@@ -302,6 +302,27 @@ cash. → Not worth sourcing paid options data.** Simplest (cash) wins.
 
 ### Phase 24 — keep-top8, CADENCE-MATCHED (the honest re-test)
 
+**STATUS: DONE 2026-05-17 ~17:4x IST. VERDICT: keep-top8 is a modest
+but GENUINE improvement on the locked weekly cadence — the Phase-23
+"rejected" call is WITHDRAWN (it was a mismatched-cadence artifact).
+Full results: `results/PHASE24_KT8_CADENCE_MATCHED_RESULTS.md`.**
+
+Fresh VPS data → 2026-05-15, weekly regime, daily-marked:
+BASE 34.2/28.4/−22.2/Cal **1.54** vs keep-top8 33.6/28.3/−20.2/Cal
+**1.66** (better Calmar, shallower DD, flat post-tax). One weak year:
+2025 (KT8 −6.9 vs base +5.3). App fixed: month-end KT8 line removed
+from heatmap/overlay (wrong engine), Phase-22 table refreshed to fresh
+numbers + honest verdict, new cadence-matched chart
+`smoothest_vs_kt8_weekly.png` added, today's-15 caption corrected
+("rejected" → "validated refinement").
+
+| Time IST | Event | Notes |
+|---|---|---|
+| 2026-05-17 ~17:4x | Phase-22 re-run on VPS fresh data DONE | keep-top8 Cal 1.66 > base 1.54; confirms Ph22, refutes Ph23 |
+| 2026-05-17 ~17:4x | Phase-24 cadence chart + per-year DONE | `smoothest_vs_kt8_weekly.png`, RESULTS.md written |
+| 2026-05-17 ~17:5x | App corrected + bundle rebuilt; STATUS finalized | charts reverted to clean month-end trio + new weekly KT8 chart |
+
+(superseded launch note follows)
 **STATUS: RUNNING (launched 2026-05-17 ~17:5x IST, on VPS, fresh data)**
 
 **The Ask (user, sharpened):** SMOOTHEST's regime gate is **weekly**
