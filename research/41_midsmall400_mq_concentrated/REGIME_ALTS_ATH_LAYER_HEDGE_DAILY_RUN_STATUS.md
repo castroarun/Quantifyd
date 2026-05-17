@@ -302,7 +302,13 @@ cash. → Not worth sourcing paid options data.** Simplest (cash) wins.
 
 ### Phase 25 — keep-top8 + CONDITIONAL REFILL (user spec)
 
-**STATUS: BUILDING → will launch on VPS (parallel with Phase 26)**
+**STATUS: DONE 2026-05-17. REJECTED — gated refill loses decisively
+(all caps: MaxDD ~−34% vs keep-top8 −20.2%, Calmar ~1.0 vs 1.66).
+The strict gate is NOT a sufficient circuit-breaker: shallow/early
+risk-off (2016, 2025) still passes names through, they get bought,
+then roll over. Plain keep-top8 (no refill) stays best. 3rd
+confirmation that re-engaging the universe mid-downturn loses.
+Full: `results/PHASE25_CONDITIONAL_REFILL_RESULTS.md`.**
 
 **The Ask (user, verbatim-condensed):** "when Nifty < 100-SMA we sell
 the bottom 7; look for alternates meeting RS-rank + above-own-100SMA +
@@ -335,7 +341,13 @@ Runner `scripts/25_kt8_conditional_refill.py` (imports Ph22 engine).
 
 ### Phase 26 — cash-flow allocation / de-allocation policy (live-readiness)
 
-**STATUS: BUILDING → will launch on VPS (parallel with Phase 25)**
+**STATUS: DONE 2026-05-17. Verdict: system is ROBUST to flow policy —
+all 20 inflow×outflow combos within <1% final wealth / 0.4pp post-tax
+XIRR / identical −20.2% DD (incl. the forced 2020-03 trough
+withdrawal). Marginal best C3 (deploy into highest-RS holds) + W1
+(cash-first then pro-rata); simplest C1/W1 is within noise. Live
+takeaway: do NOT over-engineer deposit/withdrawal logic. Full:
+`results/PHASE26_CASHFLOW_POLICY_RESULTS.md`.**
 
 **The Ask:** live users add/withdraw cash mid-stream. Find the best
 deploy policy for inflows and the least-damaging raise policy for
@@ -371,6 +383,9 @@ Runner `scripts/26_cashflow_policy.py`.
 | Time IST | Event | Notes |
 |---|---|---|
 | 2026-05-17 ~18:1x | Ph25 (corrected to cond-refill) + Ph26 STATUS written | user re-specced KT8 refill = gated by full filter; scenario = SIP+lump+drawdown-withdrawal; run both parallel |
+| 2026-05-17 ~18:2x | Both smoke-tested locally, pushed, launched on VPS in parallel (fresh data) | p25 + p26 |
+| 2026-05-17 ~18:5x | **Ph25 DONE — cond-refill REJECTED** (caps Cal ~1.0 / DD ~−34 vs keep-top8 1.66 / −20.2) | per-year shows 2016/2025 bleed; keep-top8 unchanged |
+| 2026-05-17 ~19:0x | **Ph26 DONE — flow policy ROBUST** (20 combos within <1% wealth) | C3/W1 marginal best; C1/W1 simplest & safe; RESULTS written; STATUS finalized |
 
 ### Phase 24 — keep-top8, CADENCE-MATCHED (the honest re-test)
 
