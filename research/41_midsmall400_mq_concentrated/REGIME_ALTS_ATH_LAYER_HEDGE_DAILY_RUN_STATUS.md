@@ -300,6 +300,78 @@ cheap ivx1.0** — so the conclusion is robust to the IV assumption:
 **a put improves the hedged systems but does not beat simply going to
 cash. → Not worth sourcing paid options data.** Simplest (cash) wins.
 
+### Phase 25 — keep-top8 + CONDITIONAL REFILL (user spec)
+
+**STATUS: BUILDING → will launch on VPS (parallel with Phase 26)**
+
+**The Ask (user, verbatim-condensed):** "when Nifty < 100-SMA we sell
+the bottom 7; look for alternates meeting RS-rank + above-own-100SMA +
+within-10%-ATH. If 4 qualify, deploy 4, rest to cash." I.e. replace
+keep-top8's flat "no refill while risk-off" with a *gated* refill: the
+strict eligibility filter is the panic circuit-breaker (in a true crash
+≈nothing passes within-10%-ATH/above-own-SMA → collapses to cash; in a
+shallow dip it parks freed slots in genuinely strong names not dead
+cash).
+
+**The Base (held constant):** SMOOTHEST core on the validated Phase-22
+engine (daily-marked, WEEKLY regime, monthly selection, PIT mid band,
+RS-120, q0.5, ATH≤10% entry, N=15, top-22 buffer, 0.4% RT, 6.5% cash,
+2014→2026, fresh VPS data). Only the risk-off action changes.
+
+**Locked interpretation:** kept-8 = top-8 RS of *current holdings*,
+unconditional (our survivors, not re-filtered). The ≤7 refill slots
+must pass the FULL monthly gate (q0.5 + above-own-100SMA + within-10%-
+ATH), RS-ranked, non-held. Unfilled slots → cash. Refill happens on the
+weekly risk-off check; rebuilt to 15 at a risk-on monthly rebalance.
+
+**Plan / grid (vs references):**
+- ref-A `BASE SMOOTHEST(allcash)` — risk-off → 100% cash
+- ref-B `keep-top8 (holdings-only)` — Phase-22 C (current best)
+- V1 `keep-top8 + cond-refill≤15` — user spec, allow up to full 15
+- V2 `keep-top8 + cond-refill cap-12` — hard de-risk floor (≥3/15 cash)
+- V3 `keep-top8 + cond-refill cap-10` — stronger floor (≥5/15 cash)
+Each: gross + post-tax@20% + daily-DD + Sharpe + Calmar + per-year.
+Runner `scripts/25_kt8_conditional_refill.py` (imports Ph22 engine).
+
+### Phase 26 — cash-flow allocation / de-allocation policy (live-readiness)
+
+**STATUS: BUILDING → will launch on VPS (parallel with Phase 25)**
+
+**The Ask:** live users add/withdraw cash mid-stream. Find the best
+deploy policy for inflows and the least-damaging raise policy for
+outflows, backtested. User chose scenario = **SIP + lump deposits +
+lump withdrawals INCLUDING a withdrawal forced during a drawdown**.
+
+**The Base:** SMOOTHEST + keep-top8 (current best) on the Phase-22
+weekly daily-marked engine, fresh VPS data, 2014→2026. Initial = 1.0.
+Flow schedule (fixed, deterministic, same across all policies for
+attributable deltas):
+- SIP: +0.01 (1% of initial) on the first trading day of each month.
+- Lump deposits: +0.50 at 2017-06, +0.50 at 2023-01 (calm-market adds).
+- Lump withdrawals: −0.40 at 2019-09 (normal), −0.40 forced at
+  2020-03-23 (COVID trough — the drawdown stress test), −0.30 at
+  2025-06 (the 2025 mid-cap risk-off).
+
+**Metric (critical):** with external flows, NAV-CAGR is no longer the
+investor's return. Report **money-weighted XIRR** (true experienced
+return) + time-weighted CAGR (strategy skill) + final wealth + daily
+MaxDD on the unit-NAV + post-tax@20% (lot-level holding period).
+
+**Plan / grid:**
+- Inflow: C1 park-then-rebalance (debt@6.5% until next monthly, then
+  normal EW absorb) · C2 deploy-now EW all holds · C3 deploy-now into
+  highest-RS holds · C4 deploy-now pro-rata to current weights ·
+  C5 regime-aware (deploy if risk-on else debt).
+- Outflow: W1 cash/debt-first then pro-rata trim at rebalance ·
+  W2 sell lowest-RS first · W3 tax-aware (LTCG/longest-held lots first,
+  then lowest-RS) · W4 immediate pro-rata trim.
+- Grid = 5 inflow × 4 outflow = 20 cells (+ a no-flow control).
+Runner `scripts/26_cashflow_policy.py`.
+
+| Time IST | Event | Notes |
+|---|---|---|
+| 2026-05-17 ~18:1x | Ph25 (corrected to cond-refill) + Ph26 STATUS written | user re-specced KT8 refill = gated by full filter; scenario = SIP+lump+drawdown-withdrawal; run both parallel |
+
 ### Phase 24 — keep-top8, CADENCE-MATCHED (the honest re-test)
 
 **STATUS: DONE 2026-05-17 ~17:4x IST. VERDICT: keep-top8 is a modest
