@@ -300,6 +300,41 @@ cheap ivx1.0** — so the conclusion is robust to the IV assumption:
 **a put improves the hedged systems but does not beat simply going to
 cash. → Not worth sourcing paid options data.** Simplest (cash) wins.
 
+### Phase 24 — keep-top8, CADENCE-MATCHED (the honest re-test)
+
+**STATUS: RUNNING (launched 2026-05-17 ~17:5x IST, on VPS, fresh data)**
+
+**The Ask (user, sharpened):** SMOOTHEST's regime gate is **weekly**
+(Phase-15 lock; daily was tested & rejected for whipsaw, monthly is the
+laggy baseline). My Phase-23 re-test that "rejected" keep-top8 ran it on
+the **month-end** engine — it silently changed TWO things at once
+(keep-8-vs-cash AND weekly→monthly regime), so it was not apples-to-
+apples and was unfairly stacked against keep-top8. Re-test keep-top8 vs
+base-cash with **both on the locked weekly cadence**, daily-marked, on
+**fresh VPS data → 2026-05-15**, gross + post-tax@20% + per-year +
+strict daily MaxDD. Then fix the app, which currently shows the wrong
+(month-end) KT8 and a false "rejected" caption.
+
+**The Base:** Phase-22's `run()` IS already that engine (daily-marked,
+`d in wk_last` weekly regime, monthly selection). `mode="allcash"` =
+SMOOTHEST base; `mode="keeptop",K=8` = keep-top8. No re-derivation —
+re-run the validated Phase-22 runner on VPS canonical data and read
+BASE vs C-keep-top8 (+ per-year). Phase-22's committed (laptop, ~Feb)
+numbers already favoured KT8: Cal 1.73 vs 1.60, dailyDD −20.2 vs −22.2,
+post-tax 29.3 vs 29.1 — confirm/deny on fresh data.
+
+**Plan:** (1) STATUS written (this). (2) Run `22_smoothest_variants.py`
+on VPS (fresh data, all 8 cfgs incl. BASE allcash + C keep-top8).
+(3) Read fresh BASE-vs-KT8 + per-year. (4) Write RESULTS. (5) App fix:
+revert the month-end KT8 line from scripts 14/17 (p11 can't represent
+a weekly-locked variant fairly), correct the Phase-22 caption + chart
+captions to the honest weekly-cadence verdict, refresh the Phase-22
+table to fresh VPS numbers. (6) Commit + deploy.
+
+| Time IST | Event | Notes |
+|---|---|---|
+| 2026-05-17 ~17:5x | Phase-24 STATUS written; realized Ph22 = the correct engine | re-running Ph22 on VPS fresh data; Ph23 month-end retest flagged as the flawed comparison |
+
 ### Phase 23 — keep-top8 adoption: live-15 table + heatmap/curve compare
 
 **STATUS: DONE 2026-05-17 ~14:3x IST** (resumed by a fresh session

@@ -196,7 +196,7 @@ def run(close, tv, mode, f=0.0, K=0, L_sma=100, stcg=0.0):
     py.iloc[0] = n.groupby(n.index.year).last().iloc[0] / n.iloc[0] - 1
     return dict(cagr=cg * 100, dd=dd * 100, sh=sh,
                 cal=(cg / abs(dd)) if dd < 0 else np.nan,
-                py=(py * 100).round(1))
+                py=(py * 100).round(1), nav=n)
 
 
 def main():
