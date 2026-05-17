@@ -410,7 +410,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       {
         title: 'Phase 22 — SMOOTHEST de-risk variants (daily-marked engine)',
         caption:
-          "SMOOTHEST risk-off-action variants on the daily-marked engine (stricter than the month-end Calmar in the tables above — compare WITHIN this table only). 'C keep-top8' (in risk-off, keep the 8 highest-RS holdings and cash the weaker 7, refilling to 15 only at a monthly rebalance when risk-on) is the single best refinement found: Calmar 1.60→1.73, MaxDD −22.2→−20.2%, post-tax CAGR ≈ flat. A (no market gate) and B (partial trims) are rejected/dominated; D (tighter per-stock SMA) is a mild positive. Modest, in-sample, single-window — adopting keep-top8 into the locked SMOOTHEST spec is a pending user decision.",
+          "SMOOTHEST risk-off-action variants on the daily-marked engine (compare WITHIN this table only). On THIS faster (daily/weekly-regime) clock, 'C keep-top8' (in risk-off keep the 8 highest-RS holdings, cash the weaker 7, refill to 15 at a monthly rebalance when risk-on) looked like the single best refinement: Calmar 1.60→1.73, MaxDD −22.2→−20.2%, post-tax flat. CROSS-ENGINE CHECK (Phase 23, 2026-05): re-run on the canonical MONTH-END engine — the one the equity curve + heatmap above use — keep-top8 REVERSES to clearly worse: Calmar 2.33→1.45, MaxDD −15.1→−21.8% on fresh VPS data through 2026-05 (holding 8 falling mid-caps through a bear with only a month-end re-check). KT8's edge is an artifact of the fast regime clock; it does NOT survive on the engine the locked spec runs. Verdict: do NOT adopt keep-top8 into SMOOTHEST — keep risk-off = all-to-cash. A/B rejected/dominated; D mild+.",
         columns: ['Config', 'CAGR %', 'Post-tax @20% %', 'MaxDD %', 'Sharpe', 'Calmar', 'Verdict'],
         rows: [
           ['BASE SMOOTHEST (all-cash)', '35.4', '29.1', '−22.2', '1.87', '1.60', 'reference'],
@@ -491,17 +491,41 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
             ['15', 'FEDERALBNK', '1.20', '0.50', '11%', 'bank', '+2%', 'n/a', 'Mixed ⚠'],
           ],
         },
+        {
+          title: "Today's 15 — SMOOTHEST selection (as-of 2026-05-15, VPS canonical data)",
+          caption:
+            'The system\'s RS-ranked top-15 from the PIT mid-cap band on the latest trading day, all passing q0.5 + above-own-100SMA + within-10%-of-ATH. REGIME IS RISK-OFF (NIFTYBEES 267.30 < its 100-SMA 280.37) → the locked SMOOTHEST would hold ZERO of these (100% cash); only the rejected SMOOTHEST-KT8 variant would hold the top-8 (✓ KT8 col). This is the would-be book if risk-on. Not a recommendation, no live wiring. % from ATH = distance below all-time-high; PosFrac = share of positive 21-day blocks (quality screen, ≥0.50).',
+          columns: ['#', 'Symbol', 'RS', '% from ATH', 'PosFrac', 'Last close', 'KT8 top-8'],
+          rows: [
+            ['1', 'MTARTECH', '3.07', '−4.7%', '0.58', '7234.0', '✓'],
+            ['2', 'HFCL', '2.21', '−8.6%', '0.58', '147.89', '✓'],
+            ['3', 'TDPOWERSYS', '1.90', '0.0%', '0.75', '1311.3', '✓'],
+            ['4', 'ATHERENERG', '1.51', '−3.3%', '0.83', '937.4', '✓'],
+            ['5', 'LAURUSLABS', '1.48', '0.0%', '0.83', '1323.6', '✓'],
+            ['6', 'BHARATFORG', '1.46', '−3.8%', '0.75', '1913.1', '✓'],
+            ['7', 'MAHABANK', '1.41', '−8.6%', '0.67', '78.02', '✓'],
+            ['8', 'JAINREC', '1.40', '−0.9%', '0.75', '566.15', '✓'],
+            ['9', 'BELRISE', '1.40', '−6.4%', '0.75', '209.46', '—'],
+            ['10', 'DATAPATTNS', '1.40', '−8.1%', '0.58', '3876.5', '—'],
+            ['11', 'GLENMARK', '1.39', '−3.8%', '0.67', '2325.9', '—'],
+            ['12', 'SOLARINDS', '1.38', '−1.6%', '0.58', '17314.0', '—'],
+            ['13', 'NAM-INDIA', '1.37', '−0.3%', '0.75', '1100.6', '—'],
+            ['14', 'KEI', '1.37', '−1.7%', '0.75', '5117.5', '—'],
+            ['15', 'AUROPHARMA', '1.35', '−3.7%', '0.58', '1511.8', '—'],
+          ],
+          highlightRows: [0, 1, 2, 3, 4, 5, 6, 7],
+        },
       ],
       charts: [
         {
           src: '/app/final_systems_pl_overlay.png',
           caption:
-            'Equity overlay — SMOOTHEST vs MAX-RETURN vs Nifty-50 (log scale, with drawdown panel), PIT mid-cap band, 2014–2026. Engines/rulers differ — see caveats; Nifty-50 drawdown now overlaid in the lower panel.',
+            'Equity overlay — SMOOTHEST vs SMOOTHEST-KT8 (keep-top8) vs MAX-RETURN vs Nifty-50 (log scale, with drawdown panel), PIT mid-cap band, 2014–2026, same month-end engine. SMOOTHEST-KT8 (green dashed) replaces SMOOTHEST\'s risk-off all-to-cash with "hold the 8 highest-RS names, cash the rest". On THIS month-end engine KT8 ends below SMOOTHEST (≈35× vs 40× wealth; CAGR 34.8% vs 35.6%) — the opposite of Phase 22\'s daily/weekly-engine result. Engines/rulers differ — see caveats.',
         },
         {
           src: '/app/yearly_matrix_heatmap.png',
           caption:
-            'Yearly returns heatmap — SMOOTHEST / MAX-RETURN / FORTIFIED vs Nifty 50 (gross), PIT mid-cap band, 2014–2026. Replaces the prior annual table. Note 2025: MAX-RETURN/FORTIFIED −11.8% / −11.4% vs Nifty 50 +11.7% — the regime-short backfire (long falling mid-caps + short a rising Nifty); SMOOTHEST −0.8% (cash, no short). See caveats.',
+            'Yearly returns heatmap — SMOOTHEST / SMOOTHEST-KT8 / MAX-RETURN / FORTIFIED vs Nifty 50 (gross), PIT mid-cap band, 2014–2026, month-end engine. KT8 helps some years (2018 −5.0 vs −11.8; 2021 120.4 vs 108.1; 2023 48.2 vs 40.0) but hurts others (2020 58.0 vs 85.7; 2022 7.6 vs 16.1; 2025 −1.8 vs −0.8) — net WORSE on this engine (Calmar 2.33→1.45 on fresh VPS data through 2026-05). 2025: MAX-RETURN/FORTIFIED −11.8/−11.4% (regime-short backfire) vs SMOOTHEST −0.8% (cash). See caveats.',
         },
       ],
     },

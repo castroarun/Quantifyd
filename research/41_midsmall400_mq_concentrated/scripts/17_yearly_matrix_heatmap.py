@@ -67,6 +67,9 @@ def main():
     close, tv = rs2.load()
     print("SMOOTHEST ...", flush=True)
     sm = yr_ret_nav(p11.backtest(close, tv, True, True, 0.12)["nav"])
+    print("SMOOTHEST-KT8 ...", flush=True)
+    kt8 = yr_ret_nav(p11.backtest(close, tv, True, True, 0.12,
+                                  keep_top=8)["nav"])
     print("MAX-RETURN ...", flush=True)
     mx = yr_ret_nav(p10.backtest(close, tv, "beta", 1.0)["nav"])
     print("FORTIFIED ...", flush=True)
@@ -79,16 +82,18 @@ def main():
                      parse_dates=["date"]).set_index("date")["close"]
     n50 = yr_ret_nav(nb)
 
-    cols = ["SMOOTHEST", "MAX-RETURN", "FORTIFIED", "Nifty 50"]
+    cols = ["SMOOTHEST", "SMOOTHEST-KT8", "MAX-RETURN", "FORTIFIED",
+            "Nifty 50"]
     M = pd.DataFrame(index=YEARS, columns=cols, dtype=float)
     M["SMOOTHEST"] = sm.reindex(YEARS)
+    M["SMOOTHEST-KT8"] = kt8.reindex(YEARS)
     M["MAX-RETURN"] = mx.reindex(YEARS)
     M["FORTIFIED"] = ft.reindex(YEARS)
     M["Nifty 50"] = n50.reindex(YEARS)
     M.to_csv(RES / "yearly_matrix.csv")
 
     data = M.values.astype(float)
-    fig, ax = plt.subplots(figsize=(9.2, 0.5 * len(YEARS) + 2))
+    fig, ax = plt.subplots(figsize=(11.4, 0.5 * len(YEARS) + 2))
     vmax = float(np.nanmax(np.abs(data)))
     vmax = max(20.0, np.ceil(vmax / 10) * 10)
     norm = TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)

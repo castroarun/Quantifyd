@@ -43,11 +43,19 @@ def own_pf(h, s):
     return float(np.mean([z > 0 for z in r])) if r else 0.0
 
 
-def backtest(close, tv, market_gate, per_stock_sma, trail, stcg=0.0):
+def backtest(close, tv, market_gate, per_stock_sma, trail, stcg=0.0,
+             keep_top=None):
     """market_gate: True -> Nifty SMA100 risk-off to cash.
        per_stock_sma: True -> only hold a name while close>own SMA100.
        trail: 0 disables; else drop a name if it falls trail below its
-              peak-since-entry (binding stock-level stop)."""
+              peak-since-entry (binding stock-level stop).
+       keep_top: None (default) = risk-off dumps the whole book to cash
+              (canonical SMOOTHEST — every existing caller/result is
+              byte-identical). An int K = SMOOTHEST-KT8 variant: on a
+              risk-off month-end KEEP the K highest-RS held names and
+              cash the weaker rest (no refill while risk-off). Same
+              engine/data so it is directly comparable on the app
+              heatmap + equity curve."""
     me = rs2.month_ends(close.index)
     me = me[(me >= pd.Timestamp("2014-01-01")) &
             (me <= pd.Timestamp("2026-12-31"))]
@@ -91,6 +99,20 @@ def backtest(close, tv, market_gate, per_stock_sma, trail, stcg=0.0):
                     _realize(held.pop(s))
 
         if market_gate and mkt_sma100_off(h):
+            if keep_top and held and len(held) > keep_top:
+                scg = rs2.rs_scores(close, dt, 120)
+                if scg is not None:
+                    rk = {s: scg.get(s, -9e9) for s in held}
+                    keepset = set(sorted(rk, key=rk.get,
+                                         reverse=True)[:keep_top])
+                    for s in list(held):
+                        if s not in keepset:
+                            _realize(held[s]); held.pop(s)
+                    eq = sum(v[0] for v in held.values())
+                    cash = tot - eq
+                    last = {s: px.get(s, np.nan) for s in held}
+                    nav.append((dt, tot)); continue   # no refill risk-off
+            # keep_top None / <=K held / no RS -> dump whole book to cash
             if held:
                 for s in list(held):
                     _realize(held[s])

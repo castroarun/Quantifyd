@@ -300,12 +300,102 @@ cheap ivx1.0** — so the conclusion is robust to the IV assumption:
 **a put improves the hedged systems but does not beat simply going to
 cash. → Not worth sourcing paid options data.** Simplest (cash) wins.
 
+### Phase 23 — keep-top8 adoption: live-15 table + heatmap/curve compare
+
+**STATUS: DONE 2026-05-17 ~14:3x IST** (resumed by a fresh session
+after the prior one crashed mid-Phase-23 + hit usage limit; both
+deliverables completed, verdict locked, app + STATUS-MD updated).
+User's last instruction to the crashed session (recovered from a
+screenshot):
+> "come up with the 15 stock holdings as of today if we were to hold
+> them today — table with stats/values. Also adopt keep-top8 — add it
+> to the heatmap and the equity curve; I want to compare the returns."
+
+What the crashed session left (verified this session):
+
+| Artifact | State |
+|---|---|
+| `scripts/23_keeptop8_live_and_curve.py` | written, untracked, ran once |
+| `results/nav_smoothest_base.csv` | OK — month-end NAV, ends 40.53× (2026-03-19) |
+| `results/nav_smoothest_kt8.csv` | OK — ends **30.73×** (KT8 *worse* on this engine) |
+| `results/phase23_kt8_peryear.csv` | OK — per-year base vs KT8 |
+| `results/live_holdings_today.csv` | **EMPTY (`""`) — the today-15 table FAILED** |
+| app heatmap / equity-curve PNGs | NOT yet updated with a KT8 series |
+
+Two open problems this session must close:
+1. **Empty live-15 table** — `live_holstings()` produced zero rows;
+   debug + fix + emit the table with stats.
+2. **KT8 contradiction to surface honestly** — Phase 22 (daily +
+   weekly regime) ranked keep-top8 the *best* variant (Calmar
+   1.73 > base 1.60, DD −20.2 < −22.2). Phase 23's **month-end**
+   engine shows the opposite: base 40.5× vs KT8 30.7×, 2025 −0.8%
+   vs **−12.7%**. The month-end engine holds 8 falling mid-caps
+   through a bear with month-end-only re-check → KT8 only helps on
+   the faster (weekly) regime clock. This must be stated, not
+   papered over, before any heatmap/curve adoption.
+
+| Time IST | Event | Notes |
+|---|---|---|
+| 2026-05-17 ~13:5x | Fresh session picked up Phase 23 | crashed-session screenshot supplied; resume state written here |
+| 2026-05-17 ~14:0x | **Empty-table root cause found (2 bugs)** | (1) snapshot tail is 2-symbol index stubs (real stock data ends 2026-02-17); (2) NIFTYBEES (RS benchmark) last print is **2026-02-16**, sparser grid than stocks → any asof missing NIFTYBEES yields all-NaN RS. Fixed `live_holstings`/script-23 to clip asof to last date with broad coverage AND a NIFTYBEES print = **2026-02-16** (laptop). VPS-safe (resolves to true latest there). |
+| 2026-05-17 ~14:1x | **KT8 month-end discrepancy confirmed & quantified** | On the canonical month-end engine: SMOOTHEST(cash) 35.9% / −15.1% / Cal **2.38** vs SMOOTHEST-KT8 32.9% / −18.0% / Cal **1.83**. KT8 is *worse* here — opposite of Phase 22 (daily+weekly regime: KT8 best). KT8's edge is clock-dependent; do NOT silently adopt into the locked spec. |
+| 2026-05-17 ~14:1x | KT8 wired into app engine (param, not fork) | Added `keep_top` arg to `p11.backtest` (default None = byte-identical to every existing SMOOTHEST/FORTIFIED/MAX-RETURN result). Scripts 14 (equity curve) + 17 (heatmap) now emit a 5th `SMOOTHEST-KT8` series for the apples-to-apples comparison the user asked for. |
+| 2026-05-17 ~14:2x | Live-15 table on snapshot = only **2 names** | LTF, BELRISE (RISK-ON, asof 2026-02-16). The ATH≤10% entry gate is strict and the frozen snapshot is post the 2025 mid-cap drawdown → few names near ATH. Honest output for stale data; true today-list needs a VPS rerun (canonical-host rule). |
+| 2026-05-17 ~14:1x–2x | Heatmap + equity PNGs regenerated WITH KT8 (laptop p11 engine, snapshot) | `keep_top` param added to `p11.backtest` (default None ⇒ existing SMOOTHEST/FORTIFIED/MAX-RETURN byte-identical). Heatmap now 5 cols; equity overlay now 4 lines (KT8 green dashed, 37× / 34.8% / −15.5%). Both copied to `static/app/`. |
+| 2026-05-17 ~14:2x | **VPS run (canonical, data→2026-05-15) DONE** | Regime **RISK-OFF** (NIFTYBEES 267.30 < SMA100 280.37). True today-15 fetched. Month-end engine on fresh data: SMOOTHEST(cash) 35.2/29.3/−15.1/**Cal 2.33** vs SMOOTHEST-KT8 31.5/26.2/−21.8/**Cal 1.45** — KT8 decisively worse on the canonical engine + freshest data. |
+| 2026-05-17 ~14:3x | App updated + bundle rebuilt (`index-jelrxrun.js`) | backtests.ts: today-15 VPS table (RISK-OFF, KT8 top-8 flagged), Phase-22 caption rewritten with the cross-engine reversal, both chart captions updated. **Frontend-only — VPS needs git pull, NO restart (CLAUDE.md).** |
+
+### FINAL VERDICT — keep-top8 (Phase 23)
+
+**Recommendation: do NOT adopt keep-top8 into the locked SMOOTHEST
+spec. Keep risk-off = all-to-cash.**
+
+keep-top8 was found "best" in Phase 22 ONLY on the daily-marked engine
+with a weekly regime clock (Calmar 1.60→1.73). Re-tested this session
+on the **canonical month-end engine** — the engine SMOOTHEST is locked
+to and that the app equity curve + heatmap use — it reverses to clearly
+worse on every measure, and the gap widens with fresher data:
+
+| Engine / data | SMOOTHEST | KT8 | Read |
+|---|---|---|---|
+| Phase22 daily + weekly regime | Cal 1.60 / DD −22.2 | **Cal 1.73 / −20.2** | KT8 looked best |
+| Month-end, laptop snapshot→2026-02 | Cal 2.38 / −15.1 | Cal 1.83 / −18.0 | KT8 worse |
+| Month-end, **VPS data→2026-05** | **Cal 2.33 / −15.1** | **Cal 1.45 / −21.8** | KT8 much worse |
+
+Mechanism: on a month-end clock, KT8 holds 8 falling mid-caps (β>1)
+through a bear with only a once-a-month re-check; the 2026 risk-off
+stretch (current regime: RISK-OFF) is exactly where it bleeds while
+all-to-cash sidesteps it. KT8's apparent edge is an artifact of the
+fast (weekly) regime clock, not a real improvement. Same family of
+finding as the Phase 11 "stock-level control can't replace the market
+gate" and the inert-trail result. The user's three candidate systems
+(SMOOTHEST / MAX-RETURN / FORTIFIED) are unchanged; FINAL_MODEL_SPEC
+needs NO rewrite. The comparison is now visible on the app for the
+user to judge directly, as requested.
+
+**Today's would-be book (as-of 2026-05-15, VPS):** regime RISK-OFF →
+locked SMOOTHEST holds 100% cash. RS-ranked top-15 if it were risk-on:
+MTARTECH, HFCL, TDPOWERSYS, ATHERENERG, LAURUSLABS, BHARATFORG,
+MAHABANK, JAINREC (= KT8 top-8), then BELRISE, DATAPATTNS, GLENMARK,
+SOLARINDS, NAM-INDIA, KEI, AUROPHARMA. Table on the app page.
+
 ### RESUME STATE (for a fresh session)
 
 - **Sole resume doc = THIS file.** Read it top-to-bottom + `git log`.
 - DONE & committed: Phases 09–21 (verdicts above / in §7–9), app
   fully synced (commit 72b0706), FINAL_MODEL_SPEC.md current incl.
   2025 caveat. Heatmap/chart on app.
+- **Phase 22 DONE — first real improvements found.** vs BASE
+  SMOOTHEST(all-cash) 35.4/29.1/−22.2/Cal1.60: A no-regime REJECTED
+  (−37.6 DD, Cal 0.96, 4th confirm); B trim-25/50 dominated
+  (post-tax 25.3/22.0); **C keep-top8 = best: 35.0/29.3/−20.2/Cal
+  1.73** (risk-off → hold the 8 highest-RS names, cash the weaker 7 —
+  beats BASE on Calmar+DD at flat post-tax); C keep-top5 ≈ neutral+
+  (29.8 post-tax, Cal 1.60); D perstock-SMA60 mild+ (Cal 1.66).
+  **RECOMMENDED SMOOTHEST refinement: replace risk-off "all→cash" with
+  "keep top-8 RS, cash rest".** Caveat: modest, in-sample, single-
+  window (no fresh OOS on this tweak) — adopt pending user decision;
+  FINAL_MODEL_SPEC not yet rewritten (awaiting user OK).
 - Phase 20 revised timeline DONE: `smoothest_allatonce_timeline.png`
   (anti-overplot, per-type strips; all-at-once kept config). Regime
   exits n=15 over 12y (the staggered config's 61 were chunk sub-events
