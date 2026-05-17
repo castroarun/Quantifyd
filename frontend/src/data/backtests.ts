@@ -469,29 +469,6 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ],
         },
         {
-          title: 'Live Top-15 — q0.5_dd__v__REG (as-of 2026-02-16 laptop snapshot)',
-          caption:
-            'RS-ranked picks + current fundamentals (web: screener.in, ~Mar-2026 FY) as a post-selection human annotation only. Regime: NIFTYBEES 290.76 ≥ SMA200 285.17 → RISK-ON. 68/91 supplied names passed the quality screen. Re-run scripts/05_live_top15.py on the VPS for a true today-dated list.',
-          columns: ['#', 'Symbol', 'RS', 'PosFrac', 'ROE', 'D/E', 'PAT YoY', 'ROCE', 'Read'],
-          rows: [
-            ['1', 'NATIONALUM', '1.61', '0.58', '29%', '~0', '+10%', '39%', 'Strong'],
-            ['2', 'MUTHOOTFIN', '1.59', '0.83', '31%', '3.7*', '+150%', '16%', 'Strong'],
-            ['3', 'GMDCLTD', '1.49', '0.50', '8.8%', '~0', 'erratic', '11%', 'Weak ⚠'],
-            ['4', 'MCX', '1.43', '0.58', '43%', '~0', '+1879%†', '58%', 'Strong'],
-            ['5', 'ANANDRATHI', '1.42', '0.50', '45%', '0.08', '+33%', '58%', 'Strong'],
-            ['6', 'HBLENGINE', '1.40', '0.50', '20%', '0.04', '+179%', '27%', 'Strong'],
-            ['7', 'INDIANB', '1.37', '0.83', '16%', 'bank', '+12%', 'n/a', 'Solid'],
-            ['8', 'NEULANDLAB', '1.37', '0.67', '22%', '0.16', '+40%', '27%', 'Strong'],
-            ['9', 'CUB', '1.34', '0.75', '13%', 'bank', '+30%', 'n/a', 'Solid'],
-            ['10', 'FORCEMOT', '1.31', '0.67', '29%', '0.00', '+201%', '35%', 'Strong'],
-            ['11', 'INDUSTOWER', '1.30', '0.75', '20%', '0.57', '+18%', '19%', 'Solid'],
-            ['12', 'CUMMINSIND', '1.29', '0.67', '29%', '~0', '+15%', '38%', 'Strong'],
-            ['13', 'LTF', '1.28', '0.67', '12%', '4.4*', '+18%', '8.5%', 'Mixed ⚠'],
-            ['14', 'ECLERX', '1.21', '0.58', '36%', '0.18', '+28%', '42%', 'Strong'],
-            ['15', 'FEDERALBNK', '1.20', '0.50', '11%', 'bank', '+2%', 'n/a', 'Mixed ⚠'],
-          ],
-        },
-        {
           title: "Today's 15 — SMOOTHEST selection (as-of 2026-05-15, VPS canonical data)",
           caption:
             'The system\'s RS-ranked top-15 from the PIT mid-cap band on the latest trading day, all passing q0.5 + above-own-100SMA + within-10%-of-ATH. REGIME IS RISK-OFF (NIFTYBEES 267.30 < its 100-SMA 280.37) → the locked SMOOTHEST would hold ZERO of these (100% cash); only the rejected SMOOTHEST-KT8 variant would hold the top-8 (✓ KT8 col). This is the would-be book if risk-on. Not a recommendation, no live wiring. % from ATH = distance below all-time-high; PosFrac = share of positive 21-day blocks (quality screen, ≥0.50).',
