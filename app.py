@@ -4989,6 +4989,7 @@ def _nas_ticker_watchdog():
         from services.nas_ticker import get_nas_ticker, stop_nas_ticker
         ticker = get_nas_ticker(NAS_DEFAULTS)
         if ticker.is_running and ticker.is_connected:
+            _nas_ticker_watchdog._consecutive_down = 0  # healthy — reset
             return  # healthy
         # Ticker is down — log + nuke the singleton + start fresh.
         # stop_nas_ticker() sets _nas_ticker = None so the next get_nas_ticker
@@ -5007,6 +5008,34 @@ def _nas_ticker_watchdog():
         fresh = get_nas_ticker(NAS_DEFAULTS)
         fresh.start()
         logger.info("[NAS-WATCHDOG] Restart issued")
+
+        # Escalation: in-process restarts cannot revive a poisoned Twisted
+        # reactor (one reactor per process; once run+stopped it's dead, so
+        # every fresh kws.connect() is a silent no-op). 2026-05-18: this
+        # looped futilely ~60x with zero ticks all session and NO alert.
+        # The no-restart-during-market rule forbids fixing it now, so at
+        # least page loudly — once — instead of failing silent. The real
+        # cure is the 09:05 pre-open reactor heal below.
+        n = getattr(_nas_ticker_watchdog, "_consecutive_down", 0) + 1
+        _nas_ticker_watchdog._consecutive_down = n
+        if n == 4 and not getattr(_nas_ticker_watchdog, "_alerted_today", None) == date.today():
+            _nas_ticker_watchdog._alerted_today = date.today()
+            try:
+                from services.nas_watchdog import _send_alert
+                _send_alert(
+                    f"🔴 NAS TICKER UNRECOVERABLE — reactor poisoned "
+                    f"({datetime.now().strftime('%d-%b %H:%M')})",
+                    "<div style='font-family:sans-serif;max-width:560px'>"
+                    "<h3 style='color:#c0241b'>NAS ticker cannot reconnect "
+                    "in-process</h3><p>The watchdog has issued 4+ futile "
+                    "restarts. The Twisted reactor is dead for this process "
+                    "(stale-token 403 loop poisoned it pre-open). NAS "
+                    "Squeeze variants are BLIND for the rest of the session. "
+                    "Mid-market process restart is prohibited — this will "
+                    "self-heal at tomorrow's 09:05 pre-open reactor check.</p>"
+                    "</div>")
+            except Exception as _ae:
+                logger.error(f"[NAS-WATCHDOG] escalation alert failed: {_ae}")
     except Exception as e:
         logger.error(f"[NAS-WATCHDOG] Error: {e}", exc_info=True)
 
@@ -5020,6 +5049,85 @@ try:
     logger.info("NAS ticker watchdog scheduled: every 5 min Mon-Fri 09:15-15:25 IST")
 except Exception as e:
     logger.warning(f"Could not register nas_ticker_watchdog: {e}")
+
+
+# Pre-open reactor self-heal (09:05 IST Mon-Fri) — the real cure for the
+# 2026-05-18 incident. Root cause: this gunicorn process can live for days;
+# overnight the Kite token goes stale, KiteTicker's internal autoreconnect
+# grinds a 403 loop pre-market, and that loop runs+stops the global Twisted
+# reactor. A reactor is one-shot per process — once dead, every later
+# kws.connect() is a SILENT no-op, so the 08:55 token refresh + in-process
+# restarts can never revive NAS. The only real fix is a fresh interpreter.
+#
+# 09:05 is after the 08:55 auto-login token refresh and before the 09:15
+# session / 09:16 NAS autostart, so a restart here is PRE-OPEN and fully
+# within the "no restart 09:15-15:30" rule. systemd is Restart=on-failure,
+# so os._exit(1) brings up a clean process in ~5s; its boot bootstrap
+# starts NAS on a virgin reactor with the fresh token. A date-stamped
+# marker guarantees at-most-one self-exit per day (no boot loop).
+def _nas_preopen_reactor_heal():
+    """If NAS isn't connected just before open, the reactor is poisoned —
+    exit so systemd restarts us clean. Pre-open only; at most once/day."""
+    try:
+        now_t = datetime.now().time()
+        if now_t < dtime(9, 0) or now_t >= dtime(9, 15):
+            return  # strictly pre-open only — never restart during session
+        from services.trading_calendar import get_default_calendar
+        if not get_default_calendar().is_trading_day(date.today()):
+            return
+        from services.nas_ticker import get_nas_ticker
+        ticker = get_nas_ticker(NAS_DEFAULTS)
+        if ticker.is_connected:
+            logger.info("[NAS-PREOPEN] ticker connected — reactor healthy")
+            return
+        marker = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              'backtest_data', 'nas_preopen_heal_marker.txt')
+        today = date.today().isoformat()
+        try:
+            if os.path.exists(marker) and open(marker).read().strip() == today:
+                logger.error("[NAS-PREOPEN] already self-healed today — "
+                             "NOT exiting again (avoid boot loop). "
+                             "Reactor still dead; investigate.")
+                return
+        except Exception:
+            pass
+        try:
+            with open(marker, 'w') as _m:
+                _m.write(today)
+        except Exception as _me:
+            logger.warning(f"[NAS-PREOPEN] marker write failed: {_me}")
+        logger.critical(
+            "[NAS-PREOPEN] NAS ticker NOT connected at pre-open — Twisted "
+            "reactor poisoned. Exiting (os._exit 1) so systemd restarts a "
+            "clean process before 09:15. (incident: 2026-05-18)")
+        try:
+            from services.nas_watchdog import _send_alert
+            _send_alert(
+                f"♻️ NAS PRE-OPEN SELF-HEAL — clean restart "
+                f"({datetime.now().strftime('%d-%b %H:%M')})",
+                "<div style='font-family:sans-serif;max-width:560px'>"
+                "<p>NAS ticker was not connected at 09:05 (poisoned Twisted "
+                "reactor from the overnight stale-token loop). The process "
+                "is self-restarting via systemd <b>before market open</b> "
+                "so NAS Squeeze variants get a live feed today.</p></div>")
+        except Exception:
+            pass
+        import sys as _sys
+        _sys.stdout.flush()
+        os._exit(1)
+    except Exception as e:
+        logger.error(f"[NAS-PREOPEN] heal check error: {e}", exc_info=True)
+
+
+try:
+    scheduler.add_job(
+        _nas_preopen_reactor_heal,
+        'cron', day_of_week='mon-fri', hour=9, minute=5,
+        id='nas_preopen_reactor_heal', replace_existing=True,
+    )
+    logger.info("NAS pre-open reactor heal scheduled: 09:05 Mon-Fri IST")
+except Exception as e:
+    logger.warning(f"Could not register nas_preopen_reactor_heal: {e}")
 
 
 # System validator — pre-market checklist (08:50 IST) + EOD report (15:40 IST).

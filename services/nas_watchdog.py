@@ -96,6 +96,14 @@ def _latest_candle_dt() -> Optional[datetime]:
                 latest = c
         if isinstance(latest, str):
             latest = datetime.fromisoformat(latest)
+        # The aggregator stamps candle dates tz-aware (+05:30) while
+        # _now_ist() is naive IST. Subtracting the two raised
+        # "can't subtract offset-naive and offset-aware datetimes" on every
+        # tick (2026-05-18 incident) — the watchdog never wrote a heartbeat
+        # nor sent the FROZEN alert all session. Normalise to naive IST so
+        # the lag math is consistent with _now_ist().
+        if latest is not None and latest.tzinfo is not None:
+            latest = latest.replace(tzinfo=None)
         return latest
     except Exception as e:
         logger.error(f"[NAS-WD] latest candle lookup failed: {e}")
@@ -148,7 +156,12 @@ def check_pipeline() -> dict:
     latest = _latest_candle_dt()
     lag_sec = None
     if latest is not None:
-        lag_sec = (now - latest).total_seconds()
+        try:
+            lag_sec = (now - latest).total_seconds()
+        except TypeError:
+            # tz-mismatch safety net — never let the watchdog die on this
+            _lat = latest.replace(tzinfo=None) if latest.tzinfo else latest
+            lag_sec = (now - _lat).total_seconds()
     connected = _ticker_connected()
 
     if not market_active:
