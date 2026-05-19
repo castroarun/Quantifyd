@@ -60,14 +60,44 @@ def _system_snapshot(name: str, group: str, getter: str) -> dict:
             closed = []
         snap["closed"] = len(closed)
 
-        # day P&L from today's closed legs
+        # Day P&L. Authoritative source is the completed-trades table
+        # (nas_trades / nas_atm_trades) where the strategy books realized
+        # net_pnl per closed strangle — NOT the position legs, which carry
+        # only entry_price/exit_price and no pnl column (the old code read
+        # non-existent pnl/pnl_inr/realized_pnl keys → always ₹0).
         pnl = 0.0
-        for c in closed:
-            v = c.get("pnl") or c.get("pnl_inr") or c.get("realized_pnl") or 0
-            try:
-                pnl += float(v)
-            except Exception:
-                pass
+        booked = False
+        try:
+            trades = db.get_recent_trades(limit=200) or []
+            for t in trades:
+                td = str(t.get("trade_date") or t.get("created_at") or "")[:10]
+                if td == today:
+                    v = t.get("net_pnl")
+                    if v is None:
+                        v = t.get("gross_pnl") or 0
+                    try:
+                        pnl += float(v)
+                        booked = True
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        # Fallback: no completed-trade row yet today (e.g. strangle still
+        # mid-roll) — approximate realized P&L from closed legs. Short
+        # option: (entry-exit)*qty; long: (exit-entry)*qty.
+        if not booked:
+            for c in closed:
+                try:
+                    ep = c.get("entry_price")
+                    xp = c.get("exit_price")
+                    q = c.get("qty") or 0
+                    if ep is None or xp is None or not q:
+                        continue
+                    side = str(c.get("transaction_type") or "SELL").upper()
+                    leg_pnl = (ep - xp) * q if side == "SELL" else (xp - ep) * q
+                    pnl += float(leg_pnl)
+                except Exception:
+                    pass
         snap["day_pnl"] = round(pnl, 2)
 
         # open positions
