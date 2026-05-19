@@ -10218,7 +10218,21 @@ try:
         day_of_week='mon-fri', hour=15, minute=35,
         id='nas_eod_report', replace_existing=True,
     )
-    logger.info("[NAS] Watchdog (3-min, 9-15) + EOD report (15:35) scheduled")
+
+    def _nas_mtm_tick():
+        try:
+            from services.nas_mtm import snapshot_all
+            snapshot_all()
+        except Exception as _e:
+            logger.error(f"[NAS-MTM] tick error: {_e}")
+
+    scheduler.add_job(
+        _nas_mtm_tick, 'cron',
+        day_of_week='mon-fri', hour='9-15', minute='*/3',
+        id='nas_mtm_snapshot', replace_existing=True,
+    )
+    logger.info("[NAS] Watchdog + MTM snapshot (3-min, 9-15) + "
+                "EOD report (15:35) scheduled")
 except Exception as e:
     logger.warning(f"[NAS] Could not register watchdog/EOD jobs: {e}")
 

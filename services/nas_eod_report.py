@@ -48,7 +48,8 @@ def _system_snapshot(name: str, group: str, getter: str) -> dict:
     """Pull today's activity for one system. Never raises."""
     snap = {"name": name, "group": group, "ok": True, "error": None,
             "signals": 0, "closed": 0, "open": 0, "day_pnl": 0.0,
-            "orders": 0, "win_rate": None, "fired": False}
+            "orders": 0, "win_rate": None, "fired": False, "lots": 0,
+            "curve": []}
     try:
         db = _resolve(getter)
         today = date.today().isoformat()
@@ -100,9 +101,14 @@ def _system_snapshot(name: str, group: str, getter: str) -> dict:
                     pass
         snap["day_pnl"] = round(pnl, 2)
 
-        # open positions
+        # lots traded today = max leg qty / NIFTY lot size (65)
         try:
-            snap["open"] = len(db.get_active_positions() or [])
+            active = db.get_active_positions() or []
+            qtys = [int(p.get("qty") or 0)
+                    for p in (list(closed) + list(active)) if p.get("qty")]
+            if qtys:
+                snap["lots"] = round(max(qtys) / 65)
+            snap["open"] = len(active)
         except Exception:
             pass
 
@@ -130,6 +136,13 @@ def _system_snapshot(name: str, group: str, getter: str) -> dict:
             snap["win_rate"] = st.get("win_rate")
         except Exception:
             pass
+
+        # intraday MTM curve (realized+unrealized over the session)
+        try:
+            from services.nas_mtm import get_today_curve
+            snap["curve"] = get_today_curve(db)
+        except Exception:
+            snap["curve"] = []
 
         snap["fired"] = (snap["signals"] > 0 or snap["closed"] > 0
                          or snap["open"] > 0 or snap["orders"] > 0)
@@ -189,6 +202,7 @@ def build_report() -> dict:
     if not fired and pipe.get("checks_market", 0) > 0 and not pipe.get("ever_frozen"):
         issues.append("NO system fired all day despite a live pipeline — verify entry conditions / signal logic")
 
+    curve_png = _render_curve_png(snaps)
     return {
         "date": date.today().isoformat(),
         "generated_at": datetime.now().strftime("%d-%b-%Y %H:%M:%S IST"),
@@ -196,7 +210,46 @@ def build_report() -> dict:
         "combined_pnl": combined_pnl,
         "n_fired": len(fired), "n_silent": len(silent), "n_error": len(errored),
         "issues": issues,
+        "curve_png": curve_png, "has_curve": curve_png is not None,
     }
+
+
+def _render_curve_png(snaps: list):
+    """Intraday day-P&L curve per system → PNG bytes (or None)."""
+    series = [(s["name"], s.get("curve") or []) for s in snaps
+              if s.get("curve")]
+    if not series:
+        return None
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from io import BytesIO
+
+        fig, ax = plt.subplots(figsize=(9, 4.2), dpi=110)
+        for name, curve in series:
+            xs, ys = [], []
+            for ts, v in curve:
+                try:
+                    xs.append(datetime.fromisoformat(ts)); ys.append(float(v))
+                except Exception:
+                    pass
+            if xs:
+                ax.plot(xs, ys, linewidth=1.4, label=name)
+        ax.axhline(0, color="#888", linewidth=0.8, linestyle="--")
+        ax.set_title("NAS intraday day-P&L (realized + open MTM)",
+                     fontsize=11, fontweight="bold")
+        ax.set_ylabel("₹"); ax.grid(True, alpha=0.25)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+        ax.legend(fontsize=7, ncol=4, loc="upper left", framealpha=0.4)
+        fig.autofmt_xdate(rotation=0)
+        fig.tight_layout()
+        buf = BytesIO(); fig.savefig(buf, format="png"); plt.close(fig)
+        return buf.getvalue()
+    except Exception as e:
+        logger.warning(f"[NAS-EOD] curve render failed: {e}")
+        return None
 
 
 def _pnl_color(v) -> str:
@@ -224,6 +277,7 @@ def render_html(r: dict) -> str:
           <td style="padding:7px 8px;text-align:right;font-size:13px">{s['closed']}</td>
           <td style="padding:7px 8px;text-align:right;font-size:13px">{s['open']}</td>
           <td style="padding:7px 8px;text-align:right;font-size:13px">{s['orders']}</td>
+          <td style="padding:7px 8px;text-align:right;font-size:13px">{s['lots']}</td>
           <td style="padding:7px 8px;text-align:right;font-size:13px;font-weight:700;
                      color:{_pnl_color(s['day_pnl'])}">₹{s['day_pnl']:,.0f}</td>
         </tr>"""
@@ -308,11 +362,19 @@ def render_html(r: dict) -> str:
                 <th style="padding:8px;font-size:11px;color:#666;text-align:right">Closed</th>
                 <th style="padding:8px;font-size:11px;color:#666;text-align:right">Open</th>
                 <th style="padding:8px;font-size:11px;color:#666;text-align:right">Ord</th>
+                <th style="padding:8px;font-size:11px;color:#666;text-align:right">Lots</th>
                 <th style="padding:8px;font-size:11px;color:#666;text-align:right">Day P&amp;L</th>
               </tr>
             </thead>
             <tbody>{rows}</tbody>
           </table>
+
+          {('<div style="margin-top:16px"><div style="font-size:11px;'
+            'color:#666;text-transform:uppercase;margin-bottom:4px">'
+            'Intraday P&amp;L curve</div>'
+            '<img src="cid:nascurve" alt="intraday P&L curve" '
+            'style="width:100%;max-width:660px;border:1px solid #eee;'
+            'border-radius:6px"/></div>') if r.get("has_curve") else ''}
 
           {issues_html}
 
@@ -344,16 +406,29 @@ def send_eod_report() -> dict:
         flag = " ⚠" if r["issues"] else ""
         subject = (f"[NAS EOD · PAPER] {verdict} · {r['n_fired']}/8 fired · "
                    f"{r['date']}{flag}")
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"Quantifyd <{sender}>"
-        msg["To"] = rcpt
-        msg.attach(MIMEText(html, "html"))
+        root = MIMEMultipart("mixed")
+        root["Subject"] = subject
+        root["From"] = f"Quantifyd <{sender}>"
+        root["To"] = rcpt
+        alt = MIMEMultipart("alternative")
+        alt.attach(MIMEText(html, "html"))
+        root.attach(alt)
+        png = r.get("curve_png")
+        if png:
+            try:
+                from email.mime.image import MIMEImage
+                img = MIMEImage(png, _subtype="png")
+                img.add_header("Content-ID", "<nascurve>")
+                img.add_header("Content-Disposition", "inline",
+                               filename=f"nas_pnl_curve_{r['date']}.png")
+                root.attach(img)
+            except Exception as _ie:
+                logger.warning(f"[NAS-EOD] curve attach failed: {_ie}")
         with smtplib.SMTP(cfg.get("smtp_host", "smtp.gmail.com"),
                           cfg.get("smtp_port", 587), timeout=25) as s:
             s.starttls()
             s.login(sender, pw)
-            s.send_message(msg)
+            s.send_message(root)
         logger.info(f"[NAS-EOD] report sent: {subject}")
         return {"sent": True, "subject": subject, "report": r}
     except Exception as e:
