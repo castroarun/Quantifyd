@@ -281,6 +281,28 @@ Every state transition. Not just at the end. Specifically:
 The user should be able to open the file at any minute and have a
 complete picture of where we are.
 
+### MANDATORY for ALL backtesting agents/engines/runs (binding 2026-05-15)
+
+Any backtest, sweep, or long research run MUST:
+
+1. **Write the system being tested into a relevantly-named STATUS-MD
+   BEFORE launching** (sections 1-4: the ask, the base/rules, the plan,
+   the grid). Naming per the ALL_CAPS_UNDERSCORE convention above.
+2. **Record execution + progress live in that same MD** — launch row,
+   per-milestone rows, partial findings, completion, final verdict.
+   The MD is the sole crash-recovery source.
+3. **Post a concise progress summary in chat approximately every ~4
+   minutes** while a long run is in flight (state: what's running, %
+   done / cells complete, ETA, any partial findings or issues). Use a
+   background run + periodic check-ins; do not go silent for long
+   stretches.
+4. On completion, write `results/RESULTS.md` with the honest verdict
+   (including the bias/robustness caveats) and update the STATUS-MD to
+   DONE.
+
+This applies to every backtesting workflow without needing to be
+re-instructed.
+
 ---
 
 ## NO BACKEND RESTART DURING MARKET HOURS

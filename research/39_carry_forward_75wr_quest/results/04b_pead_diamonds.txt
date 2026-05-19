@@ -1,0 +1,54 @@
+# Pattern 4b — PEAD with REAL earnings dates — Walk-Forward Diamonds
+Generated: 2026-05-07 11:41 IST
+Universe: 76 F&O stocks; train 2018-2023, test 2024-2025
+Earnings source: yfinance .NS get_earnings_dates (3666 rows)
+Master trade table: 210800 rows
+Walk-forward gates: train_n>=30, train_wr>=75%, test_n>=30, test_wr>=70%, test_pf>=1.8, test_dd<=15%
+
+## NO walk-forward survivors at gates.
+
+## Top 20 by test WR (n>=20, regardless of pass)
+
+- long ret=2 vol>=1.5 sma=True sur=True/5 tp=15 sl=10 hold=15 | train n=71 WR=57.7% | test n=22 WR=90.9% PF=13.84 DD=5.5% Ret=127.0%
+- long ret=2 vol>=1.5 sma=True sur=True/5 tp=15 sl=7 hold=15 | train n=71 WR=54.9% | test n=22 WR=90.9% PF=13.84 DD=5.5% Ret=127.0%
+- long ret=2 vol>=1.5 sma=True sur=True/5 tp=10 sl=7 hold=15 | train n=71 WR=56.3% | test n=22 WR=90.9% PF=12.03 DD=5.5% Ret=109.2%
+- long ret=2 vol>=1.5 sma=True sur=True/5 tp=20 sl=10 hold=15 | train n=71 WR=57.7% | test n=22 WR=86.4% PF=6.04 DD=10.2% Ret=101.3%
+- long ret=2 vol>=0.0 sma=True sur=True/10 tp=15 sl=7 hold=15 | train n=64 WR=54.7% | test n=20 WR=85.0% PF=12.27 DD=5.5% Ret=120.4%
+- long ret=2 vol>=0.0 sma=True sur=True/10 tp=15 sl=10 hold=15 | train n=64 WR=57.8% | test n=20 WR=85.0% PF=12.27 DD=5.5% Ret=120.4%
+- long ret=2 vol>=0.0 sma=True sur=True/10 tp=10 sl=7 hold=15 | train n=64 WR=56.2% | test n=20 WR=85.0% PF=10.18 DD=5.5% Ret=98.0%
+- long ret=2 vol>=0.0 sma=True sur=True/5 tp=15 sl=7 hold=15 | train n=85 WR=52.9% | test n=26 WR=84.6% PF=8.63 DD=7.2% Ret=136.5%
+- long ret=2 vol>=0.0 sma=True sur=True/5 tp=10 sl=7 hold=15 | train n=85 WR=54.1% | test n=26 WR=84.6% PF=7.35 DD=7.2% Ret=113.6%
+- long ret=2 vol>=0.0 sma=True sur=True/5 tp=15 sl=10 hold=15 | train n=85 WR=55.3% | test n=26 WR=84.6% PF=8.45 DD=7.6% Ret=136.1%
+- long ret=2 vol>=1.5 sma=True sur=True/5 tp=15 sl=10 hold=20 | train n=71 WR=50.7% | test n=22 WR=81.8% PF=8.31 DD=11.0% Ret=123.8%
+- long ret=2 vol>=1.5 sma=True sur=True/5 tp=10 sl=7 hold=20 | train n=71 WR=53.5% | test n=22 WR=81.8% PF=9.05 DD=8.0% Ret=112.1%
+- long ret=2 vol>=1.5 sma=True sur=True/5 tp=15 sl=7 hold=20 | train n=71 WR=47.9% | test n=22 WR=81.8% PF=10.10 DD=8.0% Ret=126.8%
+- long ret=2 vol>=0.0 sma=True sur=True/5 tp=20 sl=10 hold=15 | train n=85 WR=55.3% | test n=26 WR=80.8% PF=5.05 DD=10.2% Ret=115.3%
+- long ret=2 vol>=0.0 sma=True sur=True/5 tp=10 sl=7 hold=20 | train n=85 WR=51.8% | test n=26 WR=80.8% PF=6.64 DD=8.0% Ret=119.2%
+- long ret=2 vol>=0.0 sma=True sur=True/5 tp=15 sl=7 hold=20 | train n=85 WR=47.1% | test n=26 WR=80.8% PF=7.57 DD=8.0% Ret=138.9%
+- long ret=2 vol>=0.0 sma=True sur=True/5 tp=15 sl=10 hold=20 | train n=85 WR=49.4% | test n=26 WR=80.8% PF=5.90 DD=11.0% Ret=132.9%
+- long ret=2 vol>=0.0 sma=True sur=True/10 tp=15 sl=7 hold=20 | train n=64 WR=46.9% | test n=20 WR=80.0% PF=8.78 DD=8.0% Ret=108.3%
+- long ret=2 vol>=0.0 sma=True sur=True/10 tp=6 sl=4 hold=30 | train n=64 WR=50.0% | test n=20 WR=80.0% PF=5.23 DD=4.2% Ret=71.0%
+- long ret=2 vol>=0.0 sma=True sur=True/10 tp=15 sl=10 hold=20 | train n=64 WR=50.0% | test n=20 WR=80.0% PF=7.22 DD=11.0% Ret=105.3%
+
+## Top 20 by test_aws (n>=30)
+
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=10 sl=7 hold=15 | train n=102 WR=52.0% PF=1.16 | test n=36 WR=72.2% PF=3.49 DD=8.6% Ret=102.6%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=15 sl=7 hold=15 | train n=102 WR=51.0% PF=1.25 | test n=36 WR=72.2% PF=4.15 DD=8.6% Ret=129.6%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=15 sl=10 hold=15 | train n=102 WR=53.9% PF=1.27 | test n=36 WR=72.2% PF=4.62 DD=8.6% Ret=133.8%
+- long ret=1 vol>=1.5 sma=True sur=True/5 tp=15 sl=7 hold=15 | train n=98 WR=52.0% PF=1.45 | test n=31 WR=74.2% PF=4.12 DD=14.8% Ret=116.5%
+- long ret=1 vol>=1.5 sma=True sur=True/5 tp=10 sl=7 hold=15 | train n=98 WR=53.1% PF=1.32 | test n=31 WR=74.2% PF=3.73 DD=14.8% Ret=102.0%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=10 sl=7 hold=20 | train n=102 WR=50.0% PF=1.15 | test n=36 WR=69.4% PF=3.57 DD=8.0% Ret=111.3%
+- long ret=1 vol>=1.5 sma=True sur=True/5 tp=15 sl=10 hold=15 | train n=98 WR=54.1% PF=1.41 | test n=31 WR=74.2% PF=3.55 DD=20.8% Ret=110.5%
+- long ret=1 vol>=1.5 sma=True sur=True/5 tp=10 sl=7 hold=20 | train n=98 WR=50.0% PF=1.27 | test n=31 WR=71.0% PF=3.25 DD=16.8% Ret=102.1%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=15 sl=7 hold=20 | train n=102 WR=46.1% PF=1.16 | test n=36 WR=69.4% PF=4.03 DD=8.0% Ret=131.5%
+- long ret=1 vol>=1.5 sma=True sur=True/5 tp=15 sl=7 hold=10 | train n=98 WR=42.9% PF=1.34 | test n=31 WR=67.7% PF=3.20 DD=13.1% Ret=82.3%
+- long ret=1 vol>=1.5 sma=True sur=True/5 tp=10 sl=7 hold=10 | train n=98 WR=43.9% PF=1.21 | test n=31 WR=67.7% PF=3.03 DD=13.1% Ret=75.9%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=15 sl=10 hold=10 | train n=102 WR=48.0% PF=1.37 | test n=36 WR=63.9% PF=3.19 DD=10.1% Ret=93.9%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=15 sl=7 hold=10 | train n=102 WR=46.1% PF=1.31 | test n=36 WR=63.9% PF=3.19 DD=10.1% Ret=93.9%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=15 sl=10 hold=20 | train n=102 WR=49.0% PF=1.23 | test n=36 WR=69.4% PF=4.12 DD=11.0% Ret=132.4%
+- long ret=2 vol>=0.0 sma=False sur=True/5 tp=15 sl=7 hold=15 | train n=121 WR=51.2% PF=1.37 | test n=33 WR=69.7% PF=3.03 DD=14.4% Ret=113.4%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=20 sl=10 hold=10 | train n=102 WR=48.0% PF=1.45 | test n=36 WR=63.9% PF=3.24 DD=10.1% Ret=96.0%
+- long ret=2 vol>=0.0 sma=False sur=True/5 tp=15 sl=7 hold=10 | train n=121 WR=44.6% PF=1.29 | test n=33 WR=66.7% PF=2.86 DD=14.4% Ret=85.7%
+- long ret=0 vol>=1.5 sma=True sur=True/5 tp=15 sl=7 hold=15 | train n=144 WR=54.2% PF=1.75 | test n=44 WR=68.2% PF=2.98 DD=13.0% Ret=128.0%
+- long ret=2 vol>=0.0 sma=True sur=True/0 tp=10 sl=7 hold=10 | train n=102 WR=47.1% PF=1.23 | test n=36 WR=63.9% PF=2.80 DD=10.1% Ret=77.2%
+- long ret=2 vol>=0.0 sma=False sur=True/5 tp=15 sl=7 hold=20 | train n=121 WR=47.1% PF=1.31 | test n=33 WR=69.7% PF=3.13 DD=15.2% Ret=121.6%

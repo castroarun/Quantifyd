@@ -1,0 +1,10 @@
+Top 0 pair-trade cells by test PF (n>=30).
+Train end 2023-12-31 | Test start 2024-01-01 | Cost default 0.12%/pair-trade
+
+Empty DataFrame
+Columns: [symA, symB, beta, alpha, half_life, entry_z, stop_z, hold_days, lookback, half_life_filter, tr_n, tr_wr, tr_pf, tr_dd, tr_total_ret, tr_avg_hold, te_n, te_wr, te_pf, te_dd, te_total_ret, te_avg_hold, te_pf_stress, te_total_ret_stress, passes_gate, aws]
+Index: []
+
+Gate-pass rows (full WF survivors):
+
+(no full-gate survivors)

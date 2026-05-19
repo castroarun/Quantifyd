@@ -23,9 +23,9 @@ Run the volume-confirmed first-candle breakout signal generator (research/30) ac
 
 - State: **RUNNING**
 - Started: 2026-05-07 07:18:46
-- Last completed stock: JKTYRE
-- Stocks completed: 120 / 218
-- Signals logged: 306,965
+- Last completed stock: LAURUSLABS
+- Stocks completed: 130 / 218
+- Signals logged: 317,991
 
 ## Crash Recovery
 

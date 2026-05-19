@@ -1,0 +1,57 @@
+# Pattern 3 - Daily RSI Mean-Reversion - Walk-Forward Diamonds
+
+Generated: 2026-05-07 IST
+Universe: 76 F&O stocks (services/data_manager.py FNO_LOT_SIZES)
+Train: 2018-01-01..2023-12-31  (6 years)
+Test:  2024-01-01..2026-03-19  (~2.25 years)
+Cost model: 0.06% round-trip (F&O futures); also stress-tested at 0.20% (CNC delivery)
+
+Hard gates: train WR >= 75%, test WR >= 70%, test PF >= 1.8, test DD <= 15%, test n >= 30, TP > SL.
+
+VERDICT: NO-GO. Pattern fails 75% WR gate by a wide margin on both sides.
+
+================================================================
+LONG side (close > 200-SMA + RSI(14) < threshold)
+================================================================
+
+Walk-forward survivors (passing all gates): 0
+
+Best train-WR candidates (for reference):
+- rsi_lvl=25 tp=10% sl=5% hold=5d  n=31  WR=58.1% PF=1.31  TotalRet=14.9%
+- rsi_lvl=25 tp=7%  sl=5% hold=5d  n=31  WR=58.1% PF=1.49  TotalRet=23.4%
+- rsi_lvl=25 tp=10% sl=5% hold=5d  n=18  WR=55.6% PF=1.05  TotalRet=1.5%
+
+Why it fails: RSI(14) < 25 in long-term uptrend is RARE on F&O cohort. Most
+candidates produce <50 trades over 6 train-years. Even at the best params,
+win-rate caps at 58% — far below the 75% requirement. The mean-reversion
+edge in modern Indian large-caps appears too weak to beat the gate.
+
+================================================================
+SHORT side (close < 200-SMA + RSI(14) > threshold)
+================================================================
+
+Walk-forward survivors: 0
+
+Best train-WR candidates:
+- rsi_lvl=80 tp=5% sl=3% hold=5d  n=11 WR=54.5% PF=2.28  TotalRet=15.5%
+- rsi_lvl=80 tp=5% sl=3% hold=10d n=11 WR=54.5% PF=1.70  TotalRet=10.7%
+- rsi_lvl=80 tp=5% sl=3% hold=15d n=10 WR=50.0% PF=1.61  TotalRet=9.4%
+
+Why it fails: F&O universe was structurally bullish during train+test
+(uptrend in Indian equities). Sub-200-SMA stocks are a thin slice of the
+universe, generating only 10-20 trades per cell — far below the n>=30 gate.
+Best WR 54.5% — well below the 75% threshold.
+
+================================================================
+Final read
+================================================================
+
+Daily RSI mean-reversion on the F&O cohort produces a sub-60% win rate with
+modest edge — not the high-WR carry-forward setup we're hunting. The
+hypothesis (sharp pullback in long-term uptrend bounces) is partially true
+(positive returns at most params), but the win rate ceiling is structural.
+
+Recommend: REJECT pattern 3 as a stand-alone 75WR carry-forward system.
+Could potentially be revisited as a confluence overlay (e.g., RSI<25 +
+sector relative-strength + ATR-volatility filter), but that is out of scope
+for this task.

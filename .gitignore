@@ -68,6 +68,10 @@ backtest_data/access_token.json
 # their latest report here so the API endpoints can serve it.
 backtest_data/validator_latest_*.json
 backtest_data/premarket_brief_latest.json
+# NAS pipeline watchdog heartbeat — live per-host runtime state. The VPS
+# is canonical; committing the laptop copy would clobber the VPS trail on
+# the next `git reset --hard origin/main` deploy (2026-05-18 incident).
+backtest_data/nas_watchdog_state.json
 
 # Big data files that must never hit git (use GitHub Releases instead)
 backtest_data/market_data.db
@@ -156,4 +160,10 @@ research/34_nifty500_expansion/results/*.log
 # research/40 sweep outputs — heavy/live, never track (git reset would clobber a running sweep)
 research/40_volsurge_pdr_break_weekly_cpr/results/*.csv
 research/40_volsurge_pdr_break_weekly_cpr/results/*.bak
+# Heavy research result artifacts — regenerable from the runner scripts,
+# multi-MB, never meaningful in git history (binding STATUS-MD file
+# convention: scripts + STATUS.md + RESULTS.md committable; heavy CSVs/logs
+# gitignored). Keep .md/.txt summaries, drop the bulk CSVs/logs.
+research/**/results/*.csv
+research/**/results/*.log
 research/40_volsurge_pdr_break_weekly_cpr/results/*.log

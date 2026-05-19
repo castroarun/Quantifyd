@@ -14,6 +14,25 @@ Update it when work moves between states. When Arun asks "what's pending",
 
 ## Pending (highest-priority first)
 
+### Tri-Sleeve combined book (RS-momentum base + KC6 options + short/hedge)
+
+- **What:** Combine 3 sleeves on ONE Rs.1cr book — (1) the locked
+  research/41 MID `q0.5_dd__v__REG` RS-momentum base owns the equity,
+  (2) KC6 monetised as credit/debit option spreads, (3) a short/hedge
+  sleeve (covered-call vs collar vs systematic-short, decided by backtest).
+- **Why:** lift post-tax CAGR and/or cut the base's −24.6% DD without a
+  separate capital carve-out. Base alone = 28.9% post-tax / −24.6% / Calmar 1.44.
+- **Cross-session note:** the RS base is research/41 (another session,
+  COMPLETE/frozen). This work is research/42 — Sleeve 1 only *reads*
+  research/41 logic, never edits it.
+- **Status / how to resume:** design LOCKED, combined engine not yet
+  built, nothing launched. Sole crash-recovery doc:
+  `research/42_tri_sleeve_rs_kc6_overlay/TRI_SLEEVE_RS_KC6_HEDGE_DAILY_SWEEP_STATUS.md`
+  (§3 spec, §4 ~50-cell grid, §6 resume steps). Next step = build
+  `scripts/01_sleeve1_base_replay.py` and pass the Phase-0 fidelity gate
+  (must reproduce 35.3% CAGR / −24.6% DD ±0.3pp) before adding overlays.
+  Backtests run on VPS (canonical-host rule).
+
 ### Restart Flask (local + VPS) to activate I75WR + Pair Trading engines
 
 - **What:** Activate the new `services/intraday_75wr/` package (Configs A/B/C)

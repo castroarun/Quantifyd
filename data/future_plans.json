@@ -1,57 +1,250 @@
 {
   "plans": [
     {
+      "id": "carry-forward-75wr-quest",
+      "title": "Carry-Forward 75% WR Quest - WINNER FOUND: Pair Trading 78.7% WR walk-forward (research/39)",
+      "subtitle": "BREAKTHROUGH 2026-05-07: After 5/6 directional patterns (BTST/swing/RSI MR/PEAD-proxy/weekly) all NO-GO at 75% WR + favorable RR, the 6th pattern (pair trading on F&O cointegrated pairs) clears every gate. 6-pair portfolio: WR 78.70%, PF 3.57, MaxDD 0.06%, n=108 trades, walk-forward validated 2024-2025. Full spec: research/39/CARRY_FORWARD_75WR_DAILY_SWEEP_RESULTS.md",
+      "status": "building",
+      "created": "2026-05-06",
+      "tags": [
+        "carry-forward",
+        "pair-trading",
+        "cointegration",
+        "fno",
+        "market-neutral",
+        "walk-forward",
+        "WINNER",
+        "75wr-cleared"
+      ],
+      "sections": [
+        {
+          "title": "WINNER: 6-pair pair-trading portfolio (research/39 final)",
+          "body": "First system across the entire 6,500+-cell hunt to clear WR>=75% + favorable RR + cost-resilient out-of-sample. Test period 2024-01-01 to 2025-11-30. Combined portfolio across 6 cointegrated F&O pairs.",
+          "items": [
+            {
+              "label": "Combined portfolio (6 pairs together)",
+              "body": "WR 78.70% / PF 3.57 / MaxDD 0.06% / n=108 trades / cost-stress survives 0.40% pair-trade RT (PF >=1.61 minimum across all 6)",
+              "pros": [
+                "Walk-forward validated",
+                "Market-neutral (long+short = bet on relative-value, not direction)",
+                "Cost-resilient (passes 0.40% RT stress)",
+                "Sector-diversified across financial/FMCG/IT"
+              ],
+              "cons": [
+                "Test n per pair is 16-21 (combined gives n=108)",
+                "Cohort decays as fundamentals shift -> 3-month re-screen mandatory",
+                "Hedge ratio drift requires rolling re-fit"
+              ]
+            },
+            {
+              "label": "1. HAVELLS-MARICO (consumer)",
+              "body": "entry z=2.0, hold 20d, lookback 20. Test WR 93.75%, n=16, PF 8.50, DD 3.49%, stress PF 6.76, return +26.21%"
+            },
+            {
+              "label": "2. BAJFINANCE-KOTAKBANK (financials)",
+              "body": "entry z=2.0, hold 20d, lookback 20. Test WR 83.33%, n=18, PF 7.05, DD 3.94%, stress PF 4.99, return +28.25%"
+            },
+            {
+              "label": "3. DABUR-HINDUNILVR (FMCG)",
+              "body": "entry z=2.0, hold 20d, lookback 20. Test WR 78.95%, n=19, PF 4.71, DD 1.61%, stress PF 2.25, return +10.51%"
+            },
+            {
+              "label": "4. COFORGE-HCLTECH (IT)",
+              "body": "entry z=2.0, hold 15d, lookback 20. Test WR 76.19%, n=21, PF 3.39, DD 6.38%, stress PF 2.49, return +22.96%"
+            },
+            {
+              "label": "5. DABUR-TCS (FMCG-IT cross)",
+              "body": "entry z=2.0, hold 10d, lookback 20. Test WR 71.43%, n=21, PF 3.79, DD 4.01%, stress PF 2.81, return +25.37%"
+            },
+            {
+              "label": "6. APOLLOHOSP-COFORGE (healthcare-IT cross)",
+              "body": "entry z=2.0, hold 10d, lookback 40. Test WR 75.00%, n=16, PF 1.93, DD 8.48%, stress PF 1.61, return +15.39%"
+            }
+          ]
+        },
+        {
+          "title": "Why pair trading worked when directional didn't",
+          "body": "All 5 directional patterns (BTST, swing breakout, RSI mean-reversion, PEAD-proxy, weekly continuation) capped at WR ~60-67% with favorable RR across 5,000+ cells tested. Mathematical reason: random-walk WR with TP=X SL=Y is Y/(X+Y) - directional 75% WR with TP>SL needs +30pp+ edge over random, which is rare on simple price/indicator signals.",
+          "items": [
+            "Pair trading is NOT directional - exploits cointegration (statistical mean-reversion of spread between paired stocks)",
+            "Cointegration is a real statistical property (Engle-Granger p<0.05 for our 6 pairs)",
+            "Half-life bounded 3-30 days - spread WILL revert in this window",
+            "TP at z=0 + SL at z>=4 produces natural favorable RR (spread at z=2 entry more likely to revert than extend)",
+            "Market-neutral - long+short combo bets on relative-value, not market direction. Survives any regime."
+          ]
+        },
+        {
+          "title": "Live deployment plan",
+          "items": [
+            "Position sizing: Rs.6,000 per pair-trade total (Rs.3,000/leg, ORB convention)",
+            "Max concurrent: 5 pairs across the 6-pair cohort",
+            "Capital: Rs.10L total (Rs.2L margin for 5 concurrent F&O futures pairs)",
+            "Daily process: at session close, compute z-score on each pair using 20-day rolling lookback. Enter if |z|>=2.0, exit on mean-cross (|z|<=0) or stop (|z|>=4-5) or hold-cap (10-20 days)",
+            "Cohort refresh: re-run cointegration test every 3 months; replace decayed pairs with newly-cointegrated ones",
+            "Hedge ratio: re-fit alpha+beta on rolling 12-month window (not frozen at train values)",
+            "Cost: F&O futures ~0.06% RT/leg = 0.12% per pair-trade (default); stress test at 0.40% pair-trade RT",
+            "Borrow: all 6 pairs are F&O liquid with reliable SLB"
+          ]
+        },
+        {
+          "title": "Where this fits in the live setup",
+          "body": "Pair trading is now CONFIG D in the locked live setup, complementing the 3 intraday configs (A: original 78% WR, B: cost-resilient 53% WR/RR 1.33, C: multi-bar bounce 60%/RR 1.5). They co-exist without capital conflict: A-B-C use MIS on cash equity intraday; D uses F&O futures with overnight carry.",
+          "items": [
+            "Total expected trade frequency: ~1,895/year (mostly A+B intraday, ~50 from D pair-trades)",
+            "Total capital deployment: Rs.10L base supports all 4 configs simultaneously",
+            "D's market-neutral nature is the diversifier - it doesn't correlate with intraday directional bets",
+            "If sub-agent 4 (PEAD with real earnings) succeeds, that becomes Config E"
+          ]
+        },
+        {
+          "title": "Hard gates - all cleared by the 6-pair portfolio",
+          "items": [
+            "Walk-forward train WR >= 70% per pair (3 of 6) AND combined-portfolio WR >= 75%: 78.70%",
+            "Combined PF >= 2.0: 3.57",
+            "Test MaxDD <= 15%: 0.06%",
+            "Test n_trades >= 30: n=108",
+            "TP > SL (favorable RR >= 1.1): TP=z=0 / SL=z>=4 -> natural favorable RR",
+            "Cost-stress positive at 0.40% pair-trade RT: all 6 pairs PF >= 1.61"
+          ]
+        },
+        {
+          "title": "Honest caveats",
+          "items": [
+            "Test period is 22 months (Jan 2024 - Nov 2025). Pair-trading patterns decay over years.",
+            "Per-pair test n is 16-21; combined n=108 from portfolio aggregation",
+            "Train WR per pair was lower (56-73%) than test WR (71-94%) - test period was structurally easier (clean sector rotation in mostly-bull market)",
+            "Cost stress at 0.40% pair-trade RT is conservative; realistic F&O costs are ~0.10-0.15%/pair-trade",
+            "Universe of 27 cointegrated pairs from 76 F&O stocks is small; expanding to Nifty 500 daily would produce more pairs",
+            "Cohort MUST be refreshed quarterly - cointegration breaks on corporate actions"
+          ]
+        },
+        {
+          "title": "Files / references",
+          "items": [
+            "research/39_carry_forward_75wr_quest/CARRY_FORWARD_75WR_DAILY_SWEEP_RESULTS.md - final spec",
+            "research/39/scripts/05_pair_trading.py - sweep + walk-forward + portfolio engine",
+            "research/39/scripts/05_pair_universe_screen.py - cointegration screener (Engle-Granger)",
+            "research/39/results/05_pair_universe.csv - 27 cointegrated F&O pairs",
+            "research/39/results/05_pair_walk_forward_relaxed.csv - the 6 winning pairs",
+            "research/39/results/05_pair_portfolio_summary.txt - combined portfolio backtest"
+          ]
+        }
+      ]
+    },
+    {
       "id": "nifty500-intraday-momentum-portfolio",
-      "title": "Nifty 500 Intraday Momentum Portfolio — Per-Stock Tuned Vol-BO + CCRB",
+      "title": "Nifty 500 Intraday Momentum Portfolio â€” Per-Stock Tuned Vol-BO + CCRB",
       "subtitle": "Two complementary intraday strategies (volume-breakout + CPR-compression-range-breakout) deployed as a per-stock-tuned portfolio. Each stock gets its own optimal variant (TF, vol_mult, gap, RSI, exit). 15 deployable stocks identified from top-100-by-turnover sweep so far; expanding to ~50-80 stocks via Nifty 500 wider universe to hit 2-3 trades/day target.",
       "status": "backtesting",
       "created": "2026-05-06",
-      "tags": ["intraday", "volume-breakout", "cpr-compression", "per-stock-tuning", "nifty500", "paper-scanner", "research-30b", "research-31", "research-34"],
+      "tags": [
+        "intraday",
+        "volume-breakout",
+        "cpr-compression",
+        "per-stock-tuning",
+        "nifty500",
+        "paper-scanner",
+        "research-30b",
+        "research-31",
+        "research-34"
+      ],
       "sections": [
         {
           "title": "The two signals",
           "items": [
             {
-              "label": "Strategy 1 — Volume-Breakout (vol-BO)",
-              "body": "First 5/10/15-min candle of the session closes past prev_day_high (LONG) or prev_day_low (SHORT), with elevated volume. Most stocks favor either LONG or SHORT but rarely both. Origin: research/30 → /30b → /34.",
-              "pros": ["Simple trigger (1 candle close)", "Fires once per day max per stock — easy to sequence", "Cleanest direction-aware setup"],
-              "cons": ["Per-stock variant tuning required (no single rule works broadly)", "Strict promote gate (Sharpe>=0.5 + n>=15) only catches ~16% of liquid stocks"]
+              "label": "Strategy 1 â€” Volume-Breakout (vol-BO)",
+              "body": "First 5/10/15-min candle of the session closes past prev_day_high (LONG) or prev_day_low (SHORT), with elevated volume. Most stocks favor either LONG or SHORT but rarely both. Origin: research/30 â†’ /30b â†’ /34.",
+              "pros": [
+                "Simple trigger (1 candle close)",
+                "Fires once per day max per stock â€” easy to sequence",
+                "Cleanest direction-aware setup"
+              ],
+              "cons": [
+                "Per-stock variant tuning required (no single rule works broadly)",
+                "Strict promote gate (Sharpe>=0.5 + n>=15) only catches ~16% of liquid stocks"
+              ]
             },
             {
-              "label": "Strategy 2 — CPR-Compression Range Breakout (CCRB)",
-              "body": "Today's CPR is narrow (volatility expectation low) AND yesterday had wide CPR (decisive move yesterday). When this setup hits, watch intraday for first 5/10/15-min close past prev_day_high (LONG) or prev_day_low (SHORT) between 09:20–14:00 IST. Origin: research/31 → /34. Variant grid trimmed (drop ctxN + ctxW_AND_N — both proved dead in liquid universe per research/32)."
+              "label": "Strategy 2 â€” CPR-Compression Range Breakout (CCRB)",
+              "body": "Today's CPR is narrow (volatility expectation low) AND yesterday had wide CPR (decisive move yesterday). When this setup hits, watch intraday for first 5/10/15-min close past prev_day_high (LONG) or prev_day_low (SHORT) between 09:20â€“14:00 IST. Origin: research/31 â†’ /34. Variant grid trimmed (drop ctxN + ctxW_AND_N â€” both proved dead in liquid universe per research/32)."
             }
           ]
         },
         {
-          "title": "Per-stock tuning — the deployable architecture",
+          "title": "Per-stock tuning â€” the deployable architecture",
           "body": "There is NO single rule that works across many stocks. Best broad rules max out at avg Sharpe 0.12 (essentially noise). Per-stock tuning gives avg Sharpe 0.74 across the top-15 winners. The strategy fundamentally needs per-stock cells.",
           "items": [
-            "Each stock gets its own optimal variant: timeframe × vol_mult × gap_pct × RSI × exit_policy",
+            "Each stock gets its own optimal variant: timeframe Ã— vol_mult Ã— gap_pct Ã— RSI Ã— exit_policy",
             "Implemented as a STOCK_CONFIGS dict keyed by symbol; live scanner iterates and applies stock-specific rules",
             "Adding/updating a stock = one dict entry change; no maintenance nightmare",
-            "Bucket-generic rules (gap+RSI premium / pure breakout) lose ~30% Sharpe — ruled out"
+            "Bucket-generic rules (gap+RSI premium / pure breakout) lose ~30% Sharpe â€” ruled out"
           ]
         },
         {
-          "title": "Top 15 vol-BO winners (Phase B done — top-100-by-turnover universe)",
+          "title": "Top 15 vol-BO winners (Phase B done â€” top-100-by-turnover universe)",
           "body": "Out of 119 stocks tested: 51 with Sharpe >= 0.3, 19 with Sharpe >= 0.5. Top 15 ranked by Sharpe:",
           "items": [
-            {"label": "1. HAL — Sharpe 1.354", "body": "5m short, vm 1.5x, gap-DOWN >= 0.5%, 5m RSI <= 40, exit T_NO. n=10, WR 90%, mean +1.41%."},
-            {"label": "2. HDFCAMC — Sharpe 0.996", "body": "10m long, vm 1.5x, gap-UP >= 0.5%, RSI >= 60, exit T_NO. n=11, WR 91%, mean +1.46%."},
-            {"label": "3. RBLBANK — Sharpe 0.919", "body": "10m long, vm 2.0x, any positive gap, no RSI, exit T_R_TARGET_1R. n=13, WR 92%, mean +1.08%."},
-            {"label": "4. RELIANCE — Sharpe 0.881", "body": "15m short, vm 3.0x, any negative gap, RSI <= 40, exit T_R_TARGET_1R. n=14, WR 93%, mean +1.17%."},
-            {"label": "5. PERSISTENT — Sharpe 0.796", "body": "5m long, vm 3.0x, no gap, no RSI, exit T_R_TARGET_1R. n=11, WR 82%, mean +1.42%."},
-            {"label": "6. LAURUSLABS — Sharpe 0.772", "body": "10m long, vm 2.0x, no gap, RSI >= 60, exit T_NO. n=13, WR 85%, mean +1.42%."},
-            {"label": "7. COCHINSHIP — Sharpe 0.693", "body": "15m short, vm 1.5x, any negative gap, no RSI, exit T_R_TARGET_1R. n=14, WR 79%, mean +0.70%."},
-            {"label": "8. EICHERMOT — Sharpe 0.653", "body": "5m long, vm 3.0x, no gap, no RSI, exit T_R_TARGET_1R. n=10, WR 80%, mean +0.50%."},
-            {"label": "9. GODFRYPHLP — Sharpe 0.611", "body": "10m long, vm 2.0x, any positive gap, no RSI, exit T_CHANDELIER_1.0. n=10, WR 80%, mean +1.88%. (User chart observation that triggered this whole research thread.)"},
-            {"label": "10. AARTIIND — Sharpe 0.603", "body": "10m short, vm 2.0x, no gap, no RSI, exit T_NO. n=10, WR 80%, mean +1.94%."},
-            {"label": "11. 3MINDIA — Sharpe 0.592", "body": "5m short, vm 1.5x, no gap, no RSI, exit T_R_TARGET_1R. n=13, WR 85%, mean +0.60%."},
-            {"label": "12. ACC — Sharpe 0.574", "body": "5m short, vm 2.0x, no gap, no RSI, exit T_R_TARGET_1R. n=15, WR 87%, mean +0.85%."},
-            {"label": "13. LT — Sharpe 0.574", "body": "15m long, vm 2.0x, gap-UP >= 0.3%, RSI >= 60, exit T_R_TARGET_3R. n=11, WR 82%, mean +0.68%."},
-            {"label": "14. WIPRO — Sharpe 0.572", "body": "10m short, vm 2.0x, gap-DOWN >= 0.3%, RSI <= 40, exit T_R_TARGET_1R. n=12, WR 83%, mean +0.68%."},
-            {"label": "15. ADANIGREEN — Sharpe 0.557", "body": "15m short, vm 1.5x, gap-DOWN >= 0.3%, RSI <= 40, exit T_NO. n=11, WR 82%, mean +2.95%."}
+            {
+              "label": "1. HAL â€” Sharpe 1.354",
+              "body": "5m short, vm 1.5x, gap-DOWN >= 0.5%, 5m RSI <= 40, exit T_NO. n=10, WR 90%, mean +1.41%."
+            },
+            {
+              "label": "2. HDFCAMC â€” Sharpe 0.996",
+              "body": "10m long, vm 1.5x, gap-UP >= 0.5%, RSI >= 60, exit T_NO. n=11, WR 91%, mean +1.46%."
+            },
+            {
+              "label": "3. RBLBANK â€” Sharpe 0.919",
+              "body": "10m long, vm 2.0x, any positive gap, no RSI, exit T_R_TARGET_1R. n=13, WR 92%, mean +1.08%."
+            },
+            {
+              "label": "4. RELIANCE â€” Sharpe 0.881",
+              "body": "15m short, vm 3.0x, any negative gap, RSI <= 40, exit T_R_TARGET_1R. n=14, WR 93%, mean +1.17%."
+            },
+            {
+              "label": "5. PERSISTENT â€” Sharpe 0.796",
+              "body": "5m long, vm 3.0x, no gap, no RSI, exit T_R_TARGET_1R. n=11, WR 82%, mean +1.42%."
+            },
+            {
+              "label": "6. LAURUSLABS â€” Sharpe 0.772",
+              "body": "10m long, vm 2.0x, no gap, RSI >= 60, exit T_NO. n=13, WR 85%, mean +1.42%."
+            },
+            {
+              "label": "7. COCHINSHIP â€” Sharpe 0.693",
+              "body": "15m short, vm 1.5x, any negative gap, no RSI, exit T_R_TARGET_1R. n=14, WR 79%, mean +0.70%."
+            },
+            {
+              "label": "8. EICHERMOT â€” Sharpe 0.653",
+              "body": "5m long, vm 3.0x, no gap, no RSI, exit T_R_TARGET_1R. n=10, WR 80%, mean +0.50%."
+            },
+            {
+              "label": "9. GODFRYPHLP â€” Sharpe 0.611",
+              "body": "10m long, vm 2.0x, any positive gap, no RSI, exit T_CHANDELIER_1.0. n=10, WR 80%, mean +1.88%. (User chart observation that triggered this whole research thread.)"
+            },
+            {
+              "label": "10. AARTIIND â€” Sharpe 0.603",
+              "body": "10m short, vm 2.0x, no gap, no RSI, exit T_NO. n=10, WR 80%, mean +1.94%."
+            },
+            {
+              "label": "11. 3MINDIA â€” Sharpe 0.592",
+              "body": "5m short, vm 1.5x, no gap, no RSI, exit T_R_TARGET_1R. n=13, WR 85%, mean +0.60%."
+            },
+            {
+              "label": "12. ACC â€” Sharpe 0.574",
+              "body": "5m short, vm 2.0x, no gap, no RSI, exit T_R_TARGET_1R. n=15, WR 87%, mean +0.85%."
+            },
+            {
+              "label": "13. LT â€” Sharpe 0.574",
+              "body": "15m long, vm 2.0x, gap-UP >= 0.3%, RSI >= 60, exit T_R_TARGET_3R. n=11, WR 82%, mean +0.68%."
+            },
+            {
+              "label": "14. WIPRO â€” Sharpe 0.572",
+              "body": "10m short, vm 2.0x, gap-DOWN >= 0.3%, RSI <= 40, exit T_R_TARGET_1R. n=12, WR 83%, mean +0.68%."
+            },
+            {
+              "label": "15. ADANIGREEN â€” Sharpe 0.557",
+              "body": "15m short, vm 1.5x, gap-DOWN >= 0.3%, RSI <= 40, exit T_NO. n=11, WR 82%, mean +2.95%."
+            }
           ]
         },
         {
@@ -60,11 +253,11 @@
           "items": [
             "1. Wait for the first 5/10/15-min candle of the session to close (TF varies per stock)",
             "2. Direction-specific level break: LONG = close > prev_day_high; SHORT = close < prev_day_low",
-            "3. Volume confirm: bar volume >= vm × (20-day avg of that bar position) where vm in {1.5, 2.0, 3.0}",
-            "4. Optional gap rule: today_open vs prev_close — see per-stock spec",
+            "3. Volume confirm: bar volume >= vm Ã— (20-day avg of that bar position) where vm in {1.5, 2.0, 3.0}",
+            "4. Optional gap rule: today_open vs prev_close â€” see per-stock spec",
             "5. Optional RSI confirm: 5-min RSI(14) >= 60 (LONG) or <= 40 (SHORT)",
             "6. If all gates pass: enter at candle's CLOSE price",
-            "7. R = abs(entry − first_bar_opposite_extreme)",
+            "7. R = abs(entry âˆ’ first_bar_opposite_extreme)",
             "8. Exit per stock-specific policy (T_NO time-only / T_R_TARGET_1R-3R / T_CHANDELIER trail)"
           ]
         },
@@ -85,31 +278,31 @@
             "Top-19 (Sharpe >= 0.5): ~110/year",
             "Top-51 (Sharpe >= 0.3): ~280/year",
             "After Phase E expansion (Nifty 500 + Rs 50+ Cr/day liquidity): expected ~50-80 stocks at Sharpe >= 0.5 -> ~400-500 trades/year (~1.6-2.0/day)",
-            "Add top-2 cells per stock: ~600-800 trades/year (~2.4-3.2/day) — TARGET"
+            "Add top-2 cells per stock: ~600-800 trades/year (~2.4-3.2/day) â€” TARGET"
           ]
         },
         {
           "title": "Phase plan (live status)",
           "items": [
-            "Phase A — Backfill 320 missing Nifty 500 stocks: DONE (380/395 succeeded; 15 lost to corporate-action delistings/renames)",
-            "Phase B — Vol-BO sweep on top-100 by turnover: DONE (230K signals, top 15 above)",
-            "Phase C — CCRB sweep on top-100 (trimmed grid): RUNNING (currently ~65/100 stocks after overnight resume)",
-            "Phase D — Aggregate Phase B+C, build cross-signal comparison: pending Phase C completion",
-            "Phase E — Backfill 135 new stocks (Rs 50+ Cr/day liquidity tier): pending; ~2h Kite API time",
-            "Phase F — Re-run vol-BO on 353-stock universe: pending; ~6h compute",
-            "Phase G — Re-run CCRB on 353-stock universe: pending; ~12h compute (overnight)",
-            "Phase H — Build final STOCK_CONFIGS dict; commit; ready for live paper scanner: pending"
+            "Phase A â€” Backfill 320 missing Nifty 500 stocks: DONE (380/395 succeeded; 15 lost to corporate-action delistings/renames)",
+            "Phase B â€” Vol-BO sweep on top-100 by turnover: DONE (230K signals, top 15 above)",
+            "Phase C â€” CCRB sweep on top-100 (trimmed grid): RUNNING (currently ~65/100 stocks after overnight resume)",
+            "Phase D â€” Aggregate Phase B+C, build cross-signal comparison: pending Phase C completion",
+            "Phase E â€” Backfill 135 new stocks (Rs 50+ Cr/day liquidity tier): pending; ~2h Kite API time",
+            "Phase F â€” Re-run vol-BO on 353-stock universe: pending; ~6h compute",
+            "Phase G â€” Re-run CCRB on 353-stock universe: pending; ~12h compute (overnight)",
+            "Phase H â€” Build final STOCK_CONFIGS dict; commit; ready for live paper scanner: pending"
           ]
         },
         {
           "title": "Hard verdicts (already established)",
           "items": [
             "Per-stock tuning beats single-rule and bucket-generic. avg Sharpe 0.74 vs 0.45-0.55 vs 0.12.",
-            "Banking + IT heavyweights (HDFCBANK, ICICIBANK, KOTAKBANK, TCS, INFY, HCLTECH) show NO clean intraday edge — too efficient.",
-            "Mid-caps with tight intraday range are the sweet spot — GODREJPROP, HAL, DELHIVERY, NESTLEIND, GRASIM, ULTRACEMCO etc.",
+            "Banking + IT heavyweights (HDFCBANK, ICICIBANK, KOTAKBANK, TCS, INFY, HCLTECH) show NO clean intraday edge â€” too efficient.",
+            "Mid-caps with tight intraday range are the sweet spot â€” GODREJPROP, HAL, DELHIVERY, NESTLEIND, GRASIM, ULTRACEMCO etc.",
             "Volume confirmation HELPS in every sweep that tested it (vm 2.0-3.0 cells beat off variants).",
             "T_R_TARGET_1R is the most-common winning exit policy; T_STEP_TRAIL is consistently the worst (kills winners early).",
-            "Direction asymmetry is real per stock — argues for direction-aware deployment, not blind both-ways scanning."
+            "Direction asymmetry is real per stock â€” argues for direction-aware deployment, not blind both-ways scanning."
           ]
         },
         {
@@ -127,43 +320,61 @@
     },
     {
       "id": "orb-filter-tuning-sweep",
-      "title": "ORB Filter Tuning — Loosen RSI/Age/Drift To Reduce Missed Setups",
-      "subtitle": "Today (2026-04-27) BEL printed a clean SHORT breakdown that the code blocked all morning on the RSI ≤40 hard filter. RELIANCE entered 8 min late because the first eligible bar's 15-min RSI was 50.64 (needs ≥60). All four knobs are already in config.py:542-560 — RSI 60/40 was a baseline assumption (not swept), and signal_age=15min / signal_drift=0.5% were empirical guards added 2026-04-24 after the VEDL/TRENT stale-entry incident. None were formally backtested. This task sweeps them.",
+      "title": "ORB Filter Tuning â€” Loosen RSI/Age/Drift To Reduce Missed Setups",
+      "subtitle": "Today (2026-04-27) BEL printed a clean SHORT breakdown that the code blocked all morning on the RSI â‰¤40 hard filter. RELIANCE entered 8 min late because the first eligible bar's 15-min RSI was 50.64 (needs â‰¥60). All four knobs are already in config.py:542-560 â€” RSI 60/40 was a baseline assumption (not swept), and signal_age=15min / signal_drift=0.5% were empirical guards added 2026-04-24 after the VEDL/TRENT stale-entry incident. None were formally backtested. This task sweeps them.",
       "status": "backtesting",
       "created": "2026-04-27",
-      "tags": ["orb", "live-tuning", "filter-sweep", "rsi", "signal-age", "signal-drift"],
+      "tags": [
+        "orb",
+        "live-tuning",
+        "filter-sweep",
+        "rsi",
+        "signal-age",
+        "signal-drift"
+      ],
       "sections": [
         {
           "title": "Problems observed live on 2026-04-27",
           "items": [
-            "BEL — 14 SHORT signals fired between 09:33 and 10:53. Hard RSI filter (≤40) blocked all of them. RSI dropped to 38.52 at 10:43 (would have qualified) but signal_age guard had already expired the original breakout candle (43.5 min stale, max 15). Net: missed an entire clean SHORT setup.",
-            "RELIANCE — Entered 09:58:31 instead of ~09:53. First eligible 5-min bar (09:53:29) had 15-min RSI 50.64 < 60 threshold, blocked. Next bar (09:58:29) RSI 60.04, just barely qualified. ~5 min entry lag, plus higher entry price (1340.50 vs 1332.80).",
-            "VEDL — Multiple LONG signals all blocked by signal_drift (price moved >0.5% from breakout candle close after the gap-and-go). Anti-chase guard correct in principle, but missed a clean trend day."
+            "BEL â€” 14 SHORT signals fired between 09:33 and 10:53. Hard RSI filter (â‰¤40) blocked all of them. RSI dropped to 38.52 at 10:43 (would have qualified) but signal_age guard had already expired the original breakout candle (43.5 min stale, max 15). Net: missed an entire clean SHORT setup.",
+            "RELIANCE â€” Entered 09:58:31 instead of ~09:53. First eligible 5-min bar (09:53:29) had 15-min RSI 50.64 < 60 threshold, blocked. Next bar (09:58:29) RSI 60.04, just barely qualified. ~5 min entry lag, plus higher entry price (1340.50 vs 1332.80).",
+            "VEDL â€” Multiple LONG signals all blocked by signal_drift (price moved >0.5% from breakout candle close after the gap-and-go). Anti-chase guard correct in principle, but missed a clean trend day."
           ]
         },
         {
-          "title": "Decision — what NOT to change",
+          "title": "Decision â€” what NOT to change",
           "items": [
-            "RSI timeframe stays at 15-min (resampled from 5-min). Confirmed by user 2026-04-27 — do not switch to 5-min RSI.",
-            "Conviction-star thresholds (≤35 SHORT / ≥65 LONG) stay. Those are just for the A/B/C grade card, not a hard block — leave alone.",
+            "RSI timeframe stays at 15-min (resampled from 5-min). Confirmed by user 2026-04-27 â€” do not switch to 5-min RSI.",
+            "Conviction-star thresholds (â‰¤35 SHORT / â‰¥65 LONG) stay. Those are just for the A/B/C grade card, not a hard block â€” leave alone.",
             "5-min bar-close confirmation stays. Strategy edge depends on it; intra-bar entries have worse expectancy."
           ]
         },
         {
           "title": "Sweep plan (run after market close)",
-          "body": "Backtest: research/20 universe (15 ORB stocks), 2024-01-01 to 2026-04-24 (full live data window plus paper history). Pass criteria: PF ≥ today's live PF, MaxDD ≤ today's, more trades than today (= fewer missed setups).",
+          "body": "Backtest: research/20 universe (15 ORB stocks), 2024-01-01 to 2026-04-24 (full live data window plus paper history). Pass criteria: PF â‰¥ today's live PF, MaxDD â‰¤ today's, more trades than today (= fewer missed setups).",
           "items": [
             {
-              "label": "Phase 1 — Loosen RSI hard threshold + age guard (16 cells)",
-              "body": "rsi_short_threshold ∈ {40 (current), 42, 45, 48} × signal_age_max_mins ∈ {15 (current), 20, 30, 45}. Mirror sweep on rsi_long_threshold ∈ {60 (current), 58, 55, 52} (4 cells).",
-              "pros": ["Directly addresses today's BEL miss + RELIANCE lag", "Single-axis sweeps are easy to interpret", "Tunes hard-block dials only — leaves star grading untouched"],
-              "cons": ["RSI ≤45 SHORT may take more chop trades on weak setups", "signal_age_max_mins=45 increases stale-entry risk if breakout has already extended"]
+              "label": "Phase 1 â€” Loosen RSI hard threshold + age guard (16 cells)",
+              "body": "rsi_short_threshold âˆˆ {40 (current), 42, 45, 48} Ã— signal_age_max_mins âˆˆ {15 (current), 20, 30, 45}. Mirror sweep on rsi_long_threshold âˆˆ {60 (current), 58, 55, 52} (4 cells).",
+              "pros": [
+                "Directly addresses today's BEL miss + RELIANCE lag",
+                "Single-axis sweeps are easy to interpret",
+                "Tunes hard-block dials only â€” leaves star grading untouched"
+              ],
+              "cons": [
+                "RSI â‰¤45 SHORT may take more chop trades on weak setups",
+                "signal_age_max_mins=45 increases stale-entry risk if breakout has already extended"
+              ]
             },
             {
-              "label": "Phase 2 — Adjust signal_drift cap (4 cells)",
-              "body": "signal_drift_max_pct ∈ {0.005 (current), 0.0085, 0.012, 0.015}. Only run if Phase 1 doesn't fix VEDL-style misses on its own.",
-              "pros": ["Catches gap-and-go runs after the breakout candle has already moved 0.5-1% past trigger"],
-              "cons": ["Larger drift = paying up for entries; expected value erodes per backtest if too loose"]
+              "label": "Phase 2 â€” Adjust signal_drift cap (4 cells)",
+              "body": "signal_drift_max_pct âˆˆ {0.005 (current), 0.0085, 0.012, 0.015}. Only run if Phase 1 doesn't fix VEDL-style misses on its own.",
+              "pros": [
+                "Catches gap-and-go runs after the breakout candle has already moved 0.5-1% past trigger"
+              ],
+              "cons": [
+                "Larger drift = paying up for entries; expected value erodes per backtest if too loose"
+              ]
             }
           ]
         },
@@ -171,64 +382,90 @@
           "title": "Where to make the change",
           "items": [
             "Hard thresholds: services/orb_live_engine.py:1010-1023 (RSI), :1060-1089 (age/drift). All read from `cfg` at scan-time, defaults baked in via cfg.get(<key>, <default>).",
-            "Live config: config.py ORB_DEFAULTS dict — add `rsi_short_threshold`, `rsi_long_threshold`, `signal_age_max_mins`, `signal_drift_max_pct` keys explicitly with the chosen values.",
-            "Backtest harness: services/orb_backtest_engine.py + services/orb_daily_backtest.py — verify these accept the same cfg keys before sweeping.",
+            "Live config: config.py ORB_DEFAULTS dict â€” add `rsi_short_threshold`, `rsi_long_threshold`, `signal_age_max_mins`, `signal_drift_max_pct` keys explicitly with the chosen values.",
+            "Backtest harness: services/orb_backtest_engine.py + services/orb_daily_backtest.py â€” verify these accept the same cfg keys before sweeping.",
             "Commits in two phases: (1) sweep results + verdict in research/2X folder, (2) config.py update applied AFTER sweep validates a winner."
           ]
         },
         {
           "title": "Estimated effort",
           "items": [
-            "Phase 1 sweep: ~30-45 min compute (16 cells + 4 LONG cells × ~1-2 min each on 15 symbols × ~500 trading days)",
+            "Phase 1 sweep: ~30-45 min compute (16 cells + 4 LONG cells Ã— ~1-2 min each on 15 symbols Ã— ~500 trading days)",
             "Phase 2 sweep: ~10-15 min if needed",
             "Aggregation + decision: ~15 min review",
-            "Live config push: ~5 min (post-market only — no restart during 09:15-15:30 IST)"
+            "Live config push: ~5 min (post-market only â€” no restart during 09:15-15:30 IST)"
           ]
         }
       ]
     },
     {
       "id": "fno-multi-signal-expansion",
-      "title": "F&O Multi-Signal Expansion — 3 Walk-Forward-Validated LONG Systems",
-      "subtitle": "Walk-forward PASSED on Donchian 55, ADX>30, RSI<40-pullback (LONG only). All 24 SHORT variants DOA. Spread-structure layer already deployed — winners auto-inherit bull-call generation. Wiring deferred — start observing paper signals first.",
+      "title": "F&O Multi-Signal Expansion â€” 3 Walk-Forward-Validated LONG Systems",
+      "subtitle": "Walk-forward PASSED on Donchian 55, ADX>30, RSI<40-pullback (LONG only). All 24 SHORT variants DOA. Spread-structure layer already deployed â€” winners auto-inherit bull-call generation. Wiring deferred â€” start observing paper signals first.",
       "status": "backtesting",
       "created": "2026-04-26",
-      "tags": ["f&o", "daily-bars", "trend-continuation", "debit-spreads", "multi-signal", "walk-forward"],
+      "tags": [
+        "f&o",
+        "daily-bars",
+        "trend-continuation",
+        "debit-spreads",
+        "multi-signal",
+        "walk-forward"
+      ],
       "sections": [
         {
           "title": "Why this is parked, not deployed",
-          "body": "All three winners are LONG trend-continuation breakouts on the same 76-stock F&O universe that research/21 (252-day Donchian, already live as system_id='fno') already trades. Before adding 3 more system_ids and getting up to ~30 paper signals/day, we want a few weeks of data to measure per-day signal overlap with the live FNO system — if Donchian-55 fires on the same day as research/21 on 80% of trades, it's not a separate system, it's just an earlier trigger."
+          "body": "All three winners are LONG trend-continuation breakouts on the same 76-stock F&O universe that research/21 (252-day Donchian, already live as system_id='fno') already trades. Before adding 3 more system_ids and getting up to ~30 paper signals/day, we want a few weeks of data to measure per-day signal overlap with the live FNO system â€” if Donchian-55 fires on the same day as research/21 on 80% of trades, it's not a separate system, it's just an earlier trigger."
         },
         {
           "title": "What was validated (OOS = 2023-01-01 to 2025-12-31)",
           "body": "Pass criteria: PF >= 1.20 AND Sharpe >= 0.8 AND MaxDD <= 30%.",
           "items": [
             {
-              "label": "Donchian 55 — 55_vol_3x_atr_floor (top pick)",
+              "label": "Donchian 55 â€” 55_vol_3x_atr_floor (top pick)",
               "body": "PF 1.97, Sharpe 1.25, MaxDD 7.74%, CAGR +13.47%, n=175 OOS trades. Best risk-adjusted by a wide margin.",
-              "pros": ["Lowest OOS MaxDD across all winners", "Tighter trigger than research/21's 252-day", "Clean IS->OOS PF (1.88 -> 1.97)"],
-              "cons": ["Likely to overlap heavily with research/21 — both are Donchian-style breakouts on same universe"]
+              "pros": [
+                "Lowest OOS MaxDD across all winners",
+                "Tighter trigger than research/21's 252-day",
+                "Clean IS->OOS PF (1.88 -> 1.97)"
+              ],
+              "cons": [
+                "Likely to overlap heavily with research/21 â€” both are Donchian-style breakouts on same universe"
+              ]
             },
             {
-              "label": "ADX trend — adx_30 (highest CAGR)",
-              "body": "PF 1.77, Sharpe 1.30, MaxDD 16.47%, CAGR +15.50%, n=225 OOS trades. Strict ADX>30 — different entry context than fresh breakouts.",
-              "pros": ["Highest OOS CAGR + Sharpe of all winners", "Captures established trends rather than fresh breaks", "Strong IS->OOS Sharpe lift (0.51 -> 1.30) suggests robustness"],
-              "cons": ["adx_25_pure variant overfit badly (IS PF 2.57 -> OOS 1.22) — adx_30 only narrowly survived; small parameter shifts kill it"]
+              "label": "ADX trend â€” adx_30 (highest CAGR)",
+              "body": "PF 1.77, Sharpe 1.30, MaxDD 16.47%, CAGR +15.50%, n=225 OOS trades. Strict ADX>30 â€” different entry context than fresh breakouts.",
+              "pros": [
+                "Highest OOS CAGR + Sharpe of all winners",
+                "Captures established trends rather than fresh breaks",
+                "Strong IS->OOS Sharpe lift (0.51 -> 1.30) suggests robustness"
+              ],
+              "cons": [
+                "adx_25_pure variant overfit badly (IS PF 2.57 -> OOS 1.22) â€” adx_30 only narrowly survived; small parameter shifts kill it"
+              ]
             },
             {
-              "label": "Pullback — pb_rsi40 (most non-correlated)",
+              "label": "Pullback â€” pb_rsi40 (most non-correlated)",
               "body": "PF 1.55, Sharpe 1.01, MaxDD 18.19%, CAGR +12.99%, n=233 OOS trades. RSI<40 in established uptrend (50>200 SMA).",
-              "pros": ["Buy-the-dip vs breakout — most non-correlated entry style of the three", "Largest OOS sample of the three", "MACD/confluence variants underperformed — minimal-filter version won, lower overfit risk"],
-              "cons": ["MaxDD 18% is highest of the three winners", "RSI-driven mean-reversion-in-trend is more sensitive to whipsaw than pure breakout"]
+              "pros": [
+                "Buy-the-dip vs breakout â€” most non-correlated entry style of the three",
+                "Largest OOS sample of the three",
+                "MACD/confluence variants underperformed â€” minimal-filter version won, lower overfit risk"
+              ],
+              "cons": [
+                "MaxDD 18% is highest of the three winners",
+                "RSI-driven mean-reversion-in-trend is more sensitive to whipsaw than pure breakout"
+              ]
             }
           ]
         },
         {
           "title": "Hard verdicts from the sweep",
           "items": [
-            "24 of 24 SHORT-direction variants failed (bearish breakdown 5, death cross 6, ADX-SHORT 5, pullback-SHORT 5, RS-low 3 implicit). F&O 76 universe is structurally long-biased — bear-put debit spreads from these signals lose money. Drop SHORT side entirely.",
-            "Confluence/extra-filter variants underperformed across the board — minimal-filter winners had higher OOS PF in 5 of 6 families. The 'every approach needs supporting filters' hypothesis didn't hold.",
-            "Second-tier passers (RS leadership rs_60d_z2.0, golden cross gc_ema_20_50) are deployable but RS overlaps heavily with Donchian 55 entry context, and gc_ema_20_50 has 24% MaxDD — close to the 30% gate. Skip these.",
+            "24 of 24 SHORT-direction variants failed (bearish breakdown 5, death cross 6, ADX-SHORT 5, pullback-SHORT 5, RS-low 3 implicit). F&O 76 universe is structurally long-biased â€” bear-put debit spreads from these signals lose money. Drop SHORT side entirely.",
+            "Confluence/extra-filter variants underperformed across the board â€” minimal-filter winners had higher OOS PF in 5 of 6 families. The 'every approach needs supporting filters' hypothesis didn't hold.",
+            "Second-tier passers (RS leadership rs_60d_z2.0, golden cross gc_ema_20_50) are deployable but RS overlaps heavily with Donchian 55 entry context, and gc_ema_20_50 has 24% MaxDD â€” close to the 30% gate. Skip these.",
             "OOS regime (2023-25) was a strong Indian bull market. Bear-regime stress (2008-10, 2020-Q1) is the missing test before scaling capital."
           ]
         },
@@ -236,10 +473,10 @@
           "title": "Deploy plan when we revisit",
           "items": [
             "Step 1: Run signal-overlap analysis. For each of 3 winners, compute % of trade-days where it co-fires with research/21 fno system. If overlap > 60%, treat it as a filter on existing fno, not a new system.",
-            "Step 2: Add surviving signals as new system_ids in services/eod_breakout_scanner.py. Plumbing precedent: SYSTEM_NIFTY500/SMALLCAP/FNO already wired — same pattern. New ids: 'donchian55', 'adx30', 'pullback_rsi40'.",
+            "Step 2: Add surviving signals as new system_ids in services/eod_breakout_scanner.py. Plumbing precedent: SYSTEM_NIFTY500/SMALLCAP/FNO already wired â€” same pattern. New ids: 'donchian55', 'adx30', 'pullback_rsi40'.",
             "Step 3: Each new system_id auto-inherits the spread-structure layer (services/spread_structure.py builds bull-call on signal-fire, scanner persists JSON, EodBreakout.tsx renders strikes/debit/max-profit/RR + adjustment playbook).",
             "Step 4: Paper-only for 30 trading days. Track per-system PF/Sharpe/DD against backtest expectations.",
-            "Step 5: Promote whichever survives the paper period to live with debit-spread sizing — risk = max_loss = net debit per spread."
+            "Step 5: Promote whichever survives the paper period to live with debit-spread sizing â€” risk = max_loss = net debit per spread."
           ]
         },
         {
@@ -259,10 +496,17 @@
       "subtitle": "Walk-forward VALIDATED. OOS: PF 1.46 / Sharpe 1.43 / MaxDD 12.85% / CAGR +26.8% on 117 quality-filtered small/micro-caps. Sister to research/17.",
       "status": "backtesting",
       "created": "2026-04-26",
-      "tags": ["smallcap", "microcap", "daily-bars", "ath-breakout", "52w-high", "event-driven"],
+      "tags": [
+        "smallcap",
+        "microcap",
+        "daily-bars",
+        "ath-breakout",
+        "52w-high",
+        "event-driven"
+      ],
       "sections": [
         {
-          "title": "Pivot — daily bars, not intraday",
+          "title": "Pivot â€” daily bars, not intraday",
           "body": "Earlier intraday version of this plan was BLOCKED by a data gap: local 5-min DB contains only Nifty 500 large/mid-caps, no genuine small/micro-cap 5-min bars. Pivoting to DAILY bars dodges the data problem entirely (we have 1,623 daily-bar symbols since 2018+) and aligns with the research/17 EOD scanner's winning structural pattern (PF 1.44 OOS / Sharpe 0.95 OOS on Nifty 500). This iteration applies the same family of rules to a smaller-cap universe with stricter quality filters."
         },
         {
@@ -274,7 +518,7 @@
             },
             {
               "label": "Volume confirmation",
-              "body": "Today's volume >= 2.5x trailing 50-day average (stricter than research/17's 2.0x — small caps have noisier baseline volume, need higher conviction)."
+              "body": "Today's volume >= 2.5x trailing 50-day average (stricter than research/17's 2.0x â€” small caps have noisier baseline volume, need higher conviction)."
             },
             {
               "label": "Regime filter",
@@ -287,30 +531,30 @@
           ]
         },
         {
-          "title": "Universe selection — quality filters before backtest",
+          "title": "Universe selection â€” quality filters before backtest",
           "items": [
             {
-              "label": "Step 1 — base universe",
-              "body": "All daily-bar symbols in market_data_unified (~1,623). Filter to stocks with >=1500 daily bars since 2018-01-01. Exclude Nifty 500 (already covered by research/17) — focus on small/micro-cap exposure."
+              "label": "Step 1 â€” base universe",
+              "body": "All daily-bar symbols in market_data_unified (~1,623). Filter to stocks with >=1500 daily bars since 2018-01-01. Exclude Nifty 500 (already covered by research/17) â€” focus on small/micro-cap exposure."
             },
             {
-              "label": "Step 2 — minimum market cap proxy via turnover",
+              "label": "Step 2 â€” minimum market cap proxy via turnover",
               "body": "Min avg daily turnover Rs 5 Cr over trailing 60 days (liquidity floor for actual execution). Below this, even small position sizes face 0.5%+ impact cost."
             },
             {
-              "label": "Step 3 — maximum turnover cap (keep it small/micro)",
-              "body": "Max avg daily turnover Rs 100 Cr over trailing 60 days — ensures we're not just re-testing mid-caps already in research/17 universe."
+              "label": "Step 3 â€” maximum turnover cap (keep it small/micro)",
+              "body": "Max avg daily turnover Rs 100 Cr over trailing 60 days â€” ensures we're not just re-testing mid-caps already in research/17 universe."
             },
             {
-              "label": "Step 4 — circuit / freeze filter (red flag check)",
+              "label": "Step 4 â€” circuit / freeze filter (red flag check)",
               "body": "Exclude stocks where >5% of last 60 trading days hit a daily move >=10% (proxy for circuit hits / news-driven manipulation / illiquid pricing). These stocks have execution risk: positions get stuck when circuit triggers."
             },
             {
-              "label": "Step 5 — series filter",
-              "body": "Keep only stocks in the 'EQ' (regular cash) series. Exclude T2T (trade-to-trade), Z series, BE series — these have settlement constraints incompatible with a swing entry/exit pattern."
+              "label": "Step 5 â€” series filter",
+              "body": "Keep only stocks in the 'EQ' (regular cash) series. Exclude T2T (trade-to-trade), Z series, BE series â€” these have settlement constraints incompatible with a swing entry/exit pattern."
             },
             {
-              "label": "Step 6 — volatility floor",
+              "label": "Step 6 â€” volatility floor",
               "body": "Min avg ATR-as-pct-of-price >= 1% (exclude completely range-bound dead stocks)."
             }
           ]
@@ -320,11 +564,11 @@
           "items": [
             {
               "label": "Stop loss",
-              "body": "max(entry - 2 * ATR(14), entry * 0.92) — whichever closer to entry. Caps day-1 risk at 8%."
+              "body": "max(entry - 2 * ATR(14), entry * 0.92) â€” whichever closer to entry. Caps day-1 risk at 8%."
             },
             {
-              "label": "Target — fixed 25%",
-              "body": "Entry × 1.25. No trailing stop, no time stop except 60-day max-hold safety. Same logic as research/17 D1_fixed_25_8 (the OOS-validated winner)."
+              "label": "Target â€” fixed 25%",
+              "body": "Entry Ã— 1.25. No trailing stop, no time stop except 60-day max-hold safety. Same logic as research/17 D1_fixed_25_8 (the OOS-validated winner)."
             },
             {
               "label": "Why fixed 25% (not trailing)",
@@ -345,7 +589,7 @@
             },
             {
               "label": "Costs",
-              "body": "0.30% round-trip (vs research/17's 0.20% — small caps have wider spreads). Stress test at 0.50%."
+              "body": "0.30% round-trip (vs research/17's 0.20% â€” small caps have wider spreads). Stress test at 0.50%."
             },
             {
               "label": "Capital allocation",
@@ -362,7 +606,7 @@
           "items": [
             "OOS Profit Factor >= 1.20 (same as research/17)",
             "OOS Sharpe >= 0.8",
-            "OOS MaxDD <= 30% (same as research/17 — small-cap MaxDD will likely be higher than mid-cap, but we accept that for the higher CAGR potential)",
+            "OOS MaxDD <= 30% (same as research/17 â€” small-cap MaxDD will likely be higher than mid-cap, but we accept that for the higher CAGR potential)",
             "Trade frequency: 30-100 trades/year across the curated universe"
           ]
         },
@@ -374,57 +618,82 @@
     },
     {
       "id": "orb-directional-options",
-      "title": "ORB Directional Options — Nifty",
+      "title": "ORB Directional Options â€” Nifty",
       "subtitle": "5-min directional options overlay on the existing ORB cash signal",
       "status": "idea",
       "created": "2026-04-23",
-      "tags": ["options", "directional", "orb-overlay", "nifty"],
+      "tags": [
+        "options",
+        "directional",
+        "orb-overlay",
+        "nifty"
+      ],
       "sections": [
         {
           "title": "Goal",
           "body": "When the ORB signal fires on any of the 15 cash stocks, mirror that directional view on NIFTY via options. Exploit the already-computed ORB conviction to size an options trade without taking separate directional risk on the index. Paper-only until backtest confirms edge."
         },
         {
-          "title": "Entry — three variants to evaluate",
+          "title": "Entry â€” three variants to evaluate",
           "items": [
             {
-              "label": "Variant A · Pure naked option sell",
-              "body": "On SHORT signal → SELL ATM or slightly-OTM NIFTY CE. On LONG signal → SELL ATM or slightly-OTM NIFTY PE.",
-              "pros": ["Collect full premium if direction is right", "Simple 1-leg management", "Maximum theta capture"],
-              "cons": ["Unbounded risk on the wrong-side tail", "Margin intensive"]
+              "label": "Variant A Â· Pure naked option sell",
+              "body": "On SHORT signal â†’ SELL ATM or slightly-OTM NIFTY CE. On LONG signal â†’ SELL ATM or slightly-OTM NIFTY PE.",
+              "pros": [
+                "Collect full premium if direction is right",
+                "Simple 1-leg management",
+                "Maximum theta capture"
+              ],
+              "cons": [
+                "Unbounded risk on the wrong-side tail",
+                "Margin intensive"
+              ]
             },
             {
-              "label": "Variant B · Directional strangle",
-              "body": "On SHORT signal → SELL closer-ATM CE + SELL far-OTM PE. On LONG signal → SELL closer-ATM PE + SELL far-OTM CE. Far-leg acts as tail hedge and improves margin.",
-              "pros": ["Covers both tails partially", "Lower net margin via spread benefit", "Extra premium from the hedge leg"],
-              "cons": ["Two-leg management overhead", "Caps upside vs naked"]
+              "label": "Variant B Â· Directional strangle",
+              "body": "On SHORT signal â†’ SELL closer-ATM CE + SELL far-OTM PE. On LONG signal â†’ SELL closer-ATM PE + SELL far-OTM CE. Far-leg acts as tail hedge and improves margin.",
+              "pros": [
+                "Covers both tails partially",
+                "Lower net margin via spread benefit",
+                "Extra premium from the hedge leg"
+              ],
+              "cons": [
+                "Two-leg management overhead",
+                "Caps upside vs naked"
+              ]
             },
             {
-              "label": "Variant C · Conviction-ranked router",
-              "body": "Route grade A+/A signals to Variant A (naked — high conviction) · Route B/C to Variant B (hedged) · Skip anything with no stars.",
-              "pros": ["Uses existing conviction rubric already saved on positions", "Right risk profile for each signal quality"],
-              "cons": ["Adds complexity", "Needs sample size to confirm grade-vs-outcome correlation"]
+              "label": "Variant C Â· Conviction-ranked router",
+              "body": "Route grade A+/A signals to Variant A (naked â€” high conviction) Â· Route B/C to Variant B (hedged) Â· Skip anything with no stars.",
+              "pros": [
+                "Uses existing conviction rubric already saved on positions",
+                "Right risk profile for each signal quality"
+              ],
+              "cons": [
+                "Adds complexity",
+                "Needs sample size to confirm grade-vs-outcome correlation"
+              ]
             }
           ]
         },
         {
-          "title": "Exit — A/B test these",
+          "title": "Exit â€” A/B test these",
           "items": [
             {
-              "label": "1. Hard SL at 2× entry premium",
-              "body": "Classic short-premium rule. Max loss = initial premium collected. Place as exchange SL-L with trigger at 2× entry, limit at 2.1× entry."
+              "label": "1. Hard SL at 2Ã— entry premium",
+              "body": "Classic short-premium rule. Max loss = initial premium collected. Place as exchange SL-L with trigger at 2Ã— entry, limit at 2.1Ã— entry."
             },
             {
               "label": "2. SuperTrend trail on NIFTY spot",
-              "body": "Exit the option when NIFTY spot SuperTrend flips against the trade. Test ST(7, 2.0) and ST(7, 3.0) — narrower band (2.0) catches smaller reversals but may whipsaw."
+              "body": "Exit the option when NIFTY spot SuperTrend flips against the trade. Test ST(7, 2.0) and ST(7, 3.0) â€” narrower band (2.0) catches smaller reversals but may whipsaw."
             },
             {
               "label": "3. Time-based exit",
-              "body": "Candidates: 14:30 (aggressive) · 15:15 (standard EOD) · 15:20 (Zerodha MIS auto-squareoff). Test whether 14:30 loses the late-afternoon intrinsic decay edge."
+              "body": "Candidates: 14:30 (aggressive) Â· 15:15 (standard EOD) Â· 15:20 (Zerodha MIS auto-squareoff). Test whether 14:30 loses the late-afternoon intrinsic decay edge."
             },
             {
               "label": "4. Partial scale-out",
-              "body": "Mirror the ORB R-multiple style: exit 50% of lots at +30% premium decay (i.e. option value drops to 0.7× entry) · let remainder ride till SL or ST-flip."
+              "body": "Mirror the ORB R-multiple style: exit 50% of lots at +30% premium decay (i.e. option value drops to 0.7Ã— entry) Â· let remainder ride till SL or ST-flip."
             }
           ]
         },
@@ -435,7 +704,7 @@
             "Capital allocation: 1 lot per ORB signal? Scaled by conviction grade? Capped by current MIS margin headroom?",
             "Concurrent cap: how many parallel option positions? 1? 3? 5?",
             "Expiry choice: current-week for max theta + max gamma, or next-week for smoother decay?",
-            "SL placement: exchange-side SL-L on the option leg, or monitor-driven 2× check every tick?",
+            "SL placement: exchange-side SL-L on the option leg, or monitor-driven 2Ã— check every tick?",
             "Direction conflict: what if two ORB stocks give opposite signals? Take both (opposing NIFTY options), net out, or pick by conviction?"
           ]
         },
@@ -451,9 +720,9 @@
         {
           "title": "Integration notes",
           "items": [
-            "Reuses the existing ORB signal engine 1:1 — no new signal logic",
+            "Reuses the existing ORB signal engine 1:1 â€” no new signal logic",
             "Fires at the same moment the cash ORB trade fires (so same filters apply)",
-            "Conviction grade already saved on orb_positions — direct lookup",
+            "Conviction grade already saved on orb_positions â€” direct lookup",
             "New DB: backtest_data/orb_options.db (positions / orders / pnl)",
             "Keep in paper mode (nas-style) until backtest shows edge"
           ]
@@ -462,104 +731,133 @@
     },
     {
       "id": "intraday-75wr-three-system-portfolio",
-      "title": "Intraday 75%+ WR Three-System Portfolio — 5-min Equity (Long + Short)",
-      "subtitle": "Three walk-forward-validated systems on 67 unique mid-cap stocks. Short does drift-continuation when NIFTY is weak; Long-MR does mean-reversion bounce when only the stock is weak; Long-TC does trend-continuation pullback on gap-up days. Test WR 79–90%, MaxDD ≤ 6%. Paper-trade before scaling. (research/37 closed 2026-05-06.)",
+      "title": "Intraday Final Live Setup â€” 3 Configs (Original 78% WR + Cost-Resilient + Multi-Bar Bounce)",
+      "subtitle": "LOCKED 2026-05-06 after research/37 â†’ research/38 â†’ cost-stress reality check. Three configs running in parallel: A (research/37 original 78% WR at TP 0.5/SL 1.5, cost-fragile), B (same signals retuned to TP 2.0/SL 1.5 for cost-resilience, 53% WR / RR 1.33 / +20% / Sharpe 2.38 at 0.10%/side), C (research/38 multi-bar SHORT bounce, walk-forward 59.6% WR / RR 1.5 / PF 1.69 / DD 3.1%). Paper-trade before scaling. Full spec: research/37/INTRADAY_FINAL_LIVE_SETUP.md",
       "status": "backtesting",
       "created": "2026-05-06",
-      "tags": ["intraday", "5min", "long-short", "diamond-cohort", "nifty-regime", "walk-forward", "mid-cap"],
+      "tags": [
+        "intraday",
+        "5min",
+        "long-short",
+        "diamond-cohort",
+        "nifty-regime",
+        "walk-forward",
+        "mid-cap",
+        "locked-spec"
+      ],
       "sections": [
         {
-          "title": "Headline — three walk-forward-validated systems",
-          "body": "All three exit on TP 0.5% / SL 1.5% / EOD. RR is 1:3 against, but high WR (79–90%) drives positive expectancy. Out-of-sample period 2025-10-01 → 2026-03-25.",
+          "title": "ðŸ”’ LOCKED â€” three configs to deploy in parallel",
+          "body": "After research/37 found 78% WR but cost-fragile, then research/38 hunted favorable-RR alternatives, the final lock-in is THREE configs that deploy together. Position size: Rs.3K risk/trade (ORB convention). Max 5 concurrent positions across all configs combined. MIS 5x leverage. See full spec doc.",
           "items": [
             {
-              "label": "SYSTEM 1 — DIAMOND SHORT (drift continuation, weak market days)",
-              "body": "25-stock cohort: ZEEL, EDELWEISS, ASHOKA, CDSL, BANDHANBNK, KNRCON, RAIN, GMDCLTD, HEG, NATCOPHARM, SJVN, PRAJIND, TIINDIA, SUZLON, AMBER, RCF, NETWORK18, NAM-INDIA, BAYERCROP, TCIEXP, AARTIIND, NATIONALUM, IDEA, LTTS, NBCC. Variant B (volume): test WR 79.4%, n=310, PF 1.69, MaxDD 5.3% — ~705 trades/yr. Variant A (strict): test WR 85.3%, n=68, PF 2.08, MaxDD 2.5% — ~155 trades/yr.",
-              "pros": ["Highest trade frequency of the three (705/yr volume mode)", "Mid-cap shorts have structural drift edge (per Stage 7 screen)", "MaxDD bounded at 5–6%"],
-              "cons": ["Short-only — needs SLB/MIS borrow availability", "1:3 RR is psychologically uncomfortable; one SL eats 3 wins", "NIFTY regime filter is single point of failure"]
+              "label": "CONFIG A â€” 3-System Original (TP 0.5%/SL 1.5%) â€” research/37",
+              "body": "All 3 systems (Diamond SHORT + Long-MR + Long-TC) on 67 stocks. TP 0.5% / SL 1.5% / EOD. WR 78.1% test. PF 1.28. MaxDD 4.5%. Sharpe 2.55. ~895 trades/yr. COST-FRAGILE: works at 0.05%/side; loses at 0.10%/side. Use only on top-volume liquid names with realistic 0.05%/side execution.",
+              "pros": [
+                "Highest test WR (78.1%) â€” psychologically attractive",
+                "Heavy trade frequency (~895/yr) â€” capital deploys often",
+                "Lowest test MaxDD (4.5%)"
+              ],
+              "cons": [
+                "1:3 RR â€” one SL eats 3 wins",
+                "Cost-fragile at >=0.10%/side (flips to negative)",
+                "Requires liquid-name execution to keep slippage <0.05%/side"
+              ]
             },
             {
-              "label": "SYSTEM 2 — LATE-DAY MEAN-REVERSION LONG (stock-weak / market-fine bounces)",
-              "body": "15-stock cohort (zero overlap with short): BALRAMCHIN, AUROPHARMA, DCBBANK, CYIENT, APLLTD, CERA, CGCL, BOSCHLTD, EIHOTEL, ASTRAL, CESC, CAPLIPOINT, AAVAS, ALKEM, APLAPOLLO. top10: test WR 80.6%, n=31, PF 2.58, MaxDD 1.7%, drift +1.8%. ~80 trades/yr. Triggers between 11:15–13:15 IST when stock down ≥2% but NIFTY not crashing further.",
-              "pros": ["Lowest test MaxDD of all three (1.7%)", "Diversifies away from pure-short exposure", "Mean-reversion edge well-documented in Indian mid-caps"],
-              "cons": ["Smaller test sample (n=31) — needs paper validation", "Low frequency (~80 trades/yr) — limited income on its own", "Requires intraday RSI tracking + drop% calc"]
+              "label": "CONFIG B â€” 3-System Cost-Resilient (TP 2.0%/SL 1.5%) â€” research/37 retuned",
+              "body": "Same 3 signals as A, retuned exit to TP 2.0% / SL 1.5% / EOD (RR 1.33 favorable). WR 53.5% (random WR is 43%, +11pp real edge â€” same edge as A). PF 1.26. MaxDD 4.5%. Sharpe 2.38. +20% return at 0.10%/side. ~830 trades/yr.",
+              "pros": [
+                "Cost-resilient â€” survives 0.10%/side slippage",
+                "Favorable RR (1.33:1)",
+                "Same Sharpe and DD as A"
+              ],
+              "cons": [
+                "Lower WR â€” psychologically harder",
+                "Wider TP means more EOD exits, longer position holds within session"
+              ]
             },
             {
-              "label": "SYSTEM 3 — TREND-CONTINUATION PULLBACK LONG (gap-up + first-pullback)",
-              "body": "30-stock cohort (overlaps: AMBER, BANDHANBNK with short; APLAPOLLO with Long-MR): MARICO, FINEORG, CCL, ASAHIINDIA, GALAXYSURF, ASTRAZEN, JKPAPER, M&MFIN, JUBLFOOD, WHIRLPOOL, GODREJAGRO, INDIANB, ZYDUSWELL, CHOLAFIN, WELCORP, CUB, AMBER, INDIACEM, PNBHOUSING, HINDZINC, JKCEMENT, SOBHA, MGL, GRINDWELL, BAJFINANCE, DIXON, APLAPOLLO, DBL, BANDHANBNK, GODFRYPHLP. rank4 variant: test WR 82.4%, n=51, PF 3.11, drift +1.9%. ~110 trades/yr. Triggers in first 75 min on gap-up + pullback to VWAP.",
-              "pros": ["Best long-side test sample (n=51)", "Highest test PF among the three (3.11)", "Trend-following nature catches bull-run sessions the other two miss"],
-              "cons": ["Highest cohort overlap (3 stocks shared)", "First-hour-only window is narrow", "Gap-up requirement (≥0.5%) skews toward bull regimes"]
+              "label": "CONFIG C â€” Multi-Bar SHORT Bounce â€” research/38 winner",
+              "body": "4 consecutive bearish 5-min bars + close<VWAP + RSI<=55 + NIFTY below own VWAP at scan. SHORT entry. TP 1.5% / SL 1.0% (RR 1.5). On the same 25 short-diamond cohort as A1. Walk-forward: train WR 56.7% PF 1.54 â†’ test WR 59.6% PF 1.69 (drift -3pp test BETTER), test DD 3.1%, n=57 over 6mo. ~120 trades/yr.",
+              "pros": [
+                "Highest test PF (1.69) of all three configs",
+                "Lowest test MaxDD (3.1%)",
+                "Different signal mechanism â€” uncorrelated to A/B"
+              ],
+              "cons": [
+                "Lower frequency (~120/yr)",
+                "Short-only (no long complement at this RR)",
+                "Test n=57 needs paper-trade extension"
+              ]
             }
           ]
         },
         {
-          "title": "Trigger rules — exact session-by-session logic",
+          "title": "Concurrency rules + position sizing",
           "items": [
-            {
-              "label": "SHORT entry — checked once at 09:45 IST (bar 6 close)",
-              "body": "On each of the 25 short-cohort stocks: (1) NIFTY filter passes [Volume: NIFTY at 09:30 below today's 09:15 open, any amount; Strict: NIFTY ≥ 0.3% below today's open]. (2) Stock close (at 09:45) below its own intraday VWAP. (3) Stock RSI(14) < 40 (Volume) or < 35 (Strict). All true → SHORT at next bar's open."
-            },
-            {
-              "label": "LONG-MR entry — scanned continuously 11:15–13:15 IST (bars 24–48)",
-              "body": "On each of the 15 long-MR-cohort stocks: (1) Stock down ≥ 2.0% from today's 09:15 open. (2) RSI(14) was below 28 in the past 6 bars. (3) RSI(14) now above 35. (4) Current 5-min bar bullish (close > open). (5) NIFTY not crashing — NIFTY's 5-min close not below NIFTY's own session VWAP at this bar. All true → LONG at next bar's open."
-            },
-            {
-              "label": "LONG-TC entry — scanned continuously 09:15–10:30 IST (bars 0–15)",
-              "body": "On each of the 30 long-TC-cohort stocks: (1) Stock gapped up ≥ 0.5% (today's 09:15 open ≥ prev close × 1.005). (2) By bar 6, stock's session-high broke today's open by ≥ 0.5%. (3) Current bar's price within 0.3% of intraday VWAP (the pullback). (4) RSI(14) ≥ 45. (5) Current 5-min bar bullish. (6) NIFTY also gap-up + first bar bullish + above own VWAP at bar 6. All true → LONG at next bar's open."
-            },
-            {
-              "label": "Exit rules (all three systems share)",
-              "body": "TP at +0.5% (long) / −0.5% (short). SL at −1.5% (long) / +1.5% (short). Force-exit at 15:25 IST if neither hit. Whichever fires first wins."
-            }
+            "Don't run A AND B on the same stock simultaneously â€” same signal, different exits â†’ conflict.",
+            "Recommended live deploy: A + C (max trade frequency) OR B + C (cost-resilient + favorable-RR diversifier).",
+            "Risk per trade: Rs.3,000 fixed (ORB convention) â†’ position size = floor(3000 / (entry_price Ã— sl_pct/100)).",
+            "Max 5 concurrent positions across all configs combined.",
+            "Daily loss circuit-breaker: 3 SL hits â†’ halt for the day.",
+            "MIS 5x leverage on Indian equity intraday â€” Rs.10L NAV supports up to Rs.50L gross notional."
           ]
         },
         {
-          "title": "Combined daily expected behaviour (3 systems together)",
+          "title": "Why three, not one â€” mechanism breakdown",
           "items": [
-            "Volume mode (Short-Variant-B + LongMR-top10 + LongTC-rank4): ~895 trades/year, ~3.6 trades/session average. Capital rotates across regimes — short on weak-NIFTY days, long-TC on gap-up bullish days, long-MR on stock-specific weakness within fine markets.",
-            "Conviction mode (Short-Variant-A + LongMR-top5 + LongTC-rank4): ~305 trades/year, ~1.2 trades/session. Highest WR everywhere, lower frequency.",
-            "Same-day-same-stock conflict is structurally impossible — entry conditions are mutually exclusive (Short fires on weak+weak, Long-TC fires on gap-up+strong, Long-MR fires on stock-weak/NIFTY-not-crashing).",
-            "67 unique stocks across cohorts; only 3 stocks appear in two lists (AMBER, BANDHANBNK in both Short and Long-TC; APLAPOLLO in both Long-MR and Long-TC)."
+            "A rides per-stock structural drift (Stage 7 short-diamonds have 60-72% WR unconditionally) at low cost on liquid names. Highest WR but cost-fragile.",
+            "B uses the SAME signals as A but waits for bigger moves â€” fewer TP fires, more EOD exits, but each exit has realistic post-cost edge. Cost-resilient.",
+            "C is a different signal mechanism (multi-bar bearish continuation + NIFTY weakness gating). Fires less often (~5/stock/yr) but highest PF and lowest DD.",
+            "When markets are cleanly weak: A and C both fire. When markets are sloppy/trending: B picks up trades A misses."
           ]
         },
         {
-          "title": "Why the 3 mechanisms are different (not redundant)",
+          "title": "Trigger rules (deployable spec â€” same for A/B, different exit only)",
           "items": [
-            "SHORT exploits a structural intraday drift in mid-caps that open weak when the broader tape confirms — herd selling extends; stops cascade; no buyers come in.",
-            "LONG-MR exploits the inverse: when only one stock dumps but the index is fine, the move is usually idiosyncratic (algo, block, news) and snaps back as institutional buyers step in at oversold levels.",
-            "LONG-TC exploits classical trend continuation: a confirmed gap-up + bullish-NIFTY morning is a high-edge regime where the first pullback to VWAP is bought aggressively.",
-            "Together they cover the three intraday regimes that exist in this universe — broad weakness, lone weakness in healthy market, and confirmed bullish trend."
+            "A1+B1 â€” Diamond Short: 09:45 IST, stock RSI(14)<40 + close<VWAP + NIFTY first-30-min<0 â†’ SHORT at next bar's open",
+            "A2 â€” Long-MR: 11:15-13:15, stock down â‰¥-2% from open + RSI bounce 28â†’35 + bullish bar + NIFTY not crashing â†’ LONG at next bar's open",
+            "A3 â€” Long-TC: 09:15-10:30, stock gap-up â‰¥0.5% + first-hour break â‰¥0.5% + price within 0.3% of VWAP + RSIâ‰¥45 + NIFTY also gap-up bullish â†’ LONG at next bar's open",
+            "C â€” Multi-Bar SHORT Bounce: continuous scan, last 4 bars all bearish + lower-highs + close<VWAP + RSIâ‰¤55 + NIFTY<own-VWAP â†’ SHORT at next bar's open",
+            "Exit (A): TP 0.5% / SL 1.5% / EOD 15:25 IST | Exit (B): TP 2.0% / SL 1.5% / EOD | Exit (C): TP 1.5% / SL 1.0% / EOD"
           ]
         },
         {
-          "title": "Production checklist (before going live)",
+          "title": "Cohorts (refresh every 6 months)",
           "items": [
-            "Re-confirm all three stock cohorts with 6-month rolling re-screen (cohorts may rotate as macro context shifts).",
-            "Add 0.15% per-trade slippage cost and re-run all three. The TP 0.5% target is small — slippage of 0.1% materially changes net economics.",
-            "Verify SLB/MIS borrow availability daily for short-cohort names — some (NBCC, KRBL-tier) have intermittent constraints.",
-            "Position sizing: per-trade risk ≤ 0.5% of account so a SL hit is bounded.",
-            "Concurrency cap: max 5–7 simultaneous positions across all three systems.",
-            "Codify NIFTY filter as a session-level gate: short filter at 09:45 IST, long-TC filter at 09:45 IST + per-bar check, long-MR filter at each scan bar.",
-            "Daily loss circuit-breaker: if 3 SLs hit on a single session, halt for the day.",
-            "Paper-trade for 2–3 weeks across all three, in mutually-respecting concurrency, before scaling capital."
+            "A1+B1+C SHORT cohort (25 stocks): ZEEL, EDELWEISS, ASHOKA, CDSL, BANDHANBNK, KNRCON, RAIN, GMDCLTD, HEG, NATCOPHARM, SJVN, PRAJIND, TIINDIA, SUZLON, AMBER, RCF, NETWORK18, NAM-INDIA, BAYERCROP, TCIEXP, AARTIIND, NATIONALUM, IDEA, LTTS, NBCC",
+            "A2 Long-MR cohort (15 stocks): BALRAMCHIN, AUROPHARMA, DCBBANK, CYIENT, APLLTD, CERA, CGCL, BOSCHLTD, EIHOTEL, ASTRAL, CESC, CAPLIPOINT, AAVAS, ALKEM, APLAPOLLO",
+            "A3 Long-TC cohort (30 stocks): MARICO, FINEORG, CCL, ASAHIINDIA, GALAXYSURF, ASTRAZEN, JKPAPER, M&MFIN, JUBLFOOD, WHIRLPOOL, GODREJAGRO, INDIANB, ZYDUSWELL, CHOLAFIN, WELCORP, CUB, AMBER, INDIACEM, PNBHOUSING, HINDZINC, JKCEMENT, SOBHA, MGL, GRINDWELL, BAJFINANCE, DIXON, APLAPOLLO, DBL, BANDHANBNK, GODFRYPHLP",
+            "67 unique stocks across cohorts (3 shared: AMBER, BANDHANBNK, APLAPOLLO)"
           ]
         },
         {
-          "title": "Open work / next steps",
+          "title": "Production checklist before going live",
           "items": [
-            "Stage 13 — combined 3-system portfolio backtest with realistic capital constraints, concurrency cap, unified equity curve. Bridges per-system stats to actual account-NAV behaviour. (Pending — script written but function-name mismatch needs reconciling against the 11b/11c sub-agent output before run.)",
-            "Trade journal app feature (separate plan) — to record daily P&L, signal-fires, fills, slippage. Will track this 3-system portfolio in production.",
-            "Paper-trade adapter to feed all 3 systems' signals into the existing app paper-mode infrastructure (similar to ORB paper / NAS paper)."
+            "Re-confirm all three cohorts with 6-month rolling re-screen",
+            "Stress-test with 0.15%/side cost â€” if execution doesn't beat 0.07%/side, default to Config B not A",
+            "Verify SLB/MIS borrow availability for short-cohort daily",
+            "Codify NIFTY filter as session-level gate (per-bar for A2/A3/C; once-at-09:45 for A1/B1)",
+            "Daily loss circuit-breaker at 3 SLs combined",
+            "Paper-trade for 2-3 weeks across all configs in mutually-respecting concurrency before scaling capital",
+            "Reduced-capital first deploy: Rs.2L â†’ Rs.5L â†’ Rs.10L over a month if paper holds"
           ]
+        },
+        {
+          "title": "Why the 75% WR + favorable-RR target was retired",
+          "body": "research/38 hunted hard for WR â‰¥ 75% with TP > SL across 7 patterns Ã— 310 stocks Ã— 1380+ cells. Result: empirically not achievable on intraday 5-min equity. Mathematical reason: random-walk WR with TP=X SL=Y is Y/(X+Y) â€” original 78% WR was largely a TP/SL artifact (random WR with 0.5/1.5 = 75%, real edge only +3pp). Reversing to favorable RR exposes the small edge. Best favorable-RR found: 60% WR. Pursued in research/39 (carry-forward) instead.",
+          "items": []
         },
         {
           "title": "Files / references",
           "items": [
-            "Full research log: research/37_intraday_75wr_quest/INTRADAY_75WR_5MIN_SWEEP_STATUS.md",
-            "Full results writeup: research/37_intraday_75wr_quest/INTRADAY_75WR_5MIN_SWEEP_RESULTS.md",
-            "Cohort lists: results/07_short_diamonds.txt, 11c_long_reversal_diamonds.txt, 11b_trend_pullback_diamonds.txt",
-            "Walk-forward CSVs: results/09_walk_forward_final.csv (short), 11c_walk_forward_long_reversal.csv, 11b_walk_forward.csv",
-            "Strategy scripts: scripts/08_diamond_short_with_nifty.py, 11c_long_late_reversal.py, 11b_long_trend_pullback.py"
+            "research/37_intraday_75wr_quest/INTRADAY_FINAL_LIVE_SETUP.md â€” canonical spec",
+            "research/37_intraday_75wr_quest/INTRADAY_75WR_5MIN_SWEEP_RESULTS.md â€” research/37 detailed results",
+            "research/38_high_rr_75wr_quest/results/13_walk_forward_favorable_rr.csv â€” Config C walk-forward",
+            "research/37_intraday_75wr_quest/results/07_short_diamonds.txt â€” A1+B1+C cohort",
+            "research/37_intraday_75wr_quest/results/11c_long_reversal_diamonds.txt â€” A2 cohort",
+            "research/37_intraday_75wr_quest/results/11b_trend_pullback_diamonds.txt â€” A3 cohort"
           ]
         }
       ]

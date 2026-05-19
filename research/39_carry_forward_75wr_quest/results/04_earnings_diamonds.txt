@@ -1,0 +1,71 @@
+# Pattern 4 - Earnings Post-Drift - Walk-Forward Diamonds
+
+Generated: 2026-05-07 IST
+Universe: 76 F&O stocks
+Earnings proxy: gap_pct >= 4% AND vol_ratio >= 2.0 in Indian results months
+                (Jan/Feb/Apr/May/Jul/Aug/Oct/Nov)
+Train: 2018-01-01..2023-12-31  (6 years)
+Test:  2024-01-01..2026-03-19  (~2.25 years)
+Cost: 0.06% RT (F&O futures); also stress-tested at 0.20% (CNC delivery)
+
+Hard gates: train WR >= 75%, test WR >= 70%, test PF >= 1.8, test DD <= 15%, test n >= 30.
+
+VERDICT: NEAR-MISS. Best LONG cell hits 75% test WR + PF 2.25 + DD 7.1% — but
+only n=12 trades, failing the n>=30 sample-size gate. With strict gates: NO-GO.
+
+================================================================
+LONG side (positive earnings gap + same-day continuation)
+================================================================
+
+Walk-forward survivors (all gates): 0
+Walk-forward near-misses (75WR + favorable PF, but n < 30):
+
+1. gap >= 5%, vol_ratio >= 1.5, tp=8%, sl=7%, hold=15d
+   - Train: n=46  WR=56.5% PF=1.62  TotalRet=80.6%
+   - Test:  n=12  WR=75.0% PF=2.25  DD=7.1%   TotalRet=19.3%
+   - Test @ 0.20% RT: WR=75.0% PF=2.11  TotalRet=17.7%  (cost-robust)
+   - Verdict: Test WR is exceptional but n=12 is below n>=30 threshold —
+     could be a real edge but 12 trades over 2.25 years is too few to be
+     statistically actionable. FAIL n-gate.
+
+2. gap >= 3%, vol_ratio >= 1.5, tp=8%, sl=7%, hold=10d
+   - Train: n=186 WR=57.0% PF=1.49  TotalRet=180%
+   - Test:  n=48  WR=62.5% PF=1.68  DD=27.4%  TotalRet=51.4%
+   - Test @ 0.20% RT: WR=58.3% PF=1.57  TotalRet=44.6%
+   - Verdict: HIGH-N candidate but WR=62.5% misses the 70% test gate;
+     drawdown 27.4% well above the 15% gate. FAIL WR-gate AND DD-gate.
+
+================================================================
+SHORT side (negative earnings gap + same-day continuation)
+================================================================
+
+Walk-forward survivors: 0
+
+Best train candidates:
+- gap=-4%, vol=2.0, tp=8%, sl=7%, hold=15d  train n=51 WR=58.8% PF=1.56
+  Test:  n=26 WR=46.2% PF=0.82 — failed.
+- gap=-4%, vol=3.0, tp=4%, sl=3%, hold=10d  train n=35 WR=57.1% PF=1.59
+  Test:  n=24 WR=58.3% PF=1.49 DD=9.2% TotalRet=15.0% — closer but n<30.
+
+================================================================
+Final read
+================================================================
+
+Indian Post-Earnings Announcement Drift (proxied by gap+volume in results
+months) DOES show a measurable continuation edge:
+- LONG bias is real (best cells are all positive-return out-of-sample)
+- TP > SL with TP=8/SL=7 is the sweet spot — favorable RR + tight enough
+  to still hit 50%+ WR
+- Cost-robust: dropping cost from 0.06% to 0.20% only loses 1-2% in PF
+
+But the edge is NOT 75% WR on F&O daily. Two routes forward:
+(a) Accept lower WR (60-65%) with high N (n>=50) and favorable RR — the
+    gap=3%/tp=8%/sl=7%/hold=10d config delivered +51% out-of-sample over
+    2.25 years; could be combined-portfolio material.
+(b) Use real earnings dates (not gap proxy) and add fundamental surprise
+    score — likely improves signal precision but requires data we don't have.
+
+Recommend: REJECT as 75-WR standalone. The gap=5%/tp=8%/hold=15 LONG cell
+is INTERESTING (75% test WR, 2.25 PF, 7% DD, cost-robust) but has only 12
+trades — not enough to commit live capital on standalone. Revisit only with
+explicit earnings calendar + larger universe.
