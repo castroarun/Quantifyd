@@ -149,7 +149,37 @@ export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
   const [mtmData, setMtmData] = useState<Record<string, MtmSystem>>({});
+  const [mtmCombined, setMtmCombined] = useState<MtmSystem | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [historyDays, setHistoryDays] = useState<Array<{
+    date: string; combined_last: number; n_fired: number; n_systems: number;
+  }>>([]);
+  const [historyModal, setHistoryModal] = useState<{
+    title: string; points: MtmPoint[]; events: MtmEvent[];
+  } | null>(null);
+
+  // Load saved daily snapshots (written by scripts/snapshot_nas_eod.py at 15:32).
+  useEffect(() => {
+    fetch(`/static/snapshots/index.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.days) setHistoryDays(d.days); })
+      .catch(() => { /* no snapshots yet */ });
+  }, []);
+
+  async function openHistory(d: string) {
+    try {
+      const r = await fetch(`/static/snapshots/nas_mtm_${d}.json?t=${Date.now()}`,
+        { cache: 'no-store' });
+      if (!r.ok) return;
+      const data = await r.json();
+      const c = data.combined ?? {};
+      setHistoryModal({
+        title: `NAS overall — ${d}`,
+        points: c.points ?? [],
+        events: c.events ?? [],
+      });
+    } catch { /* swallow */ }
+  }
   const [liveTicks, setLiveTicks] = useState<LiveTicks>({
     spot: null,
     legs: {},
@@ -166,15 +196,20 @@ export default function Nas() {
       // any backend route registration; works even if gunicorn is running
       // older code than this bundle.
       try {
-        let data: { systems: Record<string, MtmSystem> } | null = null;
+        let data: {
+          systems: Record<string, MtmSystem>;
+          combined?: MtmSystem;
+        } | null = null;
         try {
           const resp = await fetch(`/static/nas_mtm.json?t=${Date.now()}`,
             { cache: 'no-store' });
           if (resp.ok) data = await resp.json();
         } catch { /* try API fallback */ }
         if (!data) {
-          data = await apiGet<{ systems: Record<string, MtmSystem> }>(
-            '/api/nas/mtm');
+          data = await apiGet<{
+            systems: Record<string, MtmSystem>;
+            combined?: MtmSystem;
+          }>('/api/nas/mtm');
         }
         if (cancelled || !data?.systems) return;
         const next: Record<string, MtmSystem> = {};
@@ -185,6 +220,10 @@ export default function Nas() {
           };
         }
         setMtmData(next);
+        setMtmCombined(data.combined
+          ? { points: data.combined.points ?? [],
+              events: data.combined.events ?? [] }
+          : null);
       } catch { /* sparkline stays in empty state */ }
     }
     pull();
@@ -353,12 +392,34 @@ export default function Nas() {
       <ChartModal
         open={!!expandedKey}
         title={
-          (ALL_SYSTEMS.find((s) => s.key === expandedKey)?.label ?? '') +
-          ' — Intraday P&L'
+          expandedKey === '_combined'
+            ? 'Overall NAS — Intraday P&L'
+            : ((ALL_SYSTEMS.find((s) => s.key === expandedKey)?.label ?? '') +
+               ' — Intraday P&L')
         }
-        points={expandedKey ? (mtmData[expandedKey]?.points || []) : []}
-        events={expandedKey ? (mtmData[expandedKey]?.events || []) : []}
+        points={
+          expandedKey === '_combined'
+            ? (mtmCombined?.points || [])
+            : expandedKey
+            ? (mtmData[expandedKey]?.points || [])
+            : []
+        }
+        events={
+          expandedKey === '_combined'
+            ? (mtmCombined?.events || [])
+            : expandedKey
+            ? (mtmData[expandedKey]?.events || [])
+            : []
+        }
         onClose={() => setExpandedKey(null)}
+      />
+
+      <ChartModal
+        open={!!historyModal}
+        title={historyModal?.title ?? ''}
+        points={historyModal?.points ?? []}
+        events={historyModal?.events ?? []}
+        onClose={() => setHistoryModal(null)}
       />
 
       {/* Shared ATR squeeze header */}
@@ -418,6 +479,72 @@ export default function Nas() {
           hint="All four 9:16 systems"
         />
       </div>
+
+      {mtmCombined && mtmCombined.points.length >= 2 ? (
+        <section className={styles.combinedHero}>
+          <div className={styles.combinedHead}>
+            <div className="section-title">Overall NAS · intraday P&amp;L</div>
+            <div className={styles.combinedMeta}>
+              {mtmCombined.points.length} pts · click to expand
+            </div>
+          </div>
+          <button
+            type="button"
+            className={styles.sparkButton}
+            onClick={() => setExpandedKey('_combined')}
+            title="Expand combined chart"
+          >
+            <div className={styles.combinedBox}>
+              <PnlChart
+                points={mtmCombined.points}
+                events={mtmCombined.events}
+              />
+              <div className={styles.sparkMeta}>
+                {(() => {
+                  const ys = mtmCombined.points.map((p) => p[1]);
+                  const last = ys[ys.length - 1];
+                  const yMin = Math.min(0, ...ys);
+                  const yMax = Math.max(0, ...ys);
+                  return (
+                    <>
+                      <span className={last >= 0 ? styles.sparkPos : styles.sparkNeg}>
+                        now {fmtPnl(last)}
+                      </span>
+                      <span className={styles.sparkRange}>
+                        lo {fmtPnl(yMin)} · hi {fmtPnl(yMax)} · all 8 systems ⤢
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </button>
+        </section>
+      ) : null}
+
+      {historyDays.length > 0 ? (
+        <section className={styles.historyStrip}>
+          <div className={styles.historyHead}>Past sessions · click to view</div>
+          <div className={styles.historyList}>
+            {historyDays.slice(0, 12).map((d) => (
+              <button
+                key={d.date}
+                type="button"
+                className={styles.historyChip}
+                onClick={() => openHistory(d.date)}
+              >
+                <div className={styles.historyDate}>{d.date}</div>
+                <div className={d.combined_last >= 0 ? styles.sparkPos : styles.sparkNeg}>
+                  {fmtPnl(d.combined_last)}
+                </div>
+                <div className={styles.historyMeta}>
+                  {d.n_fired}/{d.n_systems} fired
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className={styles.columns}>
         <div className={styles.col}>
@@ -645,6 +772,46 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
                 textAnchor="end" fontWeight="700">
             now {fmtPnl(last)}
           </text>
+          {(() => {
+            // 5-min time ticks along the x-axis (expanded mode only).
+            const ticks: Array<{ x: number; lab: string }> = [];
+            const start = new Date(tMin);
+            start.setSeconds(0, 0);
+            // round up to next 5-min boundary
+            const m = start.getMinutes();
+            start.setMinutes(m + ((5 - (m % 5)) % 5));
+            for (let t = start.getTime(); t <= tMax + 1; t += 5 * 60 * 1000) {
+              const dt = new Date(t);
+              const x =
+                PAD_X + ((t - tMin) / tSpan) * (W - 2 * PAD_X);
+              if (x < PAD_X - 2 || x > W - PAD_X + 2) continue;
+              const lab = `${String(dt.getHours()).padStart(2, '0')}:${String(
+                dt.getMinutes()
+              ).padStart(2, '0')}`;
+              ticks.push({ x, lab });
+            }
+            // thin out labels if too many (>16 ticks → label every other)
+            const step = ticks.length > 16 ? 2 : 1;
+            return (
+              <g>
+                {ticks.map((t, i) => (
+                  <g key={t.x}>
+                    <line
+                      x1={t.x} x2={t.x}
+                      y1={H - PAD_Y} y2={H - PAD_Y + 4}
+                      stroke="#525252" strokeWidth="0.7" />
+                    {i % step === 0 ? (
+                      <text x={t.x} y={H - PAD_Y + 16}
+                            fontSize="9.5" fill="#94a3b8"
+                            textAnchor="middle">
+                        {t.lab}
+                      </text>
+                    ) : null}
+                  </g>
+                ))}
+              </g>
+            );
+          })()}
         </>
       ) : null}
     </svg>

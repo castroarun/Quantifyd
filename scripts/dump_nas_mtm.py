@@ -144,14 +144,94 @@ def _system_payload(db_path: Path, positions_table: str, orders_table: str) -> d
         return {'points': [], 'last': 0.0, 'n': 0, 'events': []}
 
 
+def _dedup_events(events: list) -> list:
+    """Collapse near-simultaneous (<=3s) same-type events on the same
+    symbol into a single marker. The 9:16 entry fires CE+PE within ~0.1s,
+    and SL_HIT lands in both orders + positions tables ~30ms apart — both
+    were drawing on top of each other and looked smudged."""
+    if not events:
+        return events
+    out = []
+    for e in events:
+        try:
+            et = datetime.fromisoformat(e['ts'])
+        except Exception:
+            out.append(e); continue
+        merged = False
+        for prev in reversed(out):
+            try:
+                pt = datetime.fromisoformat(prev['ts'])
+            except Exception:
+                break
+            if (et - pt).total_seconds() > 3:
+                break
+            if prev['type'] != e['type']:
+                continue
+            # merge — keep earliest ts, combine symbols if distinct
+            psyms = set((prev.get('sym') or '').split('+'))
+            psyms.add(e.get('sym') or '')
+            psyms.discard('')
+            prev['sym'] = '+'.join(sorted(psyms))
+            merged = True
+            break
+        if not merged:
+            out.append(dict(e))
+    return out
+
+
+def _combined_curve(systems: dict) -> dict:
+    """Aggregate all systems' day_pnl into one timeline.
+
+    For each unique snapshot ts across the 8 systems, sum each system's
+    most recent day_pnl <= ts (forward-fill). This gives a faithful
+    'whole NAS book' curve that reconciles to Σ Day P&L at any moment."""
+    all_ts: set[str] = set()
+    series: dict[str, list[list]] = {}
+    for k, v in systems.items():
+        pts = v.get('points') or []
+        series[k] = pts
+        for p in pts:
+            all_ts.add(p[0])
+    if not all_ts:
+        return {'points': [], 'last': 0.0, 'n': 0, 'events': []}
+    sorted_ts = sorted(all_ts)
+    # walking pointers per system (forward-fill last known value)
+    idx = {k: 0 for k in series}
+    last_val = {k: 0.0 for k in series}
+    out: list[list] = []
+    for ts in sorted_ts:
+        total = 0.0
+        for k, pts in series.items():
+            i = idx[k]
+            while i < len(pts) and pts[i][0] <= ts:
+                last_val[k] = pts[i][1]
+                i += 1
+            idx[k] = i
+            total += last_val[k]
+        out.append([ts, round(total, 2)])
+    # union of events (sorted) — useful for legend on combined chart
+    all_events = []
+    for k, v in systems.items():
+        for e in (v.get('events') or []):
+            all_events.append({**e, 'system': k})
+    all_events.sort(key=lambda e: e['ts'])
+    last = out[-1][1] if out else 0.0
+    return {'points': out, 'last': last, 'n': len(out), 'events': all_events}
+
+
 def main() -> int:
     systems = {}
     for key, fname, pos_tbl, orders_tbl in DBS:
-        systems[key] = _system_payload(ROOT / 'backtest_data' / fname,
-                                       pos_tbl, orders_tbl)
+        sys_payload = _system_payload(ROOT / 'backtest_data' / fname,
+                                      pos_tbl, orders_tbl)
+        sys_payload['events'] = _dedup_events(sys_payload.get('events') or [])
+        systems[key] = sys_payload
+    combined = _combined_curve(systems)
+    combined['events'] = _dedup_events(combined.get('events') or [])
     payload = {
         'generated_at': datetime.now().isoformat(timespec='seconds'),
         'systems': systems,
+        'combined': combined,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     tmp = OUT.with_suffix('.json.tmp')

@@ -400,6 +400,96 @@
   border-radius: 50%;
 }
 
+/* ---- overall NAS combined hero chart ---- */
+
+.combinedHero {
+  margin: 6px 0 14px;
+}
+
+.combinedHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.combinedMeta {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.combinedBox {
+  padding: 10px 12px 8px;
+  border: 0.5px solid var(--hairline);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 120ms;
+}
+
+.combinedBox:hover {
+  border-color: var(--ink-muted);
+}
+
+.combinedBox .sparkSvg {
+  height: 88px;
+}
+
+.combinedBox .sparkMeta {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* ---- past-session strip ---- */
+
+.historyStrip {
+  margin: 6px 0 14px;
+}
+
+.historyHead {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.historyList {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.historyChip {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.02);
+  border: 0.5px solid var(--hairline-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 120px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  transition: border-color 120ms, background 120ms;
+}
+
+.historyChip:hover {
+  border-color: var(--ink-muted);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.historyDate {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+
+.historyMeta {
+  font-size: 10.5px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
 .legs {
   display: flex;
   flex-direction: column;
