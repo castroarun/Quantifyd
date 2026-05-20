@@ -131,15 +131,39 @@ interface SystemStateRecord {
   err: string | null;
 }
 
+type MtmPoint = [string, number];
+
 export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
+  const [mtmSeries, setMtmSeries] = useState<Record<string, MtmPoint[]>>({});
   const [liveTicks, setLiveTicks] = useState<LiveTicks>({
     spot: null,
     legs: {},
     connected: false,
   });
   const evtRef = useRef<EventSource | null>(null);
+
+  // Poll the per-system intraday MTM curves every 30s. Cheap (one row per
+  // system per 3 min), reuses the same snapshots the EOD report renders.
+  useEffect(() => {
+    let cancelled = false;
+    async function pull() {
+      try {
+        const r = await apiGet<{ systems: Record<string, { points: MtmPoint[] }> }>(
+          '/api/nas/mtm');
+        if (cancelled || !r?.systems) return;
+        const next: Record<string, MtmPoint[]> = {};
+        for (const k of Object.keys(r.systems)) {
+          next[k] = r.systems[k]?.points ?? [];
+        }
+        setMtmSeries(next);
+      } catch { /* ignore — sparkline just stays empty */ }
+    }
+    pull();
+    const t = setInterval(pull, 30000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, []);
 
   function updateState(id: string, rec: SystemStateRecord) {
     setStates((prev) => ({ ...prev, [id]: rec }));
@@ -370,6 +394,7 @@ export default function Nas() {
                 def={s}
                 onStateChange={(rec) => updateState(s.id, rec)}
                 onToast={showToast}
+                series={mtmSeries[s.key] || []}
               />
             ))}
           </div>
@@ -389,6 +414,7 @@ export default function Nas() {
                 def={s}
                 onStateChange={(rec) => updateState(s.id, rec)}
                 onToast={showToast}
+                series={mtmSeries[s.key] || []}
               />
             ))}
           </div>
@@ -452,9 +478,59 @@ interface PanelProps {
   def: SystemDef;
   onStateChange: (rec: SystemStateRecord) => void;
   onToast: (msg: string) => void;
+  series: MtmPoint[];
 }
 
-function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
+function Sparkline({ points }: { points: MtmPoint[] }) {
+  // Inline-SVG day-P&L curve (realized + open MTM). Zero deps. Renders nothing
+  // pre-09:15 / on systems with no snapshots yet; matches the same series the
+  // EOD email PNG draws, so what you see live is what you get in the report.
+  if (!points || points.length < 2) {
+    return (
+      <div className={styles.sparkEmpty}>
+        Live P&amp;L curve appears once snapshots flow (09:15+).
+      </div>
+    );
+  }
+  const W = 320, H = 56, PAD = 4;
+  const ys = points.map((p) => p[1]);
+  const last = ys[ys.length - 1];
+  const yMin = Math.min(0, ...ys);
+  const yMax = Math.max(0, ...ys);
+  const ySpan = yMax - yMin || 1;
+  const xStep = (W - 2 * PAD) / (points.length - 1);
+  const yScale = (v: number) =>
+    H - PAD - ((v - yMin) / ySpan) * (H - 2 * PAD);
+  const d = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${PAD + i * xStep} ${yScale(p[1])}`)
+    .join(' ');
+  const zeroY = yScale(0);
+  const stroke = last >= 0 ? '#22c55e' : '#ef4444';
+  const fill = last >= 0 ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)';
+  const area = `${d} L ${PAD + (points.length - 1) * xStep} ${zeroY} L ${PAD} ${zeroY} Z`;
+  const fmt = (v: number) =>
+    (v >= 0 ? '+₹' : '-₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
+  return (
+    <div className={styles.sparkBox}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
+           className={styles.sparkSvg}>
+        <line x1={PAD} x2={W - PAD} y1={zeroY} y2={zeroY}
+              stroke="#3a3a3a" strokeDasharray="2 3" strokeWidth="0.7" />
+        <path d={area} fill={fill} stroke="none" />
+        <path d={d} fill="none" stroke={stroke} strokeWidth="1.4"
+              strokeLinejoin="round" strokeLinecap="round" />
+      </svg>
+      <div className={styles.sparkMeta}>
+        <span>now {fmt(last)}</span>
+        <span className={styles.sparkRange}>
+          lo {fmt(yMin)} · hi {fmt(yMax)} · {points.length} pts
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SystemPanel({ def, onStateChange, onToast, series }: PanelProps) {
   const [state, setState] = useState<NASState | null>(null);
   const [err, setErr] = useState<string | null>(null);
   // Live tick prices from the parent SSE stream — keyed by tradingsymbol.
@@ -576,6 +652,8 @@ function SystemPanel({ def, onStateChange, onToast }: PanelProps) {
         />
         <MiniMetric label="SL hits today" value={formatInt(slHits ?? 0)} />
       </div>
+
+      <Sparkline points={series} />
 
       <div className={styles.legs}>
         {enriched.length === 0 ? (

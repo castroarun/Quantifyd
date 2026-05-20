@@ -4036,6 +4036,47 @@ def api_nas_equity_curve():
         return jsonify({'error': str(e)}), 500
 
 
+# Per-system intraday MTM curves (realized booked + open-leg MTM via live
+# Kite quote). Snapshots are written every 3 min during 09:15-15:30 IST by
+# the _nas_mtm_tick scheduler job. Frontend keys mirror SystemDef.key in
+# frontend/src/pages/Nas.tsx so the Nas dashboard can pick the right series.
+_NAS_MTM_KEY_MAP = {
+    'nas':           'services.nas_db:get_nas_db',
+    'nas-atm':       'services.nas_atm_db:get_nas_atm_db',
+    'nas-atm2':      'services.nas_atm2_db:get_nas_atm2_db',
+    'nas-atm4':      'services.nas_atm4_db:get_nas_atm4_db',
+    'nas-916-otm':   'services.nas_916_db:get_nas_916_otm_db',
+    'nas-916-atm':   'services.nas_916_db:get_nas_916_atm_db',
+    'nas-916-atm2':  'services.nas_916_db:get_nas_916_atm2_db',
+    'nas-916-atm4':  'services.nas_916_db:get_nas_916_atm4_db',
+}
+
+
+@app.route('/api/nas/mtm')
+def api_nas_mtm():
+    """All 8 systems' intraday day-P&L curves for today.
+
+    Returns: {"systems": {"<key>": {"points": [[ts, day_pnl], ...],
+                                    "last": <day_pnl>, "n": <count>}}}
+    """
+    try:
+        from services.nas_eod_report import _resolve
+        from services.nas_mtm import get_today_curve
+        out = {}
+        for key, getter in _NAS_MTM_KEY_MAP.items():
+            try:
+                db = _resolve(getter)
+                pts = get_today_curve(db)
+                last = pts[-1][1] if pts else 0.0
+                out[key] = {"points": pts, "last": last, "n": len(pts)}
+            except Exception as _e:
+                out[key] = {"points": [], "last": 0.0, "n": 0,
+                            "error": str(_e)}
+        return jsonify({"systems": out})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/nas/master-mode', methods=['GET', 'POST'])
 def api_nas_master_mode():
     """One-stop master switch for all 8 NAS systems.
