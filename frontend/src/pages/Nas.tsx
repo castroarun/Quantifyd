@@ -663,6 +663,16 @@ function fmtPnl(v: number): string {
   return (v >= 0 ? '+₹' : '-₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
 }
 
+function shortSym(s: string | undefined | null): string {
+  // "NIFTY26MAY23400CE+NIFTY26MAY23400PE" -> "23400CE+23400PE"
+  // Single symbol gets its trailing strike+leg fragment.
+  if (!s) return '';
+  return s.split('+')
+          .filter(Boolean)
+          .map((p) => p.slice(-7))
+          .join('+');
+}
+
 interface PnlChartProps {
   points: MtmPoint[];
   events: MtmEvent[];
@@ -846,7 +856,7 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
           {expanded ? (
             <span className={styles.markerLabel}
                   style={{ color }}>
-              {e.label}{e.sym ? ` ${e.sym.slice(-7)}` : ''}
+              {e.label}{e.sym ? ` ${shortSym(e.sym)}` : ''}
             </span>
           ) : null}
         </span>
