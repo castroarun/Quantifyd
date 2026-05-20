@@ -710,7 +710,25 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
   const rIntensity = Math.min(1, Math.max(0.25, Math.abs(yMinRaw) / denom + 0.25));
   const zeroFrac = ((zeroY - PAD_Y) / (H - 2 * PAD_Y)) * 100;
   const gid = `pnlg${Math.random().toString(36).slice(2, 8)}`;
+
+  // Interpolate event y onto the curve once, for the overlay markers.
+  function interpY(ts: string): number {
+    const t = new Date(ts).getTime();
+    if (t <= tMin) return ys[0];
+    if (t >= tMax) return ys[ys.length - 1];
+    for (let j = 0; j < points.length - 1; j++) {
+      const t0 = new Date(points[j][0]).getTime();
+      const t1 = new Date(points[j + 1][0]).getTime();
+      if (t >= t0 && t <= t1) {
+        const f = (t - t0) / Math.max(1, t1 - t0);
+        return ys[j] + f * (ys[j + 1] - ys[j]);
+      }
+    }
+    return ys[ys.length - 1];
+  }
+
   return (
+    <div className={styles.chartWrap}>
     <svg
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="none"
@@ -734,49 +752,18 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
             stroke={last >= 0 ? '#16a34a' : '#dc2626'}
             strokeWidth={expanded ? 2 : 1.4}
             strokeLinejoin="round" strokeLinecap="round" />
-      {events.map((e, i) => {
+      {expanded ? events.map((e, i) => {
+        // Only the vertical dotted line stays in SVG (lines stretch fine).
         const ex = xOf(e.ts);
         if (ex < PAD_X - 2 || ex > W - PAD_X + 2) return null;
         const color = EVENT_COLOR[e.type] || '#888';
-        // Interpolate the event's y-value onto the curve so the dot sits
-        // ON the line instead of pinned at the top. Looks clean in inline
-        // sparklines where multiple events would otherwise pile up.
-        const tMs = new Date(e.ts).getTime();
-        let interp = points[0][1];
-        if (tMs >= new Date(points[points.length - 1][0]).getTime()) {
-          interp = points[points.length - 1][1];
-        } else {
-          for (let j = 0; j < points.length - 1; j++) {
-            const t0 = new Date(points[j][0]).getTime();
-            const t1 = new Date(points[j + 1][0]).getTime();
-            if (tMs >= t0 && tMs <= t1) {
-              const f = (tMs - t0) / Math.max(1, t1 - t0);
-              interp = points[j][1] + f * (points[j + 1][1] - points[j][1]);
-              break;
-            }
-          }
-        }
-        const cy = yOf(interp);
         return (
-          <g key={`${e.ts}-${i}`}>
-            {expanded ? (
-              <line x1={ex} x2={ex} y1={PAD_Y} y2={H - PAD_Y}
-                    stroke={color} strokeOpacity={0.30}
-                    strokeWidth={1} strokeDasharray="2 3" />
-            ) : null}
-            <circle cx={ex} cy={cy}
-                    r={expanded ? 4 : 3}
-                    fill={color} stroke="#0f0f10"
-                    strokeWidth={expanded ? 1.4 : 1.1} />
-            {expanded ? (
-              <text x={ex + 7} y={Math.max(PAD_Y + 10, cy - 6)}
-                    fontSize="9.5" fill={color} textAnchor="start">
-                {e.label}{e.sym ? ` ${e.sym.slice(-7)}` : ''}
-              </text>
-            ) : null}
-          </g>
+          <line key={`vl-${e.ts}-${i}`}
+                x1={ex} x2={ex} y1={PAD_Y} y2={H - PAD_Y}
+                stroke={color} strokeOpacity={0.30}
+                strokeWidth={1} strokeDasharray="2 3" />
         );
-      })}
+      }) : null}
       {expanded ? (
         <>
           <text x={PAD_X} y={PAD_Y - 9} fontSize="10" fill="#94a3b8">
@@ -833,6 +820,39 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
         </>
       ) : null}
     </svg>
+    {events.map((e, i) => {
+      // HTML overlay markers: percent-positioned over the SVG so they're
+      // immune to preserveAspectRatio="none" stretching. The SVG stays
+      // responsive; the dots stay round.
+      const tMs = new Date(e.ts).getTime();
+      if (tMs < tMin - 1 || tMs > tMax + 1) return null;
+      const xPct = ((xOf(e.ts) - 0) / W) * 100;
+      const yPct = (yOf(interpY(e.ts)) / H) * 100;
+      const color = EVENT_COLOR[e.type] || '#888';
+      const size = expanded ? 9 : 7;
+      return (
+        <span
+          key={`m-${e.ts}-${i}`}
+          className={styles.markerDot}
+          style={{
+            left: `${xPct}%`,
+            top: `${yPct}%`,
+            width: size,
+            height: size,
+            background: color,
+          }}
+          title={`${e.label}${e.sym ? ' · ' + e.sym : ''} @ ${e.ts.slice(11, 16)}`}
+        >
+          {expanded ? (
+            <span className={styles.markerLabel}
+                  style={{ color }}>
+              {e.label}{e.sym ? ` ${e.sym.slice(-7)}` : ''}
+            </span>
+          ) : null}
+        </span>
+      );
+    })}
+    </div>
   );
 }
 
