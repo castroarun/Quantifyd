@@ -686,7 +686,7 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
   // Event markers (entry / adjust / sl_hit / exit) drawn as dotted verticals.
   const W = expanded ? 920 : 320;
   const H = expanded ? 340 : 56;
-  const PAD_X = expanded ? 30 : 4;
+  const PAD_X = expanded ? 56 : 4;
   const PAD_Y = expanded ? 28 : 4;
   const ys = points.map((p) => p[1]);
   const yMinRaw = Math.min(0, ...ys);
@@ -754,9 +754,57 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
                 stopOpacity={(0.55 * rIntensity).toFixed(3)} />
         </linearGradient>
       </defs>
+      {expanded ? (() => {
+        // Y-axis "nice" ticks: pick a step from [1,2,2.5,5]×10^k that lands
+        // ~6 ticks across the range. Draw a dashed gridline + ₹-labelled
+        // tick at each, skipping the zero line (rendered separately below).
+        const range = yMax - yMin;
+        if (range <= 0) return null;
+        const targetTicks = 6;
+        const rawStep = range / targetTicks;
+        const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+        const norm = rawStep / mag;
+        const step = norm <= 1.5 ? mag
+                   : norm <= 3   ? 2 * mag
+                   : norm <= 4   ? 2.5 * mag
+                   : norm <= 7   ? 5 * mag
+                   : 10 * mag;
+        const ticks: number[] = [];
+        const first = Math.ceil(yMin / step) * step;
+        for (let v = first; v <= yMax + step * 0.001; v += step) {
+          if (Math.abs(v) < step * 0.01) continue;  // skip near-zero
+          ticks.push(v);
+        }
+        return (
+          <g>
+            {ticks.map((v) => {
+              const yy = yOf(v);
+              return (
+                <g key={`yt-${v}`}>
+                  <line x1={PAD_X} x2={W - PAD_X}
+                        y1={yy} y2={yy}
+                        stroke="#2a2a2a" strokeWidth="0.5"
+                        strokeDasharray="2 4" />
+                  <text x={PAD_X - 6} y={yy + 3.5}
+                        fontSize="9.5" fill="#94a3b8"
+                        textAnchor="end">
+                    {fmtPnl(v)}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })() : null}
       <line x1={PAD_X} x2={W - PAD_X} y1={zeroY} y2={zeroY}
             stroke="#3a3a3a" strokeDasharray="2 3"
             strokeWidth={expanded ? 1 : 0.7} />
+      {expanded ? (
+        <text x={PAD_X - 6} y={zeroY + 3.5}
+              fontSize="9.5" fill="#94a3b8" textAnchor="end">
+          ₹0
+        </text>
+      ) : null}
       <path d={area} fill={`url(#${gid})`} stroke="none" />
       <path d={d} fill="none"
             stroke={last >= 0 ? '#16a34a' : '#dc2626'}
@@ -776,12 +824,6 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
       }) : null}
       {expanded ? (
         <>
-          <text x={PAD_X} y={PAD_Y - 9} fontSize="10" fill="#94a3b8">
-            hi {fmtPnl(yMaxRaw)}
-          </text>
-          <text x={PAD_X} y={H - PAD_Y + 16} fontSize="10" fill="#94a3b8">
-            lo {fmtPnl(yMinRaw)}
-          </text>
           <text x={W - PAD_X} y={PAD_Y - 9} fontSize="11"
                 fill={last >= 0 ? '#22c55e' : '#ef4444'}
                 textAnchor="end" fontWeight="700">
