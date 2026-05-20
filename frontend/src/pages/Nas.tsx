@@ -738,21 +738,39 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
         const ex = xOf(e.ts);
         if (ex < PAD_X - 2 || ex > W - PAD_X + 2) return null;
         const color = EVENT_COLOR[e.type] || '#888';
-        const cy = PAD_Y + (expanded ? 16 : 5);
+        // Interpolate the event's y-value onto the curve so the dot sits
+        // ON the line instead of pinned at the top. Looks clean in inline
+        // sparklines where multiple events would otherwise pile up.
+        const tMs = new Date(e.ts).getTime();
+        let interp = points[0][1];
+        if (tMs >= new Date(points[points.length - 1][0]).getTime()) {
+          interp = points[points.length - 1][1];
+        } else {
+          for (let j = 0; j < points.length - 1; j++) {
+            const t0 = new Date(points[j][0]).getTime();
+            const t1 = new Date(points[j + 1][0]).getTime();
+            if (tMs >= t0 && tMs <= t1) {
+              const f = (tMs - t0) / Math.max(1, t1 - t0);
+              interp = points[j][1] + f * (points[j + 1][1] - points[j][1]);
+              break;
+            }
+          }
+        }
+        const cy = yOf(interp);
         return (
           <g key={`${e.ts}-${i}`}>
-            <line x1={ex} x2={ex} y1={PAD_Y} y2={H - PAD_Y}
-                  stroke={color}
-                  strokeOpacity={expanded ? 0.35 : 0.22}
-                  strokeWidth={expanded ? 1 : 0.7}
-                  strokeDasharray="1 2" />
-            <circle cx={ex} cy={cy}
-                    r={expanded ? 3.5 : 2}
-                    fill={color} stroke="#0f0f10"
-                    strokeWidth={expanded ? 1 : 0.5} />
             {expanded ? (
-              <text x={ex + 5} y={cy + 3} fontSize="9.5"
-                    fill={color} textAnchor="start">
+              <line x1={ex} x2={ex} y1={PAD_Y} y2={H - PAD_Y}
+                    stroke={color} strokeOpacity={0.30}
+                    strokeWidth={1} strokeDasharray="2 3" />
+            ) : null}
+            <circle cx={ex} cy={cy}
+                    r={expanded ? 4 : 3}
+                    fill={color} stroke="#0f0f10"
+                    strokeWidth={expanded ? 1.4 : 1.1} />
+            {expanded ? (
+              <text x={ex + 7} y={Math.max(PAD_Y + 10, cy - 6)}
+                    fontSize="9.5" fill={color} textAnchor="start">
                 {e.label}{e.sym ? ` ${e.sym.slice(-7)}` : ''}
               </text>
             ) : null}
