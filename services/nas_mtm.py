@@ -57,15 +57,19 @@ def _today() -> str:
 
 
 def _realized_today(db) -> float:
+    """Sum (entry - exit) * qty over today's closed legs — matches the
+    dashboard's per-system today_pnl computation (app.py line ~3879),
+    so the live curve reconciles with the card. Reading nas_trades.net_pnl
+    alone misses individual SL_HIT closes inside an open strangle."""
     total = 0.0
     try:
-        for t in (db.get_recent_trades(limit=300) or []):
-            td = str(t.get("trade_date") or t.get("created_at") or "")[:10]
-            if td == _today():
-                v = t.get("net_pnl")
-                if v is None:
-                    v = t.get("gross_pnl") or 0
-                total += float(v or 0)
+        for p in (db.get_today_closed_positions() or []):
+            ep = p.get("entry_price"); xp = p.get("exit_price")
+            q = p.get("qty") or 0
+            if ep is None or xp is None or not q:
+                continue
+            side = str(p.get("transaction_type") or "SELL").upper()
+            total += (ep - xp) * q if side == "SELL" else (xp - ep) * q
     except Exception:
         pass
     return total

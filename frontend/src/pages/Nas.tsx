@@ -133,10 +133,23 @@ interface SystemStateRecord {
 
 type MtmPoint = [string, number];
 
+interface MtmEvent {
+  ts: string;
+  type: 'entry' | 'adjust' | 'sl_hit' | 'exit';
+  label: string;
+  sig?: string | null;
+  sym?: string | null;
+  tx?: string | null;
+  price?: number | null;
+}
+
+interface MtmSystem { points: MtmPoint[]; events: MtmEvent[]; }
+
 export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
-  const [mtmSeries, setMtmSeries] = useState<Record<string, MtmPoint[]>>({});
+  const [mtmData, setMtmData] = useState<Record<string, MtmSystem>>({});
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [liveTicks, setLiveTicks] = useState<LiveTicks>({
     spot: null,
     legs: {},
@@ -150,27 +163,29 @@ export default function Nas() {
     let cancelled = false;
     async function pull() {
       // Read the cron-written static dump (cache-busted). Doesn't depend on
-      // any backend route registration, so it works even if gunicorn is
-      // running older code than this bundle. Falls back to /api/nas/mtm if
-      // the static file is missing (early in deploy, or local dev).
+      // any backend route registration; works even if gunicorn is running
+      // older code than this bundle.
       try {
-        let data: { systems: Record<string, { points: MtmPoint[] }> } | null = null;
+        let data: { systems: Record<string, MtmSystem> } | null = null;
         try {
           const resp = await fetch(`/static/nas_mtm.json?t=${Date.now()}`,
             { cache: 'no-store' });
           if (resp.ok) data = await resp.json();
         } catch { /* try API fallback */ }
         if (!data) {
-          data = await apiGet<{ systems: Record<string, { points: MtmPoint[] }> }>(
+          data = await apiGet<{ systems: Record<string, MtmSystem> }>(
             '/api/nas/mtm');
         }
         if (cancelled || !data?.systems) return;
-        const next: Record<string, MtmPoint[]> = {};
+        const next: Record<string, MtmSystem> = {};
         for (const k of Object.keys(data.systems)) {
-          next[k] = data.systems[k]?.points ?? [];
+          next[k] = {
+            points: data.systems[k]?.points ?? [],
+            events: data.systems[k]?.events ?? [],
+          };
         }
-        setMtmSeries(next);
-      } catch { /* ignore — sparkline stays in empty state */ }
+        setMtmData(next);
+      } catch { /* sparkline stays in empty state */ }
     }
     pull();
     const t = setInterval(pull, 30000);
@@ -335,6 +350,17 @@ export default function Nas() {
 
       {toast ? <div className={styles.toast}>{toast}</div> : null}
 
+      <ChartModal
+        open={!!expandedKey}
+        title={
+          (ALL_SYSTEMS.find((s) => s.key === expandedKey)?.label ?? '') +
+          ' — Intraday P&L'
+        }
+        points={expandedKey ? (mtmData[expandedKey]?.points || []) : []}
+        events={expandedKey ? (mtmData[expandedKey]?.events || []) : []}
+        onClose={() => setExpandedKey(null)}
+      />
+
       {/* Shared ATR squeeze header */}
       <div className={styles.headerMetrics}>
         <MetricCard
@@ -406,7 +432,9 @@ export default function Nas() {
                 def={s}
                 onStateChange={(rec) => updateState(s.id, rec)}
                 onToast={showToast}
-                series={mtmSeries[s.key] || []}
+                series={mtmData[s.key]?.points || []}
+                events={mtmData[s.key]?.events || []}
+                onExpand={() => setExpandedKey(s.key)}
               />
             ))}
           </div>
@@ -426,7 +454,9 @@ export default function Nas() {
                 def={s}
                 onStateChange={(rec) => updateState(s.id, rec)}
                 onToast={showToast}
-                series={mtmSeries[s.key] || []}
+                series={mtmData[s.key]?.points || []}
+                events={mtmData[s.key]?.events || []}
+                onExpand={() => setExpandedKey(s.key)}
               />
             ))}
           </div>
@@ -491,12 +521,143 @@ interface PanelProps {
   onStateChange: (rec: SystemStateRecord) => void;
   onToast: (msg: string) => void;
   series: MtmPoint[];
+  events: MtmEvent[];
+  onExpand: () => void;
 }
 
-function Sparkline({ points }: { points: MtmPoint[] }) {
-  // Inline-SVG day-P&L curve (realized + open MTM). Zero deps. Renders nothing
-  // pre-09:15 / on systems with no snapshots yet; matches the same series the
-  // EOD email PNG draws, so what you see live is what you get in the report.
+const EVENT_COLOR: Record<string, string> = {
+  entry:  '#22c55e',  // green — open
+  adjust: '#f59e0b',  // amber — roll / adj
+  sl_hit: '#ef4444',  // red   — SL hit
+  exit:   '#94a3b8',  // grey  — time / EOD exit
+};
+
+function fmtPnl(v: number): string {
+  return (v >= 0 ? '+₹' : '-₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
+}
+
+interface PnlChartProps {
+  points: MtmPoint[];
+  events: MtmEvent[];
+  expanded?: boolean;
+}
+
+function PnlChart({ points, events, expanded = false }: PnlChartProps) {
+  // SVG day-P&L curve. Color graded by intensity:
+  //   above 0 → green (deeper as profit grows)
+  //   below 0 → red   (deeper as loss grows)
+  // Event markers (entry / adjust / sl_hit / exit) drawn as dotted verticals.
+  const W = expanded ? 920 : 320;
+  const H = expanded ? 340 : 56;
+  const PAD_X = expanded ? 30 : 4;
+  const PAD_Y = expanded ? 28 : 4;
+  const ys = points.map((p) => p[1]);
+  const yMinRaw = Math.min(0, ...ys);
+  const yMaxRaw = Math.max(0, ...ys);
+  // pad y a bit in expanded so events at edges don't get clipped
+  const yPad = expanded ? Math.max(50, (yMaxRaw - yMinRaw) * 0.08) : 0;
+  const yMin = yMinRaw - yPad;
+  const yMax = yMaxRaw + yPad;
+  const ySpan = yMax - yMin || 1;
+  const tMin = new Date(points[0][0]).getTime();
+  const tMax = new Date(points[points.length - 1][0]).getTime();
+  const tSpan = tMax - tMin || 1;
+  const xOf = (ts: string) => {
+    const m = new Date(ts).getTime();
+    const x = PAD_X + ((m - tMin) / tSpan) * (W - 2 * PAD_X);
+    return Math.max(PAD_X, Math.min(W - PAD_X, x));
+  };
+  const yOf = (v: number) =>
+    H - PAD_Y - ((v - yMin) / ySpan) * (H - 2 * PAD_Y);
+  const zeroY = yOf(0);
+  const d = points
+    .map((p, i) => `${i ? 'L' : 'M'} ${xOf(p[0])} ${yOf(p[1])}`)
+    .join(' ');
+  const firstX = xOf(points[0][0]);
+  const lastX = xOf(points[points.length - 1][0]);
+  const area = `${d} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
+  const last = ys[ys.length - 1];
+  // intensity (0.25..1) scales gradient stop opacity by how deep min/max reach
+  const denom = Math.max(1, Math.abs(yMaxRaw) + Math.abs(yMinRaw));
+  const gIntensity = Math.min(1, Math.max(0.25, Math.abs(yMaxRaw) / denom + 0.25));
+  const rIntensity = Math.min(1, Math.max(0.25, Math.abs(yMinRaw) / denom + 0.25));
+  const zeroFrac = ((zeroY - PAD_Y) / (H - 2 * PAD_Y)) * 100;
+  const gid = `pnlg${Math.random().toString(36).slice(2, 8)}`;
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      className={expanded ? styles.chartSvg : styles.sparkSvg}
+    >
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#22c55e"
+                stopOpacity={(0.55 * gIntensity).toFixed(3)} />
+          <stop offset={`${Math.max(0, Math.min(100, zeroFrac)).toFixed(2)}%`}
+                stopColor="#a3a3a3" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#ef4444"
+                stopOpacity={(0.55 * rIntensity).toFixed(3)} />
+        </linearGradient>
+      </defs>
+      <line x1={PAD_X} x2={W - PAD_X} y1={zeroY} y2={zeroY}
+            stroke="#3a3a3a" strokeDasharray="2 3"
+            strokeWidth={expanded ? 1 : 0.7} />
+      <path d={area} fill={`url(#${gid})`} stroke="none" />
+      <path d={d} fill="none"
+            stroke={last >= 0 ? '#16a34a' : '#dc2626'}
+            strokeWidth={expanded ? 2 : 1.4}
+            strokeLinejoin="round" strokeLinecap="round" />
+      {events.map((e, i) => {
+        const ex = xOf(e.ts);
+        if (ex < PAD_X - 2 || ex > W - PAD_X + 2) return null;
+        const color = EVENT_COLOR[e.type] || '#888';
+        const cy = PAD_Y + (expanded ? 16 : 5);
+        return (
+          <g key={`${e.ts}-${i}`}>
+            <line x1={ex} x2={ex} y1={PAD_Y} y2={H - PAD_Y}
+                  stroke={color}
+                  strokeOpacity={expanded ? 0.35 : 0.22}
+                  strokeWidth={expanded ? 1 : 0.7}
+                  strokeDasharray="1 2" />
+            <circle cx={ex} cy={cy}
+                    r={expanded ? 3.5 : 2}
+                    fill={color} stroke="#0f0f10"
+                    strokeWidth={expanded ? 1 : 0.5} />
+            {expanded ? (
+              <text x={ex + 5} y={cy + 3} fontSize="9.5"
+                    fill={color} textAnchor="start">
+                {e.label}{e.sym ? ` ${e.sym.slice(-7)}` : ''}
+              </text>
+            ) : null}
+          </g>
+        );
+      })}
+      {expanded ? (
+        <>
+          <text x={PAD_X} y={PAD_Y - 9} fontSize="10" fill="#94a3b8">
+            hi {fmtPnl(yMaxRaw)}
+          </text>
+          <text x={PAD_X} y={H - PAD_Y + 16} fontSize="10" fill="#94a3b8">
+            lo {fmtPnl(yMinRaw)}
+          </text>
+          <text x={W - PAD_X} y={PAD_Y - 9} fontSize="11"
+                fill={last >= 0 ? '#22c55e' : '#ef4444'}
+                textAnchor="end" fontWeight="700">
+            now {fmtPnl(last)}
+          </text>
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+interface SparkProps {
+  points: MtmPoint[];
+  events: MtmEvent[];
+  onExpand: () => void;
+}
+
+function Sparkline({ points, events, onExpand }: SparkProps) {
   if (!points || points.length < 2) {
     return (
       <div className={styles.sparkEmpty}>
@@ -504,45 +665,79 @@ function Sparkline({ points }: { points: MtmPoint[] }) {
       </div>
     );
   }
-  const W = 320, H = 56, PAD = 4;
+  const last = points[points.length - 1][1];
   const ys = points.map((p) => p[1]);
-  const last = ys[ys.length - 1];
   const yMin = Math.min(0, ...ys);
   const yMax = Math.max(0, ...ys);
-  const ySpan = yMax - yMin || 1;
-  const xStep = (W - 2 * PAD) / (points.length - 1);
-  const yScale = (v: number) =>
-    H - PAD - ((v - yMin) / ySpan) * (H - 2 * PAD);
-  const d = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${PAD + i * xStep} ${yScale(p[1])}`)
-    .join(' ');
-  const zeroY = yScale(0);
-  const stroke = last >= 0 ? '#22c55e' : '#ef4444';
-  const fill = last >= 0 ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)';
-  const area = `${d} L ${PAD + (points.length - 1) * xStep} ${zeroY} L ${PAD} ${zeroY} Z`;
-  const fmt = (v: number) =>
-    (v >= 0 ? '+₹' : '-₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   return (
-    <div className={styles.sparkBox}>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
-           className={styles.sparkSvg}>
-        <line x1={PAD} x2={W - PAD} y1={zeroY} y2={zeroY}
-              stroke="#3a3a3a" strokeDasharray="2 3" strokeWidth="0.7" />
-        <path d={area} fill={fill} stroke="none" />
-        <path d={d} fill="none" stroke={stroke} strokeWidth="1.4"
-              strokeLinejoin="round" strokeLinecap="round" />
-      </svg>
-      <div className={styles.sparkMeta}>
-        <span>now {fmt(last)}</span>
-        <span className={styles.sparkRange}>
-          lo {fmt(yMin)} · hi {fmt(yMax)} · {points.length} pts
-        </span>
+    <button type="button" onClick={onExpand} className={styles.sparkButton}
+            title="Expand chart">
+      <div className={styles.sparkBox}>
+        <PnlChart points={points} events={events} />
+        <div className={styles.sparkMeta}>
+          <span className={last >= 0 ? styles.sparkPos : styles.sparkNeg}>
+            now {fmtPnl(last)}
+          </span>
+          <span className={styles.sparkRange}>
+            lo {fmtPnl(yMin)} · hi {fmtPnl(yMax)} · {points.length} pts
+            {events.length ? ` · ${events.length} ev` : ''} ⤢
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+interface ChartModalProps {
+  open: boolean;
+  title: string;
+  points: MtmPoint[];
+  events: MtmEvent[];
+  onClose: () => void;
+}
+
+function ChartModal({ open, title, points, events, onClose }: ChartModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className={styles.modalBackdrop} onClick={onClose}>
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHead}>
+          <div className={styles.modalTitle}>{title}</div>
+          <button type="button" onClick={onClose}
+                  className={styles.modalClose} aria-label="Close">×</button>
+        </div>
+        {points.length >= 2 ? (
+          <PnlChart points={points} events={events} expanded />
+        ) : (
+          <div className={styles.sparkEmpty} style={{ margin: 24 }}>
+            No snapshots yet — comes alive after 09:15.
+          </div>
+        )}
+        {events.length ? (
+          <div className={styles.eventLegend}>
+            {Object.entries({
+              entry: 'Entry', adjust: 'Adjust', sl_hit: 'SL hit', exit: 'Exit',
+            }).map(([k, lab]) => (
+              <span key={k} className={styles.legendItem}>
+                <span className={styles.legendDot}
+                      style={{ background: EVENT_COLOR[k] }} />
+                {lab}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function SystemPanel({ def, onStateChange, onToast, series }: PanelProps) {
+function SystemPanel({ def, onStateChange, onToast, series, events, onExpand }: PanelProps) {
   const [state, setState] = useState<NASState | null>(null);
   const [err, setErr] = useState<string | null>(null);
   // Live tick prices from the parent SSE stream — keyed by tradingsymbol.
@@ -665,7 +860,7 @@ function SystemPanel({ def, onStateChange, onToast, series }: PanelProps) {
         <MiniMetric label="SL hits today" value={formatInt(slHits ?? 0)} />
       </div>
 
-      <Sparkline points={series} />
+      <Sparkline points={series} events={events} onExpand={onExpand} />
 
       <div className={styles.legs}>
         {enriched.length === 0 ? (
