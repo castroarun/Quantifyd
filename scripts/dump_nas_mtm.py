@@ -27,15 +27,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# key, db file, positions table, orders table
 DBS = [
-    ('nas',           'nas_trading.db',         'nas_orders'),
-    ('nas-atm',       'nas_atm_trading.db',     'nas_atm_orders'),
-    ('nas-atm2',      'nas_atm2_trading.db',    'nas_atm_orders'),
-    ('nas-atm4',      'nas_atm4_trading.db',    'nas_atm_orders'),
-    ('nas-916-otm',   'nas_916_otm_trading.db', 'nas_orders'),
-    ('nas-916-atm',   'nas_916_atm_trading.db', 'nas_atm_orders'),
-    ('nas-916-atm2',  'nas_916_atm2_trading.db','nas_atm_orders'),
-    ('nas-916-atm4',  'nas_916_atm4_trading.db','nas_atm_orders'),
+    ('nas',           'nas_trading.db',          'nas_positions',     'nas_orders'),
+    ('nas-atm',       'nas_atm_trading.db',      'nas_atm_positions', 'nas_atm_orders'),
+    ('nas-atm2',      'nas_atm2_trading.db',     'nas_atm_positions', 'nas_atm_orders'),
+    ('nas-atm4',      'nas_atm4_trading.db',     'nas_atm_positions', 'nas_atm_orders'),
+    ('nas-916-otm',   'nas_916_otm_trading.db',  'nas_positions',     'nas_orders'),
+    ('nas-916-atm',   'nas_916_atm_trading.db',  'nas_atm_positions', 'nas_atm_orders'),
+    ('nas-916-atm2',  'nas_916_atm2_trading.db', 'nas_atm_positions', 'nas_atm_orders'),
+    ('nas-916-atm4',  'nas_916_atm4_trading.db', 'nas_atm_positions', 'nas_atm_orders'),
 ]
 
 OUT = ROOT / 'static' / 'nas_mtm.json'
@@ -63,7 +64,7 @@ def _table_exists(c, name: str) -> bool:
         (name,)).fetchone() is not None
 
 
-def _system_payload(db_path: Path, orders_table: str) -> dict:
+def _system_payload(db_path: Path, positions_table: str, orders_table: str) -> dict:
     today = date.today().isoformat()
     if not db_path.exists():
         return {'points': [], 'last': 0.0, 'n': 0, 'events': []}
@@ -74,9 +75,9 @@ def _system_payload(db_path: Path, orders_table: str) -> dict:
             # 1) today's closed legs — fold into a sorted exit-time series
             legs: list[tuple[str, float]] = []
             for p in c.execute(
-                "SELECT exit_time, entry_price, exit_price, qty, "
-                "transaction_type FROM nas_positions "
-                "WHERE status='CLOSED' AND created_at >= ?", (today,)):
+                f"SELECT exit_time, entry_price, exit_price, qty, "
+                f"transaction_type FROM {positions_table} "
+                f"WHERE status='CLOSED' AND created_at >= ?", (today,)):
                 xt = p['exit_time']
                 ep = p['entry_price']; xp = p['exit_price']; q = p['qty'] or 0
                 if not xt or ep is None or xp is None or not q:
@@ -121,8 +122,9 @@ def _system_payload(db_path: Path, orders_table: str) -> dict:
                     })
             # add SL_HIT exits from positions if not present in orders
             for p in c.execute(
-                "SELECT exit_time, exit_reason, tradingsymbol FROM nas_positions "
-                "WHERE status='CLOSED' AND created_at >= ? AND exit_reason='SL_HIT'",
+                f"SELECT exit_time, exit_reason, tradingsymbol "
+                f"FROM {positions_table} "
+                f"WHERE status='CLOSED' AND created_at >= ? AND exit_reason='SL_HIT'",
                 (today,)):
                 if not p['exit_time']:
                     continue
@@ -144,9 +146,9 @@ def _system_payload(db_path: Path, orders_table: str) -> dict:
 
 def main() -> int:
     systems = {}
-    for key, fname, orders_tbl in DBS:
+    for key, fname, pos_tbl, orders_tbl in DBS:
         systems[key] = _system_payload(ROOT / 'backtest_data' / fname,
-                                       orders_tbl)
+                                       pos_tbl, orders_tbl)
     payload = {
         'generated_at': datetime.now().isoformat(timespec='seconds'),
         'systems': systems,
