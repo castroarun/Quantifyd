@@ -149,16 +149,28 @@ export default function Nas() {
   useEffect(() => {
     let cancelled = false;
     async function pull() {
+      // Read the cron-written static dump (cache-busted). Doesn't depend on
+      // any backend route registration, so it works even if gunicorn is
+      // running older code than this bundle. Falls back to /api/nas/mtm if
+      // the static file is missing (early in deploy, or local dev).
       try {
-        const r = await apiGet<{ systems: Record<string, { points: MtmPoint[] }> }>(
-          '/api/nas/mtm');
-        if (cancelled || !r?.systems) return;
+        let data: { systems: Record<string, { points: MtmPoint[] }> } | null = null;
+        try {
+          const resp = await fetch(`/static/nas_mtm.json?t=${Date.now()}`,
+            { cache: 'no-store' });
+          if (resp.ok) data = await resp.json();
+        } catch { /* try API fallback */ }
+        if (!data) {
+          data = await apiGet<{ systems: Record<string, { points: MtmPoint[] }> }>(
+            '/api/nas/mtm');
+        }
+        if (cancelled || !data?.systems) return;
         const next: Record<string, MtmPoint[]> = {};
-        for (const k of Object.keys(r.systems)) {
-          next[k] = r.systems[k]?.points ?? [];
+        for (const k of Object.keys(data.systems)) {
+          next[k] = data.systems[k]?.points ?? [];
         }
         setMtmSeries(next);
-      } catch { /* ignore — sparkline just stays empty */ }
+      } catch { /* ignore — sparkline stays in empty state */ }
     }
     pull();
     const t = setInterval(pull, 30000);
