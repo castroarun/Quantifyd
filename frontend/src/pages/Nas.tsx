@@ -376,6 +376,18 @@ export default function Nas() {
   return (
     <LiveTicksContext.Provider value={liveTicks}>
     <div className={styles.root}>
+      {/* Tier 1 (exchange-side SL-M) not yet built — remove this block when it ships. */}
+      <div className={styles.slmWarning} role="alert">
+        <span className={styles.slmWarningIcon} aria-hidden="true">⚠</span>
+        <div className={styles.slmWarningText}>
+          <strong>NAS LIVE — exchange-side SL-M not yet implemented.</strong>
+          <span className={styles.slmWarningDetail}>
+            {' '}If Flask or ticker dies during an open position, the short is
+            unprotected until the process recovers. Tier 1 build pending.
+          </span>
+        </div>
+      </div>
+
       <div className={styles.titleRow}>
         <div>
           <div className="page-title">NAS options</div>

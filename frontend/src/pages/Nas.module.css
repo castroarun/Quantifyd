@@ -2,6 +2,37 @@
   max-width: 1200px;
 }
 
+/* ---------- Tier 1 (exchange-side SL-M) pending warning ---------- */
+/* Remove this block + the .slmWarning JSX in Nas.tsx when Tier 1 ships. */
+
+.slmWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 0.5px solid rgba(245, 158, 11, 0.40);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.slmWarningIcon {
+  font-size: 14px;
+  line-height: 1.5;
+  flex-shrink: 0;
+  color: #fbbf24;
+}
+
+.slmWarningText {
+  color: #fbbf24;
+}
+
+.slmWarningDetail {
+  color: var(--ink-muted);
+}
+
 .toast {
   margin-top: 12px;
   padding: 10px 14px;
