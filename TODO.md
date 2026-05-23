@@ -14,6 +14,113 @@ Update it when work moves between states. When Arun asks "what's pending",
 
 ## Pending (highest-priority first)
 
+### NAS Tier 1 — Exchange-side SL-M (port ORB pattern; required before scaling NAS past Rs 25L)
+
+- **What:** Today the per-leg SL on every NAS variant is checked in-memory by the
+  WebSocket ticker callback; the BUY exit order is sent *after* `live_prem >= sl_price`
+  trips ([nas_executor.py:137](services/nas_executor.py#L137),
+  [nas_atm_executor.py:140](services/nas_atm_executor.py#L140)). If Flask, the
+  ticker, or the VPS dies during an open position, the short is naked with zero
+  exchange-side protection. Port the ORB pattern: after each NAS entry fills,
+  immediately place an opposite BUY SL-M on Kite at the trigger price, so the
+  exchange itself holds the stop.
+
+- **Why:** Scaling NAS to all 8 systems at full size means up to 28 short NIFTY
+  lots across CE+PE on a Mon/Tue/Fri. A daytime process-death plus 2% adverse
+  NIFTY move = ~Rs 4-6L drawdown per affected leg with current in-memory-only
+  SL. At Rs 1cr deployed this becomes survival-threatening; the exchange-side
+  SL is the structural fix. ORB already runs this end-to-end —
+  [orb_live_engine.py:1884-1945](services/orb_live_engine.py#L1884-L1945)
+  (`_place_exchange_sl_m`) + trail-resize handler at line 1740.
+
+- **Scope split — strategy behavior preserved:**
+  - **ATM variants (6 of 8):** per-leg hard SL @ `entry × 1.30` ports directly
+    as exchange BUY SL-M with trigger matched 1:1 to the Python value. Python
+    check stays as the *secondary* monitor — exchange fires only when Python
+    didn't (i.e. when the process is down or slow).
+  - **OTM variants (2 of 8 — NAS Squeeze OTM + NAS 9:16 OTM):** the existing
+    2-tick cross-leg roll adjustment in
+    [nas_ticker.py:_check_premium_tick](services/nas_ticker.py#L457) lines
+    488-548 **stays in Python untouched** — the exchange has no concept of
+    "if leg A premium is 2× leg B premium, roll leg A." Only add a *wide
+    catastrophic* BUY SL-M per leg (e.g. `entry × 3.0`) as fat-finger /
+    disaster backstop. Normal roll logic is unaffected.
+
+- **Build steps (~5-7 working days):**
+  - Add `sl_order_id` column to all 8 NAS position tables (shared migration helper)
+  - Wrap `_place_order` in `nas_executor.py` + `nas_atm_executor.py` +
+    `nas_atm2_executor.py` + `nas_atm4_executor.py` to fire a BUY SL-M after
+    entry confirmation; track `sl_order_id` in the position row
+  - `_close_leg` must CANCEL the SL-M first, then send the exit BUY — and skip
+    the BUY if the SL-M already filled (race condition)
+  - Adjustment flow: cancel old leg's SL-M → close old → open new → place
+    new SL-M (handles both ATM2 cascade re-entry and ATM4 roll-to-match)
+  - ATM trail-to-cost: `kite.modify_order(trigger_price=...)` on surviving
+    leg's SL-M when Python decides to trail to breakeven
+  - Startup reconciliation helper — on Flask boot, read `kite.orders()` +
+    `kite.positions()`, match against open NAS positions, rehydrate
+    `sl_order_id`s, alert on any drift
+  - Smoke test under a `LIVE_DRYRUN=1` flag against the Kite paper account
+    before any real-money variant flips
+
+- **Gate:** Required complete + 5 clean sessions with zero reconcile mismatches
+  before scaling NAS aggregate capital past Rs 25L.
+
+### NAS Tier 2 — Slippage management (limit-order entries + defined-risk wing)
+
+- **What:** Today NAS uses `MARKET` orders for entries and SL exits
+  ([nas_executor.py:148](services/nas_executor.py#L148),
+  [nas_atm_executor.py:151](services/nas_atm_executor.py#L151)). Under a vol
+  spike — exactly when SL fires — short-option fills can slip 5-15% of
+  premium. Three independent improvements, two to build, one explicitly rejected:
+
+  - **2a. Limit-order entries with auto-retry (recommended next build):**
+    SELL at `mid_ask + small_buffer` LIMIT, cancel-and-resubmit if unfilled
+    in 3-5s, fall back to MARKET after N retries. Saves ~1-3 ticks per leg
+    per entry. Shared helper across all 8 variants. Independent of Tier 1
+    — can build in parallel.
+    Effort: ~2 days.
+
+  - **2b. SL-L on the exchange in place of SL-M — REJECTED.** Caps slippage
+    but risks not filling on a gap → naked-short into a worsening move. SL-M
+    is the correct primitive for safety; slippage is the price of certainty
+    of fill. Do not do this.
+
+  - **2c. Defined-risk overlay (iron condor wings):** SELL the current
+    strike + BUY a strike ~Rs 5 further OTM per leg. Converts strangles to
+    iron condors; max loss capped to `(wing width × lot − net credit)`
+    regardless of slippage. Costs ~Rs 3-5 of premium given up per leg.
+    Requires re-backtesting the new credit profile vs current strangle
+    Sharpe to verify it still pencils.
+    Effort: ~5-7 days (new strike-selection logic + 4-leg order management
+    + adjustment rules that respect the wings).
+
+- **Why:** At current scale (Path A, ~Rs 24L peak) slippage is annoying but
+  absorbable. At Rs 50L+ a single tail event with bad fills can wipe a month's
+  premium income. 2c is the structural fix for tail risk; 2a is the easy
+  quality-of-execution win that compounds across every entry.
+
+- **Build order:**
+  1. **2a first** — cheap, immediate value, no strategy change, no
+     re-backtest needed
+  2. **2c after** — gated by capital growth + a fresh backtest comparing
+     iron-condor Sharpe against current strangle Sharpe (must still beat
+     20% post-cost or it's not worth the wings)
+
+- **Gates:**
+  - 2a complete before any single NAS variant's capital exceeds Rs 5L
+  - 2c complete + backtested + paper-validated before NAS aggregate capital
+    exceeds Rs 50L
+
+### NAS scale-up ladder (binding — rung N+1 requires rung N gate met)
+
+| Rung | Capital ceiling | Prerequisite |
+|---|---|---|
+| 0 (today) | ~Rs 24L peak (Path A, OTM=2 lots, all 8 systems) | Current state — in-memory SL only |
+| 1 | ~Rs 25L | Tier 1 (exchange SL-M) live + 5 clean sessions, zero reconcile mismatches |
+| 2 | ~Rs 50L | Tier 2a (limit entries) live + watchdog hardening complete + 2 weeks clean |
+| 3 | ~Rs 1cr+ | Tier 2c (iron condor wing) live and backtested; Tier 3 (process resilience) has resolved at least one real drift event |
+
 ### Tri-Sleeve combined book (RS-momentum base + KC6 options + short/hedge)
 
 - **What:** Combine 3 sleeves on ONE Rs.1cr book — (1) the locked

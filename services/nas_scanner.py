@@ -111,7 +111,9 @@ def get_next_thursday(ref_date=None):
 def get_current_week_expiry(ref_date=None):
     """
     Get the nearest NIFTY options expiry from Kite instruments API.
-    Falls back to Thursday-based calculation if API unavailable.
+    Falls back to Tuesday-based calculation if API unavailable.
+    (NIFTY weekly expiry = Tuesday per NSE post-2025 framework; see
+    services/trading_calendar.py:NIFTY_WEEKLY_EXPIRY_WEEKDAY.)
     """
     if ref_date is None:
         ref_date = date.today()
@@ -130,15 +132,15 @@ def get_current_week_expiry(ref_date=None):
     except Exception as e:
         logger.debug(f"Expiry lookup from Kite failed: {e}")
 
-    # Fallback: next Thursday
-    days_ahead = (3 - ref_date.weekday()) % 7
+    # Fallback: next Tuesday (NIFTY weekly expiry weekday = 1)
+    days_ahead = (1 - ref_date.weekday()) % 7
     if days_ahead == 0:
         return ref_date
     return ref_date + timedelta(days=days_ahead)
 
 
 def is_expiry_day(ref_date=None):
-    """Check if today is an expiry day (checks Kite instruments, falls back to Thursday)."""
+    """Check if today is an expiry day (checks Kite instruments, falls back to Tuesday)."""
     if ref_date is None:
         ref_date = date.today()
 
@@ -146,7 +148,7 @@ def is_expiry_day(ref_date=None):
         expiry = get_current_week_expiry(ref_date)
         return expiry == ref_date
     except Exception:
-        return ref_date.weekday() == 3
+        return ref_date.weekday() == 1
 
 
 # ─── Scanner ────────────────────────────────────────────────

@@ -337,7 +337,7 @@ NAS_DEFAULTS = {
     'symbol': 'NIFTY',
     'exchange': 'NSE',
     'exchange_fo': 'NFO',
-    'lot_size': 75,             # Nifty F&O lot size
+    'lot_size': 65,             # Nifty F&O lot size (DEAD FIELD — executors import LOT_SIZE=65 from services/nas_scanner.py; kept here for documentation/dashboard display only)
     'strike_interval': 50,      # Nifty options strike gap
 
     # ATR Squeeze Detection (5-min candles)
@@ -357,7 +357,7 @@ NAS_DEFAULTS = {
     'daily_atr_period': 14,        # ATR period on daily bars for strike calc
 
     # Position Sizing
-    'lots_per_leg': 4,          # GO-LIVE 2026-05-01: dropped 10→4 (300 qty)
+    'lots_per_leg': 2,          # 2026-05-23: dropped 4→2 ahead of live flip (130 qty/leg, ~Rs 4L margin per OTM strangle). Inherited by NAS_916_OTM_DEFAULTS via spread.
     'max_strangles': 1,         # Only 1 strangle at a time
 
     # Day-of-week filter — skip OTM trading on Wed/Thu (expiry-week trend days
@@ -393,9 +393,11 @@ NAS_DEFAULTS = {
     'max_daily_orders': 20,     # Order limit per day
 
     # Safety
+    # 2026-05-23: persisted LIVE state to file so a Flask restart doesn't
+    # silently revert to PAPER. Inherited by NAS_916_OTM_DEFAULTS via spread.
     'enabled': True,
-    'paper_trading_mode': True,
-    'live_trading_enabled': False,
+    'paper_trading_mode': False,
+    'live_trading_enabled': True,
 }
 
 # NAS ATM — Nifty ATR Strangle (ATM, SL-based, cascading re-entry)
@@ -404,7 +406,7 @@ NAS_ATM_DEFAULTS = {
     'symbol': 'NIFTY',
     'exchange': 'NSE',
     'exchange_fo': 'NFO',
-    'lot_size': 75,
+    'lot_size': 65,             # DEAD FIELD — see note on NAS_DEFAULTS.lot_size. Inherited by NAS_ATM2/ATM4 + all 916_ATM* variants via spread.
     'strike_interval': 50,
 
     # ATR Squeeze Detection (shared with NAS OTM — same ticker)
@@ -444,9 +446,12 @@ NAS_ATM_DEFAULTS = {
     'max_daily_orders': 40,
 
     # Safety
+    # 2026-05-23: persisted LIVE state to file. Inherited by NAS_ATM2/ATM4
+    # + all 916_ATM* variants via spread, so a single edit here covers
+    # 6 of the 8 NAS variants.
     'enabled': True,
-    'paper_trading_mode': True,
-    'live_trading_enabled': False,
+    'paper_trading_mode': False,
+    'live_trading_enabled': True,
 }
 
 NAS_ATM2_DEFAULTS = {
