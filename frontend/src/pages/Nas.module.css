@@ -312,16 +312,22 @@
   z-index: 2;
 }
 
-.markerLabel {
+.markerLabel,
+.markerLabelRight {
   position: absolute;
-  left: 10px;
   top: -8px;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 500;
   white-space: nowrap;
-  line-height: 1.1;
+  line-height: 1.15;
   pointer-events: none;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(15, 15, 16, 0.78);
 }
+
+.markerLabel { left: 10px; }
+.markerLabelRight { right: 10px; text-align: right; }
 
 .sparkMeta {
   display: flex;

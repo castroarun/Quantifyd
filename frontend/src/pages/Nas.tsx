@@ -872,38 +872,71 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
         </>
       ) : null}
     </svg>
-    {events.map((e, i) => {
+    {(() => {
       // HTML overlay markers: percent-positioned over the SVG so they're
       // immune to preserveAspectRatio="none" stretching. The SVG stays
       // responsive; the dots stay round.
-      const tMs = new Date(e.ts).getTime();
-      if (tMs < tMin - 1 || tMs > tMax + 1) return null;
-      const xPct = ((xOf(e.ts) - 0) / W) * 100;
-      const yPct = (yOf(interpY(e.ts)) / H) * 100;
-      const color = EVENT_COLOR[e.type] || '#888';
-      const size = expanded ? 9 : 7;
-      return (
-        <span
-          key={`m-${e.ts}-${i}`}
-          className={styles.markerDot}
-          style={{
-            left: `${xPct}%`,
-            top: `${yPct}%`,
-            width: size,
-            height: size,
-            background: color,
-          }}
-          title={`${e.label}${e.sym ? ' · ' + e.sym : ''} @ ${e.ts.slice(11, 16)}`}
-        >
-          {expanded ? (
-            <span className={styles.markerLabel}
-                  style={{ color }}>
-              {e.label}{e.sym ? ` ${shortSym(e.sym)}` : ''}
-            </span>
-          ) : null}
-        </span>
-      );
-    })}
+      //
+      // Deconflict labels: when multiple events fall in a narrow x-window
+      // (8 NAS systems all entering near 9:16, all exiting near 14:45/15:15),
+      // stagger labels vertically so they don't stack on top of each other.
+      // Also flip the label to the left of the dot near the right edge to
+      // avoid clipping at the chart border.
+      const placed = events
+        .map((e, i) => {
+          const tMs = new Date(e.ts).getTime();
+          if (tMs < tMin - 1 || tMs > tMax + 1) return null;
+          const xPct = (xOf(e.ts) / W) * 100;
+          const yPct = (yOf(interpY(e.ts)) / H) * 100;
+          return { e, i, tMs, xPct, yPct };
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null)
+        .sort((a, b) => a.xPct - b.xPct || a.tMs - b.tMs);
+
+      const BUCKET_PCT = 3.5;       // ~32px @ W=920
+      const LINE_HEIGHT_PX = 13;
+      let bucketStart = -Infinity;
+      let bucketIdx = 0;
+      const decorated = placed.map((p) => {
+        if (p.xPct - bucketStart > BUCKET_PCT) {
+          bucketStart = p.xPct;
+          bucketIdx = 0;
+        } else {
+          bucketIdx += 1;
+        }
+        return { ...p, stagger: bucketIdx };
+      });
+
+      return decorated.map(({ e, i, xPct, yPct, stagger }) => {
+        const color = EVENT_COLOR[e.type] || '#888';
+        const size = expanded ? 9 : 7;
+        const flipLeft = expanded && xPct > 62;
+        const stackPx = expanded ? stagger * LINE_HEIGHT_PX : 0;
+        return (
+          <span
+            key={`m-${e.ts}-${i}`}
+            className={styles.markerDot}
+            style={{
+              left: `${xPct}%`,
+              top: `${yPct}%`,
+              width: size,
+              height: size,
+              background: color,
+            }}
+            title={`${e.label}${e.sym ? ' · ' + e.sym : ''} @ ${e.ts.slice(11, 16)}`}
+          >
+            {expanded ? (
+              <span
+                className={flipLeft ? styles.markerLabelRight : styles.markerLabel}
+                style={{ color, transform: `translateY(${stackPx}px)` }}
+              >
+                {e.label}{e.sym ? ` ${shortSym(e.sym)}` : ''}
+              </span>
+            ) : null}
+          </span>
+        );
+      });
+    })()}
     </div>
   );
 }
