@@ -93,6 +93,34 @@ task_status = {}
 # Ticker service import (lazy load to avoid circular imports)
 _ticker_service = None
 
+# --- NAS persistent kill-switch -------------------------------------------
+# If a /api/nas/panic was hit in a prior run (or somebody touched the flag
+# file by hand), the file at backtest_data/nas_kill.flag will still exist.
+# Re-apply enabled=False to all 8 NAS variants at startup so a VPS reboot
+# during the user's trip does not silently resume trading.
+try:
+    from services.nas_kill_switch import is_killed as _nas_killed, get_kill_info as _nas_kill_info
+    if _nas_killed():
+        _ki = _nas_kill_info() or {}
+        for _name, _cfg in (
+            ('NAS_DEFAULTS', NAS_DEFAULTS),
+            ('NAS_ATM_DEFAULTS', NAS_ATM_DEFAULTS),
+            ('NAS_ATM2_DEFAULTS', NAS_ATM2_DEFAULTS),
+            ('NAS_ATM4_DEFAULTS', NAS_ATM4_DEFAULTS),
+            ('NAS_916_OTM_DEFAULTS', NAS_916_OTM_DEFAULTS),
+            ('NAS_916_ATM_DEFAULTS', NAS_916_ATM_DEFAULTS),
+            ('NAS_916_ATM2_DEFAULTS', NAS_916_ATM2_DEFAULTS),
+            ('NAS_916_ATM4_DEFAULTS', NAS_916_ATM4_DEFAULTS),
+        ):
+            _cfg['enabled'] = False
+        logger.warning(
+            f"[NAS-KILL] Startup: kill flag present (killed_at={_ki.get('killed_at')!r} "
+            f"reason={_ki.get('reason')!r}). All 8 NAS variants forced enabled=False. "
+            f"POST /api/nas/resume to allow trading again."
+        )
+except Exception as _kill_init_err:
+    logger.error(f"[NAS-KILL] Startup check failed: {_kill_init_err}")
+
 
 # =============================================================================
 # Decorators
@@ -4163,6 +4191,352 @@ def api_nas_master_mode():
     except Exception as e:
         logger.error(f"[NAS-MASTER] error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+
+# =========================================================================
+# NAS Panic — single-call kill that closes all positions on Kite, disables
+# all 8 variants in-process, AND persists the kill state across restarts
+# via backtest_data/nas_kill.flag. Resume requires an explicit second call.
+# =========================================================================
+
+def _nas_all_variant_configs():
+    """The 8 NAS variant configs in a stable order, named for logs."""
+    return [
+        ('NAS Squeeze OTM',    NAS_DEFAULTS),
+        ('NAS Squeeze ATM',    NAS_ATM_DEFAULTS),
+        ('NAS Squeeze ATM2',   NAS_ATM2_DEFAULTS),
+        ('NAS Squeeze ATM4',   NAS_ATM4_DEFAULTS),
+        ('NAS 9:16 OTM',       NAS_916_OTM_DEFAULTS),
+        ('NAS 9:16 ATM',       NAS_916_ATM_DEFAULTS),
+        ('NAS 9:16 ATM2',      NAS_916_ATM2_DEFAULTS),
+        ('NAS 9:16 ATM4',      NAS_916_ATM4_DEFAULTS),
+    ]
+
+
+def _nas_variant_executors():
+    """Lazy-instantiate the 8 NAS executors so we can close their positions."""
+    from services.nas_executor import NasExecutor
+    from services.nas_atm_executor import NasAtmExecutor
+    from services.nas_atm2_executor import NasAtm2Executor
+    from services.nas_atm4_executor import NasAtm4Executor
+    from services.nas_916_executors import (
+        Nas916OtmExecutor, Nas916AtmExecutor, Nas916Atm2Executor, Nas916Atm4Executor,
+    )
+    return [
+        ('NAS Squeeze OTM',    NasExecutor(config=NAS_DEFAULTS)),
+        ('NAS Squeeze ATM',    NasAtmExecutor(config=NAS_ATM_DEFAULTS)),
+        ('NAS Squeeze ATM2',   NasAtm2Executor(config=NAS_ATM2_DEFAULTS)),
+        ('NAS Squeeze ATM4',   NasAtm4Executor(config=NAS_ATM4_DEFAULTS)),
+        ('NAS 9:16 OTM',       Nas916OtmExecutor(config=NAS_916_OTM_DEFAULTS)),
+        ('NAS 9:16 ATM',       Nas916AtmExecutor(config=NAS_916_ATM_DEFAULTS)),
+        ('NAS 9:16 ATM2',      Nas916Atm2Executor(config=NAS_916_ATM2_DEFAULTS)),
+        ('NAS 9:16 ATM4',      Nas916Atm4Executor(config=NAS_916_ATM4_DEFAULTS)),
+    ]
+
+
+@app.route('/api/nas/panic', methods=['POST'])
+def api_nas_panic():
+    """One-tap NAS shutdown.
+
+    Steps (in order):
+      1. Write the kill flag (survives Flask/VPS restart)
+      2. Set enabled=False on all 8 NAS variant dicts in-process
+      3. Call emergency_exit_all on all 8 executors -> closes Kite positions
+
+    POST body MUST contain {"confirm": "YES"} to avoid accidental
+    same-origin hits. No auth gate by design — easy phone access during
+    the trip. Tighten this with Caddy basic-auth post-trip.
+    """
+    from services.nas_kill_switch import set_killed
+    try:
+        data = request.get_json(silent=True) or {}
+        if str(data.get('confirm', '')).strip().upper() != 'YES':
+            return jsonify({'error': 'Missing confirm=YES in request body'}), 400
+
+        reason = str(data.get('reason') or 'manual panic POST')[:200]
+        source = str(data.get('source') or 'api')[:64]
+
+        # 1. Persist the kill so a restart cannot silently resume trading
+        kill_info = set_killed(reason=reason, source=source)
+
+        # 2. Flip every variant's in-process enabled flag to False
+        disabled = []
+        for name, cfg in _nas_all_variant_configs():
+            cfg['enabled'] = False
+            disabled.append(name)
+
+        # 3. Close any open positions on each variant
+        closed_total = 0
+        per_variant_closed = {}
+        per_variant_errors = {}
+        for name, executor in _nas_variant_executors():
+            try:
+                n = executor.emergency_exit_all()
+                per_variant_closed[name] = int(n or 0)
+                closed_total += int(n or 0)
+            except Exception as e:
+                logger.error(f"[NAS-PANIC] {name} emergency_exit_all failed: {e}", exc_info=True)
+                per_variant_errors[name] = str(e)
+
+        logger.warning(
+            f"[NAS-PANIC] KILL fired — reason={reason!r} closed={closed_total} "
+            f"disabled={len(disabled)}/8 errors={len(per_variant_errors)}"
+        )
+        return jsonify({
+            'status': 'KILLED',
+            'kill_flag': kill_info,
+            'disabled': disabled,
+            'closed_positions_total': closed_total,
+            'closed_per_variant': per_variant_closed,
+            'errors_per_variant': per_variant_errors,
+        })
+    except Exception as e:
+        logger.error(f"[NAS-PANIC] fatal: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/resume', methods=['POST'])
+def api_nas_resume():
+    """Clear the NAS panic kill and re-enable all 8 variants.
+
+    POST body MUST contain {"confirm": "RESUME"}. Mode (paper vs live)
+    stays at whatever the config file says — this only clears the kill
+    flag and sets enabled=True so entries can resume.
+    """
+    from services.nas_kill_switch import clear_killed, is_killed
+    try:
+        data = request.get_json(silent=True) or {}
+        if str(data.get('confirm', '')).strip().upper() != 'RESUME':
+            return jsonify({'error': 'Missing confirm=RESUME in request body'}), 400
+
+        had_flag = clear_killed()
+
+        enabled = []
+        for name, cfg in _nas_all_variant_configs():
+            cfg['enabled'] = True
+            enabled.append(name)
+
+        logger.warning(f"[NAS-PANIC] RESUME — had_flag={had_flag} enabled={len(enabled)}/8")
+        return jsonify({
+            'status': 'RESUMED',
+            'had_kill_flag': had_flag,
+            'still_killed': is_killed(),
+            'enabled': enabled,
+        })
+    except Exception as e:
+        logger.error(f"[NAS-PANIC] resume fatal: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/panic-status', methods=['GET'])
+def api_nas_panic_status():
+    """Compact status for the panic HTML page — safe to poll from phone."""
+    from services.nas_kill_switch import is_killed, get_kill_info
+    try:
+        variants = []
+        open_positions_total = 0
+        for name, cfg in _nas_all_variant_configs():
+            variants.append({
+                'name': name,
+                'enabled': bool(cfg.get('enabled', True)),
+                'paper': bool(cfg.get('paper_trading_mode', True)),
+            })
+        # Count open positions across all 8 variant DBs (lightweight read).
+        try:
+            for _name, executor in _nas_variant_executors():
+                try:
+                    active = executor.db.get_active_positions()
+                    open_positions_total += len(active or [])
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.warning(f"[NAS-PANIC-STATUS] open-position scan failed: {e}")
+
+        return jsonify({
+            'killed': is_killed(),
+            'kill_info': get_kill_info(),
+            'open_positions_total': open_positions_total,
+            'variants': variants,
+        })
+    except Exception as e:
+        logger.error(f"[NAS-PANIC-STATUS] error: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+# Phone-friendly emergency page — self-contained HTML, no auth, no React.
+# Bookmark on phone home screen: http://94.136.185.54:5000/nas-panic
+@app.route('/nas-panic', methods=['GET'])
+def nas_panic_page():
+    return """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NAS PANIC</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:18px; background:#0d1117; color:#e8eaed;
+         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         font-size:15px; line-height:1.45; min-height:100vh; }
+  h1 { font-size:18px; margin:0 0 6px; letter-spacing:.04em; }
+  .sub { color:#9aa0a6; font-size:12px; margin-bottom:18px; }
+  .card { background:#161b22; border:0.5px solid #30363d; border-radius:10px;
+          padding:14px 16px; margin-bottom:14px; }
+  .label { color:#9aa0a6; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+  .val { font-size:15px; margin-top:4px; }
+  .state-running { color:#34d399; }
+  .state-killed { color:#fbbf24; }
+  .state-has-open { color:#f87171; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  td { padding:5px 0; border-bottom:0.5px solid #21262d; }
+  td.r { text-align:right; }
+  .pill { display:inline-block; padding:1px 7px; border-radius:10px; font-size:11px;
+          background:#21262d; }
+  .pill-live  { background:rgba(239,68,68,.15); color:#fca5a5; }
+  .pill-paper { background:rgba(96,165,250,.15); color:#93c5fd; }
+  .pill-off   { background:rgba(154,160,166,.15); color:#9aa0a6; }
+  button.kill, button.resume {
+    width:100%; padding:18px; border-radius:12px; border:none; color:#fff;
+    font-size:17px; font-weight:600; letter-spacing:.04em; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; }
+  button.kill   { background:#dc2626; }
+  button.kill:active { background:#991b1b; }
+  button.kill[disabled] { background:#374151; color:#9ca3af; }
+  button.resume { background:#374151; margin-top:10px; font-size:14px; padding:13px; }
+  button.resume:active { background:#1f2937; }
+  .toast { padding:10px 12px; border-radius:8px; font-size:12px; margin-top:12px;
+           background:rgba(52,211,153,.10); border:0.5px solid rgba(52,211,153,.35);
+           color:#34d399; white-space:pre-wrap; }
+  .toast.err { background:rgba(248,113,113,.10); border-color:rgba(248,113,113,.35);
+               color:#fca5a5; }
+  details summary { cursor:pointer; color:#9aa0a6; font-size:12px; padding:6px 0; }
+  details[open] summary { color:#e8eaed; }
+  .small { font-size:11px; color:#6e7681; margin-top:2px; }
+</style>
+</head>
+<body>
+<h1>NAS PANIC</h1>
+<div class="sub">Halts all 8 NAS systems + closes any open positions. Survives VPS restart.</div>
+
+<div class="card" id="state">
+  <div class="label">Status</div>
+  <div class="val" id="status-val">Loading...</div>
+  <div class="small" id="kill-info"></div>
+</div>
+
+<div class="card">
+  <div class="label">Variants</div>
+  <table id="variants"><tbody></tbody></table>
+</div>
+
+<button class="kill" id="kill-btn" onclick="doKill()">PANIC — STOP ALL NAS NOW</button>
+<button class="resume" id="resume-btn" onclick="doResume()" style="display:none">Resume NAS trading</button>
+<div id="toast"></div>
+
+<details style="margin-top:24px;">
+  <summary>How this works</summary>
+  <ul style="font-size:12px; color:#9aa0a6; padding-left:18px;">
+    <li>The big red button: writes a kill flag, disables all 8 variants in-process, closes open Kite positions.</li>
+    <li>Kill flag survives a Flask/VPS restart — even a reboot will not silently resume trading.</li>
+    <li>Resume requires the second button: clears the flag + sets enabled=True on all 8.</li>
+    <li>Mode (paper vs live) is not changed — only on/off and open positions.</li>
+    <li>Bookmark this page on your phone home screen for one-tap access.</li>
+  </ul>
+</details>
+
+<script>
+async function refresh() {
+  try {
+    const r = await fetch('/api/nas/panic-status', { cache:'no-store' });
+    const d = await r.json();
+    const killed = !!d.killed;
+    const openN = d.open_positions_total || 0;
+    const stateEl = document.getElementById('status-val');
+    const killInfoEl = document.getElementById('kill-info');
+    if (killed) {
+      stateEl.innerHTML = '<span class="state-killed">KILLED — no entries</span>'
+        + (openN > 0 ? ' <span class="state-has-open">+ ' + openN + ' OPEN</span>' : '');
+      if (d.kill_info) {
+        killInfoEl.textContent = 'killed at ' + (d.kill_info.killed_at || '?')
+          + ' — ' + (d.kill_info.reason || 'manual');
+      }
+      document.getElementById('kill-btn').disabled = true;
+      document.getElementById('kill-btn').textContent = 'ALREADY KILLED';
+      document.getElementById('resume-btn').style.display = 'block';
+    } else {
+      stateEl.innerHTML = '<span class="state-running">RUNNING</span>'
+        + (openN > 0 ? ' &middot; ' + openN + ' open position' + (openN===1?'':'s') : '');
+      killInfoEl.textContent = '';
+      document.getElementById('kill-btn').disabled = false;
+      document.getElementById('kill-btn').textContent = 'PANIC — STOP ALL NAS NOW';
+      document.getElementById('resume-btn').style.display = 'none';
+    }
+    const tbody = document.querySelector('#variants tbody');
+    tbody.innerHTML = '';
+    (d.variants || []).forEach(v => {
+      let pill;
+      if (!v.enabled) pill = '<span class="pill pill-off">OFF</span>';
+      else if (v.paper) pill = '<span class="pill pill-paper">PAPER</span>';
+      else pill = '<span class="pill pill-live">LIVE</span>';
+      tbody.innerHTML += '<tr><td>' + v.name + '</td><td class="r">' + pill + '</td></tr>';
+    });
+  } catch (e) {
+    document.getElementById('status-val').textContent = 'status fetch failed: ' + e;
+  }
+}
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.className = 'toast' + (isErr ? ' err' : '');
+  t.textContent = msg;
+}
+
+async function doKill() {
+  if (!confirm('PANIC: stop all NAS trading now?\\nThis closes any open positions and disables all 8 variants.')) return;
+  document.getElementById('kill-btn').disabled = true;
+  toast('Sending kill...');
+  try {
+    const r = await fetch('/api/nas/panic', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ confirm:'YES', source:'panic-page',
+                             reason:'manual panic from phone' })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'HTTP ' + r.status);
+    toast('KILLED. Closed ' + (d.closed_positions_total || 0) + ' position(s). '
+        + (Object.keys(d.errors_per_variant || {}).length
+            ? '\\nErrors: ' + JSON.stringify(d.errors_per_variant) : ''));
+  } catch (e) {
+    toast('Kill failed: ' + e.message, true);
+  }
+  refresh();
+}
+
+async function doResume() {
+  if (!confirm('Resume NAS trading?\\nClears the kill flag and re-enables all 8 variants.')) return;
+  document.getElementById('resume-btn').disabled = true;
+  toast('Resuming...');
+  try {
+    const r = await fetch('/api/nas/resume', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ confirm:'RESUME' })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'HTTP ' + r.status);
+    toast('Resumed. ' + (d.enabled?.length || 0) + ' variants enabled.');
+  } catch (e) {
+    toast('Resume failed: ' + e.message, true);
+  }
+  document.getElementById('resume-btn').disabled = false;
+  refresh();
+}
+
+refresh();
+setInterval(refresh, 8000);
+</script>
+</body>
+</html>"""
 
 
 @app.route('/api/nas/toggle-mode', methods=['POST'])

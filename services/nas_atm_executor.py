@@ -37,7 +37,12 @@ class NasAtmExecutor:
     def _check_guardrails(self, is_entry=True):
         """Pre-order safety checks. Returns (passed, reason)."""
         from datetime import datetime as _dt
+        from services.nas_kill_switch import is_killed as _nas_killed
         cfg = self.cfg
+
+        # Persistent panic kill — survives Flask restarts via sentinel file.
+        if _nas_killed():
+            return False, 'NAS PANIC kill active'
 
         if not cfg.get('enabled', True):
             return False, 'System disabled'
