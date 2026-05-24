@@ -859,6 +859,33 @@
   flex-wrap: wrap;
 }
 
+.titleRowActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.panicLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 0.5px solid rgba(239, 68, 68, 0.40);
+  border-radius: var(--radius-control);
+  background: rgba(239, 68, 68, 0.08);
+  color: #fca5a5;
+  font-size: var(--text-xxs);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.panicLink:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fecaca;
+}
+
 .masterToggle {
   display: flex;
   flex-direction: column;

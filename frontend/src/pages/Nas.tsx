@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import styles from './Nas.module.css';
 import { apiGet } from '../api/client';
 import type { NASState, NASPosition } from '../api/types';
@@ -396,7 +397,16 @@ export default function Nas() {
             left, time-based 9:16 entries on the right.
           </div>
         </div>
-        <MasterModeToggle onToast={setToast} />
+        <div className={styles.titleRowActions}>
+          <MasterModeToggle onToast={setToast} />
+          <Link
+            to="/nas-panic"
+            className={styles.panicLink}
+            title="Closes all positions and disables all 8 NAS variants. Survives Flask/VPS restart."
+          >
+            ⚠ Emergency stop
+          </Link>
+        </div>
       </div>
 
       {toast ? <div className={styles.toast}>{toast}</div> : null}

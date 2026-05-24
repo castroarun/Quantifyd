@@ -1,0 +1,197 @@
+.root {
+  max-width: 680px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.backLink {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  white-space: nowrap;
+}
+.backLink:hover { color: var(--ink); }
+
+.loading {
+  padding: 32px 16px;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- State card ---------- */
+
+.stateCard {
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  margin-bottom: 14px;
+}
+.stateCard[data-state="killed"] {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.stateLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.stateVal {
+  font-size: var(--text-md);
+  font-weight: 500;
+}
+
+.stateRunning   { color: #34d399; }
+.stateKilled    { color: #fbbf24; }
+.stateOpen      { color: #f87171; font-weight: 500; }
+.stateOpenMuted { color: var(--ink-muted); font-weight: 400; }
+
+.killInfo {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+
+/* ---------- Variants table ---------- */
+
+.variantsCard {
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  margin-bottom: 20px;
+}
+
+.cardLabel {
+  font-size: var(--text-xxs);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.variantsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+.variantsTable td {
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--hairline);
+}
+.variantsTable tr:last-child td { border-bottom: none; }
+.variantPillCell { text-align: right; }
+
+.pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 12px;
+  font-size: var(--text-xxs);
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+.pillLive  { background: rgba(239, 68, 68, 0.15);  color: #fca5a5; }
+.pillPaper { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
+.pillOff   { background: rgba(154, 160, 166, 0.15); color: #9aa0a6; }
+
+/* ---------- Buttons ---------- */
+
+.killBtn {
+  width: 100%;
+  padding: 20px;
+  border-radius: 12px;
+  border: none;
+  background: #dc2626;
+  color: #fff;
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s ease;
+}
+.killBtn:hover:not(:disabled)  { background: #ef4444; }
+.killBtn:active:not(:disabled) { background: #991b1b; }
+.killBtn:disabled {
+  background: #374151;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.resumeBtn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 0.5px solid var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.resumeBtn:hover:not(:disabled)  { background: var(--surface-hi, #1f2937); }
+.resumeBtn:active:not(:disabled) { background: #161b22; }
+.resumeBtn:disabled { color: var(--ink-muted); cursor: not-allowed; }
+
+/* ---------- Toast ---------- */
+
+.toast {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  border: 0.5px solid var(--hairline);
+}
+.toast_ok {
+  background: rgba(52, 211, 153, 0.10);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #34d399;
+}
+.toast_err {
+  background: rgba(248, 113, 113, 0.10);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fca5a5;
+}
+.toast_info {
+  background: var(--surface);
+  color: var(--ink-muted);
+}
+
+/* ---------- How it works ---------- */
+
+.howCard {
+  margin-top: 24px;
+  font-size: var(--text-xs);
+}
+.howCard summary {
+  cursor: pointer;
+  color: var(--ink-muted);
+  padding: 6px 0;
+}
+.howCard[open] summary { color: var(--ink); }
+.howCard ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+.howCard li { padding: 2px 0; }
