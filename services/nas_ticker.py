@@ -1369,6 +1369,16 @@ class NasTicker:
             except Exception as e:
                 logger.error(f"[NAS] Subscriber {sub} failed: {e}", exc_info=True)
 
+        # ── Defensive: re-assert option-leg subscriptions every 5 min ──
+        # Catches any post-restart ACTIVE positions that were never subscribed
+        # (e.g. the reconciler flipped a PENDING -> ACTIVE mid-day), plus any
+        # subscription drift after a reconnect. subscribe_*_option_legs is
+        # idempotent — it clears + rebuilds the token dict each call.
+        try:
+            self._subscribe_active_legs()
+        except Exception as e:
+            logger.warning(f"[NAS] Defensive re-subscribe at candle close failed: {e}")
+
     def _on_candle_close_atm_all(self, scan):
         """
         Single scan, shared entry signal for ATM, ATM2, and ATM4.
@@ -1588,23 +1598,35 @@ class NasTicker:
                 logger.warning(f"[{sys_name}] Cleanup error: {e}")
 
     def _subscribe_active_legs(self):
-        """Subscribe to active option leg tokens via Maruthi's WebSocket."""
+        """Subscribe to active option leg tokens — covers all 8 NAS variants.
+
+        Each subscribe_*_option_legs() call CLEARS the existing token dict
+        and rewrites it, so we MUST combine squeeze + 9:16 positions into a
+        single call per family. Otherwise the 9:16 call would wipe the
+        squeeze tokens (or vice-versa) and the SL/adjustment ticker
+        callbacks would only see one family's legs.
+        """
+        # OTM family: Squeeze OTM + 9:16 OTM (same nas_positions schema)
         try:
             from services.nas_db import get_nas_db
-            db = get_nas_db()
-            active = db.get_active_positions()
-            if active:
-                self.subscribe_option_legs(active)
+            from services.nas_916_db import get_nas_916_otm_db
+            otm = list(get_nas_db().get_active_positions() or [])
+            otm += list(get_nas_916_otm_db().get_active_positions() or [])
+            if otm:
+                self.subscribe_option_legs(otm)
+                logger.info(f"[NAS] Subscribed {len(otm)} OTM active legs (Sq + 916)")
         except Exception as e:
-            logger.warning(f"[NAS] Could not subscribe active legs: {e}")
+            logger.warning(f"[NAS] Could not subscribe OTM active legs: {e}")
 
-        # Also subscribe NAS ATM active legs + auto-start ST monitoring
+        # ATM family: Squeeze ATM + 9:16 ATM + auto-start ST monitoring
         try:
             from services.nas_atm_db import get_nas_atm_db
-            atm_db = get_nas_atm_db()
-            atm_active = atm_db.get_active_positions()
+            from services.nas_916_db import get_nas_916_atm_db
+            atm_active = list(get_nas_atm_db().get_active_positions() or [])
+            atm_active += list(get_nas_916_atm_db().get_active_positions() or [])
             if atm_active:
                 self.subscribe_atm_option_legs(atm_active)
+                logger.info(f"[NAS-ATM] Subscribed {len(atm_active)} ATM active legs (Sq + 916)")
                 # Auto-start ST monitoring for naked legs (SL=999999)
                 import time
                 time.sleep(1)
@@ -1619,23 +1641,27 @@ class NasTicker:
         except Exception as e:
             logger.warning(f"[NAS-ATM] Could not subscribe active legs: {e}")
 
-        # Also subscribe NAS ATM2 active legs
+        # ATM2 family: Squeeze ATM2 + 9:16 ATM2
         try:
             from services.nas_atm2_db import get_nas_atm2_db
-            atm2_db = get_nas_atm2_db()
-            atm2_active = atm2_db.get_active_positions()
+            from services.nas_916_db import get_nas_916_atm2_db
+            atm2_active = list(get_nas_atm2_db().get_active_positions() or [])
+            atm2_active += list(get_nas_916_atm2_db().get_active_positions() or [])
             if atm2_active:
                 self.subscribe_atm2_option_legs(atm2_active)
+                logger.info(f"[NAS-ATM2] Subscribed {len(atm2_active)} ATM2 active legs (Sq + 916)")
         except Exception as e:
             logger.warning(f"[NAS-ATM2] Could not subscribe active legs: {e}")
 
-        # Also subscribe NAS ATM4 active legs + auto-start ST monitoring
+        # ATM4 family: Squeeze ATM4 + 9:16 ATM4 + auto-start ST monitoring
         try:
             from services.nas_atm4_db import get_nas_atm4_db
-            atm4_db = get_nas_atm4_db()
-            atm4_active = atm4_db.get_active_positions()
+            from services.nas_916_db import get_nas_916_atm4_db
+            atm4_active = list(get_nas_atm4_db().get_active_positions() or [])
+            atm4_active += list(get_nas_916_atm4_db().get_active_positions() or [])
             if atm4_active:
                 self.subscribe_atm4_option_legs(atm4_active)
+                logger.info(f"[NAS-ATM4] Subscribed {len(atm4_active)} ATM4 active legs (Sq + 916)")
                 # Auto-start ST monitoring for naked legs (SL=999999)
                 import time
                 time.sleep(1)

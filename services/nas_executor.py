@@ -261,6 +261,36 @@ class NasExecutor:
             sl_price=put_sl,
         )
 
+        # Partial-fill rollback: if exactly one leg succeeded, close the
+        # survivor to prevent a naked short. Common cause: Kite rejected the
+        # second leg for insufficient margin while the first was already
+        # placed. Without this, we'd carry uncovered upside/downside risk.
+        if (pos_ce is None) != (pos_pe is None):
+            survivor_id = pos_ce if pos_ce else pos_pe
+            survivor_leg_name = 'CE' if pos_ce else 'PE'
+            failed_leg_name = 'PE' if pos_ce else 'CE'
+            try:
+                active = self.db.get_active_positions()
+                survivor_pos = next((p for p in active if p['id'] == survivor_id), None)
+                if survivor_pos:
+                    try:
+                        live_prem = self.scanner.get_live_option_premium(survivor_pos['tradingsymbol'])
+                        exit_price = live_prem if live_prem else survivor_pos.get('entry_price', 0)
+                    except Exception:
+                        exit_price = survivor_pos.get('entry_price', 0)
+                    self._close_leg(survivor_pos, exit_price, 'PARTIAL_FILL_ROLLBACK')
+                    logger.warning(
+                        f"[NAS] Strangle #{strangle_id}: {failed_leg_name} leg failed -> "
+                        f"closed orphan {survivor_leg_name} leg ({survivor_pos['tradingsymbol']}) "
+                        f"to avoid naked short"
+                    )
+            except Exception as e:
+                logger.error(
+                    f"[NAS] Partial-fill rollback for strangle #{strangle_id} failed: {e}",
+                    exc_info=True,
+                )
+            return None, f'{failed_leg_name} leg failed - {survivor_leg_name} rolled back'
+
         # Log signal
         self.db.log_signal(
             signal_type='SQUEEZE_ENTRY',

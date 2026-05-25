@@ -124,112 +124,251 @@ except Exception as _kill_init_err:
 # --- NAS PENDING -> ACTIVE / FAILED reconciliation -----------------------
 # Live entries occasionally land in the DB as status='PENDING' (e.g. Kite
 # returned an order_id but rejected the order for low funds, or the
-# previously buggy executor never flipped PENDING->ACTIVE). On every Flask
-# boot, ask Kite for the actual status of each PENDING live order and
-# reconcile: COMPLETE -> ACTIVE, REJECTED/CANCELLED -> FAILED, otherwise
-# leave alone for a later run. Without this, the SL monitor and adjustment
-# logic are blind to those positions, even though they may be real on Kite.
-try:
-    from datetime import date as _date
-    import sqlite3 as _sqlite3
-    _NAS_DBS_FOR_RECONCILE = [
-        ('backtest_data/nas_trading.db',         'nas_positions'),
-        ('backtest_data/nas_atm_trading.db',     'nas_atm_positions'),
-        ('backtest_data/nas_atm2_trading.db',    'nas_atm_positions'),
-        ('backtest_data/nas_atm4_trading.db',    'nas_atm_positions'),
-        ('backtest_data/nas_916_otm_trading.db', 'nas_positions'),
-        ('backtest_data/nas_916_atm_trading.db', 'nas_atm_positions'),
-        ('backtest_data/nas_916_atm2_trading.db','nas_atm_positions'),
-        ('backtest_data/nas_916_atm4_trading.db','nas_atm_positions'),
-    ]
-    _kite_orders_by_id = None
-    try:
-        from services.kite_service import get_kite as _get_kite_for_reconcile
-        _kite_for_reconcile = _get_kite_for_reconcile()
-        _kite_orders_by_id = {}
-        for _o in (_kite_for_reconcile.orders() or []):
-            _oid = str(_o.get('order_id') or '')
-            if _oid:
-                _kite_orders_by_id[_oid] = (
-                    str(_o.get('status') or '').upper(),
-                    str(_o.get('status_message') or ''),
-                )
-        logger.info(f"[NAS-RECONCILE] Loaded {len(_kite_orders_by_id)} orders from Kite")
-    except Exception as _kite_err:
-        logger.warning(
-            f"[NAS-RECONCILE] kite.orders() unavailable at startup: {_kite_err} "
-            f"-- skipping reconciliation, will run next restart"
-        )
+# previously buggy executor never flipped PENDING->ACTIVE). Without this,
+# the SL monitor and adjustment logic are blind to those positions, even
+# though they may be real on Kite.
+#
+# Runs at every Flask boot AND every 3 minutes during market hours via the
+# scheduler — see _nas_periodic_reconcile_job below.
+_NAS_DBS_FOR_RECONCILE = [
+    ('backtest_data/nas_trading.db',         'nas_positions'),
+    ('backtest_data/nas_atm_trading.db',     'nas_atm_positions'),
+    ('backtest_data/nas_atm2_trading.db',    'nas_atm_positions'),
+    ('backtest_data/nas_atm4_trading.db',    'nas_atm_positions'),
+    ('backtest_data/nas_916_otm_trading.db', 'nas_positions'),
+    ('backtest_data/nas_916_atm_trading.db', 'nas_atm_positions'),
+    ('backtest_data/nas_916_atm2_trading.db','nas_atm_positions'),
+    ('backtest_data/nas_916_atm4_trading.db','nas_atm_positions'),
+]
 
-    if _kite_orders_by_id is not None:
-        _total_active = 0
-        _total_failed = 0
-        _total_unmatched = 0
-        for _path, _tab in _NAS_DBS_FOR_RECONCILE:
-            _full_path = Path(__file__).parent / _path
-            if not _full_path.exists():
+
+def _nas_run_reconciler(close_orphans: bool = True, source: str = "boot"):
+    """Reconcile PENDING positions against Kite's order book.
+
+    For each PENDING live position with a kite_order_id:
+      COMPLETE             -> ACTIVE
+      REJECTED / CANCELLED -> FAILED (capture Kite's status_message in notes)
+      anything else        -> left PENDING for the next run
+
+    When `close_orphans=True`, after flipping a position to FAILED, find any
+    sibling ACTIVE leg in the same strangle_id and close it via the variant's
+    executor. This prevents a naked CE/PE when an async exchange rejection
+    leaves one leg of a strangle hanging.
+
+    Returns a summary dict.
+    """
+    import sqlite3 as _sqlite3
+    result = {
+        'source': source,
+        'kite_orders_loaded': 0,
+        'flipped_active': 0,
+        'flipped_failed': 0,
+        'left_pending': 0,
+        'orphans_closed': 0,
+        'orphan_close_errors': 0,
+    }
+
+    # Load Kite orderbook once
+    kite_orders_by_id = {}
+    try:
+        from services.kite_service import get_kite as _get_kite
+        kite = _get_kite()
+        for o in (kite.orders() or []):
+            oid = str(o.get('order_id') or '')
+            if oid:
+                kite_orders_by_id[oid] = (
+                    str(o.get('status') or '').upper(),
+                    str(o.get('status_message') or ''),
+                )
+        result['kite_orders_loaded'] = len(kite_orders_by_id)
+    except Exception as kite_err:
+        logger.warning(
+            f"[NAS-RECONCILE] kite.orders() unavailable ({source}): {kite_err} "
+            f"-- skipping reconciliation, will retry next run"
+        )
+        return result
+
+    # Walk each DB
+    newly_failed = []  # list of (db_path, table, row_id, strangle_id, tradingsymbol)
+    for path, tab in _NAS_DBS_FOR_RECONCILE:
+        full_path = Path(__file__).parent / path
+        if not full_path.exists():
+            continue
+        try:
+            con = _sqlite3.connect(str(full_path))
+            pending = con.execute(
+                f"SELECT id, kite_order_id, tradingsymbol, strangle_id FROM {tab} "
+                f"WHERE status='PENDING' AND mode='live' "
+                f"AND kite_order_id IS NOT NULL AND kite_order_id != '' "
+                f"AND kite_order_id != 'None'"
+            ).fetchall()
+            for row_id, oid, tsym, sid in pending:
+                oid = str(oid or '').strip()
+                if not oid or oid == 'None':
+                    continue
+                ks_tuple = kite_orders_by_id.get(oid)
+                if ks_tuple is None:
+                    result['left_pending'] += 1
+                    continue
+                ks, msg = ks_tuple
+                if ks == 'COMPLETE':
+                    con.execute(
+                        f"UPDATE {tab} SET status='ACTIVE' WHERE id=?", (row_id,)
+                    )
+                    result['flipped_active'] += 1
+                    logger.warning(
+                        f"[NAS-RECONCILE] {path}#{row_id} {tsym}: "
+                        f"PENDING->ACTIVE (Kite order {oid} COMPLETE)"
+                    )
+                elif ks in ('REJECTED', 'CANCELLED'):
+                    note = f"Kite order {oid} {ks}"
+                    if msg:
+                        note += f": {msg}"
+                    con.execute(
+                        f"UPDATE {tab} SET status='FAILED', notes=? WHERE id=?",
+                        (note, row_id),
+                    )
+                    result['flipped_failed'] += 1
+                    logger.warning(
+                        f"[NAS-RECONCILE] {path}#{row_id} {tsym}: "
+                        f"PENDING->FAILED ({note})"
+                    )
+                    newly_failed.append((path, tab, row_id, sid, tsym))
+                else:
+                    result['left_pending'] += 1
+            con.commit()
+            con.close()
+        except Exception as db_err:
+            logger.error(f"[NAS-RECONCILE] {path} reconcile error: {db_err}")
+
+    # Async orphan close — for each FAILED leg, look up sibling ACTIVE legs
+    # of the same strangle_id in the same DB and close them via the variant's
+    # executor. This makes sure an exchange-rejected leg never leaves its
+    # sibling running naked.
+    if close_orphans and newly_failed:
+        for path, tab, _row_id, sid, _tsym in newly_failed:
+            if sid is None:
                 continue
             try:
-                _con = _sqlite3.connect(str(_full_path))
-                _pending = _con.execute(
-                    f"SELECT id, kite_order_id, tradingsymbol FROM {_tab} "
-                    f"WHERE status='PENDING' AND mode='live' "
-                    f"AND kite_order_id IS NOT NULL AND kite_order_id != '' "
-                    f"AND kite_order_id != 'None'"
+                con = _sqlite3.connect(str(Path(__file__).parent / path))
+                siblings = con.execute(
+                    f"SELECT id, tradingsymbol, leg, qty, entry_price FROM {tab} "
+                    f"WHERE strangle_id=? AND status='ACTIVE'",
+                    (sid,),
                 ).fetchall()
-                for _row_id, _oid, _tsym in _pending:
-                    _oid = str(_oid or '').strip()
-                    if not _oid or _oid == 'None':
-                        continue
-                    _ks_tuple = _kite_orders_by_id.get(_oid)
-                    if _ks_tuple is None:
-                        _total_unmatched += 1
-                        logger.info(
-                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
-                            f"Kite order {_oid} not in today's orderbook -- left as PENDING"
-                        )
-                        continue
-                    _ks, _msg = _ks_tuple
-                    if _ks == 'COMPLETE':
-                        _con.execute(
-                            f"UPDATE {_tab} SET status='ACTIVE' WHERE id=?",
-                            (_row_id,),
-                        )
-                        _total_active += 1
+                con.close()
+                if not siblings:
+                    continue
+                # Resolve the executor that owns this DB so we can call _close_leg
+                executor = _nas_executor_for_db_path(path)
+                if executor is None:
+                    logger.error(
+                        f"[NAS-RECONCILE] orphan-close: no executor mapped for {path}"
+                    )
+                    result['orphan_close_errors'] += 1
+                    continue
+                for sib_id, sib_tsym, sib_leg, sib_qty, sib_entry in siblings:
+                    try:
+                        live_prem = sib_entry
+                        try:
+                            lp = executor.scanner.get_live_option_premium(sib_tsym)
+                            if lp:
+                                live_prem = lp
+                        except Exception:
+                            pass
+                        pos_dict = {
+                            'id': sib_id,
+                            'tradingsymbol': sib_tsym,
+                            'leg': sib_leg,
+                            'qty': sib_qty,
+                            'entry_price': sib_entry,
+                        }
+                        executor._close_leg(pos_dict, live_prem, 'ASYNC_PARTIAL_FILL_ROLLBACK')
+                        result['orphans_closed'] += 1
                         logger.warning(
-                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
-                            f"PENDING->ACTIVE (Kite order {_oid} COMPLETE)"
+                            f"[NAS-RECONCILE] orphan-close: strangle #{sid} sibling "
+                            f"{sib_tsym} closed (sibling leg {_tsym} was REJECTED by exchange)"
                         )
-                    elif _ks in ('REJECTED', 'CANCELLED'):
-                        _note = f"Kite order {_oid} {_ks}"
-                        if _msg:
-                            _note += f": {_msg}"
-                        _con.execute(
-                            f"UPDATE {_tab} SET status='FAILED', notes=? WHERE id=?",
-                            (_note, _row_id),
+                    except Exception as close_err:
+                        logger.error(
+                            f"[NAS-RECONCILE] orphan-close failed for #{sid} {sib_tsym}: {close_err}",
+                            exc_info=True,
                         )
-                        _total_failed += 1
-                        logger.warning(
-                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
-                            f"PENDING->FAILED ({_note})"
-                        )
-                    else:
-                        _total_unmatched += 1
-                        logger.info(
-                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
-                            f"Kite order {_oid} status={_ks} -- left as PENDING"
-                        )
-                _con.commit()
-                _con.close()
-            except Exception as _db_err:
-                logger.error(f"[NAS-RECONCILE] {_path} reconcile error: {_db_err}")
-        logger.warning(
-            f"[NAS-RECONCILE] Startup reconcile complete: "
-            f"{_total_active} -> ACTIVE, {_total_failed} -> FAILED, "
-            f"{_total_unmatched} left PENDING"
+                        result['orphan_close_errors'] += 1
+            except Exception as orph_err:
+                logger.error(f"[NAS-RECONCILE] orphan scan failed for #{sid}: {orph_err}")
+                result['orphan_close_errors'] += 1
+
+    logger.warning(
+        f"[NAS-RECONCILE] {source} complete: "
+        f"{result['flipped_active']} -> ACTIVE, "
+        f"{result['flipped_failed']} -> FAILED, "
+        f"{result['left_pending']} left PENDING, "
+        f"orphans closed={result['orphans_closed']} "
+        f"(errors={result['orphan_close_errors']})"
+    )
+    return result
+
+
+def _nas_executor_for_db_path(db_path: str):
+    """Return the executor instance whose db file matches db_path. Lazy import to
+    avoid cycles at module load."""
+    try:
+        from services.nas_executor import NasExecutor
+        from services.nas_atm_executor import NasAtmExecutor
+        from services.nas_atm2_executor import NasAtm2Executor
+        from services.nas_atm4_executor import NasAtm4Executor
+        from services.nas_916_executors import (
+            Nas916OtmExecutor, Nas916AtmExecutor, Nas916Atm2Executor, Nas916Atm4Executor,
         )
+        mapping = {
+            'backtest_data/nas_trading.db':          lambda: NasExecutor(config=NAS_DEFAULTS),
+            'backtest_data/nas_atm_trading.db':      lambda: NasAtmExecutor(config=NAS_ATM_DEFAULTS),
+            'backtest_data/nas_atm2_trading.db':     lambda: NasAtm2Executor(config=NAS_ATM2_DEFAULTS),
+            'backtest_data/nas_atm4_trading.db':     lambda: NasAtm4Executor(config=NAS_ATM4_DEFAULTS),
+            'backtest_data/nas_916_otm_trading.db':  lambda: Nas916OtmExecutor(config=NAS_916_OTM_DEFAULTS),
+            'backtest_data/nas_916_atm_trading.db':  lambda: Nas916AtmExecutor(config=NAS_916_ATM_DEFAULTS),
+            'backtest_data/nas_916_atm2_trading.db': lambda: Nas916Atm2Executor(config=NAS_916_ATM2_DEFAULTS),
+            'backtest_data/nas_916_atm4_trading.db': lambda: Nas916Atm4Executor(config=NAS_916_ATM4_DEFAULTS),
+        }
+        factory = mapping.get(db_path)
+        return factory() if factory else None
+    except Exception as e:
+        logger.error(f"[NAS-RECONCILE] executor lookup failed for {db_path}: {e}")
+        return None
+
+
+# Run reconciler at startup
+try:
+    _nas_run_reconciler(close_orphans=True, source="boot")
 except Exception as _rec_err:
     logger.error(f"[NAS-RECONCILE] Startup reconciliation failed: {_rec_err}", exc_info=True)
+
+
+def _nas_periodic_reconcile_job():
+    """APScheduler hook: runs the reconciler every 3 min during market hours."""
+    try:
+        _nas_run_reconciler(close_orphans=True, source="periodic")
+    except Exception as e:
+        logger.error(f"[NAS-RECONCILE] periodic run failed: {e}", exc_info=True)
+
+
+# Schedule the periodic reconcile — every 3 min, 09:15-15:30 IST Mon-Fri
+try:
+    scheduler.add_job(
+        _nas_periodic_reconcile_job,
+        trigger='cron',
+        day_of_week='mon-fri',
+        hour='9-15',
+        minute='*/3',
+        id='_nas_periodic_reconciler',
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+    logger.info("[NAS-RECONCILE] Periodic reconciler scheduled every 3 min, mon-fri 9-15")
+except Exception as _sched_err:
+    logger.error(f"[NAS-RECONCILE] Could not schedule periodic reconciler: {_sched_err}")
 
 
 # =============================================================================
