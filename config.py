@@ -393,11 +393,14 @@ NAS_DEFAULTS = {
     'max_daily_orders': 20,     # Order limit per day
 
     # Safety
-    # 2026-05-23: persisted LIVE state to file so a Flask restart doesn't
-    # silently revert to PAPER. Inherited by NAS_916_OTM_DEFAULTS via spread.
+    # 2026-05-25: flipped back to PAPER after today's go-live. User on
+    # road-trip 26-28 May; system runs in paper to keep DB + EOD report
+    # populated without sending live orders to Kite. Restored to LIVE
+    # when user explicitly flips via /api/nas/master-mode on return.
+    # Inherited by NAS_916_OTM_DEFAULTS via spread.
     'enabled': True,
-    'paper_trading_mode': False,
-    'live_trading_enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
 }
 
 # NAS ATM — Nifty ATR Strangle (ATM, SL-based, cascading re-entry)
@@ -446,12 +449,12 @@ NAS_ATM_DEFAULTS = {
     'max_daily_orders': 40,
 
     # Safety
-    # 2026-05-23: persisted LIVE state to file. Inherited by NAS_ATM2/ATM4
-    # + all 916_ATM* variants via spread, so a single edit here covers
-    # 6 of the 8 NAS variants.
+    # 2026-05-25: flipped back to PAPER after today's go-live. Inherited
+    # by NAS_ATM2/ATM4 + all 916_ATM* via spread (covers 6 of 8 variants).
+    # User restored LIVE explicitly via dashboard when ready.
     'enabled': True,
-    'paper_trading_mode': False,
-    'live_trading_enabled': True,
+    'paper_trading_mode': True,
+    'live_trading_enabled': False,
 }
 
 NAS_ATM2_DEFAULTS = {
