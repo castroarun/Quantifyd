@@ -14,6 +14,88 @@ Update it when work moves between states. When Arun asks "what's pending",
 
 ## Pending (highest-priority first)
 
+### NAS `max_daily_orders` — raise defaults or scale per active strangle
+
+- **What:** Today's incident — Sq OTM hit its `max_daily_orders=20` cap by
+  14:44 IST and got gagged from any further orders, **including its own EOD
+  squareoff and 14:45 time exit**. 28 orders used today = roughly 14 roll
+  cycles × 2 orders each (close + open). Symptom in journal:
+
+  ```
+  WARNING:services.nas_ticker:[NAS] Tick adjustment failed: Daily order limit (20) reached
+  ```
+
+- **Why this happened today (root cause analysis):**
+  1. This morning's PENDING-bypass-guardrail bug let Sq OTM accumulate
+     5 strangles instead of the design intent of 1. (Now fixed in commit
+     `049d727` — won't recur.)
+  2. The cross-leg roll trigger (`_check_premium_tick`) compares the
+     globally-most-expensive vs globally-cheapest leg across **all**
+     subscribed OTM tokens. With 10 OTM legs (5 strangles × 2 legs each)
+     at slightly drifted strikes, the 2.0× ratio condition was *almost
+     always true* — every leg-pair was close enough to the threshold that
+     tiny tick movements kept firing roll attempts. Each roll = 2 orders.
+  3. 20 daily order cap was sized for `max_strangles=1` (i.e. 1 entry +
+     ~9 roll cycles = 19 orders). With 5 strangles in play, that budget
+     was burned through in ~3 hours.
+
+- **Why the simple fix is risky:** Just bumping defaults (e.g. OTM 20→40)
+  treats the symptom. The real failure mode that 20 was protecting
+  against is a *runaway adjustment loop* — if the ticker callback bugs
+  out and keeps firing rolls forever, the daily cap is the last line of
+  defense before the broker rate-limits us or we burn through margin in
+  fees. Removing that without a replacement guardrail is unwise.
+
+- **Chosen design — Option A: scale cap by active-strangle count.**
+
+  `effective_cap = base_cap × max(1, active_strangle_count_today)`
+
+  So with `base_cap=20` on OTM: 1 strangle in play = 20-order budget,
+  3 strangles = 60, 5 strangles = 100. Same for ATM family (`base_cap=40`).
+
+  Rationale: penalises only the over-accumulation case (today's symptom)
+  while preserving the original budget per strangle. From tomorrow with
+  `max_strangles=1` properly enforced, normal operation never sees > 1
+  strangle per variant, so this scaling never kicks in — but it's there
+  as headroom if accumulation ever recurs.
+
+- **Implementation sketch:**
+  ```python
+  # services/nas_executor.py, _check_guardrails (and same in nas_atm_executor.py)
+  base_cap = cfg.get('max_daily_orders', 20)
+  strangles_today = self.db.get_today_strangle_count()   # new helper
+  effective_cap = base_cap * max(1, strangles_today)
+  today_orders = self.db.get_today_order_count()
+  if today_orders >= effective_cap:
+      return False, (
+          f"Daily order limit ({effective_cap}, scaled from base {base_cap} "
+          f"× {strangles_today} strangles) reached"
+      )
+  ```
+
+  The `get_today_strangle_count()` helper queries
+  `SELECT COUNT(DISTINCT strangle_id) FROM <positions_table>
+   WHERE date(entry_time) = date('now','localtime')` —
+  cheap, indexed lookup.
+
+- **Effort:** ~half a day. Two `_check_guardrails` callsites
+  (nas_executor.py and nas_atm_executor.py — subclasses inherit).
+  One new DB helper in each `*_db.py` (nas_db, nas_atm_db, nas_atm2_db,
+  nas_atm4_db). Log the *effective* cap so the gag message is
+  self-explanatory in journal.
+
+- **Side note on Option B + C deferred:** Considered separating entry vs
+  adjustment counters (B) and tick-rate-limiting (C). Option A chosen for
+  simplicity and because it directly maps to the failure mode observed
+  today (over-accumulation → too many rolls). Revisit B or C if Option A
+  isn't sufficient.
+
+- **Side note for today (operational):** Sq OTM's EOD squareoff at 15:15
+  IST will also be blocked by the same cap. User is closing positions
+  manually in Kite to compensate.
+
+- **Gate:** No prerequisites. Ship after market close any day.
+
 ### NAS ATM SL — 2-tick confirmation before firing (filter bid-ask spike noise)
 
 - **What:** Currently the ATM-family per-leg SL fires on the FIRST tick where
