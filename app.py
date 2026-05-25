@@ -121,6 +121,116 @@ try:
 except Exception as _kill_init_err:
     logger.error(f"[NAS-KILL] Startup check failed: {_kill_init_err}")
 
+# --- NAS PENDING -> ACTIVE / FAILED reconciliation -----------------------
+# Live entries occasionally land in the DB as status='PENDING' (e.g. Kite
+# returned an order_id but rejected the order for low funds, or the
+# previously buggy executor never flipped PENDING->ACTIVE). On every Flask
+# boot, ask Kite for the actual status of each PENDING live order and
+# reconcile: COMPLETE -> ACTIVE, REJECTED/CANCELLED -> FAILED, otherwise
+# leave alone for a later run. Without this, the SL monitor and adjustment
+# logic are blind to those positions, even though they may be real on Kite.
+try:
+    from datetime import date as _date
+    import sqlite3 as _sqlite3
+    _NAS_DBS_FOR_RECONCILE = [
+        ('backtest_data/nas_trading.db',         'nas_positions'),
+        ('backtest_data/nas_atm_trading.db',     'nas_atm_positions'),
+        ('backtest_data/nas_atm2_trading.db',    'nas_atm_positions'),
+        ('backtest_data/nas_atm4_trading.db',    'nas_atm_positions'),
+        ('backtest_data/nas_916_otm_trading.db', 'nas_positions'),
+        ('backtest_data/nas_916_atm_trading.db', 'nas_atm_positions'),
+        ('backtest_data/nas_916_atm2_trading.db','nas_atm_positions'),
+        ('backtest_data/nas_916_atm4_trading.db','nas_atm_positions'),
+    ]
+    _kite_orders_by_id = None
+    try:
+        from services.kite_service import get_kite as _get_kite_for_reconcile
+        _kite_for_reconcile = _get_kite_for_reconcile()
+        _kite_orders_by_id = {}
+        for _o in (_kite_for_reconcile.orders() or []):
+            _oid = str(_o.get('order_id') or '')
+            if _oid:
+                _kite_orders_by_id[_oid] = (
+                    str(_o.get('status') or '').upper(),
+                    str(_o.get('status_message') or ''),
+                )
+        logger.info(f"[NAS-RECONCILE] Loaded {len(_kite_orders_by_id)} orders from Kite")
+    except Exception as _kite_err:
+        logger.warning(
+            f"[NAS-RECONCILE] kite.orders() unavailable at startup: {_kite_err} "
+            f"-- skipping reconciliation, will run next restart"
+        )
+
+    if _kite_orders_by_id is not None:
+        _total_active = 0
+        _total_failed = 0
+        _total_unmatched = 0
+        for _path, _tab in _NAS_DBS_FOR_RECONCILE:
+            _full_path = Path(__file__).parent / _path
+            if not _full_path.exists():
+                continue
+            try:
+                _con = _sqlite3.connect(str(_full_path))
+                _pending = _con.execute(
+                    f"SELECT id, kite_order_id, tradingsymbol FROM {_tab} "
+                    f"WHERE status='PENDING' AND mode='live' "
+                    f"AND kite_order_id IS NOT NULL AND kite_order_id != '' "
+                    f"AND kite_order_id != 'None'"
+                ).fetchall()
+                for _row_id, _oid, _tsym in _pending:
+                    _oid = str(_oid or '').strip()
+                    if not _oid or _oid == 'None':
+                        continue
+                    _ks_tuple = _kite_orders_by_id.get(_oid)
+                    if _ks_tuple is None:
+                        _total_unmatched += 1
+                        logger.info(
+                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
+                            f"Kite order {_oid} not in today's orderbook -- left as PENDING"
+                        )
+                        continue
+                    _ks, _msg = _ks_tuple
+                    if _ks == 'COMPLETE':
+                        _con.execute(
+                            f"UPDATE {_tab} SET status='ACTIVE' WHERE id=?",
+                            (_row_id,),
+                        )
+                        _total_active += 1
+                        logger.warning(
+                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
+                            f"PENDING->ACTIVE (Kite order {_oid} COMPLETE)"
+                        )
+                    elif _ks in ('REJECTED', 'CANCELLED'):
+                        _note = f"Kite order {_oid} {_ks}"
+                        if _msg:
+                            _note += f": {_msg}"
+                        _con.execute(
+                            f"UPDATE {_tab} SET status='FAILED', notes=? WHERE id=?",
+                            (_note, _row_id),
+                        )
+                        _total_failed += 1
+                        logger.warning(
+                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
+                            f"PENDING->FAILED ({_note})"
+                        )
+                    else:
+                        _total_unmatched += 1
+                        logger.info(
+                            f"[NAS-RECONCILE] {_path}#{_row_id} {_tsym}: "
+                            f"Kite order {_oid} status={_ks} -- left as PENDING"
+                        )
+                _con.commit()
+                _con.close()
+            except Exception as _db_err:
+                logger.error(f"[NAS-RECONCILE] {_path} reconcile error: {_db_err}")
+        logger.warning(
+            f"[NAS-RECONCILE] Startup reconcile complete: "
+            f"{_total_active} -> ACTIVE, {_total_failed} -> FAILED, "
+            f"{_total_unmatched} left PENDING"
+        )
+except Exception as _rec_err:
+    logger.error(f"[NAS-RECONCILE] Startup reconciliation failed: {_rec_err}", exc_info=True)
+
 
 # =============================================================================
 # Decorators

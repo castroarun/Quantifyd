@@ -152,8 +152,16 @@ class NasExecutor:
                     product='MIS',  # Intraday product
                     order_type='MARKET',
                 )
-                self.db.update_position(position_id, kite_order_id=str(order_id))
-                logger.info(f"Kite order placed: {order_id} for {tradingsymbol}")
+                # MARKET orders fill effectively instantly. Flip to ACTIVE
+                # so the SL monitor, adjustment logic, dashboard, and ticker
+                # subscribe loop all see the position right away. Any rare
+                # rejection is handled by the except branch below.
+                self.db.update_position(
+                    position_id,
+                    status='ACTIVE',
+                    kite_order_id=str(order_id),
+                )
+                logger.info(f"Kite order placed (ACTIVE): {order_id} for {tradingsymbol}")
             except Exception as e:
                 logger.error(f"Kite order failed: {e}")
                 self.db.update_position(position_id, status='FAILED', notes=str(e))
