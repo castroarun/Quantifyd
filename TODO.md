@@ -14,6 +14,65 @@ Update it when work moves between states. When Arun asks "what's pending",
 
 ## Pending (highest-priority first)
 
+### NAS ATM SL — 2-tick confirmation before firing (filter bid-ask spike noise)
+
+- **What:** Currently the ATM-family per-leg SL fires on the FIRST tick where
+  `live_prem >= sl_price` ([nas_atm_executor.py:check_and_handle_sl line 358-363](services/nas_atm_executor.py#L358-L363)).
+  Today's 4 SL fires on the 24000 PE breached SL by tiny margins (0.02 to 0.78
+  on a ~Rs 127 premium = 0.02% to 0.6%) — well within bid-ask noise. Today
+  happened to be a trending day so the breaches kept moving past SL anyway,
+  but on a chop day this exact pattern would generate false exits.
+
+  Mirror the OTM cross-leg roll's existing 2-tick debounce pattern
+  ([nas_ticker.py:_check_premium_tick lines 488-548](services/nas_ticker.py#L488-L548))
+  and require N consecutive ticks above SL before firing.
+
+- **Why:** Cost of waiting 1 extra tick on a real breakout is ~Rs 0.50-1.50
+  slippage per leg (~Rs 30-100 of P&L on a 65 qty NIFTY ATM leg). Benefit is
+  not closing prematurely on a single-tick artifact that immediately retreats.
+  On chop days the benefit dominates by an order of magnitude.
+
+- **Design — asymmetric confirmation by detection path:**
+  - **WebSocket tick path** (`_check_atm_premium_tick` in nas_ticker.py):
+    add 2-tick consecutive-breach confirmation using a per-token counter
+    that mirrors the existing `_adj_confirm` dict. Reset to 0 on any
+    non-breaching tick.
+  - **REST poll path** (`_nas_916_sl_monitor` every 10s): keep first-poll
+    fire (no confirmation). This path is the safety net when the WS is dead
+    — adding a wait there would delay response by 10-30s and defeat the net.
+
+- **Scope:** ATM, ATM2, ATM4 across Sq + 916 (6 of 8 variants total). OTM
+  family doesn't have per-leg SL — they already use 2-tick cross-leg roll
+  separately. No change needed there.
+
+- **Sketch:**
+  ```python
+  # nas_ticker.py
+  self._atm_sl_confirm: Dict[int, int] = {}   # token -> consecutive breach count
+
+  # Inside the tick callback that checks ATM SL:
+  sl = info.get('sl_price')
+  if sl and ltp >= sl:
+      n = self._atm_sl_confirm.get(token, 0) + 1
+      self._atm_sl_confirm[token] = n
+      if n >= ATM_SL_CONFIRM_TICKS:   # config-driven, default 2
+          ...fire SL exit (existing path)...
+          self._atm_sl_confirm[token] = 0
+  else:
+      self._atm_sl_confirm[token] = 0
+  ```
+
+- **Effort:** ~half a day. Three callsites in nas_ticker.py (`_check_atm_premium_tick`,
+  `_check_atm2_premium_tick`, `_check_atm4_premium_tick`). Add
+  `ATM_SL_CONFIRM_TICKS = 2` constant in `config.py` as a tunable.
+
+- **Side-effect to be mindful of:** For ATM2's `exit_both_on_sl`, the 1-tick
+  delay also defers the CE-leg buyback. Usually this is a wash (CE moves
+  opposite to PE) but worth a quick post-deploy review of net P&L impact
+  across 1-2 weeks of trades.
+
+- **Gate:** Deploy after market close any weekday. No prerequisites.
+
 ### NAS Tier 1 — Exchange-side SL-M (port ORB pattern; required before scaling NAS past Rs 25L)
 
 - **What:** Today the per-leg SL on every NAS variant is checked in-memory by the
