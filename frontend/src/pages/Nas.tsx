@@ -693,6 +693,23 @@ interface TBRow {
   pnl: number;
   open: boolean;
   reason?: string;
+  inTime: string;        // entry time HH:MM
+  outTime: string;       // exit time HH:MM ('' while open)
+}
+
+// Compact status tags so the column stays narrow and the P&L stays next to it.
+const REASON_SHORT: Record<string, string> = {
+  adj_boundary_exit_no_strike: 'BOUNDARY',
+  PHANTOM_PAPER_NO_BROKER: 'PHANTOM',
+  MANUAL_USER_ROLL: 'MANUAL',
+  time_exit: 'TIME',
+  eod_squareoff: 'EOD',
+  SL_EXIT_BOTH: 'SL-BOTH',
+  SL_HIT: 'SL',
+};
+function shortReason(r?: string): string {
+  if (!r) return 'CLOSED';
+  return REASON_SHORT[r] ?? r.toUpperCase();
 }
 
 function buildTradeBook(
@@ -716,6 +733,8 @@ function buildTradeBook(
         sysId: sys.id, sysLabel: sys.label, family: sys.group,
         side: (p.leg ?? '').toUpperCase(), strike: p.strike ?? null, qty,
         entry, exit: ltp, pnl, open, reason: p.exit_reason ?? undefined,
+        inTime: formatLegTime(p.entry_time) ?? '',
+        outTime: open ? '' : (formatLegTime(p.exit_time) ?? ''),
       });
     };
     [...(pos.ce ?? []), ...(pos.pe ?? [])].forEach((p) => push(p, true));
@@ -767,7 +786,9 @@ function TradeBook({ systems, states, liveLegs }: {
   });
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
-  const gridCols = mode === 'system' ? '40px 64px 52px 1fr 96px' : '128px 40px 64px 52px 1fr 96px';
+  const gridCols = mode === 'system'
+    ? '34px 58px 46px 104px 116px 48px 48px 86px'
+    : '120px 34px 58px 46px 104px 116px 48px 48px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -800,13 +821,24 @@ function TradeBook({ systems, states, liveLegs }: {
       </div>
 
       <div style={{ fontSize: 'var(--text-xs)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+        {/* column header */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: gridCols, gap: 8, padding: '2px 0',
+          color: 'var(--ink-faint, #6e7681)', fontSize: 10, letterSpacing: '0.04em',
+          borderBottom: '1px solid var(--line)',
+        }}>
+          {mode !== 'system' && <span>SYSTEM</span>}
+          <span>C/P</span><span>STRIKE</span><span>QTY</span><span>ENTRY→EXIT</span>
+          <span>STATUS</span><span>IN</span><span>OUT</span>
+          <span style={{ textAlign: 'right' }}>P&amp;L</span>
+        </div>
         {groups.map((g) => {
           const gp = g.rows.reduce((a, r) => a + r.pnl, 0);
           return (
-            <div key={g.key} style={{ marginBottom: 14 }}>
+            <div key={g.key} style={{ marginBottom: 10 }}>
               <div style={{
                 display: 'flex', justifyContent: 'space-between',
-                borderBottom: '1px solid var(--line)', padding: '5px 0', fontWeight: 600,
+                borderBottom: '1px solid var(--line)', padding: '5px 0', fontWeight: 600, marginTop: 6,
               }}>
                 <span>{g.label}</span>
                 <span style={{ color: col(gp) }}>group {inr(gp)}</span>
@@ -816,20 +848,24 @@ function TradeBook({ systems, states, liveLegs }: {
                   key={`${r.sysId}-${r.side}-${r.strike}-${r.open ? 'o' : 'c'}-${i}`}
                   style={{
                     display: 'grid', gridTemplateColumns: gridCols, gap: 8,
-                    padding: '3px 0', alignItems: 'center', opacity: r.open ? 1 : 0.6,
+                    padding: '3px 0', alignItems: 'center', opacity: r.open ? 1 : 0.62,
                   }}
                 >
-                  {mode !== 'system' && <span style={{ color: 'var(--ink-muted)' }}>{r.sysLabel}</span>}
+                  {mode !== 'system' && (
+                    <span style={{ color: 'var(--ink-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.sysLabel}</span>
+                  )}
                   <span style={{ fontWeight: 700, color: r.side === 'CE' ? '#d29922' : '#a371f7' }}>{r.side}</span>
                   <span>{r.strike ?? '—'}</span>
                   <span style={{ color: 'var(--ink-muted)' }}>×{r.qty}</span>
                   <span style={{ color: 'var(--ink-muted)' }}>
                     {r.entry != null ? r.entry.toFixed(1) : '—'} → {r.exit != null ? r.exit.toFixed(1) : '—'}
-                    {'  '}
-                    <span style={{ color: r.open ? '#3fb950' : 'var(--ink-faint, #6e7681)' }}>
-                      {r.open ? 'OPEN' : (r.reason || 'CLOSED')}
-                    </span>
                   </span>
+                  <span style={{
+                    color: r.open ? '#3fb950' : 'var(--ink-faint, #6e7681)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{r.open ? 'OPEN' : shortReason(r.reason)}</span>
+                  <span style={{ color: 'var(--ink-muted)' }}>{r.inTime || '—'}</span>
+                  <span style={{ color: 'var(--ink-muted)' }}>{r.outTime || '—'}</span>
                   <span style={{ textAlign: 'right', color: col(r.pnl), fontWeight: 600 }}>{inr(r.pnl)}</span>
                 </div>
               ))}
@@ -1064,10 +1100,10 @@ function PnlChart({ points, events, expanded = false, extraSeries }: PnlChartPro
             const ticks: Array<{ x: number; lab: string }> = [];
             const start = new Date(tMin);
             start.setSeconds(0, 0);
-            // round up to next 5-min boundary
+            // round up to next 15-min boundary (15-min marks, 30-min labels)
             const m = start.getMinutes();
-            start.setMinutes(m + ((5 - (m % 5)) % 5));
-            for (let t = start.getTime(); t <= tMax + 1; t += 5 * 60 * 1000) {
+            start.setMinutes(m + ((15 - (m % 15)) % 15));
+            for (let t = start.getTime(); t <= tMax + 1; t += 15 * 60 * 1000) {
               const dt = new Date(t);
               const x =
                 PAD_X + ((t - tMin) / tSpan) * (W - 2 * PAD_X);
@@ -1077,8 +1113,8 @@ function PnlChart({ points, events, expanded = false, extraSeries }: PnlChartPro
               ).padStart(2, '0')}`;
               ticks.push({ x, lab });
             }
-            // thin out labels if too many (>16 ticks → label every other)
-            const step = ticks.length > 16 ? 2 : 1;
+            // label every other 15-min tick (= every 30 min) when dense
+            const step = ticks.length > 14 ? 2 : 1;
             return (
               <g>
                 {ticks.map((t, i) => (
@@ -1103,31 +1139,41 @@ function PnlChart({ points, events, expanded = false, extraSeries }: PnlChartPro
       ) : null}
     </svg>
     {(() => {
-      // HTML overlay event dots — percent-positioned over the SVG so they stay
-      // round despite preserveAspectRatio="none". No inline labels (they
-      // cluttered the chart); hover a dot to see the adjustment detail via the
-      // native title tooltip.
-      return events
-        .map((e, i) => {
-          const tMs = new Date(e.ts).getTime();
-          if (tMs < tMin - 1 || tMs > tMax + 1) return null;
-          const xPct = (xOf(e.ts) / W) * 100;
-          const yPct = (yOf(interpY(e.ts)) / H) * 100;
-          const color = EVENT_COLOR[e.type] || '#888';
-          const size = expanded ? 9 : 7;
-          return (
-            <span
-              key={`m-${e.ts}-${i}`}
-              className={styles.markerDot}
-              style={{
-                left: `${xPct}%`, top: `${yPct}%`,
-                width: size, height: size, background: color,
-              }}
-              title={`${e.label}${e.sym ? ' · ' + e.sym : ''} @ ${e.ts.slice(11, 16)}`}
-            />
-          );
-        })
-        .filter(Boolean);
+      // Cluster events into small time-buckets so overlapping markers collapse
+      // into ONE dot; hovering lists every event in that bucket. Dots are event
+      // markers riding the Overall curve (not points of the 9:16/Squeeze lines).
+      const BUCKET = 1.6; // ~5-6 min at full-day width
+      const buckets = new Map<number, { xPct: number; yPct: number; evs: MtmEvent[] }>();
+      events.forEach((e) => {
+        const tMs = new Date(e.ts).getTime();
+        if (tMs < tMin - 1 || tMs > tMax + 1) return;
+        const xPct = (xOf(e.ts) / W) * 100;
+        const key = Math.round(xPct / BUCKET);
+        const ex = buckets.get(key);
+        if (ex) ex.evs.push(e);
+        else buckets.set(key, { xPct, yPct: (yOf(interpY(e.ts)) / H) * 100, evs: [e] });
+      });
+      const size = expanded ? 8 : 6;
+      return Array.from(buckets.values()).map((b, i) => {
+        const types = new Set(b.evs.map((e) => e.type));
+        const color = types.size === 1 ? (EVENT_COLOR[b.evs[0].type] || '#888') : '#9ca3af';
+        const multi = b.evs.length > 1;
+        const tip = b.evs
+          .map((e) => `${e.ts.slice(11, 16)}  ${e.label}${e.sym ? ' ' + e.sym : ''}`)
+          .join('\n');
+        return (
+          <span
+            key={`mk-${i}`}
+            className={styles.markerDot}
+            style={{
+              left: `${b.xPct}%`, top: `${b.yPct}%`,
+              width: size, height: size, background: color,
+              boxShadow: multi ? '0 0 0 1.5px rgba(255,255,255,0.6)' : undefined,
+            }}
+            title={multi ? `${b.evs.length} events\n${tip}` : tip}
+          />
+        );
+      });
     })()}
     </div>
   );
