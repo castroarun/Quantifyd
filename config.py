@@ -390,7 +390,13 @@ NAS_DEFAULTS = {
     # Capital & Risk
     'capital': 300_000,         # 3L margin for short strangle
     'max_daily_loss': 15_000,   # Daily loss circuit breaker
-    'max_daily_orders': 20,     # Order limit per day
+    # 2026-05-29: raised 20→40 after the morning cross-leg roll-thrash burned
+    # the 20-order budget by 11:38 and gagged Sq-OTM (couldn't rebalance). Safe
+    # now that the cross-leg roll carries a 90s cooldown (nas_ticker
+    # _check_premium_tick) rate-limiting adjustments — the cap is the runaway
+    # backstop, the cooldown is the rate limit. Inherited by 916-OTM via spread.
+    'max_daily_orders': 40,     # Order limit per day (OTM family)
+    'adj_cooldown_sec': 90,     # Min secs between cross-leg rolls (anti-thrash)
 
     # Safety
     # 2026-05-25: flipped back to PAPER after today's go-live. User on
