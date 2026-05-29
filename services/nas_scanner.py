@@ -695,6 +695,17 @@ class NasScanner:
         elif not result['filters']['premium_ok']:
             entry_blocked = True
             block_reason = f'Combined premium {call_prem + put_prem:.1f} < min {min_prem}'
+        elif call_strike is None or put_strike is None:
+            entry_blocked = True
+            block_reason = 'Strike selection returned no valid strike — skipping entry'
+        elif call_prem < cfg.get('min_leg_premium', 5.0) or put_prem < cfg.get('min_leg_premium', 5.0):
+            # Per-leg premium floor — never sell near-worthless deep-OTM strikes.
+            # A stale/failed live-chain lookup falling back to ATR strikes
+            # (1.5x ATR OTM) can pick strikes worth ~Rs 3 vs the ~Rs 20 target,
+            # producing a junk, unbalanced strangle (2026-05-29 Sq-OTM churn).
+            entry_blocked = True
+            block_reason = (f'Per-leg premium below floor (CE {call_prem:.1f}, PE {put_prem:.1f}, '
+                            f'min {cfg.get("min_leg_premium", 5.0)}) — deep-OTM/stale-chain guard')
         elif max_vix is not None and vix is not None and vix > max_vix:
             entry_blocked = True
             block_reason = f'VIX {vix:.1f} > max {max_vix}'
