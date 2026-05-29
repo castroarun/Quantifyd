@@ -580,11 +580,74 @@ def _start_all_tickers():
         logger.warning(f"[Auth] NAS ticker start failed: {e}")
 
 
+# ---------------------------------------------------------------------------
+# Persist NAS master live/paper mode across restarts.
+# /api/nas/master-mode only writes the in-process *_DEFAULTS dicts, so a restart
+# silently reverted all 8 variants to the config.py paper default (2026-05-29
+# incident: a mid-session restart left real live positions unmanaged by a now-
+# paper app). We persist the chosen mode to a sentinel file and re-apply it on
+# boot. Fail-safe: missing/corrupt file -> keep config.py defaults (paper).
+# ---------------------------------------------------------------------------
+_NAS_MODE_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "backtest_data", "nas_master_mode.json")
+
+
+def _nas_mode_configs():
+    return [NAS_DEFAULTS, NAS_ATM_DEFAULTS, NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
+            NAS_916_OTM_DEFAULTS, NAS_916_ATM_DEFAULTS, NAS_916_ATM2_DEFAULTS,
+            NAS_916_ATM4_DEFAULTS]
+
+
+def _apply_nas_master_mode(mode):
+    """Apply 'off'|'paper'|'live' to all 8 NAS variant configs in-process."""
+    for cfg in _nas_mode_configs():
+        if mode == 'off':
+            cfg['enabled'] = False
+        elif mode == 'paper':
+            cfg['enabled'] = True
+            cfg['paper_trading_mode'] = True
+        elif mode == 'live':
+            cfg['enabled'] = True
+            cfg['paper_trading_mode'] = False
+
+
+def _save_nas_master_mode(mode):
+    """Persist the master mode so it survives a restart."""
+    try:
+        os.makedirs(os.path.dirname(_NAS_MODE_FILE), exist_ok=True)
+        with open(_NAS_MODE_FILE, 'w') as f:
+            json.dump({'mode': mode}, f)
+        logger.info(f"[NAS-MASTER] persisted mode '{mode}'")
+    except Exception as e:
+        logger.error(f"[NAS-MASTER] could not persist mode: {e}")
+
+
+def _restore_nas_master_mode_on_boot():
+    """Re-apply the last persisted master mode on startup so a restart does not
+    silently revert LIVE->paper. Fail-safe: missing/corrupt -> keep paper.
+    The persistent kill-switch (nas_kill.flag) still overrides at entry time."""
+    try:
+        if not os.path.exists(_NAS_MODE_FILE):
+            logger.info("[NAS-MASTER] no persisted mode — keeping config default (paper)")
+            return
+        with open(_NAS_MODE_FILE) as f:
+            mode = (json.load(f) or {}).get('mode')
+        if mode in ('off', 'paper', 'live'):
+            _apply_nas_master_mode(mode)
+            logger.warning(f"[NAS-MASTER] restored persisted mode on boot: '{mode}'")
+        else:
+            logger.warning(f"[NAS-MASTER] persisted mode invalid ({mode!r}) — keeping paper")
+    except Exception as e:
+        logger.error(f"[NAS-MASTER] mode restore failed ({e}) — keeping paper")
+
+
 def _bootstrap_tickers_on_startup():
     """On gunicorn boot, if access token is already valid, start tickers
     immediately. This covers `systemctl restart` where the token was cached
     from a prior login — without this, tickers only start on the next TOTP
     login flow."""
+    # Re-apply persisted live/paper mode BEFORE tickers start (token-independent).
+    _restore_nas_master_mode_on_boot()
     try:
         from services.kite_service import get_access_token
         if not get_access_token():
@@ -4431,6 +4494,8 @@ def api_nas_master_mode():
                 cfg['paper_trading_mode'] = False
             logger.info(f"[NAS-MASTER] {name}: enabled={cfg['enabled']} paper={cfg['paper_trading_mode']}")
 
+        # Persist so the mode survives a restart (else boot reverts to paper).
+        _save_nas_master_mode(mode)
         result_mode = consolidate()
         logger.warning(f"[NAS-MASTER] All 8 NAS systems set to '{mode}' (consolidated={result_mode})")
         return jsonify({

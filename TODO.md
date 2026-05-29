@@ -14,6 +14,68 @@ Update it when work moves between states. When Arun asks "what's pending",
 
 ## Pending (highest-priority first)
 
+### 🔴 TOP: Persist NAS live/paper mode across restart (mode is in-memory only)
+
+- **What:** `/api/nas/master-mode` POST writes the live/paper flag **only to the
+  in-process `*_DEFAULTS` dicts** ([app.py:4370-4372](app.py#L4370-L4372)).
+  Nothing persists it, and the bootstrap reads `config.py`'s
+  `paper_trading_mode=True` default on boot. So **every restart silently
+  reverts all 8 NAS variants to PAPER**, even if they were LIVE.
+- **Why it's critical (real incident 2026-05-29 ~12:25):** a mid-market restart
+  reverted live→paper. The broker still held ~15 live legs, but the now-paper
+  app stopped managing them with real orders, **paper-closed the Sq-OTM legs in
+  the DB while they stayed open at the broker** (orphan), and a paper squeeze
+  re-entry created phantom rows. Recovery required a manual re-flip to live +
+  DB re-adopt + phantom cleanup. If unnoticed, the EOD squareoff would have
+  "paper-squared" while real shorts sat open overnight-risk.
+- **Fix:** persist the master mode to a small state file (e.g.
+  `backtest_data/nas_master_mode.json`) on every POST, and have the Flask
+  bootstrap read it on startup and apply it to all 8 `*_DEFAULTS` before tickers
+  start. Fail safe: if the file is missing/corrupt, default to PAPER. Show the
+  resolved mode in the boot log.
+- **Related bugs found same session (stage alongside):**
+  1. **Cross-variant OTM pooling** — `_check_premium_tick` pools Sq-OTM + 916-OTM
+     legs into one comparison ("Subscribed N OTM legs (Sq + 916)") with a single
+     global `_adj_triggered`/`_adj_next_direction`, and `_fire_tick_adjustment`
+     hard-routes every roll to `NasExecutor` (squeeze). So a 916 leg's premium
+     can trigger a roll on the squeeze book, and 916-OTM never gets its own roll.
+     Scope the comparison + routing per-strangle/per-variant.
+  2. **No-strike → strangle close instead of roll** — when the roll target
+     premium has no strike in `[adj_min, adj_max]`, the OTM executor does an
+     emergency `close-both` ("No live strike found … closing strangle"). On
+     2026-05-29 this repeatedly closed the Sq-OTM instead of rolling. Widen the
+     search / pick nearest strike rather than exiting the position.
+  3. **Malformed weekly symbol on paper re-entry** — the paper Sq-OTM re-entry at
+     12:30 created `NIFTY266224300CE` (16 chars, missing a digit vs the correct
+     17-char `NIFTY2660224300CE`) → phantom DB rows that can't resolve a token.
+     Audit the strike→tradingsymbol builder used on (re-)entry.
+  4. **Cards advertise behavior the code doesn't do** — ATM/ATM2 cards say
+     "close BOTH + re-enter, max 5 re-entries" but the code does close-stopped +
+     naked-survivor-ST(7,2) (plain ATM) or close-both-no-reenter (ATM2). Decide
+     intended behavior (restore cascade re-entry vs fix the card text). [user
+     to choose A/B]
+  5. **Broken strike selection on squeeze re-entry (highest-impact OTM bug)** —
+     on 2026-05-29 the Sq-OTM kept re-entering the SAME strikes (24300CE/23400PE)
+     on each fresh squeeze (12:25/12:30/12:35/12:45) instead of premium-based
+     re-selecting near ~₹20. As spot drifted, those strikes went deep-OTM
+     (24300CE entered @₹3.56) and the no-strike→boundary-exit bug (#2) instantly
+     closed them, writing garbage P&L (mismatched exit prices: sold @3.56,
+     recorded exit @21.05 → fake −₹2,274). Real money was ~flat (broker
+     round-tripped in seconds, daily_pnl=0) but it churned real orders + polluted
+     the dashboard (headline −₹4,143 vs curve +₹497 vs daily_pnl 0 — three
+     disagreeing P&L calcs). **TEMP STOP applied 2026-05-29 12:55:** Sq-OTM
+     `entry_end_time` hot-set to "12:00" via /api/nas/config (blocks entries, no
+     restart; reverts to 14:30 on next restart). Fix the entry to premium-select
+     fresh strikes every time, and re-enable (reset entry_end_time) once fixed.
+  Also: the Day-P&L reporting inconsistency (state.daily_pnl vs closed-trade-sum
+  vs MTM curve) needs a single source of truth so the dashboard can't show
+  three different numbers.
+- **Deployed live 2026-05-29 (already on main, now running):** 916-ATM4 roll
+  mode/ACTIVE fix (`4eccc96`), OTM roll 90s cooldown (`560bfa0`), OTM cap 20→40
+  (`38ddc76`), dashboard strike-only leg display (`97a1d22`). NAS re-flipped LIVE
+  in-memory after the restart — **will revert to paper on next restart until the
+  persist fix above ships.**
+
 ### NAS `max_daily_orders` — raise defaults or scale per active strangle
 
 - **What:** Today's incident — Sq OTM hit its `max_daily_orders=20` cap by
