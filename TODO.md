@@ -70,12 +70,14 @@ Update it when work moves between states. When Arun asks "what's pending",
   Also: the Day-P&L reporting inconsistency (state.daily_pnl vs closed-trade-sum
   vs MTM curve) needs a single source of truth so the dashboard can't show
   three different numbers.
-- **Staged on main 2026-05-29 — DEPLOY AFTER 15:30 (pull + restart):**
-  persist live/paper mode (`262237f`, fixes the revert), no-strike→HOLD not close
-  (`033d12d`, fixes bug #2), per-leg premium floor on entry (`2844f6a`, fixes
-  bug #5). All compile-clean on VPS, NOT yet restarted. **After deploy: reset
-  Sq-OTM `entry_end_time` (POST /api/nas/config) to re-enable it** — it's
-  temp-stopped at "12:00" in memory (reverts to 14:30 on the restart anyway).
+- **✅ DEPLOYED LIVE 2026-05-29 ~22:48 IST (after close, pull + restart):**
+  persist live/paper mode (`262237f`, fixes the revert — **VALIDATED**: boot
+  logged "restored persisted mode on boot: 'live'"), no-strike→HOLD not close
+  (`033d12d`, bug #2), per-leg premium floor on entry (`2844f6a`, bug #5). Boot
+  reconcile orphans=0, all 8 variants FLAT post-EOD, mode=live persisted.
+  Sq-OTM `entry_end_time` auto-reverted to 14:30 on restart → re-enabled for
+  tomorrow with the fixes in place (no churn expected). **This TOP item is
+  RESOLVED** — persist-mode is fixed & proven.
 - **Still open (deferred — now non-urgent):** bug #1 cross-variant OTM pooling +
   per-variant executor routing. With #2 (hold) + #5 (no junk entries) + the 90s
   cooldown, the cross-variant trigger no longer drives destructive loops, so this
@@ -596,6 +598,27 @@ Update it when work moves between states. When Arun asks "what's pending",
   SL each tick when `position.exit_policy.startswith('T_CHANDELIER')` or
   `'T_STEP_TRAIL'`. Track highest-high (long) / lowest-low (short) since
   entry in DB.
+
+### 🟡 research/43 H-pattern continuation — Phase 3 (threshold sweep / 2-min)
+
+- **What (P1+P2 done 2026-05-29):** intraday H (pole→flag→continuation) on 5-min,
+  375 stocks + NIFTY50. P1: raw pattern is breakeven-gross, net-negative after
+  6 bps (best breakout|MM net −0.035R). **P2: confluence filters flip it
+  net-positive — prev-day-low break is the decisive filter.** Best = **short-only
+  breakout|MM + `pdl+trend`**: short-net **+0.060R**, PF 1.03, +1,130 total R over
+  32.6k short trades. Verdicts:
+  [results/RESULTS.md](research/43_h_pattern_continuation/results/RESULTS.md) +
+  [results/RESULTS_P2.md](research/43_h_pattern_continuation/results/RESULTS_P2.md).
+- **Why it's not closed:** edge is **thin (PF ~1.03)** — clears net>0 but fails the
+  PF>1.2 gate. Real but marginal; a confluence overlay, not a standalone book.
+- **How (next, highest value):** detection-threshold sweep (POLE_ATR, RETR_MAX,
+  FLAG_MAX, WIDTH_ATR) on the **short-only `pdl+trend` breakout|MM** config — a
+  tighter H definition is the likeliest way to push PF >1.2. Add short-only
+  win/loss split to the tally so short-book PF is computed exactly (P2 only has
+  combined PF).
+- **Blocked sub-item:** 2-min entry refinement — **no 2-min data in DB**; needs a
+  Kite 2-min download (VPS-only per project rule) before it can be tested.
+- **Decision pending from Arun:** pursue Phase 3, or shelve (thin edge)?
 
 ---
 
