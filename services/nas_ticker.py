@@ -215,6 +215,7 @@ class NasTicker:
         self._adj_triggered = False  # prevent duplicate adjustments
         self._adj_confirm: Dict[int, int] = {}  # token → consecutive trigger tick count
         self._adj_next_direction = 'OUT'  # alternates OUT/IN, resets on new strangle
+        self._last_adj_ts = 0.0  # epoch secs of last cross-leg roll (anti-thrash cooldown)
 
         # NAS ATM option leg monitoring (separate SL tracking)
         self._atm_option_tokens: Dict[int, dict] = {}  # token → {tradingsymbol, sl_price, position_id, ...}
@@ -505,9 +506,19 @@ class NasTicker:
             count = self._adj_confirm.get(confirm_key, 0) + 1
             self._adj_confirm[confirm_key] = count
             if count >= 2:
+                # Anti-thrash cooldown: don't fire another cross-leg roll within
+                # adj_cooldown_sec of the last one. The OUT/IN alternation can
+                # oscillate the same leg every few seconds when the cross-leg
+                # ratio hovers at the trigger, churning 2 orders/cycle and
+                # burning the daily order cap (2026-05-29 Sq-OTM 20/20 gag).
+                import time as _time
+                cooldown = cfg.get('adj_cooldown_sec', 90)
+                if (_time.time() - self._last_adj_ts) < cooldown:
+                    return
                 # Confirmed — determine direction with alternation + boundary checks
                 self._adj_triggered = True
                 self._adj_confirm[confirm_key] = 0
+                self._last_adj_ts = _time.time()
 
                 # Determine adjustment: direction + boundary logic
                 adj_leg_info, adj_ltp, action, target_prem, close_both = \
