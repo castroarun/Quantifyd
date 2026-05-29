@@ -1335,7 +1335,12 @@ function LegRow({
   closed?: boolean;
   reason?: string;
 }) {
-  const tsym = shortOptionSymbol(leg.tradingsymbol);
+  // Show just the strike (e.g. "24300") — the CE/PE side is already shown as
+  // the badge to the left, so the full contract code is noise. Fall back to
+  // the shortened symbol only if the numeric strike is unavailable.
+  const tsym = leg.strike != null
+    ? String(Math.round(leg.strike))
+    : shortOptionSymbol(leg.tradingsymbol);
   const entry = leg.entry_price ?? leg.entry_premium;
   const ltp = leg.ltp ?? leg.exit_price;
   const pnl = leg.pnl_inr;
