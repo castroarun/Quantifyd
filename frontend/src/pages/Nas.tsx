@@ -644,6 +644,9 @@ export default function Nas() {
         </div>
       </section>
 
+      {/* Trade Book — grouped active+closed trades with group P&L (EOD report) */}
+      <TradeBook systems={ALL_SYSTEMS} states={states} liveLegs={liveTicks.legs} />
+
       {/* Config footer */}
       <section className={styles.sectionBlock}>
         <div className={styles.configFooter}>
@@ -660,6 +663,171 @@ export default function Nas() {
       </section>
     </div>
     </LiveTicksContext.Provider>
+  );
+}
+
+/* ---------- Trade Book (grouped active + closed trades, EOD report) ---------- */
+
+type TBGroupMode = 'system' | 'family' | 'all';
+
+interface TBRow {
+  sysId: string;
+  sysLabel: string;
+  family: string;
+  side: string;          // 'CE' | 'PE'
+  strike: number | null;
+  qty: number;
+  entry: number | null;
+  exit: number | null;   // exit price (closed) or live ltp (open)
+  pnl: number;
+  open: boolean;
+  reason?: string;
+}
+
+function buildTradeBook(
+  systems: SystemDef[],
+  states: Record<string, SystemStateRecord>,
+  liveLegs: Record<string, number>,
+): TBRow[] {
+  const rows: TBRow[] = [];
+  for (const sys of systems) {
+    const pos = states[sys.id]?.state?.positions;
+    if (!pos) continue;
+    const push = (p: NASPosition, open: boolean) => {
+      const entry = (p.entry_price ?? p.entry_premium) ?? null;
+      const ltp = open
+        ? ((p.tradingsymbol ? liveLegs[p.tradingsymbol] : undefined) ?? p.ltp ?? null)
+        : (p.exit_price ?? null);
+      const qty = p.qty ?? 0;
+      const computed = entry != null && ltp != null && qty ? (entry - ltp) * qty : 0;
+      const pnl = open ? computed : (p.pnl_inr ?? computed);
+      rows.push({
+        sysId: sys.id, sysLabel: sys.label, family: sys.group,
+        side: (p.leg ?? '').toUpperCase(), strike: p.strike ?? null, qty,
+        entry, exit: ltp, pnl, open, reason: p.exit_reason ?? undefined,
+      });
+    };
+    [...(pos.ce ?? []), ...(pos.pe ?? [])].forEach((p) => push(p, true));
+    (pos.closed_today ?? []).forEach((p) => push(p, false));
+  }
+  return rows;
+}
+
+// CE before PE, then open before closed, then strike ascending.
+function tbSort(a: TBRow, b: TBRow): number {
+  if (a.side !== b.side) return a.side === 'CE' ? -1 : 1;
+  if (a.open !== b.open) return a.open ? -1 : 1;
+  return (a.strike ?? 0) - (b.strike ?? 0);
+}
+
+function TradeBook({ systems, states, liveLegs }: {
+  systems: SystemDef[];
+  states: Record<string, SystemStateRecord>;
+  liveLegs: Record<string, number>;
+}) {
+  const [mode, setMode] = useState<TBGroupMode>('system');
+  const rows = buildTradeBook(systems, states, liveLegs);
+
+  const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
+  const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
+  const openPnl = rows.filter((r) => r.open).reduce((a, r) => a + r.pnl, 0);
+
+  const byLabel = (a: TBRow, b: TBRow) =>
+    a.sysLabel === b.sysLabel ? tbSort(a, b) : a.sysLabel.localeCompare(b.sysLabel);
+
+  const groups: { key: string; label: string; rows: TBRow[] }[] = [];
+  if (mode === 'all') {
+    groups.push({ key: 'all', label: 'All systems', rows: [...rows].sort(byLabel) });
+  } else if (mode === 'family') {
+    for (const fam of ['squeeze', '916']) {
+      const fr = rows.filter((r) => r.family === fam).sort(byLabel);
+      if (fr.length) groups.push({ key: fam, label: fam === 'squeeze' ? 'Squeeze (ATR)' : '9:16 (timed)', rows: fr });
+    }
+  } else {
+    for (const sys of systems) {
+      const sr = rows.filter((r) => r.sysId === sys.id).sort(tbSort);
+      if (sr.length) groups.push({ key: sys.id, label: sys.label, rows: sr });
+    }
+  }
+
+  const stamp = new Date().toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
+  const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
+  const gridCols = mode === 'system' ? '40px 64px 52px 1fr 96px' : '128px 40px 64px 52px 1fr 96px';
+
+  return (
+    <section className={styles.sectionBlock}>
+      <div className={styles.sectionHead}>
+        <div className="section-title">Trade Book · {stamp} IST</div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['system', 'family', 'all'] as TBGroupMode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              style={{
+                fontSize: 'var(--text-xs)', padding: '3px 10px', borderRadius: 6,
+                border: '1px solid var(--line)', cursor: 'pointer',
+                background: mode === m ? '#2f81f7' : 'transparent',
+                color: mode === m ? '#fff' : 'var(--ink-muted)',
+              }}
+            >
+              {m === 'system' ? 'By system' : m === 'family' ? 'By family' : 'All together'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 18, alignItems: 'baseline', margin: '4px 0 12px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 18, fontWeight: 700, color: col(dayPnl) }}>Day P&amp;L {inr(dayPnl)}</span>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--ink-muted)' }}>
+          realized {inr(realized)} · open {inr(openPnl)} · {rows.length} legs
+        </span>
+      </div>
+
+      <div style={{ fontSize: 'var(--text-xs)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+        {groups.map((g) => {
+          const gp = g.rows.reduce((a, r) => a + r.pnl, 0);
+          return (
+            <div key={g.key} style={{ marginBottom: 14 }}>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                borderBottom: '1px solid var(--line)', padding: '5px 0', fontWeight: 600,
+              }}>
+                <span>{g.label}</span>
+                <span style={{ color: col(gp) }}>group {inr(gp)}</span>
+              </div>
+              {g.rows.map((r, i) => (
+                <div
+                  key={`${r.sysId}-${r.side}-${r.strike}-${r.open ? 'o' : 'c'}-${i}`}
+                  style={{
+                    display: 'grid', gridTemplateColumns: gridCols, gap: 8,
+                    padding: '3px 0', alignItems: 'center', opacity: r.open ? 1 : 0.6,
+                  }}
+                >
+                  {mode !== 'system' && <span style={{ color: 'var(--ink-muted)' }}>{r.sysLabel}</span>}
+                  <span style={{ fontWeight: 700, color: r.side === 'CE' ? '#d29922' : '#a371f7' }}>{r.side}</span>
+                  <span>{r.strike ?? '—'}</span>
+                  <span style={{ color: 'var(--ink-muted)' }}>×{r.qty}</span>
+                  <span style={{ color: 'var(--ink-muted)' }}>
+                    {r.entry != null ? r.entry.toFixed(1) : '—'} → {r.exit != null ? r.exit.toFixed(1) : '—'}
+                    {'  '}
+                    <span style={{ color: r.open ? '#3fb950' : 'var(--ink-faint, #6e7681)' }}>
+                      {r.open ? 'OPEN' : (r.reason || 'CLOSED')}
+                    </span>
+                  </span>
+                  <span style={{ textAlign: 'right', color: col(r.pnl), fontWeight: 600 }}>{inr(r.pnl)}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+        {rows.length === 0 && <div style={{ color: 'var(--ink-muted)', padding: 8 }}>No trades today yet.</div>}
+      </div>
+    </section>
   );
 }
 
