@@ -374,6 +374,13 @@ export default function Nas() {
 
   const nextEvents = useMemo(() => buildNextEvents(states), [states]);
 
+  // 9:16 and Squeeze sub-curves for the combined "Overall NAS" modal — sum each
+  // family's per-system P&L series (forward-filled across timestamps).
+  const squeezeMtmPts = useMemo(
+    () => sumSeries(SQUEEZE_SYSTEMS.map((s) => mtmData[s.key]?.points ?? [])), [mtmData]);
+  const nineMtmPts = useMemo(
+    () => sumSeries(ENTRY_916_SYSTEMS.map((s) => mtmData[s.key]?.points ?? [])), [mtmData]);
+
   return (
     <LiveTicksContext.Provider value={liveTicks}>
     <div className={styles.root}>
@@ -433,6 +440,10 @@ export default function Nas() {
             ? (mtmData[expandedKey]?.events || [])
             : []
         }
+        extraSeries={expandedKey === '_combined' ? [
+          { label: '9:16', color: '#3b82f6', points: nineMtmPts },
+          { label: 'Squeeze', color: '#f59e0b', points: squeezeMtmPts },
+        ] : undefined}
         onClose={() => setExpandedKey(null)}
       />
 
@@ -863,13 +874,41 @@ function shortSym(s: string | undefined | null): string {
           .join('+');
 }
 
+interface ChartSeries { label: string; color: string; points: MtmPoint[]; }
+
+// Sum several per-system P&L series into one, forward-filling each system's
+// last value across the union of timestamps (systems tick at slightly
+// different times). Used to build the 9:16 and Squeeze sub-curves.
+function sumSeries(seriesList: MtmPoint[][]): MtmPoint[] {
+  const lists = seriesList.filter((s) => s && s.length);
+  if (!lists.length) return [];
+  const allTs = Array.from(new Set(lists.flatMap((s) => s.map((p) => p[0])))).sort();
+  const idx = lists.map(() => 0);
+  const lastVal = lists.map(() => 0);
+  const out: MtmPoint[] = [];
+  for (const ts of allTs) {
+    const tm = new Date(ts).getTime();
+    let sum = 0;
+    lists.forEach((s, si) => {
+      while (idx[si] < s.length && new Date(s[idx[si]][0]).getTime() <= tm) {
+        lastVal[si] = s[idx[si]][1];
+        idx[si] += 1;
+      }
+      sum += lastVal[si];
+    });
+    out.push([ts, sum]);
+  }
+  return out;
+}
+
 interface PnlChartProps {
   points: MtmPoint[];
   events: MtmEvent[];
   expanded?: boolean;
+  extraSeries?: ChartSeries[];
 }
 
-function PnlChart({ points, events, expanded = false }: PnlChartProps) {
+function PnlChart({ points, events, expanded = false, extraSeries }: PnlChartProps) {
   // SVG day-P&L curve. Color graded by intensity:
   //   above 0 → green (deeper as profit grows)
   //   below 0 → red   (deeper as loss grows)
@@ -879,8 +918,9 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
   const PAD_X = expanded ? 56 : 4;
   const PAD_Y = expanded ? 28 : 4;
   const ys = points.map((p) => p[1]);
-  const yMinRaw = Math.min(0, ...ys);
-  const yMaxRaw = Math.max(0, ...ys);
+  const extraYs = (extraSeries ?? []).flatMap((s) => s.points.map((p) => p[1]));
+  const yMinRaw = Math.min(0, ...ys, ...extraYs);
+  const yMaxRaw = Math.max(0, ...ys, ...extraYs);
   // pad y a bit in expanded so events at edges don't get clipped
   const yPad = expanded ? Math.max(50, (yMaxRaw - yMinRaw) * 0.08) : 0;
   const yMin = yMinRaw - yPad;
@@ -1000,18 +1040,18 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
             stroke={last >= 0 ? '#16a34a' : '#dc2626'}
             strokeWidth={expanded ? 2 : 1.4}
             strokeLinejoin="round" strokeLinecap="round" />
-      {expanded ? events.map((e, i) => {
-        // Only the vertical dotted line stays in SVG (lines stretch fine).
-        const ex = xOf(e.ts);
-        if (ex < PAD_X - 2 || ex > W - PAD_X + 2) return null;
-        const color = EVENT_COLOR[e.type] || '#888';
+      {/* 9:16 / Squeeze sub-curves (overlaid on the same scale) */}
+      {(extraSeries ?? []).map((s) => {
+        if (s.points.length < 2) return null;
+        const sd = s.points
+          .map((p, i) => `${i ? 'L' : 'M'} ${xOf(p[0])} ${yOf(p[1])}`)
+          .join(' ');
         return (
-          <line key={`vl-${e.ts}-${i}`}
-                x1={ex} x2={ex} y1={PAD_Y} y2={H - PAD_Y}
-                stroke={color} strokeOpacity={0.30}
-                strokeWidth={1} strokeDasharray="2 3" />
+          <path key={s.label} d={sd} fill="none" stroke={s.color}
+                strokeWidth={expanded ? 1.5 : 1} strokeOpacity={0.95}
+                strokeLinejoin="round" strokeLinecap="round" />
         );
-      }) : null}
+      })}
       {expanded ? (
         <>
           <text x={W - PAD_X} y={PAD_Y - 9} fontSize="11"
@@ -1063,69 +1103,31 @@ function PnlChart({ points, events, expanded = false }: PnlChartProps) {
       ) : null}
     </svg>
     {(() => {
-      // HTML overlay markers: percent-positioned over the SVG so they're
-      // immune to preserveAspectRatio="none" stretching. The SVG stays
-      // responsive; the dots stay round.
-      //
-      // Deconflict labels: when multiple events fall in a narrow x-window
-      // (8 NAS systems all entering near 9:16, all exiting near 14:45/15:15),
-      // stagger labels vertically so they don't stack on top of each other.
-      // Also flip the label to the left of the dot near the right edge to
-      // avoid clipping at the chart border.
-      const placed = events
+      // HTML overlay event dots — percent-positioned over the SVG so they stay
+      // round despite preserveAspectRatio="none". No inline labels (they
+      // cluttered the chart); hover a dot to see the adjustment detail via the
+      // native title tooltip.
+      return events
         .map((e, i) => {
           const tMs = new Date(e.ts).getTime();
           if (tMs < tMin - 1 || tMs > tMax + 1) return null;
           const xPct = (xOf(e.ts) / W) * 100;
           const yPct = (yOf(interpY(e.ts)) / H) * 100;
-          return { e, i, tMs, xPct, yPct };
+          const color = EVENT_COLOR[e.type] || '#888';
+          const size = expanded ? 9 : 7;
+          return (
+            <span
+              key={`m-${e.ts}-${i}`}
+              className={styles.markerDot}
+              style={{
+                left: `${xPct}%`, top: `${yPct}%`,
+                width: size, height: size, background: color,
+              }}
+              title={`${e.label}${e.sym ? ' · ' + e.sym : ''} @ ${e.ts.slice(11, 16)}`}
+            />
+          );
         })
-        .filter((p): p is NonNullable<typeof p> => p !== null)
-        .sort((a, b) => a.xPct - b.xPct || a.tMs - b.tMs);
-
-      const BUCKET_PCT = 3.5;       // ~32px @ W=920
-      const LINE_HEIGHT_PX = 13;
-      let bucketStart = -Infinity;
-      let bucketIdx = 0;
-      const decorated = placed.map((p) => {
-        if (p.xPct - bucketStart > BUCKET_PCT) {
-          bucketStart = p.xPct;
-          bucketIdx = 0;
-        } else {
-          bucketIdx += 1;
-        }
-        return { ...p, stagger: bucketIdx };
-      });
-
-      return decorated.map(({ e, i, xPct, yPct, stagger }) => {
-        const color = EVENT_COLOR[e.type] || '#888';
-        const size = expanded ? 9 : 7;
-        const flipLeft = expanded && xPct > 62;
-        const stackPx = expanded ? stagger * LINE_HEIGHT_PX : 0;
-        return (
-          <span
-            key={`m-${e.ts}-${i}`}
-            className={styles.markerDot}
-            style={{
-              left: `${xPct}%`,
-              top: `${yPct}%`,
-              width: size,
-              height: size,
-              background: color,
-            }}
-            title={`${e.label}${e.sym ? ' · ' + e.sym : ''} @ ${e.ts.slice(11, 16)}`}
-          >
-            {expanded ? (
-              <span
-                className={flipLeft ? styles.markerLabelRight : styles.markerLabel}
-                style={{ color, transform: `translateY(${stackPx}px)` }}
-              >
-                {e.label}{e.sym ? ` ${shortSym(e.sym)}` : ''}
-              </span>
-            ) : null}
-          </span>
-        );
-      });
+        .filter(Boolean);
     })()}
     </div>
   );
@@ -1173,10 +1175,11 @@ interface ChartModalProps {
   title: string;
   points: MtmPoint[];
   events: MtmEvent[];
+  extraSeries?: ChartSeries[];
   onClose: () => void;
 }
 
-function ChartModal({ open, title, points, events, onClose }: ChartModalProps) {
+function ChartModal({ open, title, points, events, extraSeries, onClose }: ChartModalProps) {
   useEffect(() => {
     if (!open) return;
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -1193,12 +1196,24 @@ function ChartModal({ open, title, points, events, onClose }: ChartModalProps) {
                   className={styles.modalClose} aria-label="Close">×</button>
         </div>
         {points.length >= 2 ? (
-          <PnlChart points={points} events={events} expanded />
+          <PnlChart points={points} events={events} expanded extraSeries={extraSeries} />
         ) : (
           <div className={styles.sparkEmpty} style={{ margin: 24 }}>
             No snapshots yet — comes alive after 09:15.
           </div>
         )}
+        {extraSeries && extraSeries.length ? (
+          <div className={styles.eventLegend}>
+            <span className={styles.legendItem}>
+              <span className={styles.legendDot} style={{ background: '#16a34a' }} />Overall
+            </span>
+            {extraSeries.map((s) => (
+              <span key={s.label} className={styles.legendItem}>
+                <span className={styles.legendDot} style={{ background: s.color }} />{s.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {events.length ? (
           <div className={styles.eventLegend}>
             {Object.entries({
