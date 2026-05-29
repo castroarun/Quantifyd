@@ -331,12 +331,10 @@ class NasExecutor:
         if not pos:
             return None, f'Position {pos_id} not found'
 
-        # Close the old leg
-        exit_price = adj['current_premium']
-        action = adj['action']
-        self._close_leg(pos, exit_price, action)
-
-        # Find new strike by premium-matching (target = other leg's current premium)
+        # Resolve the roll target strike BEFORE closing anything. If no live
+        # strike matches the target, we HOLD (skip the roll) rather than close —
+        # closing the old leg first and only then discovering "no strike" forced
+        # a full strangle exit, which repeatedly closed the Sq-OTM on 2026-05-29.
         spot = scan_result.get('spot', 0)
         expiry = pos.get('expiry_date', str(get_current_week_expiry()))
         target_prem = adj.get('target_premium', 20.0)
@@ -351,34 +349,21 @@ class NasExecutor:
 
         if new_strike is None:
             # NO BS fallback — fabricated premiums lead to phantom positions
-            # (observed 2026-04-21: expiry-day with all OTM strikes <Rs 5, target
-            # was Rs 17; BS fallback invented 17 and opened 9 phantom 24750CE
-            # positions in 60 seconds). If no live strike matches target, treat
-            # as an "adj_boundary_exit" and close the strangle entirely.
+            # (observed 2026-04-21). And do NOT close the strangle: hold the
+            # position intact (nothing closed yet — the old leg is still open).
+            # The cross-leg check retries next cooldown window; a genuinely
+            # runaway imbalance is still caught by the combined SL.
             logger.warning(
-                f"[NAS] No live strike found for {pos['instrument_type']} "
-                f"target_prem={target_prem:.1f} range=[{min_prem_guard}, {adj_max_prem:.1f}]. "
-                f"Closing strangle via emergency exit to avoid phantom positions."
+                f"[NAS] No live strike for {pos['instrument_type']} "
+                f"target_prem={target_prem:.1f} range=[{min_prem_guard}, {adj_max_prem:.1f}] "
+                f"— holding position (roll skipped, strangle left intact)."
             )
-            # Close both legs of this strangle
-            try:
-                sid = pos.get('strangle_id')
-                active = self.db.get_active_positions()
-                strangle_legs = [p for p in active if p.get('strangle_id') == sid]
-                for leg in strangle_legs:
-                    tsym = leg.get('tradingsymbol', '')
-                    live_ltp = self.scanner.get_live_option_premium(tsym) if tsym else None
-                    close_px = live_ltp if live_ltp is not None else leg.get('entry_price', 0)
-                    self._close_leg(leg, close_px, 'adj_boundary_exit_no_strike')
-                self.db.log_signal(
-                    signal_type='adj_boundary_exit_no_strike',
-                    spot_price=spot,
-                    action_taken=f'No live strike for {pos["instrument_type"]} target={target_prem:.1f} — '
-                                 f'closed strangle #{sid}',
-                )
-            except Exception as e:
-                logger.error(f"[NAS] Emergency exit during adjustment failed: {e}", exc_info=True)
-            return None, 'no_live_strike_closed_strangle'
+            return None, 'no_live_strike_held'
+
+        # Strike found — now close the old leg and open the new one.
+        exit_price = adj['current_premium']
+        action = adj['action']
+        self._close_leg(pos, exit_price, action)
 
         # Place new leg
         new_symbol = self._build_tradingsymbol(pos['instrument_type'], new_strike, expiry)
