@@ -348,6 +348,11 @@ class NasAtm4Executor(NasAtmExecutor):
             status='ACTIVE' if cfg.get('paper_trading_mode', True) else 'PENDING',
             adjustment_count=1,
             notes=price_x_note,
+            # mode MUST be set so the NAS-RECONCILE job (which only scans
+            # WHERE status='PENDING' AND mode='live') can promote this rolled
+            # leg PENDING->ACTIVE. Without it the leg stayed PENDING and went
+            # unmonitored by the ticker (2026-05-29 916-ATM4 23800PE incident).
+            mode='paper' if cfg.get('paper_trading_mode', True) else 'live',
         )
 
         # Log the order for the rolled leg
@@ -377,8 +382,12 @@ class NasAtm4Executor(NasAtmExecutor):
                     product='MIS',
                     order_type='MARKET',
                 )
-                self.db.update_position(new_pos_id, kite_order_id=str(order_id))
-                logger.info(f"[NAS-ATM4] Kite roll order placed: {order_id} for {new_tsym}")
+                # Promote to ACTIVE immediately on successful placement so the
+                # ticker monitors the rolled leg right away (no up-to-3-min gap
+                # waiting for the periodic reconciler). The reconciler remains
+                # the backstop for restart/crash scenarios via mode='live'.
+                self.db.update_position(new_pos_id, kite_order_id=str(order_id), status='ACTIVE')
+                logger.info(f"[NAS-ATM4] Kite roll order placed: {order_id} for {new_tsym} (status->ACTIVE)")
             except Exception as e:
                 logger.error(f"[NAS-ATM4] Kite roll order failed: {e}")
                 self.db.update_position(new_pos_id, status='FAILED', notes=str(e))

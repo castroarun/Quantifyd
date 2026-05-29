@@ -155,6 +155,60 @@ Update it when work moves between states. When Arun asks "what's pending",
 
 - **Gate:** Deploy after market close any weekday. No prerequisites.
 
+### DEPLOY AFTER 15:30 TODAY (2026-05-29) — 916-ATM4 roll-leg fix (committed, needs restart)
+
+- **What:** Bug fix already committed to `services/nas_atm4_executor.py` — the
+  1st-SL roll's `add_position()` now sets `mode='live'/'paper'` and promotes the
+  new leg to `ACTIVE` immediately on successful Kite placement.
+- **Why:** Today (live day 1) the 916-ATM4 1st-SL roll fired correctly (sold
+  23800PE @88, order 260529150351568 COMPLETE) but the new leg was written
+  `status='PENDING', mode=NULL`. The NAS-RECONCILE job only scans
+  `WHERE status='PENDING' AND mode='live'`, so it never promoted it → the leg
+  sat PENDING, was **unmonitored by the ticker (no SL)**, and was hidden from
+  the dashboard card. A live naked short with no stop is the failure this
+  prevents. Root cause: [nas_atm4_executor.py:348](services/nas_atm4_executor.py#L348)
+  set PENDING in live mode and the `add_position` call omitted `mode`.
+- **Today's leg was hand-fixed live:** DB row #44 (23800PE) flipped PENDING→ACTIVE
+  at ~10:12 IST; ticker confirmed monitoring 2 ATM4 legs at 10:15. So today is
+  safe; the code fix prevents recurrence on the next roll.
+- **How to deploy (after 15:30 IST):**
+  ```
+  git push   # already done from laptop
+  ssh arun@94.136.185.54 'cd /home/arun/quantifyd && git reset --hard origin/main && sudo systemctl restart quantifyd'
+  ```
+- **Scope:** ATM4-only. OTM ([nas_executor.py:204](services/nas_executor.py#L204))
+  and ATM ([nas_atm_executor.py:208](services/nas_atm_executor.py#L208)) roll
+  paths already set `mode`; ATM2 reuses the ATM entry path. No other variant affected.
+
+### NAS feed watchdog goes blind every morning at open (tz-comparison bug) — fix after close
+
+- **What:** `_latest_candle_dt()` in [services/nas_watchdog.py:95](services/nas_watchdog.py#L95)
+  compares `c > latest` (completed candle date vs in-progress candle date)
+  *before* the tz-normalization at [lines 105-106](services/nas_watchdog.py#L105-L106).
+  At open, startup-loaded historical candles are tz-aware (+05:30) while live
+  ticks build tz-naive candles → `can't compare offset-naive and offset-aware
+  datetimes` is raised, the function returns `None`, and the watchdog reports
+  `latest=None` / `no_candle_data`. Observed live 2026-05-29 09:18; it
+  self-healed at 09:20 once live (naive) candles became `completed_candles[-1]`.
+- **Why it matters:** During that blind window the watchdog cannot tell whether
+  the tick→candle pipeline is actually frozen — and worse, the blind status it
+  emits (`no_candle_data`) is **not** an alert trigger: [line 195](services/nas_watchdog.py#L195)
+  only emails on `FROZEN`. So a genuine open-bell feed freeze (the exact MST
+  failure mode this watchdog exists to catch) would go unalerted for the first
+  ~5 min of every session, precisely when live NAS legs are most exposed.
+- **Fix (two parts, ~15 min, backend → deploy after 15:30 IST only):**
+  1. Normalize tz **before** the comparison in `_latest_candle_dt()` — strip
+     tzinfo on both `cur["date"]` and `comp[-1]["date"]` (or convert both to
+     naive IST) prior to the `c > latest` check at line 95, not after.
+  2. Make `no_candle_data` *during market hours* an alertable state (treat it
+     like `FROZEN` for the email path, or add it to the alert condition at
+     line 195) so an open-bell freeze actually pages.
+- **How to deploy:** after close — `git push` then
+  `ssh arun@94.136.185.54 'cd /home/arun/quantifyd && git reset --hard origin/main && sudo systemctl restart quantifyd'`.
+- **Discovered:** 2026-05-29, during the NAS live-go readiness check (first
+  real-money session). Live legs that morning: 916-OTM 24450CE/23550PE 2L,
+  916-ATM 23950CE/23950PE 1L (+ATM2/ATM4).
+
 ### NAS Tier 1 — Exchange-side SL-M (port ORB pattern; required before scaling NAS past Rs 25L)
 
 - **What:** Today the per-leg SL on every NAS variant is checked in-memory by the
