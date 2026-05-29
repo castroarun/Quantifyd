@@ -70,11 +70,21 @@ Update it when work moves between states. When Arun asks "what's pending",
   Also: the Day-P&L reporting inconsistency (state.daily_pnl vs closed-trade-sum
   vs MTM curve) needs a single source of truth so the dashboard can't show
   three different numbers.
-- **Deployed live 2026-05-29 (already on main, now running):** 916-ATM4 roll
-  mode/ACTIVE fix (`4eccc96`), OTM roll 90s cooldown (`560bfa0`), OTM cap 20→40
-  (`38ddc76`), dashboard strike-only leg display (`97a1d22`). NAS re-flipped LIVE
-  in-memory after the restart — **will revert to paper on next restart until the
-  persist fix above ships.**
+- **Staged on main 2026-05-29 — DEPLOY AFTER 15:30 (pull + restart):**
+  persist live/paper mode (`262237f`, fixes the revert), no-strike→HOLD not close
+  (`033d12d`, fixes bug #2), per-leg premium floor on entry (`2844f6a`, fixes
+  bug #5). All compile-clean on VPS, NOT yet restarted. **After deploy: reset
+  Sq-OTM `entry_end_time` (POST /api/nas/config) to re-enable it** — it's
+  temp-stopped at "12:00" in memory (reverts to 14:30 on the restart anyway).
+- **Still open (deferred — now non-urgent):** bug #1 cross-variant OTM pooling +
+  per-variant executor routing. With #2 (hold) + #5 (no junk entries) + the 90s
+  cooldown, the cross-variant trigger no longer drives destructive loops, so this
+  is a correctness cleanup — do it as a focused, tested change. Bugs #3 (malformed
+  re-entry symbol) and #4 (stale ATM card text / A-vs-B decision) also open.
+- **Already live (earlier today):** 916-ATM4 roll mode/ACTIVE (`4eccc96`), OTM roll
+  90s cooldown (`560bfa0`), OTM cap 20→40 (`38ddc76`), dashboard strike display
+  (`97a1d22`). NAS re-flipped LIVE in-memory; Sq-OTM TEMP-STOPPED via in-memory
+  `entry_end_time=12:00`.
 
 ### NAS `max_daily_orders` — raise defaults or scale per active strangle
 
