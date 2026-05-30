@@ -942,9 +942,10 @@ interface PnlChartProps {
   events: MtmEvent[];
   expanded?: boolean;
   extraSeries?: ChartSeries[];
+  hiddenSeries?: Set<string>;   // labels to hide ('Overall' | extra labels)
 }
 
-function PnlChart({ points, events, expanded = false, extraSeries }: PnlChartProps) {
+function PnlChart({ points, events, expanded = false, extraSeries, hiddenSeries }: PnlChartProps) {
   // SVG day-P&L curve. Color graded by intensity:
   //   above 0 → green (deeper as profit grows)
   //   below 0 → red   (deeper as loss grows)
@@ -954,9 +955,16 @@ function PnlChart({ points, events, expanded = false, extraSeries }: PnlChartPro
   const PAD_X = expanded ? 56 : 4;
   const PAD_Y = expanded ? 28 : 4;
   const ys = points.map((p) => p[1]);
-  const extraYs = (extraSeries ?? []).flatMap((s) => s.points.map((p) => p[1]));
-  const yMinRaw = Math.min(0, ...ys, ...extraYs);
-  const yMaxRaw = Math.max(0, ...ys, ...extraYs);
+  const showOverall = !hiddenSeries?.has('Overall');
+  const visibleExtra = (extraSeries ?? []).filter((s) => !hiddenSeries?.has(s.label));
+  // Scale to whatever's visible so toggling a curve off rescales the y-axis.
+  const scaleYs = [
+    ...(showOverall ? ys : []),
+    ...visibleExtra.flatMap((s) => s.points.map((p) => p[1])),
+  ];
+  const baseYs = scaleYs.length ? scaleYs : ys;
+  const yMinRaw = Math.min(0, ...baseYs);
+  const yMaxRaw = Math.max(0, ...baseYs);
   // pad y a bit in expanded so events at edges don't get clipped
   const yPad = expanded ? Math.max(50, (yMaxRaw - yMinRaw) * 0.08) : 0;
   const yMin = yMinRaw - yPad;
@@ -1071,13 +1079,17 @@ function PnlChart({ points, events, expanded = false, extraSeries }: PnlChartPro
           ₹0
         </text>
       ) : null}
-      <path d={area} fill={`url(#${gid})`} stroke="none" />
-      <path d={d} fill="none"
-            stroke={last >= 0 ? '#16a34a' : '#dc2626'}
-            strokeWidth={expanded ? 2 : 1.4}
-            strokeLinejoin="round" strokeLinecap="round" />
-      {/* 9:16 / Squeeze sub-curves (overlaid on the same scale) */}
-      {(extraSeries ?? []).map((s) => {
+      {showOverall ? (
+        <>
+          <path d={area} fill={`url(#${gid})`} stroke="none" />
+          <path d={d} fill="none"
+                stroke={last >= 0 ? '#16a34a' : '#dc2626'}
+                strokeWidth={expanded ? 2 : 1.4}
+                strokeLinejoin="round" strokeLinecap="round" />
+        </>
+      ) : null}
+      {/* 9:16 / Squeeze sub-curves (only the visible ones) */}
+      {visibleExtra.map((s) => {
         if (s.points.length < 2) return null;
         const sd = s.points
           .map((p, i) => `${i ? 'L' : 'M'} ${xOf(p[0])} ${yOf(p[1])}`)
@@ -1226,6 +1238,13 @@ interface ChartModalProps {
 }
 
 function ChartModal({ open, title, points, events, extraSeries, onClose }: ChartModalProps) {
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const toggleSeries = (label: string) =>
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
   useEffect(() => {
     if (!open) return;
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -1242,7 +1261,7 @@ function ChartModal({ open, title, points, events, extraSeries, onClose }: Chart
                   className={styles.modalClose} aria-label="Close">×</button>
         </div>
         {points.length >= 2 ? (
-          <PnlChart points={points} events={events} expanded extraSeries={extraSeries} />
+          <PnlChart points={points} events={events} expanded extraSeries={extraSeries} hiddenSeries={hidden} />
         ) : (
           <div className={styles.sparkEmpty} style={{ margin: 24 }}>
             No snapshots yet — comes alive after 09:15.
@@ -1250,14 +1269,27 @@ function ChartModal({ open, title, points, events, extraSeries, onClose }: Chart
         )}
         {extraSeries && extraSeries.length ? (
           <div className={styles.eventLegend}>
-            <span className={styles.legendItem}>
-              <span className={styles.legendDot} style={{ background: '#16a34a' }} />Overall
-            </span>
-            {extraSeries.map((s) => (
-              <span key={s.label} className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: s.color }} />{s.label}
-              </span>
-            ))}
+            <span style={{ color: 'var(--ink-faint, #6e7681)', fontSize: 11, marginRight: 2 }}>show:</span>
+            {[{ label: 'Overall', color: '#16a34a' }, ...extraSeries].map((s) => {
+              const off = hidden.has(s.label);
+              return (
+                <button
+                  key={s.label}
+                  type="button"
+                  onClick={() => toggleSeries(s.label)}
+                  className={styles.legendItem}
+                  title={off ? `Show ${s.label}` : `Hide ${s.label}`}
+                  style={{
+                    cursor: 'pointer', background: 'none', border: 'none',
+                    font: 'inherit', color: 'inherit', padding: 0,
+                    opacity: off ? 0.4 : 1,
+                    textDecoration: off ? 'line-through' : 'none',
+                  }}
+                >
+                  <span className={styles.legendDot} style={{ background: s.color }} />{s.label}
+                </button>
+              );
+            })}
           </div>
         ) : null}
         {events.length ? (
