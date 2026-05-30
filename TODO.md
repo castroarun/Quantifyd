@@ -629,6 +629,21 @@ Update it when work moves between states. When Arun asks "what's pending",
   discretionary long scanner. Verdicts: results/RESULTS*.md. **No further work unless
   revived as a sleeve.**
 
+### 🟢 research/45 Daily anomaly scan — DONE; found a strong edge to build
+
+- **Outcome (2026-05-29):** broad cross-sectional scan of 6 classic anomalies on
+  378 liquid names, daily 2000–2026. **Short-term reversal is the standout**:
+  perfectly monotonic deciles, LS −0.59%/5d, **t ≈ −9.78**, and naturally
+  market-neutral (long losers / short winners) → structurally avoids the correlated
+  drawdowns that sank research/43–44. Turn-of-month is a strong simple overlay
+  (+0.28%/day on ToM days). Overnight drift huge but hard to trade. Momentum/low-vol/
+  52wk-high add little. Verdict: [results/RESULTS.md](research/45_daily_anomaly_scan/results/RESULTS.md).
+- **Next → research/46 (recommended build):** short-term mean-reversion, long-short,
+  market-neutral. Must test holding period (5/10/21d), quantile width, rank-weighting
+  (turnover), and a realistic cost model; add turn-of-month timing overlay. Goal: a
+  high-Sharpe, low-DD market-neutral book — the opposite profile of the shelved
+  directional systems.
+
 ### (archived plan) research/44 Phase 3/4 detail
 
 - **What (P1+P2 done 2026-05-29):** prev-day narrow-range → next-day 5-min close
