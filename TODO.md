@@ -620,6 +620,42 @@ Update it when work moves between states. When Arun asks "what's pending",
   Kite 2-min download (VPS-only per project rule) before it can be tested.
 - **Decision pending from Arun:** pursue Phase 3, or shelve (thin edge)?
 
+### ⚪ research/44 Prev-day range-compression breakout — CONCLUDED (uninvestible standalone)
+
+- **Outcome (P1–P4 done 2026-05-29):** real long high-beta SIGNAL (causal PF ~1.3
+  with 20-DMA regime gate) but **uninvestible as a standalone book** — single-factor
+  long-beta, −37% MaxDD / Sharpe ~0.4 even regime-filtered. Arun's call: shelve as a
+  standalone. Keep the signal for possible use as a HEDGED/DIVERSIFIED sleeve or a
+  discretionary long scanner. Verdicts: results/RESULTS*.md. **No further work unless
+  revived as a sleeve.**
+
+### (archived plan) research/44 Phase 3/4 detail
+
+- **What (P1+P2 done 2026-05-29):** prev-day narrow-range → next-day 5-min close
+  beyond the range → trend-trade (swing). 379 syms. P1 raw = breakeven (PF 1.003).
+  **P2 filters lift it — high-beta is the dominant filter, HTF-trend stacks, and
+  LONG-ONLY clears PF>1.2.** Best = **long-only, high-beta (β≥1.2), NR7 prev day,
+  prev close>SMA50, break above prev-day high, stop=prev-day low (BOX), 2–3R,
+  swing ~3d: PF ~1.24, +0.16R/trade, ~1,700 trades.** PCT25 variant = ~2,900 trades
+  at PF ~1.15. Verdict: [results/RESULTS.md](research/44_prevday_range_breakout/results/RESULTS.md).
+- **Why it's the best of 3:** beats the H-pattern (PF ~1.09 short-only) and clears
+  the PF>1.2 gate long-only. Economically sound (long momentum + market drift).
+- **Phase 3 DONE 2026-05-29:** causal trailing-beta (vs synthetic equal-weight
+  market index — NIFTY50 daily only starts 2023) **confirms the edge**, monotonic
+  in beta (β≥1.4 → PF ~1.29) → real alpha, not look-ahead. **BUT** (a) broad 5-min
+  history mostly starts ~2024 so the robust window is thin/bullish; loses in
+  pullback years (2021 PF 0.31, 2026 0.74); (b) **naive portfolio is uninvestable
+  — 55–87% MaxDD** (one correlated long-beta bet; lower concurrency was worse).
+  Verdict: [results/RESULTS_P3.md](research/44_prevday_range_breakout/results/RESULTS_P3.md).
+- **How (Phase 4, what would make it real):** (1) **market-regime filter** (only
+  long when index > 50-DMA / breadth positive) — the loss years are market-weak,
+  so this should both lift PF and slash the DD; (2) de-correlate (one-per-sector /
+  gross-exposure cap / hedge with the research/43 short H-pattern); (3) **download
+  more 5-min history** (Kite, VPS-only) to test pre-2024; (4) gap-risk control on
+  swing holds.
+- **Decision pending from Arun:** run Phase 4 (regime filter is the high-value
+  test), or shelve as a known signal.
+
 ---
 
 ## In Progress

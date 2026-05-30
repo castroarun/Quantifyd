@@ -167,3 +167,12 @@ research/40_volsurge_pdr_break_weekly_cpr/results/*.bak
 research/**/results/*.csv
 research/**/results/*.log
 research/40_volsurge_pdr_break_weekly_cpr/results/*.log
+
+# stray artifacts / backups (2026-05-29)
+*.bak
+Usersarunc*.json
+
+# research: compiled python + heavy generated CSVs (keep STATUS/scripts/RESULTS + small rankings)
+research/**/__pycache__/
+research/**/results/symbol_variant_stats*.csv
+research/**/results/trades_*.csv
