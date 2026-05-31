@@ -103,6 +103,34 @@ revived.)
 
 ---
 
+## QUANT RESEARCH PLAYBOOK — READ BEFORE ANY BACKTEST (binding)
+
+Before conducting **any** investment/trading backtest, sweep, or strategy research,
+read and follow **`research/QUANT_RESEARCH_PLAYBOOK.md`**. It is the umbrella
+doctrine over the operational conventions below (STATUS-MD, folder layout, VPS host,
+market-hours rule). Non-negotiable highlights:
+
+- **Stage gates G0→G6** — kill ideas cheaply; don't spend the next stage's compute
+  until the current gate passes. Most ideas should die early; that's the system working.
+- **Net-of-cost or it didn't happen** — always report gross *and* net + a cost
+  sensitivity; a SIGNAL (positive per-trade) is NOT a STRATEGY (survives portfolio,
+  correlation, drawdown, capacity).
+- **Guard the seven deadly sins** — look-ahead, survivorship, overfitting/multiple-
+  testing, cost neglect, regime dependence, correlation/single-factor, capacity/
+  shortability. State how each is controlled.
+- **Robustness before any "it works"** — OOS/walk-forward, per-year stability,
+  parameter sensitivity (monotonic > peak), causal-only features, adversarial kill.
+- **Client tearsheet at G4+** — visual-first factsheet via
+  `research/_utilities/tearsheet.py` (KPI strip, equity-vs-benchmark, drawdown, yearly
+  vs index, heatmap); always show the benchmark and the drawdown, lead with risk-adjusted.
+- **Publish every COMPLETE study to the app** — add a `BacktestStudy` entry to
+  `frontend/src/data/backtests.ts` and put the factsheet PNG in `frontend/public/`
+  (`results.charts[0]`, served `/app/<name>.png`); `cd frontend && npm run build`.
+  Frontend-only → no backend restart, safe any time. The `/app/backtest/<slug>` page IS
+  the durable shareable report.
+- **Close the loop** — RESULTS.md (bold verdict label: NO EDGE / SIGNAL / STRATEGY /
+  CONCLUDED) → update `research/INDEX.md` → update `TODO.md` → commit.
+
 ## LIVE-STATUS MD CONVENTION (long-running tasks)
 
 For any task that runs longer than ~5 minutes, spawns background processes,

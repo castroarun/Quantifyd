@@ -644,6 +644,39 @@ Update it when work moves between states. When Arun asks "what's pending",
   high-Sharpe, low-DD market-neutral book — the opposite profile of the shelved
   directional systems.
 
+### ⚪ research/46 Short-term reversal long-short — CONCLUDED (cost-bound, not investable)
+
+- **Outcome (2026-05-29):** market-neutral reversal (long losers/short winners),
+  daily, 378 names. Strong GROSS (Sharpe ~1.1 near-zero cost) but **break-even
+  ~13 bps/side**; at realistic 10 bps only Sharpe 0.36 / +4%/yr (2018+), −24% MaxDD,
+  negative in 3 of last 5 yrs (decayed anomaly). Shorting Indian cash overnight is
+  structurally hard (SLB/F&O-only). **Not investable standalone.** Verdict:
+  [results/RESULTS.md](research/46_st_reversal_longshort/results/RESULTS.md).
+- **Synthesis (research/43–46):** net-of-cost high-frequency alpha is scarce in this
+  universe — directional intraday dies to cost+correlation; robust cross-sectional
+  anomalies are eaten by turnover (reversal) or already harvested (momentum=MQ).
+  **Recommended pivot: improve the MQ winner (already 32–48% CAGR) — e.g. a
+  market-regime overlay to cut its 27% MaxDD — rather than hunt new HF edges.**
+
+### 🟢 research/47 Regime risk-off options/ETF overlay — DONE (directional)
+
+- **Outcome (2026-05-29):** tested replacing research/41's risk-off "go to cash" with
+  options/ETF structures (long put, put/call debit spreads, short put, covered-call
+  Nifty ETF) vs cash & short-futures baselines, modeled IV (no historical options
+  data → directional). **Cash is near-optimal (Calmar 2.33)** — the gate fires when
+  the market is weak, so staying long it loses. **Covered-call ETF is DOMINATED by
+  cash** (−22.9% DD vs −15.1%). SHORT futures worst (2025 whipsaw −21%). **Only
+  enhancement first thought worth keeping (call-spread re-entry) FAILED the all-years
+  test**: across 47 risk-off months it wins only 40%, nets +0.5% total (~0/mo), helps
+  7 yrs / hurts 6 (coin flip), and slightly lowers Calmar (2.09 vs cash 2.33). **Final:
+  keep PLAIN CASH; no options/ETF overlay reliably beats it** (gate's value is being
+  flat; directional overlays add variance for ~0 mean). Verdict + charts:
+  [results/RESULTS.md](research/47_regime_options_overlay/results/RESULTS.md).
+- **To make decision-grade:** need real Nifty options/IV history. The live
+  `option_chain` collector (options_data.db) is already running — ~1yr of it makes
+  this testable on real premiums. Optional: add call-spread re-entry to the research/41
+  live spec as a small overlay.
+
 ### (archived plan) research/44 Phase 3/4 detail
 
 - **What (P1+P2 done 2026-05-29):** prev-day narrow-range → next-day 5-min close
