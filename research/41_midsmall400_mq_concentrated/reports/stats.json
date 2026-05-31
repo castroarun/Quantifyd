@@ -1,0 +1,23 @@
+{
+  "cagr": 35.17,
+  "bench_cagr": 12.67,
+  "excess": 22.49,
+  "total": 40.52,
+  "bench_total": 4.33,
+  "vol": 17.99,
+  "bench_vol": 15.66,
+  "sharpe": 1.42,
+  "bench_sharpe": 0.44,
+  "sortino": 2.52,
+  "maxdd": -15.1,
+  "bench_maxdd": -28.81,
+  "calmar": 2.33,
+  "bench_calmar": 0.44,
+  "best_yr": 108.04,
+  "worst_yr": -11.81,
+  "beat_pct": 76.92,
+  "pos_months": 81.08,
+  "years": 12.28,
+  "start": "2014-01-31",
+  "end": "2026-05-15"
+}
