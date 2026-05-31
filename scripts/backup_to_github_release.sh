@@ -49,11 +49,23 @@ echo "Tag:     $TAG"
 echo "Archive: $TMP_ARCHIVE"
 
 # ─── Create tarball ──────────────────────────────────────────
+# The live app may touch a DB mid-read. GNU tar then exits 1 ("file changed as
+# we read it") — a benign warning for a backup snapshot — which under `set -e`
+# would abort the whole backup. So tolerate rc<=1 and fail only on rc>=2 (real
+# tar errors). --warning suppresses the noise.
 echo "Creating tarball (this may take a minute)..."
-tar --exclude='backtest_data/access_token.json' \
+set +e
+tar --warning=no-file-changed --warning=no-file-removed \
+    --exclude='backtest_data/access_token.json' \
     --exclude='backtest_data/fundamentals_cache' \
     --exclude='backtest_data/__pycache__' \
     -czf "$TMP_ARCHIVE" backtest_data/
+tar_rc=$?
+set -e
+if (( tar_rc > 1 )); then
+  echo "Error: tar failed (rc=$tar_rc)" >&2
+  exit "$tar_rc"
+fi
 
 ARCHIVE_BYTES=$(wc -c < "$TMP_ARCHIVE")
 ARCHIVE_SIZE_H=$(du -h "$TMP_ARCHIVE" | cut -f1)
