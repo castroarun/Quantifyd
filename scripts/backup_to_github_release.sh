@@ -124,9 +124,13 @@ echo "Uploading asset(s)..."
 for f in "${UPLOAD_FILES[@]}"; do
   name="$(basename "$f")"
   echo "  uploading $name..."
+  # Stream the file with -T instead of --data-binary "@file": the latter buffers
+  # the whole asset in RAM and OOM'd on the ~1.2 GB archive under memory
+  # pressure (2026-05-31). -T streams (constant memory); -X POST keeps GitHub's
+  # required method and -T supplies Content-Length from the file size.
   curl --ssl-no-revoke -fsS -H "$AUTH_HEADER" \
     -H "Content-Type: application/octet-stream" \
-    --data-binary "@${f}" \
+    -X POST -T "${f}" \
     "${UPLOAD_URL}?name=${name}" > /dev/null
 done
 
