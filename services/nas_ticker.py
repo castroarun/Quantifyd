@@ -215,6 +215,11 @@ class NasTicker:
         self._adj_triggered = False  # prevent duplicate adjustments
         self._adj_confirm: Dict[int, int] = {}  # token → consecutive trigger tick count
         self._adj_next_direction = 'OUT'  # alternates OUT/IN, resets on new strangle
+        # Per-strangle cross-leg roll state — Squeeze-OTM and 9:16-OTM share
+        # one token pool but must roll INDEPENDENTLY. Keyed by strangle_id.
+        self._adj_triggered_by_sid: Dict = {}
+        self._adj_next_direction_by_sid: Dict = {}
+        self._last_adj_ts_by_sid: Dict = {}
         self._last_adj_ts = 0.0  # epoch secs of last cross-leg roll (anti-thrash cooldown)
 
         # NAS ATM option leg monitoring (separate SL tracking)
@@ -347,9 +352,13 @@ class NasTicker:
                 pos.get('strangle_id') for pos in positions
             ) if positions else set()
             if new_strangle_ids and new_strangle_ids != old_strangle_ids:
-                # New strangle entered — reset alternation to OUT
-                self._adj_next_direction = 'OUT'
-                logger.info(f"[NAS] New strangle detected — reset adj direction to OUT")
+                # New strangle(s) — reset per-strangle roll state so a reused
+                # strangle_id never inherits stale trigger/direction.
+                for _sid in new_strangle_ids:
+                    self._adj_next_direction_by_sid[_sid] = 'OUT'
+                    self._adj_triggered_by_sid[_sid] = False
+                    self._adj_confirm.pop((_sid, 'cross_leg'), None)
+                logger.info(f"[NAS] New strangle(s) {new_strangle_ids} — reset roll state")
 
             # Clear old option tokens
             old_tokens = set(self._option_tokens.keys())
@@ -486,18 +495,19 @@ class NasTicker:
             leg_ltp = self._option_ltps.get(t, leg_info['entry_premium'])
             leg_premiums[t] = (leg_ltp, leg_info)
 
-        # Bug #1 (cross-variant pool) guard: the OTM token pool mixes
-        # Squeeze-OTM and 9:16-OTM legs. A cross-leg roll is only meaningful
-        # within a single 2-leg strangle. If the pool holds anything other
-        # than exactly 2 legs (e.g. both variants active = 4), skip the
-        # cross-leg roll to avoid comparing/rolling across variants. Per-leg
-        # SL is handled separately and is unaffected.
+        # Per-strangle scope (bug #1 proper fix): roll only within THIS tick's
+        # own 2-leg strangle, so Squeeze-OTM and 9:16-OTM (sharing one token
+        # pool) roll INDEPENDENTLY with their own trigger/alternation/cooldown
+        # state. (Was: a blunt len!=2 guard that paused BOTH while both active.)
+        my_sid = info.get('strangle_id')
+        leg_premiums = {t: v for t, v in leg_premiums.items()
+                        if v[1].get('strangle_id') == my_sid}
         if len(leg_premiums) != 2:
             return
 
         # Cross-leg adjustment: compare legs against each other
-        if self._adj_triggered:
-            return  # Already processing an adjustment
+        if self._adj_triggered_by_sid.get(my_sid):
+            return  # Already processing an adjustment for this strangle
 
         # Find the most expensive and cheapest legs
         sorted_legs = sorted(leg_premiums.items(), key=lambda x: x[1][0])
@@ -510,8 +520,8 @@ class NasTicker:
 
         cross_ratio = expensive_ltp / cheap_ltp
         if cross_ratio >= imbalance_trigger:
-            # Use a single confirmation key for cross-leg imbalance
-            confirm_key = 'cross_leg'
+            # Per-strangle confirmation key for cross-leg imbalance
+            confirm_key = (my_sid, 'cross_leg')
             count = self._adj_confirm.get(confirm_key, 0) + 1
             self._adj_confirm[confirm_key] = count
             if count >= 2:
@@ -522,16 +532,17 @@ class NasTicker:
                 # burning the daily order cap (2026-05-29 Sq-OTM 20/20 gag).
                 import time as _time
                 cooldown = cfg.get('adj_cooldown_sec', 90)
-                if (_time.time() - self._last_adj_ts) < cooldown:
+                if (_time.time() - self._last_adj_ts_by_sid.get(my_sid, 0.0)) < cooldown:
                     return
                 # Confirmed — determine direction with alternation + boundary checks
-                self._adj_triggered = True
+                self._adj_triggered_by_sid[my_sid] = True
                 self._adj_confirm[confirm_key] = 0
-                self._last_adj_ts = _time.time()
+                self._last_adj_ts_by_sid[my_sid] = _time.time()
 
                 # Determine adjustment: direction + boundary logic
                 adj_leg_info, adj_ltp, action, target_prem, close_both = \
                     self._resolve_adjustment_direction(
+                        my_sid,
                         expensive_info, expensive_ltp,
                         cheap_info, cheap_ltp,
                         adj_min_prem, adj_max_prem,
@@ -560,15 +571,15 @@ class NasTicker:
                     )
                     threading.Thread(
                         target=self._fire_tick_adjustment,
-                        args=(adj_leg_info, adj_ltp, action, target_prem),
+                        args=(adj_leg_info, adj_ltp, action, target_prem, my_sid),
                         daemon=True
                     ).start()
         else:
             # Reset confirmation counter if ratio is back to normal
-            self._adj_confirm['cross_leg'] = 0
+            self._adj_confirm[(my_sid, 'cross_leg')] = 0
 
     def _resolve_adjustment_direction(
-        self,
+        self, sid,
         expensive_info: dict, expensive_ltp: float,
         cheap_info: dict, cheap_ltp: float,
         min_prem: float, max_prem: float,
@@ -582,7 +593,7 @@ class NasTicker:
 
         Returns: (leg_info, leg_ltp, action, target_prem, close_both)
         """
-        direction = self._adj_next_direction  # 'OUT' or 'IN'
+        direction = self._adj_next_direction_by_sid.get(sid, 'OUT')  # 'OUT' or 'IN'
 
         # OUT: adjust expensive leg → target = cheap leg's premium
         # IN:  adjust cheap leg    → target = expensive leg's premium
@@ -597,7 +608,7 @@ class NasTicker:
         # Boundary check on target premium
         if min_prem <= target <= max_prem:
             # Good — advance alternation
-            self._adj_next_direction = 'IN' if direction == 'OUT' else 'OUT'
+            self._adj_next_direction_by_sid[sid] = 'IN' if direction == 'OUT' else 'OUT'
             return leg_info, leg_ltp, action, target, False
 
         # Flip direction
@@ -628,7 +639,7 @@ class NasTicker:
             logger.error(f"[NAS] Tick SL exit error: {e}", exc_info=True)
 
     def _fire_tick_adjustment(self, info: dict, current_prem: float,
-                               action: str, target_prem: float):
+                               action: str, target_prem: float, sid=None):
         """Execute adjustment triggered by tick-level premium breach."""
         try:
             from services.nas_executor import NasExecutor
@@ -697,7 +708,8 @@ class NasTicker:
         except Exception as e:
             logger.error(f"[NAS] Tick adjustment error: {e}", exc_info=True)
         finally:
-            self._adj_triggered = False
+            if sid is not None:
+                self._adj_triggered_by_sid[sid] = False
 
     # ─── NAS ATM Option Leg Monitoring ────────────────────────
 
