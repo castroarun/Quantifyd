@@ -237,12 +237,20 @@ class NasAtmExecutor:
             if spot is None:
                 return None, 'Cannot fetch live spot price'
 
-        # ATM strike
-        atm_strike = self.scanner.get_atm_strike(spot)
-
         # Expiry
         today = date.today()
         expiry = get_current_week_expiry(today)
+
+        # ATM strike — snap to the FORWARD, not spot. Index options are priced
+        # off the forward (C - P = F - K), so the equal-premium / delta-neutral
+        # strike is the forward, not spot. Spot-based rounding picks a call-rich
+        # strike when futures trade over spot (cost of carry) -> imbalanced
+        # straddle (2026-06-01: 23550 CE 134 / PE 77). Derive the live synthetic
+        # forward from the spot-nearest strike's own premiums (forward =
+        # K + (CE - PE)) and re-snap. Falls back to the spot strike on any quote
+        # failure, so this can never be worse than spot-based selection.
+        strike_step = cfg.get('strike_interval', 50)
+        atm_strike = self.scanner.get_atm_strike(spot)
 
         # Build tradingsymbols
         ce_symbol = self._build_tradingsymbol('CE', atm_strike, expiry)
@@ -254,6 +262,31 @@ class NasAtmExecutor:
 
         if ce_premium is None or pe_premium is None:
             return None, f'Cannot fetch live premiums for {ce_symbol}/{pe_symbol}'
+
+        # Re-snap ATM to the live synthetic forward (delta-neutral strike)
+        try:
+            forward = atm_strike + (ce_premium - pe_premium)
+            fwd_strike = int(round(forward / strike_step) * strike_step)
+            if fwd_strike != atm_strike:
+                f_ce_sym = self._build_tradingsymbol('CE', fwd_strike, expiry)
+                f_pe_sym = self._build_tradingsymbol('PE', fwd_strike, expiry)
+                f_ce = self.scanner.get_live_option_premium(f_ce_sym)
+                f_pe = self.scanner.get_live_option_premium(f_pe_sym)
+                if f_ce and f_pe and f_ce > 0 and f_pe > 0:
+                    logger.info(
+                        f"[NAS-ATM] Forward snap: spot={spot:.1f} spot-ATM={atm_strike} "
+                        f"(CE={ce_premium:.1f}/PE={pe_premium:.1f}, gap={ce_premium-pe_premium:.1f}) "
+                        f"-> forward={forward:.1f} fwd-ATM={fwd_strike} "
+                        f"(CE={f_ce:.1f}/PE={f_pe:.1f}, gap={f_ce-f_pe:.1f})")
+                    atm_strike = fwd_strike
+                    ce_symbol, pe_symbol = f_ce_sym, f_pe_sym
+                    ce_premium, pe_premium = f_ce, f_pe
+                else:
+                    logger.warning(
+                        f"[NAS-ATM] Forward snap skipped — no quote for {fwd_strike}; "
+                        f"keeping spot-ATM {atm_strike}")
+        except Exception as e:
+            logger.warning(f"[NAS-ATM] Forward snap error ({e}); keeping spot-ATM {atm_strike}")
 
         if ce_premium <= 0 or pe_premium <= 0:
             return None, f'Invalid premiums CE={ce_premium} PE={pe_premium}'
