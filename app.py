@@ -345,12 +345,77 @@ except Exception as _rec_err:
     logger.error(f"[NAS-RECONCILE] Startup reconciliation failed: {_rec_err}", exc_info=True)
 
 
+def _nas_reconcile_broker_positions():
+    """Read-only app<->broker desync detector (no auto-close).
+
+    For each NIFTY option symbol, compare the qty the NAS DBs think is ACTIVE
+    (summed across all variants) against the broker net short position. If the
+    app shows MORE short than the broker actually holds, a leg was closed
+    externally (e.g. a manual square-off) without the DB being updated -> the app
+    is stale and a code adjustment could act on a phantom leg (2026-06-01: a
+    manual 23200 PE close left the DB active -> the auto-roll double-bought it).
+
+    Logs a DESYNC ALERT per mismatch. Does NOT auto-close: broker positions net
+    across NAS + non-NAS and across variants sharing a strike, so attribution is
+    ambiguous -> surface for operator/manual reconciliation.
+    """
+    import sqlite3 as _sqlite3
+    from collections import defaultdict
+    try:
+        from services.kite_service import get_kite as _get_kite
+        kite = _get_kite()
+        broker = {}
+        for p in (kite.positions().get("net") or []):
+            t = str(p.get("tradingsymbol") or "")
+            if t.startswith("NIFTY") and (t.endswith("CE") or t.endswith("PE")):
+                broker[t] = int(p.get("quantity") or 0)
+    except Exception as e:
+        logger.warning(f"[NAS-DESYNC] kite.positions() unavailable: {e}")
+        return []
+    db_active = defaultdict(int)
+    for path, tab in _NAS_DBS_FOR_RECONCILE:
+        full = Path(__file__).parent / path
+        if not full.exists():
+            continue
+        try:
+            con = _sqlite3.connect(str(full))
+            for tsym, qty in con.execute(
+                f"SELECT tradingsymbol, qty FROM {tab} WHERE status='ACTIVE' AND mode='live'"
+            ):
+                db_active[str(tsym)] += int(qty or 0)
+            con.close()
+        except Exception as e:
+            logger.error(f"[NAS-DESYNC] {path}: {e}")
+    alerts = []
+    for tsym, dbq in db_active.items():
+        if dbq <= 0:
+            continue
+        bq = broker.get(tsym, 0)
+        broker_short = -bq if bq < 0 else 0
+        if dbq > broker_short:
+            alerts.append(
+                f"{tsym}: app shows {dbq} short ACTIVE but broker holds only "
+                f"{broker_short} short -> leg(s) closed externally, app stale"
+            )
+    for a in alerts:
+        logger.warning(f"[NAS-DESYNC] {a}")
+    if alerts:
+        logger.warning(
+            f"[NAS-DESYNC] {len(alerts)} app<->broker mismatch(es) -- manual reconcile needed"
+        )
+    return alerts
+
+
 def _nas_periodic_reconcile_job():
     """APScheduler hook: runs the reconciler every 3 min during market hours."""
     try:
         _nas_run_reconciler(close_orphans=True, source="periodic")
     except Exception as e:
         logger.error(f"[NAS-RECONCILE] periodic run failed: {e}", exc_info=True)
+    try:
+        _nas_reconcile_broker_positions()
+    except Exception as e:
+        logger.error(f"[NAS-DESYNC] periodic desync check failed: {e}", exc_info=True)
 
 
 # Schedule the periodic reconcile — every 3 min, 09:15-15:30 IST Mon-Fri
