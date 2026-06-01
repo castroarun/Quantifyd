@@ -486,6 +486,15 @@ class NasTicker:
             leg_ltp = self._option_ltps.get(t, leg_info['entry_premium'])
             leg_premiums[t] = (leg_ltp, leg_info)
 
+        # Bug #1 (cross-variant pool) guard: the OTM token pool mixes
+        # Squeeze-OTM and 9:16-OTM legs. A cross-leg roll is only meaningful
+        # within a single 2-leg strangle. If the pool holds anything other
+        # than exactly 2 legs (e.g. both variants active = 4), skip the
+        # cross-leg roll to avoid comparing/rolling across variants. Per-leg
+        # SL is handled separately and is unaffected.
+        if len(leg_premiums) != 2:
+            return
+
         # Cross-leg adjustment: compare legs against each other
         if self._adj_triggered:
             return  # Already processing an adjustment
@@ -623,17 +632,29 @@ class NasTicker:
         """Execute adjustment triggered by tick-level premium breach."""
         try:
             from services.nas_executor import NasExecutor
+            from services.nas_916_executors import Nas916OtmExecutor
             from services.nas_db import get_nas_db
+            from services.nas_916_db import get_nas_916_otm_db
             from services.nas_scanner import get_current_week_expiry
 
-            db = get_nas_db()
-            executor = NasExecutor(config=self.config)
-
-            # Find the position by tradingsymbol
-            active = db.get_active_positions()
-            pos = next((p for p in active if p['tradingsymbol'] == info['tradingsymbol']), None)
+            # Bug #1 fix: the OTM token pool mixes Squeeze-OTM and 9:16-OTM
+            # legs, so route the roll to whichever variant actually OWNS this
+            # leg (its own DB + executor) instead of a hardcoded squeeze one.
+            tsym = info['tradingsymbol']
+            db = None
+            executor = None
+            pos = None
+            for cand_db, make_exec in (
+                (get_nas_db(), lambda: NasExecutor(config=self.config)),
+                (get_nas_916_otm_db(), lambda: Nas916OtmExecutor()),
+            ):
+                cand_pos = next((p for p in cand_db.get_active_positions()
+                                 if p['tradingsymbol'] == tsym), None)
+                if cand_pos:
+                    db, executor, pos = cand_db, make_exec(), cand_pos
+                    break
             if not pos:
-                logger.warning(f"[NAS] Tick adj: position {info['tradingsymbol']} not found")
+                logger.warning(f"[NAS] Tick adj: position {tsym} not found in any OTM variant")
                 return
 
             # Build adjustment dict matching what executor.execute_adjustment expects
@@ -665,8 +686,10 @@ class NasTicker:
             if adj_id:
                 logger.info(f"[NAS] Tick adjustment done: {action} on {pos['instrument_type']} "
                             f"→ new pos #{adj_id}")
-                # Re-subscribe with updated positions
-                updated = db.get_active_positions()
+                # Re-subscribe with the FULL OTM pool (Squeeze + 9:16), not
+                # just the owning variant, else the other variant's legs drop.
+                updated = list(get_nas_db().get_active_positions() or [])
+                updated += list(get_nas_916_otm_db().get_active_positions() or [])
                 self.subscribe_option_legs(updated)
             else:
                 logger.warning(f"[NAS] Tick adjustment failed: {msg}")
