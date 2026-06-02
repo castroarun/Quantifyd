@@ -62,3 +62,8 @@ and drawdown curves.
 | `results/nas_28day_review.png` | Factsheet | yes |
 | `results/RESULTS.md` | Verdict | yes |
 | `results/per_trade.csv` | Flattened trades used | yes (small) |
+
+
+## 7. Phase-2 verdict (chain re-priced — TRUSTWORTHY)
+
+Re-priced 96-100% of closed legs at real option_chain premiums: **combined net ~Rs+2,000 over 25 days (FLAT)**. Phase-1 Rs592k was the OTM exit=0 artifact. Real per-system: Squeeze ATM4 +34.7k, 916 ATM2 +14.7k, 916 OTM +10.4k, Sq ATM2 +4.3k, Sq ATM +2.6k, 916 ATM -7.1k, Squeeze OTM -15.5k, 916 ATM4 -42.1k. No credible winner at 25-day sample. STATUS: DONE.
