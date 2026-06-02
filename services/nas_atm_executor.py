@@ -54,6 +54,23 @@ class NasAtmExecutor:
             if _dt.now().weekday() in skip_days:
                 return False, f'Skipped today (weekday filter: {skip_days})'
 
+        # DTE entry gate (research/51): only OPEN new positions within
+        # max_dte_at_entry days of the weekly expiry. The chain replay showed the
+        # edge is at 1 DTE while 4+ DTE bleeds. Expiry-day-agnostic (live expiry);
+        # fail-open on calc error so a glitch never silently halts trading.
+        if is_entry and cfg.get('max_dte_at_entry') is not None:
+            try:
+                from services.nas_scanner import get_current_week_expiry
+                from datetime import date as _date
+                _exp = get_current_week_expiry()
+                if hasattr(_exp, 'date') and not isinstance(_exp, _date):
+                    _exp = _exp.date()
+                _dte = (_exp - _date.today()).days
+                if _dte > cfg['max_dte_at_entry']:
+                    return False, f"DTE {_dte} > max {cfg['max_dte_at_entry']} (0/1-DTE only)"
+            except Exception as _e:
+                logger.warning(f"[NAS-ATM] DTE gate calc failed (allowing entry): {_e}")
+
         # Daily order limit
         today_orders = self.db.get_today_order_count()
         if today_orders >= cfg.get('max_daily_orders', 40):

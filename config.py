@@ -363,6 +363,10 @@ NAS_DEFAULTS = {
     # Day-of-week filter — skip OTM trading on Wed/Thu (expiry-week trend days
     # are unkind to range/premium-decay strategies). Mon=0, Tue=1, Wed=2, Thu=3, Fri=4.
     'skip_weekdays': (2, 3),
+    # DTE entry gate (research/51, 2026-06-02): only open new positions at <= this
+    # many days to weekly expiry. Replay showed the edge is at 1 DTE; 4+ DTE bleeds.
+    # 1 => trade only 0 & 1 DTE. Inherited by 916_OTM via spread.
+    'max_dte_at_entry': 1,
 
     # Adjustment Rules
     'premium_double_trigger': 2.0,       # Same-leg trigger: losing leg >= 2.0x its OWN entry premium
@@ -411,6 +415,10 @@ NAS_DEFAULTS = {
 
 # NAS ATM — Nifty ATR Strangle (ATM, SL-based, cascading re-entry)
 NAS_ATM_DEFAULTS = {
+    # DTE entry gate (research/51, 2026-06-02): only open new positions at <= this
+    # many days to weekly expiry (1 => trade only 0 & 1 DTE — where the edge is).
+    # Inherited by ATM2/ATM4 + all 916_ATM* via spread.
+    'max_dte_at_entry': 1,
     # Instrument (same as NAS OTM)
     'symbol': 'NIFTY',
     'exchange': 'NSE',
