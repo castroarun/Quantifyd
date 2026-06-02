@@ -75,3 +75,6 @@ persistence, RSI no help. Cost (~0.08–0.11R) eats the edge; intraday < swing
 
 ## 52 - NAS optimization (disciplined: 28d signal + years validation)
 Found an evidence-graded playbook, NOT a dredged winner. (1) Edge at 1 DTE. (2) **Tight opening-range -> range day, robust over 6yr/1565d, positive EVERY year 2020-26 (corr 0.52)** - sell on tight open, skip wide. (3) Stop = **+/-0.4% underlying-move** (converges on 28d-real +2yr-stress; beats 1.3x premium whipsaw and no-stop whose 2yr worst-day = -58.8k). (4) Diversify across 916 vs Squeeze families (uncorrelated), drop OTM losers. Recommended config: 1-DTE ATM straddle, tight-open only, cross-family, +/-0.4% move stop. See research/52_nas_optimization/results/RESULTS_COMBINED.md.
+
+## 53 - Regime angles: gap days & CPR width (years + 28d options)
+Gap (1564d): big gaps esp DOWN = bigger moves/fewer range days (bad for short-vol). **CPR width is backwards vs textbook (wide->more move) AND its range-rate skill decayed to ~noise by 2024-26** - not a reliable filter. 28d real straddle: CPR narrow +13k/wide -17k (consistent w/ move-magnitude); gap-down +6.3k BEST but that CONTRADICTS the years -> small-sample luck, trust years. 1-DTE positive across all gap types. Verdict: gap/CPR are minor noisy overlays; 1-DTE + tight-open are the robust edges. See research/53_regime_angles/results/.
