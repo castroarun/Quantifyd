@@ -32,15 +32,17 @@ ENTRY_916 = dtime(9, 16); ENTRY_WIN_END = dtime(14, 30)
 TIME_EXIT = dtime(14, 45); EOD = dtime(15, 15)
 SQ_START = dtime(9, 35)
 
+# 5th field = skip_weekdays (Mon=0..Sun=6). OTM/ATM2/ATM4 skip Wed(2)+Thu(3) per
+# config -> they only trade the near-expiry days (Mon/Tue/Fri). Basic ATM trades all.
 SYSTEMS = [
-    ("Squeeze OTM",  "squeeze", "OTM", "ROLL"),
-    ("Squeeze ATM",  "squeeze", "ATM", "SL_ST"),
-    ("Squeeze ATM2", "squeeze", "ATM", "CASCADE"),
-    ("Squeeze ATM4", "squeeze", "ATM", "ROLL_MATCH"),
-    ("916 OTM",      "t916",    "OTM", "ROLL"),
-    ("916 ATM",      "t916",    "ATM", "SL_ST"),
-    ("916 ATM2",     "t916",    "ATM", "CASCADE"),
-    ("916 ATM4",     "t916",    "ATM", "ROLL_MATCH"),
+    ("Squeeze OTM",  "squeeze", "OTM", "ROLL",       (2, 3)),
+    ("Squeeze ATM",  "squeeze", "ATM", "SL_ST",      ()),
+    ("Squeeze ATM2", "squeeze", "ATM", "CASCADE",    (2, 3)),
+    ("Squeeze ATM4", "squeeze", "ATM", "ROLL_MATCH", (2, 3)),
+    ("916 OTM",      "t916",    "OTM", "ROLL",        (2, 3)),
+    ("916 ATM",      "t916",    "ATM", "SL_ST",       ()),
+    ("916 ATM2",     "t916",    "ATM", "CASCADE",     (2, 3)),
+    ("916 ATM4",     "t916",    "ATM", "ROLL_MATCH",  (2, 3)),
 ]
 
 # ---------- data ----------
@@ -99,6 +101,7 @@ def sim_day(day, entry_mode, strike_mode, mgmt):
     df = df[df["expiry_date"] == exp]
     if df.empty:
         return []
+    dte_day = (pd.to_datetime(exp).date() - pd.to_datetime(day).date()).days
     spot_s = df.groupby("t")["underlying_spot"].first().sort_index()
     times = spot_s.index
     # premium lookup: tsym -> sorted (np times, ltps)
@@ -189,7 +192,7 @@ def sim_day(day, entry_mode, strike_mode, mgmt):
         if p is None: p = lg["entry"]
         pnl = (lg["entry"] - p) * lg["qty"] - BROK_PER_LEG
         lg["open"] = False
-        realized.append({"day": day, "tsym": lg["tsym"], "typ": lg["typ"],
+        realized.append({"day": day, "dte": dte_day, "tsym": lg["tsym"], "typ": lg["typ"],
                          "entry": lg["entry"], "exit": p, "qty": lg["qty"],
                          "pnl": pnl, "reason": reason})
 
@@ -294,8 +297,10 @@ def sim_day(day, entry_mode, strike_mode, mgmt):
 
 # ---------- run all ----------
 rows = []
-for name, em, sm, mg in SYSTEMS:
+for name, em, sm, mg, skip in SYSTEMS:
     for day in days:
+        if pd.Timestamp(day).weekday() in skip:
+            continue   # system does not trade this weekday (skip_weekdays)
         try:
             for r in sim_day(day, em, sm, mg):
                 r["system"] = name; rows.append(r)
@@ -327,17 +332,21 @@ for s in present:
                      MaxDD=round(mdd(cum.loc[s])), Best=round(bydate.max()), Worst=round(bydate.min())))
 summ = pd.DataFrame(summ)
 
+# DTE aggregates (days-to-expiry at entry)
+dte_comb = legs.groupby("dte")["pnl"].sum().sort_index()
+dte_sys = legs.pivot_table(index="system", columns="dte", values="pnl", aggfunc="sum").reindex(present).fillna(0.0)
+dte_sys = dte_sys.reindex(columns=sorted(dte_sys.columns))
+tot = legs["pnl"].sum()
+
 # ---------- figure ----------
 plt.rcParams.update({"font.size": 9, "axes.grid": True, "grid.alpha": .25, "figure.facecolor": "white"})
-fig = plt.figure(figsize=(15, 16)); gs = GridSpec(4, 2, height_ratios=[.4, 1.2, 1.2, 1.0], hspace=.42, wspace=.18)
+fig = plt.figure(figsize=(15, 20)); gs = GridSpec(5, 2, height_ratios=[.35, 1.1, 1.1, 1.0, 1.0], hspace=.5, wspace=.18)
 ax0 = fig.add_subplot(gs[0, :]); ax0.axis("off")
-tot = legs["pnl"].sum()
-ax0.text(0, .7, "NAS Systems — REPLAY backtest on recorded NIFTY weekly chain", fontsize=16, fontweight="bold")
-ax0.text(0, .28, f"{pd.to_datetime(dates[0]).date()} -> {pd.to_datetime(dates[-1]).date()} · {len(dates)} days · "
-                 f"lots=2 (130 qty) all systems · combined net ₹{tot:,.0f} (priced from real chain)", fontsize=10)
-ax0.text(0, -.05, "True strategy replay (rules on recorded premiums). 28-day single regime — signal/audit, "
-                  "not validation. 9:16 entry exact; squeeze entry approximated; SL/ST at 1-min cadence.",
-         fontsize=8.5, color="#a00", style="italic")
+ax0.text(0, .7, "NAS Systems — REPLAY on recorded NIFTY chain (skip_weekdays respected)", fontsize=15, fontweight="bold")
+ax0.text(0, .3, f"{pd.to_datetime(dates[0]).date()} -> {pd.to_datetime(dates[-1]).date()} · {len(dates)} traded days · "
+                f"lots=2 · combined net ₹{tot:,.0f} · OTM/ATM2/ATM4 skip Wed+Thu (near-expiry only)", fontsize=9.5)
+ax0.text(0, -.05, "True replay on real premiums. 28-day single regime -> signal/audit, not validation. "
+                  "9:16 entry exact; squeeze approx; 1-min SL/ST; LTP (no slippage).", fontsize=8.5, color="#a00", style="italic")
 ax1 = fig.add_subplot(gs[1, 0])
 ax1.plot(comb.index, comb.values, color="#06c", lw=2); ax1.axhline(0, color="#999", lw=.8)
 ax1.set_title("Combined book — cumulative net ₹"); ax1.tick_params(axis="x", rotation=45)
@@ -350,31 +359,55 @@ M = pv.values.astype(float); vmax = np.nanpercentile(np.abs(M), 95) or 1
 im = ax3.imshow(M, aspect="auto", cmap="RdYlGn", vmin=-vmax, vmax=vmax)
 ax3.set_yticks(range(len(present))); ax3.set_yticklabels(present, fontsize=8)
 ax3.set_xticks(range(len(dates))); ax3.set_xticklabels([pd.to_datetime(d).strftime("%m-%d") for d in dates], rotation=90, fontsize=6.5)
-ax3.set_title("Per-day × per-system net ₹ (replay)")
+ax3.set_title("Per-day × per-system net ₹")
 for i in range(len(present)):
     for j in range(len(dates)):
         if abs(M[i, j]) > 1: ax3.text(j, i, f"{M[i,j]/1000:.1f}", ha="center", va="center", fontsize=5, color="black")
 fig.colorbar(im, ax=ax3, fraction=.025, pad=.01)
-ax4 = fig.add_subplot(gs[3, :]); ax4.axis("off")
+# DTE panels — the near-expiry focus
+axd = fig.add_subplot(gs[3, 0])
+axd.bar([str(int(d)) for d in dte_comb.index], dte_comb.values,
+        color=["#0a6" if v >= 0 else "#d33" for v in dte_comb.values])
+axd.axhline(0, color="#333", lw=.8); axd.set_xlabel("DTE at entry")
+axd.set_title("Combined net ₹ by DTE")
+axe = fig.add_subplot(gs[3, 1])
+Md = dte_sys.values.astype(float); vd = np.nanpercentile(np.abs(Md), 95) or 1
+imd = axe.imshow(Md, aspect="auto", cmap="RdYlGn", vmin=-vd, vmax=vd)
+axe.set_yticks(range(len(present))); axe.set_yticklabels(present, fontsize=7)
+axe.set_xticks(range(len(dte_sys.columns))); axe.set_xticklabels([f"{int(d)}DTE" for d in dte_sys.columns], fontsize=8)
+axe.set_title("Net ₹ by system × DTE")
+for i in range(len(present)):
+    for j in range(len(dte_sys.columns)):
+        if abs(Md[i, j]) > 1: axe.text(j, i, f"{Md[i,j]/1000:.1f}", ha="center", va="center", fontsize=6, color="black")
+ax4 = fig.add_subplot(gs[4, :]); ax4.axis("off")
 disp = summ.copy()
 for cc in ["Net", "PerDay", "MaxDD", "Best", "Worst"]: disp[cc] = disp[cc].map(lambda v: f"{v:,.0f}")
 disp["DayWin"] = disp["DayWin"].map(lambda v: f"{v:.0f}%")
 tb = ax4.table(cellText=disp.values, colLabels=disp.columns, loc="center", cellLoc="center")
 tb.auto_set_font_size(False); tb.set_fontsize(8); tb.scale(1, 1.6)
 for j in range(len(disp.columns)): tb[0, j].set_facecolor("#222"); tb[0, j].set_text_props(color="white", fontweight="bold")
-ax4.set_title("Per-system replay stats (net ₹, lots=2)", y=.9, fontweight="bold")
+ax4.set_title("Per-system replay stats (net ₹, lots=2, skip_weekdays applied)", y=.9, fontweight="bold")
 fig.savefig(OUT / "nas_replay.png", dpi=110, bbox_inches="tight")
 print("WROTE", OUT / "nas_replay.png")
 
-L = ["# NAS Systems — REPLAY backtest on recorded NIFTY chain\n",
-     f"{pd.to_datetime(dates[0]).date()} → {pd.to_datetime(dates[-1]).date()} · {len(dates)} days · lots=2 · "
+L = ["# NAS Systems — REPLAY on recorded NIFTY chain (skip_weekdays respected)\n",
+     f"{pd.to_datetime(dates[0]).date()} → {pd.to_datetime(dates[-1]).date()} · {len(dates)} traded days · lots=2 · "
      f"**combined net ₹{tot:,.0f}**\n",
-     "**VERDICT: SIGNAL/AUDIT (28-day single regime, not validation).** Rules replayed on real recorded premiums.\n",
+     "OTM/ATM2/ATM4 skip Wed+Thu (near-expiry only); basic ATM trades all days.\n",
+     "**VERDICT: SIGNAL/AUDIT (28-day single regime, not validation).**\n", "## Per-system\n",
      "| " + " | ".join(summ.columns) + " |", "|" + "|".join(["---"]*len(summ.columns)) + "|"]
 for _, r in summ.iterrows(): L.append("| " + " | ".join(str(r[c]) for c in summ.columns) + " |")
-L += ["\n- 9:16 entry exact; squeeze entry reconstructed from per-min spot (approx).",
-      "- 1-min cadence (intra-min SL/ST spikes missed); LTP pricing (no slippage) => mildly optimistic.",
-      "- Validate against actual trades (research/50) for faithfulness."]
+L.append("\n## Net ₹ by DTE (days-to-expiry at entry) — combined")
+L.append("| DTE | Net ₹ | Legs |"); L.append("|---|---|---|")
+for d in dte_comb.index:
+    L.append(f"| {int(d)} | {dte_comb.loc[d]:,.0f} | {int((legs['dte']==d).sum())} |")
+L.append("\n## Net ₹ by system × DTE")
+L.append("| System | " + " | ".join(f"{int(d)}DTE" for d in dte_sys.columns) + " |")
+L.append("|" + "|".join(["---"]*(len(dte_sys.columns)+1)) + "|")
+for s in present:
+    L.append("| " + s + " | " + " | ".join(f"{dte_sys.loc[s,d]:,.0f}" for d in dte_sys.columns) + " |")
+L += ["\n- 9:16 entry exact; squeeze entry reconstructed (approx); 1-min SL/ST; LTP (no slippage).",
+      "- skip_weekdays applied per config (OTM/ATM2/ATM4 skip Wed/Thu). Validate vs actuals (research/50)."]
 (OUT / "RESULTS.md").write_text("\n".join(L), encoding="utf-8")
 print("WROTE", OUT / "RESULTS.md")
 oc.close()

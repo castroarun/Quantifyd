@@ -41,3 +41,12 @@ phase-2 re-pricing of actual fills — a genuine strategy replay.)
 
 ## 6. VERDICT (DONE)
 True replay, all 8 systems, lots=2, 28 days, priced from recorded chain. **Combined net Rs-54,123 (NEGATIVE).** Only Squeeze ATM marginally + (Rs1.7k); 916 ATM2 cascade worst (-23.9k); 9:16 family worse than squeeze-entry; day-win 32-44%. Agrees with research/50 (actuals ~flat): NO EDGE in this regime. Fixed a roll-churn bug (916 OTM 1252->157 legs) before finalizing. 28 days + squeeze-entry/1-min approximations = SIGNAL not validation. STATUS: DONE.
+
+## 7. CORRECTED VERDICT (skip_weekdays + DTE) — supersedes the all-days run
+The v1 all-days run (-54k) was WRONG: it ignored skip_weekdays and traded Wed/Thu
+the systems never trade. Corrected (skip_weekdays respected): **combined +Rs11,236**.
+DTE breakdown is the key: **1 DTE +Rs37,272** (the edge), 0 DTE -Rs2,075, far DTE
+4/5/6 = -Rs24k (bleed). **Restrict to 0+1 DTE -> ~+Rs35k.** Best: 916 ATM4 +21k,
+916 ATM2 +7.2k (skip Wed/Thu, earn on 1 DTE). Worst: 916 ATM -14k (trades all days,
+bleeds -19k on far DTE -> should also skip Wed/Thu). User thesis (run 0/1 DTE) is
+DATA-CONFIRMED. STATUS: DONE.
