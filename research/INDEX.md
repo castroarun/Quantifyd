@@ -72,3 +72,6 @@ persistence, RSI no help. Cost (~0.08–0.11R) eats the edge; intraday < swing
 
 ## 51 - NAS Systems: true replay on recorded NIFTY weekly chain
 **All 8 NAS systems replayed (rules re-run) on 28 days of recorded option_chain, lots=2 normalized.** Combined **net Rs-54,123 (NEGATIVE)**; only Squeeze ATM +Rs1.7k, 916 ATM2 cascade -23.9k worst, 9:16 family < squeeze-entry, day-win 32-44%. **VERDICT: NO EDGE this regime** (agrees with research/50 actuals ~flat). Fixed OTM roll-churn (1252->157 legs). 28d single-regime + squeeze-entry/1-min approximations = signal not validation. See research/51_nas_chain_replay/results/.
+
+## 52 - NAS optimization (disciplined: 28d signal + years validation)
+Found an evidence-graded playbook, NOT a dredged winner. (1) Edge at 1 DTE. (2) **Tight opening-range -> range day, robust over 6yr/1565d, positive EVERY year 2020-26 (corr 0.52)** - sell on tight open, skip wide. (3) Stop = **+/-0.4% underlying-move** (converges on 28d-real +2yr-stress; beats 1.3x premium whipsaw and no-stop whose 2yr worst-day = -58.8k). (4) Diversify across 916 vs Squeeze families (uncorrelated), drop OTM losers. Recommended config: 1-DTE ATM straddle, tight-open only, cross-family, +/-0.4% move stop. See research/52_nas_optimization/results/RESULTS_COMBINED.md.
