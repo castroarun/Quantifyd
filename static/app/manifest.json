@@ -1,0 +1,14 @@
+{
+  "name": "Quantifyd",
+  "short_name": "Quantifyd",
+  "start_url": "/app/nas",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#1B1B1A",
+  "theme_color": "#1B1B1A",
+  "icons": [
+    {"src": "/app/q192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/app/q512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/app/q512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

@@ -695,6 +695,7 @@ interface TBRow {
   reason?: string;
   inTime: string;        // entry time HH:MM
   outTime: string;       // exit time HH:MM ('' while open)
+  arm: number | null;    // exit/SL monitoring trigger value (premium) while open
 }
 
 // Compact status tags so the column stays narrow and the P&L stays next to it.
@@ -735,6 +736,7 @@ function buildTradeBook(
         entry, exit: ltp, pnl, open, reason: p.exit_reason ?? undefined,
         inTime: formatLegTime(p.entry_time) ?? '',
         outTime: open ? '' : (formatLegTime(p.exit_time) ?? ''),
+        arm: open ? (p.sl_price ?? null) : null,
       });
     };
     [...(pos.ce ?? []), ...(pos.pe ?? [])].forEach((p) => push(p, true));
@@ -787,8 +789,8 @@ function TradeBook({ systems, states, liveLegs }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 104px 116px 48px 48px 86px'
-    : '120px 34px 58px 46px 104px 116px 48px 48px 86px';
+    ? '34px 58px 46px 104px 70px 116px 48px 48px 86px'
+    : '120px 34px 58px 46px 104px 70px 116px 48px 48px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -829,7 +831,7 @@ function TradeBook({ systems, states, liveLegs }: {
         }}>
           {mode !== 'system' && <span>SYSTEM</span>}
           <span>C/P</span><span>STRIKE</span><span>QTY</span><span>ENTRY→EXIT</span>
-          <span>STATUS</span><span>IN</span><span>OUT</span>
+          <span>ARM</span><span>STATUS</span><span>IN</span><span>OUT</span>
           <span style={{ textAlign: 'right' }}>P&amp;L</span>
         </div>
         {groups.map((g) => {
@@ -860,6 +862,15 @@ function TradeBook({ systems, states, liveLegs }: {
                   <span style={{ color: 'var(--ink-muted)' }}>
                     {r.entry != null ? r.entry.toFixed(1) : '—'} → {r.exit != null ? r.exit.toFixed(1) : '—'}
                   </span>
+                  <span
+                    title={r.open && r.arm != null && r.arm > 0
+                      ? `Exit/SL monitoring armed — triggers at premium ${r.arm}`
+                      : 'No active exit arm'}
+                    style={{
+                      color: r.open && r.arm != null && r.arm > 0 ? '#d29922' : 'var(--ink-faint, #6e7681)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >{r.open && r.arm != null && r.arm > 0 ? `● ${r.arm.toFixed(1)}` : '—'}</span>
                   <span style={{
                     color: r.open ? '#3fb950' : 'var(--ink-faint, #6e7681)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
