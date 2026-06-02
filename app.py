@@ -9131,7 +9131,7 @@ def api_options_coverage():
             },
             'sessions': sessions,
             'granularity': '1-min snapshots (option_chain + underlying_spot)',
-            'capture_window': '09:20 - 15:30 IST Mon-Fri',
+            'capture_window': '09:15 - 15:30 IST Mon-Fri',
         })
     except Exception as e:
         logger.error(f"[OPTIONS] coverage error: {e}", exc_info=True)
@@ -9198,9 +9198,9 @@ def api_options_download_log():
 # ---- Options Data Scheduled Jobs ----
 
 def _options_capture_job():
-    """Every 1 min Mon-Fri 9:20-15:20 — Capture index option chains."""
+    """Every 1 min Mon-Fri 9:15-15:30 — Capture index option chains."""
     now = datetime.now()
-    market_start = now.replace(hour=9, minute=20, second=0)
+    market_start = now.replace(hour=9, minute=15, second=0)
     market_end = now.replace(hour=15, minute=30, second=0)
     if now < market_start or now > market_end:
         return  # Outside market hours
