@@ -183,3 +183,4 @@ research/**/results/trades_*.csv
 *.preroll_*
 _deferred_restart.sh
 backtest_data/nas_master_mode.json
+static/nas_mtm.json
