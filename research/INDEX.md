@@ -65,3 +65,7 @@ sweep (EOD/HARD_SL/2R/Chandelier/Supertrend), RSI axis, 8-name G1 smoke,
 +0.081R), every exit net-negative @6bps (best −0.029R, PF 0.95), no per-year
 persistence, RSI no help. Cost (~0.08–0.11R) eats the edge; intraday < swing
 (cf research/44). Shelved before the 30k-cell sweep. See research/49.../RESULTS.md.
+
+
+## 50 - NAS 8-System 28-Day Live/Paper Review
+**Real recorded fills of all 8 NAS systems, 2026-04-20 to 06-02 (25 days, 180 trades).** Factsheet: per-system equity (raw + per-lot), per-day x system heatmap, drawdowns, stats. **VERDICT: SIGNAL/AUDIT ONLY (28-day single regime, not validation).** Surfaced a data bug: the OTM trade recorder books exit=Rs0 -> Squeeze OTM (+115k) & 916 OTM (+204k) show fake 100% win / Rs0 DD, inflating the combined headline to Rs592k (~319k phantom). Trustworthy ATM half: 916 ATM2 +137k / ATM +68k / ATM4 +65k positive; Squeeze ATM/ATM2 ~flat-negative; 9:16 family beat squeeze-entry family. Phase 2 re-prices actual legs vs recorded option_chain for true P&L. See research/50_nas_28day_live_review/results/RESULTS.md.
