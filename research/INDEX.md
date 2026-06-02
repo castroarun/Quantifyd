@@ -69,3 +69,6 @@ persistence, RSI no help. Cost (~0.08–0.11R) eats the edge; intraday < swing
 
 ## 50 - NAS 8-System 28-Day Live/Paper Review
 **Real recorded fills of all 8 NAS systems, 2026-04-20 to 06-02 (25 days, 180 trades).** Factsheet: per-system equity (raw + per-lot), per-day x system heatmap, drawdowns, stats. **VERDICT: SIGNAL/AUDIT ONLY (28-day single regime, not validation).** Surfaced a data bug: the OTM trade recorder books exit=Rs0 -> Squeeze OTM (+115k) & 916 OTM (+204k) show fake 100% win / Rs0 DD, inflating the combined headline to Rs592k (~319k phantom). Trustworthy ATM half: 916 ATM2 +137k / ATM +68k / ATM4 +65k positive; Squeeze ATM/ATM2 ~flat-negative; 9:16 family beat squeeze-entry family. Phase 2 re-prices actual legs vs recorded option_chain for true P&L. See research/50_nas_28day_live_review/results/RESULTS.md.
+
+## 51 - NAS Systems: true replay on recorded NIFTY weekly chain
+**All 8 NAS systems replayed (rules re-run) on 28 days of recorded option_chain, lots=2 normalized.** Combined **net Rs-54,123 (NEGATIVE)**; only Squeeze ATM +Rs1.7k, 916 ATM2 cascade -23.9k worst, 9:16 family < squeeze-entry, day-win 32-44%. **VERDICT: NO EDGE this regime** (agrees with research/50 actuals ~flat). Fixed OTM roll-churn (1252->157 legs). 28d single-regime + squeeze-entry/1-min approximations = signal not validation. See research/51_nas_chain_replay/results/.
