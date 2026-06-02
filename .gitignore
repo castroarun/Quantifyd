@@ -176,3 +176,10 @@ Usersarunc*.json
 research/**/__pycache__/
 research/**/results/symbol_variant_stats*.csv
 research/**/results/trades_*.csv
+
+# Local backups / temp (never commit)
+*.bak
+*.bak_*
+*.preroll_*
+_deferred_restart.sh
+backtest_data/nas_master_mode.json

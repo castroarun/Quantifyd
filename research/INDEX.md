@@ -57,3 +57,11 @@ NN_research_name/
 | Combined Swing | E25_60_ADX20_R14_30_P20_10 | 8.19% | 8.0% | 1.40 | 1.03 |
 
 **Key insight:** MQ portfolio strategy dominates. Technical indicators and swing trading on 60-min data cannot compete with fully-invested momentum+quality stock selection.
+
+## 49 — volbreak_pdh_30min (2026-06-01)
+**Vol > own 50-day MA + break prev-day high, 30-min intraday LONG**, all-exit
+sweep (EOD/HARD_SL/2R/Chandelier/Supertrend), RSI axis, 8-name G1 smoke,
+2018–2026, 6bps. **VERDICT: NO EDGE (net of cost)** — gross faint (best HARD_SL
++0.081R), every exit net-negative @6bps (best −0.029R, PF 0.95), no per-year
+persistence, RSI no help. Cost (~0.08–0.11R) eats the edge; intraday < swing
+(cf research/44). Shelved before the 30k-cell sweep. See research/49.../RESULTS.md.
