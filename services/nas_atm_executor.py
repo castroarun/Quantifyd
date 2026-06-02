@@ -174,41 +174,140 @@ class NasAtmExecutor:
                      f"@ {price:.2f} SL={sl_price:.2f} ({signal_type})")
         return position_id
 
-    def _close_leg(self, pos, exit_price, exit_reason):
-        """Close a single position leg."""
-        cfg = self.cfg
-        self.db.close_position(pos['id'], round(exit_price, 2), exit_reason)
+    def _confirm_exit_fill(self, order_id, tries=6, delay=0.4):
+        """Poll Kite order_history until the exit order reaches a terminal state.
 
-        # Live mode: buy back
-        if not cfg.get('paper_trading_mode', True):
+        Returns (status, avg_price) where status is one of 'COMPLETE',
+        'REJECTED', 'CANCELLED', or 'PENDING' (still working / unknown after
+        the poll window). MARKET orders normally fill on the first poll.
+        """
+        import time as _time
+        from services.kite_service import get_kite
+        kite = get_kite()
+        last_status = 'PENDING'
+        for _ in range(tries):
+            _time.sleep(delay)
             try:
-                from services.kite_service import get_kite
-                kite = get_kite()
-                kite.place_order(
-                    variety='regular',
-                    exchange='NFO',
-                    tradingsymbol=pos['tradingsymbol'],
-                    transaction_type='BUY',
-                    quantity=pos['qty'],
-                    product='MIS',
-                    order_type='MARKET',
-                )
+                hist = kite.order_history(order_id)
             except Exception as e:
-                logger.error(f"[NAS-ATM] Exit order failed for {pos['tradingsymbol']}: {e}")
+                logger.warning(f"[NAS-ATM] order_history({order_id}) failed: {e}")
+                continue
+            if not hist:
+                continue
+            last = hist[-1]
+            last_status = str(last.get('status') or '').upper()
+            if last_status == 'COMPLETE':
+                return 'COMPLETE', (last.get('average_price') or 0)
+            if last_status in ('REJECTED', 'CANCELLED'):
+                logger.error(f"[NAS-ATM] exit order {order_id} {last_status}: "
+                             f"{last.get('status_message')}")
+                return last_status, None
+        return (last_status if last_status in ('REJECTED', 'CANCELLED') else 'PENDING'), None
 
-        self.db.log_order(
-            tradingsymbol=pos['tradingsymbol'],
-            transaction_type='BUY',
-            qty=pos['qty'],
-            price=exit_price,
-            order_type='MARKET',
-            status='PAPER' if cfg.get('paper_trading_mode', True) else 'PLACED',
-            position_id=pos['id'],
-            signal_type=exit_reason,
-            mode='paper' if cfg.get('paper_trading_mode', True) else 'live',
+    def _close_leg(self, pos, exit_price, exit_reason):
+        """Close a single position leg — broker-truthful.
+
+        The DB is marked CLOSED only when the buyback is actually confirmed at
+        the exchange (or in paper mode). On the live path:
+
+          * CONFIRMED (COMPLETE)          -> status CLOSED at the real fill price
+          * placed but not yet confirmed  -> status CLOSING (+ kite_order_id) so
+                                             the SL/ST monitor never re-fires a
+                                             second buyback and the leg is not
+                                             falsely closed; the reconciler
+                                             finalises it against the orderbook.
+          * place_order failed / REJECTED -> leg LEFT ACTIVE so the monitor keeps
+                                             watching and retries; never orphaned.
+
+        Returns True if the leg is closed or a confirmed exit is in flight;
+        False if the exit failed and the leg is still live (the caller must
+        treat the position as still open).
+        """
+        cfg = self.cfg
+        paper = cfg.get('paper_trading_mode', True)
+
+        # Paper mode: fill immediately (unchanged behaviour).
+        if paper:
+            self.db.close_position(pos['id'], round(exit_price, 2), exit_reason)
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=exit_price, order_type='MARKET',
+                status='PAPER', position_id=pos['id'],
+                signal_type=exit_reason, mode='paper',
+            )
+            logger.info(f"[NAS-ATM] [EXIT] {pos['tradingsymbol']} -- {exit_reason} @ {exit_price:.2f}")
+            return True
+
+        # Live mode: place the buyback FIRST, confirm, THEN update the DB.
+        try:
+            from services.kite_service import get_kite
+            kite = get_kite()
+            order_id = kite.place_order(
+                variety='regular', exchange='NFO',
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                quantity=pos['qty'], product='MIS', order_type='MARKET',
+            )
+        except Exception as e:
+            # Nothing reached the exchange -> keep the leg ACTIVE and retry on
+            # the next SL/ST tick. NEVER mark it closed (that orphans a live short).
+            logger.critical(f"[NAS-ATM] EXIT ORDER FAILED for {pos['tradingsymbol']} "
+                            f"({exit_reason}) -- leg LEFT ACTIVE for retry: {e}")
+            self.db.update_position(pos['id'], notes=f"EXIT_FAILED {exit_reason}: {e}")
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=exit_price, order_type='MARKET',
+                status='FAILED', position_id=pos['id'],
+                signal_type=exit_reason, mode='live',
+            )
+            return False
+
+        status, avg = self._confirm_exit_fill(order_id)
+
+        if status == 'COMPLETE':
+            fill = round(avg or exit_price, 2)
+            self.db.close_position(pos['id'], fill, exit_reason)
+            self.db.update_position(pos['id'], kite_order_id=str(order_id))
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=fill, order_type='MARKET',
+                status='COMPLETE', position_id=pos['id'],
+                signal_type=exit_reason, mode='live',
+            )
+            logger.info(f"[NAS-ATM] [EXIT] {pos['tradingsymbol']} -- {exit_reason} "
+                        f"@ {fill:.2f} (order {order_id})")
+            return True
+
+        if status in ('REJECTED', 'CANCELLED'):
+            # The buyback did NOT fill -> the leg is still live. Keep it ACTIVE
+            # so the monitor retries; never orphan it.
+            logger.critical(f"[NAS-ATM] EXIT {status} for {pos['tradingsymbol']} "
+                            f"order {order_id} -- leg LEFT ACTIVE for retry")
+            self.db.update_position(pos['id'], notes=f"EXIT_{status} {exit_reason} order={order_id}")
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=exit_price, order_type='MARKET',
+                status=status, position_id=pos['id'],
+                signal_type=exit_reason, mode='live',
+            )
+            return False
+
+        # Placed but unconfirmed within the poll window. Park in CLOSING with the
+        # order id so (a) the monitor won't re-fire another buyback (no double
+        # cover) and (b) the reconciler finalises it once the orderbook settles.
+        self.db.update_position(
+            pos['id'], status='CLOSING', kite_order_id=str(order_id),
+            exit_reason=exit_reason, notes=f"EXIT_PENDING {exit_reason} order={order_id}",
         )
-
-        logger.info(f"[NAS-ATM] [EXIT] {pos['tradingsymbol']} -- {exit_reason} @ {exit_price:.2f}")
+        self.db.log_order(
+            tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+            qty=pos['qty'], price=exit_price, order_type='MARKET',
+            status='PENDING', position_id=pos['id'],
+            signal_type=exit_reason, mode='live',
+        )
+        logger.warning(f"[NAS-ATM] [EXIT-PENDING] {pos['tradingsymbol']} -- {exit_reason} "
+                       f"order {order_id} placed, fill unconfirmed -> CLOSING "
+                       f"(reconciler will finalise)")
+        return True
 
     # --- Entry Execution -----------------------------------------------
 
@@ -553,6 +652,16 @@ class NasAtmExecutor:
         existing = self.db.get_recent_trades(limit=100)
         if any(t.get('strangle_id') == strangle_id for t in existing):
             logger.debug(f"[NAS-ATM] Trade already recorded for strangle #{strangle_id}, skipping")
+            return
+
+        # Only finalise once EVERY leg has actually closed. A leg still ACTIVE,
+        # CLOSING, or PENDING means an exit is unfilled / still confirming at the
+        # exchange — recording now would book a partial (zero-exit) trade. Defer;
+        # the reconciler re-invokes this once the leg settles to CLOSED/FAILED.
+        all_legs = self.db.get_positions_by_strangle(strangle_id)
+        if any(p.get('status') in ('ACTIVE', 'CLOSING', 'PENDING') for p in all_legs):
+            logger.debug(f"[NAS-ATM] strangle #{strangle_id} still has open legs "
+                         f"-- deferring trade record")
             return
 
         # Re-read from DB to get fresh exit prices and statuses

@@ -166,6 +166,9 @@ def _nas_run_reconciler(close_orphans: bool = True, source: str = "boot"):
         'left_pending': 0,
         'orphans_closed': 0,
         'orphan_close_errors': 0,
+        'exits_finalized': 0,
+        'exits_reverted': 0,
+        'exits_left_closing': 0,
     }
 
     # Load Kite orderbook once
@@ -179,6 +182,7 @@ def _nas_run_reconciler(close_orphans: bool = True, source: str = "boot"):
                 kite_orders_by_id[oid] = (
                     str(o.get('status') or '').upper(),
                     str(o.get('status_message') or ''),
+                    o.get('average_price') or 0,
                 )
         result['kite_orders_loaded'] = len(kite_orders_by_id)
     except Exception as kite_err:
@@ -190,6 +194,7 @@ def _nas_run_reconciler(close_orphans: bool = True, source: str = "boot"):
 
     # Walk each DB
     newly_failed = []  # list of (db_path, table, row_id, strangle_id, tradingsymbol)
+    closed_strangles = []  # (db_path, table, strangle_id) whose CLOSING exit just confirmed
     for path, tab in _NAS_DBS_FOR_RECONCILE:
         full_path = Path(__file__).parent / path
         if not full_path.exists():
@@ -210,7 +215,7 @@ def _nas_run_reconciler(close_orphans: bool = True, source: str = "boot"):
                 if ks_tuple is None:
                     result['left_pending'] += 1
                     continue
-                ks, msg = ks_tuple
+                ks, msg, _avg = ks_tuple
                 if ks == 'COMPLETE':
                     con.execute(
                         f"UPDATE {tab} SET status='ACTIVE' WHERE id=?", (row_id,)
@@ -236,6 +241,60 @@ def _nas_run_reconciler(close_orphans: bool = True, source: str = "boot"):
                     newly_failed.append((path, tab, row_id, sid, tsym))
                 else:
                     result['left_pending'] += 1
+
+            # --- Exit side: finalise CLOSING legs against the orderbook -------
+            # Mirror of the entry reconcile. A leg sits in CLOSING when its
+            # buyback was placed but _close_leg could not confirm the fill
+            # synchronously:
+            #   COMPLETE             -> CLOSED (book the real fill price)
+            #   REJECTED / CANCELLED -> back to ACTIVE (exit never happened; the
+            #                           SL/ST monitor retries — never orphaned)
+            #   anything else        -> left CLOSING for the next run
+            from datetime import datetime as _dt
+            closing = con.execute(
+                f"SELECT id, kite_order_id, tradingsymbol, strangle_id, exit_price "
+                f"FROM {tab} WHERE status='CLOSING' AND mode='live' "
+                f"AND kite_order_id IS NOT NULL AND kite_order_id != '' "
+                f"AND kite_order_id != 'None'"
+            ).fetchall()
+            for row_id, oid, tsym, sid, prev_exit in closing:
+                oid = str(oid or '').strip()
+                ks_tuple = kite_orders_by_id.get(oid)
+                if ks_tuple is None:
+                    result['exits_left_closing'] += 1
+                    continue
+                ks, msg, avg = ks_tuple
+                if ks == 'COMPLETE':
+                    now = _dt.now().isoformat()
+                    fill = round(avg or prev_exit or 0, 2)
+                    con.execute(
+                        f"UPDATE {tab} SET status='CLOSED', exit_price=?, "
+                        f"exit_time=?, updated_at=? WHERE id=?",
+                        (fill, now, now, row_id),
+                    )
+                    result['exits_finalized'] += 1
+                    logger.warning(
+                        f"[NAS-RECONCILE] {path}#{row_id} {tsym}: "
+                        f"CLOSING->CLOSED @ {fill} (Kite exit order {oid} COMPLETE)"
+                    )
+                    if sid is not None:
+                        closed_strangles.append((path, tab, sid))
+                elif ks in ('REJECTED', 'CANCELLED'):
+                    note = f"Exit order {oid} {ks}"
+                    if msg:
+                        note += f": {msg}"
+                    con.execute(
+                        f"UPDATE {tab} SET status='ACTIVE', notes=? WHERE id=?",
+                        (note, row_id),
+                    )
+                    result['exits_reverted'] += 1
+                    logger.critical(
+                        f"[NAS-RECONCILE] {path}#{row_id} {tsym}: "
+                        f"CLOSING->ACTIVE ({note}) -- exit did NOT fill, leg still live"
+                    )
+                else:
+                    result['exits_left_closing'] += 1
+
             con.commit()
             con.close()
         except Exception as db_err:
@@ -299,13 +358,44 @@ def _nas_run_reconciler(close_orphans: bool = True, source: str = "boot"):
                 logger.error(f"[NAS-RECONCILE] orphan scan failed for #{sid}: {orph_err}")
                 result['orphan_close_errors'] += 1
 
+    # Finalise the strangle trade record for any strangle whose CLOSING exit
+    # just confirmed CLOSED above. _record_trade no-ops while any leg is still
+    # open and (ATM) skips duplicates, so this is safe to call once per run.
+    for path, tab, sid in {(p, t, s) for (p, t, s) in closed_strangles}:
+        try:
+            con = _sqlite3.connect(str(Path(__file__).parent / path))
+            con.row_factory = _sqlite3.Row
+            legs = con.execute(
+                f"SELECT instrument_type, leg, entry_price, exit_price, strike, qty, "
+                f"entry_time, adjustment_count, status, tradingsymbol, exit_reason, "
+                f"expiry_date FROM {tab} WHERE strangle_id=?",
+                (sid,),
+            ).fetchall()
+            con.close()
+            if not legs:
+                continue
+            # Only finalise once EVERY leg of the strangle has settled.
+            if any(str(r['status']) in ('ACTIVE', 'CLOSING', 'PENDING') for r in legs):
+                continue
+            executor = _nas_executor_for_db_path(path)
+            if executor is None:
+                continue
+            pos_dicts = [dict(r) for r in legs]
+            reason = next((r['exit_reason'] for r in legs if r['exit_reason']), 'EXIT')
+            executor._record_trade(sid, pos_dicts, reason, None)
+        except Exception as rec_err:
+            logger.error(f"[NAS-RECONCILE] trade finalise failed for #{sid}: {rec_err}")
+
     logger.warning(
         f"[NAS-RECONCILE] {source} complete: "
         f"{result['flipped_active']} -> ACTIVE, "
         f"{result['flipped_failed']} -> FAILED, "
         f"{result['left_pending']} left PENDING, "
         f"orphans closed={result['orphans_closed']} "
-        f"(errors={result['orphan_close_errors']})"
+        f"(errors={result['orphan_close_errors']}); "
+        f"exits {result['exits_finalized']} finalised, "
+        f"{result['exits_reverted']} reverted->ACTIVE, "
+        f"{result['exits_left_closing']} left CLOSING"
     )
     return result
 
@@ -355,9 +445,14 @@ def _nas_reconcile_broker_positions():
     is stale and a code adjustment could act on a phantom leg (2026-06-01: a
     manual 23200 PE close left the DB active -> the auto-roll double-bought it).
 
-    Logs a DESYNC ALERT per mismatch. Does NOT auto-close: broker positions net
-    across NAS + non-NAS and across variants sharing a strike, so attribution is
-    ambiguous -> surface for operator/manual reconciliation.
+    Auto-closes ONLY the unambiguous ghost case: broker holds ZERO short in a
+    symbol while the DB shows it ACTIVE -> every DB-active leg for that symbol is
+    provably stale (no variant can be holding it), so mark them CLOSED (DB only,
+    no broker order). A two-consecutive-check guard avoids racing a transient
+    broker-flat (e.g. the buyback-confirm window of a roll) or a positions()
+    glitch. PARTIAL mismatches (broker holds some, fewer than the DB) stay
+    alert-only: attribution across netting variants is ambiguous -> human
+    reconciles.
     """
     import sqlite3 as _sqlite3
     from collections import defaultdict
@@ -386,22 +481,74 @@ def _nas_reconcile_broker_positions():
             con.close()
         except Exception as e:
             logger.error(f"[NAS-DESYNC] {path}: {e}")
+    # Two-consecutive-observation guard (function attribute; resets on restart).
+    streak = getattr(_nas_reconcile_broker_positions, "_ghost_streak", {})
     alerts = []
+    ghosts_closed = 0
+    seen_mismatch = set()
     for tsym, dbq in db_active.items():
         if dbq <= 0:
             continue
         bq = broker.get(tsym, 0)
         broker_short = -bq if bq < 0 else 0
-        if dbq > broker_short:
+        if dbq <= broker_short:
+            continue
+        seen_mismatch.add(tsym)
+        if broker_short == 0:
+            # Unambiguous ghost — but confirm across two consecutive checks
+            # before acting, so a momentary broker-flat can't trigger a close.
+            streak[tsym] = streak.get(tsym, 0) + 1
+            if streak[tsym] < 2:
+                alerts.append(
+                    f"{tsym}: app shows {dbq} short ACTIVE, broker flat -> "
+                    f"suspected ghost (confirming, reconcile next check)"
+                )
+                continue
+            from datetime import datetime as _dt
+            now = _dt.now().isoformat()
+            closed_here = 0
+            for path, tab in _NAS_DBS_FOR_RECONCILE:
+                full = Path(__file__).parent / path
+                if not full.exists():
+                    continue
+                try:
+                    con = _sqlite3.connect(str(full))
+                    cur = con.execute(
+                        f"UPDATE {tab} SET status='CLOSED', exit_price=0, "
+                        f"exit_time=?, exit_reason='GHOST_BROKER_FLAT', updated_at=?, "
+                        f"notes='auto-reconcile: broker flat on symbol for 2 checks' "
+                        f"WHERE tradingsymbol=? AND status='ACTIVE' AND mode='live'",
+                        (now, now, tsym),
+                    )
+                    con.commit()
+                    closed_here += cur.rowcount
+                    con.close()
+                except Exception as e:
+                    logger.error(f"[NAS-DESYNC] ghost-close {path} {tsym}: {e}")
+            ghosts_closed += closed_here
+            streak.pop(tsym, None)
+            logger.warning(
+                f"[NAS-DESYNC] GHOST-RECONCILE: {tsym} broker-flat 2x -> marked "
+                f"{closed_here} stale ACTIVE leg(s) CLOSED (DB only, no order)"
+            )
+        else:
+            # Partial mismatch -> ambiguous attribution across variants: alert only.
+            streak.pop(tsym, None)
             alerts.append(
                 f"{tsym}: app shows {dbq} short ACTIVE but broker holds only "
-                f"{broker_short} short -> leg(s) closed externally, app stale"
+                f"{broker_short} short -> partial mismatch, manual reconcile"
             )
+    # Forget streaks for symbols no longer mismatched.
+    for k in list(streak.keys()):
+        if k not in seen_mismatch:
+            streak.pop(k, None)
+    _nas_reconcile_broker_positions._ghost_streak = streak
     for a in alerts:
         logger.warning(f"[NAS-DESYNC] {a}")
-    if alerts:
+    if alerts or ghosts_closed:
         logger.warning(
-            f"[NAS-DESYNC] {len(alerts)} app<->broker mismatch(es) -- manual reconcile needed"
+            f"[NAS-DESYNC] {len(alerts)} mismatch alert(s), "
+            f"{ghosts_closed} ghost leg(s) auto-closed"
         )
     return alerts
 

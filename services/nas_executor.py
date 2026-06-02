@@ -170,41 +170,140 @@ class NasExecutor:
         logger.info(f"[{order_status}] {transaction_type} {qty} {tradingsymbol} @ {price:.2f} ({signal_type})")
         return position_id
 
-    def _close_leg(self, pos, exit_price, exit_reason):
-        """Close a single position leg."""
-        cfg = self.cfg
-        self.db.close_position(pos['id'], round(exit_price, 2), exit_reason)
+    def _confirm_exit_fill(self, order_id, tries=6, delay=0.4):
+        """Poll Kite order_history until the exit order reaches a terminal state.
 
-        # Live mode: buy back
-        if not cfg.get('paper_trading_mode', True):
+        Returns (status, avg_price) where status is one of 'COMPLETE',
+        'REJECTED', 'CANCELLED', or 'PENDING' (still working / unknown after
+        the poll window). MARKET orders normally fill on the first poll.
+        """
+        import time as _time
+        from services.kite_service import get_kite
+        kite = get_kite()
+        last_status = 'PENDING'
+        for _ in range(tries):
+            _time.sleep(delay)
             try:
-                from services.kite_service import get_kite
-                kite = get_kite()
-                kite.place_order(
-                    variety='regular',
-                    exchange='NFO',
-                    tradingsymbol=pos['tradingsymbol'],
-                    transaction_type='BUY',
-                    quantity=pos['qty'],
-                    product='MIS',
-                    order_type='MARKET',
-                )
+                hist = kite.order_history(order_id)
             except Exception as e:
-                logger.error(f"Exit order failed for {pos['tradingsymbol']}: {e}")
+                logger.warning(f"[NAS] order_history({order_id}) failed: {e}")
+                continue
+            if not hist:
+                continue
+            last = hist[-1]
+            last_status = str(last.get('status') or '').upper()
+            if last_status == 'COMPLETE':
+                return 'COMPLETE', (last.get('average_price') or 0)
+            if last_status in ('REJECTED', 'CANCELLED'):
+                logger.error(f"[NAS] exit order {order_id} {last_status}: "
+                             f"{last.get('status_message')}")
+                return last_status, None
+        return (last_status if last_status in ('REJECTED', 'CANCELLED') else 'PENDING'), None
 
-        self.db.log_order(
-            tradingsymbol=pos['tradingsymbol'],
-            transaction_type='BUY',
-            qty=pos['qty'],
-            price=exit_price,
-            order_type='MARKET',
-            status='PAPER' if cfg.get('paper_trading_mode', True) else 'PLACED',
-            position_id=pos['id'],
-            signal_type=exit_reason,
-            mode='paper' if cfg.get('paper_trading_mode', True) else 'live',
+    def _close_leg(self, pos, exit_price, exit_reason):
+        """Close a single position leg — broker-truthful.
+
+        The DB is marked CLOSED only when the buyback is actually confirmed at
+        the exchange (or in paper mode). On the live path:
+
+          * CONFIRMED (COMPLETE)          -> status CLOSED at the real fill price
+          * placed but not yet confirmed  -> status CLOSING (+ kite_order_id) so
+                                             the SL monitor never re-fires a
+                                             second buyback and the leg is not
+                                             falsely closed; the reconciler
+                                             finalises it against the orderbook.
+          * place_order failed / REJECTED -> leg LEFT ACTIVE so the monitor keeps
+                                             watching and retries; never orphaned.
+
+        Returns True if the leg is closed or a confirmed exit is in flight;
+        False if the exit failed and the leg is still live (the caller must
+        treat the position as still open).
+        """
+        cfg = self.cfg
+        paper = cfg.get('paper_trading_mode', True)
+
+        # Paper mode: fill immediately (unchanged behaviour).
+        if paper:
+            self.db.close_position(pos['id'], round(exit_price, 2), exit_reason)
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=exit_price, order_type='MARKET',
+                status='PAPER', position_id=pos['id'],
+                signal_type=exit_reason, mode='paper',
+            )
+            logger.info(f"[EXIT] {pos['tradingsymbol']} -- {exit_reason} @ {exit_price:.2f}")
+            return True
+
+        # Live mode: place the buyback FIRST, confirm, THEN update the DB.
+        try:
+            from services.kite_service import get_kite
+            kite = get_kite()
+            order_id = kite.place_order(
+                variety='regular', exchange='NFO',
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                quantity=pos['qty'], product='MIS', order_type='MARKET',
+            )
+        except Exception as e:
+            # Nothing reached the exchange -> keep the leg ACTIVE and retry on
+            # the next SL tick. NEVER mark it closed (that orphans a live short).
+            logger.critical(f"[NAS] EXIT ORDER FAILED for {pos['tradingsymbol']} "
+                            f"({exit_reason}) -- leg LEFT ACTIVE for retry: {e}")
+            self.db.update_position(pos['id'], notes=f"EXIT_FAILED {exit_reason}: {e}")
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=exit_price, order_type='MARKET',
+                status='FAILED', position_id=pos['id'],
+                signal_type=exit_reason, mode='live',
+            )
+            return False
+
+        status, avg = self._confirm_exit_fill(order_id)
+
+        if status == 'COMPLETE':
+            fill = round(avg or exit_price, 2)
+            self.db.close_position(pos['id'], fill, exit_reason)
+            self.db.update_position(pos['id'], kite_order_id=str(order_id))
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=fill, order_type='MARKET',
+                status='COMPLETE', position_id=pos['id'],
+                signal_type=exit_reason, mode='live',
+            )
+            logger.info(f"[EXIT] {pos['tradingsymbol']} -- {exit_reason} "
+                        f"@ {fill:.2f} (order {order_id})")
+            return True
+
+        if status in ('REJECTED', 'CANCELLED'):
+            # The buyback did NOT fill -> the leg is still live. Keep it ACTIVE
+            # so the monitor retries; never orphan it.
+            logger.critical(f"[NAS] EXIT {status} for {pos['tradingsymbol']} "
+                            f"order {order_id} -- leg LEFT ACTIVE for retry")
+            self.db.update_position(pos['id'], notes=f"EXIT_{status} {exit_reason} order={order_id}")
+            self.db.log_order(
+                tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+                qty=pos['qty'], price=exit_price, order_type='MARKET',
+                status=status, position_id=pos['id'],
+                signal_type=exit_reason, mode='live',
+            )
+            return False
+
+        # Placed but unconfirmed within the poll window. Park in CLOSING with the
+        # order id so (a) the monitor won't re-fire another buyback (no double
+        # cover) and (b) the reconciler finalises it once the orderbook settles.
+        self.db.update_position(
+            pos['id'], status='CLOSING', kite_order_id=str(order_id),
+            exit_reason=exit_reason, notes=f"EXIT_PENDING {exit_reason} order={order_id}",
         )
-
-        logger.info(f"[EXIT] {pos['tradingsymbol']} — {exit_reason} @ {exit_price:.2f}")
+        self.db.log_order(
+            tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
+            qty=pos['qty'], price=exit_price, order_type='MARKET',
+            status='PENDING', position_id=pos['id'],
+            signal_type=exit_reason, mode='live',
+        )
+        logger.warning(f"[NAS] [EXIT-PENDING] {pos['tradingsymbol']} -- {exit_reason} "
+                       f"order {order_id} placed, fill unconfirmed -> CLOSING "
+                       f"(reconciler will finalise)")
+        return True
 
     # ─── Entry Execution ──────────────────────────────────────
 
@@ -348,17 +447,62 @@ class NasExecutor:
             min_prem_guard, adj_max_prem, min_otm)
 
         if new_strike is None:
-            # NO BS fallback — fabricated premiums lead to phantom positions
-            # (observed 2026-04-21). And do NOT close the strangle: hold the
-            # position intact (nothing closed yet — the old leg is still open).
-            # The cross-leg check retries next cooldown window; a genuinely
-            # runaway imbalance is still caught by the combined SL.
-            logger.warning(
-                f"[NAS] No live strike for {pos['instrument_type']} "
-                f"target_prem={target_prem:.1f} range=[{min_prem_guard}, {adj_max_prem:.1f}] "
-                f"— holding position (roll skipped, strangle left intact)."
-            )
-            return None, 'no_live_strike_held'
+            # The matched-premium target has no listed strike. On/near expiry
+            # this is the COMMON case: the winning leg has collapsed below the
+            # min-premium floor and the 50-pt strike granularity leaves a gap,
+            # so the strict [min, max] window matches nothing. The old behaviour
+            # ("hold position, strangle left intact") then let the tested leg
+            # run NAKED — the recurring "no adjustment happened" loss. Two-step
+            # fallback so a tested leg is never left to bleed:
+            action_u = str(adj.get('action', '')).upper()
+            is_losing = action_u in ('ADJUST_LOSING', 'ROLL_OUT')
+            cur_prem = adj.get('current_premium', target_prem) or target_prem
+
+            # (1) NEAREST-STRIKE ROLL — widen the premium window and take the
+            # closest available strike further OTM. Rolling a tested leg outward
+            # moves the short away from spot (protective) even if the premium
+            # can't exactly match the other leg. NO BS fallback (fabricated
+            # premiums caused phantom positions on 2026-04-21) — these are real
+            # live Kite quotes, just over a wider band.
+            wide_max = max(adj_max_prem, cur_prem)
+            new_strike, new_prem = self.scanner.find_strike_by_premium(
+                spot, pos['instrument_type'], target_prem, expiry,
+                min_premium=1.0, max_premium=wide_max, min_otm_distance=min_otm)
+
+            if new_strike is not None:
+                logger.warning(
+                    f"[NAS] Matched-premium strike unavailable for {pos['instrument_type']} "
+                    f"(target {target_prem:.1f}) — NEAREST-STRIKE roll to "
+                    f"{new_strike}{pos['instrument_type']} @{new_prem:.1f} (protective)."
+                )
+                # fall through to the close-old / open-new path below.
+            elif is_losing:
+                # (2) HARD DEFEND — cannot roll the tested leg at all. Exit it
+                # rather than ride a naked loser (the bug you reported). The
+                # winning leg is left to its own logic / time-exit.
+                logger.warning(
+                    f"[NAS] No strike to roll tested {pos['instrument_type']} even widened "
+                    f"— HARD-DEFEND: exiting {pos['tradingsymbol']} @ ~{cur_prem:.1f}."
+                )
+                closed = self._close_leg(pos, cur_prem, f"{action_u or 'ADJ'}_DEFEND_EXIT")
+                self.db.log_signal(
+                    signal_type='DEFEND_EXIT', spot_price=spot,
+                    call_strike=pos['strike'] if pos['instrument_type'] == 'CE' else None,
+                    put_strike=pos['strike'] if pos['instrument_type'] == 'PE' else None,
+                    action_taken=f"DEFEND_EXIT: no roll strike for tested "
+                                 f"{pos['strike']}{pos['instrument_type']} @{cur_prem:.1f} "
+                                 f"-> bought back to stop naked bleed",
+                )
+                return ('DEFEND_EXIT' if closed else None,
+                        'defend_exit' if closed else 'defend_exit_failed')
+            else:
+                # Winning leg with no roll target — safe to hold (it's
+                # profitable and far from the money; low risk).
+                logger.warning(
+                    f"[NAS] No live strike for winning {pos['instrument_type']} "
+                    f"target_prem={target_prem:.1f} — holding (low risk)."
+                )
+                return None, 'no_live_strike_held'
 
         # Strike found — now close the old leg and open the new one.
         exit_price = adj['current_premium']
@@ -466,7 +610,20 @@ class NasExecutor:
         return results
 
     def _record_trade(self, strangle_id, positions, exit_reason, spot_at_exit):
-        """Record a completed strangle trade."""
+        """Record a completed strangle trade (only once every leg is CLOSED)."""
+        # Never book a partial trade: if any leg of this strangle is still live
+        # (an exit failed and was left ACTIVE, or is still confirming in CLOSING),
+        # defer. The reconciler / next exit re-invokes this once it settles.
+        try:
+            still_active = self.db.get_active_positions(strangle_id=strangle_id)
+        except Exception:
+            still_active = []
+        if still_active or any(p.get('status') in ('ACTIVE', 'CLOSING', 'PENDING')
+                               for p in positions):
+            logger.debug(f"[NAS] strangle #{strangle_id} still has open legs "
+                         f"-- deferring trade record")
+            return
+
         ce_pos = [p for p in positions if p['instrument_type'] == 'CE']
         pe_pos = [p for p in positions if p['instrument_type'] == 'PE']
 
