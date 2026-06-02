@@ -103,6 +103,31 @@ def _bs_vega(S, K, T, sigma, r):
     return S * norm.pdf(d1) * sqrt_T
 
 
+def _bs_greeks(S, K, T, sigma, opt_type, r=RISK_FREE_RATE):
+    """Closed-form Black-Scholes greeks for a European option.
+
+    Returns (delta, gamma, theta_per_day, vega_per_1pct) or all-None if inputs
+    are degenerate. sigma is the IV in DECIMAL (e.g. 0.15). Computed at capture
+    from the already-solved IV so the recorder stores greeks (Kite's quote
+    greeks dict is usually empty)."""
+    if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
+        return (None, None, None, None)
+    sqrt_T = math.sqrt(T)
+    d1 = (math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrt_T)
+    d2 = d1 - sigma * sqrt_T
+    pdf = norm.pdf(d1)
+    disc = math.exp(-r * T)
+    if opt_type == 'CE':
+        delta = norm.cdf(d1)
+        theta = (-(S * pdf * sigma) / (2 * sqrt_T) - r * K * disc * norm.cdf(d2)) / 365.0
+    else:
+        delta = norm.cdf(d1) - 1.0
+        theta = (-(S * pdf * sigma) / (2 * sqrt_T) + r * K * disc * norm.cdf(-d2)) / 365.0
+    gamma = pdf / (S * sigma * sqrt_T)
+    vega = (S * pdf * sqrt_T) / 100.0  # per 1% change in IV
+    return (round(delta, 4), round(gamma, 6), round(theta, 2), round(vega, 4))
+
+
 def compute_iv(market_price, spot, strike, T, opt_type, r=RISK_FREE_RATE,
                max_iter=50, tol=1e-5):
     """
@@ -677,6 +702,12 @@ class OptionsDataManager:
                     # Priority: compute for all strikes (fast enough),
                     # fallback to Kite greeks if computation fails
                     iv_val = greeks.get('iv')
+                    # Greeks: Kite's quote greeks dict is usually empty, so compute
+                    # delta/gamma/theta/vega from the BS IV we solve below.
+                    g_delta = greeks.get('delta')
+                    g_gamma = greeks.get('gamma')
+                    g_theta = greeks.get('theta')
+                    g_vega = greeks.get('vega')
                     if ltp and ltp > 0 and spot and spot > 0:
                         # Time to expiry in years
                         try:
@@ -692,8 +723,12 @@ class OptionsDataManager:
                                     ltp, spot, strike_price, T, opt_type)
                                 if computed_iv is not None:
                                     iv_val = round(computed_iv * 100, 2)
+                                    d, gm, th, vg = _bs_greeks(
+                                        spot, strike_price, T, computed_iv, opt_type)
+                                    if d is not None:
+                                        g_delta, g_gamma, g_theta, g_vega = d, gm, th, vg
                         except Exception:
-                            pass  # Keep Kite IV or None
+                            pass  # Keep Kite IV/greeks or None
 
                     row = {
                         'snapshot_time': snapshot_time,
@@ -708,10 +743,10 @@ class OptionsDataManager:
                         'oi': qdata.get('oi'),
                         'volume': qdata.get('volume'),
                         'iv': iv_val,
-                        'delta': greeks.get('delta'),
-                        'gamma': greeks.get('gamma'),
-                        'theta': greeks.get('theta'),
-                        'vega': greeks.get('vega'),
+                        'delta': g_delta,
+                        'gamma': g_gamma,
+                        'theta': g_theta,
+                        'vega': g_vega,
                         'underlying_spot': spot,
                         'lot_size': cfg['lot_size'],
                     }

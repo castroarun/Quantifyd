@@ -624,24 +624,49 @@ class NasExecutor:
                          f"-- deferring trade record")
             return
 
-        ce_pos = [p for p in positions if p['instrument_type'] == 'CE']
-        pe_pos = [p for p in positions if p['instrument_type'] == 'PE']
+        # Re-read EVERY leg of the strangle from the DB. The passed `positions`
+        # are stale in-memory dicts whose exit_price was never set -> the old
+        # code booked exit=0 and inflated OTM net_pnl by the full buy-back cost
+        # (2026-06-02 finding). The per-leg DB rows carry the REAL fills, and a
+        # rolled strangle has many CE/PE legs -> net_pnl MUST sum across all of
+        # them, not just the first leg.
+        try:
+            legs = self.db.get_positions_by_strangle(strangle_id)
+        except Exception:
+            legs = None
+        closed = [p for p in (legs or positions) if p.get('status') == 'CLOSED']
+        if not closed:
+            closed = legs or positions
 
-        call_entry = ce_pos[0]['entry_price'] if ce_pos else 0
-        put_entry = pe_pos[0]['entry_price'] if pe_pos else 0
-        call_exit = ce_pos[0].get('exit_price', 0) or 0 if ce_pos else 0
-        put_exit = pe_pos[0].get('exit_price', 0) or 0 if pe_pos else 0
+        # Net P&L = sum over every leg of (entry - exit) * qty  (we are short).
+        gross_pnl = 0.0
+        total_collected = 0.0   # sum of per-unit entry premiums (display)
+        total_paid = 0.0        # sum of per-unit exit premiums (display)
+        for p in closed:
+            ent = p.get('entry_price') or 0
+            ext = p.get('exit_price') or 0
+            q = p.get('qty') or 0
+            gross_pnl += (ent - ext) * q
+            total_collected += ent
+            total_paid += ext
+        # Brokerage ~Rs40/order, 2 orders (sell+buy) per leg.
+        net_pnl = gross_pnl - (40 * 2 * len(closed))
+
+        ce_pos = [p for p in closed if p['instrument_type'] == 'CE']
+        pe_pos = [p for p in closed if p['instrument_type'] == 'PE']
+        # Representative strikes/premiums for the row (first entry, last exit).
         call_strike = ce_pos[0]['strike'] if ce_pos else 0
         put_strike = pe_pos[0]['strike'] if pe_pos else 0
+        call_entry = (ce_pos[0].get('entry_price') or 0) if ce_pos else 0
+        put_entry = (pe_pos[0].get('entry_price') or 0) if pe_pos else 0
+        call_exit = (ce_pos[-1].get('exit_price') or 0) if ce_pos else 0
+        put_exit = (pe_pos[-1].get('exit_price') or 0) if pe_pos else 0
+        lots = ((ce_pos[0].get('qty') or 0) // LOT_SIZE) if ce_pos else (
+            ((pe_pos[0].get('qty') or 0) // LOT_SIZE) if pe_pos else 0)
 
-        total_collected = call_entry + put_entry
-        total_paid = call_exit + put_exit
-        lots = (ce_pos[0]['qty'] // LOT_SIZE) if ce_pos else 0
-        gross_pnl = (total_collected - total_paid) * LOT_SIZE * lots
-        net_pnl = gross_pnl - (80 * 2)  # brokerage: Rs 40/order × 4 legs (2 entry + 2 exit)
-
-        total_adj = sum(p.get('adjustment_count', 0) or 0 for p in positions)
-        entry_time = min(p['entry_time'] for p in positions) if positions else None
+        total_adj = sum(p.get('adjustment_count', 0) or 0 for p in closed)
+        entry_time = min((p['entry_time'] for p in closed if p.get('entry_time')),
+                         default=None)
         spot_at_entry = None  # Would need from signal log
 
         self.db.add_trade(
