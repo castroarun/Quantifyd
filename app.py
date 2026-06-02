@@ -4455,6 +4455,13 @@ def _enrich_nas_positions_with_ltp(state, ticker_attr='_option_ltps', token_attr
                     continue
                 token = tokens_by_tsym.get(tsym)
                 ltp = ltps_by_token.get(token) if token else None
+                # Live-armed = the ticker is currently SUBSCRIBED to this leg
+                # (its token is in the variant's token map) AND premium ticks
+                # are flowing. This is the real "is SL/ST monitoring actually
+                # watching this leg right now" signal — distinct from merely
+                # having an sl_price stored in the DB. A leg that is ACTIVE with
+                # an sl_price but arm_live=False is a silent monitoring gap.
+                p['arm_live'] = bool(token is not None and ltp is not None and ltp > 0)
                 if ltp is None or ltp <= 0:
                     continue
                 p['ltp'] = round(ltp, 2)

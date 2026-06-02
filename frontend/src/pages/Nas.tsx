@@ -696,6 +696,7 @@ interface TBRow {
   inTime: string;        // entry time HH:MM
   outTime: string;       // exit time HH:MM ('' while open)
   arm: number | null;    // exit/SL monitoring trigger value (premium) while open
+  armLive?: boolean;     // ticker actually subscribed/watching this leg right now
 }
 
 // Compact status tags so the column stays narrow and the P&L stays next to it.
@@ -737,6 +738,7 @@ function buildTradeBook(
         inTime: formatLegTime(p.entry_time) ?? '',
         outTime: open ? '' : (formatLegTime(p.exit_time) ?? ''),
         arm: open ? (p.sl_price ?? null) : null,
+        armLive: open ? p.arm_live : undefined,
       });
     };
     [...(pos.ce ?? []), ...(pos.pe ?? [])].forEach((p) => push(p, true));
@@ -862,15 +864,27 @@ function TradeBook({ systems, states, liveLegs }: {
                   <span style={{ color: 'var(--ink-muted)' }}>
                     {r.entry != null ? r.entry.toFixed(1) : '—'} → {r.exit != null ? r.exit.toFixed(1) : '—'}
                   </span>
-                  <span
-                    title={r.open && r.arm != null && r.arm > 0
-                      ? `Exit/SL monitoring armed — triggers at premium ${r.arm}`
-                      : 'No active exit arm'}
-                    style={{
-                      color: r.open && r.arm != null && r.arm > 0 ? '#d29922' : 'var(--ink-faint, #6e7681)',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >{r.open && r.arm != null && r.arm > 0 ? `● ${r.arm.toFixed(1)}` : '—'}</span>
+                  {(() => {
+                    const hasArm = r.open && r.arm != null && r.arm > 0;
+                    if (!hasArm) {
+                      return <span style={{ color: 'var(--ink-faint, #6e7681)', whiteSpace: 'nowrap' }} title="No active exit arm">—</span>;
+                    }
+                    const v = (r.arm as number).toFixed(1);
+                    let color = '#d29922', icon = '●';
+                    let title = `Armed at premium ${v} (live monitoring status unknown)`;
+                    if (r.armLive === true) {
+                      color = '#3fb950'; icon = '●';
+                      title = `Live-armed — ticker is actively watching this leg; triggers at premium ${v}`;
+                    } else if (r.armLive === false) {
+                      color = '#ef4444'; icon = '⚠';
+                      title = `WARNING: SL ${v} is set but the ticker is NOT subscribed to this leg — monitoring gap`;
+                    }
+                    return (
+                      <span style={{ color, whiteSpace: 'nowrap', fontWeight: r.armLive === false ? 700 : 400 }} title={title}>
+                        {icon} {v}
+                      </span>
+                    );
+                  })()}
                   <span style={{
                     color: r.open ? '#3fb950' : 'var(--ink-faint, #6e7681)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',

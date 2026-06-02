@@ -210,6 +210,7 @@ export interface NASPosition {
   entry_premium?: number; // legacy alias
   exit_price?: number;
   sl_price?: number;
+  arm_live?: boolean; // ticker is actively subscribed/monitoring this leg right now
   ltp?: number;
   qty?: number;
   lots?: number;
