@@ -157,7 +157,8 @@ for key, name, fam in VARIANTS:
         ts = x.get("tradingsymbol"); strike = int(x.get("strike") or 0)
         side = x.get("instrument_type"); sl = x.get("sl_price")
         ltp = x.get("ltp"); naked = (sl or 0) >= 999999
-        db_active_qty[ts] += (x.get("qty") or 0)
+        if (x.get("mode") or "live") == "live":   # desync compares LIVE legs only (paper never hits broker)
+            db_active_qty[ts] += (x.get("qty") or 0)
         pv = mon.get(ts)
         if pv is None:
             pv = ltp if ltp is not None else live_prem(ts)
