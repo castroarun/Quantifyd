@@ -146,6 +146,119 @@ interface MtmEvent {
 
 interface MtmSystem { points: MtmPoint[]; events: MtmEvent[]; }
 
+function NasOptCard() {
+  const [state, setState] = useState<any>(null);
+  const [equity, setEquity] = useState<Array<{ day: string; pnl: number; cum: number }>>([]);
+  const [trades, setTrades] = useState<any[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [s, e, t] = await Promise.all([
+          fetch('/api/nas-opt/state').then((r) => r.json()),
+          fetch('/api/nas-opt/equity').then((r) => r.json()),
+          fetch('/api/nas-opt/trades').then((r) => r.json()),
+        ]);
+        if (!cancelled) {
+          setState(s);
+          setEquity(Array.isArray(e) ? e : []);
+          setTrades(Array.isArray(t) ? t : []);
+        }
+      } catch {
+        /* endpoint may be momentarily unavailable */
+      }
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  if (!state) return null;
+
+  const total = Number(state.closed_total_pnl || 0);
+  const nTrades = Number(state.closed_trades || 0);
+  const closed = trades.filter((t) => t.status === 'CLOSED');
+  const wins = closed.filter((t) => Number(t.pnl) > 0).length;
+  const winPct = closed.length ? Math.round((wins / closed.length) * 100) : 0;
+  const today = state.today;
+
+  const ys = equity.map((p) => p.cum);
+  let spark: JSX.Element | null = null;
+  if (ys.length >= 2) {
+    const W = 320;
+    const H = 60;
+    const min = Math.min(0, ...ys);
+    const max = Math.max(0, ...ys);
+    const rng = max - min || 1;
+    const pts = ys
+      .map((y, i) => `${(i / (ys.length - 1)) * W},${H - ((y - min) / rng) * H}`)
+      .join(' ');
+    const zeroY = H - ((0 - min) / rng) * H;
+    spark = (
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
+        <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="#444" strokeWidth="1" strokeDasharray="3 3" />
+        <polyline points={pts} fill="none" stroke="#2dd4a7" strokeWidth="2" />
+      </svg>
+    );
+  }
+
+  const chip = (bg: string, fg: string, text: string) => (
+    <span style={{ background: bg, color: fg, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>
+      {text}
+    </span>
+  );
+
+  return (
+    <section
+      style={{
+        border: '1px solid #2a2f3a',
+        background: 'linear-gradient(180deg,#161a22,#12151c)',
+        borderRadius: 12,
+        padding: '16px 18px',
+        marginBottom: 18,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+        <span style={{ fontSize: 16, fontWeight: 700, color: '#e6e9ef' }}>NAS-OPT</span>
+        {chip('#3a2a00', '#f5b301', 'PAPER')}
+        {chip('#1e2a3a', '#6db3f2', 'research/54')}
+        <span style={{ color: '#8b93a3', fontSize: 12 }}>{state.system}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', margin: '10px 0' }}>
+        <div>
+          <div style={{ fontSize: 11, color: '#8b93a3' }}>Total P&amp;L (paper)</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: total >= 0 ? '#2dd4a7' : '#ff6b6b' }}>
+            {total >= 0 ? '+' : ''}₹{total.toLocaleString('en-IN')}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: '#8b93a3' }}>Trades</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{nTrades}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: '#8b93a3' }}>Win rate</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{winPct}%</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ fontSize: 11, color: '#8b93a3', marginBottom: 2 }}>Equity curve (paper + backtest)</div>
+          {spark ?? <div style={{ color: '#5a6072', fontSize: 12 }}>—</div>}
+        </div>
+      </div>
+      <div style={{ fontSize: 12, color: today ? '#2dd4a7' : '#8b93a3' }}>
+        {today
+          ? `Open today: ${today.pe_strike}PE + ${today.ce_strike}CE · entry spot ${Math.round(
+              today.entry_spot,
+            )} · status ${today.status}`
+          : 'Idle today — NAS-OPT trades 0/1-DTE only (Mon & Tue); enters 09:20, ±0.4% move-stop, 14:45 exit.'}
+      </div>
+    </section>
+  );
+}
+
 export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
@@ -512,6 +625,8 @@ export default function Nas() {
           hint="All four 9:16 systems"
         />
       </div>
+
+      <NasOptCard />
 
       {mtmCombined && mtmCombined.points.length >= 2 ? (
         <section className={styles.combinedHero}>
