@@ -337,6 +337,10 @@ class NasAtm4Executor(NasAtmExecutor):
         # Place the rolled leg
         cfg = self.cfg
         now = datetime.now().isoformat()
+        # Day-aware live/paper (2026-06-03 fix): the ROLL path must honor live_weekdays
+        # like _place_order, else a roll on a PAPER day fires a REAL Kite order.
+        _is_paper = cfg.get('paper_trading_mode', True) or (
+            datetime.now().weekday() not in cfg.get('live_weekdays', (0, 1, 4)))
         new_pos_id = self.db.add_position(
             strangle_id=strangle_id,
             leg=pos['leg'],
@@ -351,18 +355,18 @@ class NasAtm4Executor(NasAtmExecutor):
             entry_time=now,
             sl_price=new_sl,
             signal_type='ATM4_ROLL',
-            status='ACTIVE' if cfg.get('paper_trading_mode', True) else 'PENDING',
+            status='ACTIVE' if _is_paper else 'PENDING',
             adjustment_count=1,
             notes=price_x_note,
             # mode MUST be set so the NAS-RECONCILE job (which only scans
             # WHERE status='PENDING' AND mode='live') can promote this rolled
             # leg PENDING->ACTIVE. Without it the leg stayed PENDING and went
             # unmonitored by the ticker (2026-05-29 916-ATM4 23800PE incident).
-            mode='paper' if cfg.get('paper_trading_mode', True) else 'live',
+            mode='paper' if _is_paper else 'live',
         )
 
         # Log the order for the rolled leg
-        order_status = 'PAPER' if cfg.get('paper_trading_mode', True) else 'PLACED'
+        order_status = 'PAPER' if _is_paper else 'PLACED'
         self.db.log_order(
             tradingsymbol=new_tsym,
             transaction_type='SELL',
@@ -375,7 +379,7 @@ class NasAtm4Executor(NasAtmExecutor):
         )
 
         # Live mode: place on Kite
-        if not cfg.get('paper_trading_mode', True):
+        if not _is_paper:
             try:
                 from services.kite_service import get_kite
                 kite = get_kite()
