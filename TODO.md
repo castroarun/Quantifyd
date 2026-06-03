@@ -714,6 +714,39 @@ _(Move items here when work begins. Include start date.)_
 
 ## Done — recent (most recent first; trim quarterly)
 
+### 2026-06-03 — NAS paper-days + NAS-OPT paper variant + research/54 (COMPLETE)
+
+**Operating schedule (commit 188b145):** NAS live orders only Mon/Tue/Fri; every other day runs
+as PAPER (signals+DB+P&L, no real orders), mode-tagged. DTE gate turned OFF operationally (now a
+backtest-study question). config: `live_weekdays=(0,1,4)`, `max_dte_at_entry=None` on both base
+dicts; `skip_weekdays` emptied; executors `_place_order`/exit day-aware (`_is_paper`). Deployed
+live mid-market (all flat, user-cleared).
+
+**NAS-OPT new paper variant (commits 188b145 backend + 4061e54 dashboard):** research/54's refined
+system — 0/1-DTE ~100pt-OTM strangle, 09:20 entry, ±0.4% underlying-move stop (one-and-done), 14:45
+exit. `services/nas_opt.py` reads the live options recorder (live == backtest), **paper-only (NO
+Kite-order code)**. `register()` adds `/api/nas-opt/state|trades|equity` + entry/monitor/exit jobs.
+Dashboard card on `/app/nas` (P&L, win rate, SVG equity curve, today status). `nas_opt_trading.db`
+backfilled with 13 backtest trades (+₹20,409, 69% win, maxDD −2,695). RUNNING IN PAPER; first entry
+next Mon/Tue.
+
+**research/54 NAS new-systems search (commit d362829, verdict CONCLUDED):** 6 angles tested on the
+real recorded NIFTY chain — IV-filter, iron-flies, late-entry, re-entry, directional-skew,
+calm-classifier all KILLED; only **~100pt-OTM strangle + move-stop** survived (beats ATM straddle on
+net+tail, monotonic). Re-entry HURTS (move-stop one-and-done). Mon(1DTE)+2284/day, Tue(0)+395,
+Fri(4)−70 flat, Wed/Thu bleed → Mon/Tue/Fri-live is data-consistent. Report:
+`research/54_nas_tune_newsys/results/RESULTS.md`.
+
+**Two follow-ups PARKED (build only when user asks):**
+1. **Move-stop upgrade to the LIVE 8 variants** — replace per-leg 1.3× premium stop (whipsaws,
+   −₹13,983 on chain) with ±0.4% underlying-move stop (lifts net + bounds tail; 2yr stress −7.9k vs
+   no-stop −58.8k). Money-path ticker change (`nas_ticker.py` SL handlers + `entry_spot` capture);
+   designed, deploy-later, paper-first. Pair with ~100pt-OTM strikes (research/54 stage4).
+2. **Flip NAS-OPT to LIVE** — NOT a toggle; `nas_opt.py` is paper-only by design. Add the Kite
+   execution path (orders on entry+exit) behind a paper/live flag + fill read-back + kill switch.
+   Build only when user says NAS-OPT paper is working well.
+
+
 ### 2026-05-15 — research/41 MidSmallcap400-MQ concentrated RS (COMPLETE)
 
 - ✅ **research/41 closed — validated edge that beats the ~20% MQ100 hurdle.**
