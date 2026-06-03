@@ -125,7 +125,11 @@ class NasAtmExecutor:
         """
         cfg = self.cfg
         now = datetime.now().isoformat()
-        mode = 'paper' if cfg.get('paper_trading_mode', True) else 'live'
+        # Day-aware live/paper: REAL Kite orders only on live_weekdays (Mon/Tue/Fri);
+        # every other day runs as PAPER so signals + P&L still record. 2026-06-03.
+        _live_day = datetime.now().weekday() in cfg.get('live_weekdays', (0, 1, 4))
+        _is_paper = cfg.get('paper_trading_mode', True) or (not _live_day)
+        mode = 'paper' if _is_paper else 'live'
 
         position_id = self.db.add_position(
             strangle_id=strangle_id,
@@ -141,11 +145,11 @@ class NasAtmExecutor:
             entry_time=now,
             sl_price=sl_price,
             signal_type=signal_type,
-            status='ACTIVE' if cfg.get('paper_trading_mode', True) else 'PENDING',
+            status='ACTIVE' if _is_paper else 'PENDING',
             mode=mode,
         )
 
-        order_status = 'PAPER' if cfg.get('paper_trading_mode', True) else 'PLACED'
+        order_status = 'PAPER' if _is_paper else 'PLACED'
         self.db.log_order(
             tradingsymbol=tradingsymbol,
             transaction_type=transaction_type,
@@ -159,7 +163,7 @@ class NasAtmExecutor:
         )
 
         # Live mode: place on Kite
-        if not cfg.get('paper_trading_mode', True):
+        if not _is_paper:
             try:
                 from services.kite_service import get_kite
                 kite = get_kite()
@@ -241,7 +245,10 @@ class NasAtmExecutor:
         treat the position as still open).
         """
         cfg = self.cfg
-        paper = cfg.get('paper_trading_mode', True)
+        # Same-day MIS: a position opened as paper is closed as paper. Day-aware so a
+        # paper day never fires a real Kite close for a position with no real open.
+        paper = cfg.get('paper_trading_mode', True) or (
+            datetime.now().weekday() not in cfg.get('live_weekdays', (0, 1, 4)))
 
         # Paper mode: fill immediately (unchanged behaviour).
         if paper:

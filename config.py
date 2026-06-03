@@ -362,11 +362,16 @@ NAS_DEFAULTS = {
 
     # Day-of-week filter — skip OTM trading on Wed/Thu (expiry-week trend days
     # are unkind to range/premium-decay strategies). Mon=0, Tue=1, Wed=2, Thu=3, Fri=4.
-    'skip_weekdays': (2, 3),
+    'skip_weekdays': (),  # 2026-06-03: no day fully skipped; non-live days run as PAPER (see live_weekdays)
     # DTE entry gate (research/51, 2026-06-02): only open new positions at <= this
     # many days to weekly expiry. Replay showed the edge is at 1 DTE; 4+ DTE bleeds.
     # 1 => trade only 0 & 1 DTE. Inherited by 916_OTM via spread.
-    'max_dte_at_entry': 1,
+    # 2026-06-03: gate OFF operationally (live = skip_weekdays-driven); kept as a
+    # backtest-study question, not a live gate.
+    'max_dte_at_entry': None,
+    # Live/paper by weekday: REAL Kite orders only Mon/Tue/Fri; every other day
+    # runs as PAPER (signals + DB + P&L, no real orders). Mon=0 Tue=1 Wed=2 Thu=3 Fri=4.
+    'live_weekdays': (0, 1, 4),
 
     # Adjustment Rules
     'premium_double_trigger': 2.0,       # Same-leg trigger: losing leg >= 2.0x its OWN entry premium
@@ -418,7 +423,10 @@ NAS_ATM_DEFAULTS = {
     # DTE entry gate (research/51, 2026-06-02): only open new positions at <= this
     # many days to weekly expiry (1 => trade only 0 & 1 DTE — where the edge is).
     # Inherited by ATM2/ATM4 + all 916_ATM* via spread.
-    'max_dte_at_entry': 1,
+    # 2026-06-03: gate OFF operationally (see NAS_DEFAULTS note).
+    'max_dte_at_entry': None,
+    # Live/paper by weekday: REAL Kite orders only Mon/Tue/Fri; else PAPER.
+    'live_weekdays': (0, 1, 4),
     # Instrument (same as NAS OTM)
     'symbol': 'NIFTY',
     'exchange': 'NSE',
@@ -479,7 +487,7 @@ NAS_ATM2_DEFAULTS = {
     'exit_both_on_sl': True,
     # Skip Wed/Thu — cascading 5-re-entry geometry is brittle on trending
     # expiry-week days. Basic ATM (no cascade) stays enabled all weekdays.
-    'skip_weekdays': (2, 3),
+    'skip_weekdays': (),  # 2026-06-03: no day fully skipped; non-live days run as PAPER (see live_weekdays)
 }
 
 NAS_ATM4_DEFAULTS = {
@@ -489,7 +497,7 @@ NAS_ATM4_DEFAULTS = {
     're_enter_on_sl': False,
     # Same Wed/Thu skip as ATM 2.0 — roll-to-match also struggles on
     # strong directional days. Inherited by NAS_916_ATM4_DEFAULTS via spread.
-    'skip_weekdays': (2, 3),
+    'skip_weekdays': (),  # 2026-06-03: no day fully skipped; non-live days run as PAPER (see live_weekdays)
 }
 
 # --- 916 Variants: Same strategies, mandatory 9:16 AM entry (no squeeze wait) ---

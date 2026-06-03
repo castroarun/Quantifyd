@@ -9232,6 +9232,13 @@ try:
 except Exception as e:
     logger.warning(f"Could not register options capture job: {e}")
 
+# NAS-OPT (research/54 paper variant) — 0/1-DTE ~100pt-OTM strangle + ±0.4% move-stop, paper-only
+try:
+    from services.nas_opt import register as _nasopt_register
+    _nasopt_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register NAS-OPT: {_e}")
+
 
 # ---- Daily Options Capture EOD Summary ----
 
