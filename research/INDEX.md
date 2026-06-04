@@ -78,3 +78,17 @@ Found an evidence-graded playbook, NOT a dredged winner. (1) Edge at 1 DTE. (2) 
 
 ## 53 - Regime angles: gap days & CPR width (years + 28d options)
 Gap (1564d): big gaps esp DOWN = bigger moves/fewer range days (bad for short-vol). **CPR width is backwards vs textbook (wide->more move) AND its range-rate skill decayed to ~noise by 2024-26** - not a reliable filter. 28d real straddle: CPR narrow +13k/wide -17k (consistent w/ move-magnitude); gap-down +6.3k BEST but that CONTRADICTS the years -> small-sample luck, trust years. 1-DTE positive across all gap types. Verdict: gap/CPR are minor noisy overlays; 1-DTE + tight-open are the robust edges. See research/53_regime_angles/results/.
+  - UPDATE (positional, user request): multi-day hold looked strong (daily-Supertrend
+    net +0.701R/PF1.54) but the PLACEBO/BENCHMARK kill shows it is pure BETA not alpha
+    — SIGNAL ~= BREAK_ONLY ~= random-day BASELINE for every exit. Volume filter adds
+    nothing (slightly hurts). FINAL: NO EDGE / CONCLUDED on both intraday & positional.
+
+## 55 — mtf_compression_breakout (2026-06-04)
+**MTF compression breakout** (daily uptrend + narrow CPR + multi-day coil + prev-day/
+20d-high break + volume), LONG, positional. 4 tests: largecap-5m, smallcap-5m(2024-26),
+DAILY full-universe (1099 names, 2018-26, n=7501). **VERDICT: NO ALPHA (beta)** —
+SIGNAL does NOT beat hold-the-uptrend baseline on any trailing exit (daily Supertrend
+SIGNAL +0.33R vs BASE +0.93R); volume spike consistently HURTS; only +0.04R on tight
+R-targets. Examples (TDPOWERSYS/DATAPATTNS/KMEW) = survivorship. Compression has
+defensive value ONLY in 2022 bear -> use as regime filter, not entry. CONCLUDED.
+See research/55.../results/RESULTS.md.

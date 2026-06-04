@@ -1,6 +1,8 @@
 # Volume-MA + Prev-Day-High Breakout — 30-min Intraday Long (research/49)
 
-STATUS: **DONE — VERDICT: NO EDGE (intraday, net of cost).** See `results/RESULTS.md`.
+STATUS: **DONE — VERDICT: NO EDGE.** Intraday dies to cost; positional looked good
+(net +0.70R / PF 1.54) but the placebo kill shows it is **pure beta, not alpha**
+(SIGNAL ≈ random-day BASELINE). See `results/RESULTS.md`.
 
 > Follows `research/QUANT_RESEARCH_PLAYBOOK.md`. STATUS sections 1–4 written
 > BEFORE any run, per `.claude/CLAUDE.md`.
@@ -119,3 +121,12 @@ burn hours re-confirming a dead intraday signal. Full table + caveats: RESULTS.m
 
 Pivot options (all low-EV, see RESULTS §Next levers): volume dose-response probe;
 swing-hold variant (but research/44 already owns that ground); else CONCLUDED.
+
+**POSITIONAL test (user request) — DONE.** Multi-day hold flipped the headline
+numbers positive (daily-Supertrend net +0.701R/PF1.54, Chandelier +0.490/1.53,
+several policies clear the bar). **But the placebo/benchmark kill ended it:**
+SIGNAL ≈ BREAK_ONLY ≈ BASELINE(any random day) for every exit → the positional
+return is **unconditional large-cap drift (beta), not signal alpha.** Volume filter
+adds nothing (slightly hurts); prev-day-high break adds nothing over random entry.
+**FINAL: NO EDGE / CONCLUDED on both timeframes.** Files: scripts/smoke_probe.py
+(intraday), smoke_probe_positional.py, placebo_benchmark.py; results/*.csv + RESULTS.md.

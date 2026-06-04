@@ -1,14 +1,22 @@
-# Volume-MA + Prev-Day-High Breakout, 30-min Intraday LONG — Results (G1 smoke)
+# Volume-MA + Prev-Day-High Breakout, 30-min — Results (G1: intraday + positional)
 
-**VERDICT: NO EDGE (intraday, net of cost).** There is a faint *gross* signal
-(best gross +0.081R on a 1-ATR hard stop), but it **does not survive realistic
-cost**: every exit policy is net-negative at 6 bps round-trip, the best is
-**−0.029R / PF 0.95**, and there is no per-year persistence. It fails the
-pre-registered falsification bar (need net ≥ +0.16R AND PF ≥ 1.24 — research/44).
-RSI gating does not help. Consistent with prior art: research/44 found the raw
-prev-day-high breakout is breakeven and **intraday is worse than swing**, and the
-playbook's cost-units scar (research/43) — tight intraday stops make a flat bps
-cost enormous in R-terms. **Recommendation: SHELVE the intraday version.**
+**VERDICT: NO EDGE — intraday dies to cost; positional is pure BETA, not alpha.**
+
+- **Intraday (Phase 1):** faint gross signal (best +0.081R on a 1-ATR stop) but
+  every exit is **net-negative at 6 bps** (best −0.029R / PF 0.95); no persistence.
+- **Positional / multi-day hold (Phase 2):** looks great at first — daily-Supertrend
+  exit **net +0.701R / PF 1.54**, Chandelier +0.490R / PF 1.53 — and clears the
+  falsification bar. **BUT the placebo/benchmark kill (Phase 3) shows it is 100%
+  market beta:** entering on *any random day* and holding ~a month with the same
+  trailing stop gives the **same** result (BASELINE Supertrend +0.646R / PF 1.49).
+  The volume filter slightly **hurts** (SIGNAL +0.701 < BREAK_ONLY +0.733), and the
+  prev-day-high break adds **nothing** over a random entry (BREAK_ONLY ≈ BASELINE).
+  The +0.70R is just large-cap forward drift in the 2018–2025 bull, captured by
+  anything. **No incremental alpha from the volume+breakout entry.**
+
+Consistent with prior art (research/44: raw breakout breakeven; intraday < swing)
+and the playbook's cost-units scar (research/43). **Recommendation: CONCLUDED —
+shelve both forms.** The entry signal carries no edge over unconditional exposure.
 
 ## Setup (G1 cheap probe)
 
@@ -64,11 +72,42 @@ Best policy (HARD_SL) is positive in 2018/2019/2020/2022/2024 but negative in
   same-time-of-day seasonal MA was not tested (unlikely to change a cost-bound verdict).
 - Only LONG tested (per spec). 2R uses pessimistic stop-before-target intrabar.
 
-## Next levers (low expected value, listed for completeness)
+## Phase 2 — Positional (multi-day hold, daily management)
 
-1. **Volume dose-response** — require `vol > k×VolMA`, k∈{1.5,2,3}, to see if
-   stronger surges concentrate any edge (cheap; but 40 suggests cherry-pick risk).
-2. **Swing hold (carry multi-day)** — 44 shows this is the only place this family
-   has *any* edge (~PF 1.24 with NR7+high-beta+HTF-trend), so a fresh intraday
-   sweep adds little; if pursued, build *on 44's* filtered swing core, not this.
-3. Otherwise **CONCLUDED** — do not spend the 30k-cell sweep on the intraday form.
+Same entry, held across days, R = daily ATR(14). n=3,482 (no-RSI), 8 names.
+
+| Exit | WR% | hold | gross R | net@6bp | net@12bp | PF@6bp |
+|---|--:|--:|--:|--:|--:|--:|
+| SUPERTREND daily(10,3) | 56.4 | 29.8d | +0.730 | +0.701 | +0.672 | 1.54 |
+| CHANDELIER 3ATR daily | 47.0 | 17.4d | +0.519 | +0.490 | +0.460 | 1.53 |
+| HARD_SL (1 ATR) | 24.9 | 12.3d | +0.377 | +0.347 | +0.318 | 1.45 |
+| MAXHOLD_10 | 36.2 | 6.0d | +0.203 | +0.174 | +0.145 | 1.28 |
+| R_3R | 31.1 | 7.2d | +0.198 | +0.169 | +0.140 | 1.24 |
+
+Caveats: per-signal expectancy (event study, overlapping) — a SIGNAL not a curve;
+Supertrend hold ≈ the 30-day backstop (rarely flips → really "hold ~1 month");
+per-year shows 2024 & 2026(partial) negative (regime-dependent long beta).
+
+## Phase 3 — Placebo / benchmark (the kill): NO ALPHA
+
+Identical positional exits across three entry arms (mean net@6bp R / PF):
+
+| Exit | SIGNAL (vol+break) | BREAK_ONLY (no vol) | BASELINE (any day) |
+|---|--:|--:|--:|
+| HARD_SL | +0.347 / 1.45 | +0.377 / 1.50 | +0.333 / 1.44 |
+| CHANDELIER_3ATR | +0.490 / 1.53 | +0.532 / 1.58 | +0.508 / 1.54 |
+| SUPERTREND_D | +0.701 / 1.54 | +0.733 / 1.56 | +0.646 / 1.49 |
+| MAXHOLD_10 | +0.174 / 1.28 | +0.185 / 1.30 | +0.169 / 1.27 |
+
+**SIGNAL ≈ BASELINE for every policy.** Volume filter adds nothing (slightly hurts);
+prev-day-high break adds nothing over a random-day entry. The positional return is
+**unconditional large-cap drift** (2018–25 bull), not signal alpha.
+
+## Next levers (low expected value)
+
+1. **CONCLUDED** is the honest call — the entry has no edge over buy-and-hold-ish
+   exposure on either timeframe.
+2. If a long-hold momentum sleeve is wanted, that's the MQ book's job (32–48% CAGR),
+   not this signal — and any such sleeve must be benchmarked vs buy&hold.
+3. A genuinely different test (not this signal) would need short-side / market-neutral
+   construction so the result isn't just beta.
