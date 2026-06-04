@@ -21,6 +21,7 @@ import Mst from './pages/Mst';
 import Intraday75wr from './pages/Intraday75wr';
 import PairTrading from './pages/PairTrading';
 import Scanner from './pages/Scanner';
+import BreakoutScanner from './pages/BreakoutScanner';
 import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
 import Journal from './pages/Journal';
@@ -189,6 +190,16 @@ export default function App() {
           <Protected>
             <AppLayout active="scanner">
               <Scanner />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/breakout-scanner"
+        element={
+          <Protected>
+            <AppLayout active="breakout-scanner">
+              <BreakoutScanner />
             </AppLayout>
           </Protected>
         }

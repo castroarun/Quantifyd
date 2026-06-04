@@ -12,7 +12,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'backtest' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -173,13 +173,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/scanner"
-            icon={<IconLayers />}
-            label="F&O Scanner"
-            active={active === 'scanner'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/backtest"
             icon={<IconFlask />}
             label="Backtest"
@@ -226,6 +219,26 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLightbulb />}
             label="Future plans"
             active={active === 'future-plans'}
+            collapsed={collapsed}
+          />
+        </nav>
+      </div>
+
+      <div className={styles.section}>
+        {!collapsed && <div className={styles.sectionLabel}>Scanner</div>}
+        <nav className={styles.nav}>
+          <NavItem
+            to="/scanner"
+            icon={<IconLayers />}
+            label="F&O Scanner"
+            active={active === 'scanner'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/breakout-scanner"
+            icon={<IconBarChart />}
+            label="Breakout Scanner"
+            active={active === 'breakout-scanner'}
             collapsed={collapsed}
           />
         </nav>

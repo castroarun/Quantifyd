@@ -662,6 +662,16 @@ except Exception as _pt_err:
     logger.warning('[PairTrading] blueprint failed to register: %s', _pt_err)
 
 
+# DST (NIFTY dual-Supertrend paper, research/56) - read-only dashboard API over
+# the paper logger DB. Logger: research/56_nifty_dual_supertrend/scripts/nifty_dst_paper.py (cron).
+try:
+    from services.dst_api import dst_bp
+    app.register_blueprint(dst_bp)
+    logger.info('[DST] blueprint registered at /api/dst/*')
+except Exception as _dst_err:
+    logger.warning('[DST] blueprint failed to register: %s', _dst_err)
+
+
 @app.route('/')
 def index():
     """Landing page with login status"""
@@ -7624,6 +7634,15 @@ try:
     logger.info("F&O Scanner poll job registered: every 1 min, 09:15-15:30 IST")
 except Exception as e:
     logger.warning(f"Could not register Scanner poll job: {e}")
+
+
+# --- Breakout Scanner (multi-universe live scan + email alerts) ---
+try:
+    from services.breakout_scanner_api import register as register_breakout_scanner
+    register_breakout_scanner(app, scheduler)
+    logger.info("Breakout Scanner registered (/api/breakout-scanner/*)")
+except Exception as _bo_e:
+    logger.warning(f"Could not register Breakout Scanner: {_bo_e}")
 
 
 @app.route('/scanner')
