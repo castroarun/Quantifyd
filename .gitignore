@@ -189,3 +189,4 @@ static/nas_mtm.json
 research/49_volbreak_pdh_30min/results/*.csv
 research/55_mtf_compression_breakout/results/*.csv
 backtest_data/breakout_scanner.db
+research/57_positional_straddle_biweekly/results/paper_straddle.db
