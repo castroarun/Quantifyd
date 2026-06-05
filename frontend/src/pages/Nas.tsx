@@ -125,6 +125,38 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
 
 const ALL_SYSTEMS: SystemDef[] = [...SQUEEZE_SYSTEMS, ...ENTRY_916_SYSTEMS];
 
+// NAS-OPT (research/54 paper system) — shown in the Trade Book alongside the 8 variants.
+const NAS_OPT_DEF: SystemDef = {
+  id: 'nas-opt',
+  key: 'nas-opt',
+  label: 'NAS-OPT',
+  subtitle: '0/1-DTE ~100pt-OTM strangle + move-stop (paper)',
+  rules:
+    'Entry 09:20 on 0/1-DTE only (Mon & Tue). SELL ~100pt OTM CE+PE. Exit: ±0.4% underlying move-stop or 14:45.',
+  configNote: 'paper · research/54',
+  group: '916',
+};
+
+// Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
+function nasOptTradeBookState(today: any, trades: any[]): NASState {
+  const QTY = 130; // lots_per_leg 2 × 65
+  const ce: NASPosition[] = [];
+  const pe: NASPosition[] = [];
+  const closed_today: NASPosition[] = [];
+  if (today && today.status && today.status !== 'CLOSED') {
+    ce.push({ leg: 'CE', tradingsymbol: today.ce_sym, strike: today.ce_strike, entry_price: today.ce_entry, qty: QTY, entry_time: today.entry_time, status: 'ACTIVE' });
+    pe.push({ leg: 'PE', tradingsymbol: today.pe_sym, strike: today.pe_strike, entry_price: today.pe_entry, qty: QTY, entry_time: today.entry_time, status: 'ACTIVE' });
+  }
+  const dayStr = new Date().toISOString().slice(0, 10);
+  (trades || [])
+    .filter((x) => x.status === 'CLOSED' && x.mode === 'paper' && x.day === dayStr)
+    .forEach((x) => {
+      closed_today.push({ leg: 'CE', strike: x.ce_strike, entry_price: x.ce_entry, exit_price: x.ce_exit, qty: QTY, pnl_inr: Math.round(((x.ce_entry ?? 0) - (x.ce_exit ?? 0)) * QTY), entry_time: x.entry_time, exit_time: x.exit_time, exit_reason: x.exit_reason });
+      closed_today.push({ leg: 'PE', strike: x.pe_strike, entry_price: x.pe_entry, exit_price: x.pe_exit, qty: QTY, pnl_inr: Math.round(((x.pe_entry ?? 0) - (x.pe_exit ?? 0)) * QTY), entry_time: x.entry_time, exit_time: x.exit_time, exit_reason: x.exit_reason });
+    });
+  return { stats: {}, positions: { ce, pe, total_active: ce.length + pe.length, closed_today } };
+}
+
 /* ---------- page ---------- */
 
 interface SystemStateRecord {
@@ -284,6 +316,28 @@ export default function Nas() {
   const [historyModal, setHistoryModal] = useState<{
     title: string; points: MtmPoint[]; events: MtmEvent[];
   } | null>(null);
+
+  // NAS-OPT (paper) — fetched here so it can appear in the Trade Book like the 8 variants.
+  const [nasOptTb, setNasOptTb] = useState<SystemStateRecord>({ state: null, err: null });
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [s, t] = await Promise.all([
+          fetch('/api/nas-opt/state').then((r) => r.json()),
+          fetch('/api/nas-opt/trades').then((r) => r.json()),
+        ]);
+        if (!cancelled) {
+          setNasOptTb({ state: nasOptTradeBookState(s?.today, Array.isArray(t) ? t : []), err: null });
+        }
+      } catch {
+        /* endpoint may be momentarily unavailable */
+      }
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
 
   // Load saved daily snapshots (written by scripts/snapshot_nas_eod.py at 15:32).
   useEffect(() => {
@@ -783,7 +837,11 @@ export default function Nas() {
       </section>
 
       {/* Trade Book — grouped active+closed trades with group P&L (EOD report) */}
-      <TradeBook systems={ALL_SYSTEMS} states={states} liveLegs={liveTicks.legs} />
+      <TradeBook
+        systems={[...ALL_SYSTEMS, NAS_OPT_DEF]}
+        states={{ ...states, 'nas-opt': nasOptTb }}
+        liveLegs={liveTicks.legs}
+      />
 
       {/* Config footer */}
       <section className={styles.sectionBlock}>
