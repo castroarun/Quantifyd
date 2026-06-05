@@ -41,7 +41,7 @@ exps = expiries(DAY)
 
 # ---- V1: intraday one-and-done, 0/1-DTE only -----------------------------
 v1 = {"status": "idle", "detail": "", "pnl_now": 0, "series": []}
-if exps and dte(exps[0]) <= 1:
+if exps:  # live: track V1 every day (edge is 0/1-DTE; non-0/1 shown for tracking)
     E = exps[0]; s0 = spot_at("09:20")
     if s0:
         K = round(s0 / 50) * 50
