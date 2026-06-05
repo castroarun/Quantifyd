@@ -823,6 +823,9 @@ def _nas_mode_configs():
 def _apply_nas_master_mode(mode):
     """Apply 'off'|'paper'|'live' to all 8 NAS variant configs in-process."""
     for cfg in _nas_mode_configs():
+        if cfg.get('force_disabled'):
+            cfg['enabled'] = False   # permanently disabled (over-margin) — master mode can't enable it
+            continue
         if mode == 'off':
             cfg['enabled'] = False
         elif mode == 'paper':

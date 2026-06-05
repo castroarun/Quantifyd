@@ -523,6 +523,23 @@ NAS_916_ATM4_DEFAULTS = {
     'entry_start_time': '09:16',
 }
 
+# 2026-06-05: NAS enabled flags LOCKED (post-spread). Squeeze OFF — over-margin: all 8
+# variants exceed ~Rs52L; squeeze entries rejected (insufficient funds) and re-spammed
+# every 5-min candle. 9:16 family ON — it holds the day's live positions. Re-enable the
+# squeeze when the book is funded / re-sized.
+NAS_DEFAULTS['enabled'] = False
+NAS_ATM_DEFAULTS['enabled'] = False
+NAS_ATM2_DEFAULTS['enabled'] = False
+NAS_ATM4_DEFAULTS['enabled'] = False
+NAS_916_OTM_DEFAULTS['enabled'] = True
+NAS_916_ATM_DEFAULTS['enabled'] = True
+NAS_916_ATM2_DEFAULTS['enabled'] = True
+NAS_916_ATM4_DEFAULTS['enabled'] = True
+NAS_DEFAULTS['force_disabled'] = True
+NAS_ATM_DEFAULTS['force_disabled'] = True
+NAS_ATM2_DEFAULTS['force_disabled'] = True
+NAS_ATM4_DEFAULTS['force_disabled'] = True
+
 # --- ORB: Opening Range Breakout (Cash Equity Intraday) ---
 
 ORB_DEFAULTS = {
