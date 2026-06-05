@@ -54,10 +54,15 @@ export default function Straddles() {
   const [v2, setV2] = useState<V2 | null>(null);
   const [day1, setDay1] = useState<string | null>(null);
   const [tr2, setTr2] = useState<number | null>(null);
+  const [live, setLive] = useState<any>(null);
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
     fetch('/app/straddles/v2.json').then((r) => r.json()).then(setV2).catch(() => {});
+    const loadLive = () => fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
+    loadLive();
+    const id = setInterval(loadLive, 60000);
+    return () => clearInterval(id);
   }, []);
 
   const v1stats = useMemo(() => {
@@ -83,6 +88,34 @@ export default function Straddles() {
     <div style={{ maxWidth: 1000 }}>
       <div className="page-title">Straddle Systems</div>
       <div className="page-subtitle">Two short-straddle systems on NIFTY · backtested on the recorded chain · paper-forward 10 lots</div>
+
+      {/* ===== TODAY · LIVE ===== */}
+      {live && (
+        <section style={{ ...card, marginTop: 14, borderColor: C.navy }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Today · Live</span>
+            {chip('#E7F2EE', C.pos, 'PAPER · 10 lots')}
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>updated {String(live.updated_at || '').slice(11, 19)} · {live.day}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+            {[['V1 · intraday one-and-done', live.v1], ['V2 · positional bi-weekly', live.v2]].map(([title, d]: any) => (
+              <div key={title} style={{ flex: 1, minWidth: 300, border: `1px solid ${C.hair}`, borderRadius: 8, padding: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontWeight: 700, color: C.ink }}>{title}</span>
+                  <span style={{ fontSize: 22, fontWeight: 800, marginLeft: 'auto', color: d.status === 'idle' || d.status === 'flat' ? C.muted : col(d.pnl_now) }}>
+                    {d.status === 'idle' || d.status === 'flat' ? d.status : inr(d.pnl_now)}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 6px' }}>{d.detail}</div>
+                {d.series && d.series.length >= 2
+                  ? <LineChart pts={d.series} h={80} label={`intraday running P&L · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}`} />
+                  : <div style={{ fontSize: 12, color: C.faint, padding: 8 }}>{d.status === 'idle' ? 'no trade today (not 0/1-DTE)' : '—'}</div>}
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · ticks every 5 min during market · recorded daily. Backtest history below.</div>
+        </section>
+      )}
 
       {/* ===== V1 ===== */}
       <section style={{ ...card, marginTop: 14 }}>

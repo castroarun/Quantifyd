@@ -191,3 +191,4 @@ research/55_mtf_compression_breakout/results/*.csv
 backtest_data/breakout_scanner.db
 research/57_positional_straddle_biweekly/results/paper_straddle.db
 static/app/watchdog.json
+static/app/straddles_live.json
