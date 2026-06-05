@@ -50,8 +50,8 @@ export default function Straddles() {
   const [tr2, setTr2] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
-    fetch('/straddles/v2.json').then((r) => r.json()).then(setV2).catch(() => {});
+    fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
+    fetch('/app/straddles/v2.json').then((r) => r.json()).then(setV2).catch(() => {});
   }, []);
 
   const v1stats = useMemo(() => {

@@ -178,6 +178,73 @@ interface MtmEvent {
 
 interface MtmSystem { points: MtmPoint[]; events: MtmEvent[]; }
 
+/* ---------- Integrity Watchdog (independent 5-min poller, read-only) ---------- */
+function WatchdogSection() {
+  const [wd, setWd] = useState<any>(null);
+  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    const load = () => fetch('/app/watchdog.json?t=' + Date.now()).then((r) => r.json()).then(setWd).catch(() => {});
+    load();
+    const id = setInterval(load, 60000);
+    return () => clearInterval(id);
+  }, []);
+  if (!wd) return null;
+  const s = wd.summary || { ok: 0, warn: 0, fail: 0 };
+  const attn = (s.warn || 0) + (s.fail || 0);
+  const icon = (st: string) => {
+    const m: Record<string, [string, string, string]> = {
+      ok: ['#E7F2EE', '#0F6E56', '✓'], warn: ['#FEF3C7', '#B45309', '!'], fail: ['#FBEAEA', '#A32D2D', '✕'],
+    };
+    const [bg, c, g] = m[st] || m.ok;
+    return <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: bg, color: c, fontSize: 13, fontWeight: 800 }}>{g}</span>;
+  };
+  const th: React.CSSProperties = { textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', color: '#888780', fontWeight: 600, padding: '8px 16px' };
+  const td: React.CSSProperties = { padding: '9px 16px', borderTop: '1px solid rgba(0,0,0,0.06)', fontSize: 13 };
+  const rows: any[] = [];
+  (wd.groups || []).forEach((g: any) => { rows.push({ grp: g.name }); (g.checks || []).forEach((c: any) => rows.push(c)); });
+  return (
+    <section style={{ border: '1px solid rgba(0,0,0,0.10)', background: '#fff', borderRadius: 10, marginTop: 18, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+      <div onClick={() => setOpen(!open)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer' }}>
+        <span style={{ color: '#888780', fontSize: 12, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>▶</span>
+        <span style={{ color: '#1E3A8A' }}>🛡</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#1B1B1A' }}>Integrity Watchdog</span>
+        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#888780', flexWrap: 'wrap' }}>
+          <span><span style={{ color: '#0F6E56', fontWeight: 600 }}>{s.ok} OK</span> · <span style={{ color: '#B45309', fontWeight: 600 }}>{s.warn} warn</span> · <span style={{ color: '#A32D2D', fontWeight: 600 }}>{s.fail} fail</span></span>
+          {attn > 0
+            ? <span style={{ background: '#FBEAEA', color: '#A32D2D', fontWeight: 700, fontSize: 12, padding: '3px 10px', borderRadius: 20 }}>{attn} NEED ATTENTION</span>
+            : <span style={{ background: '#E7F2EE', color: '#0F6E56', fontWeight: 700, fontSize: 12, padding: '3px 10px', borderRadius: 20 }}>ALL CLEAR</span>}
+          <span>polled {String(wd.polled_at || '').slice(11, 19)}</span>
+        </span>
+      </div>
+      {open && (
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.10)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              <th style={{ ...th, width: '24%' }}>Check</th><th style={{ ...th, width: '16%' }}>Scope</th>
+              <th style={{ ...th, textAlign: 'center', width: '8%' }}>Status</th><th style={th}>Detail</th>
+            </tr></thead>
+            <tbody>
+              {rows.map((r, i) => r.grp ? (
+                <tr key={i}><td colSpan={4} style={{ background: '#FAFAF9', color: '#888780', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, padding: '5px 16px' }}>{r.grp}</td></tr>
+              ) : (
+                <tr key={i}>
+                  <td style={{ ...td, color: '#1B1B1A' }}>{r.check}</td>
+                  <td style={{ ...td, color: '#5F5E5A', fontWeight: 600 }}>{r.scope}</td>
+                  <td style={{ ...td, textAlign: 'center' }}>{icon(r.status)}</td>
+                  <td style={{ ...td, color: '#5F5E5A' }}>{r.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ padding: '10px 16px', fontSize: 11, color: '#B4B2A9', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+            Independent 5-min poller · read-only · places no orders
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function NasOptCard() {
   const [state, setState] = useState<any>(null);
   const [equity, setEquity] = useState<Array<{ day: string; pnl: number; cum: number }>>([]);
@@ -842,6 +909,8 @@ export default function Nas() {
         states={{ ...states, 'nas-opt': nasOptTb }}
         liveLegs={liveTicks.legs}
       />
+
+      <WatchdogSection />
 
       {/* Config footer */}
       <section className={styles.sectionBlock}>
