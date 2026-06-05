@@ -131,6 +131,8 @@ class BreakoutScannerService:
         self._lock = threading.Lock()
         self._daily_cache_date: Optional[str] = None
         self._daily_ctx: Dict[str, dict] = {}
+        self._tokmap = None  # NSE tradingsymbol -> instrument_token (cached once)
+        self._building = False  # background daily-cache build in progress
         self._uni_cache: Dict[str, List[str]] = {}
         self._db_symbols: Optional[set] = None
 
@@ -178,9 +180,45 @@ class BreakoutScannerService:
         return sorted(out)
 
     # ---- daily context (cached per day) ----
+    def _get_token(self, sym: str):
+        """NSE tradingsymbol -> instrument_token via a once-cached instruments dump."""
+        if self._tokmap is None:
+            try:
+                from services.kite_service import get_kite
+                kite = get_kite()
+                insts = kite.instruments('NSE') if kite else []
+                self._tokmap = {i['tradingsymbol']: i['instrument_token'] for i in insts}
+                logger.info('[BreakoutScanner] cached %d NSE instrument tokens', len(self._tokmap))
+            except Exception as e:
+                logger.warning('[BreakoutScanner] instruments() failed: %s', e)
+                self._tokmap = {}
+        return self._tokmap.get(sym)
+
+    def _fetch_daily_live(self, sym: str, from_date: datetime, to_date: datetime):
+        """Daily bars LIVE from Kite, in-memory (NOT persisted to DB), so the scanner
+        reflects current prices and never depends on a stale local DB."""
+        import time as _t
+        try:
+            from services.kite_service import get_kite
+            tok = self._get_token(sym)
+            kite = get_kite()
+            if not tok or not kite:
+                return None
+            data = kite.historical_data(tok, from_date, to_date, 'day')
+            _t.sleep(0.34)  # Kite 3 req/sec
+            if not data:
+                return None
+            df = pd.DataFrame(data)
+            df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
+            df = df.sort_values('date').drop_duplicates(subset=['date']).set_index('date')
+            return df[['open', 'high', 'low', 'close', 'volume']]
+        except Exception as e:
+            logger.warning('[BreakoutScanner] live Kite fetch failed %s: %s', sym, e)
+            return None
+
     def _daily_context(self, sym: str, today: datetime, lb_donchian: int) -> Optional[dict]:
         try:
-            df = self._dm.load_data(sym, 'day', today - timedelta(days=420), today)
+            df = self._fetch_daily_live(sym, today - timedelta(days=420), today)
         except Exception:
             return None
         if df is None or len(df) < 60:
@@ -221,18 +259,29 @@ class BreakoutScannerService:
         }
 
     def _ensure_daily_cache(self, symbols: List[str], today: datetime, lb_donchian: int):
+        import threading
         key = today.strftime('%Y-%m-%d') + f':{lb_donchian}:' + str(hash(tuple(symbols)) & 0xffff)
         with self._lock:
             if self._daily_cache_date == key and self._daily_ctx:
                 return
-            ctx = {}
-            for s in symbols:
-                f = self._daily_context(s, today, lb_donchian)
-                if f:
-                    ctx[s] = f
-            self._daily_ctx = ctx
-            self._daily_cache_date = key
-            logger.info("[BreakoutScanner] daily ctx built %s — %d/%d", key, len(ctx), len(symbols))
+            if self._building:
+                return  # build in progress — serve current cache; next poll picks up fresh data
+            self._building = True
+        def _build():
+            try:
+                ctx = {}
+                for s in symbols:
+                    f = self._daily_context(s, today, lb_donchian)
+                    if f:
+                        ctx[s] = f
+                with self._lock:
+                    self._daily_ctx = ctx
+                    self._daily_cache_date = key
+                logger.info("[BreakoutScanner] daily ctx built LIVE %s — %d/%d", key, len(ctx), len(symbols))
+            finally:
+                with self._lock:
+                    self._building = False
+        threading.Thread(target=_build, daemon=True, name='bo-ctx-build').start()
 
     # ---- live quotes (batched) ----
     def _live_quotes(self, symbols: List[str]) -> Dict[str, dict]:
