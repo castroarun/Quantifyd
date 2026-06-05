@@ -167,6 +167,9 @@ class NasAtmExecutor:
             try:
                 from services.kite_service import get_kite
                 kite = get_kite()
+                from services.nas_kill_switch import is_frozen as _nas_frozen
+                if _nas_frozen():
+                    raise RuntimeError('NAS manual-freeze active - order blocked')
                 order_id = kite.place_order(
                     variety='regular',
                     exchange='NFO',
@@ -266,6 +269,9 @@ class NasAtmExecutor:
         try:
             from services.kite_service import get_kite
             kite = get_kite()
+            from services.nas_kill_switch import is_frozen as _nas_frozen
+            if _nas_frozen():
+                raise RuntimeError('NAS manual-freeze active - order blocked')
             order_id = kite.place_order(
                 variety='regular', exchange='NFO',
                 tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',

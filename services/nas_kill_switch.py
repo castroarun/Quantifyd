@@ -23,11 +23,34 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 KILL_FLAG_PATH = Path(__file__).resolve().parents[1] / "backtest_data" / "nas_kill.flag"
+FREEZE_FLAG_PATH = Path(__file__).resolve().parents[1] / "backtest_data" / "nas_manual_freeze.flag"
 
 
 def is_killed() -> bool:
     """True when the NAS panic kill is active."""
     return KILL_FLAG_PATH.exists()
+
+
+def is_frozen() -> bool:
+    """True when NAS manual-freeze is active: code is BLOCKED from placing ANY order
+    (entries, exits, adjustments, EOD square-off). Positions are left OPEN for manual mgmt."""
+    return FREEZE_FLAG_PATH.exists()
+
+
+def set_frozen(reason: str = "manual management") -> dict:
+    FREEZE_FLAG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    info = {"frozen_at": datetime.now().isoformat(timespec="seconds"), "reason": reason}
+    FREEZE_FLAG_PATH.write_text(json.dumps(info), encoding="utf-8")
+    logger.warning("[NAS-FREEZE] manual-freeze ARMED: %s", reason)
+    return info
+
+
+def clear_frozen() -> bool:
+    if FREEZE_FLAG_PATH.exists():
+        FREEZE_FLAG_PATH.unlink()
+        logger.warning("[NAS-FREEZE] manual-freeze CLEARED")
+        return True
+    return False
 
 
 def set_killed(reason: str = "manual panic", source: str = "api") -> dict:
