@@ -507,6 +507,14 @@ def _nas_reconcile_broker_positions():
             from datetime import datetime as _dt
             now = _dt.now().isoformat()
             closed_here = 0
+            # honest exit price for a ghost-close: current market LTP (~the buyback), NOT 0
+            ghost_exit = None
+            try:
+                from services.kite_service import get_kite as _gk
+                ghost_exit = (_gk().ltp(['NFO:' + tsym]).get('NFO:' + tsym, {}) or {}).get('last_price')
+            except Exception:
+                ghost_exit = None
+            ghost_note = 'auto-reconcile: broker flat 2 checks; exit @ %s' % (('%.2f' % ghost_exit) if ghost_exit else 'entry (LTP unavailable)')
             for path, tab in _NAS_DBS_FOR_RECONCILE:
                 full = Path(__file__).parent / path
                 if not full.exists():
@@ -514,11 +522,11 @@ def _nas_reconcile_broker_positions():
                 try:
                     con = _sqlite3.connect(str(full))
                     cur = con.execute(
-                        f"UPDATE {tab} SET status='CLOSED', exit_price=0, "
+                        f"UPDATE {tab} SET status='CLOSED', exit_price=COALESCE(?, entry_price), "
                         f"exit_time=?, exit_reason='GHOST_BROKER_FLAT', updated_at=?, "
-                        f"notes='auto-reconcile: broker flat on symbol for 2 checks' "
+                        f"notes=? "
                         f"WHERE tradingsymbol=? AND status='ACTIVE' AND mode='live'",
-                        (now, now, tsym),
+                        (ghost_exit, now, now, ghost_note, tsym),
                     )
                     con.commit()
                     closed_here += cur.rowcount
