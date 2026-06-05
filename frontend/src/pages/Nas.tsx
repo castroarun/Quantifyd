@@ -626,8 +626,6 @@ export default function Nas() {
         />
       </div>
 
-      <NasOptCard />
-
       {mtmCombined && mtmCombined.points.length >= 2 ? (
         <section className={styles.combinedHero}>
           <div className={styles.combinedHead}>
@@ -734,6 +732,7 @@ export default function Nas() {
                 onExpand={() => setExpandedKey(s.key)}
               />
             ))}
+            <NasOptCard />
           </div>
         </div>
       </div>
