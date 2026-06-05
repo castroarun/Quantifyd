@@ -20,21 +20,43 @@ const C = { ink: '#1B1B1A', muted: '#888780', faint: '#B4B2A9', sec: '#5F5E5A', 
 const inr = (n: number) => `${n >= 0 ? '+' : '−'}₹${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
 const col = (n: number) => (n >= 0 ? C.pos : C.neg);
 
-function LineChart({ pts, h = 90, label }: { pts: [string, number][]; h?: number; label?: string }) {
+const fmtY = (v: number) => `${v >= 0 ? '+' : '−'}₹${Math.abs(Math.round(v)).toLocaleString('en-IN')}`;
+function LineChart({ pts, h = 130, label }: { pts: [string, number][]; h?: number; label?: string }) {
   if (!pts || pts.length < 2) return <div style={{ color: C.faint, fontSize: 12, padding: 8 }}>—</div>;
+  const W = 600, PAD_L = 56, PAD_R = 10, PAD_T = 8, PAD_B = 18;
   const ys = pts.map((p) => p[1]);
-  const W = 600;
   const min = Math.min(0, ...ys), max = Math.max(0, ...ys), rng = max - min || 1;
-  const X = (i: number) => (i / (pts.length - 1)) * W;
-  const Y = (y: number) => h - ((y - min) / rng) * h;
-  const path = pts.map((p, i) => `${X(i)},${Y(p[1])}`).join(' ');
+  const X = (i: number) => PAD_L + (i / (pts.length - 1)) * (W - PAD_L - PAD_R);
+  const Y = (v: number) => PAD_T + (1 - (v - min) / rng) * (h - PAD_T - PAD_B);
+  const line = pts.map((p, i) => `${X(i)},${Y(p[1])}`).join(' ');
+  const area = `${X(0)},${Y(0)} ${line} ${X(pts.length - 1)},${Y(0)}`;
   const last = ys[ys.length - 1];
+  const yticks = [max, 0, min].filter((v, i, a) => a.indexOf(v) === i);
+  const xi = [0, Math.floor((pts.length - 1) / 2), pts.length - 1].filter((v, i, a) => a.indexOf(v) === i);
   return (
     <div>
       {label && <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>{label}</div>}
       <svg viewBox={`0 0 ${W} ${h}`} width="100%" height={h} preserveAspectRatio="none">
-        <line x1="0" y1={Y(0)} x2={W} y2={Y(0)} stroke="rgba(0,0,0,0.15)" strokeWidth="1" strokeDasharray="4 4" />
-        <polyline points={path} fill="none" stroke={col(last)} strokeWidth="2" />
+        <defs>
+          <linearGradient id={`sg${h}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={col(last)} stopOpacity="0.16" />
+            <stop offset="100%" stopColor={col(last)} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {yticks.map((v) => (
+          <g key={v}>
+            <line x1={PAD_L} x2={W - PAD_R} y1={Y(v)} y2={Y(v)}
+              stroke={v === 0 ? 'rgba(0,0,0,0.20)' : 'rgba(0,0,0,0.07)'} strokeWidth="1"
+              strokeDasharray={v === 0 ? '0' : '3 3'} />
+            <text x={PAD_L - 6} y={Y(v) + 3} textAnchor="end" fontSize="9.5" fill={C.muted}>{fmtY(v)}</text>
+          </g>
+        ))}
+        <polygon points={area} fill={`url(#sg${h})`} />
+        <polyline points={line} fill="none" stroke={col(last)} strokeWidth="2" />
+        {xi.map((i, k) => (
+          <text key={k} x={X(i)} y={h - 5} fontSize="9.5" fill={C.muted}
+            textAnchor={k === 0 ? 'start' : k === xi.length - 1 ? 'end' : 'middle'}>{pts[i][0]}</text>
+        ))}
       </svg>
     </div>
   );
@@ -108,7 +130,7 @@ export default function Straddles() {
                 </div>
                 <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 6px' }}>{d.detail}</div>
                 {d.series && d.series.length >= 2
-                  ? <LineChart pts={d.series} h={80} label={`intraday running P&L · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}`} />
+                  ? <LineChart pts={d.series} h={120} label={`intraday running P&L · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}`} />
                   : <div style={{ fontSize: 12, color: C.faint, padding: 8 }}>{d.status === 'idle' ? 'no trade today (not 0/1-DTE)' : '—'}</div>}
               </div>
             ))}
