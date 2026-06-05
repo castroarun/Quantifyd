@@ -842,12 +842,31 @@ class NasTicker:
 
     # ─── NAS ATM Naked Leg ST Monitoring ─────────────────────
 
+    def _seed_naked_candles(self, token, attr):
+        """Seed a naked leg's 5-min candle history from Kite so ST(7,2) arms immediately
+        instead of waiting ~40 min for live ticks to build 8 candles (fixes candles=0 after
+        a leg goes naked or after a restart re-adoption)."""
+        try:
+            from datetime import datetime as _dt, timedelta as _td
+            from services.kite_service import get_kite
+            kite = get_kite()
+            if not kite or not token:
+                return
+            data = kite.historical_data(token, _dt.now() - _td(days=3), _dt.now(), '5minute')
+            seeded = [{'open': c['open'], 'high': c['high'], 'low': c['low'], 'close': c['close']}
+                      for c in (data or [])][-61:-1]   # drop in-progress bar, keep up to 60 completed
+            setattr(self, attr, seeded)
+            logger.info(f"[NAS] seeded {len(seeded)} 5-min candles for naked-ST ({attr}) from Kite")
+        except Exception as e:
+            logger.warning(f"[NAS] naked-ST seed failed for {attr}: {e}")
+
     def start_atm_naked_monitoring(self, token, info):
         """Start ST(7,2) monitoring for a naked ATM leg after SL hit."""
         self._atm_naked_leg_token = token
         self._atm_naked_leg_info = info
         self._atm_naked_leg_candles = []
         self._atm_naked_leg_current = None
+        self._seed_naked_candles(token, '_atm_naked_leg_candles')
         logger.info(f"[NAS-ATM] Started ST(7,2) monitoring on {info.get('tradingsymbol')}")
 
     def _update_atm_naked_candle(self, ltp):
@@ -1205,6 +1224,7 @@ class NasTicker:
         self._atm4_naked_leg_info = info
         self._atm4_naked_leg_candles = []
         self._atm4_naked_leg_current = None
+        self._seed_naked_candles(token, '_atm4_naked_leg_candles')
         logger.info(f"[NAS-ATM4] Started ST(7,2) monitoring on {info.get('tradingsymbol')}")
 
     def _update_atm4_naked_candle(self, ltp: float):
