@@ -178,15 +178,23 @@ function NasOptCard() {
   }, []);
 
   if (!state) return null;
+  void equity;
 
-  const total = Number(state.closed_total_pnl || 0);
-  const nTrades = Number(state.closed_trades || 0);
-  const closed = trades.filter((t) => t.status === 'CLOSED');
-  const wins = closed.filter((t) => Number(t.pnl) > 0).length;
-  const winPct = closed.length ? Math.round((wins / closed.length) * 100) : 0;
   const today = state.today;
+  const closedAll = trades.filter((t) => t.status === 'CLOSED');
+  const sumPnl = (arr: any[]) => arr.reduce((a, t) => a + Number(t.pnl || 0), 0);
+  const paper = closedAll.filter((t) => t.mode === 'paper');
+  const bt = closedAll.filter((t) => t.mode === 'backtest');
+  const paperPnl = sumPnl(paper);
+  const paperN = paper.length;
+  const paperWin = paperN ? Math.round((paper.filter((t) => Number(t.pnl) > 0).length / paperN) * 100) : 0;
+  const btPnl = sumPnl(bt);
+  const btN = bt.length;
 
-  const ys = equity.map((p) => p.cum);
+  // live-paper equity curve (built from paper trades only)
+  const paperSorted = [...paper].sort((a, b) => (String(a.day) < String(b.day) ? -1 : 1));
+  let cum = 0;
+  const ys = paperSorted.map((t) => (cum += Number(t.pnl || 0)));
   let spark: JSX.Element | null = null;
   if (ys.length >= 2) {
     const W = 320;
@@ -230,23 +238,28 @@ function NasOptCard() {
       </div>
       <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', margin: '10px 0' }}>
         <div>
-          <div style={{ fontSize: 11, color: '#8b93a3' }}>Total P&amp;L (paper)</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: total >= 0 ? '#2dd4a7' : '#ff6b6b' }}>
-            {total >= 0 ? '+' : ''}₹{total.toLocaleString('en-IN')}
+          <div style={{ fontSize: 11, color: '#8b93a3' }}>Live paper P&amp;L</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: paperN === 0 ? '#8b93a3' : paperPnl >= 0 ? '#2dd4a7' : '#ff6b6b' }}>
+            {paperN === 0 ? '₹0' : `${paperPnl >= 0 ? '+' : ''}₹${paperPnl.toLocaleString('en-IN')}`}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#8b93a3' }}>Trades</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{nTrades}</div>
+          <div style={{ fontSize: 11, color: '#8b93a3' }}>Paper trades</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{paperN}</div>
         </div>
         <div>
           <div style={{ fontSize: 11, color: '#8b93a3' }}>Win rate</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{winPct}%</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{paperN ? `${paperWin}%` : '—'}</div>
         </div>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontSize: 11, color: '#8b93a3', marginBottom: 2 }}>Equity curve (paper + backtest)</div>
-          {spark ?? <div style={{ color: '#5a6072', fontSize: 12 }}>—</div>}
+          <div style={{ fontSize: 11, color: '#8b93a3', marginBottom: 2 }}>Live paper equity</div>
+          {spark ?? (
+            <div style={{ color: '#5a6072', fontSize: 12 }}>No paper trades yet · first entry Monday</div>
+          )}
         </div>
+      </div>
+      <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6 }}>
+        Backtest baseline (research/54, not live): {btPnl >= 0 ? '+' : ''}₹{btPnl.toLocaleString('en-IN')} · {btN} trades
       </div>
       <div style={{ fontSize: 12, color: today ? '#2dd4a7' : '#8b93a3' }}>
         {today
