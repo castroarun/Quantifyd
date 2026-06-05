@@ -307,8 +307,8 @@ function NasOptCard() {
     const zeroY = H - ((0 - min) / rng) * H;
     spark = (
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
-        <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="#444" strokeWidth="1" strokeDasharray="3 3" />
-        <polyline points={pts} fill="none" stroke="#2dd4a7" strokeWidth="2" />
+        <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="rgba(0,0,0,0.15)" strokeWidth="1" strokeDasharray="3 3" />
+        <polyline points={pts} fill="none" stroke="#0F6E56" strokeWidth="2" />
       </svg>
     );
   }
@@ -322,45 +322,46 @@ function NasOptCard() {
   return (
     <section
       style={{
-        border: '1px solid #2a2f3a',
-        background: 'linear-gradient(180deg,#161a22,#12151c)',
-        borderRadius: 12,
+        border: '1px solid rgba(0,0,0,0.10)',
+        background: '#FFFFFF',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+        borderRadius: 10,
         padding: '16px 18px',
         marginBottom: 18,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: '#e6e9ef' }}>NAS-OPT</span>
-        {chip('#3a2a00', '#f5b301', 'PAPER')}
-        {chip('#1e2a3a', '#6db3f2', 'research/54')}
-        <span style={{ color: '#8b93a3', fontSize: 12 }}>{state.system}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: '#1B1B1A' }}>NAS-OPT</span>
+        {chip('#FEF3C7', '#B45309', 'PAPER')}
+        {chip('#EFF3FA', '#1E3A8A', 'research/54')}
+        <span style={{ color: '#888780', fontSize: 12 }}>{state.system}</span>
       </div>
       <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', margin: '10px 0' }}>
         <div>
-          <div style={{ fontSize: 11, color: '#8b93a3' }}>Live paper P&amp;L</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: paperN === 0 ? '#8b93a3' : paperPnl >= 0 ? '#2dd4a7' : '#ff6b6b' }}>
+          <div style={{ fontSize: 11, color: '#888780' }}>Live paper P&amp;L</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: paperN === 0 ? '#888780' : paperPnl >= 0 ? '#0F6E56' : '#A32D2D' }}>
             {paperN === 0 ? '₹0' : `${paperPnl >= 0 ? '+' : ''}₹${paperPnl.toLocaleString('en-IN')}`}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#8b93a3' }}>Paper trades</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{paperN}</div>
+          <div style={{ fontSize: 11, color: '#888780' }}>Paper trades</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#1B1B1A' }}>{paperN}</div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#8b93a3' }}>Win rate</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#e6e9ef' }}>{paperN ? `${paperWin}%` : '—'}</div>
+          <div style={{ fontSize: 11, color: '#888780' }}>Win rate</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#1B1B1A' }}>{paperN ? `${paperWin}%` : '—'}</div>
         </div>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontSize: 11, color: '#8b93a3', marginBottom: 2 }}>Live paper equity</div>
+          <div style={{ fontSize: 11, color: '#888780', marginBottom: 2 }}>Live paper equity</div>
           {spark ?? (
-            <div style={{ color: '#5a6072', fontSize: 12 }}>No paper trades yet · first entry Monday</div>
+            <div style={{ color: '#B4B2A9', fontSize: 12 }}>No paper trades yet · first entry Monday</div>
           )}
         </div>
       </div>
-      <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6 }}>
+      <div style={{ fontSize: 11, color: '#888780', marginBottom: 6 }}>
         Backtest baseline (research/54, not live): {btPnl >= 0 ? '+' : ''}₹{btPnl.toLocaleString('en-IN')} · {btN} trades
       </div>
-      <div style={{ fontSize: 12, color: today ? '#2dd4a7' : '#8b93a3' }}>
+      <div style={{ fontSize: 12, color: today ? '#0F6E56' : '#888780' }}>
         {today
           ? `Open today: ${today.pe_strike}PE + ${today.ce_strike}CE · entry spot ${Math.round(
               today.entry_spot,

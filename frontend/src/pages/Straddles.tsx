@@ -12,34 +12,40 @@ interface V2Trade {
 }
 interface V2 { version: string; move_stop: number; pt: number; wings: number; lots: number; trades: V2Trade[]; book_curve: [string, number][]; }
 
-/* ---------- helpers ---------- */
+/* ---------- light theme tokens ---------- */
+const C = { ink: '#1B1B1A', muted: '#888780', faint: '#B4B2A9', sec: '#5F5E5A', hair: 'rgba(0,0,0,0.10)',
+  hairSoft: 'rgba(0,0,0,0.06)', pos: '#0F6E56', neg: '#A32D2D', navy: '#1E3A8A', navySoft: '#EFF3FA',
+  amber: '#B45309', amberSoft: '#FEF3C7', surface: '#FFFFFF', canvas: '#FAFAF9' };
+
 const inr = (n: number) => `${n >= 0 ? '+' : '−'}₹${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
-const col = (n: number) => (n >= 0 ? '#2dd4a7' : '#ff6b6b');
+const col = (n: number) => (n >= 0 ? C.pos : C.neg);
 
 function LineChart({ pts, h = 90, label }: { pts: [string, number][]; h?: number; label?: string }) {
-  if (!pts || pts.length < 2) return <div style={{ color: '#5a6072', fontSize: 12, padding: 8 }}>—</div>;
+  if (!pts || pts.length < 2) return <div style={{ color: C.faint, fontSize: 12, padding: 8 }}>—</div>;
   const ys = pts.map((p) => p[1]);
   const W = 600;
   const min = Math.min(0, ...ys), max = Math.max(0, ...ys), rng = max - min || 1;
   const X = (i: number) => (i / (pts.length - 1)) * W;
   const Y = (y: number) => h - ((y - min) / rng) * h;
   const path = pts.map((p, i) => `${X(i)},${Y(p[1])}`).join(' ');
-  const zeroY = Y(0);
   const last = ys[ys.length - 1];
   return (
     <div>
-      {label && <div style={{ fontSize: 11, color: '#8b93a3', marginBottom: 2 }}>{label}</div>}
+      {label && <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>{label}</div>}
       <svg viewBox={`0 0 ${W} ${h}`} width="100%" height={h} preserveAspectRatio="none">
-        <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="#3a3f4b" strokeWidth="1" strokeDasharray="4 4" />
+        <line x1="0" y1={Y(0)} x2={W} y2={Y(0)} stroke="rgba(0,0,0,0.15)" strokeWidth="1" strokeDasharray="4 4" />
         <polyline points={path} fill="none" stroke={col(last)} strokeWidth="2" />
       </svg>
     </div>
   );
 }
 
-const card: React.CSSProperties = { border: '1px solid #2a2f3a', background: 'linear-gradient(180deg,#161a22,#12151c)', borderRadius: 12, padding: '16px 18px', marginBottom: 18 };
+const card: React.CSSProperties = { border: `1px solid ${C.hair}`, background: C.surface, borderRadius: 10, padding: '16px 18px', marginBottom: 18, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' };
 const stat = (label: string, value: string, c?: string) => (
-  <div><div style={{ fontSize: 11, color: '#8b93a3' }}>{label}</div><div style={{ fontSize: 19, fontWeight: 700, color: c || '#e6e9ef' }}>{value}</div></div>
+  <div><div style={{ fontSize: 11, color: C.muted }}>{label}</div><div style={{ fontSize: 19, fontWeight: 700, color: c || C.ink }}>{value}</div></div>
+);
+const chip = (bg: string, fg: string, t: string) => (
+  <span style={{ background: bg, color: fg, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>{t}</span>
 );
 
 /* ---------- page ---------- */
@@ -68,6 +74,10 @@ export default function Straddles() {
   }, [v2]);
 
   const days1 = v1 ? Object.keys(v1.per_day).sort() : [];
+  const btn = (sel: boolean, c: string): React.CSSProperties => ({
+    cursor: 'pointer', border: `1px solid ${sel ? C.navy : C.hair}`, background: sel ? C.navySoft : C.surface,
+    color: c, borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 600,
+  });
 
   return (
     <div style={{ maxWidth: 1000 }}>
@@ -77,9 +87,9 @@ export default function Straddles() {
       {/* ===== V1 ===== */}
       <section style={{ ...card, marginTop: 14 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#e6e9ef' }}>V1 · Intraday one-and-done</span>
-          <span style={{ background: '#1e2a3a', color: '#6db3f2', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>0.4% move-stop · 0/1-DTE · exit 14:45</span>
-          <span style={{ background: '#3a2a00', color: '#f5b301', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>BACKTEST</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V1 · Intraday one-and-done</span>
+          {chip(C.navySoft, C.navy, '0.4% move-stop · 0/1-DTE · exit 14:45')}
+          {chip(C.amberSoft, C.amber, 'BACKTEST')}
         </div>
         {v1stats && (
           <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', margin: '10px 0' }}>
@@ -94,15 +104,14 @@ export default function Straddles() {
           {days1.map((d) => {
             const f = v1!.per_day[d].final;
             return (
-              <button key={d} onClick={() => setDay1(d === day1 ? null : d)}
-                style={{ cursor: 'pointer', border: `1px solid ${d === day1 ? '#6db3f2' : '#2a2f3a'}`, background: d === day1 ? '#1e2a3a' : '#12151c', color: col(f), borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 600 }}>
+              <button key={d} onClick={() => setDay1(d === day1 ? null : d)} style={btn(d === day1, col(f))}>
                 {d.slice(5)} {inr(f)}
               </button>
             );
           })}
         </div>
         {day1 && v1 && (
-          <div style={{ marginTop: 12, borderTop: '1px solid #2a2f3a', paddingTop: 10 }}>
+          <div style={{ marginTop: 12, borderTop: `1px solid ${C.hair}`, paddingTop: 10 }}>
             <LineChart pts={v1.per_day[day1].series} h={110}
               label={`${day1} · intraday P&L (entry → close) · ${v1.per_day[day1].stopped ? '0.4% STOP hit → flat' : 'held to 15:15'} · DTE ${v1.per_day[day1].dte} · final ${inr(v1.per_day[day1].final)}`} />
           </div>
@@ -112,9 +121,9 @@ export default function Straddles() {
       {/* ===== V2 ===== */}
       <section style={card}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#e6e9ef' }}>V2 · Positional bi-weekly</span>
-          <span style={{ background: '#1e2a3a', color: '#6db3f2', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>1.5% stop · PT-40% · ±500pt wings · re-enter · roll 1-DTE</span>
-          <span style={{ background: '#3a2a00', color: '#f5b301', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>BACKTEST</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 · Positional bi-weekly</span>
+          {chip(C.navySoft, C.navy, '1.5% stop · PT-40% · ±500pt wings · re-enter · roll 1-DTE')}
+          {chip(C.amberSoft, C.amber, 'BACKTEST')}
         </div>
         {v2stats && (
           <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', margin: '10px 0' }}>
@@ -127,19 +136,18 @@ export default function Straddles() {
         {v2 && <LineChart pts={v2.book_curve} h={100} label="Book cumulative P&L per trade (click a trade below for its day-by-day curve)" />}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {v2 && v2.trades.map((t, i) => (
-            <button key={i} onClick={() => setTr2(i === tr2 ? null : i)}
-              style={{ cursor: 'pointer', border: `1px solid ${i === tr2 ? '#6db3f2' : '#2a2f3a'}`, background: i === tr2 ? '#1e2a3a' : '#12151c', color: col(t.pnl), borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 600 }}>
+            <button key={i} onClick={() => setTr2(i === tr2 ? null : i)} style={btn(i === tr2, col(t.pnl))}>
               {t.entry_day.slice(5)}→{t.exit_day.slice(5)} {inr(t.pnl)}
             </button>
           ))}
         </div>
         {tr2 != null && v2 && (
-          <div style={{ marginTop: 12, borderTop: '1px solid #2a2f3a', paddingTop: 10 }}>
+          <div style={{ marginTop: 12, borderTop: `1px solid ${C.hair}`, paddingTop: 10 }}>
             <LineChart pts={v2.trades[tr2].series} h={110}
               label={`${v2.trades[tr2].entry_day} → ${v2.trades[tr2].exit_day} · ${v2.trades[tr2].strike} straddle · exit: ${v2.trades[tr2].exit_reason} · wings ${inr(v2.trades[tr2].wing_pnl)} · final ${inr(v2.trades[tr2].pnl)}`} />
           </div>
         )}
-        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 10 }}>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 10 }}>
           Note: wings cost a net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} over the book (overnight-gap protection you opted to keep). Single regime, ~6 weeks — SIGNAL, not yet validated.
         </div>
       </section>
