@@ -22,8 +22,9 @@ import styles from './FdScenarios.module.css';
  * matching the BookPnLChart pattern so the bundle stays small.
  */
 
-type MetricKey = 'total' | 'corpus' | 'cash' | 'ret';
+type MetricKey = 'total' | 'corpus' | 'cash' | 'ret' | 'effRate';
 type ChartKind = 'bars' | 'lines';
+type RetView = 'cumulative' | 'rate';
 type ScenarioKey = 'spend' | 'half' | 'compound';
 
 interface Scenario {
@@ -58,6 +59,9 @@ interface YearRow {
   total: Record<ScenarioKey, number>;
   /** cumulative gain as a % of the original capital (e.g. 65 = +65%) */
   ret: Record<ScenarioKey, number>;
+  /** this year's gross interest as a % of the ORIGINAL capital (climbs as the
+   *  corpus grows: 6.5% on a bigger base is worth >6.5% of what you put in) */
+  effRate: Record<ScenarioKey, number>;
   /** interest pocketed during this specific year (0 for compound) */
   payout: Record<ScenarioKey, number>;
 }
@@ -82,12 +86,22 @@ function buildSeries(P: number, ratePct: number, years: number): YearRow[] {
 
     const pct = (total: number) => (P > 0 ? ((total - P) / P) * 100 : 0);
     const prev = rows[n - 1];
+    // This year's gross interest = rate x (corpus at start of year), expressed
+    // as a % of the ORIGINAL capital. Year 0 anchors at the nominal rate.
+    const baseRate = r * 100;
+    const eff = (prevCorpus: number) =>
+      n === 0 || P <= 0 ? baseRate : (r * prevCorpus / P) * 100;
     rows.push({
       n,
       corpus: { spend: corpusSpend, half: corpusHalf, compound: corpusComp },
       cash: { spend: cashSpend, half: cashHalf, compound: 0 },
       total: { spend: totalSpend, half: totalHalf, compound: totalComp },
       ret: { spend: pct(totalSpend), half: pct(totalHalf), compound: pct(totalComp) },
+      effRate: {
+        spend: baseRate,
+        half: eff(prev ? prev.corpus.half : P),
+        compound: eff(prev ? prev.corpus.compound : P),
+      },
       payout: {
         spend: P * r,
         half: prev ? corpusHalf - prev.corpus.half : 0,
@@ -255,6 +269,7 @@ export default function FdScenarios() {
   const [years, setYears] = useState(10);
   const [metric, setMetric] = useState<MetricKey>('total');
   const [kind, setKind] = useState<ChartKind>('bars');
+  const [retView, setRetView] = useState<RetView>('cumulative');
 
   const rows = useMemo(
     () => buildSeries(principal, rate, years),
@@ -401,24 +416,45 @@ export default function FdScenarios() {
         </div>
       </div>
 
-      {/* ---- Chart: cumulative return over original capital (%) ---- */}
+      {/* ---- Chart: return / effective-rate over original capital (%) ---- */}
       <div className={styles.chartCard}>
         <div className={styles.chartHead}>
           <div className={styles.chartTitle}>
-            Interest growth alone — cumulative return on the original {fmtMoney(principal)}
+            {retView === 'cumulative'
+              ? `Interest growth alone — cumulative return on the original ${fmtMoney(principal)}`
+              : `Effective interest rate each year — measured against the original ${fmtMoney(principal)}`}
+          </div>
+          <div className={styles.segmented}>
+            <button
+              className={`${styles.seg} ${retView === 'cumulative' ? styles.segActive : ''}`}
+              onClick={() => setRetView('cumulative')}
+            >
+              Cumulative return
+            </button>
+            <button
+              className={`${styles.seg} ${retView === 'rate' ? styles.segActive : ''}`}
+              onClick={() => setRetView('rate')}
+            >
+              Annual rate
+            </button>
           </div>
         </div>
         <div className={styles.legend}>
           {SCENARIOS.map((s) => (
             <span key={s.key} className={styles.legendItem}>
               <span className={styles.swatch} style={{ background: s.color }} />
-              {s.short} · +{last.ret[s.key].toFixed(1)}%
+              {s.short} ·{' '}
+              {retView === 'cumulative'
+                ? `+${last.ret[s.key].toFixed(1)}%`
+                : `${last.effRate[s.key].toFixed(2)}%`}
             </span>
           ))}
         </div>
-        <Chart rows={rows} metric="ret" kind="lines" pct />
+        <Chart rows={rows} metric={retView === 'cumulative' ? 'ret' : 'effRate'} kind="lines" pct />
         <div className={styles.chartFoot}>
-          Gain over the starting capital, ignoring the principal · x-axis = year, y-axis = % return
+          {retView === 'cumulative'
+            ? 'Gain over the starting capital, ignoring the principal · x-axis = year, y-axis = % return'
+            : 'Each year’s interest as a % of the original capital — 6.5% on a grown corpus is worth more than 6.5% of what you first put in · x-axis = year, y-axis = % rate'}
         </div>
       </div>
 
