@@ -2,7 +2,7 @@
 recorder, tracks today's intraday P&L for V1 (0/1-DTE intraday one-and-done) + V2 (positional
 bi-weekly, carried), records each day, and writes static/app/straddles_live.json for the
 /app/straddles live section. Paper only — places no orders."""
-import os, json, sqlite3
+import os, sys, json, sqlite3
 from datetime import datetime, date, timedelta
 
 ROOT = "/home/arun/quantifyd"
@@ -13,7 +13,8 @@ V2ST = os.path.join(ROOT, "backtest_data", "straddle_v2_state.json")        # ca
 LOT, LOTS = 65, 10
 QTY = LOT * LOTS
 V1_TRIG = 0.4
-DAY = date.today().isoformat()
+# DAY defaults to today; pass a YYYY-MM-DD argv to regenerate a past trading day.
+DAY = sys.argv[1] if len(sys.argv) > 1 else date.today().isoformat()
 
 oc = sqlite3.connect(OPT)
 def expiries(day):
@@ -31,13 +32,24 @@ def ltp(strike, ot, E, hhmm):
 def dte(E, day=DAY):
     return (datetime.strptime(E, "%Y-%m-%d").date() - datetime.strptime(day, "%Y-%m-%d").date()).days
 def now_hhmm():
-    return min(datetime.now().strftime("%H:%M"), "15:15")
+    # IST is UTC+5:30 regardless of server TZ. When regenerating a PAST trading
+    # day, replay the full session (15:15) — don't cap the replay at today's clock.
+    ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    if DAY != ist.strftime("%Y-%m-%d"):
+        return "15:15"
+    return min(ist.strftime("%H:%M"), "15:15")
 GRID = []
 t = datetime.strptime("09:20", "%H:%M")
 while t <= datetime.strptime("15:15", "%H:%M"):
     GRID.append(t.strftime("%H:%M")); t += timedelta(minutes=5)
 NOW = now_hhmm()
 exps = expiries(DAY)
+
+# No recorder data for this day (weekend / holiday / pre-open) → leave the last
+# good straddles_live.json untouched rather than wiping the last trading day's card.
+if not SP:
+    print("straddle-live: no recorder data for %s — leaving last JSON untouched" % DAY)
+    oc.close(); raise SystemExit
 
 # ---- V1: intraday one-and-done, 0/1-DTE only -----------------------------
 v1 = {"status": "idle", "detail": "", "pnl_now": 0, "series": []}
@@ -47,7 +59,7 @@ if exps:  # live: track V1 every day (edge is 0/1-DTE; non-0/1 shown for trackin
         K = round(s0 / 50) * 50
         ce0 = ltp(K, "CE", E, "09:20"); pe0 = ltp(K, "PE", E, "09:20")
         if ce0 and pe0:
-            credit = ce0 + pe0; stopped = False; series = []; final = None
+            credit = ce0 + pe0; stopped = False; series = []; final = None; exit_t = None
             for hhmm in GRID:
                 if hhmm > NOW: break
                 sp = spot_at(hhmm); c = ltp(K, "CE", E, hhmm); p = ltp(K, "PE", E, hhmm)
@@ -56,11 +68,12 @@ if exps:  # live: track V1 every day (edge is 0/1-DTE; non-0/1 shown for trackin
                 if not stopped:
                     series.append([hhmm, mtm])
                     if abs(sp - K) >= V1_TRIG / 100.0 * K:
-                        final = mtm; stopped = True
+                        final = mtm; stopped = True; exit_t = hhmm
                 else:
                     series.append([hhmm, final])
             v1 = {"status": "stopped" if stopped else "open", "detail": "%dCE+%dPE (exp %s, %d-DTE)" % (K, K, E, dte(E)),
                   "strike": K, "expiry": E, "credit": round(credit, 1),
+                  "exit": ({"time": exit_t, "pnl": final} if stopped else None),
                   "pnl_now": (final if final is not None else (series[-1][1] if series else 0)), "series": series}
 elif exps:
     v1 = {"status": "idle", "detail": "nearest %s is %d-DTE — V1 trades 0/1-DTE only (Mon/Tue)" % (exps[0], dte(exps[0])),

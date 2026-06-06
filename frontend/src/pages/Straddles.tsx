@@ -21,7 +21,7 @@ const inr = (n: number) => `${n >= 0 ? '+' : '−'}₹${Math.abs(Math.round(n)).
 const col = (n: number) => (n >= 0 ? C.pos : C.neg);
 
 const fmtY = (v: number) => `${v >= 0 ? '+' : '−'}₹${Math.abs(Math.round(v)).toLocaleString('en-IN')}`;
-function LineChart({ pts, h = 130, label }: { pts: [string, number][]; h?: number; label?: string }) {
+function LineChart({ pts, h = 130, label, marker }: { pts: [string, number][]; h?: number; label?: string; marker?: { time: string; pnl: number; text?: string } | null }) {
   if (!pts || pts.length < 2) return <div style={{ color: C.faint, fontSize: 12, padding: 8 }}>—</div>;
   const W = 600, PAD_L = 56, PAD_R = 10, PAD_T = 8, PAD_B = 18;
   const ys = pts.map((p) => p[1]);
@@ -32,7 +32,11 @@ function LineChart({ pts, h = 130, label }: { pts: [string, number][]; h?: numbe
   const area = `${X(0)},${Y(0)} ${line} ${X(pts.length - 1)},${Y(0)}`;
   const last = ys[ys.length - 1];
   const yticks = [max, 0, min].filter((v, i, a) => a.indexOf(v) === i);
-  const xi = [0, Math.floor((pts.length - 1) / 2), pts.length - 1].filter((v, i, a) => a.indexOf(v) === i);
+  const mIdx = marker ? pts.findIndex((p) => p[0] === marker.time) : -1;
+  // auto x-axis ticks, but drop any that would collide with the exit-marker label
+  const xi = [0, Math.floor((pts.length - 1) / 2), pts.length - 1]
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .filter((i) => mIdx < 0 || i === 0 || i === pts.length - 1 ? true : Math.abs(i - mIdx) > 4);
   return (
     <div>
       {label && <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>{label}</div>}
@@ -57,6 +61,17 @@ function LineChart({ pts, h = 130, label }: { pts: [string, number][]; h?: numbe
           <text key={k} x={X(i)} y={h - 5} fontSize="9.5" fill={C.muted}
             textAnchor={k === 0 ? 'start' : k === xi.length - 1 ? 'end' : 'middle'}>{pts[i][0]}</text>
         ))}
+        {mIdx >= 0 && marker && (
+          <g>
+            <line x1={X(mIdx)} x2={X(mIdx)} y1={PAD_T} y2={h - PAD_B}
+              stroke={C.neg} strokeWidth="1" strokeDasharray="3 3" opacity="0.65" />
+            <circle cx={X(mIdx)} cy={Y(marker.pnl)} r="3.6" fill={C.surface} stroke={C.neg} strokeWidth="2" />
+            <text x={X(mIdx)} y={Y(marker.pnl) - 7} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={C.neg}>
+              {(marker.text ? marker.text + ' ' : '') + fmtY(marker.pnl)}
+            </text>
+            <text x={X(mIdx)} y={h - 5} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={C.neg}>{marker.time}</text>
+          </g>
+        )}
       </svg>
     </div>
   );
@@ -130,7 +145,9 @@ export default function Straddles() {
                 </div>
                 <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 6px' }}>{d.detail}</div>
                 {d.series && d.series.length >= 2
-                  ? <LineChart pts={d.series} h={120} label={`intraday running P&L · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}`} />
+                  ? <LineChart pts={d.series} h={120}
+                      marker={d.exit && d.exit.time ? { time: d.exit.time, pnl: d.exit.pnl, text: 'exit' } : null}
+                      label={`intraday running P&L · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}${d.exit && d.exit.time ? ` · stop-exit ${d.exit.time} @ ${inr(d.exit.pnl)}` : ''}`} />
                   : <div style={{ fontSize: 12, color: C.faint, padding: 8 }}>{d.status === 'idle' ? 'no trade today (not 0/1-DTE)' : '—'}</div>}
               </div>
             ))}
