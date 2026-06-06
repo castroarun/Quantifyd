@@ -187,8 +187,15 @@
   margin-bottom: 12px;
 }
 
+.chartTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .legend {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
   margin-bottom: 6px;
 }

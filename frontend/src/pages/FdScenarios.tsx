@@ -10,18 +10,19 @@ import styles from './FdScenarios.module.css';
  *                             stays flat, you live off a constant income.
  *   2. Reinvest half        — withdraw half the interest, let the rest
  *                             compound; corpus grows at (1 + r/2) per year.
- *   3. Leave untouched      — reinvest everything; full compounding P(1+r)^n.
+ *   3. Leave untouched       — reinvest everything; full compounding P(1+r)^n.
  *
- * For an apples-to-apples comparison we track THREE quantities per year:
+ * For an apples-to-apples comparison we track quantities per year:
  *   - FD corpus      = money still in the deposit
  *   - cash withdrawn = cumulative interest you took out and (presumably) spent
  *   - total wealth   = corpus + cash withdrawn  (net worth attributable to the FD)
+ *   - return         = total wealth as a % gain over the original capital
  *
  * Pure client-side maths + hand-rolled SVG charts — no backend, no chart lib,
  * matching the BookPnLChart pattern so the bundle stays small.
  */
 
-type MetricKey = 'total' | 'corpus' | 'cash';
+type MetricKey = 'total' | 'corpus' | 'cash' | 'ret';
 type ChartKind = 'bars' | 'lines';
 type ScenarioKey = 'spend' | 'half' | 'compound';
 
@@ -55,6 +56,8 @@ interface YearRow {
   corpus: Record<ScenarioKey, number>;
   cash: Record<ScenarioKey, number>;
   total: Record<ScenarioKey, number>;
+  /** cumulative gain as a % of the original capital (e.g. 65 = +65%) */
+  ret: Record<ScenarioKey, number>;
   /** interest pocketed during this specific year (0 for compound) */
   payout: Record<ScenarioKey, number>;
 }
@@ -66,24 +69,25 @@ function buildSeries(P: number, ratePct: number, years: number): YearRow[] {
     // Case 1 — spend all interest: flat corpus, linear cash.
     const corpusSpend = P;
     const cashSpend = n * P * r;
+    const totalSpend = corpusSpend + cashSpend;
 
     // Case 2 — reinvest half: corpus grows at (1 + r/2), cash = growth so far.
     const corpusHalf = P * Math.pow(1 + r / 2, n);
     const cashHalf = corpusHalf - P;
+    const totalHalf = corpusHalf + cashHalf;
 
     // Case 3 — leave untouched: full compounding, nothing withdrawn.
     const corpusComp = P * Math.pow(1 + r, n);
+    const totalComp = corpusComp;
 
+    const pct = (total: number) => (P > 0 ? ((total - P) / P) * 100 : 0);
     const prev = rows[n - 1];
     rows.push({
       n,
       corpus: { spend: corpusSpend, half: corpusHalf, compound: corpusComp },
       cash: { spend: cashSpend, half: cashHalf, compound: 0 },
-      total: {
-        spend: corpusSpend + cashSpend,
-        half: corpusHalf + cashHalf,
-        compound: corpusComp,
-      },
+      total: { spend: totalSpend, half: totalHalf, compound: totalComp },
+      ret: { spend: pct(totalSpend), half: pct(totalHalf), compound: pct(totalComp) },
       payout: {
         spend: P * r,
         half: prev ? corpusHalf - prev.corpus.half : 0,
@@ -112,6 +116,11 @@ function fmtFull(v: number): string {
   return `₹${Math.round(v).toLocaleString('en-IN')}`;
 }
 
+function cagr(value: number, P: number, years: number): number {
+  if (P <= 0 || years <= 0) return 0;
+  return (Math.pow(value / P, 1 / years) - 1) * 100;
+}
+
 // ---- SVG chart geometry -------------------------------------------------
 const W = 960;
 const H = 360;
@@ -126,12 +135,16 @@ function Chart({
   rows,
   metric,
   kind,
+  pct = false,
 }: {
   rows: YearRow[];
   metric: MetricKey;
   kind: ChartKind;
+  pct?: boolean;
 }) {
   const years = rows.length - 1;
+  const fmtAxisFn = pct ? (v: number) => `${Math.round(v)}%` : fmtAxis;
+  const fmtValFn = pct ? (v: number) => `${v.toFixed(1)}%` : fmtMoney;
 
   const { yMax, ticks } = useMemo(() => {
     let max = 0;
@@ -159,7 +172,7 @@ function Chart({
           <g key={i}>
             <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} className={styles.grid} />
             <text x={PAD_L - 10} y={y + 3} textAnchor="end" className={styles.yLabel}>
-              {fmtAxis(v)}
+              {fmtAxisFn(v)}
             </text>
           </g>
         );
@@ -189,7 +202,7 @@ function Chart({
                     fill={s.color}
                     rx={1.5}
                   >
-                    <title>{`${s.short} · Year ${row.n}: ${fmtMoney(v)}`}</title>
+                    <title>{`${s.short} · Year ${row.n}: ${fmtValFn(v)}`}</title>
                   </rect>
                 );
               })}
@@ -208,7 +221,7 @@ function Chart({
                 strokeLinejoin="round" strokeLinecap="round" />
               {rows.map((r) => (
                 <circle key={r.n} cx={xLine(r.n)} cy={yScale(r[metric][s.key])} r={2.6} fill={s.color}>
-                  <title>{`${s.short} · Year ${r.n}: ${fmtMoney(r[metric][s.key])}`}</title>
+                  <title>{`${s.short} · Year ${r.n}: ${fmtValFn(r[metric][s.key])}`}</title>
                 </circle>
               ))}
             </g>
@@ -232,8 +245,6 @@ function Chart({
           </text>
         );
       })}
-      <text x={PAD_L + PLOT_W / 2} y={H - 12} className={styles.axisTitle} textAnchor="middle"
-        transform={`translate(0, 6)`} style={{ display: 'none' }}>year</text>
     </svg>
   );
 }
@@ -327,12 +338,24 @@ export default function FdScenarios() {
                 <span>Cash taken out</span>
                 <span className={styles.breakVal}>{fmtMoney(last.cash[s.key])}</span>
               </div>
+              <div className={styles.breakRow}>
+                <span>Return on capital</span>
+                <span className={styles.breakVal} style={{ color: s.color }}>
+                  +{last.ret[s.key].toFixed(1)}%
+                </span>
+              </div>
+              <div className={styles.breakRow}>
+                <span>CAGR (effective)</span>
+                <span className={styles.breakVal}>
+                  {cagr(last.total[s.key], principal, years).toFixed(2)}%
+                </span>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ---- Chart ---- */}
+      {/* ---- Chart: rupee metrics ---- */}
       <div className={styles.chartCard}>
         <div className={styles.chartHead}>
           <div className={styles.segmented}>
@@ -378,6 +401,27 @@ export default function FdScenarios() {
         </div>
       </div>
 
+      {/* ---- Chart: cumulative return over original capital (%) ---- */}
+      <div className={styles.chartCard}>
+        <div className={styles.chartHead}>
+          <div className={styles.chartTitle}>
+            Interest growth alone — cumulative return on the original {fmtMoney(principal)}
+          </div>
+        </div>
+        <div className={styles.legend}>
+          {SCENARIOS.map((s) => (
+            <span key={s.key} className={styles.legendItem}>
+              <span className={styles.swatch} style={{ background: s.color }} />
+              {s.short} · +{last.ret[s.key].toFixed(1)}%
+            </span>
+          ))}
+        </div>
+        <Chart rows={rows} metric="ret" kind="lines" pct />
+        <div className={styles.chartFoot}>
+          Gain over the starting capital, ignoring the principal · x-axis = year, y-axis = % return
+        </div>
+      </div>
+
       {/* ---- Year-by-year table ---- */}
       <div className={styles.tableCard}>
         <table className={styles.table}>
@@ -386,7 +430,7 @@ export default function FdScenarios() {
               <th />
               <th colSpan={2} style={{ color: SCENARIOS[0].color }}>Spend all interest</th>
               <th colSpan={2} style={{ color: SCENARIOS[1].color }}>Reinvest half</th>
-              <th style={{ color: SCENARIOS[2].color }}>Compound</th>
+              <th colSpan={2} style={{ color: SCENARIOS[2].color }}>Compound</th>
             </tr>
             <tr className={styles.colHead}>
               <th>Year</th>
@@ -395,6 +439,7 @@ export default function FdScenarios() {
               <th>This yr income</th>
               <th>Total wealth</th>
               <th>Total wealth</th>
+              <th>Return %</th>
             </tr>
           </thead>
           <tbody>
@@ -406,6 +451,7 @@ export default function FdScenarios() {
                 <td>{fmtFull(row.payout.half)}</td>
                 <td className={styles.strong}>{fmtFull(row.total.half)}</td>
                 <td className={styles.strong}>{fmtFull(row.total.compound)}</td>
+                <td>+{row.ret.compound.toFixed(1)}%</td>
               </tr>
             ))}
           </tbody>
