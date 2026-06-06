@@ -12,7 +12,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'straddles' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'straddles' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'fd-scenarios' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -56,6 +56,17 @@ function IconLightbulb() {
       <path d="M9 18h6" />
       <path d="M10 22h4" />
       <path d="M12 2a7 7 0 0 1 7 7c0 3-1.5 4.5-3 6a3 3 0 0 0-1 2v1H9v-1a3 3 0 0 0-1-2C6.5 13.5 5 12 5 9a7 7 0 0 1 7-7z" />
+    </svg>
+  );
+}
+
+// Calculator icon for FD scenarios — interest / wealth projection tool
+function IconCalculator() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <path d="M8 6h8" />
+      <path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h4" />
     </svg>
   );
 }
@@ -219,6 +230,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconDatabase />}
             label="Options data"
             active={active === 'options-data'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/fd-scenarios"
+            icon={<IconCalculator />}
+            label="FD scenarios"
+            active={active === 'fd-scenarios'}
             collapsed={collapsed}
           />
           <NavItem

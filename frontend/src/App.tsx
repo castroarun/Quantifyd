@@ -25,6 +25,7 @@ import Scanner from './pages/Scanner';
 import BreakoutScanner from './pages/BreakoutScanner';
 import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
+import FdScenarios from './pages/FdScenarios';
 import Journal from './pages/Journal';
 import JournalDay from './pages/JournalDay';
 import JournalTrade from './pages/JournalTrade';
@@ -271,6 +272,16 @@ export default function App() {
           <Protected>
             <AppLayout active="options-data">
               <OptionsData />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/fd-scenarios"
+        element={
+          <Protected>
+            <AppLayout active="fd-scenarios">
+              <FdScenarios />
             </AppLayout>
           </Protected>
         }
