@@ -1,0 +1,7 @@
+[
+  { "file": "hype_trap_140.mp3",   "mood": "high_energy", "bpm": 140 },
+  { "file": "phonk_drift_128.mp3", "mood": "high_energy", "bpm": 128 },
+  { "file": "ambient_build.mp3",   "mood": "cinematic",   "bpm": 90 },
+  { "file": "epic_swell_100.mp3",  "mood": "cinematic",   "bpm": 100 },
+  { "file": "lofi_chill_75.mp3",   "mood": "chill",       "bpm": 75 }
+]

@@ -1,0 +1,19 @@
+# Heavy media — keep out of git
+input/*
+output/*
+sfx/*.wav
+sfx/*.mp3
+music/*.mp3
+music/*.wav
+music/selected/*
+
+# generated timelines (per-clip, regenerate from source)
+events.json
+*.events.json
+track.json
+
+# keep folder structure + docs + tags
+!**/README.md
+!.gitignore
+!music/library.json
+!sample.events.json

@@ -1,0 +1,14 @@
+# Silent-video pipeline detectors. Install what you need — extract_events.py
+# degrades gracefully if any are missing (that signal becomes [] with a warning).
+#
+# System dependency (NOT pip): ffmpeg  -> brew install ffmpeg / apt install ffmpeg
+
+numpy
+scenedetect        # shot / scene-cut detection      -> events.json "shots"
+librosa            # audio onset detection            -> events.json "audio_impacts"
+opencv-python      # motion energy / frame diff       -> events.json "motion_peaks"
+mediapipe          # pose & rep detection (2nd pass)  -> events.json "reps"
+# ultralytics      # alternative to mediapipe (YOLO-pose)
+
+# --- Flavour 1 (talking-head) only ---
+# openai-whisper   # or faster-whisper, for transcript-driven editing

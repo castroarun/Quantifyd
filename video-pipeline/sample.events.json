@@ -1,0 +1,28 @@
+{
+  "duration": 47.2,
+  "shots": [
+    { "id": "A", "start": 0.0,  "end": 11.4, "angle": "wide_front" },
+    { "id": "B", "start": 11.4, "end": 23.0, "angle": "side_low" },
+    { "id": "C", "start": 23.0, "end": 35.8, "angle": "close_up" },
+    { "id": "D", "start": 35.8, "end": 47.2, "angle": "wide_front" }
+  ],
+  "audio_impacts": [
+    { "t": 5.1,  "intensity": 0.91, "type": "plate_clank" },
+    { "t": 10.8, "intensity": 0.74, "type": "thud" },
+    { "t": 22.4, "intensity": 0.88, "type": "bar_rack" }
+  ],
+  "motion_peaks": [
+    { "t": 5.0,  "energy": 0.95 },
+    { "t": 16.2, "energy": 0.88 },
+    { "t": 30.5, "energy": 0.97 }
+  ],
+  "reps": [
+    { "exercise": "squat",    "rep": 1, "bottom_t": 4.9,  "lockout_t": 6.1,  "shot": "A" },
+    { "exercise": "squat",    "rep": 2, "bottom_t": 8.0,  "lockout_t": 9.2,  "shot": "A" },
+    { "exercise": "deadlift", "rep": 1, "bottom_t": 24.0, "lockout_t": 25.7, "shot": "C" }
+  ],
+  "_meta": {
+    "source": "sample (hand-written reference, matches the brief schema)",
+    "note": "Replace by running extractors/extract_events.py on a real clip."
+  }
+}
