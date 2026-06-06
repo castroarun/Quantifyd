@@ -11,6 +11,12 @@ interface V2Trade {
   exit_reason: string; pnl: number; wing_pnl: number; series: [string, number][];
 }
 interface V2 { version: string; move_stop: number; pt: number; wings: number; lots: number; trades: V2Trade[]; book_curve: [string, number][]; }
+interface DailyDay {
+  series: [string, number][]; exit: { time: string; pnl: number } | null;
+  final: number; stopped: boolean; low: number; high: number;
+  dte: number; expiry: string; strike: number; credit: number;
+}
+interface V1Daily { version: string; trigger_pct: number; lots: number; lot: number; days: string[]; per_day: Record<string, DailyDay>; }
 
 /* ---------- light theme tokens ---------- */
 const C = { ink: '#1B1B1A', muted: '#888780', faint: '#B4B2A9', sec: '#5F5E5A', hair: 'rgba(0,0,0,0.10)',
@@ -92,10 +98,13 @@ export default function Straddles() {
   const [day1, setDay1] = useState<string | null>(null);
   const [tr2, setTr2] = useState<number | null>(null);
   const [live, setLive] = useState<any>(null);
+  const [daily, setDaily] = useState<V1Daily | null>(null);
+  const [dayD, setDayD] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
     fetch('/app/straddles/v2.json').then((r) => r.json()).then(setV2).catch(() => {});
+    fetch('/app/straddles/v1_daily.json').then((r) => r.json()).then(setDaily).catch(() => {});
     const loadLive = () => fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
     loadLive();
     const id = setInterval(loadLive, 60000);
@@ -114,6 +123,16 @@ export default function Straddles() {
     const tot = f.reduce((a, b) => a + b, 0);
     return { n: f.length, tot, mean: tot / (f.length || 1), win: 100 * f.filter((x) => x > 0).length / (f.length || 1) };
   }, [v2]);
+  const dailyStats = useMemo(() => {
+    if (!daily) return null;
+    const f = daily.days.map((k) => daily.per_day[k].final);
+    const tot = f.reduce((a, b) => a + b, 0);
+    const stops = daily.days.filter((k) => daily.per_day[k].stopped).length;
+    return { n: f.length, tot, mean: tot / (f.length || 1), win: 100 * f.filter((x) => x > 0).length / (f.length || 1), stops };
+  }, [daily]);
+  useEffect(() => {
+    if (daily && !dayD && daily.days.length) setDayD(daily.days[daily.days.length - 1]);
+  }, [daily, dayD]);
 
   const days1 = v1 ? Object.keys(v1.per_day).sort() : [];
   const btn = (sel: boolean, c: string): React.CSSProperties => ({
@@ -153,6 +172,49 @@ export default function Straddles() {
             ))}
           </div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · ticks every 5 min during market · recorded daily. Backtest history below.</div>
+        </section>
+      )}
+
+      {/* ===== ALL DAYS · DAILY JOURNEY ===== */}
+      {daily && (
+        <section style={{ ...card, marginTop: 14 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>All recorded days · V1 intraday journey</span>
+            {chip(C.navySoft, C.navy, `${daily.days.length} days · 0.4% one-and-done`)}
+            {chip(C.amberSoft, C.amber, 'PAPER · replayed on recorded chain')}
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+            Every recorded day replayed (incl. non-0/1-DTE). The edge lives on 0/1-DTE — see the V1 backtest below for edge-only stats. Click any day for its intraday journey with the stop-exit marked (·h = held to close, no stop).
+          </div>
+          {dailyStats && (
+            <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', margin: '4px 0 10px' }}>
+              {stat('Total · all days', inr(dailyStats.tot), col(dailyStats.tot))}
+              {stat('Mean/day', inr(dailyStats.mean), col(dailyStats.mean))}
+              {stat('Days', String(dailyStats.n))}
+              {stat('Win rate', `${Math.round(dailyStats.win)}%`)}
+              {stat('Stopped', `${dailyStats.stops}/${dailyStats.n}`)}
+            </div>
+          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+            {daily.days.map((d) => {
+              const x = daily.per_day[d];
+              return (
+                <button key={d} onClick={() => setDayD(d)} style={btn(d === dayD, col(x.final))}>
+                  {d.slice(5)} {inr(x.final)}{x.stopped ? '' : ' ·h'}
+                </button>
+              );
+            })}
+          </div>
+          {dayD && daily.per_day[dayD] && (() => {
+            const x = daily.per_day[dayD];
+            return (
+              <div style={{ marginTop: 12, borderTop: `1px solid ${C.hair}`, paddingTop: 10 }}>
+                <LineChart pts={x.series} h={130}
+                  marker={x.exit ? { time: x.exit.time, pnl: x.exit.pnl, text: 'exit' } : null}
+                  label={`${dayD} · ${x.strike} straddle (DTE ${x.dte}, credit ₹${x.credit}) · low ${inr(x.low)} · high ${inr(x.high)} · ${x.stopped ? `stop-exit ${x.exit!.time} @ ${inr(x.exit!.pnl)}` : `held to 15:15, final ${inr(x.final)}`}`} />
+              </div>
+            );
+          })()}
         </section>
       )}
 
