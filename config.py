@@ -527,7 +527,7 @@ NAS_916_ATM4_DEFAULTS = {
 # variants exceed ~Rs52L; squeeze entries rejected (insufficient funds) and re-spammed
 # every 5-min candle. 9:16 family ON — it holds the day's live positions. Re-enable the
 # squeeze when the book is funded / re-sized.
-NAS_DEFAULTS['enabled'] = False
+NAS_DEFAULTS['enabled'] = True
 NAS_ATM_DEFAULTS['enabled'] = True
 NAS_ATM2_DEFAULTS['enabled'] = True
 NAS_ATM4_DEFAULTS['enabled'] = True
@@ -535,9 +535,9 @@ NAS_916_OTM_DEFAULTS['enabled'] = True
 NAS_916_ATM_DEFAULTS['enabled'] = True
 NAS_916_ATM2_DEFAULTS['enabled'] = True
 NAS_916_ATM4_DEFAULTS['enabled'] = True
-NAS_DEFAULTS['force_disabled'] = True
+NAS_DEFAULTS['force_paper'] = True
 # 2026-06-07 (Sun) LIVE flip for Mon 06-08 (user-directed): 3 squeeze ATMs + 3 916 ATMs
-# go LIVE (real money) under master 'live'. NAS base stays force_disabled (off). 916_OTM
+# go LIVE (real money) under master 'live'. NAS base + 916_OTM kept PAPER (force_paper). 916_OTM
 # kept ENABLED but PAPER via force_paper (honored in _apply_nas_master_mode). 1-lot ATM
 # each (~Rs9L initial margin, fits Rs38L collateral-incl avail). live_weekdays=(Mon,Tue,Fri).
 NAS_916_OTM_DEFAULTS['force_paper'] = True
