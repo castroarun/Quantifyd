@@ -841,7 +841,8 @@ def _apply_nas_master_mode(mode):
             cfg['paper_trading_mode'] = True
         elif mode == 'live':
             cfg['enabled'] = True
-            cfg['paper_trading_mode'] = False
+            # force_paper keeps a variant ENABLED but PAPER even under master 'live'
+            cfg['paper_trading_mode'] = bool(cfg.get('force_paper'))
 
 
 def _save_nas_master_mode(mode):
