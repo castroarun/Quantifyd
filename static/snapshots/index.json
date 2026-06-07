@@ -1,6 +1,38 @@
 {
-  "generated_at": "2026-06-01T15:32:02",
+  "generated_at": "2026-06-05T15:32:01",
   "days": [
+    {
+      "date": "2026-06-05",
+      "file": "nas_mtm_2026-06-05.json",
+      "combined_last": -3237.0,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-04",
+      "file": "nas_mtm_2026-06-04.json",
+      "combined_last": 6051.5,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-03",
+      "file": "nas_mtm_2026-06-03.json",
+      "combined_last": 0.0,
+      "n_fired": 4,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-02",
+      "file": "nas_mtm_2026-06-02.json",
+      "combined_last": -4335.5,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
     {
       "date": "2026-06-01",
       "file": "nas_mtm_2026-06-01.json",
