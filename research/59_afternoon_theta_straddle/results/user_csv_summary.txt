@@ -1,0 +1,72 @@
+==============================================================================
+AFTERNOON STRADDLE 12:15->15:15  (NIFTY, 10 lots / QTY 650)  — user backtests
+==============================================================================
+
+### BASELINE  (598 days)
+  Total P&L       : Rs       -122,274
+  Mean / day      : Rs           -204    median Rs 3,594
+  Win rate        : 63.2%   (avg win Rs 13,103 | avg loss Rs -23,069)
+  Profit factor   : 0.98
+  Std / day       : Rs 27,289    Sharpe(ann) -0.12
+  Max drawdown    : Rs       -639,219
+  Best day        : Rs        148,637
+  WORST day       : Rs       -182,227
+  Tail  P05/P95   : Rs -52,114  /  Rs 31,820
+  Per-year (days, total, win%):
+     2024: 246d   Rs       127,295   70%
+     2025: 248d   Rs       357,164   63%
+     2026: 104d   Rs      -606,733   48%
+  By VIX regime (days, total, mean/day, win%):
+       VIX<13: 196d   Rs       54,890   mean      280   62%
+        13-16: 263d   Rs      131,008   mean      498   67%
+        16-20:  99d   Rs      -82,160   mean     -830   59%
+      VIX>=20:  40d   Rs     -226,012   mean   -5,650   58%
+
+### STOP_0P4  (598 days)
+  Total P&L       : Rs       -215,950
+  Mean / day      : Rs           -361    median Rs 1,265
+  Win rate        : 55.5%   (avg win Rs 10,927 | avg loss Rs -14,449)
+  Profit factor   : 0.94
+  Std / day       : Rs 16,846    Sharpe(ann) -0.34
+  Max drawdown    : Rs       -521,836
+  Best day        : Rs         55,478
+  WORST day       : Rs       -100,598
+  Tail  P05/P95   : Rs -29,392  /  Rs 27,014
+  Per-year (days, total, win%):
+     2024: 246d   Rs       214,046   59%
+     2025: 248d   Rs       -14,959   57%
+     2026: 104d   Rs      -415,037   43%
+  By VIX regime (days, total, mean/day, win%):
+       VIX<13: 196d   Rs     -146,049   mean     -745   59%
+        13-16: 263d   Rs      191,924   mean      730   56%
+        16-20:  99d   Rs      -82,813   mean     -836   52%
+      VIX>=20:  40d   Rs     -179,011   mean   -4,475   50%
+
+==============================================================================
+HEAD-TO-HEAD: does the 0.4% SL help? (matched by date)
+==============================================================================
+  Matched days        : 598
+  Days SL exited early: 269  (45% of days)
+  SL total - Base total: Rs -93,676
+  Days SL better       : 112   Days SL worse: 156
+  Sum of SL gains on its better days : Rs 2,748,974
+  Sum of SL losses on its worse days : Rs -2,842,650
+
+  Worst 8 days BASELINE:
+     2024-09-12: Rs     -182,227   (SL that day: Rs -2,191)
+     2024-04-18: Rs     -163,702   (SL that day: Rs -100,598)
+     2025-05-15: Rs     -143,211   (SL that day: Rs -8,054)
+     2024-02-22: Rs     -119,557   (SL that day: Rs -22,027)
+     2024-11-19: Rs     -102,963   (SL that day: Rs -18,106)
+     2026-01-20: Rs      -92,349   (SL that day: Rs -18,205)
+     2026-04-02: Rs      -84,153   (SL that day: Rs -17,946)
+     2024-03-06: Rs      -78,785   (SL that day: Rs -15,485)
+  Worst 8 days +0.4% SL:
+     2024-04-18: Rs     -100,598   (Base that day: Rs -163,702)
+     2024-06-03: Rs      -50,348   (Base that day: Rs -50,348)
+     2025-03-20: Rs      -49,391   (Base that day: Rs -52,787)
+     2025-09-02: Rs      -46,150   (Base that day: Rs -71,366)
+     2025-07-03: Rs      -45,603   (Base that day: Rs -23,490)
+     2025-05-12: Rs      -41,412   (Base that day: Rs -62,642)
+     2024-05-16: Rs      -41,384   (Base that day: Rs 358)
+     2024-03-28: Rs      -40,248   (Base that day: Rs 1,920)

@@ -1,0 +1,79 @@
+======================================================================================
+AFTERNOON STRADDLE 12:15->15:15  — performance grouped by DTE and weekday (10 lots)
+  DTE reconstructed: Thu-expiry <=2025-08, Tue-expiry >=2025-09 (2026 Tue confirmed).
+======================================================================================
+
+############ BASELINE  (598 days) ############
+
+  --- by DTE (trading days to nearest weekly expiry; 0 = expiry day) ---
+   DTE   days   total Rs       mean Rs    win%    worst Rs      best Rs
+     0    128        13,737         107     63     -182,227     122,415
+     1    128      -191,185      -1,494     60     -102,963      35,634
+     2    128       110,986         867     65      -84,153     148,637
+     3    124       -31,715        -256     67      -68,945      22,239
+     4     88       -46,632        -530     59      -74,359      56,510
+     5      2        22,535      11,268    100        1,514      21,021
+
+  --- by weekday (EXACT, no assumptions) ---
+   day    days   total Rs       mean Rs    win%
+    Mon    120      -126,465      -1,054     64
+    Tue    123       345,675       2,810     64
+    Wed    117       -83,779        -716     61
+    Thu    118      -186,858      -1,584     64
+    Fri    117       -56,055        -479     62
+    Sat      2        58,048      29,024    100
+    Sun      1       -72,840     -72,840      0
+
+  --- by DTE, VIX<16 days only (where the edge lives) ---
+   DTE   days   total Rs       mean Rs    win%
+     0    100       251,379       2,514     68
+     1     99      -229,490      -2,318     61
+     2     95       120,553       1,269     68
+     3     95        74,733         787     68
+     4     69       -32,791        -475     55
+     5      1         1,514       1,514    100
+
+############ STOP_0P4  (598 days) ############
+
+  --- by DTE (trading days to nearest weekly expiry; 0 = expiry day) ---
+   DTE   days   total Rs       mean Rs    win%    worst Rs      best Rs
+     0    128       377,989       2,953     57     -100,598      55,478
+     1    128      -248,932      -1,945     53      -37,449      35,166
+     2    128      -126,764        -990     56      -35,398      45,868
+     3    124      -192,447      -1,552     57      -50,348      19,618
+     4     88       -45,914        -522     53      -28,823      37,591
+     5      2        20,118      10,059     50         -903      21,021
+
+  --- by weekday (EXACT, no assumptions) ---
+   day    days   total Rs       mean Rs    win%
+    Mon    120      -186,760      -1,556     58
+    Tue    123         6,409          52     52
+    Wed    117      -128,004      -1,094     54
+    Thu    118       190,917       1,618     58
+    Fri    117       -86,987        -743     56
+    Sat      2        12,876       6,438     50
+    Sun      1       -24,401     -24,401      0
+
+  --- by DTE, VIX<16 days only (where the edge lives) ---
+   DTE   days   total Rs       mean Rs    win%
+     0    100       396,041       3,960     59
+     1     99      -223,970      -2,262     53
+     2     95        29,425         310     63
+     3     95       -59,705        -628     59
+     4     69       -95,013      -1,377     49
+     5      1          -903        -903      0
+
+======================================================================================
+SANITY: weekday -> modal DTE (Thu pre-2025-09 / Tue post should map to DTE 0)
+  2024 (Thu-exp):
+     Mon: modal DTE 3 (41/49 days)
+     Tue: modal DTE 2 (45/53 days)
+     Wed: modal DTE 1 (44/46 days)
+     Thu: modal DTE 0 (50/50 days)
+     Fri: modal DTE 4 (37/47 days)
+  2026 (Tue-exp):
+     Mon: modal DTE 1 (18/21 days)
+     Tue: modal DTE 0 (19/19 days)
+     Wed: modal DTE 4 (12/22 days)
+     Thu: modal DTE 3 (13/20 days)
+     Fri: modal DTE 2 (15/21 days)
