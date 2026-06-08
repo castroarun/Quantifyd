@@ -4633,6 +4633,107 @@ _NAS_MTM_KEY_MAP = {
 }
 
 
+@app.route('/api/straddles/stream')
+def api_straddles_stream():
+    """SSE live-quote overlay for the /app/straddles cards. Re-prices V1 (intraday ATM
+    straddle) and V2 (carried positional) legs from live kite.ltp() every ~3s, on top of the
+    position defs the 1-min cron writes to straddles_live.json. Payload:
+        {type:'tick', systems:{v1:{ce_ltp,pe_ltp,ce_pnl,pe_pnl,pnl_now}, v2:{...}}, ts}
+        {type:'idle'}  -- no open positions to price
+    Keep ONE EventSource per page (single gthread worker)."""
+    import json as _json, time as _time, sqlite3 as _sql
+    _base = os.path.dirname(os.path.abspath(__file__))
+    OPT = os.path.join(_base, 'backtest_data', 'options_data.db')
+    LIVE = os.path.join(_base, 'static', 'app', 'straddles_live.json')
+    V2ST = os.path.join(_base, 'backtest_data', 'straddle_v2_state.json')
+    QTY, COST = 650, 160
+
+    def resolve_legs():
+        oc = _sql.connect(OPT)
+        def tsym(strike, expiry, ot):
+            r = oc.execute("SELECT tradingsymbol FROM option_chain WHERE expiry_date=? AND strike=? "
+                           "AND instrument_type=? ORDER BY snapshot_time DESC LIMIT 1",
+                           (expiry, strike, ot)).fetchone()
+            return r[0] if r else None
+        out = {}
+        try:
+            d = _json.load(open(LIVE))
+        except Exception:
+            d = {}
+        v1 = d.get('v1', {})
+        if v1.get('status') in ('open', 'stopped') and v1.get('strike'):
+            legs = {l['type']: l for l in v1.get('legs', [])}
+            out['v1'] = dict(strike=v1['strike'], expiry=v1['expiry'], credit=v1.get('credit'),
+                             ce_entry=legs.get('CE', {}).get('entry'),
+                             pe_entry=legs.get('PE', {}).get('entry'),
+                             stopped=(v1['status'] == 'stopped'))
+        try:
+            s = _json.load(open(V2ST))
+            if s.get('strike'):
+                out['v2'] = dict(strike=s['strike'], expiry=s['expiry'], credit=s['credit'],
+                                 ce_entry=s.get('ce_entry'), pe_entry=s.get('pe_entry'), stopped=False)
+        except Exception:
+            pass
+        for p in out.values():
+            p['ce_sym'] = tsym(p['strike'], p['expiry'], 'CE')
+            p['pe_sym'] = tsym(p['strike'], p['expiry'], 'PE')
+        oc.close()
+        return out
+
+    def generate():
+        yield ": connected\n\n"
+        cache = {'mtime': None, 'legs': None}
+        last = None
+        while True:
+            try:
+                m = os.path.getmtime(LIVE)
+                if cache['mtime'] != m:
+                    cache['mtime'] = m
+                    cache['legs'] = resolve_legs()
+                legs = cache['legs'] or {}
+                if not legs:
+                    if last != '__idle__':
+                        last = '__idle__'
+                        yield "data: " + _json.dumps({'type': 'idle'}) + "\n\n"
+                    _time.sleep(5)
+                    continue
+                syms = []
+                for p in legs.values():
+                    for s in (p['ce_sym'], p['pe_sym']):
+                        if s:
+                            syms.append('NFO:' + s)
+                from services.kite_service import get_kite as _get_kite
+                q = _get_kite().ltp(syms) if syms else {}
+
+                def _l(sym):
+                    v = q.get('NFO:' + sym) if sym else None
+                    return float(v['last_price']) if v and v.get('last_price') else None
+                systems = {}
+                for name, p in legs.items():
+                    if p.get('stopped'):
+                        continue
+                    c, pe = _l(p['ce_sym']), _l(p['pe_sym'])
+                    pnl_now = None
+                    if p['credit'] and c is not None and pe is not None:
+                        pnl_now = round((p['credit'] - (c + pe)) * QTY - COST)
+                    systems[name] = dict(
+                        ce_ltp=c, pe_ltp=pe,
+                        ce_pnl=(round((p['ce_entry'] - c) * QTY) if (p['ce_entry'] and c is not None) else None),
+                        pe_pnl=(round((p['pe_entry'] - pe) * QTY) if (p['pe_entry'] and pe is not None) else None),
+                        pnl_now=pnl_now)
+                sys_str = _json.dumps(systems, sort_keys=True)
+                if sys_str != last:
+                    last = sys_str
+                    yield "data: " + _json.dumps({'type': 'tick', 'systems': systems, 'ts': _time.time()}) + "\n\n"
+            except Exception:
+                pass
+            _time.sleep(3.0)
+
+    return app.response_class(
+        generate(), mimetype='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
 @app.route('/api/nas/mtm')
 def api_nas_mtm():
     """All 8 systems' intraday day-P&L curves for today.

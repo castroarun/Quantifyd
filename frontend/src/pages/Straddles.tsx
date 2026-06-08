@@ -181,6 +181,7 @@ export default function Straddles() {
   const [day1, setDay1] = useState<string | null>(null);
   const [tr2, setTr2] = useState<number | null>(null);
   const [live, setLive] = useState<any>(null);
+  const [liveTs, setLiveTs] = useState<number | null>(null);
   const [daily, setDaily] = useState<V1Daily | null>(null);
   const [dayD, setDayD] = useState<string | null>(null);
 
@@ -191,7 +192,34 @@ export default function Straddles() {
     const loadLive = () => fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
     loadLive();
     const id = setInterval(loadLive, 30000);
-    return () => clearInterval(id);
+    // Live-quote SSE overlay: ticks pnl_now + per-leg LTP/P&L every ~3s on top of the
+    // cron base (which still supplies series, detail, entry/exit times). Mirrors the NAS stream.
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource('/api/straddles/stream');
+      es.onmessage = (e) => {
+        let m: any; try { m = JSON.parse(e.data); } catch { return; }
+        if (m.type === 'tick') setLiveTs(m.ts);
+        if (m.type !== 'tick' || !m.systems) return;
+        setLive((prev: any) => {
+          if (!prev) return prev;
+          const next = { ...prev };
+          (['v1', 'v2'] as const).forEach((kk) => {
+            const s = m.systems[kk]; if (!s || !next[kk]) return;
+            const d = { ...next[kk] };
+            if (s.pnl_now != null) d.pnl_now = s.pnl_now;
+            if (Array.isArray(d.legs)) d.legs = d.legs.map((l: Leg) => {
+              const ltp = l.type === 'CE' ? s.ce_ltp : s.pe_ltp;
+              const pnl = l.type === 'CE' ? s.ce_pnl : s.pe_pnl;
+              return { ...l, ltp: ltp != null ? ltp : l.ltp, pnl: pnl != null ? pnl : l.pnl };
+            });
+            next[kk] = d;
+          });
+          return next;
+        });
+      };
+    } catch { /* SSE unsupported — static poll still ticks every 30s */ }
+    return () => { clearInterval(id); if (es) es.close(); };
   }, []);
 
   const v1stats = useMemo(() => {
@@ -225,6 +253,7 @@ export default function Straddles() {
 
   return (
     <div style={{ maxWidth: 1000 }}>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
       <div className="page-title">Straddle Systems</div>
       <div className="page-subtitle">Two short-straddle systems on NIFTY · backtested on the recorded chain · paper-forward 10 lots</div>
 
@@ -234,7 +263,15 @@ export default function Straddles() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Today · Live</span>
             {chip('#E7F2EE', C.pos, 'PAPER · 10 lots')}
-            <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>updated {String(live.updated_at || '').slice(11, 19)} · {live.day}</span>
+            {liveTs && (Date.now() / 1000 - liveTs) < 12 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: C.pos }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.pos, display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+                LIVE
+              </span>
+            )}
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>
+              {liveTs ? `live-quote ${new Date(liveTs * 1000).toLocaleTimeString('en-IN', { hour12: false })}` : `updated ${String(live.updated_at || '').slice(11, 19)}`} · {live.day}
+            </span>
           </div>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             {[['V1 · intraday one-and-done', live.v1], ['V2 · positional bi-weekly', live.v2]].map(([title, d]: any) => (
@@ -255,7 +292,7 @@ export default function Straddles() {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · ticks every minute during market (page refreshes every 30s) · recorded daily. Backtest history below.</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · live-quote P&amp;L ticks ~every 3s during market (positions/chart refresh every minute) · recorded daily. Backtest history below.</div>
           <RulesBlock />
         </section>
       )}
