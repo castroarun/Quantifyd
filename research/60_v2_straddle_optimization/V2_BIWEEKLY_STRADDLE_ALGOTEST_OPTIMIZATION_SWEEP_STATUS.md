@@ -376,3 +376,38 @@ Script: research/60_v2_straddle_optimization/scripts/vix_overlay_2pct.py
 
 NEXT: SL/target sweep + entry-time sweep on this locked 2%+VIX>=13 base. Then wire the live V2 page
 (research/57 engine) to run these rules and show entry/exit time + reason.
+
+---
+
+## SL SWEEP DONE — LOCKED BASE = 2.0% wings + 2.0% move-stop + VIX>=13 (2026-06-08)
+
+Phase-1 stop-loss sweep on the 2.0%-wing base, run on AlgoTest (per-trade entry-VIX in CSV, exact).
+Net of costs, ex-COVID, 273->271 trades, margin Rs9.58L, 7.3yr.
+
+STOP-LOSS @ VIX>=13:
+| stop | net | Calmar | MaxDD | neg |
+| 1.0% | +6.51L | 0.58 | -1.53L | 2019 |
+| 1.5%* | +8.53L | 0.76 | -1.54L | 2026 |
+| **2.0%** | **+8.80L** | **1.03** | **-1.17L** | only 2026 |
+| 2.5% | +6.29L | 0.62 | -1.39L | 2026 |
+| no-SL | +8.85L | 0.97 | -1.25L | 2021, 2026 |
+(* 1.5% VIX rows = daily-open proxy; all else exact CSV VIX.)
+
+STOP-LOSS no-filter: 1.0% +6.73L/0.44 | 1.5% +7.64L/0.70 | 2.0% +8.50L/0.68 | 2.5% +6.60L/0.49 | no-SL +8.98L/0.89.
+VIX floor on 2.0% base: none +8.50L/0.68 | >=13 +8.80L/1.03 | >=14 +8.16L/0.89 (8/8 GREEN).
+
+KEY FINDING: Calmar PEAKS at a 2.0% stop (0.76->1.03->0.62 across 1.5/2.0/2.5% @VIX>=13) — NOT monotonic.
+My interim "drop the stop entirely / monotonic" read (before 2.0/2.5 were in) was WRONG and is retracted.
+The DEFINED-RISK WINGS are the real risk control; the stop is a sweet-spot, not a plateau -> treat live
+rule as "~2% wide move-stop", not a precise value. 1.0% over-stops (choppy -2.1L DD); 2.5% dips.
+
+**LOCKED BASE: 2.0% wings + 2.0% underlying move-stop + VIX>=13** (Balanced: Calmar 1.03, +8.80L,
+DD -1.17L, 7/8 green, only 2026 stub red). Conservative alt = VIX>=14 (Calmar 0.89, +8.16L, 8/8 green).
+This REPLACES the old V2 spec's 1.5% stop.
+
+PUBLISHED to the app: /app/backtest/v2-nifty-ironfly-sl-vix (BacktestStudy in frontend/src/data/backtests.ts;
+factsheet PNG frontend/public/v2_ironfly_factsheet.png; PNG generator one-off via matplotlib on VPS venv).
+Standalone HTML factsheet also at (laptop) research_v2_locked_factsheet.html.
+
+NEXT — Phase 2: profit-target sweep on the 2.0%-stop + VIX>=13 base. PT in {25%, 55%, 70%, none}
+(40% = the 2.0% run already in hand). Then entry-time sweep. Then wire live V2 card to research/57 engine.
