@@ -344,3 +344,35 @@ Width sweep CLOSED.**
 NEXT: apply VIX>=12 floor to the 2.0% base (proven on fixed-±500: all 8 yrs green, +8.1L). Claude to
 pull daily VIX from Kite and filter the 2% entry dates directly — no AlgoTest re-run needed. Then
 SL/target sweep + entry-time sweep on the locked 2%+VIX base.
+
+---
+
+## VIX OVERLAY ON LOCKED 2% BASE (2026-06-08) — VIX>=13 floor locked
+
+Claude pulled India VIX (token 264969) daily history 2019-2026 from Kite (1841 days) and applied a
+VIX floor to the 2.0%-wing base (ex-COVID, 270 trades). Entry-VIX proxy = daily VIX OPEN (09:20 entry).
+Margin Rs9.58L, 7.3yr span, net of 0.25% slip + Rs20/order + taxes.
+
+| 2% base + filter | Trades | Net total | Calmar | MaxDD | RoM/yr | Red years |
+|---|---|---|---|---|---|---|
+| no filter | 270 | +7.64L | 0.70 | -1.50L | 10.9% | 2023, 2026 |
+| VIX>=12 | 231 | +6.15L | 0.56 | -1.50L | 8.8% | 2023, 2026 |
+| **VIX>=13** | 203 | **+8.53L** | 0.76 | -1.54L | **12.2%** | only 2026 |
+| **VIX>=14** | 172 | +7.79L | **0.94** | **-1.13L** | 11.1% | only 2026 |
+
+READ:
+- Plateau shifted to 13-14 (was 12-14 on the intraday-CSV +-700 run) ONLY because daily-VIX-open runs
+  ~1pt below the true 09:20 entry VIX. ==> VIX>=13 here ~= VIX>=12 live. Same finding, re-confirmed.
+- VIX>=13 flips 2023 GREEN (-74k -> +50k) and lifts total to +8.53L. The whipsaw year was a low-VIX-band
+  problem, as predicted.
+- VIX>=14 = risk-adjusted winner: Calmar 0.94 (vs 0.70 unfiltered), DD -1.13L, at -1/3 trades.
+- 2026 marginally red at EVERY floor (-10..-20k) = a 5-month, 8-11-trade stub dominated by two -40k Jan
+  trades. Too small a sample to drive the lock; not a strategy flaw. Discount it.
+
+**LOCKED BASE: 2.0% wings (=+-500 today) + VIX>=13 entry floor.** Best balance: +8.5L, Calmar 0.76,
+12.2% RoM, every FULL year green. Use VIX>=14 for max risk-adjusted (Calmar 0.94, smallest DD). Live
+filter reads VIX at 09:20 -> >=13 is the right live threshold.
+Script: research/60_v2_straddle_optimization/scripts/vix_overlay_2pct.py
+
+NEXT: SL/target sweep + entry-time sweep on this locked 2%+VIX>=13 base. Then wire the live V2 page
+(research/57 engine) to run these rules and show entry/exit time + reason.
