@@ -54,6 +54,17 @@ User runs backtests on algotest.in; Claude structures + analyzes (net of taxes +
   in the live V2 engine and skip narrow days; (3) test a WEEKLY-CPR variant; (4) once confirmed, fold into the
   locked base + update /app/backtest/v2-nifty-ironfly-sl-vix.
 - [ ] Re-spec wing as % live if NIFTY moves materially (rebuild as ±500 pts at today's level).
+- [ ] **MARGIN CORRECTION (page shows wrong RoM).** Verified Zerodha SPAN via Kite margin API (2026-06-08):
+  ±500 iron fly = **₹8,24,580 / 10 lots (₹82,458/lot)**; naked straddle ₹21.0L/10 lots. Earlier ₹95,802/lot
+  was ~16% high. Corrected RoM on ₹8.25L: **14.6%/yr simple / ~10.5% CAGR / ~9.7%/yr on 1.5× buffered capital**.
+  Update /app/backtest study metrics+caveat once user picks the basis to display. NB: current-level snapshot —
+  2019 margin was ~half (lower notional); RoM is simple, not compounding (fixed lots).
+- [ ] **EXPLORE: weekly → MONTHLY positional fly** (user idea 2026-06-08; parallel to Phase 2). Test on AlgoTest:
+  monthly-expiry ATM straddle + wings, entry near cycle start, roll ~1wk before expiry. Re-sweep wings (try
+  2.5/3.5%) + stop (3/4%/none) for the monthly (±2%/2% likely too tight over ~20 TD), then VIX≥13 overlay.
+  Hypotheses: more premium/cycle + ~4× less cost churn (~12 trades/yr) BUT more event risk held + smaller
+  sample (~85 trades) + CPR/compression edge may NOT transfer (it was a weekly phenomenon). Compare Calmar/DD/
+  per-year-green to the weekly base. Claude to write the exact AlgoTest config spec when user is ready.
 
 ## Straddle live V2 — wire card to the research/57 engine — 2026-06-08
 - **Why:** the live V2 card currently tracks only the **core short straddle** (CE+PE); the backtested
