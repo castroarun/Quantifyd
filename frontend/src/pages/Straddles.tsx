@@ -17,6 +17,7 @@ interface DailyDay {
   dte: number; expiry: string; strike: number; credit: number;
 }
 interface V1Daily { version: string; trigger_pct: number; lots: number; lot: number; days: string[]; per_day: Record<string, DailyDay>; }
+interface Leg { type: 'CE' | 'PE'; strike: number; qty: number; side: string; entry: number | null; ltp: number | null; pnl: number; entry_time?: string | null; exit_time?: string | null; }
 
 /* ---------- light theme tokens ---------- */
 const C = { ink: '#1B1B1A', muted: '#888780', faint: '#B4B2A9', sec: '#5F5E5A', hair: 'rgba(0,0,0,0.10)',
@@ -91,6 +92,88 @@ const chip = (bg: string, fg: string, t: string) => (
   <span style={{ background: bg, color: fg, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>{t}</span>
 );
 
+/* ---------- live positions table (trade-book style) ---------- */
+function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
+  if (!legs || !legs.length) return null;
+  const th: React.CSSProperties = { fontSize: 10, color: C.muted, fontWeight: 600, textAlign: 'right',
+    padding: '3px 8px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.hair}` };
+  const td: React.CSSProperties = { fontSize: 12.5, color: C.ink, textAlign: 'right', padding: '5px 8px',
+    fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${C.hairSoft}` };
+  const px = (v: number | null) => (v == null ? '—' : v.toFixed(1));
+  const tm = (v?: string | null) => (v ? v : '—');
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse', margin: '2px 0 8px' }}>
+      <thead><tr>
+        <th style={{ ...th, textAlign: 'left' }}>Leg</th>
+        <th style={th}>Strike</th><th style={th}>Qty</th>
+        <th style={th}>In</th><th style={th}>Entry</th><th style={th}>LTP</th>
+        <th style={th}>Out</th><th style={th}>P&amp;L</th>
+      </tr></thead>
+      <tbody>
+        {legs.map((l, i) => (
+          <tr key={i}>
+            <td style={{ ...td, textAlign: 'left' }}>
+              {chip(l.type === 'CE' ? C.navySoft : C.amberSoft, l.type === 'CE' ? C.navy : C.amber, `SELL ${l.type}`)}
+            </td>
+            <td style={td}>{l.strike}</td>
+            <td style={td}>{l.qty.toLocaleString('en-IN')}</td>
+            <td style={{ ...td, color: C.sec }}>{tm(l.entry_time)}</td>
+            <td style={td}>{px(l.entry)}</td>
+            <td style={td}>{px(l.ltp)}</td>
+            <td style={{ ...td, color: l.exit_time ? C.neg : C.faint }}>{tm(l.exit_time)}</td>
+            <td style={{ ...td, fontWeight: 700, color: col(l.pnl) }}>{inr(l.pnl)}</td>
+          </tr>
+        ))}
+        <tr>
+          <td style={{ ...td, textAlign: 'left', color: C.muted, borderTop: `1px solid ${C.hair}` }} colSpan={7}>
+            Net · paper position (incl. costs)
+          </td>
+          <td style={{ ...td, fontWeight: 800, color: col(total), borderTop: `1px solid ${C.hair}` }}>{inr(total)}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+/* ---------- collapsible system rules (both systems) ---------- */
+function RulesBlock() {
+  const head: React.CSSProperties = { fontWeight: 700, color: C.ink, fontSize: 13, margin: '0 0 4px' };
+  const li: React.CSSProperties = { fontSize: 12, color: C.sec, lineHeight: 1.55, margin: '0 0 2px' };
+  const k = (t: string) => <span style={{ color: C.ink, fontWeight: 600 }}>{t}</span>;
+  return (
+    <details style={{ marginTop: 12, borderTop: `1px solid ${C.hair}`, paddingTop: 10 }}>
+      <summary style={{ cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: C.navy, listStyle: 'none', userSelect: 'none' }}>
+        ▸ System rules — V1 &amp; V2 (click to expand)
+      </summary>
+      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 10 }}>
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <p style={head}>V1 · Intraday one-and-done</p>
+          <ul style={{ margin: 0, paddingLeft: 16 }}>
+            <li style={li}>{k('Instrument:')} short NIFTY weekly {k('ATM straddle')} (sell ATM CE + ATM PE), 10 lots · qty 650.</li>
+            <li style={li}>{k('Entry:')} 09:20, only on {k('0-DTE or 1-DTE')} days (typically Mon/Tue).</li>
+            <li style={li}>{k('Stop:')} underlying move {k('0.4% (0-DTE) / 0.5% (1-DTE)')} from entry strike → exit both legs flat. {k('One-and-done')} — no re-entry.</li>
+            <li style={li}>{k('Else:')} hold to ~15:15 close.</li>
+            <li style={li}>Edge concentrated on 0/1-DTE; P&amp;L net of brokerage + slippage.</li>
+          </ul>
+        </div>
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <p style={head}>V2 · Positional bi-weekly (iron fly)</p>
+          <ul style={{ margin: 0, paddingLeft: 16 }}>
+            <li style={li}>{k('Instrument:')} sell 2nd-nearest weekly ATM straddle + buy {k('±500-pt wings')} (≈2.0% of ATM) = short {k('iron fly')}. Overnight carry.</li>
+            <li style={li}>{k('Entry:')} 09:20, ~8 trading days to expiry; {k('roll')} 1 TD before expiry.</li>
+            <li style={li}>{k('Exits:')} {k('1.5%')} underlying-move stop, or {k('+40%')} profit target, or roll at DTE≤1; {k('re-enter')} after exit.</li>
+            <li style={li}>{k('Entry filter:')} India {k('VIX ≥ 13')} (backtested lock — lifts every full year positive).</li>
+            <li style={li}>10 lots · qty 650. Net of taxes + ₹20/order + 0.25% slippage.</li>
+          </ul>
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: C.faint, marginTop: 8 }}>
+        Live V2 card currently tracks the core short straddle; full wings / VIX / profit-target logic is the backtested spec being wired into the live engine.
+      </div>
+    </details>
+  );
+}
+
 /* ---------- page ---------- */
 export default function Straddles() {
   const [v1, setV1] = useState<V1 | null>(null);
@@ -107,7 +190,7 @@ export default function Straddles() {
     fetch('/app/straddles/v1_daily.json').then((r) => r.json()).then(setDaily).catch(() => {});
     const loadLive = () => fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
     loadLive();
-    const id = setInterval(loadLive, 60000);
+    const id = setInterval(loadLive, 30000);
     return () => clearInterval(id);
   }, []);
 
@@ -163,6 +246,7 @@ export default function Straddles() {
                   </span>
                 </div>
                 <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 6px' }}>{d.detail}</div>
+                <LegsTable legs={d.legs} total={d.pnl_now} />
                 {d.series && d.series.length >= 2
                   ? <LineChart pts={d.series} h={120}
                       marker={d.exit && d.exit.time ? { time: d.exit.time, pnl: d.exit.pnl, text: 'exit' } : null}
@@ -171,7 +255,8 @@ export default function Straddles() {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · ticks every 5 min during market · recorded daily. Backtest history below.</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · ticks every minute during market (page refreshes every 30s) · recorded daily. Backtest history below.</div>
+          <RulesBlock />
         </section>
       )}
 
