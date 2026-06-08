@@ -83,5 +83,20 @@ inh = (NasAtm2Executor._check_guardrails is NasAtmExecutor._check_guardrails
        and NasAtm4Executor._check_guardrails is NasAtmExecutor._check_guardrails)
 check("atm2/atm4 inherit the fixed guardrail", inh, True, "shared method")
 
+# 11/12) base/OTM executor (nas_executor) cooldown — defense-in-depth
+from services.nas_executor import NasExecutor
+def make_base(cooldown=15, db=None):
+    ex = NasExecutor.__new__(NasExecutor)
+    ex.cfg = {'enabled': True, 'skip_weekdays': (), 'max_dte_at_entry': None,
+              'max_daily_orders': 20, 'max_strangles': 1, 'reentry_cooldown_min': cooldown,
+              'max_daily_loss': 15000, 'max_adjustments_total': 4,
+              'entry_start_time': '00:00', 'entry_end_time': '23:59'}
+    ex.db = db or StubDB()
+    return ex
+ok, why = make_base(db=StubDB(closed=[leg(1, 'SL_HIT', 3)]))._check_guardrails(True)
+check("base/OTM cooldown: exit 3min ago (<15)", ok, False, why)
+ok, why = make_base(db=StubDB(closed=[leg(1, 'SL_HIT', 30)]))._check_guardrails(True)
+check("base/OTM: exit 30min ago -> allowed", ok, True, why)
+
 print("\n=== %d passed, %d failed ===" % (P, F))
 sys.exit(1 if F else 0)

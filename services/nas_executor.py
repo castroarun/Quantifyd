@@ -90,6 +90,27 @@ class NasExecutor:
             if len(strangle_ids) >= max_strangles:
                 return False, f'Max strangles ({max_strangles}) reached'
 
+            # Re-entry cooldown (research/60, 2026-06-08) — block a new strangle within
+            # reentry_cooldown_min of the last exit. Defense-in-depth vs per-candle churn.
+            cooldown_min = cfg.get('reentry_cooldown_min', 0)
+            if cooldown_min:
+                _ct = self.db.get_today_closed_positions()
+                if _ct:
+                    from datetime import datetime as _cd
+                    def _pt(ts):
+                        s = str(ts) if ts else ''
+                        for _fmt in ('%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
+                            try:
+                                return _cd.strptime(s[:26], _fmt)
+                            except Exception:
+                                pass
+                        return None
+                    _ex = [d for d in (_pt(t.get('exit_time')) for t in _ct) if d]
+                    if _ex:
+                        _mins = (_cd.now() - max(_ex)).total_seconds() / 60.0
+                        if 0 <= _mins < cooldown_min:
+                            return False, f'Re-entry cooldown ({_mins:.1f} < {cooldown_min} min since last exit)'
+
             # Daily P&L circuit breaker
             state = self.db.get_state()
             daily_pnl = state.get('daily_pnl', 0) or 0

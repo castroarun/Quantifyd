@@ -542,8 +542,8 @@ NAS_DEFAULTS['force_paper'] = True
 # each (~Rs9L initial margin, fits Rs38L collateral-incl avail). live_weekdays=(Mon,Tue,Fri).
 NAS_916_OTM_DEFAULTS['force_paper'] = True
 # 2026-06-08 churn-breaker (research/60): re-entry cooldown on every live ATM variant.
-for _nas_cd in (NAS_ATM_DEFAULTS, NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
-                NAS_916_ATM_DEFAULTS, NAS_916_ATM2_DEFAULTS, NAS_916_ATM4_DEFAULTS):
+for _nas_cd in (NAS_DEFAULTS, NAS_ATM_DEFAULTS, NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
+                NAS_916_OTM_DEFAULTS, NAS_916_ATM_DEFAULTS, NAS_916_ATM2_DEFAULTS, NAS_916_ATM4_DEFAULTS):
     _nas_cd['reentry_cooldown_min'] = 15
 
 # --- ORB: Opening Range Breakout (Cash Equity Intraday) ---
