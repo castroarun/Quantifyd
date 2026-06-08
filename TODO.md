@@ -33,8 +33,13 @@ User runs backtests on algotest.in; Claude structures + analyzes (net of taxes +
   index-drift confound; 2.0% best (Calmar 0.70 ex-COVID), wider strictly worse. Width sweep CLOSED.
 - [x] **VIX floor LOCKED = ≥13** (Claude pulled India VIX from Kite, daily-open proxy): 2023 flips
   green, +8.5L, Calmar 0.76; ≥14 = max risk-adj (Calmar 0.94). Script `scripts/vix_overlay_2pct.py`.
-- [ ] **NEXT — SL/target sweep** on the locked 2%+VIX≥13 base (move-stop %, profit-target %). algotest.
-- [ ] **THEN — entry-time sweep** (09:20 vs later) on the locked base.
+- [x] **SL SWEEP DONE 2026-06-08 → full base LOCKED = 2.0% wings + 2.0% underlying move-stop + VIX≥13.**
+  Stop sweep @VIX≥13: Calmar PEAKS at 2.0% (0.76→**1.03**→0.62 across 1.5/2.0/2.5%); +₹8.80L, DD −₹1.17L,
+  7/8 green. Conservative alt VIX≥14 = 8/8 green (+₹8.16L). Wings are the real risk control (stop = sweet-spot,
+  not plateau → "~2% wide stop"). Replaces old 1.5% spec. **PUBLISHED:** /app/backtest/v2-nifty-ironfly-sl-vix
+  (+ factsheet PNG; standalone HTML at laptop `research_v2_locked_factsheet.html`).
+- [ ] **NEXT — Phase 2 profit-target sweep** on the 2%+2%-stop+VIX≥13 base. PT ∈ {25%, 55%, 70%, none}
+  (40% already in hand). Fire 4 algotest runs; Claude computes year-wise/Calmar + VIX overlay. THEN entry-time sweep.
 - [ ] Re-spec wing as % live if NIFTY moves materially (rebuild as ±500 pts at today's level).
 
 ## Straddle live V2 — wire card to the research/57 engine — 2026-06-08
