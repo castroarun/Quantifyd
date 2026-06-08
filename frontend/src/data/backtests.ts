@@ -124,6 +124,206 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'v2-nifty-ironfly-sl-vix',
+    title: 'V2 NIFTY Positional Iron Fly — Stop-Loss × VIX optimization (2.0% wings)',
+    verdict:
+      'A positionally-carried short ATM NIFTY iron fly (2.0%-of-ATM wings) is best run with a ≈2.0% underlying move-stop and a VIX≥13 entry floor: +₹8.8L net over 7.3y at Calmar 1.03 and only −₹1.17L drawdown, 7/8 years green (only the 5-month 2026 stub red). A VIX≥14 floor makes every full year green. The defined-risk wings — not the stop — are the real risk control; stop-loss is a sweet-spot at 2.0%, not monotonic.',
+    status: 'COMPLETE',
+    date: '2026-06-08',
+    cardBlurb:
+      'Positional 2nd-weekly ATM straddle + 2% wings, 09:20 entry, 10 lots, net of taxes/brokerage/0.25% slippage, 2019–2026 on AlgoTest. Wing-width, VIX-floor and stop-loss all swept; base locked at 2% wings + 2% move-stop + VIX≥13.',
+    cardStats: [
+      { label: 'Net P&L (7.3y)', value: '+₹8.80L' },
+      { label: 'Calmar', value: '1.03' },
+      { label: 'MaxDD', value: '−₹1.17L' },
+    ],
+
+    systemRules: {
+      intro:
+        'The actual traded system. Two locked variants share one identical core (below) and differ only in the risk layer (move-stop fixed at 2.0%; VIX floor 13 vs 14).',
+      sharedCoreTitle: 'Locked core — identical for both variants',
+      sharedCore: [
+        { k: 'Instrument', v: 'Short ATM NIFTY straddle + long protective wings = short iron fly; 2nd-nearest weekly expiry; positional / overnight carry.' },
+        { k: 'Wings', v: '2.0% of ATM (≈ ±500 pts at today’s NIFTY) — locked from a %-of-ATM wing sweep; 2.5% / 3.0% were strictly worse.' },
+        { k: 'Entry', v: '09:20, 4 trading days before expiry (AlgoTest positional max).' },
+        { k: 'Roll / re-enter', v: 'Roll 1 trading day before expiry; re-enter the next cycle.' },
+        { k: 'Profit target', v: '40% of credit (Phase-2 PT sweep pending).' },
+        { k: 'Sizing', v: '10 lots = qty 650 (valid NIFTY multiple).' },
+        { k: 'Costs', v: 'Brokerage ₹20/order; STT & charges included; slippage 0.25% of premium (empirically measured: median bid-ask half-spread 0.17% across 3.47M recorded NIFTY option quotes).' },
+        { k: 'Window', v: '2019-02 → 2026-05 (~7.3y) on the AlgoTest historical chain.' },
+      ],
+      riskLayer: {
+        title: 'Per-variant risk layer — the only difference',
+        caption:
+          'Both fix the wings at 2.0% and the underlying move-stop at 2.0%; they differ only in the VIX entry floor. Balanced (≥13) maximises risk-adjusted return; Conservative (≥14) trades a little return for an all-green track record.',
+        columns: ['Variant', 'Underlying move-stop', 'VIX entry floor', 'Profile'],
+        rows: [
+          ['Balanced (recommended)', '2.0%', '≥ 13', 'Calmar 1.03 · +₹8.80L · DD −₹1.17L · only 2026 stub red'],
+          ['Conservative', '2.0%', '≥ 14', 'Calmar 0.89 · +₹8.16L · DD −₹1.25L · every full year green'],
+        ],
+        highlightRows: [0],
+      },
+    },
+
+    system: {
+      intro: 'Backtested on AlgoTest.in’s positional engine; entry/exit expressed as N trading-days-before-expiry. The VIX floor is applied post-hoc from AlgoTest’s exact per-trade entry-VIX column (not a proxy).',
+      rows: [
+        { k: 'Engine', v: 'AlgoTest.in positional backtester (user-run); Claude structures the grid and analyses the exported trade CSVs.' },
+        { k: 'Structure', v: 'Sell ATM CE + ATM PE; buy CE & PE wings at 2.0% of ATM = short iron fly (defined risk).' },
+        { k: 'Stop', v: 'Per-leg underlying-movement SL — the short legs exit on a 2.0% NIFTY move from entry.' },
+        { k: 'VIX filter', v: 'Keep only trades whose entry India-VIX ≥ floor (13 or 14); exact value from the AlgoTest VIX column.' },
+        { k: 'P&L basis', v: 'Net of taxes + ₹20/order + 0.25% slippage; 10 lots; fly SPAN margin ≈ ₹9.58L.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls / the seven deadly sins, as applied to this study.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — entry/exit are causal; the VIX floor uses entry-time VIX only.' },
+        { k: 'Cost neglect', v: 'Net-of-cost throughout; slippage measured empirically (0.17% median), 0.25% used as a prudent blend.' },
+        { k: 'Overfitting', v: 'Stop level is a SWEET-SPOT (Calmar 0.76→1.03→0.62 across 1.5/2.0/2.5% at VIX≥13), not a flat plateau → treat as “≈2% wide stop”, not a precise value; wings are the primary risk control.' },
+        { k: 'Regime', v: 'Spans 2019–2026 incl. COVID, 2022 bear, 2023 chop, 2024/25 trends.' },
+        { k: 'Capacity', v: '10 lots (qty 650) fills on NIFTY; deeper size needs a slippage re-check.' },
+        { k: 'Data artifact', v: 'March-2020 COVID circuit-breaker week excluded (AlgoTest left stray single-leg fills at gap strikes).' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Stop-loss sweep on the VIX≥13 base (the lock decision)',
+        caption: 'Net of costs, ex-COVID, exact entry-VIX. Calmar peaks sharply at a 2.0% stop. 1.5% rows use a daily-open VIX proxy; all others exact.',
+        columns: ['Underlying stop', 'Net P&L', 'Calmar', 'MaxDD', 'Neg years'],
+        rows: [
+          ['1.0%', '+₹6.51L', '0.58', '−₹1.53L', '2019'],
+          ['1.5%*', '+₹8.53L', '0.76', '−₹1.54L', '2026'],
+          ['2.0%', '+₹8.80L', '1.03', '−₹1.17L', 'only 2026'],
+          ['2.5%', '+₹6.29L', '0.62', '−₹1.39L', '2026'],
+          ['No stop', '+₹8.85L', '0.97', '−₹1.25L', '2021, 2026'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'Stop-loss sweep with no VIX filter (peak is not a filter artifact)',
+        caption: 'Same shape unfiltered — wide stop or none wins; 1.0% over-stops, 2.5% dips. The defined-risk wings cap every trade regardless of stop.',
+        columns: ['Underlying stop', 'Net P&L', 'Calmar', 'MaxDD', 'Worst trade', 'Neg years'],
+        rows: [
+          ['1.0%', '+₹6.73L', '0.44', '−₹2.11L', '−₹40k', '2019, 2023'],
+          ['1.5%', '+₹7.64L', '0.70', '−₹1.50L', '−₹74k', '2023, 2026'],
+          ['2.0%', '+₹8.50L', '0.68', '−₹1.70L', '−₹71k', '2023, 2026'],
+          ['2.5%', '+₹6.60L', '0.49', '−₹1.84L', '−₹67k', '2023, 2026'],
+          ['No stop', '+₹8.98L', '0.89', '−₹1.38L', '−₹77k', '2021, 2023, 2026'],
+        ],
+        highlightRows: [2, 4],
+      },
+      {
+        title: 'VIX entry floor on the 2.0%-stop base',
+        caption: 'A ≥13 floor lifts 2023 to green and maximises Calmar; ≥14 makes every full year green at a little less return.',
+        columns: ['VIX floor', 'Trades', 'Net P&L', 'Calmar', 'MaxDD', 'Neg years'],
+        rows: [
+          ['None', '271', '+₹8.50L', '0.68', '−₹1.70L', '2023, 2026'],
+          ['≥ 13', '204', '+₹8.80L', '1.03', '−₹1.17L', 'only 2026'],
+          ['≥ 14', '169', '+₹8.16L', '0.89', '−₹1.25L', 'none — all green'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'Wing-width (locked earlier at 2.0% of ATM)',
+        caption: 'Regime-consistent %-of-ATM wing sweep, ex-COVID, no VIX filter. 2.0% best on Calmar; wider strictly worse — closed before the SL sweep.',
+        columns: ['Wing (% of ATM)', 'Net P&L', 'Calmar', 'MaxDD', 'Neg years'],
+        rows: [
+          ['2.0% (= ±500 today)', '+₹7.64L', '0.70', '−₹1.50L', '2023, 2026'],
+          ['2.5%', '+₹4.84L', '0.29', '−₹2.28L', '2019, 2020, 2023, 2026'],
+          ['3.0%', '+₹5.96L', '0.31', '−₹2.59L', '2020, 2021, 2023, 2026'],
+        ],
+        highlightRows: [0],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Net P&L (7.3y)', value: '+₹8,80,110', tone: 'pos' },
+        { label: 'Calmar', value: '1.03' },
+        { label: 'Max Drawdown', value: '−₹1,16,834', tone: 'neg' },
+        { label: 'Return / Margin', value: '12.6%/yr' },
+        { label: 'Trades', value: '204' },
+        { label: 'Green years', value: '7/8' },
+        { label: 'Worst trade', value: '−₹71,235', tone: 'neg' },
+      ],
+      tables: [
+        {
+          title: 'Year-wise returns — monthly P&L (₹), Balanced VIX≥13',
+          caption: 'Bucketed by entry month, net of costs, ex-COVID. Months at 0 = no trade cleared the VIX≥13 floor that month (e.g. the low-VIX 2023/25 stretches). Only the 5-month 2026 stub is red.',
+          heatmap: true,
+          columns: ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Total'],
+          rows: [
+            ['2019', '0', '+12,734', '+36,014', '+1,863', '+18,534', '+10,317', '-5,013', '-38,369', '-16,673', '-29,644', '+21,168', '0', '+10,930'],
+            ['2020', '-16,660', '+55,156', '0', '+24,108', '+130,835', '-6,156', '-404', '-50,213', '+18,681', '-6,370', '+13,596', '+3,860', '+166,432'],
+            ['2021', '+20,968', '+15,513', '-1,017', '+7,747', '-33,801', '+63,015', '-28,700', '-16,978', '+4,147', '-8,925', '+19,754', '+16,250', '+57,973'],
+            ['2022', '+28,455', '+61,307', '+87,192', '+7,062', '-16,337', '+30,892', '-23,546', '-3,552', '-7,465', '-19,405', '+6,357', '+50,351', '+201,312'],
+            ['2023', '-20,544', '+30,437', '-3,295', '0', '+20,859', '0', '0', '0', '0', '0', '0', '+34,875', '+62,331'],
+            ['2024', '+15,232', '+63,656', '+10,015', '+7,766', '+175,295', '-35,493', '-2,744', '-49,371', '+22,825', '+103,345', '-94,905', '+78,299', '+293,918'],
+            ['2025', '-9,910', '+54,398', '+34,114', '0', '+52,969', '-26,660', '0', '0', '0', '0', '0', '0', '+104,912'],
+            ['2026', '-30,060', '0', '+20,458', '-11,567', '+3,471', '0', '0', '0', '0', '0', '0', '0', '-17,698'],
+          ],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/v2_ironfly_factsheet.png',
+          caption: 'Cumulative net P&L (VIX≥13 vs VIX≥14), drawdown, and year-wise bars for the locked 2.0%-wing / 2.0%-stop iron fly, 2019–2026, net of costs.',
+        },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'SL 2.0% + VIX≥13 — Balanced (recommended)',
+        summary: 'Best risk-adjusted point of the entire stop×VIX grid: highest Calmar and smallest drawdown, only the 5-month 2026 stub red.',
+        metrics: [
+          { k: 'Net P&L (7.3y)', v: '+₹8,80,110' },
+          { k: 'Calmar', v: '1.03' },
+          { k: 'MaxDD', v: '−₹1,16,834' },
+          { k: 'Return/Margin', v: '12.6%/yr' },
+          { k: 'Green years', v: '7/8' },
+        ],
+        rejected: [
+          'SL 1.0% — over-stops, choppy −₹2.1L drawdown',
+          'SL 2.5% — Calmar dips to 0.62 (the level is a sweet-spot, not a plateau)',
+          'Wings 2.5% / 3.0% — strictly worse than 2.0%',
+          'SL 1.5% — the old V2 spec; beaten on every axis',
+        ],
+      },
+      {
+        config: 'SL 2.0% + VIX≥14 — Conservative',
+        summary: 'The only configuration with every full year green; a little less total for an all-green track record.',
+        metrics: [
+          { k: 'Net P&L (7.3y)', v: '+₹8,15,653' },
+          { k: 'Calmar', v: '0.89' },
+          { k: 'MaxDD', v: '−₹1,24,847' },
+          { k: 'Green years', v: '8/8' },
+        ],
+      },
+    ],
+
+    caveats: [
+      'Single instrument (NIFTY), single backtester (AlgoTest), in-sample over one 7.3-year history — a robust base/SIGNAL, not yet live-validated.',
+      'The 2.0% stop is a sweet-spot, not a plateau (Calmar 0.76→1.03→0.62 across 1.5/2.0/2.5% at VIX≥13). Treat the live rule as “≈2% underlying move-stop”; the defined-risk wings are the real risk control.',
+      'March-2020 COVID circuit-breaker week excluded — AlgoTest left stray single-leg fills at gap strikes (a data artifact, not a tradable result).',
+      '2026 is a 5-month stub (Jan–May), not a full year; it is the only red year at VIX≥13.',
+      'Net of 0.25% slippage (measured median 0.17%); live fills at 10 lots may differ. Nothing is wired to live orders.',
+      '1.5%-stop VIX-filtered figures use a daily-open VIX proxy; all 2.0% figures use AlgoTest’s exact entry-VIX column.',
+    ],
+
+    githubLinks: [
+      { label: 'research/60 — V2 straddle optimization', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/60_v2_straddle_optimization' },
+    ],
+    projectPaths: [
+      'research/60_v2_straddle_optimization/V2_BIWEEKLY_STRADDLE_ALGOTEST_OPTIMIZATION_SWEEP_STATUS.md',
+      'research/60_v2_straddle_optimization/scripts/vix_overlay_2pct.py',
+      'frontend/src/pages/Straddles.tsx (live paper book)',
+    ],
+  },
+  {
     slug: 'midcap-rs120-regime-momentum',
     title: 'MidSmallcap400-MQ Concentrated Rotation (mid-cap RS-120 + 200DMA regime)',
     verdict:
