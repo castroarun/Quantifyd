@@ -38,8 +38,21 @@ User runs backtests on algotest.in; Claude structures + analyzes (net of taxes +
   7/8 green. Conservative alt VIX≥14 = 8/8 green (+₹8.16L). Wings are the real risk control (stop = sweet-spot,
   not plateau → "~2% wide stop"). Replaces old 1.5% spec. **PUBLISHED:** /app/backtest/v2-nifty-ironfly-sl-vix
   (+ factsheet PNG; standalone HTML at laptop `research_v2_locked_factsheet.html`).
-- [ ] **NEXT — Phase 2 profit-target sweep** on the 2%+2%-stop+VIX≥13 base. PT ∈ {25%, 55%, 70%, none}
+- [ ] **★ CRITICAL — Phase 2 profit-target sweep** on the 2%+2%-stop+VIX≥13 base. PT ∈ {25%, 55%, 70%, none}
   (40% already in hand). Fire 4 algotest runs; Claude computes year-wise/Calmar + VIX overlay. THEN entry-time sweep.
+  (User flagged 2026-06-08: this is the next must-do; do not skip.)
+- [x] **Conditional-attribution study DONE 2026-06-08 → CPR-COMPRESSION OVERLAY found + WALK-FORWARD VALIDATED.**
+  Losses concentrate in volatility compression, flagged by NARROW PRIOR-DAY DAILY CPR. **Skip entries when
+  CPR width < ~0.10% of spot** (|TC−BC|/spot from prior-day H/L/C). On VIX≥13 book: +CPR≥0.10% → 147t,
+  +₹11.0L, **Calmar 0.95→1.59, 7/8 green**; +CPR & skip Jan/Aug/Sep → 116t, +₹11.85L, Calmar 1.71, **8/8 green**.
+  Filter RAISES return AND CUTS drawdown. **Walk-forward:** train-half threshold (≈0.12%) applied blind to
+  test half lifts Calmar 1.13→2.81 (2023-26) and 1.11→2.08 (2019-22); skipped bucket negative in BOTH halves.
+  Directional skew NOT supported (it's a regime skip, not a tilt). Mechanism: compression → expansion → short
+  gamma run over. Detail in STATUS doc + memory.
+- [ ] **CPR overlay — forward-validate before adopting (candidate, NOT yet in locked base/app study).**
+  (1) paper-forward on the live book; (2) check AlgoTest native CPR filter, else compute CPR from NIFTY daily
+  in the live V2 engine and skip narrow days; (3) test a WEEKLY-CPR variant; (4) once confirmed, fold into the
+  locked base + update /app/backtest/v2-nifty-ironfly-sl-vix.
 - [ ] Re-spec wing as % live if NIFTY moves materially (rebuild as ±500 pts at today's level).
 
 ## Straddle live V2 — wire card to the research/57 engine — 2026-06-08

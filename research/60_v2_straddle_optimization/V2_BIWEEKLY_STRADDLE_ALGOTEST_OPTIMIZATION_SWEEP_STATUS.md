@@ -411,3 +411,39 @@ Standalone HTML factsheet also at (laptop) research_v2_locked_factsheet.html.
 
 NEXT — Phase 2: profit-target sweep on the 2.0%-stop + VIX>=13 base. PT in {25%, 55%, 70%, none}
 (40% = the 2.0% run already in hand). Then entry-time sweep. Then wire live V2 card to research/57 engine.
+
+---
+
+## CPR COMPRESSION OVERLAY — WALK-FORWARD VALIDATED (2026-06-08, candidate)
+
+Conditional-attribution study on the locked 2%-wing + 2%-stop + VIX>=13 book (Claude pulled NIFTY 50
+daily OHLC from Kite, built causal entry-time features, sliced P&L). Losses concentrate in volatility
+COMPRESSION, best flagged by a NARROW PRIOR-DAY DAILY CPR = |TC-BC| from the prior day's H/L/C
+(TC=2*pivot-BC, pivot=(H+L+C)/3, BC=(H+L)/2) / entry-day open, in %. Causal (known before 09:20).
+
+OVERLAY (VIX>=13, ex-COVID; CPR needs only 1 prior day):
+- baseline ~203t Calmar 0.95
+- + skip CPR width < 0.10%: 147t, +11.0L, Calmar 1.59, 7/8 green
+- + skip CPR<0.10% & Jan/Aug/Sep: 116t, +11.85L, Calmar 1.71, 8/8 GREEN
+CPR filter RAISES return AND CUTS drawdown simultaneously (signature of a real conditioning var).
+
+WALK-FORWARD (pick CPR threshold by Calmar on TRAIN half, apply blind to TEST half):
+- train 2019-22 -> t*=0.12 -> TEST 2023-26: Calmar 1.13->2.81, DD -117k->-51k
+- train 2023-26 -> t*=0.12 -> TEST 2019-22: Calmar 1.11->2.08, DD -102k->-72k
+- fixed t=0.10 helps BOTH halves (H1 1.11->1.75, H2 1.13->1.83)
+- skipped bucket (CPR<0.10) NEGATIVE in BOTH halves (-90k, -130k) -> robust, not one era
+Same threshold both directions; improves OOS on return AND drawdown = genuine edge, not overfit.
+
+MECHANISM: narrow CPR = compression -> expansion/breakout in days ahead -> short-gamma fly run over.
+Seasonal Jan/Aug/Sep also a persistent drag (neg 5/8 yrs) -> secondary, same regime story.
+DIRECTIONAL SKEW NOT SUPPORTED (prior-momentum sign/strength not a clean P&L driver) -> regime SKIP, not tilt.
+
+CAVEATS: in-sample (one instrument/engine); threshold ~0.10-0.12% = "skip bottom-quartile CPR width",
+not a precise constant; ~9 features tested (CPR earned it on mechanism+monotonicity+per-year+walk-forward);
+trade count drops 191->147; needs FORWARD/paper confirmation before live.
+
+STATUS: STRONG CANDIDATE (walk-forward passed). NOT yet folded into the locked base or the app study.
+Factsheet (laptop) research_v2_locked_factsheet.html has a collapsible CPR-overlay section (curves + monthly
+tables). Scripts: research/60_v2_straddle_optimization/scripts/attrib*.py + factsheet2.py.
+NEXT: (1) forward paper-validate; (2) AlgoTest native CPR filter else compute CPR in live engine, skip narrow
+days; (3) test WEEKLY-CPR variant; (4) once forward-confirmed, fold into locked base + app study.
