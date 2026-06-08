@@ -84,12 +84,35 @@ class NasAtmExecutor:
             if len(strangle_ids) >= max_strangles:
                 return False, f'Active strangle already exists ({len(strangle_ids)} active)'
 
-            # Max re-entry cycles per day
+            # Max re-entry cycles per day — count ALL completed strangle cycles today,
+            # not just SL_HIT. The 2026-06-08 churn exited via ST_EXIT, which the old
+            # SL_HIT-only counter never saw -> the cap never tripped -> per-candle re-entry
+            # loop (research/60). Count distinct closed strangle_ids.
             today_trades = self.db.get_today_closed_positions()
-            sl_reentries = len([t for t in today_trades if t.get('exit_reason') == 'SL_HIT'])
+            closed_cycles = len(set(t.get('strangle_id') for t in today_trades if t.get('strangle_id')))
             max_reentries = cfg.get('max_reentries', 5)
-            if sl_reentries >= max_reentries:
-                return False, f'Max re-entries ({max_reentries}) reached today'
+            if closed_cycles >= max_reentries:
+                return False, f'Max re-entries ({max_reentries}) reached today ({closed_cycles} cycles)'
+
+            # Re-entry cooldown — block a new strangle within reentry_cooldown_min of the
+            # last exit. Breaks the pinned-market per-candle close->reopen loop. 0 = off.
+            cooldown_min = cfg.get('reentry_cooldown_min', 0)
+            if cooldown_min and today_trades:
+                from datetime import datetime as _cd
+                def _pt(ts):
+                    s = str(ts) if ts else ''
+                    for _fmt in ('%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
+                        try:
+                            return _cd.strptime(s[:26], _fmt)
+                        except Exception:
+                            pass
+                    return None
+                _exits = [d for d in (_pt(t.get('exit_time')) for t in today_trades) if d]
+                last_exit = max(_exits) if _exits else None
+                if last_exit:
+                    _mins = (_cd.now() - last_exit).total_seconds() / 60.0
+                    if 0 <= _mins < cooldown_min:
+                        return False, f'Re-entry cooldown ({_mins:.1f} < {cooldown_min} min since last exit)'
 
             # Daily P&L circuit breaker
             state = self.db.get_state()

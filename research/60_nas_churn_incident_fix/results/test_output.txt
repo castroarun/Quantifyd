@@ -1,0 +1,13 @@
+  PASS churn replay: 5 ST_EXIT cycles, exit 2min ago -> allowed=False (want False) | Max re-entries (5) reached today (5 cycles)
+     [old SL_HIT-only counter would see 0 -> would NOT block: bug reproduced]
+  PASS cooldown: 1 cycle, exit 3min ago (<15) -> allowed=False (want False) | Re-entry cooldown (3.0 < 15 min since last exit)
+  PASS cap: 5 cycles, exit 30min ago -> allowed=False (want False) | Max re-entries (5) reached today (5 cycles)
+  PASS legit: 1 cycle, exit 30min ago -> allowed=True (want True) | OK
+  PASS active strangle exists -> allowed=False (want False) | Active strangle already exists (1 active)
+  PASS cooldown=0, 1 cycle 1min ago -> allowed=True (want True) | OK
+  PASS cap: 5 mixed-reason cycles, 30min ago -> allowed=False (want False) | Max re-entries (5) reached today (5 cycles)
+  PASS exit 16min ago (>15), 2 cycles -> allowed=True (want True) | OK
+  PASS 2 legs same strangle = 1 cycle, 30min ago -> allowed=True (want True) | OK
+  PASS atm2/atm4 inherit the fixed guardrail -> allowed=True (want True) | shared method
+
+=== 10 passed, 0 failed ===
