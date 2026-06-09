@@ -59,12 +59,13 @@ User runs backtests on algotest.in; Claude structures + analyzes (net of taxes +
   was ~16% high. Corrected RoM on ₹8.25L: **14.6%/yr simple / ~10.5% CAGR / ~9.7%/yr on 1.5× buffered capital**.
   Update /app/backtest study metrics+caveat once user picks the basis to display. NB: current-level snapshot —
   2019 margin was ~half (lower notional); RoM is simple, not compounding (fixed lots).
-- [ ] **EXPLORE: weekly → MONTHLY positional fly** (user idea 2026-06-08; parallel to Phase 2). Test on AlgoTest:
-  monthly-expiry ATM straddle + wings, entry near cycle start, roll ~1wk before expiry. Re-sweep wings (try
-  2.5/3.5%) + stop (3/4%/none) for the monthly (±2%/2% likely too tight over ~20 TD), then VIX≥13 overlay.
-  Hypotheses: more premium/cycle + ~4× less cost churn (~12 trades/yr) BUT more event risk held + smaller
-  sample (~85 trades) + CPR/compression edge may NOT transfer (it was a weekly phenomenon). Compare Calmar/DD/
-  per-year-green to the weekly base. Claude to write the exact AlgoTest config spec when user is ready.
+- [~] **MONTHLY positional fly — SHELVED 2026-06-08: NOT FEASIBLE on AlgoTest (platform-blocked).** AlgoTest's
+  positional entry is weekly-cadence-oriented (entry capped ~4 TD-before-expiry); a true monthly book needs
+  entry ~18-20 TD before monthly expiry + ~1-month hold, which it can't express. Forcing expiry=Monthly gave
+  only **6 sporadic Friday fills over 6 years** (whole years missing) — an artifact, not a backtest; re-run
+  reproduced it (structural, not a stray filter). REVISIT only if AlgoTest adds a calendar/weekday entry, OR
+  if we acquire a historical MONTHLY option-chain data source (local recorder has only ~2 months since
+  Apr-2026, not 2019+) and self-backtest. Not worth pursuing now. Weekly remains the tradeable cadence.
 
 ## Straddle live V2 — wire card to the research/57 engine — 2026-06-08
 - **Why:** the live V2 card currently tracks only the **core short straddle** (CE+PE); the backtested
