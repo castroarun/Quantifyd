@@ -2,6 +2,41 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ★ ACTIVE — V2 executor + inside-week breakout sleeve (build) — 2026-06-10
+Spec: `research/61_v2_feature_attribution/V2_EXECUTOR_AND_BREAKOUT_SLEEVE_BUILD_SPEC.md`.
+- [x] **research/61 causal-feature attribution DONE.** Only vol-COMPRESSION separates losing weeks:
+  daily CPR<0.10% + **inside-week** (NEW, independent). Combo skip → Calmar 1.03→**2.00**, DD −1.17L→−0.78L.
+  RSI/MAs/Ichimoku/pivots/range-breaks = no signal. App study UPDATED (new "Causal-feature forensic" block).
+- [x] Decisions LOCKED: V2 live gates on **combo skip (CPR<0.10% OR inside-week)**; paper-first, SHORT
+  (~2-4wk) compute-confirm window then promote; 10 lots/650 (~₹9.6L margin).
+- [x] Inside-week breakout sleeve (paper-only): UP-break→call DEBIT spread (runner edge); DOWN-break→
+  broken-wing fly skewed down (no edge, premium+capped). Case A late-entry sim FAILED calib (needs AlgoTest);
+  bear-rescue filters FAILED (n=156).
+- [x] **Pure signal layer DONE** `services/v2_breakout_signals.py` (smoke-tested). NB: market_data.db NIFTY50
+  daily STALE (ends 2026-03-19) → executor pulls fresh daily bars from Kite.
+- [x] **EXECUTOR BUILT + DEPLOYED 2026-06-10** (user cleared restart, no live trades that Wed). `services/
+  v2_ironfly_api.py` (mirrors nas_opt.py: paper executor + `register(app,scheduler)`) + `services/
+  v2_breakout_signals.py`. Routes `/api/v2-ironfly/{state,scan,kill-switch}` + `/api/v2-breakout/state`;
+  APScheduler entry(09:20)/monitor(3min)/breakout(15:20) mon-fri. app.py patched (1-line register, `.bak_v2if`).
+  Straddles.tsx "V2 Engine" card wired + frontend rebuilt. VERIFIED: paper fly entered live (SELL 23350 CE/PE +
+  BUY 23850/22850, net 352.5, VIX 15.5, exp 06-23) + monitor marks P&L. PAPER-only (force_paper). DB
+  `backtest_data/v2_ironfly_trading.db`.
+- [ ] Promote to live after ~2-4wk paper compute-confirm (verify CPR+inside-week day-by-day vs backtest); set
+  force_paper=False + live_weekdays. Optional: watchdog coverage + SSE stream (currently 30s poll).
+- [ ] AlgoTest (USER): (a) Case A conditional-late-entry run; (b) Case B call-debit-spread on inside-week up-break.
+
+## ⏸ QUEUED (start ONLY after the V2-executor thread closes) — "Weekend-theta" iron fly variant — 2026-06-10
+User-tried variant; user runs AlgoTest, Claude analyzes (separate system + separate assessment). **A couple
+more versions of this coming.**
+- **Structure:** same 2.0% wings + 2.0% underlying move-stop as V2, BUT **enter DTE-2 (Friday), exit DTE-1
+  (Monday)** — capture the 2 weekend days' theta, close Monday. Short hold across the weekend.
+- **Data scope (critical):** ONLY the weeks where **NIFTY weekly expiry was TUESDAY** (shifted from Thursday),
+  so DTE-2 = Fri, DTE-1 = Mon, expiry = Tue. Need to identify/confirm that exact date window in the AlgoTest data.
+- **Filter:** same CPR / inside-week skip MAY apply — but inside-week check uses the **CURRENT week of entry
+  (the Friday's week)**, not the last completed week (note the causal subtlety: at Fri the current week's H/L are
+  nearly fully formed — assess look-ahead carefully when we get there).
+- [ ] Await user's AlgoTest exports (+ the other versions), then structure + assess as a standalone system.
+
 ## Straddle V1 — DTE-conditional move-stop (1-DTE → 0.5%, 0-DTE → 0.4%) — 2026-06-08
 Page: `/app/straddles` · live logger `research/58_intraday_recenter_straddle/scripts/straddle_paper_live.py` (`V1_TRIG = 0.4`).
 - **Why:** current V1 stop is a flat ±0.4% underlying-move stop for BOTH 0- and 1-DTE.

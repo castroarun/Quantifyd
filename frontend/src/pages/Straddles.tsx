@@ -184,12 +184,20 @@ export default function Straddles() {
   const [liveTs, setLiveTs] = useState<number | null>(null);
   const [daily, setDaily] = useState<V1Daily | null>(null);
   const [dayD, setDayD] = useState<string | null>(null);
+  const [v2eng, setV2eng] = useState<any>(null);   // live paper executor state
+  const [bo, setBo] = useState<any>(null);          // inside-week breakout sleeve
+  const [v2engTs, setV2engTs] = useState<number | null>(null);  // last v2-engine live tick
+  const [v2spot, setV2spot] = useState<number | null>(null);    // live NIFTY spot from the stream
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
     fetch('/app/straddles/v2.json').then((r) => r.json()).then(setV2).catch(() => {});
     fetch('/app/straddles/v1_daily.json').then((r) => r.json()).then(setDaily).catch(() => {});
-    const loadLive = () => fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
+    const loadLive = () => {
+      fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
+      fetch('/api/v2-ironfly/state?t=' + Date.now()).then((r) => r.json()).then(setV2eng).catch(() => {});
+      fetch('/api/v2-breakout/state?t=' + Date.now()).then((r) => r.json()).then(setBo).catch(() => {});
+    };
     loadLive();
     const id = setInterval(loadLive, 30000);
     // Live-quote SSE overlay: ticks pnl_now + per-leg LTP/P&L every ~3s on top of the
@@ -219,7 +227,29 @@ export default function Straddles() {
         });
       };
     } catch { /* SSE unsupported — static poll still ticks every 30s */ }
-    return () => { clearInterval(id); if (es) es.close(); };
+    // V2 engine live-quote stream: ticks pnl_now + per-leg LTP/P&L every ~3s on the open fly.
+    let es2: EventSource | null = null;
+    try {
+      es2 = new EventSource('/api/v2-ironfly/stream');
+      es2.onmessage = (e) => {
+        let m: any; try { m = JSON.parse(e.data); } catch { return; }
+        if (m.type !== 'tick') return;
+        setV2engTs(m.ts);
+        if (m.spot != null) setV2spot(m.spot);
+        setV2eng((prev: any) => {
+          if (!prev || !prev.open) return prev;
+          const open = { ...prev.open, pnl_now: m.pnl_now };
+          if (Array.isArray(open.legs) && Array.isArray(m.legs)) {
+            open.legs = open.legs.map((l: any) => {
+              const t = m.legs.find((x: any) => x.strike === l.strike && x.instrument_type === l.instrument_type);
+              return t ? { ...l, ltp: t.ltp, pnl: t.pnl } : l;
+            });
+          }
+          return { ...prev, open };
+        });
+      };
+    } catch { /* no SSE — 30s poll still refreshes */ }
+    return () => { clearInterval(id); if (es) es.close(); if (es2) es2.close(); };
   }, []);
 
   const v1stats = useMemo(() => {
@@ -294,6 +324,87 @@ export default function Straddles() {
           </div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · live-quote P&amp;L ticks ~every 3s during market (positions/chart refresh every minute) · recorded daily. Backtest history below.</div>
           <RulesBlock />
+        </section>
+      )}
+
+      {/* ===== V2 ENGINE · live paper executor ===== */}
+      {v2eng && (
+        <section style={{ ...card, marginTop: 14, borderColor: C.pos }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 Engine · live paper executor</span>
+            {chip('#E7F2EE', C.pos, 'PAPER · combo filter')}
+            {v2engTs && (Date.now() / 1000 - v2engTs) < 12 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: C.pos }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.pos, display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+                LIVE
+              </span>
+            )}
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>
+              {v2engTs ? `live-quote ${new Date(v2engTs * 1000).toLocaleTimeString('en-IN', { hour12: false })} · ` : ''}closed {v2eng.closed_trades} · <b style={{ color: col(v2eng.closed_total_pnl) }}>{inr(v2eng.closed_total_pnl)}</b>
+            </span>
+          </div>
+          {v2eng.open ? (
+            <div style={{ border: `1px solid ${C.hair}`, borderRadius: 8, padding: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ fontWeight: 700, color: C.ink }}>Open fly · exp {v2eng.open.expiry} ({v2eng.open.dte_entry}d at entry)</span>
+                <span style={{ fontSize: 22, fontWeight: 800, marginLeft: 'auto', color: col(v2eng.open.pnl_now || 0) }}>{inr(v2eng.open.pnl_now || 0)}</span>
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 6px' }}>
+                entry {v2eng.open.entry_time} · spot {Math.round(v2eng.open.entry_spot)} · VIX {v2eng.open.entry_vix} · net credit {Number(v2eng.open.net_entry).toFixed(1)}
+              </div>
+              <div style={{ fontSize: 11, color: C.sec, margin: '0 0 8px', padding: '5px 8px', background: C.amberSoft, border: `1px solid ${C.hairSoft}`, borderRadius: 6 }}>
+                <b>2% move-stop band:</b> exit if NIFTY ≤ <b style={{ color: C.neg }}>{v2eng.open.stop_dn?.toLocaleString('en-IN')}</b> or ≥ <b style={{ color: C.neg }}>{v2eng.open.stop_up?.toLocaleString('en-IN')}</b>
+                <span style={{ color: C.muted }}> (±2% from {Math.round(v2eng.open.entry_spot).toLocaleString('en-IN')})</span>
+                {v2spot ? <> · spot now <b style={{ color: C.ink }}>{Math.round(v2spot).toLocaleString('en-IN')}</b></> : null}
+                <span style={{ color: C.muted }}> · checked on 1-min candle close</span>
+              </div>
+              <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                <thead><tr style={{ color: C.muted, textAlign: 'left' }}>
+                  <th style={{ padding: '2px 0' }}>Leg</th><th>Strike</th><th>In</th><th>LTP</th><th style={{ textAlign: 'right' }}>P&amp;L</th></tr></thead>
+                <tbody>
+                  {v2eng.open.legs.map((l: any, i: number) => (
+                    <tr key={i} style={{ borderTop: `1px solid ${C.hairSoft}` }}>
+                      <td style={{ padding: '3px 0', color: l.side === 'SELL' ? C.neg : C.pos, fontWeight: 600 }}>{l.side} {l.instrument_type}</td>
+                      <td>{l.strike}</td><td>{Number(l.entry).toFixed(1)}</td><td>{Number(l.ltp).toFixed(1)}</td>
+                      <td style={{ textAlign: 'right', color: col(l.pnl || 0) }}>{l.pnl != null ? inr(l.pnl) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {Array.isArray(v2eng.open.series) && v2eng.open.series.length >= 2 && (
+                <div style={{ marginTop: 8 }}>
+                  <LineChart pts={v2eng.open.series} h={120}
+                    label={`intraday running P&L · low ${inr(v2eng.open.low || 0)} · high ${inr(v2eng.open.high || 0)}`} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: C.muted, padding: '6px 2px' }}>Flat — waiting for a qualifying entry (VIX≥13 + filter not triggered).</div>
+          )}
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>
+            Filter: {v2eng.config?.filter}. Shadow-skips logged: <b>{v2eng.shadow_skips?.length || 0}</b>
+            {v2eng.shadow_skips?.length ? ` (latest ${v2eng.shadow_skips[0].day} — ${v2eng.shadow_skips[0].reasons})` : ''}. Margin {v2eng.config?.margin_est}.
+          </div>
+          {bo && (
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>
+              Inside-week breakout sleeve: <b>{bo.open ? `OPEN (${bo.open.legs?.length}-leg)` : 'flat'}</b> · closed {bo.closed_trades} ({inr(bo.closed_total_pnl)}) · UP→call debit · DOWN→broken-wing fly · paper-only.
+            </div>
+          )}
+          <details style={{ marginTop: 10 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C.navy }}>System rules — V2 engine (click to expand)</summary>
+            <div style={{ fontSize: 11.5, color: C.sec, marginTop: 6, lineHeight: 1.7 }}>
+              <div><b>Instrument:</b> short 2nd-nearest weekly NIFTY ATM straddle + ±500-pt wings (2% of ATM) = short iron fly, overnight carry.</div>
+              <div><b>Entry:</b> 09:20 if India VIX ≥ 13 AND the combo skip-filter passes.</div>
+              <div><b>Skip-filter (live):</b> skip entry when prior-day CPR width &lt; 0.10% OR last week was an inside week — every skip is shadow-logged for forward validation.</div>
+              <div><b>Exits:</b> 2% underlying move-stop · +40% credit profit-target · roll at DTE ≤ 1, then re-enter.</div>
+              <div><b>Stop band:</b> fixed at entry = entry-spot ±2% (the exact NIFTY levels are shown on the open position). A move-stop, not a premium-stop — it triggers on the underlying, not on the option P&L.</div>
+              <div><b>When it's checked (AlgoTest-synced):</b> evaluated on the <b>close of each 1-min NIFTY candle</b> — the same resolution the backtest used (all 110 backtested SL exits land on :00 minute boundaries; AlgoTest is a 1-min candle-close engine, not tick/intra-candle). On the first candle whose close is ≥2% from entry, it exits at that close. The on-screen P&L still ticks every ~3s for display, but the exit decision is candle-close each minute. +40% PT and the DTE≤1 roll run on the same cycle.</div>
+              <div><b>Sizing:</b> 10 lots = qty 650 · blocked margin ≈ ₹9.6L (₹95.8k/lot).</div>
+              <div><b>Costs:</b> P&amp;L net of ₹20/order + 0.25% slippage — same basis as the backtest.</div>
+              <div><b>Breakout sleeve (paper-only):</b> on inside-week-skip weeks, first daily close beyond the inside week's prior-week H/L → UP: call debit spread (runner edge) · DOWN: broken-wing fly skewed down.</div>
+              <div style={{ color: C.muted, marginTop: 4 }}>Paper engine · live-quote P&amp;L ticks ~every 3s during market · 1-min position marks · backtest spec wired into the live engine.</div>
+            </div>
+          </details>
         </section>
       )}
 

@@ -9371,6 +9371,13 @@ try:
 except Exception as _e:
     logger.warning(f"Could not register NAS-OPT: {_e}")
 
+# V2 positional iron fly + inside-week breakout sleeve — paper-only
+try:
+    from services.v2_ironfly_api import register as _v2if_register
+    _v2if_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register V2 iron fly: {_e}")
+
 
 # ---- Daily Options Capture EOD Summary ----
 

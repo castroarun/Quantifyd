@@ -1,0 +1,174 @@
+Trades with full features: 271 of 271
+
+=== BASELINE VIX>=13: n=204 tot=880,110 Calmar=1.03 MaxDD=-116,834 green=7/8 neg=['2026'] ===
+
+############### UNIVARIATE QUARTILE ATTRIBUTION (on VIX>=13) ###############
+feature                quartile mean-pnl (n) | totalP&L | neg-years/total  [Q1..Q4 low->high feature value]
+
+dCPRw_pct            corr(feat,pnl)=+0.12
+     Q1: mean    -3,550 (n=51) tot   -181,061  neg 6/7
+     Q2: mean     4,485 (n=51) tot    228,717  neg 3/8
+     Q3: mean     9,372 (n=51) tot    477,977  neg 2/8
+     Q4: mean     6,951 (n=51) tot    354,478  neg 2/8
+
+dRSI                 corr(feat,pnl)=-0.04
+     Q1: mean     7,352 (n=51) tot    374,932  neg 2/8
+     Q2: mean     2,042 (n=51) tot    104,132  neg 5/8
+     Q3: mean     4,007 (n=51) tot    204,348  neg 4/7
+     Q4: mean     3,857 (n=51) tot    196,698  neg 1/7
+
+dBBW                 corr(feat,pnl)=+0.08
+     Q1: mean    -1,130 (n=51) tot    -57,629  neg 6/8
+     Q2: mean     1,932 (n=51) tot     98,537  neg 4/8
+     Q3: mean     7,712 (n=51) tot    393,318  neg 1/8
+     Q4: mean     8,743 (n=51) tot    445,885  neg 0/7
+
+dPctB                corr(feat,pnl)=-0.01
+     Q1: mean     5,086 (n=51) tot    259,380  neg 3/8
+     Q2: mean     4,402 (n=51) tot    224,518  neg 5/8
+     Q3: mean     5,348 (n=51) tot    272,752  neg 2/7
+     Q4: mean     2,421 (n=51) tot    123,459  neg 3/8
+
+d_vs_sma50           corr(feat,pnl)=-0.01
+     Q1: mean     4,032 (n=51) tot    205,608  neg 3/8
+     Q2: mean     7,298 (n=51) tot    372,215  neg 3/8
+     Q3: mean     1,198 (n=51) tot     61,083  neg 3/7
+     Q4: mean     4,730 (n=51) tot    241,205  neg 2/7
+
+d_vs_sma200          corr(feat,pnl)=-0.04
+     Q1: mean     6,079 (n=51) tot    310,016  neg 2/7
+     Q2: mean       409 (n=51) tot     20,855  neg 4/8
+     Q3: mean     6,644 (n=51) tot    338,841  neg 2/5
+     Q4: mean     4,125 (n=51) tot    210,398  neg 0/5
+
+d_sma50_slope        corr(feat,pnl)=-0.10
+     Q1: mean     3,999 (n=51) tot    203,961  neg 3/8
+     Q2: mean     7,954 (n=51) tot    405,658  neg 2/8
+     Q3: mean     3,987 (n=51) tot    203,359  neg 0/6
+     Q4: mean     1,316 (n=51) tot     67,132  neg 1/7
+
+d_cloud_thick        corr(feat,pnl)=+0.00
+     Q1: mean     8,986 (n=51) tot    458,272  neg 1/8
+     Q2: mean     4,112 (n=51) tot    209,713  neg 2/8
+     Q3: mean     1,648 (n=51) tot     84,063  neg 1/8
+     Q4: mean     2,511 (n=51) tot    128,061  neg 4/8
+
+wCPRw_pct            corr(feat,pnl)=-0.03
+     Q1: mean     4,701 (n=51) tot    239,729  neg 1/8
+     Q2: mean     7,240 (n=51) tot    369,250  neg 2/7
+     Q3: mean     6,485 (n=51) tot    330,751  neg 2/8
+     Q4: mean    -1,169 (n=51) tot    -59,620  neg 4/8
+
+wCPRw_prev_pct       corr(feat,pnl)=+0.03
+     Q1: mean      -742 (n=51) tot    -37,851  neg 4/8
+     Q2: mean     6,023 (n=51) tot    307,197  neg 4/8
+     Q3: mean     3,545 (n=51) tot    180,772  neg 3/8
+     Q4: mean     8,431 (n=51) tot    429,994  neg 3/8
+
+wCPR_widening        corr(feat,pnl)=-0.05
+     Q1: mean     7,809 (n=51) tot    398,264  neg 2/8
+     Q2: mean     5,665 (n=51) tot    288,923  neg 3/8
+     Q3: mean     1,680 (n=51) tot     85,687  neg 2/8
+     Q4: mean     2,103 (n=51) tot    107,236  neg 4/8
+
+wRSI                 corr(feat,pnl)=-0.02
+     Q1: mean     3,341 (n=51) tot    170,377  neg 3/7
+     Q2: mean     5,997 (n=51) tot    305,834  neg 0/7
+     Q3: mean     1,793 (n=51) tot     91,429  neg 1/6
+     Q4: mean     6,127 (n=51) tot    312,470  neg 2/5
+
+wBBW                 corr(feat,pnl)=+0.03
+     Q1: mean     8,485 (n=51) tot    432,753  neg 1/8
+     Q2: mean     4,180 (n=51) tot    213,199  neg 1/8
+     Q3: mean       184 (n=51) tot      9,382  neg 6/7
+     Q4: mean     4,407 (n=51) tot    224,776  neg 2/5
+
+wPctB                corr(feat,pnl)=+0.02
+     Q1: mean     3,244 (n=51) tot    165,469  neg 4/8
+     Q2: mean     5,794 (n=51) tot    295,474  neg 1/7
+     Q3: mean       766 (n=51) tot     39,054  neg 3/7
+     Q4: mean     7,453 (n=51) tot    380,113  neg 1/7
+
+w_vs_sma20           corr(feat,pnl)=-0.09
+     Q1: mean     3,418 (n=51) tot    174,322  neg 5/8
+     Q2: mean     5,989 (n=51) tot    305,434  neg 0/7
+     Q3: mean     7,019 (n=51) tot    357,961  neg 0/6
+     Q4: mean       831 (n=51) tot     42,395  neg 4/7
+
+pwk_pos              corr(feat,pnl)=-0.02
+     Q1: mean     6,788 (n=51) tot    346,188  neg 3/8
+     Q2: mean     4,947 (n=51) tot    252,283  neg 3/8
+     Q3: mean      -513 (n=51) tot    -26,150  neg 3/8
+     Q4: mean     6,035 (n=51) tot    307,790  neg 1/7
+
+mRSI                 corr(feat,pnl)=+0.03
+     Q1: mean     1,917 (n=52) tot     99,701  neg 2/6
+     Q2: mean     4,080 (n=52) tot    212,145  neg 0/6
+     Q3: mean     3,813 (n=52) tot    198,302  neg 3/7
+     Q4: mean     7,708 (n=48) tot    369,962  neg 0/3
+
+mCPRw_pct            corr(feat,pnl)=+0.10
+     Q1: mean       958 (n=51) tot     48,868  neg 2/6
+     Q2: mean    10,688 (n=51) tot    545,108  neg 2/7
+     Q3: mean       955 (n=51) tot     48,704  neg 3/8
+     Q4: mean     4,655 (n=51) tot    237,430  neg 3/7
+
+m_vs_pivot           corr(feat,pnl)=-0.01
+     Q1: mean     3,277 (n=51) tot    167,129  neg 3/8
+     Q2: mean     6,021 (n=51) tot    307,077  neg 3/8
+     Q3: mean     6,470 (n=51) tot    329,995  neg 3/8
+     Q4: mean     1,488 (n=51) tot     75,908  neg 4/8
+
+
+############### FLAGGED SKIP-RULES (extreme bucket neg in >=4 yrs) ###############
+  SKIP dCPRw_pct bottom-quartile: drops n=51 totP&L=-181,061 neg6/7 mono=True corr=+0.12
+  SKIP dBBW bottom-quartile: drops n=51 totP&L=-57,629 neg6/8 mono=True corr=+0.08
+  SKIP wCPRw_pct top-quartile: drops n=51 totP&L=-59,620 neg4/8 mono=True corr=-0.03
+  SKIP wCPRw_prev_pct bottom-quartile: drops n=51 totP&L=-37,851 neg4/8 mono=True corr=+0.03
+
+
+############### CATEGORICAL GROUP MEANS (VIX>=13) ###############
+
+d_ichi:
+   d_ichi=-1: n= 56 mean     4,085 tot    228,742 neg 3/8
+   d_ichi= 0: n= 21 mean     7,475 tot    156,980 neg 3/8
+   d_ichi= 1: n=127 mean     3,893 tot    494,388 neg 1/7
+
+w_ichi:
+   w_ichi=-1: n= 23 mean     6,441 tot    148,143 neg 0/3
+   w_ichi= 0: n= 21 mean     3,855 tot     80,947 neg 3/5
+   w_ichi= 1: n=160 mean     4,069 tot    651,020 neg 2/8
+
+pwk_break:
+   pwk_break=-1: n= 42 mean     5,898 tot    247,707 neg 2/8
+   pwk_break= 0: n= 86 mean     3,849 tot    330,984 neg 2/8
+   pwk_break= 1: n= 76 mean     3,966 tot    301,419 neg 2/8
+
+d_inside:
+   d_inside= 0: n=183 mean     4,279 tot    783,076 neg 1/8
+   d_inside= 1: n= 21 mean     4,621 tot     97,034 neg 2/7
+
+w_inside:
+   w_inside= 0: n=186 mean     5,284 tot    982,800 neg 1/8
+   w_inside= 1: n= 18 mean    -5,705 tot   -102,690 neg 5/7
+
+
+############### WALK-FORWARD (pick threshold on TRAIN half, apply to TEST) ###############
+
+  dCPRw_pct (skip below thr):
+    train 2019-22 -> thr=0.123 -> TEST 2023-26: Calmar 0.52->1.22  P&L 443,464->457,768  DD -116,834->-51,434
+    train 2023-26 -> thr=0.102 -> TEST 2019-22: Calmar 0.59->0.92  P&L 436,647->526,387  DD -101,625->-78,157
+
+  dBBW (skip below thr):
+    train 2019-22 -> thr=6.062 -> TEST 2023-26: Calmar 0.52->0.68  P&L 443,464->240,643  DD -116,834->-48,148
+    train 2023-26 -> thr=4.136 -> TEST 2019-22: Calmar 0.59->0.60  P&L 436,647->447,819  DD -101,625->-102,489
+
+  wCPRw_pct (skip above thr):
+    train 2019-22 -> thr=0.544 -> TEST 2023-26: Calmar 0.52->1.37  P&L 443,464->343,100  DD -116,834->-34,393
+    train 2023-26 -> thr=0.367 -> TEST 2019-22: Calmar 0.59->0.56  P&L 436,647->300,722  DD -101,625->-73,030
+
+  wCPRw_prev_pct (skip below thr):
+    train 2019-22 -> thr=0.303 -> TEST 2023-26: Calmar 0.52->0.46  P&L 443,464->390,157  DD -116,834->-116,834
+    train 2023-26 -> thr=0.417 -> TEST 2019-22: Calmar 0.59->0.49  P&L 436,647->313,577  DD -101,625->-87,172
+
+DONE.
