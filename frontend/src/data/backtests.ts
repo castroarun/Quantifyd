@@ -698,6 +698,20 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         ],
         highlightRows: [5],
       },
+      {
+        title: 'Phase 32/33 — gradual de-risk refinements: two new client variants (daily-marked, fresh VPS data)',
+        caption:
+          'Two refinements of keep-top8 governing HOW the book de-risks in a downturn — both keep the NIFTYBEES-100SMA weekly gate. ★ "Keep-8 + Bear Trend-Trim" (RECOMMENDED) — when the market turns bear, keep the 8 highest-RS holdings (cash the weaker 7) AND, ONLY while bear, also exit any of those 8 that closes below its own 100-day SMA; refill to 15 at the next risk-on month-end. Best balance: Calmar 1.66→1.70, MaxDD −20.1%, post-tax 28.9%, low churn (~60 stock-exits/12y), never fully liquidates to debt. "Always-On Trend-Guard" — the same bear gate PLUS a per-stock 100-SMA exit that runs EVERY week (bull AND bear), so a holding breaking its 100-day trend is sold in any regime: lowest drawdown of any variant (−18.9%, Calmar 1.75) but ~1pp lower post-tax (27.8%) from extra bull-market churn-tax. Context rows: all-cash+weekly re-entry (highest return, but all-or-nothing exits) and the gate-less pure per-stock 100-SMA (REJECTED — DD −28 to −35%; the market gate is irreplaceable). Choose on client mandate: best balance vs lowest-drawdown vs max-return. All daily-marked on VPS data, 2014–2026; both baseline refs reproduce the locked engine exactly.',
+        columns: ['Variant (risk-off action)', 'CAGR %', 'Post-tax @20% %', 'MaxDD %', 'Sharpe', 'Calmar', 'Best for'],
+        rows: [
+          ['keep-top8 (baseline refinement)', '33.6', '28.3', '−20.2', '1.71', '1.66', 'simple gradual'],
+          ['★ Keep-8 + Bear Trend-Trim  (RECOMMENDED)', '34.2', '28.9', '−20.1', '1.76', '1.70', 'best balance · low churn · never full-dump'],
+          ['Always-On Trend-Guard', '32.9', '27.8', '−18.9', '1.73', '1.75', 'lowest drawdown'],
+          ['all-cash + weekly re-entry', '35.5', '29.0', '−20.7', '1.84', '1.72', 'max return (all-or-nothing exits)'],
+          ['pure per-stock 100-SMA, NO gate', '34.1', '26.1', '−28.2', '1.53', '1.21', 'REJECTED — gate irreplaceable'],
+        ],
+        highlightRows: [1],
+      },
     ],
 
     results: {
@@ -780,6 +794,11 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         },
       ],
       charts: [
+        {
+          src: '/app/midcap_finalists_yearly_heatmap.png',
+          caption:
+            'Yearly returns vs Nifty 50 (gross, daily-marked, 2014–2026) — the live de-risk finalists (all-cash + WEEKLY re-entry, keep-top8) plus the all-cash base. Both beat Nifty 50 in 9–10 of 13 years, compound ~34–35% vs Nifty 12.3%, hold MaxDD ~−20% vs Nifty −36%. Robustness (Phase 30): stable across disjoint halves (H1 ~30–31% / H2 ~37–40% CAGR); soft spots are large-cap-led years (2018, 2019, 2025 trail the index — both finalists were NEGATIVE in 2025) and the 2022–2026 third (~17–19%, weakest but still ~2× the index). The named refinements "Keep-8 + Bear Trend-Trim" (recommended) and "Always-On Trend-Guard" sit on the same selection core.',
+        },
         {
           src: '/app/midcap_momentum_factsheet.png',
           caption:
@@ -866,6 +885,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     ],
 
     githubLinks: [
+      { label: '📊 How the money moves — visual workflow chart (gradual de-risk mechanics)', href: '/app/midcap-workflow.html' },
       { label: 'research/41_midsmall400_mq_concentrated (folder)', href: GH },
       { label: '01_reconstruct_universe.py', href: `${GH}/scripts/01_reconstruct_universe.py` },
       { label: '02_rs_sweep.py', href: `${GH}/scripts/02_rs_sweep.py` },
@@ -1031,6 +1051,151 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\02_mq_portfolio_optimization\\reports\\',
       'research\\02_mq_portfolio_optimization\\scripts\\make_mq_report.py',
       'services\\mq_backtest_engine.py, services\\mq_portfolio.py',
+    ],
+  },
+
+  {
+    slug: 'momentum30-subselect',
+    title: 'Momentum-30 ETF Sub-Selection (reconstructed Nifty 200 Momentum 30)',
+    verdict:
+      'Instead of running our own factor model, piggyback a published momentum index: reconstruct the Nifty 200 Momentum 30 from methodology (no factsheets), then hold a concentrated, gated, Donchian-trailed sub-basket of it. Top-8 + a NIFTYBEES-100DMA regime gate + a per-stock 15-day Donchian trailing exit compounds at 33.4% gross / 29.0% post-tax CAGR at just −17.0% drawdown (Sharpe 1.78, net-Calmar ~1.5–1.7) vs NIFTYBEES 12.3% / −36.3%. STRATEGY candidate (G1→G3 PASS) — beats the research/41 midcap book. Key structural finding: the macro gate and the per-stock Donchian are COMPLEMENTARY, not substitutes.',
+    status: 'COMPLETE',
+    date: '2026-06-11',
+    cardBlurb:
+      'Reconstruct the Nifty 200 Momentum 30 from its published methodology (survivorship-free PIT top-200 by traded value → 6m/12m score → top-30), then hold the strongest 8 equal-weight with a buffer, a 100DMA market-regime cash gate, and a 15-day Donchian per-stock trailing stop. Monthly. Net of cost and tax.',
+    cardStats: [
+      { label: 'CAGR (gross)', value: '33.4%' },
+      { label: 'CAGR (post-tax 20%)', value: '29.0%' },
+      { label: 'MaxDD', value: '−17.0%' },
+    ],
+    system: {
+      intro: 'Long-only concentrated momentum sub-basket of a reconstructed factor index; the traded rules:',
+      rows: [
+        { k: 'Universe', v: 'Survivorship-free PIT top-200 by trailing-6-month median (close × volume) — a faithful Nifty-200 proxy rebuilt monthly from ~1,623 NSE daily symbols (not index membership).' },
+        { k: 'Factor score', v: 'Reconstructed Momentum-30: rank by 6-month & 12-month relative strength; the top-30 = the "ETF". (The authentic risk-adjusted z-score was tested and is NOT better once drawdown is controlled.)' },
+        { k: 'Hold', v: 'Top 8 of the 30, equal-weight, 100% invested.' },
+        { k: 'Buffer', v: 'Retain a name while it stays inside the top-22 of the 30 (low churn). Buffer size 18/22/26 is immaterial.' },
+        { k: 'Macro gate', v: 'NIFTYBEES vs its 100-day SMA, checked weekly → risk-off liquidates the book to cash.' },
+        { k: 'Per-stock exit', v: '15-day Donchian: exit a name on a close below its prior-15-day low; redeploy at the next month-end.' },
+        { k: 'Rotation', v: 'Monthly; daily-marked NAV for honest drawdown.' },
+        { k: 'Costs / tax', v: '0.4% round-trip on turnover (large-cap reality ~10–20 bps, so conservative); post-tax = 20% STCG on lots < 365 days.' },
+        { k: 'Backtest window', v: '2014→2026 (~12.4y, incl. 2018/2020/2022/2025 stress + the 2019 momentum dead-year).' },
+      ],
+    },
+    conditions: {
+      intro: 'Backtest window and benchmark.',
+      rows: [
+        { k: 'Period', v: 'Jan 2014 – May 2026 (~12.4 years).' },
+        { k: 'Benchmark', v: 'NIFTY-50 (NIFTYBEES), same window, excluded from the investable universe.' },
+        { k: 'Host', v: 'VPS market_data.db snapshot 2026-06-10; reproducible from committed scripts.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Annual return: strategy vs NIFTY 50',
+        columns: ['Year', 'Strategy %', 'NIFTYBEES %', 'Excess pp'],
+        rows: [
+          ['2014', '+117.6', '+31.6', '+86.0'],
+          ['2015', '−2.4', '−4.3', '+1.9'],
+          ['2016', '+45.6', '+4.0', '+41.6'],
+          ['2017', '+48.2', '+29.9', '+18.3'],
+          ['2018', '−0.4', '+4.8', '−5.2'],
+          ['2019', '−4.2', '+13.6', '−17.8'],
+          ['2020', '+59.2', '+15.4', '+43.8'],
+          ['2021', '+88.9', '+26.0', '+62.9'],
+          ['2022', '+14.0', '+5.5', '+8.5'],
+          ['2023', '+50.5', '+21.0', '+29.5'],
+          ['2024', '+44.7', '+10.4', '+34.3'],
+          ['2025', '+15.6', '+11.7', '+3.9'],
+          ['2026*', '−6.8', '−9.5', '+2.7'],
+        ],
+        highlightRows: [5],
+        heatmap: true,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'CAGR (gross)', value: '33.4%', tone: 'pos' },
+        { label: 'CAGR (post-tax 20%)', value: '29.0%', tone: 'pos' },
+        { label: 'NIFTYBEES CAGR', value: '12.3%' },
+        { label: 'Excess / yr', value: '+21.1%', tone: 'pos' },
+        { label: 'Sharpe', value: '1.78', tone: 'pos' },
+        { label: 'Max Drawdown', value: '−17.0%', tone: 'neg', hint: 'vs NIFTYBEES −36.3%' },
+        { label: 'Calmar (gross)', value: '1.97', tone: 'pos' },
+        { label: 'Yrs beating index', value: '85%' },
+      ],
+      tables: [
+        {
+          title: 'Strategy vs benchmark',
+          columns: ['Metric', 'Momentum-30 Sub', 'NIFTYBEES'],
+          rows: [
+            ['CAGR', '33.4%', '12.3%'],
+            ['Total return', '35.2x', '4.2x'],
+            ['Sharpe', '1.78', '0.88'],
+            ['Max Drawdown', '−17.0%', '−36.3%'],
+            ['Calmar', '1.97', '0.34'],
+          ],
+          highlightRows: [0, 1, 2, 3],
+        },
+        {
+          title: 'Why gate + Donchian (both needed) — MaxDD by risk layer',
+          columns: ['Risk layer', 'CAGR', 'MaxDD', 'net-Calmar'],
+          rows: [
+            ['No gate, no Donchian (base)', '25.4%', '−44.6%', '0.57'],
+            ['Donchian-15 only', '~25%', '~−32%', '0.77'],
+            ['Gate only', '25.4%', '−28.8%', '0.88'],
+            ['Gate + Donchian-15 (winner)', '33.4%', '−17.0%', '~1.7'],
+          ],
+          highlightRows: [3],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/momentum30-subselect-factsheet.png',
+          caption:
+            'CLIENT FACTSHEET — Momentum-30 Sub-Selection (Top-8 + 100DMA gate + Donchian-15) vs NIFTY 50, 2014–2026, net of 0.4% cost. KPI strip, growth-of-₹1 (log), drawdown-vs-index, annual bars, monthly heatmap, rolling 12m, stat tables. 33.4% CAGR (29.0% post-tax) vs 12.3%, 35.2x vs 4.2x, Sharpe 1.78, MaxDD −17.0% vs −36.3%, 85% of years beating the index. Generated by research/_utilities/tearsheet.py.',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'rsblend · N8 · buffer-22 · gate-100 · Donchian-15',
+        summary: 'Best risk-adjusted of a 288-cell sweep; the gate and the per-stock Donchian are complementary — gate alone −28.8% DD, Donchian alone ~−32%, together −17.0%.',
+        metrics: [
+          { k: 'CAGR', v: '33.4% gross / 29.0% net' },
+          { k: 'Excess', v: '+21.1%/yr vs NIFTYBEES' },
+          { k: 'Sharpe', v: '1.78' },
+          { k: 'MaxDD', v: '−17.0%' },
+          { k: 'net-Calmar', v: '~1.5–1.7' },
+        ],
+        rejected: [
+          'Dropping the gate (the original idea): no-gate book draws down −44.6% — Donchian helps but does not replace the gate.',
+          'Donchian-20 / -50: looser trails give worse DD and far weaker super-winner robustness; 15 wins.',
+          'The authentic risk-adjusted Momentum-30 z-score: same DD but ~8pp less CAGR than plain relative strength once DD-controlled.',
+        ],
+      },
+    ],
+    caveats: [
+      '2019 is the one genuine weak year (−4.2% vs index +13.6%) — the narrow Indian momentum dead-year; the gate kept it roughly flat but it missed the large-cap melt-up.',
+      'Multiple testing: 288 configs were searched; the winner sits on a stable plateau (N8 / any buffer / Donch-15 / gate-100) and survives cost-stress to 60 bps and a super-winner guard (Calmar holds 1.79 without its 3 best names), but the headline figure should carry a multiple-testing haircut — treat 29% net as the optimistic end.',
+      'Reconstruction is a faithful PROXY of the index, not the live NSE product (which uses risk-adjusted scores, free-float caps, semi-annual reconstitution). Validation against ~3 real factsheet dates is still owed before live capital.',
+      'Concentration/correlation (G4 pending): the 8 names currently lean PSU/defence/renewable; cluster-stress drawdown is not yet measured and could exceed the −17% backtest figure on a thematic unwind.',
+      'Backtest, net of modelled costs (and post-tax where stated). Nothing wired live. Past performance is not indicative of future results.',
+    ],
+    githubLinks: [
+      {
+        label: 'RESULTS.md (verdict + tables)',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/62_momentum_etf_subselect/results/RESULTS.md',
+      },
+      {
+        label: '62_mom30_subselect.py (engine)',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/62_momentum_etf_subselect/scripts/62_mom30_subselect.py',
+      },
+    ],
+    projectPaths: [
+      'research\\62_momentum_etf_subselect\\MOMENTUM30_ETF_SUBSELECT_DAILY_SWEEP_STATUS.md',
+      'research\\62_momentum_etf_subselect\\scripts\\62_mom30_subselect.py, 62b_g2_sweep.py',
+      'research\\62_momentum_etf_subselect\\results\\ (g2_sweep.csv, RESULTS.md, tearsheet.png)',
     ],
   },
 ];
