@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Strategies from './pages/Strategies';
 import Orb from './pages/Orb';
 import Nas from './pages/Nas';
+import NasConfig from './pages/NasConfig';
 import Straddles from './pages/Straddles';
 import NasPanic from './pages/NasPanic';
 import Nwv from './pages/Nwv';
@@ -111,6 +112,16 @@ export default function App() {
           <Protected>
             <AppLayout active="nas">
               <Nas />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/nas-config"
+        element={
+          <Protected>
+            <AppLayout active="nas-config">
+              <NasConfig />
             </AppLayout>
           </Protected>
         }

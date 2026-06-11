@@ -5019,6 +5019,51 @@ def api_nas_panic_status():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/nas/day-matrix', methods=['GET'])
+def api_nas_day_matrix_get():
+    """Day & Gap matrix for /app/nas-config + today's resolved DTE/gap."""
+    try:
+        from services.nas_day_matrix import load, SYSTEMS, trading_dte, compute_gap
+        m = load()
+        dte = trading_dte()
+        gap_pct, is_up, is_down = compute_gap(m)
+        return jsonify({
+            'matrix': m,
+            'systems': [{'key': k, 'label': lbl} for k, lbl in SYSTEMS],
+            'today': {'dte': dte, 'gap_pct': gap_pct,
+                      'is_gap_up': is_up, 'is_gap_down': is_down},
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/nas/day-matrix', methods=['POST'])
+def api_nas_day_matrix_post():
+    """Save the Day & Gap matrix from the UI."""
+    try:
+        from services.nas_day_matrix import load, save, SYSTEMS, DTES
+        body = request.get_json(force=True) or {}
+        m = load()
+        if 'gap_up_pct' in body:
+            m['gap_up_pct'] = max(0.0, float(body['gap_up_pct']))
+        if 'gap_down_pct' in body:
+            m['gap_down_pct'] = max(0.0, float(body['gap_down_pct']))
+        sysin = body.get('systems', {}) or {}
+        for k, _ in SYSTEMS:
+            if k in sysin:
+                row = sysin[k] or {}
+                tgt = m['systems'].setdefault(k, {})
+                tgt['dte'] = {str(d): bool((row.get('dte') or {}).get(str(d))) for d in DTES}
+                tgt['gap_up'] = bool(row.get('gap_up'))
+                tgt['gap_down'] = bool(row.get('gap_down'))
+                tgt['live'] = bool(row.get('live'))
+        save(m)
+        logger.warning("[NAS-MATRIX] saved day-matrix from UI")
+        return jsonify({'status': 'saved', 'matrix': m})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
 # The standalone Flask /nas-panic page was retired 2026-05-24 in favour
 # of the React page at /app/nas-panic. Keep a 302 so any stale bookmark
 # still lands at the right URL.

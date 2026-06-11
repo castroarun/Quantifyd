@@ -60,6 +60,21 @@ class NasExecutor:
             if _dt.now().weekday() in skip_days:
                 return False, f'Skipped today (weekday filter: {skip_days})'
 
+            # Day & Gap matrix gate (services.nas_day_matrix): per-system DTE/gap
+            # decides ENTRY; mode sets live/paper via cfg['_force_mode']. Keyed by
+            # cfg['matrix_key']. Fail-open to legacy if key absent or gate errors.
+            _mkey = cfg.get('matrix_key')
+            if _mkey:
+                try:
+                    from services.nas_day_matrix import gate as _mgate
+                    _mg = _mgate(_mkey)
+                except Exception:
+                    _mg = None
+                if _mg is not None:
+                    if not _mg.get('allow'):
+                        return False, 'day-matrix: ' + str(_mg.get('reason'))
+                    cfg['_force_mode'] = _mg.get('mode') or 'paper'
+
         # DTE entry gate (research/51): only OPEN new positions within
         # max_dte_at_entry days of the weekly expiry. The chain replay showed the
         # edge is at 1 DTE while 4+ DTE bleeds. Expiry-day-agnostic (live expiry);
@@ -145,8 +160,13 @@ class NasExecutor:
         now = datetime.now().isoformat()
         # Day-aware live/paper: REAL Kite orders only on live_weekdays (Mon/Tue/Fri);
         # every other day runs as PAPER so signals + P&L still record. 2026-06-03.
-        _live_day = datetime.now().weekday() in cfg.get('live_weekdays', (0, 1, 4))
-        _is_paper = cfg.get('paper_trading_mode', True) or (not _live_day)
+        # day-matrix gate (services.nas_day_matrix) overrides live/paper via cfg['_force_mode'].
+        _fm = cfg.get('_force_mode')
+        if _fm in ('live', 'paper'):
+            _is_paper = (_fm == 'paper')
+        else:
+            _live_day = datetime.now().weekday() in cfg.get('live_weekdays', (0, 1, 4))
+            _is_paper = cfg.get('paper_trading_mode', True) or (not _live_day)
         mode = 'paper' if _is_paper else 'live'
 
         position_id = self.db.add_position(
@@ -267,8 +287,12 @@ class NasExecutor:
         cfg = self.cfg
         # Same-day MIS: a position opened as paper is closed as paper. Day-aware so a
         # paper day never fires a real Kite close for a position with no real open.
-        paper = cfg.get('paper_trading_mode', True) or (
-            datetime.now().weekday() not in cfg.get('live_weekdays', (0, 1, 4)))
+        _fm = cfg.get('_force_mode')
+        if _fm in ('live', 'paper'):
+            paper = (_fm == 'paper')
+        else:
+            paper = cfg.get('paper_trading_mode', True) or (
+                datetime.now().weekday() not in cfg.get('live_weekdays', (0, 1, 4)))
 
         # Paper mode: fill immediately (unchanged behaviour).
         if paper:

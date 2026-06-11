@@ -1,0 +1,102 @@
+{
+  "gap_up_pct": 0.45,
+  "gap_down_pct": 0.45,
+  "systems": {
+    "nas": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false
+    },
+    "nas_atm": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false
+    },
+    "nas_atm2": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false
+    },
+    "nas_atm4": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false
+    },
+    "nas_916_otm": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false
+    },
+    "nas_916_atm": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": true
+    },
+    "nas_916_atm2": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": true,
+      "gap_down": true,
+      "live": true
+    },
+    "nas_916_atm4": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": true,
+        "1": true,
+        "0": true
+      },
+      "gap_up": true,
+      "gap_down": true,
+      "live": true
+    }
+  }
+}

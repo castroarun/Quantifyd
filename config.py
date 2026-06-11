@@ -550,6 +550,17 @@ NAS_ATM4_DEFAULTS['force_paper'] = True
 for _nas_cd in (NAS_DEFAULTS, NAS_ATM_DEFAULTS, NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
                 NAS_916_OTM_DEFAULTS, NAS_916_ATM_DEFAULTS, NAS_916_ATM2_DEFAULTS, NAS_916_ATM4_DEFAULTS):
     _nas_cd['reentry_cooldown_min'] = 15
+# 2026-06-11: matrix_key wires each variant to the Day & Gap matrix
+# (services.nas_day_matrix). Added AFTER the 916 spreads so each 916 variant
+# carries its OWN key, not the squeeze parent's.
+NAS_DEFAULTS['matrix_key'] = 'nas'
+NAS_ATM_DEFAULTS['matrix_key'] = 'nas_atm'
+NAS_ATM2_DEFAULTS['matrix_key'] = 'nas_atm2'
+NAS_ATM4_DEFAULTS['matrix_key'] = 'nas_atm4'
+NAS_916_OTM_DEFAULTS['matrix_key'] = 'nas_916_otm'
+NAS_916_ATM_DEFAULTS['matrix_key'] = 'nas_916_atm'
+NAS_916_ATM2_DEFAULTS['matrix_key'] = 'nas_916_atm2'
+NAS_916_ATM4_DEFAULTS['matrix_key'] = 'nas_916_atm4'
 
 # --- ORB: Opening Range Breakout (Cash Equity Intraday) ---
 
