@@ -158,15 +158,23 @@ if v2state:
             legc, legp = c, p
             series.append([hhmm, round((credit - (c + p)) * QTY - 160)])
     pnl_now = series[-1][1] if series else 0
-    # FULL multi-day journey: one EOD mark per trading day from entry to today; today = current mark.
+    # FULL journey: continuous path from entry datetime -> now, sampled every 30 min across each held
+    # day (intraday stitched across days), labelled "YYYY-MM-DD HH:MM".
     journey = []
+    jhh = []
+    _t = datetime.strptime("09:20", "%H:%M")
+    while _t <= datetime.strptime("15:15", "%H:%M"):
+        jhh.append(_t.strftime("%H:%M")); _t += timedelta(minutes=30)
     for d in (tdays(eday, DAY) if eday else []):
-        if d == DAY:
-            journey.append([d, pnl_now])
-        else:
-            cc = ltp_on(K, "CE", E, "15:15", d); pp = ltp_on(K, "PE", E, "15:15", d)
-            if cc and pp:
-                journey.append([d, round((credit - (cc + pp)) * QTY - 160)])
+        for hhmm in jhh:
+            if d == DAY and hhmm > NOW:
+                break
+            c = ltp_on(K, "CE", E, hhmm, d); p = ltp_on(K, "PE", E, hhmm, d)
+            if c and p:
+                journey.append([d + " " + hhmm, round((credit - (c + p)) * QTY - 160)])
+    last_label = DAY + " " + NOW   # ensure the live current mark is the final point
+    if eday and series and (not journey or journey[-1][0] != last_label):
+        journey.append([last_label, pnl_now])
     ce_mx = max_ltp(K, "CE", E, eday, DAY) if eday else None
     pe_mx = max_ltp(K, "PE", E, eday, DAY) if eday else None
     v2 = {"status": "open", "detail": "%dCE+%dPE (exp %s, %d-DTE) · credit Rs%.1f · entered %s" % (

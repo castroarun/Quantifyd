@@ -339,8 +339,8 @@ export default function Straddles() {
                 )}
                 <LegsTable legs={d.legs} total={d.pnl_now} />
                 {useJourney
-                  ? <LineChart pts={J} h={120}
-                      label={`trade journey · daily marks · entered ${d.entry_day} → now · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}`} />
+                  ? <LineChart pts={J} h={140}
+                      label={`trade journey · continuous (intraday across days) · entered ${d.entry_day} → now · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}`} />
                   : (d.series && d.series.length >= 2
                       ? <LineChart pts={d.series} h={120}
                           marker={d.exit && d.exit.time ? { time: d.exit.time, pnl: d.exit.pnl, text: 'exit' } : null}
