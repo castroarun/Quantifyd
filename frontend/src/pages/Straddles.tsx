@@ -17,7 +17,7 @@ interface DailyDay {
   dte: number; expiry: string; strike: number; credit: number;
 }
 interface V1Daily { version: string; trigger_pct: number; lots: number; lot: number; days: string[]; per_day: Record<string, DailyDay>; }
-interface Leg { type: 'CE' | 'PE'; strike: number; qty: number; side: string; entry: number | null; ltp: number | null; pnl: number; entry_time?: string | null; exit_time?: string | null; }
+interface Leg { type: 'CE' | 'PE'; strike: number; qty: number; side: string; entry: number | null; ltp: number | null; pnl: number; entry_time?: string | null; exit_time?: string | null; max_ltp?: number | null; }
 
 /* ---------- light theme tokens ---------- */
 const C = { ink: '#1B1B1A', muted: '#888780', faint: '#B4B2A9', sec: '#5F5E5A', hair: 'rgba(0,0,0,0.10)',
@@ -107,6 +107,7 @@ function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
         <th style={{ ...th, textAlign: 'left' }}>Leg</th>
         <th style={th}>Strike</th><th style={th}>Qty</th>
         <th style={th}>In</th><th style={th}>Entry</th><th style={th}>LTP</th>
+        <th style={{ ...th, color: C.faint }} title="Max premium the leg reached since entry (max adverse excursion)">Peak</th>
         <th style={th}>Out</th><th style={th}>P&amp;L</th>
       </tr></thead>
       <tbody>
@@ -120,12 +121,13 @@ function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
             <td style={{ ...td, color: C.sec }}>{tm(l.entry_time)}</td>
             <td style={td}>{px(l.entry)}</td>
             <td style={td}>{px(l.ltp)}</td>
+            <td style={{ ...td, color: C.faint, fontSize: 11.5, fontWeight: 400 }}>{l.max_ltp == null ? '—' : l.max_ltp.toFixed(1)}</td>
             <td style={{ ...td, color: l.exit_time ? C.neg : C.faint }}>{tm(l.exit_time)}</td>
             <td style={{ ...td, fontWeight: 700, color: col(l.pnl) }}>{inr(l.pnl)}</td>
           </tr>
         ))}
         <tr>
-          <td style={{ ...td, textAlign: 'left', color: C.muted, borderTop: `1px solid ${C.hair}` }} colSpan={7}>
+          <td style={{ ...td, textAlign: 'left', color: C.muted, borderTop: `1px solid ${C.hair}` }} colSpan={8}>
             Net · paper position (incl. costs)
           </td>
           <td style={{ ...td, fontWeight: 800, color: col(total), borderTop: `1px solid ${C.hair}` }}>{inr(total)}</td>
@@ -304,7 +306,13 @@ export default function Straddles() {
             </span>
           </div>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-            {[['V1 · intraday one-and-done', live.v1], ['V2 · positional bi-weekly', live.v2]].map(([title, d]: any) => (
+            {[['V1 · intraday one-and-done', live.v1], ['V2 · positional bi-weekly', live.v2]].map(([title, d]: any) => {
+              const J = d.journey;
+              const useJourney = Array.isArray(J) && J.length >= 2;
+              const comp = Array.isArray(d.completed) ? d.completed : null;
+              const cth: React.CSSProperties = { fontSize: 9.5, color: C.muted, fontWeight: 600, textAlign: 'right', padding: '2px 6px', textTransform: 'uppercase', borderBottom: `1px solid ${C.hairSoft}` };
+              const ctd: React.CSSProperties = { fontSize: 11, color: C.ink, textAlign: 'right', padding: '3px 6px', borderTop: `1px solid ${C.hairSoft}`, fontVariantNumeric: 'tabular-nums' };
+              return (
               <div key={title} style={{ flex: 1, minWidth: 300, border: `1px solid ${C.hair}`, borderRadius: 8, padding: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                   <span style={{ fontWeight: 700, color: C.ink }}>{title}</span>
@@ -313,14 +321,49 @@ export default function Straddles() {
                   </span>
                 </div>
                 <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 6px' }}>{d.detail}</div>
+                {useJourney && d.entry_day && (
+                  <div style={{ marginBottom: 6 }}>
+                    {chip(C.navySoft, C.navy, `entered ${d.entry_day}`)}{' '}
+                    <span style={{ fontSize: 11, color: C.muted }}>positional carry · {J.length} day{J.length === 1 ? '' : 's'} of marks</span>
+                  </div>
+                )}
                 <LegsTable legs={d.legs} total={d.pnl_now} />
-                {d.series && d.series.length >= 2
-                  ? <LineChart pts={d.series} h={120}
-                      marker={d.exit && d.exit.time ? { time: d.exit.time, pnl: d.exit.pnl, text: 'exit' } : null}
-                      label={`intraday running P&L · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}${d.exit && d.exit.time ? ` · stop-exit ${d.exit.time} @ ${inr(d.exit.pnl)}` : ''}`} />
-                  : <div style={{ fontSize: 12, color: C.faint, padding: 8 }}>{d.status === 'idle' ? 'no trade today (not 0/1-DTE)' : '—'}</div>}
+                {useJourney
+                  ? <LineChart pts={J} h={120}
+                      label={`trade journey · daily marks · entered ${d.entry_day} → now · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}`} />
+                  : (d.series && d.series.length >= 2
+                      ? <LineChart pts={d.series} h={120}
+                          marker={d.exit && d.exit.time ? { time: d.exit.time, pnl: d.exit.pnl, text: 'exit' } : null}
+                          label={`intraday running P&L · low ${inr(d.low || 0)} · high ${inr(d.high || 0)}${d.exit && d.exit.time ? ` · stop-exit ${d.exit.time} @ ${inr(d.exit.pnl)}` : ''}`} />
+                      : <div style={{ fontSize: 12, color: C.faint, padding: 8 }}>{d.status === 'idle' ? 'no trade today (not 0/1-DTE)' : '—'}</div>)}
+                {comp && (
+                  <details style={{ marginTop: 8 }}>
+                    <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 600, color: C.navy, listStyle: 'none' }}>
+                      ▸ Completed trades ({comp.length})
+                    </summary>
+                    {comp.length === 0
+                      ? <div style={{ fontSize: 11, color: C.faint, padding: '6px 0' }}>None yet — the current open position is the first (entered {d.entry_day}).</div>
+                      : <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+                          <thead><tr>
+                            <th style={{ ...cth, textAlign: 'left' }}>#</th><th style={{ ...cth, textAlign: 'left' }}>Entry</th>
+                            <th style={{ ...cth, textAlign: 'left' }}>Exit</th><th style={cth}>Strike</th>
+                            <th style={cth}>Exit P&amp;L</th><th style={{ ...cth, textAlign: 'left' }}>Reason</th>
+                          </tr></thead>
+                          <tbody>{comp.map((t: any, i: number) => (
+                            <tr key={i}>
+                              <td style={{ ...ctd, textAlign: 'left' }}>{t.n}</td>
+                              <td style={{ ...ctd, textAlign: 'left' }}>{t.entry_day}</td>
+                              <td style={{ ...ctd, textAlign: 'left' }}>{t.exit_day}</td>
+                              <td style={ctd}>{t.strike}</td>
+                              <td style={{ ...ctd, fontWeight: 700, color: col(t.exit_pnl) }}>{inr(t.exit_pnl)}</td>
+                              <td style={{ ...ctd, textAlign: 'left', color: C.muted }}>{t.reason}</td>
+                            </tr>))}</tbody>
+                        </table>}
+                  </details>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · live-quote P&amp;L ticks ~every 3s during market (positions/chart refresh every minute) · recorded daily. Backtest history below.</div>
           <RulesBlock />

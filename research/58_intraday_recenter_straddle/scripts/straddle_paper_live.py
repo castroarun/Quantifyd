@@ -36,14 +36,23 @@ def ltp(strike, ot, E, hhmm):
     return ltp_on(strike, ot, E, hhmm, DAY)
 def dte(E, day=DAY):
     return (datetime.strptime(E, "%Y-%m-%d").date() - datetime.strptime(day, "%Y-%m-%d").date()).days
-def build_legs(K, ce_e, pe_e, cnow, pnow, entry_time=None, exit_time=None):
-    def leg(ot, e, now):
+def max_ltp(strike, ot, E, frm, to):
+    # peak premium the leg reached over [frm..to] (max adverse excursion for a short)
+    r = oc.execute("SELECT MAX(ltp) FROM option_chain WHERE expiry_date=? AND strike=? AND instrument_type=? "
+                   "AND substr(snapshot_time,1,10) BETWEEN ? AND ? AND ltp>0", (E, strike, ot, frm, to)).fetchone()
+    return float(r[0]) if r and r[0] else None
+def tdays(frm, to):
+    return [r[0] for r in oc.execute("SELECT DISTINCT substr(snapshot_time,1,10) FROM underlying_spot "
+            "WHERE symbol='NIFTY' AND substr(snapshot_time,1,10) BETWEEN ? AND ? AND spot_price>0 ORDER BY 1", (frm, to))]
+def build_legs(K, ce_e, pe_e, cnow, pnow, entry_time=None, exit_time=None, ce_max=None, pe_max=None):
+    def leg(ot, e, now, mx):
         return {"type": ot, "strike": K, "qty": QTY, "side": "SELL",
                 "entry": (round(e, 2) if e is not None else None),
                 "ltp": (round(now, 2) if now is not None else None),
+                "max_ltp": (round(mx, 2) if mx is not None else None),
                 "entry_time": entry_time, "exit_time": exit_time,
                 "pnl": (round((e - now) * QTY) if (e is not None and now is not None) else 0)}
-    return [leg("CE", ce_e, cnow), leg("PE", pe_e, pnow)]
+    return [leg("CE", ce_e, cnow, ce_max), leg("PE", pe_e, pnow, pe_max)]
 def now_hhmm():
     # IST is UTC+5:30 regardless of server TZ. When regenerating a PAST trading
     # day, replay the full session (15:15) — don't cap the replay at today's clock.
@@ -91,12 +100,17 @@ if exps:  # live: track V1 every day (edge is 0/1-DTE; non-0/1 shown for trackin
                   "strike": K, "expiry": E, "credit": round(credit, 1),
                   "exit": ({"time": exit_t, "pnl": final} if stopped else None),
                   "pnl_now": (final if final is not None else (series[-1][1] if series else 0)), "series": series,
-                  "legs": build_legs(K, ce0, pe0, legc, legp, "09:20", exit_t)}
+                  "legs": build_legs(K, ce0, pe0, legc, legp, "09:20", exit_t,
+                                     max_ltp(K, "CE", E, DAY, DAY), max_ltp(K, "PE", E, DAY, DAY))}
 elif exps:
     v1 = {"status": "idle", "detail": "nearest %s is %d-DTE -- V1 trades 0/1-DTE only (Mon/Tue)" % (exps[0], dte(exps[0])),
           "pnl_now": 0, "series": [], "legs": []}
 
 # ---- V2: positional bi-weekly, carried -----------------------------------
+TRADES = os.path.join(ROOT, "backtest_data", "straddle_v2_trades.json")   # completed V2 trade log
+def load_trades():
+    try: return json.load(open(TRADES))
+    except Exception: return []
 v2state = {}
 try:
     v2state = json.load(open(V2ST))
@@ -110,6 +124,18 @@ if v2state and ("ce_entry" not in v2state) and v2state.get("entry_day"):
         v2state["ce_entry"] = round(ce_e, 2); v2state["pe_entry"] = round(pe_e, 2)
         json.dump(v2state, open(V2ST, "w"))
 need_entry = (not v2state) or (v2state.get("expiry") and dte(v2state["expiry"]) < 1)
+# Log the OLD (rolling) position as a COMPLETED trade before re-entry (idempotent by entry_day).
+if need_entry and v2state.get("entry_day"):
+    oK, oE, ocr = v2state["strike"], v2state["expiry"], v2state["credit"]
+    oc_ = ltp_on(oK, "CE", oE, NOW, DAY) or ltp_on(oK, "CE", oE, "15:15", DAY)
+    op_ = ltp_on(oK, "PE", oE, NOW, DAY) or ltp_on(oK, "PE", oE, "15:15", DAY)
+    if oc_ and op_:
+        trs = load_trades()
+        if not any(t.get("entry_day") == v2state["entry_day"] for t in trs):
+            trs.append({"n": len(trs) + 1, "entry_day": v2state["entry_day"], "exit_day": DAY,
+                        "strike": oK, "expiry": oE, "credit": ocr,
+                        "exit_pnl": round((ocr - (oc_ + op_)) * QTY - 160), "reason": "roll (DTE<1)"})
+            json.dump(trs, open(TRADES, "w"))
 if need_entry and len(exps) > 1:
     E = exps[1]; s0 = spot_at("09:20")
     if s0:
@@ -120,9 +146,10 @@ if need_entry and len(exps) > 1:
                        "ce_entry": round(ce0, 2), "pe_entry": round(pe0, 2), "entry_day": DAY}
             json.dump(v2state, open(V2ST, "w"))
 
-v2 = {"status": "flat", "detail": "no position", "pnl_now": 0, "series": [], "legs": []}
+v2 = {"status": "flat", "detail": "no position", "pnl_now": 0, "series": [], "journey": [],
+      "legs": [], "completed": load_trades()}
 if v2state:
-    K = v2state["strike"]; E = v2state["expiry"]; credit = v2state["credit"]
+    K = v2state["strike"]; E = v2state["expiry"]; credit = v2state["credit"]; eday = v2state.get("entry_day")
     series = []; legc = v2state.get("ce_entry"); legp = v2state.get("pe_entry")
     for hhmm in GRID:
         if hhmm > NOW: break
@@ -130,16 +157,28 @@ if v2state:
         if c and p:
             legc, legp = c, p
             series.append([hhmm, round((credit - (c + p)) * QTY - 160)])
+    pnl_now = series[-1][1] if series else 0
+    # FULL multi-day journey: one EOD mark per trading day from entry to today; today = current mark.
+    journey = []
+    for d in (tdays(eday, DAY) if eday else []):
+        if d == DAY:
+            journey.append([d, pnl_now])
+        else:
+            cc = ltp_on(K, "CE", E, "15:15", d); pp = ltp_on(K, "PE", E, "15:15", d)
+            if cc and pp:
+                journey.append([d, round((credit - (cc + pp)) * QTY - 160)])
+    ce_mx = max_ltp(K, "CE", E, eday, DAY) if eday else None
+    pe_mx = max_ltp(K, "PE", E, eday, DAY) if eday else None
     v2 = {"status": "open", "detail": "%dCE+%dPE (exp %s, %d-DTE) · credit Rs%.1f · entered %s" % (
-              K, K, E, dte(E), credit, v2state.get("entry_day")),
-          "strike": K, "expiry": E, "credit": credit, "entry_day": v2state.get("entry_day"),
-          "pnl_now": (series[-1][1] if series else 0), "series": series,
+              K, K, E, dte(E), credit, eday),
+          "strike": K, "expiry": E, "credit": credit, "entry_day": eday,
+          "pnl_now": pnl_now, "series": series, "journey": journey, "completed": load_trades(),
           "legs": build_legs(K, v2state.get("ce_entry"), v2state.get("pe_entry"), legc, legp,
-                             "09:20", None)}
+                             "09:20", None, ce_mx, pe_mx)}
 
 # ---- assemble + write ----------------------------------------------------
 def stats(s):
-    ys = [v for _, v in s.get("series", [])]
+    ys = [v for _, v in (s.get("journey") or s.get("series") or [])]
     return {"low": min(ys) if ys else 0, "high": max(ys) if ys else 0}
 v1.update(stats(v1)); v2.update(stats(v2))
 out = {"updated_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "day": DAY, "lots": LOTS, "v1": v1, "v2": v2}
