@@ -147,8 +147,8 @@ groups = [
              (" — squareoff window" if eod_pending else " — intraday, ok"))),
     ]},
     {"name": "Engine liveness", "checks": [
-        chk("Ticker / websocket", "option feed", "ok" if ticker.get("running") else "warn",
-            "subscribed & ticking" if ticker.get("running") else "ticker status unavailable"),
+        chk("Ticker / websocket", "option feed", "ok" if ticker.get("is_running") else "warn",
+            "subscribed & ticking" if ticker.get("is_running") else "ticker status unavailable"),
         chk("Kite / broker connection", "broker API", "ok" if broker_ok else "fail",
             "positions, orders & margins reachable" if broker_ok else "Kite error: " + broker_err[:60]),
     ]},
