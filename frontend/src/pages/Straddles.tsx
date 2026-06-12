@@ -84,6 +84,63 @@ function LineChart({ pts, h = 130, label, marker }: { pts: [string, number][]; h
   );
 }
 
+/* ---------- expiry payoff diagram (live current-spot marker) ---------- */
+function PayoffChart({ legs, qty, spot, entrySpot, stopDn, stopUp, h = 190 }:
+  { legs: any[]; qty: number; spot?: number | null; entrySpot: number; stopDn?: number; stopUp?: number; h?: number }) {
+  if (!legs || !legs.length || !entrySpot) return null;
+  const payoff = (S: number) => {
+    let pnl = 0;
+    for (const l of legs) {
+      const e = Number(l.entry), K = Number(l.strike);
+      if (!isFinite(e) || !isFinite(K)) continue;
+      const intr = l.instrument_type === 'CE' ? Math.max(S - K, 0) : Math.max(K - S, 0);
+      pnl += l.side === 'SELL' ? e - intr : -e + intr;
+    }
+    return pnl * qty;
+  };
+  const lo = entrySpot * 0.94, hi = entrySpot * 1.06, N = 140;
+  const pts: [number, number][] = [];
+  for (let i = 0; i <= N; i++) { const S = lo + (i / N) * (hi - lo); pts.push([S, payoff(S)]); }
+  const ys = pts.map((p) => p[1]); const ymin = Math.min(...ys), ymax = Math.max(...ys), yr = ymax - ymin || 1;
+  const W = 600, PADL = 52, PADR = 10, PADT = 14, PADB = 22;
+  const X = (S: number) => PADL + ((S - lo) / (hi - lo)) * (W - PADL - PADR);
+  const Y = (v: number) => PADT + (1 - (v - ymin) / yr) * (h - PADT - PADB);
+  const fL = (v: number) => `${v >= 0 ? '+' : '−'}${(Math.abs(v) / 1e5).toFixed(1)}L`;
+  const bes: number[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    if ((a[1] <= 0 && b[1] > 0) || (a[1] >= 0 && b[1] < 0)) bes.push(Math.round(a[0] + (a[1] / (a[1] - b[1])) * (b[0] - a[0])));
+  }
+  const posLine = pts.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>
+        Payoff at expiry · max profit <b style={{ color: C.pos }}>{fL(ymax)}</b> · max loss <b style={{ color: C.neg }}>{fL(ymin)}</b> (capped by wings)
+        {bes.length === 2 ? ` · breakevens ${bes[0].toLocaleString('en-IN')} / ${bes[1].toLocaleString('en-IN')}` : ''}
+      </div>
+      <svg viewBox={`0 0 ${W} ${h}`} width="100%" height={h} preserveAspectRatio="none" style={{ display: 'block' }}>
+        <line x1={PADL} x2={W - PADR} y1={Y(0)} y2={Y(0)} stroke="rgba(0,0,0,0.22)" strokeWidth="1" />
+        <text x={PADL - 6} y={Y(0) + 3} textAnchor="end" fontSize="9.5" fill={C.muted}>0</text>
+        <text x={PADL - 6} y={Y(ymax) + 9} textAnchor="end" fontSize="9.5" fill={C.pos}>{fL(ymax)}</text>
+        <text x={PADL - 6} y={Y(ymin) - 2} textAnchor="end" fontSize="9.5" fill={C.neg}>{fL(ymin)}</text>
+        {stopDn ? <line x1={X(stopDn)} x2={X(stopDn)} y1={PADT} y2={h - PADB} stroke={C.neg} strokeWidth="1" strokeDasharray="3 3" opacity="0.55" /> : null}
+        {stopUp ? <line x1={X(stopUp)} x2={X(stopUp)} y1={PADT} y2={h - PADB} stroke={C.neg} strokeWidth="1" strokeDasharray="3 3" opacity="0.55" /> : null}
+        <polyline points={posLine} fill="none" stroke={C.navy} strokeWidth="2" />
+        {spot ? (
+          <g>
+            <line x1={X(spot)} x2={X(spot)} y1={PADT} y2={h - PADB} stroke={C.pos} strokeWidth="1.5" />
+            <circle cx={X(spot)} cy={Y(payoff(spot))} r="3.6" fill="#fff" stroke={C.pos} strokeWidth="2" />
+            <text x={X(spot)} y={PADT - 2} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={C.pos}>now {Math.round(spot).toLocaleString('en-IN')}</text>
+          </g>
+        ) : null}
+        {[lo, entrySpot, hi].map((S, k) => (
+          <text key={k} x={X(S)} y={h - 6} fontSize="9.5" fill={C.muted} textAnchor={k === 0 ? 'start' : k === 2 ? 'end' : 'middle'}>{Math.round(S).toLocaleString('en-IN')}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 const card: React.CSSProperties = { border: `1px solid ${C.hair}`, background: C.surface, borderRadius: 10, padding: '16px 18px', marginBottom: 18, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' };
 const stat = (label: string, value: string, c?: string) => (
   <div><div style={{ fontSize: 11, color: C.muted }}>{label}</div><div style={{ fontSize: 19, fontWeight: 700, color: c || C.ink }}>{value}</div></div>
@@ -91,6 +148,8 @@ const stat = (label: string, value: string, c?: string) => (
 const chip = (bg: string, fg: string, t: string) => (
   <span style={{ background: bg, color: fg, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>{t}</span>
 );
+const ecth: React.CSSProperties = { fontSize: 10, color: C.muted, fontWeight: 600, textAlign: 'right', padding: '2px 6px', borderBottom: `1px solid ${C.hairSoft}` };
+const ectd: React.CSSProperties = { fontSize: 11, color: C.ink, textAlign: 'right', padding: '3px 6px', fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${C.hairSoft}` };
 
 /* ---------- live positions table (trade-book style) ---------- */
 function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
@@ -424,12 +483,19 @@ export default function Straddles() {
                   ))}
                 </tbody>
               </table>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+                Entered <b style={{ color: C.ink }}>{v2eng.open.day} · {v2eng.open.entry_time}</b> <span style={{ color: C.faint }}>(position-level — one entry/exit timestamp for all legs)</span>
+              </div>
               {Array.isArray(v2eng.open.series) && v2eng.open.series.length >= 2 && (
                 <div style={{ marginTop: 8 }}>
                   <LineChart pts={v2eng.open.series} h={120}
                     label={`intraday running P&L · low ${inr(v2eng.open.low || 0)} · high ${inr(v2eng.open.high || 0)}`} />
                 </div>
               )}
+              <div style={{ marginTop: 10 }}>
+                <PayoffChart legs={v2eng.open.legs} qty={650} spot={v2spot || v2eng.open.entry_spot}
+                  entrySpot={v2eng.open.entry_spot} stopDn={v2eng.open.stop_dn} stopUp={v2eng.open.stop_up} />
+              </div>
             </div>
           ) : (
             <div style={{ fontSize: 13, color: C.muted, padding: '6px 2px' }}>Flat — waiting for a qualifying entry (VIX≥13 + filter not triggered).</div>
@@ -443,11 +509,31 @@ export default function Straddles() {
               Inside-week breakout sleeve: <b>{bo.open ? `OPEN (${bo.open.legs?.length}-leg)` : 'flat'}</b> · closed {bo.closed_trades} ({inr(bo.closed_total_pnl)}) · UP→call debit · DOWN→broken-wing fly · paper-only.
             </div>
           )}
+          {Array.isArray(v2eng.closed) && v2eng.closed.length > 0 && (
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C.navy, listStyle: 'none' }}>▸ Completed trades ({v2eng.closed_trades})</summary>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+                <thead><tr>
+                  <th style={ecth}>#</th><th style={{ ...ecth, textAlign: 'left' }}>Entry (date · time)</th>
+                  <th style={{ ...ecth, textAlign: 'left' }}>Exit (date · time)</th>
+                  <th style={{ ...ecth, textAlign: 'left' }}>Reason</th><th style={ecth}>P&amp;L</th>
+                </tr></thead>
+                <tbody>{v2eng.closed.map((t: any, i: number) => (
+                  <tr key={i}>
+                    <td style={ectd}>{t.id}</td>
+                    <td style={{ ...ectd, textAlign: 'left' }}>{t.day} · {t.entry_time}</td>
+                    <td style={{ ...ectd, textAlign: 'left' }}>{(t.exit_day || '—')} · {(t.exit_time || '—')}</td>
+                    <td style={{ ...ectd, textAlign: 'left', color: C.muted }}>{t.exit_reason}</td>
+                    <td style={{ ...ectd, fontWeight: 700, color: col(t.pnl) }}>{inr(t.pnl)}</td>
+                  </tr>))}</tbody>
+              </table>
+            </details>
+          )}
           <details style={{ marginTop: 10 }}>
             <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C.navy }}>System rules — V2 engine (click to expand)</summary>
             <div style={{ fontSize: 11.5, color: C.sec, marginTop: 6, lineHeight: 1.7 }}>
-              <div><b>Instrument:</b> short 2nd-nearest weekly NIFTY ATM straddle + ±500-pt wings (2% of ATM) = short iron fly, overnight carry.</div>
-              <div><b>Entry:</b> 09:20 if India VIX ≥ 13 AND the combo skip-filter passes.</div>
+              <div><b>Instrument:</b> short 2nd-nearest weekly NIFTY ATM straddle + <b>2%-of-ATM wings</b> (snapped to the 50-pt strike grid — ≈±450 at NIFTY 23.4k today; <b>not a fixed 500</b>) = short iron fly, overnight carry.</div>
+              <div><b>Entry / when it starts:</b> 09:20 on any trading day the book is <b>flat</b> — sells the <b>2nd-nearest weekly</b> (must be <b>≥ 4 calendar days to expiry</b>), gated by <b>VIX ≥ 13</b> + the combo skip-filter. <b>No fixed weekday</b>: entries follow the roll cycle — it re-arms the morning after the prior fly rolls (DTE ≤ 1), so in practice it re-enters ~weekly. The scheduler checks at 09:20 Mon–Fri.</div>
               <div><b>Skip-filter (live):</b> skip entry when prior-day CPR width &lt; 0.10% OR last week was an inside week — every skip is shadow-logged for forward validation.</div>
               <div><b>Exits:</b> 2% underlying move-stop · +40% credit profit-target · roll at DTE ≤ 1, then re-enter.</div>
               <div><b>Stop band:</b> fixed at entry = entry-spot ±2% (the exact NIFTY levels are shown on the open position). A move-stop, not a premium-stop — it triggers on the underlying, not on the option P&L.</div>

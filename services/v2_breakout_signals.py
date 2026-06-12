@@ -101,11 +101,13 @@ def _leg(side, itype, strike, role):
 
 
 def v2_fly_legs(spot: float) -> list[dict]:
-    """Symmetric short iron fly (the V2 base book)."""
+    """Symmetric short iron fly (the V2 base book). Wings = 2% of ATM snapped to the strike step
+    (matches the backtest's AlgoTest '% of ATM' — NOT a fixed point width)."""
     k = atm_strike(spot)
+    wing = max(STEP, int(round(k * 0.02 / STEP) * STEP))   # 2% of ATM -> nearest strike (e.g. 23450 -> 450)
     return [
         _leg("SELL", "CE", k, "body"), _leg("SELL", "PE", k, "body"),
-        _leg("BUY", "CE", k + WING, "wing"), _leg("BUY", "PE", k - WING, "wing"),
+        _leg("BUY", "CE", k + wing, "wing"), _leg("BUY", "PE", k - wing, "wing"),
     ]
 
 

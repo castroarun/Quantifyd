@@ -152,7 +152,7 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         system TEXT, day TEXT, entry_time TEXT, entry_spot REAL, entry_vix REAL,
         expiry TEXT, dte_entry INTEGER, legs_json TEXT, net_entry REAL,
-        status TEXT DEFAULT 'OPEN', exit_time TEXT, exit_reason TEXT, exit_spot REAL,
+        status TEXT DEFAULT 'OPEN', exit_time TEXT, exit_day TEXT, exit_reason TEXT, exit_spot REAL,
         net_exit REAL, pnl REAL, pnl_now REAL, mode TEXT DEFAULT 'paper',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP );
       CREATE TABLE IF NOT EXISTS v2_shadow_skips (
@@ -161,6 +161,10 @@ def init_db():
     """)
     try:
         c.execute("ALTER TABLE v2_positions ADD COLUMN series_json TEXT DEFAULT '[]'")
+    except Exception:
+        pass        # column already exists
+    try:
+        c.execute("ALTER TABLE v2_positions ADD COLUMN exit_day TEXT")
     except Exception:
         pass        # column already exists
     c.commit(); c.close()
@@ -235,9 +239,9 @@ def _close(pos, reason, spot, at_time=None):
     pnl = _pnl_now(legs)
     xt = at_time or datetime.now().strftime("%H:%M:%S")   # candle label for move-stop, else wall-clock
     c = _conn()
-    c.execute("UPDATE v2_positions SET status='CLOSED',exit_time=?,exit_reason=?,exit_spot=?,"
+    c.execute("UPDATE v2_positions SET status='CLOSED',exit_time=?,exit_day=?,exit_reason=?,exit_spot=?,"
               "net_exit=?,pnl=?,pnl_now=?,legs_json=? WHERE id=?",
-              (xt, reason, spot, _net_premium(legs),
+              (xt, date.today().isoformat(), reason, spot, _net_premium(legs),
                round(pnl), round(pnl), json.dumps(legs), pos["id"]))
     c.commit(); c.close()
     logger.info(f"[V2] PAPER EXIT {pos['system']} ({reason}) pnl={pnl:.0f}")
@@ -352,7 +356,7 @@ def _state(system):
     tot = c.execute("SELECT COALESCE(SUM(pnl),0), COUNT(*) FROM v2_positions WHERE system=? AND status='CLOSED'",
                     (system,)).fetchone()
     closed = [dict(r) for r in c.execute(
-        "SELECT id,day,entry_time,exit_time,exit_reason,entry_spot,net_entry,pnl FROM v2_positions "
+        "SELECT id,day,entry_time,exit_day,exit_time,exit_reason,entry_spot,net_entry,pnl FROM v2_positions "
         "WHERE system=? AND status='CLOSED' ORDER BY id DESC LIMIT 50", (system,))]
     c.close()
     return {"system": system, "mode": "paper" if CFG["force_paper"] else "live",
@@ -365,7 +369,7 @@ def get_v2_state():
     sk = [dict(r) for r in c.execute("SELECT day,reasons,spot,vix FROM v2_shadow_skips ORDER BY id DESC LIMIT 60")]
     c.close()
     s["shadow_skips"] = sk
-    s["config"] = {"vix_floor": CFG["vix_floor"], "wings": "±500 (2%)", "stop": "2% move",
+    s["config"] = {"vix_floor": CFG["vix_floor"], "wings": "2% of ATM (snapped to 50)", "stop": "2% move",
                    "pt": "40%", "lots": CFG["lots"], "qty": QTY,
                    "filter": "skip if prior-day CPR<0.10% OR inside-week",
                    "margin_est": "≈₹9.6L (₹95.8k/lot)"}
