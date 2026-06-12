@@ -7389,6 +7389,60 @@ def _nas_916_eod_squareoff():
             logger.error(f"[{name}] EOD squareoff error: {e}")
 
 
+def _nas_squeeze_sl_monitor():
+    """Poll the SQUEEZE ATM variants' active positions every 10s and run their own
+    check_and_handle_sl() over REST. Backstop independent of the ticker — added
+    2026-06-12 after squeeze ATM2/ATM4 23350 CE ran 30+ pts past SL because the
+    ticker-only SL handler skipped the leg. Mirrors _nas_916_sl_monitor."""
+    now = datetime.now()
+    if not (now.weekday() < 5 and (9, 15) <= (now.hour, now.minute) <= (15, 30)):
+        return
+    from services.nas_atm_executor import NasAtmExecutor
+    from services.nas_atm2_executor import NasAtm2Executor
+    from services.nas_atm4_executor import NasAtm4Executor
+    from services.kite_service import get_kite
+    variants = [
+        ('NAS-ATM', NAS_ATM_DEFAULTS, NasAtmExecutor),
+        ('NAS-ATM2', NAS_ATM2_DEFAULTS, NasAtm2Executor),
+        ('NAS-ATM4', NAS_ATM4_DEFAULTS, NasAtm4Executor),
+    ]
+    try:
+        kite = get_kite()
+    except Exception as e:
+        logger.warning(f"[NAS-SQ-SL] Kite not available: {e}")
+        return
+    for label, cfg, cls in variants:
+        try:
+            if not cfg.get('enabled', True):
+                continue
+            executor = cls(config=cfg)
+            active = executor.db.get_active_positions() or []
+            if not active:
+                continue
+            syms = list({p['tradingsymbol'] for p in active if p.get('tradingsymbol')})
+            if not syms:
+                continue
+            ltp_map = {}
+            try:
+                resp = kite.ltp([f'NFO:{s}' for s in syms]) or {}
+                for s in syms:
+                    v = resp.get(f'NFO:{s}')
+                    if v and v.get('last_price'):
+                        ltp_map[s] = v['last_price']
+            except Exception as e:
+                logger.warning(f"[{label}] ltp fetch failed: {e}")
+                continue
+            if not ltp_map:
+                continue
+            if not hasattr(executor, 'check_and_handle_sl'):
+                continue
+            actions = executor.check_and_handle_sl(positions=active, live_ltps=ltp_map)
+            if actions:
+                logger.info(f"[{label}] SQUEEZE SL backstop: {len(actions)} actions")
+        except Exception as e:
+            logger.error(f"[{label}] squeeze SL monitor error: {e}", exc_info=True)
+
+
 def _nas_916_sl_monitor():
     """Poll each 9:16 system's active positions every 10s and run its own
     check_and_handle_sl(). Fixes the gap where nas_ticker.py only wires SL
@@ -7480,6 +7534,12 @@ try:
         _nas_916_sl_monitor,
         'interval', seconds=10,
         id='nas_916_sl_monitor', replace_existing=True,
+    )
+    # Squeeze SL backstop (10s REST poll) — independent of the ticker (fix 2026-06-12)
+    scheduler.add_job(
+        _nas_squeeze_sl_monitor,
+        'interval', seconds=10,
+        id='nas_squeeze_sl_monitor', replace_existing=True,
     )
     # EOD squareoff at 3:15 PM
     scheduler.add_job(

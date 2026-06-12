@@ -116,7 +116,7 @@ class NasAtmExecutor:
                 from datetime import datetime as _cd
                 def _pt(ts):
                     s = str(ts) if ts else ''
-                    for _fmt in ('%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
+                    for _fmt in ('%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
                         try:
                             return _cd.strptime(s[:26], _fmt)
                         except Exception:
