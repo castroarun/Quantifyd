@@ -309,7 +309,17 @@ export default function Straddles() {
             {[['V1 · intraday one-and-done', live.v1], ['V2 · positional bi-weekly', live.v2]].map(([title, d]: any) => {
               const J = d.journey;
               const useJourney = Array.isArray(J) && J.length >= 2;
-              const comp = Array.isArray(d.completed) ? d.completed : null;
+              const isV1 = String(title).startsWith('V1');
+              // V1 is one-and-done: build its completed log from the daily history (strike/final/stop/exit-time per day).
+              const v1Comp = isV1 && daily
+                ? daily.days.slice().reverse().map((dd) => {
+                    const x = daily.per_day[dd];
+                    return { n: daily.days.indexOf(dd) + 1, entry_day: dd,
+                      exit_day: x.stopped && x.exit ? x.exit.time : '15:15', strike: x.strike,
+                      exit_pnl: x.final, reason: x.stopped ? 'stop hit' : 'held to close' };
+                  })
+                : null;
+              const comp = isV1 ? v1Comp : (Array.isArray(d.completed) ? d.completed : null);
               const cth: React.CSSProperties = { fontSize: 9.5, color: C.muted, fontWeight: 600, textAlign: 'right', padding: '2px 6px', textTransform: 'uppercase', borderBottom: `1px solid ${C.hairSoft}` };
               const ctd: React.CSSProperties = { fontSize: 11, color: C.ink, textAlign: 'right', padding: '3px 6px', borderTop: `1px solid ${C.hairSoft}`, fontVariantNumeric: 'tabular-nums' };
               return (
@@ -342,7 +352,7 @@ export default function Straddles() {
                       ▸ Completed trades ({comp.length})
                     </summary>
                     {comp.length === 0
-                      ? <div style={{ fontSize: 11, color: C.faint, padding: '6px 0' }}>None yet — the current open position is the first (entered {d.entry_day}).</div>
+                      ? <div style={{ fontSize: 11, color: C.faint, padding: '6px 0' }}>{isV1 ? 'No recorded days yet.' : `None yet — the current open position is the first (entered ${d.entry_day}).`}</div>
                       : <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
                           <thead><tr>
                             <th style={{ ...cth, textAlign: 'left' }}>#</th><th style={{ ...cth, textAlign: 'left' }}>Entry</th>
