@@ -32,7 +32,11 @@ ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "backtest_data" / "v2_ironfly_trading.db"
 NIFTY_TOKEN = 256265
 
-CFG = dict(force_paper=True, live_weekdays=(0, 1, 4), vix_floor=13.0,
+# force_paper is the BREAK-GLASS master switch: while True, live is hard-disabled no matter
+# what the app toggle says. We set it False so the PAPER/LIVE control on the app governs — but
+# real trading still requires (a) persisted mode=='live' AND (b) armed=='1' (set only by an
+# explicit Deploy click). Out of the box mode=paper + armed=0, so nothing trades until you act.
+CFG = dict(force_paper=False, live_weekdays=(0, 1, 4), vix_floor=13.0,
            lots=10, lot_size=65, stop_pct=0.02, pt_pct=0.40,
            min_entry_dte=4, roll_dte=1, brokerage=20.0,
            slippage_pct=0.0025)   # 0.25% of premium — matches the AlgoTest backtest net basis
@@ -158,6 +162,7 @@ def init_db():
       CREATE TABLE IF NOT EXISTS v2_shadow_skips (
         id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT, reasons TEXT, spot REAL, vix REAL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP );
+      CREATE TABLE IF NOT EXISTS v2_settings (key TEXT PRIMARY KEY, val TEXT);
     """)
     try:
         c.execute("ALTER TABLE v2_positions ADD COLUMN series_json TEXT DEFAULT '[]'")
@@ -168,6 +173,34 @@ def init_db():
     except Exception:
         pass        # column already exists
     c.commit(); c.close()
+
+
+# ---------- persisted mode / arming ----------
+def _setting(key, default):
+    c = _conn()
+    c.execute("CREATE TABLE IF NOT EXISTS v2_settings (key TEXT PRIMARY KEY, val TEXT)")
+    r = c.execute("SELECT val FROM v2_settings WHERE key=?", (key,)).fetchone()
+    c.close()
+    return r["val"] if r else default
+
+
+def _set_setting(key, val):
+    c = _conn()
+    c.execute("CREATE TABLE IF NOT EXISTS v2_settings (key TEXT PRIMARY KEY, val TEXT)")
+    c.execute("INSERT INTO v2_settings(key,val) VALUES(?,?) "
+              "ON CONFLICT(key) DO UPDATE SET val=excluded.val", (key, str(val)))
+    c.commit(); c.close()
+
+
+def _mode():
+    """Effective trading mode. force_paper hard-pins to 'paper' (break-glass)."""
+    if CFG["force_paper"]:
+        return "paper"
+    return "live" if _setting("mode", "paper") == "live" else "paper"
+
+
+def _armed():
+    return _setting("armed", "0") == "1"
 
 
 def _hhmm():
@@ -204,17 +237,17 @@ def _pnl_now(legs):
     return per * QTY - brok - slip
 
 
-def _insert(system, spot, vix, expiry, legs):
+def _insert(system, spot, vix, expiry, legs, mode="paper"):
     dte = (expiry - date.today()).days
     c = _conn()
     c.execute("INSERT INTO v2_positions (system,day,entry_time,entry_spot,entry_vix,expiry,dte_entry,"
-              "legs_json,net_entry,status,mode) VALUES (?,?,?,?,?,?,?,?,?, 'OPEN','paper')",
+              "legs_json,net_entry,status,mode) VALUES (?,?,?,?,?,?,?,?,?, 'OPEN',?)",
               (system, date.today().isoformat(), datetime.now().strftime("%H:%M:%S"), spot, vix,
-               expiry.isoformat(), dte, json.dumps(legs), _net_premium(legs)))
+               expiry.isoformat(), dte, json.dumps(legs), _net_premium(legs), mode))
     pid = c.lastrowid
     c.execute("UPDATE v2_positions SET series_json=? WHERE id=?", (json.dumps([[_hhmm(), 0]]), pid))
     c.commit(); c.close()
-    logger.info(f"[V2] PAPER ENTRY {system} spot={spot:.0f} vix={vix} net={_net_premium(legs):.1f} "
+    logger.info(f"[V2] {mode.upper()} ENTRY {system} spot={spot:.0f} vix={vix} net={_net_premium(legs):.1f} "
                 f"legs={[(l['side'],l['instrument_type'],l['strike']) for l in legs]}")
 
 
@@ -234,9 +267,15 @@ def _refresh_marks(pos):
 
 def _close(pos, reason, spot, at_time=None):
     legs = json.loads(pos["legs_json"])
-    for lg in legs:
-        lg["exit"] = lg["ltp"]
-    pnl = _pnl_now(legs)
+    live = pos.get("mode") == "live"
+    if live:
+        legs = _exit_live(legs)                # place reverse orders; lg["exit"] = real fill price
+        per = sum(((l["entry"] - l["exit"]) if l["side"] == "SELL" else (l["exit"] - l["entry"])) for l in legs)
+        pnl = per * QTY - len(legs) * 2 * CFG["brokerage"]   # real fills already include slippage
+    else:
+        for lg in legs:
+            lg["exit"] = lg["ltp"]
+        pnl = _pnl_now(legs)                    # paper: modeled brokerage + slippage
     xt = at_time or datetime.now().strftime("%H:%M:%S")   # candle label for move-stop, else wall-clock
     c = _conn()
     c.execute("UPDATE v2_positions SET status='CLOSED',exit_time=?,exit_day=?,exit_reason=?,exit_spot=?,"
@@ -244,35 +283,139 @@ def _close(pos, reason, spot, at_time=None):
               (xt, date.today().isoformat(), reason, spot, _net_premium(legs),
                round(pnl), round(pnl), json.dumps(legs), pos["id"]))
     c.commit(); c.close()
-    logger.info(f"[V2] PAPER EXIT {pos['system']} ({reason}) pnl={pnl:.0f}")
+    logger.info(f"[V2] {'LIVE' if live else 'PAPER'} EXIT {pos['system']} ({reason}) pnl={pnl:.0f}")
+
+
+# ---------- LIVE order execution (real money) ----------
+def _place_order(sym, txn):
+    """Place one MARKET NRML leg. Returns broker order_id."""
+    return _kite().place_order(variety="regular", exchange="NFO", tradingsymbol=sym,
+                               transaction_type=txn, quantity=QTY, product="NRML",
+                               order_type="MARKET", validity="DAY")
+
+
+def _fill_price(order_id, tries=20, pause=0.4):
+    """Poll until the order is COMPLETE (avg price) or terminal-failed (None)."""
+    import time as _t
+    for _ in range(tries):
+        try:
+            for o in _kite().orders():
+                if o["order_id"] == order_id:
+                    if o["status"] == "COMPLETE":
+                        return float(o["average_price"])
+                    if o["status"] in ("REJECTED", "CANCELLED"):
+                        logger.error(f"[V2] order {order_id} {o['status']}: {o.get('status_message')}")
+                        return None
+        except Exception as e:
+            logger.warning(f"[V2] orders() poll failed: {e}")
+        _t.sleep(pause)
+    logger.error(f"[V2] order {order_id} did not confirm COMPLETE in time")
+    return None
+
+
+def _margin_check(legs):
+    """(need, avail, ok) from Kite SPAN+exposure vs available equity margin. Fail-closed."""
+    try:
+        orders = [dict(exchange="NFO", tradingsymbol=lg["sym"], transaction_type=lg["side"],
+                       variety="regular", product="NRML", order_type="MARKET", quantity=QTY)
+                  for lg in legs]
+        m = _kite().basket_order_margins(orders, consider_positions=True, mode="compact")
+        need = float(m["final"]["total"])
+        avail = float(_kite().margins("equity")["net"])
+        return need, avail, (avail >= need)
+    except Exception as e:
+        logger.error(f"[V2] margin check failed (fail-closed): {e}")
+        return None, None, False
+
+
+def _enter_live(system, spot, vix, expiry, legs):
+    """Place the fly for REAL: BUY wings first (margin benefit), then SELL the body.
+    Any leg failure rolls back everything placed so far -> returns to flat, aborts."""
+    need, avail, ok = _margin_check(legs)
+    if not ok:
+        logger.error(f"[V2] LIVE entry ABORTED: margin need={need} avail={avail}")
+        return False
+    ordered = sorted(legs, key=lambda l: 0 if l["side"] == "BUY" else 1)   # wings (BUY) first
+    filled = []
+    for lg in ordered:
+        try:
+            oid = _place_order(lg["sym"], lg["side"])
+        except Exception as e:
+            logger.error(f"[V2] LIVE place_order threw {lg['side']} {lg['sym']}: {e}")
+            oid = None
+        fp = _fill_price(oid) if oid else None
+        if fp is None:
+            logger.error(f"[V2] LIVE leg failed ({lg['side']} {lg['sym']}) — rolling back {len(filled)} fills")
+            for f in filled:
+                rev = "SELL" if f["side"] == "BUY" else "BUY"
+                try:
+                    _place_order(f["sym"], rev)
+                except Exception as e:
+                    logger.error(f"[V2] ROLLBACK FAILED {f['sym']}: {e} — MANUAL REVIEW")
+            return False
+        filled.append({**lg, "entry": fp, "ltp": fp, "exit": None, "order_id": oid})
+    _insert(system, spot, vix, expiry, filled, mode="live")
+    return True
+
+
+def _exit_live(legs):
+    """Square off each leg with the reverse MARKET order; set lg['exit'] to the real fill."""
+    out = []
+    for lg in legs:
+        rev = "BUY" if lg["side"] == "SELL" else "SELL"
+        try:
+            oid = _place_order(lg["sym"], rev)
+            fp = _fill_price(oid)
+        except Exception as e:
+            logger.error(f"[V2] LIVE exit place_order threw {lg['sym']}: {e}")
+            fp = None
+        out.append({**lg, "exit": fp if fp is not None else lg.get("ltp", lg["entry"])})
+    return out
 
 
 # ---------- scheduler jobs ----------
-def entry_job():
-    """09:20 — open the V2 fly if flat & gates pass; else shadow-log the skip."""
-    init_db()
+def _do_entry(force=False):
+    """Core entry — paper or live per _mode(). Respects VIX/combo gates unless force=True.
+    Returns {entered: bool, reason: str}. Shadow-logs skips."""
     if _open("v2"):
-        return
+        return {"entered": False, "reason": "already in a position"}
     daily = _daily_df()
     if daily is None or len(daily) < 30:
-        logger.info("[V2] entry: no daily bars"); return
+        return {"entered": False, "reason": "no daily bars"}
     today = pd.Timestamp(date.today())
     spot = _spot(); vix = _vix()
     if spot is None or vix is None:
-        logger.info("[V2] entry: no spot/vix"); return
-    if vix < CFG["vix_floor"]:
-        _shadow(today, [f"vix<{CFG['vix_floor']}({vix})"], spot, vix); return
-    skip, reasons = combo_skip(daily, today)
-    if skip:
-        _shadow(today, reasons, spot, vix)
-        logger.info(f"[V2] entry SKIP {reasons} (shadow-logged)"); return
+        return {"entered": False, "reason": "no live spot/VIX"}
+    if not force:
+        if vix < CFG["vix_floor"]:
+            _shadow(today, [f"vix<{CFG['vix_floor']}({vix})"], spot, vix)
+            return {"entered": False, "reason": f"VIX {vix} < {CFG['vix_floor']} floor"}
+        skip, reasons = combo_skip(daily, today)
+        if skip:
+            _shadow(today, reasons, spot, vix)
+            logger.info(f"[V2] entry SKIP {reasons} (shadow-logged)")
+            return {"entered": False, "reason": "skip-filter: " + ",".join(reasons)}
     exp = _second_weekly()
     if not exp or (exp - date.today()).days < CFG["min_entry_dte"]:
-        logger.info(f"[V2] entry: no suitable 2nd-weekly (exp={exp})"); return
+        return {"entered": False, "reason": f"no 2nd-weekly with DTE≥{CFG['min_entry_dte']} (exp={exp})"}
     legs = _resolve(v2_fly_legs(spot), exp)
     if not legs:
+        return {"entered": False, "reason": "could not resolve/quote legs"}
+    if _mode() == "live":
+        ok = _enter_live("v2", spot, vix, exp, legs)
+        return {"entered": ok, "reason": "LIVE entry placed" if ok else "LIVE entry failed — see logs"}
+    _insert("v2", spot, vix, exp, legs, mode="paper")
+    return {"entered": True, "reason": "paper entry"}
+
+
+def entry_job():
+    """09:20 cron — auto-entry. In live mode this fires only when armed (post-Deploy)."""
+    init_db()
+    if _open("v2"):
         return
-    _insert("v2", spot, vix, exp, legs)
+    if _mode() == "live" and not _armed():
+        return                                   # live but disarmed: wait for an explicit Deploy
+    _do_entry(force=False)
 
 
 def _shadow(today, reasons, spot, vix):
@@ -359,7 +502,7 @@ def _state(system):
         "SELECT id,day,entry_time,exit_day,exit_time,exit_reason,entry_spot,net_entry,pnl FROM v2_positions "
         "WHERE system=? AND status='CLOSED' ORDER BY id DESC LIMIT 50", (system,))]
     c.close()
-    return {"system": system, "mode": "paper" if CFG["force_paper"] else "live",
+    return {"system": system, "mode": _mode(),
             "open": pos, "closed_total_pnl": round(tot[0] or 0), "closed_trades": tot[1], "closed": closed}
 
 
@@ -369,11 +512,77 @@ def get_v2_state():
     sk = [dict(r) for r in c.execute("SELECT day,reasons,spot,vix FROM v2_shadow_skips ORDER BY id DESC LIMIT 60")]
     c.close()
     s["shadow_skips"] = sk
+    mode = _mode(); armed = _armed(); flat = s["open"] is None
+    s["mode"] = mode
+    s["armed"] = armed
+    s["live_enabled"] = not CFG["force_paper"]
+    s["deployable"] = (mode == "live" and flat and not armed)
     s["config"] = {"vix_floor": CFG["vix_floor"], "wings": "2% of ATM (snapped to 50)", "stop": "2% move",
                    "pt": "40%", "lots": CFG["lots"], "qty": QTY,
                    "filter": "skip if prior-day CPR<0.10% OR inside-week",
-                   "margin_est": "≈₹9.6L (₹95.8k/lot)"}
+                   "margin_est": "≈₹7.0L (₹70k/lot, Kite SPAN — floats with VIX)"}
     return s
+
+
+def set_mode(mode):
+    """Toggle PAPER <-> LIVE. Allowed only when flat. Never auto-arms."""
+    init_db()
+    if mode not in ("paper", "live"):
+        return {"ok": False, "error": "mode must be 'paper' or 'live'"}
+    if mode == "live" and CFG["force_paper"]:
+        return {"ok": False, "error": "live is hard-disabled in code (force_paper=True)"}
+    if _open("v2") or _open("breakout"):
+        return {"ok": False, "error": "square off the open position before switching mode"}
+    _set_setting("mode", mode)
+    _set_setting("armed", "0")
+    logger.warning(f"[V2] MODE -> {mode} (armed reset to 0)")
+    return {"ok": True, "mode": mode, "armed": False}
+
+
+def deploy(force=False):
+    """Explicit go-live: ARM automation and place the first trade now. LIVE + flat only.
+    After this, rolls and re-entries are automatic until kill-switch disarms."""
+    init_db()
+    if _mode() != "live":
+        return {"ok": False, "error": "not in LIVE mode — toggle to LIVE first"}
+    if _open("v2"):
+        return {"ok": False, "error": "already in a position"}
+    _set_setting("armed", "1")
+    res = _do_entry(force=bool(force))
+    res["ok"] = True
+    res["armed"] = True
+    logger.warning(f"[V2] DEPLOY(force={force}) entered={res.get('entered')} ({res.get('reason')})")
+    return res
+
+
+def get_preview():
+    """Dry-run preview of the exact legs + margin + gate a Deploy would use right now."""
+    init_db()
+    if _mode() != "live":
+        return {"ok": False, "error": "not in live mode"}
+    if _open("v2"):
+        return {"ok": False, "error": "already in a position"}
+    spot = _spot(); vix = _vix(); exp = _second_weekly()
+    if not spot or not exp:
+        return {"ok": False, "error": "no live spot/expiry"}
+    legs = _resolve(v2_fly_legs(spot), exp)
+    if not legs:
+        return {"ok": False, "error": "could not resolve/quote legs"}
+    need, avail, ok = _margin_check(legs)
+    gate = "—"
+    daily = _daily_df()
+    if daily is not None and len(daily) >= 30:
+        if vix is not None and vix < CFG["vix_floor"]:
+            gate = f"BLOCKED · VIX {vix} < {CFG['vix_floor']}"
+        else:
+            skip, reasons = combo_skip(daily, pd.Timestamp(date.today()))
+            gate = ("BLOCKED · " + ",".join(reasons)) if skip else "PASS"
+    return {"ok": True, "spot": round(spot), "vix": vix, "expiry": exp.isoformat(),
+            "dte": (exp - date.today()).days, "net_credit": round(_net_premium(legs), 1),
+            "legs": [{"side": l["side"], "instrument_type": l["instrument_type"],
+                      "strike": l["strike"], "premium": round(l["entry"], 2)} for l in legs],
+            "margin_need": round(need) if need else None,
+            "margin_avail": round(avail) if avail else None, "margin_ok": ok, "gate": gate}
 
 
 def get_breakout_state():
@@ -385,14 +594,16 @@ def get_breakout_state():
 
 
 def kill_switch():
-    """Close all open paper positions immediately at current marks."""
+    """Close all open positions NOW (live = real reverse MARKET orders) and DISARM automation."""
     init_db(); spot = _spot()
     n = 0
     for system in ("v2", "breakout"):
         pos = _open(system)
         if pos:
             _refresh_marks(pos); _close(pos, "kill_switch", spot or pos["entry_spot"]); n += 1
-    return {"closed": n}
+    _set_setting("armed", "0")
+    logger.warning(f"[V2] KILL-SWITCH: closed {n}, automation disarmed")
+    return {"closed": n, "armed": False}
 
 
 def stream():
@@ -430,12 +641,17 @@ def stream():
 
 
 def register(app, scheduler):
-    from flask import jsonify, Response
+    from flask import jsonify, Response, request
     init_db()
     app.add_url_rule("/api/v2-ironfly/state", "v2_ironfly_state", lambda: jsonify(get_v2_state()))
     app.add_url_rule("/api/v2-breakout/state", "v2_breakout_state", lambda: jsonify(get_breakout_state()))
     app.add_url_rule("/api/v2-ironfly/scan", "v2_ironfly_scan", lambda: (entry_job() or jsonify({"ok": True})), methods=["POST"])
     app.add_url_rule("/api/v2-ironfly/kill-switch", "v2_ironfly_kill", lambda: jsonify(kill_switch()), methods=["POST"])
+    app.add_url_rule("/api/v2-ironfly/mode", "v2_ironfly_mode",
+                     lambda: jsonify(set_mode((request.get_json(silent=True) or {}).get("mode"))), methods=["POST"])
+    app.add_url_rule("/api/v2-ironfly/deploy", "v2_ironfly_deploy",
+                     lambda: jsonify(deploy(bool((request.get_json(silent=True) or {}).get("force")))), methods=["POST"])
+    app.add_url_rule("/api/v2-ironfly/preview", "v2_ironfly_preview", lambda: jsonify(get_preview()))
     app.add_url_rule("/api/v2-ironfly/stream", "v2_ironfly_stream",
                      lambda: Response(stream(), mimetype="text/event-stream",
                                       headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}))

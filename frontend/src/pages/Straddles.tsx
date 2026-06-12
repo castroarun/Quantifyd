@@ -268,6 +268,9 @@ export default function Straddles() {
   const [bo, setBo] = useState<any>(null);          // inside-week breakout sleeve
   const [v2engTs, setV2engTs] = useState<number | null>(null);  // last v2-engine live tick
   const [v2spot, setV2spot] = useState<number | null>(null);    // live NIFTY spot from the stream
+  const [v2prev, setV2prev] = useState<any>(null);   // live deploy preview (legs + margin + gate)
+  const [v2busy, setV2busy] = useState(false);       // an action is in flight
+  const [v2msg, setV2msg] = useState<string | null>(null);  // last action result message
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -354,6 +357,44 @@ export default function Straddles() {
   useEffect(() => {
     if (daily && !dayD && daily.days.length) setDayD(daily.days[daily.days.length - 1]);
   }, [daily, dayD]);
+
+  // ----- V2 live executor controls -----
+  const refreshV2 = () => fetch('/api/v2-ironfly/state?t=' + Date.now()).then((r) => r.json()).then(setV2eng).catch(() => {});
+  const v2post = async (path: string, body?: any) => {
+    setV2busy(true); setV2msg(null);
+    try {
+      const r = await fetch('/api/v2-ironfly/' + path, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
+      });
+      const j = await r.json();
+      if (j.error) setV2msg('⚠ ' + j.error);
+      else if (path === 'deploy') setV2msg(j.entered ? '✓ Live trade deployed — automation armed.' : '⚠ Armed, but no entry today: ' + (j.reason || ''));
+      else if (path === 'mode') setV2msg('Mode → ' + String(j.mode || '').toUpperCase() + ' (disarmed)');
+      else if (path === 'kill-switch') setV2msg('Kill-switch: closed ' + (j.closed ?? 0) + ', automation disarmed.');
+      await refreshV2();
+      return j;
+    } catch { setV2msg('⚠ request failed'); }
+    finally { setV2busy(false); }
+  };
+  const v2SetMode = (mode: string) => {
+    if (mode === 'live' && !window.confirm('Switch the V2 engine to LIVE (real-money) mode?\n\nThis only ENABLES live — no order is placed until you click Deploy.')) return;
+    v2post('mode', { mode });
+  };
+  const v2Deploy = (force: boolean) => {
+    const p = v2prev;
+    const detail = p && p.ok
+      ? `\n\nLegs: ${p.legs.map((l: any) => `${l.side} ${l.strike}${l.instrument_type}`).join(', ')}\nNet credit: ${p.net_credit}   Margin: ₹${(p.margin_need || 0).toLocaleString('en-IN')} (avail ₹${(p.margin_avail || 0).toLocaleString('en-IN')})\nFilter gate: ${p.gate}` : '';
+    if (!window.confirm(`Deploy a REAL 10-lot NIFTY iron fly now?${detail}\n\n${force ? '⚠ FORCE = bypass the VIX / skip-filter gate.\n\n' : ''}After this, rolls & re-entries run automatically until you kill-switch.`)) return;
+    v2post('deploy', { force });
+  };
+  const v2Kill = () => {
+    if (!window.confirm('KILL-SWITCH — square off the open position now (real orders if live) and disarm automation?')) return;
+    v2post('kill-switch');
+  };
+  useEffect(() => {
+    if (v2eng?.deployable) fetch('/api/v2-ironfly/preview?t=' + Date.now()).then((r) => r.json()).then(setV2prev).catch(() => setV2prev(null));
+    else setV2prev(null);
+  }, [v2eng?.deployable, v2eng?.mode]);
 
   const days1 = v1 ? Object.keys(v1.per_day).sort() : [];
   const btn = (sel: boolean, c: string): React.CSSProperties => ({
@@ -462,8 +503,10 @@ export default function Straddles() {
       {v2eng && (
         <section style={{ ...card, marginTop: 14, borderColor: C.pos }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 Engine · live paper executor</span>
-            {chip('#E7F2EE', C.pos, 'PAPER · combo filter')}
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 Engine · iron-fly executor</span>
+            {v2eng.mode === 'live'
+              ? chip('#FBEEEE', C.neg, v2eng.armed ? 'LIVE · armed' : 'LIVE · disarmed')
+              : chip('#E7F2EE', C.pos, 'PAPER · combo filter')}
             {v2engTs && (Date.now() / 1000 - v2engTs) < 12 && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: C.pos }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.pos, display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -474,6 +517,70 @@ export default function Straddles() {
               {v2engTs ? `live-quote ${new Date(v2engTs * 1000).toLocaleTimeString('en-IN', { hour12: false })} · ` : ''}closed {v2eng.closed_trades} · <b style={{ color: col(v2eng.closed_total_pnl) }}>{inr(v2eng.closed_total_pnl)}</b>
             </span>
           </div>
+
+          {/* ---- PAPER / LIVE control bar ---- */}
+          {v2eng.mode != null && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10,
+                          padding: '8px 10px', borderRadius: 8,
+                          background: v2eng.mode === 'live' ? '#FBEEEE' : '#F3F7F5',
+                          border: `1px solid ${v2eng.mode === 'live' ? '#E3B7B7' : C.hairSoft}` }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 0.4 }}>MODE</span>
+              <div style={{ display: 'inline-flex', border: `1px solid ${C.hair}`, borderRadius: 6, overflow: 'hidden' }}>
+                {['paper', 'live'].map((mm) => {
+                  const disabled = v2busy || !!v2eng.open || (mm === 'live' && v2eng.live_enabled === false);
+                  return (
+                    <button key={mm} disabled={disabled} onClick={() => v2SetMode(mm)} title={v2eng.open ? 'square off before switching mode' : ''}
+                      style={{ cursor: disabled ? 'not-allowed' : 'pointer', border: 'none', padding: '5px 14px',
+                               fontSize: 12, fontWeight: 700, opacity: disabled && v2eng.mode !== mm ? 0.5 : 1,
+                               background: v2eng.mode === mm ? (mm === 'live' ? C.neg : C.pos) : C.surface,
+                               color: v2eng.mode === mm ? '#fff' : C.muted }}>
+                      {mm.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+              {v2eng.mode === 'live' && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: v2eng.armed ? C.neg : C.muted }}>
+                  {v2eng.armed ? '● ARMED · rolls automated' : '○ disarmed'}
+                </span>
+              )}
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                {v2eng.deployable && (
+                  <button disabled={v2busy} onClick={() => v2Deploy(false)}
+                    style={{ cursor: v2busy ? 'wait' : 'pointer', border: 'none', borderRadius: 6, padding: '6px 16px',
+                             fontSize: 12.5, fontWeight: 800, background: C.neg, color: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.15)' }}>
+                    ▶ Deploy live trade
+                  </button>
+                )}
+                {v2eng.open && (
+                  <button disabled={v2busy} onClick={v2Kill}
+                    style={{ cursor: v2busy ? 'wait' : 'pointer', border: `1px solid ${C.neg}`, borderRadius: 6,
+                             padding: '5px 12px', fontSize: 12, fontWeight: 700, background: '#fff', color: C.neg }}>
+                    ✕ Kill-switch
+                  </button>
+                )}
+              </div>
+              {v2eng.deployable && v2prev?.ok && (
+                <div style={{ flexBasis: '100%', fontSize: 11, color: C.sec, marginTop: 2 }}>
+                  Will place: <b>{v2prev.legs.map((l: any) => `${l.side} ${l.strike}${l.instrument_type}`).join(' · ')}</b>
+                  {' '}· net credit <b>{v2prev.net_credit}</b> · margin <b>₹{(v2prev.margin_need || 0).toLocaleString('en-IN')}</b>
+                  {' '}(avail ₹{(v2prev.margin_avail || 0).toLocaleString('en-IN')}{v2prev.margin_ok ? '' : ' — INSUFFICIENT'})
+                  {' '}· gate <b style={{ color: v2prev.gate === 'PASS' ? C.pos : C.neg }}>{v2prev.gate}</b>
+                  {v2prev.gate !== 'PASS' && (
+                    <button disabled={v2busy} onClick={() => v2Deploy(true)}
+                      style={{ marginLeft: 8, cursor: 'pointer', border: `1px solid ${C.neg}`, borderRadius: 5,
+                               padding: '2px 8px', fontSize: 10.5, fontWeight: 700, background: '#fff', color: C.neg }}>
+                      force-deploy (ignore filter)
+                    </button>
+                  )}
+                </div>
+              )}
+              {v2msg && <div style={{ flexBasis: '100%', fontSize: 11, fontWeight: 600, color: v2msg.startsWith('⚠') ? C.neg : C.pos }}>{v2msg}</div>}
+              {v2eng.mode === 'live' && !v2eng.deployable && !v2eng.open && !v2eng.armed && (
+                <div style={{ flexBasis: '100%', fontSize: 10.5, color: C.muted }}>Live, disarmed, flat — click Deploy to place the first trade and start automation.</div>
+              )}
+            </div>
+          )}
           {v2eng.open ? (
             <div style={{ border: `1px solid ${C.hair}`, borderRadius: 8, padding: 12 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
@@ -556,7 +663,8 @@ export default function Straddles() {
               <div><b>Exits:</b> 2% underlying move-stop · +40% credit profit-target · roll at DTE ≤ 1, then re-enter.</div>
               <div><b>Stop band:</b> fixed at entry = entry-spot ±2% (the exact NIFTY levels are shown on the open position). A move-stop, not a premium-stop — it triggers on the underlying, not on the option P&L.</div>
               <div><b>When it's checked (AlgoTest-synced):</b> evaluated on the <b>close of each 1-min NIFTY candle</b> — the same resolution the backtest used (all 110 backtested SL exits land on :00 minute boundaries; AlgoTest is a 1-min candle-close engine, not tick/intra-candle). On the first candle whose close is ≥2% from entry, it exits at that close. The on-screen P&L still ticks every ~3s for display, but the exit decision is candle-close each minute. +40% PT and the DTE≤1 roll run on the same cycle.</div>
-              <div><b>Sizing:</b> 10 lots = qty 650 · blocked margin ≈ ₹9.6L (₹95.8k/lot).</div>
+              <div><b>Sizing:</b> 10 lots = qty 650 · blocked margin ≈ ₹7.0L (₹70k/lot, Kite SPAN — floats with VIX; hedged by the long wings, ~3× cheaper than the ₹21L naked straddle).</div>
+              <div><b>Live control:</b> the engine runs PAPER by default. Toggle PAPER→LIVE (only when flat), then <b>Deploy</b> places the first real trade (wings bought first, then the straddle sold; margin pre-checked; auto-rollback if any leg fails) and arms automation. From then rolls/re-entries are automatic; <b>Kill-switch</b> squares off and disarms.</div>
               <div><b>Costs:</b> P&amp;L net of ₹20/order + 0.25% slippage — same basis as the backtest.</div>
               <div><b>Breakout sleeve (paper-only):</b> on inside-week-skip weeks, first daily close beyond the inside week's prior-week H/L → UP: call debit spread (runner edge) · DOWN: broken-wing fly skewed down.</div>
               <div style={{ color: C.muted, marginTop: 4 }}>Paper engine · live-quote P&amp;L ticks ~every 3s during market · 1-min position marks · backtest spec wired into the live engine.</div>
