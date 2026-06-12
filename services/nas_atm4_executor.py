@@ -207,6 +207,10 @@ class NasAtm4Executor(NasAtmExecutor):
             tsym = pos.get('tradingsymbol', '')
             live_prem = live_ltps.get(tsym)
             if live_prem is None:
+                # FIX 2026-06-12: don't silently skip the SL check when the ticker's
+                # live_ltps is missing this leg (subscription gap) -- fetch it via REST.
+                live_prem = self.scanner.get_live_option_premium(tsym)
+            if live_prem is None:
                 continue
 
             sl_price = pos.get('sl_price')
