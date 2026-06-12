@@ -10,8 +10,8 @@ interface Cpr { P: number; TC: number; BC: number; R1: number; S1: number; R2: n
 interface Data { updated: string; day: string; last: number | null; candles: Candle[]; dailyCpr?: Cpr | null; weeklyCpr?: Cpr | null; }
 
 const H = 440;
-const DAILY = '#4a90b8';   // muted cyan
-const WEEKLY = '#c2974a';  // muted amber
+const DAILY = '#22d3ee';   // bright cyan — Daily CPR (solid)
+const WEEKLY = '#f59e0b';  // bright amber — Weekly CPR (dashed)
 
 export default function NiftyChart() {
   const [data, setData] = useState<Data | null>(null);
@@ -69,19 +69,39 @@ export default function NiftyChart() {
   const ticks = 4;
   const gridVals = Array.from({ length: ticks + 1 }, (_, i) => yMin + ((yMax - yMin) * i) / ticks);
 
-  const cprLines = (cpr: Cpr | null | undefined, color: string, dash: string, prefix: string) => {
+  const renderCpr = (cpr: Cpr | null | undefined, color: string, dash: string, tag: string) => {
     if (!cpr) return null;
-    return (Object.entries(cpr) as [string, number][]).map(([k, v]) => {
-      if (v < yMin || v > yMax) return null; // clip to view → subtle, no clutter
-      const strong = k === 'P' || k === 'TC' || k === 'BC';
+    const inR = (v: number) => v >= yMin && v <= yMax;
+    const pill = (yy: number, label: string, small?: boolean) => {
+      const wd = label.length * (small ? 5.0 : 5.6) + 8;
       return (
-        <g key={prefix + k} opacity={strong ? 0.5 : 0.34}>
-          <line x1={padL} x2={w - padR} y1={y(v)} y2={y(v)} stroke={color}
-            strokeWidth={strong ? 0.9 : 0.6} strokeDasharray={dash} />
-          <text x={padL + 3} y={y(v) - 2} fontSize={8.5} fill={color}>{prefix}{k}</text>
-        </g>
+        <>
+          <rect x={padL} y={yy - (small ? 6 : 7)} width={wd} height={small ? 12 : 14} rx={3} fill={color} />
+          <text x={padL + 4} y={yy + (small ? 2.5 : 3)} fontSize={small ? 8 : 9} fontWeight={700} fill="#06121a">{label}</text>
+        </>
       );
-    });
+    };
+    return (
+      <g>
+        {cpr.BC <= yMax && cpr.TC >= yMin && (
+          <g>
+            <rect x={padL} y={y(cpr.TC)} width={w - padR - padL} height={Math.max(2, y(cpr.BC) - y(cpr.TC))} fill={color} opacity={0.16} />
+            <line x1={padL} x2={w - padR} y1={y(cpr.P)} y2={y(cpr.P)} stroke={color} strokeWidth={1.4} strokeDasharray={dash} opacity={0.95} />
+            {inR(cpr.P) && pill(y(cpr.P), `${tag} CPR`)}
+          </g>
+        )}
+        {([['R1', cpr.R1], ['R2', cpr.R2], ['S1', cpr.S1], ['S2', cpr.S2]] as [string, number][]).map(([k, v]) => (
+          inR(v) ? (
+            <g key={tag + k}>
+              <line x1={padL} x2={w - padR} y1={y(v)} y2={y(v)} stroke={color} strokeWidth={0.9} strokeDasharray={dash || '1 4'} opacity={0.7} />
+              {pill(y(v), `${tag}·${k}`, true)}
+            </g>
+          ) : null
+        ))}
+        {cpr.P < yMin && <g>{pill(H - padB - 3, `${tag} CPR ↓ ${cpr.P.toFixed(0)}`, true)}</g>}
+        {cpr.P > yMax && <g>{pill(padT + 8, `${tag} CPR ↑ ${cpr.P.toFixed(0)}`, true)}</g>}
+      </g>
+    );
   };
 
   return (
@@ -104,8 +124,8 @@ export default function NiftyChart() {
                 <text x={w - padR + 5} y={y(v) + 3} fontSize={10} fill="var(--ink-muted,#8b93a1)">{v.toFixed(0)}</text>
               </g>
             ))}
-            {cprLines(data?.weeklyCpr, WEEKLY, '5 3', 'w·')}
-            {cprLines(data?.dailyCpr, DAILY, '', 'd·')}
+            {renderCpr(data?.weeklyCpr, WEEKLY, '6 4', 'W')}
+            {renderCpr(data?.dailyCpr, DAILY, '', 'D')}
             {candles.map((c, i) => {
               const up = c.c >= c.o;
               const col = up ? '#26a69a' : '#ef5350';
