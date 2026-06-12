@@ -158,6 +158,37 @@ def _daily_df():
         logger.warning(f"[V2] daily bars fetch failed: {e}"); return None
 
 
+# Compression-gate thresholds (research/64; ~median = soft). Calm = VIX/ATR%/CPR LOW, Stoch HIGH.
+COMPRESSION = dict(vix_max=15.4, atr_pct_max=1.1, cpr_d_max=0.16, stoch_min=65.0, soft_min_pass=3)
+
+
+def _compression():
+    """SHADOW-ONLY today's compression reading from the last COMPLETED daily bar (causal) + live VIX.
+    Returns the 4 features, per-condition flags, n_pass (0-4) and soft_pass (>=3). No trading impact."""
+    df = _daily_df()
+    if df is None or len(df) < 30:
+        return None
+    d = df[df.index.date < date.today()]           # drop today's partial bar -> prior completed day
+    if len(d) < 20:
+        d = df
+    H, L, C = d["high"], d["low"], d["close"]; prevC = C.shift(1)
+    tr = pd.concat([(H - L), (H - prevC).abs(), (L - prevC).abs()], axis=1).max(axis=1)
+    atr14 = tr.ewm(alpha=1 / 14, adjust=False).mean()
+    atr_pct = float(atr14.iloc[-1] / C.iloc[-1] * 100)
+    lo14, hi14 = L.rolling(14).min(), H.rolling(14).max()
+    stoch = float(100 * (C.iloc[-1] - lo14.iloc[-1]) / (hi14.iloc[-1] - lo14.iloc[-1]))
+    h, l, c = float(H.iloc[-1]), float(L.iloc[-1]), float(C.iloc[-1])
+    piv = (h + l + c) / 3; bcv = (h + l) / 2; tcv = 2 * piv - bcv
+    cpr_d = float(abs(tcv - bcv) / c * 100)
+    vix = _vix()
+    g = dict(vix=(vix is not None and vix < COMPRESSION["vix_max"]),
+             atr=atr_pct < COMPRESSION["atr_pct_max"], cpr=cpr_d < COMPRESSION["cpr_d_max"],
+             stoch=stoch > COMPRESSION["stoch_min"])
+    npass = sum(g.values())
+    return dict(vix=vix, atr_pct=round(atr_pct, 2), cpr_d=round(cpr_d, 3), stoch=round(stoch, 1),
+                flags=g, n_pass=npass, soft_pass=npass >= COMPRESSION["soft_min_pass"])
+
+
 def _resolve(legs, expiry):
     """Attach tradingsymbol + live premium to each leg dict. Returns None on any miss."""
     out = []
@@ -189,6 +220,10 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT, reasons TEXT, spot REAL, vix REAL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP );
       CREATE TABLE IF NOT EXISTS v2_settings (key TEXT PRIMARY KEY, val TEXT);
+      CREATE TABLE IF NOT EXISTS v2_compression_log (
+        day TEXT PRIMARY KEY, vix REAL, atr_pct REAL, cpr_d REAL, stoch REAL,
+        n_pass INTEGER, soft_pass INTEGER, would_enter INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP );
     """)
     try:
         c.execute("ALTER TABLE v2_positions ADD COLUMN series_json TEXT DEFAULT '[]'")
@@ -517,6 +552,23 @@ def monitor_job():
             _close(pos, "roll", spot); continue
 
 
+def compression_shadow_job():
+    """09:25 daily — SHADOW ONLY: log today's compression reading (research/64 gate) for forward
+    validation. Records what the soft compression filter WOULD do; changes no trading behaviour."""
+    init_db()
+    cs = _compression()
+    if not cs:
+        return
+    would = 1 if cs["soft_pass"] else 0
+    c = _conn()
+    c.execute("INSERT OR REPLACE INTO v2_compression_log (day,vix,atr_pct,cpr_d,stoch,n_pass,soft_pass,would_enter) "
+              "VALUES (?,?,?,?,?,?,?,?)", (date.today().isoformat(), cs["vix"], cs["atr_pct"], cs["cpr_d"],
+              cs["stoch"], cs["n_pass"], int(cs["soft_pass"]), would))
+    c.commit(); c.close()
+    logger.info(f"[V2-compression] {date.today()} n_pass={cs['n_pass']}/4 soft={cs['soft_pass']} "
+                f"vix={cs['vix']} atr%={cs['atr_pct']} cpr={cs['cpr_d']} stoch={cs['stoch']}")
+
+
 # ---------- API ----------
 def _state(system):
     init_db()
@@ -549,6 +601,14 @@ def get_v2_state():
     sk = [dict(r) for r in c.execute("SELECT day,reasons,spot,vix FROM v2_shadow_skips ORDER BY id DESC LIMIT 60")]
     c.close()
     s["shadow_skips"] = sk
+    try:
+        s["compression_today"] = _compression()
+        cc = _conn()
+        s["compression_log"] = [dict(r) for r in cc.execute(
+            "SELECT day,vix,atr_pct,cpr_d,stoch,n_pass,soft_pass FROM v2_compression_log ORDER BY day DESC LIMIT 40")]
+        cc.close()
+    except Exception:
+        s["compression_today"] = None; s["compression_log"] = []
     if s.get("open"):
         orng = _opening_range()
         es = s["open"].get("entry_spot")
@@ -695,9 +755,17 @@ def register(app, scheduler):
     app.add_url_rule("/api/v2-ironfly/deploy", "v2_ironfly_deploy",
                      lambda: jsonify(deploy(bool((request.get_json(silent=True) or {}).get("force")))), methods=["POST"])
     app.add_url_rule("/api/v2-ironfly/preview", "v2_ironfly_preview", lambda: jsonify(get_preview()))
+    app.add_url_rule("/api/v2-ironfly/compression", "v2_ironfly_compression",
+                     lambda: jsonify({"today": _compression(),
+                                      "thresholds": COMPRESSION,
+                                      "log": [dict(r) for r in _conn().execute(
+                                          "SELECT day,vix,atr_pct,cpr_d,stoch,n_pass,soft_pass,would_enter "
+                                          "FROM v2_compression_log ORDER BY day DESC LIMIT 120")]}))
     app.add_url_rule("/api/v2-ironfly/stream", "v2_ironfly_stream",
                      lambda: Response(stream(), mimetype="text/event-stream",
                                       headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}))
+    scheduler.add_job(compression_shadow_job, "cron", day_of_week="mon-fri", hour=9, minute=25,
+                      id="v2_compression_shadow", replace_existing=True)
     scheduler.add_job(entry_job, "cron", day_of_week="mon-fri", hour=9, minute=20,
                       id="v2_ironfly_entry", replace_existing=True)
     scheduler.add_job(monitor_job, "cron", day_of_week="mon-fri", hour="9-15", minute="*",
