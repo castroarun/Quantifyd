@@ -229,3 +229,40 @@ drift + premium, not prediction. Prior-week breakouts don't follow through (matc
 ### Next (P5b/P5c — pending user pick)
 - P5b: does direction become predictable AFTER a compression squeeze (vol expansion)?
 - P5c: backtest the jade-lizard / broken-wing structure on the unconditional drift, sized for mild moves.
+
+---
+
+## P5b — squeeze->breakout direction (DONE)
+- A squeeze precedes SMALLER moves (compressed move-rate 34% vs 53% non-comp at >=1.5%). No "coiled
+  spring" at 5d — compression = calm continuation.
+- **Day-1 follow-through IS real/tradeable:** after entry, if day-1 moves up >0.5% -> week ends up 75%
+  (>1.0% -> 88%); down >0.5% -> 68% (>1.0% -> 73%). General momentum (non-comp shows the same). So:
+  direction unpredictable AT entry, but a **day-1 confirmation** is a strong directional trigger (esp up).
+
+## P5c — skewed-structure EV (DONE; proxy premiums, VIX 13-22, N=1894, per 10-lot)
+| Structure | EV | win% | worst |
+|---|---|---|---|
+| Iron fly (symmetric) | -Rs40k | 37% | -Rs182k |
+| **Jade lizard (bullish)** | **+Rs87k** | **78%** | **-Rs795k** (fat tail) |
+| Broken-wing fly (bullish lean) | -Rs74k | 30% | -Rs432k |
+
+Win-zone by move bucket (fly vs jade): jade WINS on mild_bear(+121k), calm(+156k), mild_bull(~0),
+only loses on strong_bear/strong_bull. **Jade's profit zone = "anything but a real drop" = ~78% of
+NIFTY weeks** (matches the upward drift). **Catch: negative skew — short-put left tail (worst -795k).**
+Day-1-confirmed jade (enter only after day-1 up>0.5%): EV +68k, win 66%, **worst -795k -> -396k (tail
+halved)**. Broken-wing as specified is poor (strike-dependent artifact; a tuned defined-risk version is
+the fix).
+
+**Caveats:** proxy credits (VIX-scaled, held-to-expiry, no stops) — absolute Rs is model-dependent (fly
+negative here but positive WITH management in P3); the RELATIVE ranking is the signal. AlgoTest for exact.
+
+### Takeaways
+1. NIFTY's drift strongly favors a BULLISH skew (jade lizard) over the symmetric fly.
+2. But it's negative-skew — the naked-put tail MUST be capped for live (jade-with-long-put / tuned
+   broken-wing = defined risk).
+3. Day-1 confirmation (P5b) is a real risk lever — it halves the tail.
+
+### Next (P5d)
+- Build the DEFINED-RISK bullish skew (cap the jade tail with a long put / put-spread; tune the
+  broken-wing) and compare EV/tail vs naked jade + day-1-confirmed.
+- AlgoTest card for the jade lizard (exact Rs, real premiums).
