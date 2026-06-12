@@ -956,6 +956,7 @@ interface TBRow {
   outTime: string;       // exit time HH:MM ('' while open)
   arm: number | null;    // exit/SL monitoring trigger value (premium) while open
   armLive?: boolean;     // ticker actually subscribed/watching this leg right now
+  tradingsymbol?: string;
 }
 
 // Compact status tags so the column stays narrow and the P&L stays next to it.
@@ -998,6 +999,7 @@ function buildTradeBook(
         outTime: open ? '' : (formatLegTime(p.exit_time) ?? ''),
         arm: open ? (p.sl_price ?? null) : null,
         armLive: open ? p.arm_live : undefined,
+        tradingsymbol: p.tradingsymbol,
       });
     };
     [...(pos.ce ?? []), ...(pos.pe ?? [])].forEach((p) => push(p, true));
@@ -1019,6 +1021,27 @@ function TradeBook({ systems, states, liveLegs }: {
   liveLegs: Record<string, number>;
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
+  // ST-trail value for naked-survivor legs (sl_price sentinel 999999) — from the ticker.
+  const [stTrail, setStTrail] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let on = true;
+    const load = () =>
+      fetch(`/api/nas/ticker/status`, { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d) => {
+          if (!on) return;
+          const m: Record<string, number> = {};
+          for (const k of ['atm_naked_st', 'atm4_naked_st']) {
+            const nst = d?.[k];
+            if (nst && nst.active && nst.tradingsymbol && typeof nst.st_value === 'number') m[nst.tradingsymbol] = nst.st_value;
+          }
+          setStTrail(m);
+        })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 5000);
+    return () => { on = false; clearInterval(id); };
+  }, []);
   const rows = buildTradeBook(systems, states, liveLegs);
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
@@ -1127,6 +1150,14 @@ function TradeBook({ systems, states, liveLegs }: {
                     const hasArm = r.open && r.arm != null && r.arm > 0;
                     if (!hasArm) {
                       return <span style={{ color: 'var(--ink-faint, #6e7681)', whiteSpace: 'nowrap' }} title="No active exit arm">—</span>;
+                    }
+                    if ((r.arm as number) >= 900000) {
+                      const stv = r.tradingsymbol ? stTrail[r.tradingsymbol] : undefined;
+                      return (
+                        <span style={{ color: '#58a6ff', whiteSpace: 'nowrap' }} title="SuperTrend(7,2) trailing exit on the naked survivor leg (no fixed-price stop)">
+                          ST {stv != null ? stv.toFixed(1) : '\u2026'}
+                        </span>
+                      );
                     }
                     const v = (r.arm as number).toFixed(1);
                     let color = '#d29922', icon = '●';
