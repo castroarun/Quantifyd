@@ -18,7 +18,7 @@ DB: backtest_data/v2_ironfly_trading.db. API: /api/v2-ironfly/*, /api/v2-breakou
 """
 import json, sqlite3, logging
 from pathlib import Path
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time as dtime
 
 import pandas as pd
 
@@ -45,6 +45,7 @@ QTY = CFG["lots"] * CFG["lot_size"]   # 650
 _scanner = None
 _daily_cache = {}        # date_iso -> DataFrame
 _instr_cache = {"day": None, "rows": None}
+_or_cache = {}           # date_iso -> {open, high, low} opening-range (first 5 min)
 
 
 # ---------- kite/data helpers ----------
@@ -91,6 +92,31 @@ def _last_min_bar():
         return bar["date"].strftime("%H:%M:00"), float(bar["close"])
     except Exception:
         return None, _spot()
+
+
+def _opening_range():
+    """Today's open + first-5-min (09:15–09:20) high/low from 1-min bars. Cached once complete.
+    Used for the gap-day stop: when the session opens beyond the 2% band, we ignore the gap print,
+    let this 5-min range form, then exit on a 1-min close beyond its high/low."""
+    today = date.today().isoformat()
+    if _or_cache.get("day") == today and _or_cache.get("val"):
+        return _or_cache["val"]
+    try:
+        rows = _kite().historical_data(NIFTY_TOKEN, date.today(), date.today(), "minute")
+        if not rows:
+            return None
+        first5 = [r for r in rows if r["date"].replace(tzinfo=None).time() < dtime(9, 20)]
+        if not first5:
+            return None
+        val = {"open": float(rows[0]["open"]),
+               "high": max(float(r["high"]) for r in first5),
+               "low": min(float(r["low"]) for r in first5)}
+        if len(first5) >= 5:                       # cache only once the 09:15–09:20 window is complete
+            _or_cache.clear(); _or_cache.update(day=today, val=val)
+        return val
+    except Exception as e:
+        logger.warning(f"[V2] opening-range fetch failed: {e}")
+        return None
 
 
 def _nifty_expiries():
@@ -464,9 +490,20 @@ def monitor_job():
         if spot is None:
             continue
         es = pos["entry_spot"]; net = pos["net_entry"]
-        # 2% underlying move-stop — fires on the 1-min candle close, stamped at the candle time
-        if es and abs(spot - es) / es >= CFG["stop_pct"]:
-            _close(pos, "move2%", spot, at_time=ctime); continue
+        # --- stop selection: normal day = 2% move-stop; gap-open day = opening-range breakout ---
+        orng = _opening_range()
+        gap_day = bool(orng and es and abs(orng["open"] - es) / es >= CFG["stop_pct"])
+        if gap_day:
+            # The session OPENED outside the 2% band. Ignore the gap print, take no stop action in
+            # the first 5 min; from 09:20 exit on a 1-min close beyond the opening-range high/low.
+            if datetime.now().time() > dtime(9, 20):
+                if spot > orng["high"] or spot < orng["low"]:
+                    _close(pos, "gap_or_break", spot, at_time=ctime); continue
+            # else inside the opening range (or still in the first 5 min) -> hold
+        else:
+            # 2% underlying move-stop — fires on the 1-min candle close, stamped at the candle time
+            if es and abs(spot - es) / es >= CFG["stop_pct"]:
+                _close(pos, "move2%", spot, at_time=ctime); continue
         # profit target
         if net > 0 and pnl >= CFG["pt_pct"] * net * QTY:          # credit structures
             _close(pos, "pt40", spot); continue
@@ -512,6 +549,12 @@ def get_v2_state():
     sk = [dict(r) for r in c.execute("SELECT day,reasons,spot,vix FROM v2_shadow_skips ORDER BY id DESC LIMIT 60")]
     c.close()
     s["shadow_skips"] = sk
+    if s.get("open"):
+        orng = _opening_range()
+        es = s["open"].get("entry_spot")
+        if orng and es:
+            s["open"]["gap_day"] = bool(abs(orng["open"] - es) / es >= CFG["stop_pct"])
+            s["open"]["or_high"] = round(orng["high"]); s["open"]["or_low"] = round(orng["low"])
     mode = _mode(); armed = _armed(); flat = s["open"] is None
     s["mode"] = mode
     s["armed"] = armed
