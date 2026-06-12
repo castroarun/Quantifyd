@@ -328,6 +328,19 @@ class NasTicker:
             return self.kws
         return None
 
+    def _tokens_in_use_by_others(self, own_map):
+        """Union of instrument tokens referenced by every variant leg-map EXCEPT
+        own_map. Same-strike legs across variants share ONE instrument token, so a
+        variant re-subscribe must never unsubscribe a token a sibling still needs
+        (fix 2026-06-12). Caller holds self._lock."""
+        in_use = set()
+        for m in (self._option_tokens, self._atm_option_tokens,
+                  self._atm2_option_tokens, self._atm4_option_tokens):
+            if m is own_map:
+                continue
+            in_use |= set(m.keys())
+        return in_use
+
     def subscribe_option_legs(self, positions: List[dict]):
         """
         Subscribe to option leg tokens for real-time premium monitoring.
@@ -392,8 +405,8 @@ class NasTicker:
                     }
                     new_tokens.append(token)
 
-            # Unsubscribe tokens no longer needed
-            tokens_to_remove = old_tokens - set(new_tokens)
+            # Unsubscribe tokens no longer needed (keep any token a sibling variant still uses)
+            tokens_to_remove = old_tokens - set(new_tokens) - self._tokens_in_use_by_others(self._option_tokens)
             if tokens_to_remove:
                 kws.unsubscribe(list(tokens_to_remove))
 
@@ -730,8 +743,8 @@ class NasTicker:
 
             if not positions:
                 if old_tokens:
-                    # Only unsubscribe tokens not used by OTM
-                    tokens_to_unsub = old_tokens - set(self._option_tokens.keys())
+                    # Only unsubscribe tokens not used by any sibling variant (shared strikes)
+                    tokens_to_unsub = old_tokens - self._tokens_in_use_by_others(self._atm_option_tokens)
                     if tokens_to_unsub:
                         kws.unsubscribe(list(tokens_to_unsub))
                     logger.info(f"[NAS-ATM] Unsubscribed {len(old_tokens)} option tokens")
@@ -756,15 +769,15 @@ class NasTicker:
                     }
                     new_tokens.append(token)
 
-            # Subscribe new tokens (avoid duplicating OTM subscriptions)
-            all_existing = set(self._option_tokens.keys()) | old_tokens
+            # Subscribe new tokens (avoid duplicating any sibling variant's subscriptions)
+            all_existing = self._tokens_in_use_by_others(self._atm_option_tokens) | old_tokens
             tokens_to_add = set(new_tokens) - all_existing
             if tokens_to_add:
                 kws.subscribe(list(tokens_to_add))
                 kws.set_mode(kws.MODE_LTP, list(tokens_to_add))
 
-            # Unsubscribe old ATM tokens no longer needed (and not used by OTM)
-            tokens_to_remove = old_tokens - set(new_tokens) - set(self._option_tokens.keys())
+            # Unsubscribe old ATM tokens no longer needed (and not used by any sibling variant)
+            tokens_to_remove = old_tokens - set(new_tokens) - self._tokens_in_use_by_others(self._atm_option_tokens)
             if tokens_to_remove:
                 kws.unsubscribe(list(tokens_to_remove))
 
@@ -993,8 +1006,8 @@ class NasTicker:
 
             if not positions:
                 if old_tokens:
-                    # Only unsubscribe tokens not used by OTM or ATM
-                    tokens_to_unsub = old_tokens - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys())
+                    # Only unsubscribe tokens not used by any sibling variant (shared strikes)
+                    tokens_to_unsub = old_tokens - self._tokens_in_use_by_others(self._atm2_option_tokens)
                     if tokens_to_unsub:
                         kws.unsubscribe(list(tokens_to_unsub))
                     logger.info(f"[NAS-ATM2] Unsubscribed {len(old_tokens)} option tokens")
@@ -1020,14 +1033,14 @@ class NasTicker:
                     new_tokens.append(token)
 
             # Subscribe new tokens (avoid duplicating OTM/ATM subscriptions)
-            all_existing = set(self._option_tokens.keys()) | set(self._atm_option_tokens.keys()) | old_tokens
+            all_existing = self._tokens_in_use_by_others(self._atm2_option_tokens) | old_tokens
             tokens_to_add = set(new_tokens) - all_existing
             if tokens_to_add:
                 kws.subscribe(list(tokens_to_add))
                 kws.set_mode(kws.MODE_LTP, list(tokens_to_add))
 
-            # Unsubscribe old ATM2 tokens no longer needed (and not used by OTM/ATM)
-            tokens_to_remove = old_tokens - set(new_tokens) - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys())
+            # Unsubscribe old ATM2 tokens no longer needed (and not used by any sibling variant)
+            tokens_to_remove = old_tokens - set(new_tokens) - self._tokens_in_use_by_others(self._atm2_option_tokens)
             if tokens_to_remove:
                 kws.unsubscribe(list(tokens_to_remove))
 
@@ -1114,7 +1127,7 @@ class NasTicker:
             if not positions:
                 if old_tokens:
                     # Only unsubscribe tokens not used by OTM, ATM, or ATM2
-                    tokens_to_unsub = old_tokens - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys()) - set(self._atm2_option_tokens.keys())
+                    tokens_to_unsub = old_tokens - self._tokens_in_use_by_others(self._atm4_option_tokens)
                     if tokens_to_unsub:
                         kws.unsubscribe(list(tokens_to_unsub))
                     logger.info(f"[NAS-ATM4] Unsubscribed {len(old_tokens)} option tokens")
@@ -1140,14 +1153,14 @@ class NasTicker:
                     new_tokens.append(token)
 
             # Subscribe new tokens (avoid duplicating OTM/ATM/ATM2 subscriptions)
-            all_existing = set(self._option_tokens.keys()) | set(self._atm_option_tokens.keys()) | set(self._atm2_option_tokens.keys()) | old_tokens
+            all_existing = self._tokens_in_use_by_others(self._atm4_option_tokens) | old_tokens
             tokens_to_add = set(new_tokens) - all_existing
             if tokens_to_add:
                 kws.subscribe(list(tokens_to_add))
                 kws.set_mode(kws.MODE_LTP, list(tokens_to_add))
 
             # Unsubscribe old ATM4 tokens no longer needed (and not used by OTM/ATM/ATM2)
-            tokens_to_remove = old_tokens - set(new_tokens) - set(self._option_tokens.keys()) - set(self._atm_option_tokens.keys()) - set(self._atm2_option_tokens.keys())
+            tokens_to_remove = old_tokens - set(new_tokens) - self._tokens_in_use_by_others(self._atm4_option_tokens)
             if tokens_to_remove:
                 kws.unsubscribe(list(tokens_to_remove))
 
