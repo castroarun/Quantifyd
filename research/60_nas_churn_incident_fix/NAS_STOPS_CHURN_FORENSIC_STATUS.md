@@ -1,6 +1,6 @@
 # NAS Stops / Churn Malfunction — 2026-06-12 Live Incident, Forensic & Fixes
 
-STATUS: CONTAINED (code frozen) · ALL 5 FIXES DONE (on disk, not deployed) · DEPLOY after 15:30 close · FROZEN until verified
+STATUS: RESOLVED · ALL 5 FIXES DEPLOYED + VERIFIED (after 15:30 close 2026-06-12) · STILL FROZEN pending user OK to clear for Mon · Guardian agent built (`/nas-guardian`)
 
 ## The Ask
 "Stop the code from further executions immediately, I'll manage the trades for the
