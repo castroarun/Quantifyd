@@ -11,7 +11,7 @@ interface Data { updated: string; day: string; last: number | null; candles: Can
 
 const H = 440;
 const DAILY = '#22d3ee';   // bright cyan — Daily CPR (solid)
-const WEEKLY = '#f59e0b';  // bright amber — Weekly CPR (dashed)
+const WEEKLY = '#a78bfa';  // violet — Weekly CPR (dashed); distinct from the gold price line
 
 export default function NiftyChart() {
   const [data, setData] = useState<Data | null>(null);
@@ -56,8 +56,16 @@ export default function NiftyChart() {
   }
   const lo = candles.length ? Math.min(...candles.map((c) => c.l)) : 0;
   const hi = candles.length ? Math.max(...candles.map((c) => c.h)) : 1;
-  const pad = (hi - lo) * 0.06 || 1;
-  const yMin = lo - pad, yMax = hi + pad;
+  const cR = (hi - lo) || 1;
+  // pull the daily + weekly CPR central pivots into view (within 1.3x the candle range)
+  const ext = [lo, hi];
+  [data?.dailyCpr, data?.weeklyCpr].forEach((cp) => {
+    if (!cp) return;
+    [cp.P, cp.TC, cp.BC].forEach((p) => { if (p >= lo - cR * 1.3 && p <= hi + cR * 1.3) ext.push(p); });
+  });
+  const eLo = Math.min(...ext), eHi = Math.max(...ext);
+  const pad = (eHi - eLo) * 0.06 || 1;
+  const yMin = eLo - pad, yMax = eHi + pad;
   const plotW = Math.max(w - padL - padR, 100);
   const plotH = H - padT - padB;
   const n = candles.length || 1;
