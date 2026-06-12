@@ -174,3 +174,24 @@ at the verified ₹34k MTM (varies with DTE).
 4. **Forward-validate** via the engine's existing shadow-skip log (it already records would-skips), and
    **confirm exact ₹ on AlgoTest** (real premiums) before committing — especially the low-VIX premium
    question this price-only study can't settle.
+
+---
+
+## Final gate design + standard CONVICTION TABLE (locked)
+
+**Gate = compression (ATR<1.1% & CPR_d<0.16% & Stoch>65, 2 of 3) AND VIX regime 13-22.** VIX is a
+*separate* premium/regime control (floor 13, hard-skip >22), NOT a calm flag — fixing the earlier
+double-counting where `VIX<15.4` was wrongly inside the compression score and skipped the premium-rich
+16-20 zone. This is what the live shadow logger records as `would_enter`.
+
+### CONVICTION TABLE (NIFTY 2015-26, N=2813) — include in EVERY report
+| Hold | BASE | Compression only (48% cov) | Compression + VIX 13-22 (28% cov, = live gate) |
+|---|---|---|---|
+| 3 days | 77.5% | 88.3% | 86.2% |
+| 4 days | 68.4% | 80.8% | 77.8% |
+| 5 days | 59.6% | 72.6% | 68.8% |
+| 8 days | 39.5% | 51.6% | 47.8% |
+
+**Key insight:** the VIX>=13 floor *reduces* calm by ~4pp (it removes the calmest low-VIX days) — a
+premium choice, not a calm choice. Shorter hold = higher conviction but more rolls (3d ~84 trades/yr,
+4d ~63, 5d ~50). Coverage: VIX 13-22 alone 67%, compression alone 48%, both 28%.

@@ -309,10 +309,12 @@ def _net_premium(legs):
     return sum((lg["entry"] if lg["side"] == "SELL" else -lg["entry"]) for lg in legs)
 
 
-def _pnl_now(legs):
+def _pnl_now(legs, live=False):
     per = sum(((lg["entry"] - lg["ltp"]) if lg["side"] == "SELL" else (lg["ltp"] - lg["entry"])) for lg in legs)
+    if live:
+        return per * QTY        # LIVE: raw mark-to-market, matches the broker (exit costs only on exit)
     brok = len(legs) * 2 * CFG["brokerage"]
-    # 0.25%/leg slippage on entry + exit premium — matches the backtest's net-of-slippage basis
+    # 0.25%/leg slippage on entry + exit premium — matches the backtest's net-of-slippage basis (PAPER)
     slip = CFG["slippage_pct"] * sum(lg["entry"] + lg["ltp"] for lg in legs) * QTY
     return per * QTY - brok - slip
 
@@ -337,7 +339,7 @@ def _refresh_marks(pos):
         p = _scn().get_live_option_premium(lg["sym"])
         if p and p > 0:
             lg["ltp"] = float(p); changed = True
-    pnl = _pnl_now(legs)
+    pnl = _pnl_now(legs, live=(pos.get("mode") == "live"))
     c = _conn()
     c.execute("UPDATE v2_positions SET legs_json=?, pnl_now=? WHERE id=?",
               (json.dumps(legs), round(pnl), pos["id"]))
@@ -748,7 +750,7 @@ def stream():
                 if v and v.get("last_price"):
                     l["ltp"] = float(v["last_price"])
             sp = q.get("NSE:NIFTY 50", {}).get("last_price")
-            pnl = _pnl_now(legs)
+            pnl = _pnl_now(legs, live=(pos.get("mode") == "live"))
             out = {"type": "tick", "pnl_now": round(pnl), "ts": _t.time(), "spot": sp,
                    "legs": [{"strike": l["strike"], "instrument_type": l["instrument_type"],
                              "side": l["side"], "ltp": l["ltp"],
