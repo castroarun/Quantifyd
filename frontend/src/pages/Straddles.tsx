@@ -84,53 +84,72 @@ function LineChart({ pts, h = 130, label, marker }: { pts: [string, number][]; h
   );
 }
 
-/* ---------- expiry payoff diagram (live current-spot marker) ---------- */
-function PayoffChart({ legs, qty, spot, entrySpot, stopDn, stopUp, h = 190 }:
-  { legs: any[]; qty: number; spot?: number | null; entrySpot: number; stopDn?: number; stopUp?: number; h?: number }) {
+/* ---------- payoff diagram: expiry (solid) + value-now T+0 (dashed), live spot ---------- */
+function _ncdf(x: number) {            // standard normal CDF (Abramowitz–Stegun)
+  const t = 1 / (1 + 0.2316419 * Math.abs(x)), d = 0.3989423 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return x > 0 ? 1 - p : p;
+}
+function _bs(type: 'CE' | 'PE', S: number, K: number, T: number, sig: number) {
+  if (T <= 0 || sig <= 0) return type === 'CE' ? Math.max(S - K, 0) : Math.max(K - S, 0);
+  const v = sig * Math.sqrt(T), d1 = (Math.log(S / K) + 0.5 * sig * sig * T) / v, d2 = d1 - v;
+  return type === 'CE' ? S * _ncdf(d1) - K * _ncdf(d2) : K * _ncdf(-d2) - S * _ncdf(-d1);
+}
+function PayoffChart({ legs, qty, spot, entrySpot, stopDn, stopUp, dte, iv, currentPnl, h = 200 }:
+  { legs: any[]; qty: number; spot?: number | null; entrySpot: number; stopDn?: number; stopUp?: number;
+    dte?: number; iv?: number; currentPnl?: number | null; h?: number }) {
   if (!legs || !legs.length || !entrySpot) return null;
-  const payoff = (S: number) => {
+  const val = (S: number, useBS: boolean) => {
     let pnl = 0;
     for (const l of legs) {
       const e = Number(l.entry), K = Number(l.strike);
       if (!isFinite(e) || !isFinite(K)) continue;
-      const intr = l.instrument_type === 'CE' ? Math.max(S - K, 0) : Math.max(K - S, 0);
-      pnl += l.side === 'SELL' ? e - intr : -e + intr;
+      const v = useBS ? _bs(l.instrument_type, S, K, dte || 0, iv || 0)
+                      : (l.instrument_type === 'CE' ? Math.max(S - K, 0) : Math.max(K - S, 0));
+      pnl += l.side === 'SELL' ? e - v : -e + v;
     }
     return pnl * qty;
   };
+  const payoff = (S: number) => val(S, false);
+  const showT0 = dte != null && dte > 0 && iv != null && iv > 0;
+  const off = showT0 && spot && currentPnl != null ? currentPnl - val(spot, true) : 0;  // calibrate to live MTM
+  const t0 = (S: number) => val(S, true) + off;
   const lo = entrySpot * 0.94, hi = entrySpot * 1.06, N = 140;
-  const pts: [number, number][] = [];
-  for (let i = 0; i <= N; i++) { const S = lo + (i / N) * (hi - lo); pts.push([S, payoff(S)]); }
-  const ys = pts.map((p) => p[1]); const ymin = Math.min(...ys), ymax = Math.max(...ys), yr = ymax - ymin || 1;
-  const W = 600, PADL = 52, PADR = 10, PADT = 14, PADB = 22;
+  const ptsE: [number, number][] = [], ptsT: [number, number][] = [];
+  for (let i = 0; i <= N; i++) { const S = lo + (i / N) * (hi - lo); ptsE.push([S, payoff(S)]); if (showT0) ptsT.push([S, t0(S)]); }
+  const eY = ptsE.map((p) => p[1]); const eMin = Math.min(...eY), eMax = Math.max(...eY);
+  const allY = eY.concat(showT0 ? ptsT.map((p) => p[1]) : []);
+  const ymin = Math.min(...allY), ymax = Math.max(...allY), yr = ymax - ymin || 1;
+  const W = 600, PADL = 52, PADR = 10, PADT = 16, PADB = 22;
   const X = (S: number) => PADL + ((S - lo) / (hi - lo)) * (W - PADL - PADR);
   const Y = (v: number) => PADT + (1 - (v - ymin) / yr) * (h - PADT - PADB);
   const fL = (v: number) => `${v >= 0 ? '+' : '−'}${(Math.abs(v) / 1e5).toFixed(1)}L`;
   const bes: number[] = [];
-  for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1], b = pts[i];
-    if ((a[1] <= 0 && b[1] > 0) || (a[1] >= 0 && b[1] < 0)) bes.push(Math.round(a[0] + (a[1] / (a[1] - b[1])) * (b[0] - a[0])));
-  }
-  const posLine = pts.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+  for (let i = 1; i < ptsE.length; i++) { const a = ptsE[i - 1], b = ptsE[i];
+    if ((a[1] <= 0 && b[1] > 0) || (a[1] >= 0 && b[1] < 0)) bes.push(Math.round(a[0] + (a[1] / (a[1] - b[1])) * (b[0] - a[0]))); }
+  const lineE = ptsE.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+  const lineT = showT0 ? ptsT.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ') : '';
   return (
     <div>
       <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>
-        Payoff at expiry · max profit <b style={{ color: C.pos }}>{fL(ymax)}</b> · max loss <b style={{ color: C.neg }}>{fL(ymin)}</b> (capped by wings)
-        {bes.length === 2 ? ` · breakevens ${bes[0].toLocaleString('en-IN')} / ${bes[1].toLocaleString('en-IN')}` : ''}
+        <b style={{ color: C.navy }}>— at expiry</b>{showT0 ? <b style={{ color: '#2563eb' }}> ··· value now (T+0)</b> : null}
+        {' · '}max profit <b style={{ color: C.pos }}>{fL(eMax)}</b> · max loss <b style={{ color: C.neg }}>{fL(eMin)}</b> (capped by wings)
+        {bes.length === 2 ? ` · BE ${bes[0].toLocaleString('en-IN')}/${bes[1].toLocaleString('en-IN')}` : ''}
       </div>
       <svg viewBox={`0 0 ${W} ${h}`} width="100%" height={h} preserveAspectRatio="none" style={{ display: 'block' }}>
         <line x1={PADL} x2={W - PADR} y1={Y(0)} y2={Y(0)} stroke="rgba(0,0,0,0.22)" strokeWidth="1" />
         <text x={PADL - 6} y={Y(0) + 3} textAnchor="end" fontSize="9.5" fill={C.muted}>0</text>
-        <text x={PADL - 6} y={Y(ymax) + 9} textAnchor="end" fontSize="9.5" fill={C.pos}>{fL(ymax)}</text>
-        <text x={PADL - 6} y={Y(ymin) - 2} textAnchor="end" fontSize="9.5" fill={C.neg}>{fL(ymin)}</text>
-        {stopDn ? <line x1={X(stopDn)} x2={X(stopDn)} y1={PADT} y2={h - PADB} stroke={C.neg} strokeWidth="1" strokeDasharray="3 3" opacity="0.55" /> : null}
-        {stopUp ? <line x1={X(stopUp)} x2={X(stopUp)} y1={PADT} y2={h - PADB} stroke={C.neg} strokeWidth="1" strokeDasharray="3 3" opacity="0.55" /> : null}
-        <polyline points={posLine} fill="none" stroke={C.navy} strokeWidth="2" />
+        <text x={PADL - 6} y={Y(eMax) + 9} textAnchor="end" fontSize="9.5" fill={C.pos}>{fL(eMax)}</text>
+        <text x={PADL - 6} y={Y(eMin) - 2} textAnchor="end" fontSize="9.5" fill={C.neg}>{fL(eMin)}</text>
+        {stopDn ? <line x1={X(stopDn)} x2={X(stopDn)} y1={PADT} y2={h - PADB} stroke={C.neg} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" /> : null}
+        {stopUp ? <line x1={X(stopUp)} x2={X(stopUp)} y1={PADT} y2={h - PADB} stroke={C.neg} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" /> : null}
+        {showT0 ? <polyline points={lineT} fill="none" stroke="#2563eb" strokeWidth="1.6" strokeDasharray="4 3" /> : null}
+        <polyline points={lineE} fill="none" stroke={C.navy} strokeWidth="2" />
         {spot ? (
           <g>
             <line x1={X(spot)} x2={X(spot)} y1={PADT} y2={h - PADB} stroke={C.pos} strokeWidth="1.5" />
-            <circle cx={X(spot)} cy={Y(payoff(spot))} r="3.6" fill="#fff" stroke={C.pos} strokeWidth="2" />
-            <text x={X(spot)} y={PADT - 2} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={C.pos}>now {Math.round(spot).toLocaleString('en-IN')}</text>
+            <circle cx={X(spot)} cy={Y((showT0 ? t0 : payoff)(spot))} r="3.6" fill="#fff" stroke={C.pos} strokeWidth="2" />
+            <text x={X(spot)} y={PADT - 4} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={C.pos}>now {Math.round(spot).toLocaleString('en-IN')}</text>
           </g>
         ) : null}
         {[lo, entrySpot, hi].map((S, k) => (
@@ -494,7 +513,9 @@ export default function Straddles() {
               )}
               <div style={{ marginTop: 10 }}>
                 <PayoffChart legs={v2eng.open.legs} qty={650} spot={v2spot || v2eng.open.entry_spot}
-                  entrySpot={v2eng.open.entry_spot} stopDn={v2eng.open.stop_dn} stopUp={v2eng.open.stop_up} />
+                  entrySpot={v2eng.open.entry_spot} stopDn={v2eng.open.stop_dn} stopUp={v2eng.open.stop_up}
+                  dte={Math.max((new Date(v2eng.open.expiry + 'T15:30:00').getTime() - Date.now()) / (365 * 86400000), 0)}
+                  iv={(v2eng.open.entry_vix || 13) / 100} currentPnl={v2eng.open.pnl_now} />
               </div>
             </div>
           ) : (
