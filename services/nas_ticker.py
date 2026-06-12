@@ -892,6 +892,13 @@ class NasTicker:
             cur['high'] = max(cur['high'], ltp)
             cur['low'] = min(cur['low'], ltp)
             cur['close'] = ltp
+            # tick-level ST exit: don't wait for the 5-min candle close. If the live
+            # premium breaches the last-computed SuperTrend, exit now (fix 2026-06-12).
+            _stv = getattr(self, '_atm_naked_st_val', None)
+            if _stv is not None and ltp > _stv:
+                logger.warning(f"[NAS-ATM] ST TICK-EXIT: live {ltp:.1f} > ST {_stv:.1f}")
+                self._atm_naked_st_val = None
+                threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
 
     def _check_atm_st_exit(self):
         """Check if naked ATM leg's premium closed above SuperTrend → exit."""
@@ -905,12 +912,14 @@ class NasTicker:
         if st_val is None:
             return
 
+        self._atm_naked_st_val = st_val
         latest_close = candles[-1]['close']
         logger.info(f"[NAS-ATM] ST check: close={latest_close:.1f}, ST={st_val:.1f}, "
                      f"dir={'UP' if direction==1 else 'DN'}")
 
         if direction == 1 or latest_close > st_val:
             logger.warning(f"[NAS-ATM] ST EXIT! Premium {latest_close:.1f} reversed above ST {st_val:.1f}")
+            self._atm_naked_st_val = None
             threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
 
     def _fire_atm_st_exit(self):
@@ -1252,6 +1261,11 @@ class NasTicker:
             cur['high'] = max(cur['high'], ltp)
             cur['low'] = min(cur['low'], ltp)
             cur['close'] = ltp
+            _stv = getattr(self, '_atm4_naked_st_val', None)
+            if _stv is not None and ltp > _stv:
+                logger.warning(f"[NAS-ATM4] ST TICK-EXIT: live {ltp:.1f} > ST {_stv:.1f}")
+                self._atm4_naked_st_val = None
+                threading.Thread(target=self._fire_atm4_st_exit, daemon=True).start()
 
     def _check_atm4_st_exit(self):
         """Check if naked V4 leg's premium closed above SuperTrend -> exit."""
@@ -1265,6 +1279,7 @@ class NasTicker:
         if st_val is None:
             return
 
+        self._atm4_naked_st_val = st_val
         latest_close = candles[-1]['close']
         logger.info(f"[NAS-ATM4] ST check: close={latest_close:.1f}, "
                      f"ST={st_val:.1f}, dir={'UP' if direction == 1 else 'DN'}")
@@ -1274,6 +1289,7 @@ class NasTicker:
         if direction == 1 or latest_close > st_val:
             logger.warning(f"[NAS-ATM4] ST EXIT! Premium {latest_close:.1f} "
                             f"reversed above ST {st_val:.1f}")
+            self._atm4_naked_st_val = None
             threading.Thread(
                 target=self._fire_atm4_st_exit,
                 daemon=True
