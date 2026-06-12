@@ -266,3 +266,40 @@ negative here but positive WITH management in P3); the RELATIVE ranking is the s
 - Build the DEFINED-RISK bullish skew (cap the jade tail with a long put / put-spread; tune the
   broken-wing) and compare EV/tail vs naked jade + day-1-confirmed.
 - AlgoTest card for the jade lizard (exact Rs, real premiums).
+
+---
+
+## P5d — DEFINED-RISK bullish skew (cap the tail) — DONE
+Add a long protective put (turns the naked short put into a put spread) → caps the crash tail, trades a
+little EV for a lot of tail safety. (Proxy premiums, VIX 13-22, N=1894, per 10-lot.)
+
+### Unconditional (enter day-0)
+| Structure | EV | win% | worst week |
+|---|---|---|---|
+| Jade NAKED (short 2% put) | +Rs87k | 78% | -Rs795k |
+| Jade + long 5% put | +Rs55k | 73% | -Rs342k |
+| **Jade + long 4% put (sweet spot)** | **+Rs41k** | **71%** | **-Rs206k** |
+| Jade + long 3.5% put (tight) | +Rs27k | 68% | -Rs143k |
+| Broken-wing fly (tuned -2.5/+4) | -Rs99k | 30% | -Rs508k |
+
+The long 4% put caps the worst week to ~-200k (≈ the symmetric fly's max loss) while keeping +EV and ~2x
+the win-rate. **The tuned broken-wing is poor — still a short straddle that needs calm; the put-spread
+jade is the structure, not the BWF.**
+
+### Day-1 confirmed (enter day-1 close after day-1 up>0.5%, hold to day-5)
+| Structure | EV | win% | worst |
+|---|---|---|---|
+| Jade naked | +Rs113k | 86% | -Rs560k |
+| **Jade + 4% put** | **+Rs64k** | **81%** | **-Rs201k** |
+
+Day-1 confirmation adds ~+Rs23k EV and ~+10pp win while the 4% put keeps the tail at -201k. **Best
+risk-adjusted = day-1-confirmed jade + 4% put.**
+
+### Tail proof (worst-5 naked weeks, all -7/-8% crashes: Aug-2015, Feb-2020, Feb-2016)
+naked -795k/-737k/-661k/-587k/-553k → +4%put each capped ~-185 to -203k. The put spread does its job.
+
+### RECOMMENDED LIVE STRUCTURE (proxy; confirm on AlgoTest)
+**Day-1-confirmed jade lizard with a 4% protective put** — defined risk (~-200k max), +EV, ~81% win,
+drift-aligned. AlgoTest card: `ALGOTEST_JADE_CARD.md`. Caveats: proxy credits (real IV decides if credit
+covers the call spread = no upside risk, esp. at low VIX); held-to-expiry, no intraday stop (a stop caps
+the tail further). AlgoTest for exact Rs.
