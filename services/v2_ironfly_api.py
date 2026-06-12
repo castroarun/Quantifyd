@@ -159,12 +159,17 @@ def _daily_df():
 
 
 # Compression-gate thresholds (research/64; ~median = soft). Calm = VIX/ATR%/CPR LOW, Stoch HIGH.
-COMPRESSION = dict(vix_max=15.4, atr_pct_max=1.1, cpr_d_max=0.16, stoch_min=65.0, soft_min_pass=3)
+# Compression = pure vol-structure (ATR+CPR+Stoch), soft pass = 2 of 3. VIX is a SEPARATE regime
+# control: floor (premium richness) + hard-skip (disaster zone) — NOT a calm flag. research/64.
+COMPRESSION = dict(atr_pct_max=1.1, cpr_d_max=0.16, stoch_min=65.0, soft_min_pass=2,
+                   vix_floor=13.0, vix_skip=22.0)
 
 
 def _compression():
-    """SHADOW-ONLY today's compression reading from the last COMPLETED daily bar (causal) + live VIX.
-    Returns the 4 features, per-condition flags, n_pass (0-4) and soft_pass (>=3). No trading impact."""
+    """SHADOW-ONLY today's reading from the last COMPLETED daily bar (causal) + live VIX.
+    Compression (ATR/CPR/Stoch) = the calm/vol-structure gate (n_pass/3, comp_pass>=2).
+    VIX is a separate regime: 'skip' (>22, disaster), 'below_floor' (<13, thin premium), 'ok' (13-22).
+    would_enter = comp_pass AND vix_regime=='ok'. No trading impact."""
     df = _daily_df()
     if df is None or len(df) < 30:
         return None
@@ -181,12 +186,21 @@ def _compression():
     piv = (h + l + c) / 3; bcv = (h + l) / 2; tcv = 2 * piv - bcv
     cpr_d = float(abs(tcv - bcv) / c * 100)
     vix = _vix()
-    g = dict(vix=(vix is not None and vix < COMPRESSION["vix_max"]),
-             atr=atr_pct < COMPRESSION["atr_pct_max"], cpr=cpr_d < COMPRESSION["cpr_d_max"],
+    g = dict(atr=atr_pct < COMPRESSION["atr_pct_max"], cpr=cpr_d < COMPRESSION["cpr_d_max"],
              stoch=stoch > COMPRESSION["stoch_min"])
     npass = sum(g.values())
-    return dict(vix=vix, atr_pct=round(atr_pct, 2), cpr_d=round(cpr_d, 3), stoch=round(stoch, 1),
-                flags=g, n_pass=npass, soft_pass=npass >= COMPRESSION["soft_min_pass"])
+    comp_pass = npass >= COMPRESSION["soft_min_pass"]
+    if vix is None:
+        vix_regime = "unknown"
+    elif vix > COMPRESSION["vix_skip"]:
+        vix_regime = "skip"            # disaster zone — never enter
+    elif vix < COMPRESSION["vix_floor"]:
+        vix_regime = "below_floor"     # premium too thin (existing live floor)
+    else:
+        vix_regime = "ok"              # 13-22: tradeable
+    return dict(vix=vix, vix_regime=vix_regime, atr_pct=round(atr_pct, 2), cpr_d=round(cpr_d, 3),
+                stoch=round(stoch, 1), flags=g, n_pass=npass, comp_pass=comp_pass,
+                would_enter=bool(comp_pass and vix_regime == "ok"))
 
 
 def _resolve(legs, expiry):
@@ -221,10 +235,15 @@ def init_db():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP );
       CREATE TABLE IF NOT EXISTS v2_settings (key TEXT PRIMARY KEY, val TEXT);
       CREATE TABLE IF NOT EXISTS v2_compression_log (
-        day TEXT PRIMARY KEY, vix REAL, atr_pct REAL, cpr_d REAL, stoch REAL,
-        n_pass INTEGER, soft_pass INTEGER, would_enter INTEGER,
+        day TEXT PRIMARY KEY, vix REAL, vix_regime TEXT, atr_pct REAL, cpr_d REAL, stoch REAL,
+        n_pass INTEGER, comp_pass INTEGER, would_enter INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP );
     """)
+    for _col in ("vix_regime TEXT", "comp_pass INTEGER"):
+        try:
+            c.execute(f"ALTER TABLE v2_compression_log ADD COLUMN {_col}")
+        except Exception:
+            pass
     try:
         c.execute("ALTER TABLE v2_positions ADD COLUMN series_json TEXT DEFAULT '[]'")
     except Exception:
@@ -559,14 +578,14 @@ def compression_shadow_job():
     cs = _compression()
     if not cs:
         return
-    would = 1 if cs["soft_pass"] else 0
     c = _conn()
-    c.execute("INSERT OR REPLACE INTO v2_compression_log (day,vix,atr_pct,cpr_d,stoch,n_pass,soft_pass,would_enter) "
-              "VALUES (?,?,?,?,?,?,?,?)", (date.today().isoformat(), cs["vix"], cs["atr_pct"], cs["cpr_d"],
-              cs["stoch"], cs["n_pass"], int(cs["soft_pass"]), would))
+    c.execute("INSERT OR REPLACE INTO v2_compression_log (day,vix,vix_regime,atr_pct,cpr_d,stoch,n_pass,comp_pass,would_enter) "
+              "VALUES (?,?,?,?,?,?,?,?,?)", (date.today().isoformat(), cs["vix"], cs["vix_regime"], cs["atr_pct"],
+              cs["cpr_d"], cs["stoch"], cs["n_pass"], int(cs["comp_pass"]), int(cs["would_enter"])))
     c.commit(); c.close()
-    logger.info(f"[V2-compression] {date.today()} n_pass={cs['n_pass']}/4 soft={cs['soft_pass']} "
-                f"vix={cs['vix']} atr%={cs['atr_pct']} cpr={cs['cpr_d']} stoch={cs['stoch']}")
+    logger.info(f"[V2-compression] {date.today()} comp={cs['n_pass']}/3 pass={cs['comp_pass']} "
+                f"vix={cs['vix']}({cs['vix_regime']}) atr%={cs['atr_pct']} cpr={cs['cpr_d']} stoch={cs['stoch']} "
+                f"would_enter={cs['would_enter']}")
 
 
 # ---------- API ----------
@@ -605,7 +624,7 @@ def get_v2_state():
         s["compression_today"] = _compression()
         cc = _conn()
         s["compression_log"] = [dict(r) for r in cc.execute(
-            "SELECT day,vix,atr_pct,cpr_d,stoch,n_pass,soft_pass FROM v2_compression_log ORDER BY day DESC LIMIT 40")]
+            "SELECT day,vix,vix_regime,atr_pct,cpr_d,stoch,n_pass,comp_pass,would_enter FROM v2_compression_log ORDER BY day DESC LIMIT 40")]
         cc.close()
     except Exception:
         s["compression_today"] = None; s["compression_log"] = []
@@ -759,7 +778,7 @@ def register(app, scheduler):
                      lambda: jsonify({"today": _compression(),
                                       "thresholds": COMPRESSION,
                                       "log": [dict(r) for r in _conn().execute(
-                                          "SELECT day,vix,atr_pct,cpr_d,stoch,n_pass,soft_pass,would_enter "
+                                          "SELECT day,vix,vix_regime,atr_pct,cpr_d,stoch,n_pass,comp_pass,would_enter "
                                           "FROM v2_compression_log ORDER BY day DESC LIMIT 120")]}))
     app.add_url_rule("/api/v2-ironfly/stream", "v2_ironfly_stream",
                      lambda: Response(stream(), mimetype="text/event-stream",
