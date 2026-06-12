@@ -116,3 +116,61 @@ Exactly the asymmetry you want: it removes the dangerous entries and barely touc
 Gate ≈ **doubles** expected value vs base across premium assumptions (e.g. W=₹60k: base EV ₹22k →
 gate EV ₹42k). **Caveat stands:** low-vol = thinner premium, so true W is lower in the gated subset →
 P3 resolves the net tradeoff using VIX as a premium proxy.
+
+---
+
+## P3 — Premium-aware net edge (the real sweet spot) — DONE
+
+Premium proxy: ATM-straddle credit ≈ VIX-implied (IV·√T·spot); fly keeps ~65%; win-capture ~55%; stop
+calibrated to the **verified ₹34k** 2% MTM loss. So BOTH win-size (W, rises with VIX) and calm-rate (falls
+with VIX) vary per regime. EV/trade (10 lots) = calm·W − (1−calm)·₹34k-ish.
+
+### EV by VIX bucket — the calm-vs-premium tradeoff
+| VIX | calm | W (win) | EV/trade |
+|---|---|---|---|
+| ≤11 | 80% | ₹56k | **+₹37.8k** |
+| 11–12 | 80% | ₹51k | +₹35.7k |
+| 12–13 | 78% | ₹55k | +₹36.3k |
+| **13–14** | **63%** | ₹57k | **+₹25.8k ← local dip (the known weak band)** |
+| 14–15 | 67% | ₹58k | +₹32.7k |
+| 15–16 | 71% | ₹55k | +₹33.9k |
+| 16–18 | 53% | ₹58k | +₹21.9k |
+| 18–20 | 53% | ₹71k | +₹29.3k |
+| 20–25 | 37% | ₹80k | +₹15.2k |
+| **25+** | **16%** | ₹98k | **−₹1.5k ← only losing regime** |
+
+Richer premium at high VIX does NOT compensate for the collapse in calm-rate. **VIX 25+ is the one
+clearly negative regime; VIX 13–14 is a local trough** (matches the old AlgoTest "12–14 band is the loser").
+
+### The compression gate stacks on the VIX floor
+| Regime | n | calm | EV/trade |
+|---|---|---|---|
+| VIX≥13 | 2179 | 54% | +₹24.2k |
+| **VIX≥13 + compression-gate** | 290 | **73%** | **+₹35.6k (+47%)** |
+| VIX 13–18 + gate | 267 | 74% | +₹36.0k |
+
+The gate (low-vol ∧ narrow-CPR ∧ high-Stoch) lifts EV/trade ~+47% **and** calm 54%→73% on top of the
+existing VIX≥13 floor — i.e. far fewer painful stops at higher per-trade EV.
+
+### The frequency nuance (decides the recommendation)
+The strict gate qualifies only **~20% of days** → for a ~weekly positional book that's ~10 trades/yr vs
+~50. Per-trade quality is best, but total annual ₹ is lower simply from trading less. So:
+- **Risk-adjusted / smooth equity:** the strict compression gate (73–75% calm).
+- **Total ₹ on a weekly book:** a *softer* filter that only removes the worst regimes (skip VIX>20–25 and
+  the bottom compression-score quintile / the 13–14 dip) keeps most weeks while cutting the big losers.
+
+**Caveats:** premium is a VIX proxy — the low-VIX buckets look great on calm but real low-VIX premium is
+thin; the exact ₹ (esp. the low-VIX question and the VIX floor) needs AlgoTest's real premiums. Stop fixed
+at the verified ₹34k MTM (varies with DTE).
+
+## P4 — Recommendation (proposal; live change is your call)
+1. **Add a compression filter to the live V2 entry, on top of VIX≥13** — skip entry when the prior-day
+   compression score is weak (low-vol ∧ narrow-CPR ∧ high-Stoch failing). Tune the threshold for ~50–60%
+   coverage (soft filter), not the strict 20% gate, so the weekly book keeps trading while skipping the
+   volatile weeks.
+2. **Retire / down-weight the inside-week leg** — P1 showed it barely beats base (61% vs 59%); the
+   compression score dominates it.
+3. **Hard-skip the disaster regime:** VIX > ~22–25 (calm collapses to 16%, EV negative).
+4. **Forward-validate** via the engine's existing shadow-skip log (it already records would-skips), and
+   **confirm exact ₹ on AlgoTest** (real premiums) before committing — especially the low-VIX premium
+   question this price-only study can't settle.

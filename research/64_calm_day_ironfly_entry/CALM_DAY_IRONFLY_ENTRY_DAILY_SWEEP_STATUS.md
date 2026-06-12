@@ -1,6 +1,6 @@
 # Calm-Day Entry for NIFTH Iron-Fly Selling — Compression-Gate Hunt
 
-**STATUS: P2 DONE → P3 NEXT** (premium-aware). Goal: find the entry filter that best marks "calm" days/weeks (when a
+**STATUS: P3+P4 DONE — recommendation ready; live wiring pending your go.**
 short neutral/iron fly survives its 2% stop), then push toward the net-₹ sweet spot and wire it live.
 
 ## 1. The Ask
