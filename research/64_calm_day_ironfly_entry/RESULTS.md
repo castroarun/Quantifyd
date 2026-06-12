@@ -195,3 +195,37 @@ double-counting where `VIX<15.4` was wrongly inside the compression score and sk
 **Key insight:** the VIX>=13 floor *reduces* calm by ~4pp (it removes the calmest low-VIX days) — a
 premium choice, not a calm choice. Shorter hold = higher conviction but more rolls (3d ~84 trades/yr,
 4d ~63, 5d ~50). Coverage: VIX 13-22 alone 67%, compression alone 48%, both 28%.
+
+---
+
+## P5 — Directional-drift screen for SKEWED strategies (jade lizard / skewed condor / broken-wing) — first pass
+
+**VERDICT: the mild-directional regime is frequent (~31% of weeks, bull-skewed) BUT its DIRECTION is
+~unpredictable from standard trend/momentum/breakout features. → lean structurally bullish (match the
+drift), don't time per-trade direction.**
+
+### 5-day signed-move base rates (N=2630)
+| Outcome | share |
+|---|---|
+| calm (±1.5%) | 57.1% |
+| mild bull (+1.5-3%) | 19.0% |
+| mild bear (-1.5 to -3%) | 11.7% |
+| strong bull (>3%) | 6.3% |
+| strong bear (<-3%) | 5.9% |
+
+Moved ≥1.5% by close = 43%; **sustained-directional (breach 2% & hold same side) = 33%.** Upward skew
+(mild-bull 19% vs mild-bear 12%).
+
+### Direction is ~unpredictable (among movers, base P(up)=59.2% = the drift)
+Quintile spreads in P(up): ADX +7pp (best), mom20/ma_align +3, di_diff/pweek_break +2, RSI/ma_slope/cpr
+~0, stoch/mom5 −5, donch −4. **All weak/non-monotonic — no feature reliably picks the sign.** The mild
+band (1.5-3%) is also not cleanly predictable (best: low-RSI +10pp, weak).
+
+### Implication
+A NIFTY skewed strategy should be a **structural bullish lean** (jade lizard = short put + short call
+spread, zero upside risk, wins flat-to-up — fits the 59% up-drift), NOT a per-trade direction bet. Edge =
+drift + premium, not prediction. Prior-week breakouts don't follow through (matches research/61 bear-side).
+
+### Next (P5b/P5c — pending user pick)
+- P5b: does direction become predictable AFTER a compression squeeze (vol expansion)?
+- P5c: backtest the jade-lizard / broken-wing structure on the unconditional drift, sized for mild moves.
