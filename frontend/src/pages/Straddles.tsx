@@ -480,8 +480,8 @@ export default function Straddles() {
                 <span style={{ fontWeight: 700, color: C.ink }}>Open fly · exp {v2eng.open.expiry} ({v2eng.open.dte_entry}d at entry)</span>
                 <span style={{ fontSize: 22, fontWeight: 800, marginLeft: 'auto', color: col(v2eng.open.pnl_now || 0) }}>{inr(v2eng.open.pnl_now || 0)}</span>
               </div>
-              <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 6px' }}>
-                entry {v2eng.open.entry_time} · spot {Math.round(v2eng.open.entry_spot)} · VIX {v2eng.open.entry_vix} · net credit {Number(v2eng.open.net_entry).toFixed(1)}
+              <div style={{ fontSize: 11.5, color: C.sec, margin: '2px 0 6px' }}>
+                <b style={{ color: C.ink }}>taken {v2eng.open.day} · {v2eng.open.entry_time}</b> · spot {Math.round(v2eng.open.entry_spot)} · VIX {v2eng.open.entry_vix} · net credit {Number(v2eng.open.net_entry).toFixed(1)} · exp {v2eng.open.expiry}
               </div>
               <div style={{ fontSize: 11, color: C.sec, margin: '0 0 8px', padding: '5px 8px', background: C.amberSoft, border: `1px solid ${C.hairSoft}`, borderRadius: 6 }}>
                 <b>2% move-stop band:</b> exit if NIFTY ≤ <b style={{ color: C.neg }}>{v2eng.open.stop_dn?.toLocaleString('en-IN')}</b> or ≥ <b style={{ color: C.neg }}>{v2eng.open.stop_up?.toLocaleString('en-IN')}</b>
@@ -502,9 +502,6 @@ export default function Straddles() {
                   ))}
                 </tbody>
               </table>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
-                Entered <b style={{ color: C.ink }}>{v2eng.open.day} · {v2eng.open.entry_time}</b> <span style={{ color: C.faint }}>(position-level — one entry/exit timestamp for all legs)</span>
-              </div>
               {Array.isArray(v2eng.open.series) && v2eng.open.series.length >= 2 && (
                 <div style={{ marginTop: 8 }}>
                   <LineChart pts={v2eng.open.series} h={120}
