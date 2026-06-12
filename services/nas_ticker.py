@@ -909,7 +909,7 @@ class NasTicker:
         logger.info(f"[NAS-ATM] ST check: close={latest_close:.1f}, ST={st_val:.1f}, "
                      f"dir={'UP' if direction==1 else 'DN'}")
 
-        if direction == 1:
+        if direction == 1 or latest_close > st_val:
             logger.warning(f"[NAS-ATM] ST EXIT! Premium {latest_close:.1f} reversed above ST {st_val:.1f}")
             threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
 
@@ -1269,8 +1269,9 @@ class NasTicker:
         logger.info(f"[NAS-ATM4] ST check: close={latest_close:.1f}, "
                      f"ST={st_val:.1f}, dir={'UP' if direction == 1 else 'DN'}")
 
-        # For short option: direction==1 means premium trending UP (bad) -> EXIT
-        if direction == 1:
+        # For short option: premium at/above the ST line (trending up) -> EXIT. Fire on a
+        # LEVEL breach too, not only the direction flip (which can lag/reset on re-seed).
+        if direction == 1 or latest_close > st_val:
             logger.warning(f"[NAS-ATM4] ST EXIT! Premium {latest_close:.1f} "
                             f"reversed above ST {st_val:.1f}")
             threading.Thread(
