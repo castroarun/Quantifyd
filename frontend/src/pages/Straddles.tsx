@@ -590,12 +590,19 @@ export default function Straddles() {
               <div style={{ fontSize: 11.5, color: C.sec, margin: '2px 0 6px' }}>
                 <b style={{ color: C.ink }}>taken {v2eng.open.day} · {v2eng.open.entry_time}</b> · spot {Math.round(v2eng.open.entry_spot)} · VIX {v2eng.open.entry_vix} · net credit {Number(v2eng.open.net_entry).toFixed(1)} · exp {v2eng.open.expiry}
               </div>
-              <div style={{ fontSize: 11, color: C.sec, margin: '0 0 8px', padding: '5px 8px', background: C.amberSoft, border: `1px solid ${C.hairSoft}`, borderRadius: 6 }}>
-                <b>2% move-stop band:</b> exit if NIFTY ≤ <b style={{ color: C.neg }}>{v2eng.open.stop_dn?.toLocaleString('en-IN')}</b> or ≥ <b style={{ color: C.neg }}>{v2eng.open.stop_up?.toLocaleString('en-IN')}</b>
-                <span style={{ color: C.muted }}> (±2% from {Math.round(v2eng.open.entry_spot).toLocaleString('en-IN')})</span>
-                {v2spot ? <> · spot now <b style={{ color: C.ink }}>{Math.round(v2spot).toLocaleString('en-IN')}</b></> : null}
-                <span style={{ color: C.muted }}> · checked on 1-min candle close</span>
-              </div>
+              {v2eng.open.gap_day ? (
+                <div style={{ fontSize: 11, color: C.sec, margin: '0 0 8px', padding: '5px 8px', background: '#FBEEEE', border: `1px solid #E3B7B7`, borderRadius: 6 }}>
+                  <b style={{ color: C.neg }}>GAP DAY</b> — opened beyond ±2%, so the 2% stop is suspended. <b>No action first 5 min</b>; then exit on a 1-min close <b style={{ color: C.neg }}>&gt; {v2eng.open.or_high?.toLocaleString('en-IN')}</b> or <b style={{ color: C.neg }}>&lt; {v2eng.open.or_low?.toLocaleString('en-IN')}</b> (the 09:15–09:20 opening range).
+                  {v2spot ? <> · spot now <b style={{ color: C.ink }}>{Math.round(v2spot).toLocaleString('en-IN')}</b></> : null}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: C.sec, margin: '0 0 8px', padding: '5px 8px', background: C.amberSoft, border: `1px solid ${C.hairSoft}`, borderRadius: 6 }}>
+                  <b>2% move-stop band:</b> exit if NIFTY ≤ <b style={{ color: C.neg }}>{v2eng.open.stop_dn?.toLocaleString('en-IN')}</b> or ≥ <b style={{ color: C.neg }}>{v2eng.open.stop_up?.toLocaleString('en-IN')}</b>
+                  <span style={{ color: C.muted }}> (±2% from {Math.round(v2eng.open.entry_spot).toLocaleString('en-IN')})</span>
+                  {v2spot ? <> · spot now <b style={{ color: C.ink }}>{Math.round(v2spot).toLocaleString('en-IN')}</b></> : null}
+                  <span style={{ color: C.muted }}> · checked on 1-min candle close · on a &gt;2% gap-open this switches to the opening-range stop</span>
+                </div>
+              )}
               <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                 <thead><tr style={{ color: C.muted, textAlign: 'left' }}>
                   <th style={{ padding: '2px 0' }}>Leg</th><th>Strike</th><th>In</th><th>LTP</th><th style={{ textAlign: 'right' }}>P&amp;L</th></tr></thead>
@@ -661,6 +668,7 @@ export default function Straddles() {
               <div><b>Entry / when it starts:</b> 09:20 on any trading day the book is <b>flat</b> — sells the <b>2nd-nearest weekly</b> (must be <b>≥ 4 calendar days to expiry</b>), gated by <b>VIX ≥ 13</b> + the combo skip-filter. <b>No fixed weekday</b>: entries follow the roll cycle — it re-arms the morning after the prior fly rolls (DTE ≤ 1), so in practice it re-enters ~weekly. The scheduler checks at 09:20 Mon–Fri.</div>
               <div><b>Skip-filter (live):</b> skip entry when prior-day CPR width &lt; 0.10% OR last week was an inside week — every skip is shadow-logged for forward validation.</div>
               <div><b>Exits:</b> 2% underlying move-stop · +40% credit profit-target · roll at DTE ≤ 1, then re-enter.</div>
+              <div><b>Gap-open handling:</b> if the session <b>opens outside the ±2% band</b>, the engine does <b>not</b> dump at the gap print. It takes no stop action for the first 5 min, then uses the <b>09:15–09:20 opening range</b> as the stop — exit on a 1-min close beyond its high or low (either side). Because that exit can only happen after 09:20 (while still holding), there's <b>no same-day re-entry</b>. Normal-day stop is unchanged. (Discretionary overlay — not in the AlgoTest backtest; paper-validating live.)</div>
               <div><b>Stop band:</b> fixed at entry = entry-spot ±2% (the exact NIFTY levels are shown on the open position). A move-stop, not a premium-stop — it triggers on the underlying, not on the option P&L.</div>
               <div><b>When it's checked (AlgoTest-synced):</b> evaluated on the <b>close of each 1-min NIFTY candle</b> — the same resolution the backtest used (all 110 backtested SL exits land on :00 minute boundaries; AlgoTest is a 1-min candle-close engine, not tick/intra-candle). On the first candle whose close is ≥2% from entry, it exits at that close. The on-screen P&L still ticks every ~3s for display, but the exit decision is candle-close each minute. +40% PT and the DTE≤1 roll run on the same cycle.</div>
               <div><b>Sizing:</b> 10 lots = qty 650 · blocked margin ≈ ₹7.0L (₹70k/lot, Kite SPAN — floats with VIX; hedged by the long wings, ~3× cheaper than the ₹21L naked straddle).</div>
