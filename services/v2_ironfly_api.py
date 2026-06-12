@@ -516,7 +516,7 @@ def get_v2_state():
     s["mode"] = mode
     s["armed"] = armed
     s["live_enabled"] = not CFG["force_paper"]
-    s["deployable"] = (mode == "live" and flat and not armed)
+    s["deployable"] = (mode == "live" and flat)   # show Deploy/preview whenever live+flat
     s["config"] = {"vix_floor": CFG["vix_floor"], "wings": "2% of ATM (snapped to 50)", "stop": "2% move",
                    "pt": "40%", "lots": CFG["lots"], "qty": QTY,
                    "filter": "skip if prior-day CPR<0.10% OR inside-week",
