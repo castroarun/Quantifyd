@@ -6,6 +6,7 @@ import type { NASState, NASPosition } from '../api/types';
 import StatusDot from '../components/StatusDot/StatusDot';
 import Chip from '../components/Chip/Chip';
 import MetricCard from '../components/Cards/MetricCard';
+import NiftyChart from '../components/NiftyChart/NiftyChart';
 import {
   formatInt,
   formatNumber,
@@ -903,6 +904,9 @@ export default function Nas() {
           ))}
         </div>
       </section>
+
+      {/* Live NIFTY 5-min chart, above the Trade Book */}
+      <NiftyChart />
 
       {/* Trade Book — grouped active+closed trades with group P&L (EOD report) */}
       <TradeBook
