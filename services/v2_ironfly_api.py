@@ -511,9 +511,9 @@ def monitor_job():
             _close(pos, "target2x", spot); continue
         if net < 0 and pnl <= -0.6 * abs(net) * QTY:
             _close(pos, "stop", spot); continue
-        # roll near expiry
+        # roll near expiry — pinned to the 15:15-15:30 window (avoid the volatile open / pre-open reject)
         exp = datetime.strptime(pos["expiry"], "%Y-%m-%d").date()
-        if (exp - date.today()).days <= CFG["roll_dte"]:
+        if (exp - date.today()).days <= CFG["roll_dte"] and dtime(15, 15) <= datetime.now().time() <= dtime(15, 30):
             _close(pos, "roll", spot); continue
 
 
