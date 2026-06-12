@@ -266,11 +266,11 @@ def _pnl_now(legs):
 def _insert(system, spot, vix, expiry, legs, mode="paper"):
     dte = (expiry - date.today()).days
     c = _conn()
-    c.execute("INSERT INTO v2_positions (system,day,entry_time,entry_spot,entry_vix,expiry,dte_entry,"
+    cur = c.execute("INSERT INTO v2_positions (system,day,entry_time,entry_spot,entry_vix,expiry,dte_entry,"
               "legs_json,net_entry,status,mode) VALUES (?,?,?,?,?,?,?,?,?, 'OPEN',?)",
               (system, date.today().isoformat(), datetime.now().strftime("%H:%M:%S"), spot, vix,
                expiry.isoformat(), dte, json.dumps(legs), _net_premium(legs), mode))
-    pid = c.lastrowid
+    pid = cur.lastrowid
     c.execute("UPDATE v2_positions SET series_json=? WHERE id=?", (json.dumps([[_hhmm(), 0]]), pid))
     c.commit(); c.close()
     logger.info(f"[V2] {mode.upper()} ENTRY {system} spot={spot:.0f} vix={vix} net={_net_premium(legs):.1f} "
