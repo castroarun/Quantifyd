@@ -374,3 +374,20 @@ Adjustments to evaluate (each vs just-holding, conditional on the day-3/4 state)
   (e) widen the threatened wing.
 Also: test a separate MULTI-WEEK squeeze→breakout study (the classic coil) distinct from the in-trade
 daily path, since our entry window does not isolate prolonged consolidations.
+
+---
+
+## P8 — predicting a day-4/5 breach from day-3 price patterns (beyond drift) — DONE
+Among calm-through-3 flies (n=2178), 23% breach on day-4/5. P(breach) by day-3 feature quintile:
+drift +42pp (9->52, dominant = P6 buffer) · intra-hold RANGE days1-3 +33pp (8->41) · acceleration +25pp ·
+day-3 candle range +15pp · day-3 CPR +8pp · ATR-ratio/VIX-change ~0 (no signal).
+**Beyond drift, RANGE EXPANSION is the tell** (intra-hold range, fat day-3 candle, accelerating move).
+
+**Key (the "beyond drift" warning): within LOW-drift (<0.6%, base breach 11%):** intra-hold range
+5->21% (+16pp), day-3 CPR 6->16% (+9pp), day-3 candle range +9pp. → a position that barely drifted but
+CHOPPED a lot (wide range / round-trip) has DOUBLE the hidden breach risk. Drift says safe; range says no.
+
+**Rule:** at day-3 close check range/chop AND drift. Low-drift+tight-range = safe (~95% finish);
+low-drift+wide-chop (or fat day-3 candle / acceleration) = elevated -> defend/roll. Consistent with all
+prior phases: expansion begets breach, compression begets calm (coil->explosion stays UNSUPPORTED:
+tight intra-hold range -> LOW breach). Feeds P7 (adjustment study); candidate "chop warning" for CALMER.
