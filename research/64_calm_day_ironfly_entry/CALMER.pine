@@ -1,67 +1,71 @@
 //@version=5
-// CALMER — NIFTY Iron-Fly Calm-Day Gate + 2% band + 1.4% caution band + in-trade P6 odds gauge.
-// research/64. Gate (ATR%/CPR/Stoch >=2/3) + VIX 13-22 -> deploy fly; band entry +-2%; caution +-1.4% from day-3.
+// CALMER v4 — NIFTY Iron-Fly Calm-Day Gate + 2% band + 1.4% caution + in-trade P6/P8 odds gauge (drift+chop).
+// research/64. Gate (ATR%/CPR/Stoch >=2/3)+VIX 13-22 -> deploy fly; band +-2%; caution +-1.4% from day-3.
 indicator("CALMER — Iron-Fly Calm-Day Gate + ±2% Band", overlay=true, max_lines_count=500)
-holdDays = input.int(5, "Hold (sessions the ±2% band runs)", minval=1, maxval=20, tooltip="gate calm-rate: 3d ~86%, 4d ~78%, 5d ~69%")
+holdDays = input.int(5, "Hold (sessions the ±2% band runs)", minval=1, maxval=20, tooltip="gate calm: 3d~86% 4d~78% 5d~69%")
 bandPct  = input.float(2.0, "Stop band (% of entry)", minval=0.5, step=0.1) / 100.0
-cautPct  = input.float(1.4, "Caution band (% of entry)", minval=0.3, step=0.1, tooltip="P6: drift >~1.4% by day-3/4 -> P(finish calm) collapses to ~48-64% -> roll/close") / 100.0
+cautPct  = input.float(1.4, "Caution band (% of entry)", minval=0.3, step=0.1, tooltip="P6: drift >~1.4% by day-3/4 -> P(calm) ~48-64%") / 100.0
+chopMax  = input.float(1.5, "Chop caution: intra-hold range > (%)", minval=0.3, step=0.1, tooltip="P8: low-drift + wide range doubles breach risk (5->21%)")
 cautDay  = input.int(3, "Caution band starts at hold-day", minval=1, maxval=20)
-oneTrade = input.bool(true,  "One trade at a time (hide signals while a trade is ON)")
-showBand = input.bool(true,  "Draw bands (2% stop + caution)")
-g = "Compression gate (need >= N of 3)"
-atrMax   = input.float(1.1,  "ATR(14) % of price  <", group=g, step=0.05)
+oneTrade = input.bool(true,  "One trade at a time (hide signals while ON)")
+showBand = input.bool(true,  "Draw bands (2% + caution)")
+g = "Compression gate (>= N of 3)"
+atrMax   = input.float(1.1,  "ATR(14) % of price <", group=g, step=0.05)
 cprMax   = input.float(0.16, "Prior-day CPR width % <", group=g, step=0.01)
-stochMin = input.float(65.0, "Stochastic %K(14)    >", group=g, step=1)
+stochMin = input.float(65.0, "Stochastic %K(14) >", group=g, step=1)
 minPass  = input.int(2, "Min conditions to pass", minval=1, maxval=3, group=g)
 gv = "VIX range (our setting: 13-22)"
 useVix = input.bool(true, "Require VIX in range", group=gv)
 vixSym = input.symbol("NSE:INDIAVIX", "VIX symbol", group=gv)
 vixLo  = input.float(13.0, "VIX floor >=", group=gv)
 vixHi  = input.float(22.0, "VIX ceiling <=", group=gv)
-atrPct = ta.atr(14) / close * 100.0
-pivot  = (high[1] + low[1] + close[1]) / 3.0
-bc     = (high[1] + low[1]) / 2.0
-tc     = 2.0 * pivot - bc
-cprW   = math.abs(tc - bc) / close * 100.0
+atrPct = ta.atr(14)/close*100.0
+pivot  = (high[1]+low[1]+close[1])/3.0
+cprW   = math.abs((2.0*pivot-(high[1]+low[1])/2.0)-(high[1]+low[1])/2.0)/close*100.0
 stochK = ta.stoch(close, high, low, 14)
 vix    = request.security(vixSym, "D", close)
 vixOK  = not useVix or (vix >= vixLo and vix <= vixHi)
-nPass  = (atrPct < atrMax ? 1 : 0) + (cprW < cprMax ? 1 : 0) + (stochK > stochMin ? 1 : 0)
-gate   = (nPass >= minPass) and vixOK
+nPass  = (atrPct<atrMax?1:0)+(cprW<cprMax?1:0)+(stochK>stochMin?1:0)
+gate   = (nPass>=minPass) and vixOK
 newSig = gate and not gate[1]
-var int   lastSigBar = na
-var float entryRef   = na
+var int lastSigBar = na
+var float entryRef = na
+var float runHi = na
+var float runLo = na
 barsSince = na(lastSigBar) ? 100000 : bar_index - lastSigBar
-tradeOn   = barsSince >= 1 and barsSince <= holdDays
-fire      = newSig and not (oneTrade and (barsSince < holdDays))
+tradeOn   = barsSince>=1 and barsSince<=holdDays
+fire      = newSig and not (oneTrade and (barsSince<holdDays))
 if fire
     lastSigBar := bar_index
-    entryRef   := close
+    entryRef := close
+    runHi := high
+    runLo := low
     if showBand
-        up = close * (1.0 + bandPct)
-        dn = close * (1.0 - bandPct)
-        line.new(bar_index, up, bar_index + holdDays, up, color=color.red, width=2)
-        line.new(bar_index, dn, bar_index + holdDays, dn, color=color.red, width=2)
-        line.new(bar_index, close, bar_index + holdDays, close, color=color.new(color.gray, 40), style=line.style_dotted)
-        if holdDays >= cautDay
-            cu = close * (1.0 + cautPct)
-            cd = close * (1.0 - cautPct)
-            cs = bar_index + cautDay
-            line.new(cs, cu, bar_index + holdDays, cu, color=color.new(color.orange, 30), width=1, style=line.style_dashed)
-            line.new(cs, cd, bar_index + holdDays, cd, color=color.new(color.orange, 30), width=1, style=line.style_dashed)
-plotshape(fire, title="Deploy", location=location.belowbar, style=shape.triangleup, color=color.new(color.green, 0), size=size.tiny, text="C", textcolor=color.white)
-bgcolor(oneTrade and (barsSince >= 1 and barsSince < holdDays) ? color.new(color.green, 92) : na)
-cautThr  = cautPct * 100.0
-driftPct = na(entryRef) ? na : math.abs(close - entryRef) / entryRef * 100.0
-actStr = not tradeOn or na(driftPct) ? "-" : driftPct < 0.6 ? "HOLD ~88-90%" : driftPct < cautThr ? "watch ~73-85%" : (barsSince >= 4 ? "ROLL/close ~64%" : "ROLL/close ~48%")
-actCol = not tradeOn or na(driftPct) ? color.gray : driftPct < 0.6 ? color.new(color.green, 25) : driftPct < cautThr ? color.new(color.orange, 25) : color.new(color.red, 15)
-var table t = table.new(position.top_right, 2, 7, border_width=1)
+        line.new(bar_index, close*(1+bandPct), bar_index+holdDays, close*(1+bandPct), color=color.red, width=2)
+        line.new(bar_index, close*(1-bandPct), bar_index+holdDays, close*(1-bandPct), color=color.red, width=2)
+        line.new(bar_index, close, bar_index+holdDays, close, color=color.new(color.gray,40), style=line.style_dotted)
+        if holdDays>=cautDay
+            line.new(bar_index+cautDay, close*(1+cautPct), bar_index+holdDays, close*(1+cautPct), color=color.new(color.orange,30), width=1, style=line.style_dashed)
+            line.new(bar_index+cautDay, close*(1-cautPct), bar_index+holdDays, close*(1-cautPct), color=color.new(color.orange,30), width=1, style=line.style_dashed)
+else if tradeOn
+    runHi := math.max(nz(runHi, high), high)
+    runLo := math.min(nz(runLo, low), low)
+plotshape(fire, title="Deploy", location=location.belowbar, style=shape.triangleup, color=color.new(color.green,0), size=size.tiny, text="C", textcolor=color.white)
+bgcolor(oneTrade and (barsSince>=1 and barsSince<holdDays) ? color.new(color.green,92) : na)
+cautThr  = cautPct*100.0
+driftPct = na(entryRef) ? na : math.abs(close-entryRef)/entryRef*100.0
+holdRng  = (na(runHi) or na(entryRef)) ? na : (runHi-runLo)/entryRef*100.0
+chopHi   = not na(holdRng) and holdRng > chopMax
+actStr = not tradeOn or na(driftPct) ? "-" : driftPct>=cautThr ? (barsSince>=4?"ROLL ~64%":"ROLL ~48%") : (driftPct<0.6 and chopHi) ? "watch CHOP ~79%" : driftPct<0.6 ? "HOLD ~90%" : "watch ~78%"
+actCol = not tradeOn or na(driftPct) ? color.gray : driftPct>=cautThr ? color.new(color.red,15) : (driftPct>=0.6 or chopHi) ? color.new(color.orange,25) : color.new(color.green,25)
+var table t = table.new(position.top_right, 2, 8, border_width=1)
 if barstate.islast
-    table.cell(t, 0, 0, "CALMER", text_color=color.white, bgcolor=color.teal)
-    table.cell(t, 1, 0, tradeOn ? "in trade d" + str.tostring(barsSince) : (gate ? "DEPLOY" : "wait"), text_color=color.white, bgcolor = tradeOn ? color.blue : (gate ? color.green : color.gray))
-    table.cell(t, 0, 1, "ATR%", text_color=color.gray), table.cell(t, 1, 1, str.tostring(atrPct, "#.##") + (atrPct < atrMax ? " ok" : " x"))
-    table.cell(t, 0, 2, "CPR%", text_color=color.gray), table.cell(t, 1, 2, str.tostring(cprW, "#.##") + (cprW < cprMax ? " ok" : " x"))
-    table.cell(t, 0, 3, "Stoch", text_color=color.gray), table.cell(t, 1, 3, str.tostring(stochK, "#") + (stochK > stochMin ? " ok" : " x"))
-    table.cell(t, 0, 4, "VIX", text_color=color.gray), table.cell(t, 1, 4, str.tostring(vix, "#.#") + (vixOK ? " ok" : " x"))
-    table.cell(t, 0, 5, "drift", text_color=color.gray), table.cell(t, 1, 5, tradeOn and not na(driftPct) ? str.tostring(driftPct, "#.##") + "%" : "-")
-    table.cell(t, 0, 6, "odds", text_color=color.gray), table.cell(t, 1, 6, actStr, bgcolor=actCol, text_color=color.white)
+    table.cell(t,0,0,"CALMER",text_color=color.white,bgcolor=color.teal)
+    table.cell(t,1,0, tradeOn?"in trade d"+str.tostring(barsSince):(gate?"DEPLOY":"wait"), text_color=color.white, bgcolor=tradeOn?color.blue:(gate?color.green:color.gray))
+    table.cell(t,0,1,"ATR%",text_color=color.gray), table.cell(t,1,1,str.tostring(atrPct,"#.##")+(atrPct<atrMax?" ok":" x"))
+    table.cell(t,0,2,"CPR%",text_color=color.gray), table.cell(t,1,2,str.tostring(cprW,"#.##")+(cprW<cprMax?" ok":" x"))
+    table.cell(t,0,3,"Stoch",text_color=color.gray), table.cell(t,1,3,str.tostring(stochK,"#")+(stochK>stochMin?" ok":" x"))
+    table.cell(t,0,4,"VIX",text_color=color.gray), table.cell(t,1,4,str.tostring(vix,"#.#")+(vixOK?" ok":" x"))
+    table.cell(t,0,5,"drift",text_color=color.gray), table.cell(t,1,5, tradeOn and not na(driftPct)?str.tostring(driftPct,"#.##")+"%":"-")
+    table.cell(t,0,6,"range",text_color=color.gray), table.cell(t,1,6, tradeOn and not na(holdRng)?str.tostring(holdRng,"#.##")+"%"+(chopHi?" !":""):"-")
+    table.cell(t,0,7,"odds",text_color=color.gray), table.cell(t,1,7, actStr, bgcolor=actCol, text_color=color.white)
