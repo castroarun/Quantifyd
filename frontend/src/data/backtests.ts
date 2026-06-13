@@ -568,6 +568,32 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [4, 6],
       },
       {
+        title: 'P8 — predicting a day-4/5 breach from day-3 patterns (beyond drift)',
+        caption: 'Among flies still calm at day-3 close (23% breach on day-4/5), what flags the impending breach. Drift dominates, but RANGE / CHOP adds independently — and within the low-drift "looks-safe" group, a wide intra-hold range DOUBLES the hidden breach risk (5%→21%). The CALMER indicator surfaces this at day-3 close (drift + chop → HOLD / watch / ROLL). ATR-ratio and VIX-change give nothing — and tight intra-hold range → LOW breach, so the "coil → explosion" idea stays unsupported.',
+        columns: ['Day-3 feature', 'P(breach by day-5) low→high quintile', 'Spread'],
+        rows: [
+          ['drift from entry (buffer used)', '9 → 52%', '+42pp (dominant)'],
+          ['intra-hold range, days 1–3 (chop)', '8 → 41%', '+33pp'],
+          ['acceleration (|move| growing)', '14 → 39%', '+25pp'],
+          ['day-3 candle range', '15 → 31%', '+15pp'],
+          ['WITHIN low-drift (<0.6%): wide chop', '5 → 21%', '+16pp (hidden danger)'],
+          ['ATR ratio / VIX change', '— / —', '~0 (no signal)'],
+        ],
+        highlightRows: [1, 4],
+      },
+      {
+        title: 'P9 — daily-close breach (study) vs 1-min intraday stop (live): whipsaw cost',
+        caption: 'Our calm study measures breach on the DAILY close; the live engine exits on a 1-min candle close ≥2%. The intraday stop caps trend/gap losses but whipsaws on spikes that revert by EOD. Calibrated on real 5-min closes (Kite, 2023–26): the intraday stop genuinely whipsaws ~10% of entries. Net ₹ is still positive (AlgoTest 1-min backtest, Calmar 1.03) — capping the deep-loss tail outweighs whipsaws — but a less-twitchy stop (5/15-min close or a small buffer) is a P7 lever.',
+        columns: ['Measure', 'Value'],
+        rows: [
+          ['holds that touch ±2% intraday', '53% (47% never touch)'],
+          ['of touches: WHIPSAW (revert by close)', '24%'],
+          ['true 5-min-CLOSE whipsaw rate (calibrated)', '10.5% of all entries'],
+          ['continued-day over-run beyond 2% (median)', '~0.4pp (capping benefit modest)'],
+          ['net ₹ verdict', 'positive (AlgoTest 1-min, real premiums) — proxy confirms whipsaw frequency only'],
+        ],
+      },
+      {
         title: 'ENTRY CHECKLIST — verify before each system',
         caption: 'A pre-trade checklist. Compute on the last completed daily bar (causal). All systems require VIX 13–22 first.',
         columns: ['Check', 'Neutral fly', 'Bull jade', 'Bear reverse-jade'],
