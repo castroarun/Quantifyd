@@ -606,6 +606,12 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           highlightRows: [0, 1],
         },
       ],
+      charts: [
+        {
+          src: '/app/nifty_fly_payoffs.png',
+          caption: 'Left: at-expiry payoff diagrams (per 10-lot, VIX~15 proxy) — symmetric iron fly vs bull jade-lizard (+4% put) vs bear reverse-jade; the ±2% calm zone is shaded. Middle: calm-survival by hold length (base vs compression + VIX 13–22 gate). Right: the P6 intra-hold "apply the brakes" curve — P(finish calm) vs drift-from-entry at day-3/day-4 close, with the ~1.4% caution line.',
+        },
+      ],
     },
 
     winners: [
