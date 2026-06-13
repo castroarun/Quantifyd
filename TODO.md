@@ -192,6 +192,34 @@ Bear/bull debit spread → **30-min R1/S1 stop (PRIMARY management)** → **Frid
 
 ## NAS live options (8 variants on 94.136.185.54)
 
+### ✅ DONE 2026-06-12 — Live stops/churn incident: 5 fixes + NAS Live Guardian
+Fast NIFTY rally (23325→23530); the 6 live variants' protective stops malfunctioned (book
++₹6k→−₹9k). Contained via manual-freeze, fixed once-and-for-all, deployed + verified after
+close, freeze cleared (user OK). Forensic + crash-recovery:
+`research/60_nas_churn_incident_fix/NAS_STOPS_CHURN_FORENSIC_STATUS.md`. Commits
+`0dbb1d0 9c8a63a a963de7 0856fea af05acd`.
+- [x] **#1a SL-skip** — `check_and_handle_sl` now REST-fetches a leg's premium instead of silently
+  `continue`-ing when the ticker's `live_ltps` lacked it (all 3 ATM executors).
+- [x] **#1b squeeze SL poll** — `_nas_squeeze_sl_monitor` 10s REST backstop (squeeze was ticker-only).
+- [x] **#3 churn cooldown ROOT CAUSE** — `_pt` date-formats didn't match `datetime.isoformat()`
+  (T + microseconds) → the 15-min `reentry_cooldown_min` was silently blind. Added
+  `%Y-%m-%dT%H:%M:%S.%f`. NB: this time-gate now BLOCKS the "ATM2 same-strike re-entry churn"
+  symptom listed below; the "hold straddle + reset SL in place when strike unchanged" refinement
+  there is now OPTIONAL (not required for safety).
+- [x] **#2 ST survivor exit** — fired only on SuperTrend flip + only at 5-min candle close. Added
+  level-breach (`latest_close>st_val`) + tick-level (cache st_val, exit on any tick premium>ST).
+  999999 naked sentinel preserved.
+- [x] **#4 additive subscriptions** — same-strike legs share ONE token; triangular exclusion sets let
+  a variant unsubscribe a sibling's live leg → tick gap → fed #1. Replaced with
+  `_tokens_in_use_by_others()` (excludes ALL sibling maps). Also reduces the "stale leg SL after
+  ATM2 cascade" log-noise item below.
+- [x] **NAS Live Guardian** `scripts/nas_live_guardian.py` + agent `.claude/agents/nas-live-guardian.md`
+  + `/nas-guardian` command. 4 tiers: live health (ticker/token/per-leg subscription+SL coverage/
+  naked-ST/freeze) · behavioural audit of today's REAL trades (churn, SL-breach-without-exit, P&L
+  reconcile vs Kite) · regression self-test (all 5 fixes intact) · opt-in `--firedrill` sandbox that
+  drives the REAL SL path on a throwaway DB. Runs the 5-min monitor itself + escalates. `7514a0a b2fb2a5`.
+
+
 ### Resolved 2026-06-01 (live)
 - [x] **Bug #1 — OTM cross-variant roll routing.** The OTM tick-adjustment shared
   one token pool (Squeeze-OTM + 9:16-OTM) but always fired through the *squeeze*
