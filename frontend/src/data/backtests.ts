@@ -553,6 +553,21 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [1, 2],
       },
       {
+        title: 'P6 — intra-hold survival: P(finish calm) by buffer used (the dynamic “apply the brakes” line)',
+        caption: 'Once the fly is still calm at day-3 / day-4 close, how far it has DRIFTED from entry sets the odds of finishing calm. Conditional survival: staying calm through day-3 lifts the next-2-day odds to 77% (vs 59% unconditional; per-extra-day hazard ≈13%). Past ~1.4% drift the odds collapse — the day-3/4 roll-or-close line (built into the CALMER indicator’s caution band + live odds gauge).',
+        columns: ['State at day-3 / day-4 close', 'Drift from entry', 'P(finish calm to day-5)'],
+        rows: [
+          ['day-3 · barely moved', '< 0.3%', '90%'],
+          ['day-3', '0.3–0.6%', '88%'],
+          ['day-3', '0.6–0.95%', '85%'],
+          ['day-3', '0.95–1.37%', '73%'],
+          ['day-3 · hugging the band', '> ~1.4%', '48%'],
+          ['day-4 · barely moved', '< 0.32%', '99%'],
+          ['day-4 · hugging the band', '> ~1.4%', '64%'],
+        ],
+        highlightRows: [4, 6],
+      },
+      {
         title: 'ENTRY CHECKLIST — verify before each system',
         caption: 'A pre-trade checklist. Compute on the last completed daily bar (causal). All systems require VIX 13–22 first.',
         columns: ['Check', 'Neutral fly', 'Bull jade', 'Bear reverse-jade'],
