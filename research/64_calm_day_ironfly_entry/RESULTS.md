@@ -351,3 +351,26 @@ band is anchored on the **confirmation-day close** and the calm-rates INCLUDE th
 → **Deploy toward EOD on the confirmation day** (band at that close) = the truest match (captures an extra
 night of theta). Next-morning 09:20 entry (V2 live convention) re-anchors at 09:20, skips the first
 overnight gap (marginally safer). Gate computable from the ~15:25 near-final daily bar.
+
+---
+
+## P7 (FUTURE / TODO) — day-3/4 dynamic ADJUSTMENT analysis (needs detailed study)
+Trigger to study: P6 shows the in-trade buffer-used gauge flags breach risk by day-3/4 close (drift
+>~1.4% → P(finish calm) collapses 90%→48%; choppy path 62% vs tight 84%). The "brakes/adjustment at
+day-3 close (EOD)" decision is valid — but WHICH adjustment is an open question requiring its own study.
+
+NOTE on the apparent paradox (recorded): low day-3 drift → stays calm is MECHANICAL (distance-to-band ×
+days-left) + vol-clustering, NOT a contradiction of "coil→breakout". We TESTED squeeze→breakout in P5b:
+a compressed entry preceded SMALLER moves (34% vs 53% move-rate), so at the 5-day horizon compression
+persists. The breakout-after-coil is the ~10% tail + a longer (multi-week) consolidation phenomenon our
+daily-entry window doesn't isolate; and low-drift-but-CHOPPY (round-trip) is riskier than low-drift-tight.
+
+Adjustments to evaluate (each vs just-holding, conditional on the day-3/4 state) — NEEDS option premiums
+(AlgoTest / the recorder), so it is a later phase:
+  (a) close / roll early when buffer >~1.4% used by day-3;
+  (b) take profit on the safe (untested) side, ride the rest;
+  (c) roll the THREATENED side/wing out (defend the breaching side);
+  (d) convert to a directional skew (jade) in the drift direction once one side is clearly threatened;
+  (e) widen the threatened wing.
+Also: test a separate MULTI-WEEK squeeze→breakout study (the classic coil) distinct from the in-trade
+daily path, since our entry window does not isolate prolonged consolidations.
