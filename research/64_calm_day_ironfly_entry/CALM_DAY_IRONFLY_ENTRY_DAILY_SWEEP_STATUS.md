@@ -59,3 +59,27 @@ the 2% move-stop** (= the fly wins), and the best *combination/composite* of the
   realized-vol, Donchian/BB/CPR/5d-range width, gap. Dead = ADX, Ichimoku, MA dist/compress, RSI, weekly
   CPR, inside-day/week (inside-week barely beats base — challenges the live filter). Friday slightly calmer.
 - **P2:** (filling in this run — see RESULTS.md)
+
+---
+
+## CURRENT STATE — full crash-recovery snapshot (as of 2026-06-13)
+
+**STUDY (research/64) — all phases DONE, recorded in RESULTS.md:**
+- P1 univariate · P2 combinations/composite (walk-forward) · P3 premium-aware EV · P5a–e directional
+  (jade lizard) · P6 intra-hold survival · P7 (TODO adjustment study) · P8 day-4/5 breach predictors ·
+  P9/P9b daily-close-vs-intraday-stop (5-min calibrated).
+- Verdict: CALM is predictable from vol/range COMPRESSION; gate = ATR%<1.1 ∧ CPR_d<0.16 ∧ Stoch>65 (≥2/3)
+  + VIX 13–22 → 5-day calm 59%→~69-75% (3d ~86%). Direction unpredictable at entry but day-1-confirmed
+  (up>1%→88%). Bull jade+4%put (day-1) is the directional winner. Intra-hold: buffer-used + chop predict
+  breach (drift>1.4%→48%; low-drift+wide-chop doubles risk).
+
+**PUBLISHED / LIVE ARTIFACTS:**
+- App card: /app/backtest/nifty-fly-calm-directional-entry (extends v2-nifty-ironfly-sl-vix). 3 systems,
+  conviction table, P6 table, payoff figure (frontend/public/nifty_fly_payoffs.png), entry checklist.
+- TradingView: research/64/CALMER.pine (compression gate + ±2% band + ±1.4% caution + in-trade odds gauge).
+- AlgoTest cards: ALGOTEST_TEST_CARD.md (VIX bands) + ALGOTEST_JADE_CARD.md (bull/bear structures).
+- Live engine: services/v2_ironfly_api.py — compression SHADOW logger (/api/v2-ironfly/compression, daily
+  09:25); the live V2 fly executor (PAPER/LIVE toggle, Deploy, kill). One LIVE fly open (id2, 06-23 expiry).
+
+**OPEN FOLLOW-ONS:** P7 adjustment study (needs premiums) · run the AlgoTest cards (exact ₹) ·
+day-1-confirmed jade shadow logger · P8 chop-warning on the card + indicator (in progress).

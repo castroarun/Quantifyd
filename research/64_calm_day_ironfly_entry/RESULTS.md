@@ -391,3 +391,20 @@ CHOPPED a lot (wide range / round-trip) has DOUBLE the hidden breach risk. Drift
 low-drift+wide-chop (or fat day-3 candle / acceleration) = elevated -> defend/roll. Consistent with all
 prior phases: expansion begets breach, compression begets calm (coil->explosion stays UNSUPPORTED:
 tight intra-hold range -> LOW breach). Feeds P7 (adjustment study); candidate "chop warning" for CALMER.
+
+---
+
+## P9 — daily-close breach (our study) vs 1-min intraday stop (live engine) — DONE
+Proxy: intraday breach = daily H/L TOUCH of ±2% (no NIFTY 1-min/5-min in DB). Full period N=2810:
+47% clean, 53% touch ±2% — of touches, 24% WHIPSAW (revert, daily close stays inside → daily-rule KEEPS,
+intraday-stop EXITS) / 76% CONTINUE. Continued daily-close over-runs 2% by only ~0.4-0.6pp (capping benefit
+modest; deep -4/-5% over-runs rare). Touch-proxy net looked ~-₹7.6M, BUT touch overcounts (wick ≠ close).
+
+**P9b calibration — REAL 5-min CLOSES (Kite, 2023-07→2026-06, 725 entries):** true 5-min-CLOSE whipsaw =
+10.5% (vs 13.2% touch); 79% of touch-whipsaws were REAL closes (21% wicks). So the intraday stop genuinely
+whipsaws ~10% of entries (likely a bit MORE at 1-min). Cost is real.
+
+**Reconciliation:** net ₹ needs premiums — AlgoTest (1-min CLOSE, real premiums) already validated the 2%
+stop as net-POSITIVE (Calmar 1.03). So intraday whipsaws ~10-13% (real cost) but it is net-positive per the
+authoritative premium backtest (tail-capping > whipsaw cost). The proxy confirms FREQUENCY, can't settle ₹.
+**P7 lever:** a less-twitchy stop (5/15-min close, or a small buffer past 2%) could cut whipsaws vs tail-cap.
