@@ -408,3 +408,17 @@ whipsaws ~10% of entries (likely a bit MORE at 1-min). Cost is real.
 stop as net-POSITIVE (Calmar 1.03). So intraday whipsaws ~10-13% (real cost) but it is net-positive per the
 authoritative premium backtest (tail-capping > whipsaw cost). The proxy confirms FREQUENCY, can't settle ₹.
 **P7 lever:** a less-twitchy stop (5/15-min close, or a small buffer past 2%) could cut whipsaws vs tail-cap.
+
+---
+
+## P9 (FULL PERIOD, real 5-min closes) — DEFINITIVE (supersedes the daily-touch proxy)
+Backfilled NIFTY50 5-min into the DB (2015-02→2026-03, 202,091 bars). Re-ran daily-close-vs-intraday on
+REAL 5-min closes, 2700 entries: clean 46% · CONTINUED 40% (over-run beyond 2% median 0.79pp) ·
+whipsaw-by-touch 13.4% · **whipsaw by TRUE 5-min CLOSE 11.1%** (83% of touch-whipsaws were real closes).
+→ the intraday stop whipsaws **~11% of entries** over the full history (1-min slightly higher); net ₹
+still +ve per AlgoTest (real premiums; tail-capping > whipsaw). Lever: a less-twitchy stop (5/15-min
+close or a small buffer past 2%) to cut whipsaws. AlgoTest mechanism clarified: it uses the POINT-IN-TIME
+underlying price at the exit timestamp (~1-min resolution), not a distinct "candle close".
+
+DATA ASSETS ADDED TO DB (VPS): NIFTY50 5-min full 2015-2026; INDIAVIX daily + 5-min. (NIFTY index 5-min
+volume = 0 — index has none; real volume only in NIFTY FUTURES, not downloaded.)
