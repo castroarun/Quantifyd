@@ -422,3 +422,30 @@ underlying price at the exit timestamp (~1-min resolution), not a distinct "cand
 
 DATA ASSETS ADDED TO DB (VPS): NIFTY50 5-min full 2015-2026; INDIAVIX daily + 5-min. (NIFTY index 5-min
 volume = 0 — index has none; real volume only in NIFTY FUTURES, not downloaded.)
+
+---
+
+## P10 — stop-granularity sweep (real 5-min, 2015-2026) — DONE
+| Stop | exits | whipsaw | med exit | mean exit | exits>3% |
+|---|---|---|---|---|---|
+| 5-min close | 52% | 11.1% | 2.06% | 2.20% | 4% |
+| 15-min close | 50% | 10.0% | 2.09% | 2.23% | 4% |
+| 30-min close | 49% | 9.0% | 2.12% | 2.26% | 4% |
+| daily close | 40% | 0% | 2.40% | 2.64% | 19% |
+Granularity is a MARGINAL lever: 5→30-min trims whipsaws 11→9% at ~unchanged fills. Daily-close kills
+whipsaws (0%) but 5× fatter tail (19% exits >3% = deep max-loss + overnight gap) → WORSE for a defined-risk
+fly. 15-min = sensible middle. Real whipsaw lever = a small BUFFER (exit ~2.2-2.5%) or 2-bar confirmation
+(P10b, not yet run), not coarser bars.
+
+## P7 — day-3 adjustment (DATA-ONLY done; ₹ needs premiums)
+When flagged at day-3, the move over days 4-5:
+- NEAR-BAND (drift 1.4-2%): finish-calm 46-52% | continue-breach (same side) 47-53% | **reverse-breach ~0%**
+  → ONE-SIDED ~50/50 risk; untested side safe → DEFEND the threatened side / CONVERT toward the drift
+  (asymmetric play), not a symmetric close.
+- CHOP (low-drift, wide range): finish-calm 82-84% | breach ~16-18%, can go either way (reverse 5-6%)
+  → TWO-SIDED but mild → holding defensible; tighten symmetrically if acting.
+- not flagged (tight): 92-94% calm.
+**Spec for the ₹ study (needs premiums — AlgoTest/recorder):** evaluate HOLD vs CLOSE-at-day-3 vs
+DEFEND-threatened-side (roll short/wing out) vs CONVERT-to-jade-toward-drift, conditional on the flag;
+near-band → asymmetric (one-sided) adjustments; chop → symmetric. The recorder (since 2026-04) accrues
+premiums for a forward version.
