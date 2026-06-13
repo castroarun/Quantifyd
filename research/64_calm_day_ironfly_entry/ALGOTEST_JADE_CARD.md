@@ -40,3 +40,12 @@ Key checks on each run:
 Pick the structure with the best Calmar that's positive every year AND whose worst-week tail you can
 stomach. P5d proxy expectation: **jade + 4% put** is the sweet spot (defined ~-200k tail vs naked -795k,
 keeps +EV and ~71-81% win). Confirm the real credit covers the call spread (no upside risk) at VIX 13-22.
+
+## Bear-side runs (P5e) — add these
+| # | Structure | Legs (% OTM) |
+|---|---|---|
+| 5 | Reverse jade (bear, naked) | SELL +2% CE, SELL -1% PE, BUY -2.5% PE |
+| 6 | Reverse jade + 4% call (defined) | #5 + BUY +4% CE |
+Check: net credit, worst week (should be an UP week now — verify it is gentler than the bull-jade crash
+tail), per-year, Calmar. Day-1-DOWN-confirmed variant = paper/forward only. Expectation: comparable EV,
+safer tail, but weaker as a directional bet (use tactically / as a hedge, not standalone).

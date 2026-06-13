@@ -303,3 +303,26 @@ naked -795k/-737k/-661k/-587k/-553k → +4%put each capped ~-185 to -203k. The p
 drift-aligned. AlgoTest card: `ALGOTEST_JADE_CARD.md`. Caveats: proxy credits (real IV decides if credit
 covers the call spread = no upside risk, esp. at low VIX); held-to-expiry, no intraday stop (a stop caps
 the tail further). AlgoTest for exact Rs.
+
+---
+
+## P5e — BEARISH lean (reverse skew) — DONE
+Mirror of the bull jade (SELL +2% call + put-spread, + long 4% call to cap the up tail). Proxy, VIX 13-22.
+| Structure | EV | win% | tail |
+|---|---|---|---|
+| Bull jade + 4% put (ref) | +Rs41k | 71% | -Rs206k |
+| Bear jade + 4% call | +Rs52k | 75% | -Rs205k |
+| Bull, day-1 UP-confirmed | +Rs64k | 81% | -Rs201k |
+| Bear, day-1 DOWN-confirmed | +Rs47k | 73% | -Rs203k |
+
+**Finding 1 — bear skew has a SAFER tail:** NIFTY's violent tail is the downside (crash weeks); a bull
+jade is short that tail. A bear structure's exposed tail is the upside (gentler, rarely >+4-5%). So a
+bear lean is less tail-dangerous.
+**Finding 2 — but a weaker directional bet:** fights the up-drift + day-1 DOWN follow-through (68-73%) is
+weaker than UP (75-88%). Day-1-confirmed, BULL (+64k/81%) beats BEAR (+47k/73%).
+**Caveat:** proxy strikes make both more range-like than cleanly directional — trust EV/tail not bucket
+P&L; AlgoTest with proper strikes for the real bear numbers.
+
+**Verdict:** BULL jade = primary directional play (day-1-up). BEAR lean = tactical (day-1-down) or a
+HEDGE/diversifier (its up-rocket losses are uncorrelated with the bull jade's crash losses) — not the
+standalone engine. Bear-side runs added to the AlgoTest card.
