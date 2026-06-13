@@ -397,6 +397,267 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     ],
   },
   {
+    slug: 'nifty-fly-calm-directional-entry',
+    title: 'NIFTY Premium-Selling — Entry Regimes: Calm Gate + Directional Skew (extends the V2 Iron Fly)',
+    verdict:
+      'Extension of the V2 Iron-Fly study — it answers WHEN to enter. On 11 years of NIFTY price action (2015–2026, daily): (1) calm is strongly predictable from ONE family — volatility / range COMPRESSION (low ATR/VIX, narrow daily CPR, firm Stochastic) — lifting a neutral fly’s ≈59% weekly survival to ~75%, while trend / MA / Ichimoku / ADX / inside-candle features add essentially nothing. (2) Direction is NOT predictable at entry (a coin-flip with a structural up-drift), but a day-1 confirmation IS tradeable — an up day-1 → 88% the week stays up. A defined-risk bullish JADE LIZARD (day-1-up-confirmed) monetises the drift far better than the symmetric fly; the bearish mirror has a safer tail but is weaker, best used tactically / as a hedge. Result: three entry-conditioned systems — Neutral fly (compression gate), Bull jade (day-1-up), Bear reverse-jade (day-1-down / hedge). Price-only (calm-rate + VIX-scaled proxy P&L) — exact ₹ owed to AlgoTest.',
+    status: 'COMPLETE',
+    date: '2026-06-13',
+    cardBlurb:
+      'Extends the V2 iron-fly study → WHEN to enter. Calm-day prediction (P1–P4) + directional/skewed structures (P5), NIFTY daily 2015–2026. Compression gate lifts fly survival 59%→75%; direction unpredictable at entry but day-1-confirmed; bull jade-lizard is the drift-aligned winner.',
+    cardStats: [
+      { label: 'Calm gate (5-day)', value: '59% → 75%' },
+      { label: 'Bull jade (day-1)', value: 'EV +₹64k · 81% win' },
+      { label: 'Mild-directional', value: '31% of weeks' },
+    ],
+
+    systemRules: {
+      intro:
+        'Three entry-conditioned systems came out of this study — one neutral, two directional. They share the same NIFTY premium-selling DNA and differ in structure, entry trigger and which regime they harvest. Win-rates: the fly’s “win” = the week stays calm (2% stop not hit); the jade/bear “win” = a positive trade (proxy P&L).',
+      sharedCoreTitle: 'Shared basis (all three systems)',
+      sharedCore: [
+        { k: 'Underlying / sizing', v: 'NIFTY weekly options, 10 lots (qty 650), positional / overnight carry; ≈₹7.0L SPAN margin (Kite, current).' },
+        { k: 'Research universe', v: 'NIFTY + India VIX daily, 2015-01 → 2026-06 (~2,800 entry days); causal features only (computed on data ≤ prior close — no look-ahead).' },
+        { k: 'Outcome proxy', v: 'No in-house historical option premiums → the 2% move-stop (not) firing within the hold is the model-free CALM / win proxy; structure P&L is modelled with a VIX-scaled premium. Exact ₹ ⇒ AlgoTest.' },
+        { k: 'VIX regime (all three)', v: 'Trade only VIX 13–22 — floor 13 (premium richness, inherited from the V2 study), hard-skip > 22 (calm collapses to 16%, EV turns negative).' },
+        { k: 'Costs', v: '₹20/order, taxes on, 0.25% slippage (empirical median 0.17%).' },
+      ],
+      riskLayer: {
+        title: 'The three systems — structure · trigger · exit · win-rate · edge',
+        caption:
+          'Neutral harvests CALM (compression gate); the two directional books harvest the day-1 follow-through (up strong, down weak). Strikes are % of spot. Jade/bear EV & worst are per-10-lot proxy (VIX 13–22).',
+        columns: ['System', 'Structure (strikes, % of spot)', 'Entry trigger', 'Exit', 'Win-rate', 'Edge (proxy)'],
+        rows: [
+          ['Neutral iron fly', 'SELL ATM CE + ATM PE; BUY +2% CE & −2% PE wings', 'Compression gate: ATR%<1.1 ∧ CPR_d<0.16 ∧ Stoch>65 (≥2 of 3) + VIX 13–22', '2% underlying move-stop (gap day → 09:15–09:20 OR-break) · +40% credit PT · roll DTE≤1', '~69–75% (5-day calm-survival)', 'survival 59%→75%; +EV with management (V2 study)'],
+          ['Bull jade lizard (primary directional)', 'SELL −2% PE; SELL +1% CE + BUY +2.5% CE (call spread); BUY −4% PE (tail cap)', 'Day-1 UP confirm (> +0.5%) + VIX 13–22', 'roll DTE≤1; defined risk (~−₹200k)', '81%', 'EV +₹64k · worst −₹201k'],
+          ['Bear reverse-jade (tactical / hedge)', 'SELL +2% CE; SELL −1% PE + BUY −2.5% PE (put spread); BUY +4% CE (tail cap)', 'Day-1 DOWN confirm (< −0.5%) + VIX 13–22; or as a hedge sleeve', 'roll DTE≤1; defined risk (~−₹200k)', '73%', 'EV +₹47k · worst −₹203k · safer (upside) tail'],
+        ],
+        highlightRows: [0, 1],
+      },
+    },
+
+    system: {
+      intro:
+        'A price-action study (NIFTY daily + India VIX, Kite), run in five phases. Because we hold no multi-year option premiums, the dominant loss driver — the 2% underlying move-stop — is used as a model-free calm/win proxy; structure P&L is then modelled with a VIX-scaled premium. The companion AlgoTest cards (in the repo) confirm the exact ₹ on real premiums.',
+      rows: [
+        { k: 'P1 — univariate screen', v: '~24 causal features vs the 5-day calm outcome → only the volatility/range-COMPRESSION family separates calm from non-calm.' },
+        { k: 'P2 — combinations / composite', v: 'Redundancy (the vol cluster is one factor), conditional lift, AND-gates and a compression score, all walk-forward (thresholds chosen on the train half, applied blind to test).' },
+        { k: 'P3 — premium-aware EV', v: 'VIX as a premium proxy → the net-₹ sweet spot vs the pure calm optimum; isolates the VIX 13–22 tradeable band and the >22 disaster zone.' },
+        { k: 'P5a/b — direction', v: 'Signed forward-move buckets + the day-1 follow-through (does the first day’s move predict the week).' },
+        { k: 'P5c/d/e — structures', v: 'Iron fly vs jade lizard vs broken-wing; long-put tail tuning; the bearish mirror — EV / win / worst-case on the actual weekly move distribution.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls / the seven deadly sins, as applied here.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — every feature uses data ≤ prior close; the outcome is strictly forward.' },
+        { k: 'Walk-forward', v: 'Compression thresholds picked on the train half and applied BLIND to the test half (out-of-sample AUC ≈0.65; gate calm holds ~80% on TEST).' },
+        { k: 'Multiple testing', v: '~24 features screened — the survivors (VIX/ATR/realised-vol/Donchian/Bollinger/CPR) are all one volatility-compression factor; ADX, Ichimoku, MA distance/slope, RSI, inside-candle showed ≤7pp non-monotonic spreads → eliminated.' },
+        { k: 'Regime', v: 'Spans 2015 deval, 2018, COVID-2020, 2022 bear, 2023 chop, 2024/25 trends — the gate is protective in volatile years (2020 +36pp, 2022 +34pp), ~neutral in calm years.' },
+        { k: 'Calm ≠ P&L', v: 'Calm-rate is the WIN-RATE axis only; low VIX = calmer but thinner premium → the net-₹ optimum needs real premiums (AlgoTest). The VIX floor (≥13) deliberately trades ~4pp of calm for premium richness.' },
+        { k: 'Negative skew (directional)', v: 'A naked jade is many-small-wins / one-big-loss (short-put crash tail −₹795k). The long −4% put defines the risk (~−₹200k) at some EV cost — that is the live structure.' },
+        { k: 'Proxy premiums', v: 'Structure ₹ uses a VIX-scaled credit and held-to-expiry payoffs (no intraday stop) → trust the RELATIVE ranking, not the absolute ₹. AlgoTest cards settle the exact numbers (incl. whether the jade truly has no upside risk at a given VIX).' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'P1 — what predicts CALM (univariate, 5-day, 3-era consistent)',
+        caption: 'Top-quintile vs bottom-quintile calm-rate (base 59%). One family wins: volatility / range compression. Trend / oscillator / MA / Ichimoku / inside-candle features are noise.',
+        columns: ['Feature', 'Best quintile', 'Worst quintile', 'Spread', 'Calm when'],
+        rows: [
+          ['India VIX', '81%', '32%', '0.486', 'LOW'],
+          ['ATR(14) / price', '79%', '33%', '0.461', 'LOW'],
+          ['realised vol (10/20d)', '77%', '40%', '0.375', 'LOW'],
+          ['Donchian-20 / 5-day range', '72%', '40%', '0.317', 'NARROW'],
+          ['Bollinger width (squeeze)', '69%', '45%', '0.240', 'NARROW'],
+          ['prior-day CPR width (daily)', '66%', '43%', '0.237', 'NARROW'],
+          ['ADX / Ichimoku / MA dist / RSI / inside-week', '≈ base', '≈ base', '≤0.02 / noise', 'NO signal — eliminated'],
+        ],
+        highlightRows: [0, 1, 5],
+      },
+      {
+        title: 'P2 — CONVICTION table: calm-rate by hold length',
+        caption: 'Compression = ATR%<1.1 ∧ CPR_d<0.16 ∧ Stoch>65 (2 of 3); VIX band 13–22. The right column is the live gate. Note the VIX≥13 floor LOWERS calm ~4pp (it removes the calmest low-VIX days) — a premium choice, not a calm choice.',
+        columns: ['Hold', 'BASE (no filter)', 'Compression only (≈48% cov)', 'Compression + VIX 13–22 (≈28% cov)'],
+        rows: [
+          ['3 trading days', '77.5%', '88.3%', '86.2%'],
+          ['4 trading days', '68.4%', '80.8%', '77.8%'],
+          ['5 trading days', '59.6%', '72.6%', '68.8%'],
+          ['8 trading days', '39.5%', '51.6%', '47.8%'],
+        ],
+        highlightRows: [0, 2],
+      },
+      {
+        title: 'P3 — EV by VIX bucket (the calm-vs-premium tradeoff)',
+        caption: 'Per-10-lot proxy, stop calibrated to the verified ₹34k. Calm rises as VIX falls, premium rises as VIX rises. VIX 13–14 is a local dip; VIX > 22 is the only EV-negative regime.',
+        columns: ['VIX bucket', 'Calm', 'EV / trade'],
+        rows: [
+          ['≤ 13', '78–80%', '+₹36–38k'],
+          ['13–14', '63%', '+₹25.8k (dip)'],
+          ['15–16', '71%', '+₹33.9k'],
+          ['18–20', '53%', '+₹29.3k'],
+          ['20–25', '37–48%', '+₹15.2k'],
+          ['25+', '16%', '−₹1.5k (avoid)'],
+        ],
+        highlightRows: [5],
+      },
+      {
+        title: 'P5a — direction is UNPREDICTABLE at entry',
+        caption: 'Among weeks that moved ≥1.5%, P(up) = 59% (just the drift). No entry-time feature picks the SIGN — every spread is ≤7pp and non-monotonic.',
+        columns: ['Feature', 'P(up) low→high quintile', 'Spread'],
+        rows: [
+          ['ADX (best)', '58 → 65%', '+7pp (still weak)'],
+          ['momentum 20d / MA alignment', '59 → 62%', '+3pp'],
+          ['prior-week breakout', 'follow-through', '+2pp'],
+          ['RSI / MA slope / CPR / Stoch / mom5', '—', '≈0 to −5pp'],
+        ],
+      },
+      {
+        title: 'P5b — but day-1 CONFIRMATION is tradeable',
+        caption: 'After entry, condition on the first day’s realised move → does the 5-day window finish the same side? General momentum (not squeeze-specific). Up is strong, down is weak.',
+        columns: ['Day-1 move (after entry)', 'P(week ends same side)', 'P(ends ≥1.5% same side)'],
+        rows: [
+          ['up > 0.5%', '75%', '36%'],
+          ['up > 1.0%', '88%', '56%'],
+          ['down > 0.5%', '68%', '32%'],
+          ['down > 1.0%', '73%', '48%'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'P5c/d/e — structures: EV / win / worst (proxy, VIX 13–22, per 10-lot)',
+        caption: 'The bullish jade fits NIFTY’s up-drift; the long −4% put caps its crash tail; the bearish mirror has a safer tail but is a weaker bet. Day-1 confirmation lifts EV and (with the put) keeps the tail capped.',
+        columns: ['Structure', 'EV', 'Win%', 'Worst week'],
+        rows: [
+          ['Iron fly (symmetric)', '−₹40k', '37%', '−₹182k'],
+          ['Jade NAKED (short −2% put)', '+₹87k', '78%', '−₹795k ⚠'],
+          ['Jade + long −4% put (defined)', '+₹41k', '71%', '−₹206k'],
+          ['Jade + 4% put · day-1 UP-confirmed', '+₹64k', '81%', '−₹201k'],
+          ['Bear reverse-jade + 4% call · day-1 DOWN', '+₹47k', '73%', '−₹203k'],
+        ],
+        highlightRows: [3],
+      },
+      {
+        title: 'Sample payoff — P&L by 5-day move bucket (symmetric fly vs bull jade+4%put)',
+        caption: 'Why the jade wins on the drift: it converts the fly’s mild-bull and mild-bear losses into wins, only losing on a real drop. Per-10-lot proxy averages.',
+        columns: ['5-day move (share of weeks)', 'Symmetric fly', 'Bull jade + 4% put'],
+        rows: [
+          ['strong bear < −3% (6%)', '−₹143k', '−₹143k'],
+          ['mild bear −1.5/−3% (14%)', '−₹137k', '+₹71k'],
+          ['calm ±1.5% (54%)', '+₹41k', '+₹106k'],
+          ['mild bull +1.5/3% (20%)', '−₹130k', 'capped ≈0'],
+          ['strong bull > +3% (5%)', '−₹140k', '−₹111k'],
+        ],
+        highlightRows: [1, 2],
+      },
+      {
+        title: 'ENTRY CHECKLIST — verify before each system',
+        caption: 'A pre-trade checklist. Compute on the last completed daily bar (causal). All systems require VIX 13–22 first.',
+        columns: ['Check', 'Neutral fly', 'Bull jade', 'Bear reverse-jade'],
+        rows: [
+          ['India VIX in 13–22?', 'required', 'required', 'required'],
+          ['ATR(14)/spot < 1.1%?', 'yes (compression)', '—', '—'],
+          ['Prior-day daily CPR width < 0.16%?', 'yes (compression)', '—', '—'],
+          ['Stochastic %K(14) > 65?', 'yes (compression)', '—', '—'],
+          ['Compression score ≥ 2 of 3 above?', 'REQUIRED', '—', '—'],
+          ['Day-1 confirmation', 'n/a (enter 09:20)', 'up > +0.5% (enter next morning)', 'down > −0.5% (enter next morning)'],
+          ['Structure', 'ATM fly ±2% wings', 'jade: −2% put / +1–2.5% call sp / −4% put', 'reverse: +2% call / −1/−2.5% put sp / +4% call'],
+          ['Exit', '2% move-stop · +40% PT · roll DTE≤1', 'roll DTE≤1', 'roll DTE≤1'],
+        ],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Calm base (5-day)', value: '59.6%' },
+        { label: 'Calm — compression+VIX gate', value: '~69%', tone: 'pos', hint: '72.6% compression-only; ~86–90% at 3-day' },
+        { label: 'Gate OOS AUC', value: '0.65', hint: 'walk-forward, >0.5 = skill' },
+        { label: 'Mild-directional weeks', value: '31%', hint: 'bull 19% / bear 12%' },
+        { label: 'Day-1 up → stays up', value: '88%', tone: 'pos', hint: 'after a >1% up day' },
+        { label: 'Bull jade (day-1) EV', value: '+₹64k', tone: 'pos', hint: '81% win, −₹201k worst — per 10-lot proxy' },
+      ],
+      tables: [
+        {
+          title: 'Finalised entry rules — the three systems',
+          caption: 'The conclusive output. Strikes are % of spot. Win-rate basis differs (fly = calm-survival; jade/bear = positive-trade proxy).',
+          columns: ['System', 'Regime', 'Entry trigger', 'Strikes / wings', 'Exit', 'Win-rate'],
+          rows: [
+            ['Neutral iron fly', 'CALM', 'ATR%<1.1 ∧ CPR<0.16 ∧ Stoch>65 (≥2/3) + VIX 13–22; enter 09:20', 'SELL ATM CE+PE; BUY ±2% wings', '2% move-stop (gap→OR) · +40% PT · roll DTE≤1', '~69–75%'],
+            ['Bull jade lizard', 'mild-bull / drift', 'day-1 UP > +0.5% + VIX 13–22', 'SELL −2% PE; SELL +1% / BUY +2.5% CE; BUY −4% PE', 'roll DTE≤1; defined ~−₹200k', '81%'],
+            ['Bear reverse-jade', 'mild-bear (tactical/hedge)', 'day-1 DOWN < −0.5% + VIX 13–22', 'SELL +2% CE; SELL −1% / BUY −2.5% PE; BUY +4% CE', 'roll DTE≤1; defined ~−₹200k', '73%'],
+          ],
+          highlightRows: [0, 1],
+        },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Neutral iron fly + compression gate (the calm system)',
+        summary: 'Sell the symmetric fly only when volatility/range is compressed (ATR/CPR/Stochastic) inside VIX 13–22 — lifts weekly calm-survival 59%→~75% (≈90% at a 3-day hold), strongly protective in volatile years.',
+        metrics: [
+          { k: '5-day calm (gated)', v: '~69% (vs 59% base)' },
+          { k: '3-day calm (gated)', v: '~86–90%' },
+          { k: 'OOS AUC', v: '0.65' },
+          { k: 'Coverage', v: '~28% of days' },
+        ],
+        rejected: [
+          'Inside-week filter — barely beats base (61% vs 59%); dominated by compression (retire it)',
+          'ADX / Ichimoku / MA / RSI for calm — no usable signal',
+          'VIX<15.4 as a calm flag — over-restricts; use VIX as a 13–22 regime, not a calm flag',
+        ],
+      },
+      {
+        config: 'Bull jade lizard · day-1-up-confirmed + 4% protective put (the directional winner)',
+        summary: 'Direction can’t be timed at entry, but a green day-1 (>+0.5%) → 88% the week stays up. A defined-risk bullish jade entered then monetises NIFTY’s up-drift; the long −4% put caps the crash tail.',
+        metrics: [
+          { k: 'EV / trade', v: '+₹64k (proxy)' },
+          { k: 'Win rate', v: '81%' },
+          { k: 'Worst week', v: '−₹201k (defined)' },
+          { k: 'Trigger', v: 'day-1 up >0.5%, VIX 13–22' },
+        ],
+        rejected: [
+          'Naked jade — +₹87k EV but −₹795k crash tail (must add the long put)',
+          'Broken-wing fly — still a calm-needing short straddle (poor)',
+          'Per-trade direction timing from indicators — unpredictable (≤7pp)',
+        ],
+      },
+      {
+        config: 'Bear reverse-jade — tactical / hedge only',
+        summary: 'A bearish skew has a SAFER tail (upside, gentler than NIFTY’s crash downside) but fights the up-drift and the day-1-down follow-through is weaker (73% vs 81%). Use on a confirmed down-day or as an uncorrelated hedge sleeve, not as the primary engine.',
+        metrics: [
+          { k: 'EV / trade', v: '+₹47k (proxy)' },
+          { k: 'Win rate', v: '73%' },
+          { k: 'Worst week', v: '−₹203k (defined)' },
+          { k: 'Role', v: 'tactical / hedge' },
+        ],
+      },
+    ],
+
+    caveats: [
+      'PRICE-ONLY study: no in-house multi-year option premiums, so calm-rate is the win proxy and structure ₹ uses a VIX-scaled premium. Trust the RELATIVE rankings; exact ₹ ⇒ the AlgoTest cards in the repo (iron fly + jade #1–6).',
+      'Calm-rate ≠ net P&L — low VIX is calmest but thinnest on premium; the VIX≥13 floor trades ~4pp of calm for premium richness. The net-₹ optimum needs real premiums.',
+      'Directional structures are NEGATIVE-SKEW: high win-rate masks a fat loss tail. The jade is defined-risk only WITH the long −4% put (~−₹200k); naked it is −₹795k. Not a free lunch.',
+      'Day-1 confirmation is not expressible on AlgoTest — forward-paper it (the engine can shadow-log it like the compression gate) before any real capital.',
+      'The compression gate is built + live as a SHADOW logger (records would-enter daily); it has NOT yet gated a real entry. The jade/bear structures are research-only — nothing is wired to live orders.',
+      'Single instrument (NIFTY), in-sample over one 11-year history (walk-forward within it). A robust SIGNAL set, not yet live-validated.',
+    ],
+
+    githubLinks: [
+      { label: '← Builds on: V2 Iron Fly (Stop-Loss × VIX)', href: '/app/backtest/v2-nifty-ironfly-sl-vix' },
+      { label: 'research/64 — calm-day + directional entry study', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/64_calm_day_ironfly_entry' },
+    ],
+    projectPaths: [
+      'research/64_calm_day_ironfly_entry/RESULTS.md (P1→P5 findings)',
+      'research/64_calm_day_ironfly_entry/CALM_DAY_IRONFLY_ENTRY_DAILY_SWEEP_STATUS.md',
+      'research/64_calm_day_ironfly_entry/ALGOTEST_JADE_CARD.md (+ ALGOTEST_TEST_CARD.md)',
+      'research/64_calm_day_ironfly_entry/scripts/ (calm_study, p2, p2b, p3, p5*-directional)',
+      'services/v2_ironfly_api.py — live compression shadow logger (/api/v2-ironfly/compression)',
+    ],
+  },
+  {
     slug: 'midcap-rs120-regime-momentum',
     title: 'MidSmallcap400-MQ Concentrated Rotation (mid-cap RS-120 + 200DMA regime)',
     verdict:
