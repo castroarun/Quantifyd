@@ -326,3 +326,28 @@ P&L; AlgoTest with proper strikes for the real bear numbers.
 **Verdict:** BULL jade = primary directional play (day-1-up). BEAR lean = tactical (day-1-down) or a
 HEDGE/diversifier (its up-rocket losses are uncorrelated with the bull jade's crash losses) — not the
 standalone engine. Bear-side runs added to the AlgoTest card.
+
+---
+
+## P6 — intra-hold conditional calm survival (DONE)
+Given a fly (band = entry ±2%) has stayed calm through day k, P(calm holds) and the refiner = how much
+of the ±2% buffer is already used. NIFTY daily 2015–26, N=2829.
+
+**Conditional survival:** P(calm5|calm3)=76.8% (vs 59% uncond) · P(calm4|calm3)=88.2% · P(calm5|calm4)=87.1%.
+Per-day breach hazard once calm ≈ 13%.
+
+**Buffer-used is the dominant intra-hold predictor — at day-3 close, P(finish calm to day5):**
+drift <0.3% → 90% · 0.3–0.6% → 88% · 0.6–0.95% → 85% · 0.95–1.37% → 73% · 1.37–1.99% → **48%**.
+At day-4 close: <0.32% → **99%** · 0.65–1.02% → 92% · 1.43–2.0% → **64%**. Path chop matters (tight
+range → 84%, choppy → 62%). Gated subset P(calm5|calm3)=80% vs 77% all.
+
+**Dynamic rule:** at day-3/4 close — still near entry (<~0.6% drift) → hold (85–99% finish calm);
+hugging the band (>~1.4%) → remaining-calm collapses to 48–64% → roll/close early. A trailing
+"buffer-left × days-left" gauge.
+
+## Band-anchor / deployment validation
+Backtest reference = prior close (`es=clv[i-1]`), stop measured over the FOLLOWING sessions ⇒ the ±2%
+band is anchored on the **confirmation-day close** and the calm-rates INCLUDE the overnight gap into day-1.
+→ **Deploy toward EOD on the confirmation day** (band at that close) = the truest match (captures an extra
+night of theta). Next-morning 09:20 entry (V2 live convention) re-anchors at 09:20, skips the first
+overnight gap (marginally safer). Gate computable from the ~15:25 near-final daily bar.
