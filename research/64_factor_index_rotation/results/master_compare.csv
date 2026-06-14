@@ -1,0 +1,22 @@
+group,book,weighting,cagr,max_dd,calmar,sharpe
+SOLO,Nasdaq only,-,24.59,-31.62,0.778,1.038
+SOLO,Gold only,-,14.57,-19.03,0.766,1.014
+SOLO,Momentum only,-,14.69,-29.03,0.506,0.841
+SOLO,Alpha only,-,17.15,-32.33,0.53,0.807
+SOLO,Value only,-,10.11,-22.68,0.446,0.723
+SOLO,Quality only (ind),-,5.99,-30.81,0.194,0.443
+SOLO,Nifty only,-,9.02,-29.34,0.308,0.621
+FACTOR-ONLY,Value+Momentum,invvol,12.13,-23.24,0.522,0.816
+FACTOR-ONLY,Value+Alpha,invvol,13.02,-25.37,0.513,0.802
+FACTOR-ONLY,Momentum+Alpha,invvol,15.92,-29.56,0.539,0.839
+FACTOR-ONLY,Value+Momentum+Alpha,invvol,13.56,-24.87,0.545,0.829
+FACTOR-ONLY,Value+Quality (ind),invvol,7.73,-23.9,0.323,0.577
+FACTOR-ONLY,5 clean-ish factors,invvol,11.59,-24.81,0.467,0.755
+FACTOR+1 ASSET,Value+Gold,invvol,12.74,-10.78,1.182,1.25
+FACTOR+1 ASSET,Value+Nasdaq,invvol,16.37,-17.46,0.937,1.075
+FACTOR+1 ASSET,Momentum+Gold,invvol,15.43,-11.34,1.36,1.303
+FACTOR+ GOLD+NASDAQ,Value+Gold+Nasdaq,invvol,16.84,-9.54,1.766,1.497
+FACTOR+ GOLD+NASDAQ,Momentum+Gold+Nasdaq,invvol,19.06,-12.46,1.53,1.535
+FACTOR+ GOLD+NASDAQ,Alpha+Gold+Nasdaq,invvol,19.92,-13.66,1.458,1.491
+ORIGINAL 3-ASSET,Nifty+Gold+Nasdaq (equal),equal,17.22,-11.33,1.519,1.414
+ORIGINAL 3-ASSET,Nifty+Gold+Nasdaq (invvol),invvol,16.43,-11.25,1.46,1.45

@@ -1,0 +1,12 @@
+research/64: add master comparison (solo/factor-only/+assets) + real factor-ETF test
+
+Answers two questions. First: can factor indices alone (solo or a couple) beat the
+diversified book? No - factor-only books sit at Calmar ~0.45-0.55 because they are all the
+same equity beta (drawdowns -23 to -33 percent); Gold and Nasdaq are what create the edge,
+and you need both. Best remains Value+Gold+Nasdaq (1.77). Second: pulled the real factor
+ETFs (max history) to test Low-Vol and Quality properly. Real Low-Vol has a sane 13.6
+percent vol and 0.93 correlation to the Nifty - so it is NOT a diversifier, which buries
+the earlier corrupt-index claim. Factor-only stays poor on real data too (Calmar 0.61 vs
+4.49 baseline over the same 2022-26 bull window). Two comparison tables added to the study.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
