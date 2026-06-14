@@ -238,6 +238,10 @@ def init_db():
         day TEXT PRIMARY KEY, vix REAL, vix_regime TEXT, atr_pct REAL, cpr_d REAL, stoch REAL,
         n_pass INTEGER, comp_pass INTEGER, would_enter INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP );
+      CREATE TABLE IF NOT EXISTS v2_jade_log (
+        day TEXT PRIMARY KEY, prev_ret REAL, direction TEXT, vix REAL, vix_regime TEXT, spot REAL,
+        legs_json TEXT, net_credit REAL, priced INTEGER, would_enter INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP );
     """)
     for _col in ("vix_regime TEXT", "comp_pass INTEGER"):
         try:
@@ -590,6 +594,102 @@ def compression_shadow_job():
                 f"would_enter={cs['would_enter']}")
 
 
+# ---------- day-1-confirmed jade SHADOW logger (research/64 directional) ----------
+# Direction is CONFIRMED by the prior completed daily close (day-1), NOT predicted:
+#   prior close up >+0.5% -> BULL jade lizard; down <-0.5% -> BEAR reverse-jade; else NONE.
+# Bull jade lizard: SELL -2% put + SELL +1%/BUY +2.5% call spread + BUY -4% put (the long -4% put is
+#   the defended tail => defined-risk). Bear reverse-jade mirrors it. Shadow-only: records the structure
+#   + LIVE entry premiums each signal day to accumulate REAL forward premiums. Places no orders.
+JADE = dict(ret_min=0.005, vix_floor=13.0, vix_skip=22.0)
+
+
+def _snap(x):
+    return int(round(x / 50.0) * 50)
+
+
+def _jade_legs(spot, direction):
+    """Leg skeleton (side, instrument_type, strike) for the day-1-confirmed direction."""
+    S = spot
+    if direction == "BULL":      # jade lizard — bullish lean, defined-risk via the long -4% put
+        return [
+            {"side": "SELL", "instrument_type": "PE", "strike": _snap(S * 0.98)},    # short -2% put
+            {"side": "SELL", "instrument_type": "CE", "strike": _snap(S * 1.01)},    # call credit spread...
+            {"side": "BUY",  "instrument_type": "CE", "strike": _snap(S * 1.025)},
+            {"side": "BUY",  "instrument_type": "PE", "strike": _snap(S * 0.96)},    # long -4% put (defended tail)
+        ]
+    return [                      # BEAR reverse-jade — the mirror image
+        {"side": "SELL", "instrument_type": "CE", "strike": _snap(S * 1.02)},
+        {"side": "SELL", "instrument_type": "PE", "strike": _snap(S * 0.99)},
+        {"side": "BUY",  "instrument_type": "PE", "strike": _snap(S * 0.975)},
+        {"side": "BUY",  "instrument_type": "CE", "strike": _snap(S * 1.04)},
+    ]
+
+
+def _jade_signal(price=False):
+    """Today's day-1-confirmed jade reading from the last COMPLETED daily bar (causal) + live VIX.
+    Direction from prior-day return; VIX regime same as the fly (skip>22 / below_floor<13 / ok 13-22).
+    price=True attaches LIVE entry premiums (Kite quotes) — the job uses it; the state poll does not.
+    would_enter = direction != NONE AND vix_regime=='ok'. No trading impact."""
+    df = _daily_df()
+    if df is None or len(df) < 5:
+        return None
+    d = df[df.index.date < date.today()]           # drop today's partial bar -> prior completed day
+    if len(d) < 3:
+        d = df
+    C = d["close"]
+    prev_ret = float(C.iloc[-1] / C.iloc[-2] - 1)
+    if prev_ret > JADE["ret_min"]:
+        direction = "BULL"
+    elif prev_ret < -JADE["ret_min"]:
+        direction = "BEAR"
+    else:
+        direction = "NONE"
+    vix = _vix()
+    if vix is None:
+        vix_regime = "unknown"
+    elif vix > JADE["vix_skip"]:
+        vix_regime = "skip"
+    elif vix < JADE["vix_floor"]:
+        vix_regime = "below_floor"
+    else:
+        vix_regime = "ok"
+    spot = _spot()
+    legs = _jade_legs(spot, direction) if (spot and direction != "NONE") else []
+    net_credit = None
+    priced = False
+    if legs and price:                              # capture REAL forward premiums (the point of this)
+        exp = _second_weekly()
+        if exp:
+            res = _resolve(legs, exp)
+            if res:
+                net_credit = round(_net_premium(res), 1)
+                legs = [{"side": l["side"], "instrument_type": l["instrument_type"],
+                         "strike": l["strike"], "entry": round(l["entry"], 2)} for l in res]
+                priced = True
+    return dict(prev_ret=round(prev_ret * 100, 2), direction=direction, vix=vix, vix_regime=vix_regime,
+                spot=round(spot) if spot else None, legs=legs, net_credit=net_credit, priced=priced,
+                would_enter=bool(direction != "NONE" and vix_regime == "ok"))
+
+
+def jade_shadow_job():
+    """09:25 daily — SHADOW ONLY: log today's day-1-confirmed jade reading + LIVE entry premiums
+    (research/64 directional) for forward validation. Records what the directional book WOULD enter
+    and at what real premium; changes no trading behaviour."""
+    init_db()
+    js = _jade_signal(price=True)
+    if not js:
+        return
+    c = _conn()
+    c.execute("INSERT OR REPLACE INTO v2_jade_log (day,prev_ret,direction,vix,vix_regime,spot,legs_json,"
+              "net_credit,priced,would_enter) VALUES (?,?,?,?,?,?,?,?,?,?)",
+              (date.today().isoformat(), js["prev_ret"], js["direction"], js["vix"], js["vix_regime"],
+               js["spot"], json.dumps(js["legs"]), js["net_credit"], int(js["priced"]), int(js["would_enter"])))
+    c.commit(); c.close()
+    logger.info(f"[V2-jade] {date.today()} prev_ret={js['prev_ret']}% dir={js['direction']} "
+                f"vix={js['vix']}({js['vix_regime']}) net_credit={js['net_credit']} "
+                f"would_enter={js['would_enter']}")
+
+
 # ---------- API ----------
 def _state(system):
     init_db()
@@ -630,6 +730,15 @@ def get_v2_state():
         cc.close()
     except Exception:
         s["compression_today"] = None; s["compression_log"] = []
+    try:
+        s["jade_today"] = _jade_signal(price=False)
+        jc = _conn()
+        s["jade_log"] = [dict(r) for r in jc.execute(
+            "SELECT day,prev_ret,direction,vix,vix_regime,spot,net_credit,priced,would_enter "
+            "FROM v2_jade_log ORDER BY day DESC LIMIT 40")]
+        jc.close()
+    except Exception:
+        s["jade_today"] = None; s["jade_log"] = []
     if s.get("open"):
         orng = _opening_range()
         es = s["open"].get("entry_spot")
@@ -782,11 +891,19 @@ def register(app, scheduler):
                                       "log": [dict(r) for r in _conn().execute(
                                           "SELECT day,vix,vix_regime,atr_pct,cpr_d,stoch,n_pass,comp_pass,would_enter "
                                           "FROM v2_compression_log ORDER BY day DESC LIMIT 120")]}))
+    app.add_url_rule("/api/v2-ironfly/jade", "v2_ironfly_jade",
+                     lambda: jsonify({"today": _jade_signal(price=False),
+                                      "params": JADE,
+                                      "log": [dict(r) for r in _conn().execute(
+                                          "SELECT day,prev_ret,direction,vix,vix_regime,spot,net_credit,priced,would_enter "
+                                          "FROM v2_jade_log ORDER BY day DESC LIMIT 120")]}))
     app.add_url_rule("/api/v2-ironfly/stream", "v2_ironfly_stream",
                      lambda: Response(stream(), mimetype="text/event-stream",
                                       headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}))
     scheduler.add_job(compression_shadow_job, "cron", day_of_week="mon-fri", hour=9, minute=25,
                       id="v2_compression_shadow", replace_existing=True)
+    scheduler.add_job(jade_shadow_job, "cron", day_of_week="mon-fri", hour=9, minute=25,
+                      id="v2_jade_shadow", replace_existing=True)
     scheduler.add_job(entry_job, "cron", day_of_week="mon-fri", hour=9, minute=20,
                       id="v2_ironfly_entry", replace_existing=True)
     scheduler.add_job(monitor_job, "cron", day_of_week="mon-fri", hour="9-15", minute="*",
