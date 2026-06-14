@@ -344,6 +344,20 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [0],
         heatmap: true,
       },
+      {
+        title: 'SILVERBEES add-on (tested per request) — silver HURTS over the full window',
+        caption: 'Indian silver ETFs only exist from 2022; pre-2022 silver uses a validated proxy (intl silver × USDINR, monthly-return corr 0.85 to SILVERBEES).',
+        columns: ['Book (monthly reb, net 20bps)', 'Window', 'CAGR', 'MaxDD', 'Calmar'],
+        rows: [
+          ['3-asset (Nifty/Gold/Nasdaq), equal', '2015–26 (11.4y)', '17.6%', '−11.3%', '1.57'],
+          ['4-asset (+Silver), equal', '2015–26*', '18.2%', '−12.4%', '1.47'],
+          ['4-asset (+Silver), inverse-vol', '2015–26*', '18.0%', '−12.4%', '1.45'],
+          ['3-asset, equal', '2022–26 (4.3y, metals bull)', '21.6%', '−9.0%', '2.40'],
+          ['4-asset (+Silver), inverse-vol', '2022–26', '24.5%', '−9.4%', '2.61'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
     ],
     results: {
       metrics: [
@@ -412,6 +426,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'No all-3 simultaneous crash in sample: 2008 isn’t testable (no data), COVID-2020 was V-shaped. A global risk-off hitting equity AND gold AND tech together is under-represented → real MaxDD could exceed −11.3%.',
       'MON100 capacity/regulatory: overseas-ETF flows hit RBI/SEBI caps in 2022 (creation halted, premium to NAV). At size the Nasdaq sleeve carries tracking/capacity risk.',
       'Single 11-year window, no true OOS / walk-forward — mitigated only by the winner being the zero-parameter, simplest config (no knife-edge to overfit; 108 configs searched).',
+      'SILVERBEES add-on (user request): Indian silver ETFs only exist from 2022, so pre-2022 silver uses a validated proxy (intl silver × USDINR, monthly-return corr 0.85 to SILVERBEES). Over the full 2015–26 window adding silver LOWERS Calmar (1.57→1.47 equal, 1.50→1.45 inv-vol) — silver is 0.66 correlated to gold (redundant precious-metal) and very volatile (29% vol, −28% DD). The strong 2022–26 result (Calmar 2.6) was a precious-metals bull, not a durable benefit — a recency-bias trap.',
       'Backtest, net of 20 bps modelled cost. LIQUIDBEES price-return ≈0% (daily-dividend ETF) understates the defensive variant’s cash yield by ~6%/yr; the winner uses no cash leg so is unaffected. Nothing wired live. Past performance is not indicative of future results.',
     ],
     githubLinks: [
