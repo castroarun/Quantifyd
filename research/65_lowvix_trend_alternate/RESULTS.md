@@ -27,3 +27,32 @@ fly/jade switch on.** Net-of-cost: NIFTY future/ETF long, cheap, low turnover.
 - Robustness owed: per-year stability, OOS/walk-forward, exact entry/exit mechanics, net-of-cost, the
   BLENDED book (fly/jade + low-VIX long on one pool) — does it lift the combined Calmar?
 - Sizing: this is the underlying long; size vs the fly margin so the blended book is coherent.
+
+---
+
+## G2 — blended book (REAL fly ₹ + REAL low-VIX long) — DONE; verdict = PROMISING but naive long too crude
+Blend: V2 AlgoTest fly ₹ (VIX≥13) + low-VIX NIFTY long (₹8L notional, VIX<13) on one pool, vs fly+idle-in-debt.
+
+| Year | fly ₹ | lowVIX days | lowVIX ret | blended ₹ | fly+debt ₹ |
+|---|---|---|---|---|---|
+| 2019 | +10,930 | 19 | -2.7% | -10,906 | +14,851 |
+| 2020 | +166,432 | 4 | -1.4% | +154,901 | +167,257 |
+| 2021 | +57,973 | 26 | +2.6% | +78,803 | +63,338 |
+| 2022 | +201,312 | 2 | -1.0% | +193,010 | +201,725 |
+| **2023** | +62,331 | **175** | **+24.5%** | **+258,107** | +98,442 |
+| 2024 | +293,918 | 47 | +1.9% | +308,980 | +303,616 |
+| **2025** | +104,912 | 130 | +4.7% | +142,844 | +131,737 |
+| 2026* | -17,698 | 24 | -5.7% | -63,173 | -12,746 |
+| TOTAL | | | | **+10.6L** | +9.7L |
+
+**VERDICT: lift +₹94k/7yr but ENTIRELY from 2023 (+196k) + 2025 (+38k) — sustained low-VIX bull grinds where
+the long fills the fly's thinnest years (2023 = 175 low-VIX days @ +24.5%, perfect complement). BUT the naive
+"always long in low-VIX" LOSES in short/choppy low-VIX patches (2019 -2.7%, 2026 -5.7%) -> adds directional
+VARIANCE (crude annual DD 13k->63k). G1's aggregate +15% MASKED this lumpiness; G2 caught it.** The
+complementarity is real (2023), but the naive long is too crude.
+
+## G3 (next) — refine the low-VIX entry/exit
+Keep the 2023/2025 sustained-grind upside, cut the 2019/2026 chop drag: test a trend-confirmation entry +
+a stop / VIX-rising exit (the simple MA filter in G1 cut return without fixing per-year — need better). Also:
+proper daily/monthly blended equity (real Calmar, not annual), net-of-cost, sizing/leverage, OOS.
+Caveat: DD here is annual-granularity; the fly's real intraday DD is ~-₹1.17L (V2 study).
