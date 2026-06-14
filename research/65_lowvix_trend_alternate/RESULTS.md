@@ -85,3 +85,17 @@ Low-VIX long carries the low-VIX years (2017 +12%, 2023 +21%, 2025 +5.5%) = exac
 => idle-cash problem largely SELF-SOLVED by the systems; only the VIX>22 tail remains (debt, or a future
 high-VIX 3rd sleeve). ₹ status: fly real (V2), low-VIX long real (2% trail), JADES need their AlgoTest runs
 for real ₹ -> combined ₹/Calmar pending jade premiums; coverage/utilization above is solid.
+
+---
+
+## G3b — INTRADAY VIX exit (5-min INDIAVIX) — DONE; the keeper
+Exit the low-VIX long the MOMENT a 5-min VIX bar >=13 (vs naive next-day), 5-min NIFTY+VIX 2015-26:
+| exit | days | total | Sharpe | maxDD | 2020 | 2022 | 2026 |
+|---|---|---|---|---|---|---|---|
+| naive next-day | 623 | 44% | 1.61 | -9% | -1.5 | -1.1 | -5.9 |
+| **INTRADAY VIX>=13** | 623 | **58%** | **2.17** | **-7%** | -0.7 | -0.3 | -4.5 |
+Intraday exit lifts total 44->58%, Sharpe 1.61->2.17, DD -9->-7%, trims every spike-drag year, keeps 2023
+(+21%). The lag fix WORKS. (Sharpe basis = deployed-day 5-min returns, higher than the daily-series 0.74.)
+
+**LOW-VIX LONG FINAL SPEC: long NIFTY (future/ETF) while VIX<13; 2% trailing stop; EXIT INTRADAY the moment
+5-min VIX>=13.** Closes the lag drag of the naive daily exit.
