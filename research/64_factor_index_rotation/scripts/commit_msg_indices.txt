@@ -1,0 +1,16 @@
+research/64 exploratory: Indian equity indices as the GTAA equity sleeve (NOT published)
+
+Tested every available Indian equity index (Nifty 50/Midcap/Smallcap, sectors, thematics,
+BankNifty, Sensex, BSE500) as the equity sleeve in {index + Gold + Nasdaq}. Kept exploratory
+and deliberately NOT added to the app page because the headline ranking is a multiple-testing
+artifact.
+
+Robust findings: Sensex/BSE500/Nifty500 are the Nifty (corr 0.97-1.00, swapping does nothing);
+only Pharma/IT/Media genuinely decouple (corr under 0.6) but have low returns; Midcap/Smallcap
+are higher-return higher-drawdown beta, not diversifiers. The defensive-sector "winners" (FMCG
+2.44 etc.) are overfit (28-way search, inverse-vol favours low-vol sleeves, benign window).
+Also caught the Kite Commodities index as corrupt (226 percent vol). Disciplined answer stays:
+broad index or Value factor as the sleeve; sector-picking needs a forward thesis. See
+EXPLORATORY_indices_sleeve.md.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
