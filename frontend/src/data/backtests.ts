@@ -1030,7 +1030,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
       {
         title: 'Combined coverage & IDLE-CASH map — all 3 systems (in-trade days/year)',
-        caption: 'Stacking all three systems on ONE capital pool (take any signal when flat) lifts deployment from 45% (neutral only) to ~69% of the year — the bull/bear books fill ~half the fly’s idle time. Running 3 separate books (3× capital) only reaches ~72% (the systems overlap heavily) → one pool is efficient. The idle is REGIME-CONCENTRATED: low-VIX years (2017/2023/2025) and COVID-2020 sit idle 50–65% (130–160 days) because all three only trade VIX 13–22; normal years idle ~10–15%. (B) ~4 neutral entries/yr (17%) drift to the day-3 near-band "convert" state. → Idle-cash rule: when VIX is OUTSIDE 13–22 the cash is idle — park in debt, or run a regime-matched alternate (low-VIX → momentum/trend; high-VIX → defined-risk/long-vol).',
+        caption: 'Stacking all three systems on ONE capital pool (take any signal when flat) lifts deployment from 45% (neutral only) to ~69% of the year — the bull/bear books fill ~half the fly’s idle time. Running 3 separate books (3× capital) only reaches ~72% (the systems overlap heavily) → one pool is efficient. The idle is REGIME-CONCENTRATED: low-VIX years (2017/2023/2025) and COVID-2020 sit idle 50–65% (130–160 days) because all three only trade VIX 13–22; normal years idle ~10–15%. (B) ~4 neutral entries/yr (17%) drift to the day-3 near-band "convert" state. → Idle-cash rule: when VIX is OUTSIDE 13–22 the cash is idle — park in debt, or run a regime-matched alternate (low-VIX → momentum/trend; high-VIX → defined-risk/long-vol). Both alternates are now BUILT & robustness-checked (research/65/66): the low-VIX long is ROBUST (positive in BOTH 2015–20 & 2021–26 halves, Sharpe 0.46→0.76, exit intraday the moment 5-min VIX≥13); the high-VIX mean-reversion long is a SIGNAL-but-thin (positive both halves but 2020-led, −9/−11% DD → use defined-risk). A productive sleeve for EVERY VIX regime → near-zero structural idle.',
         columns: ['Year', 'Neutral-only', 'All-3 (1 pool)', 'Idle days', 'Pool deployed'],
         rows: [
           ['2015', '100', '220', '28', '89%'],
@@ -1146,6 +1146,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'Day-1 confirmation is not expressible on AlgoTest — forward-paper it (the engine can shadow-log it like the compression gate) before any real capital.',
       'The compression gate is built + live as a SHADOW logger (records would-enter daily); it has NOT yet gated a real entry. The jade/bear structures are research-only — nothing is wired to live orders.',
       'Single instrument (NIFTY), in-sample over one 11-year history (walk-forward within it). A robust SIGNAL set, not yet live-validated.',
+      'Idle-cash alternates (research/65 low-VIX long, research/66 high-VIX long) are robustness-checked on the UNDERLYING; their DEFINED-RISK option versions AND the blended-book ₹/Calmar both still need real premiums (AlgoTest). A simple 5% stop does NOT make the high-VIX long defined-risk — it cuts return without capping the −11% DD; only a debit spread does.',
     ],
 
     githubLinks: [
