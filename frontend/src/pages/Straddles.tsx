@@ -681,6 +681,79 @@ export default function Straddles() {
         </section>
       )}
 
+      {/* ===== JADE ENGINE · directional shadow logger ===== */}
+      {v2eng && v2eng.jade_today && (() => {
+        const jt = v2eng.jade_today;
+        const log = Array.isArray(v2eng.jade_log) ? v2eng.jade_log : [];
+        const dirColor = jt.direction === 'BULL' ? C.pos : jt.direction === 'BEAR' ? C.neg : C.muted;
+        const dirBg = jt.direction === 'BULL' ? '#E7F2EE' : jt.direction === 'BEAR' ? '#FBEEEE' : C.hairSoft;
+        const dirLabel = jt.direction === 'BULL' ? 'BULL · jade lizard' : jt.direction === 'BEAR' ? 'BEAR · reverse-jade' : 'no signal today';
+        const pct = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n)}%`;
+        const jth: React.CSSProperties = { fontSize: 9.5, color: C.muted, fontWeight: 600, textAlign: 'right', padding: '2px 6px', textTransform: 'uppercase', borderBottom: `1px solid ${C.hairSoft}` };
+        const jtd: React.CSSProperties = { fontSize: 11, color: C.ink, textAlign: 'right', padding: '3px 6px', borderTop: `1px solid ${C.hairSoft}`, fontVariantNumeric: 'tabular-nums' };
+        return (
+        <section style={{ ...card, marginTop: 14, borderColor: C.navy }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Jade Engine · directional shadow logger</span>
+            {chip(C.navySoft, C.navy, 'SHADOW · no orders')}
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>{log.length} signal day{log.length === 1 ? '' : 's'} logged</span>
+          </div>
+          <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 10, lineHeight: 1.6 }}>
+            Day-1-confirmed directional book (research/64): the <b>prior daily close</b> sets the side — up &gt;+0.5% → <b style={{ color: C.pos }}>bull jade lizard</b>, down &lt;−0.5% → <b style={{ color: C.neg }}>bear reverse-jade</b>. Records the structure + <b>live entry premiums</b> every signal day (09:25 Mon–Fri) to accumulate <b>real forward ₹</b> — the missing input for the blended-book Calmar. Places <b>no orders</b>.
+          </div>
+          <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+            {chip(dirBg, dirColor, dirLabel)}
+            {stat('Prior close', pct(jt.prev_ret), col(jt.prev_ret))}
+            {stat('NIFTY', jt.spot != null ? jt.spot.toLocaleString('en-IN') : '—')}
+            {stat('VIX', `${jt.vix ?? '—'} · ${jt.vix_regime}`)}
+            {stat('Would enter', jt.would_enter ? 'YES' : 'no', jt.would_enter ? C.pos : C.muted)}
+          </div>
+          {Array.isArray(jt.legs) && jt.legs.length > 0 && (
+            <table style={{ width: '100%', maxWidth: 460, borderCollapse: 'collapse', marginBottom: 8 }}>
+              <thead><tr>
+                <th style={{ ...jth, textAlign: 'left' }}>Leg</th><th style={jth}>Type</th>
+                <th style={jth}>Strike</th><th style={jth}>Entry prem</th>
+              </tr></thead>
+              <tbody>{jt.legs.map((l: any, i: number) => (
+                <tr key={i}>
+                  <td style={{ ...jtd, textAlign: 'left', fontWeight: 700, color: l.side === 'SELL' ? C.neg : C.pos }}>{l.side}</td>
+                  <td style={jtd}>{l.instrument_type}</td>
+                  <td style={jtd}>{l.strike}</td>
+                  <td style={jtd}>{l.entry != null ? l.entry : '—'}</td>
+                </tr>))}</tbody>
+            </table>
+          )}
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>
+            {jt.priced
+              ? <>Net credit <b style={{ color: C.ink }}>{jt.net_credit} pts</b> (×650 = <b style={{ color: col(jt.net_credit ?? 0) }}>₹{Math.round((jt.net_credit ?? 0) * 650).toLocaleString('en-IN')}</b>) · long ±4% wing = defined-risk tail.</>
+              : <>Premiums priced live at the 09:25 Mon–Fri logging tick (market closed now). Long ±4% wing = defined-risk tail.</>}
+          </div>
+          <details style={{ marginTop: 8 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C.navy, listStyle: 'none' }}>▸ Logged signal days ({log.length})</summary>
+            {log.length === 0
+              ? <div style={{ fontSize: 11, color: C.faint, padding: '6px 0' }}>None yet — the first fires at the next 09:25 Mon–Fri logging tick.</div>
+              : <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+                  <thead><tr>
+                    <th style={{ ...jth, textAlign: 'left' }}>Day</th><th style={jth}>Prior%</th>
+                    <th style={{ ...jth, textAlign: 'left' }}>Direction</th><th style={jth}>VIX</th>
+                    <th style={jth}>NIFTY</th><th style={jth}>Net credit</th><th style={jth}>Enter?</th>
+                  </tr></thead>
+                  <tbody>{log.map((r: any, i: number) => (
+                    <tr key={i}>
+                      <td style={{ ...jtd, textAlign: 'left' }}>{r.day}</td>
+                      <td style={{ ...jtd, color: col(r.prev_ret) }}>{pct(r.prev_ret)}</td>
+                      <td style={{ ...jtd, textAlign: 'left', fontWeight: 700, color: r.direction === 'BULL' ? C.pos : r.direction === 'BEAR' ? C.neg : C.muted }}>{r.direction}</td>
+                      <td style={jtd}>{r.vix ?? '—'}</td>
+                      <td style={jtd}>{r.spot != null ? r.spot.toLocaleString('en-IN') : '—'}</td>
+                      <td style={jtd}>{r.priced && r.net_credit != null ? `${r.net_credit}` : '—'}</td>
+                      <td style={{ ...jtd, fontWeight: 700, color: r.would_enter ? C.pos : C.muted }}>{r.would_enter ? 'YES' : '—'}</td>
+                    </tr>))}</tbody>
+                </table>}
+          </details>
+        </section>
+        );
+      })()}
+
       {/* ===== ALL DAYS · DAILY JOURNEY ===== */}
       {daily && (
         <section style={{ ...card, marginTop: 14 }}>
