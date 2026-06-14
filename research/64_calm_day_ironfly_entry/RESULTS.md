@@ -449,3 +449,19 @@ When flagged at day-3, the move over days 4-5:
 DEFEND-threatened-side (roll short/wing out) vs CONVERT-to-jade-toward-drift, conditional on the flag;
 near-band → asymmetric (one-sided) adjustments; chop → symmetric. The recorder (since 2026-04) accrues
 premiums for a forward version.
+
+---
+
+## P10b — whipsaw lever: BUFFER vs CONFIRMATION (real 5-min, 2015-2026, 2700 entries) — DONE
+| variant | fire% | whipsaw% | missed-breach% | med fill |
+|---|---|---|---|---|
+| buffer 2.0% (baseline) | 52% | 11.1% | 0.0% | 2.06% |
+| **buffer 2.2% (winner)** | 45% | **5.6%** | 1.6% | 2.26% |
+| buffer 2.5% | 34% | 1.8% | 7.8% (too many) | 2.56% |
+| confirm 2×2.0% | 50% | 9.8% | 0.1% | 2.10% |
+| confirm 3×2.0% | 49% | 8.7% | 0.3% | 2.14% |
+A small ~2.2% BUFFER halves whipsaws (11.1→5.6%) for only 1.6% missed real breaches + ~0.2% worse fill =
+the effective lever. CONFIRMATION barely helps (whipsaws sustain 10-15 min then revert, not single-bar
+spikes). 2.5% too wide (misses 7.8% of real breaches → rides to max-loss). Underlying-only; the ₹ (missed
+breaches ride bigger losses vs avoided whipsaw stops) needs AlgoTest premiums. CANDIDATE: "2.2% stop
+buffer" — validate on AlgoTest before changing the live 2.0% rule.
