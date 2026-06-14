@@ -1,0 +1,16 @@
+research/64: fix table inconsistency - re-base whole page to one canonical 2015-26 window
+
+User spotted the same book (Momentum + Gold + Nasdaq) showing 22.1 percent in one table and
+19.1 percent in another. Root cause: one table used a 2016-26 window that dropped a flat
+2015 warm-up year (inflating the figure), while the rest used the full 2015-26 window. Fixed
+by computing every number on the page from one script (canonical.py), one method
+(inverse-vol, full 2015-26, net 20bps), one data source.
+
+On the consistent window the best-Calmar sleeve is the Value factor (CAGR 17.4 percent,
+drawdown -9.5 percent, Calmar 1.83), so the featured winner switched from Momentum to Value
+and the factsheet was regenerated. A window-note caveat now explains the old 22.1 / 1.77
+figure for anyone who saw it. Conclusions unchanged: factors are about 0.8 correlated (the
+same Nifty bet), the value is a single equity-sleeve swap plus Gold and Nasdaq, one factor
+not two. RESULTS updated.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
