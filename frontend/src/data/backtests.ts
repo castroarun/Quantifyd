@@ -594,6 +594,30 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         ],
       },
       {
+        title: 'P10 / P10b — stop granularity & the 2.2% buffer (the whipsaw lever)',
+        caption: 'The live ~1-min/point-in-time stop whipsaws ~11% of entries (real 5-min, full period 2015–26). Coarser bars (15/30-min) barely help; the daily-close stop kills whipsaws but rides a 5× fatter tail (19% of exits >3%). The effective lever is a small BUFFER — exit on a close beyond ~2.2% (not 2.0%): it halves whipsaws (11→5.6%) for only 1.6% missed breaches. Confirmation (2–3 consecutive bars) barely helps. CANDIDATE refined stop = 2.2% buffer; ₹ pending an AlgoTest check before any live change.',
+        columns: ['Stop variant', 'Whipsaw (false exit)', 'Missed real breach', 'Median exit'],
+        rows: [
+          ['2.0% (current live)', '11.1%', '0%', '2.06%'],
+          ['2.2% buffer (candidate)', '5.6%', '1.6%', '2.26%'],
+          ['2.5% buffer', '1.8%', '7.8% (too many)', '2.56%'],
+          ['15-min close', '10.0%', '0.1%', '2.09%'],
+          ['daily close', '0%', '—', '2.40% · 19% >3% (fat tail)'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'Day-3 ADJUSTMENT cases (A / B / C) — what to do when still alive at day-3',
+        caption: 'After day-3 the position self-classifies. Near-band risk is ONE-SIDED — the opposite / untested band breaches only ~0–1% (UP-drift 0%, DOWN-drift 1%), and it is ~50/50 to continue (53/47%) vs revert — so defend the hugged side only and keep the safe side. Chop is two-sided but mild. The ₹ of each defense (roll-out → asymmetric condor, re-centre → skewed fly, convert → jade) needs option premiums (P7 AlgoTest study).',
+        columns: ['Case', 'Day-3 state', 'Finish-calm', 'Risk', 'Action'],
+        rows: [
+          ['A', 'Not flagged (drift <0.6%, range ≤1.5%)', '92–94%', 'minimal', 'HOLD — do nothing'],
+          ['B', 'Near-band (drift 1.4–2% toward one band)', '46–52%', 'ONE-SIDED (opp ~0–1%)', 'Defend the hugged side: roll its credit spread OUT → asymmetric iron condor, or re-centre (skewed fly), or convert toward the drift (jade); keep the safe side'],
+          ['C', 'Chop (drift <0.6% but range >1.5%)', '82–84%', 'two-sided, mild', 'Mostly HOLD; tighten symmetrically if nervous'],
+        ],
+        highlightRows: [1],
+      },
+      {
         title: 'ENTRY CHECKLIST — verify before each system',
         caption: 'A pre-trade checklist. Compute on the last completed daily bar (causal). All systems require VIX 13–22 first.',
         columns: ['Check', 'Neutral fly', 'Bull jade', 'Bear reverse-jade'],
