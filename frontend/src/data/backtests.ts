@@ -127,7 +127,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     slug: 'factor-index-rotation',
     title: 'Nifty Factor-Index Rotation — does "diversify, don’t select" transfer from assets to factors?',
     verdict:
-      'Follow-on to the GTAA ETF study: apply the same switching / equal-weight / risk-parity toolkit to the Nifty single-factor indices (Momentum, Quality, Value, Low-Vol, Alpha). It does NOT transfer — the factors are mostly the same bet: mean cross-correlation 0.65 and 0.79–0.91 vs the Nifty itself, so equal-weighting them tops out at Calmar 0.76 (best pure-factor book = Momentum+Low-Vol, 17.4% CAGR but −22.9% DD). The real win is COMBINING: use the strongest single factor (Momentum) as the equity sleeve inside the GTAA asset trio and weight by inverse-vol → Momentum + Gold + Nasdaq (inverse-vol), monthly = Calmar 1.77, CAGR 22.1%, MaxDD −12.5%, cost-insensitive. That marginally beats the GTAA Nifty book (1.75) by upgrading the equity sleeve and taming Nasdaq’s 24% vol. Piling in ALL factors dilutes it to 1.18. STRATEGY candidate — an incremental upgrade to research/63, not a standalone factor edge; factor selection/diversification alone is a SIGNAL.',
+      'Follow-on to the GTAA ETF study: does the "diversify, don’t select" result transfer to the Nifty single factors (Momentum/Quality/Value/Low-Vol/Alpha)? No — on CLEAN data the factors are ~0.8 correlated to each other and to the Nifty (mostly the same equity bet), so diversifying across factors does not cut drawdown. DATA-INTEGRITY NOTE (2026-06-14): the Quality & Low-Vol Kite INDEX series were found corrupt (bad prints — 150% / 308% annualised daily vol) and are excluded/retracted, including the earlier "Low-Vol is the lone diversifier" claim. The real win is swapping the SINGLE equity sleeve of the GTAA trio from Nifty to one factor + Gold + Nasdaq, inverse-vol: the best CLEAN choice is the Value factor (Calmar 1.77, CAGR 16.8%, MaxDD −9.5%, 2015–26) — or Momentum (wins the 2016–26 window) — both beating the Nifty book (1.46–1.75). Use ONE factor, not two (a second adds correlated equity beta and crowds out Gold/Nasdaq). STRATEGY candidate — an incremental single-sleeve upgrade to research/63, not a standalone factor edge.',
     status: 'COMPLETE',
     date: '2026-06-14',
     cardBlurb:
@@ -214,17 +214,31 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           highlightRows: [0, 2, 3],
         },
         {
-          title: 'Factor cross-correlation (monthly returns, 2010–26) — why diversification fails',
-          columns: ['', 'Mom', 'Qual', 'Value', 'LowVol', 'Alpha'],
+          title: 'Factor cross-correlation (monthly, CLEAN data) — factors are mostly the same Nifty bet',
+          caption: 'CORRECTION: the Quality & Low-Vol Kite index series were CORRUPT (150% / 308% daily vol) and are excluded; clean factors below are ~0.8 correlated (even more than the 0.65 first reported with the bad data).',
+          columns: ['', 'Mom', 'Value', 'Alpha', 'Nifty'],
           rows: [
-            ['Momentum', '1.00', '0.80', '0.76', '0.44', '0.90'],
-            ['Quality', '0.80', '1.00', '0.85', '0.46', '0.76'],
-            ['Value', '0.76', '0.85', '1.00', '0.42', '0.71'],
-            ['LowVol', '0.44', '0.46', '0.42', '1.00', '0.42'],
-            ['Alpha', '0.90', '0.76', '0.71', '0.42', '1.00'],
+            ['Momentum', '1.00', '0.77', '0.91', '0.84'],
+            ['Value', '0.77', '1.00', '0.73', '0.89'],
+            ['Alpha', '0.91', '0.73', '1.00', '0.80'],
+            ['Nifty', '0.84', '0.89', '0.80', '1.00'],
           ],
-          highlightRows: [3],
+          highlightRows: [],
           heatmap: true,
+        },
+        {
+          title: 'Replace the Nifty sleeve with ONE factor (sleeve + Gold + Nasdaq, inverse-vol, 2015–26)',
+          caption: 'User question. Clean factors only; Quality cleaned-indicative; Low-Vol index unusable (needs the ETF, 2022+). One factor beats two.',
+          columns: ['Equity sleeve', 'CAGR', 'MaxDD', 'Calmar'],
+          rows: [
+            ['Value (clean) — best, lowest-DD', '16.8%', '−9.5%', '1.77'],
+            ['Quality (cleaned-indicative)', '16.3%', '−9.4%', '1.74'],
+            ['Momentum (clean)', '19.1%', '−12.5%', '1.53'],
+            ['Alpha (clean)', '19.9%', '−13.7%', '1.46'],
+            ['Nifty (baseline)', '16.4%', '−11.3%', '1.46'],
+          ],
+          highlightRows: [0],
+          heatmap: false,
         },
       ],
       charts: [
@@ -238,7 +252,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     winners: [
       {
         config: 'Momentum factor + Gold + Nasdaq · inverse-vol · monthly',
-        summary: 'Best of 56 configs. The 1.7-Calmar tier requires the cross-asset diversifiers; given those, the Momentum factor is a better equity sleeve than plain Nifty and inverse-vol tames Nasdaq’s vol. Marginal over research/63 (1.77 vs 1.75) but structurally sound.',
+        summary: 'The 1.7-Calmar tier requires the cross-asset diversifiers (Gold+Nasdaq); given those, ONE factor as the equity sleeve beats plain Nifty and inverse-vol tames Nasdaq’s vol. On a consistent clean 2015–26 window the VALUE factor sleeve is the lower-drawdown pick (Calmar 1.77, DD −9.5%); Momentum wins the 2016–26 window — both beat Nifty. Use one factor, not two.',
         metrics: [
           { k: 'CAGR', v: '22.1%' },
           { k: 'Excess', v: '+12.0%/yr vs NIFTYBEES' },
@@ -247,13 +261,14 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           { k: 'Calmar', v: '1.77' },
         ],
         rejected: [
-          'Pure factor diversification: equal-weight 5 factors = Calmar 0.76 — factors are 0.65 correlated, so equal-weighting them barely cuts the −23% drawdown. The research/63 "diversify > select" result does NOT transfer.',
+          'Pure factor diversification: clean factors are ~0.8 correlated (mostly the same Nifty bet), so equal-weighting them does not cut drawdown — the research/63 "diversify > select" result does NOT transfer to factors.',
           'Factor rotation/selection standalone: best 0.67 (top-3 + trend gate) — better than Nifty but drawdown-bound by equity beta.',
           'All-factors + Gold + Nasdaq: dilutes to Calmar 1.18 — too much correlated equity beta crowds out the diversifiers. Concentrate the equity sleeve into ONE factor.',
         ],
       },
     ],
     caveats: [
+      'DATA INTEGRITY CORRECTION (2026-06-14): the Kite INDEX series for the Quality and Low-Vol factors were found CORRUPT (bad prints — 150% and 308% annualised daily vol, single-day prints up to +472%). All Quality/Low-Vol index results are retracted, including the earlier "Low-Vol is the lone diversifier (0.42–0.47 corr)" claim, which was a bad-data artifact. Clean factors (Momentum/Value/Alpha/Nifty) are ~0.8 correlated. Clean Low-Vol/Quality require the factor ETFs (2022+).',
       'Period dependence (biggest): the combined book is 2016–26 — the same golden decade as research/63 (Nasdaq +24.6% INR, Momentum’s strong run). Treat ~22% CAGR as an upper bound; the low-DD/Calmar property is the robust takeaway.',
       'Mixed data: the Momentum sleeve is a PRICE-return index (understates dividends ~1.5%/yr, so its real edge over Nifty is larger); Gold/Nasdaq are ETF prices. A live version must use the Momentum ETF NAV (MOMOMENTUM / MOM30IETF, listed ~2022 → short history; recheck tracking/capacity).',
       'The improvement over research/63 (1.77 vs 1.75) is inside period-noise. The defensible claims are structural — factors don’t diversify; Momentum > Nifty as a sleeve; inverse-vol tames the book — not the 2nd-decimal Calmar.',

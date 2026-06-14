@@ -1,0 +1,12 @@
+Correct research/64: Quality and Low-Vol factor index data were corrupt; clean answer published
+
+A data-quality check (triggered by an implausible Low-Vol volatility) found the Kite index
+series for Quality and Low-Vol are corrupted by bad prints (150 and 308 percent annualised
+daily vol; single-day prints up to +472 percent). Retracted the Low-Vol-diversifier claim
+and any factor numbers that used them. On clean data the factors are about 0.8 correlated
+(even more than first reported), so diversifying across factors still fails. For replacing
+the Nifty sleeve with one factor, the best clean choice is the Value factor (Calmar 1.77,
+drawdown -9.5 percent), then Momentum; use one factor, not two. The headline winner
+(Momentum + Gold + Nasdaq) uses clean data and stands. Study page and RESULTS corrected.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
