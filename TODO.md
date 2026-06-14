@@ -2,6 +2,29 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ DONE 2026-06-14 — research/63 GTAA ETF rotation (validate + beat Upstox "Strategy 1")
+Course slide claimed Calmar 0.93 for a top-1 momentum rotation of Nifty/Gold/Nasdaq-100.
+Couldn't reproduce 0.93 (Kite ETF history starts 2015); top-1 is weak (Calmar 0.30/0.44).
+**Winner = equal-weight all 3, monthly reb: Calmar 1.73, CAGR 19.5%, DD -11.3%, cost-insensitive.**
+STRATEGY candidate. Published /app/backtest/gtaa-etf-rotation. Engine reusable for the factor study below.
+
+## ⏸ QUEUED — research/64 Nifty FACTOR-INDEX rotation/diversification (user request 2026-06-14)
+Apply the SAME switching/balancing/diversification idea to the Nifty factor indices
+(Momentum / Quality / Value / Low-Vol / Alpha / Growth, + their multi-factor blends and
+the matching factor ETFs e.g. MOM30/QUAL30/ALPHALOWVOL etc.).
+- **Test both:** (a) momentum-ROC rotation top-N across factors, (b) plain equal-weight /
+  risk-parity across factors, (c) factor + asset-class (gold/Nasdaq) combined book.
+- **Hypothesis from research/63:** within a low-correlation set, EQUAL-WEIGHT beats SELECTION;
+  factors are MORE correlated to each other (all long Indian equity beta) than Nifty/Gold/Nasdaq,
+  so diversification benefit will be SMALLER — worth measuring the factor cross-corr first (G1 probe).
+- **Data:** factor ETFs are recent/thin on Kite (check coverage first, likely 2022+); may need to
+  reconstruct factor indices from constituents (research/62 already reconstructs Momentum-30) OR
+  pull NSE factor-index TR series. Resolve data depth BEFORE the sweep.
+- **Reuse:** research/63 gtaa_engine.py (top-N, equal-weight, cash leg, costs) drops straight in.
+- [ ] G1: factor cross-correlation matrix + data-coverage check.
+- [ ] G2: rotation vs equal-weight vs risk-parity sweep, net of cost, per-year.
+- [ ] Publish + tearsheet if it clears Calmar/DD gates vs NIFTYBEES and vs research/63.
+
 ## ★ ACTIVE — V2 executor + inside-week breakout sleeve (build) — 2026-06-10
 Spec: `research/61_v2_feature_attribution/V2_EXECUTOR_AND_BREAKOUT_SLEEVE_BUILD_SPEC.md`.
 - [x] **research/61 causal-feature attribution DONE.** Only vol-COMPRESSION separates losing weeks:

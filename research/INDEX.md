@@ -92,3 +92,16 @@ SIGNAL +0.33R vs BASE +0.93R); volume spike consistently HURTS; only +0.04R on t
 R-targets. Examples (TDPOWERSYS/DATAPATTNS/KMEW) = survivorship. Compression has
 defensive value ONLY in 2022 bear -> use as regime filter, not entry. CONCLUDED.
 See research/55.../results/RESULTS.md.
+
+
+## 63 — gtaa_etf_rotation (2026-06-14)
+**GTAA multi-asset ETF rotation** — validate Upstox "Strategy 1" (top-1 of Nifty/Gold/
+Nasdaq-100 by ROC12, monthly; claimed Calmar 0.93) & beat it. Could NOT reproduce 0.93
+(Kite serves these ETFs only from 2015). top-1 is WEAK 2016-26: Calmar 0.30 raw / 0.44
+gated, -34/-25% DD. **WINNER = drop the selection, hold all 3 EQUAL-WEIGHT monthly:
+Calmar 1.73, CAGR 19.5%, MaxDD -11.3%, turnover ~0, cost-insensitive.** Corr Nifty/Gold
+-0.08, Nifty/Nasdaq +0.25, Gold/Nasdaq +0.04 -> diversification, not rotation, is the
+edge. Same ~1.7 Calmar tier as research/41 & /62 at far lower DD/turnover/tax/complexity.
+**VERDICT: STRATEGY (candidate)** for a simple low-DD core; period-dependence caveat
+(MON100 +24.6% INR carries the absolute return). Published /app/backtest/gtaa-etf-rotation.
+See research/63_gtaa_etf_rotation/results/RESULTS.md.

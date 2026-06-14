@@ -1,0 +1,6 @@
+name,cagr_0bps,calmar_0bps,cagr_10bps,calmar_10bps,cagr_20bps,calmar_20bps,cagr_40bps,calmar_40bps
+EqualWeight 3-asset (WINNER),19.5,1.732,19.49,1.731,19.48,1.73,19.46,1.728
+EqualWeight + trend filter,12.82,1.728,12.33,1.558,11.85,1.397,10.89,1.122
+Momentum top-2 (gated),17.47,1.533,16.92,1.418,16.37,1.313,15.28,1.13
+Slide top-1 (gated),12.42,0.532,11.68,0.484,10.95,0.44,9.5,0.352
+Slide top-1 (raw),11.75,0.347,11.12,0.326,10.5,0.305,9.26,0.265
