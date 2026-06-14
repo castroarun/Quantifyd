@@ -1,0 +1,15 @@
+GTAA study: extend the 3-asset book to 21 years (2005-2026) through the 2008 crash
+
+Addresses the biggest caveat - the recent decade was a bull. Factor data is post-2015,
+so this uses Nifty as the equity sleeve and proxies Gold (GLD x USD/INR) and Nasdaq
+(QQQ x USD/INR), validated against the real ETFs (0.88 / 0.71 correlation) and chained
+with real ETF data after 2015. Over 21 years the 3-asset equal-weight book returns 17.2
+percent a year at a 23.8 percent worst drawdown (Calmar 0.72, or 0.82 inverse-vol) versus
+Nifty-only at 12.7 percent and a 55 percent drawdown. In 2008 it fell 21 percent vs the
+Nifty's 52 percent; in 2011 it gained 8 percent while the Nifty fell 24 percent. The
+honest read: the recent 11 percent drawdown / 1.7 Calmar was a benign-period artifact -
+through a crisis expect about 24 percent - but the book still roughly halves the Nifty's
+drawdown and adds 4.5 percent a year over two decades. Added a 21-year factsheet, a
+through-cycle table, and corrected the period-dependence caveat.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
