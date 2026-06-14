@@ -1,0 +1,12 @@
+Add factor-index rotation study (research/64): factors too correlated to diversify; best book swaps Nifty for the Momentum factor
+
+Follow-on to the GTAA ETF study. Tests whether equal-weighting/rotating the Nifty
+factor indices (Momentum, Quality, Value, Low-Vol, Alpha) works like the asset-class
+trio. It does not - the factors are 0.65 correlated (mostly the same Nifty bet), so
+equal-weight tops out at Calmar 0.76. The better book keeps Gold and Nasdaq for
+diversification but upgrades the equity sleeve from Nifty to the Momentum factor,
+weighted by inverse-volatility: Calmar 1.77, CAGR 22.1%, drawdown -12.5% - a small but
+real improvement on the earlier Nifty book (1.75). Viewable at
+/app/backtest/factor-index-rotation.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>

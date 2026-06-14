@@ -8,7 +8,8 @@ Couldn't reproduce 0.93 (Kite ETF history starts 2015); top-1 is weak (Calmar 0.
 **Winner = equal-weight all 3, monthly reb: Calmar 1.73, CAGR 19.5%, DD -11.3%, cost-insensitive.**
 STRATEGY candidate. Published /app/backtest/gtaa-etf-rotation. Engine reusable for the factor study below.
 
-## ⏸ QUEUED — research/64 Nifty FACTOR-INDEX rotation/diversification (user request 2026-06-14)
+## ✅ DONE 2026-06-14 — research/64 Nifty factor-index rotation (was QUEUED)
+Verdict STRATEGY (candidate). Factors too correlated (0.65) to diversify (EW Calmar 0.76); WINNER = Momentum+Gold+Nasdaq inverse-vol monthly = Calmar 1.77 / CAGR 22.1% / DD -12.5%, marginal upgrade to research/63. Published /app/backtest/factor-index-rotation. Next: Momentum ETF NAV vs index + market trend overlay; SILVERBEES add-on (2022+, short window) tested per user request. See RESULTS.md.
 Apply the SAME switching/balancing/diversification idea to the Nifty factor indices
 (Momentum / Quality / Value / Low-Vol / Alpha / Growth, + their multi-factor blends and
 the matching factor ETFs e.g. MOM30/QUAL30/ALPHALOWVOL etc.).

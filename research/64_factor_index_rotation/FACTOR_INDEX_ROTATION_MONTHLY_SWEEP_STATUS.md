@@ -1,6 +1,6 @@
 # Nifty Factor-Index Rotation / Diversification — does research/63's "diversify > select" transfer to factors?
 
-STATUS: G1 PROBE DONE — thesis reframed; awaiting greenlight for G2 sweep
+STATUS: G2 DONE — winner = Momentum+Gold+Nasdaq inverse-vol (Calmar 1.77); see findings §G2
 
 ---
 
@@ -56,7 +56,24 @@ factors are too correlated; equal-weight gives Calmar 0.66, not 1.73. The levers
 | Date/time (IST) | Event | Notes |
 |---|---|---|
 | 2026-06-14 ~12:30 | research/64 framed; G1 probe run | coverage + corr done; thesis reframed |
-| — | G2 sweep | AWAITING GREENLIGHT (direction below) |
+| 2026-06-14 ~13:00 | G2 sweep DONE (56 configs) | results/g2_sweep.csv |
+
+## G2 FINDINGS (2026-06-14) — 56 configs, net 20bps
+
+- **(a) Pure factor rotation (2010-26):** best Calmar **0.67** (top-3 blend + trend-gate-to-cash).
+  Selection beats Nifty (0.35) but is DD-bound. Cash/trend gate is the only real lever.
+- **(b) Factor baskets (2010-26):** best **Mom+LowVol equal = 0.76** (CAGR 17.4%, DD −22.9%).
+  Inverse-vol ≈ equal (factor vols similar). LowVol helps marginally (0.69→0.76).
+  **→ research/63's "diversify > select" does NOT transfer; factors stay −23% DD (all equity beta).**
+- **(c) Combined factor + asset (2016-26) — WINNERS:**
+  - 🏆 **Momentum + Gold + Nasdaq, inverse-vol = Calmar 1.77, CAGR 22.1%, DD −12.5%**
+  - research/63 Nifty+Gold+Nasdaq reproduced at **1.75** (cross-engine sanity ✓)
+  - Mom+LowVol+Gold+Nasdaq invvol 1.68; **AllFactors+Gold+Nasdaq DILUTES to 1.18** (too much
+    correlated equity beta crowds the diversifiers — concentrate the equity sleeve into ONE factor).
+- **Read:** the 1.7 Calmar tier **requires the cross-asset diversifiers (Gold+Nasdaq)**; given
+  those, upgrading the equity sleeve Nifty→Momentum + inverse-vol (tames Nasdaq's 24% vol) edges
+  past research/63 — marginal (1.77 vs 1.75) but real. Verdict: **STRATEGY (candidate)** — an
+  incremental upgrade to research/63, NOT a standalone factor edge.
 
 ## 6. Crash Recovery
 

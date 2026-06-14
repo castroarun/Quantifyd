@@ -105,3 +105,17 @@ edge. Same ~1.7 Calmar tier as research/41 & /62 at far lower DD/turnover/tax/co
 **VERDICT: STRATEGY (candidate)** for a simple low-DD core; period-dependence caveat
 (MON100 +24.6% INR carries the absolute return). Published /app/backtest/gtaa-etf-rotation.
 See research/63_gtaa_etf_rotation/results/RESULTS.md.
+
+
+## 64 - factor_index_rotation (2026-06-14)
+**Nifty factor-index rotation/diversification** (follow-on to research/63). Does
+"diversify > select" transfer from asset classes to the Nifty single factors
+(Momentum/Quality/Value/LowVol/Alpha)? **NO** - factors are mostly the same bet
+(mean cross-corr 0.65; 0.79-0.91 vs Nifty). Equal-weight factors tops Calmar 0.76
+(best pure-factor = Mom+LowVol, 17.4%/-22.9% DD); rotation 0.67. **The win is COMBINING:
+Momentum factor + Gold + Nasdaq, INVERSE-VOL, monthly = Calmar 1.77, CAGR 22.1%, DD -12.5%,
+cost-insensitive** - marginally beats research/63 Nifty book 1.75 by upgrading the equity
+sleeve + taming Nasdaq vol. AllFactors+Gold+Nasdaq DILUTES 1.18 -> concentrate equity into
+one factor. **VERDICT: STRATEGY (candidate)** - incremental upgrade to research/63; factor
+selection/diversification alone = SIGNAL. Published /app/backtest/factor-index-rotation.
+See research/64_factor_index_rotation/results/RESULTS.md.
