@@ -73,3 +73,15 @@ red years but sacrifice too much return.** The 2019/2026 drag is the VIX-EXIT LA
 spike+drop; next-day daily exit catches it) — a DAILY stop can't dodge a single-day reversal.
 **G3b (next): INTRADAY VIX exit using the 5-min INDIAVIX (downloaded 2015-26) — exit the long the moment
 VIX crosses 13 intraday, not next-day. The real fix for the lag.** Then re-blend the best variant w/ the fly.
+
+---
+
+## FULL always-on book — all 3 (fly + bull jade + bear jade) + low-VIX long (2% trail), one pool — DONE
+Per-year deployment by sleeve (single pool, priority low-VIX-long when <13, else fly/jade in 13-22):
+AVG/yr: low-VIX long 45d | fly+jade 157d | idle 34d | **DEPLOYED 202d (85%)**.
+Deployment ladder: neutral-only 43% -> all-3 fly/jade 69% -> +low-VIX long 85%. Idle ~15% now almost
+entirely VIX>22 (2020 = 123 idle days / 51% deployed; the chaos regime neither sleeve covers).
+Low-VIX long carries the low-VIX years (2017 +12%, 2023 +21%, 2025 +5.5%) = exactly when premium-sellers thin.
+=> idle-cash problem largely SELF-SOLVED by the systems; only the VIX>22 tail remains (debt, or a future
+high-VIX 3rd sleeve). ₹ status: fly real (V2), low-VIX long real (2% trail), JADES need their AlgoTest runs
+for real ₹ -> combined ₹/Calmar pending jade premiums; coverage/utilization above is solid.
