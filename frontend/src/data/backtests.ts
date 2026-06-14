@@ -945,7 +945,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
       {
         title: 'Day-3 ADJUSTMENT cases (A / B / C) — what to do when still alive at day-3',
-        caption: 'After day-3 the position self-classifies. Near-band risk is ONE-SIDED — the opposite / untested band breaches only ~0–1% (UP-drift 0%, DOWN-drift 1%), and it is ~50/50 to continue (53/47%) vs revert — so defend the hugged side only and keep the safe side. Chop is two-sided but mild. The ₹ of each defense (roll-out → asymmetric condor, re-centre → skewed fly, convert → jade) needs option premiums (P7 AlgoTest study).',
+        caption: 'After day-3 the position self-classifies. The near-band CONVERT state (Case B) occurs ~4×/year — ~17% of neutral entries drift there (range 6–28%/yr). Near-band risk is ONE-SIDED — the opposite / untested band breaches only ~0–1% (UP-drift 0%, DOWN-drift 1%), and it is ~50/50 to continue (53/47%) vs revert — so defend the hugged side only and keep the safe side. Chop is two-sided but mild. The ₹ of each defense (roll-out → asymmetric condor, re-centre → skewed fly, convert → jade) needs option premiums (P7 AlgoTest study).',
         columns: ['Case', 'Day-3 state', 'Finish-calm', 'Risk', 'Action'],
         rows: [
           ['A', 'Not flagged (drift <0.6%, range ≤1.5%)', '92–94%', 'minimal', 'HOLD — do nothing'],
