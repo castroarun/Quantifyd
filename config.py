@@ -543,9 +543,9 @@ NAS_DEFAULTS['force_paper'] = True
 NAS_916_OTM_DEFAULTS['force_paper'] = True
 # 2026-06-09 re-arm: ONLY the 3 916 ATMs live. Squeeze ATMs -> PAPER via force_paper.
 # Added AFTER the 916 spreads (lines ~511-524) so NAS_916_ATM*_DEFAULTS do NOT inherit it.
-NAS_ATM_DEFAULTS['force_paper'] = True
-NAS_ATM2_DEFAULTS['force_paper'] = True
-NAS_ATM4_DEFAULTS['force_paper'] = True
+NAS_ATM_DEFAULTS['force_paper'] = False
+NAS_ATM2_DEFAULTS['force_paper'] = False
+NAS_ATM4_DEFAULTS['force_paper'] = False
 # 2026-06-08 churn-breaker (research/60): re-entry cooldown on every live ATM variant.
 for _nas_cd in (NAS_DEFAULTS, NAS_ATM_DEFAULTS, NAS_ATM2_DEFAULTS, NAS_ATM4_DEFAULTS,
                 NAS_916_OTM_DEFAULTS, NAS_916_ATM_DEFAULTS, NAS_916_ATM2_DEFAULTS, NAS_916_ATM4_DEFAULTS):
