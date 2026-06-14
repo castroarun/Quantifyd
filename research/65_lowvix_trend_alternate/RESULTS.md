@@ -56,3 +56,20 @@ Keep the 2023/2025 sustained-grind upside, cut the 2019/2026 chop drag: test a t
 a stop / VIX-rising exit (the simple MA filter in G1 cut return without fixing per-year — need better). Also:
 proper daily/monthly blended equity (real Calmar, not annual), net-of-cost, sizing/leverage, OOS.
 Caveat: DD here is annual-granularity; the fly's real intraday DD is ~-₹1.17L (V2 study).
+
+---
+
+## G3 — refined low-VIX long (trend / trailing stop) — DONE
+| variant | days | total | Sharpe | maxDD | 2023 | 2026 |
+|---|---|---|---|---|---|---|
+| naive (VIX<13) | 637 | 43% | 0.74 | -7% | +24.5% | -5.7% |
+| **+2% trail stop** | 623 | **49%** | **0.84** | -8% | +26.9% | -5.8% |
+| +20DMA trend | 606 | 36% | 0.67 | -7% | +22.3% | -5.7% |
+| +20DMA +2% trail | 515 | 39% | 0.77 | -6% | +21.6% | -3.7% |
+| +50DMA +3% trail | 568 | 35% | 0.67 | -7% | +19.7% | -6.3% |
+
+**A 2% TRAILING STOP is the keeper: total 43→49%, Sharpe 0.74→0.84, keeps 2023 (+27%). Trend filters cut
+red years but sacrifice too much return.** The 2019/2026 drag is the VIX-EXIT LAG (regime ends in a 1-day
+spike+drop; next-day daily exit catches it) — a DAILY stop can't dodge a single-day reversal.
+**G3b (next): INTRADAY VIX exit using the 5-min INDIAVIX (downloaded 2015-26) — exit the long the moment
+VIX crosses 13 intraday, not next-day. The real fix for the lag.** Then re-blend the best variant w/ the fly.
