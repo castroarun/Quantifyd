@@ -137,7 +137,10 @@ if need_entry and v2state.get("entry_day"):
                         "exit_pnl": round((ocr - (oc_ + op_)) * QTY - 160), "reason": "roll (DTE<1)"})
             json.dump(trs, open(TRADES, "w"))
 if need_entry and len(exps) > 1:
-    E = exps[1]; s0 = spot_at("09:20")
+    E = exps[1]
+    # FIX: lock the roll strike off the CONFIRMED 09:20 spot (first snapshot at/after 09:20),
+    # not the first post-open tick. Defers re-entry by a minute if 09:20 is not yet recorded.
+    s0 = next((sp for tt, sp in SP if tt >= "09:20"), None)
     if s0:
         K = round(s0 / 50) * 50
         ce0 = ltp(K, "CE", E, "09:20"); pe0 = ltp(K, "PE", E, "09:20")
