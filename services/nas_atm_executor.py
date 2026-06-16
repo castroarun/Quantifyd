@@ -129,9 +129,12 @@ class NasAtmExecutor:
                     if 0 <= _mins < cooldown_min:
                         return False, f'Re-entry cooldown ({_mins:.1f} < {cooldown_min} min since last exit)'
 
-            # Daily P&L circuit breaker
-            state = self.db.get_state()
-            daily_pnl = state.get('daily_pnl', 0) or 0
+            # Daily P&L circuit breaker -- compute from TODAY's closed positions,
+            # NOT the persisted state['daily_pnl'] (which goes stale if a prior EOD
+            # reset was skipped, e.g. during a freeze -- a stale -37638 wrongly blocked
+            # 916-ATM2 on 2026-06-16). today_trades is already in scope; date-aware.
+            daily_pnl = sum(((p.get('entry_price') or 0) - (p.get('exit_price') or 0)) * (p.get('qty') or 0)
+                            for p in today_trades if p.get('exit_price') is not None)
             max_loss = cfg.get('max_daily_loss', 25000)
             if daily_pnl < -max_loss:
                 return False, f'Daily loss Rs {abs(daily_pnl):.0f} exceeds limit Rs {max_loss}'
@@ -410,7 +413,17 @@ class NasAtmExecutor:
         # Get current spot if not provided
         if spot is None:
             spot = self.scanner.get_live_spot()
-            if spot is None:
+            if not spot:
+                # fallback: direct REST quote of the NIFTY index, so the 09:16 one-shot
+                # doesn't miss on a transient ticker-spot gap (2026-06-16 ATM/ATM4 missed).
+                try:
+                    from services.kite_service import get_kite
+                    spot = get_kite().ltp(['NSE:NIFTY 50'])['NSE:NIFTY 50']['last_price']
+                    logger.info(f"[NAS-ATM] spot REST fallback used: {spot}")
+                except Exception as _e:
+                    logger.warning(f"[NAS-ATM] spot REST fallback failed: {_e}")
+                    spot = None
+            if not spot:
                 return None, 'Cannot fetch live spot price'
 
         # Expiry
