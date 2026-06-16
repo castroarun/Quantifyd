@@ -342,13 +342,64 @@ def tier4_firedrill():
 
 
 # ──────────────────────────────── REPORT ────────────────────────────────
+def tier1b_db_ticker_kite_reconcile():
+    """Cross-check every DB-ACTIVE leg against the ticker AND the broker (added 2026-06-16).
+    Catches what the basic ticker leg-check can miss: a DB-active leg the ticker isn't
+    monitoring (subscription gap), or a DB leg with no matching Kite short (orphan)."""
+    import sqlite3
+    try:
+        st = _get('/api/nas/ticker/status')
+        mon = set()
+        for k in ('option_legs', 'atm_option_legs', 'atm2_option_legs', 'atm4_option_legs'):
+            for l in st.get(k, []) or []:
+                mon.add(l['tradingsymbol'])
+    except Exception as e:
+        add(1, 'DB/ticker/Kite reconcile', SKIP, 'ticker unreachable: %s' % e)
+        return
+    try:
+        from services.kite_service import get_kite
+        kq = {p['tradingsymbol']: (p.get('quantity') or 0) for p in get_kite().positions().get('net', [])}
+    except Exception:
+        kq = None
+    dbs = {'nas': 'nas_trading', '916_otm': 'nas_916_otm_trading', '916_atm': 'nas_916_atm_trading',
+           '916_atm2': 'nas_916_atm2_trading', '916_atm4': 'nas_916_atm4_trading',
+           'sq_atm': 'nas_atm_trading', 'sq_atm2': 'nas_atm2_trading', 'sq_atm4': 'nas_atm4_trading'}
+    not_mon, not_kite, nlegs = [], [], 0
+    for v, db in dbs.items():
+        p = 'backtest_data/%s.db' % db
+        if not os.path.exists(p):
+            continue
+        c = sqlite3.connect(p)
+        rows = []
+        for tbl in ('nas_atm_positions', 'nas_positions'):
+            try:
+                rows = [r[0] for r in c.execute("SELECT tradingsymbol FROM %s WHERE status='ACTIVE'" % tbl)]
+                break
+            except Exception:
+                continue
+        for ts in rows:
+            nlegs += 1
+            if ts not in mon:
+                not_mon.append('%s:%s' % (v, ts[-9:]))
+            if kq is not None and kq.get(ts, 0) == 0:
+                not_kite.append('%s:%s' % (v, ts[-9:]))
+    if not_mon:
+        add(1, 'DB->ticker coverage', FAIL, '%d DB-active leg(s) NOT ticker-monitored: %s' % (len(not_mon), ', '.join(not_mon)))
+    else:
+        add(1, 'DB->ticker coverage', PASS, ('all %d DB-active legs ticker-monitored' % nlegs) if nlegs else 'no active legs (flat)')
+    if not_kite:
+        add(1, 'DB->Kite reconcile', FAIL, '%d DB-active leg(s) with NO Kite short (orphan?): %s' % (len(not_kite), ', '.join(not_kite)))
+    elif nlegs and kq is not None:
+        add(1, 'DB->Kite reconcile', PASS, 'all DB-active legs have a matching Kite short')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--firedrill', action='store_true', help='also run the sandbox paper fire-drill')
     ap.add_argument('--json', action='store_true', help='emit machine-readable JSON')
     args = ap.parse_args()
 
-    for fn in (tier1_live_health, tier2_behavioural_audit, tier3_regression):
+    for fn in (tier1_live_health, tier1b_db_ticker_kite_reconcile, tier2_behavioural_audit, tier3_regression):
         try:
             fn()
         except Exception as e:
