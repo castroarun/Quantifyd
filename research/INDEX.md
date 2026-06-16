@@ -119,3 +119,13 @@ sleeve + taming Nasdaq vol. AllFactors+Gold+Nasdaq DILUTES 1.18 -> concentrate e
 one factor. **VERDICT: STRATEGY (candidate)** - incremental upgrade to research/63; factor
 selection/diversification alone = SIGNAL. Published /app/backtest/factor-index-rotation.
 See research/64_factor_index_rotation/results/RESULTS.md.
+
+## research/67 — Weekly vs Daily CPR (movement, direction, V2 fly gate) — SIGNAL/context, 2026-06-16
+Validated the classic CPR rule on NIFTY weekly with the CORRECT metric (net move / containment, NOT
+high-low range): narrow CPR -> trends, wide -> sideways/contained (recent close-inside-band 0->32%).
+Stable 1st-30min directional tell (close above weekly CPR -> 69% week holds bullish; below -> 58% bearish;
+full+recent identical). KEY: daily-vs-weekly SIGN FLIP — DAILY narrow CPR -> CALM (vol-persistence),
+WEEKLY narrow -> trend (exhaustion). Weekly CPR too regime-fragile to hard-gate the fly (wide=calmer
+recently but breaches MOST in 2020). combo_skip narrow-CPR skip UNCONFIRMED standalone (recent premium gap
+only ~9%, breach-free window; research/61 1.03->2.00 Calmar is stacked w/ inside-week) -> owed isolated
+re-test; keep conservatively. See research/67_weekly_cpr/results/RESULTS.md.

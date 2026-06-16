@@ -461,3 +461,11 @@ close, freeze cleared (user OK). Forensic + crash-recovery:
 ## Notes
 - NIFTY lot size = 65 (2026). 5 lots = 325 contracts/leg.
 - Reference spread (Sensibull): 23600/23400 PE, ~78 debit, R/R 1.56, max loss ≈ ₹25k @ 5 lots.
+
+## OWED — isolate the V2 combo_skip narrow-CPR skip (research/67) — 2026-06-16
+research/67 found the V2 fly combo_skip "skip prior-day CPR<0.10%" is UNCONFIRMED standalone: recent
+recorder premium gap only ~9% (narrow 1.16% vs normal 1.27% of spot) and narrow days are CALMER, so the
+skip discards calm days for little premium. research/61 Calmar 1.03->2.00 was narrow-CPR + inside-week
+STACKED (not isolated); recent window is breach-free so can not test reward-for-risk. TODO: isolated
+backtest of narrow-CPR-skip ALONE over breach-inclusive history WITH real premiums (decouple from
+inside-week). Until then KEEP the skip; do NOT change live on this alone.
