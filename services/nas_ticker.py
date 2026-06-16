@@ -1500,6 +1500,17 @@ class NasTicker:
             now_iso = datetime.now().isoformat()
             has_squeeze = any(s['type'] == 'SQUEEZE_ENTRY' for s in scan.get('signals', []))
 
+            # One-entry-per-squeeze-episode gate (fix 2026-06-16): SQUEEZE_ENTRY persists
+            # across a long coil, so after a stop+cooldown the system re-sold into the SAME
+            # stale squeeze. Block re-entry while squeeze_count keeps climbing since our last
+            # entry; allow again only after the squeeze resets (count drops) = a fresh episode.
+            _sq_count = scan.get('squeeze_count', 0)
+            if not hasattr(self, '_sq_entry_count'):
+                self._sq_entry_count = {}
+            def _fresh_episode(_key):
+                _last = self._sq_entry_count.get(_key)
+                return _last is None or _sq_count <= _last
+
             # Shared state update values
             state_update = dict(
                 atr_value=scan.get('atr'),
@@ -1518,11 +1529,12 @@ class NasTicker:
                     from services.nas_atm_db import get_nas_atm_db
                     atm_db = get_nas_atm_db()
                     atm_db.update_state(**state_update)
-                    if has_squeeze:
+                    if has_squeeze and _fresh_episode('atm'):
                         executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
                         sid, msg = executor.execute_strangle_entry(spot=spot)
                         if sid:
                             logger.info(f"[NAS-ATM] Entry: strangle #{sid} at spot {spot:.1f}")
+                            self._sq_entry_count['atm'] = _sq_count
                             self.subscribe_atm_option_legs(atm_db.get_active_positions())
                         else:
                             logger.info(f"[NAS-ATM] Entry blocked: {msg}")
@@ -1537,11 +1549,12 @@ class NasTicker:
                     from services.nas_atm2_db import get_nas_atm2_db
                     atm2_db = get_nas_atm2_db()
                     atm2_db.update_state(**state_update)
-                    if has_squeeze:
+                    if has_squeeze and _fresh_episode('atm2'):
                         executor = NasAtm2Executor(config=NAS_ATM2_DEFAULTS)
                         sid, msg = executor.execute_strangle_entry(spot=spot)
                         if sid:
                             logger.info(f"[NAS-ATM2] Entry: strangle #{sid} at spot {spot:.1f}")
+                            self._sq_entry_count['atm2'] = _sq_count
                             self.subscribe_atm2_option_legs(atm2_db.get_active_positions())
                         else:
                             logger.info(f"[NAS-ATM2] Entry blocked: {msg}")
@@ -1556,11 +1569,12 @@ class NasTicker:
                     from services.nas_atm4_db import get_nas_atm4_db
                     atm4_db = get_nas_atm4_db()
                     atm4_db.update_state(**state_update)
-                    if has_squeeze:
+                    if has_squeeze and _fresh_episode('atm4'):
                         executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
                         sid, msg = executor.execute_strangle_entry(spot=spot)
                         if sid:
                             logger.info(f"[NAS-ATM4] Entry: strangle #{sid} at spot {spot:.1f}")
+                            self._sq_entry_count['atm4'] = _sq_count
                             self.subscribe_atm4_option_legs(atm4_db.get_active_positions())
                         else:
                             logger.info(f"[NAS-ATM4] Entry blocked: {msg}")
