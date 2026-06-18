@@ -218,8 +218,8 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ['Thu', '🟢▲ above', '🟢▲ above', '206', '96%', '+0.02%'],
           ['Thu', '🔴▼ below', '🔴▼ below', '142', '82%', '+0.17%'],
         ],
-        highlightRows: [3],
-        caption: '🟢▲ = the DAY CLOSE finished ABOVE that CPR, 🔴▼ = below. Both 🟢▲ = close above the weekly AND daily CPR (tradeable bull); both 🔴▼ = below both (tradeable bear); one of each = the timeframes DISAGREE (neutral / coin-flip). The state EVOLVES daily — 48% of weeks the weekly side flips at least once, so re-check each evening. Both-same beats mixed every day; the absolute hold% rises toward week-end (partly mechanical — less time left). Adjust cues: weekly 🔴▼ + daily 🟢▲ = reversal-UP (lift bearish risk / mild bull); when a mixed week RESOLVES to both-same, the new side tends to hold (pooled n=120: both-up 73%, both-down only 46%); a side-flip = re-center. Basis = each day CLOSE (NOT the 1st-30-min entry candle); 11y 2015-26.',
+        highlightRows: [3, 5, 6, 7],
+        caption: '🟢▲ = the DAY CLOSE finished ABOVE that CPR, 🔴▼ = below. Both 🟢▲ = close above the weekly AND daily CPR (tradeable bull); both 🔴▼ = below both (tradeable bear); one of each = the timeframes DISAGREE (neutral / coin-flip). The state EVOLVES daily — 48% of weeks the weekly side flips at least once, so re-check each evening. Both-same beats mixed every day; the absolute hold% rises toward week-end (partly mechanical — less time left). Adjust cues: weekly 🔴▼ + daily 🟢▲ = reversal-UP (lift bearish risk / mild bull); when a mixed week RESOLVES to both-same, the new side tends to hold (pooled n=120: both-up 73%, both-down only 46%); a side-flip = re-center. Basis = each day CLOSE (NOT the 1st-30-min entry candle); 11y 2015-26. WED/THU both-same is the STRONGEST (hold 88-96%) = a HOLD-INTO-EXPIRY signal: if the confluence is intact by Wed/Thu, the Thu-Fri finish almost always holds that side — so keep / press the structure into expiry. (Late-week strength is partly MECHANICAL — fewer days left to change — which is exactly why it is safe to hold.) Friday is the terminal day, so it has no rest-of-week row.',
       },
       {
         title: 'Intra-week re-check — MORNING variant (each day 1st-30-min @ 09:45 close), rest-of-week (2015-26, 11y)',
@@ -234,8 +234,8 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ['Thu', '🟢▲ above', '🟢▲ above', '193', '85%'],
           ['Thu', '🔴▼ below', '🔴▼ below', '104', '82%'],
         ],
-        highlightRows: [2],
-        caption: 'Same re-check but on EACH day 1st-30-min close (09:45) instead of the day close — the MORNING read, for adjusting at the open. Hold rates run a touch lower than the day-close table (Mon both-🟢▲ 72% vs 76%; Thu 85% vs 96%) because 09:45 is earlier, with more of the week still to play (the day-close late-week numbers are partly mechanical). Same pattern: both-same > mixed; conviction rises through the week; weekly 🔴▼ + daily 🟢▲ = reversal-UP (Mon 44% holds below). The 09:45 weekly-side flips intra-week in 50% of weeks. Use the MORNING read to adjust at the open, the DAY-CLOSE table in the evening.',
+        highlightRows: [2, 5, 6, 7],
+        caption: 'Same re-check but on EACH day 1st-30-min close (09:45) instead of the day close — the MORNING read, for adjusting at the open. Hold rates run a touch lower than the day-close table (Mon both-🟢▲ 72% vs 76%; Thu 85% vs 96%) because 09:45 is earlier, with more of the week still to play (the day-close late-week numbers are partly mechanical). Same pattern: both-same > mixed; conviction rises through the week; weekly 🔴▼ + daily 🟢▲ = reversal-UP (Mon 44% holds below). The 09:45 weekly-side flips intra-week in 50% of weeks. Use the MORNING read to adjust at the open, the DAY-CLOSE table in the evening. WED/THU both-🟢▲ is the STRONGEST (hold 85-86%) = HOLD-INTO-EXPIRY (keep/press the structure into Fri); partly mechanical (less time left). Friday is the terminal day (no rest-of-week).',
       },
       {
         title: 'Intra-week BREACH = adjustment trigger, by candle timeframe (bull entry above weekly CPR; mirror with R1 for bear)',
