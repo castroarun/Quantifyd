@@ -73,3 +73,70 @@ above/below → 69%/58% directional hold) but **too regime-fragile to hard-gate*
 seven sins: this is in-sample single-instrument (NIFTY), regime-dependent (2020 dominates the full daily
 sample), and the premium leg is only ~2 months of recorder data — a SIGNAL/context tool, not a standalone
 STRATEGY.
+
+---
+
+# WEEKLY CPR PLAYBOOK (consolidated) — entry classification + intra-week management
+
+**STATE LEGEND (used throughout — read first):**
+- **AGREE-UP** = the day/Monday close is ABOVE *both* the weekly CPR band and the daily CPR band.
+- **AGREE-DOWN** = BELOW *both*.
+- **DISAGREE** = above one but below/inside the other (previously called "coin-flip" / "split").
+
+AGREE = a tradeable directional lean; DISAGREE = no reliable direction → trade neutral.
+Weekly CPR = lines drawn for the week from the PRIOR week; daily CPR = for the day from the PRIOR day.
+Signal fixed at the 1st-30min close (09:45) / day close. Causal. NIFTY 5min→weekly/daily, **11y 2015-2026**.
+
+## A. Context (validated)
+- Weekly CPR width: **NARROW → week TRENDS; WIDE → week SIDEWAYS/contained** (measured by net-move &
+  containment, NOT high-low range — range was the wrong metric).
+- **TOO-narrow** (top whipsaw decile) → whippy (66-74% cross both sides) → **SKIP the directional break.**
+- **Daily vs weekly SIGN FLIP:** weekly narrow = trend, daily narrow = calm. Do not mix the two timeframes.
+
+## B. ENTRY classification (Monday 09:45) → structure
+The 1st-30min candle read two ways: POSITION vs the weekly CPR (which side; ~69% above / 58% below holds)
+and COLOR (green/red = whether the week actually TRAVELS). Daily AGREE/DISAGREE is the gate.
+
+| Entry state | read | structure |
+|---|---|---|
+| AGREE-UP + GREEN | bull tilt (72% hold, +0.36% net) | bullish jade lizard / bull-put spread |
+| AGREE-UP + RED | holds up but ~0 net | NEUTRAL — iron condor / iron fly |
+| AGREE-DOWN + RED | bear tilt (61%, −0.40%) | bear-call / put debit (defined-risk) |
+| close below weekly + GREEN candle | reversal-UP trap (+0.66%) | do NOT go bear — neutral / mild bull |
+| DISAGREE | coin-flip direction (52%) | NEUTRAL only — condor / fly |
+
+The two layers are orthogonal: **daily AGREE drives the hold rate; candle color drives the net travel.**
+
+## C. DISAGREE weeks → neutral structures (max move + pivot hits for wing placement)
+| DISAGREE scenario | n | maxBull avg/p90 | maxBear avg/p90 | R1%/R2% | S1%/S2% |
+|---|---|---|---|---|---|
+| close above weekly, daily disagrees | 53 | 1.08/1.88 | 1.11/2.47 | 43/19 | 26/11 |
+| close below weekly, daily disagrees | 32 | 1.81/4.02 | 1.73/2.98 | 34/22 | 47/22 |
+
+Both-sides whipsaw only **6%** → DISAGREE weeks are CONTAINED → sell premium. Above-disagree: mild up-lean,
+S1 hit only 26% → condor short put ~S1 / call ~R2. Below-disagree: leans UP (+0.61% net) with a FAT upside
+tail (p90 4.0%) → push the call wing beyond R2; never go bear.
+
+## D. INTRA-WEEK management — re-check the state at EACH day close
+The state EVOLVES: **48% of weeks the weekly side flips at least once.** Re-classify every evening.
+
+**Robust base (large n) — ANY day showing AGREE → rest-of-week holds that side:**
+Mon **71%** (n=457) · Tue **77%** (n=369) · Wed **83%** (n=343) · Thu **90%** (n=348).
+(Absolute % rises toward week-end partly mechanically — less time to change; the AGREE-vs-DISAGREE *gap* is
+the real signal.)
+
+**Adjustment cues:**
+- **DISAGREE, below weekly CPR = reversal-UP** every day (rest net +0.5–0.6%) → lift bearish risk / mild bull.
+- **An uncertain week that RESOLVES to AGREE** (pooled n=120, robust): the new side holds **AGREE-UP 73% /
+  AGREE-DOWN 46%** → add the tilt on the UP resolution; the DOWN resolution stays unreliable (equity drift).
+- **A side-flip** (price crosses the weekly band) → re-center the structure to the new side.
+
+(Why earlier Mon→Wed transition cells were n=7-14: AGREE is 79% of Mondays, DISAGREE only 21%, so the
+specific sub-cell is rare — NOT a data shortage. Pooled across all days/sides → n=120, robust.)
+
+## Verdict
+A **Weekly CPR Playbook** for inline premium structures (NOT trend-catching): classify the week at entry
+(AGREE+matching-color → directional defined-risk; DISAGREE / opposite-color → neutral premium), then
+re-check the daily state each evening to adjust. SIGNAL/context tool — edge is in DIRECTION & structure
+choice, ~±0.4% net magnitude; option P&L still needs real premiums. In-sample, NIFTY-only; persistent
+bull/bear asymmetry (AGREE-UP ≫ AGREE-DOWN) from equity upward drift.

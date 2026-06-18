@@ -125,7 +125,7 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
     slug: 'nifty-weekly-cpr-playbook',
-    title: 'NIFTY Weekly CPR — Directional Playbook (weekly × daily CPR + 1st-30-min candle)',
+    title: 'NIFTY Weekly CPR — Playbook (weekly × daily CPR + 1st-30-min candle)',
     verdict:
       'A no-trend, structure-selection playbook for NIFTY weekly options. The weekly CPR (lines drawn for the week from the prior week) sets context: narrow CPR -> the week TRENDS, wide CPR -> it goes SIDEWAYS/contained (validated with net-move & containment, NOT high-low range). The 1st-30-min candle gives the directional read two ways: its POSITION vs the weekly CPR (which side it closes, ~69% above / ~58% below) and its COLOR (green vs red = whether the week actually TRAVELS that way). Daily CPR confluence is the gate: when the Monday open sits on the same side of BOTH the weekly and daily CPR the week holds direction 72% (bull) / 61% (bear); when they SPLIT it is a 52% coin-flip. The two extra layers are orthogonal: daily confluence drives the HOLD rate, candle color drives the NET TRAVEL. Together they sort every week into a structure: confluence+agree-color -> directional defined-risk (jade / vertical); confluence+opposite-color or split -> neutral premium (iron condor / fly). SIGNAL/context tool — edge is in DIRECTION & structure choice, not magnitude (~+/-0.4% net); option P&L still needs real premiums.',
     status: 'COMPLETE',
@@ -140,6 +140,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     system: {
       intro: 'Causal weekly read, fixed by Monday 09:45 IST. CPR width = |2C-H-L|/3 of the prior period (= how far it closed from mid-range = a trending-close measure). All levels from the prior week / prior day.',
       rows: [
+        { k: 'STATE legend (read first)', v: 'AGREE-UP = price closed ABOVE both the weekly CPR and the daily CPR; AGREE-DOWN = BELOW both; DISAGREE = above one but below/inside the other. AGREE = a tradeable directional lean; DISAGREE (the old "coin-flip") = no reliable direction -> trade neutral. "Confluence" anywhere on this card == AGREE; "coin-flip/split" == DISAGREE.' },
         { k: 'Weekly CPR', v: 'Band (BC..TC) drawn for the week from the prior week H/L/C — the lines on the chart. Narrow = trend expected; wide = sideways/contained.' },
         { k: '1st-30-min position', v: 'Monday 09:15-09:45 close vs the weekly CPR band: above / below / inside = which side the week leans.' },
         { k: '1st-30-min color', v: 'green = 09:45 close > 09:15 open (conviction up); red = down. Color predicts NET TRAVEL, not which side it closes.' },
@@ -203,6 +204,22 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ['BELOW coin-flip (wk- daily not-)', '32', '1.81 / 4.02', '1.73 / 2.98', '34 / 22', '47 / 22'],
         ],
         caption: 'Coin-flip weeks are CONTAINED (both-sides whipsaw only 6%) -> trade NEUTRAL not directional. ABOVE coin-flip: mild up-lean, S1 hit only 26% -> condor short put ~S1 / call ~R2. BELOW coin-flip: leans UP (+0.61% net) with a FAT upside tail (p90 4.0%) -> condor with call wing beyond R2; never go bear.',
+      },
+      {
+        title: 'Intra-week daily re-check — re-classify at EACH day close, rest-of-week outcome (2015-26, 11y)',
+        columns: ['Day (close)', 'state', 'n', 'rest-of-week holds side', 'rest net'],
+        rows: [
+          ['Mon', 'AGREE-UP (above both CPRs)', '271', '76%', '+0.14%'],
+          ['Mon', 'DISAGREE, above weekly CPR', '35', '57%', '+0.17%'],
+          ['Mon', 'AGREE-DOWN (below both CPRs)', '186', '64%', '+0.27%'],
+          ['Mon', 'DISAGREE, below weekly CPR', '24', '33% -> reverts UP', '+0.56%'],
+          ['Tue', 'AGREE-UP', '227', '82%', '+0.19%'],
+          ['Wed', 'AGREE-UP', '212', '88%', '+0.04%'],
+          ['Thu', 'AGREE-UP', '206', '96%', '+0.02%'],
+          ['Thu', 'AGREE-DOWN', '142', '82%', '+0.17%'],
+        ],
+        highlightRows: [3],
+        caption: 'AGREE = price on the SAME side of BOTH the weekly and daily CPR; DISAGREE = opposite sides. The state EVOLVES daily — 48% of weeks the weekly side flips at least once, so re-check each evening. AGREE beats DISAGREE every day; the absolute hold% rises toward week-end (partly mechanical — less time left). Adjust cues: DISAGREE-below-weekly = reversal-UP (lift bearish risk / mild bull); when an uncertain week RESOLVES to AGREE, the new side tends to hold (pooled n=120: AGREE-UP 73%, AGREE-DOWN only 46%); a side-flip = re-center the structure. 11y 2015-26.',
       },
     ],
     results: {
