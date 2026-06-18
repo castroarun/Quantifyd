@@ -169,11 +169,11 @@ an **S1/R1 breach = CONTINUATION** (88-91% end on the new side, holds the pivot 
 
 **Finding: within intraday (30m-4h) reliability barely moves (~71-75% end below CPR on an S1 breach) — there
 is NO magic intraday timeframe.** The only real step up is the DAILY close (79%, holds S1 67%). 30-min is the
-noisiest (holds S1 only 52%); 1h-2h is the cleaner intraday choice. The biggest coarser-TF gain is in
+all EQUIVALENT within noise (n~65, the 52->59% 'holds' gradient is < 1 SE); there is NO preferred intraday TF. The biggest coarser-TF gain is in
 *holding* the breach level (52%→67% above; 66%→83% below).
 
 **Timeframe-aware adjustment LADDER (bull entry; mirror with R1 for bear):**
-1. **1h-2h close below S1 (~72%) → EARLY alert:** start neutralizing the bull tilt.
+1. **ANY intraday close below S1 (~72%; 30m=1h=2h=4h, within noise) → EARLY alert:** start neutralizing (use whatever TF you watch).
 2. **DAILY close below S1 (79-88%, holds S1 67%) → CONFIRM:** flip bearish.
 3. **A plain CPR cross intraday (~52-57%) = WATCH only** (often recovers); decisive only on the DAILY close (61%).
 
