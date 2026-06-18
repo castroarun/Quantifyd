@@ -124,6 +124,149 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'nifty-weekly-cpr-playbook',
+    title: 'NIFTY Weekly CPR — Directional Playbook (weekly × daily CPR + 1st-30-min candle)',
+    verdict:
+      'A no-trend, structure-selection playbook for NIFTY weekly options. The weekly CPR (lines drawn for the week from the prior week) sets context: narrow CPR -> the week TRENDS, wide CPR -> it goes SIDEWAYS/contained (validated with net-move & containment, NOT high-low range). The 1st-30-min candle gives the directional read two ways: its POSITION vs the weekly CPR (which side it closes, ~69% above / ~58% below) and its COLOR (green vs red = whether the week actually TRAVELS that way). Daily CPR confluence is the gate: when the Monday open sits on the same side of BOTH the weekly and daily CPR the week holds direction 72% (bull) / 61% (bear); when they SPLIT it is a 52% coin-flip. The two extra layers are orthogonal: daily confluence drives the HOLD rate, candle color drives the NET TRAVEL. Together they sort every week into a structure: confluence+agree-color -> directional defined-risk (jade / vertical); confluence+opposite-color or split -> neutral premium (iron condor / fly). SIGNAL/context tool — edge is in DIRECTION & structure choice, not magnitude (~+/-0.4% net); option P&L still needs real premiums.',
+    status: 'COMPLETE',
+    date: '2026-06-18',
+    cardBlurb:
+      'NIFTY weekly CPR as a structure-selection map: weekly CPR (narrow=trend / wide=sideways) + the 1st-30-min candle (position vs CPR for side, color for conviction) + daily-CPR confluence as the tradeable-vs-coinflip gate. Confluence+green -> ~72% bullish hold; confluence+red -> ~61% bearish; split -> 52% coin-flip (go neutral). 11 years (2015-26), NIFTY 5-min resampled to weekly.',
+    cardStats: [
+      { label: 'Bull confluence+green hold', value: '72%' },
+      { label: 'Bear confluence+red hold', value: '61%' },
+      { label: 'Split (coin-flip) hold', value: '52%' },
+    ],
+    system: {
+      intro: 'Causal weekly read, fixed by Monday 09:45 IST. CPR width = |2C-H-L|/3 of the prior period (= how far it closed from mid-range = a trending-close measure). All levels from the prior week / prior day.',
+      rows: [
+        { k: 'Weekly CPR', v: 'Band (BC..TC) drawn for the week from the prior week H/L/C — the lines on the chart. Narrow = trend expected; wide = sideways/contained.' },
+        { k: '1st-30-min position', v: 'Monday 09:15-09:45 close vs the weekly CPR band: above / below / inside = which side the week leans.' },
+        { k: '1st-30-min color', v: 'green = 09:45 close > 09:15 open (conviction up); red = down. Color predicts NET TRAVEL, not which side it closes.' },
+        { k: 'Daily CPR confluence', v: 'Monday close also vs Monday daily CPR (from Friday). Same side as weekly = confluence (tradeable); opposite/inside = split (coin-flip).' },
+        { k: 'Pivot levels', v: 'Weekly R1/R2/S1/S2 from prior week — used to place condor / fly / spread wings by their hit-rates.' },
+        { k: 'Universe / window', v: 'NIFTY 50, 5-min bars resampled to weekly, Feb 2015 - Mar 2026 (~11y, 581 weekly bars; market_data.db NIFTY50 5min).' },
+      ],
+    },
+    conditions: {
+      intro: 'Price-action study (no option premiums). Movement in index %.',
+      rows: [
+        { k: 'Data', v: 'NIFTY50 5-minute (market_data.db on VPS) resampled to W-FRI weekly; daily CPR from 5-min daily resample.' },
+        { k: 'Causality', v: 'CPR & pivots from prior period; signal fixed at Monday 09:45 — fully tradeable, no look-ahead.' },
+        { k: 'Metrics', v: 'held-side = week closes on the signalled side of the weekly CPR; net = open->close %; maxBull/maxBear = excursion from the Monday-09:45 entry; pivot hit% = week H/L reaches the level.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Candle color x position — narrow-CPR weeks (2015-26, n=233)',
+        columns: ['1st-30-min candle', 'held its side', 'net move', 'read'],
+        rows: [
+          ['above + GREEN', '68%', '+0.42%', 'bullish'],
+          ['above + RED', '72%', '-0.07%', 'neutral (holds, no travel)'],
+          ['below + RED', '60%', '-0.37%', 'bearish'],
+          ['below + GREEN', '65%', '+1.16% (n=17)', 'reversal-up (thin)'],
+        ],
+        highlightRows: [0, 2],
+        caption: 'Color barely changes WHICH side it closes (~68-72% above either way) but flips the NET TRAVEL: green-above goes up (+0.42%), red-above just sits (neutral). Position = side; color = conviction.',
+      },
+      {
+        title: 'Weekly x Daily CPR confluence — does the week hold direction?',
+        columns: ['Monday 09:45 setup', '% of weeks', 'holds that side', 'net'],
+        rows: [
+          ['BOTH above (bull confluence)', '45%', '72%', '+0.2%'],
+          ['BOTH below (bear confluence)', '29%', '61%', '-0.2%'],
+          ['SPLIT (timeframes disagree)', '~7%', '52% (coin-flip)', '~0%'],
+        ],
+        highlightRows: [0, 2],
+        caption: 'Daily CPR is the gate: agreement -> tradeable; disagreement -> coin-flip. vs weekly-alone baselines (above 69% / below 58%).',
+      },
+      {
+        title: 'The combination — weekly position x daily confluence x candle color (2015-26)',
+        columns: ['Setup', 'n', 'held side', 'net move'],
+        rows: [
+          ['weekly above (alone)', '313', '69%', '+0.18%'],
+          ['+ daily confluence', '260', '72%', '+0.21%'],
+          ['+ GREEN + daily confluence (ALL 3, bull)', '152', '72%', '+0.36%'],
+          ['above + RED + daily conf (neutral)', '108', '70%', '-0.02%'],
+          ['above + GREEN + daily DISagree', '17', '53%', '+0.17%'],
+          ['+ RED + daily confluence (ALL 3, bear)', '136', '61%', '-0.40%'],
+          ['below + GREEN + daily conf (reversal-up)', '35', '63%', '+0.66%'],
+        ],
+        highlightRows: [2, 5],
+        caption: 'Orthogonal layers: daily confluence drives the HOLD rate (gate; without it green is a 53% coin-flip), candle color drives the NET TRAVEL (green-above +0.36 vs red-above -0.02). Best bull = above+daily-above+green (72%/+0.36%); best bear = below+daily-below+red (61%/-0.40%). below+green = reversal-up trap.',
+      },
+      {
+        title: 'Coin-flip weeks — max move from entry + pivot-level hit-rates (for wing placement)',
+        columns: ['Coin-flip scenario', 'n', 'maxBull avg/p90', 'maxBear avg/p90', 'R1% / R2%', 'S1% / S2%'],
+        rows: [
+          ['ABOVE coin-flip (wk+ daily not+)', '53', '1.08 / 1.88', '1.11 / 2.47', '43 / 19', '26 / 11'],
+          ['BELOW coin-flip (wk- daily not-)', '32', '1.81 / 4.02', '1.73 / 2.98', '34 / 22', '47 / 22'],
+        ],
+        caption: 'Coin-flip weeks are CONTAINED (both-sides whipsaw only 6%) -> trade NEUTRAL not directional. ABOVE coin-flip: mild up-lean, S1 hit only 26% -> condor short put ~S1 / call ~R2. BELOW coin-flip: leans UP (+0.61% net) with a FAT upside tail (p90 4.0%) -> condor with call wing beyond R2; never go bear.',
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Bull (above+daily+green)', value: '72% hold / +0.36%', tone: 'pos' },
+        { label: 'Bear (below+daily+red)', value: '61% hold / -0.40%', tone: 'pos' },
+        { label: 'Split / no-confluence', value: '52% (coin-flip)' },
+        { label: 'Daily confluence lift (hold)', value: '+3pp (69->72 / 58->61)' },
+        { label: 'Coin-flip both-sides whip', value: '6% (contained)', tone: 'pos' },
+        { label: 'Net move magnitude', value: '~+/-0.4% (tilt, not trend)' },
+      ],
+      tables: [
+        {
+          title: 'Structure-selection map (the playbook)',
+          columns: ['Week classification', 'Read', 'Suggested structure'],
+          rows: [
+            ['above + daily-above + GREEN', 'bull tilt (72% / +0.36%)', 'bullish jade lizard / bull-put spread'],
+            ['above + daily-above + RED', 'holds up but goes nowhere (70% / ~0)', 'iron condor / iron fly (sell range)'],
+            ['below + daily-below + RED', 'bear tilt (61% / -0.40%)', 'bear-call / put debit (defined-risk)'],
+            ['below + GREEN', 'reversal-up trap (+0.66%)', 'do NOT go bear — neutral or mild bull'],
+            ['daily disagrees (split)', 'coin-flip (52%)', 'neutral only — condor / fly, wings at R1-R2 / S1-S2'],
+            ['ultra-narrow CPR (top whipsaw decile)', 'whippy (66-74% cross both sides)', 'skip the directional break'],
+          ],
+          highlightRows: [0, 2],
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'Bull tilt: weekly-above + daily-above + GREEN 1st-30-min',
+        summary: 'The cleanest directional setup — 72% close above the weekly CPR with a genuine +0.36% net travel (n=152, 11y). Daily confluence supplies the hold rate, the green candle supplies the conviction. Play it as a bullish jade lizard or bull-put spread.',
+        metrics: [
+          { k: 'Held above', v: '72%' },
+          { k: 'Net travel', v: '+0.36%' },
+          { k: 'n', v: '152 weeks' },
+        ],
+      },
+      {
+        config: 'Coin-flip / opposite-color -> NEUTRAL premium',
+        summary: 'When daily disagrees (52% coin-flip) or the candle color opposes the position (above+red = 70% hold but ~0 net), the week is contained (both-sides whipsaw only 6%). Sell an iron condor / fly with wings at the weekly pivots (R1-R2 / S1-S2). The playbook always yields a structure — confluence+color just says directional vs neutral.',
+        metrics: [
+          { k: 'Coin-flip hold', v: '52%' },
+          { k: 'Both-sides whip', v: '6%' },
+          { k: 'above+red net', v: '~0%' },
+        ],
+      },
+    ],
+    caveats: [
+      'PRICE-ACTION study, no option premiums — movement is index %, the option P&L / EV still needs real premiums (AlgoTest or the live recorder). These stats pick the STRUCTURE and place the WINGS; they do not prove the money.',
+      'Edge is in DIRECTION & structure selection, not magnitude — net moves are small (~+/-0.4%). This is for inline premium structures (tilt/neutral), NOT trend-catching.',
+      'Some splits are thin: below+green (n=17-35) and the coin-flip buckets (n=32-53); RECENT 2023-26 alone is too thin to split (treat as directional only). Headline numbers are the full 11y (2015-26).',
+      'Single instrument (NIFTY), in-sample over one 11-year history. The bull/bear ASYMMETRY (bull ~72% vs bear ~61%) reflects equity upward drift and may not hold in a structural bear.',
+      'Daily-vs-weekly CPR SIGN FLIP (research/67): weekly narrow = trend, daily narrow = calm — do not mix the timeframes’ interpretations.',
+    ],
+    githubLinks: [
+      { label: '← Related: V2 Iron Fly (Stop-Loss x VIX)', href: '/app/backtest/v2-nifty-ironfly-sl-vix' },
+      { label: 'research/67 — weekly vs daily CPR study', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/67_weekly_cpr' },
+    ],
+    projectPaths: [
+      'research/67_weekly_cpr/results/RESULTS.md',
+      'research/67_weekly_cpr/scripts/ (cpr_plan, cpr_ab, cpr_trend, prem2, + confluence/candle/3way/coinflip)',
+    ],
+  },
+  {
     slug: 'factor-index-rotation',
     title: 'Nifty Factor-Index Rotation — does "diversify, don\'t select" transfer from assets to factors?',
     verdict:
