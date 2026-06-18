@@ -140,3 +140,43 @@ A **Weekly CPR Playbook** for inline premium structures (NOT trend-catching): cl
 re-check the daily state each evening to adjust. SIGNAL/context tool — edge is in DIRECTION & structure
 choice, ~±0.4% net magnitude; option P&L still needs real premiums. In-sample, NIFTY-only; persistent
 bull/bear asymmetry (AGREE-UP ≫ AGREE-DOWN) from equity upward drift.
+
+## E. INTRA-WEEK BREACH = the adjustment trigger (does a cross-back flip the view?)
+
+You entered ABOVE the weekly CPR (bull lean). A LATER candle closing back BELOW the CPR — or BELOW S1 — is
+a change-of-view. Outcome below = the week's FINAL close vs the CPR band (and vs S1). Mirror with R1 for
+BELOW (bear) entries. 11y 2015-26, NIFTY.
+
+**Threshold matters (DAILY-close trigger; daily-entry sample):**
+| trigger (above entry) | occurs | week ends below CPR band | week ends below S1 |
+|---|---|---|---|
+| closes back below CPR (cross) | 27% | 62% | 27% |
+| closes below S1 (deep breach) | 11% | **88%** | **68%** |
+Baseline (above-entry ends below CPR) ≈ 17-20%. Bear mirror: close above CPR → 81% end above; close above
+R1 → 91% end above / 79% hold above R1.
+
+→ a plain **CPR cross = BIAS FLIP** (62% below band but only 27% reach S1 → *neutralize*, don't flip hard);
+an **S1/R1 breach = CONTINUATION** (88-91% end on the new side, holds the pivot 68-79% → *flip & lean*).
+
+**Trigger CANDLE TIMEFRAME (entry held = 1st-30min; trigger TF varied):**
+| TF | above: S1-breach occurs / ends<CPR / holds<S1 | below: R1-breach occurs / ends>CPR / holds>R1 |
+|---|---|---|
+| 30-min | 21% / 72% / 52% | 26% / 85% / 66% |
+| 1h | 21% / 71% / 54% | 26% / 87% / 67% |
+| 2h | 20% / 73% / 56% | 25% / 86% / 69% |
+| 4h | 19% / 75% / 59% | 23% / 87% / 74% |
+| **daily** | 17% / **79% / 67%** | 21% / **90% / 83%** |
+
+**Finding: within intraday (30m-4h) reliability barely moves (~71-75% end below CPR on an S1 breach) — there
+is NO magic intraday timeframe.** The only real step up is the DAILY close (79%, holds S1 67%). 30-min is the
+noisiest (holds S1 only 52%); 1h-2h is the cleaner intraday choice. The biggest coarser-TF gain is in
+*holding* the breach level (52%→67% above; 66%→83% below).
+
+**Timeframe-aware adjustment LADDER (bull entry; mirror with R1 for bear):**
+1. **1h-2h close below S1 (~72%) → EARLY alert:** start neutralizing the bull tilt.
+2. **DAILY close below S1 (79-88%, holds S1 67%) → CONFIRM:** flip bearish.
+3. **A plain CPR cross intraday (~52-57%) = WATCH only** (often recovers); decisive only on the DAILY close (61%).
+
+It is a BIAS-FLIP signal, not a move-size signal (rest-of-week move ≈ flat after the cross). Use it to
+de-risk/flip the directional tilt, not to chase a trend. Persistent bull/bear asymmetry (bear positions
+reverse up more readily). In-sample, NIFTY.

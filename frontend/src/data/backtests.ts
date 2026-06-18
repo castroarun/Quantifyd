@@ -221,6 +221,21 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [3],
         caption: 'AGREE = price on the SAME side of BOTH the weekly and daily CPR; DISAGREE = opposite sides. The state EVOLVES daily — 48% of weeks the weekly side flips at least once, so re-check each evening. AGREE beats DISAGREE every day; the absolute hold% rises toward week-end (partly mechanical — less time left). Adjust cues: DISAGREE-below-weekly = reversal-UP (lift bearish risk / mild bull); when an uncertain week RESOLVES to AGREE, the new side tends to hold (pooled n=120: AGREE-UP 73%, AGREE-DOWN only 46%); a side-flip = re-center the structure. 11y 2015-26.',
       },
+      {
+        title: 'Intra-week BREACH = adjustment trigger, by candle timeframe (bull entry above weekly CPR; mirror with R1 for bear)',
+        columns: ['Trigger — a later candle...', 'occurs', 'week ends below CPR', 'holds below S1'],
+        rows: [
+          ['30-min closes below S1', '21%', '72%', '52% (noisiest)'],
+          ['1h closes below S1', '21%', '71%', '54%'],
+          ['2h closes below S1', '20%', '73%', '56%'],
+          ['4h closes below S1', '19%', '75%', '59%'],
+          ['DAILY closes below S1', '17%', '79%', '67% (strongest)'],
+          ['any intraday close back below CPR (cross)', '35-38%', '52-57%', '—'],
+          ['DAILY close back below CPR (cross)', '33%', '61%', '—'],
+        ],
+        highlightRows: [4],
+        caption: 'Baseline: a bull (above-CPR) entry ends below CPR only ~20%. Within intraday (30m-4h) reliability barely moves (~71-75% end below CPR on an S1 breach) — NO magic intraday TF; the real step is the DAILY close (79%, holds S1 67%). 30-min is noisiest (holds S1 only 52%). BEAR MIRROR (entry below CPR, trigger = close above R1): intraday ~85-87% end above CPR, DAILY 90% / holds R1 83%. A plain CPR cross = BIAS-FLIP (neutralize); an S1/R1 breach = CONTINUATION (flip & lean). LADDER: 1h-2h close beyond S1/R1 = EARLY alert (start neutralizing) -> DAILY close beyond S1/R1 = CONFIRM (flip). A plain CPR cross intraday (~52-57%) is WATCH-only; decisive only on the daily (61%). Bias-flip signal, not move-size (rest-move ~flat).',
+      },
     ],
     results: {
       metrics: [
