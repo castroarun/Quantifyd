@@ -192,3 +192,5 @@ backtest_data/breakout_scanner.db
 research/57_positional_straddle_biweekly/results/paper_straddle.db
 static/app/watchdog.json
 static/app/straddles_live.json
+research/68_nas_6sys_chain_replay/results/*_legs.csv
+research/68_nas_6sys_chain_replay/scripts/_ref_*
