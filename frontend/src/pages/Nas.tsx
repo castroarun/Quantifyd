@@ -55,7 +55,7 @@ const SQUEEZE_SYSTEMS: SystemDef[] = [
     label: 'Squeeze · ATM',
     subtitle: 'ATM strangle with alternating adjustment',
     rules:
-      'Entry: ATR squeeze → SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,2) exit. EOD 15:15.',
+      'Entry: ATR squeeze → SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,3) exit. EOD 15:15.',
     configNote: 'ATM: 5L | 30% SL',
     group: 'squeeze',
   },
@@ -63,10 +63,10 @@ const SQUEEZE_SYSTEMS: SystemDef[] = [
     id: 'nas-atm2',
     key: 'nas-atm2',
     label: 'Squeeze · ATM 2.0',
-    subtitle: 'Cascading ATM, 4-24 premium bounds',
+    subtitle: '±0.4% underlying move-stop, one-and-done',
     rules:
-      'Entry: ATR squeeze → SELL ATM CE+PE, SL = 1.3x. Any SL closes BOTH legs and re-enters a new ATM strangle. Max 5 re-entries. EOD 15:15.',
-    configNote: 'ATM 2.0: 5L | 1.3x SL | 5 re-entries',
+      'Entry: ATR squeeze → SELL ATM CE+PE. Exit: ±0.4% underlying move from entry closes BOTH legs (one-and-done, NO re-entry); per-leg 1.3x (30%) SL is a backstop. EOD 15:15.',
+    configNote: 'ATM 2.0: 5L | ±0.4% move-stop | 30% SL backstop',
     group: 'squeeze',
   },
   {
@@ -75,7 +75,7 @@ const SQUEEZE_SYSTEMS: SystemDef[] = [
     label: 'Squeeze · ATM V4',
     subtitle: 'ATM V4 with cross-leg topup',
     rules:
-      'Entry: ATR squeeze → SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP (both re-get 30% SLs). 2nd SL: Close stopped leg, naked surviving leg uses ST(7,2) exit. EOD 15:15.',
+      'Entry: ATR squeeze → SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP (both re-get 30% SLs). 2nd SL: Close stopped leg, naked surviving leg uses ST(7,3) exit. EOD 15:15.',
     configNote: 'ATM V4: 5L | 1.3x SL | Roll-to-match',
     group: 'squeeze',
   },
@@ -98,7 +98,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
     label: '9:16 · ATM',
     subtitle: 'Time-based 9:16 entry, ATM legs',
     rules:
-      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,2) exit. EOD 15:15.',
+      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,3) exit. EOD 15:15.',
     configNote: '916 ATM: 5L | 30% SL',
     group: '916',
   },
@@ -106,10 +106,10 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
     id: 'nas-916-atm2',
     key: 'nas-916-atm2',
     label: '9:16 · ATM 2.0',
-    subtitle: '9:16 entry, cascading ATM 2.0',
+    subtitle: '9:16 entry, ±0.4% move-stop (one-and-done)',
     rules:
-      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE, SL = 1.3x. Any SL closes BOTH legs and re-enters a new ATM strangle. Max 5 re-entries. EOD 15:15.',
-    configNote: '916 ATM 2.0: 5L | 1.3x SL | 5 re-entries',
+      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE. Exit: ±0.4% underlying move from entry closes BOTH legs (one-and-done, NO re-entry); per-leg 1.3x (30%) SL is a backstop. EOD 15:15.',
+    configNote: '916 ATM 2.0: 5L | ±0.4% move-stop | 30% SL backstop',
     group: '916',
   },
   {
@@ -118,7 +118,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
     label: '9:16 · ATM V4',
     subtitle: '9:16 entry, ATM V4 cross-leg',
     rules:
-      'Entry: Auto-enter at 9:16 AM. SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP. 2nd SL: Close stopped leg, naked surviving leg uses ST(7,2) exit. EOD 15:15.',
+      'Entry: Auto-enter at 9:16 AM. SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP. 2nd SL: Close stopped leg, naked surviving leg uses ST(7,3) exit. EOD 15:15.',
     configNote: '916 ATM V4: 5L | 1.3x SL | Roll-to-match',
     group: '916',
   },
@@ -1154,7 +1154,7 @@ function TradeBook({ systems, states, liveLegs }: {
                     if ((r.arm as number) >= 900000) {
                       const stv = r.tradingsymbol ? stTrail[r.tradingsymbol] : undefined;
                       return (
-                        <span style={{ color: '#58a6ff', whiteSpace: 'nowrap' }} title="SuperTrend(7,2) trailing exit on the naked survivor leg (no fixed-price stop)">
+                        <span style={{ color: '#58a6ff', whiteSpace: 'nowrap' }} title="SuperTrend(7,3) trailing exit on the naked survivor leg (no fixed-price stop)">
                           ST {stv != null ? stv.toFixed(1) : '\u2026'}
                         </span>
                       );
