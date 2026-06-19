@@ -159,7 +159,7 @@ class NasAtmExecutor:
 
     def _place_order(self, tradingsymbol, transaction_type, qty, price,
                      leg, instrument_type, strike, expiry_date,
-                     signal_type, strangle_id, sl_price=None):
+                     signal_type, strangle_id, sl_price=None, entry_spot=None):
         """
         Place an order. Paper mode: fill immediately. Live: place on Kite.
         Returns position_id or None.
@@ -189,6 +189,7 @@ class NasAtmExecutor:
             expiry_date=str(expiry_date),
             entry_price=price,
             entry_time=now,
+            entry_spot=entry_spot,
             sl_price=sl_price,
             signal_type=signal_type,
             status='ACTIVE' if _is_paper else 'PENDING',
@@ -499,6 +500,7 @@ class NasAtmExecutor:
             signal_type='ATM_SELL_CE',
             strangle_id=strangle_id,
             sl_price=ce_sl,
+            entry_spot=spot,
         )
 
         # Sell PUT
@@ -514,6 +516,7 @@ class NasAtmExecutor:
             signal_type='ATM_SELL_PE',
             strangle_id=strangle_id,
             sl_price=pe_sl,
+            entry_spot=spot,
         )
 
         # Partial-fill rollback: if exactly one leg succeeded, close the

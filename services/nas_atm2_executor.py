@@ -70,6 +70,44 @@ class NasAtm2Executor(NasAtmExecutor):
         # Track which strangles we've already exited this call
         exited_strangles = set()
 
+        # --- research/68: +-move-stop (one-and-done). Close BOTH legs when the
+        # underlying has moved >= move_stop_pct from entry spot. Fires before the
+        # per-leg premium SL on trend days; the per-leg SL stays as a backstop.
+        move_pct = self.cfg.get('move_stop_pct', 0) or 0
+        if move_pct > 0:
+            cur_spot = self.scanner.get_live_spot()
+            if cur_spot:
+                by_strangle = {}
+                for p in positions:
+                    if p['status'] == 'ACTIVE':
+                        by_strangle.setdefault(p.get('strangle_id'), []).append(p)
+                for sid, legs in by_strangle.items():
+                    if sid in exited_strangles:
+                        continue
+                    espot = next((l.get('entry_spot') for l in legs if l.get('entry_spot')), None)
+                    if not espot:
+                        continue
+                    moved = abs(cur_spot - espot) / espot
+                    if moved >= move_pct:
+                        logger.info(f"[NAS-ATM2] MOVE-STOP: spot {cur_spot:.1f} vs entry {espot:.1f} = "
+                                    f"{moved*100:.2f}% >= {move_pct*100:.2f}% -> close strangle #{sid}")
+                        exited_strangles.add(sid)
+                        action = {'type': 'MOVE_STOP', 'strangle_id': sid, 'entry_spot': espot,
+                                  'cur_spot': cur_spot, 'move_pct': round(moved*100, 2), 'closed_legs': []}
+                        for leg_pos in legs:
+                            leg_tsym = leg_pos.get('tradingsymbol', '')
+                            leg_live = live_ltps.get(leg_tsym) or self.scanner.get_live_option_premium(leg_tsym) or 0
+                            self._close_leg(leg_pos, leg_live, 'MOVE_STOP')
+                            pnl_leg = (leg_pos['entry_price'] - leg_live) * leg_pos['qty']
+                            st = self.db.get_state()
+                            self.db.update_state(daily_pnl=round((st.get('daily_pnl', 0) or 0) + pnl_leg, 2))
+                            action['closed_legs'].append({'tradingsymbol': leg_tsym,
+                                                          'exit_price': round(leg_live, 2), 'pnl': round(pnl_leg, 2)})
+                        fresh = self.db.get_positions_by_strangle(sid)
+                        self._record_trade(sid, fresh, 'MOVE_STOP')
+                        action['total_pnl'] = round(sum(l['pnl'] for l in action['closed_legs']), 2)
+                        actions.append(action)
+
         # Check each position for SL breach
         for pos in positions:
             if pos['status'] != 'ACTIVE':
@@ -160,8 +198,8 @@ class NasAtm2Executor(NasAtmExecutor):
                 action['total_pnl'] = round(
                     sum(leg['pnl'] for leg in action['closed_legs']), 2)
 
-                # Immediate re-entry at current ATM
-                spot = self.scanner.get_live_spot()
+                # Immediate re-entry at current ATM (gated; research/68 one-and-done)
+                spot = self.scanner.get_live_spot() if self.cfg.get('re_enter_on_sl', True) else None
                 if spot:
                     new_sid, msg = self.execute_strangle_entry(spot=spot)
                     if new_sid:
