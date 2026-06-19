@@ -920,7 +920,7 @@ class NasTicker:
             return
 
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
 
         if st_val is None:
             return
@@ -1287,7 +1287,7 @@ class NasTicker:
             return
 
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
 
         if st_val is None:
             return
@@ -1810,7 +1810,7 @@ class NasTicker:
         if len(candles) < 8:
             return None
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
         return st_val
 
     def _get_atm4_st_value(self) -> Optional[float]:
@@ -1819,7 +1819,7 @@ class NasTicker:
         if len(candles) < 8:
             return None
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=2)
+        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
         return st_val
 
     def get_status(self) -> dict:
