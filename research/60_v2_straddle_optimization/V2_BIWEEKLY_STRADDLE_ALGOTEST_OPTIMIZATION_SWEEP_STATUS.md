@@ -447,3 +447,49 @@ Factsheet (laptop) research_v2_locked_factsheet.html has a collapsible CPR-overl
 tables). Scripts: research/60_v2_straddle_optimization/scripts/attrib*.py + factsheet2.py.
 NEXT: (1) forward paper-validate; (2) AlgoTest native CPR filter else compute CPR in live engine, skip narrow
 days; (3) test WEEKLY-CPR variant; (4) once forward-confirmed, fold into locked base + app study.
+
+---
+
+## STEP 1 — WING-WIDTH SWEEP (prepared 2026-06-19) — RUN ON ALGOTEST, then Claude tabulates
+
+**Goal:** find the cheapest tail cap. Done so far: ±250 (=0a, +₹938,828) and naked/none (=0b, +₹1,890,720,
+UNBOUNDED tail). Missing: **±500 and ±700**. Hypothesis: wider wings are FURTHER OTM = cheaper to buy =
+LESS theta drag → should net MORE than the ±250 0a while keeping a BOUNDED (wider) tail. The sweep finds
+where extra premium stops being worth the bigger (still-capped) per-event loss.
+
+Both runs are **IDENTICAL to the 0a baseline; ONLY the wing distance changes.** 10 lots, 2019→2026.
+
+### Common config (same as 0a — do not change)
+- NIFTY · Underlying from = **Cash** · Strategy Type **Positional** · expire on **Weekly Expiry**
+- Entry **09:20**, Exit **15:15** · Entry **8 TD before expiry** · Exit **1 TD before expiry**
+- Leg1 **SELL CALL ATM** 1 lot · Leg2 **SELL PUT ATM** 1 lot
+- Per-leg SL/Target **OFF** · Re-entry on SL **ON** · Re-entry on Target **ON**
+- Strategy-level **Overall SL = Underlying movement 1.5%** (NOT premium %)
+- Strategy-level **Overall Target = 40% of premium received** (combined)
+- Costs **ON** · size **10 lots** (or 1 lot and ×10 in analysis)
+
+### RUN 3a — ±500 wings (the current locked default — never actually run; 0a drifted to ±250)
+- Leg3 **BUY CALL OTM 500 pts (ATM + 10 strikes)** 1 lot
+- Leg4 **BUY PUT  OTM 500 pts (ATM − 10 strikes)** 1 lot
+
+### RUN 3b — ±700 wings
+- Leg3 **BUY CALL OTM 700 pts (ATM + 14 strikes)** 1 lot
+- Leg4 **BUY PUT  OTM 700 pts (ATM − 14 strikes)** 1 lot
+
+### Export & hand back
+For EACH run, export the **Trades CSV** + the summary **PDF** (or just paste the per-year P/L + MaxDD +
+worst-trade). Claude then builds the wing-width comparison:
+
+| width | net ₹ (10 lot) | per-year (green every yr?) | MaxDD | worst trade | tail cap | return-on-margin |
+|---|---|---|---|---|---|---|
+| none (0b naked) | +1,890,720 | NO (2026-YTD neg) | 318,792 | −129,578 | UNBOUNDED | 8.7%/yr |
+| ±250 (0a) | +938,828 | YES (every yr) | 96k–127k | −59,865 | ~−60k | 3.5%/yr |
+| **±500 (3a)** | _run_ | _?_ | _?_ | _?_ | wider-but-capped | _?_ |
+| **±700 (3b)** | _run_ | _?_ | _?_ | _?_ | wider-but-capped | _?_ |
+
+**Decision rule:** pick the WIDEST wing whose worst-trade / MaxDD you can stomach at 10 lots while netting
+**≥ the ±250 0a (+₹938k)**. ±500 is the current locked default; this sweep confirms it or moves it (likely
+±500/±700 net MORE than ±250 because the far-OTM wings cost less — at the price of a wider, still-bounded tail).
+
+**Save the exports** into `research/60_v2_straddle_optimization/` (the 0a/0b CSVs were NOT saved — do not
+repeat that; keep these so the per-year tables are reproducible).
