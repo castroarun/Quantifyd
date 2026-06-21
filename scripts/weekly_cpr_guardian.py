@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """Weekly CPR Guardian harness (research/67) — TOKEN-INDEPENDENT.
-import warnings; warnings.filterwarnings("ignore")
 Data: NIFTY HLC from the options recorder (options_data.db underlying_spot, per-minute, in-process);
 live spot from /api/nas/ticker/status. No standalone Kite needed.
   --assess [--now]  -> classify the week (weekly+daily CPR + 1st-30m candle) -> verdict+levels, save state
   --monitor [--belo X --behi Y] -> live price vs levels + breakevens -> CALM / ALERT lines"""
 import sys, json, sqlite3, urllib.request
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 OPT="backtest_data/options_data.db"; STATE="/tmp/cpr_guardian_state.json"
 def load():
     try: return json.load(open(STATE))
     except Exception: return {}
 def save(s): json.dump(s, open(STATE,"w"))
-def ist(): return datetime.utcnow()+timedelta(hours=5,minutes=30)
+def ist(): return datetime.now(timezone.utc).replace(tzinfo=None)+timedelta(hours=5,minutes=30)
 def cpr(h,l,c):
     p=(h+l+c)/3.0; bc=(h+l)/2.0; tc=2*p-bc; lo,hi=min(bc,tc),max(bc,tc)
     return dict(p=p,lo=lo,hi=hi,r1=2*p-l,s1=2*p-h,r2=p+(h-l),s2=p-(h-l),width=abs(tc-bc)/c*100)
