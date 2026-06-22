@@ -116,7 +116,8 @@ def sim_loaded(bundle, entry_mode, mgmt, stop_mode="premium", move_pct=0.004,
                strike_offset=0, time_exit=DEFAULT_EXIT, allow_reentry=True,
                sl_mult=SL_MULT, st_period=7, st_mult=2.0, st_tf="5min",
                naked_method="st", pct_trail=0.30,
-               profit_target=None, position_stop=None):
+               profit_target=None, position_stop=None, strike_gate=False,
+               move_stop_reenter=False, reenter_cooldown_min=0):
     """Replay one preloaded day for one system. Returns list of closed-leg dicts.
     Phase-D knobs: sl_mult (premium SL x), st_* (SuperTrend trail params),
     naked_method in {st, breakeven, pct_trail} (how the naked survivor trails),
@@ -192,6 +193,7 @@ def sim_loaded(bundle, entry_mode, mgmt, stop_mode="premium", move_pct=0.004,
 
     realized = []
     reentries = 0
+    last_entry = t0
     sim_times = [t for t in times if t >= t0 and t.time() <= time_exit]
     st_cache = {}
 
@@ -214,9 +216,20 @@ def sim_loaded(bundle, entry_mode, mgmt, stop_mode="premium", move_pct=0.004,
         if stop_mode == "move" and not force:
             sp = float(spot_s.loc[t]) if t in spot_s.index else spot0
             if abs(sp - spot0) / spot0 >= move_pct:
+                cur_k = round(spot0 / 50) * 50
                 for lg in legs:
                     if lg["open"]:
                         close_leg(lg, t, "MOVE_STOP")
+                # re-center: re-enter at the new ATM if it differs from the closed strike,
+                # subject to a re-entry cooldown (0 = exempt / always re-center).
+                if move_stop_reenter and reentries < 5 and t.time() <= ENTRY_WIN_END:
+                    new_atm = round(sp / 50) * 50
+                    cooled = (t - last_entry).total_seconds() >= reenter_cooldown_min * 60
+                    if new_atm != cur_k and cooled:
+                        nl = open_strangle(t, sp)
+                        if nl:
+                            legs = nl; spot0 = sp; last_entry = t; reentries += 1
+                            continue
                 break
 
         # ---- whole-strangle profit-target / position-stop (on open legs vs credit) ----
@@ -273,6 +286,13 @@ def sim_loaded(bundle, entry_mode, mgmt, stop_mode="premium", move_pct=0.004,
                         if o["open"]:
                             o["naked_st"] = True
                 elif mgmt == "CASCADE":
+                    # strike-change gate (user 2026-06-22): only cascade if price has moved to a
+                    # DIFFERENT ATM strike; else HOLD (no same-strike exit/re-enter churn).
+                    if strike_gate:
+                        _sp = float(spot_s.loc[t]) if t in spot_s.index else spot0
+                        _cur_k = next((chain[o["tsym"]][2] for o in legs if o["open"]), None)
+                        if _cur_k is not None and round(_sp / 50) * 50 == int(_cur_k):
+                            continue   # ATM unchanged -> hold this strangle, check next tick
                     for o in legs:
                         if o["open"]:
                             close_leg(o, t, "SL_CASCADE")

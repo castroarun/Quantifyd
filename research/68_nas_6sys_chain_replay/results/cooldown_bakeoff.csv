@@ -1,0 +1,4 @@
+config,legs,net,maxdd,sharpe,calmar,train_net,test_net,test_sh
+move_oneanddone,98,48489,-5767,7.15,8.41,24709,23780,6.78
+move_recenter_NOcooldown,132,66101,-9467,7.17,6.98,30697,35404,8.14
+move_recenter_15mincool,128,69801,-5767,8.14,12.1,34398,35404,8.14
