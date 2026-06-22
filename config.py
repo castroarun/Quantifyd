@@ -483,10 +483,11 @@ NAS_ATM2_DEFAULTS = {
     **NAS_ATM_DEFAULTS,
     # On SL hit: close BOTH legs, then immediately re-enter new ATM straddle
     'trail_to_cost_on_sl': False,
-    're_enter_on_sl': True,    # user 2026-06-22: cascade re-entry restored
+    're_enter_on_sl': False,   # user 2026-06-22 v3: per-leg 30% SL = one-and-done backstop
     'exit_both_on_sl': True,
-    'move_stop_pct': 0,        # user 2026-06-22: move-stop OFF (back to cascade)
-    'cascade_require_strike_change': True,  # only cascade if ATM strike changed (no same-strike churn)
+    'move_stop_pct': 0.004,    # user 2026-06-22 v3: 0.4% move-stop = exit trigger
+    'cascade_require_strike_change': False,
+    'move_stop_reenter': True, # user 2026-06-22 v3: move-stop re-centers to new ATM (if strike changed)
     # Skip Wed/Thu — cascading 5-re-entry geometry is brittle on trending
     # expiry-week days. Basic ATM (no cascade) stays enabled all weekdays.
     'skip_weekdays': (),  # 2026-06-03: no day fully skipped; non-live days run as PAPER (see live_weekdays)

@@ -107,6 +107,22 @@ class NasAtm2Executor(NasAtmExecutor):
                         self._record_trade(sid, fresh, 'MOVE_STOP')
                         action['total_pnl'] = round(sum(l['pnl'] for l in action['closed_legs']), 2)
                         actions.append(action)
+                        # user 2026-06-22 v3: cascade the move-stop to the NEW current ATM
+                        # (re-center), only if it differs from the strike just closed.
+                        if self.cfg.get('move_stop_reenter', False):
+                            old_strike = next((l.get('strike') for l in legs if l.get('strike')), None)
+                            new_atm = self.scanner.get_atm_strike(cur_spot)
+                            if old_strike is None or int(new_atm) != int(old_strike):
+                                new_sid, _msg = self.execute_strangle_entry(spot=cur_spot)
+                                if new_sid:
+                                    action['re_entry'] = {'strangle_id': new_sid, 'strike': int(new_atm)}
+                                    logger.info(f"[NAS-ATM2] MOVE-STOP re-center -> #{new_sid} at new ATM "
+                                                f"{int(new_atm)} (was {old_strike})")
+                                else:
+                                    action['re_entry_blocked'] = _msg
+                            else:
+                                logger.info(f"[NAS-ATM2] MOVE-STOP: new ATM {int(new_atm)} == closed strike "
+                                            f"{old_strike}; no same-strike re-enter")
 
         # Check each position for SL breach
         for pos in positions:
