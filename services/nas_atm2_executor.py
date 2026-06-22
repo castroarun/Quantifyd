@@ -132,6 +132,18 @@ class NasAtm2Executor(NasAtmExecutor):
 
             # SL hit: live premium >= sl_price (for short positions, premium going up = loss)
             if live_prem >= sl_price:
+                # user 2026-06-22: only cascade (close+re-enter) if price has moved to a
+                # DIFFERENT ATM strike. If the ATM is unchanged the re-entry would be the
+                # SAME strike (pointless churn) -> HOLD the position instead, even though
+                # the 30% SL is hit. Wait for a strike move or EOD squareoff.
+                if self.cfg.get('cascade_require_strike_change', False):
+                    _cs = self.scanner.get_live_spot()
+                    _ck = pos.get('strike')
+                    if _cs and _ck and int(self.scanner.get_atm_strike(_cs)) == int(_ck):
+                        logger.info(f"[NAS-ATM2] SL hit on {tsym} but ATM unchanged "
+                                    f"(spot {_cs:.0f} -> ATM {int(self.scanner.get_atm_strike(_cs))} "
+                                    f"== current strike {int(_ck)}); HOLD, no same-strike churn")
+                        continue
                 logger.info(f"[NAS-ATM2] SL HIT: {tsym} live={live_prem:.2f} >= SL={sl_price:.2f}")
                 logger.info(f"[NAS-ATM2] Closing BOTH legs of strangle #{strangle_id}")
 
