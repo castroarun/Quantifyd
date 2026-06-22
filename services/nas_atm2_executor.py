@@ -147,7 +147,10 @@ class NasAtm2Executor(NasAtmExecutor):
                 continue
 
             # SL hit: live premium >= sl_price (for short positions, premium going up = loss)
-            if live_prem >= sl_price:
+            # v3 (2026-06-22): when the move-stop is active it is the SOLE exit trigger
+            # (matches the backtested move-stop). The 30% premium SL (~0.2% underlying)
+            # would otherwise pre-empt the 0.4% move-stop and the re-center would never fire.
+            if (not self.cfg.get('move_stop_pct', 0)) and live_prem >= sl_price:
                 # user 2026-06-22: only cascade (close+re-enter) if price has moved to a
                 # DIFFERENT ATM strike. If the ATM is unchanged the re-entry would be the
                 # SAME strike (pointless churn) -> HOLD the position instead, even though
