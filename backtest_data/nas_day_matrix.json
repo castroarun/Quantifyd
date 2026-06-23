@@ -24,7 +24,8 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": true
+      "live": true,
+      "paper_shadow": true
     },
     "nas_atm2": {
       "dte": {
@@ -36,7 +37,8 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": true
+      "live": true,
+      "paper_shadow": true
     },
     "nas_atm4": {
       "dte": {
@@ -48,7 +50,8 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": true
+      "live": true,
+      "paper_shadow": true
     },
     "nas_916_otm": {
       "dte": {
@@ -72,7 +75,8 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": true
+      "live": true,
+      "paper_shadow": true
     },
     "nas_916_atm2": {
       "dte": {
@@ -84,7 +88,8 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": true
+      "live": true,
+      "paper_shadow": true
     },
     "nas_916_atm4": {
       "dte": {
@@ -96,7 +101,8 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": true
+      "live": true,
+      "paper_shadow": true
     }
   }
 }

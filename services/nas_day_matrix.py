@@ -165,6 +165,12 @@ def gate(system_key, today=None, master_mode=None, matrix=None, gap=None):
         enter = True
         reasons.append('gap-down %+.2f%%' % gap_pct)
     mm = master_mode if master_mode is not None else _master_mode()
-    mode = 'live' if (mm == 'live' and row.get('live')) else 'paper'
-    return {'allow': enter, 'mode': mode, 'dte': dte, 'gap_pct': gap_pct,
+    # live only when gated-on (enter) AND master live AND this is a live row; else paper
+    mode = 'live' if (mm == 'live' and row.get('live') and enter) else 'paper'
+    # paper-shadow (user 2026-06-23): these systems ALSO enter in PAPER on EVERY day for
+    # the daily P&L curve, regardless of the live gating / master mode.
+    allow = enter or bool(row.get('paper_shadow'))
+    if not enter and row.get('paper_shadow'):
+        reasons.append('paper-shadow')
+    return {'allow': allow, 'mode': mode, 'dte': dte, 'gap_pct': gap_pct,
             'reason': '; '.join(reasons) or ('DTE%s off, no gap' % dte)}
