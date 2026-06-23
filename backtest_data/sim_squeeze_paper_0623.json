@@ -1,0 +1,24 @@
+{
+  "sim": "SQUEEZE_ATM_PAPER",
+  "reason": "squeeze fired 11:25 (is_squeezing,count2,minbars1); real entry blocked by OTM-premium-filter bug on expiry day",
+  "date": "2026-06-23",
+  "entry_time": "11:38:16",
+  "spot_at_entry": 24097.75,
+  "strike": 24100,
+  "expiry": "2026-06-23",
+  "legs": [
+    {
+      "sym": "NIFTY2662324100CE",
+      "side": "SELL",
+      "entry": 29,
+      "qty": 65
+    },
+    {
+      "sym": "NIFTY2662324100PE",
+      "side": "SELL",
+      "entry": 27.95,
+      "qty": 65
+    }
+  ],
+  "note": "1 ATM straddle = mirrors what the 3 squeeze ATM variants (nas_atm/atm2/atm4) would each sell; x3 for full book. PAPER ONLY, no Kite order."
+}

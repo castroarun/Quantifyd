@@ -100,12 +100,12 @@ def tier1_live_health():
             add(1, 'NAS ticker', PASS, 'running, connected, last_ltp=%s, candles=%s' % (last_ltp, cc))
 
         # per-leg subscription coverage + arm sanity (THE check that catches the 06-12 bug)
-        leg_groups = [('atm_option_legs', 'atm_naked_st'),
-                      ('atm2_option_legs', None),
-                      ('atm4_option_legs', 'atm4_naked_st'),
-                      ('option_legs', None)]
+        leg_groups = [('atm_option_legs', 'atm_naked_st', False),
+                      ('atm2_option_legs', None, True),  # v3: ATM2 on 0.4%% move-stop, per-leg SL disabled
+                      ('atm4_option_legs', 'atm4_naked_st', False),
+                      ('option_legs', None, False)]
         gaps, near, naked_issues = [], [], []
-        for legs_key, naked_key in leg_groups:
+        for legs_key, naked_key, is_movestop in leg_groups:
             for leg in st.get(legs_key, []) or []:
                 tsym = leg.get('tradingsymbol', '?')
                 cp = leg.get('current_premium')
@@ -126,7 +126,8 @@ def tier1_live_health():
                         if stv is not None and cl is not None and cl > stv:
                             naked_issues.append('%s: premium close %.1f ALREADY above ST %.1f but still open — exit not firing' % (tsym, cl, stv))
                 elif slp > 0 and cp >= slp:
-                    gaps.append('%s: premium %.1f >= SL %.1f but STILL OPEN — stop not firing' % (tsym, cp, slp))
+                    if not is_movestop:  # ATM2 v3 move-stop: per-leg SL intentionally off
+                        gaps.append('%s: premium %.1f >= SL %.1f but STILL OPEN — stop not firing' % (tsym, cp, slp))
                 elif slp > 0 and cp >= 0.85 * slp:
                     near.append('%s: premium %.1f within 15%% of SL %.1f' % (tsym, cp, slp))
 
@@ -135,7 +136,7 @@ def tier1_live_health():
         elif naked_issues:
             add(1, 'Naked-survivor ST', FAIL, ' | '.join(naked_issues))
         else:
-            nlegs = sum(len(st.get(k, []) or []) for k, _ in leg_groups)
+            nlegs = sum(len(st.get(k, []) or []) for k, _, _ in leg_groups)
             add(1, 'Leg subscription / SL coverage', PASS, '%d active leg(s), all have live premium + sane arm' % nlegs)
         if near:
             add(1, 'Stop-proximity watch', WARN, ' | '.join(near))
