@@ -43,6 +43,53 @@ def recent_move_atr(con):
     diffs=sorted(abs(px[i]-px[i+1]) for i in range(len(px)-1))
     return diffs[len(diffs)//2]  # median 5-min move
 
+def panic_metrics(con):
+    """Desk panic gauge (no news needed), calibrated on 2015-26 5-min history (research/70).
+    Velocity V15 = worst 15-min %; depth DDhi = worst drop from running intraday high;
+    abnormality Z15 = |V15| / today's 15-min sigma. Tier escalates NORMAL->ELEVATED->SPIKE->PANIC.
+    Thresholds: V15 p95=-0.69 p99=-1.13; DDhi p95=-1.69 p99=-2.89; Z15 p95=4.0 p99=4.6.
+    PANIC archetype = 2026-05-29 15:10 fall (-1.11% / -1.97% / 5.3sigma)."""
+    n=ist(); day=n.strftime("%Y-%m-%d")
+    rows=con.execute("SELECT snapshot_time,spot_price FROM underlying_spot WHERE symbol='NIFTY' AND substr(snapshot_time,1,10)=? AND spot_price>0 ORDER BY snapshot_time",(day,)).fetchall()
+    if len(rows)<8: return None
+    pm={}
+    for t,p in rows: pm[int(t[11:13])*60+int(t[14:16])]=p
+    tm=sorted(pm)
+    def pbefore(t):
+        for k in range(t,t-4,-1):
+            if k in pm: return pm[k]
+        return None
+    def extremes(win):
+        dn=0.0; up=0.0; dnt=None
+        for t in tm:
+            p0=pbefore(t-win)
+            if p0 and p0>0:
+                r=(pm[t]-p0)/p0*100
+                if r<dn: dn=r; dnt=t
+                if r>up: up=r
+        return dn,up,dnt
+    v15,u15,t15=extremes(15); v30,u30,_=extremes(30)
+    hi=lo=pm[tm[0]]; ddhi=0.0; rulo=0.0
+    for t in tm:
+        p=pm[t]
+        if p>hi: hi=p
+        if p<lo: lo=p
+        ddhi=min(ddhi,(p-hi)/hi*100); rulo=max(rulo,(p-lo)/lo*100)
+    rets=[]
+    for t in tm:
+        p0=pbefore(t-15)
+        if p0 and p0>0: rets.append((pm[t]-p0)/p0*100)
+    sig=0.0
+    if len(rets)>1:
+        m=sum(rets)/len(rets); sig=(sum((x-m)**2 for x in rets)/(len(rets)-1))**0.5
+    worst=min(v15,-u15,key=abs) if False else (v15 if abs(v15)>=abs(u15) else -u15)  # signed dominant 15m move
+    z=abs(worst)/sig if sig>0 else 0.0
+    tier="NORMAL"; updown="DOWN" if abs(v15)>=abs(u15) else "UP"
+    if abs(worst)>=0.40 or z>=3.5: tier="ELEVATED"
+    if abs(worst)>=0.70 or ddhi<=-1.5 or rulo>=1.5 or z>=4.0: tier="SPIKE"
+    if abs(worst)>=1.10 or ddhi<=-2.0 or rulo>=2.0 or z>=4.6: tier="PANIC"
+    return dict(v15=v15,u15=u15,v30=v30,ddhi=ddhi,rulo=rulo,sig=sig,z=z,tier=tier,dir=updown,t15=t15)
+
 def hlc_range(con,d1,d2):
     r=con.execute("SELECT MAX(spot_price),MIN(spot_price) FROM underlying_spot WHERE symbol='NIFTY' AND substr(snapshot_time,1,10) BETWEEN ? AND ? AND spot_price>0",(d1,d2)).fetchone()
     cc=con.execute("SELECT spot_price FROM underlying_spot WHERE symbol='NIFTY' AND substr(snapshot_time,1,10) BETWEEN ? AND ? AND spot_price>0 ORDER BY snapshot_time DESC LIMIT 1",(d1,d2)).fetchone()
@@ -101,14 +148,21 @@ def monitor(belo,behi):
     mv=(sp-last)/last*100; atr=recent_move_atr(con); jump=abs(sp-last)
     spike = (atr and atr>0 and jump>=max(3*atr,25)) or abs(mv)>=0.4
     if spike: flags.append(f"PRICE SPIKE {mv:+.2f}% ({sp-last:+.0f} pts) since last check"+(f" = {jump/atr:.1f}x the recent 5-min move (ATR {atr:.0f})" if atr else "")+" -> NEWS-CHECK: find the driver + score it.")
+    # --- desk PANIC gauge (research/70): act on the move's own velocity, no news needed ---
+    pmx=panic_metrics(con)
+    if pmx and pmx["tier"]=="PANIC":
+        flags.insert(0,f"PANIC / ACT URGENT [{pmx['dir']}]: worst 15-min {pmx['v15']:+.2f}% (top 1% of days, p99 -1.13%) | {pmx['ddhi']:.2f}% from day-high | {pmx['z']:.1f} sigma -> the VELOCITY itself is the act-now signal; defend/exit now, do NOT wait for the 30m/S1 ladder. (archetype 2026-05-29 15:10: -1.11%/-1.97%/5.3s)")
+    elif pmx and pmx["tier"]=="SPIKE":
+        flags.append(f"SPIKE (panic-meter) [{pmx['dir']}]: worst 15-min {pmx['v15']:+.2f}% (>=p95 -0.69%) | {pmx['ddhi']:.2f}% from high | {pmx['z']:.1f} sigma -> get defense ready + run the NEWS-CHECK.")
+    ptag=(f"{pmx['tier']} V15 {pmx['v15']:+.2f}% DDhi {pmx['ddhi']:.2f}% {pmx['z']:.1f}s" if pmx else "n/a")
     if ist().strftime("%H:%M")>="15:10": flags.append("DAY-CLOSE WINDOW (>=15:10) -> review PT/roll/exit; do NOT add size into expiry gamma")
     s["last"]=round(sp); save(s)
     if flags:
         print("ALERT "+ist().strftime("%H:%M"))
         for f in flags: print("  ! "+f)
-        print(f"  ctx NIFTY {sp:.0f} | band {W['lo']:.0f}-{W['hi']:.0f} | S1 {W['s1']:.0f} R1 {W['r1']:.0f} R2 {W['r2']:.0f} R3 {W.get('r3',0):.0f} | {s['agree']}")
+        print(f"  ctx NIFTY {sp:.0f} | band {W['lo']:.0f}-{W['hi']:.0f} | S1 {W['s1']:.0f} R1 {W['r1']:.0f} R2 {W['r2']:.0f} R3 {W.get('r3',0):.0f} | {s['agree']} | panic {ptag}")
     else:
-        print(f"CALM {ist().strftime('%H:%M')} | NIFTY {sp:.0f} {cur} band | {s['agree']} intact | S1 {W['s1']:.0f} / R1 {W['r1']:.0f} / R3 {W.get('r3',0):.0f}")
+        print(f"CALM {ist().strftime('%H:%M')} | NIFTY {sp:.0f} {cur} band | {s['agree']} intact | S1 {W['s1']:.0f} / R1 {W['r1']:.0f} / R3 {W.get('r3',0):.0f} | panic {ptag}")
 
 if __name__=="__main__":
     a=sys.argv
