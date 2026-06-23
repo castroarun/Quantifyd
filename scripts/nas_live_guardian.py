@@ -100,6 +100,22 @@ def tier1_live_health():
             add(1, 'NAS ticker', PASS, 'running, connected, last_ltp=%s, candles=%s' % (last_ltp, cc))
 
         # per-leg subscription coverage + arm sanity (THE check that catches the 06-12 bug)
+        # DB-aware (2026-06-23): only flag ticker legs that are ACTUALLY active in a DB,
+        # so phantom ticker monitors left after a manual close / reconcile don't false-FAIL.
+        import sqlite3 as _sq, glob as _gl
+        db_active = set(); _db_ok = False
+        for _p in _gl.glob('backtest_data/nas_*_trading.db'):
+            try:
+                _c = _sq.connect(_p)
+                for _tbl in ('nas_atm_positions', 'nas_positions'):
+                    try:
+                        for (_ts,) in _c.execute("SELECT tradingsymbol FROM %s WHERE status='ACTIVE'" % _tbl):
+                            db_active.add(_ts)
+                        _db_ok = True; break
+                    except Exception:
+                        continue
+            except Exception:
+                continue
         leg_groups = [('atm_option_legs', 'atm_naked_st', False),
                       ('atm2_option_legs', None, True),  # v3: ATM2 on 0.4%% move-stop, per-leg SL disabled
                       ('atm4_option_legs', 'atm4_naked_st', False),
@@ -108,6 +124,8 @@ def tier1_live_health():
         for legs_key, naked_key, is_movestop in leg_groups:
             for leg in st.get(legs_key, []) or []:
                 tsym = leg.get('tradingsymbol', '?')
+                if _db_ok and tsym not in db_active:
+                    continue  # phantom ticker leg (not DB-active) — already closed, not a real failure
                 cp = leg.get('current_premium')
                 slp = leg.get('sl_price')
                 if cp is None:
