@@ -34,6 +34,15 @@ def last_30m_close(con):
     t=bnd.strftime("%Y-%m-%dT%H:%M"); day=bnd.strftime("%Y-%m-%d")
     r=con.execute("SELECT spot_price FROM underlying_spot WHERE symbol='NIFTY' AND substr(snapshot_time,1,10)=? AND snapshot_time<=? AND spot_price>0 ORDER BY snapshot_time DESC LIMIT 1",(day,t+":59")).fetchone()
     return r[0] if r else None
+def recent_move_atr(con):
+    # typical 5-min move today (median abs 5-min change over last ~60 min of recorder spots) = adaptive ATR
+    n=ist(); day=n.strftime("%Y-%m-%d")
+    rows=con.execute("SELECT spot_price FROM underlying_spot WHERE symbol='NIFTY' AND substr(snapshot_time,1,10)=? AND spot_price>0 ORDER BY snapshot_time DESC LIMIT 14",(day,)).fetchall()
+    px=[r[0] for r in rows]
+    if len(px)<6: return None
+    diffs=sorted(abs(px[i]-px[i+1]) for i in range(len(px)-1))
+    return diffs[len(diffs)//2]  # median 5-min move
+
 def hlc_range(con,d1,d2):
     r=con.execute("SELECT MAX(spot_price),MIN(spot_price) FROM underlying_spot WHERE symbol='NIFTY' AND substr(snapshot_time,1,10) BETWEEN ? AND ? AND spot_price>0",(d1,d2)).fetchone()
     cc=con.execute("SELECT spot_price FROM underlying_spot WHERE symbol='NIFTY' AND substr(snapshot_time,1,10) BETWEEN ? AND ? AND spot_price>0 ORDER BY snapshot_time DESC LIMIT 1",(d1,d2)).fetchone()
@@ -89,8 +98,9 @@ def monitor(belo,behi):
     # --- breakevens / spike / day-close ---
     if belo and sp<=belo*1.004: flags.append(f"BREAKEVEN THREAT (low): {sp:.0f} near put BE {belo:.0f}")
     if behi and sp>=behi*0.996: flags.append(f"BREAKEVEN THREAT (high): {sp:.0f} near call BE {behi:.0f}")
-    mv=(sp-last)/last*100
-    if abs(mv)>=0.4: flags.append(f"PRICE SPIKE {mv:+.2f}% ({sp-last:+.0f} pts) since last check")
+    mv=(sp-last)/last*100; atr=recent_move_atr(con); jump=abs(sp-last)
+    spike = (atr and atr>0 and jump>=max(3*atr,25)) or abs(mv)>=0.4
+    if spike: flags.append(f"PRICE SPIKE {mv:+.2f}% ({sp-last:+.0f} pts) since last check"+(f" = {jump/atr:.1f}x the recent 5-min move (ATR {atr:.0f})" if atr else "")+" -> NEWS-CHECK: find the driver + score it.")
     if ist().strftime("%H:%M")>="15:10": flags.append("DAY-CLOSE WINDOW (>=15:10) -> review PT/roll/exit; do NOT add size into expiry gamma")
     s["last"]=round(sp); save(s)
     if flags:
