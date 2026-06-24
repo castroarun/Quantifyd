@@ -407,7 +407,12 @@ class NasAtmExecutor:
             return None, reason
 
         cfg = self.cfg
-        lots = cfg.get('lots_per_leg', 5)
+        # Per-mode sizing (user 2026-06-24): the PAPER book runs paper_lots_per_leg (10 lots) for a
+        # meaningful daily P&L curve; LIVE real money stays at lots_per_leg (1). _force_mode is set by
+        # the day-matrix gate in _check_guardrails above; matches _place_order's live/paper decision.
+        _fm = cfg.get('_force_mode')
+        _is_paper_size = (_fm == 'paper') if _fm else cfg.get('paper_trading_mode', True)
+        lots = cfg.get('paper_lots_per_leg', cfg.get('lots_per_leg', 5)) if _is_paper_size else cfg.get('lots_per_leg', 5)
         qty = lots * LOT_SIZE
         leg_sl_pct = cfg.get('leg_sl_pct', 0.30)
 

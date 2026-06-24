@@ -445,7 +445,8 @@ NAS_ATM_DEFAULTS = {
     'strike_mode': 'ATM',           # Always enter at-the-money
 
     # Position Sizing
-    'lots_per_leg': 1,              # GO-LIVE 2026-05-01: dropped 5→1 (75 qty)
+    'lots_per_leg': 1,              # GO-LIVE 2026-05-01: dropped 5→1 (75 qty). LIVE real-money size.
+    'paper_lots_per_leg': 10,       # user 2026-06-24: PAPER book = 10 lots (650 qty) for a meaningful daily P&L curve; LIVE stays at lots_per_leg. Inherited by all 6 ATM via spread.
     'max_strangles': 1,             # Only 1 active strangle at a time
     'max_reentries': 5,             # Max 5 SL re-entry cycles per day
 

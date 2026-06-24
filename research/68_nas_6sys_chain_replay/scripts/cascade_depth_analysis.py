@@ -22,12 +22,12 @@ for dbf, lab in DBS:
     if not p.exists():
         continue
     c = sqlite3.connect(str(p)); c.row_factory = sqlite3.Row
-    legs = c.execute("SELECT strangle_id, entry_price, exit_price, entry_time, date(entry_time) d "
+    legs = c.execute("SELECT strangle_id, entry_price, exit_price, qty, entry_time, date(entry_time) d "
                      "FROM nas_atm_positions WHERE exit_price IS NOT NULL AND strangle_id IS NOT NULL").fetchall()
     strangles = collections.defaultdict(lambda: {"pnl": 0.0, "et": None, "d": None})
     for r in legs:
         s = strangles[r["strangle_id"]]
-        s["pnl"] += (r["entry_price"] - r["exit_price"]) * QTY
+        s["pnl"] += (r["entry_price"] - r["exit_price"]) * (r["qty"] or QTY)   # actual qty (1 lot=65, 10 lots=650)
         if s["et"] is None or r["entry_time"] < s["et"]:
             s["et"] = r["entry_time"]
         s["d"] = r["d"]
@@ -41,7 +41,7 @@ for dbf, lab in DBS:
             a = agg[seq]; a["n"] += 1; a["pnl"] += pnl; a["wins"] += (1 if pnl > 0 else 0)
             per[lab][seq]["n"] += 1; per[lab][seq]["pnl"] += pnl
 
-print("=== ATM2 CASCADE-DEPTH P&L (paper, 1 lot = 65/leg) — %d paper days ===" % len(days_seen))
+print("=== ATM2 CASCADE-DEPTH P&L (paper, actual qty/trade) — %d paper days ===" % len(days_seen))
 print("seq #0 = original entry; #1+ = re-centers after a 0.4%% move-stop. Cap = 5/day.\n")
 print("%-8s %7s %11s %10s %7s | %12s" % ("cascade", "trades", "total Rs", "avg Rs", "win%", "cum total Rs"))
 cum = 0.0
