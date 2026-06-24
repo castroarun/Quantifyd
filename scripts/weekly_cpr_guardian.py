@@ -138,7 +138,11 @@ def monitor(belo,behi):
         elif sp<W["lo"]:
             flags.append(f"WATCH: intraday poke {sp:.0f} below weekly CPR {W['lo']:.0f} (no 30m close below yet) -> S1 holds only 32% intraday; do NOT act on the wick.")
     elif s["wpos"]=="BELOW" and cur=="ABOVE":
-        flags.append(f"CPR CROSS UP {sp:.0f} above band {W['hi']:.0f} -> bias may be flipping up (mirror of the down trip-wire)")
+        if t30 is not None and t30>W["hi"]:
+            flags.append(f"CPR RECLAIM CONFIRMED: 30m close {t30:.0f} above band {W['hi']:.0f} -> reversal-up confirmed; switching to ABOVE-band posture. Put side clear; now watching CPR/S1 as the new down trip-wire + R1/R2/R3 on the call side. (One-time announce; quiet from here unless it round-trips.)")
+            s["wpos"]="ABOVE"  # promote so the cross stops re-flagging; monitor from above
+        else:
+            flags.append(f"CPR CROSS UP (intraday) {sp:.0f} above band {W['hi']:.0f} -> reversal-up underway; confirm on a 30m close above {W['hi']:.0f}")
     # --- UPSIDE levels (call-side risk / far-OTM call selling) ---
     if sp>=W.get("r3",1e12): flags.append(f"AT/ABOVE R3 {W['r3']:.0f} -> far-OTM/trend territory (only ~11-29% of weeks reach here); call side under real pressure")
     elif sp>=W["r2"]: flags.append(f"AT/ABOVE R2 {W['r2']:.0f} (next R3 {W.get('r3',0):.0f})")
