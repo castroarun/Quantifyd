@@ -113,7 +113,7 @@ class NasAtm2Executor(NasAtmExecutor):
                             old_strike = next((l.get('strike') for l in legs if l.get('strike')), None)
                             new_atm = self.scanner.get_atm_strike(cur_spot)
                             if old_strike is None or int(new_atm) != int(old_strike):
-                                new_sid, _msg = self.execute_strangle_entry(spot=cur_spot)
+                                new_sid, _msg = self.execute_strangle_entry(spot=cur_spot, bypass_cooldown=True)
                                 if new_sid:
                                     action['re_entry'] = {'strangle_id': new_sid, 'strike': int(new_atm)}
                                     logger.info(f"[NAS-ATM2] MOVE-STOP re-center -> #{new_sid} at new ATM "

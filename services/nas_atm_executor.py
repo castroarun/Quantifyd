@@ -34,7 +34,7 @@ class NasAtmExecutor:
 
     # --- Guardrails ----------------------------------------------------
 
-    def _check_guardrails(self, is_entry=True):
+    def _check_guardrails(self, is_entry=True, bypass_cooldown=False):
         """Pre-order safety checks. Returns (passed, reason)."""
         from datetime import datetime as _dt
         from services.nas_kill_switch import is_killed as _nas_killed
@@ -112,7 +112,7 @@ class NasAtmExecutor:
             # Re-entry cooldown — block a new strangle within reentry_cooldown_min of the
             # last exit. Breaks the pinned-market per-candle close->reopen loop. 0 = off.
             cooldown_min = cfg.get('reentry_cooldown_min', 0)
-            if cooldown_min and today_trades:
+            if cooldown_min and today_trades and not bypass_cooldown:
                 from datetime import datetime as _cd
                 def _pt(ts):
                     s = str(ts) if ts else ''
@@ -392,7 +392,7 @@ class NasAtmExecutor:
 
     # --- Entry Execution -----------------------------------------------
 
-    def execute_strangle_entry(self, spot=None, scan_result=None):
+    def execute_strangle_entry(self, spot=None, scan_result=None, bypass_cooldown=False):
         """
         Execute an ATM strangle entry (sell CE + PE at same ATM strike).
 
@@ -401,7 +401,7 @@ class NasAtmExecutor:
 
         Returns (strangle_id, message) or (None, reason).
         """
-        ok, reason = self._check_guardrails(is_entry=True)
+        ok, reason = self._check_guardrails(is_entry=True, bypass_cooldown=bypass_cooldown)
         if not ok:
             logger.info(f"[NAS-ATM] Entry guardrail: {reason}")
             return None, reason
