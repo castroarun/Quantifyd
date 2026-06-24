@@ -63,10 +63,10 @@ const SQUEEZE_SYSTEMS: SystemDef[] = [
     id: 'nas-atm2',
     key: 'nas-atm2',
     label: 'Squeeze · ATM 2.0',
-    subtitle: '±0.4% underlying move-stop, one-and-done',
+    subtitle: 'Cascading ATM — ±0.4% move-stop, re-center to new CMP',
     rules:
-      'Entry: ATR squeeze → SELL ATM CE+PE. Exit: ±0.4% underlying move from entry closes BOTH legs (one-and-done, NO re-entry); per-leg 1.3x (30%) SL is a backstop. EOD 15:15.',
-    configNote: 'ATM 2.0: 5L | ±0.4% move-stop | 30% SL backstop',
+      'Entry: ATR squeeze → SELL ATM CE+PE. Exit: ±0.4% underlying move closes BOTH legs AND re-enters (cascades) at the new ATM with the same ±0.4% stop. Move-stop is the sole trigger (no per-leg SL). Max 5 re-centers/day. EOD 15:15.',
+    configNote: 'ATM 2.0: 5L | ±0.4% move-stop + re-center | max 5/day',
     group: 'squeeze',
   },
   {
@@ -106,10 +106,10 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
     id: 'nas-916-atm2',
     key: 'nas-916-atm2',
     label: '9:16 · ATM 2.0',
-    subtitle: '9:16 entry, ±0.4% move-stop (one-and-done)',
+    subtitle: '9:16 entry, ±0.4% move-stop → re-center (cascade)',
     rules:
-      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE. Exit: ±0.4% underlying move from entry closes BOTH legs (one-and-done, NO re-entry); per-leg 1.3x (30%) SL is a backstop. EOD 15:15.',
-    configNote: '916 ATM 2.0: 5L | ±0.4% move-stop | 30% SL backstop',
+      'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE. Exit: ±0.4% underlying move closes BOTH legs AND re-enters (cascades) at the new ATM with the same ±0.4% stop. Move-stop is the sole trigger (no per-leg SL). Max 5 re-centers/day. EOD 15:15.',
+    configNote: '916 ATM 2.0: 5L | ±0.4% move-stop + re-center | max 5/day',
     group: '916',
   },
   {
