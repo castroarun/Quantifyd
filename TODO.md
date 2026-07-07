@@ -2,6 +2,23 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ LIVE 2026-07-07 — 9:16 NAS systems armed REAL MONEY (2 lots, all weekdays)
+`nas_916_atm/atm2/atm4` → `live=True` on all 5 weekday DTEs, **2 lots**; squeeze `nas_atm/atm2/atm4`
+forced **PAPER** (`live=False`, shadow kept); master-mode=**live**. ATM2 keeps the 0.4% move-stop
+(revalidated best on 53d; strike-gate mechanic C worse). Activates at the 09:00 preopen restart; first
+live fire 09:16 Wed 07-08. **Wed knowingly −EV** (≈−Rs2k/lot ATM2; Thu flat, Fri +, Mon/Tue edge) —
+user chose all-days. Commit 530d99c. Kill: /api/nas/kill-switch. Paper-shadow stays 10 lots.
+
+## ★ QUEUED — research/75 book-level P&L trailing-stop (optimize, then implement) — 2026-07-07
+NAS book intraday P&L hit **+Rs75k then gave back to +Rs40k (~47%) in minutes** (short-gamma straddle
+book). Want an optimized trailing profit-stop: flatten the whole NAS book when day-P&L retraces X from
+its running peak. First-pass done; IMPLEMENT later.
+- First-pass (14-day single-straddle proxy) too thin. Hint: ARM only after a real profit (~Rs2k/lot),
+  then lock on a ~25-30% retrace from peak (helped 4 / hurt 0 in that subset); small-peak arming hurts.
+- Do it properly: reconstruct ACTUAL multi-system book intraday P&L from `nas_*_positions` marked
+  per-minute vs `options_data.db`, ALL sessions. No stored intraday P&L series (app computes live).
+  Sweep (arm-Rs, retrace-%) + abs-Rs variant; objective = maximize locked = give-back saved − winners cut.
+
 ## ✅ DONE 2026-06-14 — research/63 GTAA ETF rotation (validate + beat Upstox "Strategy 1")
 Course slide claimed Calmar 0.93 for a top-1 momentum rotation of Nifty/Gold/Nasdaq-100.
 Couldn't reproduce 0.93 (Kite ETF history starts 2015); top-1 is weak (Calmar 0.30/0.44).
@@ -437,6 +454,15 @@ close, freeze cleared (user OK). Forensic + crash-recovery:
   refreshed manually at 09:04). Check before next session's pre-open.
 
 ## Research log
+- [x] **research/73 — Weekly SuperTrend (10,3) — CONCLUDED 2026-07-07: NO INVESTABLE TIMING EDGE (headline was a benchmark artifact).**
+  First pass looked great (Nifty200 17.5% CAGR / Calmar 0.55, "+6.9pp over NIFTYBEES") but CORRECTION same day: that was a
+  survivorship-selected today-Nifty200 book vs the Nifty 50 INDEX. Fair test vs equal-weight B&H of the SAME names
+  (fair_bench.py / all_bands_fair.py): ST timing LOSES on EVERY band -- Nifty50 -6.6 / Nifty200 -3.5 / Midcap150 -6.4 /
+  Smallcap250 -2.8 / Nifty500 -4.4 pp/yr, equal-or-worse Calmar (basket wins except Smallcap). Basket beats Nifty50
+  +8..+11pp everywhere = the whole headline. Per-trade entry edge real (G1) but swamped at book level (SIGNAL!=STRATEGY,
+  cf research/49). Guest 40/40/20 booking (17.5->8.8%) + regime gate (17.5->11%) both HURT. PUBLISHED+CORRECTED
+  /app/backtest/weekly-supertrend-nifty200 (fair-benchmark + all-index + year-by-year tables). Honest ~20% = own the
+  basket (survivorship caveat) or improve the regime-gated momentum book (Cal ~1.7). VPS files.
 - [x] **REC Supertrend always-on futures — CONCLUDED 2026-06-07: NO ROBUST EDGE.**
   (VPS `research/48_covered_calls_cpr_st/`: rec_st_sweep/deep/rupee, st_basket_15m,
   rec_donchian.) Daily loses to B&H. 15-min REC looked strong (OOS +29% CAGR, plateau,
