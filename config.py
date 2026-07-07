@@ -515,16 +515,19 @@ NAS_916_OTM_DEFAULTS = {
 NAS_916_ATM_DEFAULTS = {
     **NAS_ATM_DEFAULTS,
     'entry_start_time': '09:16',
+    'lots_per_leg': 2,   # user 2026-07-07: LIVE 2 lots for 9:16 go-live (paper-shadow still paper_lots_per_leg=10)
 }
 
 NAS_916_ATM2_DEFAULTS = {
     **NAS_ATM2_DEFAULTS,
     'entry_start_time': '09:16',
+    'lots_per_leg': 2,   # user 2026-07-07: LIVE 2 lots
 }
 
 NAS_916_ATM4_DEFAULTS = {
     **NAS_ATM4_DEFAULTS,
     'entry_start_time': '09:16',
+    'lots_per_leg': 2,   # user 2026-07-07: LIVE 2 lots
 }
 
 # 2026-06-05: NAS enabled flags LOCKED (post-spread). Squeeze OFF — over-margin: all 8
