@@ -1,4 +1,4 @@
-# research/72 — Intraday ATM Premium Decay-then-Rise — RESULTS
+# research/74 — Intraday ATM Premium Decay-then-Rise — RESULTS
 
 **VERDICT: CONFIRMED (pass 1).** The pattern Arun observed is real and repeatable across 53 days.
 It is overwhelmingly a **near-expiry theta collapse**, with a **repeatable IV spike at 15:15**

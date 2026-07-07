@@ -3,7 +3,7 @@ net of theta, by DTE. Also the tight 1-min pop (15:14->15:15). Reads saved CSVs 
 import numpy as np, pandas as pd
 from pathlib import Path
 
-OUT = Path("/home/arun/quantifyd/research/72_intraday_premium_decay/results")
+OUT = Path("/home/arun/quantifyd/research/74_intraday_premium_decay/results")
 M = pd.read_csv(OUT / "pass2_day_meta.csv", dtype={"day": str})
 R = pd.read_csv(OUT / "atm_minute_paths.csv", dtype={"min": str})
 R = R[(R.spot > 20000) & (R.spot < 28000) & (R.prem > 0)]

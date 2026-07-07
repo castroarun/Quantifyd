@@ -10,7 +10,7 @@ import pandas as pd
 from pathlib import Path
 
 DB = "/home/arun/quantifyd/backtest_data/options_data.db"
-OUT = Path("/home/arun/quantifyd/research/72_intraday_premium_decay/results")
+OUT = Path("/home/arun/quantifyd/research/74_intraday_premium_decay/results")
 con = sqlite3.connect(DB)
 REF, WIN0, WIN1 = "14:00", "13:40:00", "15:30:00"
 SHOW = [f"{h:02d}:{m:02d}" for h in (14, 15) for m in range(0, 60, 5)]

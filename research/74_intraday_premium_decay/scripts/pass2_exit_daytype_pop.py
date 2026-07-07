@@ -11,7 +11,7 @@ import numpy as np, pandas as pd
 from pathlib import Path
 
 DB = "/home/arun/quantifyd/backtest_data/options_data.db"
-OUT = Path("/home/arun/quantifyd/research/72_intraday_premium_decay/results")
+OUT = Path("/home/arun/quantifyd/research/74_intraday_premium_decay/results")
 con = sqlite3.connect(DB)
 STEP = 50
 days = pd.read_sql("SELECT DISTINCT date(snapshot_time) d FROM option_chain ORDER BY d", con)["d"].tolist()

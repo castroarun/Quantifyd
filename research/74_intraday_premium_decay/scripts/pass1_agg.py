@@ -3,7 +3,7 @@ the averaged decay-then-rise report. Merge-based normalisation (avoids the group
 import pandas as pd
 from pathlib import Path
 
-OUT = Path("/home/arun/quantifyd/research/72_intraday_premium_decay/results")
+OUT = Path("/home/arun/quantifyd/research/74_intraday_premium_decay/results")
 REF = "14:00"
 SHOW = [f"{h:02d}:{m:02d}" for h in (14, 15) for m in range(0, 60, 5)]
 R = pd.read_csv(OUT / "atm_minute_paths.csv", dtype={"min": str})

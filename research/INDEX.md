@@ -130,5 +130,5 @@ recently but breaches MOST in 2020). combo_skip narrow-CPR skip UNCONFIRMED stan
 only ~9%, breach-free window; research/61 1.03->2.00 Calmar is stacked w/ inside-week) -> owed isolated
 re-test; keep conservatively. See research/67_weekly_cpr/results/RESULTS.md.
 
-## research/72 — Intraday ATM premium decay-then-rise (CONFIRMED, pass 1, 2026-07-07)
-Near-expiry theta collapse (expiry ATM straddle −40% by ~15:15; far-DTE flat) + a repeatable **IV spike at 15:15** (+1–1.5 vol, the 3:15 rise). Vega not directional; DTE is the master variable. Read-through: expiry 14:00→15:15 melt IS the short-straddle edge; 15:15 square-off sits at the premium trough. Pass 2 owed: exit-minute sweep + CPR/day-type. See research/72_intraday_premium_decay/results/RESULTS.md.
+## research/74 — Intraday ATM premium decay-then-rise (CONFIRMED, pass 1, 2026-07-07)
+Near-expiry theta collapse (expiry ATM straddle −40% by ~15:15; far-DTE flat) + a repeatable **IV spike at 15:15** (+1–1.5 vol, the 3:15 rise). Vega not directional; DTE is the master variable. Read-through: expiry 14:00→15:15 melt IS the short-straddle edge; 15:15 square-off sits at the premium trough. Pass 2 owed: exit-minute sweep + CPR/day-type. See research/74_intraday_premium_decay/results/RESULTS.md.
