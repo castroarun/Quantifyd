@@ -62,6 +62,66 @@ ATM IV (%) confirms a sharp, precise spike at 15:15, biggest on expiry days:
   straddle; CPR-width / range-vs-trend concurrency; is the 15:15 IV pop tradeable (buy vol 15:10,
   sell 15:16)?
 
+---
+
+# PASS 2 — exit-minute economics, day-type concurrency, is the pop tradeable
+
+## (a) Exit-minute sweep — short ATM straddle entered 09:16, buyback at minute M
+
+P&L = entry − exit premium (₹/lot 65), DTE 0-1 (expiry), n≈16–19 days:
+
+| Exit | mean P&L | median | p5 (worst) |
+|---|---|---|---|
+| **15:00** | **+1085** | 1963 | **−4,630** |
+| 15:05 | +121 | 1639 | −9,078 |
+| 15:10 | +175 | 1940 | −8,695 |
+| **15:15** | **−275** | 1601 | **−10,451** |
+| 15:20 | +237 | 1852 | −9,428 |
+| 15:30 | +342 | 1888 | −9,609 |
+
+- **Theta is essentially done by 15:00** (median P&L already ~₹1,900). Holding past 15:00 adds **no
+  median return** but the **tail risk roughly doubles** (p5 −4.6k → −9 to −10.5k) — that damage
+  materialises right after 15:00.
+- **15:15 is the single WORST exit** (mean −275, worst p5) — the IV pop makes the buyback momentarily
+  expensive *and* you eat late-day gamma. Far-DTE (2+) shows none of this (15:15 fine, +971 / p5 −2.4k).
+- **Actionable (small n, validate forward): move the expiry-day EOD square-off earlier (~15:00).** Same
+  typical P&L, ~half the tail. The systems currently exit 15:15 = the worst minute on expiry.
+
+## (b) Day-type / CPR concurrency — it's a TREND-vs-RANGE story
+
+Re-picked ATM premium (14:00=100) trough + the 15:15 IV pop, by day-type:
+
+| Day type | n | premium trough | 15:15 IV pop |
+|---|---|---|---|
+| **Trend day** (|C−O|/range > .55) | 14 | **63 @15:15 (deep)** | +0.44 |
+| **Range day** (< .35) | 8 | **84 @15:30 (shallow)** | +0.09 (~none) |
+| CPR-wide | 15 | 70 | +0.56 |
+| CPR-narrow | 14 | 77 | +0.35 |
+
+- **The decay depth is driven by whether the day trends.** Trend days gut the straddle (→63%); range
+  days barely decay (→84%). So the "3 PM cliff" is really a *trend-day + expiry* phenomenon.
+- **The 15:15 IV pop concurs with movement** — biggest on wide-CPR (+0.56) and trend days (+0.44),
+  ~absent on quiet range days (+0.09). Consistent with a square-off / closing-vol burst that only
+  fires when there's directional activity to unwind. (CPR width is a weak, small-n signal here; the
+  realised trend/range split is the clean one.)
+
+## (c) Is the 15:15 pop tradeable? — NO
+
+| Trade | mean ₹/lot | win% |
+|---|---|---|
+| Long straddle buy 15:10 / sell 15:15 | −48 (ALL), −12 (exp), −97 (far) | 25–45% |
+| Tight 1-min: buy 15:14 / sell 15:15 | +75 (exp) | 64% (exp) |
+
+- As a **5-minute long, theta beats the IV pop** — it loses across the board. The pop only survives as
+  a **1-minute blip** (buy 15:14 / sell 15:15 ≈ +₹75 on expiry, 64% win) — too small/fast to trade
+  after slippage. **Leave it.**
+
+## Pass-2 verdict + next
+The observation is fully explained: **near-expiry theta, deepened on trend days, with a movement-driven
+15:15 IV pop.** The one concrete lever for the book is **(a): an earlier expiry-day exit (~15:00)** —
+worth a proper exit-time sweep on the live short-straddle engine (14:45/14:50/15:00/15:10/15:15,
+risk-adjusted), which is the natural G-gate follow-up.
+
 ## Files
 | File | Purpose |
 |---|---|

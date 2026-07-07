@@ -1,8 +1,10 @@
 # Intraday ATM Premium Decay-then-Rise — ~15:00 crush / ~15:15 pickup, 53 days per-minute NIFTY chain
 
-STATUS: DONE (pass 1) — **CONFIRMED**. Near-expiry theta collapse (expiry −40% by 15:15, far-DTE flat);
-repeatable **IV spike at 15:15** (+1–1.5 vol, expiry) = the "rise". Vega, not directional. See `results/RESULTS.md`.
-Factsheet artifact published. Pass 2 owed: exit-minute sweep + CPR/day-type concurrency.
+STATUS: DONE (pass 1 + pass 2) — **CONFIRMED**. Near-expiry theta collapse (expiry −40% by 15:15,
+far-DTE flat); repeatable **IV spike at 15:15** (+1–1.5 vol) = the "rise", vega not directional.
+Pass 2: decay is a **trend-vs-range** story (trend day →63%, range →84%); the 15:15 pop concurs with
+movement; the pop is NOT tradeable (theta beats it). **Actionable: expiry-day exit ~15:00 beats 15:15**
+(same median, ~½ the tail; 15:15 is the worst exit). See `results/RESULTS.md`. Factsheet published.
 
 ## The Ask
 
