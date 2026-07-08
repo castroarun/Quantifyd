@@ -2,6 +2,13 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ★ QUEUED (after-close build) — research/75 Skip-Lull-vs-Hold daily tracker on NAS page — 2026-07-08
+User wants the skip-lull idea CONTINUOUSLY tested + shown on the NAS page, session-independent.
+- **Finding (research/75, 14d, robust):** Bcond = 'close 09:16 ATM straddle ~11:15 IF in profit, re-enter fresh ATM 13:00, hold to 15:15' beats HOLD-all-day ~2x (Rs1373 vs 686/day @0.15%% slip, win 86%% vs 71%%). EXPIRY-driven: DTE0-1 skip +Rs942/day, far-DTE -Rs1433/day -> rule = skip-if-in-profit on expiry, hold on far-DTE. Promising NOT proven (n=9 expiry, 56%% day-win).
+- **Build:** daily EOD APScheduler job reconstructs A(hold)/B(skip)/Bcond from that day chain -> append to a results DB; NAS page card shows running A-vs-B/Bcond edge by DTE + day count; backfill the ~14 clean historical days on first run. Server-side (not session-dependent). Backend+endpoint -> deploy after 15:30; frontend card safe anytime.
+- Recording is HEALTHY (54/54 days good coverage; earlier '34/7 day' loss was MY query using the patchy option_chain.underlying_spot column + exact-minute strictness, NOT a recorder gap). Robust query = underlying_spot TABLE + ±3min windows. Scripts in research/75_intraday_time_sections/scripts.
+
+
 ## ✅ LIVE 2026-07-07 — 9:16 NAS systems armed REAL MONEY (2 lots, all weekdays)
 `nas_916_atm/atm2/atm4` → `live=True` on all 5 weekday DTEs, **2 lots**; squeeze `nas_atm/atm2/atm4`
 forced **PAPER** (`live=False`, shadow kept); master-mode=**live**. ATM2 keeps the 0.4% move-stop
