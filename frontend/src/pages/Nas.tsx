@@ -1106,7 +1106,8 @@ function TradeBook({ systems, states, liveLegs }: {
         </span>
       </div>
 
-      <div style={{ fontSize: 'var(--text-xs)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+      <div style={{ fontSize: 'var(--text-xs)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ minWidth: 'max-content' }}>
         {/* column header */}
         <div style={{
           display: 'grid', gridTemplateColumns: gridCols, gap: 8, padding: '2px 0',
@@ -1188,6 +1189,7 @@ function TradeBook({ systems, states, liveLegs }: {
           );
         })}
         {rows.length === 0 && <div style={{ color: 'var(--ink-muted)', padding: 8 }}>No trades today yet.</div>}
+        </div>
       </div>
     </section>
   );
