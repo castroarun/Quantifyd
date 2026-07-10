@@ -8,6 +8,8 @@ import type {
   HoldingsRecord,
 } from '../api/types';
 import Chip from '../components/Chip/Chip';
+import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
+import chartStyles from '../components/HoldingsCharts/HoldingsCharts.module.css';
 import { formatInt, formatNumber, formatPct, formatPnl, pnlClass } from '../utils/format';
 
 const EXTREME_LABELS: Record<string, string> = {
@@ -56,6 +58,7 @@ export default function Holdings() {
   const [data, setData] = useState<HoldingsDigest | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'digest' | 'charts'>('digest');
 
   useEffect(() => {
     let cancelled = false;
@@ -93,12 +96,27 @@ export default function Holdings() {
   const { summary, movers_today, movers_weekly, extremes, events, next_event, holdings } = data;
 
   return (
-    <div className={styles.root}>
+    <div className={`${styles.root} ${tab === 'charts' ? chartStyles.wide : ''}`}>
       <div className="page-title">Holdings</div>
       <div className="page-subtitle">
         {summary.count} stocks · signals Kite doesn't flag — movers, extremes, events
       </div>
 
+      <div className={chartStyles.tabBar}>
+        <button
+          className={`${chartStyles.tab} ${tab === 'digest' ? chartStyles.tabOn : ''}`}
+          onClick={() => setTab('digest')}
+        >Digest</button>
+        <button
+          className={`${chartStyles.tab} ${tab === 'charts' ? chartStyles.tabOn : ''}`}
+          onClick={() => setTab('charts')}
+        >Charts</button>
+      </div>
+
+      {tab === 'charts' ? (
+        <HoldingsCharts holdings={holdings} />
+      ) : (
+        <>
       {/* Hero (B) */}
       <HeroSummary summary={summary} next={next_event} />
 
@@ -169,6 +187,8 @@ export default function Holdings() {
           View holdings history →
         </Link>
       </div>
+        </>
+      )}
     </div>
   );
 }
