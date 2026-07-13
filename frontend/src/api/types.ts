@@ -211,6 +211,7 @@ export interface NASPosition {
   exit_price?: number;
   sl_price?: number;
   entry_spot?: number; // underlying at leg entry -- anchor for the move-stop band
+  mode?: string;       // 'live' | 'paper' -- decides whether an order is really sent to Kite
   arm_live?: boolean; // ticker is actively subscribed/monitoring this leg right now
   ltp?: number;
   qty?: number;

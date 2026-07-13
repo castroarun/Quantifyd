@@ -1099,6 +1099,8 @@ interface TBRow {
   armLo?: number;        // move-stop systems: NIFTY level below which BOTH legs close + re-center
   armHi?: number;        // move-stop systems: NIFTY level above which BOTH legs close + re-center
   armSpot?: number;      // entry spot the band is anchored to
+  mode?: string;         // 'live' | 'paper' -- from 2026-07-14 both trade 130 qty, so size
+                         // no longer distinguishes them; this is the only reliable tell
   tradingsymbol?: string;
 }
 
@@ -1158,6 +1160,7 @@ function buildTradeBook(
         armLo: band ? (eSpot as number) * (1 - (msPct as number)) : undefined,
         armHi: band ? (eSpot as number) * (1 + (msPct as number)) : undefined,
         armSpot: band ? (eSpot as number) : undefined,
+        mode: (p.mode || '').toLowerCase(),
         tradingsymbol: p.tradingsymbol,
       });
     };
@@ -1233,8 +1236,8 @@ function TradeBook({ systems, states, liveLegs }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 104px 124px 116px 48px 48px 86px'
-    : '120px 34px 58px 46px 104px 124px 116px 48px 48px 86px';
+    ? '34px 58px 46px 50px 104px 124px 116px 48px 48px 86px'
+    : '120px 34px 58px 46px 50px 104px 124px 116px 48px 48px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -1275,7 +1278,7 @@ function TradeBook({ systems, states, liveLegs }: {
           borderBottom: '1px solid var(--line)',
         }}>
           {mode !== 'system' && <span>SYSTEM</span>}
-          <span>C/P</span><span>STRIKE</span><span>QTY</span><span>ENTRY→EXIT</span>
+          <span>C/P</span><span>STRIKE</span><span>QTY</span><span>MODE</span><span>ENTRY→EXIT</span>
           <span>ARM</span><span>STATUS</span><span>IN</span><span>OUT</span>
           <span style={{ textAlign: 'right' }}>P&amp;L</span>
         </div>
@@ -1304,6 +1307,25 @@ function TradeBook({ systems, states, liveLegs }: {
                   <span style={{ fontWeight: 700, color: r.side === 'CE' ? '#d29922' : '#a371f7' }}>{r.side}</span>
                   <span>{r.strike ?? '—'}</span>
                   <span style={{ color: 'var(--ink-muted)' }}>×{r.qty}</span>
+                  {(() => {
+                    const live = r.mode === 'live';
+                    return (
+                      <span
+                        style={{
+                          color: live ? '#ef4444' : 'var(--ink-faint, #6e7681)',
+                          fontWeight: live ? 700 : 400,
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={
+                          live
+                            ? 'LIVE — real money. This leg was sent to the exchange.'
+                            : 'Paper — simulated. No order was sent to the exchange.'
+                        }
+                      >
+                        {live ? 'LIVE' : 'paper'}
+                      </span>
+                    );
+                  })()}
                   <span style={{ color: 'var(--ink-muted)' }}>
                     {r.entry != null ? r.entry.toFixed(1) : '—'} → {r.exit != null ? r.exit.toFixed(1) : '—'}
                   </span>
