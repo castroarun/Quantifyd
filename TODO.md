@@ -2,6 +2,37 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ DONE 2026-07-13 — P0: a PAPER leg can no longer place a REAL order (ATM4 roll)
+`nas_atm4` (squeeze, PAPER, 10 lots) rolled its 24100 leg and fired a **REAL 650-qty SELL on 24250CE**.
+User spotted it ("24250 CE 10 lots were taken now - why?") and exited manually.
+- **Root cause:** the ROLL path and the ENTRY path decided live/paper by *different rules*. Entry
+  (`_place_order`) uses the day-matrix gate (`cfg['_force_mode']`) → correctly PAPER. The roll used the
+  LEGACY rule (`paper_trading_mode` + `live_weekdays`); at runtime `paper_trading_mode` is **False** for
+  the squeeze systems (config says True, but `force_paper=False` flips it at startup) and Monday ∈
+  live_weekdays → resolved **LIVE**, at the paper book's 650 qty.
+- **Fix (commit c7c47a3, deployed + restarted 19:4x):** the roll now **INHERITS the mode of the leg it
+  replaces** (a paper leg can only ever roll into a paper leg — there is no real short to replace), and
+  the day-matrix may only **downgrade** live→paper, never upgrade. Belt and braces.
+- Reconciled `nas_atm4` id=288 → CLOSED so no 10-lot orphan LONG could appear.
+
+## ✅ DONE 2026-07-13 — all NAS PAPER books dropped 10 lots → 2 lots (uniform with live)
+`paper_lots_per_leg: 10 → 2` on `NAS_ATM_DEFAULTS` (inherited by all 6 ATM variants; read in exactly
+one place, `nas_atm_executor.py:415`). Paper books now trade **130 qty**, same as the LIVE 916 book, so
+paper and live P&L are directly comparable. NAS-OPT already traded 2 lots (LOT 65 × 2) — unchanged.
+
+## ★ PENDING — restate the NAS performance HISTORY at a uniform 2 lots (display-only)
+Forward is fixed (above), but the **history is not comparable**: paper size went 65 → 75 → 375 → 650
+over time, so the daily-P&L amplitude jumps ~10× on 2026-06-25 purely from a size change, not a regime
+change. User asked to "place the recorded P&L each day in proportion".
+- **Approach — do NOT rewrite the ledger.** `nas_*_positions` is the audit record of orders that really
+  went to the exchange; rewriting live qty/P&L would falsify it. Normalise at the **display layer**.
+- **Rule:** scale a `(system, day)` figure by `130 / qty` **only where that system's legs that day were
+  `mode='paper'`**. LIVE legs (real money) always show as actually traded — never normalised.
+- **Surfaces:** `static/snapshots/*.json` (written by `scripts/snapshot_nas_eod.py` 15:32 → the daily
+  history strip), per-system stats (`nas_atm_trades.net_pnl`, which stores a `lots` column → scale by
+  `2/lots`). The intraday MTM chart is today-only, so it self-corrects from tomorrow.
+- No restart needed (frontend/static + cron script only).
+
 ## ★ QUEUED (after-close build) — research/75 Skip-Lull-vs-Hold daily tracker on NAS page — 2026-07-08
 User wants the skip-lull idea CONTINUOUSLY tested + shown on the NAS page, session-independent.
 - **Finding (research/75, 14d, robust):** Bcond = 'close 09:16 ATM straddle ~11:15 IF in profit, re-enter fresh ATM 13:00, hold to 15:15' beats HOLD-all-day ~2x (Rs1373 vs 686/day @0.15%% slip, win 86%% vs 71%%). EXPIRY-driven: DTE0-1 skip +Rs942/day, far-DTE -Rs1433/day -> rule = skip-if-in-profit on expiry, hold on far-DTE. Promising NOT proven (n=9 expiry, 56%% day-win).
@@ -502,3 +533,8 @@ skip discards calm days for little premium. research/61 Calmar 1.03->2.00 was na
 STACKED (not isolated); recent window is breach-free so can not test reward-for-risk. TODO: isolated
 backtest of narrow-CPR-skip ALONE over breach-inclusive history WITH real premiums (decouple from
 inside-week). Until then KEEP the skip; do NOT change live on this alone.
+
+## [P0] [DONE 2026-07-09 15:37] Fix ATM4 phantom-roll bug — fill-confirmation guard deployed (nas_atm4_executor.py roll path: only mark leg ACTIVE on COMPLETE fill, else FAILED); restart verified. Backup /tmp/nas_atm4_executor.py.bak
+- Bug: roll/re-enter records new SHORT leg as ACTIVE before confirming the broker SELL filled. When the sell silently fails, the later 30% SL buy-back creates an orphan LONG (no real short to close). Fired 3x (yesterday 2x on ATM4 24000PE/24200CE, today 24200CE, cost ~Rs9.8k real).
+- Fix: in the roll path (services/nas_atm_executor.py roll/re-enter), place+confirm the broker SELL (real order-id, non-rejected) BEFORE recording the leg ACTIVE; if it fails, record nothing (mirror the entry-path partial-fill guard). Then restart quantifyd (after close) + verify.
+- Blocked during market hours (needs restart). MUST be live before 09:16 tomorrow.
