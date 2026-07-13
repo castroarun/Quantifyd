@@ -341,10 +341,34 @@ class NasAtm4Executor(NasAtmExecutor):
         # Place the rolled leg
         cfg = self.cfg
         now = datetime.now().isoformat()
-        # Day-aware live/paper (2026-06-03 fix): the ROLL path must honor live_weekdays
-        # like _place_order, else a roll on a PAPER day fires a REAL Kite order.
-        _is_paper = cfg.get('paper_trading_mode', True) or (
-            datetime.now().weekday() not in cfg.get('live_weekdays', (0, 1, 4)))
+        # Live/paper for the ROLL. Two independent guards -- 2026-07-13 incident: a PAPER
+        # squeeze leg (650 qty) rolled into a REAL 650-qty Kite order on 24250CE because
+        # this path used the LEGACY rule (paper_trading_mode + live_weekdays) while the
+        # entry path (_place_order) uses the day-matrix gate (cfg['_force_mode']). Entry
+        # was gated to paper; the roll independently resolved to live. Never again:
+        #
+        #   1. INHERIT: the replacement leg takes the mode of the leg it replaces. A paper
+        #      leg can ONLY roll into a paper leg -- there is no real short to replace.
+        #   2. GATE: the day-matrix may then only DOWNGRADE live -> paper, never upgrade.
+        try:
+            _pos_mode = (pos['mode'] or 'paper').lower()
+        except (KeyError, IndexError, TypeError):
+            _pos_mode = 'paper'
+        _is_paper = (_pos_mode != 'live')
+
+        if not _is_paper:
+            _fm = cfg.get('_force_mode')
+            if _fm in ('live', 'paper'):
+                _is_paper = (_fm == 'paper')
+            else:
+                _is_paper = cfg.get('paper_trading_mode', True) or (
+                    datetime.now().weekday() not in cfg.get('live_weekdays', (0, 1, 4)))
+
+        if _pos_mode == 'live' and _is_paper:
+            logger.warning(
+                "[NAS-ATM4] roll of LIVE leg %s downgraded to PAPER by the day-matrix gate "
+                "(_force_mode=%s) - no Kite order will be placed",
+                pos.get('tradingsymbol'), cfg.get('_force_mode'))
         new_pos_id = self.db.add_position(
             strangle_id=strangle_id,
             leg=pos['leg'],
@@ -399,12 +423,21 @@ class NasAtm4Executor(NasAtmExecutor):
                     product='MIS',
                     order_type='MARKET',
                 )
-                # Promote to ACTIVE immediately on successful placement so the
-                # ticker monitors the rolled leg right away (no up-to-3-min gap
-                # waiting for the periodic reconciler). The reconciler remains
-                # the backstop for restart/crash scenarios via mode='live'.
-                self.db.update_position(new_pos_id, kite_order_id=str(order_id), status='ACTIVE')
-                logger.info(f"[NAS-ATM4] Kite roll order placed: {order_id} for {new_tsym} (status->ACTIVE)")
+                # CONFIRM the SELL actually FILLED before recording the leg as a
+                # live short. A MARKET order returns an order_id immediately but can
+                # still be REJECTED downstream (margin / freak-trade / circuit).
+                # Recording it ACTIVE unconfirmed created a PHANTOM short whose later
+                # 30% SL buy-back became an orphan LONG (2026-07-08/09 ATM4 24000CE/
+                # 24200CE incidents, ~Rs5k each). Only promote to ACTIVE on a COMPLETE
+                # fill; on anything else mark FAILED so no phantom short is ever
+                # recorded (FAILED is excluded from the PENDING->ACTIVE reconciler).
+                roll_status, _roll_avg = self._confirm_exit_fill(order_id, tries=8, delay=0.5)
+                if roll_status == 'COMPLETE':
+                    self.db.update_position(new_pos_id, kite_order_id=str(order_id), status='ACTIVE')
+                    logger.info(f"[NAS-ATM4] Kite roll order {order_id} FILLED for {new_tsym} (status->ACTIVE)")
+                else:
+                    self.db.update_position(new_pos_id, kite_order_id=str(order_id), status='FAILED', notes=f'roll SELL not confirmed (order {order_id} status={roll_status}) - phantom guard')
+                    logger.critical(f"[NAS-ATM4] ROLL SELL NOT CONFIRMED for {new_tsym} (order {order_id}, status={roll_status}) -- leg marked FAILED, NOT recorded as a live short (phantom guard). If it actually filled, a manual naked short may exist - CHECK.")
             except Exception as e:
                 logger.error(f"[NAS-ATM4] Kite roll order failed: {e}")
                 self.db.update_position(new_pos_id, status='FAILED', notes=str(e))

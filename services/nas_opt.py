@@ -1,9 +1,16 @@
 """services/nas_opt.py — NAS-OPT paper-trading variant (research/54 refined system).
 
-System: on each 0/1-DTE day, at 09:20 sell ~100pt-OTM NIFTY strangle (2 strikes OTM each side),
-±0.4% underlying-move stop (full exit, one-and-done), else time-exit 14:45. PAPER ONLY (no Kite
-orders). Marks entry/exit from the live options recorder (options_data.db) — the same data the
-research/54 backtest used, so live == backtest by construction.
+System: at 09:20 sell ~100pt-OTM NIFTY strangle (2 strikes OTM each side), ±0.4% underlying-move
+stop (full exit, one-and-done), else time-exit 14:45. PAPER ONLY (no Kite orders). Marks
+entry/exit from the live options recorder (options_data.db) — the same data the research/54
+backtest used, so live == backtest by construction.
+
+DTE SCOPE (2026-07-13): the research/54 system is DEFINED on 0/1-DTE only, and that remains the
+system of record. But we now paper-enter on EVERY weekday so we stop discarding Wed/Thu/Fri.
+The two are never mixed — every row carries signal_class:
+    dte <= 1  -> 'system'         the research/54 system; the headline number
+    dte >= 2  -> 'observational'  data collection only; never quoted as the system's result
+Zero risk either way (paper), and it answers whether the edge is really DTE-specific.
 
 Scheduler (wired in app.py): entry 09:20, monitor every 1 min 09:21-14:44, exit 14:45 — Mon-Fri.
 DB: backtest_data/nas_opt_trading.db. API: app.py /api/nas-opt/*.
@@ -47,6 +54,13 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_nasopt_day ON nas_opt_positions(day);
         """
     )
+    # signal_class: 'system' (0/1-DTE, the research/54 system) vs 'observational' (DTE>=2,
+    # collected from 2026-07-14 so the two are never conflated). Added late -> backfill from dte.
+    cols = {r[1] for r in c.execute("PRAGMA table_info(nas_opt_positions)")}
+    if 'signal_class' not in cols:
+        c.execute("ALTER TABLE nas_opt_positions ADD COLUMN signal_class TEXT")
+    c.execute("UPDATE nas_opt_positions SET signal_class = CASE WHEN dte <= 1 THEN 'system' "
+              "ELSE 'observational' END WHERE signal_class IS NULL")
     c.commit(); c.close()
 
 
@@ -91,8 +105,9 @@ def entry_job():
     if not snap:
         logger.info("[NAS-OPT] entry: no chain snapshot yet"); return
     snap_t, spot, dte, chain = snap
-    if dte > 1:
-        logger.info(f"[NAS-OPT] entry skipped: DTE {dte} > 1 (trades 0/1-DTE only)"); return
+    # No DTE gate (2026-07-13): we paper-enter every weekday. 0/1-DTE remains the SYSTEM;
+    # DTE>=2 is tagged observational and is never counted in the system's result.
+    sig_class = "system" if dte <= 1 else "observational"
     ex = _open_today()
     if ex:
         logger.info("[NAS-OPT] entry skipped: already have today's position"); return
@@ -105,12 +120,13 @@ def entry_job():
         logger.warning(f"[NAS-OPT] entry: strikes {ce_k}CE/{pe_k}PE not in snapshot"); return
     c = _conn()
     c.execute("INSERT INTO nas_opt_positions (day,dte,weekday,entry_time,entry_spot,ce_sym,pe_sym,"
-              "ce_strike,pe_strike,ce_entry,pe_entry,credit,status,mode) "
-              "VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'OPEN','paper')",
+              "ce_strike,pe_strike,ce_entry,pe_entry,credit,status,mode,signal_class) "
+              "VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'OPEN','paper',?)",
               (date.today().isoformat(), dte, datetime.now().strftime("%a"), snap_t, spot,
-               ce[0], pe[0], ce_k, pe_k, ce[1], pe[1], ce[1] + pe[1]))
+               ce[0], pe[0], ce_k, pe_k, ce[1], pe[1], ce[1] + pe[1], sig_class))
     c.commit(); c.close()
-    logger.info(f"[NAS-OPT] PAPER ENTRY {pe_k}PE@{pe[1]} + {ce_k}CE@{ce[1]} credit={ce[1]+pe[1]:.1f} spot={spot:.0f} dte={dte}")
+    logger.info(f"[NAS-OPT] PAPER ENTRY [{sig_class}] {pe_k}PE@{pe[1]} + {ce_k}CE@{ce[1]} "
+                f"credit={ce[1]+pe[1]:.1f} spot={spot:.0f} dte={dte}")
 
 
 def _close(pos, reason):
@@ -156,7 +172,9 @@ def get_state():
     tot = c.execute("SELECT COALESCE(SUM(pnl),0), COUNT(*) FROM nas_opt_positions WHERE status='CLOSED'").fetchone()
     c.close()
     return {"name": "NAS-OPT", "mode": "paper",
-            "system": "0/1-DTE ~100pt-OTM strangle + ±0.4% move-stop, 09:20 entry, 14:45 exit",
+            "system": "~100pt-OTM strangle + ±0.4% move-stop, 09:20 entry, 14:45 exit. "
+                      "System = 0/1-DTE; other DTEs are paper-traded for observation only.",
+            "lots_per_leg": 2, "qty_per_leg": QTY, "lot_size": LOT,
             "today": pos, "closed_total_pnl": round(tot[0] or 0), "closed_trades": tot[1]}
 
 

@@ -446,7 +446,7 @@ NAS_ATM_DEFAULTS = {
 
     # Position Sizing
     'lots_per_leg': 1,              # GO-LIVE 2026-05-01: dropped 5→1 (75 qty). LIVE real-money size.
-    'paper_lots_per_leg': 10,       # user 2026-06-24: PAPER book = 10 lots (650 qty) for a meaningful daily P&L curve; LIVE stays at lots_per_leg. Inherited by all 6 ATM via spread.
+    'paper_lots_per_leg': 2,        # user 2026-07-13: PAPER books dropped 10 -> 2 lots (130 qty) to MATCH the live size, so paper and live P&L are directly comparable (was 10 from 2026-06-24, which put the paper book on a 5x scale vs live). Inherited by all 6 ATM via spread.
     'max_strangles': 1,             # Only 1 active strangle at a time
     'max_reentries': 5,             # Max 5 SL re-entry cycles per day
 
