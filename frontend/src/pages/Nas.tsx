@@ -301,6 +301,12 @@ function NasOptCard() {
   const stopPnl = sumPnl(stopped);
   const rs = (n: number) => `${n >= 0 ? '+' : '-'}\u20B9${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
   const LOGCOLS = '104px 34px 108px 56px 92px 74px';
+  // Position size -- mirrors services/nas_opt.py (LOT 65, lots_per_leg 2 => 130 qty/leg).
+  // Every rupee figure on this card is on that size; per-lot lets it be compared against
+  // the live books, which run 2 lots live / 10 lots paper.
+  const NASOPT_LOTS = 2;
+  const NASOPT_QTY = 130;
+  const perLot = (n: number) => rs(n / NASOPT_LOTS);
 
   // live-paper equity curve (built from paper trades only)
   const paperSorted = [...paper].sort((a, b) => (String(a.day) < String(b.day) ? -1 : 1));
@@ -346,6 +352,7 @@ function NasOptCard() {
         <span style={{ fontSize: 16, fontWeight: 700, color: '#1B1B1A' }}>NAS-OPT</span>
         {chip('#FEF3C7', '#B45309', 'PAPER')}
         {chip('#EFF3FA', '#1E3A8A', 'research/54')}
+        {chip('#F1F0EC', '#5A5852', `${NASOPT_LOTS} lots/leg · ${NASOPT_QTY} qty`)}
         <span style={{ color: '#888780', fontSize: 12 }}>{state.system}</span>
       </div>
       <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', margin: '10px 0' }}>
@@ -354,6 +361,9 @@ function NasOptCard() {
           <div style={{ fontSize: 20, fontWeight: 700, color: paperN === 0 ? '#888780' : paperPnl >= 0 ? '#0F6E56' : '#A32D2D' }}>
             {paperN === 0 ? '₹0' : `${paperPnl >= 0 ? '+' : ''}₹${paperPnl.toLocaleString('en-IN')}`}
           </div>
+          {paperN > 0 && (
+            <div style={{ fontSize: 11, color: '#888780' }}>{perLot(paperPnl)}/lot</div>
+          )}
         </div>
         <div>
           <div style={{ fontSize: 11, color: '#888780' }}>Paper trades</div>
@@ -423,10 +433,16 @@ function NasOptCard() {
                   <div>
                     Held to 14:45 &middot; <strong>{held.length}</strong> days &middot;{' '}
                     <span style={{ color: heldPnl >= 0 ? '#0F6E56' : '#A32D2D', fontWeight: 600 }}>{rs(heldPnl)}</span>
+                    <span style={{ color: '#888780' }}> ({perLot(heldPnl)}/lot)</span>
                   </div>
                   <div>
                     Move-stop fired &middot; <strong>{stopped.length}</strong> days &middot;{' '}
                     <span style={{ color: stopPnl >= 0 ? '#0F6E56' : '#A32D2D', fontWeight: 600 }}>{rs(stopPnl)}</span>
+                    <span style={{ color: '#888780' }}> ({perLot(stopPnl)}/lot)</span>
+                  </div>
+                  <div style={{ color: '#888780', marginTop: 4 }}>
+                    All figures on {NASOPT_LOTS} lots/leg ({NASOPT_QTY} qty × CE + PE), net of ₹80/leg
+                    round-trip brokerage. 1 lot = 65.
                   </div>
                 </div>
               </div>
