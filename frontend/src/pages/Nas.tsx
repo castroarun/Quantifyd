@@ -1009,7 +1009,7 @@ export default function Nas() {
       {/* Trade Book — grouped active+closed trades with group P&L (EOD report). Paper legs are
           restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
       <TradeBook
-        systems={[...ALL_SYSTEMS, NAS_OPT_DEF]}
+        systems={[...ENTRY_916_SYSTEMS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
         states={{ ...states, 'nas-opt': nasOptTb }}
         liveLegs={liveTicks.legs}
         basis={histBasis}
@@ -1264,7 +1264,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   if (mode === 'all') {
     groups.push({ key: 'all', label: 'All systems', rows: [...rows].sort(byLabel) });
   } else if (mode === 'family') {
-    for (const fam of ['squeeze', '916']) {
+    for (const fam of ['916', 'squeeze']) {
       const fr = rows.filter((r) => r.family === fam).sort(byLabel);
       if (fr.length) groups.push({ key: fam, label: fam === 'squeeze' ? 'Squeeze (ATR)' : '9:16 (timed)', rows: fr });
     }
