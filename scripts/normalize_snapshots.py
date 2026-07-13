@@ -81,6 +81,33 @@ def day_size(sys_key: str, day: str):
     return int(qty), round(lots, 4), round(TARGET_LOTS / lots, 6), (mode or "paper")
 
 
+def _combined_2lot(systems: dict) -> dict:
+    """Whole-book curve with every system restated at 2 lots.
+
+    Same aggregation as dump_nas_mtm._combined_curve (union of snapshot times,
+    forward-fill each system's most recent value, sum) with system.scale applied.
+    """
+    all_ts = sorted({p[0] for v in systems.values() for p in (v.get("points") or [])})
+    if not all_ts:
+        return {"points": [], "last": 0.0, "n": 0}
+    idx = {k: 0 for k in systems}
+    cur = {k: 0.0 for k in systems}
+    out = []
+    for ts in all_ts:
+        tot = 0.0
+        for k, v in systems.items():
+            pts = v.get("points") or []
+            sc = float(v.get("scale") or 1.0)
+            i = idx[k]
+            while i < len(pts) and pts[i][0] <= ts:
+                cur[k] = float(pts[i][1] or 0.0) * sc
+                i += 1
+            idx[k] = i
+            tot += cur[k]
+        out.append([ts, round(tot, 2)])
+    return {"points": out, "last": out[-1][1] if out else 0.0, "n": len(out)}
+
+
 def main():
     if not SNAP.exists():
         print("no snapshots dir:", SNAP)
@@ -115,8 +142,14 @@ def main():
             sysdoc["scale"] = scale
             sysdoc["mode"] = mode
             combined_2lot += float(sysdoc.get("last") or 0) * scale
+        # Rebuild the whole-book curve on the 2-lot basis. Mirrors
+        # dump_nas_mtm._combined_curve: union of ts, forward-fill each system, sum --
+        # but each system's value scaled to 2 lots first. On a mixed day (2-lot live +
+        # 10-lot paper) the scale differs per system, so a single day-level ratio would
+        # distort the intraday shape. This does not.
+        doc["combined_2lot"] = _combined_2lot(systems)
         fp.write_text(json.dumps(doc, separators=(",", ":")))
-        d["combined_last_2lot"] = round(combined_2lot, 2)
+        d["combined_last_2lot"] = round(float(doc["combined_2lot"]["last"]), 2)
         changed += 1
 
     idx["normalized_to_lots"] = TARGET_LOTS

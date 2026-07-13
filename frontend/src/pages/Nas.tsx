@@ -126,6 +126,14 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
 
 const ALL_SYSTEMS: SystemDef[] = [...SQUEEZE_SYSTEMS, ...ENTRY_916_SYSTEMS];
 
+// UI ONLY (user 2026-07-13): hide the two OTM variants' CARDS from the dashboard.
+// Nothing else changes -- both systems keep running, keep trading, and still appear in the
+// Trade Book, the combined P&L and the day matrix. This hides a card, not a strategy.
+const HIDDEN_CARDS = new Set(['nas', 'nas-916-otm']);
+
+// The uniform size everything is restated to (2 lots x 65).
+const TARGET_QTY = 130;
+
 // NAS-OPT (research/54 paper system) — shown in the Trade Book alongside the 8 variants.
 const NAS_OPT_DEF: SystemDef = {
   id: 'nas-opt',
@@ -489,6 +497,7 @@ export default function Nas() {
   };
   const [historyModal, setHistoryModal] = useState<{
     title: string; points: MtmPoint[]; events: MtmEvent[];
+    points2lot?: MtmPoint[];
   } | null>(null);
 
   // NAS-OPT (paper) — fetched here so it can appear in the Trade Book like the 8 variants.
@@ -528,10 +537,14 @@ export default function Nas() {
       if (!r.ok) return;
       const data = await r.json();
       const c = data.combined ?? {};
+      // combined_2lot: the same whole-book curve with every system restated at 2 lots
+      // (scripts/normalize_snapshots.py). Absent on days written before the restatement.
+      const c2 = data.combined_2lot ?? {};
       setHistoryModal({
         title: `NAS overall — ${d}`,
         points: c.points ?? [],
         events: c.events ?? [],
+        points2lot: c2.points ?? undefined,
       });
     } catch { /* swallow */ }
   }
@@ -803,8 +816,15 @@ export default function Nas() {
 
       <ChartModal
         open={!!historyModal}
-        title={historyModal?.title ?? ''}
-        points={historyModal?.points ?? []}
+        title={
+          (historyModal?.title ?? '') +
+          (histBasis === 'per2' && historyModal?.points2lot ? '  · per 2 lots' : '  · as traded')
+        }
+        points={
+          histBasis === 'per2'
+            ? (historyModal?.points2lot ?? historyModal?.points ?? [])
+            : (historyModal?.points ?? [])
+        }
         events={historyModal?.events ?? []}
         onClose={() => setHistoryModal(null)}
       />
@@ -912,7 +932,21 @@ export default function Nas() {
       {historyDays.length > 0 ? (
         <section className={styles.historyStrip}>
           <div className={styles.historyHead} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <span>Past sessions · click to view</span>
+            {(() => {
+              const tot = historyDays.reduce(
+                (a, d) => a + (histBasis === 'per2' ? (d.combined_last_2lot ?? d.combined_last) : d.combined_last),
+                0,
+              );
+              return (
+                <span>
+                  Past sessions · {historyDays.length} days ·{' '}
+                  <span style={{ color: tot >= 0 ? '#3fb950' : '#ef4444', fontWeight: 700 }}>
+                    {fmtPnl(tot)}
+                  </span>{' '}
+                  total · click to view
+                </span>
+              );
+            })()}
             <span style={{ display: 'inline-flex', gap: 4 }}>
               {(['per2', 'raw'] as const).map((b) => (
                 <button
@@ -938,7 +972,7 @@ export default function Nas() {
             </span>
           </div>
           <div className={styles.historyList}>
-            {historyDays.slice(0, 12).map((d) => (
+            {historyDays.map((d) => (
               <button
                 key={d.date}
                 type="button"
@@ -968,14 +1002,27 @@ export default function Nas() {
         </section>
       ) : null}
 
+      {/* Chart + positions sit ABOVE the system cards (user 2026-07-13): the live NIFTY and
+          what we are actually holding are what you look at first. */}
+      <NiftyChart />
+
+      {/* Trade Book — grouped active+closed trades with group P&L (EOD report). Paper legs are
+          restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
+      <TradeBook
+        systems={[...ALL_SYSTEMS, NAS_OPT_DEF]}
+        states={{ ...states, 'nas-opt': nasOptTb }}
+        liveLegs={liveTicks.legs}
+        basis={histBasis}
+      />
+
       <div className={styles.columns}>
         <div className={styles.col}>
           <div className={styles.colHead}>
             <div className="section-title">ATR squeeze</div>
-            <Chip>4 systems</Chip>
+            <Chip>{SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
           </div>
           <div className={styles.panelList}>
-            {SQUEEZE_SYSTEMS.map((s) => (
+            {SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
               <SystemPanel
                 key={s.id}
                 def={s}
@@ -994,10 +1041,10 @@ export default function Nas() {
         <div className={styles.col}>
           <div className={styles.colHead}>
             <div className="section-title">9:16 entry</div>
-            <Chip>4 systems</Chip>
+            <Chip>{ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
           </div>
           <div className={styles.panelList}>
-            {ENTRY_916_SYSTEMS.map((s) => (
+            {ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
               <SystemPanel
                 key={s.id}
                 def={s}
@@ -1045,16 +1092,6 @@ export default function Nas() {
         </div>
       </section>
 
-      {/* Live NIFTY 5-min chart, above the Trade Book */}
-      <NiftyChart />
-
-      {/* Trade Book — grouped active+closed trades with group P&L (EOD report) */}
-      <TradeBook
-        systems={[...ALL_SYSTEMS, NAS_OPT_DEF]}
-        states={{ ...states, 'nas-opt': nasOptTb }}
-        liveLegs={liveTicks.legs}
-      />
-
       <WatchdogSection />
 
       {/* Config footer */}
@@ -1101,6 +1138,7 @@ interface TBRow {
   armSpot?: number;      // entry spot the band is anchored to
   mode?: string;         // 'live' | 'paper' -- from 2026-07-14 both trade 130 qty, so size
                          // no longer distinguishes them; this is the only reliable tell
+  restated?: boolean;    // paper leg shown at the uniform 130 qty rather than as traded
   tradingsymbol?: string;
 }
 
@@ -1133,6 +1171,7 @@ function buildTradeBook(
   systems: SystemDef[],
   states: Record<string, SystemStateRecord>,
   liveLegs: Record<string, number>,
+  basis: 'per2' | 'raw' = 'per2',
 ): TBRow[] {
   const rows: TBRow[] = [];
   for (const sys of systems) {
@@ -1143,9 +1182,14 @@ function buildTradeBook(
       const ltp = open
         ? ((p.tradingsymbol ? liveLegs[p.tradingsymbol] : undefined) ?? p.ltp ?? null)
         : (p.exit_price ?? null);
-      const qty = p.qty ?? 0;
-      const computed = entry != null && ltp != null && qty ? (entry - ltp) * qty : 0;
-      const pnl = open ? computed : (p.pnl_inr ?? computed);
+      const rawQty = p.qty ?? 0;
+      const isLive = (p.mode || '').toLowerCase() === 'live';
+      // Restate PAPER legs at the uniform 2-lot size. LIVE legs are real money and are
+      // NEVER restated -- they must always show exactly what hit the account.
+      const sc = basis === 'per2' && !isLive && rawQty > 0 ? TARGET_QTY / rawQty : 1;
+      const qty = Math.round(rawQty * sc);
+      const rawComputed = entry != null && ltp != null && rawQty ? (entry - ltp) * rawQty : 0;
+      const pnl = (open ? rawComputed : (p.pnl_inr ?? rawComputed)) * sc;
       const msPct = MOVE_STOP_PCT[sys.id];
       const eSpot = p.entry_spot ?? null;
       const band = open && msPct != null && eSpot != null && eSpot > 0;
@@ -1161,6 +1205,7 @@ function buildTradeBook(
         armHi: band ? (eSpot as number) * (1 + (msPct as number)) : undefined,
         armSpot: band ? (eSpot as number) : undefined,
         mode: (p.mode || '').toLowerCase(),
+        restated: sc !== 1,
         tradingsymbol: p.tradingsymbol,
       });
     };
@@ -1177,10 +1222,11 @@ function tbSort(a: TBRow, b: TBRow): number {
   return (a.strike ?? 0) - (b.strike ?? 0);
 }
 
-function TradeBook({ systems, states, liveLegs }: {
+function TradeBook({ systems, states, liveLegs, basis }: {
   systems: SystemDef[];
   states: Record<string, SystemStateRecord>;
   liveLegs: Record<string, number>;
+  basis: 'per2' | 'raw';
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
   const { spot } = useLiveTicks();   // live NIFTY -- distance to the move-stop band
@@ -1205,7 +1251,7 @@ function TradeBook({ systems, states, liveLegs }: {
     const id = setInterval(load, 5000);
     return () => { on = false; clearInterval(id); };
   }, []);
-  const rows = buildTradeBook(systems, states, liveLegs);
+  const rows = buildTradeBook(systems, states, liveLegs, basis);
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -1306,7 +1352,12 @@ function TradeBook({ systems, states, liveLegs }: {
                   )}
                   <span style={{ fontWeight: 700, color: r.side === 'CE' ? '#d29922' : '#a371f7' }}>{r.side}</span>
                   <span>{r.strike ?? '—'}</span>
-                  <span style={{ color: 'var(--ink-muted)' }}>×{r.qty}</span>
+                  <span
+                    style={{ color: r.restated ? '#58a6ff' : 'var(--ink-muted)' }}
+                    title={r.restated
+                      ? 'Paper leg restated to the uniform 2 lots (130 qty). Switch the history basis to "as traded" to see the size it actually simulated.'
+                      : undefined}
+                  >×{r.qty}</span>
                   {(() => {
                     const live = r.mode === 'live';
                     return (
