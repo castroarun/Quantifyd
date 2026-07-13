@@ -475,7 +475,18 @@ export default function Nas() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [historyDays, setHistoryDays] = useState<Array<{
     date: string; combined_last: number; n_fired: number; n_systems: number;
+    combined_last_2lot?: number;
   }>>([]);
+  // Past sessions were traded at 1-10 lots across two NIFTY lot sizes, so the as-traded
+  // series is not comparable day to day. Default to the 2-lot restatement; 'as traded' is
+  // what actually hit the account and stays one click away.
+  const [histBasis, setHistBasis] = useState<'per2' | 'raw'>(
+    () => (localStorage.getItem('nasHistBasis') === 'raw' ? 'raw' : 'per2'),
+  );
+  const setBasis = (b: 'per2' | 'raw') => {
+    setHistBasis(b);
+    localStorage.setItem('nasHistBasis', b);
+  };
   const [historyModal, setHistoryModal] = useState<{
     title: string; points: MtmPoint[]; events: MtmEvent[];
   } | null>(null);
@@ -900,7 +911,32 @@ export default function Nas() {
 
       {historyDays.length > 0 ? (
         <section className={styles.historyStrip}>
-          <div className={styles.historyHead}>Past sessions · click to view</div>
+          <div className={styles.historyHead} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span>Past sessions · click to view</span>
+            <span style={{ display: 'inline-flex', gap: 4 }}>
+              {(['per2', 'raw'] as const).map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setBasis(b)}
+                  title={
+                    b === 'per2'
+                      ? 'Every day restated at a uniform 2 lots, so sessions are comparable. The book actually traded 1-10 lots at different times, which makes the raw series jump ~10x on 25 Jun for no reason other than size.'
+                      : 'Exactly what hit the account that day, at whatever size was traded (1-10 lots).'
+                  }
+                  style={{
+                    background: histBasis === b ? 'var(--line)' : 'transparent',
+                    border: '1px solid var(--line)', borderRadius: 5,
+                    padding: '1px 7px', fontSize: 10, cursor: 'pointer',
+                    color: histBasis === b ? 'var(--ink)' : 'var(--ink-muted)',
+                    fontWeight: histBasis === b ? 700 : 400,
+                  }}
+                >
+                  {b === 'per2' ? 'per 2 lots' : 'as traded'}
+                </button>
+              ))}
+            </span>
+          </div>
           <div className={styles.historyList}>
             {historyDays.slice(0, 12).map((d) => (
               <button
@@ -910,9 +946,19 @@ export default function Nas() {
                 onClick={() => openHistory(d.date)}
               >
                 <div className={styles.historyDate}>{d.date}</div>
-                <div className={d.combined_last >= 0 ? styles.sparkPos : styles.sparkNeg}>
-                  {fmtPnl(d.combined_last)}
-                </div>
+                {(() => {
+                  const per2 = d.combined_last_2lot ?? d.combined_last;
+                  const v = histBasis === 'per2' ? per2 : d.combined_last;
+                  const other = histBasis === 'per2' ? d.combined_last : per2;
+                  return (
+                    <div
+                      className={v >= 0 ? styles.sparkPos : styles.sparkNeg}
+                      title={`${histBasis === 'per2' ? 'Restated at 2 lots' : 'As traded'}: ${fmtPnl(v)}  ·  ${histBasis === 'per2' ? 'as traded' : 'at 2 lots'}: ${fmtPnl(other)}`}
+                    >
+                      {fmtPnl(v)}
+                    </div>
+                  );
+                })()}
                 <div className={styles.historyMeta}>
                   {d.n_fired}/{d.n_systems} fired
                 </div>

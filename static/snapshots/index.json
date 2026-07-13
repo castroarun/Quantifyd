@@ -1,13 +1,248 @@
 {
-  "generated_at": "2026-06-05T15:32:01",
+  "generated_at": "2026-07-13T19:51:06",
   "days": [
+    {
+      "date": "2026-07-13",
+      "file": "nas_mtm_2026-07-13.json",
+      "combined_last": -38789.4,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -4911.4
+    },
+    {
+      "date": "2026-07-10",
+      "file": "nas_mtm_2026-07-10.json",
+      "combined_last": 79846.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 25740.0
+    },
+    {
+      "date": "2026-07-09",
+      "file": "nas_mtm_2026-07-09.json",
+      "combined_last": -82244.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -22522.5
+    },
+    {
+      "date": "2026-07-08",
+      "file": "nas_mtm_2026-07-08.json",
+      "combined_last": -21268.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -13858.0
+    },
+    {
+      "date": "2026-07-07",
+      "file": "nas_mtm_2026-07-07.json",
+      "combined_last": 40397.5,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 992,
+      "combined_last_2lot": 8079.5
+    },
+    {
+      "date": "2026-07-06",
+      "file": "nas_mtm_2026-07-06.json",
+      "combined_last": 38220.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 992,
+      "combined_last_2lot": 7644.0
+    },
+    {
+      "date": "2026-07-03",
+      "file": "nas_mtm_2026-07-03.json",
+      "combined_last": 102862.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 20572.5
+    },
+    {
+      "date": "2026-07-02",
+      "file": "nas_mtm_2026-07-02.json",
+      "combined_last": 31947.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 6389.5
+    },
+    {
+      "date": "2026-07-01",
+      "file": "nas_mtm_2026-07-01.json",
+      "combined_last": 89472.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 17894.5
+    },
+    {
+      "date": "2026-06-30",
+      "file": "nas_mtm_2026-06-30.json",
+      "combined_last": 6922.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 992,
+      "combined_last_2lot": 1384.5
+    },
+    {
+      "date": "2026-06-29",
+      "file": "nas_mtm_2026-06-29.json",
+      "combined_last": -14657.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 960,
+      "combined_last_2lot": -2931.5
+    },
+    {
+      "date": "2026-06-26",
+      "file": "nas_mtm_2026-06-26.json",
+      "combined_last": 0.0,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 992,
+      "combined_last_2lot": 0.0
+    },
+    {
+      "date": "2026-06-25",
+      "file": "nas_mtm_2026-06-25.json",
+      "combined_last": -89277.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 888,
+      "combined_last_2lot": -17855.5
+    },
+    {
+      "date": "2026-06-24",
+      "file": "nas_mtm_2026-06-24.json",
+      "combined_last": 1761.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 864,
+      "combined_last_2lot": 3523.0
+    },
+    {
+      "date": "2026-06-23",
+      "file": "nas_mtm_2026-06-23.json",
+      "combined_last": -1777.75,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -3555.5
+    },
+    {
+      "date": "2026-06-22",
+      "file": "nas_mtm_2026-06-22.json",
+      "combined_last": 11797.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 23595.0
+    },
+    {
+      "date": "2026-06-19",
+      "file": "nas_mtm_2026-06-19.json",
+      "combined_last": 14452.75,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 28905.5
+    },
+    {
+      "date": "2026-06-18",
+      "file": "nas_mtm_2026-06-18.json",
+      "combined_last": 0.0,
+      "n_fired": 0,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 0.0
+    },
+    {
+      "date": "2026-06-17",
+      "file": "nas_mtm_2026-06-17.json",
+      "combined_last": 0.0,
+      "n_fired": 0,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 0.0
+    },
+    {
+      "date": "2026-06-16",
+      "file": "nas_mtm_2026-06-16.json",
+      "combined_last": 6477.25,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 12954.5
+    },
+    {
+      "date": "2026-06-15",
+      "file": "nas_mtm_2026-06-15.json",
+      "combined_last": 2951.0,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 5902.0
+    },
+    {
+      "date": "2026-06-12",
+      "file": "nas_mtm_2026-06-12.json",
+      "combined_last": -6558.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -13117.0
+    },
+    {
+      "date": "2026-06-11",
+      "file": "nas_mtm_2026-06-11.json",
+      "combined_last": -2983.5,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -7039.5
+    },
+    {
+      "date": "2026-06-10",
+      "file": "nas_mtm_2026-06-10.json",
+      "combined_last": -5001.75,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -10900.5
+    },
+    {
+      "date": "2026-06-09",
+      "file": "nas_mtm_2026-06-09.json",
+      "combined_last": 4771.0,
+      "n_fired": 7,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 7559.5
+    },
+    {
+      "date": "2026-06-08",
+      "file": "nas_mtm_2026-06-08.json",
+      "combined_last": -8440.25,
+      "n_fired": 7,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": -18902.0
+    },
     {
       "date": "2026-06-05",
       "file": "nas_mtm_2026-06-05.json",
       "combined_last": -3237.0,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": -6903.0
     },
     {
       "date": "2026-06-04",
@@ -15,7 +250,8 @@
       "combined_last": 6051.5,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 9067.5
     },
     {
       "date": "2026-06-03",
@@ -23,7 +259,8 @@
       "combined_last": 0.0,
       "n_fired": 4,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 0.0
     },
     {
       "date": "2026-06-02",
@@ -31,7 +268,8 @@
       "combined_last": -4335.5,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": -8898.5
     },
     {
       "date": "2026-06-01",
@@ -39,7 +277,8 @@
       "combined_last": 7368.4,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 15861.3
     },
     {
       "date": "2026-05-29",
@@ -47,7 +286,8 @@
       "combined_last": 3666.0,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 13962.0
     },
     {
       "date": "2026-05-28",
@@ -55,7 +295,8 @@
       "combined_last": 0.0,
       "n_fired": 1,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 0.0
     },
     {
       "date": "2026-05-27",
@@ -63,7 +304,8 @@
       "combined_last": 1774.5,
       "n_fired": 2,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 3549.0
     },
     {
       "date": "2026-05-26",
@@ -71,7 +313,8 @@
       "combined_last": -6825.0,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": -12564.5
     },
     {
       "date": "2026-05-25",
@@ -79,7 +322,8 @@
       "combined_last": 8251.75,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 13104.0
     },
     {
       "date": "2026-05-22",
@@ -87,7 +331,8 @@
       "combined_last": 10143.25,
       "n_fired": 8,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 12681.5
     },
     {
       "date": "2026-05-21",
@@ -95,7 +340,8 @@
       "combined_last": 689.0,
       "n_fired": 2,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 1378.0
     },
     {
       "date": "2026-05-20",
@@ -103,7 +349,9 @@
       "combined_last": 2054.0,
       "n_fired": 2,
       "n_systems": 8,
-      "n_points": 1000
+      "n_points": 1000,
+      "combined_last_2lot": 4108.0
     }
-  ]
+  ],
+  "normalized_to_lots": 2
 }

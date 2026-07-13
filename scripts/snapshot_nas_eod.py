@@ -68,6 +68,19 @@ def main() -> int:
     }
     (DEST_DIR / 'index.json').write_text(json.dumps(index, indent=2))
     print(f"[snapshot] index: {len(entries)} day(s)")
+
+    # Restate the history on a uniform 2-lot basis. The traded size varied 1-10 lots across
+    # two NIFTY lot sizes (75 -> 65), so the raw daily series is NOT comparable across time --
+    # the amplitude jumped ~10x on 2026-06-25 purely because the paper book went 1 -> 10 lots.
+    # This ANNOTATES each (system, day) with its size + a scale factor; it never rewrites a
+    # P&L value and never touches the position ledger. Rerun here because we just rebuilt
+    # index.json, which would otherwise drop the annotation.
+    try:
+        import normalize_snapshots
+        normalize_snapshots.main()
+    except Exception as e:  # non-fatal: the raw snapshot is still correct without it
+        print(f"[snapshot] 2-lot restatement failed (non-fatal): {e}", file=sys.stderr)
+
     return 0
 
 
