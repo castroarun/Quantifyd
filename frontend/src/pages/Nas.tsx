@@ -956,8 +956,21 @@ interface TBRow {
   outTime: string;       // exit time HH:MM ('' while open)
   arm: number | null;    // exit/SL monitoring trigger value (premium) while open
   armLive?: boolean;     // ticker actually subscribed/watching this leg right now
+  armLo?: number;        // move-stop systems: NIFTY level below which BOTH legs close + re-center
+  armHi?: number;        // move-stop systems: NIFTY level above which BOTH legs close + re-center
+  armSpot?: number;      // entry spot the band is anchored to
   tradingsymbol?: string;
 }
+
+// Systems whose ONLY exit trigger is the underlying move-stop, not the per-leg premium SL.
+// On these the stored sl_price is never evaluated -- nas_atm2_executor.py guards the SL check
+// with `if (not move_stop_pct) and live_prem >= sl_price`, always false when a move-stop is set.
+// So the arm we display must be the NIFTY band that actually fires.
+const MOVE_STOP_PCT: Record<string, number> = {
+  'nas-atm2': 0.004,
+  'nas-916-atm2': 0.004,
+  'nas-opt': 0.004,
+};
 
 // Compact status tags so the column stays narrow and the P&L stays next to it.
 const REASON_SHORT: Record<string, string> = {
@@ -991,6 +1004,9 @@ function buildTradeBook(
       const qty = p.qty ?? 0;
       const computed = entry != null && ltp != null && qty ? (entry - ltp) * qty : 0;
       const pnl = open ? computed : (p.pnl_inr ?? computed);
+      const msPct = MOVE_STOP_PCT[sys.id];
+      const eSpot = p.entry_spot ?? null;
+      const band = open && msPct != null && eSpot != null && eSpot > 0;
       rows.push({
         sysId: sys.id, sysLabel: sys.label, family: sys.group,
         side: (p.leg ?? '').toUpperCase(), strike: p.strike ?? null, qty,
@@ -999,6 +1015,9 @@ function buildTradeBook(
         outTime: open ? '' : (formatLegTime(p.exit_time) ?? ''),
         arm: open ? (p.sl_price ?? null) : null,
         armLive: open ? p.arm_live : undefined,
+        armLo: band ? (eSpot as number) * (1 - (msPct as number)) : undefined,
+        armHi: band ? (eSpot as number) * (1 + (msPct as number)) : undefined,
+        armSpot: band ? (eSpot as number) : undefined,
         tradingsymbol: p.tradingsymbol,
       });
     };
@@ -1021,6 +1040,7 @@ function TradeBook({ systems, states, liveLegs }: {
   liveLegs: Record<string, number>;
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
+  const { spot } = useLiveTicks();   // live NIFTY -- distance to the move-stop band
   // ST-trail value for naked-survivor legs (sl_price sentinel 999999) — from the ticker.
   const [stTrail, setStTrail] = useState<Record<string, number>>({});
   useEffect(() => {
@@ -1073,8 +1093,8 @@ function TradeBook({ systems, states, liveLegs }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 104px 70px 116px 48px 48px 86px'
-    : '120px 34px 58px 46px 104px 70px 116px 48px 48px 86px';
+    ? '34px 58px 46px 104px 124px 116px 48px 48px 86px'
+    : '120px 34px 58px 46px 104px 124px 116px 48px 48px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -1148,6 +1168,34 @@ function TradeBook({ systems, states, liveLegs }: {
                     {r.entry != null ? r.entry.toFixed(1) : '—'} → {r.exit != null ? r.exit.toFixed(1) : '—'}
                   </span>
                   {(() => {
+                    // Move-stop systems (ATM2 / OTM): the enforced arm is a NIFTY level, not a
+                    // premium. Show the band that actually closes BOTH legs and re-centers.
+                    if (r.open && r.armLo != null && r.armHi != null) {
+                      const lo = Math.round(r.armLo);
+                      const hi = Math.round(r.armHi);
+                      const near = spot != null
+                        ? Math.round(Math.min(Math.abs(hi - spot), Math.abs(spot - lo)))
+                        : null;
+                      const color = near == null ? '#d29922'
+                        : near <= 15 ? '#ef4444'
+                        : near <= 40 ? '#d29922'
+                        : '#3fb950';
+                      const title =
+                        `MOVE-STOP (the only exit trigger on this system): closes BOTH legs and ` +
+                        `re-centers when NIFTY leaves ${lo}-${hi} (+/-0.40% from entry spot ` +
+                        `${Math.round(r.armSpot ?? 0)}).` +
+                        (spot != null ? ` NIFTY ${Math.round(spot)} - ${near} pts from firing.` : '') +
+                        ` The per-leg premium SL (${r.arm != null ? r.arm.toFixed(1) : 'n/a'}) is ` +
+                        `deliberately disabled on this system and will NEVER fire.`;
+                      return (
+                        <span
+                          style={{ color, whiteSpace: 'nowrap', fontWeight: near != null && near <= 15 ? 700 : 400 }}
+                          title={title}
+                        >
+                          {lo}-{hi}{near != null ? ` (${near})` : ''}
+                        </span>
+                      );
+                    }
                     const hasArm = r.open && r.arm != null && r.arm > 0;
                     if (!hasArm) {
                       return <span style={{ color: 'var(--ink-faint, #6e7681)', whiteSpace: 'nowrap' }} title="No active exit arm">—</span>;
