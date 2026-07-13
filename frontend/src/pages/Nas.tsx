@@ -248,6 +248,7 @@ function WatchdogSection() {
 
 function NasOptCard() {
   const [state, setState] = useState<any>(null);
+  const [showLog, setShowLog] = useState(false);
   const [equity, setEquity] = useState<Array<{ day: string; pnl: number; cum: number }>>([]);
   const [trades, setTrades] = useState<any[]>([]);
 
@@ -290,6 +291,16 @@ function NasOptCard() {
   const paperWin = paperN ? Math.round((paper.filter((t) => Number(t.pnl) > 0).length / paperN) * 100) : 0;
   const btPnl = sumPnl(bt);
   const btN = bt.length;
+
+  // Daily record (newest first) + the split that actually explains the P&L:
+  // days held to the 14:45 time-exit vs days the +/-0.4% move-stop fired.
+  const paperDesc = [...paper].sort((a, b) => (String(a.day) < String(b.day) ? 1 : -1));
+  const held = paper.filter((t) => t.exit_reason === 'time1445');
+  const stopped = paper.filter((t) => t.exit_reason !== 'time1445');
+  const heldPnl = sumPnl(held);
+  const stopPnl = sumPnl(stopped);
+  const rs = (n: number) => `${n >= 0 ? '+' : '-'}\u20B9${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
+  const LOGCOLS = '104px 34px 108px 56px 92px 74px';
 
   // live-paper equity curve (built from paper trades only)
   const paperSorted = [...paper].sort((a, b) => (String(a.day) < String(b.day) ? -1 : 1));
@@ -362,11 +373,78 @@ function NasOptCard() {
       <div style={{ fontSize: 11, color: '#888780', marginBottom: 6 }}>
         Backtest baseline (research/54, not live): {btPnl >= 0 ? '+' : ''}₹{btPnl.toLocaleString('en-IN')} · {btN} trades
       </div>
+      {paperN > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <button
+            onClick={() => setShowLog((v) => !v)}
+            style={{
+              background: 'transparent', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 6,
+              padding: '3px 9px', fontSize: 11, fontWeight: 600, color: '#1B1B1A', cursor: 'pointer',
+            }}
+          >
+            {showLog ? 'Hide daily record \u25B4' : `Daily record \u2014 ${paperN} paper days \u25BE`}
+          </button>
+          {showLog && (
+            <div style={{ marginTop: 8, overflowX: 'auto' }}>
+              <div style={{ minWidth: 'max-content', fontSize: 11, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: LOGCOLS, gap: 8, padding: '3px 0',
+                  color: '#888780', fontSize: 10, letterSpacing: '0.04em',
+                  borderBottom: '1px solid rgba(0,0,0,0.10)',
+                }}>
+                  <span>DAY</span><span>DTE</span><span>STRIKES</span><span>CREDIT</span>
+                  <span>EXIT</span><span style={{ textAlign: 'right' }}>P&amp;L</span>
+                </div>
+                {paperDesc.map((t) => {
+                  const timeExit = t.exit_reason === 'time1445';
+                  const p = Number(t.pnl || 0);
+                  return (
+                    <div
+                      key={t.id}
+                      style={{
+                        display: 'grid', gridTemplateColumns: LOGCOLS, gap: 8, padding: '4px 0',
+                        borderBottom: '1px solid rgba(0,0,0,0.05)',
+                      }}
+                    >
+                      <span style={{ color: '#1B1B1A' }}>{t.day} {t.weekday}</span>
+                      <span style={{ color: '#888780' }}>{t.dte}</span>
+                      <span style={{ color: '#888780' }}>{t.pe_strike}P/{t.ce_strike}C</span>
+                      <span style={{ color: '#888780' }}>{Number(t.credit || 0).toFixed(1)}</span>
+                      <span style={{ color: timeExit ? '#0F6E56' : '#A32D2D' }}>
+                        {timeExit ? 'held 14:45' : 'move-stop'}
+                      </span>
+                      <span style={{ textAlign: 'right', fontWeight: 600, color: p >= 0 ? '#0F6E56' : '#A32D2D' }}>
+                        {rs(p)}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div style={{ marginTop: 8, fontSize: 11, fontFamily: 'inherit', color: '#5A5852', lineHeight: 1.55 }}>
+                  <div>
+                    Held to 14:45 &middot; <strong>{held.length}</strong> days &middot;{' '}
+                    <span style={{ color: heldPnl >= 0 ? '#0F6E56' : '#A32D2D', fontWeight: 600 }}>{rs(heldPnl)}</span>
+                  </div>
+                  <div>
+                    Move-stop fired &middot; <strong>{stopped.length}</strong> days &middot;{' '}
+                    <span style={{ color: stopPnl >= 0 ? '#0F6E56' : '#A32D2D', fontWeight: 600 }}>{rs(stopPnl)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <div style={{ fontSize: 12, color: today ? '#0F6E56' : '#888780' }}>
         {today
-          ? `Open today: ${today.pe_strike}PE + ${today.ce_strike}CE · entry spot ${Math.round(
-              today.entry_spot,
-            )} · status ${today.status}`
+          ? today.status === 'CLOSED'
+            ? `Today: ${today.pe_strike}PE + ${today.ce_strike}CE from spot ${Math.round(
+                today.entry_spot,
+              )} — closed ${
+                today.exit_reason === 'time1445' ? 'at the 14:45 time-exit' : 'on the ±0.4% move-stop'
+              } · ${rs(Number(today.pnl || 0))}`
+            : `Open today: ${today.pe_strike}PE + ${today.ce_strike}CE · entry spot ${Math.round(
+                today.entry_spot,
+              )} · running`
           : 'Idle today — NAS-OPT trades 0/1-DTE only (Mon & Tue); enters 09:20, ±0.4% move-stop, 14:45 exit.'}
       </div>
     </section>
