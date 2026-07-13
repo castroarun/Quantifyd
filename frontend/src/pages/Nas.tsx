@@ -1018,28 +1018,6 @@ export default function Nas() {
       <div className={styles.columns}>
         <div className={styles.col}>
           <div className={styles.colHead}>
-            <div className="section-title">ATR squeeze</div>
-            <Chip>{SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
-          </div>
-          <div className={styles.panelList}>
-            {SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
-              <SystemPanel
-                key={s.id}
-                def={s}
-                onStateChange={(rec) => updateState(s.id, rec)}
-                onToast={showToast}
-                series={mtmData[s.key]?.points || []}
-                events={mtmData[s.key]?.events || []}
-                onExpand={() => setExpandedKey(s.key)}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.divider} aria-hidden />
-
-        <div className={styles.col}>
-          <div className={styles.colHead}>
             <div className="section-title">9:16 entry</div>
             <Chip>{ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
           </div>
@@ -1056,6 +1034,28 @@ export default function Nas() {
               />
             ))}
             <NasOptCard />
+          </div>
+        </div>
+
+        <div className={styles.divider} aria-hidden />
+
+        <div className={styles.col}>
+          <div className={styles.colHead}>
+            <div className="section-title">ATR squeeze</div>
+            <Chip>{SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
+          </div>
+          <div className={styles.panelList}>
+            {SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
+              <SystemPanel
+                key={s.id}
+                def={s}
+                onStateChange={(rec) => updateState(s.id, rec)}
+                onToast={showToast}
+                series={mtmData[s.key]?.points || []}
+                events={mtmData[s.key]?.events || []}
+                onExpand={() => setExpandedKey(s.key)}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -1342,9 +1342,18 @@ function TradeBook({ systems, states, liveLegs, basis }: {
               {g.rows.map((r, i) => (
                 <div
                   key={`${r.sysId}-${r.side}-${r.strike}-${r.open ? 'o' : 'c'}-${i}`}
+                  title={r.mode === 'live'
+                    ? 'LIVE — real money. This leg went to the exchange.'
+                    : 'Paper — simulated. No order went to the exchange.'}
                   style={{
                     display: 'grid', gridTemplateColumns: gridCols, gap: 8,
-                    padding: '3px 0', alignItems: 'center', opacity: r.open ? 1 : 0.62,
+                    padding: '3px 0 3px 7px', alignItems: 'center', opacity: r.open ? 1 : 0.62,
+                    // Whole-row tell for real money. inset shadow, not a border, so it can
+                    // never shift the grid columns.
+                    boxShadow: r.mode === 'live'
+                      ? 'inset 2px 0 0 #ef4444'
+                      : 'inset 2px 0 0 rgba(110,118,129,0.40)',
+                    background: r.mode === 'live' ? 'rgba(239,68,68,0.045)' : 'transparent',
                   }}
                 >
                   {mode !== 'system' && (
