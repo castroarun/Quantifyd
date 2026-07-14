@@ -275,6 +275,39 @@ class NasAtmExecutor:
                 return last_status, None
         return (last_status if last_status in ('REJECTED', 'CANCELLED') else 'PENDING'), None
 
+    # ---- broker truth: never trade against a position that is not there ----------------
+    _POS_CACHE = {'ts': 0.0, 'net': None}
+
+    @classmethod
+    def _broker_net_positions(cls, ttl=5.0):
+        """{tradingsymbol: net qty} for MIS, or None if the broker cannot be reached.
+
+        None means UNKNOWN -- it must never be read as 'flat'.
+        """
+        import time
+        now = time.time()
+        if cls._POS_CACHE['net'] is not None and (now - cls._POS_CACHE['ts']) < ttl:
+            return cls._POS_CACHE['net']
+        try:
+            from services.kite_service import get_kite
+            net = {}
+            for p in (get_kite().positions() or {}).get('net', []):
+                if p.get('product') == 'MIS':
+                    net[p.get('tradingsymbol')] = int(p.get('quantity') or 0)
+            cls._POS_CACHE = {'ts': now, 'net': net}
+            return net
+        except Exception as e:
+            logger.warning(f"[NAS-ATM] could not read broker positions ({e}) -- "
+                           f"exit will proceed unverified rather than risk leaving a short open")
+            return None
+
+    def _broker_qty(self, tradingsymbol):
+        """Net qty the broker actually holds (negative = short). None = could not verify."""
+        net = self._broker_net_positions()
+        if net is None:
+            return None
+        return net.get(tradingsymbol, 0)
+
     def _close_leg(self, pos, exit_price, exit_reason):
         """Close a single position leg — broker-truthful.
 
@@ -323,10 +356,36 @@ class NasAtmExecutor:
             from services.nas_kill_switch import is_frozen as _nas_frozen
             if _nas_frozen():
                 raise RuntimeError('NAS manual-freeze active - order blocked')
+
+            # Does the short still exist at the broker? If it was squared off outside the system
+            # (manually, or already closed), a BUY here would not close anything -- it would OPEN
+            # a naked LONG. Only skip when we POSITIVELY know it is gone; if the broker cannot be
+            # reached we proceed, because failing to exit a real short is the worse failure.
+            _held = self._broker_qty(pos['tradingsymbol'])
+            if _held == 0:
+                logger.critical(
+                    f"[NAS-ATM] {pos['tradingsymbol']} is ACTIVE in the book but the broker holds "
+                    f"NOTHING -- it was closed outside the system. NOT placing a BUY (that would "
+                    f"open a naked long). Reconciling the leg to CLOSED @ {exit_price:.2f} "
+                    f"(was: {exit_reason}).")
+                self.db.close_position(pos['id'], round(exit_price, 2), 'MANUAL_CLOSE_RECONCILED')
+                self.db.update_position(
+                    pos['id'],
+                    notes=f'closed outside the system before {exit_reason}; '
+                          f'reconciled from the broker, no order placed')
+                return True
+
+            _qty = int(pos['qty'])
+            if _held is not None and abs(int(_held)) < _qty:
+                logger.warning(
+                    f"[NAS-ATM] {pos['tradingsymbol']}: book says {_qty} but the broker holds "
+                    f"{_held} -- partially closed outside the system. Buying back only {abs(int(_held))}.")
+                _qty = abs(int(_held))
+
             order_id = kite.place_order(
                 variety='regular', exchange='NFO',
                 tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
-                quantity=pos['qty'], product='MIS', order_type='MARKET',
+                quantity=_qty, product='MIS', order_type='MARKET',
             )
         except Exception as e:
             # Nothing reached the exchange -> keep the leg ACTIVE and retry on
@@ -451,9 +510,21 @@ class NasAtmExecutor:
         ce_symbol = self._build_tradingsymbol('CE', atm_strike, expiry)
         pe_symbol = self._build_tradingsymbol('PE', atm_strike, expiry)
 
-        # Get live premiums
-        ce_premium = self.scanner.get_live_option_premium(ce_symbol)
-        pe_premium = self.scanner.get_live_option_premium(pe_symbol)
+        # Get live premiums -- retry: at the 09:16 open the Kite quote API is
+        # congested and a single fetch times out (2026-07-08: ATM/ATM4 missed
+        # entry on a transient quote timeout while ATM2 caught a good tick).
+        # Retry a few times so a slow open does not skip a system.
+        import time as _time
+        ce_premium = pe_premium = None
+        for _att in range(5):
+            ce_premium = self.scanner.get_live_option_premium(ce_symbol)
+            pe_premium = self.scanner.get_live_option_premium(pe_symbol)
+            if ce_premium is not None and pe_premium is not None:
+                if _att:
+                    logger.info(f"[NAS-ATM] premium fetch OK on retry #{_att} for {ce_symbol}/{pe_symbol}")
+                break
+            logger.warning(f"[NAS-ATM] premium fetch attempt {_att+1}/5 failed for {ce_symbol}/{pe_symbol}; retrying")
+            _time.sleep(2)
 
         if ce_premium is None or pe_premium is None:
             return None, f'Cannot fetch live premiums for {ce_symbol}/{pe_symbol}'
