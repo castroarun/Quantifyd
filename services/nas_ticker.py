@@ -1767,17 +1767,30 @@ class NasTicker:
             if atm_active:
                 self.subscribe_atm_option_legs(atm_active)
                 logger.info(f"[NAS-ATM] Subscribed {len(atm_active)} ATM active legs (Sq + 916)")
-                # Auto-start ST monitoring for naked legs (SL=999999)
+                # Arm the trail on the naked leg (SL sentinel 999999). There can be TWO
+                # naked legs at once -- one in the squeeze book, one in the 9:16 book -- but
+                # there is a single naked slot per family. This used to start monitoring on
+                # EACH in turn, so whichever was iterated LAST silently won the slot: a PAPER
+                # leg could take the trailing stop away from a LIVE one (2026-07-14). Pick
+                # exactly one, and let LIVE win -- real money is what needs the stop.
                 import time
                 time.sleep(1)
-                for pos in atm_active:
-                    if (pos.get('sl_price', 0) or 0) > 900000:
-                        tsym = pos.get('tradingsymbol', '')
-                        for t, info in self._atm_option_tokens.items():
-                            if info['tradingsymbol'] == tsym:
-                                self.start_atm_naked_monitoring(t, info)
-                                logger.info(f"[NAS-ATM] Auto-started ST monitoring for {tsym}")
-                                break
+                naked = [p for p in atm_active if (p.get('sl_price', 0) or 0) > 900000]
+                naked.sort(key=lambda p: 0 if (p.get('mode') or '').lower() == 'live' else 1)
+                if naked:
+                    tsym = naked[0].get('tradingsymbol', '')
+                    for t, info in self._atm_option_tokens.items():
+                        if info['tradingsymbol'] == tsym:
+                            self.start_atm_naked_monitoring(t, info)
+                            logger.info(
+                                f"[NAS-ATM] trail armed on naked leg {tsym} "
+                                f"(mode={naked[0].get('mode')}; {len(naked)} naked leg(s) present)")
+                            break
+                    if len(naked) > 1:
+                        logger.warning(
+                            f"[NAS-ATM] {len(naked)} naked legs but one trail slot -- "
+                            f"trailing {tsym}, NOT "
+                            f"{[p.get('tradingsymbol') for p in naked[1:]]}")
         except Exception as e:
             logger.warning(f"[NAS-ATM] Could not subscribe active legs: {e}")
 
@@ -1802,17 +1815,30 @@ class NasTicker:
             if atm4_active:
                 self.subscribe_atm4_option_legs(atm4_active)
                 logger.info(f"[NAS-ATM4] Subscribed {len(atm4_active)} ATM4 active legs (Sq + 916)")
-                # Auto-start ST monitoring for naked legs (SL=999999)
+                # Arm the trail on the naked leg (SL sentinel 999999). There can be TWO
+                # naked legs at once -- one in the squeeze book, one in the 9:16 book -- but
+                # there is a single naked slot per family. This used to start monitoring on
+                # EACH in turn, so whichever was iterated LAST silently won the slot: a PAPER
+                # leg could take the trailing stop away from a LIVE one (2026-07-14). Pick
+                # exactly one, and let LIVE win -- real money is what needs the stop.
                 import time
                 time.sleep(1)
-                for pos in atm4_active:
-                    if (pos.get('sl_price', 0) or 0) > 900000:
-                        tsym = pos.get('tradingsymbol', '')
-                        for t, info in self._atm4_option_tokens.items():
-                            if info['tradingsymbol'] == tsym:
-                                self.start_atm4_naked_monitoring(t, info)
-                                logger.info(f"[NAS-ATM4] Auto-started ST monitoring for {tsym}")
-                                break
+                naked = [p for p in atm4_active if (p.get('sl_price', 0) or 0) > 900000]
+                naked.sort(key=lambda p: 0 if (p.get('mode') or '').lower() == 'live' else 1)
+                if naked:
+                    tsym = naked[0].get('tradingsymbol', '')
+                    for t, info in self._atm4_option_tokens.items():
+                        if info['tradingsymbol'] == tsym:
+                            self.start_atm4_naked_monitoring(t, info)
+                            logger.info(
+                                f"[NAS-ATM4] trail armed on naked leg {tsym} "
+                                f"(mode={naked[0].get('mode')}; {len(naked)} naked leg(s) present)")
+                            break
+                    if len(naked) > 1:
+                        logger.warning(
+                            f"[NAS-ATM4] {len(naked)} naked legs but one trail slot -- "
+                            f"trailing {tsym}, NOT "
+                            f"{[p.get('tradingsymbol') for p in naked[1:]]}")
         except Exception as e:
             logger.warning(f"[NAS-ATM4] Could not subscribe active legs: {e}")
 
