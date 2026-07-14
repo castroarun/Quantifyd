@@ -98,6 +98,57 @@ class NasAtm4Executor(NasAtmExecutor):
     # --- SuperTrend for naked leg exit -----------------------------------
 
     @staticmethod
+    def compute_short_trailing_stop(candles, period=7, multiplier=3.0):
+        """Trailing stop for a SHORT option premium. Returns (stop, breached_now).
+
+        A short loses when the premium RISES, so the stop sits ABOVE the premium and ratchets
+        DOWN as it decays -- it never loosens. Exit when the premium closes above it.
+
+        This replaces _compute_supertrend for the naked-leg exit. That function returns the
+        LOWER band whenever direction == 1, and direction is initialised to 1 and only flips
+        when the premium closes below a band 3xATR underneath -- which a decaying premium
+        never does. It therefore reported a stop BELOW the price and the callers'
+        `direction == 1` exit fired the instant it armed (2026-07-14: fired every 5 minutes
+        on a live 916-ATM4 leg; only a separate routing bug stopped it closing the position).
+        """
+        n = len(candles)
+        if n < period + 1:
+            return None, None
+
+        high = np.array([c['high'] for c in candles], dtype=float)
+        low = np.array([c['low'] for c in candles], dtype=float)
+        close = np.array([c['close'] for c in candles], dtype=float)
+
+        tr = np.zeros(n)
+        tr[0] = high[0] - low[0]
+        for i in range(1, n):
+            tr[i] = max(high[i] - low[i], abs(high[i] - close[i - 1]), abs(low[i] - close[i - 1]))
+
+        atr = np.zeros(n)
+        atr[period - 1] = np.mean(tr[:period])
+        for i in range(period, n):
+            atr[i] = (atr[i - 1] * (period - 1) + tr[i]) / period
+
+        hl2 = (high + low) / 2.0
+        upper = hl2 + multiplier * atr
+
+        stop = np.zeros(n)
+        stop[period - 1] = upper[period - 1]
+        breached_now = False
+        for i in range(period, n):
+            candidate = min(upper[i], stop[i - 1])   # ratchet DOWN only
+            if close[i] > candidate:
+                # premium broke above the trail -> exit signal; re-arm above the move
+                stop[i] = upper[i]
+                breached_now = (i == n - 1)
+            else:
+                stop[i] = candidate
+                if i == n - 1:
+                    breached_now = False
+
+        return round(float(stop[-1]), 2), bool(breached_now)
+
+    @staticmethod
     def _compute_supertrend(candles, period=7, multiplier=2):
         """
         Compute SuperTrend on list of OHLC dicts.

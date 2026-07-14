@@ -865,16 +865,57 @@ class NasTicker:
             kite = get_kite()
             if not kite or not token:
                 return
-            data = kite.historical_data(token, _dt.now() - _td(days=3), _dt.now(), '5minute')
+            # TODAY only (from the open). An option's premium 3 days ago is a different
+            # instrument in all but name -- different moneyness, 3 days of decay -- so ATR and
+            # the bands were being computed across a discontinuity. And a ratcheting stop seeded
+            # with an old, far lower band gets dragged below the live premium and fires at once.
+            _open = _dt.now().replace(hour=9, minute=15, second=0, microsecond=0)
+            data = kite.historical_data(token, _open, _dt.now(), '5minute')
             seeded = [{'open': c['open'], 'high': c['high'], 'low': c['low'], 'close': c['close']}
-                      for c in (data or [])][-61:-1]   # drop in-progress bar, keep up to 60 completed
+                      for c in (data or [])][:-1]   # drop the in-progress bar
             setattr(self, attr, seeded)
             logger.info(f"[NAS] seeded {len(seeded)} 5-min candles for naked-ST ({attr}) from Kite")
         except Exception as e:
             logger.warning(f"[NAS] naked-ST seed failed for {attr}: {e}")
 
+    def _resolve_naked_owner(self, family, tsym):
+        """Return (db, executor, [position]) for whichever book actually holds `tsym` ACTIVE.
+
+        The naked leg can belong to the SQUEEZE book or the 9:16 book. The exit handlers used
+        to hardcode the squeeze book, so a 9:16 naked leg could never be closed: the handler
+        looked up an empty position list and returned (2026-07-14, live 916-ATM4 24050PE --
+        the ST exit fired every 5 minutes and did nothing).
+        """
+        from config import (NAS_ATM_DEFAULTS, NAS_ATM4_DEFAULTS,
+                            NAS_916_ATM_DEFAULTS, NAS_916_ATM4_DEFAULTS)
+        from services.nas_atm_db import get_nas_atm_db
+        from services.nas_atm4_db import get_nas_atm4_db
+        from services.nas_916_db import get_nas_916_atm_db, get_nas_916_atm4_db
+        from services.nas_atm_executor import NasAtmExecutor
+        from services.nas_atm4_executor import NasAtm4Executor
+        from services.nas_916_executors import Nas916AtmExecutor, Nas916Atm4Executor
+
+        if family == 'atm4':
+            books = [(get_nas_atm4_db, NasAtm4Executor, NAS_ATM4_DEFAULTS),
+                     (get_nas_916_atm4_db, Nas916Atm4Executor, NAS_916_ATM4_DEFAULTS)]
+        else:
+            books = [(get_nas_atm_db, NasAtmExecutor, NAS_ATM_DEFAULTS),
+                     (get_nas_916_atm_db, Nas916AtmExecutor, NAS_916_ATM_DEFAULTS)]
+
+        for get_db, cls, cfg in books:
+            try:
+                db = get_db()
+                for p in db.get_active_positions():
+                    if p.get('tradingsymbol') == tsym:
+                        return db, cls(config=cfg), [p]   # ONLY the naked leg
+            except Exception as ex:
+                logger.warning("[NAS] naked-owner lookup failed for %s: %s", tsym, ex)
+        return None, None, []
+
     def start_atm_naked_monitoring(self, token, info):
-        """Start ST(7,2) monitoring for a naked ATM leg after SL hit."""
+        """Start the trailing-stop monitor for a naked ATM leg after an SL hit."""
+        if self._atm_naked_leg_token == token and self._atm_naked_leg_candles:
+            return   # already monitoring -- re-seeding would wipe the ratchet
         self._atm_naked_leg_token = token
         self._atm_naked_leg_info = info
         self._atm_naked_leg_candles = []
@@ -914,23 +955,22 @@ class NasTicker:
                 threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
 
     def _check_atm_st_exit(self):
-        """Check if naked ATM leg's premium closed above SuperTrend → exit."""
+        """Exit the naked ATM leg if its premium closed above the trailing stop."""
         candles = self._atm_naked_leg_candles
         if len(candles) < 8:
             return
 
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
+        st_val, breached = NasAtm4Executor.compute_short_trailing_stop(candles, period=7, multiplier=3)
 
         if st_val is None:
             return
 
         self._atm_naked_st_val = st_val
         latest_close = candles[-1]['close']
-        logger.info(f"[NAS-ATM] ST check: close={latest_close:.1f}, ST={st_val:.1f}, "
-                     f"dir={'UP' if direction==1 else 'DN'}")
+        logger.info(f"[NAS-ATM] trail check: close={latest_close:.1f}, stop={st_val:.1f}")
 
-        if direction == 1 or latest_close > st_val:
+        if breached or latest_close > st_val:
             logger.warning(f"[NAS-ATM] ST EXIT! Premium {latest_close:.1f} reversed above ST {st_val:.1f}")
             self._atm_naked_st_val = None
             threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
@@ -938,15 +978,10 @@ class NasTicker:
     def _fire_atm_st_exit(self):
         """Exit the naked ATM leg because ST flipped."""
         try:
-            from services.nas_atm_executor import NasAtmExecutor
-            from services.nas_atm_db import get_nas_atm_db
-            from config import NAS_ATM_DEFAULTS
-
-            db = get_nas_atm_db()
-            executor = NasAtmExecutor(config=NAS_ATM_DEFAULTS)
-
-            active = db.get_active_positions()
+            naked = (self._atm_naked_leg_info or {}).get('tradingsymbol')
+            db, executor, active = self._resolve_naked_owner('atm', naked)
             if not active:
+                logger.warning(f"[NAS-ATM] trail exit: {naked} is not ACTIVE in any ATM book")
                 return
 
             for pos in active:
@@ -1241,7 +1276,9 @@ class NasTicker:
     # ─── ATM4 Naked Leg SuperTrend Monitoring ────────────────
 
     def start_atm4_naked_monitoring(self, token: int, info: dict):
-        """Start SuperTrend(7,2) monitoring for a naked V4 leg after 2nd SL."""
+        """Start the trailing-stop monitor for a naked V4 leg after the 2nd SL."""
+        if self._atm4_naked_leg_token == token and self._atm4_naked_leg_candles:
+            return   # already monitoring -- re-seeding would wipe the ratchet
         self._atm4_naked_leg_token = token
         self._atm4_naked_leg_info = info
         self._atm4_naked_leg_candles = []
@@ -1281,25 +1318,23 @@ class NasTicker:
                 threading.Thread(target=self._fire_atm4_st_exit, daemon=True).start()
 
     def _check_atm4_st_exit(self):
-        """Check if naked V4 leg's premium closed above SuperTrend -> exit."""
+        """Exit the naked V4 leg if its premium closed above the trailing stop."""
         candles = self._atm4_naked_leg_candles
         if len(candles) < 8:  # Need at least period+1 bars
             return
 
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, direction = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
+        st_val, breached = NasAtm4Executor.compute_short_trailing_stop(candles, period=7, multiplier=3)
 
         if st_val is None:
             return
 
         self._atm4_naked_st_val = st_val
         latest_close = candles[-1]['close']
-        logger.info(f"[NAS-ATM4] ST check: close={latest_close:.1f}, "
-                     f"ST={st_val:.1f}, dir={'UP' if direction == 1 else 'DN'}")
+        logger.info(f"[NAS-ATM4] trail check: close={latest_close:.1f}, stop={st_val:.1f}")
 
-        # For short option: premium at/above the ST line (trending up) -> EXIT. Fire on a
-        # LEVEL breach too, not only the direction flip (which can lag/reset on re-seed).
-        if direction == 1 or latest_close > st_val:
+        # Short leg: exit only when the premium closes ABOVE the trailing stop.
+        if breached or latest_close > st_val:
             logger.warning(f"[NAS-ATM4] ST EXIT! Premium {latest_close:.1f} "
                             f"reversed above ST {st_val:.1f}")
             self._atm4_naked_st_val = None
@@ -1311,15 +1346,10 @@ class NasTicker:
     def _fire_atm4_st_exit(self):
         """Exit the naked V4 leg because SuperTrend flipped to uptrend."""
         try:
-            from services.nas_atm4_executor import NasAtm4Executor
-            from services.nas_atm4_db import get_nas_atm4_db
-            from config import NAS_ATM4_DEFAULTS
-
-            db = get_nas_atm4_db()
-            executor = NasAtm4Executor(config=NAS_ATM4_DEFAULTS)
-
-            active = db.get_active_positions()
+            naked = (self._atm4_naked_leg_info or {}).get('tradingsymbol')
+            db, executor, active = self._resolve_naked_owner('atm4', naked)
             if not active:
+                logger.warning(f"[NAS-ATM4] trail exit: {naked} is not ACTIVE in any ATM4 book")
                 return
 
             for pos in active:
@@ -1805,21 +1835,21 @@ class NasTicker:
         self.start()
 
     def _get_atm_st_value(self) -> Optional[float]:
-        """Get current SuperTrend value for the naked ATM leg, or None."""
+        """Current trailing-stop level for the naked ATM leg (sits ABOVE the premium)."""
         candles = self._atm_naked_leg_candles
         if len(candles) < 8:
             return None
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
+        st_val, _ = NasAtm4Executor.compute_short_trailing_stop(candles, period=7, multiplier=3)
         return st_val
 
     def _get_atm4_st_value(self) -> Optional[float]:
-        """Get current SuperTrend value for the naked ATM4 leg, or None."""
+        """Current trailing-stop level for the naked ATM4 leg (sits ABOVE the premium)."""
         candles = self._atm4_naked_leg_candles
         if len(candles) < 8:
             return None
         from services.nas_atm4_executor import NasAtm4Executor
-        st_val, _ = NasAtm4Executor._compute_supertrend(candles, period=7, multiplier=3)
+        st_val, _ = NasAtm4Executor.compute_short_trailing_stop(candles, period=7, multiplier=3)
         return st_val
 
     def get_status(self) -> dict:
