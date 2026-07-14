@@ -116,16 +116,19 @@ for d in sorted({o["dte"] for o in obs}):
     sub = [o for o in obs if o["dte"] == d]
     if len(sub) < 6:
         continue
+    # Zero the MEDIAN SIGNED error, not the absolute one. Minimising |error| leaves a systematic
+    # bias in place -- and since every strategy here SELLS this premium, a pricer that is 7% high
+    # hands us free money that does not exist. An unbiased pricer cannot manufacture P&L.
     best, bk = None, None
-    for k in np.arange(0.60, 2.51, 0.01):
+    for k in np.arange(0.60, 2.51, 0.005):
         errs = []
         for o in sub:
             th = bs(o["spot"], o["K"], T_of(d), (o["vix"] / 100.0) * k, o["kind"])
             if o["px"] > 0.5:
-                errs.append(abs(th - o["px"]) / o["px"])
+                errs.append((th - o["px"]) / o["px"])
         if not errs:
             continue
-        e = float(np.median(errs))
+        e = abs(float(np.median(errs)))          # how far the MEDIAN SIGNED error is from zero
         if best is None or e < best:
             best, bk = e, float(k)
     signed = np.median([
