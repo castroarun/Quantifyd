@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weekly SuperTrend (10,3) — Stress-Tested | Quantifyd Research 73</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1b2230; --line:#262d38;
+    --ink:#e6edf3; --mut:#8b949e; --gold:#e3b341; --green:#3fb950; --red:#f85149; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  .wrap{max-width:980px;margin:0 auto;padding:28px 20px 80px}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+  h1{font-size:30px;line-height:1.2;margin:0 0 6px;font-weight:700}
+  h2{font-size:20px;margin:40px 0 6px;font-weight:700}
+  h2 .n{color:var(--gold);font-style:italic;font-family:Georgia,serif;margin-right:8px}
+  h3{font-size:15px;color:var(--mut);font-weight:600;margin:0 0 14px;letter-spacing:.02em}
+  p{margin:10px 0}
+  .kicker{color:var(--gold);font-style:italic;font-family:Georgia,serif;font-size:15px;margin-bottom:8px}
+  .sub{color:var(--mut);font-size:14px;margin-top:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px}
+  .chip{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--mut)}
+  .chip.bad{border-color:#5b2b2b;color:#ff9b93} .chip.good{border-color:#2b5b36;color:#7ee29a}
+  .chip.warn{border-color:#5b4a2b;color:var(--gold)}
+  .tl{background:linear-gradient(180deg,#161b22,#12161d);border:1px solid var(--line);
+    border-left:3px solid var(--gold);border-radius:10px;padding:18px 20px;margin:22px 0}
+  .tl b{color:var(--ink)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 18px 8px;margin:14px 0}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:6px 0 4px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+  th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{color:var(--mut);font-weight:600;font-size:12px;letter-spacing:.03em;border-bottom:1px solid #313b49}
+  tbody tr:hover{background:#12161d}
+  tr.win td{background:rgba(227,179,65,.09)}
+  tr.win td:first-child{box-shadow:inset 3px 0 0 var(--gold);font-weight:600}
+  .pos{color:var(--green)} .neg{color:var(--red)} .g{color:var(--gold)} .m{color:var(--mut)}
+  .cap{color:var(--mut);font-size:12.5px;margin:8px 2px 14px;line-height:1.5}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+  .lvl{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .lvl .t{font-size:13px;color:var(--gold);font-weight:600;margin-bottom:4px}
+  .lvl .v{font-size:12.5px;color:var(--mut)}
+  .lvl.win{border-color:#5c4a1e}
+  figure{margin:16px 0}
+  figure img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
+  figcaption{color:var(--mut);font-size:12px;margin-top:8px}
+  ul{margin:8px 0;padding-left:20px} li{margin:6px 0}
+  .foot{margin-top:44px;border-top:1px solid var(--line);padding-top:16px;color:var(--mut);font-size:12.5px}
+  .back{display:inline-block;margin-bottom:18px;font-size:13px;color:var(--mut)}
+  @media(max-width:560px){h1{font-size:24px} .grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/app/backtest/weekly-supertrend-nifty200">← Back to the data study</a>
+  <div class="kicker">Quantifyd Research · No. 73 · concluded 2026-07-08</div>
+  <h1>Weekly SuperTrend (10,3): a YouTube system, stress-tested to the ground</h1>
+  <div class="sub">Buy on green, exit on red, size 5–7%, book 40/40/20, five "hacks". We tested every claim on
+    Nifty&nbsp;50 / 200 / Midcap&nbsp;150 / Smallcap&nbsp;250 / 500, net of cost &amp; tax, 2010–2026.</div>
+  <div class="chips">
+    <span class="chip bad">Per-name timing: NO EDGE</span>
+    <span class="chip good">Index crash-overlay: doubles Calmar</span>
+    <span class="chip good">ETF timing: halves drawdown</span>
+    <span class="chip warn">40/40/20 &amp; regime gate: HURT</span>
+  </div>
+
+  <div class="tl">
+    <p style="margin-top:0"><b>The one-paragraph verdict.</b> As pitched — timing each <i>stock</i> in and out on
+    its SuperTrend — the system <b>loses</b> to simply owning the same names (the eye-catching "beats the index"
+    was survivorship + breadth, not the signal). But the indicator has a real, robust use the video never
+    mentions: applied at the <b>market level</b> — one SuperTrend on the <i>index</i>, controlling exposure to
+    the whole book — it <b>cuts drawdown by more than half for a small return give-up</b>. The cleanest, most
+    tradeable form is to trend-time the index ETF itself: on NIFTYBEES, net-of-tax you give up ~1.5pp CAGR
+    (10.6&nbsp;→&nbsp;9.0%) and cut max drawdown from <b>−36% to −14%</b>, roughly doubling Calmar and Sharpe.
+    It's real, it's clean, it's infinitely scalable — and it's a well-known tactical-timing result, not a
+    discovery.</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--green)">
+    <div style="font-size:13px;color:var(--green);font-weight:700;letter-spacing:.04em;margin-bottom:6px">★★ THE WINNER — trend-time the NIFTYBEES ETF with daily SuperTrend(7,3)</div>
+    <p style="margin-top:4px">Hold NIFTYBEES when its daily ST(7,3) is green; on red, sell and park in a
+      <b>liquid fund (~4.5% net</b>, after its expense + slab tax); re-enter on the next green.
+      <b>Realistic</b> — net of cost, the liquid-fund net return, <b>and T+1 settlement lag</b>:</p>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>NIFTYBEES · ST(7,3)</th><th>CAGR</th><th>Max Drawdown</th><th>Calmar</th>
+        <th>Volatility</th><th>Net-of-all-tax CAGR</th></tr></thead>
+      <tbody>
+        <tr><td>Buy &amp; hold</td><td>10.6%</td><td class="neg">−36.3%</td><td>0.29</td><td>15.1%</td><td>10.6%</td></tr>
+        <tr class="win"><td>ST(7,3) timing (realistic)</td><td>9.3%</td><td class="pos">−14.3%</td><td class="g">0.65</td><td class="pos">9.7%</td><td>7.8%</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap"><b>Halves the drawdown (−36%→−14%)</b> and cuts volatility (15%→10%) for a ~1.3pp CAGR
+      give-up (~2.8pp net of all tax). It is <b>roughly Sharpe-neutral — a drawdown-reduction overlay,
+      not a return-enhancer.</b> Best built as a <b>NIFTY-futures/puts hedge</b> (no ETF sale → no equity
+      tax, no settlement lag → recovers most of the give-up). One liquid instrument, no survivorship,
+      infinitely scalable.</div>
+    <figure><img src="/app/niftybees-st73-winner.png" alt="NIFTYBEES SuperTrend(7,3) winner factsheet"/>
+      <figcaption>Client factsheet — realistic (net of cost + liquid-fund net return + T+1 settlement).</figcaption></figure>
+  </div>
+
+  <h2><span class="n">01</span>Three very different things called "SuperTrend"</h2>
+  <h3>Always label which one — they give opposite answers</h3>
+  <div class="grid3">
+    <div class="lvl"><div class="t">STOCK-LEVEL</div><div class="v">Each stock in/out on its own ST.
+      <b style="color:#ff9b93">Loses</b> to buy-and-hold the basket by 3–7pp/yr. (Phase 1)</div></div>
+    <div class="lvl win"><div class="t">INDEX-LEVEL · overlay</div><div class="v">One ST on the index flips the
+      <i>whole basket</i> to cash in downtrends. <b style="color:#7ee29a">Doubles Calmar.</b> (Phase 2)</div></div>
+    <div class="lvl win"><div class="t">INDEX-LEVEL · on the ETF</div><div class="v">Trend-time the index ETF
+      itself. <b style="color:#7ee29a">Halves drawdown</b>, tiny CAGR cost. (Phase 3)</div></div>
+  </div>
+
+  <h2><span class="n">01b</span>Master comparison — every version, returns &amp; drawdowns</h2>
+  <h3>2010–2026, net of realistic cost (tax basis noted per block)</h3>
+  <div class="card">
+    <div class="cap" style="margin-top:0"><b>A · Timing the NIFTYBEES ETF itself (index-level, one instrument) — the tradeable winner</b></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Version</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Sharpe</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>Buy &amp; hold (baseline)</td><td>10.5%</td><td class="neg">−36.3%</td><td>0.29</td><td>0.75</td><td class="m">the thing to beat</td></tr>
+        <tr class="win"><td>ST(7,3) — futures-hedge (REAL data) ⭐</td><td class="g">9.9%</td><td class="pos">−14.8%</td><td class="g">0.67</td><td>1.03</td><td>✅ the winner</td></tr>
+        <tr><td>ST(7,3) — futures-hedge, conservative</td><td>9.4%</td><td>−15.2%</td><td>0.62</td><td>0.99</td><td class="m">real-data low case</td></tr>
+        <tr><td>ST(7,3) — cash-rotation, net of cost only</td><td>9.3%</td><td>−14.3%</td><td>0.65</td><td class="m">—</td><td class="m">pre-tax</td></tr>
+        <tr><td>ST(7,3) — cash-rotation, net of ALL tax</td><td>7.8%</td><td>−14.3%</td><td>0.46</td><td class="m">~0.9</td><td class="m">tax-inefficient build</td></tr>
+        <tr><td>ST(7,3) — idealized (6.5% cash, instant)</td><td class="m">10.7%</td><td class="m">−14.2%</td><td class="m">0.76</td><td class="m">1.11</td><td class="m">⚠ too-kind assumptions</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap"><b>B · Which signal to time the ETF with (net of cost, pre-tax)</b></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Signal on NIFTYBEES</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>ST(7,3)</td><td>10.7%</td><td class="pos">−14.2%</td><td class="g">0.76</td><td>✅ best (fewest switches)</td></tr>
+        <tr><td>100-DMA</td><td>10.3%</td><td>−14.2%</td><td>0.72</td><td class="m">≈ ties ST</td></tr>
+        <tr><td>50-DMA</td><td>10.1%</td><td>−14.0%</td><td>0.72</td><td class="m">≈ ties</td></tr>
+        <tr><td>ST(10,3)</td><td>10.3%</td><td>−16.9%</td><td>0.61</td><td class="m">ok</td></tr>
+        <tr><td>200-DMA</td><td>5.5%</td><td class="neg">−20.7%</td><td>0.27</td><td>❌ too slow, hurts</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap"><b>C · The debunked / rejected versions (net of cost + tax)</b></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Version</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>Per-stock ST on Nifty 200 (the pitched system)</td><td>17.5%</td><td>−31.7%</td><td>0.55</td><td class="neg">❌ illusion</td></tr>
+        <tr><td>…vs its own same-basket buy &amp; hold</td><td>21.0%</td><td>−35.9%</td><td>0.58</td><td class="m">the benchmark it loses to</td></tr>
+        <tr><td>Per-stock ST + 40/40/20 booking</td><td>8.8%</td><td>−31.6%</td><td>0.28</td><td class="neg">❌ booking kills returns</td></tr>
+        <tr><td>Per-stock ST + regime gate</td><td>11.0%</td><td>−32.1%</td><td>0.34</td><td class="neg">❌ gate redundant</td></tr>
+        <tr><td>Phase-2 overlay on survivorship basket</td><td>19.6%</td><td>−15.3%</td><td>1.28</td><td class="m">⚠ un-real (inflated base)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap"><b>D · Per-stock ST across cap bands — every one loses to its own basket (net cost+tax)</b></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Band</th><th>ST book CAGR</th><th>ST MaxDD</th><th>ST Calmar</th><th>Same-basket B&amp;H</th><th>ST − Basket</th></tr></thead>
+      <tbody>
+        <tr><td>Nifty 50</td><td>12.2%</td><td>−22.9%</td><td>0.53</td><td>18.9%</td><td class="neg">−6.6pp</td></tr>
+        <tr><td>Nifty 200</td><td>17.5%</td><td>−31.7%</td><td>0.55</td><td>21.0%</td><td class="neg">−3.5pp</td></tr>
+        <tr><td>Midcap 150</td><td>15.2%</td><td>−30.3%</td><td>0.50</td><td>21.6%</td><td class="neg">−6.4pp</td></tr>
+        <tr><td>Smallcap 250</td><td>19.3%</td><td>−40.5%</td><td>0.48</td><td>22.0%</td><td class="neg">−2.8pp</td></tr>
+        <tr><td>Nifty 500</td><td>17.1%</td><td>−36.7%</td><td>0.47</td><td>21.5%</td><td class="neg">−4.4pp</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap" style="border-top:1px solid var(--line);padding-top:10px"><b>The story in one line:</b> timing individual
+      <i>stocks</i> loses to owning them (D), and the pitched system's 17.5% only beat the <i>wrong</i> benchmark (C).
+      The <i>same</i> signal at the <i>index</i> level on the ETF you'd hold anyway (A) takes the −36% drawdown to −15%
+      for ~0.6pp of CAGR — Calmar 0.29→0.67, Sharpe 0.75→1.03.</div>
+  </div>
+
+  <h2><span class="n">02</span>Phase 1 — the headline was a benchmark illusion</h2>
+  <h3>Fair test: the ST book vs holding the SAME names (equal-weight buy &amp; hold), all bands, net</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Band</th><th>ST timing CAGR</th><th>Same-basket B&amp;H</th><th>ST − Basket</th>
+        <th>ST Calmar</th><th>Basket Calmar</th></tr></thead>
+      <tbody>
+        <tr><td>Nifty 50</td><td>12.2%</td><td>18.9%</td><td class="neg">−6.6pp</td><td>0.53</td><td>0.57</td></tr>
+        <tr><td>Nifty 200</td><td>17.5%</td><td>21.0%</td><td class="neg">−3.5pp</td><td>0.55</td><td>0.58</td></tr>
+        <tr><td>Midcap 150</td><td>15.2%</td><td>21.6%</td><td class="neg">−6.4pp</td><td>0.50</td><td>0.61</td></tr>
+        <tr><td>Smallcap 250</td><td>19.3%</td><td>22.0%</td><td class="neg">−2.8pp</td><td>0.48</td><td>0.41</td></tr>
+        <tr><td>Nifty 500</td><td>17.1%</td><td>21.5%</td><td class="neg">−4.4pp</td><td>0.47</td><td>0.52</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">On <b>every</b> band the per-stock timing loses to just owning the basket. The tempting
+      "+6.9pp over NIFTYBEES" (Nifty 200) was the survivorship-selected basket beating the Nifty 50 index by
+      +8–11pp — the SuperTrend timing itself was <b>negative</b>. Median trade ≈ 0; the whole return is a fat
+      right tail of survivorship-selected multibaggers. A clean negative.</div>
+  </div>
+
+  <h2><span class="n">03</span>Phase 2 — the redemption: an index-level crash overlay</h2>
+  <h3>Hold the basket always; a DAILY index ST flattens the whole book in downtrends (Nifty 200)</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Book</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Sw/yr</th>
+        <th>Net-tax CAGR</th><th>Net-tax Calmar</th></tr></thead>
+      <tbody>
+        <tr><td>Plain basket (tax-deferred)</td><td>21.8%</td><td class="neg">−39.2%</td><td>0.56</td><td>0</td><td>21.8%</td><td>0.56</td></tr>
+        <tr class="win"><td>+ daily-ST(7,3) overlay</td><td>19.6%</td><td class="pos">−15.3%</td><td class="g">1.28</td><td>5.0</td><td>16.8%</td><td class="g">1.01</td></tr>
+        <tr><td>+ 200-DMA gate (too slow — hurts)</td><td>15.1%</td><td>−33.3%</td><td>0.45</td><td>9.5</td><td>13.2%</td><td>0.38</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">A fast market-level filter more than <b>doubles pre-tax Calmar (0.56→1.28)</b> by cutting
+      drawdown for ~2pp CAGR — consistent across all bands (Smallcap 0.40→0.86, Nifty 500 0.50→1.17) and robust
+      across the whole fast family (daily-ST 7/10/20 + 50-DMA). <b>Tax is the catch</b>: liquidating the cash
+      book ~2.5×/yr realises STCG (net Calmar 1.01) → build it as a NIFTY-futures/puts hedge (no sale, no tax).</div>
+    <div class="cap" style="border-top:1px solid var(--line);padding-top:10px"><b>Why is Phase 2's Calmar
+      (1.28) higher than Phase 3's (0.65)?</b> Both use the <i>same</i> index ST(7,3) doing the <i>same</i> job —
+      cutting drawdown to ~−14/−15%. The difference is <b>what's being timed</b>: Phase 2 times the
+      survivorship-inflated 200-stock basket (21.8% CAGR), Phase 3 times the real ETF (10.6% CAGR). Same DD
+      reduction ÷ a ~2× higher (but un-real) return = a higher Calmar. Phase 2's 1.28 is a mirage you can't
+      capture; <b>Phase 3 is the honest, tradeable number.</b></div>
+  </div>
+
+  <h2><span class="n">04</span>Phase 3 — the cleanest tradeable version: time the ETF itself</h2>
+  <h3>Trend-time NIFTYBEES directly — no survivorship, one liquid instrument, infinite capacity</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Signal on NIFTYBEES</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Sharpe</th>
+        <th>Sw/yr</th><th>Net-tax CAGR</th><th>Net-tax Calmar</th></tr></thead>
+      <tbody>
+        <tr><td>Buy &amp; hold</td><td>10.6%</td><td class="neg">−36.3%</td><td>0.29</td><td>0.75</td><td>0</td><td>10.6%</td><td>0.29</td></tr>
+        <tr class="win"><td>ST(7,3) — best net</td><td>10.7%</td><td class="pos">−14.2%</td><td class="g">0.75</td><td>1.11</td><td>5.0</td><td>9.0%</td><td class="g">0.53</td></tr>
+        <tr><td>100-DMA</td><td>10.3%</td><td>−14.2%</td><td>0.72</td><td>1.02</td><td>8.7</td><td>8.4%</td><td>0.52</td></tr>
+        <tr><td>50-DMA</td><td>10.1%</td><td>−14.0%</td><td>0.72</td><td>1.05</td><td>13.6</td><td>8.0%</td><td>0.49</td></tr>
+        <tr><td>200-DMA (too slow — hurts)</td><td>5.5%</td><td>−20.7%</td><td>0.27</td><td>0.55</td><td>9.5</td><td>4.6%</td><td>0.20</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">Net-of-tax: <b>~1.5pp CAGR give-up, drawdown more than halved (−36→−14%), Calmar and Sharpe
+      ~doubled.</b> Pre-tax the give-up is ~zero. ST(7,3) wins by a hair only because it switches least (least
+      tax) — 50/100-DMA tie, so it's <i>any</i> fast-medium trend filter, not ST magic. The <b>200-DMA is too
+      slow and hurts</b>. Robust on NIFTYBEES / JUNIORBEES / BANKBEES; <b>does not help GOLDBEES</b>.
+      <br><span class="m">(Numbers above are net-of-cost signal comparison; the table below adds the real-world liquid-fund &amp; settlement frictions.)</span></div>
+  </div>
+
+  <h3 style="margin-top:22px">Real-world frictions — liquid-fund idle return (net of tax/expense) + T+1 settlement</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Scenario (NIFTYBEES · ST 7,3)</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th>
+        <th>Net-of-all-tax CAGR</th><th>Net-tax Calmar</th></tr></thead>
+      <tbody>
+        <tr><td>Buy &amp; hold</td><td>10.6%</td><td class="neg">−36.3%</td><td>0.29</td><td>10.6%</td><td>0.29</td></tr>
+        <tr><td>Idealized (6.5% cash, instant switch)</td><td>10.7%</td><td>−14.2%</td><td>0.76</td><td>9.1%</td><td>0.54</td></tr>
+        <tr class="win"><td>REALISTIC (liquid 4.5% net + T+1 lag)</td><td>9.3%</td><td class="pos">−14.3%</td><td class="g">0.65</td><td>7.8%</td><td>0.46</td></tr>
+        <tr><td>Conservative (2-day lags)</td><td>9.0%</td><td>−16.6%</td><td>0.54</td><td>7.4%</td><td>0.41</td></tr>
+        <tr><td>Cash 0% (no liquid at all)</td><td>7.5%</td><td>−16.1%</td><td>0.47</td><td>6.0%</td><td>0.32</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">The <b>drawdown-halving is friction-proof</b> (−14 to −17% everywhere). The CAGR give-up grows
+      with realism: idealized ~0pp → realistic ~1.3pp pre-tax / <b>~2.8pp net of all tax</b>. The <b>liquid fund
+      is essential</b> (worth ~1.8pp vs 0% cash). The liquid-fund tax/expense (6.5%→4.5% net) costs ~0.8pp; the
+      T+1 settlement lag ~0.6pp. All of which is why the <b>tax-free futures/puts hedge</b> is the preferred build.</div>
+  </div>
+
+  <h2><span class="n">05</span>The best build — hedge with NIFTY futures (REAL-DATA VALIDATED)</h2>
+  <h3>Keep the ETF, short NIFTY futures on the red signal → recovers most of the give-up</h3>
+  <div class="card" style="border-left:3px solid var(--green)">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Approach (NIFTYBEES · ST 7,3)</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Sharpe</th></tr></thead>
+      <tbody>
+        <tr><td>Buy &amp; hold</td><td>10.5%</td><td class="neg">−36.3%</td><td>0.29</td><td>0.75</td></tr>
+        <tr><td>Cash-rotation (realistic, net all tax)</td><td>7.8%</td><td>−14.3%</td><td>0.46</td><td class="m">~0.9</td></tr>
+        <tr class="win"><td>Futures-hedge, ~3% carry (REAL data)</td><td class="g">9.9%</td><td class="pos">−14.8%</td><td class="g">0.67</td><td>1.03</td></tr>
+        <tr><td>Futures-hedge, ~4.6% (old modeled — too kind)</td><td class="m">10.5%</td><td class="m">−14.4%</td><td class="m">0.73</td><td class="m">1.09</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">Keep NIFTYBEES (never sold → <b>no equity CGT</b>, deferred like B&amp;H; <b>no T+1 lag</b>; margin
+      funded by <b>pledging the ETF</b>) and short NIFTY futures on the red signal. While hedged, long-ETF +
+      short-future ≈ a synthetic T-bill earning the carry. <b>Validated on REAL NSE bhavcopy basis</b> (196 points
+      across COVID / 2022 / 2018): the carry is ~+3% (not the +4.6% first modeled), and futures DO flip to
+      backwardation in crashes — already baked into that +3%. With the real carry: <b>~9.9% CAGR (−0.6pp vs B&amp;H)
+      at −15% drawdown (halved), Calmar 0.67, and Sharpe 1.03 — a genuine risk-adjusted improvement</b>, unlike the
+      Sharpe-neutral cash version. Recovers most of the ~2.8pp give-up. Residual: constant-carry approximation
+      (path effects in specific crashes), monthly roll execution, lot-size granularity, deferred ETF-tax liability.</div>
+  </div>
+  <h3 style="margin-top:22px">The backwardation check — real NIFTY futures basis (NSE bhavcopy, 196 pts)</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Regime</th><th>Data pts</th><th>Mean carry %/yr</th><th>Median</th><th>Days backwardation</th></tr></thead>
+      <tbody>
+        <tr><td>Hedge-OFF (ST green / uptrend)</td><td>49</td><td class="pos">+5.1%</td><td>+4.5%</td><td>0%</td></tr>
+        <tr class="win"><td>Hedge-ON (ST red / downtrend)</td><td>147</td><td>+3.1%</td><td>+1.1%</td><td>36%</td></tr>
+        <tr><td>— COVID 2020 (Feb–May)</td><td>60</td><td>+3.0%</td><td class="neg">−0.6%</td><td class="neg">52%</td></tr>
+        <tr><td>— 2022 selloff</td><td>59</td><td>+2.3%</td><td>+1.6%</td><td>27%</td></tr>
+        <tr><td>— 2018 correction</td><td>30</td><td>+4.5%</td><td>+4.4%</td><td>13%</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">The carry is the futures premium the short captures — positive in uptrends, flipping negative
+      (backwardation) in crashes exactly when the hedge is on, but the <b>average stays positive</b>, so the ~9.9%
+      hedge result (which uses the realized average) already accounts for it. The extreme −20 to −46%/yr figures are
+      near-expiry annualisation artifacts of tiny (−0.4%) absolute basis moves.</div>
+  </div>
+
+  <h2><span class="n">05b</span>Should we add a SHORT sleeve (bidirectional)? Tested — no</h2>
+  <h3>Instead of going flat when ST is red, go net short — on both daily &amp; weekly ST</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Book</th><th>Signal</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Sharpe</th></tr></thead>
+      <tbody>
+        <tr><td>Buy &amp; hold</td><td class="m">—</td><td>10.5%</td><td class="neg">−36.3%</td><td>0.29</td><td>0.75</td></tr>
+        <tr class="win"><td>Long-only (hedge, the winner)</td><td class="m">daily ST(7,3)</td><td class="g">9.9%</td><td class="pos">−14.8%</td><td class="g">0.67</td><td>1.03</td></tr>
+        <tr><td>Bidirectional long/short</td><td class="m">daily ST(7,3)</td><td class="neg">6.6%</td><td class="neg">−25.3%</td><td>0.26</td><td>0.51</td></tr>
+        <tr><td>Short-only (diagnostic)</td><td class="m">daily ST(7,3)</td><td class="neg">0.8%</td><td class="neg">−33.8%</td><td>0.02</td><td>0.13</td></tr>
+        <tr><td>Long-only (hedge)</td><td class="m">weekly ST(10,3)</td><td>6.3%</td><td>−31.1%</td><td>0.20</td><td>0.61</td></tr>
+        <tr><td>Bidirectional long/short</td><td class="m">weekly ST(10,3)</td><td class="neg">0.3%</td><td class="neg">−50.9%</td><td>0.00</td><td>0.09</td></tr>
+        <tr><td>Short-only (diagnostic)</td><td class="m">weekly ST(10,3)</td><td class="neg">−1.9%</td><td class="neg">−43.6%</td><td class="neg">neg</td><td class="neg">neg</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap"><b>The short side is a structural loser.</b> During ST-<b>red</b> periods the index still <b>RISES</b>
+      — <b>+6%/yr on daily ST, +19%/yr on weekly ST</b> — because the slow filter flags red <i>after</i> the drop and
+      stays red <i>through</i> the recovery, so you short into the bounce. Markets drift up and spend more time
+      recovering than crashing. Short-only earns ~nothing (daily +0.8%) or loses (weekly −1.9%) at huge drawdown, and
+      going bidirectional cuts CAGR and roughly DOUBLES the drawdown (worse than buy-and-hold). Weekly is worse than
+      daily throughout — too slow. <b>Stay long-only: hold the ETF, hedge to flat in downtrends, never short.</b></div>
+  </div>
+
+  <h2><span class="n">05c</span>Apply the overlay to our best-CAGR book? The value is inverse to return</h2>
+  <h3>Overlay the same NIFTY daily-ST(7,3) crash filter on the research/75 momentum book (31.9% CAGR)</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Version</th><th>CAGR</th><th>MaxDD</th><th>Calmar</th><th>Sharpe</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>Base momentum book (no overlay)</td><td>31.9%</td><td>−31.6%</td><td class="g">1.01</td><td>1.45</td></tr>
+        <tr><td>+ NIFTY-ST overlay → cash 4.5% net (pre-tax)</td><td>26.0%</td><td class="pos">−22.2%</td><td>1.17</td><td>1.45</td></tr>
+        <tr><td>+ NIFTY-ST overlay → cash 4.5% net (net ALL tax)</td><td class="neg">21.0%</td><td>−23.9%</td><td class="neg">0.88</td><td>1.18</td></tr>
+        <tr><td>+ NIFTY-ST overlay → hedge-carry (proxy)</td><td>25.4%</td><td>−22.2%</td><td>1.14</td><td>1.42</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">Idle cash at the honest ~4.5% NET liquid rate. The overlay cuts the drawdown (−32%→−22%) and
+      <b>pre-tax</b> lifts Calmar (1.01→1.17) — but <b>net of ALL tax it HURTS</b> (0.88 &lt; 1.01): pulling a
+      high-gain momentum book to cash ~5×/yr triggers heavy
+      short-term tax, and being out 39% of the time forgoes ~30%/yr (vs a 10% index). The hedge version (1.14)
+      avoids the tax but NIFTY futures don't cleanly hedge a midcap book (beta&gt;1, idiosyncratic risk) → optimistic.
+      <b>Key lesson: the crash overlay's value is INVERSELY related to the underlying's return</b> — it's a tool for
+      low-return, high-drawdown INDEX ETFs, not for an already-high-Calmar momentum book (best de-risked by its own
+      regime gate). And the flashy 46.5% "best CAGR" is itself the lower-cap capacity/survivorship mirage (research/62).</div>
+  </div>
+
+  <h2><span class="n">06</span>Cross-check on the LIVE momentum book — tested, rejected</h2>
+  <h3>Swap the book's 100-DMA regime gate for a daily-ST gate? No — the 100-DMA wins</h3>
+  <div class="card">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Gate on the momentum book</th><th>Net CAGR</th><th>Net MaxDD</th><th>Net Calmar</th>
+        <th>De-risk events</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>100-DMA (current, LIVE)</td><td>30.2%</td><td>−17.6%</td><td class="g">1.71</td><td>23</td></tr>
+        <tr><td>daily-ST(7,3)</td><td>24.6%</td><td>−18.5%</td><td>1.33</td><td>30</td></tr>
+        <tr><td>daily-ST(10,3)</td><td>22.9%</td><td>−18.3%</td><td>1.25</td><td>32</td></tr>
+        <tr><td>No gate</td><td>30.4%</td><td class="neg">−39.5%</td><td>0.77</td><td>0</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cap">On the live research/62 momentum book the ST gate is <b>twitchier</b> (de-risks 30–36× vs 23),
+      whipsaws out of recoveries, and gives up ~6pp CAGR for no drawdown benefit. The lesson isn't "ST beats a
+      moving-average gate" — it's "a <i>medium-speed</i> gate beats a <i>slow</i> one," and the 100-DMA already
+      is that. <b>Keep the live gate.</b></div>
+  </div>
+
+  <h2><span class="n">07</span>The client factsheet (Nifty 200, honest — vs the Nifty 50 index)</h2>
+  <figure>
+    <img src="/app/weekly-supertrend-nifty200.png" alt="Weekly SuperTrend Nifty 200 factsheet"/>
+    <figcaption>Growth of ₹1 (log), drawdown-vs-index, annual bars, monthly heatmap. Note: this factsheet uses
+      the Nifty&nbsp;50 index as benchmark — the very comparison Phase 1 showed is unfair (the gap is
+      survivorship + breadth). Read it alongside the fair-benchmark tables above.</figcaption>
+  </figure>
+
+  <h2><span class="n">08</span>Honest caveats</h2>
+  <ul>
+    <li><b>Survivorship bias</b> is the root of the illusion — today's index members applied to the past; the
+      returns are carried by names that are in the index <i>because</i> they 10–50×'d.</li>
+    <li><b>The DD-halving is a well-known result</b> (Faber-style tactical index timing), cleanly confirmed on
+      Indian ETFs. Value = clean + scalable + simple, not novelty.</li>
+    <li><b>Tax is the entire give-up</b> on the ETF version (~5 switches/yr realise STCG). A futures/puts hedge
+      recovers most of it.</li>
+    <li><b>Not universal</b> — it halves DD on trending, crash-prone equity indices; it hurt GOLDBEES.</li>
+    <li><b>Regime-dependent &amp; whipsaws</b> in choppy years (2025–26 lagged). Pre-tax "zero give-up" is
+      period-flattered by sharp, recoverable crashes (2011, 2020) the filter dodged.</li>
+  </ul>
+
+  <h2><span class="n">09</span>What's worth doing next</h2>
+  <ul>
+    <li><b>Futures-hedge carry — VALIDATED on real NSE bhavcopy</b> (done): real carry ~+3%, hedge does ~9.9% CAGR /
+      −15% DD / Calmar 0.67. Remaining before capital: a full daily basis series (vs the 196-pt crash-window sample)
+      for a path-exact P&L, and a paper-forward soak of the actual futures execution/roll.</li>
+    <li><b>Multi-ETF trend-timed sleeve</b> (equity indices; gold excluded — it didn't respond).</li>
+    <li><b>Signal robustness</b> — per-year whipsaw + walk-forward on ST(7,3) vs 100-DMA before committing.</li>
+  </ul>
+
+  <div class="foot">
+    <b>Reproducibility.</b> VPS <span class="m">market_data.db</span> (daily, snapshot 2026-07-07). Scripts:
+    <span class="m">research/73_weekly_supertrend_investing/scripts/</span> — st_weekly_engine · g1_signal_probe ·
+    g4_portfolio · fair_bench · all_bands_fair · crash_overlay · etf_st · etf_st2 (+ research/62 62i_st_gate).
+    SuperTrend = TradingView-accurate calc_supertrend. Costs 0.30% round-trip; STCG 15% / LTCG 10% (momentum
+    book 20%). Net of cost &amp; tax. Past performance is not indicative of future results.<br><br>
+    <a href="/app/backtest/weekly-supertrend-nifty200">→ Full data study &amp; comparison tables</a>
+  </div>
+</div>
+</body>
+</html>

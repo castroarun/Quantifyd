@@ -369,6 +369,13 @@ function NasOptCard() {
         >
           {chip('#EFF3FA', '#1E3A8A', 'research/54 · full study \u2197')}
         </Link>
+        <Link
+          to="/app/backtest/fardte-rescue"
+          style={{ textDecoration: 'none' }}
+          title="Why NAS-OPT only trades 0/1-DTE, and what the other days are worth (research/80)"
+        >
+          {chip('#FEF3C7', '#B45309', 'the other days ↗')}
+        </Link>
         {chip('#F1F0EC', '#5A5852', `${NASOPT_LOTS} lots/leg · ${NASOPT_QTY} qty`)}
         <span style={{ color: '#888780', fontSize: 12 }}>{state.system}</span>
       </div>

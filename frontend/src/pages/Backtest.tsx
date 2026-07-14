@@ -49,6 +49,9 @@ export default function Backtest() {
             </div>
             <div className={styles.cardFoot}>
               <span className={styles.metaDate}>{fmtDate(s.date)}</span>
+              {s.slug === 'momentum30-subselect' && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-pos, #1f9d55)', letterSpacing: '0.04em' }}>● LIVE BOOK</span>
+              )}
               <span className={styles.openLink}>Open report ›</span>
             </div>
           </Link>

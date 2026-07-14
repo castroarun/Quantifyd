@@ -12,7 +12,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'straddles' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'straddles' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -191,6 +191,20 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconFlask />}
             label="Backtest"
             active={active === 'backtest'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/momentum-paper"
+            icon={<IconBarChart />}
+            label="Momentum ₹20L"
+            active={active === 'momentum-paper'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/breakout-paper"
+            icon={<IconBarChart />}
+            label="Breakout ₹10L"
+            active={active === 'breakout-paper'}
             collapsed={collapsed}
           />
           <NavItem

@@ -124,6 +124,216 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'fardte-rescue',
+    title: 'Rescuing the far-from-expiry days — five ideas, four dead, one that works',
+    verdict:
+      'SIGNAL (not yet STRATEGY). research/79 showed NAS-OPT loses Rs441/day on DTE>=4. The cause is NOT the ' +
+      'stop and NOT that those days are wilder — it is that there is almost nothing to collect: intraday you ' +
+      'keep only 6-10% of the far-DTE premium you sell (vs 83% on expiry day), because theta lives in an ' +
+      "option's final DAYS, not its final hours. Every intraday fix therefore failed: 22 exit rules (best " +
+      '+Rs9/day), calm-day filters (the calm days are also the thin-premium days), the "Wed/Thu move more" ' +
+      'theory (an 11-day accident — across 11 years every weekday moves the same), and directional selling ' +
+      'after a break (the entire edge is smaller than the slippage). What DOES work is to stop fighting the ' +
+      'cause: HOLD the position for days. Enter Wednesday, sell a ~100pt strangle with 250pt wings, EXIT ' +
+      'FRIDAY: Calmar 1.83, max drawdown -Rs36k, 79% win — using the very capital NAS-OPT leaves idle Wed-Fri, ' +
+      'and flat again before Monday so it never competes for margin. NOT deployable yet: the stop is marked at ' +
+      'daily closes (optimistic), it has never touched a real chain, and the portfolio-correlation test is ' +
+      'still open — every book we run is already short volatility.',
+    status: 'COMPLETE',
+    date: '2026-07-14',
+    cardBlurb:
+      'NAS-OPT loses money on every day that is not expiry-day-or-the-day-before. Can those days be rescued — ' +
+      'by a better stop, a filter, a skew, or a different system? Five ideas tested on 11 years. Four are dead. ' +
+      'The one that works requires abandoning the intraday frame entirely.',
+    cardStats: [
+      { label: 'The cause', value: 'keep only 6-10% of premium' },
+      { label: 'Best answer', value: 'Condor, Wed→Fri' },
+      { label: 'Calmar', value: '1.83' },
+    ],
+    systemRules: {
+      intro:
+        'The candidate that survived. It is deliberately shaped around a CONSTRAINT, not just around returns: ' +
+        'NAS-OPT only trades 0/1-DTE (Mon/Tue), so the margin sits idle Wed-Fri. This uses exactly those idle ' +
+        'days and is flat again before Monday, so the two never compete for capital.',
+      sharedCoreTitle: 'The Wed→Fri iron condor',
+      sharedCore: [
+        { k: 'Entry', v: 'Wednesday close (DTE6 against the Tuesday weekly expiry)' },
+        { k: 'Structure', v: 'SELL ~100pt-OTM strangle, BUY wings 250pts beyond each short (iron condor)' },
+        { k: 'Exit', v: 'FRIDAY close — never held over a weekend, never held into Mon/Tue' },
+        { k: 'Stop', v: 'close the position if the combined premium doubles' },
+        { k: 'Size', v: '2 lots/leg (130 qty) — margin ~Rs52,500 (capped by the wings)' },
+        { k: 'Why the wings', v: 'not a compromise — the naked version has 2.5x the drawdown, 4x the margin and a WORSE Calmar' },
+        { k: 'Why exit Friday', v: 'the weekend hold is worth -Rs96/trade: the Monday gap costs more than 3 days of decay earn' },
+      ],
+      riskLayer: {
+        title: 'What each exit day costs and buys',
+        caption:
+          'The biggest P&L is the worst trade. Exiting Friday earns half as much at a fifth of the risk — and ' +
+          'uses the margin for 1.1 days instead of 3.7, which is the metric that actually matters when the ' +
+          'capital is needed elsewhere on Monday.',
+        columns: ['Variant', 'Mean/trade', 'Annual', 'Max DD', 'Calmar', 'Margin-days', 'Return/margin-day'],
+        rows: [
+          ['Condor 100/250 — EXIT FRIDAY', '+1,491', '+65,599', '-35,822', '1.83', '1.1', '265 bp'],
+          ['Condor 150/250 — exit Friday', '+1,443', '+63,492', '-38,235', '1.66', '1.1', '256 bp'],
+          ['Condor 150/250 — hold to expiry', '+2,021', '+88,931', '-104,337', '0.85', '3.7', '103 bp'],
+          ['Naked 100pt — hold to expiry', '+3,549', '+156,134', '-260,146', '0.60', '3.7', '41 bp'],
+        ],
+        highlightRows: [0],
+      },
+    },
+    system: {
+      intro:
+        'The question: research/79 proved the 0/1-DTE gate IS the edge and every other day is EV-negative. ' +
+        'Rather than accept that, this study asks whether the far-DTE days can be made to work at all.',
+      rows: [
+        { k: 'The problem', v: 'NAS-OPT on DTE>=4: -Rs441/day (33 days), vs +Rs1,578/day on 0/1-DTE' },
+        { k: 'Ideas tested', v: 'exit rules, band widths, premium SLs, calm-day filters, weekday skew, directional selling, overnight holding' },
+        { k: 'Evidence base', v: '58 real chain days (option P&L) + 2,693 days of NIFTY 5-min (predictability) + a calibrated engine (11 years of option P&L)' },
+        { k: 'Success bar', v: 'must beat the current rule AND be stable per-year AND survive slippage. Most ideas failed all three.' },
+      ],
+    },
+    conditions: {
+      intro: 'Three independent evidence bases, because each has a different blind spot.',
+      rows: [
+        { k: 'A. Real chain', v: 'options_data.db — 58 days, actual premiums, minute by minute. Used for the exit-rule sweep and the decomposition.' },
+        { k: 'B. NIFTY 5-min', v: '2,693 days (2015-02 → 2026-03) + India VIX. Used for anything about how the index MOVES — no option pricing needed.' },
+        { k: 'C. Synthetic engine', v: 'Black-Scholes on NIFTY + VIX as IV, IV multiplier calibrated PER DTE against the real chain, to ZERO signed error.' },
+        { k: 'Costs', v: 'Rs20/leg brokerage + slippage swept at 0 / 1 / 2% of premium. Everything quoted at 1%.' },
+        { k: 'ENGINE BIAS — caught', v: 'the first calibration minimised ABSOLUTE error and left the engine 7% too EXPENSIVE. Since the strategy SELLS that premium, it invented ~Rs1,430/trade. Recalibrated to zero SIGNED error; the "edge" fell from +4,980 to +3,549.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'WHY the far-DTE days lose — the keep rate is the whole story',
+        caption:
+          'How much of the premium you sell is still yours at 14:45. On expiry day you sell 45 points and keep ' +
+          '37. On Wednesday you sell 273 and keep 28 — carrying 6x the premium risk to harvest crumbs. And a ' +
+          'far-DTE option has real delta, so a 0.4% move costs about what a calm day pays. The asymmetry that ' +
+          'makes DTE0 work (+37.2 vs -3.3) is simply absent.',
+        columns: ['DTE', 'Credit sold', 'Kept if calm', 'KEEP RATE', 'Given back if the band is hit'],
+        rows: [
+          ['0', '44.6', '37.2', '83%', '-3.3'],
+          ['1', '138.2', '25.8', '19%', '+0.2'],
+          ['4', '178.2', '11.5', '6%', '-2.7'],
+          ['5', '190.1', '12.5', '7%', '-13.1'],
+          ['6', '273.0', '27.7', '10%', '-12.8'],
+        ],
+        highlightRows: [0],
+        heatmap: true,
+      },
+      {
+        title: 'The four dead ideas',
+        caption:
+          'Each was tested to the point where it could be killed. Note the ceiling: far-DTE pays +1,753 on a ' +
+          'calm day and costs -1,539 on a hit, at a 67% hit rate — so even a PERFECT COSTLESS stop caps out at ' +
+          '+578/day. No exit rule at the same band can beat that, which is why the sweep was doomed in advance.',
+        columns: ['Idea', 'Result', 'Why it died'],
+        rows: [
+          ['22 exit rules (bands 0.2-1.0%, premium SL, per-leg SL, no-stop, targets)', 'best +Rs9/day', 'the best of 22 tries on 33 days — i.e. zero. You cannot tune a stop into an edge that is not in the payoff.'],
+          ['"Wed/Thu move more" → trade the move', 'DEAD', 'an 11-day accident. Over 2,693 days P(move>=0.4%) is Mon 76.2 / Tue 77.1 / Wed 74.4 / Thu 78.3 / Fri 78.5% — identical.'],
+          ['Filter for calm days (VIX / CPR / opening range / gap)', 'DEAD', 'volatility IS predictable (VIX<12 → 50.3% hit vs >=22 → 97.6%, monotone) but breakeven needs <53.3% AND the calm days are also the thin-premium days.'],
+          ['Directional selling after the band breaks', 'DEAD', 'the whole edge is inside the slippage: +101/trade at 0%, -40 at 1%, -181 at 2%. Only 5/12 years positive.'],
+        ],
+      },
+      {
+        title: 'The trap that nearly fooled me — why win-rate and median are liars',
+        caption:
+          'The best directional-short cell had a +343 MEDIAN and a 60% WIN RATE — with a NEGATIVE MEAN. Many ' +
+          'small wins, rare -44,797 disasters. Reporting either of the first two numbers would have sold this ' +
+          'as a discovery. Its VIX conditioning was also non-monotone (+50 / -348 / -145 / +219) = noise — in ' +
+          'sharp contrast to the clean monotone structures elsewhere. That contrast is how you tell them apart.',
+        columns: ['Metric', 'Best directional-short cell', 'Reads as'],
+        rows: [
+          ['Win rate', '60%', 'a winner'],
+          ['Median trade', '+Rs343', 'a winner'],
+          ['MEAN trade', '-Rs40', 'a loser'],
+          ['Worst trade', '-Rs44,797', 'the reason'],
+        ],
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Calmar (Wed→Fri condor)', value: '1.83', tone: 'pos', hint: 'vs 0.72 holding to expiry' },
+        { label: 'Annual P&L', value: '+Rs65,599', tone: 'pos', hint: '2 lots, 528 trades over 11 years' },
+        { label: 'Max drawdown', value: '-Rs35,822', hint: 'vs -Rs124,749 holding to expiry' },
+        { label: 'Win rate', value: '79%', tone: 'pos' },
+        { label: 'Margin', value: '~Rs52,500', hint: 'capped by the wings; naked would need ~Rs233k' },
+        { label: 'Weekend hold', value: '-Rs96/trade', tone: 'neg', hint: 'the Monday gap costs more than 3 days of decay earn' },
+      ],
+      tables: [
+        {
+          title: 'Cost sensitivity — it survives where the directional short died',
+          columns: ['Slippage', 'Naked hold-to-expiry (mean/trade)'],
+          rows: [
+            ['0%', '+3,891'],
+            ['1%', '+3,549'],
+            ['2%', '+3,206'],
+          ],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/fardte-rescue.png',
+          caption:
+            'Equity and drawdown for the three shapes, the keep-rate by DTE that explains why intraday fails, ' +
+            'and the scoreboard. The biggest P&L (naked, hold-to-expiry) is the WORST trade once you look at risk.',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'Iron condor — enter Wednesday, ~100pt shorts / 250pt wings, EXIT FRIDAY',
+        summary:
+          'The only shape that earns on the capital NAS-OPT leaves idle, gets out before Monday so it never ' +
+          'competes for margin, and never carries a weekend gap. Half the P&L of holding to expiry, a fifth of ' +
+          'the risk, and 2.5x the return per rupee per day.',
+        metrics: [
+          { k: 'Calmar', v: '1.83 (vs 0.72 hold-to-expiry, 0.60 naked)' },
+          { k: 'Annual', v: '+Rs65,599 on ~Rs52,500 margin' },
+          { k: 'Max DD', v: '-Rs35,822' },
+          { k: 'Return per margin-day', v: '265 bp (vs 41 bp for the naked version)' },
+        ],
+        rejected: [
+          'NAKED strangle — makes the most money and is the WRONG trade: 2.5x drawdown, 4x margin, worse Calmar',
+          'Holding to Tuesday expiry — collides with NAS-OPT for margin exactly when it is needed',
+          'Holding over the weekend — worth -Rs96/trade; the Monday gap beats the weekend decay',
+        ],
+      },
+    ],
+    caveats: [
+      'NOT DEPLOYABLE YET. The stop ("premium doubles") is checked only at DAILY CLOSES. In reality it blows ' +
+      'through intraday and you exit worse — so the real P&L is BELOW every number here.',
+      'The strategy has never touched a real option chain. Every price came from the engine. The engine was ' +
+      'validated against 58 real days, but the STRATEGY was not.',
+      'THE CORRELATION QUESTION IS STILL OPEN, and it is the one that matters. Every options book we run — 916 ' +
+      'straddles, squeeze strangles, NAS-OPT — is short volatility. This is too. Its worst days are Covid and ' +
+      'Ukraine. If they all lose together, this does not diversify the book, it concentrates it. My first ' +
+      'attempt at this test was INVALID (the P&L was time-misaligned and the 916 proxy lost money, which the ' +
+      'real system does not) and is being rebuilt.',
+      'This is the variance risk premium — real, well-documented, and the textbook "pennies in front of a ' +
+      'steamroller". 11 years is not enough to see the steamroller.',
+      'The engine assumes the IV term structure (short-dated ~1.5x VIX, far-dated ~1.0x) is stable across 11 ' +
+      'years. It was fitted on 58 days.',
+    ],
+    githubLinks: [
+      {
+        label: 'research/80 — all scripts, logs and RESULTS.md',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/80_farDTE_rescue',
+      },
+      {
+        label: 'research/79 — the study that raised the question',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/79_nasopt_full_replay',
+      },
+    ],
+    projectPaths: [
+      'research/80_farDTE_rescue/results/RESULTS.md',
+      'research/80_farDTE_rescue/scripts/r80_phase1.py',
+      'research/80_farDTE_rescue/scripts/r80_overnight.py',
+      'research/80_farDTE_rescue/scripts/r80_capital.py',
+      'research/80_farDTE_rescue/scripts/r80_engine.py',
+    ],
+  },
+  {
     slug: 'nasopt-full-replay',
     title: 'NAS-OPT — replayed on every recorded chain day (is the 0/1-DTE gate the edge?)',
     verdict:

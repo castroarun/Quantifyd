@@ -185,6 +185,18 @@ export default function BacktestStudy() {
           </span>
         </div>
         <div className={styles.verdict}>{study.verdict}</div>
+        {study.slug === 'momentum30-subselect' && (
+          <Link
+            to="/momentum-paper"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14,
+              padding: '9px 16px', borderRadius: 8, background: 'var(--accent-pos, #1f9d55)',
+              color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            }}
+          >
+            ▶ View the live ₹20L paper book →
+          </Link>
+        )}
         <div className={styles.headerMeta}>
           <span>Study completed {fmtDate(study.date)}</span>
           <span className={styles.dot}>·</span>

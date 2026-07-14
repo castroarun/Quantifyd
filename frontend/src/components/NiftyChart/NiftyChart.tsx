@@ -9,15 +9,30 @@ interface Candle { t: string; o: number; h: number; l: number; c: number; }
 interface Cpr { P: number; TC: number; BC: number; R1: number; S1: number; R2: number; S2: number; }
 interface Data { updated: string; day: string; last: number | null; candles: Candle[]; dailyCpr?: Cpr | null; weeklyCpr?: Cpr | null; }
 
-const H = 440;
+const H_FULL = 440, H_COMPACT = 250;
+const MAX_SLOT = 28;       // cap candle spacing so a half-empty morning chart isn't all gaps
 const DAILY = '#22d3ee';   // bright cyan — Daily CPR (solid)
 const WEEKLY = '#a78bfa';  // violet — Weekly CPR (dashed); distinct from the gold price line
+
+const btn: React.CSSProperties = {
+  fontSize: 11, padding: '2px 9px', borderRadius: 6, cursor: 'pointer',
+  border: '1px solid var(--border,#232936)', background: 'transparent',
+  color: 'var(--ink-muted,#8b93a1)', lineHeight: 1.6,
+};
 
 export default function NiftyChart() {
   const [data, setData] = useState<Data | null>(null);
   const [ltp, setLtp] = useState<number | null>(null);
   const [w, setW] = useState(900);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('niftyChartCollapsed') === '1');
+  const [compact, setCompact] = useState(() => localStorage.getItem('niftyChartCompact') === '1');
   const wrapRef = useRef<HTMLDivElement>(null);
+  const H = compact ? H_COMPACT : H_FULL;
+
+  const toggleCollapsed = () =>
+    setCollapsed((v) => { localStorage.setItem('niftyChartCollapsed', v ? '0' : '1'); return !v; });
+  const toggleCompact = () =>
+    setCompact((v) => { localStorage.setItem('niftyChartCompact', v ? '0' : '1'); return !v; });
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -26,7 +41,7 @@ export default function NiftyChart() {
     ro.observe(el);
     setW(el.clientWidth || 900);
     return () => ro.disconnect();
-  }, []);
+  }, [collapsed, compact]);
 
   useEffect(() => {
     let on = true;
@@ -69,8 +84,8 @@ export default function NiftyChart() {
   const plotW = Math.max(w - padL - padR, 100);
   const plotH = H - padT - padB;
   const n = candles.length || 1;
-  const slot = plotW / n;
-  const bodyW = Math.max(2.5, Math.min(slot * 0.72, 22)); // wider bodies → smaller gaps
+  const slot = Math.min(plotW / n, MAX_SLOT);   // left-aligned, capped spacing → tight candles, grows through the day
+  const bodyW = Math.max(2.5, Math.min(slot * 0.72, 22));
   const y = (p: number) => padT + ((yMax - p) / (yMax - yMin)) * plotH;
   const x = (i: number) => padL + slot * i + slot / 2;
   const cur = ltp ?? data?.last ?? null;
@@ -118,46 +133,58 @@ export default function NiftyChart() {
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink,#e6e8ec)' }}>NIFTY 50 · 5-min</span>
         {cur != null && <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent,#f5b301)' }}>{cur.toFixed(2)}</span>}
         <span style={{ fontSize: 11, color: 'var(--ink-muted,#8b93a1)' }}>live {ltp ? '●' : '○'} · {data?.updated ?? '–'}</span>
-        <span style={{ fontSize: 10.5, color: DAILY, marginLeft: 'auto' }}>— Daily CPR</span>
-        <span style={{ fontSize: 10.5, color: WEEKLY }}>– – Weekly CPR</span>
+        {!collapsed && <span style={{ fontSize: 10.5, color: DAILY }}>— Daily CPR</span>}
+        {!collapsed && <span style={{ fontSize: 10.5, color: WEEKLY }}>– – Weekly CPR</span>}
+        <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          {!collapsed && (
+            <button style={btn} onClick={toggleCompact} title="Toggle chart height">
+              {compact ? '↕ Tall' : '↕ Compact'}
+            </button>
+          )}
+          <button style={btn} onClick={toggleCollapsed} title="Collapse the chart to see the Trade Book alone">
+            {collapsed ? 'Show chart ▸' : 'Hide chart ▾'}
+          </button>
+        </span>
       </div>
-      <div ref={wrapRef} style={{ height: H, width: '100%', background: 'var(--surface,#0f131a)', border: '1px solid var(--border,#232936)', borderRadius: 12, overflow: 'hidden' }}>
-        {candles.length === 0 ? (
-          <div style={{ padding: 24, color: 'var(--ink-muted,#8b93a1)', fontSize: 13 }}>Loading NIFTY candles…</div>
-        ) : (
-          <svg width={w} height={H} style={{ display: 'block' }}>
-            {gridVals.map((v, i) => (
-              <g key={'g' + i}>
-                <line x1={padL} x2={w - padR} y1={y(v)} y2={y(v)} stroke="var(--border,#232936)" strokeWidth={0.5} />
-                <text x={w - padR + 5} y={y(v) + 3} fontSize={10} fill="var(--ink-muted,#8b93a1)">{v.toFixed(0)}</text>
-              </g>
-            ))}
-            {renderCpr(data?.weeklyCpr, WEEKLY, '6 4', 'W')}
-            {renderCpr(data?.dailyCpr, DAILY, '', 'D')}
-            {candles.map((c, i) => {
-              const up = c.c >= c.o;
-              const col = up ? '#26a69a' : '#ef5350';
-              const yo = y(c.o), yc = y(c.c), bx = x(i);
-              return (
-                <g key={'c' + i}>
-                  <line x1={bx} x2={bx} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth={1} />
-                  <rect x={bx - bodyW / 2} y={Math.min(yo, yc)} width={bodyW} height={Math.max(1, Math.abs(yc - yo))} fill={col} />
+      {!collapsed && (
+        <div ref={wrapRef} style={{ height: H, width: '100%', background: 'var(--surface,#0f131a)', border: '1px solid var(--border,#232936)', borderRadius: 12, overflow: 'hidden' }}>
+          {candles.length === 0 ? (
+            <div style={{ padding: 24, color: 'var(--ink-muted,#8b93a1)', fontSize: 13 }}>Loading NIFTY candles…</div>
+          ) : (
+            <svg width={w} height={H} style={{ display: 'block' }}>
+              {gridVals.map((v, i) => (
+                <g key={'g' + i}>
+                  <line x1={padL} x2={w - padR} y1={y(v)} y2={y(v)} stroke="var(--border,#232936)" strokeWidth={0.5} />
+                  <text x={w - padR + 5} y={y(v) + 3} fontSize={10} fill="var(--ink-muted,#8b93a1)">{v.toFixed(0)}</text>
                 </g>
-              );
-            })}
-            {cur != null && (
-              <g>
-                <line x1={padL} x2={w - padR} y1={y(cur)} y2={y(cur)} stroke="var(--accent,#f5b301)" strokeWidth={0.8} strokeDasharray="4 3" />
-                <rect x={w - padR} y={y(cur) - 8} width={padR - 2} height={16} fill="var(--accent,#f5b301)" />
-                <text x={w - padR + 5} y={y(cur) + 3} fontSize={10} fontWeight={700} fill="#1a1300">{cur.toFixed(1)}</text>
-              </g>
-            )}
-            {candles.map((c, i) => (i % 6 === 0 ? (
-              <text key={'t' + i} x={x(i)} y={H - 7} fontSize={9} fill="var(--ink-muted,#8b93a1)" textAnchor="middle">{c.t}</text>
-            ) : null))}
-          </svg>
-        )}
-      </div>
+              ))}
+              {renderCpr(data?.weeklyCpr, WEEKLY, '6 4', 'W')}
+              {renderCpr(data?.dailyCpr, DAILY, '', 'D')}
+              {candles.map((c, i) => {
+                const up = c.c >= c.o;
+                const col = up ? '#26a69a' : '#ef5350';
+                const yo = y(c.o), yc = y(c.c), bx = x(i);
+                return (
+                  <g key={'c' + i}>
+                    <line x1={bx} x2={bx} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth={1} />
+                    <rect x={bx - bodyW / 2} y={Math.min(yo, yc)} width={bodyW} height={Math.max(1, Math.abs(yc - yo))} fill={col} />
+                  </g>
+                );
+              })}
+              {cur != null && (
+                <g>
+                  <line x1={padL} x2={w - padR} y1={y(cur)} y2={y(cur)} stroke="var(--accent,#f5b301)" strokeWidth={0.8} strokeDasharray="4 3" />
+                  <rect x={w - padR} y={y(cur) - 8} width={padR - 2} height={16} fill="var(--accent,#f5b301)" />
+                  <text x={w - padR + 5} y={y(cur) + 3} fontSize={10} fontWeight={700} fill="#1a1300">{cur.toFixed(1)}</text>
+                </g>
+              )}
+              {candles.map((c, i) => (i % 6 === 0 ? (
+                <text key={'t' + i} x={x(i)} y={H - 7} fontSize={9} fill="var(--ink-muted,#8b93a1)" textAnchor="middle">{c.t}</text>
+              ) : null))}
+            </svg>
+          )}
+        </div>
+      )}
     </section>
   );
 }

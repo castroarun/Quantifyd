@@ -26,6 +26,8 @@ import Scanner from './pages/Scanner';
 import BreakoutScanner from './pages/BreakoutScanner';
 import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
+import MomentumPaper from './pages/MomentumPaper';
+import BreakoutPaper from './pages/BreakoutPaper';
 import Journal from './pages/Journal';
 import JournalDay from './pages/JournalDay';
 import JournalTrade from './pages/JournalTrade';
@@ -242,6 +244,26 @@ export default function App() {
           <Protected>
             <AppLayout active="backtest">
               <BacktestStudy />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/momentum-paper"
+        element={
+          <Protected>
+            <AppLayout active="momentum-paper">
+              <MomentumPaper />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/breakout-paper"
+        element={
+          <Protected>
+            <AppLayout active="breakout-paper">
+              <BreakoutPaper />
             </AppLayout>
           </Protected>
         }
