@@ -40,6 +40,12 @@ from services.kite_service import get_access_token, KITE_API_KEY
 
 logger = logging.getLogger(__name__)
 
+# Consecutive ticks the premium must hold ABOVE a naked leg's trailing stop before we exit.
+# 1 = fire on the first print (the old behaviour -- a single fat/thin quote could stop a leg
+# out). 3 costs ~1-3s of lag and filters single-print noise. The count resets on any tick back
+# below the stop, so only a sustained breach exits. (user, 2026-07-14)
+NAKED_TRAIL_CONFIRM_TICKS = 3
+
 # ─── Constants ──────────────────────────────────────────────
 
 MARKET_OPEN = dtime(9, 15)
@@ -948,11 +954,24 @@ class NasTicker:
             cur['close'] = ltp
             # tick-level ST exit: don't wait for the 5-min candle close. If the live
             # premium breaches the last-computed SuperTrend, exit now (fix 2026-06-12).
+            # Exit only after the premium holds above the trail for N consecutive ticks --
+            # a single print above it used to be enough to close the leg.
             _stv = getattr(self, '_atm_naked_st_val', None)
             if _stv is not None and ltp > _stv:
-                logger.warning(f"[NAS-ATM] ST TICK-EXIT: live {ltp:.1f} > ST {_stv:.1f}")
-                self._atm_naked_st_val = None
-                threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
+                self_atm_breach_ticks = getattr(self, '_atm_breach_ticks', 0) + 1
+                if self_atm_breach_ticks >= NAKED_TRAIL_CONFIRM_TICKS:
+                    logger.warning(
+                        f"[NAS-ATM] TRAIL EXIT: live {ltp:.1f} > stop {_stv:.1f} "
+                        f"for {self_atm_breach_ticks} consecutive ticks")
+                    self._atm_naked_st_val = None
+                    self_atm_breach_ticks = 0
+                    threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
+                else:
+                    logger.info(
+                        f"[NAS-ATM] trail breach {self_atm_breach_ticks}/{NAKED_TRAIL_CONFIRM_TICKS} "
+                        f"(live {ltp:.1f} > stop {_stv:.1f}) -- not confirmed yet")
+            elif _stv is not None:
+                self_atm_breach_ticks = 0   # back below the stop -> start the count again
 
     def _check_atm_st_exit(self):
         """Exit the naked ATM leg if its premium closed above the trailing stop."""
@@ -1311,11 +1330,24 @@ class NasTicker:
             cur['high'] = max(cur['high'], ltp)
             cur['low'] = min(cur['low'], ltp)
             cur['close'] = ltp
+            # Exit only after the premium holds above the trail for N consecutive ticks --
+            # a single print above it used to be enough to close the leg.
             _stv = getattr(self, '_atm4_naked_st_val', None)
             if _stv is not None and ltp > _stv:
-                logger.warning(f"[NAS-ATM4] ST TICK-EXIT: live {ltp:.1f} > ST {_stv:.1f}")
-                self._atm4_naked_st_val = None
-                threading.Thread(target=self._fire_atm4_st_exit, daemon=True).start()
+                self_atm4_breach_ticks = getattr(self, '_atm4_breach_ticks', 0) + 1
+                if self_atm4_breach_ticks >= NAKED_TRAIL_CONFIRM_TICKS:
+                    logger.warning(
+                        f"[NAS-ATM4] TRAIL EXIT: live {ltp:.1f} > stop {_stv:.1f} "
+                        f"for {self_atm4_breach_ticks} consecutive ticks")
+                    self._atm4_naked_st_val = None
+                    self_atm4_breach_ticks = 0
+                    threading.Thread(target=self._fire_atm4_st_exit, daemon=True).start()
+                else:
+                    logger.info(
+                        f"[NAS-ATM4] trail breach {self_atm4_breach_ticks}/{NAKED_TRAIL_CONFIRM_TICKS} "
+                        f"(live {ltp:.1f} > stop {_stv:.1f}) -- not confirmed yet")
+            elif _stv is not None:
+                self_atm4_breach_ticks = 0   # back below the stop -> start the count again
 
     def _check_atm4_st_exit(self):
         """Exit the naked V4 leg if its premium closed above the trailing stop."""
