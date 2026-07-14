@@ -112,5 +112,12 @@ case halves (-20,280 -> -9,750). Monotonic: the less it fires, the more you earn
 the underlying moved AWAY from them, so they are pre-selected winners) and contains NO crash day,
 which is precisely what the stop insures against.
 
-**Next: trail WIDTH (ATR multiplier 3/4/5/6/8), not confirmation.** That is where monotonicity
-points -- fire less, keep the tail cap. Not run here.
+**P2 (width) RAN and FAILED the gate.** Widening 3->5 gains +773/ep on the mean but is better on
+only 23 episodes and worse on 35, and FLIPS SIGN across periods (Apr-May -899, Jun-Jul +1982) --
+the research/77 failure mode exactly. NOT adopted.
+
+**P2's one robust finding is a warning:** the tail cap is flat at -9,750 for every multiplier <=5,
+then BREAKS -- x8 gives -34,645, WORSE than no stop at all. A too-wide stop fires late, at the
+spike. Never widen beyond ~5.
+
+**OVERALL VERDICT: NO VALIDATED EDGE. Live config unchanged (K=3, ATR7 x3).**
