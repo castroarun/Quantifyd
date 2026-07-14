@@ -134,11 +134,15 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       '+Rs9/day), calm-day filters (the calm days are also the thin-premium days), the "Wed/Thu move more" ' +
       'theory (an 11-day accident — across 11 years every weekday moves the same), and directional selling ' +
       'after a break (the entire edge is smaller than the slippage). What DOES work is to stop fighting the ' +
-      'cause: HOLD the position for days. Enter Wednesday, sell a ~100pt strangle with 250pt wings, EXIT ' +
-      'FRIDAY: Calmar 1.83, max drawdown -Rs36k, 79% win — using the very capital NAS-OPT leaves idle Wed-Fri, ' +
-      'and flat again before Monday so it never competes for margin. NOT deployable yet: the stop is marked at ' +
-      'daily closes (optimistic), it has never touched a real chain, and the portfolio-correlation test is ' +
-      'still open — every book we run is already short volatility.',
+      'cause: HOLD the position for days. Enter Wednesday, sell a ~0.8%-OTM strangle with wings 1.0% beyond, ' +
+      'EXIT FRIDAY: Calmar 1.63, +Rs38,944/yr, 75% win, 11/12 years positive, ~100% p.a. on the margin it ' +
+      'ties up — using the capital NAS-OPT leaves idle Wed-Fri, and flat again before Monday so it never ' +
+      'competes for margin. CORRECTION: an earlier version quoted Calmar 1.83 / +Rs65,599. That run fixed the ' +
+      'strikes at +/-100 POINTS across 11 years while NIFTY tripled (8,000 -> 24,000) — 1.25% OTM in 2015 vs ' +
+      '0.42% today, i.e. three different strategies wearing one name. Re-run on PERCENTAGE strikes the edge is ' +
+      '38% smaller. NOT deployable: never tested on a real chain, the portfolio-correlation test is still open ' +
+      '(every book we run is already short volatility), and wider shorts were STILL improving at the edge of ' +
+      'the sweep — the optimum may lie outside what was tested.',
     status: 'COMPLETE',
     date: '2026-07-14',
     cardBlurb:
@@ -148,7 +152,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     cardStats: [
       { label: 'The cause', value: 'keep only 6-10% of premium' },
       { label: 'Best answer', value: 'Condor, Wed→Fri' },
-      { label: 'Calmar', value: '1.83' },
+      { label: 'Calmar', value: '1.63' },
     ],
     systemRules: {
       intro:
@@ -158,7 +162,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       sharedCoreTitle: 'The Wed→Fri iron condor',
       sharedCore: [
         { k: 'Entry', v: 'Wednesday close (DTE6 against the Tuesday weekly expiry)' },
-        { k: 'Structure', v: 'SELL ~100pt-OTM strangle, BUY wings 250pts beyond each short (iron condor)' },
+        { k: 'Structure', v: 'SELL strangle ~0.8% OTM either side, BUY wings 1.0% beyond each short. PERCENTAGE strikes, NOT fixed points -- see the correction.' },
         { k: 'Exit', v: 'FRIDAY close — never held over a weekend, never held into Mon/Tue' },
         { k: 'Stop', v: 'close the position if the combined premium doubles' },
         { k: 'Size', v: '2 lots/leg (130 qty) — margin ~Rs52,500 (capped by the wings)' },
@@ -171,12 +175,12 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           'The biggest P&L is the worst trade. Exiting Friday earns half as much at a fifth of the risk — and ' +
           'uses the margin for 1.1 days instead of 3.7, which is the metric that actually matters when the ' +
           'capital is needed elsewhere on Monday.',
-        columns: ['Variant', 'Mean/trade', 'Annual', 'Max DD', 'Calmar', 'Margin-days', 'Return/margin-day'],
+        columns: ['Shorts / Wings', 'Mean/trade', 'Annual', 'Max DD', 'Calmar', '+years', 'Return on margin'],
         rows: [
-          ['Condor 100/250 — EXIT FRIDAY', '+1,491', '+65,599', '-35,822', '1.83', '1.1', '265 bp'],
-          ['Condor 150/250 — exit Friday', '+1,443', '+63,492', '-38,235', '1.66', '1.1', '256 bp'],
-          ['Condor 150/250 — hold to expiry', '+2,021', '+88,931', '-104,337', '0.85', '3.7', '103 bp'],
-          ['Naked 100pt — hold to expiry', '+3,549', '+156,134', '-260,146', '0.60', '3.7', '41 bp'],
+          ['0.8% / 1.0% (stop x2)', '+880', '+38,944', '-23,820', '1.63', '11/12', '100% p.a.'],
+          ['0.8% / 0.6% (stop x1.5)', '+466', '+20,626', '-13,179', '1.57', '11/12', '66% p.a.'],
+          ['0.6% / 1.0% (stop x1.5)', '+757', '+33,507', '-22,627', '1.48', '10/12', '86% p.a.'],
+          ['0.4% / 0.6% (wings only)', '+196', '+8,637', '-17,392', '0.50', '9/12', '27% p.a.'],
         ],
         highlightRows: [0],
       },
@@ -253,10 +257,10 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     ],
     results: {
       metrics: [
-        { label: 'Calmar (Wed→Fri condor)', value: '1.83', tone: 'pos', hint: 'vs 0.72 holding to expiry' },
-        { label: 'Annual P&L', value: '+Rs65,599', tone: 'pos', hint: '2 lots, 528 trades over 11 years' },
-        { label: 'Max drawdown', value: '-Rs35,822', hint: 'vs -Rs124,749 holding to expiry' },
-        { label: 'Win rate', value: '79%', tone: 'pos' },
+        { label: 'Calmar (Wed→Fri condor)', value: '1.63', tone: 'pos', hint: 'CORRECTED — was 1.83 before the strike-drift fix' },
+        { label: 'Annual P&L', value: '+Rs38,944', tone: 'pos', hint: '2 lots, 531 trades, 11/12 years positive' },
+        { label: 'Max drawdown', value: '-Rs23,820', hint: '~100% p.a. on the margin it ties up' },
+        { label: 'Win rate', value: '75%', tone: 'pos' },
         { label: 'Margin', value: '~Rs52,500', hint: 'capped by the wings; naked would need ~Rs233k' },
         { label: 'Weekend hold', value: '-Rs96/trade', tone: 'neg', hint: 'the Monday gap costs more than 3 days of decay earn' },
       ],
@@ -301,8 +305,23 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
     ],
     caveats: [
-      'NOT DEPLOYABLE YET. The stop ("premium doubles") is checked only at DAILY CLOSES. In reality it blows ' +
-      'through intraday and you exit worse — so the real P&L is BELOW every number here.',
+      'STRIKE-DRIFT CORRECTION — the biggest error in this study. The first run fixed the strikes at +/-100 ' +
+      'POINTS across 2015-2026 while NIFTY went 8,000 -> 24,000: that is 1.25% OTM in 2015 and 0.42% today, ' +
+      'and the wings drifted from 3% wide to 1% wide. Three different strategies wearing one name. It inflated ' +
+      'the result ~38% (Calmar 1.94 -> 1.63; +Rs62k -> +Rs39k/yr) and manufactured a bogus "tighter stops are ' +
+      'strictly better" monotonicity. Everything is now on PERCENTAGE strikes.',
+      'THE 2x-CREDIT STOP WAS DEAD CODE on the condor: 2x a ~150pt credit is ~300 points, but the structure can ' +
+      'never be worth more than the wing width. The stop sat ABOVE its own ceiling and fired on 0-5% of trades. ' +
+      'THE WINGS ARE THE STOP — max loss is known at entry.',
+      'THE DECAY-CLOCK / SNEAK-IN IDEA IS DEAD. Decay IS lumpy on the real chain (Wednesday\'s last two hours ' +
+      'melt 2.4x faster than midday, ~Rs2,411 IF the index stands still). Traded for real, including the ' +
+      'afternoons that MOVE, the best window makes +Rs269/day over 33 days and every window before 14:30 LOSES. ' +
+      'The clock measured the reward with the risk removed.',
+      'WIDER SHORTS WERE STILL IMPROVING AT THE EDGE OF THE SWEEP (0.4 -> 0.6 -> 0.8% gives Calmar 0.98 -> 1.15 ' +
+      '-> 1.45). A metric that only improves as you approach the boundary of what was tested usually means the ' +
+      'optimum lies OUTSIDE it. 0.8% is not "the answer" until the sweep is extended and it turns.',
+      'Marking the stop every 5 minutes instead of at daily closes changes almost nothing — an earlier caveat ' +
+      'of mine that turned out not to matter.',
       'The strategy has never touched a real option chain. Every price came from the engine. The engine was ' +
       'validated against 58 real days, but the STRATEGY was not.',
       'THE CORRELATION QUESTION IS STILL OPEN, and it is the one that matters. Every options book we run — 916 ' +
