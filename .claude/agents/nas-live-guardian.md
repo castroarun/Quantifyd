@@ -53,8 +53,8 @@ ssh arun@94.136.185.54 'cd /home/arun/quantifyd && ./venv/bin/python3 scripts/na
    open. Root cause then: executor skipped the leg when the ticker's `live_ltps` lacked it.
    The harness flags this directly ("premium X ≥ SL Y but STILL OPEN"). If you ever see it on
    LIVE money, recommend the freeze immediately.
-2. **Naked-survivor ST not firing** — `atm/atm4_naked_st.active` with `current_close > st_value`
-   but still open. Means the SuperTrend exit isn't triggering (was: candle-close + flip-only).
+2. **Naked-survivor trail not firing** — `atm/atm4_naked_st.active` with `current_close > st_value`
+   but still open. Means the trailing exit isn't triggering (was: candle-close + flip-only).
 3. **Churn** — same strike exited then re-entered within `reentry_cooldown_min` (15). The harness
    audits today's trade logs for this. Root cause then: cooldown date-parse missed isoformat.
 4. **Subscription gap** — an active leg with no live premium in the ticker (a sibling variant's
@@ -63,6 +63,56 @@ ssh arun@94.136.185.54 'cd /home/arun/quantifyd && ./venv/bin/python3 scripts/na
    harness reconciles DB day-P&L vs Kite MTM.
 6. **Stale token / ticker dark** — Kite auth fails, or ticker `is_running=false` / `last_ltp`
    stale in market hours → SL/ST monitoring is blind. Harness checks both.
+
+### Added 2026-07-14 — found live, all four were silently broken. Check every one, every run.
+
+7. **A stop on the WRONG SIDE of the price** (naked legs). These are SHORT options: a short loses
+   when the premium RISES, so the trailing stop must sit **ABOVE** the live premium and ratchet
+   **down**. If `st_value < current_close`, the "stop" is not a stop — it can never protect the leg,
+   and depending on the exit rule it may fire constantly instead. **This is a FAIL, not a WARN.**
+   ```
+   curl -s http://127.0.0.1:5000/api/nas/ticker/status | python3 -c "
+   import sys,json; d=json.load(sys.stdin)
+   for k in ('atm_naked_st','atm4_naked_st'):
+       v=d.get(k) or {}
+       if v.get('active') and v.get('st_value') and v.get('current_close'):
+           bad = v['st_value'] < v['current_close']
+           print(k, v['tradingsymbol'], 'stop', v['st_value'], 'close', v['current_close'],
+                 'BROKEN - stop is BELOW the premium' if bad else 'ok')"
+   ```
+   Root cause when it happened: `_compute_supertrend` initialises `direction=1` (UP) and can only
+   flip when the premium closes below a band 3×ATR beneath it — which a decaying premium never
+   does — so it returned the LOWER band forever. Fixed by `compute_short_trailing_stop()`.
+
+8. **An exit that fires but closes nothing (cross-book routing)** — the journal shows `ST EXIT` /
+   `trail exit` / `TICK-EXIT` repeatedly while the leg is *still ACTIVE*. That means the exit
+   handler is querying a different book than the one holding the leg (the handlers used to
+   hardcode the SQUEEZE db while the leg lived in the 9:16 db → `get_active_positions()` returned
+   `[]` and it bailed out silently, every 5 minutes). **Any exit that logs but does not close is a
+   FAIL.** Cross-check: the naked leg's `tradingsymbol` must be ACTIVE in the book the handler
+   resolves (`_resolve_naked_owner`), and a fired exit must be followed by a CLOSED row.
+   *Two bugs can mask each other — a broken stop that also cannot execute looks calm. Never infer
+   "the stop is fine" from "nothing has been closed".*
+
+9. **A PAPER leg placing a REAL order** — every Kite order must map to a DB row with `mode='live'`.
+   Reconcile by `kite_order_id`: **any COMPLETE Kite order whose id is absent from every
+   `nas_*_trading.db` is either a leak or not ours.** Discriminator:
+   - **`product == 'NRML'` → Arun's OWN manual trades. IGNORE them.** Never flag, never square.
+   - **`product == 'MIS'` → Quantifyd.** Every MIS order must have a matching DB leg.
+   Root cause when it happened: the ATM4 roll path computed live/paper from the legacy
+   `paper_trading_mode`+`live_weekdays` rule while the entry path used the day-matrix, so a paper
+   leg rolled into a real 650-qty order. Rolls now inherit the parent leg's mode.
+
+10. **Size anomaly** — since 2026-07-14 **every** NAS book, live *and* paper, trades **2 lots =
+    130 qty**. A **650-qty MIS** leg is the old 10-lot paper size leaking into a live order → treat
+    as a live incident. (650 qty on **NRML** is just Arun's manual book — ignore.)
+
+11. **Do NOT report ATM2's `sl_price` as its arm.** On any system with `move_stop_pct` set (ATM2,
+    916-ATM2, NAS-OPT) the per-leg premium SL is **deliberately disabled in code** and will never
+    fire — the sole trigger is the ±0.4% underlying move-stop band around `entry_spot`
+    (`entry_spot × (1 ± 0.004)`), which closes BOTH legs and re-centres. Quote the NIFTY band and
+    the distance to it, never the dead premium number. A premium above ATM2's stored `sl_price` is
+    **expected**, not a stop failure — do not raise it.
 
 ## When asked to MONITOR (the 5-min job)
 Loop while the market is open (09:15–15:30 IST):
