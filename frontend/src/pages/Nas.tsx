@@ -153,15 +153,18 @@ function nasOptTradeBookState(today: any, trades: any[]): NASState {
   const pe: NASPosition[] = [];
   const closed_today: NASPosition[] = [];
   if (today && today.status && today.status !== 'CLOSED') {
-    ce.push({ leg: 'CE', tradingsymbol: today.ce_sym, strike: today.ce_strike, entry_price: today.ce_entry, qty: QTY, entry_time: today.entry_time, status: 'ACTIVE' });
-    pe.push({ leg: 'PE', tradingsymbol: today.pe_sym, strike: today.pe_strike, entry_price: today.pe_entry, qty: QTY, entry_time: today.entry_time, status: 'ACTIVE' });
+    // entry_spot drives the +/-0.4% move-stop band in the ARM column -- NAS-OPT's ONLY exit
+    // trigger besides the 14:45 time exit. Without it the arm rendered as '--', which read as
+    // 'no stop' when in fact the band is checked every minute (services/nas_opt.py MOVE_PCT).
+    ce.push({ leg: 'CE', tradingsymbol: today.ce_sym, strike: today.ce_strike, entry_price: today.ce_entry, qty: QTY, entry_time: today.entry_time, status: 'ACTIVE', entry_spot: today.entry_spot, mode: 'paper' });
+    pe.push({ leg: 'PE', tradingsymbol: today.pe_sym, strike: today.pe_strike, entry_price: today.pe_entry, qty: QTY, entry_time: today.entry_time, status: 'ACTIVE', entry_spot: today.entry_spot, mode: 'paper' });
   }
   const dayStr = new Date().toISOString().slice(0, 10);
   (trades || [])
     .filter((x) => x.status === 'CLOSED' && x.mode === 'paper' && x.day === dayStr)
     .forEach((x) => {
-      closed_today.push({ leg: 'CE', strike: x.ce_strike, entry_price: x.ce_entry, exit_price: x.ce_exit, qty: QTY, pnl_inr: Math.round(((x.ce_entry ?? 0) - (x.ce_exit ?? 0)) * QTY), entry_time: x.entry_time, exit_time: x.exit_time, exit_reason: x.exit_reason });
-      closed_today.push({ leg: 'PE', strike: x.pe_strike, entry_price: x.pe_entry, exit_price: x.pe_exit, qty: QTY, pnl_inr: Math.round(((x.pe_entry ?? 0) - (x.pe_exit ?? 0)) * QTY), entry_time: x.entry_time, exit_time: x.exit_time, exit_reason: x.exit_reason });
+      closed_today.push({ leg: 'CE', strike: x.ce_strike, entry_price: x.ce_entry, exit_price: x.ce_exit, qty: QTY, pnl_inr: Math.round(((x.ce_entry ?? 0) - (x.ce_exit ?? 0)) * QTY), entry_time: x.entry_time, exit_time: x.exit_time, exit_reason: x.exit_reason, entry_spot: x.entry_spot, mode: 'paper' });
+      closed_today.push({ leg: 'PE', strike: x.pe_strike, entry_price: x.pe_entry, exit_price: x.pe_exit, qty: QTY, pnl_inr: Math.round(((x.pe_entry ?? 0) - (x.pe_exit ?? 0)) * QTY), entry_time: x.entry_time, exit_time: x.exit_time, exit_reason: x.exit_reason, entry_spot: x.entry_spot, mode: 'paper' });
     });
   return { stats: {}, positions: { ce, pe, total_active: ce.length + pe.length, closed_today } };
 }
