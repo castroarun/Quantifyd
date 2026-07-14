@@ -362,7 +362,13 @@ function NasOptCard() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
         <span style={{ fontSize: 16, fontWeight: 700, color: '#1B1B1A' }}>NAS-OPT</span>
         {chip('#FEF3C7', '#B45309', 'PAPER')}
-        {chip('#EFF3FA', '#1E3A8A', 'research/54')}
+        <Link
+          to="/app/backtest/nasopt-full-replay"
+          style={{ textDecoration: 'none' }}
+          title="Full study: NAS-OPT replayed on all 58 recorded chain days — is the 0/1-DTE gate the edge?"
+        >
+          {chip('#EFF3FA', '#1E3A8A', 'research/54 · full study \u2197')}
+        </Link>
         {chip('#F1F0EC', '#5A5852', `${NASOPT_LOTS} lots/leg · ${NASOPT_QTY} qty`)}
         <span style={{ color: '#888780', fontSize: 12 }}>{state.system}</span>
       </div>

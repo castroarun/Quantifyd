@@ -124,6 +124,380 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'nasopt-full-replay',
+    title: 'NAS-OPT — replayed on every recorded chain day (is the 0/1-DTE gate the edge?)',
+    verdict:
+      'STRATEGY (as defined) — and the DTE gate IS the strategy, not a detail. Replayed on all 58 recorded ' +
+      'chain days: on 0/1-DTE (the days it actually trades) it makes +Rs1,578/day and wins 68% of the time. ' +
+      'On every OTHER day it LOSES money (-Rs441/day, win 33%). Trading it every day does not dilute the ' +
+      'edge, it CANCELS a third of it: the total falls from +Rs39,440 to +Rs24,871. The decay with ' +
+      'days-to-expiry is clean and monotone — DTE0 +2,045, DTE1 +1,147, DTE4 +494, DTE5 -953, DTE6 -865. ' +
+      'Near expiry theta is fat and the index rarely travels far enough to hit the +/-0.4% band; far from ' +
+      'expiry the premium is rich, the band gets hit anyway, and the move-stop is pure cost. This settles ' +
+      'the 2026-07-14 decision to paper-trade NAS-OPT on every weekday: those extra days stay tagged ' +
+      'OBSERVATIONAL and must never be counted into the system result.',
+    status: 'COMPLETE',
+    date: '2026-07-14',
+    cardBlurb:
+      'NAS-OPT only enters on expiry day and the day before. Is that restriction the edge, or just a habit? ' +
+      'Replayed the live rules on all 58 recorded chain days — validated first against the 11 days it really ' +
+      'paper-traded. The gate is the edge: every other day is EV-negative.',
+    cardStats: [
+      { label: '0/1-DTE (the system)', value: '+Rs1,578/day' },
+      { label: 'DTE>=2 (all other days)', value: '-Rs441/day' },
+      { label: 'Verdict', value: 'DTE gate = the edge' },
+    ],
+    system: {
+      intro:
+        'NAS-OPT (research/54) sells a ~100pt-OTM NIFTY strangle at 09:20 and manages it with a single ' +
+        'underlying move-stop — no per-leg premium SL. It enters ONLY on 0/1-DTE days. This study asks ' +
+        'whether that DTE restriction is doing the work.',
+      rows: [
+        { k: 'Entry', v: '09:20 — SELL ~100pt-OTM strangle (2 strikes either side of ATM), front weekly expiry' },
+        { k: 'Risk control', v: '+/-0.4% UNDERLYING move-stop — closes BOTH legs. Checked every minute 09:21-14:44' },
+        { k: 'No premium SL', v: 'deliberate (research/54): the band is the sole control, one-and-done' },
+        { k: 'Exit', v: '14:45 time-exit if the band was never hit' },
+        { k: 'Sizing', v: '2 lots/leg = 130 qty (LOT 65). Net of Rs80/leg round-trip brokerage' },
+        { k: 'The question', v: 'live it trades 0/1-DTE only. What happens on the other 33 days?' },
+      ],
+    },
+    conditions: {
+      intro:
+        'Replayed against the REAL recorded option chain, minute by minute — the same data the live paper ' +
+        'book marks itself from, so live == replay by construction.',
+      rows: [
+        { k: 'Data', v: 'options_data.db chain recorder — 58 days, 2026-04-20 to 2026-07-14' },
+        { k: 'Spot', v: 'underlying_spot column, 100% populated on every day in the window' },
+        { k: 'Cadence', v: '~370 snapshots/day (roughly 1/min); the move-stop is evaluated on every one' },
+        { k: 'Costs', v: 'Rs80/leg round-trip brokerage. No extra slippage modelled (see caveats)' },
+        { k: 'VALIDATION', v: '11 of the 58 days were really paper-traded live — replay checked leg-for-leg against that record BEFORE trusting the other 47' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Validation — replay vs the 11 days actually paper-traded live',
+        caption:
+          'Same strikes on 8/11 days, and there the difference is under Rs300. The 3 mismatches are NOT a ' +
+          'coding error: the 09:20 spot sat near a 25-pt boundary, so ATM rounding flipped the strikes by 50. ' +
+          'That is a real fragility of NAS-OPT — which tick it reads at 09:20 can swing a day by thousands.',
+        columns: ['Day', 'Live strikes', 'Replay strikes', 'Live P&L', 'Replay P&L', 'Diff'],
+        rows: [
+          ['2026-06-08', '23000P/23200C', '23050P/23250C', '-2,390', '+477', '+2,867'],
+          ['2026-06-15', '23850P/24050C', 'same', '+2,895', '+2,460', '-435'],
+          ['2026-06-16', '23850P/24050C', 'same', '+4,702', '+4,644', '-58'],
+          ['2026-06-22', '24050P/24250C', '24000P/24200C', '+3,617', '+2,973', '-644'],
+          ['2026-06-23', '23950P/24150C', '24000P/24200C', '-2,123', '-4,222', '-2,099'],
+          ['2026-06-29', '24000P/24200C', 'same', '-1,948', '-1,987', '-39'],
+          ['2026-06-30', '23850P/24050C', 'same', '+6,041', '+6,138', '+97'],
+          ['2026-07-06', '24250P/24450C', 'same', '-1,512', '-1,616', '-104'],
+          ['2026-07-07', '24350P/24550C', 'same', '+3,110', '+3,064', '-46'],
+          ['2026-07-13', '23950P/24150C', 'same', '-1,993', '-1,973', '+20'],
+          ['2026-07-14', '24000P/24200C', 'same', '+4,962', '+4,676', '-286'],
+          ['TOTAL', '', '', '+15,361', '+14,634', 'within 5%'],
+        ],
+        highlightRows: [11],
+      },
+      {
+        title: 'The edge decays monotonically with days-to-expiry',
+        caption:
+          'Not a peak, not noise — a structure. DTE 2 and 3 simply do not occur in the window (Tue expiry), ' +
+          'so there is a gap in the curve.',
+        columns: ['DTE at entry', 'Weekday', 'Days', 'Total', 'Mean/day', 'Win%'],
+        rows: [
+          ['0', 'Tue (expiry)', '12', '+24,535', '+2,045', '67%'],
+          ['1', 'Mon', '13', '+14,905', '+1,147', '69%'],
+          ['4', 'Fri', '11', '+5,429', '+494', '55%'],
+          ['5', 'Thu', '11', '-10,478', '-953', '27%'],
+          ['6', 'Wed', '11', '-9,520', '-865', '18%'],
+        ],
+        highlightRows: [0, 1],
+        heatmap: true,
+      },
+      {
+        title: 'The move-stop is not broken — it is protecting positions that should not exist',
+        caption:
+          'On the days the system actually trades, the move-stop costs only -Rs325/day. On far-DTE days it ' +
+          'costs -Rs1,539/day. The stop is being asked to defend a bad entry.',
+        columns: ['Slice', 'Held to 14:45 (days)', 'Held mean', 'Move-stop (days)', 'Move-stop mean'],
+        rows: [
+          ['0/1-DTE (the system)', '11', '+3,999', '14', '-325'],
+          ['DTE>=2 (observational)', '11', '+1,753', '22', '-1,539'],
+        ],
+        highlightRows: [0],
+      },
+    ],
+    results: {
+      metrics: [
+        { label: '0/1-DTE mean/day', value: '+Rs1,578', tone: 'pos', hint: '25 days, 68% win' },
+        { label: 'DTE>=2 mean/day', value: '-Rs441', tone: 'neg', hint: '33 days, 33% win' },
+        { label: '0/1-DTE total', value: '+Rs39,440', tone: 'pos', hint: 'vs +Rs24,871 if traded every day' },
+        { label: 'Cost of trading all days', value: '-Rs14,569', tone: 'neg', hint: 'a third of the edge, cancelled' },
+        { label: 'Worst day (system)', value: '-Rs4,222', hint: '2026-06-23, DTE0' },
+        { label: 'Days replayed', value: '58', hint: '2026-04-20 to 2026-07-14' },
+      ],
+      tables: [
+        {
+          title: 'Headline — the DTE gate is the strategy',
+          columns: ['Slice', 'Days', 'Total', 'Mean', 'Median', 'Win%', 'Worst'],
+          rows: [
+            ['SYSTEM (0/1-DTE)', '25', '+39,440', '+1,578', '+2,024', '68%', '-4,222'],
+            ['OBSERVATIONAL (DTE>=2)', '33', '-14,569', '-441', '-823', '33%', '-4,866'],
+            ['ALL DAYS', '58', '+24,871', '+429', '-160', '48%', '-4,866'],
+          ],
+          highlightRows: [0],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/nasopt-full-replay.png',
+          caption:
+            'Cumulative P&L (0/1-DTE only vs every day), mean P&L by DTE, and where the move-stop actually ' +
+            'costs money. 58 days, 2 lots/leg, net of brokerage.',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'Keep the 0/1-DTE gate exactly as it is',
+        summary:
+          'The restriction is not a habit inherited from research/54 — it IS the edge. Every day outside it ' +
+          'is EV-negative, and adding those days cancels a third of the profit.',
+        metrics: [
+          { k: '0/1-DTE', v: '+Rs1,578/day, 68% win, 25 days' },
+          { k: 'Everything else', v: '-Rs441/day, 33% win, 33 days' },
+          { k: 'DTE0 alone', v: '+Rs2,045/day (the strongest day)' },
+        ],
+        rejected: [
+          'Trading NAS-OPT on all weekdays as a SYSTEM — cancels a third of the edge (+39,440 -> +24,871)',
+          'Reading the all-weekday paper record as the strategy result — those days stay OBSERVATIONAL',
+        ],
+      },
+    ],
+    caveats: [
+      '58 days, ONE benign regime (Apr-Jul 2026). No crash, no vol spike. A naked-ish 0.4% band is exactly ' +
+      'the structure a gap destroys, and no gap is in this sample.',
+      'ATM-ROUNDING FRAGILITY: if the 09:20 spot sits near a 25-pt boundary, the strikes flip by 50 and the ' +
+      'day swings by thousands. 3 of the 11 validation days did exactly this. This is a property of the ' +
+      'strategy, not of the test — and it means day-level P&L is genuinely noisy.',
+      'Only Rs80/leg brokerage is charged. Fills are the recorded chain print at the trigger snapshot. A ' +
+      'proper slippage sensitivity is OWED before this is called a validated STRATEGY at G4.',
+      'DTE 2 and 3 do not occur in the window (Tuesday expiry), so the decay curve has a gap between 1 and 4.',
+      'The 33 observational days are a REPLAY, not a live record — the live all-weekday paper book only ' +
+      'started on 2026-07-14.',
+    ],
+    githubLinks: [
+      {
+        label: 'research/79 — runner + per-day CSV + RESULTS.md',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/79_nasopt_full_replay',
+      },
+      {
+        label: 'services/nas_opt.py — the live system being replayed',
+        href: 'https://github.com/castroarun/Quantifyd/blob/main/services/nas_opt.py',
+      },
+    ],
+    projectPaths: [
+      'research/79_nasopt_full_replay/scripts/run_nasopt_replay.py',
+      'research/79_nasopt_full_replay/results/nasopt_daily.csv',
+      'research/79_nasopt_full_replay/results/RESULTS.md',
+      'services/nas_opt.py',
+    ],
+  },
+  {
+    slug: 'nas-sl-reanchor',
+    title: 'NAS 09:16 Straddle — Is the 30% stop-loss too loose? (SL tightening / re-anchor)',
+    verdict:
+      'NO EDGE (regime-unstable). The idea — that a 30% stop anchored to the MORNING premium sits far too ' +
+      'wide once theta has banked the gain — is intuitively right, and the SL record is ugly (avg −Rs7,526 ' +
+      'per ATM stop-out). But no tested alternative beats it robustly. Continuous tightening ' +
+      '(trail-to-breakeven, ratchet) is REFUTED — it whipsaws you out of legs that recover (win rate ' +
+      'collapses to 27–33%). A single LATE re-anchor at 12:00 looked like a winner (+Rs1,225/lot) — until ' +
+      'the shadow on ACTUAL traded legs showed the benefit FLIPS SIGN across periods: −Rs8,831/day ' +
+      '(Apr–May) vs +Rs7,246/day (Jun–Jul), ≈ −Rs457/day over the full 48-day real record. The favourable ' +
+      'result was a WINDOW ARTIFACT: the chain reconstruction needs a 09:15–09:18 quote window, and the ' +
+      'Apr–May days start at 09:20, so they were silently dropped — fitting the winning regime. ' +
+      'Ex-ante gating (CPR width, gap, VIX, opening-range) has ZERO predictive power. DO NOT deploy. ' +
+      'A zero-risk shadow now runs daily on the real legs to accumulate out-of-sample evidence.',
+    status: 'COMPLETE',
+    date: '2026-07-10',
+    cardBlurb:
+      'Does tightening the per-leg stop intraday beat the fixed 30%-off-morning stop? Tested on real option ' +
+      'premiums, a 743-day synthetic, and a shadow over the actual traded legs. Answer: no — the winner was a ' +
+      'sampling artifact and the edge flips sign by regime.',
+    cardStats: [
+      { label: 'Verdict', value: 'NO EDGE' },
+      { label: 'Full real record', value: '−Rs457/day' },
+      { label: 'Sign flip', value: '−8,831 → +7,246/day' },
+    ],
+    system: {
+      intro:
+        'The live NAS 09:16 systems sell an ATM straddle at 09:16 and manage each leg with a per-leg stop ' +
+        'fixed at 30% above its ENTRY (morning) premium, squaring off at 15:15. The question: once decay has ' +
+        'banked most of the gain, that stop sits miles above the now-cheap premium — should it be brought in?',
+      rows: [
+        { k: 'Entry', v: 'SELL ATM straddle (CE+PE) at 09:16, front weekly expiry' },
+        { k: 'Current stop (baseline)', v: 'per leg: SL = entry premium x 1.3 (30% off MORNING premium), fixed all day' },
+        { k: 'Exit', v: 'EOD square-off 15:15 (or per-leg stop, whichever first)' },
+        { k: 'Sizing', v: 'reported per 1 lot = 65 qty (live runs 2 lots)' },
+        { k: 'All DTE', v: 'systems trade every weekday — DTE 0 through 4 all included' },
+      ],
+    },
+    conditions: {
+      intro: 'Three independent evidence bases were used, deliberately, because each has a different blind spot.',
+      rows: [
+        { k: 'A. Real option premiums', v: 'options_data.db chain recorder; ATM derived from the chain (strike where CE≈PE)' },
+        { k: 'B. Synthetic (long history)', v: 'Black-Scholes on NIFTY 5-min spot + REAL India VIX as IV; 743 days (2023-01→2026-03)' },
+        { k: 'C. Actual traded legs', v: 'the 916 systems real recorded legs replayed against their real chain paths — 48 days, 396 legs' },
+        { k: 'Cost', v: '0.15% per leg per transaction; sensitivity run at 0.10 / 0.15 / 0.20%' },
+        { k: 'Policies tested', v: 'baseline 30%; trail-to-breakeven; ratchet (0.2/0.3/0.4); re-anchor at 11:15/12:00/13:00/14:00; profit-lock 40/50/60%' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Per-leg SL policies on REAL premiums (n=27 days) — this is what looked like a winner',
+        caption:
+          'Re-anchor = at time T, reset the stop to 30% above the THEN-CURRENT premium (only tightens if the leg has decayed). ' +
+          'Net of 0.15%/leg, per 1 lot. NOTE: this 27-day sample later proved to be the favourable regime only.',
+        columns: ['Policy', 'Mean net/lot', 'vs baseline', 'Win %', 'Worst day'],
+        rows: [
+          ['Re-anchor @ 12:00', '+2,678', '+1,225', '74%', '−3,566'],
+          ['Re-anchor @ 13:00', '+2,458', '+1,005', '78%', '−8,644'],
+          ['Re-anchor @ 14:00', '+1,815', '+362', '70%', '−17,510'],
+          ['BASELINE (30% off morning)', '+1,453', '0', '70%', '−17,510'],
+          ['Profit-lock 50%', '+1,432', '−21', '63%', '−10,164'],
+          ['Trail-to-breakeven', '+736', '−717', '33%', '−10,164'],
+          ['Ratchet 0.2 / 0.3 / 0.4', '−72 / −402 / −284', '−1,525 to −1,855', '37–56%', '—'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'THE KILLER — shadow on ACTUAL traded legs (48 days, 396 real legs, zero orders placed)',
+        caption:
+          'Every real 916 leg replayed against its own chain path within [entry_time, exit_time]; only legs LIVE at 12:00 are re-anchored. ' +
+          'The benefit flips sign between halves of the record — that is regime instability, not a bug.',
+        columns: ['Window', 'Days', 'Actual (30% SL)', 'Shadow (re-anchor 12:00)', 'Diff'],
+        rows: [
+          ['Apr 20 – Jun 02', '23', '+247,869', '+44,752', '−203,117  (−8,831/day)'],
+          ['Jun 03 – Jul 10', '25', '+123,433', '+304,603', '+181,170  (+7,246/day)'],
+          ['FULL RECORD', '48', '+371,302', '+349,355', '−21,947  (−457/day)'],
+        ],
+        highlightRows: [2],
+        heatmap: false,
+      },
+      {
+        title: 'Can we GATE it? Ex-ante predictors of when the re-anchor helps — all dead',
+        caption:
+          'Correlation of the per-day re-anchor benefit with features known BEFORE noon. Bucket tables showed tempting ' +
+          'patterns (gap-up>60 +2,322; open-above-CPR +2,021; narrow-CPR +1,436) but they are non-monotonic at n≈10/bucket ' +
+          'with ~zero correlation — noise. Gating on these would be curve-fitting.',
+        columns: ['Feature (known ex-ante)', 'Correlation with benefit', 'Usable as a gate?'],
+        rows: [
+          ['CPR width', '−0.03', 'No'],
+          ['Gap up / down', '+0.06', 'No'],
+          ['Opening-range move (09:16–09:46)', '−0.10', 'No'],
+          ['Day excursion', '+0.05', 'No'],
+          ['India VIX', 'only 6 usable days', 'No'],
+          ['Afternoon move (close − noon)', '+0.41 to +0.56', 'YES — but unknowable at noon'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'What the re-anchor actually IS — tail insurance, driven only by the afternoon move',
+        caption: 'Neutral on 63% of days (never triggers). Its whole value sits in the extremes.',
+        columns: ['Afternoon move (|close − noon|)', 'Benefit / lot', 'Read'],
+        rows: [
+          ['< 30 pts', '0', 'never fires — free'],
+          ['30 – 60 pts', '−1,178', 'WHIPSAW zone — stops a leg that recovers'],
+          ['60 – 100 pts', '+122', 'roughly neutral'],
+          ['> 100 pts', '+1,812 to +3,176', 'the saves — this is the insurance paying out'],
+        ],
+        highlightRows: [3],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Verdict', value: 'NO EDGE', tone: 'neg' },
+        { label: 'Full real record (48d)', value: '−Rs457/day', tone: 'neg' },
+        { label: 'Apr–May half', value: '−Rs8,831/day', tone: 'neg' },
+        { label: 'Jun–Jul half', value: '+Rs7,246/day', tone: 'pos' },
+        { label: 'Days re-anchor does nothing', value: '63%' },
+        { label: 'Ex-ante gate found', value: 'None' },
+      ],
+      tables: [
+        {
+          title: 'The live 30% stop IS expensive — but nothing tested beats it robustly',
+          caption: 'Actual recorded paper-trade legs across 49 trading days.',
+          columns: ['System', 'SL hits', 'Avg loss per stop-out', 'Avg premium rise at stop', 'Avg EOD winning leg'],
+          rows: [
+            ['916-ATM', '36', '−Rs7,526', '32%', '+Rs7,764'],
+            ['916-ATM2', '70', '−Rs3,606', '33%', '+Rs6,199'],
+            ['916-ATM4', '54', '−Rs5,772', '26%', '+Rs6,774'],
+          ],
+          heatmap: false,
+        },
+        {
+          title: 'Days it saved vs days it cost (idealised 27-day window)',
+          caption: 'The asymmetry that made it look great — before the sign-flip was discovered.',
+          columns: ['Day', 'Baseline', 'Re-anchor', 'Effect'],
+          rows: [
+            ['2026-06-03 (Wed, DTE1)', '−17,510', '−1,141', '+16,369 SAVED'],
+            ['2026-06-25 (Thu, DTE0)', '−11,463', '+4,079', '+15,542 SAVED'],
+            ['2026-06-10 (Wed, DTE1)', '−9,668', '−2,091', '+7,577 SAVED'],
+            ['2026-06-04 (Thu)', '+11,059', '+6,958', '−4,101 clipped'],
+            ['2026-07-09 (Thu)', '+8,453', '+5,101', '−3,353 clipped'],
+          ],
+          heatmap: false,
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'NO WINNER — keep the existing 30% stop',
+        summary:
+          'The re-anchor-at-12:00 rule beat the baseline by +Rs1,225/lot on the reconstructed sample and then failed ' +
+          'out-of-window on the actual traded legs. Nothing tested is a robust improvement, so nothing changes.',
+        metrics: [
+          { k: 'Full real record', v: '−Rs457/day (≈ neutral)' },
+          { k: 'Stability', v: 'FAILS — sign flips by period' },
+          { k: 'Gate available?', v: 'No — all ex-ante features ~0 correlation' },
+          { k: 'Action', v: 'Do NOT change the live SL' },
+        ],
+        rejected: [
+          'Trail-to-breakeven — whipsaws, win rate collapses to 27–33%',
+          'Ratchet SL (0.2 / 0.3 / 0.4) — worst of all, −1,525 to −1,855/lot',
+          'Profit-lock at 40/50/60% decay — neutral to negative',
+          'Re-anchor @ 12:00 / 13:00 — looked best, then failed the actual-leg shadow (regime-unstable)',
+          'Gating by CPR width / gap / VIX / opening-range — zero predictive power (curve-fitting risk)',
+        ],
+      },
+    ],
+    caveats: [
+      'SELF-CORRECTION: the headline "+Rs1,225/lot" was a WINDOW ARTIFACT. The chain reconstruction requires a ' +
+        '09:15–09:18 quote window; the Apr–May days start at 09:20 and were silently dropped — so the sample WAS ' +
+        'the favourable regime. Lesson: always check that a reconstruction day-drops are not correlated with the outcome.',
+      'The 743-day synthetic (Black-Scholes + real VIX) ranked AGGRESSIVE tightening best — but BS sells at fair value ' +
+        'and therefore has NO vol-risk-premium, which is precisely the strategy edge. That ranking was discarded as misleading.',
+      'Real-premium sample is small (27 idealised days / 48 actual-leg days) and covers a single regime (2026 Apr–Jul).',
+      'The actual-leg shadow assumes the leg would have been exited at the shadow-stop premium with no extra slippage.',
+      'Whether the Apr–May underperformance is regime or residual data quality cannot be fully separated — but Apr-30 has ' +
+        '334k chain rows (it just starts 09:20), so it is NOT corruption.',
+    ],
+    githubLinks: [
+      { label: 'research/77 — SL tightening (STATUS + RESULTS)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/77_sl_tightening' },
+      { label: 'research/76 — exit-timing / churn sweep (prior)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/76_early_peak_reentry' },
+    ],
+    projectPaths: [
+      'research/77_sl_tightening/NAS_0916_STRADDLE_SL_TIGHTENING_SWEEP_STATUS.md',
+      'research/77_sl_tightening/RESULTS.md  (P1 — 15-day real)',
+      'research/77_sl_tightening/RESULTS_P2.md  (P2 — 743-day synthetic)',
+      'research/77_sl_tightening/RESULTS_P3.md  (P3 — grouping + actual-leg shadow → NO EDGE)',
+      'scripts/sl_reanchor_shadow.py  (zero-risk daily shadow, cron 15:45 Mon–Fri)',
+      'research/77_sl_tightening/results/shadow_log.csv  (forward evidence, accumulating)',
+    ],
+  },
+
+  {
     slug: 'nifty-weekly-cpr-playbook',
     title: 'NIFTY Weekly CPR — Playbook (weekly × daily CPR + 1st-30-min candle)',
     verdict:
@@ -2102,6 +2476,8 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
     ],
     caveats: [
+      "IMMEDIATE-REDEPLOY tested + REJECTED (2026-07-08): the 15-day Donchian per-stock exit is a DAILY check, and when a name exits mid-month the freed cash sits in cash until the next month-end refill (it does NOT instantly buy the next-best momentum name). Testing immediate redeploy is far WORSE — MaxDD more than doubles (−15.6% → −37.9% gross / −46.7% net, worse than buy-and-hold), net-tax CAGR collapses 30.2% → 18.6%, net Calmar 1.71 → 0.40, and Donchian churn 2.3×'s (452 → 1,052 exits). The exit-to-cash gap is a DEFENSIVE FEATURE: in a broad selloff many names break down at once, the book drifts to cash and de-risks; refilling immediately keeps you fully invested straight into the crash. Keep the month-end refill.",
+
       '2019 is the one genuine weak year (−4.2% vs index +13.6%) — the narrow Indian momentum dead-year; the gate kept it roughly flat but it missed the large-cap melt-up.',
       'Multiple testing: 288 configs were searched; the winner sits on a stable plateau (N8 / any buffer / Donch-15 / gate-100) and survives cost-stress to 60 bps and a super-winner guard (Calmar holds 1.79 without its 3 best names), but the headline figure should carry a multiple-testing haircut — treat 29% net as the optimistic end.',
       'Reconstruction is a faithful PROXY of the index, not the live NSE product (which uses risk-adjusted scores, free-float caps, semi-annual reconstitution). Validation against ~3 real factsheet dates is still owed before live capital.',
@@ -2122,6 +2498,518 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\62_momentum_etf_subselect\\MOMENTUM30_ETF_SUBSELECT_DAILY_SWEEP_STATUS.md',
       'research\\62_momentum_etf_subselect\\scripts\\62_mom30_subselect.py, 62b_g2_sweep.py',
       'research\\62_momentum_etf_subselect\\results\\ (g2_sweep.csv, RESULTS.md, tearsheet.png)',
+    ],
+  },
+  {
+    slug: 'breakout-mtf-volume-swing',
+    title: 'Breakout Swing Book — MTF-Bullish Volume-Breakout Exit Bake-Off',
+    verdict:
+      'Automate a Chartink-style multi-timeframe-bullish volume-breakout scan (monthly+weekly+daily MACD>0, at/near 52-week high, volume >= 2x, liquid), then answer the real question: which EXIT is best for short-term trading? Across 20,804 tradeable breakouts, TRAILING stops beat fixed targets and fast/time exits decisively (Donchian-20 / Supertrend 10,3 ~ +4.4% net/trade, PF ~1.8) — and a profit target HURTS (it caps the fat right tail that is the entire edge). As a book (Donchian-20 trail, NO target, NIFTY>200DMA regime gate, 8 concurrent, max 1 new entry/day) it compounds at 19.9% CAGR at just -29.1% drawdown (Calmar 0.68, Sharpe 0.67) vs NIFTYBEES 11.6% / -59.7% — 40.9x vs 9.4x over 20.5 years. STRATEGY candidate (G1->G5 PASS). The regime gate is the single biggest drawdown reducer; the 1/day cap pushes MaxDD under 30%.',
+    status: 'COMPLETE',
+    date: '2026-07-01',
+    cardBlurb:
+      'Reconstruct the multi-timeframe-bullish volume-breakout scan, then bake off every exit family (fixed SL+target, ATR-chandelier, Supertrend, Donchian, EMA, time-based, hybrids) on 20,804 liquid breakouts. Winner: a trailing stop with NO target + a market-regime gate + a 1-new-entry-per-day cap. Net of cost.',
+    cardStats: [
+      { label: 'CAGR', value: '19.9%' },
+      { label: 'MaxDD', value: '-29.1%' },
+      { label: 'Calmar', value: '0.68' },
+    ],
+    system: {
+      intro: 'Long-only short-term breakout swing book; the traded rules:',
+      rows: [
+        { k: 'Entry signal', v: 'MACD line(12,26) > 0 on DAILY, WEEKLY and MONTHLY (the Chartink MTF-bullish filter) AND close >= 98% of the 252-day high (at/near 52-week high) AND volume >= 2x its 20-day average (the volume breakout).' },
+        { k: 'Liquidity filter', v: '20-day MEDIAN turnover (close x volume) >= Rs.5cr, price >= Rs.20. Median NOT mean — a mean turnover filter lets one spike day sneak illiquid/circuit names through.' },
+        { k: 'Entry-fill guard', v: 'Skip if the next-open bar is circuit-locked ((high-low)/open < 1%) or gaps > 15% above the signal close (unfillable chase). Fill at the next-day open.' },
+        { k: 'Exit (winner)', v: 'Donchian-20 lower-channel trailing stop: exit on a close below the prior-20-day low. Supertrend(10,3) is statistically identical. NO profit target. Fill at next open.' },
+        { k: 'Catastrophe stop', v: 'Hard 20% stop floor beneath every position (gap protection).' },
+        { k: 'Regime gate', v: 'Take NEW entries only when NIFTYBEES is above its 200-day SMA. This is the single biggest drawdown reducer.' },
+        { k: 'Concurrency + cadence', v: '8 positions equal-weight; at most 1 NEW entry per day (when > slots free, rank the day qualifiers by today percent-run and take the top one). This caps trade frequency to ~0.55/week and pushes MaxDD under 30%.' },
+        { k: 'Costs', v: '0.20% round-trip; not cost-fragile (long ~7-week holds = low turnover). Gross of tax (~45-day holds = 20% STCG -> net CAGR ~16-17%).' },
+        { k: 'Window', v: '2006-2026 (~20.5y), compounding, daily mark-to-market for honest drawdown.' },
+      ],
+    },
+    conditions: {
+      intro: 'Backtest window, universe and benchmark.',
+      rows: [
+        { k: 'Period', v: 'Jan 2006 - Jun 2026 (~20.5 years; 200-DMA warmup from 2005).' },
+        { k: 'Universe', v: 'All NSE daily symbols passing the liquidity filter (~1,642 in DB). Skews to today listed names (survivorship caveat).' },
+        { k: 'Benchmark', v: 'NIFTY 50 (NIFTYBEES), 2005-2026 long history, excluded from the investable set and used for the regime gate.' },
+        { k: 'Host', v: 'VPS market_data.db snapshot ~2026-05-15; reproducible from committed scripts.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Annual return: strategy vs NIFTY 50',
+        columns: ['Year', 'Strategy %', 'NIFTYBEES %', 'Excess pp'],
+        rows: [
+          ['2007', '+78', '+53', '+25'],
+          ['2008', '-25', '-52', '+27'],
+          ['2009', '+36', '+76', '-40'],
+          ['2010', '+27', '+19', '+8'],
+          ['2011', '-6', '-24', '+18'],
+          ['2012', '+23', '+27', '-4'],
+          ['2013', '+0', '+7', '-7'],
+          ['2014', '+66', '+32', '+34'],
+          ['2015', '-10', '-4', '-6'],
+          ['2016', '+31', '+4', '+27'],
+          ['2017', '+34', '+30', '+4'],
+          ['2018', '-15', '+5', '-20'],
+          ['2019', '+10', '+14', '-4'],
+          ['2020', '+32', '+15', '+17'],
+          ['2021', '+81', '+26', '+55'],
+          ['2022', '+1', '+5', '-4'],
+          ['2023', '+70', '+21', '+49'],
+          ['2024', '+40', '+10', '+30'],
+          ['2025', '+1', '+12', '-11'],
+          ['2026*', '-16', '-8', '-8'],
+        ],
+        highlightRows: [14, 16, 17],
+        heatmap: true,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'CAGR', value: '19.9%', tone: 'pos' },
+        { label: 'NIFTYBEES CAGR', value: '11.6%' },
+        { label: 'Excess / yr', value: '+8.3%', tone: 'pos' },
+        { label: 'Sharpe', value: '0.67', tone: 'pos', hint: 'vs index 0.34' },
+        { label: 'Sortino', value: '0.84' },
+        { label: 'Max Drawdown', value: '-29.1%', tone: 'neg', hint: 'vs NIFTYBEES -59.7%' },
+        { label: 'Calmar', value: '0.68', tone: 'pos' },
+        { label: 'Total return', value: '40.9x', hint: 'vs index 9.4x' },
+      ],
+      tables: [
+        {
+          title: 'The exit bake-off — net per-trade return on 20,804 tradeable breakouts (net 0.20%)',
+          caption: 'The core finding: trailing stops beat targets and fast exits. A profit target HURTS. Fast/tight exits earn nothing.',
+          columns: ['Exit rule', 'Net / trade', 'Win %', 'Profit factor', 'Avg hold'],
+          rows: [
+            ['Supertrend (7,3) trail', '+4.43%', '42%', '1.85', '44d'],
+            ['Donchian-20 trail', '+4.38%', '42%', '1.76', '49d'],
+            ['EMA-50 trail', '+4.28%', '40%', '1.83', '40d'],
+            ['Supertrend (10,3) trail', '+4.27%', '42%', '1.80', '43d'],
+            ['Chandelier 4xATR trail', '+4.12%', '43%', '1.75', '45d'],
+            ['Hold exactly 40 days', '+3.30%', '54%', '1.62', '37d'],
+            ['5% SL + 10% target (tight)', '+0.02%', '35%', '1.00', '9d'],
+          ],
+          highlightRows: [1, 3],
+        },
+        {
+          title: 'Why the gate + the 1/day cap — portfolio equity curves',
+          caption: 'The regime gate roughly halves drawdown AND raises CAGR. The 1/day entry cap pushes MaxDD under 30%.',
+          columns: ['Book config', 'CAGR', 'MaxDD', 'Calmar'],
+          rows: [
+            ['Donchian + gate + 8 + 1/day cap (WINNER)', '19.9%', '-29.1%', '0.68'],
+            ['Donchian + gate + 8 (no cap)', '20.5%', '-34.4%', '0.60'],
+            ['Supertrend(10,3) + gate + 10', '20.1%', '-39.9%', '0.50'],
+            ['Donchian + NO gate + 10', '12.9%', '-64.0%', '0.20'],
+            ['Donchian + NO gate + 5', '11.6%', '-70.5%', '0.16'],
+          ],
+          highlightRows: [0],
+        },
+        {
+          title: 'Strategy vs benchmark',
+          columns: ['Metric', 'Breakout Swing Book', 'NIFTYBEES'],
+          rows: [
+            ['CAGR', '19.9%', '11.6%'],
+            ['Total return', '40.9x', '9.4x'],
+            ['Sharpe', '0.67', '0.34'],
+            ['Max Drawdown', '-29.1%', '-59.7%'],
+            ['Calmar', '0.68', '0.19'],
+            ['Beta / Correlation', '0.46 / 0.42', '1.00'],
+          ],
+          highlightRows: [0, 1, 2, 3, 4],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/breakout-swing-factsheet.png',
+          caption:
+            'CLIENT FACTSHEET — Breakout Swing Book (Donchian-20 trail + NIFTY>200DMA gate + 8 concurrent + 1 entry/day cap) vs NIFTY 50, 2006-2026, net of 0.20% cost. 19.9% CAGR vs 11.6%, 40.9x vs 9.4x, Sharpe 0.67, MaxDD -29.1% vs -59.7%, Calmar 0.68. KPI strip, growth-of-Rs.1 (log), drawdown-vs-index, annual bars, monthly heatmap, rolling 12m. Generated by research/_utilities/tearsheet.py.',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'Donchian-20 trail (no target) + NIFTY>200DMA gate + 8 concurrent + max 1 entry/day',
+        summary: 'Best risk-adjusted of the exit x gate x concurrency x fine-filter sweep. Trailing beats target beats tight stop; the gate halves drawdown; the 1/day cap smooths entries and drops MaxDD under 30%. Cadence is light — ~0.55 trades/week, an entry on ~11% of days.',
+        metrics: [
+          { k: 'CAGR', v: '19.9% gross (~16-17% post-tax)' },
+          { k: 'Excess', v: '+8.3%/yr vs NIFTYBEES' },
+          { k: 'MaxDD', v: '-29.1% (index -59.7%)' },
+          { k: 'Calmar', v: '0.68' },
+          { k: 'Per-trade edge', v: '+4.4% net, PF 1.8, ~7-week hold' },
+        ],
+        rejected: [
+          'ANY profit target: every fixed-target config underperformed its no-target sibling (8%SL+15%tgt +0.9% vs 8%SL-no-target +4.9%). A target caps the fat tail that is the edge.',
+          'Tight/fast exits: 5%SL+10%target and 5-day holds earn ~0 net. The breakout drift is slow; you must ride winners for weeks.',
+          'Dropping the regime gate: no-gate books draw down -48% to -70% and earn less CAGR.',
+          'An over-extension filter to pre-avoid parabolic chases: REJECTED by the data — IRFC broke out +63% above its 50-SMA and ran +119%. Extension filters throw away the biggest winners; the trailing stop handles reversals instead.',
+          'Ranking entries by today biggest percent-run: NOT additive (top-run names mildly mean-revert). Use run as a filter, not the picker.',
+        ],
+      },
+    ],
+    caveats: [
+      'Survivorship bias (biggest): the universe = symbols in today DB, so historical breakouts on names that later delisted/died are absent. Real returns are lower and real drawdown deeper than shown — treat 19.9% CAGR / -29% DD as the optimistic end.',
+      'Thin early years: few Rs.5cr-median-turnover names existed 2006-2010, so early-year returns (2007 +78%) sit on a small book; the 2015+ era is more credible.',
+      'Gross of tax: ~45-day holds are short-term -> 20% STCG -> net CAGR ~16-17%.',
+      'Concentrated long-beta: beta 0.46, correlation 0.42; all breakouts are one bet, so the -29% DD is correlated-cluster risk that a thematic unwind could exceed.',
+      'Many of the exact microcaps the user trades (PAISALO, SMSPHARMA, VELJAN, ...) have 0 rows in the DB — this is a PROXY population on a mid/large-cap-skewed liquid universe, not those specific names.',
+      'Backtest, net of 0.20% modelled cost, gross of tax except where stated. Nothing wired live. Next: better selection ranker, point-in-time universe, and a G5 paper soak before any capital. Past performance is not indicative of future results.',
+    ],
+    githubLinks: [
+      {
+        label: 'RESULTS.md (verdict + tables)',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/71_breakout_exit_bakeoff/results/RESULTS.md',
+      },
+      {
+        label: 'g4_portfolio.py (portfolio engine)',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/71_breakout_exit_bakeoff/scripts/g4_portfolio.py',
+      },
+    ],
+    projectPaths: [
+      'research\\71_breakout_exit_bakeoff\\BREAKOUT_MTF_VOLUME_DAILY_SWEEP_STATUS.md',
+      'research\\71_breakout_exit_bakeoff\\scripts\\ (g1_probe, g2_exit_bakeoff, g3_clean_bakeoff, g4_portfolio, g5_finefilter).py',
+      'research\\71_breakout_exit_bakeoff\\results\\ (RESULTS.md, tearsheet.png, g*_*.csv)',
+    ],
+  },
+  {
+    slug: 'weekly-supertrend-nifty200',
+    title: 'Trend-Timing NIFTYBEES with SuperTrend — the one clean winner (and the SuperTrend myths it debunks)',
+    verdict:
+      '★★ THE WINNER: hold NIFTYBEES when its DAILY SuperTrend(7,3) is GREEN; on RED sell and park in a LIQUID fund (~4.5% net after expense+slab tax), re-enter on the next green. REALISTIC — net of 0.30% cost, the liquid-fund net return AND T+1 settlement lag (re-enter 1 day late, proceeds sit 1 day in transit): it CUTS MAX DRAWDOWN FROM −36% TO −14% (Calmar 0.29→0.65, volatility 15%→10%) for a ~1.3pp CAGR give-up (10.6→9.3%); net of ETF STCG/LTCG ≈ 7.8% CAGR (~2.8pp give-up net of EVERYTHING). Honest framing: this is a DRAWDOWN-REDUCTION overlay — roughly SHARPE-NEUTRAL, NOT a return-enhancer — you trade ~1.3–2.8pp CAGR to halve your worst crash. The drawdown-halving is friction-proof. BEST BUILD (MODELED): keep the ETF and SHORT NIFTY futures on the red signal instead of selling — no ETF sale → no equity CGT (deferred like B&H), no settlement lag, margin funded by pledging the ETF; while hedged you earn the carry (≈ risk-free). This RECOVERS most of the give-up. VALIDATED on REAL NSE bhavcopy basis (196 pts across COVID/2022/2018): the real carry is ~+3% (not the +4.6% first modeled), and futures DO go to backwardation in crashes (COVID 52% of days) — already baked into that +3%. With the real carry the hedge does ~9.9% CAGR (−0.6pp vs B&H) at −15% drawdown (halved), Calmar 0.67, Sharpe 1.03 (a genuine Sharpe improvement, unlike the cash version). One liquid instrument, no survivorship, infinitely scalable. ST(7,3) ties 50/100-DMA; 200-DMA too slow. Everything below is HOW WE GOT HERE — including two myths we debunked. ——— A YouTube guest pitched a system built entirely on the weekly SuperTrend (10,3): buy green, exit blind on red, size 5–7%/name, book 40/40/20, +5 hacks. First pass looked like a critical finding — on Nifty 200 it did 17.5% CAGR / −31.7% MaxDD / Calmar 0.55, "+6.9pp over NIFTYBEES". CORRECTION (same day): that headline was a BENCHMARK ARTIFACT. The book trades TODAY’s Nifty 200 names (survivorship-selected — includes the RVNL/KEI-type names that are in the index BECAUSE they 10–50×’d) and was compared to the Nifty 50 index. Against the fair, survivorship-MATCHED benchmark — equal-weight buy-and-hold of the SAME 200 names — the SuperTrend timing LOSES by ~3.5pp/yr (17.5% vs 21.0% CAGR) at essentially identical Calmar (0.55 vs 0.56–0.58). Even the most conservative fixed-capital drift basket (buy-what-you-could-in-2010, hold, least survivorship) does 20.4% / Calmar 0.56. So the timing adds no return and no risk-adjusted edge over simply owning the basket; it only trims MaxDD a hair (−31.7 vs −36.3), paid for with ~3pp/yr. VERDICT: NO INVESTABLE TIMING EDGE — the attractive number was survivorship + breadth, not the signal. The per-trade entry timing has a small real edge (G1 +5.2pp vs random-hold) but it is swamped at the portfolio level by being out of the market through a secular bull. SIGNAL ≠ STRATEGY. Also proven along the way: the guest’s own 40/40/20 booking and a regime gate both HURT. ★ PHASE 2 (the redemption): where the SuperTrend DOES work is as a MARKET-LEVEL CRASH OVERLAY — hold the basket always and use a DAILY ST(7,3) on the index to flatten the whole book in downtrends. That more than DOUBLES pre-tax Calmar (0.56→1.28) by cutting Nifty200 drawdown from −39% to −15% for ~2pp CAGR, consistent across all bands and the whole fast-filter family (only the 200-DMA fails). Catch: liquidating the cash basket ~2.5×/yr realises tax (net Calmar 1.01), so the right build is a NIFTY-futures/puts hedge (no sale → no tax event). Bonus lever TESTED then REJECTED (2026-07-08): swapping the live momentum book’s 100-DMA gate for a daily-ST gate is WORSE (net Calmar 1.71→1.33) — the ST gate is twitchier (de-risks 30–36× vs 23), gives up ~6pp CAGR for no DD benefit. The earlier "ST beats the gate" was vs a too-slow 200-DMA; a well-tuned 100-DMA wins. KEEP the live gate. ★★ PHASE 3 — the cleanest, most tradeable version: apply the INDEX-LEVEL trend filter to the actual index ETF (NIFTYBEES) itself — no survivorship, one liquid instrument, infinite capacity. REALISTIC (net of cost + a liquid fund at ~4.5% net after its expense/slab tax + T+1 settlement lag): it CUTS DRAWDOWN BY MORE THAN HALF (−36%→−14%, Calmar 0.29→0.65) for a ~1.3pp CAGR give-up (10.6→9.3%); net of ETF STCG/LTCG ≈ 7.8% (~2.8pp give-up). Roughly SHARPE-NEUTRAL — a drawdown-reduction overlay, not a return-enhancer. (An idealized instant-switch, 6.5%-cash run flattered it to ~zero give-up; the honest, friction-adjusted number is ~1.3–2.8pp.) On a single ETF ST(7,3) is marginally best (fewest switches → least tax) but 50/100-DMA are tied — it is "any fast-medium trend filter," not ST-specific; the 200-DMA is too slow and HURTS (halves CAGR). A well-known tactical-timing result (Faber-style), confirmed on Indian ETFs. FOOTNOTE (Phase 2 vs 3): both use the SAME index ST(7,3) doing the SAME job (cut DD to ~−14/−15%); Phase 2 shows a higher Calmar (1.28) ONLY because it times the survivorship-inflated 200-stock basket (21.8% CAGR) — a mirage you can’t capture. Phase 3 times the real ETF (10.6% CAGR) → the honest, tradeable Calmar. Same timing, different (real vs inflated) underlying.',
+    status: 'COMPLETE',
+    date: '2026-07-07',
+    cardBlurb:
+      'The one clean winner: trend-time the NIFTYBEES ETF itself with daily SuperTrend(7,3) — realistic (net of cost + liquid-fund tax + T+1 settlement) it HALVES max drawdown (−36%→−14%, Calmar 0.29→0.65) for a ~1.3pp CAGR give-up (~2.8pp net of all tax). A drawdown-reduction overlay, roughly Sharpe-neutral; best as a futures hedge. Along the way we debunked two myths: per-stock ST timing LOSES to buy-and-hold (the "beats index" headline was survivorship), and the guest’s 40/40/20 + regime gate both HURT.',
+    cardStats: [
+      { label: 'NIFTYBEES + ST(7,3) MaxDD', value: '−14% vs −36%' },
+      { label: 'Calmar', value: '0.65 vs 0.29' },
+      { label: 'CAGR give-up', value: '~1.3pp (2.8 net-tax)' },
+    ],
+    systemRules: {
+      intro: 'The mechanical core is what we tested; the 5 "hacks" + 40/40/20 + 50-EMA band were layered on top (and the tested ones failed to help — see winners/caveats).',
+      sharedCoreTitle: 'Core system (all bands)',
+      sharedCore: [
+        { k: 'Signal', v: 'Weekly (W-FRI resampled) SuperTrend, ATR 10 / multiplier 3 — TradingView-accurate (services/technical_indicators.calc_supertrend). Long-only.' },
+        { k: 'Entry', v: 'SuperTrend flips UP (green) at the Friday weekly close → fill at next-week open.' },
+        { k: 'Exit (core)', v: 'SuperTrend flips DOWN (red) → fill at next-week open. Blind, no discretion.' },
+        { k: 'Causality', v: 'Signal read at weekly close of week t → trade fills at OPEN of week t+1. No look-ahead. ("Wait for Friday close" is automatic on weekly bars.)' },
+        { k: 'Sizing', v: 'Max 16 concurrent names at 6.25% target weight; oversubscribed → take strongest flip-week gain (king-candle proxy). Idle cash @6.5% (liquid fund).' },
+        { k: 'Costs/tax', v: '0.15%/side (0.30% round-trip) + STCG 15% (<1y) / LTCG 10% (>1y) on realised gains.' },
+      ],
+      riskLayer: {
+        title: 'Variant sweep on the Nifty 200 core (net of cost+tax, 2010–2026) — the guest’s add-ons both HURT',
+        columns: ['Config', 'CAGR', 'MaxDD', 'Calmar', 'Sharpe', 'Verdict'],
+        rows: [
+          ['Core — blind ST exit, no gate, no booking', '17.5%', '−31.7%', '0.55', '1.03', 'best ST cell'],
+          ['+ NIFTYBEES 200-DMA regime gate', '11.0%', '−32.1%', '0.34', '0.73', 'HURTS (redundant)'],
+          ['+ gate + 40/40/20 profit-booking', '8.8%', '−31.6%', '0.28', '0.73', 'HURTS (caps tail)'],
+          ['Benchmark: NIFTYBEES buy & hold', '10.6%', '−34.0%', '0.31', '—', '(wrong benchmark — see below)'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+    },
+    system: {
+      intro: 'From a YouTube interview (Vijay Khant): a whole system on ONE indicator, the weekly SuperTrend (10,3). We tested the mechanical core faithfully, then each "hack", then — crucially — checked the benchmark.',
+      rows: [
+        { k: 'Source claim', v: 'Enter when weekly ST turns green, exit blindly when red; size 5–7%/name (stop ≤1–2% of capital); book 40% at +40%, another 40% at a further +40%, trail last 20% on ST.' },
+        { k: '5 hacks', v: 'King candle, Friday-close confirmation, breakout-high entry, 18–20wk pre-consolidation, Dow higher-highs/lows. Plus a 50-EMA (H/C/L) band for re-entry.' },
+        { k: 'What we automated', v: 'Core signal + sizing + 40/40/20 + king-candle selection + regime gate. Friday-close = automatic on weekly bars. Dow-structure = too subjective to encode (noted, not coded).' },
+        { k: 'Universe', v: 'Current official Nifty 50 (50) / Nifty 200 (200) / Midcap 150 (150) / Smallcap 250 (250) — SURVIVORSHIP-BIASED (today’s members applied to the past).' },
+        { k: 'The benchmark trap', v: 'Comparing this survivorship-selected 200-name book to the NIFTY 50 index gives two free edges (survivorship + Nifty200-breadth) before ST does anything. The fair benchmark is buy-and-hold of the SAME 200 names.' },
+      ],
+    },
+    conditions: {
+      intro: 'Window and data.',
+      rows: [
+        { k: 'Period', v: '2010-01-01 → 2026-07-07 (16.5y). Daily bars resampled to weekly; breadth grows 283 (2008) → 1632 (2025) names.' },
+        { k: 'Data', v: 'VPS market_data.db (day tf, snapshot max 2026-07-07); NIFTYBEES full 2005–2026 history.' },
+        { k: 'Host', v: 'VPS venv (numpy 2.4.4 / pandas 3.0.2); reproducible from committed scripts.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: '★ MASTER COMPARISON — every version, returns & drawdowns (2010–2026, net of realistic cost)',
+        caption: 'The whole study in one table. Timing individual STOCKS loses to owning them; the pitched system’s 17.5% only beat the WRONG benchmark. The SAME signal at the INDEX level on the ETF you’d hold anyway takes the −36% drawdown to −15% for ~0.6pp CAGR (best as a futures hedge). Tax basis noted per row.',
+        columns: ['Version', 'CAGR', 'MaxDD', 'Calmar', 'Sharpe', 'Verdict'],
+        rows: [
+          ['NIFTYBEES buy & hold (baseline)', '10.5%', '−36.3%', '0.29', '0.75', 'the thing to beat'],
+          ['ST(7,3) · futures-hedge · REAL data', '9.9%', '−14.8%', '0.67', '1.03', '✅ THE WINNER'],
+          ['ST(7,3) · cash-rotation · net ALL tax', '7.8%', '−14.3%', '0.46', '~0.9', 'tax-inefficient build'],
+          ['ST(7,3) · idealized (too-kind)', '10.7%', '−14.2%', '0.76', '1.11', '⚠ flattering assumptions'],
+          ['100-DMA on the ETF (net cost)', '10.3%', '−14.2%', '0.72', '—', '≈ ties ST'],
+          ['200-DMA on the ETF (net cost)', '5.5%', '−20.7%', '0.27', '—', '❌ too slow'],
+          ['Per-stock ST · Nifty 200 (pitched)', '17.5%', '−31.7%', '0.55', '—', '❌ illusion (wrong bench)'],
+          ['…its own same-basket buy & hold', '21.0%', '−35.9%', '0.58', '—', 'the benchmark it loses to'],
+          ['Per-stock ST + 40/40/20 booking', '8.8%', '−31.6%', '0.28', '—', '❌ booking kills returns'],
+          ['Phase-2 overlay on survivorship basket', '19.6%', '−15.3%', '1.28', '—', '⚠ un-real (inflated base)'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
+        title: '★ THE DECIDING TEST — does the TIMING add anything? (fair, survivorship-matched, same 200 names, 2010–2026)',
+        caption: 'The ST book vs simply HOLDING the identical basket. Against the fair benchmark the SuperTrend timing LOSES by ~3–3.5pp/yr at equal Calmar. The "+6.9pp over NIFTYBEES" headline was survivorship + Nifty200-breadth, not the signal.',
+        columns: ['Book (same universe)', 'CAGR', 'MaxDD', 'Calmar', 'Sharpe', 'Total'],
+        rows: [
+          ['ST-core (flip in / flip out) — the "strategy"', '17.5%', '−31.7%', '0.55', '1.03', '14.3×'],
+          ['EW buy-&-hold, same 200 names', '21.0%', '−35.9%', '0.58', '1.16', '23.2×'],
+          ['B&H-drift, fixed-cap, start-names (LEAST survivorship)', '20.4%', '−36.3%', '0.56', '1.17', '21.2×'],
+          ['NIFTYBEES (Nifty 50 index — the WRONG benchmark)', '10.6%', '−34.0%', '0.31', '0.74', '5.2×'],
+        ],
+        highlightRows: [1, 2],
+        heatmap: false,
+      },
+      {
+        title: 'ALL INDICES — same fair test (ST timing vs same-basket B&H vs Nifty 50), 2010–2026',
+        caption: 'The result is uniform: on EVERY band the SuperTrend timing loses to simply holding the same basket (−2.8 to −6.6pp/yr). The "beats Nifty 50" column is the survivorship+breadth illusion — the basket itself beats Nifty 50 by +8 to +11pp before any timing. Only in Smallcap does timing help risk-adjusted (Calmar 0.48 vs 0.41) by taming the −54% basket DD — but that band is untradeable at size.',
+        columns: ['Band', 'ST timing CAGR', 'Same-basket B&H', 'ST − Basket', 'ST − Nifty50', 'ST Calmar', 'Basket Calmar'],
+        rows: [
+          ['Nifty 50', '12.2%', '18.9%', '−6.6pp', '+1.6', '0.53', '0.57'],
+          ['Nifty 200', '17.5%', '21.0%', '−3.5pp', '+6.9', '0.55', '0.58'],
+          ['Midcap 150', '15.2%', '21.6%', '−6.4pp', '+4.6', '0.50', '0.61'],
+          ['Smallcap 250', '19.3%', '22.0%', '−2.8pp', '+8.7', '0.48', '0.41'],
+          ['Nifty 500 (=50+next50+mid150+small250)', '17.1%', '21.5%', '−4.4pp', '+6.6', '0.47', '0.52'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
+        title: 'YEAR-BY-YEAR — Nifty 200: ST timing vs same-basket B&H vs Nifty 50 (annual %)',
+        caption: 'ST beats the index in strong single-direction trend years (2014/2017/2020/2023) and loses badly in V-recoveries & chop when it sits in cash (2010 −23 vs basket, 2021 −36, 2012 −21). Net across the cycle: the basket wins. (Full per-band year tables: fair_allbands_peryear.csv.)',
+        columns: ['Year', 'ST %', 'Basket %', 'Nifty50 %', 'ST − Nifty', 'ST − Basket'],
+        rows: [
+          ['2010', '4.9', '27.7', '17.7', '−12.7', '−22.8'],
+          ['2011', '−22.6', '−18.5', '−21.5', '−1.0', '−4.1'],
+          ['2012', '17.4', '38.4', '22.7', '−5.3', '−20.9'],
+          ['2013', '20.7', '3.5', '5.5', '+15.2', '+17.2'],
+          ['2014', '77.4', '61.5', '31.9', '+45.5', '+15.9'],
+          ['2015', '10.7', '5.0', '−6.0', '+16.7', '+5.7'],
+          ['2016', '5.6', '11.3', '3.7', '+1.8', '−5.7'],
+          ['2017', '52.7', '44.3', '28.7', '+24.0', '+8.4'],
+          ['2018', '−10.2', '−7.7', '4.5', '−14.7', '−2.6'],
+          ['2019', '16.6', '10.5', '15.2', '+1.4', '+6.1'],
+          ['2020', '45.9', '25.4', '13.0', '+33.0', '+20.5'],
+          ['2021', '13.2', '49.5', '25.6', '−12.3', '−36.2'],
+          ['2022', '3.7', '10.9', '2.9', '+0.7', '−7.3'],
+          ['2023', '53.6', '51.1', '22.4', '+31.2', '+2.5'],
+          ['2024', '21.2', '29.2', '11.1', '+10.1', '−8.1'],
+          ['2025', '1.5', '8.3', '9.7', '−8.2', '−6.7'],
+          ['2026*', '−0.0', '0.8', '−7.3', '+7.3', '−0.8'],
+        ],
+        heatmap: true,
+      },
+      {
+        title: 'G1 signal probe — the per-trade ENTRY edge is small but real (vs random-duration placebo)',
+        caption: 'ST entries beat random-duration entries of the SAME names — a genuine trade-level signal. But median trade ≈ 0 (edge is right-tail only), and at the PORTFOLIO level it is swamped by time out of the market. SIGNAL ≠ STRATEGY.',
+        columns: ['Band', 'Trades', 'Win%', 'Mean net/trade', 'Median', 'Edge vs placebo'],
+        rows: [
+          ['Nifty 50', '555', '56%', '32.5%', '3.5%', '−1.8pp (NONE)'],
+          ['Nifty 200', '1713', '55%', '44.0%', '3.5%', '+5.2pp'],
+          ['Midcap 150', '1098', '54%', '47.5%', '2.3%', '+7.5pp'],
+          ['Smallcap 250', '1373', '51%', '47.6%', '1.1%', '+12.2pp'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
+        title: '★ PHASE 2 — where ST DOES work: a MARKET-LEVEL crash overlay on the Nifty 200 basket (2010–2026)',
+        caption: 'Hold the basket always; use a DAILY index trend filter to flatten the whole book in downtrends. Unlike per-name timing (which loses), a fast market filter more than DOUBLES pre-tax Calmar by cutting drawdown for ~2pp CAGR — consistent across the whole fast family, only the 200-DMA fails. Net-of-tax it’s still a big Calmar win but liquidating the cash book realises STCG (~2.5 switches/yr) → build it as a NIFTY-futures/puts hedge instead.',
+        columns: ['Book', 'CAGR', 'MaxDD', 'Calmar', 'Sw/yr', 'Net-tax CAGR', 'Net-tax Calmar'],
+        rows: [
+          ['PLAIN basket (tax-deferred)', '21.8%', '−39.2%', '0.56', '0', '21.8%', '0.56'],
+          ['+ daily-ST(7,3) overlay', '19.6%', '−15.3%', '1.28', '5.0', '16.8%', '1.01'],
+          ['+ daily-ST(10,3)', '19.4%', '−15.5%', '1.25', '5.1', '16.5%', '0.96'],
+          ['+ 50-DMA gate', '20.3%', '−16.6%', '1.23', '13.6', '16.6%', '0.93'],
+          ['+ 200-DMA gate (too slow — HURTS)', '15.1%', '−33.3%', '0.45', '9.5', '13.2%', '0.38'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
+        title: 'Cross-check (tested, REJECTED) — does a daily-ST gate improve the LIVE momentum book? No.',
+        caption: 'The Phase-2 overlay result tempted a swap: replace the live research/62 momentum book’s 100-DMA regime gate with a daily-ST gate. Tested head-to-head on the winner config (rsblend N8 buf22 donch15, net-post-tax, 2014–26): the 100-DMA WINS decisively (net Calmar 1.71). The ST gates are twitchier (de-risk 30–36× vs 23), whipsaw out of recoveries, and give up ~6pp CAGR for no drawdown benefit. Lesson: it isn’t "ST > moving-average gate" — it’s "medium-speed gate > slow (200-DMA) gate", and the 100-DMA already is that. KEEP the live gate.',
+        columns: ['Gate on the momentum book', 'net CAGR', 'net MaxDD', 'net Calmar', 'De-risk events'],
+        rows: [
+          ['No gate', '30.4%', '−39.5%', '0.77', '0'],
+          ['100-DMA (current, LIVE)', '30.2%', '−17.6%', '1.71', '23'],
+          ['daily-ST(7,3)', '24.6%', '−18.5%', '1.33', '30'],
+          ['daily-ST(10,3)', '22.9%', '−18.3%', '1.25', '32'],
+          ['50-DMA', '20.9%', '−21.1%', '0.99', '36'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
+        title: '★★ PHASE 3 — the cleanest tradeable version: time the actual INDEX ETF (NIFTYBEES) itself, 2010–2026',
+        caption: 'Index-level trend filter ON the real ETF (hold when green, to cash when red). No survivorship, one liquid instrument, infinite capacity. Net-of-tax: ~1.5pp CAGR give-up, drawdown MORE THAN HALVED (−36%→−14%), Calmar & Sharpe ~doubled. Pre-tax the give-up is ~zero. ST(7,3) marginally best (fewest switches → least tax) but 50/100-DMA are tied — it is any fast-medium trend filter, NOT ST-specific; the 200-DMA is too slow and HURTS. A real, robust, WELL-KNOWN tactical-timing result (Faber-style), confirmed on Indian ETFs. Holds across NIFTYBEES/JUNIORBEES/BANKBEES; does NOT help GOLDBEES.',
+        columns: ['Signal on NIFTYBEES', 'CAGR', 'MaxDD', 'Calmar', 'Sharpe', 'Sw/yr', 'Net-tax CAGR', 'Net-tax Calmar'],
+        rows: [
+          ['Buy & hold', '10.6%', '−36.3%', '0.29', '0.75', '0', '10.6%', '0.29'],
+          ['ST(7,3) — best net', '10.7%', '−14.2%', '0.75', '1.11', '5.0', '9.0%', '0.53'],
+          ['100-DMA', '10.3%', '−14.2%', '0.72', '1.02', '8.7', '8.4%', '0.52'],
+          ['50-DMA', '10.1%', '−14.0%', '0.72', '1.05', '13.6', '8.0%', '0.49'],
+          ['200-DMA (too slow — HURTS)', '5.5%', '−20.7%', '0.27', '0.55', '9.5', '4.6%', '0.20'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
+        title: 'REAL-WORLD FRICTIONS on the winner — liquid-fund idle return + T+1 settlement (NIFTYBEES · ST 7,3)',
+        caption: 'The idle cash between trades earns a LIQUID fund return NET of its expense + slab tax (~6.5% gross → ~4.5% net), and India ETF settlement is T+1 (on a red flip you exit but proceeds sit in transit ~1 day; on a green flip you re-enter ~1 day late). The drawdown-halving is friction-PROOF (−14 to −17% everywhere), but the CAGR give-up grows: from the idealized ~0pp to ~1.3pp pre-tax / ~2.8pp net of ALL tax. The liquid fund is essential (worth ~1.8pp vs 0% cash). This is why the tax-free NIFTY-futures/puts hedge is the preferred build.',
+        columns: ['Scenario', 'CAGR', 'MaxDD', 'Calmar', 'Net-of-all-tax CAGR', 'Net-tax Calmar'],
+        rows: [
+          ['Buy & hold', '10.6%', '−36.3%', '0.29', '10.6%', '0.29'],
+          ['Idealized (6.5% cash, instant switch)', '10.7%', '−14.2%', '0.76', '9.1%', '0.54'],
+          ['REALISTIC (liquid 4.5% net + T+1 lag)', '9.3%', '−14.3%', '0.65', '7.8%', '0.46'],
+          ['Conservative (2-day lags)', '9.0%', '−16.6%', '0.54', '7.4%', '0.41'],
+          ['Cash 0% (no liquid at all)', '7.5%', '−16.1%', '0.47', '6.0%', '0.32'],
+        ],
+        highlightRows: [2],
+        heatmap: false,
+      },
+      {
+        title: 'THE BEST BUILD (REAL-DATA VALIDATED) — futures-hedge instead of selling the ETF',
+        caption: 'Keep NIFTYBEES (never sold → NO equity CGT, deferred like B&H; NO T+1 lag; margin by PLEDGING the ETF) and SHORT NIFTY futures on the red signal; hedged ≈ a synthetic T-bill earning the carry. VALIDATED on REAL NSE bhavcopy basis (196 points across COVID/2022/2018 crashes): the carry is ~+3% (mean +3.1% hedge-on), NOT the +4.6% first modeled — and futures DO flip to BACKWARDATION in crashes (COVID: 52% of days negative), which is already baked into the +3% realized average. With that real carry: ~9.9% CAGR (−0.6pp vs B&H) at −15% drawdown (halved), Calmar 0.67, and it now IMPROVES Sharpe (1.03 vs 0.75). Recovers MOST of the cash-rotation give-up. Residual caveats: constant-carry approximation (path effects in specific crashes), monthly roll execution, lot-size granularity, deferred-tax liability on the ETF.',
+        columns: ['Approach', 'CAGR', 'MaxDD', 'Calmar', 'Sharpe'],
+        rows: [
+          ['Buy & hold', '10.5%', '−36.3%', '0.29', '0.75'],
+          ['Cash-rotation (realistic, net all tax)', '7.8%', '−14.3%', '0.46', '~0.9'],
+          ['Futures-hedge, ~2.0% carry (real, conservative)', '9.4%', '−15.2%', '0.62', '0.99'],
+          ['Futures-hedge, ~3.2% carry (real, central)', '9.9%', '−14.8%', '0.67', '1.03'],
+          ['Futures-hedge, ~4.6% carry (old modeled — too kind)', '10.5%', '−14.4%', '0.73', '1.09'],
+        ],
+        highlightRows: [3],
+        heatmap: false,
+      },
+      {
+        title: 'REAL NIFTY futures basis (NSE bhavcopy, 196 pts) — the backwardation check',
+        caption: 'Annualised carry = the futures premium the short captures. Positive in normal/uptrend regimes; flips negative (backwardation) in crashes, exactly when the hedge is on — but the average stays positive, so the ~9.9% hedge result (which uses the realized average) already accounts for it. The extreme −20 to −46%/yr figures are near-expiry annualisation artifacts of tiny (−0.4%) absolute basis moves.',
+        columns: ['Regime', 'Data pts', 'Mean carry %/yr', 'Median', 'Days in backwardation'],
+        rows: [
+          ['Hedge-OFF (ST green / uptrend)', '49', '+5.1%', '+4.5%', '0%'],
+          ['Hedge-ON (ST red / downtrend)', '147', '+3.1%', '+1.1%', '36%'],
+          ['— COVID 2020 (Feb–May)', '60', '+3.0%', '−0.6%', '52%'],
+          ['— 2022 selloff', '59', '+2.3%', '+1.6%', '27%'],
+          ['— 2018 correction', '30', '+4.5%', '+4.4%', '13%'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
+        title: 'Apply the overlay to our BEST-CAGR book (research/75 momentum, 31.9% CAGR)? — the value is INVERSE to return',
+        caption: 'Take the highest-return book we have and overlay the same NIFTY daily-ST(7,3) crash filter (idle cash at the honest ~4.5% NET liquid rate). It DOES cut the drawdown (−32%→−22%) and PRE-TAX lifts Calmar (1.01→1.17). BUT net of ALL tax it HURTS (0.88 < 1.01) — pulling a high-gain momentum book to cash ~5×/yr triggers heavy short-term tax, and being out 39% of the time forgoes ~30%/yr (vs a 10% index). The hedge version (1.14) avoids the tax but NIFTY futures don’t cleanly hedge a midcap book (beta>1, idiosyncratic risk) → optimistic. KEY LESSON: the crash overlay’s value is INVERSELY related to the underlying’s return — it’s a tool for low-return, high-DD INDEX ETFs, not for an already-high-Calmar momentum book (best de-risked by its own regime gate, per the gate cross-check).',
+        columns: ['Version', 'CAGR', 'MaxDD', 'Calmar', 'Sharpe'],
+        rows: [
+          ['Base momentum book (research/75, no overlay)', '31.9%', '−31.6%', '1.01', '1.45'],
+          ['+ NIFTY-ST overlay → cash 4.5% net (pre-tax)', '26.0%', '−22.2%', '1.17', '1.45'],
+          ['+ NIFTY-ST overlay → cash 4.5% net (net ALL tax)', '21.0%', '−23.9%', '0.88', '1.18'],
+          ['+ NIFTY-ST overlay → hedge-carry (proxy, optimistic)', '25.4%', '−22.2%', '1.14', '1.42'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'Should we add a SHORT sleeve (bidirectional long/short)? Tested — NO, on both timeframes',
+        caption: 'Instead of going FLAT when ST is red, go net SHORT to profit from downtrends. The short side is a structural LOSER: during ST-red periods the index still RISES (+6%/yr on daily ST, +19%/yr on weekly ST) because the slow filter flags red AFTER the drop and stays red THROUGH the recovery — you short into the bounce. Short-only makes ~nothing (daily +0.8%) or loses (weekly −1.9%) at huge DD. Bidirectional cuts CAGR and roughly DOUBLES drawdown. Weekly is worse than daily throughout (too slow). STAY LONG-ONLY: hold the ETF, hedge to flat in downtrends, never short.',
+        columns: ['Book', 'Signal', 'CAGR', 'MaxDD', 'Calmar', 'Sharpe'],
+        rows: [
+          ['Buy & hold', '—', '10.5%', '−36.3%', '0.29', '0.75'],
+          ['Long-only (hedge, the winner)', 'daily ST(7,3)', '9.9%', '−14.8%', '0.67', '1.03'],
+          ['Bidirectional long/short', 'daily ST(7,3)', '6.6%', '−25.3%', '0.26', '0.51'],
+          ['Short-only (diagnostic)', 'daily ST(7,3)', '0.8%', '−33.8%', '0.02', '0.13'],
+          ['Long-only (hedge)', 'weekly ST(10,3)', '6.3%', '−31.1%', '0.20', '0.61'],
+          ['Bidirectional long/short', 'weekly ST(10,3)', '0.3%', '−50.9%', '0.00', '0.09'],
+          ['Short-only (diagnostic)', 'weekly ST(10,3)', '−1.9%', '−43.6%', '—', 'neg'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'WINNER MaxDD', value: '−14.3%', tone: 'pos', hint: 'NIFTYBEES+ST(7,3) vs B&H −36.3%' },
+        { label: 'WINNER Calmar', value: '0.65', tone: 'pos', hint: 'vs B&H 0.29' },
+        { label: 'WINNER CAGR', value: '9.3%', hint: 'vs B&H 10.6% (realistic, net cost+liquid+lag)' },
+        { label: 'Net-of-all-tax CAGR', value: '7.8%', hint: '~2.8pp give-up net of everything' },
+        { label: 'Volatility', value: '9.7%', tone: 'pos', hint: 'vs B&H 15.1%' },
+        { label: 'Sharpe', value: '≈ tied', hint: 'DD-reduction overlay, not return-enhancer' },
+        { label: 'Per-name ST timing', value: 'LOSES', tone: 'neg', hint: '−3 to −7pp/yr vs same-basket B&H' },
+        { label: 'Build', value: 'futures/puts hedge', hint: 'avoids tax + settlement drag' },
+      ],
+      tables: [
+        {
+          title: 'Attribution of the +6.9pp "headline"',
+          columns: ['Source', 'Contribution'],
+          rows: [
+            ['Survivorship + Nifty200-breadth (basket vs Nifty50 index)', '+10.4pp (basket 21.0% − index 10.6%)'],
+            ['SuperTrend TIMING (ST book vs same basket)', '−3.5pp'],
+            ['Net headline (ST book vs Nifty50 index)', '+6.9pp'],
+          ],
+          highlightRows: [1],
+        },
+        {
+          title: 'OOS split (10,3) — the ST cell itself is stable, but it still trails the basket',
+          columns: ['Window', 'CAGR', 'MaxDD', 'Calmar'],
+          rows: [
+            ['Train 2010–2019', '15.2%', '−31.7%', '0.48'],
+            ['Test 2020–2026', '20.0%', '−19.4%', '1.03'],
+          ],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/niftybees-st73-winner.png',
+          caption:
+            '★★ THE WINNER — NIFTYBEES timed by daily SuperTrend(7,3), REALISTIC (net of cost + liquid-fund net return ~4.5% + T+1 settlement lag), 2010–2026. Max drawdown −14.3% vs the index’s −36.3% (Calmar 0.65 vs 0.29, volatility 9.7% vs 15.1%) for a ~1.3pp CAGR give-up (9.3% vs 10.6%); net of ETF STCG/LTCG ≈ 7.8%. Note Sharpe ≈ tied (0.33 vs 0.34): this is a DRAWDOWN-reduction overlay, not a return-enhancer. Best implemented as a futures/puts hedge to avoid the tax + settlement drag. This is the deliverable.',
+        },
+        {
+          src: '/app/weekly-supertrend-nifty200.png',
+          caption:
+            'FOR CONTRAST — the Phase-1 "illusion" factsheet: the per-name Weekly-SuperTrend Nifty 200 book vs the NIFTY 50 index. This is the UNFAIR comparison (the gap is survivorship + breadth, not timing). Against a same-200-names buy-and-hold the per-stock timing underperforms by ~3.5pp/yr. Kept only to show why the "beats the index" headline was misleading.',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'THE WINNER: trend-time the NIFTYBEES ETF with daily SuperTrend(7,3) — a drawdown-reduction overlay',
+        summary: 'Hold NIFTYBEES when its daily ST(7,3) is green; on red sell to a liquid fund (~4.5% net) and re-enter on the next green. Realistic (net of cost + liquid-fund tax/expense + T+1 settlement lag), it halves the max drawdown (−36%→−14%) and cuts volatility (15%→10%) for a ~1.3pp CAGR give-up (~2.8pp net of ETF tax). It is roughly Sharpe-neutral — a way to sidestep the −36% crashes at a modest return cost, NOT a return-enhancer. Clean, one liquid instrument, no survivorship, infinitely scalable. Best built as a NIFTY-futures/puts hedge (no ETF sale → no equity tax, no settlement drag) to recover most of the give-up.',
+        metrics: [
+          { k: 'Max Drawdown', v: '−14.3% vs −36.3% (B&H)' },
+          { k: 'Calmar', v: '0.65 vs 0.29' },
+          { k: 'CAGR', v: '9.3% vs 10.6% (−1.3pp; net-tax 7.8%)' },
+          { k: 'Volatility', v: '9.7% vs 15.1%' },
+          { k: 'Sharpe', v: '≈ tied — DD-reduction, not return' },
+          { k: 'Best filter', v: 'ST(7,3) ≈ 50/100-DMA; 200-DMA too slow' },
+        ],
+        rejected: [
+          'STOCK-LEVEL per-name ST timing (the pitched system): LOSES to buy-and-hold the same names by 3–7pp/yr. The "+6.9pp beats the index" headline was survivorship + Nifty200-breadth vs the Nifty 50 index, not the signal.',
+          '40/40/20 profit-booking: a return-killer (17.5%→8.8% CAGR) — caps the fat right tail that carries trend-following.',
+          'Daily-ST as the LIVE momentum-book gate: worse than the current 100-DMA (net Calmar 1.71→1.33) — keep the 100-DMA.',
+          'Small-cap tilt: higher gross return but untradeable at size (research/62 capacity wall); and 200-DMA timing of the ETF halves CAGR.',
+        ],
+      },
+    ],
+    caveats: [
+      'BENCHMARK ARTIFACT (the headline correction): the attractive "+6.9pp over NIFTYBEES / Calmar 0.55" compares a survivorship-selected TODAY’s-Nifty-200 book to the Nifty 50 index. Against the fair, survivorship-matched benchmark (buy-and-hold of the SAME 200 names) the SuperTrend timing LOSES by ~3–3.5pp/yr at equal Calmar. No investable timing edge.',
+      'Survivorship bias (the root cause): today’s index membership applied to the past; the right tail that drives returns IS the survivorship-selected multibaggers (TARIL +5347%, KEI +3717%, PAGEIND, RVNL, ADANIENT). A point-in-time universe would cut these numbers materially — for BOTH the ST book and the basket.',
+      'SIGNAL ≠ STRATEGY: the per-trade ENTRY timing has a small real edge (G1 +5.2pp vs random-hold), but as a portfolio it is swamped by the opportunity cost of being out of the market / under-concentrated through a 16-year bull. Same lesson as research/49 ("it’s beta, not alpha").',
+      'PHASE 2 RESOLVED the salvageable angle: as a MARKET-LEVEL crash overlay (daily ST(7,3) on the index, flatten the whole book in downtrends) the SuperTrend more than doubles pre-tax Calmar (0.56→1.28, DD −39→−15%). But (a) implemented by liquidating the cash basket it realises STCG ~2.5×/yr → net Calmar 1.01 (still ≫ 0.56, but a ~5pp CAGR give-up vs tax-deferred B&H); the tax-efficient build is a NIFTY-futures/puts hedge (owed a test incl. roll/basis/tracking cost). (b) Recent chop (2025–26) the overlay lagged. (c) Pre-tax 1.28 is good but still below the existing regime-gated momentum book (~1.7).',
+      'Drawdown ≈ market either way (−32%). Weekly ST is slow; in fast crashes the flip comes AFTER a big drop. Not a capital-preserving product.',
+      'Modeled sizing/cost/tax (0.30% RT, STCG 15%/LTCG 10%, idle cash 6.5%); the basket benchmarks are gross of cost (a buy-and-hold basket barely trades, so this is minor and does not change the conclusion). Nothing wired live. Past performance is not indicative of future results.',
+    ],
+    githubLinks: [
+      { label: '📊 Clean visual report (HTML) — the full story on one page', href: '/app/weekly-supertrend-report.html' },
+      { label: 'RESULTS.md (verdict + correction + tables)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/73_weekly_supertrend_investing/results/RESULTS.md' },
+      { label: 'fair_bench.py (the deciding survivorship-matched test)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/73_weekly_supertrend_investing/scripts/fair_bench.py' },
+      { label: 'st_weekly_engine.py + g4_portfolio.py', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/73_weekly_supertrend_investing/scripts/st_weekly_engine.py' },
+    ],
+    projectPaths: [
+      'research\\73_weekly_supertrend_investing\\WEEKLY_SUPERTREND_10_3_WEEKLY_SWEEP_STATUS.md',
+      'research\\73_weekly_supertrend_investing\\scripts\\ (st_weekly_engine, g1_signal_probe, g4_portfolio, g3_param_sens, fair_bench, make_tearsheet).py',
+      'research\\73_weekly_supertrend_investing\\results\\ (RESULTS.md, weekly-supertrend-nifty200.png, g*_*.csv)',
     ],
   },
 ];
