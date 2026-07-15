@@ -132,3 +132,56 @@ if theta lives in the final days, then HOLD for days instead of renting the risk
 To test: enter Wed/Thu (DTE 4–6), hold N days into expiry; strangle vs iron condor (capped tail);
 OTM width; VIX / CPR filters; and **overnight gap risk — the thing that can kill it, and precisely
 what an intraday system never has to face.**
+
+---
+
+# G12 — the two gating questions: strike PEAK and portfolio correlation
+
+## Strike sweep, extended until it turns → PEAK at 1.4% OTM shorts
+
+| shorts | annual | win | maxDD | Calmar | +yrs |
+|---|---|---|---|---|---|
+| 0.4% | +24,364 | 72% | -24,902 | 0.98 | 10/12 |
+| 0.6% | +33,114 | 74% | -29,065 | 1.14 | 10/12 |
+| 0.8% | +38,944 | 75% | -23,820 | 1.63 | 11/12 |
+| 1.0% | +39,466 | 77% | -26,637 | 1.48 | 11/12 |
+| 1.2% | +42,104 | 78% | -26,550 | 1.59 | 11/12 |
+| **1.4%** | **+42,954** | **78%** | **-22,440** | **1.91** | 11/12 |
+| 1.6% | +39,518 | 80% | -25,393 | 1.56 | 11/12 |
+
+It peaks at 1.4% (Calmar 1.91) and turns at 1.6% — a real interior optimum, retiring the "still
+improving at the edge" caveat. BUT the engine has NO volatility skew (only a per-DTE IV multiplier)
+and was validated near-ATM (~0.4% OTM). 1.4% OTM is exactly where skew bites hardest, so the engine
+is LEAST reliable there. Treat 0.8-1.0% as the validated-confidence zone; 1.4% is suggestive and
+needs skew-aware (real-chain) pricing before trusting.
+
+## Correlation with NAS-OPT → NOT the same bet. Strongly diversifying.
+
+The original worry: every options book we run is short-vol, so adding this concentrates the risk.
+The data says the opposite, because the two books trade OPPOSITE ENDS OF THE EXPIRY CYCLE:
+
+- NAS-OPT holds the 2 days CLOSEST to expiry (DTE 0-1).
+- The condor holds days 4-6 BEFORE expiry.
+- **Simultaneously in the market: 3 calendar days in 11 years.**
+- **On the condor's 10 worst days, NAS-OPT was in the market and losing: 0 of 10.**
+- Combined-book maxDD -49,771 vs the sum of separate DDs -238,430 -> diversifying, not concentrating.
+
+HONESTY CAVEAT: the 11-year NAS-OPT SYNTHETIC came out net-negative (-203k), contradicting the +EV
+that research/79 measured on the real 58-day chain. So the combined-book TOTALS are not trustworthy.
+But the OVERLAP STRUCTURE (near-zero simultaneous exposure, 0/10 worst-day coincidence) does not
+depend on P&L magnitudes and is robust. That is the part that answers the question.
+
+## Definition caveat found here
+Both books are defined relative to expiry, and NIFTY expiry was THURSDAY until 2025-09, then TUESDAY.
+So the condor's "Wed->Fri (no weekend)" identity only holds in the recent Tuesday era. In the
+Thursday era, "enter DTE6, exit DTE4" was FRIDAY->MONDAY, carrying a weekend. The 11-year backtest
+therefore blends weekend-carry and no-weekend trades. The DTE-relative structure (2-session hold,
+4 days before expiry) is consistent; the weekend exposure is not.
+
+## Where this leaves the verdict
+Still SIGNAL, not STRATEGY, but two of the three blockers have moved:
+- Strike optimum: FOUND (1.4% in-engine; 0.8-1.0% validated-confidence).
+- Correlation: RESOLVED FAVOURABLY — it diversifies the existing short-vol book rather than doubling it.
+- Real-chain validation at the chosen strikes: STILL OPEN — and now the priority, because the
+  in-engine optimum (1.4%) sits exactly where the engine is weakest (far-OTM, no skew). The live
+  paper book (running at 0.8%) is the vehicle that will supply that real-chain evidence.
