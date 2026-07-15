@@ -270,6 +270,7 @@ export default function Straddles() {
   const [v2spot, setV2spot] = useState<number | null>(null);    // live NIFTY spot from the stream
   const [v2prev, setV2prev] = useState<any>(null);   // live deploy preview (legs + margin + gate)
   const [v2busy, setV2busy] = useState(false);       // an action is in flight
+  const [condor, setCondor] = useState<any>(null);   // research/80 Wed->Fri iron-condor paper book
   const [v2msg, setV2msg] = useState<string | null>(null);  // last action result message
 
   useEffect(() => {
@@ -280,6 +281,7 @@ export default function Straddles() {
       fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
       fetch('/api/v2-ironfly/state?t=' + Date.now()).then((r) => r.json()).then(setV2eng).catch(() => {});
       fetch('/api/v2-breakout/state?t=' + Date.now()).then((r) => r.json()).then(setBo).catch(() => {});
+      fetch('/app/condor_paper.json?t=' + Date.now()).then((r) => r.json()).then(setCondor).catch(() => {});
     };
     loadLive();
     const id = setInterval(loadLive, 30000);
@@ -402,11 +404,94 @@ export default function Straddles() {
     color: c, borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 600,
   });
 
+  const cth2: React.CSSProperties = { fontSize: 9.5, color: C.muted, fontWeight: 600, textAlign: 'right', padding: '2px 8px', textTransform: 'uppercase', borderBottom: `1px solid ${C.hairSoft}` };
+  const ctd2: React.CSSProperties = { fontSize: 11.5, color: C.ink, textAlign: 'right', padding: '4px 8px', borderTop: `1px solid ${C.hairSoft}`, fontVariantNumeric: 'tabular-nums' };
   return (
     <div style={{ maxWidth: 1000 }}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
       <div className="page-title">Straddle Systems</div>
       <div className="page-subtitle">Two short-straddle systems on NIFTY · backtested on the recorded chain · paper-forward 10 lots</div>
+
+      {condor && (
+        <section style={{ ...card, marginTop: 14, borderColor: C.amber }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Wed&#8594;Fri Iron Condor</span>
+            {chip(C.amberSoft, C.amber, 'PAPER · 2 lots')}
+            <a href="/app/backtest/fardte-rescue" style={{ textDecoration: 'none' }}>
+              {chip(C.navySoft, C.navy, 'research/80 ↗')}
+            </a>
+            {condor.closed_trades > 0 && (
+              <span style={{ marginLeft: 'auto', fontSize: 12, color: C.muted }}>
+                closed {condor.closed_trades} · <b style={{ color: col(condor.closed_total_pnl) }}>{inr(condor.closed_total_pnl)}</b>
+                {condor.win_rate != null ? ` · ${condor.win_rate}% win` : ''}
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 10 }}>{condor.subtitle}</div>
+
+          {condor.open ? (
+            <div>
+              <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'baseline', marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 10.5, color: C.muted, textTransform: 'uppercase' }}>Day P&amp;L</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: col(condor.open.day_pnl || 0) }}>{inr(condor.open.day_pnl || 0)}</div>
+                </div>
+                <div style={{ fontSize: 12, color: C.sec }}>
+                  entered <b>{condor.open.entry_day}</b> (DTE {condor.open.dte_at_entry}) · spot {condor.open.spot_at_entry} ·
+                  credit <b>{condor.open.credit}</b> pts ({inr(condor.open.credit_inr)}) ·
+                  max loss <b style={{ color: C.neg }}>{inr(-condor.open.max_loss_inr)}</b> · exit Fri close
+                </div>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>
+                  <th style={{ ...cth2, textAlign: 'left' }}>LEG</th><th style={cth2}>STRIKE</th><th style={cth2}>QTY</th>
+                  <th style={cth2}>ENTRY</th><th style={cth2}>LTP</th><th style={cth2}>P&amp;L</th>
+                </tr></thead>
+                <tbody>{condor.open.legs.map((l: any, i: number) => (
+                  <tr key={i}>
+                    <td style={{ ...ctd2, textAlign: 'left', fontWeight: 700, color: l.side === 'SELL' ? C.neg : C.pos }}>{l.side} {l.type}</td>
+                    <td style={ctd2}>{l.strike}</td>
+                    <td style={ctd2}>{l.qty}</td>
+                    <td style={ctd2}>{l.entry}</td>
+                    <td style={ctd2}>{l.ltp}</td>
+                    <td style={{ ...ctd2, fontWeight: 700, color: col(l.pnl) }}>{inr(l.pnl)}</td>
+                  </tr>))}</tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: C.faint, padding: '4px 0' }}>
+              Flat — no open position. Enters automatically on the next Wednesday close.
+            </div>
+          )}
+
+          {condor.history && condor.history.length > 0 && (
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 600, color: C.navy, listStyle: 'none' }}>
+                &#9656; Completed cycles ({condor.history.length})
+              </summary>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+                <thead><tr>
+                  <th style={{ ...cth2, textAlign: 'left' }}>ENTERED</th><th style={{ ...cth2, textAlign: 'left' }}>EXITED</th>
+                  <th style={cth2}>CREDIT</th><th style={cth2}>EXIT VAL</th><th style={cth2}>P&amp;L</th>
+                </tr></thead>
+                <tbody>{condor.history.map((h: any, i: number) => (
+                  <tr key={i}>
+                    <td style={{ ...ctd2, textAlign: 'left' }}>{h.entry_day}</td>
+                    <td style={{ ...ctd2, textAlign: 'left' }}>{h.exit_day}</td>
+                    <td style={ctd2}>{h.credit}</td>
+                    <td style={ctd2}>{h.exit_value}</td>
+                    <td style={{ ...ctd2, fontWeight: 700, color: col(h.pnl) }}>{inr(h.pnl)}</td>
+                  </tr>))}</tbody>
+              </table>
+            </details>
+          )}
+          <div style={{ fontSize: 10.5, color: C.faint, marginTop: 8 }}>
+            SIGNAL, not yet a proven strategy — paper-forward only while the portfolio-correlation and real-chain
+            checks are open. Uses the capital NAS-OPT leaves idle Wed&#8211;Fri; flat before Monday.
+          </div>
+        </section>
+      )}
+
 
       {/* ===== TODAY · LIVE ===== */}
       {live && (
