@@ -9,19 +9,15 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 ## Status (live)
 
 - **State:** RUNNING
-- **Progress:** 65 done · 1 skipped (already deep) · 1 failed · of 381 symbols
-- **Current symbol:** BIRLACORPN
-- **Elapsed:** 195 min · **crude ETA:** 15.4 h remaining
-- **Last update:** 2026-07-15T22:00:19 IST
+- **Progress:** 68 done · 1 skipped (already deep) · 2 failed · of 381 symbols
+- **Current symbol:** BPCL
+- **Elapsed:** 208 min · **crude ETA:** 15.4 h remaining
+- **Last update:** 2026-07-15T22:13:45 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-15 20:28 IST | [38/381] ASIANPAINT done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 20:31 IST | [39/381] ASTERDM done in 3.1m — earliest 2024-03-18 → 2018-02-26 |
-| 2026-07-15 20:34 IST | [40/381] ASTRAL done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 20:37 IST | [41/381] ASTRAZEN done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:40 IST | [42/381] ATUL done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:43 IST | [43/381] AUBANK done in 3.0m — earliest 2024-03-18 → 2017-07-10 |
 | 2026-07-15 20:47 IST | [44/381] AUROPHARMA done in 3.5m — earliest 2024-03-18 → 2015-02-02 |
@@ -48,6 +44,10 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 | 2026-07-15 21:53 IST | [65/381] BHARATFORG done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 21:56 IST | [66/381] BHEL done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 22:00 IST | [67/381] BIOCON done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 22:03 IST | [68/381] BIRLACORPN done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 22:06 IST | [69/381] BLUEDART FAILED: BLUEDART: Execution failed |
+| 2026-07-15 22:10 IST | [70/381] BLUESTARCO done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 22:13 IST | [71/381] BOSCHLTD done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
 
 ## Crash recovery
 

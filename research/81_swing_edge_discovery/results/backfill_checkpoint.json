@@ -329,10 +329,26 @@
    "min": "2015-02-02",
    "was": "2024-03-18",
    "mins": 3.3
+  },
+  "BIRLACORPN": {
+   "min": "2015-02-02",
+   "was": "2024-03-18",
+   "mins": 3.2
+  },
+  "BLUESTARCO": {
+   "min": "2015-02-02",
+   "was": "2024-03-18",
+   "mins": 3.3
+  },
+  "BOSCHLTD": {
+   "min": "2015-02-02",
+   "was": "2024-03-18",
+   "mins": 3.7
   }
  },
  "failed": {
-  "BANKNIFTY": "BANKNIFTY: Instrument token not found for BANKNIFTY"
+  "BANKNIFTY": "BANKNIFTY: Instrument token not found for BANKNIFTY",
+  "BLUEDART": "BLUEDART: Execution failed"
  },
  "started_at": "2026-07-15T18:44:11"
 }
