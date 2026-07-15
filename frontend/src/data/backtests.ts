@@ -328,7 +328,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'validated against 58 real days, but the STRATEGY was not.',
       'CORRELATION — RESOLVED, and the worry was BACKWARDS. NAS-OPT holds the 2 days CLOSEST to expiry (DTE ' +
       '0-1); this condor holds days 4-6 BEFORE expiry. They trade opposite ends of the week: simultaneously ' +
-      'in the market only 3 calendar days in 11 years, and on the condor's 10 worst days NAS-OPT was flat ' +
+      'in the market only 3 calendar days in 11 years, and on the 10 worst condor days NAS-OPT was flat ' +
       'every time. Combined drawdown -49,771 vs the sum of separate DDs -238,430 — it DIVERSIFIES the existing ' +
       'short-vol book rather than doubling it. (Caveat: the 11-year NAS-OPT SYNTHETIC came out net-negative, ' +
       'contradicting the real 58-day +EV, so the combined TOTALS are not trusted — but the near-zero overlap ' +
