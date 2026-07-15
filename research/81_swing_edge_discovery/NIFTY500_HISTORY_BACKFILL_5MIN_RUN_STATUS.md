@@ -9,16 +9,15 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 ## Status (live)
 
 - **State:** RUNNING
-- **Progress:** 64 done · 1 skipped (already deep) · 1 failed · of 381 symbols
-- **Current symbol:** BIOCON
-- **Elapsed:** 191 min · **crude ETA:** 15.5 h remaining
-- **Last update:** 2026-07-15T21:56:58 IST
+- **Progress:** 65 done · 1 skipped (already deep) · 1 failed · of 381 symbols
+- **Current symbol:** BIRLACORPN
+- **Elapsed:** 195 min · **crude ETA:** 15.4 h remaining
+- **Last update:** 2026-07-15T22:00:19 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-15 20:24 IST | [37/381] ASHOKLEY done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:28 IST | [38/381] ASIANPAINT done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:31 IST | [39/381] ASTERDM done in 3.1m — earliest 2024-03-18 → 2018-02-26 |
 | 2026-07-15 20:34 IST | [40/381] ASTRAL done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
@@ -48,6 +47,7 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 | 2026-07-15 21:50 IST | [64/381] BERGEPAINT done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 21:53 IST | [65/381] BHARATFORG done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 21:56 IST | [66/381] BHEL done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 22:00 IST | [67/381] BIOCON done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
 
 ## Crash recovery
 

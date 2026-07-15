@@ -53,7 +53,17 @@ or circuits → corporate-action guard needed for any cash-equity strategy.
 | EXP-E1 | E cross-sectional | 5-day RS decile rotation, fresh entrants, 16 cells | `experiments/E1_xsec_rs_daily/results/e1_ranking.csv` | **NO EDGE** — all 16 cells net-negative both directions/skips |
 | EXP-F1 | F index | NIFTY ORB→1-4d hold, 5-min 2015-2021 IS, 12 cells | `experiments/F1_nifty_orb_5min/results/f1_ranking.csv` | **SIGNAL (best of night)** — long-only, monotone in hold, consistent across W, 6/7 yrs positive & improving; t=2.2-2.3 at realistic 1bp index cost (+15bps/trade), dies at 6bp stress. F2 filters + Val confirmation queued |
 
-**Total experiment count (multiple-testing ledger): 108 cells (A1 24, B1 16, B2 8, C1 16, D1 16, E1 16, F1 12; +6 F1 cost-sensitivity re-runs of same cells, not selection)**
+| EXP-F2 | F index | filters on locked F1 cell (gap/trend/VIX marginal) + ONE Val touch, 8 cells | `experiments/F2_nifty_orb_filters/results/f2_is_filters.csv` | **SHORTLISTED (borderline Val pass)** — gap_up≥0.25% adopted (IS +29bps t=3.0 @1bp; gap-down inverts edge); Val +15.4bps @1bp all-years-pos, WF-eff 0.53@1bp/0.46@3bp. Val CONSUMED for family F |
+| EXP-A2 | A momentum (5-min) | stock ORB→2-4d hold, 9 deep names, 8 cells | `experiments/A2_stock_orb_5min/results/a2_ranking.csv` | **WEAK SIGNAL** — same signature as F1 (longs +7.6bps t=1.6, shorts strongly neg) |
+| EXP-A3 | A momentum (5-min) | gap_up≥0.25% conditioning on A2 long-ts4 cells, 2 cells | in A2 STATUS | **NEAR-PASS** — +17.4bps net t=2.87, 8/9 symbols positive; gap+ORB mechanism REPLICATES across index & stocks |
+
+**Total experiment count (multiple-testing ledger): 126 cells (A1 24, B1 16, B2 8, C1 16, D1 16, E1 16, F1 12, F2 8, A2 8, A3 2; +6 F1 cost-sensitivity re-runs of same cells, not selection)**
+
+**Lead candidate (end of night 1):** GAP-UP (≥0.25%) + OPENING-RANGE BREAKOUT
+LONG, hold ≤4 sessions — coherent on NIFTY (t 3.0 IS, borderline Val pass) AND
+9 F&O stocks (t 2.87, 8/9 positive). G3 next: walk-forward, Monte Carlo,
+param plateau, regime split, broad universe + BANKNIFTY post-backfill.
+Val consumed for family F; OOS untouched everywhere.
 
 **Meta-finding (daily variants):** on daily bars with forced 2–4 session exits,
 the F&O universe offers at best a weak deep-reversion short-side signal.
