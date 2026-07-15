@@ -9,22 +9,15 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 ## Status (live)
 
 - **State:** RUNNING
-- **Progress:** 26 done · 1 skipped (already deep) · 1 failed · of 381 symbols
-- **Current symbol:** AMBER
-- **Elapsed:** 67 min · **crude ETA:** 14.6 h remaining
-- **Last update:** 2026-07-15T19:52:36 IST
+- **Progress:** 35 done · 1 skipped (already deep) · 1 failed · of 381 symbols
+- **Current symbol:** ASIANPAINT
+- **Elapsed:** 99 min · **crude ETA:** 15.8 h remaining
+- **Last update:** 2026-07-15T20:24:52 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-15 18:45 IST | Run start — 381 symbols, target from 2015-02-01 |
-| 2026-07-15 18:45 IST | [1/381] BANKNIFTY FAILED: BANKNIFTY: Instrument token not found for BANKNIFTY |
-| 2026-07-15 18:46 IST | [3/381] ICICIBANK done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
-| 2026-07-15 18:47 IST | [4/381] RELIANCE done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
-| 2026-07-15 18:48 IST | [5/381] INFY done in 0.9m — earliest 2018-01-01 → 2015-02-02 |
-| 2026-07-15 18:49 IST | [6/381] TCS done in 0.9m — earliest 2018-01-01 → 2015-02-02 |
-| 2026-07-15 18:50 IST | [7/381] SBIN done in 0.9m — earliest 2018-01-01 → 2015-02-02 |
 | 2026-07-15 18:51 IST | [8/381] ITC done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
 | 2026-07-15 18:52 IST | [9/381] HINDUNILVR done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
 | 2026-07-15 18:53 IST | [10/381] KOTAKBANK done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
@@ -46,6 +39,15 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 | 2026-07-15 19:44 IST | [26/381] AJANTPHARM done in 3.4m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 19:48 IST | [27/381] AKZOINDIA done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 19:52 IST | [28/381] ALKEM done in 3.9m — earliest 2024-03-18 → 2015-12-23 |
+| 2026-07-15 19:56 IST | [29/381] AMBER done in 3.9m — earliest 2024-03-18 → 2018-01-30 |
+| 2026-07-15 20:00 IST | [30/381] AMBUJACEM done in 4.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:04 IST | [31/381] APLAPOLLO done in 3.8m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:08 IST | [32/381] APLLTD done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:11 IST | [33/381] APOLLOHOSP done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:14 IST | [34/381] APOLLOTYRE done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:18 IST | [35/381] ASAHIINDIA done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:21 IST | [36/381] ASHOKA done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:24 IST | [37/381] ASHOKLEY done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
 
 ## Crash recovery
 

@@ -46,9 +46,20 @@ or circuits → corporate-action guard needed for any cash-equity strategy.
 | ID | Family | What | Result file | Verdict |
 |---|---|---|---|---|
 | EXP-A1 | A momentum | Donchian N-day breakout, daily F&O, 2-4d hold, 24 cells, IS 05-17 | `experiments/A1_donchian_daily/results/a1_ranking.csv` | **NO EDGE** (all cells net-neg; longs gross-neg t≈−8..−10; best short gross +4-6bps < 9.6bps cost) |
-| EXP-B1 | B mean-rev | z-score dip-buy/rip-fade, daily F&O, 2-4d hold, 16 cells, IS 05-17 | `experiments/B1_zscore_daily/` | pre-registered |
+| EXP-B1 | B mean-rev | z-score dip-buy/rip-fade, daily F&O, 2-4d hold, 16 cells, IS 05-17 | `experiments/B1_zscore_daily/results/b1_ranking.csv` | **WEAK SIGNAL** — gate t≥3 missed (best +31.7bps net, t=1.5) but monotone in z, sma20-target dominant, short side > long |
+| EXP-B2 | B mean-rev | deeper z {2.5,3.0} follow-up + per-year regime check, 8 cells | `experiments/B2_deep_z_daily/results/b2_ranking.csv` | **SIGNAL (not investable)** — z3.0 plateaus; per-year clean (8-10/13 yrs positive, NOT a 2008 artifact); max t=1.5 dies to multiple-testing haircut. Family B daily CLOSED; 5-min timing + sleeve candidacy recorded as next levers |
+| EXP-C1 | C volatility | BB-squeeze→breakout daily, 16 cells | `experiments/C1_squeeze_daily/results/c1_ranking.csv` | **NO EDGE** — 4 positive cells but spike-not-plateau (longs only ts4, shorts only ts2); fails stability |
+| EXP-D1 | D intraday→swing | EOD strength (CLV) carry, 16 cells | `experiments/D1_eod_strength_daily/results/d1_ranking.csv` | **NO EDGE** — longs negative gross; best short +6.6bps t=1.2 |
+| EXP-E1 | E cross-sectional | 5-day RS decile rotation, fresh entrants, 16 cells | `experiments/E1_xsec_rs_daily/results/e1_ranking.csv` | **NO EDGE** — all 16 cells net-negative both directions/skips |
 
-**Total experiment count (multiple-testing ledger): 40 cells (A1 24 + B1 16)**
+**Total experiment count (multiple-testing ledger): 96 cells (A1 24, B1 16, B2 8, C1 16, D1 16, E1 16)**
+
+**Meta-finding (daily variants):** on daily bars with forced 2–4 session exits,
+the F&O universe offers at best a weak deep-reversion short-side signal.
+Breakout/momentum needs longer holds than the mandate allows; rotation/reversal
+is cost-eaten. The study's remaining hope: 5-min families (F index ORB, A2
+stock ORB, B-timing refinement) where entry precision is worth bps and index
+futures carry the lowest cost.
 
 ## 4. In progress + how to resume
 
