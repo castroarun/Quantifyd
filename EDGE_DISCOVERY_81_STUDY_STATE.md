@@ -45,9 +45,10 @@ or circuits → corporate-action guard needed for any cash-equity strategy.
 
 | ID | Family | What | Result file | Verdict |
 |---|---|---|---|---|
-| (none yet) | | | | |
+| EXP-A1 | A momentum | Donchian N-day breakout, daily F&O, 2-4d hold, 24 cells, IS 05-17 | `experiments/A1_donchian_daily/results/a1_ranking.csv` | **NO EDGE** (all cells net-neg; longs gross-neg t≈−8..−10; best short gross +4-6bps < 9.6bps cost) |
+| EXP-B1 | B mean-rev | z-score dip-buy/rip-fade, daily F&O, 2-4d hold, 16 cells, IS 05-17 | `experiments/B1_zscore_daily/` | pre-registered |
 
-**Total experiment count (multiple-testing ledger): 0**
+**Total experiment count (multiple-testing ledger): 40 cells (A1 24 + B1 16)**
 
 ## 4. In progress + how to resume
 

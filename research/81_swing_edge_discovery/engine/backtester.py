@@ -75,7 +75,8 @@ def run_symbol(bars: pd.DataFrame, entries: pd.DataFrame,
         stop = float(row["stop"])
         target = float(row.get("target", np.nan))
 
-        ent_px = cfg.cost.fill_price(o[ent_i], is_buy=(d == 1))
+        ent_raw = o[ent_i]
+        ent_px = cfg.cost.fill_price(ent_raw, is_buy=(d == 1))
         ent_sess = sess_codes[ent_i]
         last_sess = ent_sess + cfg.time_stop_sessions - 1
         # bars of the trade window: ent_i .. last bar of last_sess
@@ -87,7 +88,7 @@ def run_symbol(bars: pd.DataFrame, entries: pd.DataFrame,
             # window runs past data end — cannot verify the time-stop: drop trade
             continue
 
-        exit_i, exit_px, reason = None, None, None
+        exit_i, exit_px, exit_raw, reason = None, None, None, None
         for i in range(ent_i, win_end + 1):
             open_px = o[i]
             if d == 1:
@@ -104,25 +105,26 @@ def run_symbol(bars: pd.DataFrame, entries: pd.DataFrame,
                 # entry bar: entry happened AT the open; stop/target act after
                 gap_stop = gap_tgt = False
             if stop_hit:                             # stop precedence (conservative)
-                raw = open_px if gap_stop else stop
+                exit_raw = open_px if gap_stop else stop
                 exit_i, reason = i, "STOP"
-                exit_px = cfg.cost.fill_price(raw, is_buy=(d == -1))
+                exit_px = cfg.cost.fill_price(exit_raw, is_buy=(d == -1))
                 break
             if tgt_hit:
-                raw = open_px if gap_tgt else target
+                exit_raw = open_px if gap_tgt else target
                 exit_i, reason = i, "TARGET"
-                exit_px = cfg.cost.fill_price(raw, is_buy=(d == -1))
+                exit_px = cfg.cost.fill_price(exit_raw, is_buy=(d == -1))
                 break
         if exit_i is None:                           # time-stop at window close
             exit_i, reason = win_end, "TIME"
-            exit_px = cfg.cost.fill_price(c[win_end], is_buy=(d == -1))
+            exit_raw = c[win_end]
+            exit_px = cfg.cost.fill_price(exit_raw, is_buy=(d == -1))
 
         qty = NOTIONAL_RS / ent_px
         charges = (cfg.cost.side_cost(ent_px, qty, d == 1)
                    + cfg.cost.side_cost(exit_px, qty, d == -1))
-        gross = d * (exit_px / ent_px - 1)
-        net = gross - charges / NOTIONAL_RS
-        risk = abs(ent_px - stop) / ent_px
+        gross = d * (exit_raw / ent_raw - 1)                 # raw prices: pure gross
+        net = d * (exit_px / ent_px - 1) - charges / NOTIONAL_RS  # slippage + charges
+        risk = abs(ent_raw - stop) / ent_raw
         trades.append({
             "symbol": symbol, "direction": d,
             "signal_time": ts, "entry_time": idx[ent_i], "exit_time": idx[exit_i],

@@ -9,10 +9,10 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 ## Status (live)
 
 - **State:** RUNNING
-- **Progress:** 24 done · 1 skipped (already deep) · 1 failed · of 381 symbols
-- **Current symbol:** AKZOINDIA
-- **Elapsed:** 59 min · **crude ETA:** 14.1 h remaining
-- **Last update:** 2026-07-15T19:44:56 IST
+- **Progress:** 26 done · 1 skipped (already deep) · 1 failed · of 381 symbols
+- **Current symbol:** AMBER
+- **Elapsed:** 67 min · **crude ETA:** 14.6 h remaining
+- **Last update:** 2026-07-15T19:52:36 IST
 
 ## Event log (last 30)
 
@@ -44,6 +44,8 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 | 2026-07-15 19:37 IST | [24/381] AFFLE done in 3.4m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 19:41 IST | [25/381] AIAENG done in 3.5m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 19:44 IST | [26/381] AJANTPHARM done in 3.4m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 19:48 IST | [27/381] AKZOINDIA done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 19:52 IST | [28/381] ALKEM done in 3.9m — earliest 2024-03-18 → 2015-12-23 |
 
 ## Crash recovery
 
