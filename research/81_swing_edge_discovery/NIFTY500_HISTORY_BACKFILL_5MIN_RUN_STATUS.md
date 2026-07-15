@@ -9,16 +9,15 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 ## Status (live)
 
 - **State:** RUNNING
-- **Progress:** 68 done · 1 skipped (already deep) · 2 failed · of 381 symbols
-- **Current symbol:** BPCL
-- **Elapsed:** 208 min · **crude ETA:** 15.4 h remaining
-- **Last update:** 2026-07-15T22:13:45 IST
+- **Progress:** 69 done · 1 skipped (already deep) · 2 failed · of 381 symbols
+- **Current symbol:** BRIGADE
+- **Elapsed:** 212 min · **crude ETA:** 15.4 h remaining
+- **Last update:** 2026-07-15T22:17:31 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-15 20:40 IST | [42/381] ATUL done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:43 IST | [43/381] AUBANK done in 3.0m — earliest 2024-03-18 → 2017-07-10 |
 | 2026-07-15 20:47 IST | [44/381] AUROPHARMA done in 3.5m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:50 IST | [45/381] AXISBANK done in 3.4m — earliest 2024-03-18 → 2015-02-02 |
@@ -48,6 +47,7 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 | 2026-07-15 22:06 IST | [69/381] BLUEDART FAILED: BLUEDART: Execution failed |
 | 2026-07-15 22:10 IST | [70/381] BLUESTARCO done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 22:13 IST | [71/381] BOSCHLTD done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 22:17 IST | [72/381] BPCL done in 3.8m — earliest 2024-03-18 → 2015-02-02 |
 
 ## Crash recovery
 
