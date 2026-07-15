@@ -9,16 +9,15 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 ## Status (live)
 
 - **State:** RUNNING
-- **Progress:** 35 done · 1 skipped (already deep) · 1 failed · of 381 symbols
-- **Current symbol:** ASIANPAINT
-- **Elapsed:** 99 min · **crude ETA:** 15.8 h remaining
-- **Last update:** 2026-07-15T20:24:52 IST
+- **Progress:** 36 done · 1 skipped (already deep) · 1 failed · of 381 symbols
+- **Current symbol:** ASTERDM
+- **Elapsed:** 103 min · **crude ETA:** 15.8 h remaining
+- **Last update:** 2026-07-15T20:28:04 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-15 18:51 IST | [8/381] ITC done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
 | 2026-07-15 18:52 IST | [9/381] HINDUNILVR done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
 | 2026-07-15 18:53 IST | [10/381] KOTAKBANK done in 1.0m — earliest 2018-01-01 → 2015-02-02 |
 | 2026-07-15 18:54 IST | [11/381] BHARTIARTL done in 0.9m — earliest 2018-01-01 → 2015-02-02 |
@@ -48,6 +47,7 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 | 2026-07-15 20:18 IST | [35/381] ASAHIINDIA done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:21 IST | [36/381] ASHOKA done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-15 20:24 IST | [37/381] ASHOKLEY done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-15 20:28 IST | [38/381] ASIANPAINT done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
 
 ## Crash recovery
 
