@@ -51,8 +51,9 @@ or circuits → corporate-action guard needed for any cash-equity strategy.
 | EXP-C1 | C volatility | BB-squeeze→breakout daily, 16 cells | `experiments/C1_squeeze_daily/results/c1_ranking.csv` | **NO EDGE** — 4 positive cells but spike-not-plateau (longs only ts4, shorts only ts2); fails stability |
 | EXP-D1 | D intraday→swing | EOD strength (CLV) carry, 16 cells | `experiments/D1_eod_strength_daily/results/d1_ranking.csv` | **NO EDGE** — longs negative gross; best short +6.6bps t=1.2 |
 | EXP-E1 | E cross-sectional | 5-day RS decile rotation, fresh entrants, 16 cells | `experiments/E1_xsec_rs_daily/results/e1_ranking.csv` | **NO EDGE** — all 16 cells net-negative both directions/skips |
+| EXP-F1 | F index | NIFTY ORB→1-4d hold, 5-min 2015-2021 IS, 12 cells | `experiments/F1_nifty_orb_5min/results/f1_ranking.csv` | **SIGNAL (best of night)** — long-only, monotone in hold, consistent across W, 6/7 yrs positive & improving; t=2.2-2.3 at realistic 1bp index cost (+15bps/trade), dies at 6bp stress. F2 filters + Val confirmation queued |
 
-**Total experiment count (multiple-testing ledger): 96 cells (A1 24, B1 16, B2 8, C1 16, D1 16, E1 16)**
+**Total experiment count (multiple-testing ledger): 108 cells (A1 24, B1 16, B2 8, C1 16, D1 16, E1 16, F1 12; +6 F1 cost-sensitivity re-runs of same cells, not selection)**
 
 **Meta-finding (daily variants):** on daily bars with forced 2–4 session exits,
 the F&O universe offers at best a weak deep-reversion short-side signal.
@@ -87,6 +88,12 @@ per series actually used). **No system has consumed its OOS look yet.**
 
 ## 7. Next 3 actions
 
-1. Launch backfill on VPS (smoke 1 symbol → nohup full run) + monitor.
-2. Phase 0 audit on deep series → `reports/00_data_audit.md` → **pause for user sign-off**.
-3. Build canonical backtest engine (`research/81_swing_edge_discovery/engine/`) + unit tests.
+1. **When backfill completes** (single-notification waiter armed): repair pass —
+   full-universe splice re-check (delete+refetch flagged symbols; KOTAKBANK
+   known), BANKNIFTY 5-min 2015→2024 via index token 260105, re-download 22
+   daily-hole symbols (COALINDIA, ONGC...), then re-run data audit sections A/F.
+2. **EXP-F2 (pre-register first):** conditioning filters on F1's W12_L_ts4
+   locked cell — gap direction/size, prev-day trend, INDIAVIX terciles; then
+   Val-split (2021-10→2023-12) confirmation of the locked config.
+3. **EXP-A2:** stock ORB→swing on the (now deep) broad 5-min universe;
+   B-family 5-min entry-timing refinement on z≥2.5 short-fade days.

@@ -2,84 +2,49 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ✅ DONE 2026-07-13 — P0: a PAPER leg can no longer place a REAL order (ATM4 roll)
-`nas_atm4` (squeeze, PAPER, 10 lots) rolled its 24100 leg and fired a **REAL 650-qty SELL on 24250CE**.
-User spotted it ("24250 CE 10 lots were taken now - why?") and exited manually.
-- **Root cause:** the ROLL path and the ENTRY path decided live/paper by *different rules*. Entry
-  (`_place_order`) uses the day-matrix gate (`cfg['_force_mode']`) → correctly PAPER. The roll used the
-  LEGACY rule (`paper_trading_mode` + `live_weekdays`); at runtime `paper_trading_mode` is **False** for
-  the squeeze systems (config says True, but `force_paper=False` flips it at startup) and Monday ∈
-  live_weekdays → resolved **LIVE**, at the paper book's 650 qty.
-- **Fix (commit c7c47a3, deployed + restarted 19:4x):** the roll now **INHERITS the mode of the leg it
-  replaces** (a paper leg can only ever roll into a paper leg — there is no real short to replace), and
-  the day-matrix may only **downgrade** live→paper, never upgrade. Belt and braces.
-- Reconciled `nas_atm4` id=288 → CLOSED so no 10-lot orphan LONG could appear.
+## ★ ACTIVE — research/81: Swing Edge Discovery study (brief: docs/Trading-sytem-research-prompt-fable.md) — 2026-07-15
+Multi-family systematic search for automatable 2-4-day swing systems, net-of-cost.
+Crash-recovery master: `EDGE_DISCOVERY_81_STUDY_STATE.md` (repo root, VPS canonical).
+- [x] Phase 0 data audit (user signed off) + unit-tested canonical engine (32 asserts)
+- [x] 5-min history backfill 2015→2024 for ~370 names LAUNCHED on VPS (~20h; resumable;
+  STATUS: `research/81_swing_edge_discovery/NIFTY500_HISTORY_BACKFILL_5MIN_RUN_STATUS.md`)
+- [x] Night-1 IS screens (108 cells): A1/C1/D1/E1 **NO EDGE**; B1+B2 **SIGNAL** (deep-z
+  short-side reversion, +32bps, 8-10/13 yrs pos, t1.5); F1 **SIGNAL — best** (NIFTY ORB
+  long 4d-hold, +15bps net @1bp cost, t2.3, 6/7 yrs pos & improving)
+- [ ] Post-backfill repair pass (splice refetch incl. KOTAKBANK, BANKNIFTY via token
+  260105, 22 daily-hole symbols) → re-audit
+- [ ] EXP-F2 filters on F1 locked cell → Val confirmation; EXP-A2 stock ORB; B 5-min timing
 
-## ✅ DONE 2026-07-13 — all NAS PAPER books dropped 10 lots → 2 lots (uniform with live)
-`paper_lots_per_leg: 10 → 2` on `NAS_ATM_DEFAULTS` (inherited by all 6 ATM variants; read in exactly
-one place, `nas_atm_executor.py:415`). Paper books now trade **130 qty**, same as the LIVE 916 book, so
-paper and live P&L are directly comparable. NAS-OPT already traded 2 lots (LOT 65 × 2) — unchanged.
-
-## ★ PENDING — restate the NAS performance HISTORY at a uniform 2 lots (display-only)
-Forward is fixed (above), but the **history is not comparable**: paper size went 65 → 75 → 375 → 650
-over time, so the daily-P&L amplitude jumps ~10× on 2026-06-25 purely from a size change, not a regime
-change. User asked to "place the recorded P&L each day in proportion".
-- **Approach — do NOT rewrite the ledger.** `nas_*_positions` is the audit record of orders that really
-  went to the exchange; rewriting live qty/P&L would falsify it. Normalise at the **display layer**.
-- **Rule:** scale a `(system, day)` figure by `130 / qty` **only where that system's legs that day were
-  `mode='paper'`**. LIVE legs (real money) always show as actually traded — never normalised.
-- **Surfaces:** `static/snapshots/*.json` (written by `scripts/snapshot_nas_eod.py` 15:32 → the daily
-  history strip), per-system stats (`nas_atm_trades.net_pnl`, which stores a `lots` column → scale by
-  `2/lots`). The intraday MTM chart is today-only, so it self-corrects from tomorrow.
-- No restart needed (frontend/static + cron script only).
-
-## ★ QUEUED (after-close build) — research/75 Skip-Lull-vs-Hold daily tracker on NAS page — 2026-07-08
-User wants the skip-lull idea CONTINUOUSLY tested + shown on the NAS page, session-independent.
-- **Finding (research/75, 14d, robust):** Bcond = 'close 09:16 ATM straddle ~11:15 IF in profit, re-enter fresh ATM 13:00, hold to 15:15' beats HOLD-all-day ~2x (Rs1373 vs 686/day @0.15%% slip, win 86%% vs 71%%). EXPIRY-driven: DTE0-1 skip +Rs942/day, far-DTE -Rs1433/day -> rule = skip-if-in-profit on expiry, hold on far-DTE. Promising NOT proven (n=9 expiry, 56%% day-win).
-- **Build:** daily EOD APScheduler job reconstructs A(hold)/B(skip)/Bcond from that day chain -> append to a results DB; NAS page card shows running A-vs-B/Bcond edge by DTE + day count; backfill the ~14 clean historical days on first run. Server-side (not session-dependent). Backend+endpoint -> deploy after 15:30; frontend card safe anytime.
-- Recording is HEALTHY (54/54 days good coverage; earlier '34/7 day' loss was MY query using the patchy option_chain.underlying_spot column + exact-minute strictness, NOT a recorder gap). Robust query = underlying_spot TABLE + ±3min windows. Scripts in research/75_intraday_time_sections/scripts.
-
+## ✅ DONE 2026-07-08 — research/75: faithful backtest of the "Nifty-250 Momentum" video
+Replicated the Quantinuous "Only Momentum Strategy You Need for Nifty 250" video on
+survivorship-free data, 2006–2026. **Verdict: STRATEGY-candidate — replicates & EXCEEDS the
+claimed return (net 31.9% CAGR / 292× vs advertised 27% / 100×) but DD is deeper (−31.6%
+daily vs claimed −23%; the −23% only shows on modern 2014+ w/ risk-adj momentum).** Key
+attribution: **the NIFTYBEES>100EMA cash gate is the whole risk story** (remove it → DD −66%);
+**the video's per-stock 50>100>200 EMA filter is inert-to-harmful** (removing it *raises* CAGR
+to 34.7%). Cost-robust, low turnover. **Not new alpha** — same family as the live momentum-paper
+₹20L book (research/62). Files: `research/75_nifty250_momentum_top15/` (RESULTS.md + tearsheet.png).
+Optional follow-up (not queued unless user wants it): publish the study to `/app/backtest` and/or
+decide whether a large-mid-250 momentum sleeve earns a slot next to momentum-paper (likely redundant).
 
 ## ✅ LIVE 2026-07-07 — 9:16 NAS systems armed REAL MONEY (2 lots, all weekdays)
 `nas_916_atm/atm2/atm4` → `live=True` on all 5 weekday DTEs, **2 lots**; squeeze `nas_atm/atm2/atm4`
 forced **PAPER** (`live=False`, shadow kept); master-mode=**live**. ATM2 keeps the 0.4% move-stop
-(revalidated best on 53d; strike-gate mechanic C worse). Activates at the 09:00 preopen restart; first
-live fire 09:16 Wed 07-08. **Wed knowingly −EV** (≈−Rs2k/lot ATM2; Thu flat, Fri +, Mon/Tue edge) —
-user chose all-days. Commit 530d99c. Kill: /api/nas/kill-switch. Paper-shadow stays 10 lots.
+(revalidated best on 53d; strike-gate mechanic C was worse). Activates at the 09:00 preopen restart;
+first live fire 09:16 Wed 07-08. **Wed is knowingly −EV** (≈−₹2k/lot ATM2; Thu flat, Fri +, Mon/Tue
+edge) — user chose all-days. Commit `530d99c`. Kill: `/api/nas/kill-switch`. Paper-shadow stays 10 lots.
 
 ## ★ QUEUED — research/75 book-level P&L trailing-stop (optimize, then implement) — 2026-07-07
-NAS book intraday P&L hit **+Rs75k then gave back to +Rs40k (~47%) in minutes** (short-gamma straddle
-book). Want an optimized trailing profit-stop: flatten the whole NAS book when day-P&L retraces X from
-its running peak. First-pass done; IMPLEMENT later.
-- First-pass (14-day single-straddle proxy) too thin. Hint: ARM only after a real profit (~Rs2k/lot),
-  then lock on a ~25-30% retrace from peak (helped 4 / hurt 0 in that subset); small-peak arming hurts.
-- Do it properly: reconstruct ACTUAL multi-system book intraday P&L from `nas_*_positions` marked
-  per-minute vs `options_data.db`, ALL sessions. No stored intraday P&L series (app computes live).
-  Sweep (arm-Rs, retrace-%) + abs-Rs variant; objective = maximize locked = give-back saved − winners cut.
-
-## ✅ DONE 2026-06-14 — research/63 GTAA ETF rotation (validate + beat Upstox "Strategy 1")
-Course slide claimed Calmar 0.93 for a top-1 momentum rotation of Nifty/Gold/Nasdaq-100.
-Couldn't reproduce 0.93 (Kite ETF history starts 2015); top-1 is weak (Calmar 0.30/0.44).
-**Winner = equal-weight all 3, monthly reb: Calmar 1.73, CAGR 19.5%, DD -11.3%, cost-insensitive.**
-STRATEGY candidate. Published /app/backtest/gtaa-etf-rotation. Engine reusable for the factor study below.
-
-## ✅ DONE 2026-06-14 — research/64 Nifty factor-index rotation (was QUEUED)
-Verdict STRATEGY (candidate). Factors too correlated (0.65) to diversify (EW Calmar 0.76); WINNER = Momentum+Gold+Nasdaq inverse-vol monthly = Calmar 1.77 / CAGR 22.1% / DD -12.5%, marginal upgrade to research/63. Published /app/backtest/factor-index-rotation. Next: Momentum ETF NAV vs index + market trend overlay; SILVERBEES add-on (2022+, short window) tested per user request. See RESULTS.md.
-Apply the SAME switching/balancing/diversification idea to the Nifty factor indices
-(Momentum / Quality / Value / Low-Vol / Alpha / Growth, + their multi-factor blends and
-the matching factor ETFs e.g. MOM30/QUAL30/ALPHALOWVOL etc.).
-- **Test both:** (a) momentum-ROC rotation top-N across factors, (b) plain equal-weight /
-  risk-parity across factors, (c) factor + asset-class (gold/Nasdaq) combined book.
-- **Hypothesis from research/63:** within a low-correlation set, EQUAL-WEIGHT beats SELECTION;
-  factors are MORE correlated to each other (all long Indian equity beta) than Nifty/Gold/Nasdaq,
-  so diversification benefit will be SMALLER — worth measuring the factor cross-corr first (G1 probe).
-- **Data:** factor ETFs are recent/thin on Kite (check coverage first, likely 2022+); may need to
-  reconstruct factor indices from constituents (research/62 already reconstructs Momentum-30) OR
-  pull NSE factor-index TR series. Resolve data depth BEFORE the sweep.
-- **Reuse:** research/63 gtaa_engine.py (top-N, equal-weight, cash leg, costs) drops straight in.
-- [ ] G1: factor cross-correlation matrix + data-coverage check.
-- [ ] G2: rotation vs equal-weight vs risk-parity sweep, net of cost, per-year.
-- [ ] Publish + tearsheet if it clears Calmar/DD gates vs NIFTYBEES and vs research/63.
+NAS book intraday P&L hit **+₹75k then gave back to +₹40k (~47%) in minutes** (short-gamma straddle
+book). Want an optimized **trailing profit-stop**: flatten the whole NAS book when day-P&L retraces X
+from its running peak. User: first-pass assessment done; **IMPLEMENT later**.
+- **First-pass (14-day single-straddle proxy) = too thin to lock a number.** Directional hint: ARM the
+  trail only after a real profit (~₹2k/lot), then lock on a **~25–30% retrace** from peak (helped 4 /
+  hurt 0 in that subset); arming on small peaks hurts more than helps. Proxy script `/tmp/pnl_trail.py` (VPS).
+- **Do it properly:** reconstruct the ACTUAL multi-system book intraday P&L from recorded trades
+  (`nas_*_positions` entry/exit) marked per-minute vs `options_data.db`, ALL sessions = the real curve.
+  NO stored intraday P&L series exists (app computes it live). Sweep (arm-₹, retrace-%) + abs-₹ variant;
+  objective = maximize total locked = give-back saved − winners cut. Then implement as a book overlay.
 
 ## ★ ACTIVE — V2 executor + inside-week breakout sleeve (build) — 2026-06-10
 Spec: `research/61_v2_feature_attribution/V2_EXECUTOR_AND_BREAKOUT_SLEEVE_BUILD_SPEC.md`.
@@ -103,6 +68,103 @@ Spec: `research/61_v2_feature_attribution/V2_EXECUTOR_AND_BREAKOUT_SLEEVE_BUILD_
 - [ ] Promote to live after ~2-4wk paper compute-confirm (verify CPR+inside-week day-by-day vs backtest); set
   force_paper=False + live_weekdays. Optional: watchdog coverage + SSE stream (currently 30s poll).
 - [ ] AlgoTest (USER): (a) Case A conditional-late-entry run; (b) Case B call-debit-spread on inside-week up-break.
+
+## ✅ research/62 — Momentum-30 ETF sub-selection — STRATEGY candidate (G1→G3 PASS) — 2026-06-10
+Folder: `research/62_momentum_etf_subselect/` (STATUS-MD + `results/RESULTS.md`). Runs on VPS.
+New system: piggyback a factor index instead of our own selection. **Reconstructed Nifty 200
+Momentum 30 from methodology** (NO factsheets — PIT top-200 by traded value → 6m/12m score →
+top-30), then hold a concentrated buffered sub-basket. Reuses research/41 `02_rs_sweep.py` core
+(`pit_universe`/`rs_scores`) + new daily-marked engine + Donchian + gate.
+- [x] G1 probe (8 cells) + G2 sweep (288 cells) DONE on VPS. **Winner = `rsblend N8 buf22
+  gate100 Donch15`: CAGR 33.4% / net-tax 29.0% / MaxDD −17.0% / Sharpe 1.78 / net-Calmar ~1.5–1.7**
+  (beats NIFTYBEES 12.3%/−36% AND research/41 keep-top8 ~1.66).
+- [x] KEY FINDING: **gate + Donchian are complementary** (gate alone −29%, both −17%) — confirms
+  research/41 "gate irreplaceable", extends it. Donch-15 ≫ 20 ≫ 50. N8 sweet spot. Buffer irrelevant.
+  Plain 6m/12m RS beats the fancy risk-adjusted score once DD-controlled.
+- [x] Robustness PASS: cost-stress to 60bps (monotonic), super-winner guard (Calmar holds 1.79
+  without top-3 names = breadth not multibaggers), 288-cell plateau, 11/13 yrs beat index.
+- [x] **TEARSHEET + PUBLISHED** to `/app/backtest/momentum30-subselect` (4th card). NB: build the
+  React app ON THE VPS (laptop `frontend/` is stale — a laptop build dropped the V2 study; see
+  memory `laptop_frontend_stale_build_on_vps`). All 4 study slugs verified in live bundle.
+- [ ] **G4 next:** **tighten the universe definition** (currently loose = "any stock with data" +
+  ≥75-day floor) → add explicit floors: listing-age ≥252d, price ≥₹20, ABSOLUTE turnover ≥₹25cr,
+  data-completeness ≥90%, equities-only, THEN top-200 by traded value. **Tune the floors AGAINST a
+  real factsheet** (do the factsheet validation first, then pick floors that reproduce the index's
+  actual holdings) — user explicitly deferred this to G4 (2026-06-11). Plus: correlation/cluster-
+  stress DD (N8 leans PSU/defence); walk-forward + 2019-stress note. Then → G5 paper soak on VPS.
+- WHY paused before G4: natural gate checkpoint — confirm with user whether to build the tearsheet/
+  publish now or park as a validated candidate.
+- [x] **PHASE 2 — universe-band capacity study DONE (2026-06-30).** Scripts `62d_universe_bands.py`
+  (sqrt market-impact model, fixed-AUM), `62e_combos.py` (multi-sleeve combos), `62f_runner_capture.py`,
+  `62g_fairgate_diversified.py`. Findings: (a) **top200 net-optimal at every AUM** (net Cal 1.34/0.71/0.25
+  @₹1/10/50cr); top500/small higher GROSS but NEGATIVE net at ₹10cr (participation 1,000–98,000× ADV =
+  untradeable). (b) **No combo beats top200.** (c) **Runner-capture:** held 5/5 of in-universe runners
+  (+130–250%/name); 25/30 big runners live in 200–500 (outside our net) AND un-tradeable. (d) **Fair-gate
+  correction:** band-matched gate lifts smallcap GROSS Cal 1.09→1.67 (I'd under-rated lower-cap) but net
+  still collapses (capacity wall). (e) **Diversified midcap sleeve** (N≈30, fair-gated) IS tradeable
+  (participation→0.8×) but net Cal ~0.44 < top200. **Verdict: top200 stands; lower-cap momentum is a
+  gross-only mirage at size.** All in STATUS-MD Phase 2a–2d.
+- [x] **DE-CORRELATION BLEND test DONE (2026-06-30, `62h_blend.py`):** corr top200↔div-midcap = **0.69**
+  (too high); blending monotonically LOWERS Calmar gross (2.21→1.49) and net@₹10cr (0.71→0.60). A midcap
+  sleeve does NOT help even as a diversifier. **Lower-cap momentum CONCLUSIVELY rejected at every angle**
+  (concentrated/fair-gated/diversified/blended). top200 stands. Phase 2 fully closed.
+- [ ] **G4 still owed** (deferred): tighten universe (floors, factsheet-tuned), correlation/cluster-stress,
+  walk-forward, then G5 paper. **NB: Phase-2 scripts + STATUS/CSVs are UNCOMMITTED on VPS+laptop** → next git sweep.
+
+## ✅ research/62 LIVE PAPER BOOK — ₹20L Momentum-30 deployed (G5 soak) — 2026-06-30
+`services/momentum_paper.py` (PAPER only, never places orders) + `/api/momentum-paper/*` +
+`/app/momentum-paper` page + sidebar "Momentum ₹20L" + LIVE-BOOK badge/CTA on the backtest card.
+DB `backtest_data/momentum_paper.db`. Registered in app.py after v2_ironfly. Backend restarted
+16:19 IST 2026-06-30 (after close). Frontend built ON VPS (bundle index-CWcU0nQO.js).
+- [x] **Universe = the OFFICIAL NSE Nifty 200** (niftyindices.com CSV, cached `backtest_data/
+  nifty200_official.csv`, market-cap defined) — NOT the traded-value proxy (user corrected this;
+  proxy was only a backtest-PIT necessity). Refreshes exactly the 200 (not 381). Fallback to
+  traded-value if list unfetchable. ETFs excluded (SILVERBEES/GOLDBEES bug fixed).
+- [x] Rules automated (APScheduler): daily 15:45 mark+Donchian-15 · weekly Fri 15:50 NIFTYBEES-100DMA
+  gate · monthly last-trading-day 15:55 rebalance (top-8 / buffer-22). Idle cash earns 6.5% (liquid
+  fund). Net ~0.3% RT; STCG 20% shown separately. Closed trades shown with exit reason.
+- [x] SEEDED 2026-06-30: ₹20L, gate RISK-OFF (NIFTYBEES −0.44% vs 100DMA on fresh data) → in CASH;
+  target basket computed (POWERINDIA/GVT&D/LAURUSLABS/ADANIPOWER/IDEA/ADANIENSOL/BHARATFORG/BHEL).
+  Re-entry is MONTH-END (next rebalance end-July) once gate flips risk-on — matches research/62 winner.
+- [ ] Monitor the soak; verify daily/weekly/monthly jobs fire. When gate flips risk-on at a month-end,
+  confirm it deploys the 8 and that Donchian/gate exits log correctly.
+- [x] **PERF FIX 2026-07-05 — page was stuck on "Loading paper book…" forever.** `get_state()` took
+  13–35s: `_panel()` reads the ENTIRE daily table (1015d × 1642 syms) + pivots it, TWICE/request,
+  uncached, on single-worker GIL-bound gunicorn. Fixed: memoize `_panel` by (start, DB-mtime)
+  (`_PANEL_CACHE`), fetch panel once in get_state, + daemon pre-warm thread in `register()`. Warm now
+  0.02–0.09s. Deployed via SIGHUP (weekend). Backups `momentum_paper.py.bak_panelcache`. UNCOMMITTED.
+- [x] **GATE/BUY TIMING confirmed from code:** gate evaluated in `weekly_job` (last trading day of
+  week ~15:15) — flipped **risk-ON Fri 07-03** (NIFTYBEES +1.01% vs 100DMA). But BUYS only happen in
+  `monthly_job`=`rebalance_job` (cron 14:45, guarded `_is_last_trading_day()` of MONTH). So first
+  8-stock basket buys on **last trading day of July 2026 (~Jul 31)** IF gate still risk-ON then
+  (monthly_job re-checks). Month-end re-entry is by design (matches research/62 winner).
+- [x] **LIVE-EXECUTION PATH BUILT + DEPLOYED (flag OFF) 2026-07-05.** Per user "build now, flip when I
+  say · MARKET orders · capital set at flip". `services/momentum_paper.py` now has a real Kite **CNC
+  MARKET** order layer gated by persisted `live_mode` (default OFF=PAPER, verified). All flow funnels
+  through `_buy`/`_sell` → one switch arms the whole book. Adds: `_place_cnc_market` (place+poll fill,
+  read `average_price`), integer-share qty, `_market_open_now` guard, per-order value cap, slippage
+  alert, `reconcile_holdings` (book vs Kite, alert-only), partial-sell support. **LIVE monthly rebalance
+  is ROTATE-ONLY** (`_rebalance_live_delta`): sell names leaving target, buy brand-new names cash-aware
+  equal-weight, kept winners RIDE — NOT the paper liquidate-and-rebuild (that would churn+tax the whole
+  book monthly). New endpoints `/api/momentum-paper/{toggle-mode,kill-switch,reconcile}`; `get_state`
+  now returns `mode`/`live_mode`. **20/20 simulated-live tests PASS** (`/tmp/test_momentum_live.py`,
+  fake order layer + temp DB, no real orders). Backup `momentum_paper.py.bak_live`. Runbook:
+  `docs/MOMENTUM_LIVE_RUNBOOK.md`. UNCOMMITTED on VPS → next git sweep.
+- [ ] **BEFORE FLIPPING LIVE (user decisions still open):** (a) set the **live capital** amount (user
+  said "different amount" — not yet given; pass via toggle `{"capital": <rupees>}`). (b) Confirm the
+  **rotate-only vs full-equal-weight** rebalance policy (v1 = rotate-only, no top-up/trim of kept
+  names; `CFG['live_rebalance_trim']` reserved for future). (c) Frontend LIVE/PAPER badge + toggle
+  control on `/app/momentum-paper` (build on VPS). (d) First live action would be the ~Jul-31
+  rebalance — flip + fund the Zerodha account before then; run `reconcile` after the first fills.
+
+## ⏸ QUEUED — re-test Phase 2 lower-cap with OFFICIAL market-cap indices (user flagged) — 2026-06-30
+Phase 2 (research/62) mid/small/micro bands were by TRADED VALUE (liquidity rank), NOT market cap —
+labels were loose. Capacity verdict is robust (liquidity-driven), but the midcap/smallcap PERFORMANCE
+claims (e.g. smallcap fair-gated Cal 1.67) should be re-tested on the REAL indices. Lists already
+cached on VPS: `backtest_data/niftymidcap150_official.csv` (150), `niftysmallcap250_official.csv` (250).
+- [ ] Re-run the band study (62d/62e/62g) using official Nifty Midcap 150 / Smallcap 250 membership
+  (current list as a modern-period proxy; PIT history still owed for full rigor). Expect capacity to
+  still bind, but get honest labels + numbers. Then update STATUS-MD Phase 2 with the correction.
 
 ## ⏸ QUEUED (start ONLY after the V2-executor thread closes) — "Weekend-theta" iron fly variant — 2026-06-10
 User-tried variant; user runs AlgoTest, Claude analyzes (separate system + separate assessment). **A couple
@@ -270,34 +332,6 @@ Bear/bull debit spread → **30-min R1/S1 stop (PRIMARY management)** → **Frid
 - [ ] Paper-trade one full week before going live NRML.
 
 ## NAS live options (8 variants on 94.136.185.54)
-
-### ✅ DONE 2026-06-12 — Live stops/churn incident: 5 fixes + NAS Live Guardian
-Fast NIFTY rally (23325→23530); the 6 live variants' protective stops malfunctioned (book
-+₹6k→−₹9k). Contained via manual-freeze, fixed once-and-for-all, deployed + verified after
-close, freeze cleared (user OK). Forensic + crash-recovery:
-`research/60_nas_churn_incident_fix/NAS_STOPS_CHURN_FORENSIC_STATUS.md`. Commits
-`0dbb1d0 9c8a63a a963de7 0856fea af05acd`.
-- [x] **#1a SL-skip** — `check_and_handle_sl` now REST-fetches a leg's premium instead of silently
-  `continue`-ing when the ticker's `live_ltps` lacked it (all 3 ATM executors).
-- [x] **#1b squeeze SL poll** — `_nas_squeeze_sl_monitor` 10s REST backstop (squeeze was ticker-only).
-- [x] **#3 churn cooldown ROOT CAUSE** — `_pt` date-formats didn't match `datetime.isoformat()`
-  (T + microseconds) → the 15-min `reentry_cooldown_min` was silently blind. Added
-  `%Y-%m-%dT%H:%M:%S.%f`. NB: this time-gate now BLOCKS the "ATM2 same-strike re-entry churn"
-  symptom listed below; the "hold straddle + reset SL in place when strike unchanged" refinement
-  there is now OPTIONAL (not required for safety).
-- [x] **#2 ST survivor exit** — fired only on SuperTrend flip + only at 5-min candle close. Added
-  level-breach (`latest_close>st_val`) + tick-level (cache st_val, exit on any tick premium>ST).
-  999999 naked sentinel preserved.
-- [x] **#4 additive subscriptions** — same-strike legs share ONE token; triangular exclusion sets let
-  a variant unsubscribe a sibling's live leg → tick gap → fed #1. Replaced with
-  `_tokens_in_use_by_others()` (excludes ALL sibling maps). Also reduces the "stale leg SL after
-  ATM2 cascade" log-noise item below.
-- [x] **NAS Live Guardian** `scripts/nas_live_guardian.py` + agent `.claude/agents/nas-live-guardian.md`
-  + `/nas-guardian` command. 4 tiers: live health (ticker/token/per-leg subscription+SL coverage/
-  naked-ST/freeze) · behavioural audit of today's REAL trades (churn, SL-breach-without-exit, P&L
-  reconcile vs Kite) · regression self-test (all 5 fixes intact) · opt-in `--firedrill` sandbox that
-  drives the REAL SL path on a throwaway DB. Runs the 5-min monitor itself + escalates. `7514a0a b2fb2a5`.
-
 
 ### Resolved 2026-06-01 (live)
 - [x] **Bug #1 — OTM cross-variant roll routing.** The OTM tick-adjustment shared
@@ -492,15 +526,103 @@ close, freeze cleared (user OK). Forensic + crash-recovery:
   refreshed manually at 09:04). Check before next session's pre-open.
 
 ## Research log
-- [x] **research/73 — Weekly SuperTrend (10,3) — CONCLUDED 2026-07-07: NO INVESTABLE TIMING EDGE (headline was a benchmark artifact).**
-  First pass looked great (Nifty200 17.5% CAGR / Calmar 0.55, "+6.9pp over NIFTYBEES") but CORRECTION same day: that was a
-  survivorship-selected today-Nifty200 book vs the Nifty 50 INDEX. Fair test vs equal-weight B&H of the SAME names
-  (fair_bench.py / all_bands_fair.py): ST timing LOSES on EVERY band -- Nifty50 -6.6 / Nifty200 -3.5 / Midcap150 -6.4 /
-  Smallcap250 -2.8 / Nifty500 -4.4 pp/yr, equal-or-worse Calmar (basket wins except Smallcap). Basket beats Nifty50
-  +8..+11pp everywhere = the whole headline. Per-trade entry edge real (G1) but swamped at book level (SIGNAL!=STRATEGY,
-  cf research/49). Guest 40/40/20 booking (17.5->8.8%) + regime gate (17.5->11%) both HURT. PUBLISHED+CORRECTED
-  /app/backtest/weekly-supertrend-nifty200 (fair-benchmark + all-index + year-by-year tables). Honest ~20% = own the
-  basket (survivorship caveat) or improve the regime-gated momentum book (Cal ~1.7). VPS files.
+- [x] **research/73 — Weekly SuperTrend (10,3) trend-following — CONCLUDED 2026-07-07: NO INVESTABLE TIMING EDGE (headline was a benchmark artifact).**
+  YouTube system (Vijay Khant): buy weekly ST(10,3) green / exit blind on red / size 5-7% / book 40/40/20 / +5 hacks.
+  Tested core on Nifty50/200/Midcap150/Smallcap250/Nifty500, net 0.30% RT + STCG/LTCG, 2010-26 (VPS folder
+  `research/73_weekly_supertrend_investing`; engine `st_weekly_engine.py`, g1/g3/g4 + `fair_bench.py`/`all_bands_fair.py`,
+  RESULTS.md). **FIRST PASS looked great (Nifty200 17.5% CAGR / −31.7% DD / Calmar 0.55, "+6.9pp over NIFTYBEES") but
+  the CORRECTION (same day) killed it: that was a BENCHMARK ARTIFACT — a survivorship-selected TODAY's-Nifty200 book
+  vs the Nifty 50 INDEX. Fair test vs equal-weight buy-&-hold of the SAME names: the ST timing LOSES on EVERY band —
+  Nifty50 −6.6 / Nifty200 −3.5 / Midcap150 −6.4 / Smallcap250 −2.8 / Nifty500 −4.4 pp/yr, at equal-or-worse Calmar
+  (basket wins except Smallcap, where ST only helps by cutting the basket's −54% DD).** The basket beats Nifty50 by
+  +8..+11pp on every band = the whole headline (survivorship + Nifty200-breadth). Per-trade ENTRY edge is real
+  (G1 +5.2pp vs random-hold) but swamped at book level by time out-of-market in a bull → SIGNAL≠STRATEGY (same
+  lesson as research/49 "beta not alpha"). Also proven: the guest's own 40/40/20 booking (17.5→8.8%) and a regime
+  gate (17.5→11%) both HURT. Merit = none as timing; at best a mild de-risk overlay on a basket you'd hold anyway
+  (poor trade: −4pp DD for −3pp CAGR). PUBLISHED + CORRECTED `/app/backtest/weekly-supertrend-nifty200` (added
+  the deciding fair-benchmark table, all-index table, year-by-year). Honest way to the ~20% = own the basket (with
+  its survivorship caveat) or improve the existing regime-gated momentum book (Cal ~1.7). (All files on VPS.)
+  **PHASE 2 (2026-07-08) — the redemption:** ST DOES work as a MARKET-LEVEL CRASH OVERLAY (not per-name). Hold
+  the basket always; a DAILY ST(7,3) on the index flattens the whole book in downtrends → **pre-tax Calmar
+  0.56→1.28** (Nifty200 DD −39%→−15%) for ~2pp CAGR; consistent all bands, robust across fast family (dST 7/10/20
+  + 50DMA); **200-DMA HURTS (0.45)**. Tax is the real cost (liquidating the cash book ~2.5 sw/yr → net Calmar
+  1.01) → **build as a NIFTY-futures/puts hedge (no sale = no tax event)**. `crash_overlay.py` on VPS; app study
+  + RESULTS Phase-2 updated. **TWO NEXT-LEVERS opened:** (1) implement the overlay as a Nifty-futures hedge +
+  re-measure net (incl. roll/basis/tracking); (2) swap the LIVE momentum book's (research/62) MA gate for a
+  daily-ST(7,3) gate and re-test — dST beat the 200-DMA here.
+  **GATE CROSS-CHECK DONE (2026-07-08) — REJECTED.** `research/62.../scripts/62i_st_gate.py`: on the LIVE
+  momentum book (rsblend N8 buf22 donch15, net STCG20%, 2014–26) swapping the 100-DMA gate for a daily-ST gate
+  is WORSE — net Calmar 100-DMA **1.71** vs dST(7,3) 1.33 / dST(10,3) 1.25 / 50-DMA 0.99. ST gates twitchier
+  (30–36 de-risk events vs 23), give up ~6pp CAGR for no DD benefit. **KEEP the live 100-DMA gate.** (Engine got
+  a backward-compat `gate_roff` param, `.bak_stgate` kept; services/momentum_paper.py untouched.)
+  **PHASE 3 DONE (2026-07-08) — the cleanest tradeable finding.** `etf_st.py`/`etf_st2.py`: trend-time the
+  actual INDEX ETF itself (NIFTYBEES; index-level, no survivorship, infinite capacity). Net-of-tax ~1.5pp CAGR
+  give-up (10.6→9.0%) but **DD MORE THAN HALVED (−36→−14%)**, Calmar 0.29→0.53, Sharpe 0.75→1.11 (~2×). Pre-tax
+  give-up ~zero. ST(7,3) marginally best (fewest switches→least tax) but 50/100-DMA tied — any fast-medium
+  filter; **200-DMA HURTS** (halves CAGR). Robust NIFTYBEES/JUNIORBEES/BANKBEES; GOLDBEES no. Well-known
+  Faber-style timing, clean+scalable not novel. Published as ★★ Phase 3 on the app study. **NEW next-levers:**
+  (i) futures/puts-hedge implementation to kill the ~1.5pp tax drag; (ii) multi-ETF trend-timed sleeve (equity
+  + gold, though gold didn't respond to ST). NB: the STOCK-LEVEL per-name ST (Phase 1) loses; only INDEX-LEVEL
+  works — always label which.
+  **PHASE 3b + WINNER REFRAME (2026-07-08).** User pushed for realism on the ETF winner: idle cash in a LIQUID
+  fund earns NET of its expense+slab tax (~6.5%→~4.5% net) + T+1 settlement lag (`settlement_liquid.py`). REALISTIC
+  NIFTYBEES·ST(7,3): **9.3% CAGR / DD −14.3% / Calmar 0.65; net-of-ALL-tax 7.8% / Calmar 0.46** — DD-halving is
+  friction-PROOF, but give-up grows to ~1.3pp pre-tax / **~2.8pp net-tax** (earlier ~1.5pp was too kind). Roughly
+  **Sharpe-NEUTRAL (0.33 vs 0.34) — a drawdown-reduction overlay, not a return-enhancer.** Liquid fund essential
+  (worth ~1.8pp). Study + HTML report REFRAMED to LEAD with the winner (own dark factsheet `niftybees-st73-winner.png`,
+  realistic numbers) not the Phase-1 illusion; added settlement table + Phase2-vs-3 note (P2 Calmar 1.28 > P3 0.65
+  only because P2 times the survivorship-inflated basket — mirage). Clean HTML report live
+  `/app/weekly-supertrend-report.html`, linked from the study card.
+  **PHASE 3c — MODELED futures-hedge DONE (2026-07-08)** `futures_hedge.py`. Keep the ETF (never sold → no
+  equity CGT, deferred like B&H; no T+1 lag; margin by pledging the ETF) + SHORT NIFTY futures on the red signal;
+  hedged ≈ synthetic T-bill (carry ≈ risk-free). **RECOVERS the whole give-up: ~B&H return 10.6% CAGR at HALF the
+  drawdown (−14.4%, Calmar 0.74 vs 0.29, Sharpe 1.10)** — the near-free-lunch, via the tax structure. Published
+  as ★★ section 05 on the study + HTML report. **⚠ MODELED, not backtested — DB has NO NIFTY futures series, so
+  the ~4.6% carry is an ASSUMPTION** (sensitivity 4.0/4.6/5.2% → Cal 0.71/0.74/0.76). Hidden risk: crash-time
+  BACKWARDATION (short carry goes negative exactly when hedged).
+  **PHASE 3d — REAL-DATA VALIDATED (2026-07-08)** `kite_futures_probe.py` + `build_real_basis.py`. Kite only
+  serves the current contract, but NSE F&O BHAVCOPY archives ARE reachable from the VPS → pulled **196 real
+  NIFTY near-month future basis points** across COVID/2022/2018 crashes + normal months (`real_basis.csv`).
+  **Findings: (1) backwardation risk CONFIRMED — COVID 52% of days negative, clustering when hedge is ON; my
+  +4.6% modeled carry was too kind. (2) But BOUNDED — real hedge-on carry still +3.1% mean/+1.1% median (the
+  −20..−46%/yr extremes are near-expiry annualisation artifacts). (3) Re-run with real ~+3% carry (incl. crash
+  backwardation): hedge = ~9.9% CAGR / −14.8% DD / Calmar 0.67 / Sharpe 1.03** (vs B&H 10.5%/−36%/0.29; cash-rot
+  7.8%/0.46). Recovers MOST of the give-up (~0.6pp vs B&H), halves DD, and GENUINELY improves Sharpe (unlike the
+  Sharpe-neutral cash version). Study + HTML report updated with validated numbers + real-basis backwardation
+  table. **Remaining before capital: full DAILY basis series (vs 196-pt crash sample) for path-exact P&L + a
+  paper-forward soak of the futures roll execution.** NSE bhavcopy downloader is reusable for the full series.
+  **PHASE 3e — bidirectional long/short? TESTED (daily+weekly ST), REJECTED (2026-07-08)** `bidirectional_st.py`.
+  Idea: go net SHORT (not flat) when ST red. Short side is a structural LOSER — during ST-red the index STILL
+  RISES (+6%/yr daily, +19%/yr weekly; slow filter shorts into the recovery). Short-only ~0 (daily +0.8%) /
+  negative (weekly −1.9%) at huge DD; bidirectional cuts CAGR (9.9→6.6% daily, 6.3→0.3% weekly) and ~DOUBLES
+  drawdown (−15→−25% daily, −31→−51% weekly, worse than B&H). Weekly worse than daily throughout. **STAY
+  LONG-ONLY** — winner stands. Study + HTML report updated.
+  **PHASE 3f — apply the overlay to our BEST-CAGR book? TESTED (2026-07-08)** `overlay_momentum.py`. Best recent
+  CAGR = research/75 nifty250 momentum (combo__ret252 46.5% gross but −42% DD, lower-cap mirage). Overlaid the
+  NIFTY daily-ST(7,3) crash filter on the tradeable base NAV (31.9% CAGR/−31.6% DD, already gated): cuts DD to
+  −22% and PRE-TAX lifts Calmar 1.01→1.21, BUT **net of STCG it HURTS (0.93 < 1.01)** — liquidating a high-gain
+  momentum book ~5×/yr triggers heavy tax + forgoes ~30%/yr while out. Hedge version (1.14) avoids tax but NIFTY
+  futures don't cleanly hedge midcaps (optimistic). **KEY LESSON: the crash overlay's value is INVERSELY related
+  to the underlying's return** — it's an index-ETF tool (low-return/high-DD), NOT for a high-Calmar momentum book
+  (de-risk that with its own gate). Confirms the Phase-3c gate cross-check. research/73 design space now fully
+  explored.
+- [x] **research/72 — RSI 70/40 momentum-regime timing — CONCLUDED 2026-07-07: SIGNAL, not a clean STRATEGY.**
+  User idea: enter stock when daily RSI closes ≥70, exit when RSI closes <40; RELIANCE base, expand to
+  Nifty universe; aim = beat Nifty by ≥50% with lower DD. Master-orchestrator + 2 fan-out agents on VPS.
+  Folder `research/72_rsi_regime_7040/` (engine `rsi_regime_engine.py` + `portfolio_engine.py`, phases A-E,
+  RESULTS.md). **Findings:** (A) single-name RELIANCE 70/40 = **NO EDGE** (net 4.2% vs index 10.9% / stock
+  B&H 17.1%; 0/75 threshold cells beat index — RSI≥70 enters late, <40 exits after the drop). (B) filters
+  (MA/ADX/wRSI/ST/Donchian) **don't rescue it** — only SMA200/wRSI add ~1pp, rest just cut exposure (Calmar
+  illusion); 0 configs beat index. (C) diversified slot-portfolio = **real OOS-robust momentum-breadth
+  signal** but a **return/DD frontier**: broad-533 universe 2.8× index CAGR (29%) at ~index DD (−45%); blue-
+  chip Nifty50 1.5× (16.8%) at lower DD (−24%) — not both. (D) edge STRONGER out-of-sample (2021-26 broad
+  net 51.8%) → not overfit; param plateau. (E) 200DMA regime gate → 1 config technically passes both
+  (broad exit-all 2.78×, −35.3% < −36.3%) but razor-thin, fails at 30bps + OOS. **Dominant caveats:
+  survivorship + capacity** (high return = illiquid small/midcaps; research/62 already showed lower-cap
+  momentum is a gross-only mirage at size). **Convergence:** at its best this IS the existing regime-gated
+  momentum book (research/41/62, Calmar ~1.7) with a cruder entry → adds no new alpha. Next levers:
+  liquidity-floored capacity test, vol-target sizing, or just improve the existing book. Files UNCOMMITTED
+  on VPS+laptop → next git sweep.
 - [x] **REC Supertrend always-on futures — CONCLUDED 2026-06-07: NO ROBUST EDGE.**
   (VPS `research/48_covered_calls_cpr_st/`: rec_st_sweep/deep/rupee, st_basket_15m,
   rec_donchian.) Daily loses to B&H. 15-min REC looked strong (OOS +29% CAGR, plateau,
@@ -525,16 +647,3 @@ close, freeze cleared (user OK). Forensic + crash-recovery:
 ## Notes
 - NIFTY lot size = 65 (2026). 5 lots = 325 contracts/leg.
 - Reference spread (Sensibull): 23600/23400 PE, ~78 debit, R/R 1.56, max loss ≈ ₹25k @ 5 lots.
-
-## OWED — isolate the V2 combo_skip narrow-CPR skip (research/67) — 2026-06-16
-research/67 found the V2 fly combo_skip "skip prior-day CPR<0.10%" is UNCONFIRMED standalone: recent
-recorder premium gap only ~9% (narrow 1.16% vs normal 1.27% of spot) and narrow days are CALMER, so the
-skip discards calm days for little premium. research/61 Calmar 1.03->2.00 was narrow-CPR + inside-week
-STACKED (not isolated); recent window is breach-free so can not test reward-for-risk. TODO: isolated
-backtest of narrow-CPR-skip ALONE over breach-inclusive history WITH real premiums (decouple from
-inside-week). Until then KEEP the skip; do NOT change live on this alone.
-
-## [P0] [DONE 2026-07-09 15:37] Fix ATM4 phantom-roll bug — fill-confirmation guard deployed (nas_atm4_executor.py roll path: only mark leg ACTIVE on COMPLETE fill, else FAILED); restart verified. Backup /tmp/nas_atm4_executor.py.bak
-- Bug: roll/re-enter records new SHORT leg as ACTIVE before confirming the broker SELL filled. When the sell silently fails, the later 30% SL buy-back creates an orphan LONG (no real short to close). Fired 3x (yesterday 2x on ATM4 24000PE/24200CE, today 24200CE, cost ~Rs9.8k real).
-- Fix: in the roll path (services/nas_atm_executor.py roll/re-enter), place+confirm the broker SELL (real order-id, non-rejected) BEFORE recording the leg ACTIVE; if it fails, record nothing (mirror the entry-path partial-fill guard). Then restart quantifyd (after close) + verify.
-- Blocked during market hours (needs restart). MUST be live before 09:16 tomorrow.
