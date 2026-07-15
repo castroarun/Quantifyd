@@ -317,18 +317,22 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'melt 2.4x faster than midday, ~Rs2,411 IF the index stands still). Traded for real, including the ' +
       'afternoons that MOVE, the best window makes +Rs269/day over 33 days and every window before 14:30 LOSES. ' +
       'The clock measured the reward with the risk removed.',
-      'WIDER SHORTS WERE STILL IMPROVING AT THE EDGE OF THE SWEEP (0.4 -> 0.6 -> 0.8% gives Calmar 0.98 -> 1.15 ' +
-      '-> 1.45). A metric that only improves as you approach the boundary of what was tested usually means the ' +
-      'optimum lies OUTSIDE it. 0.8% is not "the answer" until the sweep is extended and it turns.',
+      'STRIKE PEAK — FOUND. Extended, the sweep peaks at 1.4% OTM shorts (Calmar 1.91, +Rs42,954/yr, 78% win) ' +
+      'and TURNS at 1.6% — a real interior optimum. BUT the engine has NO volatility skew and was validated ' +
+      'near-ATM, and 1.4% OTM is exactly where skew bites hardest — the engine is least reliable there. ' +
+      '0.8-1.0% is the validated-confidence zone; 1.4% is suggestive and needs real-chain pricing. The live ' +
+      'paper book runs at 0.8% and will collect that evidence.',
       'Marking the stop every 5 minutes instead of at daily closes changes almost nothing — an earlier caveat ' +
       'of mine that turned out not to matter.',
       'The strategy has never touched a real option chain. Every price came from the engine. The engine was ' +
       'validated against 58 real days, but the STRATEGY was not.',
-      'THE CORRELATION QUESTION IS STILL OPEN, and it is the one that matters. Every options book we run — 916 ' +
-      'straddles, squeeze strangles, NAS-OPT — is short volatility. This is too. Its worst days are Covid and ' +
-      'Ukraine. If they all lose together, this does not diversify the book, it concentrates it. My first ' +
-      'attempt at this test was INVALID (the P&L was time-misaligned and the 916 proxy lost money, which the ' +
-      'real system does not) and is being rebuilt.',
+      'CORRELATION — RESOLVED, and the worry was BACKWARDS. NAS-OPT holds the 2 days CLOSEST to expiry (DTE ' +
+      '0-1); this condor holds days 4-6 BEFORE expiry. They trade opposite ends of the week: simultaneously ' +
+      'in the market only 3 calendar days in 11 years, and on the condor's 10 worst days NAS-OPT was flat ' +
+      'every time. Combined drawdown -49,771 vs the sum of separate DDs -238,430 — it DIVERSIFIES the existing ' +
+      'short-vol book rather than doubling it. (Caveat: the 11-year NAS-OPT SYNTHETIC came out net-negative, ' +
+      'contradicting the real 58-day +EV, so the combined TOTALS are not trusted — but the near-zero overlap ' +
+      'does not depend on magnitudes.)',
       'This is the variance risk premium — real, well-documented, and the textbook "pennies in front of a ' +
       'steamroller". 11 years is not enough to see the steamroller.',
       'The engine assumes the IV term structure (short-dated ~1.5x VIX, far-dated ~1.0x) is stable across 11 ' +
