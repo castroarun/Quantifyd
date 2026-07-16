@@ -132,3 +132,48 @@ re-test; keep conservatively. See research/67_weekly_cpr/results/RESULTS.md.
 
 ## research/74 — Intraday ATM premium decay-then-rise (CONFIRMED, pass 1, 2026-07-07)
 Near-expiry theta collapse (expiry ATM straddle −40% by ~15:15; far-DTE flat) + a repeatable **IV spike at 15:15** (+1–1.5 vol, the 3:15 rise). Vega not directional; DTE is the master variable. Read-through: expiry 14:00→15:15 melt IS the short-straddle edge; 15:15 square-off sits at the premium trough. Pass 2 owed: exit-minute sweep + CPR/day-type. See research/74_intraday_premium_decay/results/RESULTS.md.
+
+## research/73 — Weekly SuperTrend (10,3) trend-following, all cap bands (SIGNAL, 2026-07-07)
+YouTube system (Vijay Khant): buy weekly ST(10,3) green, exit blind on red, size 5-7%, book 40/40/20, +5 hacks.
+Tested mechanical core on Nifty50/200/Midcap150/Smallcap250, net 0.30% RT + STCG/LTCG, 2010-26. VERDICT SIGNAL:
+real trend signal, beats B&H on every band at <= index DD; **Nifty200 best risk-adj + capacity: 17.5% CAGR /
+-31.7% DD / Calmar 0.55 / Sharpe 1.03, beats NIFTYBEES 11/17 yrs, mult=3 robust ridge, OOS test Calmar 1.03
+(> in-sample).** Two of the guests own rules HURT: 40/40/20 booking is a return-killer (caps the fat right
+tail = 73-82% of return; 17.5->8.8%), regime gate redundant (ST self-exits; 17.5->11%). NOT better than the
+regime-gated midcap book (Cal ~1.7) - weekly ST too slow to cut fast crashes (DD ~ market). Survivorship-
+flattered (small-cap tail = todays multibaggers). A simple passive-plus, not new alpha. Published
+/app/backtest/weekly-supertrend-nifty200. See research/73_weekly_supertrend_investing/results/RESULTS.md.
+
+### ⚠️ research/73 CORRECTION (2026-07-07): NO INVESTABLE TIMING EDGE.
+The "+6.9pp beats passive" was a BENCHMARK ARTIFACT (survivorship-selected today-Nifty200 book vs the Nifty50
+index). Fair test (`fair_bench.py` / `all_bands_fair.py`) vs same-basket equal-weight B&H, ALL bands 2010-26:
+ST timing LOSES on every band -- Nifty50 -6.6, Nifty200 -3.5, Midcap150 -6.4, Smallcap250 -2.8, Nifty500 -4.4
+pp/yr, at equal-or-worse Calmar (basket wins except Smallcap where ST only helps by cutting the -54% DD).
+Basket beats Nifty50 by +8..+11pp on every band = the whole headline. Per-trade entry edge real (G1) but
+swamped at book level (SIGNAL != STRATEGY, cf research/49). Verdict downgraded NO TIMING EDGE. App study
+corrected /app/backtest/weekly-supertrend-nifty200.
+
+### research/73 PHASE 2 (2026-07-08): ST as a MARKET-LEVEL CRASH OVERLAY — this is where it works.
+`crash_overlay.py` (daily res, causal). Hold the basket always; a DAILY ST(7,3) on the index flattens the
+whole book in downtrends → pre-tax Calmar 0.56→**1.28** (Nifty200 DD −39%→−15%) for ~2pp CAGR; consistent
+all bands (Small 0.40→0.86, N500 0.50→1.17), robust across fast family (dST 7/10/20 + 50DMA); **200-DMA
+HURTS** (0.45). TAX is the real cost: liquidating the cash book ~2.5 sw/yr → net Calmar 1.01 → **build as a
+NIFTY-futures/puts hedge (no sale = no tax)**. BONUS lever: dST(7,3) beats the 200/100-DMA gate → candidate
+upgrade for the LIVE momentum book (research/62). Verdict: SuperTrend’s real edge = market crash overlay, NOT
+per-name entry/exit. App study updated.
+
+### research/73 PHASE 3 (2026-07-08): time the actual INDEX ETF — cleanest tradeable version.
+`etf_st.py`/`etf_st2.py`. Trend-timing NIFTYBEES itself (hold green/cash red): net-tax ~1.5pp CAGR give-up
+(10.6→9.0%) but DD MORE THAN HALVED (−36→−14%), Calmar 0.29→0.53, Sharpe 0.75→1.11. ST(7,3) marginally best
+(least switches→least tax) but 50/100-DMA tied — any fast-medium trend filter; 200-DMA HURTS (halves CAGR).
+Robust NIFTYBEES/JUNIORBEES/BANKBEES; GOLDBEES no. Well-known Faber-style timing, clean+scalable, not novel.
+GATE CROSS-CHECK: swapping the LIVE momentum book (research/62) 100-DMA gate for a daily-ST gate is WORSE
+(net Cal 1.71 vs 1.33) — KEEP the 100-DMA. (62i_st_gate.py.)
+
+## 81 — Swing edge discovery (multi-family, 5-min + daily) — ACTIVE 2026-07-15→
+Systematic pre-registered search for automatable ≤4-day swing systems, net-of-cost
+(brief: docs/Trading-sytem-research-prompt-fable.md; crash doc EDGE_DISCOVERY_81_STUDY_STATE.md).
+~160 cells so far. DEAD on daily 2-4d exits: Donchian, squeeze, EOD-carry, 5d-RS, PDH/PWH,
+MA crossovers. SIGNAL: deep-z short fade (t1.5); CPR-open long (t2.4). **LEAD: morning-strength
+continuation LONG (gap≥0.25%+ORB / O=L break / CPR-open), ≤4-session hold — index t3.0 +
+stocks t2.9-3.2, G3 PASS, G4 Sharpe 1.0 / DD −17%; breadth + OOS pending.** Verdict: TBD.
