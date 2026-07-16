@@ -59,11 +59,17 @@ or circuits → corporate-action guard needed for any cash-equity strategy.
 
 **Total experiment count (multiple-testing ledger): 126 cells (A1 24, B1 16, B2 8, C1 16, D1 16, E1 16, F1 12, F2 8, A2 8, A3 2; +6 F1 cost-sensitivity re-runs of same cells, not selection)**
 
-**Lead candidate (end of night 1):** GAP-UP (≥0.25%) + OPENING-RANGE BREAKOUT
-LONG, hold ≤4 sessions — coherent on NIFTY (t 3.0 IS, borderline Val pass) AND
-9 F&O stocks (t 2.87, 8/9 positive). G3 next: walk-forward, Monte Carlo,
-param plateau, regime split, broad universe + BANKNIFTY post-backfill.
-Val consumed for family F; OOS untouched everywhere.
+| EXP-G3 | validation | plateau/WF/MC/regime/super-winner on lead | `experiments/G3_orb_validation/` | **PASS** (stocks MC needs 0.5% sizing) |
+| EXP-G4 | portfolio | combined book cap-6, daily MTM NAV 15-23 | `experiments/G4_portfolio/` | **BORDERLINE** — Sharpe 1.0, DD −17% (vs NIFTY −38%), Calmar 0.77 ✗, DD-dur 16mo ✗ → needs breadth/sleeves |
+| EXP-D2/C2/A5/A6 | setups battery | O=L break, CPR-open, PDH/PWH, MA cross (32 cells) | `experiments/SETUPS_BATTERY/` | **D2 G1 PASS** (+21bps t=3.2, 64% disjoint from ORB, plateau+WF solid); **C2 SIGNAL** (+10bps t=2.4); A5/A6 NO EDGE |
+
+**Ledger: ~160 pre-registered cells + noted sensitivity re-runs.**
+
+**Lead system (2026-07-16): MORNING-STRENGTH CONTINUATION, long-only, ≤4-session
+hold, triggers {gap≥0.25%+ORB-break, O=L break, CPR-open-long}.** Index+stocks
+coherent; every short-side mirror loses. Sequence locked with user: backfill →
+repair → A4 breadth (all 3 triggers) → rebuild G4 union book → checkpoint →
+single OOS touch. Val consumed for family F only; OOS untouched everywhere.
 
 **Meta-finding (daily variants):** on daily bars with forced 2–4 session exits,
 the F&O universe offers at best a weak deep-reversion short-side signal.
