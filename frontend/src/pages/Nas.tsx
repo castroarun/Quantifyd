@@ -491,6 +491,157 @@ function NasOptCard() {
   );
 }
 
+
+/* ---------- SENSEX expiry-day paper book (research/82) ----------
+   SENSEX expires THURSDAY, NIFTY Tuesday. NAS-OPT harvests NIFTY's 0/1-DTE edge on Mon/Tue;
+   this covers Wed(DTE1)/Thu(DTE0) — the days that capital would otherwise sit idle.
+   Runs every weekday, but DTE0/1 is the SYSTEM and other DTEs are recorded as OBSERVATION
+   only — the same split research/79 forced on NAS-OPT after far-DTE proved EV-negative. */
+function SensexPaperCard() {
+  const [d, setD] = useState<any>(null);
+  const [open, setOpen] = useState(false);
+  const [showLog, setShowLog] = useState(false);
+  const [variant, setVariant] = useState<'straddle' | 'strangle'>('strangle');
+  useEffect(() => {
+    const load = () => fetch(`/app/sensex_paper.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json()).then(setD).catch(() => {});
+    load();
+    const id = setInterval(load, 60000);
+    return () => clearInterval(id);
+  }, []);
+  if (!d) return null;
+  const V = d.variants?.[variant];
+  if (!V) return null;
+  const rs = (n: number) => `${n >= 0 ? '+' : '\u2212'}\u20B9${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
+  const cc = (n: number) => (n >= 0 ? '#3fb950' : '#f85149');
+  const rows = (d.history || []).filter((h: any) => h.variant === variant);
+
+  // cumulative P&L curve — SYSTEM days only (the honest number)
+  const curve: [string, number][] = V.curve || [];
+  let spark: JSX.Element | null = null;
+  if (curve.length >= 2) {
+    const W = 560, H = 74;
+    const ys = curve.map((p) => p[1]);
+    const mn = Math.min(0, ...ys), mx = Math.max(0, ...ys), rg = mx - mn || 1;
+    const pts = ys.map((y, i) => `${(i / (ys.length - 1)) * W},${H - ((y - mn) / rg) * H}`).join(' ');
+    const zy = H - ((0 - mn) / rg) * H;
+    spark = (
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
+        <line x1="0" y1={zy} x2={W} y2={zy} stroke="var(--line)" strokeWidth="1" strokeDasharray="3 3" />
+        <polyline points={pts} fill="none" stroke={ys[ys.length - 1] >= 0 ? '#3fb950' : '#f85149'} strokeWidth="2" />
+      </svg>
+    );
+  }
+  const cell: React.CSSProperties = { fontSize: 11, padding: '3px 8px', textAlign: 'right',
+    borderTop: '1px solid var(--line)', fontVariantNumeric: 'tabular-nums' };
+  const head: React.CSSProperties = { fontSize: 9.5, color: 'var(--ink-faint, #6e7681)', padding: '2px 8px',
+    textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.04em' };
+
+  return (
+    <section className={styles.sectionBlock} style={{ marginTop: 14 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'transparent',
+          border: 0, padding: '4px 0', cursor: 'pointer', textAlign: 'left' }}
+      >
+        <span style={{ fontSize: 13, color: 'var(--ink-muted)' }}>{open ? '\u25BE' : '\u25B8'}</span>
+        <span className="section-title">SENSEX expiry-day \u00b7 paper</span>
+        <Chip>{d.lots} lots \u00b7 {d.qty} qty</Chip>
+        <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>Thu expiry \u2192 fills Wed/Thu</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted)' }}>
+          system {V.system.n}d{' '}
+          <b style={{ color: cc(V.system.pnl) }}>{rs(V.system.pnl)}</b>
+          {V.system.win != null ? ` \u00b7 ${V.system.win}% win` : ''}
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-muted)', marginBottom: 10 }}>{d.subtitle}</div>
+
+          <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+            {(['strangle', 'straddle'] as const).map((v) => (
+              <button key={v} type="button" onClick={() => setVariant(v)}
+                style={{ background: variant === v ? 'var(--line)' : 'transparent',
+                  border: '1px solid var(--line)', borderRadius: 5, padding: '2px 9px', fontSize: 11,
+                  cursor: 'pointer', color: variant === v ? 'var(--ink)' : 'var(--ink-muted)',
+                  fontWeight: variant === v ? 700 : 400 }}>
+                {v === 'strangle' ? 'OTM strangle (NAS-OPT shape)' : 'ATM straddle (NAS-916 shape)'}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', textTransform: 'uppercase' }}>
+                System (DTE 0/1 \u2014 Wed/Thu)
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: cc(V.system.pnl) }}>{rs(V.system.pnl)}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-muted)' }}>
+                {V.system.n} days{V.system.win != null ? ` \u00b7 ${V.system.win}% win` : ''}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', textTransform: 'uppercase' }}>
+                Observational (DTE \u2265 2)
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: cc(V.observational.pnl) }}>{rs(V.observational.pnl)}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-muted)' }}>
+                {V.observational.n} days \u00b7 not the system
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', marginBottom: 2 }}>
+                Cumulative P&amp;L \u2014 system days only
+              </div>
+              {spark ?? <div style={{ fontSize: 11, color: 'var(--ink-faint, #6e7681)' }}>building\u2026</div>}
+            </div>
+          </div>
+
+          <button type="button" onClick={() => setShowLog((v) => !v)}
+            style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 6,
+              padding: '3px 9px', fontSize: 11, fontWeight: 600, color: 'var(--ink)', cursor: 'pointer' }}>
+            {showLog ? 'Hide daily record \u25B4' : `Daily record \u2014 ${rows.length} days \u25BE`}
+          </button>
+
+          {showLog && (
+            <div style={{ marginTop: 8, overflowX: 'auto' }}>
+              <div style={{ minWidth: 'max-content', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '104px 34px 34px 132px 62px 82px 78px',
+                  gap: 8, borderBottom: '1px solid var(--line)' }}>
+                  <span style={head}>DAY</span><span style={head}>WD</span><span style={head}>DTE</span>
+                  <span style={head}>STRIKES</span><span style={head}>CREDIT</span><span style={head}>EXIT</span>
+                  <span style={head}>P&amp;L</span>
+                </div>
+                {rows.map((h: any, i: number) => (
+                  <div key={i} style={{ display: 'grid',
+                    gridTemplateColumns: '104px 34px 34px 132px 62px 82px 78px', gap: 8,
+                    opacity: h.signal_class === 'system' ? 1 : 0.5 }}>
+                    <span style={{ ...cell, textAlign: 'left' }}>{h.day}</span>
+                    <span style={cell}>{h.weekday}</span>
+                    <span style={cell}>{h.dte}</span>
+                    <span style={cell}>{h.pe_strike}P/{h.ce_strike}C</span>
+                    <span style={cell}>{h.credit}</span>
+                    <span style={{ ...cell, color: h.exit_reason?.startsWith('time') ? '#3fb950' : '#f85149' }}>
+                      {h.exit_reason}
+                    </span>
+                    <span style={{ ...cell, fontWeight: 700, color: cc(h.pnl) }}>{rs(h.pnl)}</span>
+                  </div>
+                ))}
+                <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', marginTop: 8 }}>
+                  Faded rows are DTE\u22652 \u2014 observation only, never counted in the system number.
+                  All figures on {d.lots} lots ({d.qty} qty), SENSEX lot {d.lot_size}, net of \u20B920/leg.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
@@ -1030,6 +1181,8 @@ export default function Nas() {
         liveLegs={liveTicks.legs}
         basis={histBasis}
       />
+
+      <SensexPaperCard />
 
       <div className={styles.columns}>
         <div className={styles.col}>
