@@ -90,7 +90,11 @@ futures carry the lowest cost.
 ## 5. OOS-touch ledger
 
 Split convention: IS = first 60%, Val = next 20%, OOS = final 20% (chronological,
-per series actually used). **No system has consumed its OOS look yet.**
+per series actually used).
+**CONSUMED 2026-07-16 22:47 IST (EXP-G6, user-authorized): ORB family — index
+W12 cell, stock W6+W12 cells, G4 10-name book, breadth v6 book. VERDICT: SIGNAL
+(decaying) — see `results/RESULTS.md`. No further OOS looks for these systems.**
+Val consumed earlier for family F (F2). Family B never touched Val/OOS.
 
 ## 6. Known issues / decisions
 

@@ -2,7 +2,18 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ★ ACTIVE — research/81: Swing Edge Discovery study (brief: docs/Trading-sytem-research-prompt-fable.md) — 2026-07-15
+## ✅ CONCLUDED 2026-07-16 — research/81: Swing Edge Discovery — **SIGNAL (decaying), not investable**
+Two-day systematic study (~170 pre-registered cells, 8 families, 6 book constructions,
+1 authorized OOS touch). Gap-up+ORB long was real (IS t=5.6 / 77 F&O names) but the OOS
+look caught temporal decay: +33bps 2024 → +5 2025 → −27 2026; both books fail gates.
+7 families buried with data (incl. all shorts, MA crosses, coin-toss first-candle).
+Byproducts: 5-min history 2015→2024 backfilled for 381 symbols + adjustment repairs
+(KOTAKBANK-class splice bugs) + BANKNIFTY 5-min 2015+. Full verdict:
+`research/81_swing_edge_discovery/results/RESULTS.md`. Crash doc: `EDGE_DISCOVERY_81_STUDY_STATE.md`.
+Open follow-ups (not queued): decay-gate research, OR-width filter, B-family 5-min timing,
+NIFTY50/INDIAVIX index-token catchup fix (5-min ends 2026-03-25), app publication of the study page.
+
+## ~~★ ACTIVE~~ — research/81: Swing Edge Discovery study (brief: docs/Trading-sytem-research-prompt-fable.md) — 2026-07-15
 Multi-family systematic search for automatable 2-4-day swing systems, net-of-cost.
 Crash-recovery master: `EDGE_DISCOVERY_81_STUDY_STATE.md` (repo root, VPS canonical).
 - [x] Phase 0 data audit (user signed off) + unit-tested canonical engine (32 asserts)
