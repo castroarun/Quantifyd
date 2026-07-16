@@ -1,6 +1,6 @@
 # Nifty-500 5-Min History Backfill — 2015→2024 for ~370 Names (Kite, VPS)
 
-STATUS: RUNNING
+STATUS: WAITING_AUTH
 
 Part of **research/81 Swing Edge Discovery** (`EDGE_DISCOVERY_81_STUDY_STATE.md` at repo root).
 Full pre-registration (Ask/Base/Plan) is preserved in git history of this file;
@@ -8,46 +8,46 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 
 ## Status (live)
 
-- **State:** RUNNING
-- **Progress:** 69 done · 1 skipped (already deep) · 2 failed · of 381 symbols
-- **Current symbol:** BRIGADE
-- **Elapsed:** 212 min · **crude ETA:** 15.4 h remaining
-- **Last update:** 2026-07-15T22:17:31 IST
+- **State:** WAITING_AUTH
+- **Progress:** 184 done · 1 skipped (already deep) · 4 failed · of 381 symbols
+- **Current symbol:** IFBIND
+- **Elapsed:** 767 min · **crude ETA:** 13.1 h remaining
+- **Last update:** 2026-07-16T07:32:56 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-15 20:43 IST | [43/381] AUBANK done in 3.0m — earliest 2024-03-18 → 2017-07-10 |
-| 2026-07-15 20:47 IST | [44/381] AUROPHARMA done in 3.5m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 20:50 IST | [45/381] AXISBANK done in 3.4m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 20:53 IST | [46/381] BAJAJ-AUTO done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 20:57 IST | [47/381] BAJAJCON done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:00 IST | [48/381] BAJAJELEC done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:03 IST | [49/381] BAJAJFINSV done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:06 IST | [50/381] BAJAJHLDNG done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:09 IST | [51/381] BAJFINANCE done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:12 IST | [52/381] BALKRISIND done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:15 IST | [53/381] BALMLAWRIE done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:19 IST | [54/381] BALRAMCHIN done in 3.6m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:22 IST | [55/381] BANDHANBNK done in 2.9m — earliest 2024-03-18 → 2018-03-27 |
-| 2026-07-15 21:25 IST | [56/381] BANKBARODA done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:28 IST | [57/381] BANKINDIA done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:31 IST | [58/381] BASF done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:34 IST | [59/381] BATAINDIA done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:37 IST | [60/381] BAYERCROP done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:40 IST | [61/381] BDL done in 3.0m — earliest 2024-03-18 → 2018-03-23 |
-| 2026-07-15 21:43 IST | [62/381] BEL done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:47 IST | [63/381] BEML done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:50 IST | [64/381] BERGEPAINT done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:53 IST | [65/381] BHARATFORG done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 21:56 IST | [66/381] BHEL done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 22:00 IST | [67/381] BIOCON done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 22:03 IST | [68/381] BIRLACORPN done in 3.2m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 22:06 IST | [69/381] BLUEDART FAILED: BLUEDART: Execution failed |
-| 2026-07-15 22:10 IST | [70/381] BLUESTARCO done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 22:13 IST | [71/381] BOSCHLTD done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-15 22:17 IST | [72/381] BPCL done in 3.8m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:11 IST | [160/381] GRASIM done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:14 IST | [161/381] GRINDWELL done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:19 IST | [162/381] GSFC done in 4.4m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:20 IST | [163/381] GSPL: no earlier history at Kite (listed later?) |
+| 2026-07-16 03:23 IST | [164/381] GUJALKALI done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:24 IST | [165/381] GUJGASLTD: no earlier history at Kite (listed later?) |
+| 2026-07-16 03:27 IST | [166/381] GULFOILLUB done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:30 IST | [167/381] HAL done in 2.9m — earliest 2024-03-18 → 2018-04-02 |
+| 2026-07-16 03:33 IST | [168/381] HATSUN done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:36 IST | [169/381] HAVELLS done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:40 IST | [170/381] HCLTECH done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:43 IST | [171/381] HDFCAMC done in 3.1m — earliest 2024-03-18 → 2018-08-06 |
+| 2026-07-16 03:46 IST | [172/381] HDFCLIFE done in 3.4m — earliest 2024-03-18 → 2015-02-11 |
+| 2026-07-16 03:50 IST | [173/381] HEG done in 3.6m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:53 IST | [174/381] HEIDELBERG done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:56 IST | [175/381] HERITGFOOD done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 03:59 IST | [176/381] HEROMOTOCO done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 04:02 IST | [177/381] HFCL done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 04:05 IST | [178/381] HINDALCO done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 04:08 IST | [179/381] HINDCOPPER done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 04:11 IST | [180/381] HINDPETRO done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 04:14 IST | [181/381] HINDZINC done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 04:19 IST | [182/381] HONAUT done in 4.5m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 04:22 IST | [183/381] HUDCO done in 3.1m — earliest 2024-03-18 → 2017-05-19 |
+| 2026-07-16 04:25 IST | [184/381] ICICIGI done in 3.1m — earliest 2024-03-18 → 2017-09-27 |
+| 2026-07-16 04:28 IST | [185/381] ICICIPRULI done in 3.1m — earliest 2024-03-18 → 2016-09-29 |
+| 2026-07-16 04:30 IST | [186/381] IDBI UNVERIFIED (token died mid-run) — will retry |
+| 2026-07-16 06:06 IST | [187/381] IDEA done in 6.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 06:09 IST | [188/381] IDFCFIRSTB done in 3.2m — earliest 2024-03-18 → 2015-11-06 |
+| 2026-07-16 06:12 IST | [189/381] IEX UNVERIFIED (token died mid-run) — will retry |
 
 ## Crash recovery
 
