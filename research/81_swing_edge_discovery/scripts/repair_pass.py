@@ -64,8 +64,15 @@ def delete_5min(sym: str):
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fno-only", action="store_true",
+                    help="audit+refetch only F&O names (critical path for G5); "
+                         "rest deferred to the full pass")
+    args = ap.parse_args()
+
     from services.kite_service import get_kite
-    from services.data_manager import CentralizedDataManager
+    from services.data_manager import CentralizedDataManager, FNO_LOT_SIZES
     from services.nifty500_universe import get_instrument_token
 
     kite = get_kite()
@@ -78,6 +85,9 @@ def main():
     syms = [r[0] for r in con.execute(
         "SELECT DISTINCT symbol FROM market_data_unified WHERE timeframe='5minute'")]
     con.close()
+    if args.fno_only:
+        syms = [s for s in syms if s in FNO_LOT_SIZES]
+        print(f"--fno-only: auditing {len(syms)} F&O names")
 
     # ---- 1. adjustment audit ----
     print(f"=== adjustment audit: {len(syms)} symbols ===", flush=True)

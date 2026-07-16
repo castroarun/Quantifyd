@@ -1,0 +1,50 @@
+{
+ "checked": 79,
+ "drifted": [
+  {
+   "symbol": "BANKBARODA",
+   "drift": 0.0398
+  },
+  {
+   "symbol": "INFY",
+   "drift": 0.0276
+  },
+  {
+   "symbol": "ITC",
+   "drift": 0.0606
+  },
+  {
+   "symbol": "KOTAKBANK",
+   "drift": 4.0186
+  },
+  {
+   "symbol": "PNB",
+   "drift": 0.0363
+  },
+  {
+   "symbol": "TECHM",
+   "drift": 0.0333
+  },
+  {
+   "symbol": "TRENT",
+   "drift": 0.5167
+  },
+  {
+   "symbol": "VEDL",
+   "drift": 0.9239
+  }
+ ],
+ "refetched": [
+  "BANKBARODA",
+  "INFY",
+  "ITC",
+  "KOTAKBANK",
+  "PNB",
+  "TECHM",
+  "TRENT",
+  "VEDL"
+ ],
+ "errors": {},
+ "banknifty": "stored 146976 bars from 2015-02-02 09:15:00",
+ "daily_fixed": []
+}

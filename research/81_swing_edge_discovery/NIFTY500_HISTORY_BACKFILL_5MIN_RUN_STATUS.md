@@ -1,6 +1,6 @@
 # Nifty-500 5-Min History Backfill — 2015→2024 for ~370 Names (Kite, VPS)
 
-STATUS: WAITING_AUTH
+STATUS: RUNNING
 
 Part of **research/81 Swing Edge Discovery** (`EDGE_DISCOVERY_81_STUDY_STATE.md` at repo root).
 Full pre-registration (Ask/Base/Plan) is preserved in git history of this file;
@@ -8,46 +8,46 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 
 ## Status (live)
 
-- **State:** WAITING_AUTH
-- **Progress:** 184 done · 1 skipped (already deep) · 4 failed · of 381 symbols
-- **Current symbol:** IFBIND
-- **Elapsed:** 767 min · **crude ETA:** 13.1 h remaining
-- **Last update:** 2026-07-16T07:32:56 IST
+- **State:** RUNNING
+- **Progress:** 70 done · 262 skipped (already deep) · 1 failed · of 382 symbols
+- **Current symbol:** SFL
+- **Elapsed:** 302 min · **crude ETA:** 3.5 h remaining
+- **Last update:** 2026-07-16T18:09:22 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-16 03:11 IST | [160/381] GRASIM done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:14 IST | [161/381] GRINDWELL done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:19 IST | [162/381] GSFC done in 4.4m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:20 IST | [163/381] GSPL: no earlier history at Kite (listed later?) |
-| 2026-07-16 03:23 IST | [164/381] GUJALKALI done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:24 IST | [165/381] GUJGASLTD: no earlier history at Kite (listed later?) |
-| 2026-07-16 03:27 IST | [166/381] GULFOILLUB done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:30 IST | [167/381] HAL done in 2.9m — earliest 2024-03-18 → 2018-04-02 |
-| 2026-07-16 03:33 IST | [168/381] HATSUN done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:36 IST | [169/381] HAVELLS done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:40 IST | [170/381] HCLTECH done in 3.3m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:43 IST | [171/381] HDFCAMC done in 3.1m — earliest 2024-03-18 → 2018-08-06 |
-| 2026-07-16 03:46 IST | [172/381] HDFCLIFE done in 3.4m — earliest 2024-03-18 → 2015-02-11 |
-| 2026-07-16 03:50 IST | [173/381] HEG done in 3.6m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:53 IST | [174/381] HEIDELBERG done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:56 IST | [175/381] HERITGFOOD done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 03:59 IST | [176/381] HEROMOTOCO done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 04:02 IST | [177/381] HFCL done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 04:05 IST | [178/381] HINDALCO done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 04:08 IST | [179/381] HINDCOPPER done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 04:11 IST | [180/381] HINDPETRO done in 3.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 04:14 IST | [181/381] HINDZINC done in 3.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 04:19 IST | [182/381] HONAUT done in 4.5m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 04:22 IST | [183/381] HUDCO done in 3.1m — earliest 2024-03-18 → 2017-05-19 |
-| 2026-07-16 04:25 IST | [184/381] ICICIGI done in 3.1m — earliest 2024-03-18 → 2017-09-27 |
-| 2026-07-16 04:28 IST | [185/381] ICICIPRULI done in 3.1m — earliest 2024-03-18 → 2016-09-29 |
-| 2026-07-16 04:30 IST | [186/381] IDBI UNVERIFIED (token died mid-run) — will retry |
-| 2026-07-16 06:06 IST | [187/381] IDEA done in 6.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 06:09 IST | [188/381] IDFCFIRSTB done in 3.2m — earliest 2024-03-18 → 2015-11-06 |
-| 2026-07-16 06:12 IST | [189/381] IEX UNVERIFIED (token died mid-run) — will retry |
+| 2026-07-16 15:57 IST | [304/382] PAGEIND done in 4.9m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:01 IST | [305/382] PETRONET done in 4.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:07 IST | [306/382] PFC done in 6.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:12 IST | [307/382] PFIZER done in 4.5m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:16 IST | [308/382] PGHH done in 4.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:24 IST | [309/382] PHOENIXLTD done in 7.9m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:28 IST | [310/382] PIIND done in 3.9m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:31 IST | [311/382] PNBHOUSING done in 3.4m — earliest 2024-03-18 → 2016-11-07 |
+| 2026-07-16 16:36 IST | [312/382] PNCINFRA done in 4.5m — earliest 2024-03-18 → 2015-05-26 |
+| 2026-07-16 16:39 IST | [313/382] POLYCAB done in 3.5m — earliest 2024-03-18 → 2019-04-18 |
+| 2026-07-16 16:43 IST | [314/382] PRAJIND done in 4.2m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:49 IST | [315/382] PRESTIGE done in 5.8m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:54 IST | [316/382] PTC done in 4.6m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 16:58 IST | [317/382] RADICO done in 4.0m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:02 IST | [318/382] RAIN done in 4.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:06 IST | [319/382] RALLIS done in 3.8m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:10 IST | [320/382] RAMCOCEM done in 4.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:14 IST | [321/382] RATNAMANI done in 4.5m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:21 IST | [322/382] RAYMOND done in 6.9m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:26 IST | [323/382] RBLBANK done in 4.5m — earliest 2024-03-18 → 2016-08-31 |
+| 2026-07-16 17:31 IST | [324/382] RCF done in 5.2m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:36 IST | [325/382] RECLTD done in 4.5m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:40 IST | [326/382] REDINGTON done in 4.4m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:45 IST | [327/382] RELAXO done in 5.2m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 17:50 IST | [328/382] RITES done in 4.9m — earliest 2024-03-18 → 2018-07-03 |
+| 2026-07-16 17:54 IST | [329/382] RVNL done in 3.5m — earliest 2024-03-18 → 2015-08-12 |
+| 2026-07-16 17:58 IST | [330/382] SAIL done in 4.7m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:04 IST | [331/382] SANOFI done in 5.4m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:09 IST | [332/382] SCHAEFFLER done in 5.2m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:09 IST | [333/382] SENSEX FAILED: SENSEX: Instrument token not found for SENSEX |
 
 ## Crash recovery
 

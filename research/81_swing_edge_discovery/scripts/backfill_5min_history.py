@@ -193,9 +193,17 @@ def main() -> int:
         wanted = [x.strip() for x in args.symbols.split(",") if x.strip()]
         universe = {s: universe[s] for s in wanted if s in universe}
 
-    # priority names first, then the rest alphabetically
-    ordered = [s for s in PRIORITY if s in universe] + \
-              sorted(s for s in universe if s not in PRIORITY)
+    # priority: deep names, then F&O universe (critical path for the G5 book),
+    # then the rest alphabetically
+    prio = list(PRIORITY)
+    try:
+        from services.data_manager import FNO_LOT_SIZES
+        prio += sorted(FNO_LOT_SIZES.keys())
+    except Exception:
+        pass
+    prio = list(dict.fromkeys(prio))
+    ordered = [s for s in prio if s in universe] + \
+              sorted(s for s in universe if s not in prio)
 
     _state["total"] = len(ordered)
     _state["t_start"] = time.time()
