@@ -9,25 +9,15 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 ## Status (live)
 
 - **State:** RUNNING
-- **Progress:** 70 done · 262 skipped (already deep) · 1 failed · of 382 symbols
-- **Current symbol:** SFL
-- **Elapsed:** 302 min · **crude ETA:** 3.5 h remaining
-- **Last update:** 2026-07-16T18:09:22 IST
+- **Progress:** 80 done · 262 skipped (already deep) · 1 failed · of 382 symbols
+- **Current symbol:** STAR
+- **Elapsed:** 352 min · **crude ETA:** 2.8 h remaining
+- **Last update:** 2026-07-16T18:58:39 IST
 
 ## Event log (last 30)
 
 | Time | Event |
 |---|---|
-| 2026-07-16 15:57 IST | [304/382] PAGEIND done in 4.9m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 16:01 IST | [305/382] PETRONET done in 4.1m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 16:07 IST | [306/382] PFC done in 6.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 16:12 IST | [307/382] PFIZER done in 4.5m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 16:16 IST | [308/382] PGHH done in 4.0m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 16:24 IST | [309/382] PHOENIXLTD done in 7.9m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 16:28 IST | [310/382] PIIND done in 3.9m — earliest 2024-03-18 → 2015-02-02 |
-| 2026-07-16 16:31 IST | [311/382] PNBHOUSING done in 3.4m — earliest 2024-03-18 → 2016-11-07 |
-| 2026-07-16 16:36 IST | [312/382] PNCINFRA done in 4.5m — earliest 2024-03-18 → 2015-05-26 |
-| 2026-07-16 16:39 IST | [313/382] POLYCAB done in 3.5m — earliest 2024-03-18 → 2019-04-18 |
 | 2026-07-16 16:43 IST | [314/382] PRAJIND done in 4.2m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-16 16:49 IST | [315/382] PRESTIGE done in 5.8m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-16 16:54 IST | [316/382] PTC done in 4.6m — earliest 2024-03-18 → 2015-02-02 |
@@ -48,6 +38,16 @@ this copy is rewritten live by `scripts/backfill_5min_history.py`.
 | 2026-07-16 18:04 IST | [331/382] SANOFI done in 5.4m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-16 18:09 IST | [332/382] SCHAEFFLER done in 5.2m — earliest 2024-03-18 → 2015-02-02 |
 | 2026-07-16 18:09 IST | [333/382] SENSEX FAILED: SENSEX: Instrument token not found for SENSEX |
+| 2026-07-16 18:14 IST | [334/382] SFL done in 4.9m — earliest 2024-03-18 → 2016-12-09 |
+| 2026-07-16 18:20 IST | [335/382] SHK done in 6.0m — earliest 2024-03-18 → 2015-11-16 |
+| 2026-07-16 18:24 IST | [336/382] SIS done in 4.0m — earliest 2024-03-18 → 2017-08-10 |
+| 2026-07-16 18:29 IST | [337/382] SJVN done in 5.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:34 IST | [338/382] SKFINDIA done in 5.1m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:39 IST | [339/382] SOBHA done in 4.6m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:44 IST | [340/382] SOLARINDS done in 5.3m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:50 IST | [341/382] SONATSOFTW done in 5.6m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:54 IST | [342/382] SOUTHBANK done in 4.9m — earliest 2024-03-18 → 2015-02-02 |
+| 2026-07-16 18:58 IST | [343/382] SRF done in 3.7m — earliest 2024-03-18 → 2015-02-02 |
 
 ## Crash recovery
 

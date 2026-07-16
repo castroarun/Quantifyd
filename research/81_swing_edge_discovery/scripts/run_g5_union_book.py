@@ -47,6 +47,18 @@ CFG_STK = BTConfig(cost=CostConfig(product="FUTURES_PROXY", slippage=0.0003),
 MIN_SESSIONS = 500
 
 
+import os
+ORB_ONLY = os.getenv("G5_ORB_ONLY") == "1"   # A4 gate: D2/C2 failed breadth
+W_STOCKS = int(os.getenv("G5_W", "6"))       # A4 breadth: W12 dominant
+CAP = int(os.getenv("G5_CAP", "6"))
+RISK_STK_ENV = float(os.getenv("G5_RISK_STK", "0.005"))
+BOOK_NOTIONAL_CAP = float(os.getenv("G5_BOOK_NOTIONAL", "99.0"))  # x equity
+# equal-NOTIONAL sizing (fraction of equity per position); 0 = equal-risk mode.
+# Rationale: A4 validated the EQUAL-WEIGHTED per-trade edge; 1/stop-width
+# sizing overweights narrow-OR (losing) trades and inverts it.
+EQUAL_NOTIONAL = float(os.getenv("G5_EQUAL_NOTIONAL", "0"))
+
+
 def collect() -> tuple[pd.DataFrame, dict]:
     from services.data_manager import FNO_LOT_SIZES
     fno = sorted(FNO_LOT_SIZES.keys())
@@ -65,11 +77,13 @@ def collect() -> tuple[pd.DataFrame, dict]:
         if df.empty or df.index.normalize().nunique() < MIN_SESSIONS:
             continue
         closes[sym] = loader.to_daily(df)["close"]
-        for trig, ent in (("ORB", orb_entries(df, 6, START, END, 0.0025)),
-                          ("D2", d2_entries(df, "OL_long")),
-                          ("C2", c2_entries(df, "long"))):
+        trig_list = [("ORB", orb_entries(df, W_STOCKS, START, END, 0.0025))]
+        if not ORB_ONLY:
+            trig_list += [("D2", d2_entries(df, "OL_long")),
+                          ("C2", c2_entries(df, "long"))]
+        for trig, ent in trig_list:
             t = run_symbol(df, ent, CFG_STK, symbol=sym)
-            t["trigger"], t["risk_pct"] = trig, RISK_STK
+            t["trigger"], t["risk_pct"] = trig, RISK_STK_ENV
             rows.append(t)
     tr = pd.concat(rows, ignore_index=True)
     tr["entry_time"] = pd.to_datetime(tr["entry_time"])
@@ -105,14 +119,23 @@ def main():
             ti += 1
             if tr["eday"] != d:
                 continue
-            if len(open_pos) >= MAX_CONCURRENT:
+            if len(open_pos) >= CAP:
                 n_skipped += 1
                 continue
             risk = abs(tr["entry_px"] - tr["stop"])
             if risk <= 0:
                 continue
-            qty = min((eq * tr["risk_pct"]) / risk,
-                      (eq * MAX_NOTIONAL_PCT) / tr["entry_px"])
+            book_notional = sum(p["qty"] * p["mark"] for p in open_pos)
+            headroom = max(eq * BOOK_NOTIONAL_CAP - book_notional, 0.0)
+            if EQUAL_NOTIONAL > 0:
+                base_qty = (eq * EQUAL_NOTIONAL) / tr["entry_px"]
+            else:
+                base_qty = (eq * tr["risk_pct"]) / risk
+            qty = min(base_qty, (eq * MAX_NOTIONAL_PCT) / tr["entry_px"],
+                      headroom / tr["entry_px"])
+            if qty * tr["entry_px"] < eq * 0.005:      # headroom too thin
+                n_skipped += 1
+                continue
             slipped = tr["direction"] * (tr["exit_px"] / tr["entry_px"] - 1)
             open_pos.append({"symbol": tr["symbol"], "qty": qty,
                              "dir": tr["direction"], "mark": tr["entry_px"],
