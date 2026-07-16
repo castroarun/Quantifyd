@@ -57,6 +57,9 @@ BOOK_NOTIONAL_CAP = float(os.getenv("G5_BOOK_NOTIONAL", "99.0"))  # x equity
 # Rationale: A4 validated the EQUAL-WEIGHTED per-trade edge; 1/stop-width
 # sizing overweights narrow-OR (losing) trades and inverts it.
 EQUAL_NOTIONAL = float(os.getenv("G5_EQUAL_NOTIONAL", "0"))
+# within-day intake ranked by gap size (validated monotone dose-response,
+# F2/G3); gap is fixed at the 09:15 open -> causal ranking. 0 = clock order.
+GAP_RANK_TOP = int(os.getenv("G5_GAP_RANK", "0"))
 
 
 def collect() -> tuple[pd.DataFrame, dict]:
@@ -65,11 +68,17 @@ def collect() -> tuple[pd.DataFrame, dict]:
     closes = {}
     rows = []
 
+    def day_gaps(df5):
+        d = loader.to_daily(df5)
+        return (d["open"] / d["close"].shift(1) - 1)
+
     nifty = loader.load_bars("NIFTY50", "5minute", start=START, end=END)
     closes["NIFTY50"] = loader.to_daily(nifty)["close"]
     tri = run_symbol(nifty, orb_entries(nifty, 12, START, END, 0.0025),
                      CFG_IDX, symbol="NIFTY50")
     tri["trigger"], tri["risk_pct"] = "ORB", RISK_IDX
+    g = day_gaps(nifty)
+    tri["gap"] = pd.to_datetime(tri["entry_time"]).dt.normalize().map(g).values
     rows.append(tri)
 
     for sym in fno:
@@ -81,9 +90,11 @@ def collect() -> tuple[pd.DataFrame, dict]:
         if not ORB_ONLY:
             trig_list += [("D2", d2_entries(df, "OL_long")),
                           ("C2", c2_entries(df, "long"))]
+        g = day_gaps(df)
         for trig, ent in trig_list:
             t = run_symbol(df, ent, CFG_STK, symbol=sym)
             t["trigger"], t["risk_pct"] = trig, RISK_STK_ENV
+            t["gap"] = pd.to_datetime(t["entry_time"]).dt.normalize().map(g).values
             rows.append(t)
     tr = pd.concat(rows, ignore_index=True)
     tr["entry_time"] = pd.to_datetime(tr["entry_time"])
@@ -100,6 +111,11 @@ def main():
     RESULTS.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     trades, closes = collect()
+    if GAP_RANK_TOP > 0:
+        rank = trades.groupby("eday")["gap"].rank(ascending=False, method="first")
+        before = len(trades)
+        trades = trades[rank <= GAP_RANK_TOP].reset_index(drop=True)
+        print(f"gap-rank intake: top {GAP_RANK_TOP}/day -> {len(trades)} of {before}")
     print(f"union trades: {len(trades)} across {trades['symbol'].nunique()} symbols")
     print(trades.groupby("trigger")["net_ret"].agg(["size", "mean"])
           .assign(mean_bps=lambda x: (x["mean"] * 1e4).round(1))[["size", "mean_bps"]]

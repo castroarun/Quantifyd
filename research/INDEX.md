@@ -176,4 +176,4 @@ Systematic pre-registered search for automatable ≤4-day swing systems, net-of-
 ~160 cells so far. DEAD on daily 2-4d exits: Donchian, squeeze, EOD-carry, 5d-RS, PDH/PWH,
 MA crossovers. SIGNAL: deep-z short fade (t1.5); CPR-open long (t2.4). **LEAD: morning-strength
 continuation LONG (gap≥0.25%+ORB / O=L break / CPR-open), ≤4-session hold — index t3.0 +
-stocks t2.9-3.2, G3 PASS, G4 Sharpe 1.0 / DD −17%; breadth + OOS pending.** Verdict: TBD.
+stocks t2.9-3.2, G3 PASS, G4 Sharpe 1.0 / DD −17%; breadth + OOS pending.** Verdict: **SIGNAL (decaying) — not investable as tested; OOS consumed 2026-07-16.**
