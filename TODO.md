@@ -2,6 +2,14 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ CONCLUDED 2026-07-17 — research/82: Medium-swing 5-15d long+short — shorts NO EDGE (final), longs converge on live r/71 book
+User-mandated extension of research/81 to 5-15 session holds incl. futures shorts. **Shorts: all 24
+cells negative — directional short swing dead across the whole 1-15d spectrum (combined r/81+r/82).**
+Longs: real cyclical breakout edge at 10-15d (t 3.7-4.0 IS, Val + but purely 2020-21) — same family as
+research/71, already LIVE as the breakout paper book; per-trade 200DMA gating fails (lags tops). No new
+build; **OOS unconsumed.** Verdict: `research/82_medium_swing/results/RESULTS.md`; crash doc
+`MEDIUM_SWING_82_STUDY_STATE.md`.
+
 ## ✅ CONCLUDED 2026-07-16 — research/81: Swing Edge Discovery — **SIGNAL (decaying), not investable**
 Two-day systematic study (~170 pre-registered cells, 8 families, 6 book constructions,
 1 authorized OOS touch). Gap-up+ORB long was real (IS t=5.6 / 77 F&O names) but the OOS
