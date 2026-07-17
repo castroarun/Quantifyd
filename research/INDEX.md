@@ -177,3 +177,10 @@ Systematic pre-registered search for automatable ≤4-day swing systems, net-of-
 MA crossovers. SIGNAL: deep-z short fade (t1.5); CPR-open long (t2.4). **LEAD: morning-strength
 continuation LONG (gap≥0.25%+ORB / O=L break / CPR-open), ≤4-session hold — index t3.0 +
 stocks t2.9-3.2, G3 PASS, G4 Sharpe 1.0 / DD −17%; breadth + OOS pending.** Verdict: **SIGNAL (decaying) — not investable as tested; OOS consumed 2026-07-16.**
+
+## 82 — Medium-swing 5-15d, long+short futures — CONCLUDED 2026-07-17
+User-mandated extension of research/81 to the untested hold band. **SHORTS: NO EDGE, final —
+all 24 cells across 4 families negative (t −3…−10); combined with r/81, directional short swing
+is dead across 1-15 sessions.** LONGS: real cyclical breakout edge at 10-15d (N20-break t=4.0,
+PWH-break t=3.7; Val pooled + but all 2020-21) — converges on the r/71 family already LIVE as
+the breakout paper book; per-trade 200DMA gating does NOT work (lags tops). No build; OOS unconsumed.

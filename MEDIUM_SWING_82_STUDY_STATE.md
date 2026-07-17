@@ -61,3 +61,10 @@ None consumed.
 - M2 long dip-buy: +32bps t=2.17 (below gate; KC6 occupies this zone live).
 - Next: per-year stability + Val (2018-2022) on the two survivors — the
   research/81 decay lesson makes this THE gate that matters. OOS untouched.
+
+## STUDY CONCLUDED 2026-07-17 ~13:00 IST
+
+Shorts: NO EDGE (final, 1-15d spectrum closed). Longs: real cyclical
+breakout edge at 10-15d holds converges on research/71's already-live family
+(breakout paper book) — no new build; OOS UNCONSUMED. Full verdict:
+research/82_medium_swing/results/RESULTS.md
