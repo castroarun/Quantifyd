@@ -67,3 +67,13 @@ W6+W12, G4 book, breadth v6 book). No further OOS looks for these systems.**
 Reproducibility: engine @ research/81_swing_edge_discovery/engine (32 unit
 assertions); data snapshot = VPS market_data.db as of 2026-07-16 22:40 IST;
 scripts in scripts/; all runs logged in experiment STATUS files.
+
+## Addendum 2026-07-17 — follow-ups battery (A8/H1/B3) + publication
+
+All three follow-up levers closed NEGATIVE (details in
+experiments/FOLLOWUPS_BATTERY/): OR-width filter too weak (1.03x vs 1.5x gate)
+though the narrow-is-worst effect confirmed; reversion 5-min timing = noise;
+and NO trailing decay-gate works — 6-12m health gates were ON through the
+2025-26 bleed (2024 masked the onset). Study page published:
+/app/backtest/gaporb-morning-strength-research81 (factsheet included).
+NIFTY50/INDIAVIX 5-min repaired to current via index tokens.

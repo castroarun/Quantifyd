@@ -1,6 +1,6 @@
 # Follow-ups Battery — OR-Width Filter, Decay-Gate Forensic, B-Family 5-Min Timing
 
-STATUS: PRE-REGISTERED
+STATUS: DONE (see Verdicts)
 
 Experiments **EXP-A8, EXP-H1, EXP-B3** of research/81 (post-conclusion
 follow-ups, user-approved 2026-07-17). The ORB family's Val AND OOS are
@@ -50,3 +50,23 @@ baseline (t must beat baseline's on the same days).
 ## Findings
 
 (after run)
+
+## VERDICTS (2026-07-17 ~11:40 IST)
+
+- **EXP-A8 (OR-width filter): effect REAL, filter FAILS its gate.** Narrow
+  tercile is the worst bucket in both sets (index +6.3 vs +42/+45 mid/wide;
+  stocks +18.3 vs +27/+23) — confirms the G5 sizing forensic. But top-tercile
+  lift = 1.03x unconditional (gate needed 1.5x) and stocks mid>wide breaks
+  monotonicity. Keep as the SIZING lesson (never 1/stop-width), not a filter.
+- **EXP-B3 (reversion 5-min timing): NO IMPROVEMENT.** n collapses to 144-235
+  on the 5-min IS window; all cells within noise (best t=0.18). Family B stays
+  a thin daily SIGNAL; the timing lever does not rescue it.
+- **EXP-H1 (decay-gate forensic): NO WORKABLE GATE.** All four trailing gates
+  (6m/12m x mean/t) were ON through the 2025-26 bleed (2024 strength kept the
+  trailing window green as decay began -> avoided-bleed is NEGATIVE, i.e. the
+  gate captured MORE of the bleed than the ungated book while skipping good
+  months elsewhere; kept only 42-66% of 2017-21 gains). Lesson with LIVE-book
+  relevance: monthly-granularity trailing-PnL health gates lag abrupt decay —
+  do not rely on them as kill-switches.
+
+STATUS: DONE — all three closed; no new deployable finding; two lessons banked.
