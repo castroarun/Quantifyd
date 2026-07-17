@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Nas.module.css';
 import { apiGet } from '../api/client';
@@ -512,7 +512,7 @@ function SensexPaperCard() {
   if (!d) return null;
   const V = d.variants?.[variant];
   if (!V) return null;
-  const rs = (n: number) => `${n >= 0 ? '+' : '\u2212'}\u20B9${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
+  const rs = (n: number) => `${n >= 0 ? '+' : '−'}₹${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
   const cc = (n: number) => (n >= 0 ? '#3fb950' : '#f85149');
   const rows = (d.history || []).filter((h: any) => h.variant === variant);
 
@@ -545,14 +545,14 @@ function SensexPaperCard() {
         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'transparent',
           border: 0, padding: '4px 0', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span style={{ fontSize: 13, color: 'var(--ink-muted)' }}>{open ? '\u25BE' : '\u25B8'}</span>
-        <span className="section-title">SENSEX expiry-day \u00b7 paper</span>
-        <Chip>{d.lots} lots \u00b7 {d.qty} qty</Chip>
-        <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>Thu expiry \u2192 fills Wed/Thu</span>
+        <span style={{ fontSize: 13, color: 'var(--ink-muted)' }}>{open ? '▾' : '▸'}</span>
+        <span className="section-title">SENSEX expiry-day · paper</span>
+        <Chip>{d.lots} lots · {d.qty} qty</Chip>
+        <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>Thu expiry → fills Wed/Thu</span>
         <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted)' }}>
           system {V.system.n}d{' '}
           <b style={{ color: cc(V.system.pnl) }}>{rs(V.system.pnl)}</b>
-          {V.system.win != null ? ` \u00b7 ${V.system.win}% win` : ''}
+          {V.system.win != null ? ` · ${V.system.win}% win` : ''}
         </span>
       </button>
 
@@ -575,34 +575,91 @@ function SensexPaperCard() {
           <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', textTransform: 'uppercase' }}>
-                System (DTE 0/1 \u2014 Wed/Thu)
+                System (DTE 0/1 — Wed/Thu)
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: cc(V.system.pnl) }}>{rs(V.system.pnl)}</div>
               <div style={{ fontSize: 11, color: 'var(--ink-muted)' }}>
-                {V.system.n} days{V.system.win != null ? ` \u00b7 ${V.system.win}% win` : ''}
+                {V.system.n} days{V.system.win != null ? ` · ${V.system.win}% win` : ''}
               </div>
             </div>
             <div>
               <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', textTransform: 'uppercase' }}>
-                Observational (DTE \u2265 2)
+                Observational (DTE ≥ 2)
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: cc(V.observational.pnl) }}>{rs(V.observational.pnl)}</div>
               <div style={{ fontSize: 11, color: 'var(--ink-muted)' }}>
-                {V.observational.n} days \u00b7 not the system
+                {V.observational.n} days · not the system
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 240 }}>
               <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', marginBottom: 2 }}>
-                Cumulative P&amp;L \u2014 system days only
+                Cumulative P&amp;L — system days only
               </div>
-              {spark ?? <div style={{ fontSize: 11, color: 'var(--ink-faint, #6e7681)' }}>building\u2026</div>}
+              {spark ?? <div style={{ fontSize: 11, color: 'var(--ink-faint, #6e7681)' }}>building…</div>}
             </div>
           </div>
+
+          {(() => {
+            // Today's actual legs, both variants — the live book. `legs` is emitted by
+            // sensex_paper.py; during market hours `ltp` is the live mark off the chain.
+            const today = (d.history || []).filter((h: any) => h.day === d.today_day && h.legs);
+            if (!today.length) {
+              return (
+                <div style={{ fontSize: 11.5, color: 'var(--ink-faint, #6e7681)',
+                  border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
+                  No position today yet — enters 09:20 each weekday.
+                </div>
+              );
+            }
+            return (
+              <div style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px',
+                marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>Positions · {d.today_day}</span>
+                  <span style={{ fontSize: 10.5, color: 'var(--ink-muted)' }}>
+                    {today[0].weekday} · DTE {today[0].dte} · {today[0].signal_class}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 800,
+                    color: cc(today.reduce((a: number, t: any) => a + t.pnl, 0)) }}>
+                    {rs(today.reduce((a: number, t: any) => a + t.pnl, 0))}
+                  </span>
+                </div>
+                {today.map((t: any, ti: number) => (
+                  <div key={ti} style={{ marginTop: ti ? 8 : 0 }}>
+                    <div style={{ fontSize: 10.5, color: 'var(--ink-muted)', marginBottom: 2 }}>
+                      {t.variant === 'strangle' ? 'OTM strangle' : 'ATM straddle'} · credit {t.credit} ·{' '}
+                      <span style={{ color: t.exit_reason?.startsWith('time') ? '#3fb950' : '#f85149' }}>
+                        {t.exit_reason}
+                      </span>
+                      <span style={{ marginLeft: 8, fontWeight: 700, color: cc(t.pnl) }}>{rs(t.pnl)}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '68px 76px 46px 62px 62px 78px',
+                      gap: 8, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                      <span style={head}>LEG</span><span style={head}>STRIKE</span><span style={head}>QTY</span>
+                      <span style={head}>ENTRY</span><span style={head}>LTP</span><span style={head}>P&amp;L</span>
+                      {(t.legs || []).map((l: any, li: number) => (
+                        <React.Fragment key={li}>
+                          <span style={{ ...cell, textAlign: 'left', fontWeight: 700, color: '#f85149' }}>
+                            SELL {l.type}
+                          </span>
+                          <span style={cell}>{l.strike}</span>
+                          <span style={cell}>{l.qty}</span>
+                          <span style={cell}>{l.entry}</span>
+                          <span style={cell}>{l.ltp}</span>
+                          <span style={{ ...cell, fontWeight: 700, color: cc(l.pnl) }}>{rs(l.pnl)}</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           <button type="button" onClick={() => setShowLog((v) => !v)}
             style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 6,
               padding: '3px 9px', fontSize: 11, fontWeight: 600, color: 'var(--ink)', cursor: 'pointer' }}>
-            {showLog ? 'Hide daily record \u25B4' : `Daily record \u2014 ${rows.length} days \u25BE`}
+            {showLog ? 'Hide daily record ▴' : `Daily record — ${rows.length} days ▾`}
           </button>
 
           {showLog && (
@@ -630,8 +687,8 @@ function SensexPaperCard() {
                   </div>
                 ))}
                 <div style={{ fontSize: 10.5, color: 'var(--ink-faint, #6e7681)', marginTop: 8 }}>
-                  Faded rows are DTE\u22652 \u2014 observation only, never counted in the system number.
-                  All figures on {d.lots} lots ({d.qty} qty), SENSEX lot {d.lot_size}, net of \u20B920/leg.
+                  Faded rows are DTE≥2 — observation only, never counted in the system number.
+                  All figures on {d.lots} lots ({d.qty} qty), SENSEX lot {d.lot_size}, net of ₹20/leg.
                 </div>
               </div>
             </div>

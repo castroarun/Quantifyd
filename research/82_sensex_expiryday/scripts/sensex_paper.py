@@ -115,11 +115,17 @@ def run_day(c, day, E, dte):
         cx, tcx, rc = leg_exit(atm, "CE", ce0)
         px_, tpx, rp = leg_exit(atm, "PE", pe0)
         pnl = ((ce0 - cx) + (pe0 - px_)) * QTY - 2 * BROK
+        legs = [
+            {"type": "CE", "side": "SELL", "strike": atm, "qty": QTY, "entry": round(ce0, 2),
+             "ltp": round(cx, 2), "pnl": round((ce0 - cx) * QTY)},
+            {"type": "PE", "side": "SELL", "strike": atm, "qty": QTY, "entry": round(pe0, 2),
+             "ltp": round(px_, 2), "pnl": round((pe0 - px_) * QTY)},
+        ]
         out.append(dict(day=day, weekday=wd, dte=dte, signal_class=cls, variant="straddle",
                         entry_spot=round(s0, 2), ce_strike=atm, pe_strike=atm,
                         ce_entry=ce0, pe_entry=pe0, credit=round(ce0 + pe0, 2),
                         ce_exit=cx, pe_exit=px_, exit_reason=("SL" if "SL" in (rc, rp) else "time1515"),
-                        entry_time=hm(t_in), exit_time=hm(max(tcx, tpx)), pnl=round(pnl)))
+                        entry_time=hm(t_in), exit_time=hm(max(tcx, tpx)), pnl=round(pnl), legs=legs))
     # ---- strangle: ~0.4% OTM, 0.4% move-stop, exit 14:45 ----
     ck = round(s0 * (1 + MOVE) / STEP) * STEP
     pk = round(s0 * (1 - MOVE) / STEP) * STEP
@@ -135,11 +141,17 @@ def run_day(c, day, E, dte):
         cx = px_at(tx, ck, "CE", ce0)
         px_ = px_at(tx, pk, "PE", pe0)
         pnl = ((ce0 - cx) + (pe0 - px_)) * QTY - 2 * BROK
+        legs = [
+            {"type": "CE", "side": "SELL", "strike": ck, "qty": QTY, "entry": round(ce0, 2),
+             "ltp": round(cx, 2), "pnl": round((ce0 - cx) * QTY)},
+            {"type": "PE", "side": "SELL", "strike": pk, "qty": QTY, "entry": round(pe0, 2),
+             "ltp": round(px_, 2), "pnl": round((pe0 - px_) * QTY)},
+        ]
         out.append(dict(day=day, weekday=wd, dte=dte, signal_class=cls, variant="strangle",
                         entry_spot=round(s0, 2), ce_strike=ck, pe_strike=pk,
                         ce_entry=ce0, pe_entry=pe0, credit=round(ce0 + pe0, 2),
                         ce_exit=cx, pe_exit=px_, exit_reason=("move0.4%" if et else "time1445"),
-                        entry_time=hm(t_in), exit_time=hm(tx), pnl=round(pnl)))
+                        entry_time=hm(t_in), exit_time=hm(tx), pnl=round(pnl), legs=legs))
     return out
 
 
@@ -158,6 +170,7 @@ def publish(st):
         "study": "/app/backtest/fardte-rescue",
         "mode": "paper", "lots": LOTS, "qty": QTY, "lot_size": LOT,
         "updated": (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime("%Y-%m-%d %H:%M:%S"),
+        "today_day": (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime("%Y-%m-%d"),
         "variants": {},
         "history": list(reversed(h))[:400],
     }
@@ -197,8 +210,13 @@ def main():
         if not E:
             continue
         dte = (datetime.fromisoformat(E).date() - datetime.fromisoformat(day).date()).days
-        if all((day, v) in done for v in ("straddle", "strangle")):
+        # Today's row is LIVE — recompute it every run so the marks tick. Past days are frozen.
+        _today = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime("%Y-%m-%d")
+        if day != _today and all((day, v) in done for v in ("straddle", "strangle")):
             continue
+        if day == _today:
+            st["history"] = [r for r in st["history"] if r["day"] != _today]
+            done = {(r["day"], r["variant"]) for r in st["history"]}
         t0 = time.time()
         try:
             trades = run_day(c, day, E, dte)

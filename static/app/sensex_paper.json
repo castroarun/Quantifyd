@@ -1,0 +1,197 @@
+{
+ "name": "SENSEX expiry-day (paper)",
+ "subtitle": "SENSEX expires Thursday \u2014 fills the Wed/Thu days NAS-OPT leaves idle. Entry 09:20 daily. DTE0/1 = the system; other DTEs recorded as observation only.",
+ "study": "/app/backtest/fardte-rescue",
+ "mode": "paper",
+ "lots": 2,
+ "qty": 40,
+ "lot_size": 20,
+ "updated": "2026-07-17 10:42:46",
+ "today_day": "2026-07-17",
+ "variants": {
+  "straddle": {
+   "all": {
+    "n": 2,
+    "pnl": -3138,
+    "win": 50
+   },
+   "system": {
+    "n": 1,
+    "pnl": 1240,
+    "win": 100
+   },
+   "observational": {
+    "n": 1,
+    "pnl": -4378,
+    "win": 0
+   },
+   "curve": [
+    [
+     "2026-07-16",
+     1240
+    ]
+   ],
+   "curve_all": [
+    [
+     "2026-07-16",
+     1240
+    ],
+    [
+     "2026-07-17",
+     -3138
+    ]
+   ]
+  },
+  "strangle": {
+   "all": {
+    "n": 2,
+    "pnl": -298,
+    "win": 50
+   },
+   "system": {
+    "n": 1,
+    "pnl": 2946,
+    "win": 100
+   },
+   "observational": {
+    "n": 1,
+    "pnl": -3244,
+    "win": 0
+   },
+   "curve": [
+    [
+     "2026-07-16",
+     2946
+    ]
+   ],
+   "curve_all": [
+    [
+     "2026-07-16",
+     2946
+    ],
+    [
+     "2026-07-17",
+     -298
+    ]
+   ]
+  }
+ },
+ "history": [
+  {
+   "day": "2026-07-17",
+   "weekday": "Fri",
+   "dte": 6,
+   "signal_class": "observational",
+   "variant": "strangle",
+   "entry_spot": 77643.64,
+   "ce_strike": 78000,
+   "pe_strike": 77300,
+   "ce_entry": 388.05,
+   "pe_entry": 405.0,
+   "credit": 793.05,
+   "ce_exit": 534.1,
+   "pe_exit": 339.05,
+   "exit_reason": "move0.4%",
+   "entry_time": "09:20",
+   "exit_time": "10:31",
+   "pnl": -3244,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 78000,
+     "qty": 40,
+     "entry": 388.05,
+     "ltp": 534.1,
+     "pnl": -5842
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 77300,
+     "qty": 40,
+     "entry": 405.0,
+     "ltp": 339.05,
+     "pnl": 2638
+    }
+   ]
+  },
+  {
+   "day": "2026-07-17",
+   "weekday": "Fri",
+   "dte": 6,
+   "signal_class": "observational",
+   "variant": "straddle",
+   "entry_spot": 77643.64,
+   "ce_strike": 77600,
+   "pe_strike": 77600,
+   "ce_entry": 581.6,
+   "pe_entry": 527.35,
+   "credit": 1108.95,
+   "ce_exit": 764.8,
+   "pe_exit": 452.6,
+   "exit_reason": "SL",
+   "entry_time": "09:20",
+   "exit_time": "15:15",
+   "pnl": -4378,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 77600,
+     "qty": 40,
+     "entry": 581.6,
+     "ltp": 764.8,
+     "pnl": -7328
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 77600,
+     "qty": 40,
+     "entry": 527.35,
+     "ltp": 452.6,
+     "pnl": 2990
+    }
+   ]
+  },
+  {
+   "day": "2026-07-16",
+   "weekday": "Thu",
+   "dte": 0,
+   "signal_class": "system",
+   "variant": "strangle",
+   "entry_spot": 77497.33,
+   "ce_strike": 77800,
+   "pe_strike": 77200,
+   "ce_entry": 59.2,
+   "pe_entry": 70.05,
+   "credit": 129.25,
+   "ce_exit": 12.5,
+   "pe_exit": 42.1,
+   "exit_reason": "time1445",
+   "entry_time": "09:20",
+   "exit_time": "14:45",
+   "pnl": 2946
+  },
+  {
+   "day": "2026-07-16",
+   "weekday": "Thu",
+   "dte": 0,
+   "signal_class": "system",
+   "variant": "straddle",
+   "entry_spot": 77497.33,
+   "ce_strike": 77500,
+   "pe_strike": 77500,
+   "ce_entry": 165.2,
+   "pe_entry": 177.15,
+   "credit": 342.35,
+   "ce_exit": 61.5,
+   "pe_exit": 248.85,
+   "exit_reason": "SL",
+   "entry_time": "09:20",
+   "exit_time": "15:15",
+   "pnl": 1240
+  }
+ ]
+}
