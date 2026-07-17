@@ -3245,6 +3245,128 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\73_weekly_supertrend_investing\\results\\ (RESULTS.md, weekly-supertrend-nifty200.png, g*_*.csv)',
     ],
   },
+  {
+    slug: 'gaporb-morning-strength-research81',
+    title:
+      'Swing Edge Discovery (8 families, 170 pre-registered cells) — Gap-Up + ORB Long was REAL and the OOS look caught it DECAYING',
+    verdict:
+      'VERDICT: SIGNAL (decaying) — NOT investable as tested. A two-day systematic search for automatable 2-4 day swing systems on 5-min data (381 symbols backfilled to 2015 as part of the study). Seven families died cheaply at the IS gate: daily Donchian breakouts, vol-squeeze breakouts, EOD-strength carry, 5-day RS rotation, PDH/PWH breaks, MA crossovers on every timeframe, and the first-candle coin-toss (gross is literally zero). EVERY short-side variant of every setup loses net at this horizon. The one real anomaly: MORNING-STRENGTH CONTINUATION — gap-up >=0.25% at open + opening-range (60-min) breakout, long only, held up to 4 sessions. In-sample it was overwhelming: +21bps/trade net, t=5.6 across 77 F&O names, positive 86% of years, survived plateau/walk-forward/Monte-Carlo/regime/super-winner batteries, and a 10-name book did Sharpe 1.0 at MaxDD -17% (NIFTY B&H: -38%). Then the single authorized OOS look (2024-2026) rendered the verdict IS+Val could not: the per-trade edge HALVED out of sample and turned negative — +33bps in 2024, +5 in 2025, -27 in 2026 — and both pre-declared books fail the gates (G4 book OOS CAGR -1.6%). Most plausible cause: ORB-style morning momentum went retail-mainstream post-2023 and was crowded away. Deploying on the in-sample evidence would be funding the 2026 bleed. Do not trade; paper-monitor at most. The OOS ledger is consumed for this family.',
+    status: 'COMPLETE',
+    date: '2026-07-17',
+    cardBlurb:
+      'Systematic 8-family swing search: 7 families buried with data, all shorts lose net, and the one real edge (gap-up + ORB long, IS t=5.6 on 77 F&O names) was caught DECAYING by the one-time OOS look: +33bps 2024, +5 2025, -27 2026. Not deployed — the process working as designed.',
+    cardStats: [
+      { label: 'IS edge (77 names)', value: '+21bps t=5.6' },
+      { label: 'OOS decay 24/25/26', value: '+33 / +5 / -27 bps' },
+      { label: 'Families killed', value: '7 of 8' },
+    ],
+    system: {
+      intro: 'The lead system (the only family that survived in-sample gates). Fully automatable; every rule causal.',
+      rows: [
+        { k: 'Setup filter', v: 'Overnight gap-up >= 0.25% (open vs prev close) — validated monotone dose-response; gap-down INVERTS the edge.' },
+        { k: 'Entry', v: 'First 5-min close above the 09:15-10:15 opening-range high, after 10:15 -> buy next bar open. One entry/symbol/day. LONG ONLY (all short mirrors negative).' },
+        { k: 'Stop', v: 'Opening-range low (gap-through fills at open, modeled).' },
+        { k: 'Exit', v: 'No target; hard time-stop at the close of session entry+3 (max 4 sessions). Intraday exits destroy the edge — it is multi-day drift.' },
+        { k: 'Universe', v: 'F&O liquid names (edge concentrates there: non-F&O gross is half) + NIFTY index as futures-proxy.' },
+        { k: 'Costs', v: 'Futures-proxy model: brokerage/STT/exchange/GST + 1bp (index) / 3bp (stocks) slippage per side; every result net.' },
+      ],
+    },
+    conditions: {
+      intro: 'Data built for the study, then audited and repaired.',
+      rows: [
+        { k: 'Data', v: '5-minute OHLCV backfilled 2015->2024 for 381 symbols (was 2024-only); adjustment-drift audit found 6 F&O names on mixed split bases (fake 401% jumps) — deleted and refetched; BANKNIFTY 2015+ added via index token.' },
+        { k: 'Splits', v: 'IS 2015-02..2021-09 (60%), Val 2021-10..2023-12, OOS 2024-01..2026-07 touched ONCE (user-authorized) for the whole family.' },
+        { k: 'Multiple-testing ledger', v: '~184 pre-registered cells across all experiments; every grid locked before running; failed experiments reported, never re-gridded.' },
+        { k: 'Survivorship', v: 'Universe = today’s liquid names (biased); OOS decay is if anything understated by this.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Family league table (all net of costs, IS unless noted)',
+        columns: ['Family / system', 'Best result', 'Verdict'],
+        rows: [
+          ['Gap-up + ORB long <=4d (77 F&O)', 'IS +20.9bps t=5.62; OOS +10.4 t=2.57 but decaying', 'SIGNAL (decaying)'],
+          ['Same on NIFTY index', 'IS +29bps t=3.0; Val pass @1bp; OOS n=52 only', 'SIGNAL, thin'],
+          ['Deep-z reversion SHORT fade (daily)', '+32bps t=1.5, positive 8-10/13 yrs', 'SIGNAL, too thin'],
+          ['Open=Low break long', 'megacaps t=3.2 -> breadth t=0.87', 'does not generalize'],
+          ['CPR-open long', 'megacaps t=2.4 -> breadth negative', 'does not generalize'],
+          ['Donchian daily / squeeze / EOD-carry / 5d-RS / PDH-PWH / MA crosses / coin-toss', 'all negative net', 'NO EDGE (7 families)'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'The OOS decay that killed deployment (stock cell W12, net bps/trade)',
+        columns: ['Window', 'Net bps/trade', 'Note'],
+        rows: [
+          ['IS 2015-2021', '+20.9 (t=5.62)', 'all robustness batteries passed'],
+          ['OOS 2024', '+32.9', 'edge alive'],
+          ['OOS 2025', '+5.3', 'decaying'],
+          ['OOS 2026 (to Jul)', '-26.7', 'gone / negative'],
+        ],
+        heatmap: true,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'IS t-stat (77 names)', value: '5.62', tone: 'pos' },
+        { label: 'OOS t-stat', value: '2.57', hint: 'positive overall but decaying by year' },
+        { label: 'G4 book IS+Val', value: 'Sharpe 1.00 / DD -17%', tone: 'pos' },
+        { label: 'G4 book OOS', value: 'CAGR -1.6%', tone: 'neg' },
+        { label: 'Shorts (any setup)', value: 'all negative', tone: 'neg' },
+        { label: 'OOS ledger', value: 'CONSUMED 2026-07-16' },
+      ],
+      tables: [
+        {
+          title: '10-name book (locked construction): in-sample vs the OOS look',
+          columns: ['Window', 'CAGR', 'Sharpe', 'MaxDD', 'Calmar'],
+          rows: [
+            ['IS+Val 2015-2023', '13.2%', '1.00', '-17.2%', '0.77'],
+            ['NIFTY B&H same period', '10.7%', '0.70', '-38.2%', '0.28'],
+            ['OOS 2024-2026', '-1.6%', '-0.10', '-21.4%', '-0.07'],
+          ],
+          highlightRows: [2],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/gaporb-research81-factsheet.png',
+          caption: 'Client factsheet — 10-name book, full period 2015-2026 with the OOS flattening visible (net of futures-proxy costs; NIFTY benchmark; NOT deployed).',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'None deployable — the honest outcome',
+        summary: 'The study succeeded as a PROCESS: 7 families killed cheaply, one real edge found and validated in-sample, and the one-time OOS look caught its decay before capital did.',
+        metrics: [
+          { k: 'Durable byproduct 1', v: '381-symbol 5-min history 2015->2024 + adjustment repairs in market_data.db' },
+          { k: 'Durable byproduct 2', v: 'Unit-tested reusable 5-min/daily backtest engine (32 assertions)' },
+          { k: 'Durable lesson', v: 'OR-width inverts equal-risk sizing; trade-level t-stats do not make a book (capacity 3x); shorts never survive 2-4d costs here' },
+        ],
+        rejected: [
+          'All 6 breadth-book constructions (capacity-constrained; intake selection dominates)',
+          'First-candle coin-toss RR 1:1.5 (gross exactly zero)',
+          'Every short-side variant of every setup',
+        ],
+      },
+    ],
+    caveats: [
+      'Universe survivorship-biased (today’s 381 names applied to the past).',
+      'Futures modeled from cash series (user-approved proxy); slippage assumed 1-3bp/side.',
+      'Index OOS cell has n=52 (below the 100-trade evidence gate).',
+      '2026 covers ~6.5 months — decay vs temporary regime not fully separable; the verdict label (SIGNAL, decaying) stands either way.',
+      'OOS is consumed for this family: any revival (decay-gate, OR-width filter) validates only via paper-forward.',
+    ],
+    githubLinks: [
+      { label: 'RESULTS.md (full verdict)', href: 'https://github.com/castroarun/Quantifyd/blob/main/research/81_swing_edge_discovery/results/RESULTS.md' },
+      { label: 'Study crash-doc / ledgers', href: 'https://github.com/castroarun/Quantifyd/blob/main/EDGE_DISCOVERY_81_STUDY_STATE.md' },
+    ],
+    projectPaths: [
+      'research\\81_swing_edge_discovery\\engine\\ (loader, costs, backtester, metrics + tests)',
+      'research\\81_swing_edge_discovery\\experiments\\ (A1..A8, B1..B3, C1-C2, D1-D2, E1, F1-F2, G3-G6, H1)',
+      'research\\81_swing_edge_discovery\\results\\RESULTS.md',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {
