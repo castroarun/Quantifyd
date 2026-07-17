@@ -87,8 +87,10 @@ def run_screen(exp_id: str, results_dir: Path, grid: list, cell_label,
             done = {(r["cell"], r["symbol"]) for r in csv.DictReader(f)}
         print(f"resuming: {len(done)} rows present")
 
+    from engine.backtester import MAX_TIME_STOP
     cfg = {ts: BTConfig(cost=CostConfig(product="FUTURES_PROXY"),
-                        time_stop_sessions=ts) for ts in (1, 2, 3, 4)}
+                        time_stop_sessions=ts)
+           for ts in range(1, MAX_TIME_STOP + 1)}
     t0 = time.time()
     excluded = thin = 0
     for si, sym in enumerate(universe, 1):

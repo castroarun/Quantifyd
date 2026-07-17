@@ -21,6 +21,7 @@ on NOTIONAL_RS so flat brokerage is representable.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -28,7 +29,10 @@ import pandas as pd
 
 from .costs import CostConfig
 
-MAX_TIME_STOP = 4          # brief: max holding 3-4 trading days, hard rule
+# research/81 brief: max holding 3-4 trading days (default). research/82
+# (medium-swing, user-mandated 2026-07-17) raises it via env:
+#   ENGINE_MAX_TIME_STOP=15
+MAX_TIME_STOP = int(os.getenv("ENGINE_MAX_TIME_STOP", "4"))
 NOTIONAL_RS = 500_000.0    # notional per trade for cost math (flat fees need one)
 
 
