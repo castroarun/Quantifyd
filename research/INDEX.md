@@ -184,3 +184,10 @@ all 24 cells across 4 families negative (t −3…−10); combined with r/81, di
 is dead across 1-15 sessions.** LONGS: real cyclical breakout edge at 10-15d (N20-break t=4.0,
 PWH-break t=3.7; Val pooled + but all 2020-21) — converges on the r/71 family already LIVE as
 the breakout paper book; per-trade 200DMA gating does NOT work (lags tops). No build; OOS unconsumed.
+
+## 83 — Faithful Turtle (Dennis) on F&O equities — CONCLUDED 2026-07-17
+**Shorts: FINAL closure at ALL horizons** (turtle multi-week shorts worst yet: t −11, S2 0% yrs
+positive; with r/81+r/82 the equity short-swing question is closed permanently). Longs: turtle
+mechanics beat live-book rules in-sample (dual-system+2N, EQUAL-notional Calmar 0.45 vs 0.37;
+N-sizing LOSES — 3rd sizing-scheme failure) BUT whole family ~flat 2018-23 ex-2020/21 → RECORDED
+ONLY, live paper book soak decides. OOS unconsumed.

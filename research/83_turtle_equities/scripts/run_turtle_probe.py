@@ -35,7 +35,7 @@ SYSTEMS = {"S1": (20, 10), "S2": (55, 20)}
 
 
 def turtle_sim(df: pd.DataFrame, n_in: int, n_out: int, d: int,
-               sym: str) -> pd.DataFrame:
+               sym: str, stop_mult: float | None = 2.0) -> pd.DataFrame:
     """One symbol, one direction. Entry: close beyond n_in-channel -> next
     open. Exit: close beyond opposite n_out-channel -> next open; or 2N stop
     intrabar (gap-through at open). One position at a time."""
@@ -64,7 +64,8 @@ def turtle_sim(df: pd.DataFrame, n_in: int, n_out: int, d: int,
                 ent_i = i + 1
                 ent_raw = o[ent_i]
                 ent_px = COST.fill_price(ent_raw, is_buy=(d == 1))
-                stop = ent_raw - d * 2 * atr[i]
+                stop = (ent_raw - d * stop_mult * atr[i]) if stop_mult \
+                    else (-np.inf if d == 1 else np.inf)
                 in_pos = True
                 i = ent_i
         else:

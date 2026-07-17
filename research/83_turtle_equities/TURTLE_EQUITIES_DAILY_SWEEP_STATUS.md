@@ -1,6 +1,6 @@
 # research/83 — Faithful Turtle (S1/S2, both directions) on Indian F&O Equities
 
-STATUS: PRE-REGISTERED → RUNNING
+STATUS: DONE — see results/RESULTS.md
 
 User mandate 2026-07-17: Turtle Traders system (Dennis/Covel), restricted to
 Nifty-200/our stocks (MCX declined after Phase-0 audit). NEW information vs
