@@ -10,8 +10,10 @@ look caught temporal decay: +33bps 2024 → +5 2025 → −27 2026; both books f
 Byproducts: 5-min history 2015→2024 backfilled for 381 symbols + adjustment repairs
 (KOTAKBANK-class splice bugs) + BANKNIFTY 5-min 2015+. Full verdict:
 `research/81_swing_edge_discovery/results/RESULTS.md`. Crash doc: `EDGE_DISCOVERY_81_STUDY_STATE.md`.
-Open follow-ups (not queued): decay-gate research, OR-width filter, B-family 5-min timing,
-NIFTY50/INDIAVIX index-token catchup fix (5-min ends 2026-03-25), app publication of the study page.
+Follow-ups ALL CLOSED 2026-07-17: study published to /app/backtest/gaporb-morning-strength-research81
+(+factsheet); NIFTY50/INDIAVIX 5-min repaired to current via index tokens; OR-width filter too weak
+(sizing lesson stands); B-family 5-min timing = noise; NO workable trailing decay-gate (6-12m health
+gates lag abrupt decay — general live-book kill-switch lesson). Nothing further queued.
 
 ## ~~★ ACTIVE~~ — research/81: Swing Edge Discovery study (brief: docs/Trading-sytem-research-prompt-fable.md) — 2026-07-15
 Multi-family systematic search for automatable 2-4-day swing systems, net-of-cost.
