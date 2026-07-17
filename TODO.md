@@ -2,6 +2,12 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ CONCLUDED 2026-07-17 — research/83: Turtle (Dennis) on F&O equities — shorts closed at ALL horizons; turtle-EQ recorded, no book change
+T1: turtle multi-week shorts = worst short result yet (t −11, S2 0% yrs) → with r/81+82 the equity
+short-swing question is PERMANENTLY closed. T2 bakeoff: turtle S1+S2+2N EQUAL-notional beats live-book
+rules IS (Calmar 0.45 vs 0.37; N-sizing loses — 3rd sizing failure) but family ~flat 2018-23 → user
+chose RECORD ONLY; live breakout-paper soak decides. OOS unconsumed. `research/83_turtle_equities/results/RESULTS.md`.
+
 ## ✅ CONCLUDED 2026-07-17 — research/82: Medium-swing 5-15d long+short — shorts NO EDGE (final), longs converge on live r/71 book
 User-mandated extension of research/81 to 5-15 session holds incl. futures shorts. **Shorts: all 24
 cells negative — directional short swing dead across the whole 1-15d spectrum (combined r/81+r/82).**
