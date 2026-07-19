@@ -57,3 +57,22 @@ survivorship-FREE +18pp on Nifty-250 momentum is the reason to believe the
 family net of bias; even a 50% haircut clears +5pp. OOS 2024+ UNTOUCHED —
 available for a one-time confirmation before deployment.
 STATUS: DONE — STRATEGY-CANDIDATE (momentum top-10 12-1)
+
+## OOS TOUCH (2026-07-17, user-authorized, CONSUMED for the momentum-N50 family)
+
+Window 2024-01..2026-07 (~31 monthly decisions — short for a monthly system):
+- top10_nogate (LOCKED): excess +0.4pp (2024 +10.0, 2025 -7.1, 2026 -1.0)
+- top5_nogate: +4.2pp (2024 +31.0, then -9.3/-5.5) — front-loaded
+- top10_gate200: +1.1pp at MaxDD -14%
+
+**The +5pp mandate is NOT confirmed out-of-sample in the recent regime.**
+Same shape as every study: strong 2024, fading 2025-26. HOWEVER: 2.5yrs is a
+short OOS for monthly rotation; the IS record contains comparable droughts
+(2018-19: -8/-7pp) followed by big recoveries (+37.5pp 2021, +22.8 2023) —
+drought vs decay is indistinguishable at n~31 months. VERDICT downgraded:
+STRATEGY-CANDIDATE -> **SIGNAL/WATCH** for the concentrated N50 version.
+Recommendation: the family stays best expressed via the BROADER live
+momentum-paper book (Nifty 200 — breadth is momentum's fuel); a N50 top-10
+paper sleeve is reasonable for a patient investor who accepts multi-year
+tracking droughts; no real-money deploy on this evidence.
+No further OOS looks for momentum-N50.
