@@ -197,3 +197,9 @@ ONLY, live paper book soak decides. OOS unconsumed.
 9-11% vs NIFTYBEES 12.6% on the SURVIVOR universe; slot demand 3-4x capacity (dips cluster in
 crashes); p95 campaign 1-4yrs buried; blow-up arm ~0/negative with averaging WORSE (2-7% slot
 wipes). Structurally short-vol martingale. OOS untouched.
+
+## 85 — Beat Nifty-50 by ≥5pp (user mandate) — CONCLUDED 2026-07-17
+**WINNER: 12-1 momentum top-10 monthly ungated = +13.8pp FULL (25.9% vs 13.5%), DD = bench,
+14/18 yrs, passes all pre-registered gates** (top-5 +16.8pp but DD worse; 200DMA gate halves DD
+but fails Val). Turtle-N50 fails (-2.4pp); KC6-N50 = overlay not mandate. Survivorship caveat;
+r/75 survivorship-free +18pp supports family. OOS 2024+ reserved for pre-deploy confirmation.
