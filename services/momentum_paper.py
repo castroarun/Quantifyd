@@ -1,0 +1,833 @@
+"""services/momentum_paper.py — Momentum-30 Sub-Selection PAPER book (research/62 winner).
+
+Live-reflective ₹20L paper deployment of the validated large-cap momentum system. FULLY
+AUTOMATED: monthly rebalance + weekly NIFTYBEES-100DMA gate + daily 15-day Donchian stop, all
+run by APScheduler. Net of ~0.3% round-trip cost; 20% STCG tracked & shown SEPARATELY (not baked
+into NAV). This module NEVER places a real order — it only records paper fills, so there is no
+live-trading risk.
+
+System rules (the winner — research/62 STATUS-MD):
+  Universe : top-200 NSE stocks by trailing-6mo median traded value (close×volume), rebuilt monthly
+  Score    : 6m & 12m relative strength vs NIFTYBEES (rsblend); top-30 = the "ETF"
+  Hold     : top-8 of the 30, equal-weight, 100% invested when risk-on
+  Buffer   : keep a holding while it stays in the top-22 of the 30; else rotate to best un-owned
+  Gate     : weekly — NIFTYBEES < 100-day SMA → liquidate to cash; back above → redeploy next rebal
+  Stop     : daily — holding closes below its prior-15-day low → exit that stock to cash
+
+DB: backtest_data/momentum_paper.db   API: /api/momentum-paper/*   Page: /app/momentum-paper
+"""
+from __future__ import annotations
+import sqlite3, json, logging
+from pathlib import Path
+from datetime import datetime, date, timedelta
+
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+ROOT = Path(__file__).resolve().parent.parent
+DB = ROOT / "backtest_data" / "momentum_paper.db"
+MARKET_DB = ROOT / "backtest_data" / "market_data.db"
+BENCH = "NIFTYBEES"
+EXCLUDE = {"NIFTYBEES", "NIFTY50", "BANKNIFTY", "INDIAVIX", "NIFTYJR", "NIFTYMID",
+           "NIFTYIT", "FINNIFTY", "MIDCPNIFTY", "JUNIORBEES",
+           # commodity / index / debt ETFs that rank high by traded value but aren't equities
+           "GOLDBEES", "SILVERBEES", "LIQUIDBEES", "BANKBEES", "ICICIB22", "CPSEETF",
+           "MON100", "MAFANG", "SETFNIF50", "SETFGOLD", "SETFNIFBK", "GOLDCASE",
+           "KOTAKGOLD", "AXISGOLD", "HDFCGOLD", "GOLDSHARE", "GOLD1", "SILVER1"}
+
+
+def _is_etf(sym):
+    return sym.endswith("BEES") or sym.endswith("ETF") or sym.endswith("GOLD") \
+        or sym.endswith("SILVER") or sym in EXCLUDE
+
+
+N200_CACHE = ROOT / "backtest_data" / "nifty200_official.csv"
+N200_URL = "https://niftyindices.com/IndexConstituent/ind_nifty200list.csv"
+
+
+def _official_nifty200(force=False):
+    """The OFFICIAL NSE Nifty-200 constituents (market-cap defined), from niftyindices.com.
+    Cached locally; refreshed if older than ~20 days (index reconstitutes semi-annually).
+    This is the real index list — not a traded-value proxy. Falls back to traded-value
+    only if the list can't be loaded."""
+    import csv as _csv
+    import urllib.request
+    try:
+        stale = (not N200_CACHE.exists() or
+                 (date.today() - date.fromtimestamp(N200_CACHE.stat().st_mtime)).days > 20)
+        if force or stale:
+            req = urllib.request.Request(N200_URL, headers={"User-Agent": "Mozilla/5.0"})
+            N200_CACHE.write_bytes(urllib.request.urlopen(req, timeout=20).read())
+    except Exception as e:
+        logger.warning(f"[MP] Nifty200 list refresh failed (using cache): {e}")
+    try:
+        with open(N200_CACHE, newline="", encoding="utf-8-sig") as f:
+            syms = [(r.get("Symbol") or "").strip() for r in _csv.DictReader(f)]
+        syms = [s for s in syms if s and not _is_etf(s)]
+        return syms if len(syms) >= 150 else None
+    except Exception:
+        return None
+
+
+N50_CACHE = ROOT / "backtest_data" / "nifty50_official.csv"
+NEXT50_CACHE = ROOT / "backtest_data" / "niftynext50_official.csv"
+_TIER = {}
+
+
+def _mcap_tier(sym):
+    """Market-cap tier from official index membership (Nifty 200 = Nifty 100 + Midcap 100;
+    Nifty 100 = Nifty 50 + Next 50). These indices ARE free-float-mcap defined, so the tier
+    is a real size bucket: Nifty 50 ≈ mcap rank 1–50, Next 50 ≈ 51–100, Midcap ≈ 101–200."""
+    import csv as _csv
+    if not _TIER:
+        for key, path in (("n50", N50_CACHE), ("nxt", NEXT50_CACHE)):
+            try:
+                with open(path, newline="", encoding="utf-8-sig") as f:
+                    _TIER[key] = {(r.get("Symbol") or "").strip() for r in _csv.DictReader(f)}
+            except Exception:
+                _TIER[key] = set()
+    if sym in _TIER.get("n50", set()):
+        return "Nifty 50"
+    if sym in _TIER.get("nxt", set()):
+        return "Next 50"
+    return "Midcap"
+
+CFG = dict(
+    capital=2_000_000,        # ₹20 lakh
+    n_hold=8,
+    buffer=22,
+    etf_size=30,
+    universe_size=200,
+    gate_sma=100,             # NIFTYBEES 100-day SMA
+    donchian=15,              # 15-day low stop
+    cost_rt=0.003,            # 0.3% round-trip (mostly STT; Zerodha delivery brokerage ≈ 0)
+    stcg_pct=0.20,            # short-term capital-gains tax, shown separately
+    cash_yield=0.065,         # idle/risk-off cash parked in a liquid fund (LIQUIDBEES) @6.5% p.a.
+    liq_lookback=320,         # ~trailing 6mo (in trading days *1.6) for traded-value median
+    refresh_candidates=380,   # how many top-liquidity names to refresh from Kite at rebalance
+    # ── LIVE-execution guardrails (only consulted when live_mode is ON) ──
+    live_max_order_value=1_500_000,  # per-order sanity cap (₹) — refuse any single live order above this
+    live_fill_timeout=90,     # seconds to poll a MARKET order for a COMPLETE fill before giving up
+    live_slippage_alert=0.01,  # log a SLIPPAGE alert if |fill − expected| exceeds 1% of expected
+    live_rebalance_trim=False,  # v1 monthly rebalance policy: never TRIM kept winners (top-up only) →
+                                # avoids partial-lot STCG churn; new names sized to equal weight
+)
+
+# Each rule = (name, frequency of check/action, what happens)
+RULES = [
+    ("Universe", "fixed (index reconstitutes semi-annually)",
+     "The Nifty 200 — the 200 largest NSE stocks by (free-float) market cap. The entire candidate pool."),
+    ("Selection", "at each monthly rebalance",
+     "Rank all 200 by momentum (6-month + 12-month relative strength vs NIFTYBEES); hold the top 8, equal-weight."),
+    ("Capital", "—",
+     "₹20,00,000 · 100% invested when risk-on · equal-weight across the 8 names (~₹2.5L each)."),
+    ("Rebalance + buffer", "MONTHLY — last trading day, ~14:45 IST (early, ~45-min runway)",
+     "Re-rank the 200 (the heavy step, run early to leave time to catch issues). Keep a holding while it stays in the top 22; if it drops out, sell it and buy the best-ranked name not already owned."),
+    ("Macro gate", "WEEKLY — last trading day of week, ~15:15 IST (pre-close)",
+     "If NIFTYBEES is below its 100-day SMA → liquidate ALL 8 to cash. Redeploys at the next month-end once it reclaims the 100-DMA."),
+    ("Donchian stop", "DAILY — ~15:15 IST (pre-close, executable)",
+     "If any holding is below its own prior-15-day low → exit just that one stock to cash."),
+    ("Idle cash", "continuous",
+     "Risk-off / un-deployed cash parked in a liquid fund (LIQUIDCASE) earning ~6.5% p.a."),
+    ("Costs", "per trade",
+     "Net of ~0.3% round-trip (mostly STT; Zerodha delivery brokerage ≈ 0)."),
+    ("Tax", "on booked gains",
+     "20% STCG on gains held < 1 year — tracked & shown separately, not baked into NAV."),
+]
+
+
+# ───────────────────────── DB ─────────────────────────
+def _conn():
+    c = sqlite3.connect(str(DB)); c.row_factory = sqlite3.Row; return c
+
+
+def init_db():
+    DB.parent.mkdir(parents=True, exist_ok=True)
+    c = _conn()
+    c.executescript("""
+      CREATE TABLE IF NOT EXISTS mp_positions(
+        symbol TEXT PRIMARY KEY, qty REAL, entry_date TEXT, entry_price REAL,
+        invested REAL, peak_price REAL);
+      CREATE TABLE IF NOT EXISTS mp_closed(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT, entry_date TEXT, entry_price REAL,
+        exit_date TEXT, exit_price REAL, qty REAL, gross_pnl REAL, gross_pct REAL,
+        cost REAL, net_pnl REAL, reason TEXT, holding_days INTEGER, stcg_tax REAL);
+      CREATE TABLE IF NOT EXISTS mp_fills(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, symbol TEXT, side TEXT,
+        price REAL, qty REAL, value REAL, cost REAL, reason TEXT);
+      CREATE TABLE IF NOT EXISTS mp_nav(
+        d TEXT PRIMARY KEY, equity REAL, cash REAL, nav REAL, invested_pct REAL,
+        gate TEXT, bench_close REAL, unrealized REAL);
+      CREATE TABLE IF NOT EXISTS mp_state(key TEXT PRIMARY KEY, val TEXT);
+    """)
+    c.commit(); c.close()
+
+
+def _get(key, default=None):
+    c = _conn(); r = c.execute("SELECT val FROM mp_state WHERE key=?", (key,)).fetchone(); c.close()
+    return json.loads(r["val"]) if r else default
+
+
+def _set(key, val):
+    c = _conn(); c.execute("INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)",
+                           (key, json.dumps(val))); c.commit(); c.close()
+
+
+# ───────────────────── kite / data ─────────────────────
+def _kite():
+    from services.kite_service import get_kite_with_refresh
+    return get_kite_with_refresh()
+
+
+def _dm():
+    from services.data_manager import get_data_manager
+    return get_data_manager(_kite())
+
+
+def _live_prices(symbols):
+    """Latest traded price per symbol via Kite (after close = the day's close)."""
+    if not symbols:
+        return {}
+    out = {}
+    try:
+        k = _kite()
+        keys = [f"NSE:{s}" for s in symbols]
+        for i in range(0, len(keys), 200):
+            q = k.quote(keys[i:i + 200])
+            for key, v in q.items():
+                out[key.split(":", 1)[1]] = float(v.get("last_price") or
+                                                   (v.get("ohlc") or {}).get("close") or 0)
+    except Exception as e:
+        logger.warning(f"[MP] live price fetch failed: {e}")
+    return {s: p for s, p in out.items() if p > 0}
+
+
+# ───────────────────── LIVE execution (real Kite CNC orders) ─────────────────────
+# This module is PAPER by default. Real orders are placed ONLY when the persisted
+# `live_mode` setting is "1". Flip it via POST /api/momentum-paper/toggle-mode; kill via
+# /api/momentum-paper/kill-switch. All order flow funnels through _buy/_sell, so turning the
+# flag on is the single switch that makes the whole book trade real money.
+def _is_live():
+    return str(_get("live_mode", "0")) in ("1", "true", "True", "on")
+
+
+def _market_open_now():
+    from datetime import time as _t
+    now = datetime.now()
+    if now.weekday() >= 5:                     # Sat/Sun
+        return False
+    return _t(9, 15) <= now.time() <= _t(15, 30)
+
+
+def _slippage_check(symbol, side, fill, expected):
+    if expected and abs(fill - expected) / expected > CFG["live_slippage_alert"]:
+        logger.warning(f"[MP-LIVE] SLIPPAGE {side} {symbol}: fill {fill:.2f} vs expected "
+                       f"{expected:.2f} ({(fill / expected - 1) * 100:+.2f}%)")
+
+
+def _place_cnc_market(symbol, side, qty):
+    """Place a real NSE CNC MARKET order and BLOCK until it fills. Returns (avg_price, filled_qty).
+    Raises on rejection/timeout. Reached ONLY when live_mode is on — this spends real money."""
+    import time as _time
+    k = _kite()
+    oid = k.place_order(
+        variety=k.VARIETY_REGULAR, exchange=k.EXCHANGE_NSE, tradingsymbol=symbol,
+        transaction_type=(k.TRANSACTION_TYPE_BUY if side == "BUY" else k.TRANSACTION_TYPE_SELL),
+        quantity=int(qty), product=k.PRODUCT_CNC, order_type=k.ORDER_TYPE_MARKET,
+        validity=k.VALIDITY_DAY, tag="MOMENTUM")
+    logger.warning(f"[MP-LIVE] {side} {symbol} x{int(qty)} → order {oid} placed")
+    deadline = _time.time() + CFG["live_fill_timeout"]
+    while _time.time() < deadline:
+        _time.sleep(1.5)
+        try:
+            hist = k.order_history(oid)
+        except Exception as e:
+            logger.warning(f"[MP-LIVE] order_history({oid}) error: {e}")
+            continue
+        last = hist[-1] if hist else {}
+        status = (last.get("status") or "").upper()
+        if status == "COMPLETE":
+            avg = float(last.get("average_price") or 0)
+            fq = int(last.get("filled_quantity") or qty)
+            logger.warning(f"[MP-LIVE] {side} {symbol} FILLED {fq}@{avg:.2f} (order {oid})")
+            return avg, fq
+        if status in ("REJECTED", "CANCELLED"):
+            raise RuntimeError(f"order {oid} {status}: {last.get('status_message')}")
+    raise TimeoutError(f"order {oid} not COMPLETE within {CFG['live_fill_timeout']}s")
+
+
+def reconcile_holdings():
+    """Compare our book (mp_positions) vs actual Kite holdings; alert-only (no auto-correct)."""
+    if not _is_live():
+        return {"live": False, "note": "paper mode"}
+    try:
+        k = _kite()
+        broker = {h["tradingsymbol"]: int(h["quantity"]) for h in k.holdings()}
+    except Exception as e:
+        return {"live": True, "error": str(e)}
+    ours = {s: int(round(p["qty"])) for s, p in _positions().items()}
+    diffs = [{"symbol": s, "book": ours.get(s, 0), "broker": broker.get(s, 0)}
+             for s in sorted(set(ours) | set(broker)) if ours.get(s, 0) != broker.get(s, 0)]
+    if diffs:
+        logger.warning(f"[MP-LIVE] HOLDINGS MISMATCH (book vs broker): {diffs}")
+    return {"live": True, "match": not diffs, "diffs": diffs}
+
+
+def _toggle_mode(body):
+    """Flip PAPER↔LIVE and optionally set live capital. LIVE means the next scheduled
+    rebalance/exit places REAL Kite CNC orders. Body: {"live": true/false, "capital": <rupees>}."""
+    want = str(body.get("live", "")).lower() in ("1", "true", "on", "yes")
+    cap = body.get("capital")
+    if cap is not None:
+        _set("capital", float(cap))
+    _set("live_mode", "1" if want else "0")
+    logger.warning(f"[MP] *** MODE → {'LIVE (real orders)' if want else 'PAPER'} ***"
+                   + (f"  capital ₹{float(cap):,.0f}" if cap is not None else ""))
+    return {"live_mode": want, "mode": "LIVE" if want else "PAPER", "capital": _get("capital")}
+
+
+def _kill_switch():
+    """Emergency: force back to PAPER so no further real orders are placed. Existing broker
+    positions are LEFT UNTOUCHED (square off manually or let the next risk-off gate exit them)."""
+    _set("live_mode", "0")
+    logger.warning("[MP] *** KILL SWITCH → live_mode OFF. Open positions untouched. ***")
+    return {"live_mode": False, "killed": True,
+            "note": "back to PAPER; broker positions unchanged — square off manually if needed"}
+
+
+_PANEL_CACHE = {}
+
+def _panel(start="2022-06-01"):
+    # Memoize by (start, DB mtime): the daily panel is a ~1000x1600 pivot that costs
+    # ~7s to build. get_state() is on the request path, so without this the page hangs.
+    # Any write to market_data.db (e.g. the EOD refresh) bumps mtime and invalidates.
+    import os
+    try:
+        key = (start, os.path.getmtime(str(MARKET_DB)))
+    except OSError:
+        key = None
+    if key is not None and _PANEL_CACHE.get("key") == key:
+        return _PANEL_CACHE["val"]
+    con = sqlite3.connect(str(MARKET_DB))
+    df = pd.read_sql("SELECT symbol,date,close,volume FROM market_data_unified "
+                     "WHERE timeframe='day' AND close IS NOT NULL AND date>=? ORDER BY symbol,date",
+                     con, params=(start,), parse_dates=["date"])
+    con.close()
+    df["tv"] = df["close"] * df["volume"].fillna(0)
+    close = df.pivot_table(index="date", columns="symbol", values="close").sort_index()
+    tv = df.pivot_table(index="date", columns="symbol", values="tv").sort_index()
+    if key is not None:
+        _PANEL_CACHE["key"] = key
+        _PANEL_CACHE["val"] = (close, tv)
+    return close, tv
+
+
+def refresh_universe(full=False):
+    """Pull fresh daily bars from Kite for the working universe (held + top-liquidity pool)."""
+    try:
+        official = _official_nifty200(force=full)
+        if official:
+            pool = official                        # refresh exactly the official Nifty 200
+        else:
+            close, tv = _panel()
+            asof = close.index[-1]
+            med = tv.loc[:asof].tail(CFG["liq_lookback"]).median().sort_values(ascending=False)
+            pool = [s for s in med.index if not _is_etf(s)][:CFG["refresh_candidates"]]
+        held = [r["symbol"] for r in _conn().execute("SELECT symbol FROM mp_positions")]
+        syms = sorted(set(pool + held + [BENCH]))
+        frm = (date.today() - timedelta(days=20 if not full else 400))
+        ok, fail, _ = _dm().download_data(syms, "day", datetime.combine(frm, datetime.min.time()),
+                                          datetime.now())
+        logger.info(f"[MP] refresh: {ok} ok / {fail} fail ({len(syms)} syms)")
+        return ok
+    except Exception as e:
+        logger.error(f"[MP] refresh failed: {e}")
+        return 0
+
+
+# ───────────────────── signals ─────────────────────
+def _universe(close, tv, asof):
+    official = _official_nifty200()
+    if official:                                   # the REAL Nifty 200 (market-cap defined)
+        return [s for s in official if s in close.columns]
+    # fallback only: traded-value proxy (the backtest method) if the official list is unavailable
+    w = tv.loc[:asof].tail(CFG["liq_lookback"])
+    cnt = w.notna().sum(); med = w.median()
+    elig = med[(cnt >= 75) & (med > 0)].sort_values(ascending=False)
+    return [s for s in elig.index if not _is_etf(s)][:CFG["universe_size"]]
+
+
+def _rs_basket(close, tv, asof):
+    """Return ranked top-30 'ETF' by 6m/12m relative strength within the top-200 universe."""
+    uni = set(_universe(close, tv, asof))
+    h = close.loc[:asof].ffill()          # ffill: last panel date can miss the benchmark/some names
+    if BENCH not in h.columns or len(h) <= 252 or pd.isna(h[BENCH].iloc[-1]):
+        return None
+    out = {}
+    for L, wt in ((126, 0.5), (252, 0.5)):
+        p0 = h.iloc[-L - 1]; p1 = h.iloc[-1]
+        nf = p1[BENCH] / p0[BENCH]
+        r = (p1 / p0) / nf
+        for s, v in r.items():
+            if s in uni and s not in EXCLUDE and pd.notna(v):
+                out[s] = out.get(s, 0) + wt * v
+    if not out:
+        return None
+    return list(pd.Series(out).sort_values(ascending=False).index[:CFG["etf_size"]])
+
+
+def _gate_risk_off(close, asof):
+    b = close[BENCH].loc[:asof].dropna()
+    return bool(len(b) >= CFG["gate_sma"] and b.iloc[-1] < b.tail(CFG["gate_sma"]).mean())
+
+
+def _donchian_low(close, sym, asof):
+    cs = close[sym].loc[:asof].dropna() if sym in close.columns else pd.Series(dtype=float)
+    n = CFG["donchian"]
+    return float(cs.iloc[-n - 1:-1].min()) if len(cs) > n else None
+
+
+# ───────────────────── book ops ─────────────────────
+def _positions():
+    return {r["symbol"]: dict(r) for r in _conn().execute("SELECT * FROM mp_positions")}
+
+
+def _cash():
+    return float(_get("cash", 0.0))
+
+
+def _record_fill(symbol, side, price, qty, reason):
+    value = price * qty; cost = value * (CFG["cost_rt"] / 2)
+    c = _conn()
+    c.execute("INSERT INTO mp_fills(ts,symbol,side,price,qty,value,cost,reason) VALUES(?,?,?,?,?,?,?,?)",
+              (datetime.now().isoformat(timespec="seconds"), symbol, side, price, qty, value, cost, reason))
+    c.commit(); c.close()
+    return cost
+
+
+def _buy(symbol, price, rupees, d, reason):
+    if _is_live():
+        qty = int(rupees // price)                       # whole shares for CNC delivery
+        if qty < 1:
+            logger.warning(f"[MP-LIVE] skip BUY {symbol}: budget ₹{rupees:.0f} < 1 share @ {price:.1f}")
+            return
+        if not _market_open_now():
+            logger.error(f"[MP-LIVE] REFUSE BUY {symbol}: market closed"); return
+        if qty * price > CFG["live_max_order_value"]:
+            logger.error(f"[MP-LIVE] REFUSE BUY {symbol}: value ₹{qty * price:.0f} > cap"); return
+        try:
+            fill, fq = _place_cnc_market(symbol, "BUY", qty)
+        except Exception as e:
+            logger.error(f"[MP-LIVE] BUY {symbol} FAILED — not recording: {e}"); return
+        _slippage_check(symbol, "BUY", fill, price)
+        price, qty = fill, fq
+    else:
+        qty = rupees / price                             # paper allows fractional shares
+    cost = _record_fill(symbol, "BUY", price, qty, reason)
+    c = _conn()
+    c.execute("INSERT OR REPLACE INTO mp_positions(symbol,qty,entry_date,entry_price,invested,peak_price) "
+              "VALUES(?,?,?,?,?,?)", (symbol, qty, d, price, qty * price, price))
+    c.commit(); c.close()
+    _set("cash", _cash() - qty * price - cost)
+
+
+def _sell(symbol, price, d, reason, qty=None):
+    pos = _positions().get(symbol)
+    if not pos:
+        return
+    full = qty is None or qty >= pos["qty"]
+    qty = pos["qty"] if full else qty
+    if _is_live():
+        sell_qty = int(round(qty))
+        if sell_qty < 1:
+            return
+        if not _market_open_now():
+            logger.error(f"[MP-LIVE] REFUSE SELL {symbol}: market closed — POSITION STILL HELD"); return
+        try:
+            fill, fq = _place_cnc_market(symbol, "SELL", sell_qty)
+        except Exception as e:
+            logger.error(f"[MP-LIVE] SELL {symbol} FAILED — POSITION STILL HELD: {e}"); return
+        _slippage_check(symbol, "SELL", fill, price)
+        price = fill; qty = fq; full = fq >= pos["qty"]
+    cost = _record_fill(symbol, "SELL", price, qty, reason)
+    gross = (price - pos["entry_price"]) * qty
+    gpct = (price / pos["entry_price"] - 1) * 100
+    hold = (datetime.fromisoformat(d).date() - datetime.fromisoformat(pos["entry_date"]).date()).days \
+        if "T" not in d else (date.fromisoformat(d) - date.fromisoformat(pos["entry_date"])).days
+    entry_half = pos["invested"] * (qty / pos["qty"]) * (CFG["cost_rt"] / 2)  # proportional on partials
+    rt_cost = entry_half + cost                               # entry + exit halves
+    stcg = gross * CFG["stcg_pct"] if (gross > 0 and hold < 365) else 0.0
+    c = _conn()
+    c.execute("INSERT INTO mp_closed(symbol,entry_date,entry_price,exit_date,exit_price,qty,"
+              "gross_pnl,gross_pct,cost,net_pnl,reason,holding_days,stcg_tax) "
+              "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+              (symbol, pos["entry_date"], pos["entry_price"], d, price, qty, gross, gpct,
+               rt_cost, gross - rt_cost, reason, hold, stcg))
+    if full:
+        c.execute("DELETE FROM mp_positions WHERE symbol=?", (symbol,))
+    else:                                                    # partial trim — keep the remainder
+        rem = pos["qty"] - qty
+        c.execute("UPDATE mp_positions SET qty=?, invested=? WHERE symbol=?",
+                  (rem, pos["invested"] * (rem / pos["qty"]), symbol))
+    c.commit(); c.close()
+    _set("cash", _cash() + qty * price - cost)
+
+
+def _mark_nav(close, asof_iso, live=None):
+    pos = _positions()
+    syms = list(pos)
+    px = live or (_live_prices(syms) if syms else {})
+    equity = 0.0; unreal = 0.0
+    c = _conn()
+    for s, p in pos.items():
+        pr = px.get(s) or p["entry_price"]
+        equity += p["qty"] * pr
+        unreal += (pr - p["entry_price"]) * p["qty"]
+        peak = max(p["peak_price"], pr)
+        if peak > p["peak_price"]:
+            c.execute("UPDATE mp_positions SET peak_price=? WHERE symbol=?", (peak, s))
+    c.commit(); c.close()
+    cash = _cash(); nav = equity + cash
+    bench = None
+    try:
+        bench = float(close[BENCH].loc[:asof_iso].dropna().iloc[-1])
+    except Exception:
+        pass
+    gate = _get("gate", "ON")
+    c = _conn()
+    c.execute("INSERT OR REPLACE INTO mp_nav(d,equity,cash,nav,invested_pct,gate,bench_close,unrealized) "
+              "VALUES(?,?,?,?,?,?,?,?)",
+              (asof_iso[:10], equity, cash, nav, (equity / nav * 100) if nav else 0,
+               gate, bench, unreal))
+    c.commit(); c.close()
+    return nav
+
+
+# ───────────────────── jobs ─────────────────────
+def seed(force=False):
+    """One-time: deploy ₹20L into today's top-8 momentum picks at live prices."""
+    init_db()
+    if _get("seeded") and not force:
+        return {"ok": False, "msg": "already seeded"}
+    refresh_universe(full=True)
+    close, tv = _panel()
+    asof = close.index[-1]
+    etf = _rs_basket(close, tv, asof)
+    if not etf:
+        return {"ok": False, "msg": "could not compute basket"}
+    top8 = etf[:CFG["n_hold"]]
+    risk_off = _gate_risk_off(close, asof)
+    _set("capital", CFG["capital"]); _set("cash", CFG["capital"])
+    _set("inception", date.today().isoformat()); _set("gate", "OFF" if risk_off else "ON")
+    d = date.today().isoformat()
+    if not risk_off:
+        live = _live_prices(top8)
+        per = CFG["capital"] / len(top8)
+        for s in top8:
+            p = live.get(s)
+            if p:
+                _buy(s, p, per, d, "SEED")
+    _mark_nav(close, asof.isoformat())
+    _set("seeded", True); _set("last_monthly", d)
+    return {"ok": True, "held": list(_positions()), "gate": _get("gate"),
+            "basket": etf, "risk_off": risk_off}
+
+
+def daily_job(panel=None):
+    """Accrue liquid-fund yield on cash + mark P&L + 15-day Donchian stops.
+    `panel` = pre-loaded (close, tv) so the single EOD run refreshes only once."""
+    if not _get("seeded"):
+        return
+    # one trading-day of liquid-fund yield on idle/risk-off cash (LIQUIDCASE @6.5% p.a.)
+    if _cash() > 0:
+        new_cash = _cash() * (1 + CFG["cash_yield"]) ** (1 / 252)
+        _set("interest_earned", round(_get("interest_earned", 0.0) + (new_cash - _cash()), 2))
+        _set("cash", new_cash)
+    if panel is None:
+        refresh_universe(full=False); close, tv = _panel()
+    else:
+        close, tv = panel
+    asof = close.index[-1]; d = date.today().isoformat()
+    live = _live_prices(list(_positions()))
+    for s in list(_positions()):
+        low = _donchian_low(close, s, asof)
+        pr = live.get(s)
+        if low is not None and pr is not None and pr < low:
+            _sell(s, pr, d, "DONCHIAN")
+            logger.info(f"[MP] Donchian exit {s} @ {pr:.1f} (<15d low {low:.1f})")
+    _mark_nav(close, asof.isoformat(), live=live)
+    _set("last_daily", d)
+
+
+def weekly_job(panel=None):
+    """NIFTYBEES 100-DMA gate (last trading day of week)."""
+    if not _get("seeded"):
+        return
+    if panel is None:
+        refresh_universe(full=False); close, tv = _panel()
+    else:
+        close, tv = panel
+    asof = close.index[-1]; d = date.today().isoformat()
+    risk_off = _gate_risk_off(close, asof)
+    if risk_off and _positions():
+        live = _live_prices(list(_positions()))
+        for s in list(_positions()):
+            _sell(s, live.get(s, close[s].loc[:asof].dropna().iloc[-1]), d, "GATE_RISK_OFF")
+        _set("gate", "OFF")
+        logger.info("[MP] GATE risk-off → liquidated to cash")
+    elif not risk_off:
+        _set("gate", "ON")
+        if not _positions():
+            # r/41 phase-27: when FULLY in cash and the gate flips back on,
+            # re-enter at the weekly check instead of waiting for month-end
+            # (allcash+weekly re-entry won, Cal 1.72; the false-dawn penalty
+            # applies to the partially-held state, not the all-cash state).
+            etf = _rs_basket(close, tv, asof)
+            if etf:
+                top8 = etf[:CFG["n_hold"]]
+                live = _live_prices(top8)
+                per = _cash() / len(top8)
+                for s in top8:
+                    px = live.get(s, close[s].loc[:asof].dropna().iloc[-1])
+                    _buy(s, px, per, d, "GATE_REENTRY")
+                logger.info(f"[MP] GATE weekly re-entry (all-cash): {top8}")
+    _mark_nav(close, asof.isoformat())
+    _set("last_weekly", d)
+
+
+def monthly_job(panel=None):
+    """Rebalance: top-8 with top-22 buffer (last trading day of month)."""
+    if not _get("seeded"):
+        return
+    if panel is None:
+        refresh_universe(full=True); close, tv = _panel()
+    else:
+        close, tv = panel
+    asof = close.index[-1]; d = date.today().isoformat()
+    if _gate_risk_off(close, asof):
+        _set("gate", "OFF"); _mark_nav(close, asof.isoformat()); _set("last_monthly", d)
+        logger.info("[MP] monthly: risk-off, staying in cash")
+        return
+    _set("gate", "ON")
+    etf = _rs_basket(close, tv, asof)
+    if not etf:
+        return
+    top8 = etf[:CFG["n_hold"]]; buf = set(etf[:CFG["buffer"]])
+    held = _positions()
+    live = _live_prices(sorted(set(list(held) + top8)))
+    # 1) sell holds that fell out of the top-22 buffer
+    for s in list(held):
+        if s not in buf:
+            _sell(s, live.get(s, close[s].loc[:asof].dropna().iloc[-1]), d, "BUFFER_ROTATE")
+    # 2) target = kept (still in buffer) + new top-8; equal-weight whole book
+    kept = [s for s in _positions() if s in buf]
+    target = (kept + [s for s in top8 if s not in kept])[:CFG["n_hold"]]
+    nav = sum(_positions()[s]["qty"] * live.get(s, _positions()[s]["entry_price"])
+              for s in _positions()) + _cash()
+    per = nav / len(target)
+    if _is_live():
+        _rebalance_live_delta(target, per, live, close, asof, d)
+    else:
+        # PAPER: liquidate everything then rebuild to clean equal weights (matches the backtest).
+        for s in list(_positions()):
+            _sell(s, live.get(s, close[s].loc[:asof].dropna().iloc[-1]), d, "REBALANCE")
+        for s in target:
+            p = live.get(s)
+            if p:
+                _buy(s, p, per, d, "REBALANCE")
+    _mark_nav(close, asof.isoformat(), live=live)
+    _set("last_monthly", d)
+    logger.info(f"[MP] monthly rebalance → {target}")
+
+
+def _rebalance_live_delta(target, per, live, close, asof, d):
+    """LIVE monthly rebalance — rotate-only, do NOT churn the whole book (that would pay
+    needless brokerage + 20% STCG on winners every month). Policy v1:
+      • exit any held name NOT in the new target (full sell)
+      • buy brand-new target names, cash-aware & equal-weight (never overspend into negative cash)
+      • kept names ride as-is (no top-up/trim → let winners run, zero avoidable tax)
+    Weight top-up/trim of kept names is deferred (needs cost-basis averaging); flag it later
+    via CFG['live_rebalance_trim'] if the equal-weight drift ever matters."""
+    tset = set(target)
+    for s in list(_positions()):
+        if s not in tset:
+            px = live.get(s)
+            if px is None and close is not None:
+                px = float(close[s].loc[:asof].dropna().iloc[-1])
+            if not px:
+                logger.warning(f"[MP-LIVE] rebalance: no price to exit {s} — holding, will retry next cycle")
+                continue
+            _sell(s, px, d, "REBALANCE")
+    new_names = [s for s in target if s not in _positions() and live.get(s)]
+    if not new_names:
+        return
+    budget_each = _cash() / len(new_names)           # split available cash so we never go negative
+    for s in new_names:
+        _buy(s, live[s], min(per, budget_each), d, "REBALANCE")
+
+
+# ───────────────────── API getters ─────────────────────
+def get_state():
+    init_db()
+    pos = _positions()
+    syms = list(pos)
+    live = _live_prices(syms) if syms else {}
+    cap = _get("capital", CFG["capital"]); cash = _cash()
+    close = tvp = None
+    try:
+        close, tvp = _panel()
+    except Exception:
+        pass
+    holdings = []
+    equity = 0.0
+    for s, p in pos.items():
+        pr = live.get(s) or p["entry_price"]
+        val = p["qty"] * pr; equity += val
+        low = _donchian_low(close, s, close.index[-1]) if close is not None else None
+        hold = (date.today() - date.fromisoformat(p["entry_date"][:10])).days
+        holdings.append(dict(
+            symbol=s, qty=round(p["qty"], 1), entry_date=p["entry_date"][:10],
+            entry_price=round(p["entry_price"], 1), price=round(pr, 1),
+            value=round(val), weight=0, pnl=round(val - p["invested"]),
+            pnl_pct=round((pr / p["entry_price"] - 1) * 100, 1), days=hold,
+            stop=round(low, 1) if low else None,
+            stop_dist_pct=round((pr / low - 1) * 100, 1) if low else None))
+    nav = equity + cash
+    n_stocks = len(holdings)
+    for h in holdings:
+        h["weight"] = round(h["value"] / nav * 100, 1) if nav else 0
+    holdings.sort(key=lambda x: -x["value"])
+    # idle/risk-off cash shown AS A HOLDING — parked in LIQUIDCASE (liquid fund @6.5%)
+    if cash > 1000:
+        _incep = _get("inception") or date.today().isoformat()
+        holdings.insert(0, dict(
+            symbol="LIQUIDCASE", qty=None, entry_date=_incep[:10], entry_price=None,
+            price=None, value=round(cash), weight=round(cash / nav * 100, 1) if nav else 0,
+            pnl=round(_get("interest_earned", 0.0)),
+            pnl_pct=round(CFG["cash_yield"] * 100, 1), is_cash=True,
+            days=(date.today() - date.fromisoformat(_incep[:10])).days,
+            stop=None, stop_dist_pct=None))
+    navcurve = [dict(d=r["d"], nav=round(r["nav"]), bench=r["bench_close"], gate=r["gate"])
+                for r in _conn().execute("SELECT * FROM mp_nav ORDER BY d")]
+    closed = [dict(r) for r in _conn().execute(
+        "SELECT * FROM mp_closed ORDER BY exit_date DESC, id DESC LIMIT 200")]
+    stcg_open = sum(max(0.0, (live.get(s, p["entry_price"]) - p["entry_price"]) * p["qty"]) * CFG["stcg_pct"]
+                    for s, p in pos.items())
+    realized = sum(r["net_pnl"] for r in closed)
+    stcg_booked = sum(r["stcg_tax"] for r in closed)
+    incep = _get("inception")
+    # target basket (what the book holds, or WOULD hold at next risk-on) + gate detail
+    target, gate_last, gate_sma, gate_gap = [], None, None, None
+    if close is not None:
+        try:
+            asof = close.index[-1]
+            etf = _rs_basket(close, tvp, asof)
+            if etf:
+                target = [{"symbol": s, "rank": i + 1, "tier": _mcap_tier(s)}
+                          for i, s in enumerate(etf[:CFG["n_hold"]])]
+            b = close[BENCH].dropna()
+            gate_last = round(float(b.iloc[-1]), 2)
+            gate_sma = round(float(b.tail(CFG["gate_sma"]).mean()), 2)
+            gate_gap = round((gate_last / gate_sma - 1) * 100, 2)
+        except Exception:
+            pass
+    return dict(
+        seeded=bool(_get("seeded")), gate=_get("gate", "ON"), inception=incep,
+        mode=("LIVE" if _is_live() else "PAPER"), live_mode=_is_live(),
+        target_basket=target, gate_last=gate_last, gate_sma=gate_sma, gate_gap_pct=gate_gap,
+        capital=cap, nav=round(nav), cash=round(cash), equity=round(equity),
+        invested_pct=round(equity / nav * 100, 1) if nav else 0,
+        total_return_pct=round((nav / cap - 1) * 100, 2) if cap else 0,
+        unrealized=round(equity - sum(p["invested"] for p in pos.values())),
+        realized_net=round(realized), n_holdings=n_stocks,
+        interest_earned=round(_get("interest_earned", 0.0)), cash_yield_pct=CFG["cash_yield"] * 100,
+        stcg_unbooked=round(stcg_open), stcg_booked=round(stcg_booked),
+        last_daily=_get("last_daily"), last_weekly=_get("last_weekly"),
+        last_monthly=_get("last_monthly"),
+        data_asof=(close.index[-1].date().isoformat() if close is not None else None),
+        holdings=holdings, navcurve=navcurve, closed=closed, rules=RULES)
+
+
+# ───────────────────── register ─────────────────────
+def register(app, scheduler):
+    from flask import jsonify, request
+    init_db()
+    app.add_url_rule("/api/momentum-paper/state", "mp_state", lambda: jsonify(get_state()))
+    app.add_url_rule("/api/momentum-paper/seed", "mp_seed",
+                     lambda: jsonify(seed(bool((request.get_json(silent=True) or {}).get("force")))),
+                     methods=["POST"])
+    app.add_url_rule("/api/momentum-paper/run-daily", "mp_run_daily",
+                     lambda: (daily_job() or jsonify({"ok": True})), methods=["POST"])
+    app.add_url_rule("/api/momentum-paper/run-rebalance", "mp_run_rebal",
+                     lambda: (monthly_job() or jsonify({"ok": True})), methods=["POST"])
+    # ── LIVE controls ──
+    app.add_url_rule("/api/momentum-paper/toggle-mode", "mp_toggle",
+                     lambda: jsonify(_toggle_mode(request.get_json(silent=True) or {})), methods=["POST"])
+    app.add_url_rule("/api/momentum-paper/kill-switch", "mp_kill",
+                     lambda: jsonify(_kill_switch()), methods=["POST"])
+    app.add_url_rule("/api/momentum-paper/reconcile", "mp_reconcile",
+                     lambda: jsonify(reconcile_holdings()))
+    # Monthly re-rank runs EARLY (~14:45) for runway; light Donchian+gate near close (~15:15).
+    scheduler.add_job(rebalance_job, "cron", day_of_week="mon-fri", hour=14, minute=45,
+                      id="mp_rebalance", replace_existing=True)
+    scheduler.add_job(eod_job, "cron", day_of_week="mon-fri", hour=15, minute=15,
+                      id="mp_eod", replace_existing=True)
+    for jid in ("mp_daily", "mp_weekly", "mp_monthly"):     # drop legacy split jobs
+        try:
+            scheduler.remove_job(jid)
+        except Exception:
+            pass
+    logger.info("[MP] registered /api/momentum-paper/* + rebalance 14:45 (month-end) + "
+                "EOD 15:15 (Donchian daily · gate last-day-of-week) — MODE=%s"
+                % ("LIVE" if _is_live() else "PAPER"))
+    # Pre-warm the panel/state cache off the request path so the first page load after
+    # a restart is instant instead of paying the ~15-35s cold pivot+RS build.
+    def _prewarm():
+        try:
+            get_state()
+            logger.info("[MP] state cache pre-warmed")
+        except Exception as _e:
+            logger.warning(f"[MP] pre-warm failed: {_e}")
+    import threading
+    threading.Thread(target=_prewarm, name="mp-prewarm", daemon=True).start()
+
+
+def rebalance_job():
+    """MONTHLY re-rank, run EARLY (~14:45 IST) so there's ~45 min of runway before the
+    15:30 close to catch/fix any issue (it refreshes 200 names + re-ranks + rotates 8
+    positions — the heaviest, most consequential step). Acts only on the month's last
+    trading day; a 14:45 price is a fine EOD proxy for monthly momentum signals."""
+    if not _get("seeded") or not _is_last_trading_day():
+        return
+    refresh_universe(full=True)
+    monthly_job(_panel())
+
+
+def eod_job():
+    """Light pre-close EOD run (~15:15 IST): daily Donchian stop + weekly macro gate, at
+    near-close prices (executable while open). The heavy monthly re-rank runs earlier
+    (rebalance_job, ~14:45)."""
+    if not _get("seeded"):
+        return
+    refresh_universe(full=False)
+    panel = _panel()
+    daily_job(panel)                                   # interest + mark + Donchian (every day)
+    if _is_last_trading_day_of_week():
+        weekly_job(panel)                              # macro gate
+
+
+def _is_last_trading_day_of_week():
+    today = date.today()
+    nxt = today + timedelta(days=1)
+    while nxt.weekday() >= 5:                           # skip Sat/Sun
+        nxt += timedelta(days=1)
+    return nxt.isocalendar()[1] != today.isocalendar()[1]
+
+
+def _is_last_trading_day():
+    today = date.today()
+    nxt = today + timedelta(days=1)
+    while nxt.weekday() >= 5:                      # skip weekend
+        nxt += timedelta(days=1)
+    return nxt.month != today.month
