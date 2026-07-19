@@ -191,3 +191,9 @@ positive; with r/81+r/82 the equity short-swing question is closed permanently).
 mechanics beat live-book rules in-sample (dual-system+2N, EQUAL-notional Calmar 0.45 vs 0.37;
 N-sizing LOSES — 3rd sizing-scheme failure) BUT whole family ~flat 2018-23 ex-2020/21 → RECORDED
 ONLY, live paper book soak decides. OOS unconsumed.
+
+## 84 — Dip-buy + average-down x/y/z (user idea) — CONCLUDED 2026-07-17
+**NO EDGE vs market.** 93-98% win rates are an artifact (take-profit + no-stop); portfolio CAGR
+9-11% vs NIFTYBEES 12.6% on the SURVIVOR universe; slot demand 3-4x capacity (dips cluster in
+crashes); p95 campaign 1-4yrs buried; blow-up arm ~0/negative with averaging WORSE (2-7% slot
+wipes). Structurally short-vol martingale. OOS untouched.
