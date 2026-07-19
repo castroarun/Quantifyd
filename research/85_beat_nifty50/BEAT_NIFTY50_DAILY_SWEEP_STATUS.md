@@ -76,3 +76,22 @@ momentum-paper book (Nifty 200 — breadth is momentum's fuel); a N50 top-10
 paper sleeve is reasonable for a patient investor who accepts multi-year
 tracking droughts; no real-money deploy on this evidence.
 No further OOS looks for momentum-N50.
+
+## ADDENDUM (2026-07-17 ~18:15 IST): EXP-ST1 + EXP-ZOO (per-stock timing, +22 cells)
+
+User ideas: (1) per-stock ST(7,3)+liquid on all-N50 and top-10-mcap;
+(2) timing zoo (ST params, EMA crosses, P>EMA, Donchian, RSI, stoch, MACD).
+
+**VERDICT: NO timing signal adds return over holding the same basket — all 20
+zoo cells NEGATIVE vs same-basket B&H (-6.2 to -19.6pp/yr).** The seeming
++3.6pp of ST-case-1 vs NIFTYBEES is pure survivorship: today's N50 members
+equal-weight B&H did 24.8% CAGR vs NIFTYBEES 13.5% (+11pp survivorship gift);
+ST timing DESTROYED 7.7pp of that. Top-10-mcap case even worse (-8.2pp vs its
+basket, beat 4/19 yrs). What timing DOES buy: drawdown — DONCH20/10 cuts DD
+-57%->-16% (Calmar 0.89 vs 0.43) at -10.6pp CAGR; EMAX9/21 the best
+CAGR-preserving (-6.2pp for DD -23%). Oscillators (RSI>50, stoch, MACD) are
+pure churn destruction (18-57 flips/yr). Taxes NOT modeled — real results
+worse. Confirms and extends the weekly-ST study's conclusion: per-stock
+trend-timing is a DD-reduction tool priced in CAGR, never a return-enhancer;
+if DD control is the goal, index-level gating is cheaper.
+Ledger +22 (Bonferroni: best-of-20 Calmar 0.89 is selection-flattered).
