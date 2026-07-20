@@ -241,7 +241,7 @@ function RulesBlock() {
           <ul style={{ margin: 0, paddingLeft: 16 }}>
             <li style={li}>{k('Instrument:')} sell 2nd-nearest weekly ATM straddle + buy {k('±500-pt wings')} (≈2.0% of ATM) = short {k('iron fly')}. Overnight carry.</li>
             <li style={li}>{k('Entry:')} 09:20, ~8 trading days to expiry; {k('roll')} 1 TD before expiry.</li>
-            <li style={li}>{k('Exits:')} {k('1.5%')} underlying-move stop, or {k('+40%')} profit target, or roll at DTE≤1; {k('re-enter')} after exit.</li>
+            <li style={li}>{k('Exits:')} {k('2.0%')} underlying-move stop, or {k('+40%')} profit target, or roll at DTE≤1; {k('re-enter')} after exit.</li>
             <li style={li}>{k('Entry filter:')} India {k('VIX ≥ 13')} (backtested lock — lifts every full year positive).</li>
             <li style={li}>10 lots · qty 650. Net of taxes + ₹20/order + 0.25% slippage.</li>
           </ul>
@@ -483,6 +483,19 @@ export default function Straddles() {
                     <td style={{ ...ctd2, fontWeight: 700, color: col(h.pnl) }}>{inr(h.pnl)}</td>
                   </tr>))}</tbody>
               </table>
+              <div style={{ fontSize: 11.5, color: C.sec, marginTop: 8, lineHeight: 1.7 }}>
+                <b>Overall (realized):</b>{' '}
+                <b style={{ color: col(v2eng.closed_total_pnl) }}>{inr(v2eng.closed_total_pnl)}</b>
+                {' '}over <b>{v2eng.closed_trades}</b> closed trades
+                {v2eng.closed_trades > 0 && <> · mean/trade <b style={{ color: col(v2eng.closed_total_pnl / v2eng.closed_trades) }}>{inr(Math.round(v2eng.closed_total_pnl / v2eng.closed_trades))}</b></>}
+                {(() => { const w = v2eng.closed.filter((x: any) => x.pnl > 0).length;
+                  return <> · win rate <b>{Math.round(w / v2eng.closed.length * 100)}%</b>{v2eng.closed_trades > v2eng.closed.length ? ` (last ${v2eng.closed.length})` : ''}</>; })()}
+                {v2eng.open && <> · <span style={{ color: C.muted }}>open position not included</span></>}
+                <div style={{ color: C.faint, marginTop: 3 }}>
+                  wCPR/dCPR = CPR width (research/67): weekly is fixed Mon–Fri; daily re-draws. Blank where the trade
+                  predates the 160-day daily-bar window.
+                </div>
+              </div>
             </details>
           )}
           <div style={{ fontSize: 10.5, color: C.faint, marginTop: 8 }}>
@@ -510,7 +523,7 @@ export default function Straddles() {
             </span>
           </div>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-            {[['V1 · intraday one-and-done', live.v1], ['V2 · positional bi-weekly', live.v2]].map(([title, d]: any) => {
+            {[['V1 · intraday one-and-done (naked straddle)', live.v1], ['V2 · positional bi-weekly (naked straddle · legacy)', live.v2]].map(([title, d]: any) => {
               const J = d.journey;
               const useJourney = Array.isArray(J) && J.length >= 2;
               const isV1 = String(title).startsWith('V1');
@@ -732,6 +745,11 @@ export default function Straddles() {
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
                 <thead><tr>
                   <th style={ecth}>#</th><th style={{ ...ecth, textAlign: 'left' }}>Entry (date · time)</th>
+                  <th style={ecth} title="Day of week of entry">DOW</th>
+                  <th style={ecth} title="Calendar days to expiry at entry">DTE</th>
+                  <th style={ecth} title="India VIX at entry (gate = 13)">VIX</th>
+                  <th style={ecth} title="Weekly CPR width % (research/67) — narrow = trend-prone">wCPR</th>
+                  <th style={ecth} title="Prior-day CPR width % (research/67) — narrow = calm next day">dCPR</th>
                   <th style={{ ...ecth, textAlign: 'left' }}>Exit (date · time)</th>
                   <th style={{ ...ecth, textAlign: 'left' }}>Reason</th><th style={ecth}>P&amp;L</th>
                 </tr></thead>
@@ -739,6 +757,11 @@ export default function Straddles() {
                   <tr key={i}>
                     <td style={ectd}>{t.id}</td>
                     <td style={{ ...ectd, textAlign: 'left' }}>{t.day} · {t.entry_time}</td>
+                    <td style={{ ...ectd, color: C.muted }}>{t.dow || '—'}</td>
+                    <td style={ectd}>{t.dte_entry != null ? `${t.dte_entry}d` : '—'}</td>
+                    <td style={{ ...ectd, color: t.entry_vix != null && t.entry_vix < 13 ? C.neg : C.sec }}>{t.entry_vix != null ? Number(t.entry_vix).toFixed(2) : '—'}</td>
+                    <td style={{ ...ectd, color: C.sec }}>{t.cpr_w != null ? `${Number(t.cpr_w).toFixed(3)}%` : '—'}</td>
+                    <td style={{ ...ectd, color: C.sec }}>{t.cpr_d != null ? `${Number(t.cpr_d).toFixed(3)}%` : '—'}</td>
                     <td style={{ ...ectd, textAlign: 'left' }}>{(t.exit_day || '—')} · {(t.exit_time || '—')}</td>
                     <td style={{ ...ectd, textAlign: 'left', color: C.muted }}>{t.exit_reason}</td>
                     <td style={{ ...ectd, fontWeight: 700, color: col(t.pnl) }}>{inr(t.pnl)}</td>
@@ -920,7 +943,7 @@ export default function Straddles() {
       <section style={card}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 · Positional bi-weekly</span>
-          {chip(C.navySoft, C.navy, '1.5% stop · PT-40% · ±500pt wings · re-enter · roll 1-DTE')}
+          {chip(C.navySoft, C.navy, '1.5% stop (superseded — 2.0% validated) · PT-40% · ±500pt wings · re-enter · roll 1-DTE')}
           {chip(C.amberSoft, C.amber, 'BACKTEST')}
         </div>
         {v2stats && (

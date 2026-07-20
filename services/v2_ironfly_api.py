@@ -308,6 +308,42 @@ def _open(system):
     c.close(); return dict(r) if r else None
 
 
+def _weekly_cpr_width_pct(daily, on):
+    """CPR width of the last COMPLETED week before `on`, as % of `on`'s open (research/67 formula)."""
+    try:
+        on = pd.Timestamp(on)
+        if on not in daily.index:
+            return None
+        w = daily.resample("W-FRI").agg({"open": "first", "high": "max", "low": "min", "close": "last"}).dropna()
+        prior = w[w.index < on]
+        if len(prior) < 1:
+            return None
+        q = prior.iloc[-1]
+        piv = (q.high + q.low + q.close) / 3
+        bc = (q.high + q.low) / 2
+        tc = 2 * piv - bc
+        return abs(tc - bc) / daily.loc[on].open * 100
+    except Exception:
+        return None
+
+
+def _enrich_closed(closed):
+    """Attach day-of-week + weekly/daily CPR width (research/67) to each closed trade."""
+    daily = _daily_df()
+    for r in closed:
+        try:
+            d = pd.Timestamp(r.get("day"))
+            r["dow"] = d.strftime("%a")
+            if daily is not None and len(daily) > 5:
+                cd = prior_day_cpr_width_pct(daily, d)
+                cw = _weekly_cpr_width_pct(daily, d)
+                r["cpr_d"] = float(round(cd, 3)) if cd is not None else None
+                r["cpr_w"] = float(round(cw, 3)) if cw is not None else None
+        except Exception:
+            pass
+    return closed
+
+
 def _net_premium(legs):
     """credit (+) / debit (-) per unit = sum(SELL entry) - sum(BUY entry)."""
     return sum((lg["entry"] if lg["side"] == "SELL" else -lg["entry"]) for lg in legs)
@@ -709,9 +745,10 @@ def _state(system):
     tot = c.execute("SELECT COALESCE(SUM(pnl),0), COUNT(*) FROM v2_positions WHERE system=? AND status='CLOSED'",
                     (system,)).fetchone()
     closed = [dict(r) for r in c.execute(
-        "SELECT id,day,entry_time,exit_day,exit_time,exit_reason,entry_spot,net_entry,pnl FROM v2_positions "
+        "SELECT id,day,entry_time,exit_day,exit_time,exit_reason,entry_spot,entry_vix,expiry,dte_entry,net_entry,pnl FROM v2_positions "
         "WHERE system=? AND status='CLOSED' ORDER BY id DESC LIMIT 50", (system,))]
     c.close()
+    closed = _enrich_closed(closed)
     return {"system": system, "mode": _mode(),
             "open": pos, "closed_total_pnl": round(tot[0] or 0), "closed_trades": tot[1], "closed": closed}
 
