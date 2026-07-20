@@ -203,3 +203,9 @@ wipes). Structurally short-vol martingale. OOS untouched.
 14/18 yrs, passes all pre-registered gates** (top-5 +16.8pp but DD worse; 200DMA gate halves DD
 but fails Val). Turtle-N50 fails (-2.4pp); KC6-N50 = overlay not mandate. Survivorship caveat;
 r/75 survivorship-free +18pp supports family. OOS 2024+ reserved for pre-deploy confirmation.
+
+## 86 — Heikin-Ashi 2-green no-wick break, 30m LONG (user pattern) — STRATEGY CANDIDATE 2026-07-20
+**FIRST FULL SURVIVOR of the r/81-86 program: IS t3.7 → Val t6.0 (79 names) → OOS t3.7 PASSED.**
+Book: OOS 2024-26 CAGR 11.6% vs bench 5.6%, DD −11%, Calmar 1.03, beat bench all 3 yrs incl. 2026
+down-tape. Full 2015-26 ≈ 13.6%/−20% vs 10.2%/−36%. Caveats: per-trade fade 47→36→25bps; shorts
+dead (4th confirmation). OOS consumed. Next: G5 paper book.

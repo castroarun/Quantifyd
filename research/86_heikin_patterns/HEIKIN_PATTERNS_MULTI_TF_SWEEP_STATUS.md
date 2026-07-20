@@ -1,6 +1,6 @@
 # research/86 — Heikin-Ashi Continuation Patterns (user chart idea), Multi-TF
 
-STATUS: G1+VAL PASSED (2GREEN_NW_L_30m) — breadth next
+STATUS: DONE — STRATEGY CANDIDATE (OOS passed; see results/RESULTS.md)
 
 User spec (2026-07-20, from a SENSEX 30-min HA chart): after 2 consecutive
 GREEN HA candles, a break of their high = long entry; mirror (2 red, low
