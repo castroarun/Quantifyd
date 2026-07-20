@@ -990,7 +990,15 @@ class NasTicker:
         logger.info(f"[NAS-ATM] trail check: close={latest_close:.1f}, stop={st_val:.1f}")
 
         if breached or latest_close > st_val:
-            logger.warning(f"[NAS-ATM] ST EXIT! Premium {latest_close:.1f} reversed above ST {st_val:.1f}")
+            if latest_close > st_val:
+                logger.warning(f"[NAS-ATM] TRAIL EXIT: close {latest_close:.1f} is above the stop {st_val:.1f}")
+            else:
+                # `breached` fired: the premium crossed the ratcheted stop DURING the bar and
+                # compute_short_trailing_stop re-armed the stop to the upper band for the next
+                # bar. Printing st_val here would show the RE-ARMED level (higher than the
+                # close) and read like a false trigger -- which is exactly how it looked on
+                # 2026-07-20 ("Premium 113.2 reversed above ST 150.1").
+                logger.warning(f"[NAS-ATM] TRAIL EXIT: premium breached the trail intrabar (close {latest_close:.1f}; stop re-armed to {st_val:.1f})")
             self._atm_naked_st_val = None
             threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
 
