@@ -1375,8 +1375,15 @@ class NasTicker:
 
         # Short leg: exit only when the premium closes ABOVE the trailing stop.
         if breached or latest_close > st_val:
-            logger.warning(f"[NAS-ATM4] ST EXIT! Premium {latest_close:.1f} "
-                            f"reversed above ST {st_val:.1f}")
+            if latest_close > st_val:
+                logger.warning(f"[NAS-ATM4] TRAIL EXIT: close {latest_close:.1f} is above "
+                               f"the stop {st_val:.1f}")
+            else:
+                # breached fired: the premium crossed the ratcheted stop DURING the bar and
+                # compute_short_trailing_stop re-armed the stop above it for the next bar, so
+                # printing st_val alone reads like a false trigger (2026-07-20).
+                logger.warning(f"[NAS-ATM4] TRAIL EXIT: premium breached the trail intrabar "
+                               f"(close {latest_close:.1f}; stop re-armed to {st_val:.1f})")
             self._atm4_naked_st_val = None
             threading.Thread(
                 target=self._fire_atm4_st_exit,
