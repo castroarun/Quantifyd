@@ -2,6 +2,13 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ★ PENDING DECISION — research/86 HA 2-green-no-wick 30m LONG: build the G5 paper book? — 2026-07-20
+**STRATEGY CANDIDATE — the first full survivor of the r/81-86 program** (IS t3.7 → Val t6.0 →
+OOS t3.7 PASSED; OOS book 11.6% CAGR vs bench 5.6%, DD −11%, Calmar 1.03, beat bench all 3 OOS
+years incl. the 2026 down-tape). OOS consumed. Watch-item: per-trade fade 47→36→25bps across
+splits. NEXT: G5 paper book — construction choice needed (cash-CNC sleeves vs futures subset;
+fractional per-name sizing is the practical question). Verdict: `research/86_heikin_patterns/results/RESULTS.md`.
+
 ## ✅ 2026-07-20 — Momentum-paper weekly gate re-entry LIVE (+ market-hours restart incident, no harm)
 Patched `services/momentum_paper.py`: when FULLY in cash and the weekly gate is ON, re-enter the
 top-8 immediately (r/41-P27 validated) instead of waiting for month-end. Verified working: book
