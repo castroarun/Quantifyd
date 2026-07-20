@@ -2,6 +2,16 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-07-20 — Momentum-paper weekly gate re-entry LIVE (+ market-hours restart incident, no harm)
+Patched `services/momentum_paper.py`: when FULLY in cash and the weekly gate is ON, re-enter the
+top-8 immediately (r/41-P27 validated) instead of waiting for month-end. Verified working: book
+re-entered 2026-07-20 (ADANIENSOL, POWERINDIA, GVT&D, LAURUSLABS, ADANIPOWER, BHARATFORG, BHEL,
+IDEA; 100% invested, gate ON). INCIDENT: the deploy restart accidentally executed 10:24 IST Mon
+(market hours; Friday's "tonight" approval executed after a session gap without re-checking the
+clock). nas-live-guardian full battery = PASS (SL monitors re-armed in 23s, ticker live, Kite↔DB
+reconciled, no unmanaged exposure). Prevention memorized: time-window approvals VOID after gaps;
+standalone date+market-hours check before any VPS state change.
+
 ## ✅ CONCLUDED 2026-07-17 — research/83: Turtle (Dennis) on F&O equities — shorts closed at ALL horizons; turtle-EQ recorded, no book change
 T1: turtle multi-week shorts = worst short result yet (t −11, S2 0% yrs) → with r/81+82 the equity
 short-swing question is PERMANENTLY closed. T2 bakeoff: turtle S1+S2+2N EQUAL-notional beats live-book
