@@ -67,8 +67,8 @@
     },
     "nas_916_atm": {
       "dte": {
-        "4": true,
-        "3": true,
+        "4": false,
+        "3": false,
         "2": true,
         "1": true,
         "0": true
@@ -80,8 +80,8 @@
     },
     "nas_916_atm2": {
       "dte": {
-        "4": true,
-        "3": true,
+        "4": false,
+        "3": false,
         "2": true,
         "1": true,
         "0": true
@@ -93,8 +93,8 @@
     },
     "nas_916_atm4": {
       "dte": {
-        "4": true,
-        "3": true,
+        "4": false,
+        "3": false,
         "2": true,
         "1": true,
         "0": true
