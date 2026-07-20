@@ -103,6 +103,45 @@
       "gap_down": false,
       "live": true,
       "paper_shadow": true
+    },
+    "sensex_atm": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": false,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false,
+      "paper_shadow": true
+    },
+    "sensex_atm2": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": false,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false,
+      "paper_shadow": true
+    },
+    "sensex_atm4": {
+      "dte": {
+        "4": false,
+        "3": false,
+        "2": false,
+        "1": true,
+        "0": true
+      },
+      "gap_up": false,
+      "gap_down": false,
+      "live": false,
+      "paper_shadow": true
     }
   }
 }

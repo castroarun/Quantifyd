@@ -534,6 +534,41 @@ NAS_916_ATM4_DEFAULTS = {
 # variants exceed ~Rs52L; squeeze entries rejected (insufficient funds) and re-spammed
 # every 5-min candle. 9:16 family ON — it holds the day's live positions. Re-enable the
 # squeeze when the book is funded / re-sized.
+# ─── SENSEX 9:16 systems (BSE/BFO) ──────────────────────────────────────────
+# SENSEX expires THURSDAY, NIFTY Tuesday. The NAS edge lives on 0/1-DTE (research/79), so these
+# cover Wed(DTE1)/Thu(DTE0) — the days NIFTY has nothing to harvest and where real money is off.
+# Identical rules to the 916 NIFTY systems; only the venue differs (BFO, lot 20, strike step 100).
+#
+# SHIPS PAPER. Live SENSEX evidence is 1 day and the 59-day chain backfill has not run. Flip to
+# live from the day matrix ONLY once that evidence exists.
+SENSEX_ATM_DEFAULTS = {
+    **NAS_916_ATM_DEFAULTS,
+    'strike_interval': 100,      # SENSEX strikes are 100 apart
+    'lots_per_leg': 2,           # 2 lots x 20 = 40 qty (SENSEX lot is 20, verified 2026-07-20)
+    'paper_lots_per_leg': 2,
+    'paper_trading_mode': True,  # PAPER until validated
+    'force_paper': True,         # belt and braces: cannot go live by config alone
+    'matrix_key': 'sensex_atm',
+}
+SENSEX_ATM2_DEFAULTS = {
+    **NAS_916_ATM2_DEFAULTS,
+    'strike_interval': 100,
+    'lots_per_leg': 2,
+    'paper_lots_per_leg': 2,
+    'paper_trading_mode': True,
+    'force_paper': True,
+    'matrix_key': 'sensex_atm2',
+}
+SENSEX_ATM4_DEFAULTS = {
+    **NAS_916_ATM4_DEFAULTS,
+    'strike_interval': 100,
+    'lots_per_leg': 2,
+    'paper_lots_per_leg': 2,
+    'paper_trading_mode': True,
+    'force_paper': True,
+    'matrix_key': 'sensex_atm4',
+}
+
 NAS_DEFAULTS['enabled'] = True
 NAS_ATM_DEFAULTS['enabled'] = True
 NAS_ATM2_DEFAULTS['enabled'] = True

@@ -37,6 +37,9 @@ SYSTEMS = [
     ('nas_916_atm',  '9:16 ATM'),
     ('nas_916_atm2', '9:16 ATM2'),
     ('nas_916_atm4', '9:16 ATM4'),
+    ('sensex_atm',   'SENSEX ATM'),
+    ('sensex_atm2',  'SENSEX ATM2'),
+    ('sensex_atm4',  'SENSEX ATM4'),
 ]
 DTES = (4, 3, 2, 1, 0)
 
@@ -60,6 +63,11 @@ DEFAULT = {
         'nas_916_atm':  _row({2, 1, 0}, False, False, True),
         'nas_916_atm2': _row({2, 1, 0}, True,  True,  True),
         'nas_916_atm4': _row({2, 1, 0}, True,  True,  True),
+        # SENSEX expires THURSDAY, so its DTE0=Thu and DTE1=Wed -- the days NIFTY has
+        # nothing left to harvest. live=False: paper until the chain backfill validates it.
+        'sensex_atm':   _row({1, 0}, False, False, False),
+        'sensex_atm2':  _row({1, 0}, False, False, False),
+        'sensex_atm4':  _row({1, 0}, False, False, False),
     },
 }
 
@@ -94,14 +102,31 @@ def save(m):
     return True
 
 
-def trading_dte(today=None):
-    """Trading-DTE by weekday, for the standard Tuesday weekly expiry:
-        Tue=0, Mon=1, Fri=2, Thu=3, Wed=4.
-    The matrix columns are weekday buckets labelled by their normal DTE, so this
-    fixed map (not a holiday-aware count) is what matches the user's model and
-    stays stable across holiday weeks. Returns None on Sat/Sun."""
+# Which weekday each venue's weekly contract expires on (0=Mon .. 4=Fri).
+EXPIRY_WEEKDAY = {'nifty': 1, 'sensex': 3}      # NIFTY Tuesday, SENSEX Thursday
+
+
+def venue_of(system_key):
+    """SENSEX systems are keyed 'sensex_*'; everything else is NIFTY."""
+    return 'sensex' if str(system_key).startswith('sensex') else 'nifty'
+
+
+def trading_dte(today=None, expiry_weekday=1):
+    """Trading-day DTE against the venue's weekly expiry. Returns None on Sat/Sun.
+
+    Default expiry_weekday=1 (Tuesday) reproduces the original NIFTY map exactly:
+        Tue=0, Mon=1, Fri=2, Thu=3, Wed=4
+    For SENSEX (Thursday) it gives: Thu=0, Wed=1, Tue=2, Mon=3, Fri=4.
+
+    Weekday buckets, not a holiday-aware count — stable across holiday weeks, which is what the
+    matrix columns mean.
+    """
     today = today or date.today()
-    return {0: 1, 1: 0, 2: 4, 3: 3, 4: 2}.get(today.weekday())
+    w = today.weekday()
+    if w > 4:
+        return None
+    e = expiry_weekday
+    return (e - w) if w <= e else (5 - w) + e
 
 
 _GAP_CACHE = {'date': None, 'gap_pct': None}
@@ -150,7 +175,7 @@ def gate(system_key, today=None, master_mode=None, matrix=None, gap=None):
     if not row:
         return {'allow': False, 'mode': 'paper', 'dte': None, 'gap_pct': None,
                 'reason': 'no matrix row'}
-    dte = trading_dte(today)
+    dte = trading_dte(today, EXPIRY_WEEKDAY[venue_of(system_key)])
     if gap is None:
         gap = compute_gap(m)
     gap_pct, is_up, is_down = gap

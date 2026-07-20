@@ -1122,6 +1122,40 @@ def api_get_historical(symbol: str):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/holdings/order', methods=['POST'])
+@login_required
+def api_holdings_topup():
+    """Smart-limit CNC top-up of an existing holding (manual buy from the chart wall)."""
+    try:
+        from services.holdings_order import start_topup
+        data = request.get_json(silent=True) or {}
+        symbol = (data.get('symbol') or '').strip().upper()
+        amount = data.get('amount')
+        paper = bool(data.get('paper', False))
+        try:
+            from services.kite_service import get_kite
+            _k = get_kite()
+            syms = {h.get('tradingsymbol') for h in (_k.holdings() or [])}
+        except Exception as he:
+            logger.error(f"[topup] holdings fetch failed: {he}")
+            syms = set()
+        res = start_topup(symbol, amount, syms, paper=paper)
+        return jsonify(res), (400 if res.get('error') else 200)
+    except Exception as e:
+        logger.exception("[topup] route error")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/holdings/order/<exec_id>')
+@login_required
+def api_holdings_topup_status(exec_id):
+    from services.holdings_order import get_status
+    s = get_status(exec_id)
+    if not s:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify(s)
+
+
 @app.route('/api/trading-data', methods=['POST'])
 @login_required
 def api_get_trading_data():
@@ -7554,6 +7588,102 @@ try:
 except Exception as e:
     logger.warning(f"Could not register NAS 916 scheduled jobs: {e}")
 
+# ─── SENSEX 9:16 systems (BSE/BFO) ──────────────────────────────────────────
+# SENSEX expires THURSDAY, so its DTE0/DTE1 fall on Wed/Thu — the days NIFTY has nothing left to
+# harvest (research/79, /84) and where NIFTY real money is now switched off. Same rules, same
+# cadence; separate jobs so a SENSEX fault can never disturb the live NIFTY book.
+# Entry/live-vs-paper is decided by the day matrix (keys sensex_atm/atm2/atm4), which currently
+# has live=False -> PAPER until the chain backfill validates the edge.
+def _sensex_auto_entry():
+    """09:16 Mon-Fri — enter the 3 SENSEX systems (gated by the day matrix)."""
+    systems = [
+        ('SENSEX-ATM', 'SensexAtmExecutor'),
+        ('SENSEX-ATM2', 'SensexAtm2Executor'),
+        ('SENSEX-ATM4', 'SensexAtm4Executor'),
+    ]
+    for name, cls_name in systems:
+        try:
+            import importlib
+            mod = importlib.import_module('services.sensex_executors')
+            executor = getattr(mod, cls_name)()
+            sid, msg = executor.execute_strangle_entry()
+            logger.info(f"[{name}] auto-entry: strangle={sid} msg={msg}")
+        except Exception as e:
+            logger.error(f"[{name}] auto-entry error: {e}", exc_info=True)
+
+
+def _sensex_sl_monitor():
+    """10s REST poll — the SL/move-stop backstop, independent of any ticker (same design as the
+    916 monitor, which is what actually enforces those systems' exits)."""
+    now = datetime.now()
+    if not (now.weekday() < 5 and (9, 15) <= (now.hour, now.minute) <= (15, 30)):
+        return
+    try:
+        from services.kite_service import get_kite
+        kite = get_kite()
+    except Exception as e:
+        logger.warning(f"[SENSEX-SL] Kite unavailable: {e}")
+        return
+    for name, cls_name in [('SENSEX-ATM', 'SensexAtmExecutor'),
+                           ('SENSEX-ATM2', 'SensexAtm2Executor'),
+                           ('SENSEX-ATM4', 'SensexAtm4Executor')]:
+        try:
+            import importlib
+            mod = importlib.import_module('services.sensex_executors')
+            executor = getattr(mod, cls_name)()
+            active = executor.db.get_active_positions() or []
+            if not active:
+                continue
+            syms = list({p['tradingsymbol'] for p in active if p.get('tradingsymbol')})
+            if not syms:
+                continue
+            ltp_map = {}
+            try:
+                q = kite.ltp([f'BFO:{x}' for x in syms]) or {}
+                for x in syms:
+                    v = q.get(f'BFO:{x}')
+                    if v and v.get('last_price'):
+                        ltp_map[x] = v['last_price']
+            except Exception as e:
+                logger.warning(f"[{name}] ltp fetch failed: {e}")
+                continue
+            if not ltp_map:
+                continue
+            actions = executor.check_and_handle_sl(positions=active, live_ltps=ltp_map)
+            if actions:
+                logger.info(f"[{name}] SL monitor: {len(actions)} actions")
+        except Exception as e:
+            logger.error(f"[{name}] SL monitor error: {e}", exc_info=True)
+
+
+def _sensex_eod_squareoff():
+    """15:15 — flatten every SENSEX position, whatever else happened."""
+    for name, cls_name in [('SENSEX-ATM', 'SensexAtmExecutor'),
+                           ('SENSEX-ATM2', 'SensexAtm2Executor'),
+                           ('SENSEX-ATM4', 'SensexAtm4Executor')]:
+        try:
+            import importlib
+            mod = importlib.import_module('services.sensex_executors')
+            executor = getattr(mod, cls_name)()
+            if hasattr(executor, 'eod_squareoff'):
+                res = executor.eod_squareoff()
+                logger.info(f"[{name}] EOD squareoff: {res}")
+        except Exception as e:
+            logger.error(f"[{name}] EOD squareoff error: {e}", exc_info=True)
+
+
+try:
+    scheduler.add_job(_sensex_auto_entry, 'cron', day_of_week='mon-fri', hour=9, minute=16,
+                      id='sensex_auto_entry', replace_existing=True)
+    scheduler.add_job(_sensex_sl_monitor, 'interval', seconds=10,
+                      id='sensex_sl_monitor', replace_existing=True)
+    scheduler.add_job(_sensex_eod_squareoff, 'cron', day_of_week='mon-fri', hour=15, minute=15,
+                      id='sensex_eod_squareoff', replace_existing=True)
+    logger.info("SENSEX jobs registered: entry(9:16), SL monitor(10s), EOD(15:15) — Mon-Fri, PAPER")
+except Exception as e:
+    logger.error(f"SENSEX job registration failed: {e}")
+
+
 
 # =============================================================================
 # ORB — Opening Range Breakout (Cash Equity Intraday)
@@ -9482,6 +9612,20 @@ try:
     _v2if_register(app, scheduler)
 except Exception as _e:
     logger.warning(f"Could not register V2 iron fly: {_e}")
+
+# Momentum-30 sub-selection — Rs20L PAPER book (research/62 winner)
+try:
+    from services.momentum_paper import register as _mp_register
+    _mp_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register momentum paper book: {_e}")
+
+# MTF-bullish volume-breakout — Rs10L PAPER book (research/71 winner)
+try:
+    from services.breakout_paper import register as _bp_register
+    _bp_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register breakout paper book: {_e}")
 
 
 # ---- Daily Options Capture EOD Summary ----

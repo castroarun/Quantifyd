@@ -34,6 +34,29 @@ class NasAtmExecutor:
 
     # --- Guardrails ----------------------------------------------------
 
+    # --- venue parameters -------------------------------------------------
+    # Defaults are the NIFTY/NFO values this class has always used, so behaviour is unchanged.
+    # A SENSEX (BFO) subclass overrides these and inherits every rule below untouched.
+    EXCHANGE = 'NFO'
+    SPOT_KEY = 'NSE:NIFTY 50'
+    LOT_SIZE = None          # None -> use the module-level NIFTY LOT_SIZE import
+
+    def _lot_size(self):
+        return self.LOT_SIZE if self.LOT_SIZE else LOT_SIZE
+
+    def _week_expiry(self, ref=None):
+        """Venue expiry. Prefer the scanner's (SENSEX resolves it from Kite, handling holiday
+        shifts); fall back to the module-level NIFTY Tuesday rule."""
+        try:
+            fn = getattr(self.scanner, 'get_current_week_expiry', None)
+            if fn:
+                e = fn(ref)
+                if e:
+                    return e
+        except Exception:
+            pass
+        return get_current_week_expiry(ref)
+
     def _check_guardrails(self, is_entry=True, bypass_cooldown=False):
         """Pre-order safety checks. Returns (passed, reason)."""
         from datetime import datetime as _dt
@@ -181,7 +204,7 @@ class NasAtmExecutor:
             strangle_id=strangle_id,
             leg=leg,
             tradingsymbol=tradingsymbol,
-            exchange='NFO',
+            exchange=self.EXCHANGE,
             transaction_type=transaction_type,
             instrument_type=instrument_type,
             qty=qty,
@@ -219,7 +242,7 @@ class NasAtmExecutor:
                     raise RuntimeError('NAS manual-freeze active - order blocked')
                 order_id = kite.place_order(
                     variety='regular',
-                    exchange='NFO',
+                    exchange=self.EXCHANGE,
                     tradingsymbol=tradingsymbol,
                     transaction_type=transaction_type,
                     quantity=qty,
@@ -383,7 +406,7 @@ class NasAtmExecutor:
                 _qty = abs(int(_held))
 
             order_id = kite.place_order(
-                variety='regular', exchange='NFO',
+                variety='regular', exchange=self.EXCHANGE,
                 tradingsymbol=pos['tradingsymbol'], transaction_type='BUY',
                 quantity=_qty, product='MIS', order_type='MARKET',
             )
@@ -472,7 +495,7 @@ class NasAtmExecutor:
         _fm = cfg.get('_force_mode')
         _is_paper_size = (_fm == 'paper') if _fm else cfg.get('paper_trading_mode', True)
         lots = cfg.get('paper_lots_per_leg', cfg.get('lots_per_leg', 5)) if _is_paper_size else cfg.get('lots_per_leg', 5)
-        qty = lots * LOT_SIZE
+        qty = lots * self._lot_size()
         leg_sl_pct = cfg.get('leg_sl_pct', 0.30)
 
         # Get current spot if not provided
@@ -483,7 +506,7 @@ class NasAtmExecutor:
                 # doesn't miss on a transient ticker-spot gap (2026-06-16 ATM/ATM4 missed).
                 try:
                     from services.kite_service import get_kite
-                    spot = get_kite().ltp(['NSE:NIFTY 50'])['NSE:NIFTY 50']['last_price']
+                    spot = get_kite().ltp([self.SPOT_KEY])[self.SPOT_KEY]['last_price']
                     logger.info(f"[NAS-ATM] spot REST fallback used: {spot}")
                 except Exception as _e:
                     logger.warning(f"[NAS-ATM] spot REST fallback failed: {_e}")
@@ -493,7 +516,7 @@ class NasAtmExecutor:
 
         # Expiry
         today = date.today()
-        expiry = get_current_week_expiry(today)
+        expiry = self._week_expiry(today)
 
         # ATM strike — snap to the FORWARD, not spot. Index options are priced
         # off the forward (C - P = F - K), so the equal-premium / delta-neutral

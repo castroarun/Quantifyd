@@ -424,7 +424,7 @@ class NasAtm4Executor(NasAtmExecutor):
             strangle_id=strangle_id,
             leg=pos['leg'],
             tradingsymbol=new_tsym,
-            exchange='NFO',
+            exchange=self.EXCHANGE,
             transaction_type='SELL',
             instrument_type=pos['instrument_type'],
             qty=pos['qty'],
@@ -467,7 +467,7 @@ class NasAtm4Executor(NasAtmExecutor):
                     raise RuntimeError('NAS manual-freeze active - order blocked')
                 order_id = kite.place_order(
                     variety='regular',
-                    exchange='NFO',
+                    exchange=self.EXCHANGE,
                     tradingsymbol=new_tsym,
                     transaction_type='SELL',
                     quantity=pos['qty'],
