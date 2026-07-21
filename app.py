@@ -9627,6 +9627,13 @@ try:
 except Exception as _e:
     logger.warning(f"Could not register breakout paper book: {_e}")
 
+# HA 2-green no-wick break — Rs20L PAPER book (research/86 survivor)
+try:
+    from services.ha_paper import register as _hap_register
+    _hap_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register HA paper book: {_e}")
+
 
 # ---- Daily Options Capture EOD Summary ----
 
