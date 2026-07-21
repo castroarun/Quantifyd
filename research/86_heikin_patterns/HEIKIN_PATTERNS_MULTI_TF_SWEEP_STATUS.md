@@ -84,3 +84,18 @@ noted as possible BOOK-level lever at paper stage (would need forward
 validation). Better-returns answer: the legitimate dial is futures leverage
 on the Calmar~1.0 curve, not signal tuning. Ledger +10 (8 pre-reg + 2 Val
 re-checks). STATUS: DONE.
+
+## G5 PAPER BOOK — DEPLOYED 2026-07-21
+
+Construction: cash-sleeve (faithful to the validated book) — Rs20L / 81 F&O
+names = Rs24.7k per sleeve; sleeve is in-trade or accrues 5.5% liquid yield.
+Module: services/ha_paper.py (PAPER-only, no live mode exists).
+Mechanics: cycle job 1 min after every 30-min bar close (09:46..15:16, 15:31)
+does a STATELESS RECOMPUTE — refetch 10d of 30-min bars per name, replay the
+locked state machine, reconcile vs DB. Completed-bars-only guard. EOD 15:50:
+liquid accrual + NAV mark vs NIFTYBEES. 3bp/side paper cost.
+API: /api/ha-paper/state | seed (POST) | kill-switch (POST).
+Seeded 2026-07-21 (no positions inherited mid-pattern — entries only from
+fresh fires). Restart deferred to 15:31 IST via /tmp/hap_deploy.sh.
+SOAK QUESTION (pre-registered): does live per-trade land nearer OOS 25bps or
+continue the 47-36-25 fade? Review at ~3 months (2026-10).
