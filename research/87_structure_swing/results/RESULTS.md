@@ -31,3 +31,15 @@ is RELATIVE (hedged expression doubles costs, eating the margin).
    now filters open/high/low/close > 0).
 
 Ledger: 104 cells + 2 rescoring passes + 1 Val pass. OOS untouched.
+
+## Phase 1c addendum (2026-07-21): explicit chart-pattern geometry — NO EDGE
+
+Head-and-shoulders (+inverse), triangles/wedges (pivot-convergence), and
+cup-with-handle (+inverted): 40 cells, daily, date-matched controls. **0
+gate passers.** Notable inversion: LONG breakouts from bullish geometry
+(inverse H&S, triangle/wedge upside breaks, cup-handle) show significantly
+NEGATIVE relative returns (t -2..-3.9, only 30-39% of names positive) —
+buying classical bullish pattern breaks selected UNDERPERFORMERS in
+2005-2017. Recorded as an observation only (no sign-flip mining; shorts are
+5x-buried and the relative expression costs double). Best cell: inverted
+cup-handle short h5, t=2.37, n=174 — small-sample, fails gate.

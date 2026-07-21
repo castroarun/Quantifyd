@@ -1,6 +1,6 @@
 # Structure-Based Swing Systems — S/R Levels, Chart Patterns, MTF Confluence & Breakouts (Daily, F&O Universe)
 
-STATUS: DONE — NO EDGE absolute; borderline relative short SIGNAL failed Val (see results/RESULTS.md)
+STATUS: PHASE 1b RUNNING — 30-min intraday pass (daily pass: NO EDGE, results/RESULTS.md)
 
 ## 1. The Ask
 
@@ -84,3 +84,37 @@ family passes G1): 60-min intraday timing layer on the passing family
 ## 7. Findings
 
 (populated during/after the run)
+
+
+## PHASE 1b PRE-REGISTRATION (2026-07-21): 30-min intraday pass
+
+Same 8 families, identical bar-parameterized detectors now operating on
+30-MIN bars (structure at intraday scale), F&O universe, 5-min resampled.
+MTF1 becomes daily-trend (30-bar daily SMA) x 30m-breakout — true MTF.
+- Splits (intraday convention): IS 2015-02..2021-09 · Val 2021-10..2023-12
+  · OOS 2024+ QUARANTINED.
+- Horizons in bars: {13, 39, 65, 130} ~= 1/3/5/10 sessions.
+- Costs 10bps RT. Controls IN THE PRIMARY PASS: per-cell excess vs
+  unconditional drift AND date-matched universe mean; primary gate =
+  rel_net>0 & t_rel>=2.5 & names+>=0.55 (absolute net reported alongside).
+- Cells: 13 param-variants x 4 h x 2 dir = 104. Ledger r/87+88: 238.
+- 60m pass contingent on a 30m family passing.
+Runner: scripts/run_g2_intraday_screen.py · log results/g2_intraday.log
+
+## PHASE 1c PRE-REGISTRATION (2026-07-21): explicit chart-pattern geometry (daily)
+
+Three classical patterns not covered by the statistical families, coded as
+explicit pivot-sequence geometry, daily bars, same universe/splits/costs,
+scored date-matched (primary) + absolute (reported):
+- **CP4 head-and-shoulders** (short) / inverse (long): pivot highs P1<P2>P3,
+  shoulders within 3%, neckline = min of intervening pivot lows; signal on
+  close breaking neckline. 8 cells.
+- **CP5 triangles/wedges**: >=2 successively lower pivot highs AND >=2
+  successively higher pivot lows (sym); rising/falling wedge sub-variants by
+  slope signs; break beyond the last pivot bound sets direction. 3 subs x
+  h4 x dir2 = 24 cells.
+- **CP6 cup-with-handle** (long) / inverted (short): recovery to within 3%
+  of a >=30-bar-old peak after >=15% base depth, handle <=5% for 3-10 bars,
+  break of peak. 8 cells.
+Gate: as phase 1 (rel_net>0, t_rel>=2.5, names+>=0.55; Val same as before).
+Cells +40 → program ledger 278. Runner: scripts/run_g3_patterns2.py
