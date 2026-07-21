@@ -182,6 +182,10 @@ class NasAtmDB:
                 for stmt in (
                     "ALTER TABLE nas_atm_positions ADD COLUMN mode VARCHAR(10)",
                     "ALTER TABLE nas_atm_orders ADD COLUMN mode VARCHAR(10)",
+                    # entry_spot was added to the NIFTY DBs by a one-off ALTER, so it was missing from
+                    # this self-healing block. Fresh DBs (the SENSEX books) came up without it and the
+                    # 09:16 INSERT crashed. Added here so every DB, present and future, has it.
+                    "ALTER TABLE nas_atm_positions ADD COLUMN entry_spot REAL",
                 ):
                     try:
                         conn.execute(stmt)
