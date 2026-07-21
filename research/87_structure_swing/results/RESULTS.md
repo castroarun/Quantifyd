@@ -66,3 +66,26 @@ Other notables: dead-cat-bounce LONG (buying 15% crashes) shows big absolute
 nets (+96..+309bps) but t_rel <=1.6, names+ <0.5 — crash mean-reversion
 variance, consistent with research/84's book-level failure. Everything else
 dead.
+
+## Phase 1d user-review corrections (2026-07-21 evening)
+
+**TATASTEEL example invalid (user caught it):** detector accepted 'rising
+lows' ABOVE the flat resistance (post-breakout structures, not triangles).
+Corrected definition (lows strictly below resistance): IS weakens to rel
++24.3bps t=1.94 (below gate), Val +53.6 t=3.08. Window-inconsistent =>
+family downgraded to FRAGILE SIGNAL, parked. Curious footnote: the excluded
+'non-triangle' instances (support-failure after breakout) carried much of
+the IS signal — a different pattern, would need fresh pre-registration.
+
+**Entry mechanics (user: 'short should be AT the line'):** tested stop-order-
+at-the-line vs close-confirmation on the corrected pattern set.
+- Fills on true breaks improve ~50bps (user is right per-fill: collapse bars
+  like SBIN 2014-07-11 fill at the line, not 14 points lower).
+- BUT the same resting order fills on every intraday poke that closes back
+  above (false break / shakeout): those cases are BULLISH — rel -184bps IS
+  (n=1772, only 14% of names positive), -93bps Val.
+- Net trader version: IS -11.3bps t=-1.1 (vs +24.3 close-confirm); Val
+  +43.8 t=2.98 (vs +53.6). **Close-below confirmation IS the edge's filter**;
+  the fill giveaway is the price paid to dodge shakeouts. Hybrid (line entry
+  + same-bar close-back-above invalidation) noted as possible refinement,
+  not pursued while the family is window-inconsistent.
