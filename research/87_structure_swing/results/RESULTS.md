@@ -89,3 +89,18 @@ at-the-line vs close-confirmation on the corrected pattern set.
   the fill giveaway is the price paid to dodge shakeouts. Hybrid (line entry
   + same-bar close-back-above invalidation) noted as possible refinement,
   not pursued while the family is window-inconsistent.
+
+## Structured-trade test of the user's spec (2026-07-21, late evening)
+
+Entry stop-sell AT the support line, SL above flat resistance (pattern
+invalidation), target = measured move (entry - triangle height), 30-session
+backstop. Corrected geometry, 74 names.
+- IS 2005-2017:  n=5051  net -78.9bps/trade  t=-7.05  win 51%  avgR -0.09
+- Val 2018-22H1: n=2247  net -76.4bps/trade  t=-5.46  win 51%  avgR -0.06
+Same ~-77bps in both eras. Decomposition: (a) line entry admits every
+shakeout, and with the SL all the way above resistance those never
+invalidate quickly - they chop to the time backstop; (b) ~11-day naked short
+pays ~drift (~7bps/day * 11d ~= 77bps) as rent - matches the loss almost
+exactly; (c) ~1:1 R:R at 51% win minus costs is negative expectancy. The
+pattern's genuine content (~+50bps RELATIVE lag vs index in Val) cannot be
+monetized by stock-price SL/target - only by hedging.
