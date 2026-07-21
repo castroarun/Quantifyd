@@ -28,6 +28,7 @@ import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
 import MomentumPaper from './pages/MomentumPaper';
 import BreakoutPaper from './pages/BreakoutPaper';
+import HaPaper from './pages/HaPaper';
 import Journal from './pages/Journal';
 import JournalDay from './pages/JournalDay';
 import JournalTrade from './pages/JournalTrade';
@@ -264,6 +265,16 @@ export default function App() {
           <Protected>
             <AppLayout active="breakout-paper">
               <BreakoutPaper />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/ha-paper"
+        element={
+          <Protected>
+            <AppLayout active="ha-paper">
+              <HaPaper />
             </AppLayout>
           </Protected>
         }
