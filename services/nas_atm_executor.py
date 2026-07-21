@@ -331,6 +331,36 @@ class NasAtmExecutor:
             return None
         return net.get(tradingsymbol, 0)
 
+    def _broker_holds_any(self, legs):
+        """True if the broker still holds >=1 of these legs (for a LIVE strangle).
+
+        Paper strangle -> True (no broker truth to consult). Broker unreachable -> True (fail-open:
+        a transient API error must not suppress a genuine stop). Forces a FRESH read because this
+        only runs at the moment a stop fires -- rare, so the extra call is cheap, and staleness here
+        could let a re-entry slip through right after a manual close.
+        """
+        live_legs = [p for p in legs if (p.get('mode') or 'paper') == 'live']
+        if not live_legs:
+            return True
+        net = self._broker_net_positions(ttl=0)      # ttl=0 -> fresh
+        if net is None:
+            return True
+        return any(abs(int(net.get(p.get('tradingsymbol'), 0) or 0)) > 0 for p in live_legs)
+
+    def _reconcile_phantom(self, legs, reason='MANUAL_CLOSE_RECONCILED'):
+        """Mark DB-active legs CLOSED without placing any order -- they are gone at the broker
+        (closed outside the system). Books each at its entry price (P&L neutral in the DB; the real
+        manual fill is on the user's contract note)."""
+        for p in legs:
+            try:
+                if p.get('status') == 'ACTIVE':
+                    self.db.close_position(p['id'], p.get('entry_price') or 0, reason)
+                    logger.critical("[%s] %s reconciled to CLOSED (broker flat -- closed outside "
+                                    "the system); no order placed", self.EXCHANGE, p.get('tradingsymbol'))
+            except Exception as e:
+                logger.error("[%s] phantom reconcile failed for %s: %s",
+                             self.EXCHANGE, p.get('tradingsymbol'), e)
+
     def _close_leg(self, pos, exit_price, exit_reason):
         """Close a single position leg — broker-truthful.
 

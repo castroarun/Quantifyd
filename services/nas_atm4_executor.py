@@ -278,6 +278,15 @@ class NasAtm4Executor(NasAtmExecutor):
             strangle_legs = [p for p in positions
                              if p.get('strangle_id') == strangle_id
                              and p['status'] == 'ACTIVE']
+
+            # DURABLE MANUAL-EXIT GUARD: never close-and-roll a strangle the broker no longer holds
+            # (user squared it off by hand). Reconcile the phantom DB legs; open nothing new.
+            if not self._broker_holds_any(strangle_legs):
+                logger.critical("[NAS-ATM4] SL/roll suppressed for #%s: broker holds none of these "
+                                "legs (closed outside the system). Reconciling; NOT rolling.",
+                                strangle_id)
+                self._reconcile_phantom(strangle_legs)
+                continue
             has_rolled = any(
                 (p.get('adjustment_count') or 0) >= 1 for p in strangle_legs
             )

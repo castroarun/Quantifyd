@@ -89,6 +89,16 @@ class NasAtm2Executor(NasAtmExecutor):
                         continue
                     moved = abs(cur_spot - espot) / espot
                     if moved >= move_pct:
+                        # DURABLE MANUAL-EXIT GUARD: if the user squared this off by hand, the broker
+                        # holds none of these legs. Do NOT close-and-re-center a position that is
+                        # already gone -- reconcile the phantom DB legs and move on.
+                        if not self._broker_holds_any(legs):
+                            logger.critical("[NAS-ATM2] MOVE-STOP suppressed for #%s: broker holds "
+                                            "none of these legs (closed outside the system). "
+                                            "Reconciling; NOT re-entering.", sid)
+                            self._reconcile_phantom(legs)
+                            exited_strangles.add(sid)
+                            continue
                         logger.info(f"[NAS-ATM2] MOVE-STOP: spot {cur_spot:.1f} vs entry {espot:.1f} = "
                                     f"{moved*100:.2f}% >= {move_pct*100:.2f}% -> close strangle #{sid}")
                         exited_strangles.add(sid)
