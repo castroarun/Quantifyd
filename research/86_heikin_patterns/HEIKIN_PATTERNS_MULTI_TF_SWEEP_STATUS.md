@@ -62,3 +62,25 @@ BREAK-confirmation (user's addition) changes that.
   60m variants positive but Val-underpowered. 15m weaker (costs).
 - Next: breadth replication (full F&O 5-min universe, IS+Val — free of OOS)
   → then the one-time OOS decision (2024+, user gate).
+
+## PHASE 2 PRE-REGISTRATION (2026-07-20 ~20:30 IST) — refinement battery
+
+OOS is CONSUMED: selection on IS (2015-21) + Val (2021-23) ONLY; 2024-26 is
+QUARANTINED from all phase-2 decisions; adopted refinements validate only
+paper-forward vs the locked baseline. Grid (LOCKED, ledger +8): baseline;
++VOLCONF (break-bar volume > 20-bar avg); +TREND200 (close>200DMA at signal);
++BODYTOP (2nd HA candle body >= trailing-252-bar median); TF45 baseline;
+best-single + second-best combo. Gate: beat baseline net bps AND t on BOTH
+IS and Val independently; retain >=40% of trades.
+
+## PHASE 2 VERDICT (2026-07-20): NO refinement adopted — baseline stands
+
+Per the pre-registered gate (beat net AND t on BOTH IS and Val): volconf /
+trend200 / bodytop all RAISE t but CUT mean net (they trim outlier winners —
+variance reduction, not edge addition); 45m raises per-trade net (hold-length
+effect) but not significance. The locked 30m 2GREEN_NW long baseline remains
+THE system; its OOS pass is unchanged. Filter variance-reduction property
+noted as possible BOOK-level lever at paper stage (would need forward
+validation). Better-returns answer: the legitimate dial is futures leverage
+on the Calmar~1.0 curve, not signal tuning. Ledger +10 (8 pre-reg + 2 Val
+re-checks). STATUS: DONE.
