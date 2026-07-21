@@ -65,9 +65,9 @@ DEFAULT = {
         'nas_916_atm4': _row({2, 1, 0}, True,  True,  True),
         # SENSEX expires THURSDAY, so its DTE0=Thu and DTE1=Wed -- the days NIFTY has
         # nothing left to harvest. live=False: paper until the chain backfill validates it.
-        'sensex_atm':   _row({1, 0}, False, False, False),
-        'sensex_atm2':  _row({1, 0}, False, False, False),
-        'sensex_atm4':  _row({1, 0}, False, False, False),
+        'sensex_atm':   _row({1, 0}, False, False, True),
+        'sensex_atm2':  _row({1, 0}, False, False, True),
+        'sensex_atm4':  _row({1, 0}, False, False, True),
     },
 }
 

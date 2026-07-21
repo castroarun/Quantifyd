@@ -547,7 +547,7 @@ SENSEX_ATM_DEFAULTS = {
     'lots_per_leg': 2,           # 2 lots x 20 = 40 qty (SENSEX lot is 20, verified 2026-07-20)
     'paper_lots_per_leg': 2,
     'paper_trading_mode': True,  # PAPER until validated
-    'force_paper': True,         # belt and braces: cannot go live by config alone
+    'force_paper': False,        # LIVE-enabled 2026-07-21 (user): Wed/Thu real money
     'matrix_key': 'sensex_atm',
 }
 SENSEX_ATM2_DEFAULTS = {
@@ -556,7 +556,7 @@ SENSEX_ATM2_DEFAULTS = {
     'lots_per_leg': 2,
     'paper_lots_per_leg': 2,
     'paper_trading_mode': True,
-    'force_paper': True,
+    'force_paper': False,
     'matrix_key': 'sensex_atm2',
 }
 SENSEX_ATM4_DEFAULTS = {
@@ -565,7 +565,7 @@ SENSEX_ATM4_DEFAULTS = {
     'lots_per_leg': 2,
     'paper_lots_per_leg': 2,
     'paper_trading_mode': True,
-    'force_paper': True,
+    'force_paper': False,
     'matrix_key': 'sensex_atm4',
 }
 

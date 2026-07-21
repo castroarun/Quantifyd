@@ -114,7 +114,7 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": false,
+      "live": true,
       "paper_shadow": true
     },
     "sensex_atm2": {
@@ -127,7 +127,7 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": false,
+      "live": true,
       "paper_shadow": true
     },
     "sensex_atm4": {
@@ -140,7 +140,7 @@
       },
       "gap_up": false,
       "gap_down": false,
-      "live": false,
+      "live": true,
       "paper_shadow": true
     }
   }
