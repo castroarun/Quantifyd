@@ -1,3 +1,4 @@
+- research/87 (structure patterns) + research/88 (GCO pullback stoch): CONCLUDED 2026-07-21, both NO EDGE — drift/survivorship controls now mandatory for daily screens. See results/RESULTS.md in each.
 - **HA 2-green paper book (research/86) — DEPLOYED, restart pending 15:31 IST 2026-07-21.**
   Rs20L / 81 F&O sleeves, 30-min cycle jobs, /api/ha-paper/state. PAPER-only module
   services/ha_paper.py. Follow-ups: /app/ha-paper React page; after ~3mo soak compare
