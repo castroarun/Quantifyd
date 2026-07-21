@@ -43,3 +43,26 @@ buying classical bullish pattern breaks selected UNDERPERFORMERS in
 2005-2017. Recorded as an observation only (no sign-flip mining; shorts are
 5x-buried and the relative expression costs double). Best cell: inverted
 cup-handle short h5, t=2.37, n=174 — small-sample, fails gate.
+
+## Phase 1d addendum (2026-07-21): remaining named patterns (investingoal list)
+
+72 cells: ascending/descending triangles, triple top/bottom, island
+reversal, dead-cat bounce, megaphone, diamond, channel bounce, parabolic
+break. Date-matched harness. IS gate passers: 3, all one family —
+**ATDT_asc_S: the FAILED ascending triangle** (flat >=2-touch resistance +
+rising support; price breaks DOWN through the rising support) predicts
+relative underperformance.
+
+**Val 2018-2022H1: 2 of 3 pre-registered cells pass; flagship h15 holds its
+effect size** — IS rel +79.5bps t=3.38 -> Val rel +84.6bps t=2.69, names+
+0.63. First structure signal in this study to survive IS->Val without fade.
+Caveats: RELATIVE-only (absolute short is flat/negative — the signal ranks
+underperformers, it does not make money shorted naked); ~75/yr signals in
+Val at h15; family found within a 350-cell program ledger. Label: **SIGNAL
+(relative)** pending robustness (parameter neighbors, per-year, breadth) —
+OOS untouched, requires explicit authorization.
+
+Other notables: dead-cat-bounce LONG (buying 15% crashes) shows big absolute
+nets (+96..+309bps) but t_rel <=1.6, names+ <0.5 — crash mean-reversion
+variance, consistent with research/84's book-level failure. Everything else
+dead.

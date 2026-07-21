@@ -118,3 +118,26 @@ scored date-matched (primary) + absolute (reported):
   break of peak. 8 cells.
 Gate: as phase 1 (rel_net>0, t_rel>=2.5, names+>=0.55; Val same as before).
 Cells +40 → program ledger 278. Runner: scripts/run_g3_patterns2.py
+
+## PHASE 1d PRE-REGISTRATION (2026-07-21): remaining named patterns (investingoal.com list)
+
+User-supplied reference: investingoal.com/trading/chart-pattern/. Eight
+formalizable patterns not yet covered, daily bars, date-matched harness:
+- **AT/DT**: ascending triangle (flat resistance >=2 pivot-high touches 1% +
+  >=2 higher pivot lows) & descending mirror; break sets direction. 16 cells.
+- **CP8 triple top/bottom**: 3 pivots within 1.5%, span>=20 bars, neckline
+  break. 8 cells.
+- **ISL island reversal**: up-gap then down-gap within 10 bars (island) ->
+  short; mirror long. 8 cells.
+- **DCB dead-cat bounce**: >=15%/5-bar crash, >=5% bounce, first lower close
+  -> short; mirror long. 8 cells.
+- **MEG megaphone**: >=2 higher pivot highs AND >=2 lower pivot lows
+  (diverging) within 40 bars; extreme break sets direction. 8 cells.
+- **DIA diamond (approx)**: 10-bar range expands then contracts >=40%;
+  contraction-extreme break. 8 cells.
+- **CHN channel bounce**: >=3 collinear-ish higher pivot lows (rising) /
+  lower pivot highs (falling); tag + hold of channel line. 8 cells.
+- **PARA parabolic break**: >=25%/20-bar accelerating run; first close below
+  3-bar low -> short; mirror long. 8 cells.
+72 cells. Excluded as unfalsifiably fuzzy: bump-and-run, scallops, butterfly.
+Program ledger: 278 + 72 = 350. Runner: scripts/run_g4_patterns3.py
