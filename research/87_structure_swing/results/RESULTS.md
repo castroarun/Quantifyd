@@ -104,3 +104,27 @@ pays ~drift (~7bps/day * 11d ~= 77bps) as rent - matches the loss almost
 exactly; (c) ~1:1 R:R at 51% win minus costs is negative expectancy. The
 pattern's genuine content (~+50bps RELATIVE lag vs index in Val) cannot be
 monetized by stock-price SL/target - only by hedging.
+
+## Phase 1b verdict (2026-07-21 22:05): 30-min pass — NO EDGE. STUDY CLOSED.
+
+Val 2021-10..2023-12: **0 of 18 pre-registered IS passers survive.** Massive
+sign flips (BR2_inside_S_h39: IS +19.1 -> Val -298.3 rel bps; MTF1 cells
+-40..-520) — the IS short-relative 'edges' were 2015-21 regime artifacts
+that the 2021-23 tape reversed. The lone absolute-positive long (CP2 flag
+30m) produced too few Val trades to evaluate (n<100) = unverifiable, not
+promotable.
+
+## FINAL STUDY VERDICT — research/87 (with 1b/1c/1d + user-review tests)
+
+**NO EDGE at every tested scale.** Across 320 signal cells (104 daily + 104
+30-min + 40 geometry + 72 named-pattern) + entry-mechanics + structured-
+trade tests, price-structure entries (S/R, chart patterns, MTF confluence,
+breakouts) carry no harvestable absolute edge on this universe. What looked
+like edges were, in order of discovery: raw drift, survivorship, bear-regime
+timing, selection luck, and (for the structured pattern trade) drift-rent +
+shakeout fills. The only durable observations: (1) close-below confirmation
+beats level-touch entry — the filter IS the alpha's guard; (2) trailing
+exits beat targets (3rd replication); (3) bullish-geometry breakouts mildly
+ANTI-predict. Program stands: edges live in confirmation mechanics + exits +
+portfolio construction (r/86 HA book, momentum, breakout-trail books), not
+in pattern entries.

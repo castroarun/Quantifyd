@@ -1,6 +1,6 @@
 # Structure-Based Swing Systems — S/R Levels, Chart Patterns, MTF Confluence & Breakouts (Daily, F&O Universe)
 
-STATUS: PHASE 1b RUNNING — 30-min intraday pass (daily pass: NO EDGE, results/RESULTS.md)
+STATUS: DONE — STUDY CLOSED, NO EDGE at every scale (daily + 30m + geometry packs; see results/RESULTS.md)
 
 ## 1. The Ask
 
