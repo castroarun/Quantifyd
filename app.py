@@ -7519,6 +7519,22 @@ def _nas_916_sl_monitor():
         logger.warning(f"[NAS-916-SL] Kite not available: {e}")
         return
 
+    # EOD BACKSTOP (2026-07-22): same fix as SENSEX — the 15:15 EOD cron can misfire under the job
+    # pileup. Force the square-off from this reliable 10s monitor at/after 15:16 (classes already
+    # imported above). Idempotent: only acts while legs remain open.
+    if (now.hour, now.minute) >= (15, 16):
+        for _cls, _cfg in ((Nas916AtmExecutor, NAS_916_ATM_DEFAULTS),
+                           (Nas916Atm2Executor, NAS_916_ATM2_DEFAULTS),
+                           (Nas916Atm4Executor, NAS_916_ATM4_DEFAULTS)):
+            try:
+                _ex = _cls(config=_cfg)
+                if _ex.db.get_active_positions():
+                    _res = _ex.eod_squareoff()
+                    logger.warning(f"[NAS916-EOD-BACKSTOP] {_cls.__name__} squared off {len(_res)} legs")
+            except Exception as _e:
+                logger.error(f"[NAS916-EOD-BACKSTOP] error: {_e}", exc_info=True)
+        return
+
     for label, cfg_name, cls_name in variants:
         try:
             cfg = name_to_cfg[cfg_name]
@@ -7624,6 +7640,23 @@ def _sensex_sl_monitor():
     except Exception as e:
         logger.warning(f"[SENSEX-SL] Kite unavailable: {e}")
         return
+
+    # EOD BACKSTOP (2026-07-22): the 15:15 cron _sensex_eod_squareoff was SKIPPED under the 15:15
+    # apscheduler job pileup (misfire), leaving the live SENSEX book open. This 10s monitor is
+    # reliable, so force the square-off at/after 15:16 (1 min after the cron, to avoid racing it).
+    # Idempotent: only acts while legs remain open.
+    if (now.hour, now.minute) >= (15, 16):
+        import importlib
+        _mod = importlib.import_module('services.sensex_executors')
+        for _cls in ('SensexAtmExecutor', 'SensexAtm2Executor', 'SensexAtm4Executor'):
+            try:
+                _ex = getattr(_mod, _cls)()
+                if _ex.db.get_active_positions():
+                    _res = _ex.eod_squareoff()
+                    logger.warning(f"[SENSEX-EOD-BACKSTOP] {_cls} squared off {len(_res)} legs")
+            except Exception as _e:
+                logger.error(f"[SENSEX-EOD-BACKSTOP] {_cls} error: {_e}", exc_info=True)
+        return
     for name, cls_name in [('SENSEX-ATM', 'SensexAtmExecutor'),
                            ('SENSEX-ATM2', 'SensexAtm2Executor'),
                            ('SENSEX-ATM4', 'SensexAtm4Executor')]:
@@ -7682,6 +7715,37 @@ try:
     logger.info("SENSEX jobs registered: entry(9:16), SL monitor(10s), EOD(15:15) — Mon-Fri, PAPER")
 except Exception as e:
     logger.error(f"SENSEX job registration failed: {e}")
+
+
+# ─── NAS daily PORTFOLIO stop (research/90) ─────────────────────────────────
+# Proportional per-venue stop: flatten a venue's whole live book if combined MIS day-P&L falls to
+# -Rs1300 x (live lots deployed today). No take-profit / trail (the 64-day sweep showed both hurt).
+# 10s cadence; fail-safe (never flattens on unpriced data); self-limiting (flattening blocks re-entry).
+def _nas_portfolio_stop_monitor():
+    now = datetime.now()
+    if not (now.weekday() < 5 and (9, 16) <= (now.hour, now.minute) <= (15, 15)):
+        return
+    try:
+        from services.nas_portfolio_stop import check_and_apply
+    except Exception as e:
+        logger.error(f"[PORT-STOP] import failed: {e}")
+        return
+    for venue in ('nifty', 'sensex'):
+        try:
+            res = check_and_apply(venue)
+            if res and res.get('flattened'):
+                logger.critical(f"[PORT-STOP] {venue} FIRED: {res}")
+        except Exception as e:
+            logger.error(f"[PORT-STOP] {venue} error: {e}", exc_info=True)
+
+
+try:
+    scheduler.add_job(_nas_portfolio_stop_monitor, 'interval', seconds=10,
+                      id='nas_portfolio_stop_monitor', replace_existing=True)
+    logger.info("NAS portfolio-stop monitor registered: 10s, per-venue proportional -Rs1300/lot "
+                "(no target/trail)")
+except Exception as e:
+    logger.error(f"portfolio-stop registration failed: {e}")
 
 
 
