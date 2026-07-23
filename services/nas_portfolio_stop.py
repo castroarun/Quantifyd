@@ -36,6 +36,8 @@ FLAG_DIR = Path(__file__).resolve().parents[1] / "backtest_data"
 VENUES = {
     "nifty": {
         "exchange": "NFO",
+        "tp_per_lot": None,          # research/90: a daily take-profit HURTS NIFTY (grinds up into
+                                     # the close) -> stop only, no target.
         "systems": [
             ("NAS-916-ATM", "Nas916AtmExecutor", "NAS_916_ATM_DEFAULTS"),
             ("NAS-916-ATM2", "Nas916Atm2Executor", "NAS_916_ATM2_DEFAULTS"),
@@ -44,6 +46,10 @@ VENUES = {
     },
     "sensex": {
         "exchange": "BFO",
+        "tp_per_lot": 1667.0,        # research/91: SENSEX fades its intraday gains into the close
+                                     # (median EOD -396) -> a ~Rs1667/lot (Rs10k on 6 lots) daily
+                                     # take-profit HELPS (best total, both halves positive). Venue-
+                                     # specific: the opposite holds for NIFTY.
         "systems": [
             ("SENSEX-ATM", "SensexAtmExecutor", "SENSEX_ATM_DEFAULTS"),
             ("SENSEX-ATM2", "SensexAtm2Executor", "SENSEX_ATM2_DEFAULTS"),
@@ -183,15 +189,26 @@ def check_and_apply(venue: str, dry_run: bool = False):
     combined, lots, to_flatten, details, incomplete = compute_venue(venue, kite)
     if incomplete or lots <= 0:
         return None
-    threshold = -STOP_PER_LOT * lots
-    breached = combined <= threshold
-    info = dict(venue=venue, combined=round(combined), threshold=round(threshold),
-                lots=lots, details=details, breached=breached)
-    if not breached:
+
+    stop_threshold = -STOP_PER_LOT * lots
+    tp_per_lot = VENUES[venue].get("tp_per_lot")
+    tp_threshold = (tp_per_lot * lots) if tp_per_lot else None
+
+    kind, thr = None, None
+    if combined <= stop_threshold:
+        kind, thr = "STOP", stop_threshold
+    elif tp_threshold is not None and combined >= tp_threshold:
+        kind, thr = "TP", tp_threshold
+
+    info = dict(venue=venue, combined=round(combined), stop_threshold=round(stop_threshold),
+                tp_threshold=(round(tp_threshold) if tp_threshold else None),
+                lots=lots, details=details, hit=kind)
+    if kind is None:
         return info if dry_run else None
 
-    logger.critical("[PORT-STOP %s] BREACH combined=%.0f <= threshold=%.0f (lots=%d) details=%s",
-                    venue, combined, threshold, lots, details)
+    reason = "PORTFOLIO_STOP" if kind == "STOP" else "PORTFOLIO_TP"
+    logger.critical("[PORT-%s %s] %s combined=%.0f vs %.0f (lots=%d) details=%s",
+                    kind, venue, reason, combined, thr, lots, details)
     if dry_run:
         info["would_flatten"] = [lbl for lbl, _ in to_flatten]
         return info
@@ -199,11 +216,11 @@ def check_and_apply(venue: str, dry_run: bool = False):
     flattened = []
     for label, ex in to_flatten:
         try:
-            exits = ex.exit_all_positions("PORTFOLIO_STOP")
+            exits = ex.exit_all_positions(reason)
             flattened.append((label, len(exits or [])))
-            logger.critical("[PORT-STOP %s] %s flattened %d legs", venue, label, len(exits or []))
+            logger.critical("[PORT-%s %s] %s flattened %d legs", kind, venue, label, len(exits or []))
         except Exception as e:
-            logger.error("[PORT-STOP %s] %s flatten FAILED: %s", venue, label, e, exc_info=True)
-    _write_flag(venue, combined, threshold, lots)
+            logger.error("[PORT-%s %s] %s flatten FAILED: %s", kind, venue, label, e, exc_info=True)
+    _write_flag(venue, combined, thr, lots)
     info["flattened"] = flattened
     return info
