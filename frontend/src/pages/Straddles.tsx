@@ -523,6 +523,7 @@ export default function Straddles() {
                       exit_pnl: x.final, reason: x.stopped ? 'stop hit' : 'held to close' };
                   })
                 : null;
+              const dowOf = (ds: string) => { const a = String(ds || '').split('-').map(Number); return a.length === 3 && !a.some(Number.isNaN) ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(a[0], a[1] - 1, a[2]).getDay()] : ''; };
               const comp = isV1 ? v1Comp : (Array.isArray(d.completed) ? d.completed : null);
               const cth: React.CSSProperties = { fontSize: 9.5, color: C.muted, fontWeight: 600, textAlign: 'right', padding: '2px 6px', textTransform: 'uppercase', borderBottom: `1px solid ${C.hairSoft}` };
               const ctd: React.CSSProperties = { fontSize: 11, color: C.ink, textAlign: 'right', padding: '3px 6px', borderTop: `1px solid ${C.hairSoft}`, fontVariantNumeric: 'tabular-nums' };
@@ -560,6 +561,7 @@ export default function Straddles() {
                       : <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
                           <thead><tr>
                             <th style={{ ...cth, textAlign: 'left' }}>#</th><th style={{ ...cth, textAlign: 'left' }}>Entry</th>
+                            <th style={cth}>Day</th>
                             <th style={{ ...cth, textAlign: 'left' }}>Exit</th><th style={cth}>Strike</th>
                             <th style={cth}>Exit P&amp;L</th><th style={{ ...cth, textAlign: 'left' }}>Reason</th>
                           </tr></thead>
@@ -567,6 +569,7 @@ export default function Straddles() {
                             <tr key={i}>
                               <td style={{ ...ctd, textAlign: 'left' }}>{t.n}</td>
                               <td style={{ ...ctd, textAlign: 'left' }}>{t.entry_day}</td>
+                              <td style={{ ...ctd, color: C.muted }}>{dowOf(t.entry_day)}</td>
                               <td style={{ ...ctd, textAlign: 'left' }}>{t.exit_day}</td>
                               <td style={ctd}>{t.strike}</td>
                               <td style={{ ...ctd, fontWeight: 700, color: col(t.exit_pnl) }}>{inr(t.exit_pnl)}</td>
