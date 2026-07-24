@@ -2,7 +2,7 @@
 Sequential book: 09:20 ATM straddle in 2nd-nearest weekly; carry; exit on 1.5% move-stop OR PT-40%
 OR DTE<=1 (roll); on exit RE-ENTER same day (stay short); +/-500pt overnight wings (buy 15:20 /
 sell 09:20) tracked separately. 10 lots. Emits per-trade daily PnL series + book cumulative."""
-import sqlite3, json
+import sqlite3, json, os
 from pathlib import Path
 from datetime import datetime
 import numpy as np
@@ -11,7 +11,7 @@ ROOT = Path("/home/arun/quantifyd")
 OUT = ROOT / "research/58_intraday_recenter_straddle/results"; OUT.mkdir(parents=True, exist_ok=True)
 OPT = ROOT / "backtest_data" / "options_data.db"
 LOT = 65; LOTS = 10; QTY = LOT * LOTS; COST = 2 * 80
-MOVE = 2.0; PT = 40; ROLL_DTE = 1; WING = 500
+MOVE = float(os.environ.get("V2_MOVE","2.0")); PT = 40; ROLL_DTE = 1; WING = 500
 
 oc = sqlite3.connect(str(OPT))
 oc.execute("CREATE INDEX IF NOT EXISTS idx_oc_lk ON option_chain(expiry_date,strike,instrument_type,snapshot_time)")
