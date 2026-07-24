@@ -67,11 +67,11 @@
     },
     "nas_916_atm": {
       "dte": {
-        "4": false,
-        "3": false,
-        "2": true,
+        "0": true,
         "1": true,
-        "0": true
+        "2": false,
+        "3": false,
+        "4": false
       },
       "gap_up": false,
       "gap_down": false,
@@ -80,11 +80,11 @@
     },
     "nas_916_atm2": {
       "dte": {
-        "4": false,
-        "3": false,
-        "2": true,
+        "0": true,
         "1": true,
-        "0": true
+        "2": false,
+        "3": false,
+        "4": false
       },
       "gap_up": false,
       "gap_down": false,
@@ -93,11 +93,11 @@
     },
     "nas_916_atm4": {
       "dte": {
-        "4": false,
-        "3": false,
-        "2": true,
+        "0": true,
         "1": true,
-        "0": true
+        "2": false,
+        "3": false,
+        "4": false
       },
       "gap_up": false,
       "gap_down": false,
@@ -106,11 +106,11 @@
     },
     "sensex_atm": {
       "dte": {
-        "4": false,
-        "3": false,
-        "2": false,
+        "0": true,
         "1": true,
-        "0": true
+        "2": false,
+        "3": false,
+        "4": false
       },
       "gap_up": false,
       "gap_down": false,
@@ -119,11 +119,11 @@
     },
     "sensex_atm2": {
       "dte": {
-        "4": false,
-        "3": false,
-        "2": false,
+        "0": true,
         "1": true,
-        "0": true
+        "2": false,
+        "3": false,
+        "4": false
       },
       "gap_up": false,
       "gap_down": false,
@@ -132,11 +132,11 @@
     },
     "sensex_atm4": {
       "dte": {
-        "4": false,
-        "3": false,
-        "2": false,
+        "0": true,
         "1": true,
-        "0": true
+        "2": false,
+        "3": false,
+        "4": false
       },
       "gap_up": false,
       "gap_down": false,
