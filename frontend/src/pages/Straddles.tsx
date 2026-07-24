@@ -946,7 +946,7 @@ export default function Straddles() {
       <section style={card}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 · Positional bi-weekly</span>
-          {chip(C.navySoft, C.navy, '1.5% stop (superseded — 2.0% validated) · PT-40% · ±500pt wings · re-enter · roll 1-DTE')}
+          {chip(C.navySoft, C.navy, '2.0% move-stop · PT-40% · ±500pt wings · re-enter · roll 1-DTE')}
           {chip(C.amberSoft, C.amber, 'BACKTEST')}
         </div>
         {v2stats && (
@@ -972,7 +972,7 @@ export default function Straddles() {
           </div>
         )}
         <div style={{ fontSize: 11, color: C.muted, marginTop: 10 }}>
-          Note: wings cost a net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} over the book (overnight-gap protection you opted to keep). Single regime, ~6 weeks — SIGNAL, not yet validated.
+          Note: wings cost a net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} over the book (overnight-gap protection you opted to keep). Recorder replay Apr–Jul 2026 (~3 months, 13 trades, 69% win) — SIGNAL only; the multi-year validation is research/60 (AlgoTest, ±500 wings).
         </div>
       </section>
       </details>

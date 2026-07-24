@@ -11,7 +11,7 @@ ROOT = Path("/home/arun/quantifyd")
 OUT = ROOT / "research/58_intraday_recenter_straddle/results"; OUT.mkdir(parents=True, exist_ok=True)
 OPT = ROOT / "backtest_data" / "options_data.db"
 LOT = 65; LOTS = 10; QTY = LOT * LOTS; COST = 2 * 80
-MOVE = 1.5; PT = 40; ROLL_DTE = 1; WING = 500
+MOVE = 2.0; PT = 40; ROLL_DTE = 1; WING = 500
 
 oc = sqlite3.connect(str(OPT))
 oc.execute("CREATE INDEX IF NOT EXISTS idx_oc_lk ON option_chain(expiry_date,strike,instrument_type,snapshot_time)")
@@ -88,7 +88,7 @@ json.dump({"version": "V2 positional bi-weekly", "move_stop": MOVE, "pt": PT, "w
            "lots": LOTS, "lot": LOT, "trades": trades, "book_curve": book_curve}, open(OUT / "v2_positional.json", "w"))
 a = np.array([t["pnl"] for t in trades])
 wa = np.array([t["wing_pnl"] for t in trades])
-print("=== V2 POSITIONAL (1.5%% + PT40 + wings + re-enter, 10 lots) ===")
+print("=== V2 POSITIONAL (2.0%% + PT40 + wings + re-enter, 10 lots) ===")
 print("trades=%d  total=%+d  mean/trade=%+d  median=%+d  win%%=%d  worst=%d  best=%d  wing_total=%+d" % (
     len(a), a.sum(), round(a.mean()), round(np.median(a)), round(100*(a>0).mean()), a.min(), a.max(), wa.sum()))
 print("exit reasons:", {r: sum(1 for t in trades if t["exit_reason"] == r) for r in set(t["exit_reason"] for t in trades)})
