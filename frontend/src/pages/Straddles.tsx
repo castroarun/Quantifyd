@@ -258,6 +258,8 @@ function RulesBlock() {
 export default function Straddles() {
   const [v1, setV1] = useState<V1 | null>(null);
   const [v2, setV2] = useState<V2 | null>(null);
+  const [v2all, setV2all] = useState<{ [k: string]: V2 }>({});
+  const [v2stop, setV2stop] = useState<'1.5' | '2.0'>('2.0');
   const [day1, setDay1] = useState<string | null>(null);
   const [tr2, setTr2] = useState<number | null>(null);
   const [live, setLive] = useState<any>(null);
@@ -275,7 +277,8 @@ export default function Straddles() {
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
-    fetch('/app/straddles/v2.json').then((r) => r.json()).then(setV2).catch(() => {});
+    fetch('/app/straddles/v2_2.0.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '2.0': d }))).catch(() => {});
+    fetch('/app/straddles/v2_1.5.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '1.5': d }))).catch(() => {});
     fetch('/app/straddles/v1_daily.json').then((r) => r.json()).then(setDaily).catch(() => {});
     const loadLive = () => {
       fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
@@ -343,6 +346,7 @@ export default function Straddles() {
     const tot = f.reduce((a, b) => a + b, 0);
     return { n: f.length, tot, mean: tot / (f.length || 1), win: 100 * f.filter((x) => x > 0).length / (f.length || 1) };
   }, [v1]);
+  useEffect(() => { if (v2all[v2stop]) setV2(v2all[v2stop]); }, [v2all, v2stop]);
   const v2stats = useMemo(() => {
     if (!v2) return null;
     const f = v2.trades.map((t) => t.pnl);
@@ -946,7 +950,12 @@ export default function Straddles() {
       <section style={card}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 · Positional bi-weekly</span>
-          {chip(C.navySoft, C.navy, '2.0% move-stop · PT-40% · ±500pt wings · re-enter · roll 1-DTE')}
+          <span style={{ display: 'inline-flex', border: `1px solid ${C.hair}`, borderRadius: 6, overflow: 'hidden' }}>
+            {(['1.5', '2.0'] as const).map((sv) => (
+              <button key={sv} onClick={() => setV2stop(sv)} style={{ border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, padding: '3px 10px', background: v2stop === sv ? C.navy : 'transparent', color: v2stop === sv ? '#fff' : C.muted }}>{sv}% stop</button>
+            ))}
+          </span>
+          {chip(C.navySoft, C.navy, `${v2stop}% move-stop · PT-40% · ±500pt wings · re-enter · roll 1-DTE`)}
           {chip(C.amberSoft, C.amber, 'BACKTEST')}
         </div>
         {v2stats && (
@@ -972,7 +981,7 @@ export default function Straddles() {
           </div>
         )}
         <div style={{ fontSize: 11, color: C.muted, marginTop: 10 }}>
-          Note: wings cost a net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} over the book (overnight-gap protection you opted to keep). Recorder replay Apr–Jul 2026 (~3 months, 13 trades, 69% win) — SIGNAL only; the multi-year validation is research/60 (AlgoTest, ±500 wings).
+          Note: wings cost a net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} over the book (overnight-gap protection you opted to keep). Recorder replay Apr–Jul 2026 (~3 months, {v2stats ? v2stats.n : 13} trades, {v2stats ? Math.round(v2stats.win) : 0}% win, {v2stop}% stop) — SIGNAL only; the multi-year validation is research/60 (AlgoTest, ±500 wings).
         </div>
       </section>
       </details>
