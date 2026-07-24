@@ -483,19 +483,6 @@ export default function Straddles() {
                     <td style={{ ...ctd2, fontWeight: 700, color: col(h.pnl) }}>{inr(h.pnl)}</td>
                   </tr>))}</tbody>
               </table>
-              <div style={{ fontSize: 11.5, color: C.sec, marginTop: 8, lineHeight: 1.7 }}>
-                <b>Overall (realized):</b>{' '}
-                <b style={{ color: col(v2eng.closed_total_pnl) }}>{inr(v2eng.closed_total_pnl)}</b>
-                {' '}over <b>{v2eng.closed_trades}</b> closed trades
-                {v2eng.closed_trades > 0 && <> · mean/trade <b style={{ color: col(v2eng.closed_total_pnl / v2eng.closed_trades) }}>{inr(Math.round(v2eng.closed_total_pnl / v2eng.closed_trades))}</b></>}
-                {(() => { const w = v2eng.closed.filter((x: any) => x.pnl > 0).length;
-                  return <> · win rate <b>{Math.round(w / v2eng.closed.length * 100)}%</b>{v2eng.closed_trades > v2eng.closed.length ? ` (last ${v2eng.closed.length})` : ''}</>; })()}
-                {v2eng.open && <> · <span style={{ color: C.muted }}>open position not included</span></>}
-                <div style={{ color: C.faint, marginTop: 3 }}>
-                  wCPR/dCPR = CPR width (research/67): weekly is fixed Mon–Fri; daily re-draws. Blank where the trade
-                  predates the 160-day daily-bar window.
-                </div>
-              </div>
             </details>
           )}
           <div style={{ fontSize: 10.5, color: C.faint, marginTop: 8 }}>
@@ -767,6 +754,17 @@ export default function Straddles() {
                     <td style={{ ...ectd, fontWeight: 700, color: col(t.pnl) }}>{inr(t.pnl)}</td>
                   </tr>))}</tbody>
               </table>
+              <div style={{ fontSize: 11.5, color: C.sec, marginTop: 8, lineHeight: 1.7 }}>
+                <b>Overall (realized):</b>{' '}
+                <b style={{ color: col(v2eng.closed_total_pnl) }}>{inr(v2eng.closed_total_pnl)}</b>
+                {' '}over <b>{v2eng.closed_trades}</b> closed trades
+                {v2eng.closed_trades > 0 && <> · mean/trade <b style={{ color: col(v2eng.closed_total_pnl / v2eng.closed_trades) }}>{inr(Math.round(v2eng.closed_total_pnl / v2eng.closed_trades))}</b></>}
+                {Array.isArray(v2eng.closed) && v2eng.closed.length > 0 && <> · win rate <b>{Math.round(v2eng.closed.filter((x: any) => x.pnl > 0).length / v2eng.closed.length * 100)}%</b>{v2eng.closed_trades > v2eng.closed.length ? ` (last ${v2eng.closed.length})` : ''}</>}
+                {v2eng.open && <> · <span style={{ color: C.muted }}>open position not included</span></>}
+                <div style={{ color: C.faint, marginTop: 3 }}>
+                  wCPR/dCPR = CPR width (research/67): weekly fixed Mon–Fri; daily re-draws. Blank where the trade predates the 160-day daily-bar window.
+                </div>
+              </div>
             </details>
           )}
           <details style={{ marginTop: 10 }}>
