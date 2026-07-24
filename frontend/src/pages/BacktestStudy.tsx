@@ -267,6 +267,16 @@ export default function BacktestStudy() {
         {study.results.charts?.map((c, i) => (
           <StudyFigure key={i} src={c.src} caption={c.caption} />
         ))}
+        {study.results.embeds?.map((e, i) => (
+          <div key={`e${i}`} style={{ margin: '18px 0' }}>
+            <iframe
+              src={e.src}
+              title={e.caption || 'embedded report'}
+              style={{ width: '100%', height: e.height ?? 1200, border: '1px solid rgba(148,163,184,0.18)', borderRadius: 10, background: 'transparent' }}
+            />
+            {e.caption && <div style={{ fontSize: 12, opacity: 0.65, marginTop: 6 }}>{e.caption}</div>}
+          </div>
+        ))}
       </section>
 
       {/* 7. Winners */}

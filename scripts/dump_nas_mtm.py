@@ -96,15 +96,17 @@ def _system_payload(db_path: Path, positions_table: str, orders_table: str) -> d
                         break
                 return tot
 
-            # 2) today's snapshots — recompute day_pnl = realized@ts + stored_unrealized
+            # 2) today's snapshots -- use the day_pnl captured LIVE at each ts
+            # (realized+unrealized as of that snapshot). Recomputing realized
+            # from the current positions table double-counts each leg at its
+            # own exit ts, because the stored unrealized still holds it open
+            # (2026-07-08: produced a spurious -130k spike at the 15:15 EOD).
             points: list[list] = []
             if _table_exists(c, 'nas_mtm_snapshots'):
                 for r in c.execute(
-                    "SELECT ts, unrealized FROM nas_mtm_snapshots "
+                    "SELECT ts, day_pnl FROM nas_mtm_snapshots "
                     "WHERE snap_date=? ORDER BY id", (today,)):
-                    u = float(r['unrealized'] or 0)
-                    dp = realized_at(str(r['ts'])) + u
-                    points.append([r['ts'], round(dp, 2)])
+                    points.append([r['ts'], round(float(r['day_pnl'] or 0), 2)])
 
             # 3) events from orders + closed-leg exit reasons
             events = []

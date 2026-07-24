@@ -87,3 +87,30 @@ keep-top8 book (~1.66).** Ready for G4 (tearsheet/correlation/capacity) → G5 p
 3. **Factsheet validation** of the reconstruction at 3 dates.
 4. **Walk-forward** (the params were chosen in-sample 2014→2026) + a 2019-only stress note.
 5. If G4 holds → **paper-forward soak** on VPS alongside the existing books.
+
+---
+
+## IMMEDIATE-REDEPLOY test (2026-07-08) — REJECTED. The exit-to-cash gap is a DEFENSIVE FEATURE.
+Question (user): the 15-day Donchian per-stock exit is a DAILY check; when a name exits mid-month the freed
+cash sits idle till the next month-end rebalance (does NOT immediately buy the next-best momentum name).
+Tested a `redeploy_on_exit=True` variant (engine `62_mom30_subselect.py` got a backward-compatible flag +
+refill helper; `.bak_redeploy` kept; live `services/momentum_paper.py` UNTOUCHED). Winner config
+rsblend N8 buf22 donch15 gate100. `scripts/62j_redeploy.py`.
+
+| Variant | CAGR | MaxDD | Calmar | Sharpe | donchX | redeploys |
+|---|---|---|---|---|---|---|
+| BASE (cash till month-end) gross | 34.7% | -15.6% | 2.23 | 1.83 | 452 | 0 |
+| BASE net-tax(20%) | 30.2% | -17.6% | 1.71 | 1.61 | 452 | 0 |
+| REDEPLOY-on-exit gross | 30.8% | -37.9% | 0.81 | 1.35 | 1052 | 1051 |
+| REDEPLOY-on-exit net-tax(20%) | **18.6%** | **-46.7%** | **0.40** | 0.88 | 1050 | 1047 |
+
+**Verdict: immediate redeploy is MUCH WORSE.** MaxDD MORE THAN DOUBLES (-15.6→-37.9% gross / -17.6→-46.7%
+net, worse than B&H NIFTYBEES -36%); net-tax CAGR collapses 30.2→18.6%; net-tax Calmar 1.71→0.40. Why:
+(1) The base book's "drift to cash on Donchian exits" is a DYNAMIC de-risk — in a broad selloff many names
+exit → book naturally goes to cash → shallow DD. (2) Immediate redeploy defeats it: on a selloff you exit a
+breaking-down name and instantly buy the next-best momentum name, which is ALSO falling → you stay fully
+invested INTO the crash → DD doubles (2018 +2.9→-19.8%). (3) Churn spiral: donchian exits 452→1052 (2.3×
+turnover) → huge STCG drag. **The exit-to-cash gap is a FEATURE, complementary to the 100-DMA gate.** Keep
+the month-end refill. (Confirms research/62 "gate + Donchian complementary" — both are de-risk mechanisms.)
+
+| 2026-07-08 | Immediate-redeploy test (`62j_redeploy.py`) | REJECTED — DD doubles (-16→-38%), net Calmar 1.71→0.40, churn 2.3×; the exit-to-cash gap is a defensive feature; keep month-end refill |

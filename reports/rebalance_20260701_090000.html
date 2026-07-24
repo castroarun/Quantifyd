@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rebalance Report - Jul 2026 | MQ Agent</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; }
+        .card { border: 1px solid #334155; }
+        .text-muted { color: #94a3b8 !important; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4><i class="bi bi-robot me-2"></i>Rebalance Report - Jul 2026</h4>
+            <small class="text-muted">Generated: 2026-07-01 09:00</small>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card bg-dark text-light border-danger">
+                    <div class="card-body text-center">
+                        <h6 class="text-danger">Exits</h6>
+                        <h3>0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-dark text-light border-success">
+                    <div class="card-body text-center">
+                        <h6 class="text-success">Entries</h6>
+                        <h3>0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5>Exits (ATH Drawdown > 20%)</h5>
+        <table class="table table-dark table-sm">
+            <thead><tr><th>Symbol</th><th>Drawdown</th><th>Reason</th></tr></thead>
+            <tbody><tr><td colspan="3" class="text-muted">No exits</td></tr></tbody>
+        </table>
+
+        <h5>New Entries</h5>
+        <table class="table table-dark table-sm">
+            <thead><tr><th>Symbol</th><th>Sector</th><th>Quality Score</th></tr></thead>
+            <tbody><tr><td colspan="3" class="text-muted">No new entries</td></tr></tbody>
+        </table>
+        
+    </div>
+</body>
+</html>

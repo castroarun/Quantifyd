@@ -83,8 +83,41 @@ def eligible_etf(close, tv, d, score_fn, etf_size):
     return list(sc.index[:etf_size])
 
 
+def _bs_put(S, K, T, sig, r=0.065):
+    """Black-Scholes European put, spot S / strike K in fraction-of-spot units (S≈1)."""
+    import math
+    from statistics import NormalDist
+    if T <= 0 or sig <= 0:
+        return max(0.0, K - S)
+    N = NormalDist().cdf
+    d1 = (math.log(S / K) + (r + 0.5 * sig * sig) * T) / (sig * math.sqrt(T))
+    d2 = d1 - sig * math.sqrt(T)
+    return K * math.exp(-r * T) * N(-d2) - S * N(-d1)
+
+
+def _spread_val(S, w, T, sig):
+    """Bear put spread value (frac of spot): long ATM put (K=1), short OTM put (K=1−w)."""
+    return _bs_put(S, 1.0, T, sig) - _bs_put(S, 1.0 - w, T, sig)
+
+
+def _breadth(close, tv, asof):
+    """Fraction of the top-200 universe trading above its own 100-day SMA (market breadth)."""
+    uni = rs2.pit_universe(tv, close, asof, "nifty200")
+    h = close.loc[:asof]
+    ab = tot = 0
+    for s in uni:
+        cs = h[s].dropna()
+        if len(cs) >= 100:
+            tot += 1
+            if cs.iloc[-1] > cs.tail(100).mean():
+                ab += 1
+    return ab / tot if tot else 1.0
+
+
 def run(close, tv, score_fn="mom30", N=10, buffer=22, gate=None, donchian=None,
-        etf_size=30, stcg=0.0, rt=RT, exclude=None):
+        etf_size=30, stcg=0.0, rt=RT, exclude=None, weekly_reentry=False,
+        gate_mode="cash", breadth_thresh=0.30, gate_confirm=1, gate_margin=0.0,
+        hedge_width=0.10, hedge_ratio=1.0, gate_roff=None, redeploy_on_exit=False):
     """Daily-marked backtest. held[sym] = [value, cost_basis, buydate, peak].
     `exclude` = set of symbols the book may never hold (super-winner guard)."""
     exclude = exclude or set()
@@ -95,9 +128,21 @@ def run(close, tv, score_fn="mom30", N=10, buffer=22, gate=None, donchian=None,
         [iso.year.values, iso.week.values]).last().values)
     cash, held = 1.0, {}
     derisked = False
+    gate_acted = False        # one gate action per risk-off episode (reshuffle/breadth modes)
+    roff_streak = 0           # consecutive weekly risk-off bars (for exit confirmation)
+    nbx = close[BENCH].ffill()                          # NIFTY proxy = underlying for the hedge
+    vixx = close["INDIAVIX"].ffill() if "INDIAVIX" in close.columns else None
+    hon = False; hS0 = None; hexp = None; hdeb = 0.0; hnot = 0.0; hreal = 0.0  # bear-put-spread state
+
+    def vix_at(d):
+        if vixx is not None:
+            v = vixx.loc[:d].dropna()
+            if len(v):
+                return float(v.iloc[-1]) / 100.0
+        return 0.15                                     # fallback IV before 2015
     nav, prev = [], None
     st = dict(tax=0.0, cost=0.0, fills=0, donchian_exits=0, gate_derisk=0,
-              turn_sum=0.0, contrib={})
+              turn_sum=0.0, contrib={}, gate_dates=[], fill_dates=[])
     # vectorized trailing Donchian low (prior N bars, excludes today via shift)
     roll_low = (close.rolling(donchian, min_periods=donchian).min().shift(1)
                 if donchian else None)
@@ -141,7 +186,7 @@ def run(close, tv, score_fn="mom30", N=10, buffer=22, gate=None, donchian=None,
         held = nh
         c = tot * rt * turn * 2
         cash = tot - w * len(target) - c
-        st['cost'] += c; st['fills'] += 1; st['turn_sum'] += turn
+        st['cost'] += c; st['fills'] += 1; st['turn_sum'] += turn; st['fill_dates'].append(d)
         derisked = False
 
     for d in idx:
@@ -159,28 +204,83 @@ def run(close, tv, score_fn="mom30", N=10, buffer=22, gate=None, donchian=None,
             cash *= DAY_CASH
         h = close.loc[:d]
 
+        exited_today = False
         if donchian and held:                          # per-stock Donchian exit
             lows = roll_low.loc[d]
             for s in list(held):
                 p1 = px.get(s, np.nan); low_n = lows.get(s, np.nan)
                 if pd.notna(p1) and pd.notna(low_n) and p1 < low_n:
                     t = realize(held[s], d); cash += held.pop(s)[0] - t
-                    st['donchian_exits'] += 1
+                    st['donchian_exits'] += 1; exited_today = True
+        if redeploy_on_exit and exited_today and not derisked and len(held) < N:
+            etf2 = eligible_etf(close, tv, d, score_fn, etf_size)
+            if etf2:
+                if exclude: etf2 = [s for s in etf2 if s not in exclude]
+                w = (E() + cash) / N
+                for s in etf2:
+                    if len(held) >= N or cash < w * 0.5: break
+                    if s in held: continue
+                    p = px.get(s, np.nan)
+                    if pd.isna(p): continue
+                    buy = min(w, cash); c = buy * rt
+                    held[s] = [buy - c, buy - c, d, p]; cash -= buy
+                    st['cost'] += c; st['redeploys'] = st.get('redeploys', 0) + 1
 
-        if gate and d in wk_last:                       # weekly macro gate (control)
+        if gate and d in wk_last:                       # weekly macro gate
             b = h[BENCH].dropna()
-            roff = len(b) >= gate and b.iloc[-1] < b.tail(gate).mean()
-            if roff and held:
-                for s in list(held):
-                    t = realize(held[s], d); cash += held.pop(s)[0] - t
-                derisked = True; st['gate_derisk'] += 1
-            elif not roff:
-                derisked = False
+            if gate_roff is not None:
+                roff = bool(gate_roff.get(d, False))
+            else:
+                roff = len(b) >= gate and b.iloc[-1] < b.tail(gate).mean() * (1 - gate_margin)
+            roff_streak = roff_streak + 1 if roff else 0
+            confirmed = roff_streak >= gate_confirm     # exit only after N consecutive risk-off wks
+            if roff and confirmed:
+                if gate_mode == "cash":                 # (validated winner) liquidate all → cash
+                    if held:
+                        for s in list(held):
+                            t = realize(held[s], d); cash += held.pop(s)[0] - t
+                        derisked = True; st['gate_derisk'] += 1; st['gate_dates'].append(d)
+                elif gate_mode == "hedge":              # KEEP stocks, overlay a NIFTY bear put spread
+                    if not hon:
+                        hon = True; hS0 = float(nbx.loc[d]); hexp = d + pd.Timedelta(days=30)
+                        hdeb = _spread_val(1.0, hedge_width, 30 / 365, vix_at(d))
+                        hnot = E() + cash + hreal        # hedge notional = current NAV
+                        st['gate_derisk'] += 1; st['gate_dates'].append(d)
+                elif not gate_acted:                    # one action per risk-off episode
+                    if gate_mode == "reshuffle":        # rotate to current top-8, stay invested
+                        do_fill(d, px)
+                    else:                               # breadth: cash only if broadly weak
+                        if _breadth(close, tv, d) < breadth_thresh:
+                            for s in list(held):
+                                t = realize(held[s], d); cash += held.pop(s)[0] - t
+                            derisked = True
+                        else:
+                            do_fill(d, px)
+                    st['gate_derisk'] += 1; st['gate_dates'].append(d); gate_acted = True
+            else:
+                derisked = False; gate_acted = False
+                if hon:                                  # risk-on → close hedge, bank P&L to cash
+                    S = float(nbx.loc[d]) / hS0; Trem = max(0.0, (hexp - d).days) / 365
+                    hreal += (_spread_val(S, hedge_width, Trem, vix_at(d)) - hdeb) * hedge_ratio * hnot
+                    cash += hreal; hreal = 0.0; hon = False
+                if weekly_reentry and not held:         # optional fast re-entry (tested: hurts)
+                    do_fill(d, px)
 
         if d in me and not (gate and derisked):         # monthly rebalance
             do_fill(d, px)
 
-        nav.append((d, E() + cash))
+        hval = 0.0                                       # daily hedge mark + monthly roll
+        if hon:
+            if d >= hexp:                                # roll: settle intrinsic, reopen 30d spread
+                sig = vix_at(d)
+                hreal += (_spread_val(float(nbx.loc[d]) / hS0, hedge_width, 0.0, sig) - hdeb) \
+                    * hedge_ratio * hnot
+                hS0 = float(nbx.loc[d]); hexp = d + pd.Timedelta(days=30)
+                hdeb = _spread_val(1.0, hedge_width, 30 / 365, sig); hnot = E() + cash + hreal
+            S = float(nbx.loc[d]) / hS0; Trem = max(0.0, (hexp - d).days) / 365
+            hval = hreal + (_spread_val(S, hedge_width, Trem, vix_at(d)) - hdeb) * hedge_ratio * hnot
+
+        nav.append((d, E() + cash + hval))
         prev = d
 
     return _stats(nav, st)

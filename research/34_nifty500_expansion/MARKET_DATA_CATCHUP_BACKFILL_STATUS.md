@@ -2,14 +2,18 @@
 
 **State:** DONE_WITH_ERRORS
 **Timeframe:** 5minute
-**Range:** 2000-01-01 → 2026-05-01
-**Progress:** 0/1 (0.0%)  ·  failed: 1
+**Range:** 2000-01-01 → 2026-07-16
+**Progress:** 377/382 (98.7%)  ·  failed: 5
 **Current symbol:** 
-**Last update:** 2026-05-07T11:24:02 IST
+**Last update:** 2026-07-16T22:38:35 IST
 
 ## Recent errors (last 10)
 
-- HAL: [data_manager] download_data(1 syms, 5minute) is restricted to the VPS (94.136.185.54). Run this on VPS via paramiko/ssh, or set ALLOW_LOCAL_DATA_WRITE=1 to override (emergency dev only). See CLAUDE.md → 'VPS IS THE CANONICAL HOST FOR EVERYTHING'.
+- BANKNIFTY: Instrument token not found for BANKNIFTY
+- GSPL: No data fetched for GSPL
+- INDIAVIX: Instrument token not found for INDIAVIX
+- NIFTY50: Instrument token not found for NIFTY50
+- SENSEX: Instrument token not found for SENSEX
 
 ## Resume
 

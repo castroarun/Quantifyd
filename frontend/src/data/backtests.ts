@@ -107,6 +107,9 @@ export interface BacktestStudy {
      *  build). Each is rendered as a responsive full-width image with a
      *  muted caption beneath, in order. */
     charts?: { src: string; caption: string }[];
+    /** Optional embedded interactive HTML reports (self-contained, served under /app/),
+     *  rendered as full-width iframes. */
+    embeds?: { src: string; height?: number; caption?: string }[];
   };
 
   // ---- Section 6: Winners ----
@@ -3365,6 +3368,358 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\81_swing_edge_discovery\\engine\\ (loader, costs, backtester, metrics + tests)',
       'research\\81_swing_edge_discovery\\experiments\\ (A1..A8, B1..B3, C1-C2, D1-D2, E1, F1-F2, G3-G6, H1)',
       'research\\81_swing_edge_discovery\\results\\RESULTS.md',
+    ],
+  },
+  {
+    slug: 'nifty250-momentum-video-research75',
+    title: 'Nifty-250 Momentum Top-15 — Faithful Replication of the "Only Momentum Strategy" Video',
+    verdict:
+      'Faithful survivorship-free replication of the Quantinuous "Only Momentum Strategy You Need for Nifty 250 Stocks" video (top-15 by 12-month momentum, per-stock 50>100>200 EMA filter, Nifty-100EMA cash gate, monthly). The video’s claimed 27% CAGR REPLICATES and is beaten — 31.8% net / 29.1% post-tax, 292×, 2006–2026 — but its claimed −23% MaxDD does NOT hold: the honest daily-marked drawdown is −31.6% (our 20-year window includes 2008). The NIFTYBEES-100EMA cash gate is the ENTIRE risk story (removing it → −51% DD) and is IRREPLACEABLE — no per-stock quality / ATH-proximity / MA-exit combination substitutes for it (best gate-less DD −46%). The per-stock EMA-stack filter is inert-to-harmful. Best RISK-ADJUSTED knob = midcap + 6-month relative strength (Calmar 1.26, −29% DD); highest raw CAGR = mid+small combo (43.5% net, but −42% DD). Same family as Aurum’s midcap_smoothest — corroborates the live design, does not add new alpha. STRATEGY-family candidate (already harvested).',
+    status: 'COMPLETE',
+    date: '2026-07-21',
+    cardBlurb:
+      'Replicated a popular YouTube momentum system on our own survivorship-free NSE data, 2006–2026, net of 0.3% cost, daily-marked. The 27% CAGR claim replicates (31.8% net, 292×); the −23% drawdown claim does not (−31.6%). Attribution: the index cash-gate is the whole risk story and cannot be replaced by per-stock rules; midcap + 6-month RS is the best knob.',
+    cardStats: [
+      { label: 'CAGR (net)', value: '31.8%' },
+      { label: 'MaxDD (daily)', value: '−31.6%' },
+      { label: 'Total return', value: '292×' },
+    ],
+    system: {
+      intro: 'Long-only concentrated momentum with a market-regime cash gate — the video’s rules, exactly:',
+      rows: [
+        { k: 'Universe', v: 'Nifty LargeMidcap 250 — survivorship-free PIT proxy = top-250 NSE names by trailing-6-month median traded value, rebuilt monthly (ETFs/index excluded).' },
+        { k: 'Selection', v: 'Rank the universe by momentum, hold the TOP 15 equal-weight, 100% invested when risk-on.' },
+        { k: 'Momentum', v: 'Faithful default = plain 12-month price return (also tested 12−1, and 6m/12m relative strength — conclusion unchanged).' },
+        { k: 'Per-stock trend filter', v: 'Eligible only if EMA50 > EMA100 > EMA200 on the stock’s own close (causal).' },
+        { k: 'Market regime gate', v: 'If NIFTYBEES close ≤ its own EMA100 → liquidate to cash; NIFTYBEES = full-history Nifty-50 proxy (raw NIFTY50 daily only starts 2023).' },
+        { k: 'Rotation', v: 'Monthly; daily-marked NAV for honest drawdown. Idle cash earns 6.5% p.a. (sensitivity: 4% → −1pp CAGR, 0% → −2.6pp).' },
+        { k: 'Costs / tax', v: '0.3% round-trip on turnover; post-tax = 20% STCG on lots < 365 days (shown separately).' },
+        { k: 'Window', v: '2006–2026 (~20.5y, incl. the 2008 crash — the real test of the −23% DD claim).' },
+      ],
+    },
+    conditions: {
+      intro: 'Backtest window, benchmark, host.',
+      rows: [
+        { k: 'Period', v: 'Jan 2006 – Jul 2026 (~20.5 years).' },
+        { k: 'Benchmark', v: 'NIFTY-50 (NIFTYBEES), same window, excluded from the investable universe.' },
+        { k: 'Host', v: 'VPS market_data.db snapshot 2026-07-08; reproducible from committed scripts.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Universe × momentum-angle — net CAGR / MaxDD / Calmar (2006–2026)',
+        columns: ['Universe · momentum', 'Net CAGR', 'MaxDD', 'Calmar'],
+        rows: [
+          ['midcap · 6m RS (rs126)', '37.2%', '−29.6%', '1.26'],
+          ['midcap · 120d RS', '36.3%', '−29.2%', '1.25'],
+          ['midcap · 6m+12m blend', '38.8%', '−32.8%', '1.18'],
+          ['large-mid 250 · blend', '36.2%', '−32.8%', '1.11'],
+          ['large-mid 250 · 12m (faithful, no stack)', '34.7%', '−32.2%', '1.08'],
+          ['mid+small combo · 12m', '43.5%', '−42.2%', '1.03'],
+          ['smallcap · 12m', '33.2%', '−46.2%', '0.72'],
+        ],
+        highlightRows: [0, 1],
+        heatmap: true,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'CAGR (net)', value: '31.8%', tone: 'pos' },
+        { label: 'CAGR (post-tax 20%)', value: '29.1%', tone: 'pos' },
+        { label: 'NIFTYBEES CAGR', value: '11.6%' },
+        { label: 'Excess / yr', value: '+20.2%', tone: 'pos' },
+        { label: 'Sharpe', value: '1.14', tone: 'pos' },
+        { label: 'Max Drawdown', value: '−31.6%', tone: 'neg', hint: 'vs NIFTYBEES −59.7%; video claimed −23%' },
+        { label: 'Calmar', value: '1.01', tone: 'pos' },
+        { label: 'Yrs beating index', value: '71%' },
+      ],
+      tables: [
+        {
+          title: 'Faithful base vs benchmark',
+          columns: ['Metric', 'Nifty-250 Momentum', 'NIFTYBEES'],
+          rows: [
+            ['CAGR', '31.8%', '11.6%'],
+            ['Total return', '291.6x', '9.5x'],
+            ['Sharpe', '1.14', '0.34'],
+            ['Max Drawdown', '−31.6%', '−59.7%'],
+            ['Calmar', '1.01', '0.19'],
+          ],
+          highlightRows: [0, 1, 3],
+        },
+        {
+          title: 'Rule attribution — the gate is the whole risk story; the EMA-stack is inert',
+          columns: ['Configuration', 'Net CAGR', 'MaxDD', 'Calmar'],
+          rows: [
+            ['Faithful base (gate ON, EMA-stack ON)', '31.8%', '−31.6%', '1.01'],
+            ['No EMA-stack (gate ON)', '34.7%', '−32.2%', '1.08'],
+            ['No index gate (stack ON)', '~20%', '−51.3%', '0.38'],
+            ['Pure momentum (no gate, no stack)', '~21%', '−51.4%', '0.40'],
+          ],
+          highlightRows: [0],
+        },
+        {
+          title: 'Can per-stock controls REPLACE the gate? (midcap RS120) — No.',
+          columns: ['Risk control (no gate)', 'Net CAGR', 'MaxDD', 'Calmar'],
+          rows: [
+            ['Gate ON (baseline)', '36.2%', '−29.2%', '1.24'],
+            ['No gate, nothing', '32.9%', '−65.2%', '0.50'],
+            ['+ quality filter', '36.3%', '−64.6%', '0.56'],
+            ['+ ATH-proximity', '23.1%', '−58.4%', '0.39'],
+            ['+ SMA100 exit', '32.7%', '−53.9%', '0.61'],
+            ['+ Donchian-15 exit (best gate-less)', '31.0%', '−46.2%', '0.67'],
+          ],
+          highlightRows: [0],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/nifty250-momentum-research75-factsheet.png',
+          caption:
+            'CLIENT FACTSHEET — Nifty-250 Momentum Top-15 (faithful video replication) vs NIFTY 50, 2006–2026, survivorship-free, net of 0.3% cost, daily-marked. 31.8% CAGR (29.1% post-tax), 291.6× vs 9.5×, Sharpe 1.14, MaxDD −31.6% vs −59.7%, 71% of years beating the index. Note the drawdown panel: the gate held the strategy to −31.6% while NIFTY fell −59.7% in 2008. Generated by research/_utilities/tearsheet.py.',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'Faithful video base · large-mid 250 · 12m momentum · EMA-stack · 100EMA gate · monthly',
+        summary: 'The video’s CAGR claim replicates and is beaten (31.8% net / 292×); its −23% drawdown claim does not (−31.6%, because our honest window includes 2008). Best risk-adjusted variant = midcap + 6-month RS (Calmar 1.26).',
+        metrics: [
+          { k: 'CAGR', v: '31.8% net / 29.1% post-tax' },
+          { k: 'Excess', v: '+20.2%/yr vs NIFTYBEES' },
+          { k: 'Sharpe', v: '1.14' },
+          { k: 'MaxDD', v: '−31.6%' },
+          { k: 'Calmar', v: '1.01' },
+        ],
+        rejected: [
+          'Dropping the 100EMA gate: drawdown blows out to −51% — the gate is the entire risk story and IRREPLACEABLE.',
+          'Per-stock quality / ATH-proximity / MA-exit as a gate substitute: best gate-less DD is still −46% (Donchian), Calmar ≤ 0.67 vs the gated 1.24. Stocks break one at a time — a per-stock rule cannot be a market circuit-breaker.',
+          'The per-stock 50>100>200 EMA filter: inert-to-harmful (removing it RAISES CAGR 31.8% → 34.7% at the same drawdown).',
+          'mid+small combo (highest CAGR 43.5%, survives cost-stress to 0.7%) — rejected on drawdown: −42% is uninvestable.',
+        ],
+      },
+    ],
+    caveats: [
+      'The video’s −23% MaxDD is not reproducible on an honest 20-year, daily-marked, survivorship-free basis — we get −31.6%. The likely reasons the video looks shallower: a shorter/post-2008 window, monthly (not daily) marking, and/or index-provided constituent data. Its 27% CAGR, by contrast, is conservative — we beat it (31.8%).',
+      'A data-integrity bug was caught and fixed mid-study: the first run reused a helper that hard-coded a 2014 rebalance start, parking the book in cash for 2006–2013 and never testing 2008 (it reported a spurious 21.5% with a +111% 2014 jump). Fixed to trade the full 2006–2026 calendar; all headline numbers are post-fix.',
+      'Cash-yield assumption: idle cash earns a modeled 6.5% p.a. (liquid fund). At a realistic 4% the CAGR is ~1pp lower; at 0% it is ~2.6pp lower. A modest but real tailwind.',
+      'Momentum definition was the one thing the video left unspecified; the plain-12m default and two alternatives (12−1, risk-adjusted 6m/12m) all give the same conclusion, so the result does not hinge on it.',
+      'Cost realism: 0.3% round-trip is defensible for large-mid and midcap; smallcap/combo cells are optimistic (real 0.5–0.7%+) — cost-stressed, they survive on CAGR (combo 43%→39%) but are killed by drawdown, not fees.',
+      'Redundancy: this is the same family as the live momentum-paper book and Aurum’s midcap_smoothest (research/41/62). The study CORROBORATES those; it is not new alpha.',
+      'Backtest, net of modelled costs (post-tax where stated). Nothing wired live. Past performance is not indicative of future results.',
+    ],
+    githubLinks: [
+      {
+        label: 'RESULTS (phase 2 verdict + tables)',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/75_nifty250_momentum_top15/results/RESULTS_P2.md',
+      },
+      {
+        label: 'run_nifty250_momentum.py (faithful engine)',
+        href: 'https://github.com/castroarun/Quantifyd/tree/main/research/75_nifty250_momentum_top15/scripts/run_nifty250_momentum.py',
+      },
+    ],
+    projectPaths: [
+      'research\\75_nifty250_momentum_top15\\NIFTY250_MOMENTUM_TOP15_DAILY_SWEEP_STATUS.md',
+      'research\\75_nifty250_momentum_top15\\scripts\\ (run_nifty250_momentum.py, run_variants_phase2.py, run_phase3_combos.py)',
+      'research\\75_nifty250_momentum_top15\\results\\ (ranking*.csv, RESULTS_P2.md, tearsheet.png)',
+    ],
+  },
+  {
+    slug: 'nifty-strangle-rules-research90',
+    title: 'NSR-W v1.1 — Rules-Based NIFTY Weekly Strangle (automating the manual book)',
+    verdict:
+      'STRATEGY-CANDIDATE. Born from the W30 mentor review: the untouched Monday strangle beat the 22-leg manual ' +
+      'management by ~Rs6k and the root habit was calm-day credit-chasing rolls toward spot. Four studies in one day on ' +
+      'REAL data (nse_options_bhav 2019-2026 + 1-min recorded chain Apr-Jul 2026): (G1) monthly strangle + per-leg ' +
+      'premium stop cuts the tail 6x and DOUBLES the t-stat; (G2, pessimistic gap-aware fills) stop 2.0-2.5x survives, ' +
+      '1.5x monthly dies, giveback rule harmful, post-stop answer = flat-both on monthly but ROLL-AWAY-once on weekly ' +
+      '(best family: t 4.73); indicator exits (ATR/ADX/VIX-jump) all lose to the premium stop - the premium IS the ' +
+      'composite sensor; (G3) Arun’s own spec - Monday entry, NEXT-week expiry, strikes by Rs-premium target - BEATS ' +
+      'day-after-expiry entries: Rs30 target + PT50 + stop 2.0x + roll = 11.06 pts/wk, t 5.47, positive ALL 8 years. ' +
+      '(Replay) 13 live-recorded weeks at quote-level execution: 11W/2L, +Rs1.41L at 10 lots, robot profit-took Arun’s ' +
+      'exact W30 strikes on TUESDAY and skipped the drift he spent the week fighting. Entry-time sweep: LATE Monday ' +
+      '(~15:00-15:15) beats morning entries and matches the EOD assumption; PT sweep on 378 weeks: 40-60% is the ' +
+      'plateau, deeper PTs lose consistency. Daily-0916 variant tested and shelved: Wed-Fri intraday premium selling ' +
+      'nets ~zero; the edge is Mon/Tue only (independently reproduces research/51’s 0/1-DTE finding). Residual risk: ' +
+      'gap-and-grind weeks (worst EOD week -445 pts = -Rs2.9L at 10 lots) survive every stop rule; event-skip rule ' +
+      'proposed, untested. Next: G5 paper book beside the straddle V1/V2 books; weekly human-vs-robot mentor review.',
+    status: 'COMPLETE',
+    date: '2026-07-24',
+    cardBlurb:
+      'Can mechanical rules replace the manual strangle book? Monday ~15:00, next-week expiry, sell CE+PE nearest ' +
+      'Rs20-30 premium, GTT stop 2x/leg, profit-take 50%, one roll-away, exit DTE<=1. Validated three ways: 378 weekly ' +
+      'cycles EOD 2019-2026 (t 4.8-5.5, positive 7-8/8 years), pessimistic gap-aware fills, and a 13-week quote-level ' +
+      'replay on our own recorded chain (11W/2L, +Rs1.41L at 10 lots) that re-traded the user’s exact W30 strikes and won.',
+    cardStats: [
+      { label: 'EOD t-stat (378 wks)', value: '5.47' },
+      { label: 'Replay 13 wks @10 lots', value: '+Rs1.41L' },
+      { label: 'Win/loss (replay)', value: '11 / 2' },
+    ],
+    systemRules: {
+      intro: 'NSR-W v1.1 - the locked rule set. Every exit is pre-committed at entry; there is no discretionary decision after the sell.',
+      sharedCoreTitle: 'Shared core (both premium targets)',
+      sharedCore: [
+        { k: 'Entry', v: 'Monday afternoon ~15:00-15:15 (entry-time sweep: late Monday beats 09:16/09:30 - strikes are set AFTER the day’s move is known; matches the EOD backtest’s close-entry assumption).' },
+        { k: 'Expiry', v: 'NEXT week’s expiry (cal DTE 6-12, ~9.6 avg). Premium-targeting at this DTE lands ~2.7-3.2% OTM - further than the same rupees on shorter DTE.' },
+        { k: 'Strikes', v: 'Sell CE + PE nearest the Rs-premium target (liquid strikes only, volume/OI > 0). Premium targeting auto-adapts to vol: high IV pushes strikes further OTM.' },
+        { k: 'Stop', v: 'GTT at 2.0x each leg’s own credit, placed AT entry. (2.0x, not 1.5x - at ~9 DTE the tighter stop whipsaws; 1.5x is right only for ~5-DTE entries.)' },
+        { k: 'Profit-take', v: '50% of total credit (378-week sweep: 40-60% is the optimal plateau; 70/80/none lose consistency).' },
+        { k: 'EOD recenter (v1.2)', v: 'At 15:15 daily: if any leg >= 1.5x its credit, close the WHOLE book at the close and re-sell a fresh equidistant-by-premium strangle (once per week). 378-wk test: lifts t 5.47 -> 5.84 at unchanged tail; beat the exit-heavy-leg alternative (t 5.63). Distinct from manual rolling: fires once, at the close, on a defined trigger, restarting a symmetric book - not defending a broken one.' },
+        { k: 'Roll', v: 'ONE roll-away allowed: re-sell the stopped side at the same Rs-target from current spot. A post-roll stop closes THAT leg only; the surviving leg rides with its own stop (this recovered ~27 pts in the worst replay week).' },
+        { k: 'Time exit', v: 'Close everything at DTE <= 1, 15:15. No expiry-day holds.' },
+        { k: 'Sizing', v: 'FIXED lots (baseline 10 lots = 650 qty; 1 pt = Rs650). Never add while red. Margin utilization <= 70%.' },
+        { k: 'Never', v: 'Roll toward spot. Add size mid-drawdown. Hold into DTE 0. Trade stock options into results.' },
+      ],
+      riskLayer: {
+        title: 'Premium-target variants (EOD 2019-2026, Monday arm, stop 2.0x + PT50 + roll)',
+        columns: ['Target', 'Net pts/wk', 't-stat', 'Win %', 'p5 / worst (pts)', 'Avg OTM', 'Years positive'],
+        rows: [
+          ['Rs30/leg', '11.06', '5.47', '71%', '-40 / -422', '2.7%', '8 of 8 (incl 2026)'],
+          ['Rs20/leg', '7.86', '4.79', '73%', '-29 / -445', '3.2%', '7 of 8 (2026 flat)'],
+        ],
+        highlightRows: [0],
+      },
+    },
+    system: {
+      intro: 'Short volatility, harvested with strict mechanical loss control. Objective is risk-shape, not alpha: match the manual book’s results with bounded losses and zero interventions.',
+      rows: [
+        { k: 'Origin', v: 'W30 mentor review (mentor/reviews/2026-W30.md): manual 22-leg management turned a +Rs12.7k untouched week into +Rs6.8k with a worse book; margin measured 97% utilized. The user’s Monday entry was already this system - the management was the leak.' },
+        { k: 'Honest prior', v: 'research/89: index short-vol EV decayed to ~0 post-2022. The surviving premium sits in the OTM wings (strangle), not ATM vol (straddle) - harvestable only with strict stops. Expect modest EV; the win is consistency.' },
+        { k: 'Rejected by data', v: 'Giveback stop (halves monthly means). Indicator exits - ATR pctile, ADX, VIX-jump all act one day late (t 1.1-1.6 vs 2.0-2.6). VIX>=1.25x-entry exit: higher mean, 2.7x fatter tail. Rolling toward spot: the documented manual leak. Daily 09:16 entries Wed-Fri: ~zero after costs.' },
+      ],
+    },
+    conditions: {
+      rows: [
+        { k: 'EOD sweep', v: 'nse_options_bhav (real NSE bhav), NIFTY 2019-2026, 379 weekly cycles, liquidity filter contracts>=50, net of 0.5% premium + 0.15 pt; pessimistic gap-aware stop fills (gap-open -> fill at open).' },
+        { k: 'Intraday replay', v: 'options_data.db 1-min full-chain snapshots, 2026-04-20 -> 07-24 (66 days, 14 Mondays). Entries at BID, exits/stops at ASK - real spreads and GTT slippage (13.7 pts observed in the Jul-8 crash minute).' },
+        { k: 'Host', v: 'VPS (canonical). Scripts: research/90_nifty_strangle_rules/scripts/.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'What the premium stop buys (G2, monthly arm p2.5%, pessimistic fills)',
+        columns: ['Exit rule', 'Net/cycle', 't', 'Worst cycle', 'Post-22 mean'],
+        rows: [
+          ['No stop (hold)', '51.3', '1.38', '-1,878 pts (-Rs12.2L)', '+82.9'],
+          ['Stop 2.5x', '47.8 (PT50)', '2.61', '-301 pts (-Rs2.0L)', '+33.8'],
+          ['Stop 2.0x', '33.2 (PT50)', '2.17', '-161 pts (-Rs1.0L)', '+15.9'],
+          ['Stop 1.5x', '17-19', '1.4', '-184 pts', 'NEGATIVE'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'Entry-time sweep (13-week replay, PT50 stop2.0; net pts/week)',
+        caption: 'Late Monday wins - and the 378-week EOD study effectively assumed close entry, so the big-sample result already belongs to the late entry.',
+        columns: ['Entry', 'Rs20 mean (t)', 'Rs30 mean (t)'],
+        rows: [
+          ['09:16', '12.3 (1.9)', '17.0 (2.4)'],
+          ['09:30', '10.4 (1.5)', '16.7 (2.2)'],
+          ['09:45', '15.5 (3.1)', '21.1 (3.9)'],
+          ['11:00', '15.0 (3.6)', '21.9 (4.3)'],
+          ['15:14', '17.2 (4.2)', '24.2 (4.5)'],
+        ],
+        highlightRows: [4],
+      },
+      {
+        title: 'Profit-take level (EOD 378 weeks, Monday arm, Rs30, stop 2.0x)',
+        columns: ['PT', 'Net pts/wk', 't-stat'],
+        rows: [
+          ['40%', '10.36', '5.48'],
+          ['50%', '11.06', '5.47'],
+          ['60%', '9.63', '3.80'],
+          ['70%', '10.50', '4.06'],
+          ['80%', '10.58', '4.00'],
+          ['None (time exit)', '11.47', '4.25'],
+        ],
+        highlightRows: [0, 1],
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'EOD net/wk (Rs30)', value: '11.06 pts', hint: 'Rs7.2k at 10 lots', tone: 'pos' },
+        { label: 'EOD t-stat', value: '5.47', tone: 'pos' },
+        { label: 'Years positive', value: '8 / 8', hint: 'incl. 2026', tone: 'pos' },
+        { label: 'Replay 13 wks', value: '+Rs1.41L', hint: '11W / 2L at 10 lots', tone: 'pos' },
+        { label: 'Median hold', value: '2 days', hint: 'winners banked Tue-Wed; margin free rest of week' },
+        { label: 'Worst replay week', value: '-Rs34.5k', tone: 'neg', hint: 'Jul-06: two stops + survivor ride' },
+        { label: 'Worst EOD week', value: '-445 pts', tone: 'neg', hint: 'Feb-2026 grind = -Rs2.9L at 10 lots; the sizing number' },
+      ],
+      tables: [
+        {
+          title: 'Per-year net pts/week (EOD, Monday arm, stop 2.0x + PT50 + roll)',
+          columns: ['Year', 'Rs20', 'Rs30'],
+          rows: [
+            ['2019', '13.0', '16.7'], ['2020', '2.3', '6.0'], ['2021', '6.3', '2.7'],
+            ['2022', '10.4', '17.4'], ['2023', '6.5', '7.6'], ['2024', '6.7', '9.6'],
+            ['2025', '14.6', '18.8'], ['2026 (29w)', '-0.3', '9.7'],
+          ],
+          heatmap: true,
+        },
+        {
+          title: '13-week quote-level replay (net Rs at 10 lots)',
+          caption: 'Full minute-level P&L travel with every stop/roll/PT marked: interactive report linked below.',
+          columns: ['Week (Mon)', 'Rs20', 'Rs30', 'How it ended'],
+          rows: [
+            ['Apr 27', '+19,100', '+20,500', 'PT Tue/Wed'],
+            ['May 04', '+19,000', '+20,500', 'PT'],
+            ['May 11', '-30,500', '-21,800', '2 stops -> survivor ride -> TIME'],
+            ['May 18', '+10,200', '+9,900', 'TIME'],
+            ['May 25', '+15,100', '+21,700', 'PT'],
+            ['Jun 01', '+12,500', '+18,500', 'PT'],
+            ['Jun 08', '+13,300', '+19,600', 'PT'],
+            ['Jun 15', '+12,500', '+19,200', 'PT'],
+            ['Jun 22', '+13,100', '+19,200', 'PT'],
+            ['Jun 29', '+13,100', '+19,200', 'PT'],
+            ['Jul 06', '-27,000', '-34,500', '2 stops -> survivor ride -> TIME'],
+            ['Jul 13', '+5,500', '+10,700', 'stop+roll -> TIME (the drift week, survived)'],
+            ['Jul 20', '+11,900', '+18,700', 'PT Tue 14:20 - the user’s own W30 strikes'],
+          ],
+        },
+      ],
+      embeds: [
+        {
+          src: '/app/nsrw-travel-research90.html',
+          height: 2800,
+          caption: 'Embedded live report: KPIs, weekly net bars, minute-level P&L travel of every week (stops/rolls/PT marked), full trade table, and the spec-evolution reasoning.',
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'NSR-W v1.2 - Rs30 target, Monday ~15:00, stop 2.0x, PT 50%, one roll-away',
+        summary: 'Best cell of the whole program and a monotonic family, not a lucky point: t 5.47 over 378 weeks, positive all 8 years including 2026, and 11W/2L on quote-level replay.',
+        metrics: [
+          { k: 'Net/week', v: '11.06 pts (Rs7.2k @ 10 lots)' },
+          { k: 't-stat', v: '5.47 (n=379)' },
+          { k: 'Typical bad week (p5)', v: '-40 pts (-Rs26k)' },
+          { k: 'Replay', v: '+Rs1.41L / 13 wks, median hold 2 days' },
+        ],
+        rejected: [
+          'Giveback stop - halves monthly means everywhere',
+          'Indicator exits (ATR/ADX/VIX-jump) - one day late by construction',
+          'Daily 09:16 entries on Wed-Fri - ~zero after costs (edge is Mon/Tue only, confirms research/51)',
+          'Monthly iron condor - untestable at EOD (stale wing marks); retest intraday',
+        ],
+      },
+    ],
+    caveats: [
+      'research/89 prior stands: index short-vol EV mostly decayed post-2022. This system’s post-22 means are modest (+8-13 pts/wk); the product is CONSISTENCY and bounded loss, not alpha.',
+      'The tail is not zero: gap-and-grind weeks (worst EOD -445 pts = -Rs2.9L at 10 lots, Feb-2026) survive every stop rule. Event-skip rule (elections/budget/Fed) proposed, NOT yet tested. Size so one such week is survivable.',
+      'The 13-week replay window was a friendly regime (VIX 12-15) - its Rs/week runs above the long-run expectation; anchor on the EOD numbers.',
+      'Multiple-testing: 96-cell replay grids on 13 weeks cannot rank PT levels or fine entry times alone - every replay hint was re-tested on the 378-week EOD sample before entering the spec (PT80 hint died there).',
+      'GTT slippage is real: stops filled up to 13.7 pts past trigger in a crash minute. Modeled at quote level in the replay; EOD model uses gap-aware pessimistic fills.',
+      'Not yet run as a live paper book - G5 build pending. Weekly human-vs-robot comparison will be the ongoing validation.',
+    ],
+    githubLinks: [
+      { label: 'Interactive weekly P&L travel report (13-week replay)', href: '/app/nsrw-travel-research90.html' },
+      { label: 'research/90 on GitHub', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/90_nifty_strangle_rules' },
+    ],
+    projectPaths: [
+      'research/90_nifty_strangle_rules/DESIGN.md',
+      'research/90_nifty_strangle_rules/results/RESULTS.md',
+      'research/90_nifty_strangle_rules/MONDAY_20RS_STRANGLE_WEEKLY_SWEEP_STATUS.md',
+      'research/90_nifty_strangle_rules/NSRW_V1_CHAIN_REPLAY_1MIN_RUN_STATUS.md',
+      'research/90_nifty_strangle_rules/DAILY_0916_PREMIUM_STRANGLE_1MIN_SWEEP_STATUS.md',
+      'mentor/reviews/2026-W30.md',
     ],
   },
 ];
