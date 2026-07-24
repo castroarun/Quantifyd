@@ -981,7 +981,7 @@ export default function Straddles() {
           </div>
         )}
         <div style={{ fontSize: 11, color: C.muted, marginTop: 10 }}>
-          Note: wings cost a net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} over the book (overnight-gap protection you opted to keep). Recorder replay Apr–Jul 2026 (~3 months, {v2stats ? v2stats.n : 13} trades, {v2stats ? Math.round(v2stats.win) : 0}% win, {v2stop}% stop) — SIGNAL only; the multi-year validation is research/60 (AlgoTest, ±500 wings).
+          ⚠ Wings here are OVERNIGHT-ONLY (buy 15:20 / sell 09:20), net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} — NOT the live engine's held-to-expiry wings. Held wings can't be backtested on this recorder: far-OTM wing quotes go stale (research/89) and produce impossible P&L. So read this as an ATM short-straddle behaviour probe, not a fly validation. Recorder replay Apr–Jul 2026 (~3 months, {v2stats ? v2stats.n : 13} trades, {v2stats ? Math.round(v2stats.win) : 0}% win, {v2stop}% stop) — SIGNAL only. The real held-wing fly is validated by the LIVE engine above + research/60 (AlgoTest).
         </div>
       </section>
       </details>
