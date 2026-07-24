@@ -1,20 +1,72 @@
-- research/87 (structure patterns) + research/88 (GCO pullback stoch): CONCLUDED 2026-07-21, both NO EDGE — drift/survivorship controls now mandatory for daily screens. See results/RESULTS.md in each.
-- **HA 2-green paper book (research/86) — DEPLOYED, restart pending 15:31 IST 2026-07-21.**
-  Rs20L / 81 F&O sleeves, 30-min cycle jobs, /api/ha-paper/state. PAPER-only module
-  services/ha_paper.py. Follow-ups: /app/ha-paper React page; after ~3mo soak compare
-  live per-trade bps vs OOS 25bps (decay watch-item); futures-leverage variant only
-  if soak holds.
-
 # Covered_Calls — TODO
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## RESOLVED (book deployed 2026-07-21) — research/86 HA 2-green-no-wick 30m LONG: build the G5 paper book? — 2026-07-20
+## ★ IN PROGRESS — research/90: NIFTY rules-based short strangle — **G2 PASS → STRATEGY-CANDIDATE; next = G5 paper book** — 2026-07-24
+**G2 DONE (pessimistic gap-aware fills, 58k rows, 22s):** monthly stop-family SURVIVES at 2.0–2.5×
+(best: 2.5%OTM + stop2.5× + PT50 → net 47.8 pts/cycle, t 2.61, worst −301) but **stop 1.5× monthly
+DIES under real fills** (post-22 negative). Post-stop answer: **monthly = flat both** (roll re-fattens
+tail −161→−670); **weekly = roll-away-once at stop 1.5× = best family in study (t 4.73, p5 −39,
+7/8 yrs positive, 2020 flat)**. Indicator exits (ATR/ADX/VIX-jump) all lose to premium stop; VIX≥1.25×
+entry = higher mean, 2.7× tail (rejected for loss-min objective). Monthly condor UNTESTABLE at EOD
+(stale wing marks — worst exceeds structural cap). NSR v0.9 spec: RESULTS §5. **NEXT: (a) G5 paper
+book — NSR monthly + weekly-roll sleeves, 10 lots, alongside straddle V1/V2 books, weekly
+human-vs-robot mentor comparison; (b) replay W30 on chain recorder; (c) CPR/VIX entry gates with
+regime controls.** Original G0/G1 detail below.
+W30 mentor review (`mentor/reviews/2026-W30.md`) proved manual strangle management is a measurable
+drag (untouched Monday strangle +₹12.7k vs 22-leg managed +₹6.8k; root habit = calm-day
+credit-chasing rolls toward spot; margin measured 97% utilized). Arun approved building a
+rules-based NIFTY strangle system (entry/exit/adjust/react; CPR + VIX gates; emotions out).
+**G1 DONE same day — SIGNAL, PASS → G2** (`research/90_nifty_strangle_rules/results/RESULTS.md`):
+monthly strangle + per-leg premium stop 2.0–2.5× = net t≈2.0–2.4, tail cut 6× (worst −1,878→−298
+pts), monotonic stop family; giveback harmful; weekly arm t 2.5 but gap-tail unfixable at EOD →
+wings/intraday. VIX≥16 helps monthly/hurts weekly; narrow weekly CPR GOOD (opposite r/67 sign —
+regime confound, don't gate yet). **NEXT = G2:** (1) pessimistic gap-aware stop fills
+(make-or-break), (2) iron-condor arm (fixes 97%-margin problem), (3) per-year tables + 2020
+isolation, (4) r/89 reconciliation memo, (5) chain-recorder intraday validation incl. W30 replay.
+Runner: `research/90_nifty_strangle_rules/scripts/run_g1_daily_sweep.py` (12s on VPS).
+NEW INFRA: mentor daily account capture cron LIVE on VPS (15:45 IST →
+`/home/arun/mentor/daily/*.json`) — weekly reviews data-complete without Console exports.
+Mentor system: `.claude/skills/trade-mentor/SKILL.md` + `mentor/LEDGER.md` (invoke /trade-mentor).
+W30 review COMPLETE: `mentor/reviews/2026-W30.md`.
+
+## ✅ CONCLUDED 2026-07-24 — research/91: 20/200-SMA "Picture of Power" retrace-break (iFundTraders RBI&GO) — **NO EDGE**
+Arun's ask: test the iFundTraders "RBI & GO" setup from the video clips — buy a red pause-bar's
+high (sell a green pause-bar's low, short mirror "NARROW TO WIDE") when price is NEAR a **rising**
+20-SMA stacked over the 200-SMA, hold while trending, exit on 2–3×ATR drift away. Tested long+short,
+5/15/30-min + daily, 12 deep 5-min names 2015→now, gross+net@5bps.
+- **G1:** loses **gross** on 5-min (the taught TF) — long −0.006% / short −0.005%/tr, net −0.056%,
+  win 28%, avg hold 3.8 bars, t≈−38. Tight red-low stop shredded by noise; ATR target rarely hit.
+- **G2 (84 cells):** no cell clears gross>0∧net>0∧t≥3. Stricter "rising 20-SMA" = worse; overnight
+  hold + SMA-cross exit barely help; only daily-LONG net-positive but t 1.1–1.8 (n≤233); daily
+  SHORT mirror loses (asymmetry ⇒ not a real structure).
+- **G3 drift control:** setup +0.78%/tr < random-entry-in-uptrend +1.03% < all-regime-bars +0.90%.
+  Daily "profit" = 100% survivor drift; the pause/near mechanics **subtract** 0.12–0.25%/tr.
+Verdict: `research/91_sma20_200_pullback/results/RESULTS.md`. SHELVE — do not re-litigate intraday
+(loses gross). Engine + G1/G2/G3 runners committed. Mandatory drift-control rule (r/87-88) applied.
+
+## ★ PENDING DECISION — research/86 HA 2-green-no-wick 30m LONG: build the G5 paper book? — 2026-07-20
 **STRATEGY CANDIDATE — the first full survivor of the r/81-86 program** (IS t3.7 → Val t6.0 →
 OOS t3.7 PASSED; OOS book 11.6% CAGR vs bench 5.6%, DD −11%, Calmar 1.03, beat bench all 3 OOS
 years incl. the 2026 down-tape). OOS consumed. Watch-item: per-trade fade 47→36→25bps across
 splits. NEXT: G5 paper book — construction choice needed (cash-CNC sleeves vs futures subset;
 fractional per-name sizing is the practical question). Verdict: `research/86_heikin_patterns/results/RESULTS.md`.
+
+## ✅ CONCLUDED 2026-07-22 — research/89: Short straddle (calm + flip + real-IV mgmt) — NO ROBUST TRADEABLE EDGE
+User idea: sell monthly straddles into predicted-calm stocks; later reframe: don't hold a month,
+manage actively (take profit / cut on criteria) for better-probability-of-calm shorter holds.
+Findings: (1) **sell-into-calm is INVERTED** — calm is the WORST time (vol mean-reverts up; calm
+persists only ~35%/mo, 53-73% shorter). (2) Built **REAL NSE F&O stock+index option EOD history
+2016→now** into `backtest_data/market_data.db` table `nse_options_bhav` (30.3M rows, 83 syms;
+`download_nse_bhav_stocks.py`; IV via BS inversion) — permanent asset, removes the "no real stock
+IV" blocker. (3) Mgmt reframe CONFIRMED useful: take-25/50%-profit beats hold-to-expiry, ~18d hold,
+iron fly caps tail (per tastytrade/OptionAlpha/Varsity). (4) INDEX real-IV: short-vol strong pre-2021
+(+315bps/trade OOS) but **DECAYED to ≈0 post-2022** retail options boom. (5) STOCKS looked huge
+(+146bps t16 every year) but **G6 LIQUIDITY FILTER KILLS IT** — iron fly +140→−82bps (t−7.9) once
+you require real ATM volume≥50; **105% of the apparent profit came from untraded stale-priced
+options**; only 9/39 liquid names positive (noise). **BINDING LESSON: any options backtest here MUST
+filter real traded volume/OI.** Verdict: NO ROBUST TRADEABLE EDGE — don't trade. Full writeup:
+`research/89_short_monthly_straddle/results/RESULTS.md`. Reusable: engine + run_g4/g5/g6.
 
 ## ✅ 2026-07-20 — Momentum-paper weekly gate re-entry LIVE (+ market-hours restart incident, no harm)
 Patched `services/momentum_paper.py`: when FULLY in cash and the weekly gate is ON, re-enter the
@@ -74,9 +126,21 @@ daily vs claimed −23%; the −23% only shows on modern 2014+ w/ risk-adj momen
 attribution: **the NIFTYBEES>100EMA cash gate is the whole risk story** (remove it → DD −66%);
 **the video's per-stock 50>100>200 EMA filter is inert-to-harmful** (removing it *raises* CAGR
 to 34.7%). Cost-robust, low turnover. **Not new alpha** — same family as the live momentum-paper
-₹20L book (research/62). Files: `research/75_nifty250_momentum_top15/` (RESULTS.md + tearsheet.png).
-Optional follow-up (not queued unless user wants it): publish the study to `/app/backtest` and/or
-decide whether a large-mid-250 momentum sleeve earns a slot next to momentum-paper (likely redundant).
+₹20L book (research/62). Files: `research/75_nifty250_momentum_top15/` (RESULTS.md/_P2/_P3 + tearsheet.png).
+**Phase 2/3 (2026-07-21):** universe×momentum sweep → best risk-adjusted = **midcap + 6-month RS
+(Calmar 1.26)**; combo (mid+small) = highest CAGR 43.5% but −42% DD (uninvestable). **Gate is
+IRREPLACEABLE** — no per-stock quality/ATH/exit combo substitutes (best gate-less DD −46%).
+**PUBLISHED:** `/app/backtest/nifty250-momentum-video-research75` (built on VPS) + Artifact
+`claude.ai/code/artifact/f7cccc3d`. ⚠ research/75 folder **not git-pushed** → app page's GitHub links 404 until pushed.
+
+## ★ QUEUED — Aurum: arm the research/75 winner as a selectable engine (paper-first) — 2026-07-21
+
+User approved (full gated process; wait for phase-3 winner — now known). Arm **gated midcap RS-120/126**
+(a higher-CAGR/higher-DD sibling of Aurum's existing `midcap_smoothest`) as a distinct selectable engine
+in the `aurum` repo strategy registry, **paper-only** (`EXECUTION_LIVE_ENABLED=False`). **NEXT = write the
+GATE-A design doc** (`aurum/docs/`) for user approval BEFORE any code. Confirm exact spec at GATE-A: bare
+research/75 variant (higher return, −29% DD) vs adding smoothest DD-filters. Parity-check vs research/75 +
+tests before GATE-B. Note: winner ≈ Aurum's default family, so this is a more-aggressive variant, not new alpha.
 
 ## ✅ LIVE 2026-07-07 — 9:16 NAS systems armed REAL MONEY (2 lots, all weekdays)
 `nas_916_atm/atm2/atm4` → `live=True` on all 5 weekday DTEs, **2 lots**; squeeze `nas_atm/atm2/atm4`
