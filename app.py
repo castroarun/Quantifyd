@@ -7682,6 +7682,22 @@ def _sensex_sl_monitor():
                 continue
             if not ltp_map:
                 continue
+            # SENSEX naked-survivor guard (2026-07-24): the ST(7,2) survivor trail is enforced by
+            # nas_ticker, which resolves NFO tokens only and cannot see SENSEX (BFO). A leg handed the
+            # 999999 sentinel therefore sat NAKED-UNARMED. Arm it here with a breakeven protective
+            # stop (SL = entry) so the existing SL check manages it and it can never become a loss.
+            # NIFTY survivors are untouched (their NFO ST trail works).
+            for _p in active:
+                if (_p.get('sl_price') or 0) >= 900000 and _p.get('entry_price'):
+                    _be = round(_p['entry_price'], 1)
+                    try:
+                        executor.db.update_position(_p['id'], sl_price=_be,
+                                                    notes='SENSEX_BE_PROTECT (no BFO ST trail)')
+                        _p['sl_price'] = _be
+                        logger.warning(f"[{name}] naked survivor {_p.get('tradingsymbol')} armed to "
+                                       f"breakeven SL {_be} (BFO ST trail unavailable)")
+                    except Exception as _e:
+                        logger.error(f"[{name}] survivor re-arm failed: {_e}")
             actions = executor.check_and_handle_sl(positions=active, live_ltps=ltp_map)
             if actions:
                 logger.info(f"[{name}] SL monitor: {len(actions)} actions")
