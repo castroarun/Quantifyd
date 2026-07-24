@@ -500,17 +500,24 @@ function NasOptCard() {
    restart while positions are open. Refreshes every 8s. */
 function SensexLiveCard() {
   const [d, setD] = useState<any>(null);
+  const [hist, setHist] = useState<any>(null);
+  const [openHist, setOpenHist] = useState(false);
+  const [openDay, setOpenDay] = useState<string | null>(null);
   useEffect(() => {
-    const load = () => fetch(`/app/sensex_live.json?t=${Date.now()}`, { cache: 'no-store' })
-      .then((r) => r.json()).then(setD).catch(() => {});
+    const load = () => {
+      fetch(`/app/sensex_live.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => r.json()).then(setD).catch(() => {});
+      fetch(`/api/sensex/sessions`, { cache: 'no-store' })
+        .then((r) => r.json()).then(setHist).catch(() => {});
+    };
     load();
     const id = setInterval(load, 8000);
     return () => clearInterval(id);
   }, []);
-  if (!d) return null;
-  const rs = (n: number) => `${n >= 0 ? '+' : '−'}₹${Math.abs(Math.round(n)).toLocaleString('en-IN')}`;
-  const cc = (n: number) => (n >= 0 ? '#3fb950' : '#f85149');
-  const withLegs = (d.systems || []).filter((x: any) => (x.legs || []).length);
+  if (!d && !hist) return null;
+  const rs = (n: number) => `${(n || 0) >= 0 ? '+' : '−'}₹${Math.abs(Math.round(n || 0)).toLocaleString('en-IN')}`;
+  const cc = (n: number) => ((n || 0) >= 0 ? '#3fb950' : '#f85149');
+  const withLegs = ((d && d.systems) || []).filter((x: any) => (x.legs || []).length);
   const cell: React.CSSProperties = { fontSize: 11, padding: '3px 8px', textAlign: 'right',
     borderTop: '1px solid var(--line)', fontVariantNumeric: 'tabular-nums' };
   const head: React.CSSProperties = { fontSize: 9.5, color: 'var(--ink-faint, #6e7681)', padding: '2px 8px',
@@ -525,32 +532,31 @@ function SensexLiveCard() {
     </span>
   );
   const GRID = '54px 68px 46px 60px 60px 60px 1fr 78px 82px';
+  const sessions = (hist && hist.sessions) || [];
 
   return (
     <section className={styles.sectionBlock} style={{ marginTop: 14,
       border: '1px solid rgba(63,185,80,0.35)', borderRadius: 10, padding: '12px 14px',
       background: 'rgba(63,185,80,0.03)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
-        <span className="section-title">SENSEX · LIVE</span>
+        <span className="section-title">SENSEX · LIVE / PAPER</span>
         {modePill('live')}
-        <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>{d.expiry}</span>
-        {d.spot != null && (
+        <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>{d ? d.expiry : 'Wed/Thu live · else paper'}</span>
+        {d && d.spot != null && (
           <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>spot {d.spot.toLocaleString('en-IN')}</span>
         )}
         <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted)' }}>
-          day <b style={{ color: cc(d.day_pnl) }}>{rs(d.day_pnl)}</b>
+          today <b style={{ color: cc(d ? d.day_pnl : 0) }}>{rs(d ? d.day_pnl : 0)}</b>
         </span>
       </div>
       <div style={{ fontSize: 10, color: 'var(--ink-faint, #6e7681)', marginBottom: 8 }}>
-        Real-money 9:16 systems on SENSEX (Wed/Thu 0/1-DTE) · updated {d.generated_at}
+        9:16 systems on SENSEX (Wed/Thu 0/1-DTE) · {d ? `updated ${d.generated_at}` : 'after-hours — showing recorded sessions'}
       </div>
 
       {!withLegs.length && (
         <div style={{ fontSize: 11.5, color: 'var(--ink-faint, #6e7681)',
           border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px' }}>
-          No live SENSEX positions right now.
-          {(d.systems || []).some((x: any) => x.mode === 'flat')
-            ? ' (a system was margin-rejected / flat today)' : ''}
+          No open SENSEX positions right now — see recorded sessions below.
         </div>
       )}
 
@@ -589,10 +595,74 @@ function SensexLiveCard() {
           </div>
         </div>
       ))}
+
+      {sessions.length > 0 && (
+        <div style={{ marginTop: 12, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
+          <button type="button" onClick={() => setOpenHist((v) => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'transparent',
+              border: 0, padding: '2px 0', cursor: 'pointer', textAlign: 'left' }}>
+            <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{openHist ? '▾' : '▸'}</span>
+            <span style={{ fontSize: 11.5, fontWeight: 700 }}>Past sessions — {sessions.length} days</span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 800, color: cc(hist.total) }}>
+              {rs(hist.total)}
+            </span>
+          </button>
+          {openHist && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                {sessions.map((se: any) => (
+                  <button key={se.day} type="button" onClick={() => setOpenDay(openDay === se.day ? null : se.day)}
+                    style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '4px 9px',
+                      background: openDay === se.day ? 'var(--line)' : 'transparent', cursor: 'pointer' }}>
+                    <div style={{ fontSize: 10, color: 'var(--ink-muted)' }}>{se.day.slice(5)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: cc(se.pnl) }}>{rs(se.pnl)}</div>
+                  </button>
+                ))}
+              </div>
+              {openDay && (() => {
+                const se = sessions.find((x: any) => x.day === openDay);
+                if (!se) return null;
+                return (
+                  <div style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Positions · {se.day}</div>
+                    {se.systems.map((sy: any, i: number) => (
+                      <div key={i} style={{ marginTop: i ? 8 : 0 }}>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 2 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700 }}>{sy.label}</span>
+                          {modePill((sy.legs[0] && sy.legs[0].mode) || 'paper')}
+                          <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: cc(sy.pnl) }}>{rs(sy.pnl)}</span>
+                        </div>
+                        <div style={{ overflowX: 'auto' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '54px 68px 46px 62px 62px 1fr 80px',
+                            gap: 8, minWidth: 520, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                            <span style={{ ...head, textAlign: 'left' }}>C/P</span><span style={head}>STRIKE</span>
+                            <span style={head}>QTY</span><span style={head}>ENTRY</span><span style={head}>EXIT</span>
+                            <span style={{ ...head, textAlign: 'left' }}>EXIT REASON</span><span style={head}>P&amp;L</span>
+                            {sy.legs.map((l: any, li: number) => (
+                              <React.Fragment key={li}>
+                                <span style={{ ...cell, textAlign: 'left', fontWeight: 700, color: '#f85149' }}>SELL {l.leg}</span>
+                                <span style={cell}>{l.strike}</span>
+                                <span style={cell}>{l.qty}</span>
+                                <span style={cell}>{l.entry}</span>
+                                <span style={cell}>{l.exit ?? '—'}</span>
+                                <span style={{ ...cell, textAlign: 'left', color: 'var(--ink-muted)' }}>{l.reason}</span>
+                                <span style={{ ...cell, fontWeight: 700, color: cc(l.pnl || 0) }}>{l.pnl != null ? rs(l.pnl) : '—'}</span>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
-
 
 /* ---------- SENSEX expiry-day paper book (research/82) ----------
    SENSEX expires THURSDAY, NIFTY Tuesday. NAS-OPT harvests NIFTY's 0/1-DTE edge on Mon/Tue;
@@ -795,6 +865,80 @@ function SensexPaperCard() {
               </div>
             </div>
           )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** NSR-W v1.2 weekly-strangle PAPER book (research/90 G5) — live card + positions.
+ *  Backend: services/nsrw_paper.py -> /api/nsrw/state. Study card:
+ *  /app/backtest/nifty-strangle-rules-research90 · report: /app/nsrw-travel-research90.html */
+function NsrwPaperCard() {
+  const [s, setS] = useState<any>(null);
+  useEffect(() => {
+    const load = () =>
+      fetch('/api/nsrw/state', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then(setS)
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 10000);
+    return () => clearInterval(t);
+  }, []);
+  if (!s) return null;
+  const c: any = s.cycle;
+  const legs: any[] = c?.legs ?? [];
+  const live = legs.filter((l) => l.status === 'live');
+  const chip = (txt: string, col: string) => (
+    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, border: `1px solid ${col}`,
+      color: col, borderRadius: 99, padding: '1px 9px', marginLeft: 8 }}>{txt}</span>
+  );
+  const rs = (v: number) => (v < 0 ? '−₹' : '+₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
+  return (
+    <section className={styles.sectionBlock} style={{ marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 800 }}>NSR-W v1.2 — Weekly ₹30 Strangle</span>
+        {chip('PAPER · 10 LOTS', '#8b8fa3')}
+        {s.killed ? chip('KILLED', '#e66767') : c ? chip(`OPEN · ${c.entry_date}`, '#3987e5') : chip('FLAT — next entry Mon 15:14', '#8b8fa3')}
+        <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.75 }}>
+          book {s.totals.weeks}w · {s.totals.wins}W · <b>{rs(s.totals.net_rs)}</b>
+          {' · '}<a href="/app/backtest/nifty-strangle-rules-research90" style={{ color: '#3987e5' }}>study</a>
+          {' · '}<a href="/app/nsrw-travel-research90.html" style={{ color: '#3987e5' }}>travel report</a>
+        </span>
+      </div>
+      {c ? (
+        <>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12.5, margin: '8px 0 6px', opacity: 0.9 }}>
+            <span>expiry <b>{c.expiry}</b></span>
+            <span>credit <b>{c.credit0}</b> pts</span>
+            <span>m2m <b style={{ color: (c.m2m_rs ?? 0) >= 0 ? '#0ca30c' : '#e66767' }}>{rs(c.m2m_rs ?? 0)}</b></span>
+            <span>rolled <b>{c.rolled ? 'yes' : 'no'}</b> · recentered <b>{c.recentered ? 'yes' : 'no'}</b></span>
+            <span>live legs <b>{live.length}</b></span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
+              <thead><tr style={{ opacity: 0.6, textAlign: 'left' }}>
+                <th style={{ padding: '4px 8px' }}>Leg</th><th>Qty</th><th>Sold @</th>
+                <th>Stop (2.0×)</th><th>Status</th><th>Exit</th>
+              </tr></thead>
+              <tbody>
+                {legs.map((l, i) => (
+                  <tr key={i} style={{ borderTop: '1px solid rgba(148,163,184,0.12)' }}>
+                    <td style={{ padding: '4px 8px', fontWeight: 600 }}>{l.tsym}</td>
+                    <td>{l.qty}</td><td>{l.entry}</td><td>{l.stop}</td>
+                    <td style={{ color: l.status === 'live' ? '#3987e5' : l.status === 'STOP' ? '#e66767' : '#8b8fa3', fontWeight: 700 }}>{l.status}</td>
+                    <td>{l.exit ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <div style={{ fontSize: 12.5, opacity: 0.7, marginTop: 6 }}>
+          No open cycle. Enters automatically Monday 15:14 (next-week expiry, ₹30/leg, GTT 2.0× stops,
+          PT 50%, one roll-away, EOD recenter 1.5×, out by DTE-1).
         </div>
       )}
     </section>
@@ -1344,6 +1488,8 @@ export default function Nas() {
       />
 
       <SensexPaperCard />
+
+      <NsrwPaperCard />
 
       <div className={styles.columns}>
         <div className={styles.col}>

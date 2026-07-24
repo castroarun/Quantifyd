@@ -907,9 +907,11 @@ class NasAtmExecutor:
 
         total_collected = call_entry + put_entry
         total_paid = call_exit + put_exit
-        lots = (ce_pos[0]['qty'] // LOT_SIZE) if ce_pos else (
-            (pe_pos[0]['qty'] // LOT_SIZE) if pe_pos else 0)
-        gross_pnl = (total_collected - total_paid) * LOT_SIZE * lots
+        _ls = self._lot_size()   # per-venue lot (SENSEX 20, NIFTY 65) -- was module NIFTY LOT_SIZE,
+        # which made SENSEX qty//65 = 0 -> lots=0 -> every SENSEX trade net_pnl collapsed to -brokerage
+        lots = (ce_pos[0]['qty'] // _ls) if ce_pos else (
+            (pe_pos[0]['qty'] // _ls) if pe_pos else 0)
+        gross_pnl = (total_collected - total_paid) * _ls * lots
         net_pnl = gross_pnl - (80 * 2)  # brokerage: Rs 40/order x 4 legs
 
         entry_time = min(p['entry_time'] for p in fresh_positions) if fresh_positions else None

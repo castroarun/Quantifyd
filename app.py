@@ -7610,6 +7610,55 @@ except Exception as e:
 # cadence; separate jobs so a SENSEX fault can never disturb the live NIFTY book.
 # Entry/live-vs-paper is decided by the day matrix (keys sensex_atm/atm2/atm4), which currently
 # has live=False -> PAPER until the chain backfill validates the edge.
+@app.route('/api/sensex/sessions')
+def api_sensex_sessions():
+    """Per-day SENSEX session history (all 3 systems) from the executor DBs. P&L from positions."""
+    import sqlite3
+    from collections import defaultdict
+    base = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backtest_data')
+    SYS = [('sensex_atm', 'ATM'), ('sensex_atm2', 'ATM2'), ('sensex_atm4', 'ATM4')]
+    byday = defaultdict(lambda: defaultdict(list))
+    for db, lab in SYS:
+        p = os.path.join(base, db + '_trading.db')
+        if not os.path.exists(p):
+            continue
+        try:
+            c = sqlite3.connect(p)
+            c.row_factory = sqlite3.Row
+            for r in c.execute("SELECT * FROM nas_atm_positions WHERE entry_time IS NOT NULL "
+                               "AND (exit_reason IS NULL OR exit_reason!='TEST_CLEANUP') ORDER BY entry_time"):
+                d = dict(r)
+                byday[d['entry_time'][:10]][lab].append(d)
+            c.close()
+        except Exception as e:
+            logger.error(f"[sensex-sessions] {db}: {e}")
+    sessions = []
+    for day in sorted(byday, reverse=True):
+        systems = []
+        dtot = 0.0
+        for lab in ('ATM', 'ATM2', 'ATM4'):
+            legs = byday[day].get(lab, [])
+            if not legs:
+                continue
+            stot = 0.0
+            ll = []
+            for l in legs:
+                closed = (l['status'] == 'CLOSED' and l['exit_price'] is not None)
+                pnl = (l['entry_price'] - l['exit_price']) * l['qty'] if closed else None
+                if pnl is not None:
+                    stot += pnl
+                ll.append(dict(leg=l['leg'], strike=int(l['strike']), qty=l['qty'],
+                               mode=(l.get('mode') or 'paper'), entry=round(l['entry_price'], 1),
+                               exit=(round(l['exit_price'], 1) if l['exit_price'] is not None else None),
+                               reason=(l['exit_reason'] or l['status']), status=l['status'],
+                               pnl=(round(pnl) if pnl is not None else None)))
+            systems.append(dict(label='SENSEX ' + lab, pnl=round(stot), legs=ll))
+            dtot += stot
+        if systems:
+            sessions.append(dict(day=day, pnl=round(dtot), systems=systems))
+    return jsonify(dict(sessions=sessions, total=round(sum(x['pnl'] for x in sessions))))
+
+
 def _sensex_auto_entry():
     """09:16 Mon-Fri — enter the 3 SENSEX systems (gated by the day matrix)."""
     systems = [
@@ -9713,6 +9762,13 @@ try:
     _hap_register(app, scheduler)
 except Exception as _e:
     logger.warning(f"Could not register HA paper book: {_e}")
+
+# NSR-W v1.2 weekly strangle - Rs30/leg, 10 lots PAPER book (research/90 G5)
+try:
+    from services.nsrw_paper import register as _nsrw_register
+    _nsrw_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register NSRW paper book: {_e}")
 
 
 # ---- Daily Options Capture EOD Summary ----

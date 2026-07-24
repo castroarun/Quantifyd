@@ -1,0 +1,295 @@
+<title>NSR-W v1.0 — Weekly P&amp;L Travel</title>
+<style>
+  :root{
+    color-scheme: light;
+    --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
+    --s1:#2a78d6; --s2:#eb6834;
+    --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --goodtext:#006300;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --plane:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+      --s1:#3987e5; --s2:#d95926; --goodtext:#0ca30c;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --goodtext:#0ca30c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--plane);color:var(--ink);
+       font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:28px 20px 60px}
+  .wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+  .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1{font-size:clamp(22px,3.4vw,30px);margin:4px 0 6px;text-wrap:balance}
+  .sub{color:var(--ink2);max-width:72ch;margin:0}
+  .sub b{color:var(--ink)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .kpi{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:14px 16px}
+  .kpi .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .kpi .v{font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+  .kpi .d{font-size:12px;color:var(--ink2);margin-top:2px}
+  .pos{color:var(--goodtext)} .neg{color:var(--crit)}
+  section{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:18px 20px}
+  h2{font-size:16px;margin:0 0 4px}
+  .note{font-size:12.5px;color:var(--ink2);margin:0 0 12px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12.5px;color:var(--ink2);margin-bottom:10px}
+  .sw{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:5px;border:1.5px solid var(--surface)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px 8px}
+  .card h3{font-size:13.5px;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .card .when{font-size:11.5px;color:var(--muted);margin:2px 0 4px;font-variant-numeric:tabular-nums}
+  .card .fin{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .chip{font-size:10.5px;font-weight:600;letter-spacing:.06em;border-radius:99px;padding:1px 8px;border:1px solid var(--ring);color:var(--ink2)}
+  svg{display:block;width:100%;height:auto}
+  .gridline{stroke:var(--grid);stroke-width:1}
+  .zero{stroke:var(--axis);stroke-width:1.2}
+  .daysep{stroke:var(--grid);stroke-width:1;stroke-dasharray:2 3}
+  .axis-t{fill:var(--muted);font-size:10px}
+  .lbl{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums}
+  .tt{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--ring);
+      border-radius:6px;padding:6px 9px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.18);
+      display:none;z-index:9;font-variant-numeric:tabular-nums;max-width:260px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap}
+  th{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-align:right}
+  th:first-child,td:first-child,th.lft,td.lft{text-align:left}
+  .scroll{overflow-x:auto}
+  footer{font-size:12.5px;color:var(--ink2);max-width:86ch}
+  @media (prefers-reduced-motion: no-preference){ .card{transition:border-color .15s} .card:hover{border-color:var(--axis)} }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Research/90 · NSR-W v1.0 · replay on recorded 1-min NIFTY chain</div>
+    <h1>Weekly P&amp;L travel — Monday ₹-premium strangle, Apr 20 → Jul 24 2026</h1>
+    <p class="sub">Rules as replayed: <b>Monday 15:14</b> entry (the sweep-validated late entry — see
+    <a href="#evolution" style="color:var(--s1)">how the spec evolved</a>), next-week expiry, sell CE + PE nearest
+    the ₹ target at <b>bid</b> · GTT stop <b>2.0×</b> per leg (LTP trigger, ask fill) · profit-take at
+    <b>50%</b> of credit · one <b>roll-away</b>, survivor rides · time exit DTE ≤ 1 at 15:15. Two targets:
+    <b style="color:var(--s1)">₹20</b> and <b style="color:var(--s2)">₹30</b> per leg. All ₹ at 10 lots (650 qty).
+    The week of Jul 20 is still OPEN (marked at last recorded price; time exit Mon Jul 27).</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <h2>Net result by week</h2>
+    <p class="note">Bars are net of charges. All 14 Mondays qualify at the 15:14 entry (the Apr-20 recorder gap only affected morning entries).</p>
+    <div class="legend"><span><span class="sw" style="background:var(--s1)"></span>₹20 target</span>
+      <span><span class="sw" style="background:var(--s2)"></span>₹30 target</span></div>
+    <div id="bars"></div>
+  </section>
+
+  <section>
+    <h2>The travel — mark-to-market path of every week</h2>
+    <p class="note">Lines are gross mark-to-market at mid, sampled every 5 minutes; final values in the header of each card are <b>net</b>.
+    Dashed verticals separate trading days. Hover for time &amp; values.</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--s1)"></span>₹20 target</span>
+      <span><span class="sw" style="background:var(--s2)"></span>₹30 target</span>
+      <span><span class="dot" style="background:var(--crit)"></span>Stop</span>
+      <span><span class="dot" style="background:var(--warn)"></span>Roll</span>
+      <span><span class="dot" style="background:var(--good)"></span>Profit-take</span>
+      <span><span class="dot" style="background:var(--muted)"></span>Time exit</span>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section>
+    <h2>Every cycle — entries, exits, results</h2>
+    <div class="scroll"><table id="tbl"></table></div>
+  </section>
+
+  <section id="evolution">
+    <h2>How the spec evolved — the questions that changed the rules</h2>
+    <p class="note">Every rule below started as a question, got a test, and only then entered (or left) the spec.
+    Current spec: <b>NSR-W v1.2</b> — Monday ~15:00 entry · next-week expiry · CE+PE nearest ₹20–30 each ·
+    GTT stop 2.0×/leg · PT 50% of credit · one intraday roll-away (survivor leg rides with its own stop) ·
+    EOD recenter at 1.5× (once/week) · out by DTE-1 · fixed lots · margin ≤ 70%.</p>
+
+    <h3 style="font-size:14px;margin:14px 0 4px">1 · Entry time: 09:30 was an untested guess — the data says ~15:00</h3>
+    <p class="note">The first replay used 09:30 by convention ("let the open settle") — never backtested. Challenged
+    ("why not 09:16/09:20?"), an 8-point entry-time sweep ran on the 13 recorded weeks: a smooth gradient, later = better —
+    ₹30 at 09:16 → 17.0 pts/wk (t 2.4), 09:30 → 16.7 (t 2.2), 09:45 → 21.1 (t 3.9), 11:00 → 21.9 (t 4.3),
+    <b>15:14 → 24.2 (t 4.5)</b>. Decisively, the 378-week EOD study prices at daily closes — it was always implicitly a
+    Monday-close-entry system, so the big-sample t 5.5 belongs to the late entry. Mechanism: at 8–9 DTE, waiting until
+    15:00 costs almost no theta but sets strikes AFTER Monday's move is known and skips six hours of day-one gamma.</p>
+
+    <h3 style="font-size:14px;margin:14px 0 4px">2 · Profit-take: 40–50% is the plateau; deeper is worse</h3>
+    <p class="note">"Why 50%, not 60/70?" → swept 40/50/60/70/80/none on all 378 EOD weeks (₹30, stop 2.0×):
+    PT40 t 5.48 and PT50 t 5.47 tie at the top; PT60–80 and no-PT drop to t 3.8–4.3 with no mean gain.
+    The 13-week replay had hinted PT80 — the hint died on the big sample (small-sample mirage; every replay
+    hint is re-tested on 378 weeks before touching the spec).</p>
+
+    <h3 style="font-size:14px;margin:14px 0 4px">3 · After a stop: one roll, then the survivor rides</h3>
+    <p class="note">Stops are per-leg. The FIRST stop of the week buys back that leg and re-sells the same side at the
+    ₹-target from current spot (the one roll). A second stop closes that leg with no replacement. The never-stopped
+    leg stays on — still wearing its own stop — to PT or the time exit. Worst-week example (May 11, ₹30): two put
+    stops cost −60.7 pts; the surviving 24800CE decayed and clawed back ~27 pts → final −33.5. Rolling is capped at
+    one because two same-side stops means the market is trending through the position — a third sell into the trend
+    is the manual-treadmill failure this system exists to prevent.</p>
+
+    <h3 style="font-size:14px;margin:14px 0 4px">4 · Overnight skew: exit-the-heavy-leg tested, then beaten by the user's recenter idea</h3>
+    <p class="note">Worry: "if CE/PE premiums are unbalanced at the close, aren't we exposed to a gap on the heavy side?"
+    Test 1 — EOD guard (close the heavy leg at 15:15 if ≥1.5× credit): free insurance — t 5.47→5.63, mean unchanged.
+    Test 2 — the user's counter-proposal: <b>recenter</b> — close the whole skewed book at 15:15 and re-sell a fresh
+    equidistant-by-premium strangle: <b>t 5.84 (once/week) to 5.92 — the strongest cell in the entire program</b>,
+    +0.7 pts/wk, tail unchanged. Why this is NOT the manual-rolling leak: it fires once, at the close, on a defined
+    trigger, and restarts a symmetric book at the same risk distance — it restarts the system rather than defending a
+    broken position. Adopted at once/week (v1.2). Honest limit: the worst weeks (−422/−445 pts) are unchanged by ANY
+    guard — those gaps launched from unremarkable closes. The true tail defense remains sizing and margin headroom.</p>
+
+    <h3 style="font-size:14px;margin:14px 0 4px">5 · Daily 09:16 in-and-out variant: tested and shelved</h3>
+    <p class="note">Selling a ₹10–30 premium strangle every morning at 09:16, same exits, flat by 15:15 — 64 days,
+    318 cycles: Wed/Thu/Fri net ≈ 0 after costs at every target; the entire edge sits on Monday (DTE 1) and Tuesday
+    (expiry day), ~+8 pts/day at ₹30 — independently reproducing the research/51 finding that intraday premium edge
+    lives on 0/1-DTE. Shelved: a Mon/Tue-only intraday book would stack the same short-gamma risk on top of NSR-W's
+    Monday entry.</p>
+
+    <h3 style="font-size:14px;margin:14px 0 4px">6 · What no rule fixed</h3>
+    <p class="note">Gap-and-grind weeks (worst EOD week −445 pts ≈ −₹2.9L at 10 lots, Feb 2026) survive every stop,
+    guard and recenter variant tested. The mitigations are structural: fixed size you can survive, margin utilization
+    ≤ 70%, and a proposed (untested) event-skip rule for election/budget/Fed weeks.</p>
+  </section>
+
+  <footer>
+    13-week execution validation on real recorded quotes (entries at bid, exits at ask — spreads and GTT slippage are real, including a 13.7-pt slip in the Jul 8 crash minute).
+    This window was a friendly regime (VIX 12–15); the long-run expectation comes from the 378-week EOD study (t 4.8–5.5), not from these weeks.
+    Charges model: 0.25% of premium + 0.1 pt per cycle. Source: research/90, options_data.db.
+  </footer>
+</div>
+<div class="tt" id="tt"></div>
+<script>
+const RAW = /*__DATA__*/[];
+const LOT = 650, rup = p => (p*LOT);
+const fmt = r => (r<0?"−₹":"+₹") + Math.abs(Math.round(r)).toLocaleString("en-IN");
+const fmtd = s => s ? s.slice(5,10).replace("-","/")+" "+s.slice(11,16) : "—";
+const S = {20:"--s1", 30:"--s2"};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+// group by week
+const weeks = [...new Set(RAW.map(c=>c.week))].sort();
+const byWeek = Object.fromEntries(weeks.map(w=>[w, RAW.filter(c=>c.week===w)]));
+
+// ---------- KPIs ----------
+(function(){
+  const clean = RAW;
+  const holdDays = c => { const a=new Date((c.entry_time||c.path[0][0]).slice(0,10)), b=new Date((c.exit||c.path[c.path.length-1][0]).slice(0,10)); return Math.round((b-a)/86400000); };
+  const k = [];
+  [20,30].forEach(T=>{
+    const s = clean.filter(c=>c.T===T);
+    const val = c => c.net??c.gross;
+    const tot = s.reduce((a,c)=>a+val(c),0);
+    const wins = s.filter(c=>val(c)>0).length;
+    const best = s.reduce((a,c)=>val(c)>val(a)?c:a);
+    const worst = s.reduce((a,c)=>val(c)<val(a)?c:a);
+    const pt = s.filter(c=>c.reason==="PT").length;
+    const holds = s.map(holdDays).sort((a,b)=>a-b);
+    const med = holds[Math.floor(holds.length/2)];
+    k.push([`₹${T} · ${s.length} weeks`, fmt(rup(tot)), `${wins} / ${s.length-wins} win/loss (1 open)`, tot>=0]);
+    k.push([`Best week · ₹${T}`, fmt(rup(val(best))), `Mon ${best.week.slice(5).replace("-","/")} → ${best.reason} ${fmtd(best.exit)}`, true]);
+    k.push([`Worst week · ₹${T}`, fmt(rup(val(worst))), `Mon ${worst.week.slice(5).replace("-","/")} → ${worst.reason} ${fmtd(worst.exit)}`, false]);
+    k.push([`Profit-takes · ₹${T}`, `${pt} / ${s.length}`, `rest: time exits (no expiry holds)`, true]);
+    k.push([`Median hold · ₹${T}`, `${med} day${med===1?"":"s"}`, `range ${holds[0]}–${holds[holds.length-1]} days`, true]);
+  });
+  document.getElementById("kpis").innerHTML = k.map(([l,v,d,pos]) =>
+    `<div class="kpi"><div class="l">${l}</div><div class="v ${pos?"pos":"neg"}">${v}</div><div class="d">${d}</div></div>`).join("");
+})();
+
+// ---------- weekly bars ----------
+(function(){
+  const W=1140,H=190,P={l:46,r:8,t:10,b:34}, iw=(W-P.l-P.r)/weeks.length;
+  const vals = weeks.flatMap(w=>byWeek[w].map(c=>rup(c.net??c.gross)));
+  const mx=Math.max(...vals,0), mn=Math.min(...vals,0);
+  const y=v=>P.t+(mx-v)/(mx-mn)*(H-P.t-P.b);
+  let g=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(0)}" y2="${y(0)}" class="zero"/>`;
+  [mx,mn].forEach(v=>{ if(v!==0) g+=`<text x="${P.l-6}" y="${y(v)+3}" text-anchor="end" class="axis-t">${Math.round(v/1000)}k</text>`});
+  g+=`<text x="${P.l-6}" y="${y(0)+3}" text-anchor="end" class="axis-t">0</text>`;
+  weeks.forEach((w,i)=>{
+    const x0=P.l+i*iw;
+    byWeek[w].sort((a,b)=>a.T-b.T).forEach((c,j)=>{
+      const v=rup(c.net??c.gross), bw=Math.min(16,(iw-10)/2), x=x0+iw/2+(j?2:-bw-2);
+      const yy=Math.min(y(0),y(v)), h=Math.max(2,Math.abs(y(v)-y(0)));
+      const r=Math.min(4,bw/2);
+      const path = v>=0
+        ? `M${x},${y(0)} L${x},${yy+r} Q${x},${yy} ${x+r},${yy} L${x+bw-r},${yy} Q${x+bw},${yy} ${x+bw},${yy+r} L${x+bw},${y(0)} Z`
+        : `M${x},${y(0)} L${x},${yy+h-r} Q${x},${yy+h} ${x+r},${yy+h} L${x+bw-r},${yy+h} Q${x+bw},${yy+h} ${x+bw},${yy+h-r} L${x+bw},${y(0)} Z`;
+      g+=`<path d="${path}" fill="var(${S[c.T]})" data-tt="Mon ${w.slice(5)} · ₹${c.T} target&lt;br&gt;<b>${fmt(v)}</b> · ${c.reason}"/>`;
+    });
+    g+=`<text x="${x0+iw/2}" y="${H-14}" text-anchor="middle" class="axis-t">${w.slice(5).replace("-","/")}</text>`;
+  });
+  document.getElementById("bars").innerHTML=`<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+})();
+
+// ---------- travel cards ----------
+const tt=document.getElementById("tt");
+function showTT(html,ev){ tt.innerHTML=html; tt.style.display="block";
+  const x=Math.min(ev.clientX+14, innerWidth-tt.offsetWidth-8);
+  tt.style.left=x+"px"; tt.style.top=(ev.clientY+14)+"px"; }
+function hideTT(){ tt.style.display="none"; }
+document.addEventListener("scroll",hideTT,true);
+
+(function(){
+  const cardsEl=document.getElementById("cards");
+  weeks.forEach(w=>{
+    const cyc=byWeek[w].sort((a,b)=>a.T-b.T);
+    // shared time axis: trading minutes
+    const daysSet=[...new Set(cyc.flatMap(c=>c.path.map(p=>p[0].slice(0,10))))].sort();
+    const dayIdx=Object.fromEntries(daysSet.map((d,i)=>[d,i]));
+    const tmin=s=>{const h=+s.slice(11,13),m=+s.slice(14,16);return dayIdx[s.slice(0,10)]*380+(h*60+m-555);};
+    const allX=cyc.flatMap(c=>c.path.map(p=>tmin(p[0])));
+    const X0=Math.min(...allX), X1=Math.max(...allX);
+    const allY=cyc.flatMap(c=>c.path.map(p=>rup(p[1])));
+    const Y0=Math.min(...allY,0), Y1=Math.max(...allY,0);
+    const W=340,H=150,P={l:8,r:44,t:8,b:18};
+    const sx=t=>P.l+(t-X0)/(X1-X0||1)*(W-P.l-P.r);
+    const sy=v=>P.t+(Y1-v)/(Y1-Y0||1)*(H-P.t-P.b);
+    let g=`<line x1="${P.l}" x2="${W-P.r}" y1="${sy(0)}" y2="${sy(0)}" class="zero"/>`;
+    daysSet.forEach((d,i)=>{ if(i){const x=sx(i*380-10); g+=`<line x1="${x}" x2="${x}" y1="${P.t}" y2="${H-P.b}" class="daysep"/>`}
+      g+=`<text x="${sx(i*380+180)}" y="${H-6}" text-anchor="middle" class="axis-t">${["Su","Mo","Tu","We","Th","Fr","Sa"][new Date(d).getDay()]} ${d.slice(8)}</text>`;});
+    cyc.forEach(c=>{
+      const pts=c.path.map(p=>[sx(tmin(p[0])),sy(rup(p[1])),p[0],rup(p[1])]);
+      g+=`<polyline fill="none" stroke="var(${S[c.T]})" stroke-width="2" points="${pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}"/>`;
+      const last=pts[pts.length-1];
+      g+=`<text x="${last[0]+4}" y="${last[1]+3}" class="lbl" fill="var(${S[c.T]})">${fmt(rup(c.net??c.gross))}</text>`;
+      c.events.forEach(e=>{
+        if(e.label.startsWith("ENTRY"))return;
+        const col=e.label.startsWith("STOP")?"var(--crit)":e.label.startsWith("ROLL")?"var(--warn)":e.label.startsWith("PROFIT")?"var(--good)":"var(--muted)";
+        const px=sx(tmin(e.t));
+        const near=pts.reduce((a,p)=>Math.abs(p[0]-px)<Math.abs(a[0]-px)?p:a);
+        g+=`<circle cx="${px}" cy="${near[1]}" r="4.5" fill="${col}" stroke="var(--surface)" stroke-width="1.5" data-tt="${e.t.slice(5,16).replace("T"," ")}&lt;br&gt;<b>${e.label}</b> (₹${c.T})"/>`;
+      });
+    });
+    const c30=cyc.find(c=>c.T===30)||cyc[0];
+    const entry=c30.events[0], hdrNet=cyc.map(c=>`<span class="fin" style="color:var(${S[c.T]})">${fmt(rup(c.net??c.gross))}</span>`).join(" · ");
+    const card=document.createElement("div");card.className="card";
+    const liveChip = w >= "2026-07-27" ? '<span class="chip" style="border-color:var(--good);color:var(--goodtext)">LIVE PAPER</span> ' : "";
+    card.innerHTML=`<h3><span>Mon ${w.slice(5).replace("-","/")} ${liveChip}<span class="chip">${c30.reason}</span></span><span>${hdrNet}</span></h3>
+      <div class="when">in ${fmtd(c30.entry_time||c30.path[0][0])} → out ${fmtd(c30.exit)} · ${c30.pe} + ${c30.ce} (₹30 legs)</div>
+      <svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+    cardsEl.appendChild(card);
+  });
+  document.querySelectorAll("[data-tt]").forEach(el=>{
+    el.addEventListener("mousemove",ev=>showTT(el.dataset.tt,ev));
+    el.addEventListener("mouseleave",hideTT);
+  });
+})();
+
+// ---------- table ----------
+(function(){
+  const rows=RAW.slice().sort((a,b)=>a.week===b.week?a.T-b.T:(a.week<b.week?-1:1));
+  document.getElementById("tbl").innerHTML =
+    `<tr><th class="lft">Week</th><th>Target</th><th class="lft">Legs sold</th><th>Credit</th>
+     <th class="lft">Entry</th><th class="lft">Exit</th><th class="lft">How it ended</th><th>Net ₹ (10 lots)</th></tr>` +
+    rows.map(c=>{const v=rup(c.net??c.gross);return `<tr><td class="lft">Mon ${c.week.slice(5).replace("-","/")}${c.week>="2026-07-27"?" · LIVE":""}</td>
+      <td>₹${c.T}</td><td class="lft">${c.pe} + ${c.ce}</td><td>${c.credit}</td>
+      <td class="lft">${fmtd(c.entry_time||c.path[0][0])}</td><td class="lft">${fmtd(c.exit)}</td>
+      <td class="lft">${c.reason}</td><td class="${v>=0?"pos":"neg"}" style="font-weight:700">${fmt(v)}</td></tr>`;}).join("");
+})();
+</script>
