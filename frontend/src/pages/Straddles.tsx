@@ -863,6 +863,8 @@ export default function Straddles() {
         );
       })()}
 
+      <details style={{ marginTop: 14 }}>
+        <summary style={{ cursor: 'pointer', fontSize: 15, fontWeight: 700, color: C.navy, padding: '10px 0' }}>📊 Backtests &amp; historical replays — click to expand (live books are above)</summary>
       {/* ===== ALL DAYS · DAILY JOURNEY ===== */}
       {daily && (
         <section style={{ ...card, marginTop: 14 }}>
@@ -973,6 +975,7 @@ export default function Straddles() {
           Note: wings cost a net {v2 ? inr(v2.trades.reduce((a, t) => a + t.wing_pnl, 0)) : ''} over the book (overnight-gap protection you opted to keep). Single regime, ~6 weeks — SIGNAL, not yet validated.
         </div>
       </section>
+      </details>
     </div>
   );
 }
