@@ -2,7 +2,16 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ★ IN PROGRESS — research/90: NIFTY rules-based short strangle — **G2 PASS → STRATEGY-CANDIDATE; next = G5 paper book** — 2026-07-24
+## ★ LIVE — research/90 NSR-W v1.2: **G5 PAPER BOOK LIVE on VPS** (2026-07-24) — first auto-entry Mon 07-27 15:14
+`services/nsrw_paper.py` — Mon 15:14 entry, next-wk expiry, ₹30/leg 10 lots, GTT stop 2×, PT50,
+one roll-away, EOD recenter 1.5× (user's idea — beat exit-heavy-leg, t 5.84), out DTE≤1. Card +
+positions on /app/nas; study card /app/backtest/nifty-strangle-rules-research90 (embeds travel
+report); travel page auto-regens 15:55 cron, LIVE-PAPER chips for weeks ≥07-27. Kill:
+POST /api/nsrw/kill-switch. **SENSEX tested → NO (66-day replay: all morning entries deeply
+negative, best cell noise; wide BSE spreads).** WATCH: first live cycle vs replay; weekly
+/trade-mentor review = Arun vs robot. Prior detail below.
+
+## (superseded header) research/90 G2 notes — 2026-07-24
 **G2 DONE (pessimistic gap-aware fills, 58k rows, 22s):** monthly stop-family SURVIVES at 2.0–2.5×
 (best: 2.5%OTM + stop2.5× + PT50 → net 47.8 pts/cycle, t 2.61, worst −301) but **stop 1.5× monthly
 DIES under real fills** (post-22 negative). Post-stop answer: **monthly = flat both** (roll re-fattens
@@ -29,6 +38,23 @@ NEW INFRA: mentor daily account capture cron LIVE on VPS (15:45 IST →
 `/home/arun/mentor/daily/*.json`) — weekly reviews data-complete without Console exports.
 Mentor system: `.claude/skills/trade-mentor/SKILL.md` + `mentor/LEDGER.md` (invoke /trade-mentor).
 W30 review COMPLETE: `mentor/reviews/2026-W30.md`.
+
+## ✅ CONCLUDED 2026-07-26 — research/93 (VPS numbering): HMA 30/44 weekly swing (Nitin Hulaji, Market Aur Main Ep.5) — **SIGNAL (not investable)**
+Arun's ask: test the video's weekly swing system — HMA30/44 retracement zone + MACD(21,39,9)
+histogram turn after ≥8 bars below zero + RSI(9) 3-SMA × 21-WMA cross; SL below swing low,
+target prior swing high. Full daily universe (629 names pass screens) resampled to weekly, 2001–2026.
+- **Per-trade edge REAL**: net(25bps) +4.62%/tr (n 4,537) vs year-matched random-entry control
+  +1.45% → **+3.17%/tr, Welch t 7.15**; all 27 sweep cells beat control (flat grid); both
+  decade-halves positive; super-winner-proof; costs irrelevant at 12.6-wk holds.
+- **G4 book FAILS**: 20-slot 5%-NAV = 6.70% CAGR / DD −48.9% vs NIFTYBEES 12.75% / −58%;
+  idle-cash-in-index variant worse (8.93%, DD −63.8%). Post-crash signal clustering (52/wk vs
+  20 slots) turns away 65% of candidates in the best vintages; median trade −6.1%, 61% stop-outs
+  (tail-carried); 2020 outlier (+49.7%/tr; ex-2020 diff ≈ +1.7%).
+- Untested: video's +3%-day→sell-10% overlay (moot until a book beats the index).
+- **If ever revisited**: NIFTY>200DMA regime gate (r/71/75 precedent), contention ranking
+  instead of alphabetical, trailing exit instead of fixed target.
+Verdict: `research/93_hma_weekly_swing/results/RESULTS.md`. STATUS-MD:
+`HMA30_44_MACD_RSI_WEEKLY_SWEEP_STATUS.md`. Publish-to-app (backtests.ts card) = optional chore.
 
 ## ✅ CONCLUDED 2026-07-24 — research/91: 20/200-SMA "Picture of Power" retrace-break (iFundTraders RBI&GO) — **NO EDGE**
 Arun's ask: test the iFundTraders "RBI & GO" setup from the video clips — buy a red pause-bar's
