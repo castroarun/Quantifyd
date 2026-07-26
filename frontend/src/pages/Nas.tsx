@@ -609,6 +609,28 @@ function SensexLiveCard() {
           </button>
           {openHist && (
             <div style={{ marginTop: 8 }}>
+              {(() => {
+                const chron = [...sessions].reverse();
+                let c = 0; const pts = chron.map((se: any) => (c += se.pnl));
+                if (pts.length < 2) return null;
+                const W = 560, H = 60;
+                const mn = Math.min(0, ...pts), mx = Math.max(0, ...pts), rg = (mx - mn) || 1;
+                const poly = pts.map((y: number, i: number) =>
+                  `${(i / (pts.length - 1)) * W},${H - ((y - mn) / rg) * H}`).join(' ');
+                const zy = H - ((0 - mn) / rg) * H;
+                return (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, color: 'var(--ink-faint, #6e7681)', marginBottom: 2 }}>
+                      Cumulative P&amp;L (SENSEX paper + live, all days)
+                    </div>
+                    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
+                      <line x1="0" y1={zy} x2={W} y2={zy} stroke="var(--line)" strokeWidth="1" strokeDasharray="3 3" />
+                      <polyline points={poly} fill="none"
+                        stroke={pts[pts.length - 1] >= 0 ? '#3fb950' : '#f85149'} strokeWidth="2" />
+                    </svg>
+                  </div>
+                );
+              })()}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
                 {sessions.map((se: any) => (
                   <button key={se.day} type="button" onClick={() => setOpenDay(openDay === se.day ? null : se.day)}
