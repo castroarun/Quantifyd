@@ -49,6 +49,7 @@ export default function OptionsStudy() {
   const [wd, setWd] = useState('All');
   const [startT, setStartT] = useState('09:16');
   const [endT, setEndT] = useState('15:30');
+  const [grp, setGrp] = useState('none');
 
   useEffect(() => {
     fetch(`/app/options_study.json?t=${Date.now()}`, { cache: 'no-store' })
@@ -61,7 +62,10 @@ export default function OptionsStudy() {
   useEffect(() => { if (days.length && !days.some((x) => x.date === sel)) setSel(days[days.length - 1].date); }, [days, sel]);
   const day = useMemo(() => days.find((x) => x.date === sel) ?? days[days.length - 1], [days, sel]);
 
-  const gridMins = useMemo(() => { const o: number[] = []; for (let m = toMin(startT); m <= toMin(endT); m += 5) o.push(m); return o; }, [startT, endT]);
+  // grid = the ACTUAL recorded bar times within the window (bars are at 09:16 then :20/:25/:30…,
+  // i.e. minutes 0,4,9,14… — NOT multiples of 5 — so build the grid from the real slots, else the
+  // median/overlay grid only ever matches the 09:16 point and everything else is null).
+  const gridMins = useMemo(() => times.filter((t) => t >= startT && t <= endT).map(toMin), [times, startT, endT]);
 
   // generic window helpers (a "getter" returns a day's full [hhmm,value] series)
   const getStrad = (dy: Day): [string, number][] => dy.series.map((b) => [b[0], b[1]]);
@@ -148,6 +152,22 @@ export default function OptionsStudy() {
     return { n: ds.length, med: ds.length ? ds[Math.floor(ds.length / 2)] : null };
   })), [allDays, startT, endT]);
 
+  // group the daily-decay bars by a chosen criterion (with per-group median)
+  const groups = useMemo(() => {
+    const keyOf = (x: Day) => grp === 'weekday' ? x.weekday : grp === 'dte' ? 'DTE' + x.dte : grp === 'month' ? x.date.slice(0, 7) : 'all';
+    const m = new Map<string, Day[]>();
+    days.forEach((x) => { const k = keyOf(x); if (!m.has(k)) m.set(k, []); m.get(k)!.push(x); });
+    let keys = [...m.keys()];
+    if (grp === 'weekday') keys = WDS.filter((k) => m.has(k));
+    else if (grp === 'dte') keys = DTES.map((k) => 'DTE' + k).filter((k) => m.has(k));
+    else keys.sort();
+    return keys.map((k) => {
+      const gd = m.get(k)!.slice().sort((a, b) => a.date.localeCompare(b.date));
+      const dec = gd.map((x) => statOf(x)?.decay).filter((v): v is number => v != null).sort((a, b) => a - b);
+      return { key: k, days: gd, med: dec.length ? dec[Math.floor(dec.length / 2)] : null };
+    });
+  }, [days, grp, startT, endT]);
+
   if (!d) return <div className={styles.wrap}>Loading options study…</div>;
   const stats = days.map(statOf).filter(Boolean) as NonNullable<ReturnType<typeof statOf>>[];
   const decayed = stats.filter((s) => s.decay < 0).length;
@@ -199,7 +219,7 @@ export default function OptionsStudy() {
       </section>
 
       <section className={styles.card}>
-        <div className={styles.cardHead}><b>All {wd} days, normalised to window-start = 100</b><span className={styles.sub}>faint = each day · gold = selected · bold green = median</span></div>
+        <div className={styles.cardHead}><b>{wd === 'All' ? 'All days' : wd + ' days'}, normalised to window-start = 100</b><span className={styles.sub}>faint = each day · gold = selected · bold green = median</span></div>
         {c2 && <Chart opts={c2.opts} data={c2.data} height={240} />}
       </section>
 
@@ -234,11 +254,26 @@ export default function OptionsStudy() {
       </section>
 
       <section className={styles.card}>
-        <div className={styles.cardHead}><b>Decay per day ({startT}→{endT}) &mdash; click a day</b><span className={styles.sub}>green = cheaper (profit) · red = expanded</span></div>
-        <div className={styles.strip}>
-          {days.map((x) => { const s = statOf(x); const dc = s ? s.decay : 0;
-            return <button key={x.date} title={`${x.date} ${x.weekday} DTE${x.dte}\n${startT}→${endT}: ₹${s?.entry} → ₹${s?.close}\ndecay ${dc}%`} onClick={() => setSel(x.date)} className={styles.bar} style={{ outline: x.date === sel ? '1px solid var(--ink)' : 'none' }}>
-              <span style={{ height: Math.min(100, Math.abs(dc)) + '%', background: dc < 0 ? '#3fb950' : '#f85149' }} /></button>; })}
+        <div className={styles.cardHead}><b>Decay per day &mdash; click a day</b>
+          <span className={styles.sub}>green = cheaper (profit) · red = expanded · {startT}→{endT}</span>
+          <select className={styles.sel} value={grp} onChange={(e) => setGrp(e.target.value)}>
+            <option value="none">Chronological</option>
+            <option value="weekday">Group by weekday</option>
+            <option value="dte">Group by DTE</option>
+            <option value="month">Group by month</option>
+          </select>
+        </div>
+        <div className={styles.stripGroups}>
+          {groups.map((g) => (
+            <div key={g.key} className={styles.stripG}>
+              {grp !== 'none' && <div className={styles.stripLabel}>{g.key} <span>({g.days.length}{g.med != null ? ` · med ${g.med}%` : ''})</span></div>}
+              <div className={styles.strip}>
+                {g.days.map((x) => { const s = statOf(x); const dc = s ? s.decay : 0;
+                  return <button key={x.date} title={`${x.date} ${x.weekday} DTE${x.dte}\n${startT}→${endT}: ₹${s?.entry} → ₹${s?.close}\ndecay ${dc}%`} onClick={() => setSel(x.date)} className={styles.bar} style={{ outline: x.date === sel ? '1px solid var(--ink)' : 'none' }}>
+                    <span style={{ height: Math.min(100, Math.abs(dc)) + '%', background: dc < 0 ? '#3fb950' : '#f85149' }} /></button>; })}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>

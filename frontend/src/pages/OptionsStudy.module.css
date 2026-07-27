@@ -38,8 +38,12 @@
   border: 1px solid var(--line); cursor: default; }
 
 /* daily decay strip */
+.stripGroups { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+.stripG { display: flex; flex-direction: column; gap: 4px; }
+.stripLabel { font-size: 11px; font-weight: 700; color: var(--ink-muted); }
+.stripLabel span { font-weight: 400; color: var(--ink-faint, #6e7681); }
 .strip { display: flex; align-items: flex-end; gap: 2px; height: 110px; overflow-x: auto; padding-top: 6px; }
-.bar { flex: 1 1 6px; min-width: 5px; height: 100%; display: flex; align-items: flex-end; justify-content: center;
+.bar { flex: 0 0 7px; width: 7px; height: 100%; display: flex; align-items: flex-end; justify-content: center;
   background: transparent; border: 0; border-radius: 2px; padding: 0; cursor: pointer; }
 .bar span { display: block; width: 100%; border-radius: 2px 2px 0 0; min-height: 2px; transition: opacity .12s; }
 .bar:hover span { opacity: 0.75; }
