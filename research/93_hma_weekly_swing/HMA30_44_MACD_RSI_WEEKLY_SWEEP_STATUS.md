@@ -180,6 +180,45 @@ Mechanics: post-crash entry clustering (up to 52/week vs 20 slots) turns away 65
 candidates in the best vintages; ~65% avg exposure; equal-weight undersizes tail winners.
 (G4 v1 was invalid — same-week-exit zombie-position bug — fixed before these numbers.)
 
-### FINAL VERDICT: **SIGNAL (not investable as tested)** — see `results/RESULTS.md`
+### FINAL VERDICT (phase 1): **SIGNAL (not investable as tested)** — see `results/RESULTS.md`
 for caveats (survivorship-retracement interaction, 2020 dominance) and next levers
 (regime gate, contention ranking, trailing exit).
+
+### Phase-1b (2026-07-27, Arun's ASIANPAINT chart review): target-rule variants
+
+Arun spotted the ASIANPAINT near-miss (target 3,582.90, high 3,568.00 — Rs15 short →
+52wk time-stop +1.3% instead of ~+26%). Tested exact-touch vs 1%-buffer fill vs fractal
+target across the universe (`run_g5_target_variants.py` → `results/g5_target_variants.csv`):
+**base wins** — buffer99 net 4.39% (−0.23 vs base: the 1% haircut on the 33% of trades
+that DO touch outweighs rescued near-misses); fractal net 2.69% (win 53% but winners
+truncated). The taught rule (exact touch at full prior swing high) survives its own edge case.
+
+---
+
+## Phase 2 (2026-07-27): can it be made INVESTABLE? (Arun's ask)
+
+Attack the four diagnosed G4 failures with principled levers, two stages:
+
+1. **Per-trade exit variants** (`run_g6_trail_pertrade.py`): base target-26w vs
+   trail-HMA44 (weekly close < HMA44) vs trail-Donchian-10w (close < prior 10wk low) —
+   r/71 lesson: trailing ≫ target. Initial SL stays active; 25 bps; trade lists saved.
+2. **Portfolio replays** (`run_g7_portfolio_opt.py`, all from 2005 for benchmark
+   comparability): axes = regime gate (NIFTYBEES weekly close > 40wk SMA blocks NEW
+   entries), slot priority (alphabetical vs reward:risk desc), slots (20×5% vs 40×2.5%),
+   exit mode (target vs best trail). ~8 named cells, NOT a grid — multiple-testing noted.
+
+Success gate: beat NIFTYBEES B&H on Calmar AND CAGR with MaxDD ≤ ~35%, holding per-year.
+
+### Phase-2 results (2026-07-27 ~11:45 IST) — improved, still NOT investable
+
+- **Per-trade (G6):** Donchian-10w trail replaces target → **net +11.11%/tr, PF 2.72, t 13.9**
+  (vs target +4.62%/1.66). HMA44 trail too tight (+3.48%). r/71 confirmed: never a target.
+- **Book (G7, 14 cells):** best = **Donchian trail, 40×2.5%, ungated: 15.04% CAGR /
+  Sharpe 0.87 / MaxDD −51.2% / Calmar 0.29** vs NIFTYBEES 12.75% / 0.73 / −58.0% / 0.22.
+  Beats index on all headline metrics — but fails the pre-set MaxDD ≤35% bar; excess lumpy
+  (−28pp 2018, −16pp 2019, −24pp 2025); best-of-14 multiple-testing haircut applies.
+- **Structural discovery: the regime gate HURTS every cell** (retracement-reversal alpha
+  fires BELOW the 40w SMA — 2009/2020/2023 vintages). Retracement systems are anti-gate.
+  R:R contention ranking never helps. 40 slots > 20 for the trail book.
+- **Verdict unchanged: SIGNAL (not investable)** — Calmar 0.29 ≪ existing books (RS120 ~1.7).
+  Reusable insights recorded: Donchian trail on weekly swing entries; anti-gate behavior.

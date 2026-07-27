@@ -2,6 +2,37 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ★ DECISION PENDING — research/94: NWV → jade lizard / iron condor automation — 2026-07-27
+Arun's ask: automate the Nifty Weekly View into JL/IC trades ("construct like so" =
+his live 27-Jul position: short 23450 PE / long 22900 PE / short 24500 CE / long
+24700 CE, 10 lots, 4-Aug = pivot-anchored S1/R2 asymmetric condor). **Bake-off DONE
+same day on real option EOD 2020-02→2026-07** (318 Mondays, replayed live engine,
+net of costs, r/89 liquidity rule): `research/94_nwv_jade_lizard_ic/results/RESULTS.md`.
+**Verdict: NO EDGE for the directional mapping; user's exact construction ≈ breakeven
+always-on (+₹145/wk, PF 1.01) and NEGATIVE on BULL-view weeks (−₹1.0k/wk, t −0.18 —
+this week's deployment is its weakest bucket). Only weak SIGNAL: NEUTRAL-week
+far-OTM premium selling (true JL naked S1 put: +₹14.3k/wk, PF 1.99, t 2.22 — weak
+after ~90 cells; tail −₹395k/wk at 10 lots; ₹10-11L margin). ICs flat everywhere.
+Bear-view inversion re-confirmed (bull structures win on bear weeks, t~1.2).**
+**RESOLVED same day — Arun picked (b): his JL template, ALL non-ignore weeks, PAPER.**
+`services/nwv_trade.py` BUILT + DEPLOYED (registered in app.py after nsrw, `.bak_nwvtrade`;
+activates at next 09:00 pre-open restart — no market-hours restart done). Mon 09:50 entry
+from live Phase-0 view, next-wk expiry, 10 lots, sells@bid/buys@ask, PT50/stop−1×,
+Fri 15:15 out; W2026-07-27 cycle SEEDED from Arun's real fills (credit 44.44pts) so the
+paper book mirrors his live 4-Aug position. Kill: POST /api/nwv-trade/kill-switch.
+**PHASE-2 (adjustments — Arun asked when/how to adjust): NEVER ROLL, EXIT.** Both roll
+styles (defensive roll-away AND credit-chase = his W30 habit) re-widen the tail; best =
+**exit threatened side on daily close beyond weekly S1/R2** (+₹5.8k/wk PF 1.62 t 2.48 vs
+hold +₹4.0k PF 1.29; worst −₹230k→−₹144k; fixes 2021). Wired into executor as 15:25
+pivot-exit job (combo with PT/stop untested — paper book is the forward test). 4th
+independent confirmation: r/92 hold>adjust, June morph net-neg, mentor W30.
+- [ ] Card on /app/nwv for the paper book (poll /api/nwv-trade/state) — build ON VPS.
+- [ ] Verify tomorrow ≥09:15: /api/nwv-trade/state live, monitor marking m2m on seeded cycle.
+- [ ] Git commit research/94 + services/nwv_trade.py + app.py (on VPS).
+- [ ] Watch Fri 15:15 exit + weekly /trade-mentor comparison: Arun's manual JL vs robot.
+Prior Phase-1 design: `docs/NWV-PHASE1-TRADE-PLAN.md`. Infra byproduct: NIFTY50 30-min
+derived from 5-min through 2026-07-16 (was stuck 2026-05-05); script in research/94 scripts/.
+
 ## ★ LIVE — research/90 NSR-W v1.2: **G5 PAPER BOOK LIVE on VPS** (2026-07-24) — first auto-entry Mon 07-27 15:14
 `services/nsrw_paper.py` — Mon 15:14 entry, next-wk expiry, ₹30/leg 10 lots, GTT stop 2×, PT50,
 one roll-away, EOD recenter 1.5× (user's idea — beat exit-heavy-leg, t 5.84), out DTE≤1. Card +
@@ -53,6 +84,14 @@ target prior swing high. Full daily universe (629 names pass screens) resampled 
 - Untested: video's +3%-day→sell-10% overlay (moot until a book beats the index).
 - **If ever revisited**: NIFTY>200DMA regime gate (r/71/75 precedent), contention ranking
   instead of alphabetical, trailing exit instead of fixed target.
+**Phase 2 (2026-07-27, optimization for investability): improved but verdict unchanged.**
+Donchian-10w trail replaces target → per-trade net +11.11%/tr, PF 2.72, t 13.9 (2.4× the
+taught target rule — r/71's "never a target" again). Best book (trail, 40×2.5%, ungated):
+**15.04% CAGR / Sharpe 0.87 / DD −51.2% / Calmar 0.29** vs NIFTYBEES 12.75% / 0.73 / −58% /
+0.22 — beats the index on all headline metrics but FAILS the pre-set MaxDD ≤35% bar; excess
+lumpy (−28pp 2018, −24pp 2025); best-of-14-cells haircut. **Structural finding: regime gate
+HURTS retracement-reversal systems** (alpha fires below the 40w SMA — 2009/2020/2023
+vintages); R:R contention ranking never helps. Calmar 0.29 ≪ existing books → shelve.
 Verdict: `research/93_hma_weekly_swing/results/RESULTS.md`. STATUS-MD:
 `HMA30_44_MACD_RSI_WEEKLY_SWEEP_STATUS.md`. Publish-to-app (backtests.ts card) = optional chore.
 

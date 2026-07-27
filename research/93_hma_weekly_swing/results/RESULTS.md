@@ -60,6 +60,45 @@ The book realized far less than the population +4.6%/tr.
   the grid floor, not the peak.
 - Data: VPS `market_data.db` snapshot 2026-07-26; scripts in `research/93_hma_weekly_swing/scripts/`.
 
+## Phase 2 (2026-07-27, Arun's ask): optimization for investability
+
+**Outcome: materially improved — from "clearly loses to index" to "modestly beats index" —
+but still NOT investable by the pre-set bar (MaxDD ≤ ~35%).** Verdict stays **SIGNAL**,
+now with a much better exit rule on record.
+
+**Stage 1 — exit variants (per-trade, same entries/stops):**
+
+| Exit | n | net/tr | PF | t | hold |
+|---|---|---|---|---|---|
+| Target at prior swing high (as taught) | 4,537 | +4.62% | 1.66 | 11.2 | 12.6 wk |
+| Trail: close < HMA44 | 4,813 | +3.48% | 1.90 | 9.5 | 6.1 wk |
+| **Trail: close < prior 10-wk low (Donchian)** | 4,560 | **+11.11%** | **2.72** | **13.9** | 17.4 wk |
+
+The r/71 lesson repeats: **never a profit target** — riding past the old high 2.4×'s
+expectancy. (Also: Arun's ASIANPAINT near-miss prompted a 1%-buffer target fill test —
+it LOSES −0.23%/tr net; the haircut on the 33% of clean touches outweighs rescued
+near-misses. Exact-touch at the full high is the best *target* rule; the trail beats both.)
+
+**Stage 2 — 14 portfolio replays (2005→2026 vs NIFTYBEES 12.75% / 0.73 / −58.0% / 0.22):**
+
+Best cell: **Donchian trail, 40 slots × 2.5%, no gate → 15.04% CAGR, Sharpe 0.87,
+MaxDD −51.2%, Calmar 0.29** (76% exposure, 2,123 trades). Full table:
+`/tmp/hma93_g7b.log` + `results/g7_best_nav.csv`.
+
+Key structural findings:
+- **The regime gate (NIFTYBEES > 40-wk SMA) HURTS every cell** (best gated Donchian: 9.2%
+  CAGR). Opposite of r/71/75 — because this is a retracement-REVERSAL system: its best
+  entries (2009/2020/2023 vintages) fire BELOW the SMA. The alpha lives exactly where a
+  gate blocks. Retracement systems are anti-gate; breakout/momentum systems are pro-gate.
+- R:R slot-ranking never helps (contention adverse-selection isn't fixable by that rank).
+- 40 slots > 20 slots for the trail book (absorbs clustering; DD −58.8→−51.2, Sharpe up).
+
+**Why it still isn't investable:** −51% MaxDD (bar was ≤35%); excess is lumpy — positive
+14/21 years but −28pp (2018), −16pp (2019), −24pp (2025); best-of-14-cells carries a
+multiple-testing haircut; survivorship flatters the stock book more than the index. And at
+Calmar 0.29 it is far below the live/candidate books (midcap RS120 ~1.7, r/75 momentum
+~1.26) — capital would be better deployed there.
+
 ## Next levers (only if revisited)
 
 1. **Regime gate** (NIFTY > 200DMA) — the one overlay with a track record here (research/71/75);

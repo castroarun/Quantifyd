@@ -1,0 +1,11 @@
+[361/1628] 150 done, 16s
+[727/1628] 300 done, 32s
+[1138/1628] 450 done, 48s
+[1543/1628] 600 done, 66s
+
+=== PER-TRADE EXIT VARIANTS (net 25bps) ===
+target         n= 4537 gross= 4.870% net= 4.620% win=37.8% PF=1.66 t= 11.2 hold=12.6wk | sl 60.6% trail/tgt 33.1% time  4.5%
+trail_hma44    n= 4813 gross= 3.734% net= 3.484% win=29.8% PF=1.90 t=  9.5 hold= 6.1wk | sl 20.1% trail/tgt 79.0% time  0.0%
+trail_donch10  n= 4560 gross=11.358% net=11.108% win=32.8% PF=2.72 t= 13.9 hold=17.4wk | sl 49.7% trail/tgt 36.9% time 11.1%
+
+trade lists saved to results/g6_trades_<mode>.csv
