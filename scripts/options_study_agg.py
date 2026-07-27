@@ -58,11 +58,25 @@ def build_day(day):
     entry, close, hi, lo = strad[0], strad[-1], max(strad), min(strad)
     last_t = grid[-1]
     spot_close = float(spot_s.loc[last_t]) if last_t in spot_s.index else spot0
+    # OTM strangles at +/- offset points (CE above, PE below) -> combined 5-min series per offset
+    otm = {}
+    for off in (100, 200, 300):
+        cts, pts = tsym(atm + off, "CE"), tsym(atm - off, "PE")
+        if not cts or not pts:
+            continue
+        oser = []
+        for t in grid:
+            cp, pp = prem(cts, t), prem(pts, t)
+            if cp is None or pp is None:
+                continue
+            oser.append([t.strftime("%H:%M"), round(cp + pp, 1)])
+        if len(oser) >= 2:
+            otm[str(off)] = oser
     return dict(date=day, weekday=WD[datetime.strptime(day, "%Y-%m-%d").weekday()], dte=dte,
                 atm=int(atm), entry=entry, close=close, high=hi, low=lo,
                 decay_pct=round((close / entry - 1) * 100, 1) if entry else 0,
                 rng=round(hi - lo, 1), spot_open=round(spot0), spot_close=round(spot_close),
-                spot_move=round(spot_close - spot0), series=series)
+                spot_move=round(spot_close - spot0), series=series, otm=otm)
 
 
 def main():
