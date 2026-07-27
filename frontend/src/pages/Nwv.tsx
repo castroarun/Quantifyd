@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import styles from './Nwv.module.css';
+import NwvPaperCard from './NwvPaperCard';
 
 type StackedLevel = {
   price: number;
@@ -188,6 +189,8 @@ export default function Nwv() {
           </div>
         </div>
       </div>
+
+      <NwvPaperCard />
 
       {!view && (
         <div className={styles.waiting}>

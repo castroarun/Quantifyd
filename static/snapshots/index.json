@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-07-24T15:32:01",
+  "generated_at": "2026-07-27T15:32:01",
   "days": [
+    {
+      "date": "2026-07-27",
+      "file": "nas_mtm_2026-07-27.json",
+      "combined_last": 11225.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000,
+      "combined_last_2lot": 11225.5
+    },
     {
       "date": "2026-07-24",
       "file": "nas_mtm_2026-07-24.json",

@@ -12,7 +12,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'straddles' | 'nwv' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'straddles' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -156,6 +156,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLayers />}
             label="NWV"
             active={active === 'nwv'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/options-study"
+            icon={<IconBarChart />}
+            label="Opt Study"
+            active={active === 'options-study'}
             collapsed={collapsed}
           />
           <NavItem

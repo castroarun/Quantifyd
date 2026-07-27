@@ -894,9 +894,110 @@ function SensexPaperCard() {
   );
 }
 
-/** NSR-W v1.2 weekly-strangle PAPER book (research/90 G5) — live card + positions.
- *  Backend: services/nsrw_paper.py -> /api/nsrw/state. Study card:
- *  /app/backtest/nifty-strangle-rules-research90 · report: /app/nsrw-travel-research90.html */
+/** NSR-W v1.5 weekly-strangle PAPER books (research/90 G5) — live cards + positions.
+ *  Backend: services/nsrw_paper.py -> /api/nsrw/state (books t30/t20, 1-min m2m series).
+ *  Study: /app/backtest/nifty-strangle-rules-research90 · report: /app/nsrw-travel-research90.html */
+function NsrwSpark({ series }: { series: [string, number][] }) {
+  if (!series || series.length < 2) return null;
+  const W = 560, H = 92, P = 6;
+  const vals = series.map((p) => p[1]);
+  const lo = Math.min(...vals, 0), hi = Math.max(...vals, 0);
+  const x = (i: number) => P + (i / (series.length - 1)) * (W - 2 * P);
+  const y = (v: number) => P + ((hi - v) / (hi - lo || 1)) * (H - 2 * P);
+  const now = vals[vals.length - 1];
+  const col = now >= 0 ? '#0ca30c' : '#e66767';
+  const pts = series.map((p, i) => `${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
+  const area = `${x(0).toFixed(1)},${y(0).toFixed(1)} ${pts} ${x(series.length - 1).toFixed(1)},${y(0).toFixed(1)}`;
+  return (
+    <div style={{ margin: '6px 0 2px' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+        <polygon points={area} fill={col} opacity={0.12} />
+        <line x1={P} x2={W - P} y1={y(0)} y2={y(0)} stroke="#8b8fa3" strokeWidth={1} strokeDasharray="3 4" opacity={0.5} />
+        <polyline fill="none" stroke={col} strokeWidth={2} points={pts} />
+        <circle cx={x(series.length - 1)} cy={y(now)} r={3.5} fill={col} />
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5 }}>
+        <span style={{ color: col, fontWeight: 800 }}>
+          now {now < 0 ? '−₹' : '+₹'}{Math.abs(Math.round(now)).toLocaleString('en-IN')}
+        </span>
+        <span style={{ opacity: 0.6 }}>
+          lo −₹{Math.abs(Math.round(Math.min(...vals, 0))).toLocaleString('en-IN')} · hi
+          +₹{Math.abs(Math.round(Math.max(...vals, 0))).toLocaleString('en-IN')} · {series[0][0]}→{series[series.length - 1][0]}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function NsrwBook({ id, b }: { id: string; b: any }) {
+  const c: any = b.cycle;
+  const legs: any[] = c?.legs ?? [];
+  const rs = (v: number) => (v < 0 ? '−₹' : '+₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
+  const legPnl = (l: any) => (l.entry - (l.status === 'live' ? (l.ltp ?? l.entry) : (l.exit ?? l.entry))) * Math.abs(l.qty);
+  const chip = (txt: string, col: string) => (
+    <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, border: `1px solid ${col}`,
+      color: col, borderRadius: 99, padding: '1px 8px' }}>{txt}</span>
+  );
+  return (
+    <div style={{ flex: '1 1 420px', minWidth: 340, border: '1px solid rgba(148,163,184,0.15)', borderRadius: 10, padding: '10px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 800 }}>{b.label}</span>
+        {b.killed ? chip('KILLED', '#e66767') : c ? chip(`OPEN · exp ${c.expiry}`, '#3987e5') : chip('FLAT', '#8b8fa3')}
+        <span style={{ marginLeft: 'auto', fontSize: 11.5, opacity: 0.75 }}>
+          book {b.totals.weeks}w · {b.totals.wins}W · <b>{rs(b.totals.net_rs)}</b>
+        </span>
+      </div>
+      {c ? (
+        <>
+          <div style={{ display: 'flex', gap: 22, alignItems: 'baseline', margin: '8px 0 0', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.6 }}>Day P&amp;L</div>
+              <div style={{ fontSize: 20, fontWeight: 800,
+                color: ((c.m2m_rs ?? 0) - ((c.mtm_series ?? [])[0]?.[1] ?? 0)) >= 0 ? '#0ca30c' : '#e66767' }}>
+                {rs((c.m2m_rs ?? 0) - ((c.mtm_series ?? [])[0]?.[1] ?? 0))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 12, opacity: 0.9 }}>
+              <span>credit <b>{c.credit0}</b></span>
+              <span>week m2m <b style={{ color: (c.m2m_rs ?? 0) >= 0 ? '#0ca30c' : '#e66767' }}>{rs(c.m2m_rs ?? 0)}</b></span>
+              <span>restrangled <b>{c.rolled ? 'yes' : 'no'}</b></span>
+              <span>recentered <b>{c.recentered ? 'yes' : 'no'}</b></span>
+            </div>
+          </div>
+          <NsrwSpark series={c.mtm_series ?? []} />
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+              <thead><tr style={{ opacity: 0.6, textAlign: 'left' }}>
+                <th style={{ padding: '3px 6px' }}>Leg</th><th>Sold @</th><th>Now / Exit</th>
+                <th>Stop</th><th>P&amp;L</th><th>Status</th>
+              </tr></thead>
+              <tbody>
+                {legs.map((l, i) => {
+                  const p = legPnl(l);
+                  return (
+                    <tr key={i} style={{ borderTop: '1px solid rgba(148,163,184,0.1)' }}>
+                      <td style={{ padding: '3px 6px', fontWeight: 600 }}>{l.tsym} ×{Math.abs(l.qty)}</td>
+                      <td>{l.entry}</td>
+                      <td>{l.status === 'live' ? (l.ltp ?? '—') : l.exit}</td>
+                      <td>{l.stop}</td>
+                      <td style={{ color: p >= 0 ? '#0ca30c' : '#e66767', fontWeight: 700 }}>{rs(p)}</td>
+                      <td style={{ color: l.status === 'live' ? '#3987e5' : l.status === 'STOP' ? '#e66767' : '#8b8fa3', fontWeight: 700 }}>{l.status}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
+          Flat — enters Monday 15:14 (₹{b.target}/leg, adjustments at ₹{b.adjust}).
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NsrwPaperCard() {
   const [s, setS] = useState<any>(null);
   useEffect(() => {
@@ -909,61 +1010,23 @@ function NsrwPaperCard() {
     const t = setInterval(load, 10000);
     return () => clearInterval(t);
   }, []);
-  if (!s) return null;
-  const c: any = s.cycle;
-  const legs: any[] = c?.legs ?? [];
-  const live = legs.filter((l) => l.status === 'live');
-  const chip = (txt: string, col: string) => (
-    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, border: `1px solid ${col}`,
-      color: col, borderRadius: 99, padding: '1px 9px', marginLeft: 8 }}>{txt}</span>
-  );
-  const rs = (v: number) => (v < 0 ? '−₹' : '+₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
+  if (!s || !s.books) return null;
   return (
     <section className={styles.sectionBlock} style={{ marginTop: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 14, fontWeight: 800 }}>NSR-W v1.2 — Weekly ₹30 Strangle</span>
-        {chip('PAPER · 10 LOTS', '#8b8fa3')}
-        {s.killed ? chip('KILLED', '#e66767') : c ? chip(`OPEN · ${c.entry_date}`, '#3987e5') : chip('FLAT — next entry Mon 15:14', '#8b8fa3')}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 800 }}>NSR-W — Weekly Strangle Paper Books</span>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, border: '1px solid #8b8fa3',
+          color: '#8b8fa3', borderRadius: 99, padding: '1px 9px' }}>PAPER · 10 LOTS EACH</span>
         <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.75 }}>
-          book {s.totals.weeks}w · {s.totals.wins}W · <b>{rs(s.totals.net_rs)}</b>
-          {' · '}<a href="/app/backtest/nifty-strangle-rules-research90" style={{ color: '#3987e5' }}>study</a>
+          <a href="/app/backtest/nifty-strangle-rules-research90" style={{ color: '#3987e5' }}>study</a>
           {' · '}<a href="/app/nsrw-travel-research90.html" style={{ color: '#3987e5' }}>travel report</a>
         </span>
       </div>
-      {c ? (
-        <>
-          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12.5, margin: '8px 0 6px', opacity: 0.9 }}>
-            <span>expiry <b>{c.expiry}</b></span>
-            <span>credit <b>{c.credit0}</b> pts</span>
-            <span>m2m <b style={{ color: (c.m2m_rs ?? 0) >= 0 ? '#0ca30c' : '#e66767' }}>{rs(c.m2m_rs ?? 0)}</b></span>
-            <span>rolled <b>{c.rolled ? 'yes' : 'no'}</b> · recentered <b>{c.recentered ? 'yes' : 'no'}</b></span>
-            <span>live legs <b>{live.length}</b></span>
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
-              <thead><tr style={{ opacity: 0.6, textAlign: 'left' }}>
-                <th style={{ padding: '4px 8px' }}>Leg</th><th>Qty</th><th>Sold @</th>
-                <th>Stop (2.0×)</th><th>Status</th><th>Exit</th>
-              </tr></thead>
-              <tbody>
-                {legs.map((l, i) => (
-                  <tr key={i} style={{ borderTop: '1px solid rgba(148,163,184,0.12)' }}>
-                    <td style={{ padding: '4px 8px', fontWeight: 600 }}>{l.tsym}</td>
-                    <td>{l.qty}</td><td>{l.entry}</td><td>{l.stop}</td>
-                    <td style={{ color: l.status === 'live' ? '#3987e5' : l.status === 'STOP' ? '#e66767' : '#8b8fa3', fontWeight: 700 }}>{l.status}</td>
-                    <td>{l.exit ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      ) : (
-        <div style={{ fontSize: 12.5, opacity: 0.7, marginTop: 6 }}>
-          No open cycle. Enters automatically Monday 15:14 (next-week expiry, ₹30/leg, GTT 2.0× stops,
-          PT 50%, one roll-away, EOD recenter 1.5×, out by DTE-1).
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <NsrwBook id="t30" b={s.books.t30} />
+        <NsrwBook id="t20" b={s.books.t20} />
+      </div>
+      <div style={{ fontSize: 11.5, opacity: 0.6, marginTop: 6 }}>{s.spec}</div>
     </section>
   );
 }

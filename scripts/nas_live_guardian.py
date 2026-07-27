@@ -392,7 +392,7 @@ def tier1b_db_ticker_kite_reconcile():
         rows = []
         for tbl in ('nas_atm_positions', 'nas_positions'):
             try:
-                rows = [r[0] for r in c.execute("SELECT tradingsymbol FROM %s WHERE status='ACTIVE'" % tbl)]
+                rows = [r[0] for r in c.execute("SELECT tradingsymbol FROM %s WHERE status='ACTIVE' AND mode='live'" % tbl)]
                 break
             except Exception:
                 continue

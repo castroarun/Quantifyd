@@ -1,0 +1,44 @@
+{
+ "cycle": {
+  "entry_date": "2026-07-27",
+  "expiry": "2026-08-04",
+  "spot0": 23987.65,
+  "legs": [
+   {
+    "side": "PE",
+    "tsym": "NIFTY2680423550PE",
+    "strike": 23550.0,
+    "qty": -650,
+    "entry": 31.55,
+    "stop": 63.1,
+    "status": "live",
+    "opened": "2026-07-27 15:14",
+    "lot_size": 65
+   },
+   {
+    "side": "CE",
+    "tsym": "NIFTY2680424450CE",
+    "strike": 24450.0,
+    "qty": -650,
+    "entry": 32.1,
+    "stop": 64.2,
+    "status": "live",
+    "opened": "2026-07-27 15:14",
+    "lot_size": 65
+   }
+  ],
+  "flows": 41372.5,
+  "events": [
+   "2026-07-27 15:14 ENTRY SELL NIFTY2680423550PE @31.55 x650",
+   "2026-07-27 15:14 ENTRY SELL NIFTY2680424450CE @32.1 x650"
+  ],
+  "rolled": false,
+  "recentered": false,
+  "status": "OPEN",
+  "credit0": 63.65,
+  "m2m_rs": -65.0
+ },
+ "history": [],
+ "killed": false,
+ "started": "2026-07-27"
+}

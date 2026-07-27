@@ -168,3 +168,31 @@
   color: var(--text-muted, #6b7280);
   font-family: 'DM Mono', ui-monospace, monospace;
 }
+
+/* -- Phase-1 paper book card (research/94) -- */
+.pbHead { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.pbChips { display:flex; align-items:center; gap:8px; }
+.pbChip { font-size:.72rem; font-weight:700; letter-spacing:.04em; padding:3px 10px; border-radius:999px; background:rgba(148,163,184,.15); color:var(--text-muted,#94a3b8); }
+.pbChipPaper { background:rgba(37,99,235,.15); color:#60a5fa; }
+.pbChipOpen { background:rgba(16,185,129,.15); color:#34d399; }
+.pbChipKilled { background:rgba(220,38,38,.18); color:#f87171; }
+.pbKill { background:none; border:1px solid rgba(220,38,38,.4); color:#f87171; border-radius:6px; padding:2px 10px; font-size:.72rem; cursor:pointer; }
+.pbStats { display:flex; flex-wrap:wrap; gap:18px 28px; margin:12px 0; }
+.pbStats > div { display:flex; flex-direction:column; gap:2px; }
+.pbStats span { font-size:.72rem; color:var(--text-muted,#94a3b8); }
+.pbStats b { font-size:.95rem; }
+.pbPos { color:#34d399; }
+.pbNeg { color:#f87171; }
+.pbWatch { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:10px 0 6px; }
+.pbLevel { border:1px solid var(--card-border,#1f2937); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:2px; text-align:center; }
+.pbLevel span { font-size:.68rem; letter-spacing:.06em; color:var(--text-muted,#94a3b8); }
+.pbLevel b { font-size:1rem; }
+.pbLevel em { font-style:normal; font-size:.75rem; color:var(--text-muted,#94a3b8); }
+.pbLevelDone { opacity:.45; }
+.pbRule { font-size:.78rem; color:var(--text-muted,#94a3b8); margin-bottom:10px; }
+.pbTable { width:100%; border-collapse:collapse; font-size:.82rem; margin-top:8px; }
+.pbTable th { text-align:left; font-size:.7rem; letter-spacing:.05em; color:var(--text-muted,#94a3b8); padding:4px 8px; border-bottom:1px solid var(--card-border,#1f2937); }
+.pbTable td { padding:5px 8px; border-bottom:1px solid rgba(148,163,184,.08); }
+.pbLegClosed { opacity:.5; }
+.pbFoot { display:flex; flex-direction:column; gap:4px; margin-top:10px; font-size:.8rem; }
+@media (max-width:720px){ .pbWatch { grid-template-columns:1fr; } }

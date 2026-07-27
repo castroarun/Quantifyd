@@ -1,0 +1,47 @@
+{
+ "cycle": {
+  "entry_date": "2026-07-27",
+  "expiry": "2026-08-04",
+  "spot0": 23995.95,
+  "legs": [
+   {
+    "side": "PE",
+    "tsym": "NIFTY2680423450PE",
+    "strike": 23450.0,
+    "qty": -650,
+    "entry": 20.45,
+    "stop": 40.9,
+    "status": "live",
+    "opened": "2026-07-27 15:38",
+    "ltp": 20.45,
+    "lot_size": 65
+   },
+   {
+    "side": "CE",
+    "tsym": "NIFTY2680424550CE",
+    "strike": 24550.0,
+    "qty": -650,
+    "entry": 21.15,
+    "stop": 42.3,
+    "status": "live",
+    "opened": "2026-07-27 15:38",
+    "ltp": 21.15,
+    "lot_size": 65
+   }
+  ],
+  "flows": 27040.0,
+  "events": [
+   "2026-07-27 15:38 ENTRY_LATE SELL NIFTY2680423450PE @20.45 x650",
+   "2026-07-27 15:38 ENTRY_LATE SELL NIFTY2680424550CE @21.15 x650"
+  ],
+  "rolled": false,
+  "recentered": false,
+  "status": "OPEN",
+  "mtm_series": [],
+  "mtm_date": "2026-07-27",
+  "credit0": 41.6
+ },
+ "history": [],
+ "killed": false,
+ "started": "2026-07-27"
+}

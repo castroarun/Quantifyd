@@ -14,9 +14,11 @@ Locked spec (Arun 2026-07-27 — "construct like so", all non-ignore weeks):
            Fixed 10 lots. Sells fill at BID, buys at ASK (pessimistic).
   MGMT     PT at +50% of net credit; stop at -1.0x net credit (combined MTM,
            checked every minute; matches the backtested pt50_stop1x cell).
-  PIVOT-X  15:25 daily: close < weekly S1 -> exit BOTH put legs; close > weekly
-           R2 -> exit BOTH call legs (research/94 phase-2: exit_side on pivot
-           breach = best cell, t 2.48; rolls re-widen the tail — never roll).
+  PIVOT-X  every 30-MIN bar close (09:45..15:15): spot < weekly S1 -> exit BOTH
+           put legs; spot > weekly R2 -> exit BOTH call legs (research/94
+           phase-2/3: exit_side on pivot breach beats all rolls; 30-min TF
+           monotonic best — avg +6.2k/wk, worst wk -74.5k, t 3.10 vs daily
+           t 2.48. NEVER roll — both roll styles re-widen the tail).
   TIME     Friday 15:15 flat; DTE<=1 15:16 backstop (holiday weeks).
 PAPER ONLY. Accounting in cash flows; no margin model. Backtest prior entered
 Mon EOD — live entry is 09:50 (Arun's actual practice); divergence noted in
@@ -267,6 +269,11 @@ def monitor_job():
         close_cash += -px * (-leg["qty"])        # buyback shorts -cash, sell longs +cash
     profit_rs = cycle["flows"] + close_cash
     cycle["m2m_rs"] = round(profit_rs, 0)
+    try:
+        cycle["last_spot"] = kite.ltp(CFG["spot_key"])[CFG["spot_key"]]["last_price"]
+        cycle["last_check"] = now
+    except Exception:
+        pass
     cap_rs = cycle["credit0"] * lot_qty
     if profit_rs >= CFG["pt_frac"] * cap_rs:
         _close_all(st, cycle, quotes, now, "PT")
@@ -276,21 +283,28 @@ def monitor_job():
 
 
 def pivot_exit_job():
-    """15:25 daily — exit the threatened SIDE on a close beyond weekly S1/R2
-    (research/94 phase-2 winner). Never roll."""
+    """30-min bar closes (09:45..15:15) — exit the threatened SIDE when spot is
+    beyond weekly S1/R2 (research/94 phase-3 winner: 30m TF, t 3.10). Never
+    roll. Idempotent — a side exits once."""
     st = _load()
     cycle = st.get("cycle")
     if not cycle or cycle["status"] != "OPEN" or not cycle.get("pivots"):
         return
+    hm = datetime.now().strftime("%H:%M")
+    if not ("09:44" <= hm <= "15:17"):
+        return
     kite = _kite()
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     spot = kite.ltp(CFG["spot_key"])[CFG["spot_key"]]["last_price"]
+    cycle["last_pivot_check"] = now
+    cycle["last_spot"] = spot
     side = None
     if spot < cycle["pivots"]["s1"]:
         side = "PE"
     elif spot > cycle["pivots"]["r2"]:
         side = "CE"
     if not side:
+        _save(st)
         return
     live = [l for l in cycle["legs"] if l["status"] == "live" and l["side"] == side]
     if not live:
@@ -334,7 +348,28 @@ def time_exit_job():
 def get_state():
     st = _load()
     hist = [h for h in st.get("history", []) if h.get("reason") != "SKIP_IGNORE"]
+    cycle = st.get("cycle")
+    watch = None
+    if cycle and cycle.get("pivots"):
+        s1, r2 = cycle["pivots"]["s1"], cycle["pivots"]["r2"]
+        spot = cycle.get("last_spot")
+        lot_qty = int(CFG["lots"] * (cycle["legs"][0].get("lot_size") or 65)) if cycle.get("legs") else 650
+        cap_rs = round(cycle["credit0"] * lot_qty, 0)
+        watch = {
+            "s1": s1, "r2": r2, "spot": spot,
+            "dist_s1_pts": round(spot - s1, 1) if spot else None,
+            "dist_r2_pts": round(r2 - spot, 1) if spot else None,
+            "put_side_live": any(l["status"] == "live" and l["side"] == "PE" for l in cycle["legs"]),
+            "call_side_live": any(l["status"] == "live" and l["side"] == "CE" for l in cycle["legs"]),
+            "pt_rs": round(CFG["pt_frac"] * cap_rs, 0),
+            "stop_rs": round(-CFG["stop_mult"] * cap_rs, 0),
+            "last_pivot_check": cycle.get("last_pivot_check"),
+            "rule": "30-min bar closes 09:45-15:15 (:15/:45): spot < S1 -> exit both "
+                    "put legs; spot > R2 -> exit both call legs. One shot per side. "
+                    "NEVER roll (r/94: rolls re-widen the tail).",
+        }
     return {
+        "watch": watch,
         "spec": "NWV-JL paper (research/94) — Mon 09:50 on any non-ignore view: "
                 "SELL PE@S1 (+550 wing) / SELL CE@R2 (+200 wing), next-wk expiry, "
                 "PT 50% credit, stop -1x, 15:25 pivot-exit of threatened side on "
@@ -369,8 +404,9 @@ def register(app, scheduler):
     scheduler.add_job(monitor_job, "cron", day_of_week="mon-fri", hour="9-15",
                       minute="*", id="nwv_trade_monitor", replace_existing=True,
                       misfire_grace_time=30)
-    scheduler.add_job(pivot_exit_job, "cron", day_of_week="mon-thu", hour=15, minute=25,
-                      id="nwv_trade_pivot_exit", replace_existing=True, misfire_grace_time=120)
+    scheduler.add_job(pivot_exit_job, "cron", day_of_week="mon-fri", hour="9-15",
+                      minute="15,45", id="nwv_trade_pivot_exit",
+                      replace_existing=True, misfire_grace_time=120)
     scheduler.add_job(time_exit_job, "cron", day_of_week="mon-fri", hour=15, minute=15,
                       id="nwv_trade_time_exit", replace_existing=True, misfire_grace_time=300)
     logger.info("[NWV-TRADE] registered (paper-only, 10 lots)")

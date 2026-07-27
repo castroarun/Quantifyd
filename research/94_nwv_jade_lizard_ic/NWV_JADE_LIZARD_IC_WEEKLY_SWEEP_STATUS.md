@@ -86,6 +86,10 @@ runs on real prices. No modeled arm needed.
 | 2026-07-27 11:0x IST | Arun picked paper mapping (b): his JL, all non-ignore weeks | via AskUserQuestion |
 | 2026-07-27 11:1x IST | `services/nwv_trade.py` built, deployed, app.py registered, week seeded from live fills | live at next 09:00 restart |
 | 2026-07-27 11:2x IST | Phase-2 adjustment sweep DONE: exits beat rolls; pivot exit-side t 2.48 | wired into executor (15:25 job) |
+| 2026-07-27 11:3x IST | Phase-3 trigger-TF sweep: 30m monotonic best (t 3.10, worst −74.5k, maxDD −142k) | executor moved to 30-min pivot checks (:15/:45) |
+| 2026-07-27 11:38 IST | **Book ACTIVATED intraday** via standalone one-day runner (Arun's ask) | first MTM +₹3,308; in-app jobs take over at next 09:00 restart |
+| 2026-07-27 11:3x IST | S1 discrepancy explained: Zerodha chart weekly high differs ~39 pts | engine stays self-consistent (23,493.80) |
+| 2026-07-27 11:5x IST | /app/nwv card BUILT on VPS (NwvPaperCard.tsx, bundle index-B4ev1EO_.js) | level watch + legs + MTM + history; API 404 until 09:00 restart (card explains) |
 
 ## 6. Crash Recovery (resume without Claude)
 

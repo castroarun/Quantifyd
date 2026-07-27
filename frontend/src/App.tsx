@@ -11,6 +11,7 @@ import NasConfig from './pages/NasConfig';
 import Straddles from './pages/Straddles';
 import NasPanic from './pages/NasPanic';
 import Nwv from './pages/Nwv';
+import OptionsStudy from './pages/OptionsStudy';
 import N500m from './pages/N500m';
 import Strangle from './pages/Strangle';
 import Report from './pages/Report';
@@ -375,6 +376,16 @@ export default function App() {
           <Protected>
             <AppLayout active="journal">
               <JournalTrade />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/options-study"
+        element={
+          <Protected>
+            <AppLayout active="options-study">
+              <OptionsStudy />
             </AppLayout>
           </Protected>
         }

@@ -1,0 +1,32 @@
+.wrap { padding: 18px 22px 60px; max-width: 1100px; margin: 0 auto; }
+
+.head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.head h1 { font-size: 18px; font-weight: 800; margin: 0; }
+.sub { font-size: 11px; color: var(--ink-faint, #6e7681); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.tile { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel, rgba(139,148,158,0.04)); }
+.tl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-faint, #6e7681); }
+.tv { font-size: 15px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+.cardHead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px; }
+.cardHead b { font-size: 13px; }
+
+.sel { margin-left: auto; background: transparent; color: var(--ink); border: 1px solid var(--line);
+  border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
+.toggle { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-muted); cursor: pointer; }
+
+.chart { width: 100%; }
+
+/* daily decay strip */
+.strip { display: flex; align-items: flex-end; gap: 2px; height: 110px; overflow-x: auto; padding-top: 6px; }
+.bar { flex: 1 1 6px; min-width: 5px; height: 100%; display: flex; align-items: flex-end; justify-content: center;
+  background: transparent; border: 0; border-radius: 2px; padding: 0; cursor: pointer; }
+.bar span { display: block; width: 100%; border-radius: 2px 2px 0 0; min-height: 2px; transition: opacity .12s; }
+.bar:hover span { opacity: 0.75; }
+
+/* uPlot dark-theme tweaks */
+:global(.uplot), :global(.u-legend) { color: var(--ink-muted, #8b949e); font-size: 11px; }
+:global(.u-legend .u-value) { color: var(--ink); }
+:global(.u-title) { color: var(--ink); }

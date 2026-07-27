@@ -126,8 +126,40 @@ buys@ask, PT50 / stop −1× (per-minute), **15:25 pivot exit-side rule** (phase
 winner; combo with PT/stop is untested — the paper book is its forward test),
 Fri 15:15 flat, DTE≤1 backstop, kill `/api/nwv-trade/kill-switch`, state
 `/api/nwv-trade/state`, JSON state `backtest_data/nwv_trade_paper.json`.
-Registered in app.py (after nsrw; `.bak_nwvtrade`); goes live at the next
-09:00 pre-open restart (no market-hours restart). Week of 2026-07-27 cycle
+Registered in app.py (after nsrw; `.bak_nwvtrade`); scheduler jobs go live at the
+next 09:00 pre-open restart (no market-hours restart). Week of 2026-07-27 cycle
 SEEDED from Arun's actual manual fills (credit 44.44 pts) so the book mirrors
 the live position from day one. Dry-run reproduced his exact strikes/expiry.
-Pending: card on /app/nwv (build on VPS), git commit.
+**ACTIVATED intraday 2026-07-27 11:38 IST** via a one-day standalone runner
+(`scripts/standalone_today_runner.py`, exits 15:31; in-app jobs take over next
+restart) — first MTM tick +₹3,308. Pending: card on /app/nwv (build on VPS), git commit.
+
+## Phase 3 — trigger timeframe + distribution stats (Arun's asks) — 2026-07-27
+
+Same harness, pivot exit-side triggers on N-min closes beyond S1/R2 (spot from
+30-min bars; option fills at trigger-day EOD — no intraday option history
+pre-2026, so intraday arms differ only in WHICH DAY they exit). All ₹ at 10
+lots (1 pt = ₹650). Log `results/trigger_tf_stats.log`.
+
+| Policy | win% | avg | median | worst wk | best wk | total (169w) | maxDD | t |
+|---|---|---|---|---|---|---|---|---|
+| hold | 68.6 | 3,964 | 13,162 | −230,457 | 103,903 | 669,987 | −465,660 | 1.16 |
+| pt50_stop1x | 69.2 | 4,439 | 13,292 | −150,572 | 90,578 | 750,262 | −544,732 | 1.38 |
+| **exit-side 30m** | 62.1 | **6,233** | 11,115 | **−74,522** | 57,363 | **1,053,455** | **−141,960** | **3.10** |
+| exit-side 60m | 63.9 | 6,112 | 11,407 | −144,332 | 57,622 | 1,032,947 | −170,885 | 2.75 |
+| exit-side 120m | 63.9 | 5,952 | 11,180 | −144,332 | 57,622 | 1,005,972 | −170,885 | 2.68 |
+| exit-side daily | 64.5 | 5,848 | 12,058 | −144,332 | 65,065 | 988,325 | −167,960 | 2.48 |
+
+**30-min is the best trigger TF and the improvement is MONOTONIC** (30m > 60m ≈
+120m > daily) — the playbook's preferred shape. It trades a lower win-rate (more
+whipsaw side-exits) for a much smaller tail: worst week −₹2.30L → −₹0.75L, maxDD
+−₹4.66L → −₹1.42L, and the only t ≥ 3 in the whole study. Executor updated to
+30-min cadence (bar closes 09:45–15:15). Echoes the June finding (15m ≈ 30m
+structural stop on debit spreads).
+
+**Pivot-source note:** engine S1 for W2026-07-27 = 23,493.80 from prev-week NSE
+spot H/L/C 24,266.10 / 23,606.30 / 23,767.45 (classic S1 = 2·PP − H, verified).
+Arun's Zerodha chart shows 23,506.83, which back-solves to a prev-week high of
+24,227 — a different weekly-candle high (~39 pts), i.e. a different data series
+or week aggregation on the chart. The engine stays self-consistent with its
+backtest; the ~13-pt trigger difference is immaterial (strikes round to 50).
