@@ -505,6 +505,84 @@
      "pnl": -5118
     }
    ]
+  },
+  {
+   "day": "2026-07-27",
+   "weekday": "Mon",
+   "dte": 3,
+   "signal_class": "observational",
+   "variant": "straddle",
+   "entry_spot": 76577.44,
+   "ce_strike": 76600,
+   "pe_strike": 76600,
+   "ce_entry": 489.85,
+   "pe_entry": 388.15,
+   "credit": 878.0,
+   "ce_exit": 498.3,
+   "pe_exit": 329.65,
+   "exit_reason": "time1515",
+   "entry_time": "09:20",
+   "exit_time": "15:15",
+   "pnl": 1962,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 76600,
+     "qty": 40,
+     "entry": 489.85,
+     "ltp": 498.3,
+     "pnl": -338
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 76600,
+     "qty": 40,
+     "entry": 388.15,
+     "ltp": 329.65,
+     "pnl": 2340
+    }
+   ]
+  },
+  {
+   "day": "2026-07-27",
+   "weekday": "Mon",
+   "dte": 3,
+   "signal_class": "observational",
+   "variant": "strangle",
+   "entry_spot": 76577.44,
+   "ce_strike": 76900,
+   "pe_strike": 76300,
+   "ce_entry": 341.55,
+   "pe_entry": 267.9,
+   "credit": 609.45,
+   "ce_exit": 340.0,
+   "pe_exit": 223.45,
+   "exit_reason": "time1445",
+   "entry_time": "09:20",
+   "exit_time": "14:45",
+   "pnl": 1800,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 76900,
+     "qty": 40,
+     "entry": 341.55,
+     "ltp": 340.0,
+     "pnl": 62
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 76300,
+     "qty": 40,
+     "entry": 267.9,
+     "ltp": 223.45,
+     "pnl": 1778
+    }
+   ]
   }
  ]
 }

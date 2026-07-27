@@ -31,7 +31,8 @@ CFG = {
     "underlying": "NIFTY",
     "spot_key": "NSE:NIFTY 50",
     "lots": 10,
-    "target": 30.0,
+    "target": 30.0,       # entry premium target per leg
+    "adjust": 20.0,       # re-strangle/recenter target (v1.4: 20-24 plateau beats 30, t 6.9)
     "stop_mult": 2.0,
     "pt_frac": 0.5,
     "recenter_mult": 1.5,
@@ -233,12 +234,23 @@ def monitor_job():
         bid, ask, ltp = _bid_ask(q)
         if ltp and ltp >= leg["stop"]:
             _close_leg(cycle, leg, ask or ltp, now, "STOP")
-            if _live_legs(cycle) and not cycle["rolled"]:
+            if not cycle["rolled"]:
+                # v1.3 (tested t 6.76): a stop RE-STRANGLES — close the survivor too
+                # and sell a fresh Rs-target pair at current spot. Once per cycle.
                 cycle["rolled"] = True
+                for other in list(_live_legs(cycle)):
+                    _, oask, oltp = _bid_ask(quotes.get("NFO:" + other["tsym"], {}))
+                    _close_leg(cycle, other, oask or oltp or other["entry"], now, "RESTRANGLE_OUT")
                 spot = kite.ltp(CFG["spot_key"])[CFG["spot_key"]]["last_price"]
-                nl = _pick_leg(kite, cycle["expiry"], leg["side"], spot, CFG["target"])
-                if nl:
-                    _sell(cycle, nl, now, "ROLL")
+                pe = _pick_leg(kite, cycle["expiry"], "PE", spot, CFG["adjust"])
+                ce = _pick_leg(kite, cycle["expiry"], "CE", spot, CFG["adjust"])
+                if pe and ce:
+                    _sell(cycle, pe, now, "RESTRANGLE")
+                    _sell(cycle, ce, now, "RESTRANGLE")
+                else:
+                    _finish(st, cycle, now, "RESTRANGLE_FLAT")
+                    _save(st)
+                    return
             if not _live_legs(cycle):
                 _finish(st, cycle, now, "STOP2_FLAT")
                 _save(st)
@@ -289,8 +301,8 @@ def eod_job():
                 _, ask, ltp = _bid_ask(quotes.get("NFO:" + leg["tsym"], {}))
                 _close_leg(cycle, leg, ask or ltp or leg["entry"], now, "RECENTER_OUT")
             spot = kite.ltp(CFG["spot_key"])[CFG["spot_key"]]["last_price"]
-            pe = _pick_leg(kite, cycle["expiry"], "PE", spot, CFG["target"])
-            ce = _pick_leg(kite, cycle["expiry"], "CE", spot, CFG["target"])
+            pe = _pick_leg(kite, cycle["expiry"], "PE", spot, CFG["adjust"])
+            ce = _pick_leg(kite, cycle["expiry"], "CE", spot, CFG["adjust"])
             if pe and ce:
                 cycle["recentered"] = True
                 _sell(cycle, pe, now, "RECENTER")
@@ -306,8 +318,8 @@ def get_state():
     cycle = st.get("cycle")
     hist = st.get("history", [])
     return {
-        "spec": "NSR-W v1.2 paper — Mon 15:14, next-wk expiry, Rs30/leg, stop 2.0x, "
-                "PT 50%, 1 roll-away, EOD recenter 1.5x, out DTE<=1, 10 lots",
+        "spec": "NSR-W v1.4 paper — Mon 15:14, next-wk expiry, ENTER Rs30/leg, stop 2.0x, "
+                "PT 50%, stop->RE-STRANGLE & EOD-recenter both at Rs20 (t 6.9), out DTE<=1, 10 lots",
         "killed": bool(st.get("killed")),
         "cycle": cycle,
         "history": hist[-30:],

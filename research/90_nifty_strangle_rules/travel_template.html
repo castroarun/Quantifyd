@@ -109,9 +109,11 @@
   <section id="evolution">
     <h2>How the spec evolved — the questions that changed the rules</h2>
     <p class="note">Every rule below started as a question, got a test, and only then entered (or left) the spec.
-    Current spec: <b>NSR-W v1.2</b> — Monday ~15:00 entry · next-week expiry · CE+PE nearest ₹20–30 each ·
-    GTT stop 2.0×/leg · PT 50% of credit · one intraday roll-away (survivor leg rides with its own stop) ·
-    EOD recenter at 1.5× (once/week) · out by DTE-1 · fixed lots · margin ≤ 70%.</p>
+    Current spec: <b>NSR-W v1.4</b> — Monday ~15:00 entry · next-week expiry · <b>ENTER at ₹30/leg</b> ·
+    GTT stop 2.0×/leg · PT 50% of credit · <b>first stop → close both &amp; RE-STRANGLE, and EOD skew ≥1.5× →
+    recenter — both adjustments at ₹20/leg</b> (once each per week; t 6.9) · second stop closes that leg only,
+    survivor rides · out by DTE-1 · fixed lots · margin ≤ 70%. (Note: the travel charts below were replayed
+    under v1.1 roll rules; the nightly regen carries the live rules forward for live-paper weeks.)</p>
 
     <h3 style="font-size:14px;margin:14px 0 4px">1 · Entry time: 09:30 was an untested guess — the data says ~15:00</h3>
     <p class="note">The first replay used 09:30 by convention ("let the open settle") — never backtested. Challenged
@@ -127,13 +129,18 @@
     The 13-week replay had hinted PT80 — the hint died on the big sample (small-sample mirage; every replay
     hint is re-tested on 378 weeks before touching the spec).</p>
 
-    <h3 style="font-size:14px;margin:14px 0 4px">3 · After a stop: one roll, then the survivor rides</h3>
-    <p class="note">Stops are per-leg. The FIRST stop of the week buys back that leg and re-sells the same side at the
-    ₹-target from current spot (the one roll). A second stop closes that leg with no replacement. The never-stopped
-    leg stays on — still wearing its own stop — to PT or the time exit. Worst-week example (May 11, ₹30): two put
-    stops cost −60.7 pts; the surviving 24800CE decayed and clawed back ~27 pts → final −33.5. Rolling is capped at
-    one because two same-side stops means the market is trending through the position — a third sell into the trend
-    is the manual-treadmill failure this system exists to prevent.</p>
+    <h3 style="font-size:14px;margin:14px 0 4px">3 · After a stop: RE-STRANGLE (v1.3) — the user's second winning idea</h3>
+    <p class="note">v1.2 rolled only the stopped side at the ₹-target, survivor riding. Question raised: "if the survivor
+    is worth ₹6, matching its premium gives nothing — should we close BOTH and sell fresh on both sides?" Tested four
+    roll styles on 378 weeks (₹30 base): fixed one-side 11.73 (t 5.84) · match-survivor 10.74 (t 5.74) · halfway-₹15
+    10.96 (t 5.73) · <b>close-both-and-re-strangle 12.93 — t 6.76, the strongest result of the entire program</b>,
+    better on mean, tail (worst −407 vs −422), p5 (−34.7) and post-22 (+15.9). So v1.3: the FIRST stop closes the whole
+    book and re-sells a fresh symmetric ₹-target pair (once per cycle); a second stop closes that leg only, survivor
+    rides. Unifying principle with the EOD recenter: <b>when the book breaks, don't patch a leg — re-run the entry.</b><br>
+    <b>v1.4 refinement (also user-raised):</b> "a fresh ₹30 at 15:15 sits closer to the market" — correct. Adjustment-target
+    sweep (₹30/24/20/15 on the ₹30 book): <b>₹20–24 is the plateau (t 6.92–6.94, p5 −30 vs −34.7)</b>, ₹15 too timid
+    (t 5.75). Adopted: <b>enter at ₹30, adjust (re-strangle &amp; recenter) at ₹20</b>. The ₹20-entry book keeps ₹20
+    adjustments — already far OTM, backing off further only costs credit.</p>
 
     <h3 style="font-size:14px;margin:14px 0 4px">4 · Overnight skew: exit-the-heavy-leg tested, then beaten by the user's recenter idea</h3>
     <p class="note">Worry: "if CE/PE premiums are unbalanced at the close, aren't we exposed to a gap on the heavy side?"

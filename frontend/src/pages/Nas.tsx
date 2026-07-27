@@ -533,14 +533,15 @@ function SensexLiveCard() {
   );
   const GRID = '54px 68px 46px 60px 60px 60px 1fr 78px 82px';
   const sessions = (hist && hist.sessions) || [];
+  const anyLive = withLegs.some((x: any) => x.mode === 'live');
 
   return (
     <section className={styles.sectionBlock} style={{ marginTop: 14,
       border: '1px solid rgba(63,185,80,0.35)', borderRadius: 10, padding: '12px 14px',
       background: 'rgba(63,185,80,0.03)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
-        <span className="section-title">SENSEX · LIVE / PAPER</span>
-        {modePill('live')}
+        <span className="section-title">SENSEX</span>
+        {modePill(anyLive ? 'live' : 'paper')}
         <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>{d ? d.expiry : 'Wed/Thu live · else paper'}</span>
         {d && d.spot != null && (
           <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>spot {d.spot.toLocaleString('en-IN')}</span>

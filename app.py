@@ -9767,6 +9767,8 @@ except Exception as _e:
 try:
     from services.nsrw_paper import register as _nsrw_register
     _nsrw_register(app, scheduler)
+    from services.nwv_trade import register as _nwv_trade_register
+    _nwv_trade_register(app, scheduler)
 except Exception as _e:
     logger.warning(f"Could not register NSRW paper book: {_e}")
 

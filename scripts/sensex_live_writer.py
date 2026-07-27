@@ -156,7 +156,7 @@ def build():
     return {
         "generated_at": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
         "spot": round(spot, 1) if spot else None,
-        "expiry": "23 Jul (Thu) — current week",
+        "expiry": (datetime.now(IST).date() + timedelta(days=(3 - datetime.now(IST).date().weekday()) % 7)).strftime("%d %b current-week (Thu)"),
         "day_pnl": round(day_pnl),
         "systems": systems,
     }

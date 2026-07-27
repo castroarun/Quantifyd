@@ -1,0 +1,69 @@
+{
+ "cycle": {
+  "entry_date": "2026-07-27",
+  "expiry": "2026-08-04",
+  "view": "bullish",
+  "spot0": 23915.75,
+  "strikes": {
+   "sell_pe": 23450,
+   "buy_pe": 22900,
+   "sell_ce": 24500,
+   "buy_ce": 24700
+  },
+  "legs": [
+   {
+    "side": "PE",
+    "tsym": "NIFTY2680423450PE",
+    "strike": 23450,
+    "qty": -650,
+    "entry": 39.37,
+    "status": "live",
+    "opened": "2026-07-27 10:15",
+    "lot_size": 65
+   },
+   {
+    "side": "PE",
+    "tsym": "NIFTY2680422900PE",
+    "strike": 22900,
+    "qty": 650,
+    "entry": 7.88,
+    "status": "live",
+    "opened": "2026-07-27 10:15",
+    "lot_size": 65
+   },
+   {
+    "side": "CE",
+    "tsym": "NIFTY2680424500CE",
+    "strike": 24500,
+    "qty": -650,
+    "entry": 22.0,
+    "status": "live",
+    "opened": "2026-07-27 10:15",
+    "lot_size": 65
+   },
+   {
+    "side": "CE",
+    "tsym": "NIFTY2680424700CE",
+    "strike": 24700,
+    "qty": 650,
+    "entry": 9.05,
+    "status": "live",
+    "opened": "2026-07-27 10:15",
+    "lot_size": 65
+   }
+  ],
+  "flows": 28886.0,
+  "events": [
+   "2026-07-27 10:15 SEEDED from Arun live manual fills (mirror)"
+  ],
+  "status": "OPEN",
+  "credit0": 44.44,
+  "pivots": {
+   "s1": 23493.8,
+   "r2": 24539.75
+  }
+ },
+ "history": [],
+ "killed": false,
+ "started": "2026-07-27"
+}
