@@ -49,7 +49,9 @@ def build_day(day):
         cp, pp = prem(ce, t), prem(pe, t)
         if cp is None or pp is None:
             continue
-        series.append([t.strftime("%H:%M"), round(cp + pp, 1), round(cp, 1), round(pp, 1)])
+        sp = float(spot_s.loc[t]) if t in spot_s.index else None
+        series.append([t.strftime("%H:%M"), round(cp + pp, 1), round(cp, 1), round(pp, 1),
+                       round(sp) if sp else None])
     if len(series) < 2:
         return None
     strad = [s[1] for s in series]
