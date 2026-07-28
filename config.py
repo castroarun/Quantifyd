@@ -486,9 +486,10 @@ NAS_ATM2_DEFAULTS = {
     'trail_to_cost_on_sl': False,
     're_enter_on_sl': False,   # user 2026-06-22 v3: per-leg 30% SL = one-and-done backstop
     'exit_both_on_sl': True,
-    'move_stop_pct': 0.004,    # user 2026-06-22 v3: 0.4% move-stop = exit trigger
+    'move_stop_pct': 0,        # research/96 2026-07-28: REPLACED by rupee_stop_per_lot (spot-move stop = DTE-dependent loss; expiry-gamma trap)
     'cascade_require_strike_change': False,
-    'move_stop_reenter': True, # user 2026-06-22 v3: move-stop re-centers to new ATM (if strike changed)
+    'move_stop_reenter': False,  # research/96: ONE-AND-DONE — re-center churns on trending/expiry days
+    'rupee_stop_per_lot': 2500,  # research/96: DTE-agnostic MTM stop, Rs2,500/lot (Rs5,000 per 2-lot strangle); calib +2,153/tr near-expiry vs +1,386 for 0.4% move
     # Skip Wed/Thu — cascading 5-re-entry geometry is brittle on trending
     # expiry-week days. Basic ATM (no cascade) stays enabled all weekdays.
     'skip_weekdays': (),  # 2026-06-03: no day fully skipped; non-live days run as PAPER (see live_weekdays)

@@ -134,6 +134,63 @@ class NasAtm2Executor(NasAtmExecutor):
                                 logger.info(f"[NAS-ATM2] MOVE-STOP: new ATM {int(new_atm)} == closed strike "
                                             f"{old_strike}; no same-strike re-enter")
 
+        # --- research/96 (2026-07-28): DTE-agnostic RUPEE MTM STOP (replaces the 0.4%
+        # spot-move stop). Close BOTH legs when the strangle's open MTM loss reaches
+        # rupee_stop_per_lot x lots. ONE-AND-DONE: no re-center. Evaluated on the same
+        # cadence as the old move-stop (periodic check_positions + SL-tick piggyback;
+        # the per-leg sl_price stays populated purely as the ticker wake-up trigger).
+        rupee_per_lot = self.cfg.get('rupee_stop_per_lot', 0) or 0
+        if rupee_per_lot > 0:
+            by_strangle = {}
+            for p in positions:
+                if p['status'] == 'ACTIVE':
+                    by_strangle.setdefault(p.get('strangle_id'), []).append(p)
+            for sid, legs in by_strangle.items():
+                if sid in exited_strangles:
+                    continue
+                mtm = 0.0
+                have_all = True
+                for l in legs:
+                    lt = l.get('tradingsymbol', '')
+                    lp = live_ltps.get(lt)
+                    if lp is None:
+                        lp = self.scanner.get_live_option_premium(lt)
+                    if lp is None:
+                        have_all = False
+                        break
+                    mtm += (l['entry_price'] - lp) * l['qty']
+                if not have_all:
+                    continue
+                lots = max(1, round(sum(abs(l['qty']) for l in legs) / (2 * 65)))
+                threshold = rupee_per_lot * lots
+                if mtm <= -threshold:
+                    if not self._broker_holds_any(legs):
+                        logger.critical("[NAS-ATM2] RUPEE-STOP suppressed for #%s: broker holds "
+                                        "none of these legs (closed outside the system). "
+                                        "Reconciling; NOT re-entering.", sid)
+                        self._reconcile_phantom(legs)
+                        exited_strangles.add(sid)
+                        continue
+                    logger.info(f"[NAS-ATM2] RUPEE-STOP: strangle #{sid} MTM Rs{mtm:.0f} <= "
+                                f"-Rs{threshold:.0f} ({lots} lots x Rs{rupee_per_lot}) -> close both legs, one-and-done")
+                    exited_strangles.add(sid)
+                    action = {'type': 'RUPEE_STOP', 'strangle_id': sid,
+                              'mtm_at_trigger': round(mtm, 2), 'threshold': threshold,
+                              'closed_legs': []}
+                    for leg_pos in legs:
+                        leg_tsym = leg_pos.get('tradingsymbol', '')
+                        leg_live = live_ltps.get(leg_tsym) or self.scanner.get_live_option_premium(leg_tsym) or 0
+                        self._close_leg(leg_pos, leg_live, 'RUPEE_STOP')
+                        pnl_leg = (leg_pos['entry_price'] - leg_live) * leg_pos['qty']
+                        st = self.db.get_state()
+                        self.db.update_state(daily_pnl=round((st.get('daily_pnl', 0) or 0) + pnl_leg, 2))
+                        action['closed_legs'].append({'tradingsymbol': leg_tsym,
+                                                      'exit_price': round(leg_live, 2), 'pnl': round(pnl_leg, 2)})
+                    fresh = self.db.get_positions_by_strangle(sid)
+                    self._record_trade(sid, fresh, 'RUPEE_STOP')
+                    action['total_pnl'] = round(sum(l['pnl'] for l in action['closed_legs']), 2)
+                    actions.append(action)
+
         # Check each position for SL breach
         for pos in positions:
             if pos['status'] != 'ACTIVE':
@@ -160,7 +217,9 @@ class NasAtm2Executor(NasAtmExecutor):
             # v3 (2026-06-22): when the move-stop is active it is the SOLE exit trigger
             # (matches the backtested move-stop). The 30% premium SL (~0.2% underlying)
             # would otherwise pre-empt the 0.4% move-stop and the re-center would never fire.
-            if (not self.cfg.get('move_stop_pct', 0)) and live_prem >= sl_price:
+            # research/96: the 30% per-leg SL is DROPPED when the rupee stop is active
+            # (calibration: it pre-empts the rupee stop and collapses avg to +64/tr).
+            if (not self.cfg.get('move_stop_pct', 0)) and (not self.cfg.get('rupee_stop_per_lot', 0)) and live_prem >= sl_price:
                 # user 2026-06-22: only cascade (close+re-enter) if price has moved to a
                 # DIFFERENT ATM strike. If the ATM is unchanged the re-entry would be the
                 # SAME strike (pointless churn) -> HOLD the position instead, even though
