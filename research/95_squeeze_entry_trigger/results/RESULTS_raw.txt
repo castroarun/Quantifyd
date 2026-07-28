@@ -1,0 +1,31 @@
+  replay 0/68 2026-04-20
+  replay 10/68 2026-05-08
+  replay 20/68 2026-05-22
+  replay 30/68 2026-06-05
+  replay 40/68 2026-06-19
+  replay 50/68 2026-07-03
+  replay 60/68 2026-07-17
+  replay 67/68 2026-07-28
+
+=== SQUEEZE-family ENTRY-TRIGGER bake-off — short ATM straddle held to 15:15, 2 lots (QTY 130), net ===
+trigger                nDays     total   avg/tr   median   win%      best     worst    recent
+09:16 (ref)               68    +39204     +576    +2183     66    +16304    -32394    +24057
+ATR squeeze               53    +21577     +407     +458     70     +5085     -5211    +12696
+time 09:30                68    +43049     +633    +1865     69    +13139    -24762    +18429
+time 10:00                68     -9379     -137    +1244     60    +12158    -30970     -8010
+time 10:30                67    -29746     -443    +1361     61     +9948    -25932     -3682
+time 11:00                67    -66958     -999    +1069     60     +9239    -28955    -16969
+time 12:00                67    -67732    -1010     +419     60     +5670    -25621    -23598
+price ±50 (1 strike)      63    +23514     +373    +1614     68    +12892    -26563    +20577
+price ±100 (2 strikes)    43    -19790     -460     +991     60    +13146    -20531    -13026
+
+Ranked by AVG per trade (the fair entry-quality metric, since trigger fire-counts differ):
+  time 09:30             avg    +633/tr  (n=68, total +43049, recent +18429)
+  09:16 (ref)            avg    +576/tr  (n=68, total +39204, recent +24057)
+  ATR squeeze            avg    +407/tr  (n=53, total +21577, recent +12696)
+  price ±50 (1 strike)   avg    +373/tr  (n=63, total +23514, recent +20577)
+  time 10:00             avg    -137/tr  (n=68, total -9379, recent -8010)
+  time 10:30             avg    -443/tr  (n=67, total -29746, recent -3682)
+  price ±100 (2 strikes) avg    -460/tr  (n=43, total -19790, recent -13026)
+  time 11:00             avg    -999/tr  (n=67, total -66958, recent -16969)
+  time 12:00             avg   -1010/tr  (n=67, total -67732, recent -23598)
