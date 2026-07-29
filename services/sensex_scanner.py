@@ -80,7 +80,13 @@ class SensexScanner:
 
     def build_tradingsymbol(self, instrument_type, strike, expiry):
         """LOOK UP the contract. Returns None if it does not exist (caller must handle)."""
-        if isinstance(expiry, datetime):
+        if isinstance(expiry, str):
+            # positions store expiry_date as a 'YYYY-MM-DD' string; the cache is
+            # keyed by date objects, so a raw string silently misses every strike
+            # (2026-07-29: broke the ATM4 roll — every candidate came back
+            # "no contract" and the strangle boundary-exited instead of rolling).
+            expiry = datetime.strptime(expiry[:10], '%Y-%m-%d').date()
+        elif isinstance(expiry, datetime):
             expiry = expiry.date()
         by_key, _ = _load_instruments()
         sym = by_key.get((expiry, int(strike), instrument_type))
