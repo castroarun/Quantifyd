@@ -41,6 +41,7 @@ interface Series {
   pnl: number;
   qty: number;
   avg: number;
+  prevClose: number;
 }
 
 function toSeries(r: HoldingsRecord, bars?: Bar[]): Series | null {
@@ -78,11 +79,32 @@ function toSeries(r: HoldingsRecord, bars?: Bar[]): Series | null {
     pnl: r.total_pnl_inr ?? 0,
     qty: r.qty ?? 0,
     avg: r.avg_price ?? 0,
+    prevClose: r.prev_close ?? 0,
   };
 }
 
 interface Bar { t: string; o: number; h: number; l: number; c: number; v: number; }
 type OhlcMap = Record<string, Bar[]>;
+
+function ymd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// The OHLC file is regenerated once a day (after close), so intraday its last
+// bar is yesterday's. Append a live "today" forming candle from the digest LTP
+// (open ≈ prev close, high/low bracket the move) so the chart reflects today
+// while the market is open. Skipped on weekends and once Yahoo already has today.
+function augmentToday(bars: Bar[] | undefined, s: Series): Bar[] | undefined {
+  if (!bars || bars.length < 2) return bars;
+  if (!(Number.isFinite(s.ltp) && s.ltp > 0)) return bars;
+  const today = ymd(new Date());
+  const last = bars[bars.length - 1];
+  if (last.t >= today) return bars;                 // already has today (or newer)
+  const dow = new Date().getDay();
+  if (dow === 0 || dow === 6) return bars;          // weekend — no synthetic bar
+  const o = s.prevClose > 0 ? s.prevClose : last.c;
+  return [...bars, { t: today, o, h: Math.max(o, s.ltp), l: Math.min(o, s.ltp), c: s.ltp, v: 0 }];
+}
 
 function roundTick(p: number): number { return Math.round(p / 0.05) * 0.05; }
 interface ExecStep { t: string; price: number; action: string; }
@@ -770,7 +792,7 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
               <div className={styles.metric}><span className={styles.mLabel}>Unrealized P&amp;L</span><span className={`${styles.mVal} ${upDn(current.pnl)}`}>{fmtRs(current.pnl)} · {pct(current.ret, 1)}</span></div>
               <div className={styles.metric}><span className={styles.mLabel}>Qty · Avg</span><span className={styles.mVal}>{current.qty} · ₹{current.avg.toFixed(0)}</span></div>
             </div>
-            <FocusChart s={current} win={tf} bars={ohlc[current.sym]} />
+            <FocusChart s={current} win={tf} bars={augmentToday(ohlc[current.sym], current)} />
             <div className={styles.leg}>
               <span><i style={{ borderColor: 'var(--brand-amber)' }} />50-DMA</span>
               <span><i style={{ borderColor: 'var(--brand-navy)' }} />200-DMA</span>
