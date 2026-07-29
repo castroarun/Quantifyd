@@ -164,6 +164,10 @@ def _finish(cfg, st, cycle, when, reason):
         "credit0": cycle["credit0"], "reason": reason,
         "net_rs": net_rs, "net_pts": round(net_rs / lot_qty, 2),
         "events": cycle["events"],
+        "entry_time": cycle.get("entry_time"), "entry_date": cycle.get("entry_date"),
+        "spot0": cycle.get("spot0"), "path_week": cycle.get("path_week", []),
+        "closed": when, "m2m_rs": net_rs,
+        "legs": [{k: l.get(k) for k in ("side", "strike", "entry", "tsym", "status")} for l in cycle["legs"]],
     })
     st["cycle"] = None
     logger.info(f"[NSRW:{cfg['id']}] cycle closed {reason} net Rs{net_rs}")
@@ -212,7 +216,7 @@ def _entry(cfg, tag="ENTRY"):
     cycle = {"entry_date": str(today), "expiry": expiry, "spot0": spot,
              "legs": [], "flows": 0.0, "events": [], "rolled": False,
              "recentered": False, "status": "OPEN", "mtm_series": [],
-             "mtm_date": str(today)}
+             "mtm_date": str(today), "entry_time": now, "path_week": []}
     _sell(cfg, cycle, pe, now, tag)
     _sell(cfg, cycle, ce, now, tag)
     cycle["credit0"] = round(sum(l["entry"] for l in cycle["legs"]), 2)
@@ -280,6 +284,11 @@ def _monitor(cfg):
         cycle["mtm_series"] = []
     cycle.setdefault("mtm_series", []).append([now_dt.strftime("%H:%M"), cycle["m2m_rs"]])
     cycle["mtm_series"] = cycle["mtm_series"][-400:]
+    stamp = now_dt.strftime("%Y-%m-%d %H:%M")
+    pw = cycle.setdefault("path_week", [])
+    if now_dt.minute % 5 == 0 and (not pw or pw[-1][0] != stamp):
+        pw.append([stamp, cycle["m2m_rs"]])
+        cycle["path_week"] = pw[-2000:]
     profit_pts = (cycle["flows"] - comb_val) / lot_qty
     if _live_legs(cycle) and profit_pts >= cfg["pt_frac"] * cycle["credit0"]:
         for leg in list(_live_legs(cycle)):

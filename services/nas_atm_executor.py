@@ -259,6 +259,14 @@ class NasAtmExecutor:
                     kite_order_id=str(order_id),
                 )
                 logger.info(f"[NAS-ATM] Kite order placed (ACTIVE): {order_id} for {tradingsymbol}")
+                # 2026-07-29 (guardian MEDIUM): reconcile entry_price to the REAL Kite
+                # fill. Quoted premium drifted up to +-13.75 pts from average_price on
+                # 07-29's fast SENSEX open; entry_price feeds the SL multiple, the P&L
+                # card AND the portfolio stop. Async so the entry burst never blocks.
+                import threading as _th
+                _th.Thread(target=self._reconcile_entry_fill,
+                           args=(position_id, str(order_id), price, sl_price),
+                           daemon=True).start()
             except Exception as e:
                 logger.error(f"[NAS-ATM] Kite order failed: {e}")
                 self.db.update_position(position_id, status='FAILED', notes=str(e))
@@ -297,6 +305,25 @@ class NasAtmExecutor:
                              f"{last.get('status_message')}")
                 return last_status, None
         return (last_status if last_status in ('REJECTED', 'CANCELLED') else 'PENDING'), None
+
+    def _reconcile_entry_fill(self, position_id, order_id, quoted_price, quoted_sl):
+        """guardian 2026-07-29: write the confirmed Kite average_price back onto the
+        position and rescale sl_price by fill/quote, preserving each system's SL
+        multiple. No-op when the fill matches the quote (or order not COMPLETE)."""
+        try:
+            status, avg = self._confirm_exit_fill(order_id)
+            if status != 'COMPLETE' or not avg or not quoted_price:
+                return
+            if abs(avg - quoted_price) < 0.05:
+                return
+            updates = {'entry_price': avg}
+            if quoted_sl and quoted_sl < 900000:
+                updates['sl_price'] = round(quoted_sl * (avg / quoted_price), 2)
+            self.db.update_position(position_id, **updates)
+            logger.info(f"[NAS-ATM] ENTRY FILL RECONCILED #{position_id}: quote "
+                        f"{quoted_price:.2f} -> fill {avg:.2f}; SL -> {updates.get('sl_price')}")
+        except Exception as _e:
+            logger.warning(f"[NAS-ATM] entry-fill reconcile failed #{position_id}: {_e}")
 
     # ---- broker truth: never trade against a position that is not there ----------------
     _POS_CACHE = {'ts': 0.0, 'net': None}
