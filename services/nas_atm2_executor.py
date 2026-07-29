@@ -161,7 +161,7 @@ class NasAtm2Executor(NasAtmExecutor):
                     mtm += (l['entry_price'] - lp) * l['qty']
                 if not have_all:
                     continue
-                lots = max(1, round(sum(abs(l['qty']) for l in legs) / (2 * 65)))
+                lots = max(1, round(sum(abs(l['qty']) for l in legs) / (2 * self._lot_size())))
                 threshold = rupee_per_lot * lots
                 if mtm <= -threshold:
                     if not self._broker_holds_any(legs):

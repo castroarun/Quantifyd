@@ -553,6 +553,13 @@ SENSEX_ATM_DEFAULTS = {
 }
 SENSEX_ATM2_DEFAULTS = {
     **NAS_916_ATM2_DEFAULTS,
+    # research/96 SCOPE FIX 2026-07-29 (guardian HIGH finding): the rupee stop was
+    # calibrated on NIFTY chains ONLY and was never approved for SENSEX — but this
+    # dict inherits it via NAS_916_ATM2_DEFAULTS. Restore SENSEX ATM2 to its exact
+    # pre-2026-07-28 behaviour (0.4% move-stop + per-leg 30% SL backstop semantics).
+    'rupee_stop_per_lot': 0,
+    'move_stop_pct': 0.004,
+    'move_stop_reenter': True,
     'strike_interval': 100,
     'lots_per_leg': 2,
     'paper_lots_per_leg': 2,
