@@ -50,6 +50,7 @@ export default function OptionsStudy() {
   const [startT, setStartT] = useState('09:16');
   const [endT, setEndT] = useState('15:30');
   const [grp, setGrp] = useState('none');
+  const [expand, setExpand] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/app/options_study.json?t=${Date.now()}`, { cache: 'no-store' })
@@ -83,6 +84,18 @@ export default function OptionsStudy() {
     });
     return gridMins.map((_, i) => {
       const vals = norm.map((n) => n[i]).filter((v): v is number => v != null).sort((a, b) => a - b);
+      return vals.length ? vals[Math.floor(vals.length / 2)] : null;
+    });
+  };
+  // median ABSOLUTE ₹ P&L of a SHORT position = entry − premium_t (profit as premium decays)
+  const medPnl = (dset: Day[], get: (d: Day) => [string, number][] | undefined) => {
+    const rows = dset.map((dy) => {
+      const w = win(get(dy)); const map = new Map<number, number>();
+      if (w.length >= 2 && w[0][1]) { const e = w[0][1]; w.forEach((b) => map.set(toMin(b[0]), Math.round((e - b[1]) * 10) / 10)); }
+      return gridMins.map((m) => (map.has(m) ? map.get(m)! : null));
+    });
+    return gridMins.map((_, i) => {
+      const vals = rows.map((n) => n[i]).filter((v): v is number => v != null).sort((a, b) => a - b);
       return vals.length ? vals[Math.floor(vals.length / 2)] : null;
     });
   };
@@ -146,6 +159,16 @@ export default function OptionsStudy() {
     return { opts: { series, axes: [XAXIS, pctAxis], legend: { show: true }, cursor: { drag: { x: false, y: false } } }, data };
   }, [days, startT, endT]);
 
+  // Chart — ABSOLUTE ₹ P&L of a short ATM straddle vs short OTM strangles (median, filtered days)
+  const cAbs = useMemo(() => {
+    if (!days.length) return null;
+    const rupee = { stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((x) => '₹' + x) };
+    const data: any = [gridMins, medPnl(days, getStrad), ...OTM_OFFS.map((o) => medPnl(days, getOtm(o)))];
+    const series: any[] = [{}, { label: 'ATM straddle', stroke: OTM_COLOR.atm, width: 2.5, points: { show: false } },
+      ...OTM_OFFS.map((o) => ({ label: '±' + o + 'pt', stroke: OTM_COLOR[o], width: 1.5, points: { show: false } }))];
+    return { opts: { series, axes: [XAXIS, rupee], legend: { show: true }, cursor: { drag: { x: false, y: false } } }, data };
+  }, [days, startT, endT]);
+
   // heatmap weekday x DTE (median straddle window-decay)
   const heat = useMemo(() => WDS.map((w) => DTES.map((k) => {
     const ds = allDays.filter((x) => x.weekday === w && x.dte === k).map((dy) => winDecay(dy, getStrad)).filter((v): v is number => v != null).sort((a, b) => a - b);
@@ -173,6 +196,18 @@ export default function OptionsStudy() {
   const decayed = stats.filter((s) => s.decay < 0).length;
   const medDecay = stats.length ? [...stats].map((s) => s.decay).sort((a, b) => a - b)[Math.floor(stats.length / 2)] : 0;
   const dStat = day ? statOf(day) : null;
+
+  // registry of the line-charts so any of them can open fullscreen
+  const chartsMap: Record<string, { title: string; opts: any; data: any }> = {};
+  if (c1) chartsMap.c1 = { title: 'Intraday ATM straddle premium', opts: c1.opts, data: c1.data };
+  if (cOTM) chartsMap.cOTM = { title: 'ATM straddle vs OTM strangles — % normalised', opts: cOTM.opts, data: cOTM.data };
+  if (cAbs) chartsMap.cAbs = { title: 'Short-straddle P&L — absolute ₹ kept as premium decays', opts: cAbs.opts, data: cAbs.data };
+  if (c2) chartsMap.c2 = { title: (wd === 'All' ? 'All days' : wd + ' days') + ' — normalised to window-start = 100', opts: c2.opts, data: c2.data };
+  if (cG) chartsMap.cG = { title: 'Median decay by weekday', opts: cG.opts, data: cG.data };
+  if (cDTE) chartsMap.cDTE = { title: 'Median decay by DTE', opts: cDTE.opts, data: cDTE.data };
+  const ExpandBtn = ({ k }: { k: string }) => (
+    <button className={styles.exp} title="Open fullscreen" onClick={() => setExpand(k)}>⤢</button>
+  );
 
   return (
     <div className={styles.wrap}>
@@ -209,28 +244,33 @@ export default function OptionsStudy() {
         <div className={styles.cardHead}><b>Intraday ATM straddle premium</b>
           <select className={styles.sel} value={sel ?? ''} onChange={(e) => setSel(e.target.value)}>{[...days].reverse().map((x) => <option key={x.date} value={x.date}>{x.date} &middot; {x.weekday} &middot; DTE{x.dte}</option>)}</select>
           <label className={styles.toggle}><input type="checkbox" checked={showLegs} onChange={(e) => setShowLegs(e.target.checked)} /> CE / PE split</label>
-          <span className={styles.sub}>dotted grey = NIFTY spot (right axis)</span></div>
-        {c1 && <Chart opts={c1.opts} data={c1.data} height={260} />}
+          <span className={styles.sub}>dotted grey = NIFTY spot (right axis)</span><ExpandBtn k="c1" /></div>
+        {c1 && <Chart opts={c1.opts} data={c1.data} height={320} />}
       </section>
 
       <section className={styles.card}>
-        <div className={styles.cardHead}><b>ATM straddle vs OTM strangles</b><span className={styles.sub}>median normalised to 100 · {wd} days · how much slower OTM decays</span></div>
-        {cOTM && <Chart opts={cOTM.opts} data={cOTM.data} height={240} />}
+        <div className={styles.cardHead}><b>ATM straddle vs OTM strangles</b><span className={styles.sub}>median normalised to 100 · {wd} days · OTM decays faster in % (cheaper, more extrinsic)</span><ExpandBtn k="cOTM" /></div>
+        {cOTM && <Chart opts={cOTM.opts} data={cOTM.data} height={300} />}
       </section>
 
       <section className={styles.card}>
-        <div className={styles.cardHead}><b>{wd === 'All' ? 'All days' : wd + ' days'}, normalised to window-start = 100</b><span className={styles.sub}>faint = each day · gold = selected · bold green = median</span></div>
-        {c2 && <Chart opts={c2.opts} data={c2.data} height={240} />}
+        <div className={styles.cardHead}><b>Short-straddle P&amp;L &mdash; absolute ₹</b><span className={styles.sub}>median ₹ kept as a seller (entry − premium) · {wd} days · ATM loses more % slowly but banks far more rupees</span><ExpandBtn k="cAbs" /></div>
+        {cAbs && <Chart opts={cAbs.opts} data={cAbs.data} height={300} />}
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><b>{wd === 'All' ? 'All days' : wd + ' days'}, normalised to window-start = 100</b><span className={styles.sub}>faint = each day · gold = selected · bold green = median</span><ExpandBtn k="c2" /></div>
+        {c2 && <Chart opts={c2.opts} data={c2.data} height={320} />}
       </section>
 
       <div className={styles.two}>
         <section className={styles.card}>
-          <div className={styles.cardHead}><b>Median decay by weekday</b></div>
-          {cG && <Chart opts={cG.opts} data={cG.data} height={220} />}
+          <div className={styles.cardHead}><b>Median decay by weekday</b><ExpandBtn k="cG" /></div>
+          {cG && <Chart opts={cG.opts} data={cG.data} height={260} />}
         </section>
         <section className={styles.card}>
-          <div className={styles.cardHead}><b>Median decay by DTE</b><span className={styles.sub}>the 0/1-DTE edge</span></div>
-          {cDTE && <Chart opts={cDTE.opts} data={cDTE.data} height={220} />}
+          <div className={styles.cardHead}><b>Median decay by DTE</b><span className={styles.sub}>the 0/1-DTE edge</span><ExpandBtn k="cDTE" /></div>
+          {cDTE && <Chart opts={cDTE.opts} data={cDTE.data} height={260} />}
         </section>
       </div>
 
@@ -269,13 +309,25 @@ export default function OptionsStudy() {
               {grp !== 'none' && <div className={styles.stripLabel}>{g.key} <span>({g.days.length}{g.med != null ? ` · med ${g.med}%` : ''})</span></div>}
               <div className={styles.strip}>
                 {g.days.map((x) => { const s = statOf(x); const dc = s ? s.decay : 0;
-                  return <button key={x.date} title={`${x.date} ${x.weekday} DTE${x.dte}\n${startT}→${endT}: ₹${s?.entry} → ₹${s?.close}\ndecay ${dc}%`} onClick={() => setSel(x.date)} className={styles.bar} style={{ outline: x.date === sel ? '1px solid var(--ink)' : 'none' }}>
+                  return <button key={x.date} title={`${x.date} ${x.weekday} DTE${x.dte}\n${startT}→${endT}: ₹${s?.entry} → ₹${s?.close}\ndecay ${dc}%`} onClick={() => setSel(x.date)} className={`${styles.bar} ${x.date === sel ? styles.barSel : ''}`}>
                     <span style={{ height: Math.min(100, Math.abs(dc)) + '%', background: dc < 0 ? '#3fb950' : '#f85149' }} /></button>; })}
               </div>
             </div>
           ))}
         </div>
+        <div className={styles.sub} style={{ marginTop: 8 }}>bar height = |decay %| (capped 100) · green = premium decayed (seller profit) · red = expanded (loss)</div>
       </section>
+
+      {expand && chartsMap[expand] && (
+        <div className={styles.modal} onClick={() => setExpand(null)}>
+          <div className={styles.modalInner} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.cardHead}><b>{chartsMap[expand].title}</b>
+              <button className={styles.exp} style={{ marginLeft: 'auto' }} title="Close" onClick={() => setExpand(null)}>✕</button></div>
+            <Chart opts={chartsMap[expand].opts} data={chartsMap[expand].data}
+              height={Math.round((typeof window !== 'undefined' ? window.innerHeight : 720) * 0.74)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

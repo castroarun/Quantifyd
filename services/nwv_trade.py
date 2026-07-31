@@ -136,7 +136,7 @@ def _open_leg(cycle, contract, qty_sign, px, when, tag):
     cycle["legs"].append({
         "side": contract["side"], "tsym": contract["tsym"],
         "strike": contract["strike"], "qty": qty, "entry": px,
-        "status": "live", "opened": when,
+        "status": "live", "opened": when, "px_max": px, "px_min": px,
         "lot_size": contract.get("lot_size") or 65,
     })
     cycle["flows"] = cycle.get("flows", 0.0) - px * qty      # short: +cash, long: -cash
@@ -144,7 +144,7 @@ def _open_leg(cycle, contract, qty_sign, px, when, tag):
     cycle["events"].append(f"{when} {tag} {verb} {contract['tsym']} @{px} x{abs(qty)}")
 
 
-def _close_all(st, cycle, quotes, when, reason):
+def _close_all(st, cycle, quotes, when, reason, detail=None):
     for leg in cycle["legs"]:
         if leg["status"] != "live":
             continue
@@ -154,6 +154,8 @@ def _close_all(st, cycle, quotes, when, reason):
         leg["status"] = reason
         leg["exit"] = px
         leg["closed"] = when
+        if detail:
+            leg["reason_detail"] = detail
         cycle["events"].append(
             f"{when} {reason} {'BUY' if leg['qty'] < 0 else 'SELL'} {leg['tsym']} @{px} x{abs(leg['qty'])}")
     cycle["status"] = "CLOSED"
@@ -165,7 +167,7 @@ def _close_all(st, cycle, quotes, when, reason):
         "week": cycle["entry_date"], "expiry": cycle["expiry"], "view": cycle["view"],
         "strikes": cycle["strikes"], "credit0": cycle["credit0"], "reason": reason,
         "net_rs": net_rs, "net_pts": round(net_rs / lot_qty, 2),
-        "events": cycle["events"],
+        "events": cycle["events"], "legs": cycle["legs"],
     })
     st["cycle"] = None
     logger.info(f"[NWV-TRADE] cycle closed {reason} net Rs{net_rs}")
@@ -255,7 +257,7 @@ def monitor_job():
         logger.warning(f"[NWV-TRADE] quote fail: {e}")
         return
     if st.get("killed"):
-        _close_all(st, cycle, quotes, now, "KILLED")
+        _close_all(st, cycle, quotes, now, "KILLED", "kill switch")
         _save(st)
         return
     lot_qty = int(CFG["lots"] * (cycle["legs"][0].get("lot_size") or 65))
@@ -265,6 +267,10 @@ def monitor_job():
         if leg["status"] != "live":
             continue
         bid, ask, ltp = _bid_ask(quotes.get("NFO:" + leg["tsym"], {}))
+        mark = ltp or ((bid + ask) / 2 if bid and ask else 0)
+        if mark:
+            leg["px_max"] = round(max(leg.get("px_max") or leg["entry"], mark), 2)
+            leg["px_min"] = round(min(leg.get("px_min") or leg["entry"], mark), 2)
         px = (ask if leg["qty"] < 0 else bid) or ltp or leg["entry"]
         close_cash += -px * (-leg["qty"])        # buyback shorts -cash, sell longs +cash
     profit_rs = cycle["flows"] + close_cash
@@ -276,9 +282,13 @@ def monitor_job():
         pass
     cap_rs = cycle["credit0"] * lot_qty
     if profit_rs >= CFG["pt_frac"] * cap_rs:
-        _close_all(st, cycle, quotes, now, "PT")
+        _close_all(st, cycle, quotes, now, "PT",
+                   f"combined profit Rs{profit_rs:,.0f} >= +50% of the "
+                   f"{cycle['credit0']}-pt credit (Rs{0.5 * cap_rs:,.0f})")
     elif profit_rs <= -CFG["stop_mult"] * cap_rs:
-        _close_all(st, cycle, quotes, now, "STOP")
+        _close_all(st, cycle, quotes, now, "STOP",
+                   f"combined loss Rs{profit_rs:,.0f} <= -1x the "
+                   f"{cycle['credit0']}-pt credit (Rs{cap_rs:,.0f})")
     _save(st)
 
 
@@ -317,6 +327,9 @@ def pivot_exit_job():
         leg["status"] = "PIVOT_EXIT"
         leg["exit"] = px
         leg["closed"] = now
+        lvl = ("S1", cycle["pivots"]["s1"]) if side == "PE" else ("R2", cycle["pivots"]["r2"])
+        leg["reason_detail"] = (f"30-min close beyond weekly {lvl[0]} ({lvl[1]}) at "
+                                f"spot {spot} -> exit threatened side (never roll)")
         cycle["events"].append(
             f"{now} PIVOT_EXIT ({side} side, spot {spot}) "
             f"{'BUY' if leg['qty'] < 0 else 'SELL'} {leg['tsym']} @{px} x{abs(leg['qty'])}")
@@ -341,7 +354,8 @@ def time_exit_job():
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     keys = ["NFO:" + l["tsym"] for l in cycle["legs"] if l["status"] == "live"]
     quotes = kite.quote(keys) if keys else {}
-    _close_all(st, cycle, quotes, now, "TIME")
+    _close_all(st, cycle, quotes, now, "TIME",
+               "time exit (Friday 15:15 / DTE<=1 backstop)")
     _save(st)
 
 

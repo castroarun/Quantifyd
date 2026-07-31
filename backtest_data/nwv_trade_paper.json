@@ -21,6 +21,64 @@
     "2026-07-28 11:01 PT SELL NIFTY2680422900PE @5.25 x650",
     "2026-07-28 11:01 PT BUY NIFTY2680424500CE @18.3 x650",
     "2026-07-28 11:01 PT SELL NIFTY2680424700CE @6.2 x650"
+   ],
+   "legs": [
+    {
+     "side": "PE",
+     "tsym": "NIFTY2680423450PE",
+     "strike": 23450,
+     "qty": -650,
+     "entry": 39.37,
+     "exit": 15.15,
+     "status": "PT",
+     "opened": "2026-07-27 10:15",
+     "closed": "2026-07-28 11:01",
+     "px_max": 48.05,
+     "px_min": 15.15,
+     "reason_detail": "combined profit Rs14,586 hit +50% of the 44.44-pt credit"
+    },
+    {
+     "side": "PE",
+     "tsym": "NIFTY2680422900PE",
+     "strike": 22900,
+     "qty": 650,
+     "entry": 7.88,
+     "exit": 5.25,
+     "status": "PT",
+     "opened": "2026-07-27 10:15",
+     "closed": "2026-07-28 11:01",
+     "px_max": 9.8,
+     "px_min": 5.25,
+     "reason_detail": "combined profit Rs14,586 hit +50% of the 44.44-pt credit"
+    },
+    {
+     "side": "CE",
+     "tsym": "NIFTY2680424500CE",
+     "strike": 24500,
+     "qty": -650,
+     "entry": 22.0,
+     "exit": 18.3,
+     "status": "PT",
+     "opened": "2026-07-27 10:15",
+     "closed": "2026-07-28 11:01",
+     "px_max": 27.85,
+     "px_min": 18.3,
+     "reason_detail": "combined profit Rs14,586 hit +50% of the 44.44-pt credit"
+    },
+    {
+     "side": "CE",
+     "tsym": "NIFTY2680424700CE",
+     "strike": 24700,
+     "qty": 650,
+     "entry": 9.05,
+     "exit": 6.2,
+     "status": "PT",
+     "opened": "2026-07-27 10:15",
+     "closed": "2026-07-28 11:01",
+     "px_max": 12.8,
+     "px_min": 6.2,
+     "reason_detail": "combined profit Rs14,586 hit +50% of the 44.44-pt credit"
+    }
    ]
   }
  ],

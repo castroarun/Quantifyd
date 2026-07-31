@@ -159,13 +159,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/options-study"
-            icon={<IconBarChart />}
-            label="Opt Study"
-            active={active === 'options-study'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/n500m"
             icon={<IconLayers />}
             label="N500M"
@@ -250,17 +243,30 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/options-data"
-            icon={<IconDatabase />}
-            label="Options data"
-            active={active === 'options-data'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/future-plans"
             icon={<IconLightbulb />}
             label="Future plans"
             active={active === 'future-plans'}
+            collapsed={collapsed}
+          />
+        </nav>
+      </div>
+
+      <div className={styles.section}>
+        {!collapsed && <div className={styles.sectionLabel}>Options</div>}
+        <nav className={styles.nav}>
+          <NavItem
+            to="/options-study"
+            icon={<IconBarChart />}
+            label="Opt Study"
+            active={active === 'options-study'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/options-data"
+            icon={<IconDatabase />}
+            label="Options data"
+            active={active === 'options-data'}
             collapsed={collapsed}
           />
         </nav>

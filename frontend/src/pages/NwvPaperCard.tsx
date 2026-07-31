@@ -1,10 +1,28 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import styles from './Nwv.module.css';
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function prettyExp(e?: string): string {
+  if (!e) return '';
+  const d = new Date(e);
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+function prettyLeg(l: { strike: number; side?: string; tsym?: string }, expiry?: string): string {
+  const side = l.side || (String(l.tsym || '').endsWith('PE') ? 'PE' : 'CE');
+  return `NIFTY ${l.strike} ${side}${expiry ? ' · ' + prettyExp(expiry) : ''}`;
+}
+function fmtDT(s?: string | null): string {
+  if (!s) return '—';
+  const d = new Date(s.replace(' ', 'T'));
+  return isNaN(d.getTime()) ? s : `${d.getDate()} ${MONTHS[d.getMonth()]} ${s.slice(11, 16)}`;
+}
+
 type Leg = {
   side: string; tsym: string; strike: number; qty: number; entry: number;
-  status: string; exit?: number; closed?: string;
+  status: string; exit?: number; opened?: string; closed?: string;
+  px_max?: number; px_min?: number; reason_detail?: string;
 };
 type Watch = {
   s1: number; r2: number; spot?: number | null;
@@ -19,7 +37,7 @@ type Cycle = {
 };
 type Hist = {
   week: string; view?: string; expiry?: string; credit0?: number;
-  reason: string; net_rs: number; net_pts?: number;
+  reason: string; net_rs: number; net_pts?: number; legs?: Leg[];
 };
 type PaperState = {
   spec: string; killed: boolean; watch: Watch | null; cycle: Cycle | null;
@@ -134,17 +152,28 @@ export default function NwvPaperCard() {
 
           <table className={styles.pbTable}>
             <thead>
-              <tr><th>Leg</th><th>Qty</th><th>Entry</th><th>Status</th><th>Exit</th></tr>
+              <tr><th>Leg</th><th>Qty</th><th>Entry</th><th>Exit</th>
+                  <th>Min</th><th>Max</th><th>Status</th></tr>
             </thead>
             <tbody>
               {c.legs.map((l, i) => (
-                <tr key={i} className={l.status !== 'live' ? styles.pbLegClosed : ''}>
-                  <td>{l.tsym}</td>
-                  <td>{l.qty > 0 ? `+${l.qty}` : l.qty}</td>
-                  <td>{l.entry.toFixed(2)}</td>
-                  <td>{l.status}</td>
-                  <td>{l.exit != null ? l.exit.toFixed(2) : '—'}</td>
-                </tr>
+                <Fragment key={i}>
+                  <tr className={l.status !== 'live' ? styles.pbLegClosed : ''}>
+                    <td>{prettyLeg(l, c.expiry)}</td>
+                    <td>{l.qty > 0 ? `+${l.qty}` : l.qty}</td>
+                    <td>{l.entry.toFixed(2)}
+                      <div className={styles.pbSub}>{fmtDT(l.opened)}</div></td>
+                    <td>{l.exit != null ? l.exit.toFixed(2) : '—'}
+                      <div className={styles.pbSub}>{l.closed ? fmtDT(l.closed) : 'live'}</div></td>
+                    <td>{l.px_min != null ? l.px_min.toFixed(2) : '—'}</td>
+                    <td>{l.px_max != null ? l.px_max.toFixed(2) : '—'}</td>
+                    <td>{l.status}</td>
+                  </tr>
+                  {l.reason_detail && (
+                    <tr><td colSpan={7} className={styles.pbReason}>
+                      ↳ {l.status}: {l.reason_detail}</td></tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -168,13 +197,28 @@ export default function NwvPaperCard() {
           </thead>
           <tbody>
             {st!.history.slice(-8).reverse().map((h, i) => (
-              <tr key={i}>
-                <td>{h.week}</td>
-                <td>{h.view ?? '—'}</td>
-                <td>{h.credit0 != null ? `${h.credit0} pts` : '—'}</td>
-                <td>{h.reason}</td>
-                <td className={h.net_rs >= 0 ? styles.pbPos : styles.pbNeg}>{rs(h.net_rs)}</td>
-              </tr>
+              <Fragment key={i}>
+                <tr>
+                  <td>{h.week}</td>
+                  <td>{h.view ?? '—'}</td>
+                  <td>{h.credit0 != null ? `${h.credit0} pts` : '—'}</td>
+                  <td>{h.reason}</td>
+                  <td className={h.net_rs >= 0 ? styles.pbPos : styles.pbNeg}>{rs(h.net_rs)}</td>
+                </tr>
+                {(h.legs ?? []).map((l, j) => (
+                  <tr key={j} className={styles.pbLegClosed}>
+                    <td className={styles.pbSubCell}>
+                      {prettyLeg(l, h.expiry)} {l.qty > 0 ? `+${l.qty}` : l.qty}</td>
+                    <td className={styles.pbSubCell}>
+                      in {l.entry?.toFixed(2)} <span className={styles.muted}>{fmtDT(l.opened)}</span></td>
+                    <td className={styles.pbSubCell}>
+                      out {l.exit != null ? l.exit.toFixed(2) : '—'} <span className={styles.muted}>{fmtDT(l.closed)}</span></td>
+                    <td className={styles.pbSubCell}>
+                      min {l.px_min != null ? l.px_min.toFixed(2) : '—'} · max {l.px_max != null ? l.px_max.toFixed(2) : '—'}</td>
+                    <td className={styles.pbSubCell} title={l.reason_detail || ''}>{l.status}</td>
+                  </tr>
+                ))}
+              </Fragment>
             ))}
           </tbody>
         </table>

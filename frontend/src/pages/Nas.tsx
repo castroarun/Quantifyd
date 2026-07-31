@@ -929,6 +929,23 @@ function NsrwSpark({ series }: { series: [string, number][] }) {
   );
 }
 
+const NSRW_M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const nsrwExp = (e?: string) => {
+  if (!e) return '';
+  const d = new Date(e);
+  return `${d.getDate()} ${NSRW_M[d.getMonth()]}`;
+};
+const nsrwLeg = (l: any, expiry?: string) =>
+  `NIFTY ${l.strike} ${String(l.tsym || '').endsWith('PE') ? 'PE' : 'CE'}` +
+  (expiry ? ` · ${nsrwExp(expiry)}` : '');
+const nsrwDT = (s?: string) => {
+  if (!s) return '—';
+  const d = new Date(String(s).replace(' ', 'T'));
+  return isNaN(d.getTime()) ? String(s)
+    : `${d.getDate()} ${NSRW_M[d.getMonth()]} ${String(s).slice(11, 16)}`;
+};
+
 function NsrwBook({ id, b }: { id: string; b: any }) {
   const c: any = b.cycle;
   const legs: any[] = c?.legs ?? [];
@@ -942,7 +959,7 @@ function NsrwBook({ id, b }: { id: string; b: any }) {
     <div style={{ flex: '1 1 420px', minWidth: 340, border: '1px solid rgba(148,163,184,0.15)', borderRadius: 10, padding: '10px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 13, fontWeight: 800 }}>{b.label}</span>
-        {b.killed ? chip('KILLED', '#e66767') : c ? chip(`OPEN · exp ${c.expiry}`, '#3987e5') : chip('FLAT', '#8b8fa3')}
+        {b.killed ? chip('KILLED', '#e66767') : c ? chip(`OPEN · exp ${nsrwExp(c.expiry)}`, '#3987e5') : chip('FLAT', '#8b8fa3')}
         <span style={{ marginLeft: 'auto', fontSize: 11.5, opacity: 0.75 }}>
           book {b.totals.weeks}w · {b.totals.wins}W · <b>{rs(b.totals.net_rs)}</b>
         </span>
@@ -969,19 +986,32 @@ function NsrwBook({ id, b }: { id: string; b: any }) {
             <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
               <thead><tr style={{ opacity: 0.6, textAlign: 'left' }}>
                 <th style={{ padding: '3px 6px' }}>Leg</th><th>Sold @</th><th>Now / Exit</th>
-                <th>Stop</th><th>P&amp;L</th><th>Status</th>
+                <th>Min</th><th>Max</th><th>Stop</th><th>P&amp;L</th><th>Status</th>
               </tr></thead>
               <tbody>
                 {legs.map((l, i) => {
                   const p = legPnl(l);
                   return (
-                    <tr key={i} style={{ borderTop: '1px solid rgba(148,163,184,0.1)' }}>
-                      <td style={{ padding: '3px 6px', fontWeight: 600 }}>{l.tsym} ×{Math.abs(l.qty)}</td>
-                      <td>{l.entry}</td>
-                      <td>{l.status === 'live' ? (l.ltp ?? '—') : l.exit}</td>
+                    <tr key={i} style={{ borderTop: '1px solid rgba(148,163,184,0.1)',
+                      opacity: l.status === 'live' ? 1 : 0.75 }}>
+                      <td style={{ padding: '3px 6px', fontWeight: 600 }}>
+                        {nsrwLeg(l, c.expiry)} ×{Math.abs(l.qty)}</td>
+                      <td>{l.entry}
+                        <div style={{ fontSize: 10, opacity: 0.55 }}>{nsrwDT(l.opened)}</div></td>
+                      <td>{l.status === 'live' ? (l.ltp ?? '—') : l.exit}
+                        <div style={{ fontSize: 10, opacity: 0.55 }}>
+                          {l.status === 'live' ? 'live' : nsrwDT(l.closed)}</div></td>
+                      <td>{l.px_min ?? '—'}</td>
+                      <td>{l.px_max ?? '—'}</td>
                       <td>{l.stop}</td>
                       <td style={{ color: p >= 0 ? '#0ca30c' : '#e66767', fontWeight: 700 }}>{rs(p)}</td>
-                      <td style={{ color: l.status === 'live' ? '#3987e5' : l.status === 'STOP' ? '#e66767' : '#8b8fa3', fontWeight: 700 }}>{l.status}</td>
+                      <td style={{ color: l.status === 'live' ? '#3987e5' : l.status === 'STOP' ? '#e66767' : '#8b8fa3', fontWeight: 700 }}>
+                        {l.status}
+                        {l.reason_detail && (
+                          <div style={{ fontSize: 10, fontWeight: 400, opacity: 0.6,
+                            maxWidth: 240, whiteSpace: 'normal' }}>{l.reason_detail}</div>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

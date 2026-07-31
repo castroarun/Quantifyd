@@ -196,3 +196,7 @@
 .pbLegClosed { opacity:.5; }
 .pbFoot { display:flex; flex-direction:column; gap:4px; margin-top:10px; font-size:.8rem; }
 @media (max-width:720px){ .pbWatch { grid-template-columns:1fr; } }
+
+.pbSub { font-size:.68rem; color:var(--text-muted,#94a3b8); }
+.pbReason { font-size:.72rem; color:var(--text-muted,#94a3b8); padding:0 8px 6px !important; }
+.pbSubCell { font-size:.74rem; color:var(--text-muted,#94a3b8); }

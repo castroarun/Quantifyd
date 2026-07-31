@@ -134,18 +134,21 @@ def _sell(cfg, cycle, leg, when, tag):
         "side": leg["side"], "tsym": leg["tsym"], "strike": leg["strike"],
         "qty": -qty, "entry": px, "stop": round(cfg["stop_mult"] * px, 2),
         "status": "live", "opened": when, "ltp": px,
+        "px_max": px, "px_min": px,
         "lot_size": leg.get("lot_size") or 65,
     })
     cycle["flows"] = cycle.get("flows", 0.0) + px * qty
     cycle["events"].append(f"{when} {tag} SELL {leg['tsym']} @{px} x{qty}")
 
 
-def _close_leg(cycle, leg, px, when, reason):
+def _close_leg(cycle, leg, px, when, reason, detail=None):
     qty = abs(leg["qty"])
     cycle["flows"] -= px * qty
     leg["status"] = reason
     leg["exit"] = px
     leg["closed"] = when
+    if detail:
+        leg["reason_detail"] = detail
     cycle["events"].append(f"{when} {reason} BUY {leg['tsym']} @{px} x{qty}")
 
 
@@ -167,7 +170,9 @@ def _finish(cfg, st, cycle, when, reason):
         "entry_time": cycle.get("entry_time"), "entry_date": cycle.get("entry_date"),
         "spot0": cycle.get("spot0"), "path_week": cycle.get("path_week", []),
         "closed": when, "m2m_rs": net_rs,
-        "legs": [{k: l.get(k) for k in ("side", "strike", "entry", "tsym", "status")} for l in cycle["legs"]],
+        "legs": [{k: l.get(k) for k in ("side", "strike", "entry", "tsym", "status",
+             "qty", "exit", "opened", "closed", "px_max", "px_min",
+             "reason_detail")} for l in cycle["legs"]],
     })
     st["cycle"] = None
     logger.info(f"[NSRW:{cfg['id']}] cycle closed {reason} net Rs{net_rs}")
@@ -182,7 +187,12 @@ def _restrangle(cfg, st, cycle, kite, quotes, now, tag):
     """Close ALL live legs at ask, sell a fresh pair at the ADJUST target."""
     for leg in list(_live_legs(cycle)):
         _, ask, ltp = _bid_ask(quotes.get("NFO:" + leg["tsym"], {}))
-        _close_leg(cycle, leg, ask or ltp or leg["entry"], now, tag + "_OUT")
+        _close_leg(cycle, leg, ask or ltp or leg["entry"], now, tag + "_OUT",
+                   ("a leg hit its 2.0x stop -> re-strangle rule closes the pair "
+                    "and re-sells fresh strikes at the adjust target")
+                   if tag == "RESTRANGLE" else
+                   ("EOD recenter: a leg marked >= 1.5x its entry -> close all, "
+                    "re-sell fresh pair at the adjust target"))
     spot = kite.ltp(cfg["spot_key"])[cfg["spot_key"]]["last_price"]
     pe = _pick_leg(cfg, kite, cycle["expiry"], "PE", spot, cfg["adjust"])
     ce = _pick_leg(cfg, kite, cycle["expiry"], "CE", spot, cfg["adjust"])
@@ -243,7 +253,8 @@ def _monitor(cfg):
     if st.get("killed"):
         for leg in _live_legs(cycle):
             _, ask, ltp = _bid_ask(quotes.get("NFO:" + leg["tsym"], {}))
-            _close_leg(cycle, leg, ask or ltp or leg["entry"], now, "KILLED")
+            _close_leg(cycle, leg, ask or ltp or leg["entry"], now, "KILLED",
+                       "kill switch")
         _finish(cfg, st, cycle, now, "KILLED")
         _save(cfg, st)
         return
@@ -251,7 +262,11 @@ def _monitor(cfg):
     for leg in _live_legs(cycle):
         q = quotes.get("NFO:" + leg["tsym"])
         if q:
-            leg["ltp"] = q.get("last_price") or leg["ltp"]
+            _l = q.get("last_price") or leg["ltp"]
+            leg["ltp"] = _l
+            if _l:
+                leg["px_max"] = round(max(leg.get("px_max") or leg["entry"], _l), 2)
+                leg["px_min"] = round(min(leg.get("px_min") or leg["entry"], _l), 2)
     # stops -> v1.3 re-strangle once, then per-leg
     for leg in list(_live_legs(cycle)):
         q = quotes.get("NFO:" + leg["tsym"])
@@ -259,7 +274,9 @@ def _monitor(cfg):
             continue
         bid, ask, ltp = _bid_ask(q)
         if ltp and ltp >= leg["stop"]:
-            _close_leg(cycle, leg, ask or ltp, now, "STOP")
+            _close_leg(cycle, leg, ask or ltp, now, "STOP",
+                       f"LTP {ltp} hit the 2.0x premium stop {leg['stop']} "
+                       f"(sold @{leg['entry']})")
             if not cycle["rolled"]:
                 cycle["rolled"] = True
                 if not _restrangle(cfg, st, cycle, kite, quotes, now, "RESTRANGLE"):
@@ -293,7 +310,9 @@ def _monitor(cfg):
     if _live_legs(cycle) and profit_pts >= cfg["pt_frac"] * cycle["credit0"]:
         for leg in list(_live_legs(cycle)):
             _, ask, ltp = _bid_ask(quotes.get("NFO:" + leg["tsym"], {}))
-            _close_leg(cycle, leg, ask or ltp or leg["entry"], now, "PT")
+            _close_leg(cycle, leg, ask or ltp or leg["entry"], now, "PT",
+                       f"book profit reached 50% of the {cycle['credit0']}-pt "
+                       f"entry credit")
         _finish(cfg, st, cycle, now, "PT")
     _save(cfg, st)
 
@@ -310,7 +329,8 @@ def _eod(cfg):
     if dte <= 1:
         for leg in list(_live_legs(cycle)):
             _, ask, ltp = _bid_ask(quotes.get("NFO:" + leg["tsym"], {}))
-            _close_leg(cycle, leg, ask or ltp or leg["entry"], now, "TIME")
+            _close_leg(cycle, leg, ask or ltp or leg["entry"], now, "TIME",
+                       "time exit: DTE <= 1")
         _finish(cfg, st, cycle, now, "TIME")
         _save(cfg, st)
         return
