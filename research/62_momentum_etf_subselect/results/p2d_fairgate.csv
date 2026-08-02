@@ -1,0 +1,13 @@
+band,gate,aum,cagr,maxdd,sharpe,calmar,maxpart
+mid,nifty,gross,28.2,-34.5,1.58,0.82,0.0
+mid,nifty,1cr,22.7,-42.0,1.3,0.54,0.3
+mid,nifty,10cr,13.6,-53.5,0.82,0.25,3.1
+mid,fair,gross,26.3,-29.1,1.47,0.9,0.0
+mid,fair,1cr,20.7,-35.2,1.18,0.59,0.3
+mid,fair,10cr,11.4,-49.9,0.7,0.23,3.0
+small,nifty,gross,33.5,-30.9,1.81,1.09,0.0
+small,nifty,1cr,0.1,-82.3,0.12,0.0,1960.8
+small,nifty,10cr,-37.6,-99.9,-1.24,-0.38,19608.5
+small,fair,gross,34.7,-20.8,1.8,1.67,0.0
+small,fair,1cr,-2.7,-87.9,-0.0,-0.03,1960.8
+small,fair,10cr,-43.9,-100.0,-1.39,-0.44,19608.5

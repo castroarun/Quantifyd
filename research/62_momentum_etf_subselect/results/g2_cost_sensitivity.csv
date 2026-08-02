@@ -1,0 +1,7 @@
+config,net_cagr_20bps,net_cagr_40bps,net_cagr_60bps,netCal_20,netCal_40,netCal_60
+rsblend_N8_buf22_g100_d15,30.3,29.0,27.6,1.77,1.53,1.31
+rsblend_N8_buf18_g100_d15,30.0,28.6,27.2,1.79,1.52,1.3
+rsblend_N8_buf26_g100_d15,29.7,28.4,27.0,1.74,1.5,1.28
+rsblend_N8_buf18_g100_d20,30.0,28.8,27.7,1.56,1.37,1.21
+rsblend_N8_buf22_g100_d20,29.8,28.6,27.5,1.51,1.33,1.18
+rsblend_N5_buf22_g100_d15,30.9,29.5,28.2,1.37,1.19,1.04
