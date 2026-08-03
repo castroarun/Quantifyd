@@ -1020,8 +1020,9 @@ function NsrwBook({ id, b }: { id: string; b: any }) {
           </div>
         </>
       ) : (
-        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
-          Flat — enters Monday 15:14 (₹{b.target}/leg, adjustments at ₹{b.adjust}).
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', minHeight: 150, gap: 6, opacity: 0.72 }}>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>Flat — no open cycle</div>
+          <div style={{ fontSize: 12, opacity: 0.85 }}>Enters Monday 15:14 · ₹{b.target}/leg · adjust at ₹{b.adjust}</div>
         </div>
       )}
     </div>

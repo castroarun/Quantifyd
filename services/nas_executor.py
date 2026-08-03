@@ -46,9 +46,8 @@ class NasExecutor:
         from services.nas_kill_switch import is_killed as _nas_killed
         cfg = self.cfg
 
-        # Persistent panic kill — survives Flask restarts via sentinel file.
-        if _nas_killed():
-            return False, 'NAS PANIC kill active'
+        # KILL FLAG = LIVE-ONLY HALT (2026-08-03): never block here. The paper-shadow must
+        # always record; a killed ENTRY is downgraded to PAPER (below), exits/mgmt proceed.
 
         if not cfg.get('enabled', True):
             return False, 'System disabled'
@@ -74,6 +73,11 @@ class NasExecutor:
                     if not _mg.get('allow'):
                         return False, 'day-matrix: ' + str(_mg.get('reason'))
                     cfg['_force_mode'] = _mg.get('mode') or 'paper'
+
+            # KILL FLAG live-only (2026-08-03): panic kill halts LIVE only — force this entry
+            # to PAPER so the shadow book always records. Real-money entry is suppressed.
+            if _nas_killed():
+                cfg['_force_mode'] = 'paper'
 
         # DTE entry gate (research/51): only OPEN new positions within
         # max_dte_at_entry days of the weekly expiry. The chain replay showed the
