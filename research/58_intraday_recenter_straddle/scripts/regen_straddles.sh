@@ -1,0 +1,18 @@
+#!/bin/bash
+# Regenerate ALL straddle backtest/replay JSONs from the recorded chain. Daily post-close cron.
+cd /home/arun/quantifyd || exit 1
+S=research/58_intraday_recenter_straddle
+# V1 all-days replay (writes static/app/straddles/v1_daily.json directly)
+PYTHONPATH=. ./venv/bin/python $S/scripts/straddle_daily_journeys.py >/dev/null 2>&1
+cp static/app/straddles/v1_daily.json frontend/public/straddles/v1_daily.json 2>/dev/null
+# V1 backtest (0.4% / 0-1-DTE) -> v1_oad_4_dte1.json -> v1.json
+PYTHONPATH=. ./venv/bin/python $S/scripts/v1_oad.py >/dev/null 2>&1
+cp $S/results/v1_oad_4_dte1.json static/app/straddles/v1.json 2>/dev/null
+cp $S/results/v1_oad_4_dte1.json frontend/public/straddles/v1.json 2>/dev/null
+# V2 both stop-variants
+for m in 1.5 2.0; do
+  V2_MOVE=$m PYTHONPATH=. ./venv/bin/python $S/scripts/v2_curves.py >/dev/null 2>&1
+  cp $S/results/v2_positional.json static/app/straddles/v2_${m}.json 2>/dev/null
+  cp $S/results/v2_positional.json frontend/public/straddles/v2_${m}.json 2>/dev/null
+done
+echo "$(date "+%F %T") regenerated v1_daily + v1 + v2_1.5 + v2_2.0"
