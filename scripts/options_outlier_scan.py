@@ -34,16 +34,16 @@ def main():
     mad = median([abs(x - dmed) for x in decay]) or 1.0
     mp90 = sorted(moves)[int(0.9 * len(moves))]
 
+    # decay_pct sign: NEGATIVE = straddle decayed (good for a short); POSITIVE = expanded (hurt short).
     outliers = []
     for d in rows:
-        z = (d["decay_pct"] - dmed) / (1.4826 * mad)
+        dp = d["decay_pct"]
+        z = (dp - dmed) / (1.4826 * mad)   # +z = higher decay_pct than typical = worse for short
         flags = []
-        if d["decay_pct"] <= 0:
-            flags.append("straddle expanded — no decay")
-        elif z <= -2:
-            flags.append("unusually low decay")
-        elif z >= 2.5:
-            flags.append("exceptional decay")
+        if dp > 0:
+            flags.append("straddle EXPANDED %+.1f%% (hurt short)" % dp)
+        elif z >= 2:
+            flags.append("weak decay (%.1f%% vs %.1f%% median)" % (dp, dmed))
         if abs(d.get("spot_move") or 0) >= mp90:
             flags.append("big underlying move %+d" % (d.get("spot_move") or 0))
         if flags:
@@ -52,10 +52,11 @@ def main():
 
     recent = decay[-10:]
     rmed = median(recent)
-    if rmed < dmed - 2:
+    # more-negative decay_pct = MORE decay = stronger edge. Less-negative = softening.
+    if rmed > dmed + 2:
         read = "decay SOFTENING — short-straddle edge weaker recently (%.1f%% vs %.1f%% median)" % (rmed, dmed)
-    elif rmed > dmed + 2:
-        read = "decay stronger recently (%.1f%% vs %.1f%%)" % (rmed, dmed)
+    elif rmed < dmed - 2:
+        read = "decay STRONGER recently (%.1f%% vs %.1f%%) — edge intact/better" % (rmed, dmed)
     else:
         read = "decay stable (%.1f%% recent vs %.1f%% median)" % (rmed, dmed)
 
