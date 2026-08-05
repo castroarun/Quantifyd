@@ -558,7 +558,8 @@ export default function Straddles() {
                 {comp && (
                   <details style={{ marginTop: 8 }}>
                     <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 600, color: C.navy, listStyle: 'none' }}>
-                      ▸ Completed trades ({comp.length})
+                      ▸ Completed trades ({comp.length}) · total{' '}
+                      <span style={{ color: col(comp.reduce((a: number, t: any) => a + (t.exit_pnl || 0), 0)) }}>{inr(comp.reduce((a: number, t: any) => a + (t.exit_pnl || 0), 0))}</span>
                     </summary>
                     {comp.length === 0
                       ? <div style={{ fontSize: 11, color: C.faint, padding: '6px 0' }}>{isV1 ? 'No recorded days yet.' : `None yet — the current open position is the first (entered ${d.entry_day}).`}</div>
