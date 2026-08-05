@@ -96,6 +96,14 @@ export default function Report() {
   }, []);
   const fmtRs = (v: number) => (v < 0 ? '−₹' : '+₹') + Math.abs(Math.round(v || 0)).toLocaleString('en-IN');
   const ragColor = (r: string) => (r === 'RED' ? '#e66767' : r === 'AMBER' ? '#e6a817' : r === 'GREEN' ? '#0ca30c' : '#8b8fa3');
+  const [watchdog, setWatchdog] = useState<any>(null);
+  useEffect(() => {
+    const load = () => fetch(`/app/watchdog.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json()).then(setWatchdog).catch(() => {});
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -385,6 +393,23 @@ export default function Report() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+      {watchdog && (
+        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: 10, padding: '10px 16px', margin: '0 0 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 800 }}>Live Monitor</span>
+            <span style={{ fontSize: 11, fontWeight: 800, padding: '1px 9px', borderRadius: 99, color: '#fff', background: (watchdog.summary?.fail ?? 0) > 0 ? '#e66767' : '#0ca30c' }}>{(watchdog.summary?.fail ?? 0) > 0 ? `${watchdog.summary.fail} FAIL` : 'ALL OK'}</span>
+            <span style={{ fontSize: 12, opacity: 0.8 }}>{watchdog.summary?.ok ?? 0} checks passing</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.6 }}>{(watchdog.polled_at || '').replace('T', ' ').slice(0, 16)}</span>
+          </div>
+          {(watchdog.summary?.fail ?? 0) > 0 && (
+            <div style={{ marginTop: 8 }}>
+              {(watchdog.groups || []).flatMap((g: any) => (g.checks || []).filter((c: any) => c.status !== 'ok').map((c: any) => (
+                <div key={g.name + c.check} style={{ fontSize: 12.5, color: '#e66767', padding: '2px 0' }}><b>{c.check}</b> ({c.scope}) — {c.detail}</div>
+              )))}
+            </div>
+          )}
         </div>
       )}
       {err ? <div className={styles.error}>{err}</div> : null}
