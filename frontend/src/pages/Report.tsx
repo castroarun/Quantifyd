@@ -97,6 +97,11 @@ export default function Report() {
   const fmtRs = (v: number) => (v < 0 ? '−₹' : '+₹') + Math.abs(Math.round(v || 0)).toLocaleString('en-IN');
   const ragColor = (r: string) => (r === 'RED' ? '#e66767' : r === 'AMBER' ? '#e6a817' : r === 'GREEN' ? '#0ca30c' : '#8b8fa3');
   const [watchdog, setWatchdog] = useState<any>(null);
+  const [optOut, setOptOut] = useState<any>(null);
+  useEffect(() => {
+    fetch(`/app/options_outliers.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json()).then(setOptOut).catch(() => {});
+  }, []);
   useEffect(() => {
     const load = () => fetch(`/app/watchdog.json?t=${Date.now()}`, { cache: 'no-store' })
       .then((r) => r.json()).then(setWatchdog).catch(() => {});
@@ -410,6 +415,20 @@ export default function Report() {
               )))}
             </div>
           )}
+        </div>
+      )}
+      {optOut && optOut.drift && (
+        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: 10, padding: '10px 16px', margin: '0 0 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 800 }}>Options Behaviour</span>
+            <span style={{ fontSize: 12, opacity: 0.85 }}>{optOut.drift}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.6 }}>{optOut.n_outliers} outlier days / {optOut.n_days}</span>
+          </div>
+          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {(optOut.outliers || []).slice(-6).reverse().map((o: any) => (
+              <span key={o.date} style={{ fontSize: 11.5, padding: '2px 8px', borderRadius: 6, background: 'rgba(230,103,103,0.12)', color: '#e66767' }}>{o.date} {o.weekday} · {o.flags.join(', ')}</span>
+            ))}
+          </div>
         </div>
       )}
       {err ? <div className={styles.error}>{err}</div> : null}
