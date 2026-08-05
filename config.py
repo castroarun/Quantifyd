@@ -446,7 +446,7 @@ NAS_ATM_DEFAULTS = {
 
     # Position Sizing
     'lots_per_leg': 1,              # GO-LIVE 2026-05-01: dropped 5→1 (75 qty). LIVE real-money size.
-    'paper_lots_per_leg': 2,        # user 2026-07-13: PAPER books dropped 10 -> 2 lots (130 qty) to MATCH the live size, so paper and live P&L are directly comparable (was 10 from 2026-06-24, which put the paper book on a 5x scale vs live). Inherited by all 6 ATM via spread.
+    'paper_lots_per_leg': 3,        # user 2026-07-13: PAPER books dropped 10 -> 2 lots (130 qty) to MATCH the live size, so paper and live P&L are directly comparable (was 10 from 2026-06-24, which put the paper book on a 5x scale vs live). Inherited by all 6 ATM via spread.  # 2026-08-05: user paper 2->3 (match live)
     'max_strangles': 1,             # Only 1 active strangle at a time
     'max_reentries': 5,             # Max 5 SL re-entry cycles per day
 
@@ -516,19 +516,19 @@ NAS_916_OTM_DEFAULTS = {
 NAS_916_ATM_DEFAULTS = {
     **NAS_ATM_DEFAULTS,
     'entry_start_time': '09:16',
-    'lots_per_leg': 2,   # user 2026-07-07: LIVE 2 lots for 9:16 go-live (paper-shadow still paper_lots_per_leg=10)
+    'lots_per_leg': 3,   # user 2026-07-07: LIVE 2 lots for 9:16 go-live (paper-shadow still paper_lots_per_leg=10)  # 2026-08-05: user 2->3 lots (whole NAS book to 3)
 }
 
 NAS_916_ATM2_DEFAULTS = {
     **NAS_ATM2_DEFAULTS,
     'entry_start_time': '09:16',
-    'lots_per_leg': 2,   # user 2026-07-07: LIVE 2 lots
+    'lots_per_leg': 3,   # user 2026-07-07: LIVE 2 lots  # 2026-08-05: user 2->3 lots (whole NAS book to 3)
 }
 
 NAS_916_ATM4_DEFAULTS = {
     **NAS_ATM4_DEFAULTS,
     'entry_start_time': '09:16',
-    'lots_per_leg': 2,   # user 2026-07-07: LIVE 2 lots
+    'lots_per_leg': 3,   # user 2026-07-07: LIVE 2 lots  # 2026-08-05: user 2->3 lots (whole NAS book to 3)
 }
 
 # 2026-06-05: NAS enabled flags LOCKED (post-spread). Squeeze OFF — over-margin: all 8
