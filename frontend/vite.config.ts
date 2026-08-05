@@ -8,7 +8,7 @@ export default defineConfig({
   base: '/app/',
   build: {
     outDir: '../static/app',
-    emptyOutDir: true,
+    emptyOutDir: false,  // 2026-08-05: was true -- builds were wiping data JSONs (nas_analyzer, options_study) from static/app
     assetsDir: 'assets',
   },
   server: {
