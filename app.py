@@ -7661,20 +7661,31 @@ def api_sensex_sessions():
 
 def _sensex_auto_entry():
     """09:16 Mon-Fri — enter the 3 SENSEX systems (gated by the day matrix)."""
+    import importlib, threading
+    mod = importlib.import_module('services.sensex_executors')
     systems = [
         ('SENSEX-ATM', 'SensexAtmExecutor'),
         ('SENSEX-ATM2', 'SensexAtm2Executor'),
         ('SENSEX-ATM4', 'SensexAtm4Executor'),
     ]
-    for name, cls_name in systems:
+
+    # 2026-08-05: fire the 3 systems in PARALLEL so they enter within the same second instead of a
+    # ~6s sequential stagger (each execute_strangle_entry is ~2-3s). Per-system DBs are isolated and
+    # Kite REST is thread-safe; 6 orders max is within the rate limit.
+    def _run(name, cls_name):
         try:
-            import importlib
-            mod = importlib.import_module('services.sensex_executors')
             executor = getattr(mod, cls_name)()
             sid, msg = executor.execute_strangle_entry()
             logger.info(f"[{name}] auto-entry: strangle={sid} msg={msg}")
         except Exception as e:
             logger.error(f"[{name}] auto-entry error: {e}", exc_info=True)
+
+    threads = [threading.Thread(target=_run, args=(n, c), name=f"sxentry-{n}") for n, c in systems]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=30)
+    logger.info("[SENSEX] parallel auto-entry: 3 systems fired concurrently")
 
 
 def _sensex_sl_monitor():
