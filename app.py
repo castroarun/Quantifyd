@@ -7737,16 +7737,33 @@ def _sensex_sl_monitor():
             # stop (SL = entry) so the existing SL check manages it and it can never become a loss.
             # NIFTY survivors are untouched (their NFO ST trail works).
             for _p in active:
-                if (_p.get('sl_price') or 0) >= 900000 and _p.get('entry_price'):
-                    _be = round(_p['entry_price'], 1)
+                _notes = _p.get('notes') or ''
+                _naked = ((_p.get('sl_price') or 0) >= 900000
+                          or 'SENSEX_ST_TRAIL' in _notes or 'SENSEX_BE_PROTECT' in _notes)
+                if not _naked or not _p.get('entry_price'):
+                    continue
+                _be = round(_p['entry_price'], 1)
+                _st = None
+                try:
+                    from services.sensex_naked_trail import trail_stop as _sx_trail
+                    _st = _sx_trail(_p['id'], ltp_map.get(_p.get('tradingsymbol')), _p['entry_price'])
+                except Exception as _te:
+                    logger.warning(f"[{name}] ST-trail calc failed: {_te}")
+                # clamp ST stop to <= breakeven: the survivor is in profit, so this can only ever
+                # TIGHTEN (lock more profit), never be worse than the BE_PROTECT fallback.
+                if _st is not None and _st < _be:
+                    _sl = round(_st, 1); _note = 'SENSEX_ST_TRAIL(7,3)'
+                else:
+                    _sl = _be; _note = 'SENSEX_BE_PROTECT (warmup/fallback)'
+                if abs((_p.get('sl_price') or 0) - _sl) > 0.05:
                     try:
-                        executor.db.update_position(_p['id'], sl_price=_be,
-                                                    notes='SENSEX_BE_PROTECT (no BFO ST trail)')
-                        _p['sl_price'] = _be
-                        logger.warning(f"[{name}] naked survivor {_p.get('tradingsymbol')} armed to "
-                                       f"breakeven SL {_be} (BFO ST trail unavailable)")
+                        executor.db.update_position(_p['id'], sl_price=_sl, notes=_note)
+                        _p['sl_price'] = _sl
+                        logger.info(f"[{name}] naked survivor {_p.get('tradingsymbol')} -> {_note} SL {_sl}")
                     except Exception as _e:
                         logger.error(f"[{name}] survivor re-arm failed: {_e}")
+                else:
+                    _p['sl_price'] = _sl
             actions = executor.check_and_handle_sl(positions=active, live_ltps=ltp_map)
             if actions:
                 logger.info(f"[{name}] SL monitor: {len(actions)} actions")
