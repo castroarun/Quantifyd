@@ -28,11 +28,26 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sqlite3
+import threading
 from datetime import date, datetime
 from pathlib import Path
 
 logger = logging.getLogger("nwv_trade")
+
+# One lock for every load->mutate->save cycle. All jobs run in the same process
+# (APScheduler thread pool); unlocked concurrent jobs raced on the state file on
+# 2026-08-03 (monitor vs pivot check) and corrupted it -> the whole book froze.
+_LOCK = threading.Lock()
+
+
+def _locked(fn):
+    def wrap(*a, **k):
+        with _LOCK:
+            return fn(*a, **k)
+    wrap.__name__ = fn.__name__
+    return wrap
 
 ROOT = Path(__file__).resolve().parent.parent
 STATE_PATH = ROOT / "backtest_data" / "nwv_trade_paper.json"
@@ -63,7 +78,10 @@ def _load():
 
 
 def _save(st):
-    STATE_PATH.write_text(json.dumps(st, indent=1, default=str))
+    # atomic replace so a concurrent reader never sees a half-written file
+    tmp = STATE_PATH.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(st, indent=1, default=str))
+    os.replace(tmp, STATE_PATH)
 
 
 def _r50d(x):
@@ -173,6 +191,7 @@ def _close_all(st, cycle, quotes, when, reason, detail=None):
     logger.info(f"[NWV-TRADE] cycle closed {reason} net Rs{net_rs}")
 
 
+@_locked
 def entry_job():
     """Monday 09:50 — build the week's jade lizard if the view says trade."""
     st = _load()
@@ -239,6 +258,7 @@ def entry_job():
     logger.info(f"[NWV-TRADE] entered {view} JL {strikes} credit {cycle['credit0']}pts")
 
 
+@_locked
 def monitor_job():
     """Every minute market hours: combined-MTM PT / stop, kill switch."""
     st = _load()
@@ -292,6 +312,7 @@ def monitor_job():
     _save(st)
 
 
+@_locked
 def pivot_exit_job():
     """30-min bar closes (09:45..15:15) — exit the threatened SIDE when spot is
     beyond weekly S1/R2 (research/94 phase-3 winner: 30m TF, t 3.10). Never
@@ -340,6 +361,7 @@ def pivot_exit_job():
     logger.info(f"[NWV-TRADE] pivot exit fired on {side} side at spot {spot}")
 
 
+@_locked
 def time_exit_job():
     """Fri 15:15 flat; also DTE<=1 backstop for holiday-shifted weeks."""
     st = _load()

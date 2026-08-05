@@ -1025,6 +1025,43 @@ function NsrwBook({ id, b }: { id: string; b: any }) {
           <div style={{ fontSize: 12, opacity: 0.85 }}>Enters Monday 15:14 · ₹{b.target}/leg · adjust at ₹{b.adjust}</div>
         </div>
       )}
+      {(b.history ?? []).length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, opacity: 0.6,
+            marginBottom: 3 }}>COMPLETED WEEKS</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 11.5, borderCollapse: 'collapse' }}>
+              <tbody>
+                {b.history.slice(-6).reverse().flatMap((h: any, i: number) => [
+                  <tr key={`h${i}`} style={{ borderTop: '1px solid rgba(148,163,184,0.18)' }}>
+                    <td style={{ padding: '4px 6px', fontWeight: 700 }}>wk {h.week}</td>
+                    <td>credit {h.credit0}</td>
+                    <td>{h.reason}</td>
+                    <td style={{ fontWeight: 700,
+                      color: h.net_rs >= 0 ? '#0ca30c' : '#e66767' }}>
+                      {(h.net_rs < 0 ? '−₹' : '+₹') + Math.abs(Math.round(h.net_rs)).toLocaleString('en-IN')}
+                    </td>
+                    <td style={{ opacity: 0.6 }}>closed {nsrwDT(h.closed)}</td>
+                  </tr>,
+                  ...(h.legs ?? []).map((l: any, j: number) => (
+                    <tr key={`h${i}l${j}`} style={{ opacity: 0.62 }}>
+                      <td style={{ padding: '2px 6px 2px 14px' }}>{nsrwLeg(l, h.expiry)}</td>
+                      <td>in {l.entry} <span style={{ opacity: 0.6 }}>{nsrwDT(l.opened)}</span></td>
+                      <td>out {l.exit ?? '—'} <span style={{ opacity: 0.6 }}>{nsrwDT(l.closed)}</span></td>
+                      <td>min {l.px_min ?? '—'} · max {l.px_max ?? '—'}</td>
+                      <td title={l.reason_detail || ''}>{l.status}
+                        {l.reason_detail && (
+                          <span style={{ fontSize: 10, opacity: 0.7 }}> — {l.reason_detail}</span>
+                        )}
+                      </td>
+                    </tr>
+                  )),
+                ])}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

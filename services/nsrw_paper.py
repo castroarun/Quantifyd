@@ -23,6 +23,21 @@ from pathlib import Path
 
 logger = logging.getLogger("nsrw_paper")
 
+# One lock for every load->mutate->save. Unlocked concurrent jobs (monitor at
+# :16:00 vs eod at :16:00) raced on the state file 2026-08-03/04: the monitor
+# saved a stale "still open" copy over the eod close, un-doing it twice.
+import os as _os
+import threading as _threading
+_LOCK = _threading.Lock()
+
+
+def _locked(fn):
+    def wrap(*a, **k):
+        with _LOCK:
+            return fn(*a, **k)
+    wrap.__name__ = fn.__name__
+    return wrap
+
 ROOT = Path(__file__).resolve().parent.parent
 OPTDB = ROOT / "backtest_data" / "options_data.db"
 
@@ -58,7 +73,9 @@ def _load(cfg):
 
 
 def _save(cfg, st):
-    cfg["state"].write_text(json.dumps(st, indent=1, default=str))
+    tmp = cfg["state"].with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(st, indent=1, default=str))
+    _os.replace(tmp, cfg["state"])
 
 
 def _instruments(cfg, expiry: str):
@@ -206,8 +223,25 @@ def _restrangle(cfg, st, cycle, kite, quotes, now, tag):
 
 def _entry(cfg, tag="ENTRY"):
     st = _load(cfg)
-    if st.get("killed") or st.get("cycle"):
+    if st.get("killed"):
         return
+    leftover = st.get("cycle")
+    if leftover:
+        dte = (date.fromisoformat(leftover["expiry"]) - date.today()).days
+        if leftover["status"] == "OPEN" and dte <= 1:
+            # Tue-expiry weeks: the old cycle is still open at Mon 15:14 and
+            # used to block the new week entirely. Close it now, then enter.
+            kite0 = _kite()
+            now0 = datetime.now().strftime("%Y-%m-%d %H:%M")
+            q0 = _quotes_for(kite0, leftover)
+            for leg in list(_live_legs(leftover)):
+                _, ask, ltp = _bid_ask(q0.get("NFO:" + leg["tsym"], {}))
+                _close_leg(leftover, leg, ask or ltp or leg["entry"], now0, "TIME",
+                           "time exit: DTE <= 1 (cleared before new weekly entry)")
+            _finish(cfg, st, leftover, now0, "TIME")
+            _save(cfg, st)
+        else:
+            return
     today = date.today()
     if today.weekday() != 0:
         return
@@ -345,6 +379,7 @@ def _eod(cfg):
     _save(cfg, st)
 
 
+@_locked
 def entry_job():
     for cfg in BOOKS:
         try:
@@ -353,6 +388,7 @@ def entry_job():
             logger.exception(f"[NSRW:{cfg['id']}] entry error: {e}")
 
 
+@_locked
 def monitor_job():
     for cfg in BOOKS:
         try:
@@ -361,6 +397,7 @@ def monitor_job():
             logger.exception(f"[NSRW:{cfg['id']}] monitor error: {e}")
 
 
+@_locked
 def eod_job():
     for cfg in BOOKS:
         try:
@@ -369,6 +406,7 @@ def eod_job():
             logger.exception(f"[NSRW:{cfg['id']}] eod error: {e}")
 
 
+@_locked
 def catchup_entry():
     """Deploy-day helper: late Monday entry using latest quotes (event-marked)."""
     for cfg in BOOKS:
