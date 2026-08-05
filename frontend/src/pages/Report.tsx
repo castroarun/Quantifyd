@@ -86,6 +86,16 @@ export default function Report() {
   const [orbErr, setOrbErr] = useState<string | null>(null);
   const [orbLive, setOrbLive] = useState<ORBLiveDailyResponse | null>(null);
   const [orbLiveErr, setOrbLiveErr] = useState<string | null>(null);
+  const [analyzer, setAnalyzer] = useState<any>(null);
+  useEffect(() => {
+    const load = () => fetch(`/app/nas_analyzer.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json()).then(setAnalyzer).catch(() => {});
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, []);
+  const fmtRs = (v: number) => (v < 0 ? '−₹' : '+₹') + Math.abs(Math.round(v || 0)).toLocaleString('en-IN');
+  const ragColor = (r: string) => (r === 'RED' ? '#e66767' : r === 'AMBER' ? '#e6a817' : r === 'GREEN' ? '#0ca30c' : '#8b8fa3');
 
   useEffect(() => {
     let cancelled = false;
@@ -346,6 +356,37 @@ export default function Report() {
         All 4 squeeze + 4 x 9:16 systems, combined view
       </div>
 
+      {analyzer && (
+        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: 10, padding: '12px 16px', margin: '10px 0 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 800 }}>Daily System Analyzer</span>
+            <span style={{ fontSize: 11, fontWeight: 800, padding: '1px 9px', borderRadius: 99, color: '#fff', background: ragColor(analyzer.verdict) }}>{analyzer.verdict}</span>
+            <span style={{ fontSize: 12, opacity: 0.8 }}>book all-time {fmtRs(analyzer.book?.all_total)} · last-{analyzer.recent_days}d {fmtRs(analyzer.book?.recent_total)}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.6 }}>{analyzer.generated}</span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
+              <thead><tr style={{ opacity: 0.6, textAlign: 'right' }}>
+                <th style={{ textAlign: 'left', padding: '3px 8px' }}>System</th><th style={{ padding: '3px 8px' }}>RAG</th><th style={{ padding: '3px 8px' }}>all net</th><th style={{ padding: '3px 8px' }}>avg/tr</th><th style={{ padding: '3px 8px' }}>win%</th><th style={{ padding: '3px 8px' }}>PF</th><th style={{ padding: '3px 8px' }}>recent net</th><th style={{ textAlign: 'left', padding: '3px 8px' }}>read</th>
+              </tr></thead>
+              <tbody>
+                {(analyzer.systems || []).map((sy: any) => (
+                  <tr key={sy.db} style={{ textAlign: 'right', borderTop: '1px solid rgba(148,163,184,0.12)' }}>
+                    <td style={{ textAlign: 'left', padding: '3px 8px', fontWeight: 600 }}>{sy.label}</td>
+                    <td style={{ padding: '3px 8px', fontWeight: 800, color: ragColor(sy.rag) }}>{sy.rag}</td>
+                    <td style={{ padding: '3px 8px' }}>{fmtRs(sy.all?.total)}</td>
+                    <td style={{ padding: '3px 8px' }}>{fmtRs(sy.all?.avg)}</td>
+                    <td style={{ padding: '3px 8px' }}>{sy.all?.win}%</td>
+                    <td style={{ padding: '3px 8px' }}>{sy.all?.pf}</td>
+                    <td style={{ padding: '3px 8px', color: (sy.recent?.total ?? 0) >= 0 ? '#0ca30c' : '#e66767' }}>{fmtRs(sy.recent?.total)}</td>
+                    <td style={{ textAlign: 'left', padding: '3px 8px', opacity: 0.7, fontSize: 11.5 }}>{sy.read}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {err ? <div className={styles.error}>{err}</div> : null}
 
       {/* Summary cards */}
