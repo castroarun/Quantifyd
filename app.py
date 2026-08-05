@@ -7373,16 +7373,19 @@ def _nas_916_auto_entry():
         ('NAS-916-ATM2', NAS_916_ATM2_DEFAULTS, 'services.nas_916_executors', 'Nas916Atm2Executor', 'execute_strangle_entry'),
         ('NAS-916-ATM4', NAS_916_ATM4_DEFAULTS, 'services.nas_916_executors', 'Nas916Atm4Executor', 'execute_strangle_entry'),
     ]
-    for name, cfg, mod_path, cls_name, method in systems:
+    import importlib, threading
+
+    # 2026-08-05: fire the systems in PARALLEL so they enter within the same second instead of a
+    # sequential stagger. Per-system DBs isolated + Kite REST thread-safe; per-system gating kept.
+    def _run(name, cfg, mod_path, cls_name, method):
         if not cfg.get('enabled', True):
             logger.info(f"[{name}] disabled, skipping auto-entry")
-            continue
+            return
         skip_days = cfg.get('skip_weekdays') or ()
         if today_wd in skip_days:
             logger.info(f"[{name}] weekday {today_wd} in skip_weekdays={skip_days}, no auto-entry today")
-            continue
+            return
         try:
-            import importlib
             mod = importlib.import_module(mod_path)
             cls = getattr(mod, cls_name)
             executor = cls(config=cfg)
@@ -7395,6 +7398,13 @@ def _nas_916_auto_entry():
                 logger.info(f"[{name}] 9:16 auto-entry: sid={sid}, {msg}")
         except Exception as e:
             logger.error(f"[{name}] 9:16 auto-entry error: {e}")
+
+    threads = [threading.Thread(target=_run, args=s, name=f"916entry-{s[0]}") for s in systems]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=30)
+    logger.info("[NAS-916] parallel auto-entry: systems fired concurrently")
 
 
 def _nas_916_eod_squareoff():
