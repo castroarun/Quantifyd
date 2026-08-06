@@ -204,6 +204,10 @@ def check_and_apply(venue: str, dry_run: bool = False):
     """The 10s tick. Returns a dict when the stop fires (or would, if dry_run), else None."""
     if already_fired(venue) and not dry_run:
         return None
+    # 2026-08-06: a manual freeze halts the venue portfolio stop too (Arun is managing by hand).
+    from services.nas_kill_switch import is_frozen as _pf_frozen
+    if _pf_frozen() and not dry_run:
+        return None
     now = datetime.now()
     if not (now.weekday() < 5 and (9, 16) <= (now.hour, now.minute) <= (15, 15)) and not dry_run:
         return None

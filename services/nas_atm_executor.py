@@ -893,6 +893,30 @@ class NasAtmExecutor:
                 'exit_price': round(exit_price, 2),
             })
 
+        # 2026-08-06 FIX: retry any leg whose buyback FAILED (Kite API read-timeout or
+        # rejection) before returning. Today a SENSEX atm2 PE buyback hit the 7s read-timeout
+        # during the portfolio-stop burst and was left short with NO retry. _close_leg is
+        # broker-truth-guarded -- it re-reads the actual short qty each attempt and will NOT place
+        # a BUY when the broker is already flat -- so retrying can never double-cover into a naked
+        # long. Only ACTIVE (=still-open) live legs are retried; CLOSING/paper legs are untouched.
+        import time as _time
+        for _attempt in range(3):
+            _still = [p for p in (self.db.get_active_positions() or [])
+                      if (p.get('mode') or 'paper') == 'live']
+            if not _still:
+                break
+            _time.sleep(1.0 + _attempt)
+            for _pos in _still:
+                _xp = None
+                if _pos.get('tradingsymbol'):
+                    try:
+                        _xp = self.scanner.get_live_option_premium(_pos['tradingsymbol'])
+                    except Exception:
+                        pass
+                logger.warning(f"[NAS-ATM] exit retry {_attempt + 1}/3 for "
+                               f"{_pos.get('tradingsymbol')} ({exit_reason})")
+                self._close_leg(_pos, _xp if _xp is not None else 0, exit_reason)
+
         # Record trades per strangle
         for sid, positions_group in strangle_groups.items():
             self._record_trade(sid, positions_group, exit_reason)

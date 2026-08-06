@@ -7704,6 +7704,12 @@ def _sensex_sl_monitor():
     now = datetime.now()
     if not (now.weekday() < 5 and (9, 15) <= (now.hour, now.minute) <= (15, 30)):
         return
+    # 2026-08-06: honor manual-freeze at the loop level too. Order placement is already
+    # freeze-guarded inside _close_leg, but skipping the whole SL / EOD-backstop pass avoids
+    # churn and log-noise while Arun is managing SENSEX by hand.
+    from services.nas_kill_switch import is_frozen as _sx_frozen
+    if _sx_frozen():
+        return
     try:
         from services.kite_service import get_kite
         kite = get_kite()
