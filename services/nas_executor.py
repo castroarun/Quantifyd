@@ -682,6 +682,37 @@ class NasExecutor:
                 'exit_price': round(exit_price, 2),
             })
 
+        # 2026-08-06 FIX (matches nas_atm_executor): retry any live leg whose buyback FAILED
+        # (Kite API read-timeout / rejection) before returning. This _close_leg has no per-symbol
+        # broker guard, so the retry verifies the broker is STILL short the leg before re-firing --
+        # it can never double-cover into a naked long. Paper legs retry trivially.
+        import time as _time
+        for _attempt in range(3):
+            _still = [p for p in (self.db.get_active_positions() or [])
+                      if (p.get('mode') or 'paper') == 'live']
+            if not _still:
+                break
+            try:
+                from services.kite_service import get_kite as _gk
+                _net = {p.get('tradingsymbol'): int(p.get('quantity') or 0)
+                        for p in (_gk().positions() or {}).get('net', [])
+                        if p.get('product') == 'MIS'}
+            except Exception:
+                _net = None      # broker unreachable -> fail-open (a real short left open is worse)
+            _time.sleep(1.0 + _attempt)
+            for _pos in _still:
+                _ts = _pos.get('tradingsymbol')
+                if _net is not None and abs(int(_net.get(_ts, 0) or 0)) < int(_pos.get('qty') or 0):
+                    continue     # broker not (fully) short this leg -> do NOT re-buy
+                _xp = None
+                if _ts:
+                    try:
+                        _xp = self.scanner.get_live_option_premium(_ts)
+                    except Exception:
+                        pass
+                logger.warning(f"[NAS] exit retry {_attempt + 1}/3 for {_ts} ({exit_reason})")
+                self._close_leg(_pos, _xp if _xp is not None else 0, exit_reason)
+
         # Record trades per strangle
         for sid, positions in strangle_groups.items():
             self._record_trade(sid, positions, exit_reason, spot)
