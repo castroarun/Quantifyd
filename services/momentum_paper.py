@@ -239,6 +239,9 @@ def _place_cnc_market(symbol, side, qty):
     """Place a real NSE CNC MARKET order and BLOCK until it fills. Returns (avg_price, filled_qty).
     Raises on rejection/timeout. Reached ONLY when live_mode is on — this spends real money."""
     import time as _time
+    if str(_get("live_armed", "0")).lower() not in ("1", "true", "on", "yes"):
+        _alert("LIVE ORDER BLOCKED", f"{side} {symbol} x{int(qty)} blocked — two-key safety: live_armed not set.", "high")
+        raise RuntimeError("two-key safety: live_armed not set — order blocked")
     k = _kite()
     oid = k.place_order(
         variety=k.VARIETY_REGULAR, exchange=k.EXCHANGE_NSE, tradingsymbol=symbol,
@@ -291,6 +294,8 @@ def _toggle_mode(body):
     """Flip PAPER↔LIVE and optionally set live capital. LIVE means the next scheduled
     rebalance/exit places REAL Kite CNC orders. Body: {"live": true/false, "capital": <rupees>}."""
     want = str(body.get("live", "")).lower() in ("1", "true", "on", "yes")
+    if body.get("arm") is not None:
+        _set("live_armed", "1" if str(body.get("arm")).lower() in ("1", "true", "on", "yes") else "0")
     cap = body.get("capital")
     if cap is not None:
         _set("capital", float(cap))
@@ -304,7 +309,8 @@ def _kill_switch():
     """Emergency: force back to PAPER so no further real orders are placed. Existing broker
     positions are LEFT UNTOUCHED (square off manually or let the next risk-off gate exit them)."""
     _set("live_mode", "0")
-    logger.warning("[MP] *** KILL SWITCH → live_mode OFF. Open positions untouched. ***")
+    _set("live_armed", "0")
+    logger.warning("[MP] *** KILL SWITCH → live_mode + live_armed OFF. Open positions untouched. ***")
     return {"live_mode": False, "killed": True,
             "note": "back to PAPER; broker positions unchanged — square off manually if needed"}
 

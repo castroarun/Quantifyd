@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { apiGet } from '../api/client';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { apiGet, apiPost } from '../api/client';
 import BacktestCharts from '../components/BacktestCurve/BacktestCharts';
 import styles from './MomentumPaper.module.css';
 
@@ -21,6 +21,7 @@ type State = {
   unrealized: number; realized_net: number; n_holdings: number; interest_earned: number;
   cash_yield_pct: number; stcg_unbooked: number; stcg_booked: number;
   last_daily: string | null; last_weekly: string | null; last_monthly: string | null;
+  mode: string; live_mode: boolean;
   data_asof: string | null; target_basket: Target[]; gate_last: number | null;
   gate_sma: number | null; gate_gap_pct: number | null;
   holdings: Holding[]; navcurve: NavPt[]; closed: Closed[]; rules: [string, string, string][];
@@ -84,9 +85,14 @@ export default function MomentumPaper() {
             ₹20L paper (research/62 winner){s.inception ? ` · since ${s.inception}` : ''} · data as-of {s.data_asof || '—'}
           </p>
         </div>
-        <div className={`${styles.gateBadge} ${riskOn ? styles.on : styles.off}`}>
-          <span className={styles.dot} />
-          {riskOn ? 'RISK-ON · invested' : 'RISK-OFF · in cash'}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ padding: '5px 11px', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', background: s.live_mode ? '#c0392b' : '#39424e' }}>
+            {s.mode}
+          </span>
+          <div className={`${styles.gateBadge} ${riskOn ? styles.on : styles.off}`}>
+            <span className={styles.dot} />
+            {riskOn ? 'RISK-ON · invested' : 'RISK-OFF · in cash'}
+          </div>
         </div>
       </div>
 
@@ -101,6 +107,8 @@ export default function MomentumPaper() {
         <Kpi label="Realized (net)" value={inr(s.realized_net)} tone={s.realized_net >= 0 ? 'pos' : 'neg'} />
         <Kpi label={`Liquid yield @${s.cash_yield_pct}%`} value={inr(s.interest_earned)} tone="pos" />
       </div>
+
+      <CashPanel s={s} reload={load} />
 
       <div className={styles.grid2}>
         {/* Gate panel */}
@@ -267,6 +275,101 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
     <div className={styles.kpi}>
       <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
+    </div>
+  );
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function CashPanel({ s, reload }: { s: State; reload: () => void }) {
+  const [rec, setRec] = useState<any>(null);
+  const [dep, setDep] = useState<{ amount: string; mode: string; plan: any; busy: boolean }>({ amount: '', mode: 'park', plan: null, busy: false });
+  const [wd, setWd] = useState<{ amount: string; plan: any; busy: boolean }>({ amount: '', plan: null, busy: false });
+
+  const previewDep = async () => {
+    const amt = parseFloat(dep.amount); if (!(amt > 0)) return;
+    setDep((d) => ({ ...d, busy: true }));
+    const r: any = await apiPost('/api/momentum-paper/deposit', { amount: amt, mode: dep.mode, dry_run: true }).catch(() => null);
+    setDep((d) => ({ ...d, plan: r, busy: false }));
+  };
+  const execDep = async () => {
+    const amt = parseFloat(dep.amount);
+    if (!window.confirm(`Deposit ₹${amt.toLocaleString('en-IN')} (${dep.mode})? This ${s.live_mode ? 'PLACES REAL ORDERS' : 'updates the paper book'}.`)) return;
+    setDep((d) => ({ ...d, busy: true }));
+    await apiPost('/api/momentum-paper/deposit', { amount: amt, mode: dep.mode, dry_run: false }).catch(() => null);
+    setDep({ amount: '', mode: 'park', plan: null, busy: false }); reload();
+  };
+  const previewWd = async () => {
+    const amt = parseFloat(wd.amount); if (!(amt > 0)) return;
+    setWd((w) => ({ ...w, busy: true }));
+    const r: any = await apiPost('/api/momentum-paper/withdraw', { amount: amt, dry_run: true }).catch(() => null);
+    setWd((w) => ({ ...w, plan: r, busy: false }));
+  };
+  const execWd = async () => {
+    const amt = parseFloat(wd.amount);
+    if (!window.confirm(`Withdraw ₹${amt.toLocaleString('en-IN')}? This ${s.live_mode ? 'PLACES REAL SELL ORDERS' : 'updates the paper book'}.`)) return;
+    setWd((w) => ({ ...w, busy: true }));
+    await apiPost('/api/momentum-paper/withdraw', { amount: amt, dry_run: false }).catch(() => null);
+    setWd({ amount: '', plan: null, busy: false }); reload();
+  };
+  const reconcile = async () => setRec(await apiGet('/api/momentum-paper/reconcile').catch((e) => ({ error: String(e) })));
+
+  const btn: CSSProperties = { padding: '7px 12px', borderRadius: 6, border: '1px solid var(--border,#333)', cursor: 'pointer', fontSize: 13, background: 'var(--panel2,#1c232c)', color: 'inherit' };
+  const inp: CSSProperties = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border,#333)', background: 'transparent', color: 'inherit', width: 140, fontSize: 13 };
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>Live controls &amp; cash management</div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+        <span>Mode: <b style={{ color: s.live_mode ? '#c0392b' : 'inherit' }}>{s.mode}</b></span>
+        <button style={{ ...btn, opacity: 0.5, cursor: 'not-allowed' }} disabled title="Arming is gated until the Kite account + two-key safety (Phase 0)">
+          Go LIVE — 🔒 gated (Phase 0)
+        </button>
+        <button style={btn} onClick={reconcile}>Reconcile vs broker</button>
+        {rec && (
+          <span style={{ fontSize: 12, color: rec.match ? '#1f9d55' : rec.error ? '#d97706' : '#c0392b' }}>
+            {rec.live === false ? 'paper mode — reconcile is live-only' : rec.error ? `error: ${rec.error}` : rec.match ? '✓ book matches broker' : `⚠ mismatch: ${JSON.stringify(rec.diffs)}`}
+          </span>
+        )}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--ink-muted,#888)', marginBottom: 14 }}>
+        Live-arming is intentionally disabled until the Kite Connect account is set up + the two-key safety is wired (Phase 0) — otherwise a live order would trade the currently-logged-in account. The cash tools below run in paper now and carry straight to live.
+      </div>
+      <div className={styles.grid2}>
+        <div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Add funds (deposit)</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input style={inp} placeholder="₹ amount" value={dep.amount} onChange={(e) => setDep((d) => ({ ...d, amount: e.target.value, plan: null }))} />
+            <select style={{ ...inp, width: 'auto' }} value={dep.mode} onChange={(e) => setDep((d) => ({ ...d, mode: e.target.value, plan: null }))}>
+              <option value="park">Park → deploy next rebalance (default)</option>
+              <option value="immediate">Immediate equal top-up</option>
+            </select>
+            <button style={btn} onClick={previewDep} disabled={dep.busy}>Preview</button>
+          </div>
+          {dep.plan && (
+            <div style={{ marginTop: 8, fontSize: 12.5 }}>
+              <div style={{ color: 'var(--ink-muted,#888)' }}>{dep.plan.note}</div>
+              {dep.plan.plan?.length > 0 && (
+                <ul style={{ margin: '4px 0', paddingLeft: 18 }}>{dep.plan.plan.map((p: any, i: number) => <li key={i}>BUY {p.qty} {p.symbol} (~{inr(p.value)})</li>)}</ul>
+              )}
+              <button style={{ ...btn, background: '#1f9d55', color: '#fff', marginTop: 4 }} onClick={execDep} disabled={dep.busy}>Confirm &amp; deploy</button>
+            </div>
+          )}
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Withdraw funds</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input style={inp} placeholder="₹ amount" value={wd.amount} onChange={(e) => setWd((w) => ({ ...w, amount: e.target.value, plan: null }))} />
+            <button style={btn} onClick={previewWd} disabled={wd.busy}>Preview plan</button>
+          </div>
+          {wd.plan && (
+            <div style={{ marginTop: 8, fontSize: 12.5 }}>
+              <div style={{ color: 'var(--ink-muted,#888)' }}>Raises {inr(wd.plan.raised)}{wd.plan.shortfall > 0 ? ` (short ${inr(wd.plan.shortfall)})` : ''} — sells the weakest names first, keeps the winners.</div>
+              <ul style={{ margin: '4px 0', paddingLeft: 18 }}>{wd.plan.plan?.map((p: any, i: number) => <li key={i}>{p.source === 'idle cash' ? `Idle cash ${inr(p.value)}` : `SELL ${p.qty} ${p.source} (~${inr(p.value)}, score ${p.score})`}</li>)}</ul>
+              <button style={{ ...btn, background: '#c0392b', color: '#fff', marginTop: 4 }} onClick={execWd} disabled={wd.busy}>Confirm &amp; withdraw</button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
