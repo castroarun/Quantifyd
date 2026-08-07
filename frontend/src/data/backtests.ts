@@ -127,6 +127,973 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'momentum-250-leverage-frontier',
+    title: 'Momentum-250 Leverage Frontier — how far can the gated momentum book be pushed for return?',
+    verdict:
+      'The Nifty-250 risk-adjusted momentum book (top-8, monthly rebalance, NIFTYBEES>EMA100 index cash gate) already beats buy-hold; the question was whether LEVERAGE can raise return without becoming ruinous. Answer: yes, and the index gate is what makes it survivable — leverage is only ever applied while the gate is risk-on (in cash during downtrends), so across 2006–2026 (incl. 2008 & 2020) there were ZERO margin calls at any leverage up to 2×. Static leverage 1.3–1.6× lifts CAGR from 33.8% to 40.7–47.3% (net of 0.3% cost and 10.5% MTF financing), at a proportional drawdown cost (−39 to −48%, Calmar drifts 1.13→0.99). It is not a free lunch — leverage trades drawdown for return. Two things that DON’T help: vol-targeting (it de-levers into momentum’s high-vol melt-ups, landing below the static frontier) and deeper concentration (N<8 trades Calmar for noise). At 1.0× (own capital, no borrowing) the book is still 33.8% CAGR / −30% DD vs NIFTYBEES 11.7% / −60%.',
+    status: 'COMPLETE',
+    date: '2026-08-06',
+    cardBlurb:
+      'How far can the gated Nifty-250 momentum book be pushed for return? The index cash gate makes leverage survivable — 0 margin calls in 20 years at up to 2×. Static 1.3–1.6× → 40.7–47.3% CAGR (net, 10.5% MTF) at −39 to −48% DD, Calmar ~1.0. Vol-targeting and deeper concentration both HURT. At 1.0× (own capital) still 33.8% / −30% vs B&H 11.7% / −60%.',
+    cardStats: [
+      { label: 'CAGR (1.6×, net, 10.5% MTF)', value: '47.3%' },
+      { label: 'Calmar (1.3×)', value: '1.05' },
+      { label: 'Margin calls / 20y', value: '0' },
+    ],
+
+    systemRules: {
+      intro: 'The traded system. Risk-adjusted momentum on a large-mid-cap universe, top-8 equal-weight, with the index cash gate as the entire risk control. Leverage is optional and applied only while the gate is risk-on.',
+      sharedCoreTitle: 'Momentum-250 book — locked rules',
+      sharedCore: [
+        { k: 'Universe', v: 'Top ~250 NSE stocks by trailing traded value (large-mid proxy for Nifty LargeMidcap 250), rebuilt monthly, survivorship-free.' },
+        { k: 'Signal', v: 'Rank by risk-adjusted momentum (6- & 12-month return per unit of own volatility, z-blended). Hold the TOP 8 equal-weight (the Calmar sweet spot).' },
+        { k: 'Entry gate (the whole risk story)', v: 'Only hold stocks when NIFTYBEES > its own EMA100 (market uptrend). Below it → sell everything, sit in cash at ~6.5%. This gate is what dodged −52% in 2008 and the 2020 crash.' },
+        { k: 'Rebalance', v: 'Monthly: re-rank, sell names that dropped out of the top 8, buy the new top 8 (~12 rebalances/yr, turnover ~0.38). No per-stock stop-loss.' },
+        { k: 'Exit', v: 'A stock leaves either by (a) falling out of the top-8 momentum rank at rebalance, or (b) the index gate flipping off → whole book to cash.' },
+        { k: 'Leverage (optional)', v: 'Deploy lev×capital while the gate is risk-on; borrowed slice funded at ~10.5% MTF (or ~8% via futures basis). 1.0× = own capital only. 1.3–1.6× = return sweet spot. Applied ONLY in uptrends → 0 margin calls in 20y.' },
+      ],
+      riskLayer: {
+        title: 'The leverage frontier — net of cost + 10.5% MTF, daily-marked, 2006–2026',
+        caption: 'Pick your point. 1.0× is own-capital-only. Return scales with leverage; drawdown scales with it too; Calmar drifts down — a proportional trade, not a free lunch.',
+        columns: ['Leverage', 'CAGR', 'Max DD', 'Sharpe', 'Calmar', 'Margin calls'],
+        rows: [
+          ['1.0× (own capital)', '33.8%', '−29.9%', '1.49', '1.13', '0'],
+          ['1.3×', '40.7%', '−38.9%', '1.40', '1.05', '0'],
+          ['1.6×', '47.3%', '−47.9%', '1.35', '0.99', '0'],
+          ['2.0×', '55.4%', '−59.7%', '1.29', '0.93', '0'],
+        ],
+        highlightRows: [1, 2],
+      },
+    },
+
+    system: {
+      intro: 'Built on the research/75 daily-marked momentum engine (faithful replication of the Nifty-250 momentum video), extended with leverage + a maintenance margin-call model.',
+      rows: [
+        { k: 'Data', v: 'market_data.db daily close+volume, top-250-by-traded-value PIT universe, 2004→2026 (2006 start after warmup). NIFTYBEES for gate + benchmark.' },
+        { k: 'Leverage model', v: 'Deploy lev×equity in the top-8 while gate on; borrowed cash accrues 10.5% p.a.; maintenance margin call if own-equity / gross-notional < 25% (force-liquidate at marks). 0 calls fired in 20y.' },
+        { k: 'P&L basis', v: 'Daily-marked NAV, net of 0.3% round-trip cost, cash yield 6.5%; CAGR/DD/Sharpe/Calmar on the NAV curve.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls / caveats.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — momentum from data ≤ decision date; gate uses NIFTYBEES ≤ date; monthly rebalance at close.' },
+        { k: 'Margin-call model', v: '25% maintenance on DAILY marks. A gapping crash (2020 gapped down hard) could force liquidation this daily model understates — real leverage carries gap risk beyond the backtest.' },
+        { k: 'Financing', v: 'Modelled at 10.5% MTF; 8% (futures-basis) shown as sensitivity — the gap between them is only 0.7–2.4% CAGR because leverage is on ~76% of months and only on the borrowed slice.' },
+        { k: 'Not new alpha', v: 'This is the SAME momentum edge magnified by leverage — it amplifies both the edge and the risk. Universe is a survivorship-free top-250 proxy, not the exact index.' },
+        { k: 'Multiples are compounding fantasies', v: 'The 400×–8800× growth figures assume perfect reinvestment/capacity — trust CAGR/DD/Calmar, not the multiple.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Borrow-rate sensitivity — 8% (futures basis) vs 10.5% (MTF)',
+        caption: 'Financing barely moves the frontier — leverage is only on in gate-on months and only on the borrowed portion.',
+        columns: ['Leverage', 'CAGR @8%', 'CAGR @10.5%', 'Max DD', 'Calmar @10.5%'],
+        rows: [
+          ['1.0×', '33.8%', '33.8%', '−30%', '1.13'],
+          ['1.3×', '41.4%', '40.7%', '−39%', '1.05'],
+          ['1.6×', '48.7%', '47.3%', '−48%', '0.99'],
+          ['2.0×', '57.8%', '55.4%', '−60%', '0.93'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'Vol-targeting does NOT help (counterintuitive)',
+        caption: 'Dynamic leverage from trailing vol lands below the static frontier at matched average leverage. The gate already handles the downside, and momentum’s biggest up-years are high-vol rallies — vol-targeting de-levers into the melt-ups.',
+        columns: ['Approach', 'Avg lev', 'CAGR', 'Max DD', 'Calmar'],
+        rows: [
+          ['Static leverage 1.3×', '1.30', '41.4%', '−38.9%', '1.06'],
+          ['Vol-target (vt25/lb60)', '1.14', '33.2%', '−39.6%', '0.84'],
+          ['Static leverage 1.6×', '1.60', '48.7%', '−47.8%', '1.02'],
+          ['Vol-target (vt35/lb20)', '1.60', '43.2%', '−52.3%', '0.83'],
+        ],
+        highlightRows: [0, 2],
+      },
+      {
+        title: 'Concentration — N8 is the sweet spot',
+        caption: 'Fewer names raise return but hurt Calmar faster; N8 is the best risk-adjusted point at every leverage (N5 over-concentrates, N12 dilutes).',
+        columns: ['Config', 'CAGR', 'Max DD', 'Calmar'],
+        rows: [
+          ['N5 · 2.0×', '54.9%', '−66.7%', '0.82'],
+          ['N8 · 2.0×', '57.8%', '−59.6%', '0.97'],
+          ['N12 · 2.0×', '58.0%', '−60.2%', '0.96'],
+        ],
+        highlightRows: [1],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: '1.6× · CAGR (net, 10.5% MTF)', value: '47.3%', tone: 'pos' },
+        { label: '1.3× · Calmar', value: '1.05' },
+        { label: 'Margin calls in 20 years', value: '0', tone: 'pos' },
+        { label: '1.0× (own capital) CAGR', value: '33.8%' },
+        { label: 'NIFTYBEES B&H', value: '11.7% / −60% DD', tone: 'neg' },
+        { label: 'Vol-targeting vs static', value: 'worse (Calmar 0.84 vs 1.05)' },
+      ],
+      tables: [],
+      embeds: [
+        { src: '/app/momentum_leverage_tearsheet.html', height: 2350,
+          caption: 'Interactive: growth-of-₹1 on a log scale for each leverage level vs NIFTYBEES, the drawdown curves, year-by-year returns, the leverage frontier, borrow-rate sensitivity, and the vol-targeting comparison.' },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Gated risk-adjusted momentum, top-8, static 1.3–1.6× leverage (10.5% MTF)',
+        summary: 'The index gate makes leverage survivable (0 margin calls / 20y); static 1.3–1.6× is the return sweet spot. Keep leverage a simple fixed multiple — vol-targeting and deeper concentration both reduce risk-adjusted return.',
+        metrics: [
+          { k: 'CAGR (1.6×)', v: '47.3%' },
+          { k: 'CAGR (1.3×)', v: '40.7%' },
+          { k: 'Calmar (1.3×)', v: '1.05' },
+          { k: 'Max DD (1.6×)', v: '−47.9%' },
+        ],
+        rejected: [
+          'Vol-targeting — de-levers into momentum’s high-vol up-years; below the static frontier',
+          'N<8 concentration — trades Calmar for noise (N5 2.0× Calmar 0.82 vs N8 0.97)',
+          'Leverage > 1.6× — Calmar below 1, drawdown beyond −55%',
+          'Ungated leverage — would wipe out (−66% DD ungated even at 1.0×)',
+        ],
+      },
+    ],
+
+    caveats: [
+      'The −48% drawdown at 1.6× is real, daily-marked, and psychologically brutal to hold — leverage amplifies the pain as much as the gain.',
+      'Margin-call model is a 25% maintenance floor on daily marks; a gapping crash (2020) could force liquidation this understates. Real leverage carries gap risk beyond the model.',
+      'Financing modelled at 10.5% MTF (own-capital 1.0× has no borrow). Futures leverage (~8% basis) is cheaper but adds roll mechanics; MTF on the stock basket is the literal implementation.',
+      'This is the same momentum edge magnified, not a new source of alpha — and it is ~0.8-correlated with the running momentum-paper book, so it is a sizing decision, not a new sleeve.',
+      'Universe is a survivorship-free top-250-by-value proxy, not the exact Nifty LargeMidcap 250; growth multiples assume idealised reinvestment/capacity — trust CAGR/DD/Calmar.',
+    ],
+
+    githubLinks: [
+      { label: 'research/104 — momentum leverage', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/104_momentum_leverage' },
+      { label: '← Related: Nifty-250 momentum (base book)', href: '/app/backtest/nifty250-momentum-video' },
+    ],
+    projectPaths: [
+      'research/104_momentum_leverage/scripts/run_lev_conc.py (leverage+margin-call), run_voltarget.py, run_borrow_sens.py',
+      'research/104_momentum_leverage/scripts/export_lev.py, build_lev_ts.py — built on research/75 momentum engine',
+    ],
+  },
+  {
+    slug: 'premium-weekly-nifty-strangle',
+    title: 'Premium-Based Weekly NIFTY Strangle — sell ₹20/leg, VIX≥15 + ATR<1.2% (IV>RV) edge',
+    verdict:
+      'Selecting strikes by TARGET PREMIUM (~₹20/leg) rather than %OTM, and sweeping tenor × management from scratch, the weekly cadence wins and a single clean edge survives: sell rich implied vol (VIX≥15) only when realized vol is calm (ATR<1.2%) — the IV>RV vol-risk-premium. That gate takes the weekly ₹20 strangle from Calmar 0.19 (all weeks) to 2.37 with the 6% liquid yield, cutting the drawdown from −₹7.8L to −₹1.05L (daily-close basis). The ATR threshold is WALK-FORWARD VALIDATED — each half of 2019–2026 independently picks 1.2% and it holds out-of-sample (OOS Calmar 2.84 and 0.81). Honest live sizing uses an INTRADAY 3× combined-premium stop (not the optimistic daily-close one): that roughly doubles the drawdown to −₹1.8L and lands the realistic book at CAGR ~10% / Calmar ~1.2 with liquid yield / 81% win on ₹20L (10 lots). Four independent tests agree the strategy is HOLD-not-defend: an ATR-breach exit, underlying-move stops, and rolling the winning side in ALL hurt; the only helpful adjustment is re-deploying a fresh ₹20 strangle after a stop.',
+    status: 'COMPLETE',
+    date: '2026-08-06',
+    cardBlurb:
+      'Strikes by premium (~₹20/leg), not %OTM. Unbiased tenor × management sweep → weekly wins, and one edge survives: VIX≥15 + ATR<1.2% (sell rich IV into calm RV). Walk-forward validated (OOS Calmar 2.84 / 0.81). Honest live-realistic book with an INTRADAY 3× stop: CAGR ~10%, Calmar ~1.2, −₹1.8L DD, 81% win on ₹20L (10 lots). Reacting to the move hurts; re-deploying premium is the only helpful adjustment.',
+    cardStats: [
+      { label: 'CAGR (net, +6% liquid)', value: '~10%' },
+      { label: 'Calmar (live-realistic)', value: '~1.2' },
+      { label: 'Max DD (₹20L, intraday stop)', value: '−₹1.8L' },
+    ],
+
+    systemRules: {
+      intro: 'The recommended traded system — a low-utilization, high-selectivity vol-premium harvester. 10-lot weekly NIFTY strangle, strikes chosen by premium, only sold when IV is rich and RV is calm.',
+      sharedCoreTitle: 'Premium weekly strangle — locked rules',
+      sharedCore: [
+        { k: 'Instrument', v: 'Sell the CE & PE nearest ₹20 premium EACH (not a fixed %OTM), 10 lots (qty 750). Enter ~4 trading days before the weekly expiry.' },
+        { k: 'Entry gate (the edge)', v: 'ONLY enter when India VIX ≥ 15 AND NIFTY ATR(14) < 1.2% of spot at entry — rich implied vol into calm realized vol (IV>RV). ATR is an ENTRY filter only: once on, HOLD even if ATR later breaches 1.2% (reacting to it doubles the drawdown).' },
+        { k: 'Exit — combined-premium stop', v: 'INTRADAY stop: buy back the strangle if the combined mark reaches 3× the credit collected (a blow-up stop, run as SL-M live). No profit target and no underlying-move stop — both hurt.' },
+        { k: 'Adjustment — re-deploy only', v: 'After a 3× stop fires with days left to expiry, sell a FRESH ₹20 strangle re-centred on spot (up to 3×). This is the ONLY adjustment that helps — it recaptures premium. Do NOT roll the winning side toward the money (blows the drawdown out ~7×).' },
+        { k: 'Capital & yield', v: '₹15–20L parked for 10 lots — sized to survive tested-side margin EXPANSION (a naked strangle’s margin can 2–3× mid-trade), not just entry margin (~₹9–13L). Idle ~85% of weeks → parked capital in 6% liquid adds ~6% CAGR.' },
+      ],
+      riskLayer: {
+        title: 'The four books — base vs +6% liquid yield (10 lots, ₹20L, 2019–2026)',
+        caption: 'Raw all-weeks → + VIX≥15 → + ATR<1.2% → final live-realistic (intraday 3× stop + re-deploy). The VIX gate earns the most rupees; the ATR gate buys the smoothest ride; the intraday stop is the honest drawdown.',
+        columns: ['Book', 'CAGR (base → +liquid)', 'Calmar (base → +liquid)', 'Max DD', 'Win'],
+        rows: [
+          ['Weekly ₹20 · all weeks (385 wks)', '7.5% → 13.5%', '0.19 → 0.37', '−₹7.78L', '78%'],
+          ['+ VIX≥15 (204 wks)', '9.4% → 15.4%', '0.53 → 1.01', '−₹3.55L', '81%'],
+          ['+ VIX≥15 + ATR<1.2% (57 wks, daily-close)', '5.3% → 11.3%', '1.01 → 2.37', '−₹1.05L', '84%'],
+          ['Final · intraday 3× stop + re-deploy', '4.3% → 10.3%', '0.47 → 1.22', '−₹1.81L', '81%'],
+        ],
+        highlightRows: [3],
+      },
+    },
+
+    system: {
+      intro: 'Tested on our bhavcopy engine over real weekly NIFTY option premiums (2019–2026), strikes chosen by traded premium with open-interest > 0. Exits simulated on the option OHLC.',
+      rows: [
+        { k: 'Data', v: 'nse_options_bhav (NIFTY weekly, OHLC + OI); India VIX daily; NIFTY50 daily OHLC for ATR(14)/ADX(14)/CPR.' },
+        { k: 'Strike selection', v: 'CE & PE nearest ₹20 close each with OI>0 (target-premium, not %OTM); combined credit marked daily.' },
+        { k: 'Gates', v: 'India VIX ≥ 15 and Wilder ATR(14) < 1.2% of spot at entry (both causal). ADX and prior-day CPR filters tested and rejected (no help / hurt).' },
+        { k: 'P&L basis', v: 'Net of 0.3%/leg slippage + ₹400/leg-transaction; 10 lots (qty 750); returns on ₹20L, with a 6% liquid-yield overlay on parked cash.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls / the seven deadly sins.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — strikes from the entry-day traded premium; VIX/ATR/CPR use only data at or before entry; exits use the held options’ own OHLC.' },
+        { k: 'Overfitting / walk-forward', v: 'The ATR<1.2% threshold is walk-forward validated: split 2019–2026 in half, each half INDEPENDENTLY picks 1.2% by Calmar and it holds out-of-sample (train 2019–22 → OOS 2023–26 Calmar 2.84, 88% win; train 2023–26 → OOS 2019–22 Calmar 0.81, 82% win).' },
+        { k: 'Stops are modelled intraday', v: 'The headline book uses an INTRADAY 3× stop (CE_high+PE_high trigger, fill at 3× or the gap-open) — a conservative over-count of breaches; the true figure sits between the intraday (Calmar +liq 1.20) and daily-close (3.11) books, ~1.2–2.0.' },
+        { k: 'Cost neglect', v: 'Net of slippage + per-leg transaction cost on every open, close, and re-deploy; the 6% liquid yield is an explicit toggle, not baked in.' },
+        { k: 'Capacity / margin', v: 'Far-OTM weekly NIFTY strangle is liquid; sizing note: park ₹15–20L for 10 lots because tested-side margin expands 2–3× mid-trade — tight-margin sizing risks a forced close.' },
+        { k: 'VIX window', v: 'Options weekly data begins 2019, so the study runs 2019–2026 (~7.4 yrs); one COVID-2020 shock is included and the intraday stop is what carries it.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Adjustment / exit bake-off (weekly ₹20, VIX≥15 + ATR<1.2%, daily-close, +6% liquid)',
+        caption: 'HOLD-not-defend wins. Re-deploying premium after a stop is the only helpful adjustment; every directional reaction hurts, and rolling the winning side toward the money is a disaster.',
+        columns: ['Method', 'Base total', 'Calmar +liq', 'Max DD +liq', 'Win'],
+        rows: [
+          ['Re-deploy fresh strangle after SL', '+₹7.85L', '3.11', '−₹0.72L', '84%'],
+          ['Roll-recenter on leg-2×', '+₹6.0L', '2.54', '−₹0.78L', '75%'],
+          ['Baseline — hold + premium-3× stop', '+₹7.8L', '2.33', '−₹0.95L', '84%'],
+          ['Underlying-move stop 2%', '+₹5.3L', '1.83', '−₹1.04L', '79%'],
+          ['Roll-untested-side IN on 2×', '+₹1.0L', '0.21', '−₹6.40L', '80%'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Intraday stop vs daily-close stop (the honesty check)',
+        caption: 'A real intraday SL-M catches the whipsaw days the daily-close backtest quietly dodged — drawdown more than doubles and Calmar drops. The intraday figure is the one to trust.',
+        columns: ['Stop basis', 'P&L (10 lots)', 'Win', 'Max DD', 'Calmar +liq'],
+        rows: [
+          ['Daily-CLOSE 3× + re-deploy (optimistic)', '+₹7.85L', '84%', '−₹0.82L', '3.11'],
+          ['INTRADAY 3× + re-deploy (live-realistic)', '+₹6.22L', '80%', '−₹1.81L', '1.20'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'CAGR by capital base (intraday-stop book)',
+        caption: 'The absolute edge is ₹1.05L/yr; the CAGR depends on what you divide by. Broker margin for a 10-lot far-OTM strangle is ~₹9–13L, but park ₹15–20L to survive tested-side margin expansion.',
+        columns: ['Capital parked', 'Strangle-only CAGR', '+6% liquid CAGR', 'Calmar +liq'],
+        rows: [
+          ['₹20L (conservative)', '4.1%', '10.1%', '1.20'],
+          ['₹15L (margin + buffer)', '5.5%', '11.5%', '1.01'],
+          ['₹12L (~est 10-lot margin)', '6.8%', '12.8%', '0.89'],
+          ['₹10L (tight margin)', '8.2%', '14.2%', '0.82'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'Tenor comparison (premium strangle, VIX≥15 + premium-3× stop)',
+        caption: 'Weekly is the best risk-adjusted tenor; monthly earns the most rupees but with a far deeper drawdown. Bi-weekly sits in between.',
+        columns: ['Tenor', 'Total', 'Calmar', 'Max DD'],
+        rows: [
+          ['Weekly ₹20', '+₹8.0L', '0.44', '−₹4.1L'],
+          ['Bi-weekly ₹20', '+₹15L', '0.31', '−₹9L'],
+          ['Monthly ₹20', '+₹33.3L', '0.31', '−₹14.3L'],
+        ],
+        highlightRows: [0],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Final book · CAGR (+6% liquid)', value: '~10%', tone: 'pos' },
+        { label: 'Calmar (live-realistic, +liquid)', value: '~1.2' },
+        { label: 'Max Drawdown (intraday stop)', value: '−₹1.81L', tone: 'neg' },
+        { label: 'Win rate', value: '81%' },
+        { label: 'ATR gate walk-forward OOS Calmar', value: '2.84 / 0.81', tone: 'pos' },
+        { label: 'Daily-close Calmar (optimistic)', value: '3.11 vs 1.20 intraday' },
+      ],
+      tables: [],
+      embeds: [
+        { src: '/app/premium_strangle_tearsheet.html', height: 2450,
+          caption: 'Interactive: four books (raw all-weeks / +VIX≥15 / +ATR<1.2% / final intraday+re-deploy) with a 6%-liquid-yield toggle — KPIs, cumulative P&L, drawdown, year-by-year, a ₹ monthly heatmap, month-on-month running drawdown, and the 57-trade blotter with entry VIX/ATR and exit reasons.' },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Weekly ₹20 strangle — VIX≥15 + ATR<1.2% + intraday 3× stop + re-deploy (+ 6% liquid yield)',
+        summary: 'Sell rich IV into calm RV, hold through the move, and re-deploy premium after a stop rather than defending directionally. A selective (7.5 trades/yr) vol-premium harvester whose virtues are safety and the liquid-yield leverage on idle capital.',
+        metrics: [
+          { k: 'CAGR (+liquid)', v: '~10%' },
+          { k: 'Calmar (+liquid)', v: '~1.2' },
+          { k: 'Max DD', v: '−₹1.81L' },
+          { k: 'Win', v: '81%' },
+        ],
+        rejected: [
+          'Reacting to an ATR breach mid-hold — Calmar 2.33→1.89, drawdown doubles',
+          'Underlying-move stops (1–2%) — all worse; tighter is worse (Calmar 1.05 at 1%)',
+          'Rolling the winning side toward the money on a leg-double — Calmar 0.21, −₹6.4L drawdown',
+          'ADX and prior-day CPR entry filters — no help / hurt on the weekly book',
+          'Daily-close stop as a live assumption — optimistic; a real intraday stop nearly doubles the drawdown',
+        ],
+      },
+    ],
+
+    caveats: [
+      'The headline book uses an INTRADAY 3× stop modelled from option daily high/low (CE_high+PE_high over-counts simultaneous peaks) — a conservative bound; the true Calmar sits between 1.20 (intraday) and 3.11 (daily-close), ~1.2–2.0. Nothing is wired to live orders.',
+      'Options weekly data begins 2019, so the study is ~7.4 years with a single COVID-2020 shock; the intraday stop is what carries that event.',
+      'Broker margin for a 10-lot far-OTM strangle is an estimate (~₹9–13L; the Kite margin API was not reachable this session). Size ₹15–20L parked because a tested strangle’s margin expands 2–3× mid-trade.',
+      'The 6% liquid yield is a modelled overlay on parked capital (the book is idle ~85% of weeks); real pledge haircuts and liquid-fund yields vary — treat it as indicative.',
+      'The absolute edge is modest (~₹1.05L/yr at 10 lots) — this is a low-utilization safety book; scale lots or combine tenors to raise rupee return. A robust risk structure, not a guaranteed edge.',
+    ],
+
+    githubLinks: [
+      { label: 'research/102 — premium strangle', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/102_premium_strangle' },
+      { label: '← Related: Managed monthly straddle', href: '/app/backtest/cushioned-monthly-nifty-straddle' },
+    ],
+    projectPaths: [
+      'research/102_premium_strangle/scripts/multi_tenor_premium.py, atr_validate.py, atr_dynamic_exit.py',
+      'research/102_premium_strangle/scripts/adjust_sweep.py, intraday_stop.py, export_premium.py, build_premium_ts.py',
+    ],
+  },
+  {
+    slug: 'cushioned-monthly-nifty-straddle',
+    title: 'Managed Monthly NIFTY Straddle — VIX gate + premium blow-up stop (cushion & 6% liquid optional)',
+    verdict:
+      'On 15 years of real premiums, the best short-straddle book is not a naked straddle with a cushion — it is a DISCIPLINED one. A VIX≥15 entry gate + 40% profit-target + a combined-premium 2.5× blow-up stop + close-by-DTE-5 takes the 10-lot DTE-28 monthly straddle from Calmar 0.28 (raw) to ~1.0, cutting the max drawdown from −₹11.7L to −₹3.7L. The VIX gate is the dominant lever — Calmar collapses ~4× without it (best 1.06 → 0.27); management can’t rescue a bad entry. A prior-day CPR<0.10% compression filter lifts it further (Calmar ~1.9). The BankNifty long-vol cushion still helps — on a like-for-like calendar basis it lifts Calmar (0.98→1.21 with the 6% liquid yield) and cuts the drawdown ~26% for a ~9% return give-up. And parking idle/pledged capital in 6% liquid funds adds ~2.5% CAGR — the VIX gate’s flat months aren’t wasted. Recommended book: ≈20% CAGR, Calmar ≈1.2, −₹3.7L max drawdown on ₹20L (10 lots), net of costs, with 6% liquid yield.',
+    status: 'COMPLETE',
+    date: '2026-08-05',
+    cardBlurb:
+      'The disciplined short-straddle. 15yr/5-crash-validated: VIX≥15 gate + 40% PT + premium-2.5× blow-up stop + DTE-5 close turns a raw DTE-28 monthly straddle from Calmar 0.28 → ~1.0 and −₹11.7L drawdown → −₹3.7L. The VIX gate is the whole game; the BankNifty cushion is optional; 6% liquid yield on idle/pledged capital adds ~2.5% CAGR → ≈20% CAGR, Calmar ≈1.2.',
+    cardStats: [
+      { label: 'CAGR (net, +6% liquid)', value: '~20%' },
+      { label: 'Calmar', value: '~1.2' },
+      { label: 'Max DD (₹20L)', value: '−₹3.7L' },
+    ],
+
+    systemRules: {
+      intro: 'The recommended traded system. 10-lot DTE-28 monthly NIFTY straddle, but only sold with discipline and closed on rules. All levers checked at the daily close.',
+      sharedCoreTitle: 'Managed monthly straddle — locked rules',
+      sharedCore: [
+        { k: 'Instrument', v: 'Sell ATM NIFTY monthly straddle (CE+PE), 10 lots. Enter ~28 calendar days before the monthly expiry, at the option OPEN (~09:20). ATM from the entry-day open (no look-ahead).' },
+        { k: 'Entry gate (#1 lever)', v: 'ONLY enter when India VIX ≥ 15 at entry — sell rich premium, sit out low-vol months. Optional extra filter: skip when the prior-day daily CPR width < 0.10% of spot (compression precedes expansion).' },
+        { k: 'Exit — whichever first', v: '(a) 40% profit-target: buy back when the straddle has decayed to 60% of the credit collected; (b) blow-up stop: exit if the straddle value rises to 2.5× the credit (a combined-premium loss stop); (c) close by DTE-5.' },
+        { k: 'Cushion (recommended)', v: 'BankNifty long 1% strangle ×8 held to expiry — a genuine risk-adjusted gain: lifts Calmar (0.98→1.21 with liquid yield) and cuts the drawdown ~26% (−₹4.53L→−₹3.36L) for a ~9% return give-up. Drop only if you prefer more raw return and can hold the deeper drawdown.' },
+        { k: 'Capital & yield', v: '₹20L for 10 lots. Meet margin 50% pledged stocks + ~₹7.5L pledged LIQUIDBEES (earns 6%); on flat (VIX<15) months the full cash sits in liquid @ 6% → ~+2.5% CAGR.' },
+      ],
+      riskLayer: {
+        title: 'The four books — base vs +6% liquid yield (10 lots, ₹20L, 2016–2026)',
+        caption: 'Raw straddle → + cushion → managed + cushion → same management with NO VIX gate. Management (green) dominates; dropping the VIX gate (last row) keeps return but halves Calmar.',
+        columns: ['Book', 'CAGR (base → +liquid)', 'Calmar (base → +liquid)', 'Max DD'],
+        rows: [
+          ['Straddle alone', '16.6% → 18.8%', '0.28 → 0.34', '−₹11.67L'],
+          ['+ BankNifty cushion', '17.7% → 20.0%', '0.50 → 0.63', '−₹7.16L'],
+          ['Managed·VIX15 + cushion', '17.8% → 20.4%', '0.96 → 1.21', '−₹3.72L'],
+          ['Managed·noVIX + cushion', '19.2% → 21.5%', '0.51 → 0.59', '−₹7.57L'],
+        ],
+        highlightRows: [2],
+      },
+    },
+
+    system: {
+      intro: 'Tested on our own bhavcopy engine over 15 years of real NIFTY + BankNifty option premiums (2011–2026; 2011–2016 downloaded for this study). Exits are simulated bar-by-bar on the daily close of the held straddle.',
+      rows: [
+        { k: 'Data', v: 'nse_options_bhav (NIFTY + BankNifty monthly 2011→2026); India VIX daily; index spot back to 2011.' },
+        { k: 'Straddle', v: 'ATM CE+PE at DTE-28 entry-day open; the held straddle is marked every day (CE close + PE close) to trigger the PT / premium-stop / DTE-5 exits.' },
+        { k: 'Gates', v: 'India VIX ≥ 15 at entry; optional prior-day CPR-width filter (causal — prior day’s H/L/C ÷ entry-open).' },
+        { k: 'P&L basis', v: 'Net of 0.3%/leg + ₹160/RT; 10 lots; returns on ₹20L capital, with a 6% liquid-yield overlay on parked/pledged cash.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls / the seven deadly sins.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — ATM from entry-day open; every exit (PT / premium-2.5× / DTE-5) and both gates (VIX at entry, prior-day CPR) use only information available at or before the decision.' },
+        { k: 'Regime / multi-crash', v: '15 years across 2011 EU, 2013 taper, 2015/16 China, 2018 vol, 2020 COVID — the drawdown control holds across all of them.' },
+        { k: 'Overfitting', v: 'The premium-2.5× stop and VIX≥15 gate are broad, robust choices (leg-ratio stops were rejected; move-stops were second-best). CPR<0.10% matches V2’s out-of-sample-validated threshold. The aggressive prior-month CPR<1.2% (Calmar 3.44) is flagged as promising-but-needs-walk-forward.' },
+        { k: 'Cost neglect', v: 'Net of slippage + brokerage on every leg; the 6% liquid yield is modelled explicitly and is a toggle, not baked in.' },
+        { k: 'Stops are EOD', v: 'The premium/move stops are checked at the daily CLOSE; a true intraday stop would trigger sooner, so live fills may differ.' },
+        { k: 'VIX data window', v: 'India VIX starts 2015, so the VIX-gated book effectively runs 2015–2026 (~67 trades) — part of the gate’s edge is also a cleaner window.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Exit optimization — raw hold-to-expiry vs managed',
+        caption: '10-lot DTE-28 monthly straddle, 2011–2026. Adding discipline 5×’s the Calmar and cuts the drawdown ~60%, at the same return.',
+        columns: ['Config', 'Total', 'Calmar', 'Max DD', 'Win'],
+        rows: [
+          ['Baseline — hold to DTE-1, no management', '+₹27.3L', '0.18', '−₹11.0L', '60%'],
+          ['+ VIX≥15 + 40% PT + move-4% stop + DTE-5', '+₹27.8L', '0.91', '−₹4.65L', '58%'],
+          ['+ VIX≥15 + 40% PT + premium-2.5× stop + DTE-5', '+₹39.9L', '1.28', '−₹5.60L', '70%'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'Stop-type bake-off (on the VIX≥15 + 40% PT base)',
+        caption: 'The combined-premium 2.5× blow-up stop wins — it lets winners run and only cuts genuine blow-ups. Leg-ratio stops fire on any drift and knife winners.',
+        columns: ['Stop type', 'Total', 'Calmar', 'Max DD'],
+        rows: [
+          ['no stop', '+₹37.1L', '0.68', '−₹8.3L'],
+          ['underlying move 4%', '+₹27.8L', '0.91', '−₹4.65L'],
+          ['combined-premium 2.5×', '+₹39.7L', '1.06', '−₹5.69L'],
+          ['leg-ratio 2× (one side doubles)', '+₹3.1L', '0.13', '−₹3.65L'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'The VIX gate is the whole game (same configs, with vs without)',
+        caption: 'Without the VIX≥15 gate, every stop config collapses to ~Calmar 0.26. Discipline can’t fix a bad entry.',
+        columns: ['Stop (40% PT + DTE-5)', 'Calmar WITH VIX≥15', 'Calmar NO gate'],
+        rows: [
+          ['no stop', '0.68', '0.26'],
+          ['move 4%', '0.91', '0.17'],
+          ['combined-premium 2.5×', '1.06', '0.27'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'CPR compression filter on the managed book',
+        caption: 'Skipping compressed setups helps further; the prior-day CPR<0.10% is the robust pick (keeps 50 of 67 trades). Prior-month CPR<1.2% reaches Calmar 3.44 but halves activity → treat as promising, not yet trusted.',
+        columns: ['CPR gate', 'n', 'Total', 'Calmar', 'Max DD'],
+        rows: [
+          ['managed, no CPR', '67', '+₹39.9L', '1.28', '−₹5.60L'],
+          ['+ skip prior-day CPR < 0.10%', '50', '+₹36.2L', '1.92', '−₹4.53L'],
+          ['+ skip prior-month CPR < 1.2% (aggressive)', '37', '+₹24.8L', '3.44', '−₹2.34L'],
+        ],
+        highlightRows: [1],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Managed·VIX15 + cushion · CAGR (+6% liquid)', value: '20.4%', tone: 'pos' },
+        { label: 'Calmar (+liquid)', value: '1.21' },
+        { label: 'Max Drawdown', value: '−₹3.72L', tone: 'neg' },
+        { label: 'Win rate', value: '63%' },
+        { label: 'Managed alone (no cushion) · Calmar (+liquid)', value: '0.98' },
+        { label: 'Cushion vs none · Calmar (+liquid)', value: '1.21 vs 0.98', tone: 'pos' },
+      ],
+      tables: [],
+      embeds: [
+        { src: '/app/managed_straddle_tearsheet.html', height: 2450,
+          caption: 'Interactive: four books (raw / +cushion / managed+cushion / managed·noVIX) with a 6%-liquid-yield toggle — KPIs, cumulative P&L, drawdown, year-by-year, a ₹ monthly heatmap, month-on-month running drawdown, and the managed trade blotter with exit reasons.' },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Managed monthly straddle — VIX≥15 + 40% PT + premium-2.5× stop + DTE-5 (+ 6% liquid yield)',
+        summary: 'Disciplined entry and a wide blow-up stop turn a mediocre short-straddle into a Calmar ~1 book; parked capital at 6% adds ~2.5% CAGR; the cushion is optional once the stop caps the tail.',
+        metrics: [
+          { k: 'CAGR (+liquid)', v: '20.4%' },
+          { k: 'Calmar (+liquid)', v: '1.21' },
+          { k: 'Max DD', v: '−₹3.72L' },
+          { k: '+ CPR<0.10% Calmar', v: '1.92' },
+        ],
+        rejected: [
+          'Raw hold-to-expiry straddle — Calmar 0.18, −₹11L drawdown',
+          'No VIX gate — every stop config collapses to ~Calmar 0.26 (the gate is the #1 lever)',
+          'Leg-ratio stops — fire on any drift, knife winners (Calmar 0.13)',
+          'Rolling weekly/monthly far-OTM wings for margin — cost 50–85% of the edge for only ~₹2L/10-lot margin relief',
+        ],
+      },
+    ],
+
+    caveats: [
+      'The premium/move stops are checked at the daily CLOSE — a true intraday stop triggers sooner, so live fills may differ. Nothing is wired to live orders.',
+      'India VIX data starts 2015, so the VIX-gated book runs effectively 2015–2026 (~67 trades); part of the gate’s benefit is also a cleaner, post-2015 window.',
+      'The 6% liquid yield is a modelled overlay on parked/pledged capital (₹20L: 50% pledged stocks + ~₹7.5L pledged liquid + cash); real pledge haircuts and liquid-fund yields vary — treat ~2.5% CAGR as indicative.',
+      'The aggressive prior-month CPR<1.2% (Calmar 3.44) throws away ~45% of trades and needs walk-forward before trusting; the prior-day CPR<0.10% is the robust choice.',
+      'Sizing is 10 lots on a fixed 50-unit-per-lot basis for 15-year comparability; NIFTY’s real lot drifted — translate ₹ to your actual lot count. This is a robust risk structure, not a guaranteed edge.',
+    ],
+
+    githubLinks: [
+      { label: 'research/101 — trend sleeve / straddle management', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/101_trend_sleeve' },
+      { label: '← Related: NIFTY straddle look-ahead audit', href: '/app/backtest/nifty-straddle-lookahead-audit' },
+    ],
+    projectPaths: [
+      'research/101_trend_sleeve/scripts/monthly_exit_opt.py, monthly_stop_compare.py, monthly_cpr_gate.py',
+      'research/101_trend_sleeve/scripts/export_managed.py (tearsheet data), nse_fo_downloader.py (2011-2015 bhavcopy)',
+    ],
+  },
+
+  {
+    slug: 'managed-futures-trend-sleeve',
+    title: 'Managed-Futures Trend Sleeve — diversified weekly Donchian (gold + Nasdaq + PSU)',
+    verdict:
+      'A multi-asset weekly-trend sleeve turns the single gold edge into a properly diversified managed-futures book. Equal-weight weekly Donchian-8 long-only across low-correlation legs — gold (GOLDBEES), Nasdaq (MOM100), Indian PSU (CPSEETF) — delivers Sharpe 1.41, CAGR 13.0%, Calmar 0.85, max drawdown −15% net over 11.5 years. That is the SAME return as gold-alone but markedly better risk-adjustment (Sharpe 1.07→1.41, DD −21%→−15%) purely from diversification: gold↔Nasdaq correlation is +0.00. Adding S&P (MASPTOP50), US FANG (MAFANG) and silver (shorter history) pushes it to Sharpe 1.49 / Calmar 0.91. 10 of 12 years green; the walk-forward OOS (2021H2→2026) STRENGTHENS to Sharpe 1.91 / CAGR 20% / −10% DD. It is uncorrelated with the Indian short-vol / equity books — a genuine independent alpha sleeve, not a straddle hedge.',
+    status: 'COMPLETE',
+    date: '2026-08-05',
+    cardBlurb:
+      'Diversification turns the single gold trend edge into a real managed-futures book. Equal-weight weekly Donchian across gold + Nasdaq + PSU (cross-correlation ≈ 0): Sharpe 1.41, CAGR 13%, max DD −15% net — the same return as gold with a third less drawdown. Walk-forward OOS strengthens to Sharpe 1.91. 10/12 green years, ~1 trade/leg/yr.',
+    cardStats: [
+      { label: 'Sharpe (net, 11.5y)', value: '1.41' },
+      { label: 'CAGR', value: '13.0%' },
+      { label: 'Max DD', value: '−15%' },
+    ],
+
+    systemRules: {
+      intro: 'A deliberately simple, low-turnover trend rule applied to a basket of uncorrelated assets. Long-only on each leg (short sides lose to whipsaw); equal-weight across legs (risk-parity is a refinement).',
+      sharedCoreTitle: 'Managed-futures trend sleeve — locked rules',
+      sharedCore: [
+        { k: 'Instruments (core)', v: 'Equal-weight: Gold (GOLDBEES) + Nasdaq (MOM100) + Indian PSU (CPSEETF). Deploy via the respective ETFs / futures.' },
+        { k: 'Instruments (extended)', v: 'Optional recent-history legs: S&P-500 (MASPTOP50), US FANG+ (MAFANG), Silver (SILVERBEES) — lift Sharpe to ~1.5 but only ~4.5y of data.' },
+        { k: 'Signal (each leg)', v: 'Weekly Donchian-8 long-only: LONG on a weekly close above the prior 8-week high; FLAT on a close below the prior 8-week low. No shorts.' },
+        { k: 'Weighting', v: 'Equal-weight the available legs each week. (Inverse-vol / risk-parity is a refinement, not required.)' },
+        { k: 'Timeframe / turnover', v: 'Weekly close; ≈ 1 round-trip per leg per year — costs immaterial.' },
+        { k: 'Costs / sizing', v: '0.1%/side slippage; compounded; scale the sleeve to its −15% historical drawdown.' },
+      ],
+      riskLayer: {
+        title: 'Gold-alone vs the diversified sleeve',
+        caption: 'Net, compounded, 2015–2026. Diversification holds the return and cuts the drawdown — the managed-futures free lunch.',
+        columns: ['Sleeve', 'Sharpe', 'CAGR', 'Calmar', 'Max DD'],
+        rows: [
+          ['Gold alone', '1.07', '13.1%', '0.61', '−21%'],
+          ['Core: Gold + Nasdaq + PSU (11.5y)', '1.41', '13.0%', '0.85', '−15%'],
+          ['Full: + S&P + FANG + silver (~4.5y legs)', '1.49', '14.0%', '0.91', '−15%'],
+        ],
+        highlightRows: [1],
+      },
+    },
+
+    system: {
+      intro: 'Weekly Donchian breakout applied to a basket of uncorrelated trend assets, equal-weighted, net-of-cost. Grew out of the Phase-2 trend search (research/101): gold was the first clean edge, and adding global-equity ETFs downloaded via Kite produced a genuinely diversified book.',
+      rows: [
+        { k: 'Engine', v: 'Weekly-resampled backtester on market_data_unified daily ETF data (GOLDBEES, MOM100/Nasdaq, CPSEETF, MASPTOP50/S&P, MAFANG, SILVERBEES).' },
+        { k: 'Signal', v: 'Per leg: Donchian-8 on weekly high/low; long above the prior 8-week high, flat below the prior 8-week low.' },
+        { k: 'Diversification', v: 'Core-leg cross-correlations near zero: gold↔Nasdaq +0.00, gold↔PSU −0.04, Nasdaq↔PSU +0.48 — the sleeve out-Sharpes every single leg.' },
+        { k: 'P&L basis', v: 'Compounded equity, net of 0.1%/side. ~1 trade/leg/yr.' },
+        { k: 'Validation', v: 'Per-asset robustness (Donchian-8 long-only won the earlier N-sweep); walk-forward 2021H2→2026 strengthens to Sharpe 1.91.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls / the seven deadly sins.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — Donchian uses prior weeks; the weekly-close signal earns the following week.' },
+        { k: 'Overfitting', v: 'One signal, one knob (N=8, on a flat plateau); long-only and equal-weight chosen for robustness, not fit. No per-leg tuning.' },
+        { k: 'Diversification (not single-factor)', v: 'Three near-uncorrelated legs (gold / US tech / Indian PSU); the Sharpe gain (1.07→1.41) IS the diversification, verified by the correlation matrix.' },
+        { k: 'Regime', v: 'Core spans 2015–2026; 10 of 12 years green, only 2018 (−11%) and the 2015 stub red.' },
+        { k: 'OOS / walk-forward', v: 'Blind 2021H2→2026 = Sharpe 1.91 / CAGR 20% / −10% DD — holds and strengthens.' },
+        { k: 'Capacity / FX', v: 'Global ETFs are INR-denominated (they blend the underlying with USDINR — realistic for an Indian book). ETF proxies hide futures roll cost; re-cost before sizing.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Per-asset trend edge (weekly Donchian-8 long-only, net)',
+        caption: 'The legs the sleeve is built from vs the ones dropped. Gold + Nasdaq + PSU anchor the 11-year core; S&P/FANG/silver are strong but short-history; HangSeng/PSU-bank/China-tech were dead.',
+        columns: ['Asset', 'Sharpe', 'CAGR', 'Max DD', 'History', 'In sleeve?'],
+        rows: [
+          ['GOLDBEES (gold)', '+1.07', '13.1%', '−21%', '11.3y', 'core'],
+          ['MOM100 (Nasdaq)', '+0.99', '12.4%', '−27%', '11.5y', 'core'],
+          ['CPSEETF (Indian PSU)', '+0.80', '11.9%', '−39%', '11.5y', 'core'],
+          ['MASPTOP50 (S&P-500)', '+1.21', '20.8%', '−23%', '4.7y', 'extended'],
+          ['MAFANG (US FANG+)', '+1.18', '24.0%', '−20%', '4.7y', 'extended'],
+          ['SILVERBEES', '+0.96', '24.7%', '−27%', '4.2y', 'extended'],
+          ['HangSeng / PSU-bank / MAHKTECH', '+0.22 / +0.15 / −0.34', 'weak-dead', '', '', 'dropped'],
+        ],
+        highlightRows: [0, 1, 2],
+      },
+      {
+        title: 'Relationship to the Indian short-vol / equity books',
+        caption: 'The sleeve is an independent alpha stream, uncorrelated with the straddle and Indian equity — run it alongside, not as a hedge.',
+        columns: ['Metric', 'Value', 'Read'],
+        rows: [
+          ['Core-leg cross-correlation', '≈ 0.00–0.48', 'genuine internal diversification'],
+          ['vs naked-straddle monthly P&L', '≈ +0.2', 'not a straddle hedge'],
+          ['Sharpe (net) vs gold-alone', '1.41 vs 1.07', 'diversification lifts risk-adjusted return'],
+        ],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Sharpe (net, 11.5y)', value: '1.41', tone: 'pos' },
+        { label: 'CAGR', value: '13.0%' },
+        { label: 'Calmar', value: '0.85' },
+        { label: 'Max Drawdown', value: '−15%', tone: 'neg' },
+        { label: 'Green years', value: '10 / 12' },
+        { label: 'Walk-forward OOS Sharpe', value: '1.91', tone: 'pos' },
+        { label: 'Turnover', value: '~1 trade/leg/yr' },
+      ],
+      tables: [
+        {
+          title: 'Core sleeve — return by year (Gold + Nasdaq + PSU, net)',
+          caption: 'Broad-based, not one-year-dependent: 2021(+25%), 2023(+34%), 2024(+26%) all strong; only 2018 (−11%) and the 2015 stub red.',
+          heatmap: true,
+          columns: ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+          rows: [
+            ['−0%', '+13%', '+12%', '−11%', '+4%', '+15%', '+25%', '+8%', '+34%', '+26%', '+17%', '+1%'],
+          ],
+        },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Core managed-futures sleeve — Gold + Nasdaq + PSU, equal-weight, weekly Donchian-8 long-only',
+        summary: 'The strongest trend result of Phase 2: same return as gold but a third less drawdown and a much higher Sharpe, from three near-uncorrelated legs. Robust, low-turnover, and strengthens out-of-sample.',
+        metrics: [
+          { k: 'Sharpe (net)', v: '1.41' },
+          { k: 'CAGR', v: '13.0%' },
+          { k: 'Calmar', v: '0.85' },
+          { k: 'Max DD', v: '−15%' },
+          { k: 'OOS Sharpe', v: '1.91' },
+        ],
+        rejected: [
+          'Gold alone — good (Sharpe 1.07) but the sleeve dominates it on risk-adjusted terms',
+          'HangSeng / PSU-bank / MAHKTECH (China tech) — weak-to-dead trend, excluded',
+          'Long/short & short legs — lose to whipsaw; long-only only',
+          'As a straddle hedge — corr ≈ +0.2, independent sleeve only',
+        ],
+      },
+    ],
+
+    caveats: [
+      'Core is 11.5 years / one signal; the extended legs (S&P, FANG, silver) have only ~4.5 years — treat the +Sharpe from them as provisional.',
+      'ETF proxies; a real deploy uses futures (gold/Nasdaq/S&P) with roll cost the ETFs hide, or the ETFs themselves with their tracking/AUM limits. Re-cost before sizing.',
+      'Global ETFs are INR-denominated — returns blend the underlying with USDINR. Realistic for an Indian book, but it is not pure USD exposure.',
+      'Correlations can spike toward 1 in a sharp global risk-off reversal (all trend legs whipsaw together) — the −15% DD is in-sample; size for worse.',
+      'Not a hedge for the short-straddle book (corr ≈ +0.2). Run as an independent alpha sleeve. Nothing is wired to live orders.',
+    ],
+
+    githubLinks: [
+      { label: 'research/101 — trend sleeve / Phase 2', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/101_trend_sleeve' },
+      { label: '← Deep-dive: Gold Weekly-Trend (single leg)', href: '/app/backtest/gold-weekly-trend' },
+    ],
+    projectPaths: [
+      'research/101_trend_sleeve/scripts/mf_sleeve.py (sleeve), phase2_mf.py (per-asset search), etf_download.py (data)',
+      'research/101_trend_sleeve/PHASE2_TREND_COMPLEMENT_DAILY_SWEEP_STATUS.md',
+    ],
+  },
+
+  {
+    slug: 'gold-weekly-trend',
+    title: 'Gold Weekly-Trend — the one clean managed-futures edge (Donchian, long-only)',
+    verdict:
+      'A weekly Donchian breakout on gold (long-only) is a genuinely robust, out-of-sample-validated trend edge: CAGR 14.7%, Sharpe 1.18, Calmar 0.69, max drawdown −21% net of costs over 2015–2026, ~0.8 trades/yr. It has a flat parameter plateau (N8→N20 all Sharpe 1.1–1.2), 9 of 12 green years, and a walk-forward OOS (2021H2→2026) that STRENGTHENS to CAGR 19.7% / Sharpe 1.48 / −11% DD. It emerged from a Phase-2 search for a complement to the short-straddle book — it does NOT hedge the straddle (corr ≈ +0.2), but it stands on its own as an uncorrelated alpha sleeve, and it was the ONLY asset with a clean trend edge (silver too whippy −75% DD; Indian equity ETFs/indices weak-to-dead). Long-only beats long/short everywhere — gold is long-biased, so shorting only adds whipsaw.',
+    status: 'COMPLETE',
+    date: '2026-08-05',
+    cardBlurb:
+      'The one clean trend edge from a Phase-2 managed-futures search. Gold weekly Donchian breakout, long-only: CAGR ~15%, Sharpe 1.18, −21% max DD net of costs — a flat param plateau and a walk-forward OOS that STRENGTHENS to Sharpe 1.48. Not a straddle hedge (corr ≈ 0) but a genuinely uncorrelated alpha sleeve. ~0.8 trades/yr.',
+    cardStats: [
+      { label: 'CAGR (net, 11y)', value: '14.7%' },
+      { label: 'Sharpe', value: '1.18' },
+      { label: 'Max DD', value: '−21%' },
+    ],
+
+    systemRules: {
+      intro: 'A deliberately simple, low-turnover trend rule on gold. Long-only was chosen over long/short for robustness, not fit — the short side loses to whipsaw on every parameter.',
+      sharedCoreTitle: 'Gold weekly Donchian trend — locked rules',
+      sharedCore: [
+        { k: 'Instrument', v: 'Gold — GOLDBEES ETF used as the price proxy; deploy via MCX gold / gold futures.' },
+        { k: 'Signal', v: 'Weekly Donchian-8. Go/stay LONG on a weekly close above the prior 8-week high; exit to FLAT on a weekly close below the prior 8-week low. No shorts.' },
+        { k: 'Timeframe', v: 'Weekly bars; the decision is made on the weekly close (causal — the position earns the following week).' },
+        { k: 'Turnover', v: '≈ 0.8 round-trips per year — very low; cost-insensitive.' },
+        { k: 'Costs', v: '0.1% slippage per side; equity compounded.' },
+        { k: 'Sizing', v: 'Full-notional long / flat; scale to the sleeve’s risk budget (−21% historical max DD).' },
+      ],
+      riskLayer: {
+        title: 'Long-only vs long/short × Donchian length (robustness grid)',
+        caption: 'Net of costs, compounded, 2015–2026. Long-only dominates on every length; the edge is a flat plateau, not a tuned peak.',
+        columns: ['Config', 'CAGR', 'Sharpe', 'Max DD', 'Calmar'],
+        rows: [
+          ['Donchian-8 · long-only', '14.7%', '1.18', '−21%', '0.69'],
+          ['Donchian-10 · long-only', '14.6%', '1.16', '−21%', '0.68'],
+          ['Donchian-20 · long-only', '15.0%', '1.17', '−21%', '0.70'],
+          ['Donchian-8 · long/short', '12.5%', '0.95', '−21%', '0.58'],
+          ['Donchian-13 · long/short', '11.1%', '0.86', '−29%', '0.38'],
+        ],
+        highlightRows: [0],
+      },
+    },
+
+    system: {
+      intro: 'Weekly Donchian breakout on gold, net-of-cost, causal. Emerged from the Phase-2 trend search (research/101) as the single asset with a clean, robust edge — and the only Phase-2 candidate that stands on its own.',
+      rows: [
+        { k: 'Engine', v: 'Our weekly-resampled backtester on market_data_unified GOLDBEES daily (2015→2026-06).' },
+        { k: 'Signal', v: 'Donchian-8 channel on weekly high/low; long above the prior 8-week high, flat below the prior 8-week low.' },
+        { k: 'P&L basis', v: 'Compounded equity, net of 0.1%/side slippage. ~0.8 trades/yr keeps costs negligible.' },
+        { k: 'Validation', v: 'Parameter plateau N8–N20; walk-forward (train ≤2021H1 → test 2021H2–2026) STRENGTHENS the edge.' },
+        { k: 'Context', v: 'Beat silver (Sharpe 0.37, −75% DD), Nifty/Junior ETFs (0.53 / −0.21). Crude & USDINR not yet in the DB → a broader managed-futures sleeve needs those downloaded.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls / the seven deadly sins.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — the Donchian channel uses prior weeks only; the signal is the weekly close and the position earns the NEXT week.' },
+        { k: 'Overfitting', v: 'Flat param plateau (N8→N20 all Sharpe 1.1–1.2); long-only picked for robustness, and it wins on every length. One signal, one knob.' },
+        { k: 'Cost neglect', v: 'Net of 0.1%/side; turnover ~0.8/yr so costs are immaterial (a strength of the weekly timeframe).' },
+        { k: 'Regime', v: '2015–2026 spans gold’s 2015–18 doldrums, the 2019–20 rally, 2022 chop, and the 2024–25 bull. 9 of 12 years green; losing years small (−4%, −5%).' },
+        { k: 'OOS / walk-forward', v: 'Train ≤2021H1 picks N=8; blind OOS 2021H2→2026 = CAGR 19.7%, Sharpe 1.48, −11% DD — the edge holds and strengthens.' },
+        { k: 'Capacity', v: 'Gold futures (MCX / international) are deep; the ETF is a proxy — real deploy carries roll cost the ETF hides.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Phase-2 managed-futures search — why gold, and only gold',
+        caption: 'Weekly Donchian-10, per available asset. Gold is the lone clean edge; silver is too whippy, Indian-equity ETFs are weak-to-dead. Crude/USDINR/global not in the DB.',
+        columns: ['Asset', 'Sharpe', 'Ann. return', 'Max DD', 'History'],
+        rows: [
+          ['GOLDBEES', '+0.98', '+13.0%', '−23%', '10.3y'],
+          ['SILVERBEES', '+0.37', '+11.0%', '−75%', '4.2y'],
+          ['NIFTYBEES', '+0.53', '+7.8%', '−39%', '10.4y'],
+          ['JUNIORBEES (Nifty Next 50)', '−0.21', '−3.7%', '−127%', '10.3y'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Relationship to the short-straddle book — a diversifier, not a hedge',
+        caption: 'Phase-2 started as a hunt for a straddle cushion. Gold trend does NOT cushion the straddle (positive correlation), but it is an independent return stream worth running alongside it.',
+        columns: ['Metric', 'Value', 'Read'],
+        rows: [
+          ['Gold-trend vs naked-straddle monthly corr', '+0.21', 'mildly POSITIVE → not a tail hedge'],
+          ['Adds to combined straddle Calmar?', 'No (best weight 0)', 'value is as its OWN sleeve, not a hedge'],
+          ['Standalone Sharpe', '1.18', 'stands on its own two feet'],
+        ],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'CAGR (net, 2015–26)', value: '14.7%', tone: 'pos' },
+        { label: 'Sharpe', value: '1.18' },
+        { label: 'Calmar', value: '0.69' },
+        { label: 'Max Drawdown', value: '−21%', tone: 'neg' },
+        { label: 'Weekly win rate', value: '58%' },
+        { label: 'Trades / year', value: '~0.8' },
+        { label: 'Walk-forward OOS Sharpe', value: '1.48', tone: 'pos' },
+      ],
+      tables: [
+        {
+          title: 'Gold weekly trend — return by year (Donchian-8 long-only, net)',
+          caption: 'Approx. sum of weekly net returns. 9 of 12 years green; losing years small. 2025 (+56%) was the gold bull, but 2016/19/20/22/24 were all solid — not one-year-dependent.',
+          heatmap: true,
+          columns: ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+          rows: [
+            ['+0%', '+13%', '−4%', '+3%', '+23%', '+23%', '−5%', '+13%', '+7%', '+20%', '+56%', '+10%'],
+          ],
+        },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Gold · weekly Donchian-8 · long-only',
+        summary: 'The one Phase-2 candidate that stands on its own: robust across parameters, strengthens out-of-sample, tiny turnover, and uncorrelated with the Indian-equity/vol books.',
+        metrics: [
+          { k: 'CAGR (net)', v: '14.7%' },
+          { k: 'Sharpe', v: '1.18' },
+          { k: 'Calmar', v: '0.69' },
+          { k: 'Max DD', v: '−21%' },
+          { k: 'OOS Sharpe', v: '1.48' },
+        ],
+        rejected: [
+          'Long/short — the short side loses to whipsaw on every length (gold is long-biased)',
+          'Silver — trends but −75% DD; drags a gold+silver sleeve below gold-alone',
+          'Nifty/BankNifty/Junior trend — weak or negative (Indian index daily & weekly whipsaw)',
+          'As a straddle hedge — corr +0.21, does not cushion; value is standalone only',
+        ],
+      },
+    ],
+
+    caveats: [
+      'Single asset, single signal, one 11-year history — a robust SIGNAL, not yet live-validated. The walk-forward and param plateau argue against overfit, but it is one instrument.',
+      'GOLDBEES is an ETF proxy and its data ends 2026-06-12; a real deploy uses gold FUTURES with roll costs the ETF hides — re-cost before sizing.',
+      'It is NOT a hedge for the short-straddle book (corr +0.21) — run it as an independent sleeve, sized to its own −21% drawdown, not as straddle insurance.',
+      'A true diversified managed-futures sleeve (gold + crude + FX + global) needs crude/USDINR/global data downloaded — gold is the only clean trender currently in the DB.',
+      'Nothing is wired to live orders. Returns are compounded on full notional; scale to the risk budget.',
+    ],
+
+    githubLinks: [
+      { label: 'research/101 — trend sleeve / Phase 2', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/101_trend_sleeve' },
+      { label: '← Complements: NIFTY straddle (look-ahead audit)', href: '/app/backtest/nifty-straddle-lookahead-audit' },
+    ],
+    projectPaths: [
+      'research/101_trend_sleeve/PHASE2_TREND_COMPLEMENT_DAILY_SWEEP_STATUS.md',
+      'research/101_trend_sleeve/scripts/gold_g4.py (proper study), phase2_widen.py (asset search)',
+    ],
+  },
+
+  {
+    slug: 'nifty-straddle-lookahead-audit',
+    title: 'NIFTY / SENSEX Straddle & Iron-Fly — Look-Ahead Audit & Honest Comparison',
+    verdict:
+      'An adversarial re-audit of our own straddle backtests found a single look-ahead bug — the ATM strike was chosen from the entry-day CLOSE while the trade entered at the OPEN — that had inflated results ~3×, smoothed every equity curve and hidden the drawdown. Corrected (strike chosen at the open, causal), 8 of 9 straddle variants are dead or edgeless. The lone survivor is the NIFTY DTE-3 iron fly: a weak-but-real, defined-risk edge (+₹18.1L / 7yr, Mean/SD 0.12, Calmar 0.66, worst week −₹1.84L capped by the wings, ~33%/yr on 2×-drawdown capital). Naked straddles post the biggest raw ₹ (+₹39.5L) but carry an UNBOUNDED crash tail → disqualified. SENSEX has NO edge once the strike is picked honestly. The CPR compression filter is real but structure-specific (it lifts the AlgoTest V2 same-week fly, and HURTS our next-week fly). This study also independently reproduces and VALIDATES the AlgoTest V2 iron fly (+₹6.9L on our engine vs +₹8.85L on AlgoTest, same losing years).',
+    status: 'COMPLETE',
+    date: '2026-08-05',
+    cardBlurb:
+      'We smelled a result too good to be true — 97.7% win, ₹1.19 Cr — and killed it. A one-line look-ahead bug (ATM strike picked from the day’s close) had tripled our straddle backtests. Corrected at the open: 8 of 9 variants die; only the NIFTY DTE-3 iron fly survives (+₹18.1L/7yr, Calmar 0.66, defined risk). Independently validates the AlgoTest V2 fly.',
+    cardStats: [
+      { label: 'Honest DTE-3 fly (7yr)', value: '+₹18.1L' },
+      { label: 'Calmar', value: '0.66' },
+      { label: 'Bias removed', value: '3× → real' },
+    ],
+
+    systemRules: {
+      intro:
+        'The one survivor of the audit — a defined-risk NIFTY iron fly, tested on our own bhavcopy engine with the look-ahead removed. Naked variants are shown for contrast but are disqualified (unbounded tail).',
+      sharedCoreTitle: 'Honest DTE-3 iron fly — locked rules',
+      sharedCore: [
+        { k: 'Instrument', v: 'Short ATM NIFTY straddle + long 3%-OTM CE & PE in the NEXT-week expiry = short iron fly (defined risk).' },
+        { k: 'Entry', v: '≈3 calendar days before the weekly expiry, at the option OPEN (~09:20). ATM = nearest 50 to the entry-day OPEN spot — the only price known at 09:20 (the corrected, causal choice).' },
+        { k: 'Exit', v: 'DTE-1 (day before expiry) at the CLOSE. No intraday management assumed.' },
+        { k: 'Gate', v: 'India VIX 13–28 (floor + ceiling).' },
+        { k: 'Costs', v: '0.3%/leg slippage + ₹160/round-trip; OI≥100 ATM, ≥25 wings (real traded contracts only).' },
+        { k: 'Sizing / margin', v: '10 lots (qty 650); iron-fly SPAN ≈ ₹50,000/lot → ₹5L for 10 lots (a naked straddle blocks ~₹1.3L/lot = ~2.6× more).' },
+      ],
+      riskLayer: {
+        title: 'The audit — every variant, look-ahead removed',
+        caption: 'Real, open-based strike selection. Only the DTE-3 iron fly has a defensible, defined-risk edge; nothing clears a Mean/SD of 0.5.',
+        columns: ['Variant', 'Net / 7yr', 'Mean/SD', 'Max DD', 'Verdict'],
+        rows: [
+          ['NIFTY DTE-3 iron fly (this system)', '+₹18.1L', '0.12', '−₹3.73L', 'WEAK SIGNAL — the only survivor'],
+          ['NIFTY DTE-3 naked', '+₹39.5L', '0.18', '−₹5.62L', 'bigger ₹, UNBOUNDED tail → out'],
+          ['NIFTY DTE-1 iron fly', '+₹8.2L', '0.07', '−₹6.74L', 'DEAD'],
+          ['SENSEX DTE-3 iron fly', '+₹2.1L', '0.02', '−₹9.47L', 'NO EDGE'],
+          ['SENSEX DTE-1 naked', '+₹4.1L', '0.05', '−₹3.91L', 'NO EDGE'],
+        ],
+        highlightRows: [0],
+      },
+    },
+
+    system: {
+      intro:
+        'Tested on our own SQLite bhavcopy engine (not AlgoTest): real NSE/BSE end-of-day option premiums, entry at the daily OPEN, exit at the daily CLOSE. The single correction vs the earlier pages is the strike-selection line.',
+      rows: [
+        { k: 'Engine', v: 'Our bhav backtester — nse_options_bhav (NIFTY, 2019→2026) + bse_options_bhav (SENSEX, 2024→2026, downloaded for this study).' },
+        { k: 'Strike (the fix)', v: 'ATM = nearest strike to the entry-day OPEN underlying. The earlier pages used the entry-day CLOSE — the single look-ahead bug this study corrects.' },
+        { k: 'Entry / exit', v: 'Sell straddle + buy wings at the option OPEN on entry day; close all legs at the CLOSE on DTE-1. DTE by calendar days.' },
+        { k: 'P&L basis', v: 'Net of 0.3%/leg + ₹160/RT; 10 lots; returns stated on ₹50k/lot fly margin (naked on ~₹1.3L/lot).' },
+        { k: 'Data built', v: 'Downloaded BSE UDiFF bhavcopy (SENSEX + BANKEX, 2024→now, 370,746 rows → bse_options_bhav) and refreshed India VIX to 2026-08-05.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'The seven deadly sins — with the one that bit us front and centre.',
+      rows: [
+        { k: 'Look-ahead (headline)', v: 'FOUND & FIXED. The prior pages picked the ATM strike from the entry-day CLOSE while entering at the OPEN — a future peek that tripled P&L, smoothed the curve and hid the drawdown. All numbers here pick the strike at the OPEN (causal). Kill-test: on one Mar-2019 trade the same day flips from +₹1.14L (cheat) to −₹1.04L (honest); the strike differed from the close on 84% of days.' },
+        { k: 'Cost neglect', v: 'Net of 0.3%/leg + ₹160/RT throughout; naked vs fly compared on their real (different) margins.' },
+        { k: 'Overfitting', v: 'No parameter mined post-hoc. The CPR filter was tested on our system and REJECTED (it hurt) — an anti-overfit check, not a fit.' },
+        { k: 'Survivorship', v: 'ATM straddle on a liquid index; OI filter keeps only really-traded contracts (research/89 rule).' },
+        { k: 'Regime', v: 'NIFTY spans 2019–2026 incl. COVID; SENSEX 2024–2026 only (calm, low-VIX — a caveat on the SENSEX verdict).' },
+        { k: 'Cross-validation', v: 'The AlgoTest V2 iron fly was independently reproduced on our engine (+₹6.93L vs +₹8.85L, losses in the same years) — mutual validation across two tools and two data paths.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'The look-ahead illusion — same systems, before vs after the fix',
+        caption: 'Strike from the entry-day CLOSE (future peek) vs the OPEN (causal). The bug roughly tripled P&L and shrank the drawdown ~3×. These "before" numbers are RETRACTED.',
+        columns: ['System', 'Look-ahead (biased, retracted)', 'Real (open-based)'],
+        rows: [
+          ['NIFTY DTE-3 naked · VIX', '+₹1.19 Cr · M/SD 0.65 · DD −₹2.0L', '+₹39.5L · M/SD 0.18 · DD −₹5.6L'],
+          ['NIFTY DTE-3 fly · VIX', '+₹68.8L · M/SD ~0.48', '+₹18.1L · M/SD 0.12 · DD −₹3.7L'],
+          ['NIFTY DTE-1 (the “grail”)', '97.7% win · M/SD 1.31 · DD −₹0.2L', '62% win · M/SD 0.07 · DD −₹6.7L'],
+        ],
+      },
+      {
+        title: 'Every variant, honest — NIFTY (7yr) + SENSEX (2.5yr)',
+        caption: 'Real, open-based strike; 10-lot books (NIFTY qty 650 / SENSEX qty 200). Nothing clears a Mean/SD of 0.5.',
+        columns: ['Index', 'Variant', 'Net', 'Win', 'M/SD', 'Worst wk', 'Max DD', 'Verdict'],
+        rows: [
+          ['NIFTY', 'DTE-3 iron fly', '+₹18.1L', '63%', '0.12', '−₹1.84L', '−₹3.73L', 'WEAK SIGNAL ★'],
+          ['NIFTY', 'DTE-3 naked', '+₹39.5L', '67%', '0.18', '−₹4.20L', '−₹5.62L', 'unbounded tail'],
+          ['NIFTY', 'DTE-1 iron fly', '+₹8.2L', '62%', '0.07', '−₹2.38L', '−₹6.74L', 'DEAD'],
+          ['NIFTY', 'DTE-1 naked', '+₹28.4L', '71%', '0.21', '−₹1.92L', '−₹6.74L', 'unbounded; untradeable'],
+          ['SENSEX', 'DTE-3 iron fly', '+₹2.1L', '59%', '0.02', '−₹2.04L', '−₹9.47L', 'NO EDGE'],
+          ['SENSEX', 'DTE-3 naked', '+₹8.7L', '62%', '0.06', '−₹4.49L', '−₹10.1L', 'NO EDGE'],
+          ['SENSEX', 'DTE-1 iron fly', '+₹3.4L', '60%', '0.06', '−₹1.94L', '−₹4.09L', 'NO EDGE'],
+          ['SENSEX', 'DTE-1 naked', '+₹4.1L', '61%', '0.05', '−₹3.53L', '−₹3.91L', 'NO EDGE'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Naked vs our fly vs AlgoTest V2 + CPR — on real margin',
+        caption: 'Fly ₹50k/lot; naked ~₹1.3L/lot (≈2.6× more). "Return" is ANNUALIZED on the capital you must actually hold to survive the drawdown (≈2× max DD, or the exchange margin, whichever is larger).',
+        columns: ['System', 'Net / yr', 'Margin (10 lots)', 'Max DD', 'DD % of margin', 'Ann. return (safe capital)', 'Risk'],
+        rows: [
+          ['Naked straddle (ours, VIX 13-28)', '₹5.34L', '~₹13L', '−₹5.62L', '43%', '~41%/yr', '❌ UNBOUNDED tail'],
+          ['Our iron fly (3% next-wk)', '₹2.44L', '₹5L', '−₹3.73L', '75%', '~33%/yr', '✅ defined; needs 2× buffer'],
+          ['V2 + CPR (AlgoTest, stop+PT)', '₹1.51L', '₹5L', '−₹0.95L', '19%', '~30%/yr', '✅ defined + managed; safe at min margin'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'CPR compression filter on our fly — REJECTED (structure-specific)',
+        caption: 'Skipping narrow-CPR (compressed) entries LIFTS the V2 same-week fly but HURTS our next-week fly — under both a VIX band and a VIX floor, so it is structural, not VIX-redundancy. Kept off our book.',
+        columns: ['Our DTE-3 fly', 'VIX gate', 'CPR', 'Net / 7yr', 'Calmar', 'Max DD'],
+        rows: [
+          ['baseline', '13–28 band', 'none', '+₹18.07L', '0.66', '−₹3.73L'],
+          ['+ skip CPR<0.10%', '13–28 band', 'skip', '+₹12.90L', '0.56', '−₹3.14L'],
+          ['baseline', '≥13 floor', 'none', '+₹17.80L', '0.63', '−₹3.83L'],
+          ['+ skip CPR<0.10%', '≥13 floor', 'skip', '+₹12.76L', '0.55', '−₹3.14L'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Independent validation of the AlgoTest V2 iron fly (our engine)',
+        caption: 'V2 structure (2% same-week wings, 4-trading-days-before entry, VIX≥13) reproduced on our look-ahead-free bhav engine. The core edge AND the CPR uplift both replicate; V2’s smaller drawdown comes from its intraday 2%-stop + 40%-PT, which our EOD engine cannot model.',
+        columns: ['Config (our engine, VIX≥13, no stop/PT)', 'Net / 7yr', 'Calmar', 'Max DD'],
+        rows: [
+          ['V2 structure, no CPR', '+₹6.93L', '0.19', '−₹4.87L'],
+          ['+ skip CPR<0.10%', '+₹13.79L', '0.53', '−₹3.51L'],
+          ['AlgoTest reference (with stop+PT)', '+₹8.1L → +₹11.0L', '0.95 → 1.59', '−₹1.17L → −₹0.95L'],
+        ],
+        highlightRows: [1],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Honest DTE-3 fly · Net (7yr)', value: '+₹18,07,487', tone: 'pos' },
+        { label: 'Mean / SD', value: '0.12' },
+        { label: 'Calmar', value: '0.66' },
+        { label: 'Max Drawdown', value: '−₹3,73,276', tone: 'neg' },
+        { label: 'Worst week (capped by wings)', value: '−₹1,83,583', tone: 'neg' },
+        { label: 'Ann. return (₹7.5L safe capital)', value: '~33%/yr', hint: '48.9% on bare ₹5L margin, but the −₹3.7L drawdown is 75% of it → run on ~2× buffer' },
+        { label: 'Win rate', value: '63%' },
+      ],
+      tables: [
+        {
+          title: 'Honest DTE-3 iron fly — P&L by year (VIX 13-28, no CPR)',
+          caption: 'Net of costs, open-based strike. 6 of 8 years green; 2020 and the 5-month 2026 stub red.',
+          heatmap: true,
+          columns: ['2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+          rows: [
+            ['+305k', '−127k', '+382k', '+54k', '+44k', '+744k', '+502k', '−98k'],
+          ],
+        },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'NIFTY DTE-3 iron fly — 3% next-week wings, VIX 13-28 (the only survivor)',
+        summary: 'The one variant with a defensible real edge after the look-ahead fix: defined risk, positive in 6 of 8 years, worst week capped by the wings. A weak SIGNAL, not yet a proven strategy.',
+        metrics: [
+          { k: 'Net P&L (7yr)', v: '+₹18,07,487' },
+          { k: 'Mean/SD', v: '0.12' },
+          { k: 'Calmar', v: '0.66' },
+          { k: 'Max DD', v: '−₹3,73,276' },
+          { k: 'Ann. return (safe capital)', v: '~33%/yr' },
+        ],
+        rejected: [
+          'DTE-1 (any) — the “97.7% grail” was pure look-ahead; dead at M/SD 0.07 and untradeable naked near expiry',
+          'Naked straddles — biggest raw ₹ (+₹39.5L) but an UNBOUNDED crash tail; disqualified',
+          'SENSEX (all variants) — no edge once the strike is picked honestly (M/SD 0.02–0.06)',
+          'CPR compression filter on our fly — helps V2’s same-week structure, hurts ours',
+        ],
+      },
+    ],
+
+    caveats: [
+      'This study CORRECTS earlier NIFTY straddle pages — the +₹1.19 Cr DTE-3 and 97.7%-win DTE-1 figures had look-ahead in strike selection and are SUPERSEDED.',
+      'The surviving edge is WEAK (Mean/SD 0.12, ~₹7k/trade). Positive (t≈2.6) but thin enough that realistic expiry-week slippage could erode much of it — a SIGNAL, not a proven strategy.',
+      'No intraday stop/profit-target is modelled — our bhav engine only sees the daily open & close. The AlgoTest V2 book’s far smaller drawdown comes from exactly that intraday management, which we can only cross-check on AlgoTest, not reproduce here.',
+      'Naked’s −₹5.62L drawdown is IN-SAMPLE; an unhedged straddle can lose multiples of it on a real crash gap. Its return-on-margin looks best precisely because its tail risk is uncapped — which is why it is disqualified for real trading.',
+      'SENSEX = 2024–2026 only (BSE weeklies launched 2024) — a calm, low-VIX window with no 2020-style stress; the “no edge” verdict is on that limited sample.',
+      'Margins are indicative (fly ₹50k/lot, naked ~₹1.3L/lot) — verify on Kite at trade time. Returns are simple-on-capital (fixed 10 lots, profits drawn), not compounded.',
+    ],
+
+    githubLinks: [
+      { label: 'research/100 — SENSEX DTE-3 + look-ahead audit', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/100_sensex_dte3_straddle' },
+      { label: '← Related: V2 Iron Fly (Stop-Loss × VIX)', href: '/app/backtest/v2-nifty-ironfly-sl-vix' },
+    ],
+    projectPaths: [
+      'research/100_sensex_dte3_straddle/results/RESULTS.md',
+      'research/100_sensex_dte3_straddle/scripts/ (bhav downloader, realistic backtests, look-ahead kill-test, V2 reproduction)',
+    ],
+  },
+
+  {
     slug: 'fardte-rescue',
     title: 'Rescuing the far-from-expiry days — five ideas, four dead, one that works',
     verdict:
