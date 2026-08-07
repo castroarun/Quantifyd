@@ -759,6 +759,113 @@ def get_state():
 
 
 # ───────────────────── register ─────────────────────
+def _held_weak_first():
+    """Held symbols ordered WEAKEST momentum first, with their blended relative-strength score."""
+    close, tvp = _panel()
+    asof = close.index[-1]
+    h = close.loc[:asof].ffill()
+    score = {}
+    for L, wt in ((126, 0.5), (252, 0.5)):
+        p0 = h.iloc[-L - 1]; p1 = h.iloc[-1]; nf = p1[BENCH] / p0[BENCH]; r = (p1 / p0) / nf
+        for s, v in r.items():
+            if pd.notna(v):
+                score[s] = score.get(s, 0) + wt * v
+    return sorted(list(_positions()), key=lambda s: score.get(s, -9)), score
+
+
+def cash_deposit(amount, mode="park", dry_run=True):
+    """Add funds. mode='park' (default) -> liquid, deploys at the next rebalance. mode='immediate' ->
+    equal-rupee top-up across current holdings IF the gate is risk-on (else parks). Returns the plan;
+    executes only when dry_run is False. Works in paper and (when live) via real orders."""
+    from datetime import date as _date
+    try:
+        amount = float(amount)
+    except Exception:
+        return {"ok": False, "error": "invalid amount"}
+    if amount <= 0:
+        return {"ok": False, "error": "amount must be > 0"}
+    d = _date.today().isoformat()
+    pos = _positions()
+    close, tvp = _panel()
+    gate_on = not _gate_risk_off(close, close.index[-1])
+    plan = []; live = {}
+    use_immediate = (mode == "immediate" and pos and gate_on)
+    if use_immediate:
+        live = _live_prices(list(pos)); per = amount / len(pos)
+        for s in pos:
+            pr = live.get(s) or pos[s]["entry_price"]
+            qty = int(per / pr) if pr else 0
+            if qty > 0:
+                plan.append({"symbol": s, "action": "BUY", "qty": qty, "value": round(qty * pr)})
+        note = f"Immediate equal-rupee top-up across {len(plan)} holdings (gate risk-ON)."
+    else:
+        mode = "park"
+        note = ("Park in liquid (6.5%); deploys into the top-8 at the next month-end rebalance."
+                if (gate_on or not pos) else "Gate is risk-OFF — parked in liquid until it turns risk-on.")
+    res = {"ok": True, "action": "deposit", "mode": mode, "amount": round(amount),
+           "plan": plan, "note": note, "dry_run": dry_run}
+    if not dry_run:
+        if use_immediate:
+            spent = 0.0
+            for p in plan:
+                _buy(p["symbol"], live.get(p["symbol"]) or pos[p["symbol"]]["entry_price"], p["value"], d, "DEPOSIT_TOPUP")
+                spent += p["value"]
+            _set("cash", _cash() + (amount - spent))
+        else:
+            _set("cash", _cash() + amount)
+        _set("capital", float(_get("capital", CFG["capital"])) + amount)
+        logger.warning(f"[MP] DEPOSIT Rs{amount:,.0f} ({mode})")
+        res["executed"] = True
+    return res
+
+
+def cash_withdraw(amount, dry_run=True):
+    """Withdraw funds: use idle cash first, then SELL from the WEAKEST momentum rank upward
+    (keeps winners; tax-efficient). Fully liquidates the weakest name, then the next. Returns the
+    plan; executes only when dry_run is False."""
+    from datetime import date as _date
+    try:
+        amount = float(amount)
+    except Exception:
+        return {"ok": False, "error": "invalid amount"}
+    if amount <= 0:
+        return {"ok": False, "error": "amount must be > 0"}
+    d = _date.today().isoformat()
+    pos = _positions(); cash = _cash()
+    plan = []; raised = 0.0
+    from_cash = min(cash, amount)
+    if from_cash > 0:
+        plan.append({"source": "idle cash", "value": round(from_cash)}); raised += from_cash
+    need = amount - raised
+    weak, score = _held_weak_first()
+    live = _live_prices(weak) if weak else {}
+    for s in weak:
+        if need <= 1:
+            break
+        pr = live.get(s) or pos[s]["entry_price"]
+        held_val = pos[s]["qty"] * pr
+        qty = int(min(held_val, need) / pr) if pr else 0
+        if qty <= 0:
+            continue
+        if held_val - qty * pr < pr:                     # selling nearly all -> take the whole lot
+            qty = int(round(pos[s]["qty"]))
+        val = qty * pr
+        plan.append({"source": s, "action": "SELL", "qty": qty, "value": round(val),
+                     "score": round(score.get(s, 0), 2)})
+        raised += val; need -= val
+    res = {"ok": True, "action": "withdraw", "amount": round(amount), "raised": round(raised),
+           "shortfall": round(max(0.0, amount - raised)), "plan": plan, "dry_run": dry_run}
+    if not dry_run:
+        for p in plan:
+            if p.get("action") == "SELL":
+                _sell(p["source"], live.get(p["source"]) or pos[p["source"]]["entry_price"], d, "WITHDRAWAL")
+        _set("cash", max(0.0, _cash() - amount))
+        _set("capital", max(0.0, float(_get("capital", CFG["capital"])) - amount))
+        logger.warning(f"[MP] WITHDRAW Rs{amount:,.0f}")
+        res["executed"] = True
+    return res
+
+
 def register(app, scheduler):
     from flask import jsonify, request
     init_db()
@@ -777,6 +884,15 @@ def register(app, scheduler):
                      lambda: jsonify(_kill_switch()), methods=["POST"])
     app.add_url_rule("/api/momentum-paper/reconcile", "mp_reconcile",
                      lambda: jsonify(reconcile_holdings()))
+    app.add_url_rule("/api/momentum-paper/deposit", "mp_deposit", methods=["POST"],
+                     view_func=lambda: jsonify(cash_deposit(
+                         (request.get_json(silent=True) or {}).get("amount"),
+                         (request.get_json(silent=True) or {}).get("mode", "park"),
+                         bool((request.get_json(silent=True) or {}).get("dry_run", True)))))
+    app.add_url_rule("/api/momentum-paper/withdraw", "mp_withdraw", methods=["POST"],
+                     view_func=lambda: jsonify(cash_withdraw(
+                         (request.get_json(silent=True) or {}).get("amount"),
+                         bool((request.get_json(silent=True) or {}).get("dry_run", True)))))
     # Monthly re-rank runs EARLY (~14:45) for runway; light Donchian+gate near close (~15:15).
     scheduler.add_job(rebalance_job, "cron", day_of_week="mon-fri", hour=14, minute=45,
                       id="mp_rebalance", replace_existing=True)
