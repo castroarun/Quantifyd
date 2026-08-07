@@ -143,7 +143,7 @@ export default function BreakoutPaper() {
           <table className={styles.table}>
             <thead><tr>
               <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th>
-              <th>P&L</th><th>Days</th><th>Trailing stop</th><th>To stop</th>
+              <th>P&L</th><th>Days</th><th>Trailing stop (prior 20-day low; hard floor −20% from entry)</th><th>To stop</th>
             </tr></thead>
             <tbody>
               {s.holdings.map((h) => (
