@@ -226,6 +226,15 @@ def _slippage_check(symbol, side, fill, expected):
                        f"{expected:.2f} ({(fill / expected - 1) * 100:+.2f}%)")
 
 
+def _alert(title, msg, priority="normal"):
+    """Fire an alert email; never raises (dispatch must never break trading)."""
+    try:
+        from services.momentum_eod_report import send_alert
+        send_alert(title, msg, priority)
+    except Exception as _e:
+        logger.error(f"[MP] alert dispatch failed: {_e}")
+
+
 def _place_cnc_market(symbol, side, qty):
     """Place a real NSE CNC MARKET order and BLOCK until it fills. Returns (avg_price, filled_qty).
     Raises on rejection/timeout. Reached ONLY when live_mode is on — this spends real money."""
@@ -253,7 +262,9 @@ def _place_cnc_market(symbol, side, qty):
             logger.warning(f"[MP-LIVE] {side} {symbol} FILLED {fq}@{avg:.2f} (order {oid})")
             return avg, fq
         if status in ("REJECTED", "CANCELLED"):
+            _alert(f"LIVE ORDER {status}", f"{side} {symbol} x{int(qty)} — order {oid} {status}: {last.get('status_message')}", "high")
             raise RuntimeError(f"order {oid} {status}: {last.get('status_message')}")
+    _alert("LIVE ORDER TIMEOUT", f"{side} {symbol} x{int(qty)} — order {oid} not filled within {CFG['live_fill_timeout']}s", "high")
     raise TimeoutError(f"order {oid} not COMPLETE within {CFG['live_fill_timeout']}s")
 
 
@@ -271,6 +282,8 @@ def reconcile_holdings():
              for s in sorted(set(ours) | set(broker)) if ours.get(s, 0) != broker.get(s, 0)]
     if diffs:
         logger.warning(f"[MP-LIVE] HOLDINGS MISMATCH (book vs broker): {diffs}")
+        _alert("HOLDINGS MISMATCH", "Book vs broker holdings differ:\n" +
+               "\n".join(f"  {d['symbol']}: book {d['book']} vs broker {d['broker']}" for d in diffs), "high")
     return {"live": True, "match": not diffs, "diffs": diffs}
 
 
@@ -782,6 +795,25 @@ def register(app, scheduler):
             logger.error(f"[MP] eod-report job error: {_e}")
     scheduler.add_job(_mp_eod_report_job, "cron", day_of_week="mon-fri", hour=15, minute=35,
                       id="mp_eod_report", replace_existing=True)
+
+    def _mp_reconcile_job():                              # morning DB<->broker reconcile (live-only; alerts on mismatch)
+        try:
+            if _is_live():
+                reconcile_holdings()
+        except Exception as _e:
+            logger.error(f"[MP] reconcile job error: {_e}")
+    scheduler.add_job(_mp_reconcile_job, "cron", day_of_week="mon-fri", hour=9, minute=20,
+                      id="mp_reconcile", replace_existing=True)
+
+    def _mp_monthly_report_job():                         # month-end summary email (last trading day, ~15:40)
+        try:
+            if _is_last_trading_day():
+                from services.momentum_eod_report import send_monthly_report
+                send_monthly_report()
+        except Exception as _e:
+            logger.error(f"[MP] monthly-report job error: {_e}")
+    scheduler.add_job(_mp_monthly_report_job, "cron", day_of_week="mon-fri", hour=15, minute=40,
+                      id="mp_monthly_report", replace_existing=True)
     for jid in ("mp_daily", "mp_weekly", "mp_monthly"):     # drop legacy split jobs
         try:
             scheduler.remove_job(jid)
