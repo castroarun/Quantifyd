@@ -128,49 +128,50 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
     slug: 'momentum-250-leverage-frontier',
-    title: 'Momentum-250 Leverage Frontier — how far can the gated momentum book be pushed for return?',
+    title: 'Momentum-250 Leverage Frontier — how far can the LIVE momentum book be pushed for return?',
     verdict:
-      'The Nifty-250 risk-adjusted momentum book (top-8, monthly rebalance, NIFTYBEES>EMA100 index cash gate) already beats buy-hold; the question was whether LEVERAGE can raise return without becoming ruinous. Answer: yes, and the index gate is what makes it survivable — leverage is only ever applied while the gate is risk-on (in cash during downtrends), so across 2006–2026 (incl. 2008 & 2020) there were ZERO margin calls at any leverage up to 2×. Static leverage 1.3–1.6× lifts CAGR from 33.8% to 40.7–47.3% (net of 0.3% cost and 10.5% MTF financing), at a proportional drawdown cost (−39 to −48%, Calmar drifts 1.13→0.99). It is not a free lunch — leverage trades drawdown for return. Two things that DON’T help: vol-targeting (it de-levers into momentum’s high-vol melt-ups, landing below the static frontier) and deeper concentration (N<8 trades Calmar for noise). At 1.0× (own capital, no borrowing) the book is still 33.8% CAGR / −30% DD vs NIFTYBEES 11.7% / −60%.',
+      'The question: can leverage raise the return of the book we actually run — relative-strength momentum, top-8 with a top-22 anti-churn buffer, a 15-day Donchian per-stock stop, and the NIFTYBEES>100-SMA index cash gate — without becoming ruinous? Answer over the full 2006–2026 cycle (through the 2008 crash), net of cost, financed at 10.5% MTF: yes, and this book levers BETTER than the plain top-8 version. The index gate keeps leverage survivable (0 margin calls in 20 years, at any leverage up to 2×), and the Donchian stop + buffer keep the drawdowns shallow, so the Calmar holds ~1.35–1.48 across ALL leverage instead of decaying. Static 1.3–1.6× lifts CAGR from 32.7% to 40.4–47.9%, at a proportional −28 to −35% drawdown. At 1.0× (own capital, no borrowing) it is 32.7% CAGR / −22% drawdown vs NIFTYBEES buy-hold 11.7% / −60%. Vol-targeting and deeper concentration (N<8) both reduce risk-adjusted return. This is the same momentum edge magnified, not new alpha.',
     status: 'COMPLETE',
-    date: '2026-08-06',
+    date: '2026-08-07',
     cardBlurb:
-      'How far can the gated Nifty-250 momentum book be pushed for return? The index cash gate makes leverage survivable — 0 margin calls in 20 years at up to 2×. Static 1.3–1.6× → 40.7–47.3% CAGR (net, 10.5% MTF) at −39 to −48% DD, Calmar ~1.0. Vol-targeting and deeper concentration both HURT. At 1.0× (own capital) still 33.8% / −30% vs B&H 11.7% / −60%.',
+      'How far can the LIVE momentum book (top-8 + buffer + Donchian stop + index gate) be pushed for return? The gate makes leverage survivable — 0 margin calls in 20 years to 2× — and the per-stock stop keeps drawdowns shallow, so the Calmar holds ~1.4 all the way up. Full-cycle 2006–2026, MTF 10.5%: 1.0× = 32.7% / −22% DD; static 1.3–1.6× → 40.4–47.9% CAGR at −28 to −35% DD. Levers far better than the plain top-8 book (Calmar 1.35–1.48 vs decay).',
     cardStats: [
-      { label: 'CAGR (1.6×, net, 10.5% MTF)', value: '47.3%' },
-      { label: 'Calmar (1.3×)', value: '1.05' },
+      { label: 'CAGR (1.6×, net, 10.5% MTF)', value: '47.9%' },
+      { label: 'Calmar (1.3×)', value: '1.42' },
       { label: 'Margin calls / 20y', value: '0' },
     ],
 
     systemRules: {
-      intro: 'The traded system. Risk-adjusted momentum on a large-mid-cap universe, top-8 equal-weight, with the index cash gate as the entire risk control. Leverage is optional and applied only while the gate is risk-on.',
-      sharedCoreTitle: 'Momentum-250 book — locked rules',
+      intro: 'The traded system — the existing live momentum-paper book. Relative-strength momentum on a large-cap universe, top-8 with an anti-churn buffer and a per-stock trailing stop, with the index cash gate as the master risk control. Leverage is optional and applied only while the gate is risk-on.',
+      sharedCoreTitle: 'Live momentum book — locked rules',
       sharedCore: [
-        { k: 'Universe', v: 'Top ~250 NSE stocks by trailing traded value (large-mid proxy for Nifty LargeMidcap 250), rebuilt monthly, survivorship-free.' },
-        { k: 'Signal', v: 'Rank by risk-adjusted momentum (6- & 12-month return per unit of own volatility, z-blended). Hold the TOP 8 equal-weight (the Calmar sweet spot).' },
-        { k: 'Entry gate (the whole risk story)', v: 'Only hold stocks when NIFTYBEES > its own EMA100 (market uptrend). Below it → sell everything, sit in cash at ~6.5%. This gate is what dodged −52% in 2008 and the 2020 crash.' },
-        { k: 'Rebalance', v: 'Monthly: re-rank, sell names that dropped out of the top 8, buy the new top 8 (~12 rebalances/yr, turnover ~0.38). No per-stock stop-loss.' },
-        { k: 'Exit', v: 'A stock leaves either by (a) falling out of the top-8 momentum rank at rebalance, or (b) the index gate flipping off → whole book to cash.' },
-        { k: 'Leverage (optional)', v: 'Deploy lev×capital while the gate is risk-on; borrowed slice funded at ~10.5% MTF (or ~8% via futures basis). 1.0× = own capital only. 1.3–1.6× = return sweet spot. Applied ONLY in uptrends → 0 margin calls in 20y.' },
+        { k: 'Universe', v: 'Official Nifty-200 (market-cap defined), rebuilt monthly; survivorship-free proxy back to 2006.' },
+        { k: 'Signal', v: 'Rank by relative strength vs NIFTYBEES — 6-month & 12-month return ratio, blended. Hold the TOP 8 equal-weight.' },
+        { k: 'Anti-churn buffer', v: 'Keep a holding while it stays inside the top-22; only rotate it out when it drops below rank 22. Reduces needless turnover.' },
+        { k: 'Per-stock stop', v: '15-day Donchian: exit a name if it closes below its own prior-15-day low → to cash (parked at ~6.5% until the next rebalance). This is what keeps the drawdowns shallow.' },
+        { k: 'Entry gate (master risk control)', v: 'Only hold stocks when NIFTYBEES > its 100-day SMA. Below it → sell everything to cash. Dodged −52% in 2008 and the 2020 crash.' },
+        { k: 'Rebalance', v: 'Monthly, rotate-only — sell names that fell out of the buffer, buy new names from freed cash, and LET WINNERS RUN (no equal-weight trim → no needless STCG). ~12 rebalances/yr.' },
+        { k: 'Leverage (optional)', v: 'Deploy lev×capital while the gate is risk-on; MTF ~10.5% (the realistic vehicle for a stock book; stock-futures ~8% only if all 8 names have liquid F&O). Applied ONLY in uptrends → 0 margin calls in 20y.' },
       ],
       riskLayer: {
-        title: 'The leverage frontier — net of cost + 10.5% MTF, daily-marked, 2006–2026',
-        caption: 'Pick your point. 1.0× is own-capital-only. Return scales with leverage; drawdown scales with it too; Calmar drifts down — a proportional trade, not a free lunch.',
+        title: 'The leverage frontier — existing live book, net + 10.5% MTF, daily-marked, full cycle 2006–2026',
+        caption: 'Pick your point. 1.0× is own-capital-only. The Donchian stop + buffer keep the Calmar high (1.35–1.48) even under leverage — far above the plain top-8 book (~0.9–1.1).',
         columns: ['Leverage', 'CAGR', 'Max DD', 'Sharpe', 'Calmar', 'Margin calls'],
         rows: [
-          ['1.0× (own capital)', '33.8%', '−29.9%', '1.49', '1.13', '0'],
-          ['1.3×', '40.7%', '−38.9%', '1.40', '1.05', '0'],
-          ['1.6×', '47.3%', '−47.9%', '1.35', '0.99', '0'],
-          ['2.0×', '55.4%', '−59.7%', '1.29', '0.93', '0'],
+          ['1.0× (own capital)', '32.7%', '−22.0%', '1.77', '1.48', '0'],
+          ['1.3×', '40.4%', '−28.5%', '1.68', '1.42', '0'],
+          ['1.6×', '47.9%', '−34.9%', '1.62', '1.37', '0'],
+          ['2.0×', '57.6%', '−42.8%', '1.56', '1.35', '0'],
         ],
         highlightRows: [1, 2],
       },
     },
 
     system: {
-      intro: 'Built on the research/75 daily-marked momentum engine (faithful replication of the Nifty-250 momentum video), extended with leverage + a maintenance margin-call model.',
+      intro: 'Built on the research/62 momentum engine (the live-book rules), extended with leverage + a maintenance margin-call model, loaded back to 2006 for a full-cycle drawdown.',
       rows: [
-        { k: 'Data', v: 'market_data.db daily close+volume, top-250-by-traded-value PIT universe, 2004→2026 (2006 start after warmup). NIFTYBEES for gate + benchmark.' },
-        { k: 'Leverage model', v: 'Deploy lev×equity in the top-8 while gate on; borrowed cash accrues 10.5% p.a.; maintenance margin call if own-equity / gross-notional < 25% (force-liquidate at marks). 0 calls fired in 20y.' },
+        { k: 'Data', v: 'market_data.db daily close+volume; official Nifty-200 universe; NIFTYBEES for gate + benchmark. 2004→2026 loaded (2006 start after warmup).' },
+        { k: 'Leverage model', v: 'Deploy lev×equity in the top-8 while gate on; borrowed cash accrues 10.5% p.a. MTF; maintenance margin call if own-equity / gross-notional < 25%. 0 calls fired in 20y.' },
         { k: 'P&L basis', v: 'Daily-marked NAV, net of 0.3% round-trip cost, cash yield 6.5%; CAGR/DD/Sharpe/Calmar on the NAV curve.' },
       ],
     },
@@ -178,29 +179,41 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     conditions: {
       intro: 'Robustness controls / caveats.',
       rows: [
-        { k: 'Look-ahead', v: 'None — momentum from data ≤ decision date; gate uses NIFTYBEES ≤ date; monthly rebalance at close.' },
+        { k: 'Look-ahead', v: 'None — momentum from data ≤ decision date; gate uses NIFTYBEES ≤ date; monthly rebalance + daily Donchian at close.' },
         { k: 'Margin-call model', v: '25% maintenance on DAILY marks. A gapping crash (2020 gapped down hard) could force liquidation this daily model understates — real leverage carries gap risk beyond the backtest.' },
-        { k: 'Financing', v: 'Modelled at 10.5% MTF; 8% (futures-basis) shown as sensitivity — the gap between them is only 0.7–2.4% CAGR because leverage is on ~76% of months and only on the borrowed slice.' },
-        { k: 'Not new alpha', v: 'This is the SAME momentum edge magnified by leverage — it amplifies both the edge and the risk. Universe is a survivorship-free top-250 proxy, not the exact index.' },
-        { k: 'Multiples are compounding fantasies', v: 'The 400×–8800× growth figures assume perfect reinvestment/capacity — trust CAGR/DD/Calmar, not the multiple.' },
+        { k: 'Financing', v: 'Modelled at 10.5% MTF (realistic for a rotating stock basket); 8% (stock-futures basis) shown as sensitivity but needs all 8 names to have liquid F&O every month, which mid-caps often lack.' },
+        { k: 'Not new alpha', v: 'The SAME momentum edge magnified by leverage — amplifies both edge and risk. Universe is a survivorship-free Nifty-200 proxy, not the exact index.' },
+        { k: 'Multiples are compounding fantasies', v: 'The 300×–12000× growth figures assume perfect reinvestment/capacity — trust CAGR/DD/Calmar, not the multiple.' },
       ],
     },
 
     comparisons: [
       {
-        title: 'Borrow-rate sensitivity — 8% (futures basis) vs 10.5% (MTF)',
+        title: 'Borrow-rate sensitivity — 8% (stock-futures basis) vs 10.5% (MTF)',
         caption: 'Financing barely moves the frontier — leverage is only on in gate-on months and only on the borrowed portion.',
         columns: ['Leverage', 'CAGR @8%', 'CAGR @10.5%', 'Max DD', 'Calmar @10.5%'],
         rows: [
-          ['1.0×', '33.8%', '33.8%', '−30%', '1.13'],
-          ['1.3×', '41.4%', '40.7%', '−39%', '1.05'],
-          ['1.6×', '48.7%', '47.3%', '−48%', '0.99'],
-          ['2.0×', '57.8%', '55.4%', '−60%', '0.93'],
+          ['1.0×', '32.7%', '32.7%', '−22%', '1.48'],
+          ['1.3×', '40.6%', '40.4%', '−29%', '1.42'],
+          ['1.6×', '48.4%', '47.9%', '−35%', '1.37'],
+          ['2.0×', '58.7%', '57.6%', '−43%', '1.35'],
         ],
         highlightRows: [2],
       },
       {
-        title: 'Vol-targeting does NOT help (counterintuitive)',
+        title: 'Existing book vs plain top-8 under leverage (why the stop + buffer matter)',
+        caption: 'The live book’s per-stock Donchian stop + buffer keep drawdowns shallow, so its Calmar HOLDS under leverage while the plain book’s decays. Same period, same 10.5% MTF.',
+        columns: ['Leverage', 'Existing Calmar', 'Plain top-8 Calmar'],
+        rows: [
+          ['1.0×', '1.48', '1.13'],
+          ['1.3×', '1.42', '1.05'],
+          ['1.6×', '1.37', '0.99'],
+          ['2.0×', '1.35', '0.93'],
+        ],
+        highlightRows: [0, 1, 2, 3],
+      },
+      {
+        title: 'Vol-targeting does NOT help (tested on the plain momentum variant; lesson transfers)',
         caption: 'Dynamic leverage from trailing vol lands below the static frontier at matched average leverage. The gate already handles the downside, and momentum’s biggest up-years are high-vol rallies — vol-targeting de-levers into the melt-ups.',
         columns: ['Approach', 'Avg lev', 'CAGR', 'Max DD', 'Calmar'],
         rows: [
@@ -211,60 +224,49 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         ],
         highlightRows: [0, 2],
       },
-      {
-        title: 'Concentration — N8 is the sweet spot',
-        caption: 'Fewer names raise return but hurt Calmar faster; N8 is the best risk-adjusted point at every leverage (N5 over-concentrates, N12 dilutes).',
-        columns: ['Config', 'CAGR', 'Max DD', 'Calmar'],
-        rows: [
-          ['N5 · 2.0×', '54.9%', '−66.7%', '0.82'],
-          ['N8 · 2.0×', '57.8%', '−59.6%', '0.97'],
-          ['N12 · 2.0×', '58.0%', '−60.2%', '0.96'],
-        ],
-        highlightRows: [1],
-      },
     ],
 
     results: {
       metrics: [
-        { label: '1.6× · CAGR (net, 10.5% MTF)', value: '47.3%', tone: 'pos' },
-        { label: '1.3× · Calmar', value: '1.05' },
+        { label: '1.6× · CAGR (net, 10.5% MTF)', value: '47.9%', tone: 'pos' },
+        { label: '1.3× · Calmar', value: '1.42' },
         { label: 'Margin calls in 20 years', value: '0', tone: 'pos' },
-        { label: '1.0× (own capital) CAGR', value: '33.8%' },
+        { label: '1.0× (own capital) CAGR / DD', value: '32.7% / −22%' },
         { label: 'NIFTYBEES B&H', value: '11.7% / −60% DD', tone: 'neg' },
-        { label: 'Vol-targeting vs static', value: 'worse (Calmar 0.84 vs 1.05)' },
+        { label: 'Existing vs plain-book Calmar (1.0×)', value: '1.48 vs 1.13', tone: 'pos' },
       ],
       tables: [],
       embeds: [
         { src: '/app/momentum_leverage_tearsheet.html', height: 2350,
-          caption: 'Interactive: growth-of-₹1 on a log scale for each leverage level vs NIFTYBEES, the drawdown curves, year-by-year returns, the leverage frontier, borrow-rate sensitivity, and the vol-targeting comparison.' },
+          caption: 'Interactive: growth-of-₹1 on a log scale for each leverage level vs NIFTYBEES, the drawdown curves, year-by-year returns, the leverage frontier, borrow-rate sensitivity, and the vol-targeting comparison — all on the existing live book (rsblend + buffer + Donchian), full cycle 2006–2026.' },
       ],
     },
 
     winners: [
       {
-        config: 'Gated risk-adjusted momentum, top-8, static 1.3–1.6× leverage (10.5% MTF)',
-        summary: 'The index gate makes leverage survivable (0 margin calls / 20y); static 1.3–1.6× is the return sweet spot. Keep leverage a simple fixed multiple — vol-targeting and deeper concentration both reduce risk-adjusted return.',
+        config: 'The live momentum book, static 1.3–1.6× leverage (10.5% MTF)',
+        summary: 'The index gate makes leverage survivable (0 margin calls / 20y); the Donchian stop + buffer keep it efficient (Calmar holds ~1.4). Static 1.3–1.6× is the return sweet spot. Keep leverage a simple fixed multiple — vol-targeting and deeper concentration both reduce risk-adjusted return.',
         metrics: [
-          { k: 'CAGR (1.6×)', v: '47.3%' },
-          { k: 'CAGR (1.3×)', v: '40.7%' },
-          { k: 'Calmar (1.3×)', v: '1.05' },
-          { k: 'Max DD (1.6×)', v: '−47.9%' },
+          { k: 'CAGR (1.6×)', v: '47.9%' },
+          { k: 'CAGR (1.3×)', v: '40.4%' },
+          { k: 'Calmar (1.3×)', v: '1.42' },
+          { k: 'Max DD (1.6×)', v: '−34.9%' },
         ],
         rejected: [
           'Vol-targeting — de-levers into momentum’s high-vol up-years; below the static frontier',
-          'N<8 concentration — trades Calmar for noise (N5 2.0× Calmar 0.82 vs N8 0.97)',
-          'Leverage > 1.6× — Calmar below 1, drawdown beyond −55%',
-          'Ungated leverage — would wipe out (−66% DD ungated even at 1.0×)',
+          'N<8 concentration — trades Calmar for noise',
+          'Ungated leverage — would wipe out (the gate is what prevents margin calls)',
+          'The plain top-8 book (no Donchian/buffer) — levers worse: Calmar decays 1.13→0.93 vs the live book’s 1.48→1.35',
         ],
       },
     ],
 
     caveats: [
-      'The −48% drawdown at 1.6× is real, daily-marked, and psychologically brutal to hold — leverage amplifies the pain as much as the gain.',
+      'The −35% drawdown at 1.6× is real, daily-marked through 2008, and psychologically hard to hold — leverage amplifies the pain as much as the gain.',
       'Margin-call model is a 25% maintenance floor on daily marks; a gapping crash (2020) could force liquidation this understates. Real leverage carries gap risk beyond the model.',
-      'Financing modelled at 10.5% MTF (own-capital 1.0× has no borrow). Futures leverage (~8% basis) is cheaper but adds roll mechanics; MTF on the stock basket is the literal implementation.',
-      'This is the same momentum edge magnified, not a new source of alpha — and it is ~0.8-correlated with the running momentum-paper book, so it is a sizing decision, not a new sleeve.',
-      'Universe is a survivorship-free top-250-by-value proxy, not the exact Nifty LargeMidcap 250; growth multiples assume idealised reinvestment/capacity — trust CAGR/DD/Calmar.',
+      'Financing modelled at 10.5% MTF (own-capital 1.0× has no borrow). Stock-futures (~8%) is cheaper but needs all 8 rotating names to have liquid F&O — often false for mid-caps.',
+      'Same momentum edge magnified, not new alpha — and ~0.8-correlated with the running momentum-paper book itself, so it is a sizing decision, not a new sleeve.',
+      'Universe is a survivorship-free Nifty-200 proxy, not the exact index; growth multiples assume idealised reinvestment/capacity — trust CAGR/DD/Calmar.',
     ],
 
     githubLinks: [
@@ -272,8 +274,8 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       { label: '← Related: Nifty-250 momentum (base book)', href: '/app/backtest/nifty250-momentum-video' },
     ],
     projectPaths: [
-      'research/104_momentum_leverage/scripts/run_lev_conc.py (leverage+margin-call), run_voltarget.py, run_borrow_sens.py',
-      'research/104_momentum_leverage/scripts/export_lev.py, build_lev_ts.py — built on research/75 momentum engine',
+      'research/104_momentum_leverage/scripts/run_lev62.py (existing-book leverage + margin-call), run_notrim.py (let-winners-run), run_voltarget.py',
+      'research/104_momentum_leverage/scripts/export_lev62_curves.py, build_lev_ts.py — built on the research/62 live-book engine',
     ],
   },
   {
