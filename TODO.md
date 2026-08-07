@@ -2,6 +2,122 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ 2026-08-07 — Breakout paper book: cash-model v2 (settlement realism) DEPLOYED, activates Mon 08-10 09:00
+`services/breakout_paper.py` rewritten (commit `f45f619`): 4 cash buckets — one slot's ₹
+held as a SETTLED buy buffer (earns 0), liquid fund earns 6.5% from T+1, redemptions +
+equity sale proceeds settle T+1, a buy triggers a same-day fund redemption so tomorrow's
+slot is ready. One-time migration recasts the whole history from fills+NAV dates (interest
+₹7,022 → ₹5,298 as of 08-06). Code is on the VPS but the service was NOT restarted (market
+hours) — **the Mon 09:00 preopen auto-restart activates it; verify Monday**: `/app/breakout-paper`
+should show CASH (fund) + BUFFER rows and `bp_state` should have `cash_model_v2=true`.
+Frontend already live. Backtest evidence: research/71 G5b (`g5b_cash_ledger.py`) — realistic
+18.8% CAGR / −30.5% DD / Calmar 0.62; naive instant-cash model overstates ~0.9% CAGR;
+gate-aware buffer (park during risk-OFF) worth +0.85% CAGR — available via
+`CFG['buffer_gate_aware']=True` if wanted (default = always-on buffer per Arun's spec).
+
+## ✅ INCIDENT FIXED 2026-08-05 — paper-book state-file race (both weekly books) — commit `abca8ef`
+Symptom Arun spotted: NSR-W ₹30 book flat all week while ₹20 book traded. Root cause:
+**unlocked concurrent APScheduler jobs doing load-modify-write on the same JSON state.**
+Three casualties: (a) NWV JL state CORRUPTED Mon 12:45 (monitor vs :45 pivot check) →
+every NWV job crashed all week, position unmanaged Mon 12:45→Wed (audit vs recorded
+chain: P&L stayed −₹3.8k…+₹6.5k, NO missed PT/stop; resumed cleanly); (b) NSR-W t30
+Monday DTE≤1 TIME close (−₹4,030 @3.35) was **un-done twice** by the stale monitor save
+(Mon AND Tue), finally "closing" Wed at a phantom entry-price fill (−₹16,218 — wrong);
+(c) t30 missed Monday's new entry (old Tue-expiry cycle still open at 15:14).
+FIXES: threading lock + atomic tmp+os.replace saves in BOTH services; Monday entry now
+TIME-closes a DTE≤1 leftover first, then enters; t30 history repaired to the true
+−₹4,030 Mon close; NSR-W card gained a COMPLETED WEEKS table (per-leg in/out datetimes,
+min/max, close reasons). Restarted 15:5x (post-close). **LESSON (generalize): any
+multi-job JSON-state paper service MUST lock its load→save and write atomically —
+check ha_paper/breakout_paper/momentum_paper/nas services for the same pattern.
+
+## ★ 2026-07-30 (Thu, SENSEX expiry DTE0) — manual close + research/97
+- **Live event:** SENSEX rallied +0.43%; the short-CE side bled. Arun manually closed the whole
+  SENSEX book (CEs then PEs) — followed the handoff's own E5 guidance ("manage to ~−₹5k, don't ride
+  the 286-pt move-stop into DTE0 gamma"). Net day ≈ +₹1,900 (PE decay covered the CE loss).
+- **✅ Book LOCKED:** broker flat; **kill flag ARMED** (blocks all NAS+SENSEX entries/re-entries);
+  live phantom legs reconciled (no orders). 17 paper-shadow legs left (harmless). Master mode = `mixed`.
+  **⚠️❌ MISSED — the kill flag was NOT cleared before Monday.** It carried into Mon 2026-08-03 (a live
+  NIFTY day) and BLOCKED the 09:16 live entry (missed, one-shot, unrecoverable). Cleared 08-03 10:34 IST.
+  Day-matrix verified: Tue 08-04 → nas_916_atm/atm2/atm4 LIVE, squeeze+OTM paper. **LESSON: a kill flag
+  armed at session-end must have a scheduled un-arm (cron), not just a TODO line — a TODO note didn't
+  survive the session gap.** Live re-armed for Tue 08-04 (real money) — flagged to Arun.
+- **✅ Verified the two 07-29 staged deploys landed** (entry-fill reconciliation + SENSEX ATM2 scope fix).
+- **✅ research/97 DONE — INCONCLUSIVE (G2). NO SENSEX stop deploy.** SENSEX exit-stack calibration on
+  real chains (14 cycles, DTE0 vs DTE1). Findings: (1) **30% per-leg SL is BAD on expiry** — DTE0 win 14%,
+  −964/tr, whipsaws the theta crush (answers "is 30% SL ok on expiry?" = NO); (2) on DTE0 hold/loose wins
+  BUT only because **no trending expiry is in the sample** (all moves <0.75%) → can't price the tail the
+  stop exists for → do NOT read as "remove the stop"; (3) **DTE1 intraday short straddles look
+  structurally unprofitable** net-of-cost (flag: maybe no SENSEX Wed entry). **Recommendation: keep the
+  NIFTY-borrowed stops as provisional tail insurance; gather more cycles (esp. a trend expiry) before any
+  calibration. Layer B deferred (same benign-sample limit).** `research/97_.../results/RESULTS.md`.
+- **[ ] Follow-ups from research/97:** (a) loosen/disable the 30% per-leg SL on DTE0 for ATM/ATM4 (low-regret,
+  verify vs a trend expiry first); (b) separate study — is the SENSEX DTE1 (Wed) entry +EV at all?; (c) re-run
+  the sweep as more expiry cycles accrue.
+
+## ★ PENDING — guardian findings 2026-07-29 (SENSEX live validation)
+1. **entry-fill reconciliation: STAGED, one-shot 15:45 07-29** (`/home/arun/fillfix_stage/`):
+   async `_reconcile_entry_fill` in nas_atm_executor base (all ATM-family + SENSEX) — writes Kite
+   average_price back to entry_price, rescales sl_price by fill/quote. Verify deploy.log post-close.
+   NOTE: nas_executor.py (OTM/base, paper-only systems) NOT covered — extend if those ever go live.
+2. **Add SENSEX coverage to scripts/nas_live_guardian.py** — still open (only remaining guardian item).
+3. STAGED via 15:33 one-shot 07-29: SENSEX ATM2 scope fix (rupee stop = NIFTY-only; restored 0.4%
+   move-stop) + venue-aware lot divisor. Verify /home/arun/atm2fix_stage/deploy.log post-close.
+4. **Travel page live-weeks = actual paper fills: DONE 07-29** — new inject_travel.py deployed &
+   run (30 cycles, 2 live-book); engine path_week accumulation goes live with the 15:45 restart
+   (charts fill from Thu; Mon–Wed path synthesized flat).
+
+## ★ NAS live-book — in flight + queue (2026-07-27)
+**Live schedule armed:** NIFTY-916 live Mon/Tue, SENSEX live Wed/Thu, else paper-shadow (2 lots, recorded).
+**Portfolio risk manager** (`services/nas_portfolio_stop.py`, 10s job): STOP −₹1,300/lot both venues;
+NIFTY **trailing profit-lock** arm ₹2,000/lot + give-back ₹350/lot (committed 07-27, activates at the
+after-close / pre-open restart); SENSEX **TP** +₹1,667/lot. + 15:16 EOD square-off backstop + BFO naked-
+survivor auto-arm. Guardian (`.claude/agents/nas-live-guardian.md`) mandate broadened → full periodic
+**SYSTEM REVIEW** (performance · per-system contribution · pattern-drift/edge-decay · param re-calibration
+· exec health · **RED/AMBER/GREEN** + ranked recs). First review run in progress 07-27.
+
+### 2026-07-28 (Tue, expiry-week) — manual close + ATM2 exit redesign
+- **Live event:** Arun manually closed the live 09:16 ATM2/ATM/ATM4 book on an **expiry-gamma
+  exit concern** (0.4% spot-move stop crystallises an asymmetric loss near expiry — losing leg
+  balloons, OTM leg already ~0, no cushion). Broker FLAT, phantom DB legs reconciled (no orders).
+- **Rest of today = PAPER:** all 8 NAS variants forced `paper` via `/api/nas/master-mode`; kill
+  flag cleared so paper entries continue + record. **⚠️ master mode persisted as `paper` — MUST flip
+  back to `live` before Wed's SENSEX session** (write `backtest_data/nas_master_mode.json`={"mode":"live"}
+  and/or POST master-mode live; folded into the post-close deploy below).
+- **[ ] STAGED — post-close deploy (after 15:30 IST): ATM2 exit redesign (research/96, APPROVED).**
+  Replace the 0.4% move-stop with a **DTE-agnostic ₹2,500/lot rupee MTM stop**, **drop** the 30%
+  per-leg SL, **one-and-done** (no re-center). **ATM2 only, both variants** (`nas_atm2` +
+  `nas_916_atm2`); other 6 have `move_stop_pct=None`, untouched. Calibration (68d): ₹2,500/lot
+  near-expiry +2,153/tr vs current +1,386, tail ≈ same, and fixes the current stop's far-DTE bleed.
+  **Exact edits + deploy checklist: `research/96_atm2_exit_rupee_stop/ATM2_EXPIRY_EXIT_RUPEE_STOP_STATUS.md`.**
+  Bundle the master-mode→live flip + restart + Wed-day-matrix verify with this deploy.
+- **Finding (paper, sign-off needed) — squeeze 2nd-sleeve shape (research/96 §stack test):** stacking
+  a 2nd ATM straddle at the SAME strike deepens the combined worst day (−37k vs −32k for 916-alone) —
+  confirms the concentration risk. An **OTM strangle ±100** is better: higher total (+93.3k best) with
+  NO tail worsening. Combined with research/95 (squeeze timing sub-optimal) → "if stacking at all, stack OTM."
+- **Finding (11.5yr NIFTY 5-min):** a tight morning (consolidation by 09:30) does NOT foreshadow a
+  bigger breakout — calm mornings mostly stay calm (corr +0.58, P(≥1% rest-of-day move) 13% tight vs
+  36% wide). Volatility persists intraday; the squeeze selects calmer days (lower per-unit risk).
+- **[ ] Optional (not approved):** add a `_broker_holds_any` guard to `exit_all_positions` (EOD/emergency
+  path is unguarded — a phantom short would be bought-to-cover into a NEW long; today the move-stop guard
+  caught it first). One-liner. Arun deferred; re-offer if desired.
+
+**QUEUED (take up in order, only after the guardian report + the trailing-stop restart):**
+- **Options Behaviour Study page** `/app/options-study` (React + uPlot) — ATM straddle (CE+PE combined) + OTM.
+  - [x] **Phase 1 LIVE (2026-07-27):** NIFTY ATM straddle — intraday curve (+CE/PE split, day picker),
+    all-days normalised-100 overlay w/ median path, clickable daily-decay strip. `scripts/options_study_agg.py`
+    → `static/app/options_study.json` (67 days, 5-min series + daily summary); daily 15:45 cron appends.
+  - [x] **Phase 1b enhancements (07-27):** weekday filter, start→close time window (all charts window-aware
+    + aligned), NIFTY spot dotted on intraday (right axis), median-decay-by-weekday chart.
+  - [x] **Phase 2 LIVE (07-27):** OTM strangles (agg stores ±100/200/300pt series); ATM-vs-OTM median overlay,
+    median-decay-by-DTE chart, weekday×DTE decay heatmap — all window-aware.
+  - [ ] **Phase 3:** weekly rollup + BANKNIFTY/SENSEX.
+- [x] **Squeeze-ATM entry-trigger study DONE (research/95, 07-27):** SIGNAL/actionable — the ATR **squeeze
+  trigger is SUB-OPTIMAL**. Early time entry wins: 09:30 +₹633/tr, 09:16 +₹576/tr BEAT squeeze +₹407/tr;
+  late (10:00+) and price ±100 LOSE (11-12:00 ~ −₹1,000/tr). Edge = enter early to bank the morning theta;
+  the squeeze wait gives it up + skips 15 no-squeeze days. **Recommend: paper squeeze family (nas_atm/atm2/
+  atm4) drop the squeeze wait → enter 09:16/09:30** (sign-off needed). results/RESULTS.md.
+
 ## ★ DECISION PENDING — research/94: NWV → jade lizard / iron condor automation — 2026-07-27
 Arun's ask: automate the Nifty Weekly View into JL/IC trades ("construct like so" =
 his live 27-Jul position: short 23450 PE / long 22900 PE / short 24500 CE / long
@@ -26,8 +142,29 @@ styles (defensive roll-away AND credit-chase = his W30 habit) re-widen the tail;
 hold +₹4.0k PF 1.29; worst −₹230k→−₹144k; fixes 2021). Wired into executor as 15:25
 pivot-exit job (combo with PT/stop untested — paper book is the forward test). 4th
 independent confirmation: r/92 hold>adjust, June morph net-neg, mentor W30.
-- [ ] Card on /app/nwv for the paper book (poll /api/nwv-trade/state) — build ON VPS.
-- [ ] Verify tomorrow ≥09:15: /api/nwv-trade/state live, monitor marking m2m on seeded cycle.
+- [x] **Card BUILT on /app/nwv (2026-07-27, VPS bundle index-B4ev1EO_.js)**: level-watch strip
+  (S1 / spot / R2 + distances + 30-min check rule), legs table, MTM, PT/stop ₹, history,
+  kill button. `frontend/src/pages/NwvPaperCard.tsx` + Nwv.tsx/module.css patched ON VPS
+  (laptop frontend stale — do NOT scp laptop copies of Nwv.tsx/css over).
+- [x] **Book ACTIVATED intraday 07-27 11:38** via standalone one-day runner
+  (`research/94.../scripts/standalone_today_runner.py`, exits 15:31); 30-MIN pivot checks
+  (:15/:45) per phase-3 (30m monotonic best: t 3.10, worst wk −₹74.5k, maxDD −₹1.42L vs
+  daily t 2.48). Executor pivot job moved to 30-min cadence.
+- [x] Verified 07-31: /api/nwv-trade/state 200; **JL WEEK 1: PT hit Tue 07-28 11:01,
+  all 4 legs closed, net +₹14,586** (robot banked +50% of credit in ~25h).
+- [x] **Leg-detail upgrade BOTH books (2026-07-31)**: per-leg px_max/px_min tracking +
+  stop/exit reason_detail + full leg snapshots in history (nsrw_paper.py VPS-patched
+  `.bak_legdetail` — laptop nsrw copy STALE v1.2; nwv_trade.py updated); recorder
+  backfill script `research/94.../scripts/backfill_leg_maxmin.py` (option_chain.snapshot_time);
+  cards show pretty legs ("NIFTY 23550 PE · 4 Aug"), entry/exit datetimes, Min/Max
+  columns, reason text (Nas.tsx NsrwBook + NwvPaperCard, bundle index-DAQlahUo.js).
+  Notable: stopped strangle week — 23550 PE spiked 112.75→6; 24450 CE stopped @65.25;
+  new 23950 PE maxed 43.55 vs 44.2 stop (0.65 pts from re-stop).
+- [x] **RESTARTED 07-31 11:04 IST** (user-cleared mid-market: "no live trades" — verified
+  first: only a paper NAS-OPT position open, master-mode intact after). Live max/min
+  tracking confirmed ticking (23950 PE min updated live); backfill re-run post-restart.
+- [x] Git commit + push DONE 07-31 (`e5409d8`): both services, cards, bundle,
+  research/94 scripts, book states. (research/94 folder + app.py were already in `51e1e03`.)
 - [ ] Git commit research/94 + services/nwv_trade.py + app.py (on VPS).
 - [ ] Watch Fri 15:15 exit + weekly /trade-mentor comparison: Arun's manual JL vs robot.
 Prior Phase-1 design: `docs/NWV-PHASE1-TRADE-PLAN.md`. Infra byproduct: NIFTY50 30-min
