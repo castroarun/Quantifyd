@@ -626,16 +626,12 @@ def monthly_job(panel=None):
     nav = sum(_positions()[s]["qty"] * live.get(s, _positions()[s]["entry_price"])
               for s in _positions()) + _cash()
     per = nav / len(target)
-    if _is_live():
-        _rebalance_live_delta(target, per, live, close, asof, d)
-    else:
-        # PAPER: liquidate everything then rebuild to clean equal weights (matches the backtest).
-        for s in list(_positions()):
-            _sell(s, live.get(s, close[s].loc[:asof].dropna().iloc[-1]), d, "REBALANCE")
-        for s in target:
-            p = live.get(s)
-            if p:
-                _buy(s, p, per, d, "REBALANCE")
+    # Rotate-only in BOTH modes: sell names that fell out of the top-22 buffer, buy new names from
+    # freed cash, and let winners RIDE (no equal-weight trim). Backtest-confirmed return-neutral vs
+    # trimming (34.3% vs 34.6% CAGR), with ~13% less turnover cost and ~20% less realized STCG. The
+    # old PAPER path liquidated + rebuilt the whole book every month, churning winners (e.g.
+    # LAURUSLABS was sold + rebought at the same price, needlessly realizing STCG for nothing).
+    _rebalance_live_delta(target, per, live, close, asof, d)
     _mark_nav(close, asof.isoformat(), live=live)
     _set("last_monthly", d)
     logger.info(f"[MP] monthly rebalance → {target}")
