@@ -1,21 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 
 /**
- * Cumulative P&L curve across past sessions, split NIFTY / SENSEX / Combined.
+ * Cumulative P&L + drawdown across past sessions, split NIFTY / SENSEX / Combined.
+ * Collapsed by default. Date-range presets. Pure inline SVG, theme-aware.
  *
  * NIFTY  = sum of the three 9:16 systems' cumulative_pnl (/api/nas-916-atm|atm2|atm4/equity-curve).
  * SENSEX = running sum of /api/sensex/sessions day P&L.
- * Pure inline SVG (no chart dep), theme-aware via CSS vars. Frontend-only.
+ *
+ * BASIS: as-traded ₹, live + paper days combined. Lot size varied over the history
+ * (1 / 2 / 10 lots early → 3 lots now); this curve is NOT lot-normalized.
  */
 
 type Pt = { day: string; cum: number };
 type Venue = 'combined' | 'nifty' | 'sensex';
+type Range = '1M' | '3M' | '6M' | 'ALL';
 
 const NIFTY_EPS = [
   '/api/nas-916-atm/equity-curve',
   '/api/nas-916-atm2/equity-curve',
   '/api/nas-916-atm4/equity-curve',
 ];
+const RANGE_DAYS: Record<Range, number> = { '1M': 30, '3M': 90, '6M': 180, ALL: 1e9 };
+const GREEN = '#3fb950';
+const RED = '#ef4444';
 
 function fmtInr(v: number): string {
   const s = v < 0 ? '−' : '+';
@@ -28,15 +35,12 @@ async function jget(url: string): Promise<any> {
   return r.json();
 }
 
-// Sum of the three NIFTY systems' cumulative_pnl per date (carry-forward missing dates).
 async function niftyCurve(): Promise<Pt[]> {
   const maps = await Promise.all(
     NIFTY_EPS.map(async (ep) => {
       const rows = await jget(ep);
       const m = new Map<string, number>();
-      for (const r of rows || []) {
-        if (r && r.trade_date) m.set(r.trade_date, Number(r.cumulative_pnl) || 0);
-      }
+      for (const r of rows || []) if (r && r.trade_date) m.set(r.trade_date, Number(r.cumulative_pnl) || 0);
       return m;
     }),
   );
@@ -78,20 +82,61 @@ function combine(a: Pt[], b: Pt[]): Pt[] {
   });
 }
 
-// Drop leading flat-zero points so the curve starts where money first moved.
 function trimLead(pts: Pt[]): Pt[] {
   let i = 0;
   while (i < pts.length - 1 && pts[i].cum === 0) i += 1;
   return pts.slice(i);
 }
 
-const GREEN = '#3fb950';
-const RED = '#ef4444';
+function tms(day: string): number {
+  return new Date(`${day}T00:00:00`).getTime();
+}
+
+function Chart({ vals, dates, color, height }: { vals: number[]; dates: string[]; color: string; height: number }) {
+  const W = 920;
+  const PT = 12;
+  const PB = 18;
+  const PL = 6;
+  const PR = 6;
+  if (vals.length < 2) return null;
+  const yMin = Math.min(0, ...vals);
+  const yMax = Math.max(0, ...vals);
+  const span = yMax - yMin || 1;
+  const x = (i: number) => PL + (i / (vals.length - 1)) * (W - PL - PR);
+  const y = (v: number) => PT + (1 - (v - yMin) / span) * (height - PT - PB);
+  const line = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const zeroY = y(0);
+  const area = `${line} L${x(vals.length - 1).toFixed(1)},${zeroY.toFixed(1)} L${x(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
+  const step = Math.max(1, Math.floor(vals.length / 5));
+  const ticks: Array<{ x: number; label: string }> = [];
+  for (let i = 0; i < vals.length; i += step) ticks.push({ x: x(i), label: dates[i].slice(5) });
+  const gid = `cpnl${color.replace('#', '')}${height}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" preserveAspectRatio="none" style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <line x1={PL} y1={zeroY} x2={W - PR} y2={zeroY} stroke="var(--ink-muted)" strokeOpacity="0.3" strokeDasharray="3 3" />
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+      {ticks.map((t, i) => (
+        <text key={i} x={t.x} y={height - 4} fontSize={10} fill="var(--ink-muted)" textAnchor="middle">
+          {t.label}
+        </text>
+      ))}
+    </svg>
+  );
+}
 
 export default function CumulativePnL() {
   const [nifty, setNifty] = useState<Pt[]>([]);
   const [sensex, setSensex] = useState<Pt[]>([]);
+  const [open, setOpen] = useState(false);
   const [venue, setVenue] = useState<Venue>('combined');
+  const [range, setRange] = useState<Range>('ALL');
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -113,132 +158,160 @@ export default function CumulativePnL() {
     };
   }, []);
 
-  const pts = useMemo(() => {
-    const raw =
-      venue === 'nifty' ? nifty : venue === 'sensex' ? sensex : combine(nifty, sensex);
+  const full = useMemo(() => {
+    const raw = venue === 'nifty' ? nifty : venue === 'sensex' ? sensex : combine(nifty, sensex);
     return trimLead(raw);
   }, [venue, nifty, sensex]);
 
+  // headline total is always the all-time last (independent of the zoom range)
+  const headline = full.length ? full[full.length - 1].cum : 0;
+
+  // drawdown over the full series (all-time running peak), then window to the range
+  const view = useMemo(() => {
+    if (full.length === 0) return { pts: [] as Pt[], dd: [] as number[] };
+    let peak = -Infinity;
+    const ddFull = full.map((p) => {
+      peak = Math.max(peak, p.cum);
+      return p.cum - peak;
+    });
+    let lo = 0;
+    if (range !== 'ALL' && full.length > 1) {
+      const cut = tms(full[full.length - 1].day) - RANGE_DAYS[range] * 86400000;
+      lo = full.findIndex((p) => tms(p.day) >= cut);
+      if (lo < 0) lo = 0;
+    }
+    return { pts: full.slice(lo), dd: ddFull.slice(lo) };
+  }, [full, range]);
+
   const stats = useMemo(() => {
+    const pts = view.pts;
     if (pts.length < 1) return null;
-    const cums = pts.map((p) => p.cum);
-    const last = cums[cums.length - 1];
-    // per-day deltas
+    const first = pts[0].cum;
+    const last = pts[pts.length - 1].cum;
     let best = { day: '', v: -Infinity };
     let worst = { day: '', v: Infinity };
-    let prev = 0;
-    for (const p of pts) {
-      const d = p.cum - prev;
-      if (d > best.v) best = { day: p.day, v: d };
-      if (d < worst.v) worst = { day: p.day, v: d };
-      prev = p.cum;
+    let prev = pts[0].cum - (pts.length ? 0 : 0);
+    // per-day deltas within the window (delta of the first point uses its own step vs prior full point unknown -> skip)
+    for (let i = 1; i < pts.length; i += 1) {
+      const d = pts[i].cum - pts[i - 1].cum;
+      if (d > best.v) best = { day: pts[i].day, v: d };
+      if (d < worst.v) worst = { day: pts[i].day, v: d };
     }
-    return { last, peak: Math.max(...cums), trough: Math.min(...cums), best, worst, n: pts.length };
-  }, [pts]);
+    void prev;
+    const maxDD = view.dd.length ? Math.min(...view.dd) : 0;
+    return { periodPnl: last - first, maxDD, best, worst, n: pts.length };
+  }, [view]);
 
-  // SVG geometry
-  const W = 920;
-  const H = 240;
-  const PL = 8;
-  const PR = 8;
-  const PT = 14;
-  const PB = 22;
-  const geom = useMemo(() => {
-    if (pts.length < 2) return null;
-    const ys = pts.map((p) => p.cum);
-    const yMin = Math.min(0, ...ys);
-    const yMax = Math.max(0, ...ys);
-    const span = yMax - yMin || 1;
-    const x = (i: number) => PL + (i / (pts.length - 1)) * (W - PL - PR);
-    const y = (v: number) => PT + (1 - (v - yMin) / span) * (H - PT - PB);
-    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.cum).toFixed(1)}`).join(' ');
-    const area = `${line} L${x(pts.length - 1).toFixed(1)},${y(0).toFixed(1)} L${x(0).toFixed(1)},${y(0).toFixed(1)} Z`;
-    const zeroY = y(0);
-    // ~5 date ticks
-    const ticks: Array<{ x: number; label: string }> = [];
-    const step = Math.max(1, Math.floor(pts.length / 5));
-    for (let i = 0; i < pts.length; i += step) ticks.push({ x: x(i), label: pts[i].day.slice(5) });
-    return { line, area, zeroY, x, y, ticks };
-  }, [pts]);
-
-  const pos = (stats?.last ?? 0) >= 0;
-  const stroke = pos ? GREEN : RED;
-
-  const toggle = (v: Venue, label: string) => (
+  const btn = (active: boolean, onClick: () => void, label: string) => (
     <button
       type="button"
-      onClick={() => setVenue(v)}
+      onClick={onClick}
       style={{
-        background: venue === v ? 'var(--line)' : 'transparent',
+        background: active ? 'var(--line)' : 'transparent',
         border: '1px solid var(--line)',
         borderRadius: 6,
         padding: '2px 10px',
         fontSize: 12,
         cursor: 'pointer',
-        color: venue === v ? 'var(--ink)' : 'var(--ink-muted)',
-        fontWeight: venue === v ? 700 : 500,
+        color: active ? 'var(--ink)' : 'var(--ink-muted)',
+        fontWeight: active ? 700 : 500,
       }}
     >
       {label}
     </button>
   );
 
-  return (
-    <section
-      style={{
-        border: '1px solid var(--line)',
-        borderRadius: 12,
-        padding: '12px 16px 8px',
-        margin: '0 0 16px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
-        <span style={{ fontSize: 14, fontWeight: 800 }}>Cumulative P&amp;L · past sessions</span>
-        <span style={{ display: 'inline-flex', gap: 4 }}>
-          {toggle('combined', 'Combined')}
-          {toggle('nifty', 'NIFTY')}
-          {toggle('sensex', 'SENSEX')}
-        </span>
-        {stats ? (
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted)' }}>
-            <span style={{ color: pos ? GREEN : RED, fontWeight: 800, fontSize: 15 }}>{fmtInr(stats.last)}</span>
-            {'  '}· {stats.n} sessions · peak {fmtInr(stats.peak)} · trough {fmtInr(stats.trough)}
-          </span>
-        ) : null}
-      </div>
+  const pos = headline >= 0;
 
-      {err ? (
-        <div style={{ color: RED, fontSize: 12, padding: '20px 0' }}>Couldn&apos;t load P&amp;L: {err}</div>
-      ) : geom ? (
-        <>
-          <svg viewBox={`0 0 ${W} ${H}`} width="100%" preserveAspectRatio="none" style={{ display: 'block' }}>
-            <defs>
-              <linearGradient id="cpnlFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={stroke} stopOpacity="0.20" />
-                <stop offset="100%" stopColor={stroke} stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            {/* zero baseline */}
-            <line x1={PL} y1={geom.zeroY} x2={W - PR} y2={geom.zeroY} stroke="var(--ink-muted)" strokeOpacity="0.35" strokeDasharray="3 3" />
-            <path d={geom.area} fill="url(#cpnlFill)" />
-            <path d={geom.line} fill="none" stroke={stroke} strokeWidth={2} strokeLinejoin="round" />
-            {geom.ticks.map((t, i) => (
-              <text key={i} x={t.x} y={H - 6} fontSize={10} fill="var(--ink-muted)" textAnchor="middle">
-                {t.label}
-              </text>
-            ))}
-          </svg>
-          {stats ? (
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11.5, color: 'var(--ink-muted)', marginTop: 4 }}>
-              <span>best day <span style={{ color: GREEN, fontWeight: 700 }}>{fmtInr(stats.best.v)}</span> ({stats.best.day.slice(5)})</span>
-              <span>worst day <span style={{ color: RED, fontWeight: 700 }}>{fmtInr(stats.worst.v)}</span> ({stats.worst.day.slice(5)})</span>
-              <span style={{ marginLeft: 'auto', opacity: 0.7 }}>system P&amp;L (live + paper days), as traded</span>
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <div style={{ color: 'var(--ink-muted)', fontSize: 12, padding: '20px 0' }}>Loading…</div>
-      )}
+  return (
+    <section style={{ border: '1px solid var(--line)', borderRadius: 12, margin: '0 0 16px' }}>
+      {/* header — always visible, click to expand */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 16px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)' }}>Cumulative P&amp;L · past sessions</span>
+        <span style={{ color: pos ? GREEN : RED, fontWeight: 800, fontSize: 15 }}>{fmtInr(headline)}</span>
+        <span style={{ fontSize: 11.5, color: 'var(--ink-muted)' }}>combined · all systems</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted)' }}>{open ? 'Hide ▴' : 'Show ▾'}</span>
+      </button>
+
+      {open ? (
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+            <span style={{ display: 'inline-flex', gap: 4 }}>
+              {btn(venue === 'combined', () => setVenue('combined'), 'Combined')}
+              {btn(venue === 'nifty', () => setVenue('nifty'), 'NIFTY')}
+              {btn(venue === 'sensex', () => setVenue('sensex'), 'SENSEX')}
+            </span>
+            <span style={{ display: 'inline-flex', gap: 4, marginLeft: 8 }}>
+              {(['1M', '3M', '6M', 'ALL'] as Range[]).map((r) => btn(range === r, () => setRange(r), r))}
+            </span>
+            {stats ? (
+              <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted)' }}>
+                period{' '}
+                <span style={{ color: stats.periodPnl >= 0 ? GREEN : RED, fontWeight: 700 }}>{fmtInr(stats.periodPnl)}</span>
+                {'  '}· maxDD <span style={{ color: RED, fontWeight: 700 }}>{fmtInr(stats.maxDD)}</span> · {stats.n} sessions
+              </span>
+            ) : null}
+          </div>
+
+          {err ? (
+            <div style={{ color: RED, fontSize: 12, padding: '20px 0' }}>Couldn&apos;t load P&amp;L: {err}</div>
+          ) : view.pts.length >= 2 ? (
+            <>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 0.4, margin: '2px 0' }}>
+                Equity (cumulative)
+              </div>
+              <Chart vals={view.pts.map((p) => p.cum)} dates={view.pts.map((p) => p.day)} color={headline >= 0 ? GREEN : RED} height={200} />
+              <div style={{ fontSize: 10.5, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 0.4, margin: '8px 0 2px' }}>
+                Drawdown (from peak)
+              </div>
+              <Chart vals={view.dd} dates={view.pts.map((p) => p.day)} color={RED} height={110} />
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11.5, color: 'var(--ink-muted)', marginTop: 6 }}>
+                {stats ? (
+                  <>
+                    <span>
+                      best day <span style={{ color: GREEN, fontWeight: 700 }}>{fmtInr(stats.best.v)}</span> ({stats.best.day.slice(5)})
+                    </span>
+                    <span>
+                      worst day <span style={{ color: RED, fontWeight: 700 }}>{fmtInr(stats.worst.v)}</span> ({stats.worst.day.slice(5)})
+                    </span>
+                  </>
+                ) : null}
+              </div>
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  background: 'rgba(148,163,184,0.10)',
+                  fontSize: 11.5,
+                  color: 'var(--ink-muted)',
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong style={{ color: 'var(--ink)' }}>Basis:</strong> live + paper days combined, <strong>as-traded ₹</strong> —
+                lot size varied over the history (1 / 2 / 10 lots early → <strong>3 lots now</strong>), so this is{' '}
+                <em>not</em> lot-normalized; older steps partly reflect size, not edge.
+              </div>
+            </>
+          ) : (
+            <div style={{ color: 'var(--ink-muted)', fontSize: 12, padding: '20px 0' }}>Loading…</div>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -1512,8 +1512,6 @@ export default function Nas() {
         />
       </div>
 
-      <CumulativePnL />
-
       {mtmCombined && mtmCombined.points.length >= 2 ? (
         <section className={styles.combinedHero}>
           <div className={styles.combinedHead}>
@@ -1692,6 +1690,8 @@ export default function Nas() {
           </div>
         </div>
       </div>
+
+      <CumulativePnL />
 
       {/* What's next */}
       <section className={styles.sectionBlock}>
