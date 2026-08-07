@@ -7,6 +7,7 @@ import StatusDot from '../components/StatusDot/StatusDot';
 import Chip from '../components/Chip/Chip';
 import MetricCard from '../components/Cards/MetricCard';
 import NiftyChart from '../components/NiftyChart/NiftyChart';
+import CumulativePnL from '../components/CumulativePnL/CumulativePnL';
 import {
   formatInt,
   formatNumber,
@@ -1510,6 +1511,8 @@ export default function Nas() {
           hint="All four 9:16 systems"
         />
       </div>
+
+      <CumulativePnL />
 
       {mtmCombined && mtmCombined.points.length >= 2 ? (
         <section className={styles.combinedHero}>
