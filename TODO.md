@@ -2,14 +2,19 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ⏳ 2026-08-07 — Breakout paper book: cash-model v2 (settlement realism) DEPLOYED, activates Mon 08-10 09:00
+## ⏳ 2026-08-07 — Breakout paper book: cash-model v2 (settlement realism) DEPLOYED, activates TODAY 15:32 IST
 `services/breakout_paper.py` rewritten (commit `f45f619`): 4 cash buckets — one slot's ₹
 held as a SETTLED buy buffer (earns 0), liquid fund earns 6.5% from T+1, redemptions +
 equity sale proceeds settle T+1, a buy triggers a same-day fund redemption so tomorrow's
 slot is ready. One-time migration recasts the whole history from fills+NAV dates (interest
-₹7,022 → ₹5,298 as of 08-06). Code is on the VPS but the service was NOT restarted (market
-hours) — **the Mon 09:00 preopen auto-restart activates it; verify Monday**: `/app/breakout-paper`
-should show CASH (fund) + BUFFER rows and `bp_state` should have `cash_model_v2=true`.
+₹7,022 → ₹5,298 as of 08-06). Arun approved restarts → one-shot self-removing cron installed:
+`32 15 7 8 *` runs `scripts/bp_v2_restart.sh` (post-close restart + auto-verify, log
+`/tmp/bp_v2_activation.log`), so TODAY'S 15:45 daily job already runs the new model.
+**Verify after 15:33**: the log should say `cash-model v2 live: True`; `/app/breakout-paper`
+should show CASH (fund) + BUFFER rows and `bp_state` `cash_model_v2=true`. (Fallback if the
+cron missed: `sudo /bin/systemctl restart quantifyd` after 15:30.) Side observation: someone/
+something restarted quantifyd at 12:49 IST today DURING market hours — not this session; check
+whether it was intentional (other session's NAS deploy?) or a crash-restart.
 Frontend already live. Backtest evidence: research/71 G5b (`g5b_cash_ledger.py`) — realistic
 18.8% CAGR / −30.5% DD / Calmar 0.62; naive instant-cash model overstates ~0.9% CAGR;
 gate-aware buffer (park during risk-OFF) worth +0.85% CAGR — available via
