@@ -3,9 +3,10 @@ import { apiGet } from '../api/client';
 import styles from './BreakoutPaper.module.css';
 
 type Holding = {
-  symbol: string; qty: number | null; entry_date: string; entry_price: number | null;
+  symbol: string; qty: number | null; entry_date: string | null; entry_price: number | null;
   price: number | null; value: number; weight: number; pnl: number; pnl_pct: number | null;
-  days: number; stop: number | null; stop_dist_pct: number | null; is_cash?: boolean;
+  days: number | null; stop: number | null; stop_dist_pct: number | null; is_cash?: boolean;
+  tag?: string;
 };
 type Candidate = { symbol: string; run_pct: number; turn_cr: number };
 type Closed = {
@@ -150,7 +151,7 @@ export default function BreakoutPaper() {
                 <tr key={h.symbol} className={h.is_cash ? styles.cashRow : ''}>
                   <td className={styles.sym}>
                     {h.symbol}
-                    {h.is_cash && <span className={styles.cashTag}>liquid fund @6.5%</span>}
+                    {h.is_cash && <span className={styles.cashTag}>{h.tag || 'liquid fund @6.5%'}</span>}
                   </td>
                   <td>{h.weight}%</td>
                   <td className={styles.muted}>{h.entry_date}</td>
@@ -236,8 +237,9 @@ export default function BreakoutPaper() {
           ))}
         </div>
         <p className={styles.note}>
-          Automation: daily 15:45 IST — accrue cash yield, check exits (Donchian-20 / 20% catastrophe), then take up to 1 new breakout if risk-on.
-          Paper only — never places a real order. Last daily run: {s.last_daily || '—'}.
+          Automation: daily 15:45 IST — settle T+1 money + accrue fund interest, check exits (Donchian-20 / 20% catastrophe),
+          take up to 1 new breakout from the settled buffer if risk-on, then refill/sweep the buffer (a buy triggers a same-day
+          fund redemption so tomorrow's slot is ready). Paper only — never places a real order. Last daily run: {s.last_daily || '—'}.
         </p>
       </div>
     </div>

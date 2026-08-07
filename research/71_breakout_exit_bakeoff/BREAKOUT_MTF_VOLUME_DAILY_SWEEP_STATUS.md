@@ -236,7 +236,63 @@ quantifyd; sleep 25; cd /home/arun/quantifyd && venv/bin/python3 -c "import
 services.breakout_paper as bp; print(bp.seed())"'`. Backups: /tmp/app.py.bak, App.tsx.bak,
 Sidebar.tsx.bak on VPS.
 
-### PUBLISHED (2026-07-01) — `/app/backtest/breakout-mtf-volume-swing`
+### G5b (2026-08-07) — liquid-fund settlement realism (cash-ledger re-run). STATUS: DONE
+
+**What you asked:** funds move to/from a liquid fund with T+1 both ways (redemption proceeds
+usable next day; fresh parkings start earning next day). So the book must keep one slot's worth
+of SETTLED cash idle every day to be able to buy a breakout same-day; if a slot is consumed by a
+buy, redeem the next slot from the liquid fund the SAME day so cash is ready again tomorrow.
+Neither the G5 backtest (zero cash yield, no cash constraint — pure notional model) nor the
+paper book (instant 6.5% on ALL cash, no lags, no idle buffer) models this. Is the logic in,
+and what are the honest numbers?
+
+**What we're testing:** the winning G5 book (Donchian-20 trail + 20% catastrophe, NIFTY>200DMA
+gate, 8 concurrent, max 1 new entry/day, %-run ranking, 0.20% RT cost, 2006→now, ₹10L,
+eq/8 compounding slots) re-run through an explicit daily cash ledger, 4 variants:
+
+- **A. published** — G5 as-is: no cash yield, no cash constraint (sanity: must reproduce
+  19.9% / −29.1% / Calmar 0.68).
+- **B. naive-instant** — what the paper book currently does: one cash pool, earns 6.5%/yr
+  daily (calendar-day accrual), instantly available, entries cash-constrained.
+- **C. realistic buffer (user spec)** — 3 buckets: idle settled buffer (target = 1 slot,
+  earns 0) held EVERY day slots are free (gate ON or OFF); liquid fund earns 6.5% with
+  parkings starting T+1; redemptions usable T+1; equity sale proceeds usable T+1; after an
+  EOD buy, same-day redemption refills the buffer for tomorrow.
+- **D. gate-aware buffer** — same as C but the buffer is held only while the regime gate is
+  ON (during OFF everything sits in the fund; on a flip day the book cannot buy — entry
+  capability resumes T+1).
+
+Success criterion: quantify B−A (what yield adds), B−C (what the naive model over-credits),
+C vs D (what the always-on buffer costs). Runner: `scripts/g5b_cash_ledger.py` (VPS, nice-15).
+Cost caveat: 6.5% held flat across 2006→now (conservative for the high-rate 2006-2014 era).
+
+**RESULTS (run 2026-08-07, window 2006→2026-08, ₹10L):**
+
+| Variant | CAGR | Sharpe | MaxDD | Calmar | Final | Interest | Blocked entries |
+|---|---|---|---|---|---|---|---|
+| A published (no yield, no cash constraint) | 18.63% | 0.91 | −32.9% | 0.57 | ₹3.37cr | — | 0 |
+| B naive-instant (old paper-book model) | 19.70% | 1.00 | −28.8% | 0.68 | ₹4.06cr | ₹30.8L | 0 |
+| **C realistic buffer (user spec — DEPLOYED)** | **18.82%** | **0.97** | **−30.5%** | **0.62** | **₹3.49cr** | ₹22.2L | 240 |
+| D gate-aware buffer | 19.67% | 1.00 | −30.7% | 0.64 | ₹4.03cr | ₹27.2L | 270 |
+
+(A is below the published 19.9%/−29.1% because the window now includes Jul-2026's gate-OFF
+drawdown month — same code, +1 month of data.)
+
+Findings: (1) liquid yield is worth ~+1% CAGR over 20y — the published numbers were
+conservative by that much; (2) the NAIVE instant model over-credits ~0.9% CAGR vs realistic
+T+1 settlement — the old paper-book accounting was flattering; (3) the always-on buffer (C)
+gives up ~0.85% CAGR vs parking it during gate-OFF (D) — mostly 2008/2011/2015/2018-19 bear
+stretches where one idle slot earned nothing for months; D's price is entries slipping T+1 on
+gate FLIP days (~30 extra blocked entry-days in 20y, immaterial); (4) ~12 blocked entry-days/yr
+under realism are exits whose proceeds hadn't settled — instant-recycle was never real.
+
+**Deployed to the live paper book (services/breakout_paper.py, cash-model v2):** 4 cash
+buckets (settled buffer ⁄ T+1 in-transit ⁄ fund earning ⁄ fund pending-T+1), buffer target =
+1 slot ×1.002 while a slot is free, same-day fund redemption after a buy, calendar-day 6.5%
+accrual starting T+1, equity sales settle T+1. One-time migration recasts the book's history
+from fills+NAV dates (interest ₹7,022 → ₹5,298 as of 08-06). `buffer_gate_aware` config flag
+(default False = user spec C; True = D) if the +0.85% CAGR is ever wanted. Activates via the
+Mon 09:00 preopen auto-restart; frontend (CASH/BUFFER split rows) is live already.
 Study added to `frontend/src/data/backtests.ts`; factsheet `frontend/public/breakout-swing-
 factsheet.png`; built on VPS (static/app), slug verified in live bundle. Frontend-only → no
 backend restart. Headline = the 1/day-cap config (19.9% CAGR, −29.1% DD, Calmar 0.68). Recommended

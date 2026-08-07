@@ -55,6 +55,9 @@ CFG = dict(
     stcg_pct=0.20,            # short-term capital-gains tax, shown separately
     cash_yield=0.065,         # idle cash parked in a liquid fund @6.5% p.a.
     universe_size=500,        # working liquid universe refreshed daily from Kite
+    buffer_gate_aware=False,  # False = hold the buy buffer every day slots are free (user spec,
+                              # G5b variant C); True = park it in the fund while the regime gate
+                              # is OFF (G5b variant D: +0.85% CAGR, but flip-day entries slip T+1)
 )
 
 RULES = [
@@ -65,7 +68,12 @@ RULES = [
     ("Regime gate", "Take NEW entries only when NIFTYBEES > its 200-day SMA (does not force-liquidate)"),
     ("Exit (trailing)", "Close below the prior-20-day low (Donchian-20 trail) → exit. NO profit target."),
     ("Exit (catastrophe)", "Price ≤ 20% below entry → hard stop."),
-    ("Idle cash", "Un-deployed cash parked in a liquid fund @ 6.5% p.a."),
+    ("Idle cash", "One slot's ₹ held SETTLED as the next-buy buffer (earns 0) whenever a slot is "
+                  "free; the rest sits in a liquid fund @6.5% p.a. Parkings earn from T+1; "
+                  "redemptions and equity sale proceeds settle T+1."),
+    ("Buffer discipline", "A buy spends the settled buffer; the same evening one slot's ₹ is "
+                          "redeemed from the fund so tomorrow's breakout can be bought. No "
+                          "same-day recycling of exit proceeds (they settle T+1)."),
     ("Costs", "Net of 0.20% round-trip; 20% STCG tracked & shown separately (not baked into NAV)"),
 ]
 
@@ -95,6 +103,7 @@ def init_db():
       CREATE TABLE IF NOT EXISTS bp_state(key TEXT PRIMARY KEY, val TEXT);
     """)
     c.commit(); c.close()
+    _migrate_cash_v2()
 
 
 def _get(key, default=None):
@@ -225,8 +234,120 @@ def _positions():
     return {r["symbol"]: dict(r) for r in _conn().execute("SELECT * FROM bp_positions")}
 
 
+# Cash lives in 4 buckets (settlement realism, 2026-08-07):
+#   cash_avail     settled cash held IDLE as the buy buffer — earns nothing, spendable today
+#   cash_pending   in transit T+1 (fund redemptions + equity sale proceeds) → avail next day
+#   liquid_bal     in the liquid fund, earning 6.5% (calendar-day accrual)
+#   liquid_pending parked into the fund today — starts earning from the NEXT day
+def _buckets():
+    return dict(cash_avail=float(_get("cash_avail", 0.0)),
+                cash_pending=float(_get("cash_pending", 0.0)),
+                liquid_bal=float(_get("liquid_bal", 0.0)),
+                liquid_pending=float(_get("liquid_pending", 0.0)))
+
+
+def _save_buckets(b):
+    for k, v in b.items():
+        _set(k, round(v, 4))
+
+
 def _cash():
-    return float(_get("cash", 0.0))
+    b = _buckets()
+    return b["cash_avail"] + b["cash_pending"] + b["liquid_bal"] + b["liquid_pending"]
+
+
+def _buffer_target():
+    """One slot's worth (with cost headroom) kept settled while a slot is free."""
+    if len(_positions()) >= CFG["n_hold"]:
+        return 0.0
+    if CFG["buffer_gate_aware"] and _get("gate", "ON") != "ON":
+        return 0.0
+    return CFG["capital"] / CFG["n_hold"] * 1.002
+
+
+def _settle_and_accrue(today: date):
+    """T+1 settlements + liquid-fund interest for calendar days since last accrual.
+    Accrual runs on the OLD fund balance first — money parked yesterday starts earning
+    only from today (interest counted T+1) — then pending amounts merge in."""
+    b = _buckets()
+    last = _get("last_accrual")
+    if last:
+        dt = (today - date.fromisoformat(last)).days
+        if dt <= 0:
+            return
+        gain = b["liquid_bal"] * ((1 + CFG["cash_yield"]) ** (dt / 365) - 1)
+        b["liquid_bal"] += gain
+        _set("interest_earned", round(_get("interest_earned", 0.0) + gain, 2))
+        b["liquid_bal"] += b["liquid_pending"]; b["liquid_pending"] = 0.0
+        b["cash_avail"] += b["cash_pending"]; b["cash_pending"] = 0.0
+    _set("last_accrual", today.isoformat())
+    _save_buckets(b)
+
+
+def _migrate_cash_v2():
+    """One-time recast (2026-08-07): split the single instant-yield cash pool into
+    settlement-realistic buckets and rebuild interest + bp_nav from fills + nav dates."""
+    if _get("cash_model_v2") or not _get("seeded"):
+        return
+    cap = float(_get("capital", CFG["capital"]))
+    slot = cap / CFG["n_hold"]
+    c = _conn()
+    navdays = [r["d"] for r in c.execute("SELECT d FROM bp_nav ORDER BY d")]
+    fills = [dict(r) for r in c.execute("SELECT * FROM bp_fills ORDER BY ts")]
+    c.close()
+    by_day = {}
+    for f in fills:
+        by_day.setdefault(f["ts"][:10], []).append(f)
+    cash_avail, cash_pending, liquid, liquid_pending = cap, 0.0, 0.0, 0.0
+    interest = 0.0; n_open = 0; prev = None; upd = []
+    for dstr in navdays:
+        d = date.fromisoformat(dstr)
+        if prev is not None:
+            g = liquid * ((1 + CFG["cash_yield"]) ** ((d - prev).days / 365) - 1)
+            liquid += g + liquid_pending; interest += g; liquid_pending = 0.0
+            cash_avail += cash_pending; cash_pending = 0.0
+        for f in by_day.get(dstr, []):
+            if f["side"] == "BUY":
+                out = f["value"] + f["cost"]
+                take = min(cash_avail, out); cash_avail -= take
+                if out > take:   # buffer was thin — emergency same-day redemption
+                    liquid -= min(liquid, out - take)
+                n_open += 1
+            else:
+                cash_pending += f["value"] - f["cost"]; n_open -= 1
+        target = slot * 1.002 if n_open < CFG["n_hold"] else 0.0
+        if cash_avail > target + 1:
+            liquid_pending += cash_avail - target; cash_avail = target
+        elif cash_avail < target - 1 and liquid > 0:
+            red = min(liquid, target - cash_avail); liquid -= red; cash_pending += red
+        upd.append((dstr, cash_avail + cash_pending + liquid + liquid_pending))
+        prev = d
+    c = _conn()
+    for dstr, cashtot in upd:
+        c.execute("UPDATE bp_nav SET cash=?, nav=equity+?, "
+                  "invested_pct=CASE WHEN equity+?>0 THEN equity*100.0/(equity+?) ELSE 0 END "
+                  "WHERE d=?", (cashtot, cashtot, cashtot, cashtot, dstr))
+    c.commit(); c.close()
+    _save_buckets(dict(cash_avail=cash_avail, cash_pending=cash_pending,
+                       liquid_bal=liquid, liquid_pending=liquid_pending))
+    _set("interest_earned", round(interest, 2))
+    _set("last_accrual", navdays[-1] if navdays else date.today().isoformat())
+    _set("cash_model_v2", True)
+    logger.info(f"[BP] cash-model v2 recast: interest ₹{interest:.0f}, buffer ₹{cash_avail:.0f}, "
+                f"in-transit ₹{cash_pending:.0f}, fund ₹{liquid + liquid_pending:.0f}")
+
+
+def _rebalance_buffer():
+    """Sweep excess settled cash into the fund; refill a used buffer the same day (usable T+1)."""
+    b = _buckets(); target = _buffer_target()
+    if b["cash_avail"] > target + 1:
+        b["liquid_pending"] += b["cash_avail"] - target; b["cash_avail"] = target
+        logger.info(f"[BP] swept ₹{b['liquid_pending']:.0f} to liquid fund (earns from T+1)")
+    elif b["cash_avail"] < target - 1 and b["liquid_bal"] > 0:
+        red = min(b["liquid_bal"], target - b["cash_avail"])
+        b["liquid_bal"] -= red; b["cash_pending"] += red
+        logger.info(f"[BP] redeemed ₹{red:.0f} from liquid fund (settles T+1 → tomorrow's buffer)")
+    _save_buckets(b)
 
 
 def _record_fill(symbol, side, price, qty, reason):
@@ -245,7 +366,9 @@ def _buy(symbol, price, rupees, d, reason):
     c.execute("INSERT OR REPLACE INTO bp_positions(symbol,qty,entry_date,entry_price,invested,peak_price) "
               "VALUES(?,?,?,?,?,?)", (symbol, qty, d, price, qty * price, price))
     c.commit(); c.close()
-    _set("cash", _cash() - qty * price - cost)
+    b = _buckets()
+    b["cash_avail"] -= qty * price + cost   # buys spend SETTLED cash only (the buffer)
+    _save_buckets(b)
 
 
 def _sell(symbol, price, d, reason):
@@ -266,7 +389,9 @@ def _sell(symbol, price, d, reason):
                rt_cost, gross - rt_cost, reason, hold, stcg))
     c.execute("DELETE FROM bp_positions WHERE symbol=?", (symbol,))
     c.commit(); c.close()
-    _set("cash", _cash() + qty * price - cost)
+    b = _buckets()
+    b["cash_pending"] += qty * price - cost   # equity settlement: proceeds usable T+1
+    _save_buckets(b)
 
 
 def _mark_nav(close, asof_iso, live=None):
@@ -304,27 +429,31 @@ def seed(force=False):
     if _get("seeded") and not force:
         return {"ok": False, "msg": "already seeded"}
     refresh_universe(full=True)
-    _set("capital", CFG["capital"]); _set("cash", CFG["capital"])
+    _set("capital", CFG["capital"])
+    _set("cash_avail", CFG["capital"]); _set("cash_pending", 0.0)
+    _set("liquid_bal", 0.0); _set("liquid_pending", 0.0)
+    _set("last_accrual", date.today().isoformat())
     _set("inception", date.today().isoformat()); _set("interest_earned", 0.0)
+    _set("cash_model_v2", True)
     _set("seeded", True)
     daily_job()   # take today's first entry if the market is risk-on and one qualifies
     return {"ok": True, "held": list(_positions()), "gate": _get("gate")}
 
 
 def daily_job():
-    """Mon-Fri EOD: accrue cash yield → exits (Donchian/catastrophe) → 1 new entry if gated-on."""
+    """Mon-Fri EOD: settle T+1 + accrue fund interest → exits → 1 new entry (from the settled
+    buffer only) → refill/sweep the buffer so tomorrow's slot is ready."""
+    init_db()                      # ensures the cash-model migration has run before mutating
     if not _get("seeded"):
         return
-    if _cash() > 0:
-        new_cash = _cash() * (1 + CFG["cash_yield"]) ** (1 / 252)
-        _set("interest_earned", round(_get("interest_earned", 0.0) + (new_cash - _cash()), 2))
-        _set("cash", new_cash)
+    today = date.today()
+    _settle_and_accrue(today)      # yesterday's redemptions/sales become spendable; fund accrues
     refresh_universe(full=False)
     close, vol = _panel()
-    asof = close.index[-1]; d = date.today().isoformat()
+    asof = close.index[-1]; d = today.isoformat()
     gate_on = _gate_on(close, asof)
     _set("gate", "ON" if gate_on else "OFF")
-    # 1) exits — Donchian-20 trail OR 20% catastrophe
+    # 1) exits — Donchian-20 trail OR 20% catastrophe (proceeds settle T+1)
     live = _live_prices(list(_positions()))
     for s in list(_positions()):
         p = _positions()[s]; pr = live.get(s)
@@ -335,24 +464,28 @@ def daily_job():
             _sell(s, pr, d, "CATASTROPHE"); logger.info(f"[BP] catastrophe exit {s} @ {pr:.1f}")
         elif low is not None and pr < low:
             _sell(s, pr, d, "DONCHIAN"); logger.info(f"[BP] Donchian exit {s} @ {pr:.1f} (<20d low {low:.1f})")
-    # 2) entry — max 1 new/day, only if risk-on and slots free
+    # 2) entry — max 1 new/day, only if risk-on, slot free, and the SETTLED buffer covers it
     if gate_on and len(_positions()) < CFG["n_hold"]:
         held = set(_positions())
         cands = [c for c in _scan(close, vol, asof) if c[0] not in held]
         added = 0
-        per = (_cash() + 0) / max(1, CFG["n_hold"] - len(_positions()))  # fill remaining slots evenly
         for s, run, turn in cands:
             if added >= CFG["max_per_day"] or len(_positions()) >= CFG["n_hold"]:
                 break
             pr = _live_prices([s]).get(s)
             if not pr:
                 continue
-            rupees = min(_cash(), CFG["capital"] / CFG["n_hold"])   # ~equal weight of full capital
+            avail = _buckets()["cash_avail"] / (1 + CFG["cost_rt"] / 2)
+            rupees = min(avail, CFG["capital"] / CFG["n_hold"])   # ~equal weight of full capital
             if rupees < 5000:
+                logger.warning(f"[BP] entry {s} skipped — settled buffer only ₹{avail:.0f}")
                 break
             _buy(s, pr, rupees, d, "BREAKOUT")
             logger.info(f"[BP] entry {s} @ {pr:.1f} (run {run}% turn ₹{turn}cr)")
             added += 1
+    # 3) buffer discipline — refill a spent buffer from the fund the SAME day (usable
+    #    tomorrow), or sweep excess settled cash into the fund (earns from tomorrow)
+    _rebalance_buffer()
     _mark_nav(close, asof.isoformat(), live=_live_prices(list(_positions())))
     _set("last_daily", d)
 
@@ -387,14 +520,25 @@ def get_state():
     for h in holdings:
         h["weight"] = round(h["value"] / nav * 100, 1) if nav else 0
     holdings.sort(key=lambda x: -x["value"])
-    if cash > 1000:
-        _incep = _get("inception") or date.today().isoformat()
+    bkt = _buckets(); _incep = _get("inception") or date.today().isoformat()
+    fund_val = bkt["liquid_bal"] + bkt["liquid_pending"]
+    buf_val = bkt["cash_avail"] + bkt["cash_pending"]
+    if fund_val > 1000:
         holdings.append(dict(
             symbol="CASH", qty=None, entry_date=_incep[:10], entry_price=None, price=None,
-            value=round(cash), weight=round(cash / nav * 100, 1) if nav else 0,
+            value=round(fund_val), weight=round(fund_val / nav * 100, 1) if nav else 0,
             pnl=round(_get("interest_earned", 0.0)), pnl_pct=round(CFG["cash_yield"] * 100, 1),
-            is_cash=True, days=(date.today() - date.fromisoformat(_incep[:10])).days,
+            is_cash=True, tag=f"liquid fund @{CFG['cash_yield'] * 100:.1f}%",
+            days=(date.today() - date.fromisoformat(_incep[:10])).days,
             stop=None, stop_dist_pct=None))
+    if buf_val > 1000:
+        holdings.append(dict(
+            symbol="BUFFER", qty=None, entry_date=None, entry_price=None, price=None,
+            value=round(buf_val), weight=round(buf_val / nav * 100, 1) if nav else 0,
+            pnl=0, pnl_pct=None, is_cash=True,
+            tag="next-buy buffer (settled, idle)" if bkt["cash_avail"] >= bkt["cash_pending"]
+                else "in transit T+1 → settles next session",
+            days=None, stop=None, stop_dist_pct=None))
     navcurve = [dict(d=r["d"], nav=round(r["nav"]), bench=r["bench_close"], gate=r["gate"])
                 for r in _conn().execute("SELECT * FROM bp_nav ORDER BY d")]
     closed = [dict(r) for r in _conn().execute(
@@ -423,6 +567,8 @@ def get_state():
         inception=_get("inception"), today_candidates=today_cands,
         gate_last=gate_last, gate_sma=gate_sma, gate_gap_pct=gate_gap,
         capital=cap, nav=round(nav), cash=round(cash), equity=round(equity),
+        cash_buffer=round(bkt["cash_avail"]), cash_in_transit=round(bkt["cash_pending"]),
+        cash_liquid_fund=round(fund_val),
         invested_pct=round(equity / nav * 100, 1) if nav else 0,
         total_return_pct=round((nav / cap - 1) * 100, 2) if cap else 0,
         unrealized=round(equity - sum(p["invested"] for p in pos.values())),

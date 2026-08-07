@@ -59,6 +59,14 @@ drawdowns, and the headline is optimistic due to survivorship bias (see caveats)
    %-run (user's workflow) — but G1 showed %-run ranking is *not* additive. A better ranker
    (base tightness, RS) is unexplored upside.
 6. **No idle-cash yield** modeled (conservative offset, ~+? when <8 positions held).
+   → RESOLVED by **G5b (2026-08-07)**: full cash-ledger re-run with liquid-fund settlement
+   realism (idle 1-slot buy buffer earning 0, parkings earn T+1, redemptions + sale proceeds
+   settle T+1, same-day buffer refill after a buy). Realistic numbers: **18.8% CAGR /
+   −30.5% DD / Calmar 0.62** incl. ₹22.2L fund interest over 20y (vs 18.6%/−32.9% with no
+   yield on the same window; a NAIVE all-cash-earns-instantly model overstates ~+0.9% CAGR).
+   Gate-aware buffer (park it during risk-OFF, entries slip T+1 on flip days) is worth
+   +0.85% CAGR. See STATUS G5b + `scripts/g5b_cash_ledger.py`; deployed to the live paper
+   book as cash-model v2.
 7. Missing many of the user's exact microcaps (0 rows in DB); this is a *proxy* population on
    a mid/large-cap-skewed liquid universe. Data ends ~2026-05-15 for most names.
 
