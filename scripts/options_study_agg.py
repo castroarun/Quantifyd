@@ -24,6 +24,19 @@ def build_day(day):
         return None
     chain = b["chain"]; spot_s = b["spot_s"]; times = b["times"]; dte = b["dte_day"]
 
+    # Convert CALENDAR-days-to-expiry -> TRADING-days-to-expiry. With NIFTY's weekly
+    # (Tuesday) expiry, calendar-DTE leaves DTE2/DTE3 on Sat/Sun (never traded) and pushes
+    # Wed/Thu to DTE5/DTE6 (off the 0-4 scale). Trading-DTE maps DTE0..4 cleanly to
+    # Tue/Mon/Fri/Thu/Wed and keeps DTE0/DTE1 identical (the 0/1-DTE edge is preserved).
+    _dd = datetime.strptime(day, "%Y-%m-%d").date()
+    _exp = _dd + timedelta(days=int(dte))
+    _tdte, _cur = 0, _dd + timedelta(days=1)
+    while _cur <= _exp:
+        if _cur.weekday() < 5:          # Mon-Fri = trading day (holidays rare, ignored)
+            _tdte += 1
+        _cur += timedelta(days=1)
+    dte = _tdte
+
     def prem(ts, t):
         ta, la, _, _ = chain[ts]
         i = np.searchsorted(ta, np.datetime64(t), side="right") - 1

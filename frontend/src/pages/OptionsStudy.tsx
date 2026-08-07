@@ -19,10 +19,15 @@ const OTM_OFFS = ['100', '200', '300'];
 const OTM_COLOR: Record<string, string> = { atm: '#3fb950', '100': '#e3b341', '200': '#ff9e64', '300': '#f85149' };
 
 const toMin = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m - (9 * 60 + 16); };
+// snap a bar's minute-offset to a clean 5-min grid so stray marks (e.g. 13:56 vs 13:55)
+// collapse into the same bucket — otherwise a slot only one odd day fills becomes a null gap
+const snap5 = (m: number) => Math.round(m / 5) * 5;
 const fmtT = (x: number) => {
   const v = 9 * 60 + 16 + x;
   return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(((v % 60) + 60) % 60).padStart(2, '0')}`;
 };
+const MON3 = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const fmtDMY = (s: string) => { const [y, m, d] = s.split('-'); return `${d}-${MON3[+m - 1]}-${y.slice(2)}`; };
 const XAXIS = { stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map(fmtT) };
 const pctAxis = { stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((x) => x + '%') };
 
@@ -41,6 +46,26 @@ function Tile({ label, v, good }: { label: string; v: string; good?: boolean }) 
   return <div className={styles.tile}><div className={styles.tl}>{label}</div>
     <div className={styles.tv} style={{ color: good == null ? undefined : good ? '#3fb950' : '#f85149' }}>{v}</div></div>;
 }
+// tiny SVG sparkline of one day's straddle path (pts = [x,y]); green if it decayed, red if it rose
+function Spark({ pts, up }: { pts: [number, number][]; up: boolean }) {
+  const W = 150, H = 46, pad = 3;
+  if (pts.length < 2) return <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} />;
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const sx = (x: number) => pad + (x1 > x0 ? (x - x0) / (x1 - x0) : 0) * (W - 2 * pad);
+  const sy = (y: number) => H - pad - (y1 > y0 ? (y - y0) / (y1 - y0) : 0.5) * (H - 2 * pad);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + sx(p[0]).toFixed(1) + ' ' + sy(p[1]).toFixed(1)).join(' ');
+  const c = up ? '#f85149' : '#3fb950';
+  const yEntry = sy(pts[0][1]);
+  const pk = ys.indexOf(y1);  // index of the intraday max premium (seller's peak pain)
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
+      <line x1={0} y1={yEntry} x2={W} y2={yEntry} stroke="rgba(139,148,158,0.35)" strokeWidth={0.6} strokeDasharray="3 3" />
+      <path d={d} fill="none" stroke={c} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+      <circle cx={sx(pts[pk][0])} cy={sy(pts[pk][1])} r={2.2} fill="#d29922" />
+    </svg>
+  );
+}
 
 export default function OptionsStudy() {
   const [d, setD] = useState<{ generated_at: string; n_days: number; days: Day[] } | null>(null);
@@ -51,6 +76,7 @@ export default function OptionsStudy() {
   const [endT, setEndT] = useState('15:30');
   const [grp, setGrp] = useState('none');
   const [expand, setExpand] = useState<string | null>(null);
+  const [tableSort, setTableSort] = useState<'date' | 'decay'>('date');
 
   useEffect(() => {
     fetch(`/app/options_study.json?t=${Date.now()}`, { cache: 'no-store' })
@@ -66,7 +92,7 @@ export default function OptionsStudy() {
   // grid = the ACTUAL recorded bar times within the window (bars are at 09:16 then :20/:25/:30…,
   // i.e. minutes 0,4,9,14… — NOT multiples of 5 — so build the grid from the real slots, else the
   // median/overlay grid only ever matches the 09:16 point and everything else is null).
-  const gridMins = useMemo(() => times.filter((t) => t >= startT && t <= endT).map(toMin), [times, startT, endT]);
+  const gridMins = useMemo(() => [...new Set(times.filter((t) => t >= startT && t <= endT).map((t) => snap5(toMin(t))))].sort((a, b) => a - b), [times, startT, endT]);
 
   // generic window helpers (a "getter" returns a day's full [hhmm,value] series)
   const getStrad = (dy: Day): [string, number][] => dy.series.map((b) => [b[0], b[1]]);
@@ -79,7 +105,7 @@ export default function OptionsStudy() {
   const medNorm = (dset: Day[], get: (d: Day) => [string, number][] | undefined) => {
     const norm = dset.map((dy) => {
       const w = win(get(dy)); const map = new Map<number, number>();
-      if (w.length >= 2 && w[0][1]) { const e = w[0][1]; w.forEach((b) => map.set(toMin(b[0]), (b[1] / e) * 100)); }
+      if (w.length >= 2 && w[0][1]) { const e = w[0][1]; w.forEach((b) => map.set(snap5(toMin(b[0])), (b[1] / e) * 100)); }
       return gridMins.map((m) => (map.has(m) ? Math.round(map.get(m)! * 10) / 10 : null));
     });
     return gridMins.map((_, i) => {
@@ -91,7 +117,7 @@ export default function OptionsStudy() {
   const medPnl = (dset: Day[], get: (d: Day) => [string, number][] | undefined) => {
     const rows = dset.map((dy) => {
       const w = win(get(dy)); const map = new Map<number, number>();
-      if (w.length >= 2 && w[0][1]) { const e = w[0][1]; w.forEach((b) => map.set(toMin(b[0]), Math.round((e - b[1]) * 10) / 10)); }
+      if (w.length >= 2 && w[0][1]) { const e = w[0][1]; w.forEach((b) => map.set(snap5(toMin(b[0])), Math.round((e - b[1]) * 10) / 10)); }
       return gridMins.map((m) => (map.has(m) ? map.get(m)! : null));
     });
     return gridMins.map((_, i) => {
@@ -126,7 +152,7 @@ export default function OptionsStudy() {
   const c2 = useMemo(() => {
     if (!days.length) return null;
     const norm = days.map((dy) => { const w = win(getStrad(dy)); const map = new Map<number, number>();
-      if (w.length >= 2 && w[0][1]) { const e = w[0][1]; w.forEach((b) => map.set(toMin(b[0]), Math.round((b[1] / e) * 1000) / 10)); }
+      if (w.length >= 2 && w[0][1]) { const e = w[0][1]; w.forEach((b) => map.set(snap5(toMin(b[0])), Math.round((b[1] / e) * 1000) / 10)); }
       return gridMins.map((m) => (map.has(m) ? map.get(m)! : null)); });
     const data: any = [gridMins, ...norm, medNorm(days, getStrad)];
     const series: any[] = [{}]; days.forEach((dy) => series.push({ label: dy.date, stroke: dy.date === sel ? '#e3b341' : 'rgba(139,148,158,0.15)', width: dy.date === sel ? 2 : 1, points: { show: false } }));
@@ -191,6 +217,31 @@ export default function OptionsStudy() {
     });
   }, [days, grp, startT, endT]);
 
+  // per-day ATM decay table (one row per day in the current weekday filter)
+  const dayRows = useMemo(() => {
+    const rows = days.map((x) => { const s = statOf(x); if (!s) return null;
+      const peakBar = s.w.find((b) => b[1] === s.hi);
+      return { x, entry: s.entry, close: s.close, hi: s.hi, decay: s.decay,
+        mae: s.entry ? Math.round((s.hi / s.entry - 1) * 1000) / 10 : 0,
+        peakT: peakBar ? peakBar[0] : '',
+        rng: s.entry ? Math.round(((s.hi - s.lo) / s.entry) * 1000) / 10 : 0 }; })
+      .filter(Boolean) as { x: Day; entry: number; close: number; hi: number; decay: number; mae: number; peakT: string; rng: number }[];
+    rows.sort((a, b) => tableSort === 'decay' ? a.decay - b.decay : b.x.date.localeCompare(a.x.date));
+    return rows;
+  }, [days, tableSort, startT, endT]);
+
+  // weekday-aligned grid: columns = Mon..Fri, rows = weeks (newest first)
+  const weekGrid = useMemo(() => {
+    const mondayOf = (s: string) => { const [y, mo, da] = s.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, mo - 1, da)); const wd = (dt.getUTCDay() + 6) % 7;
+      dt.setUTCDate(dt.getUTCDate() - wd); return dt.toISOString().slice(0, 10); };
+    const m = new Map<string, (typeof dayRows[number] | null)[]>();
+    dayRows.forEach((r) => { const wk = mondayOf(r.x.date);
+      if (!m.has(wk)) m.set(wk, [null, null, null, null, null]);
+      const ci = WDS.indexOf(r.x.weekday); if (ci >= 0) m.get(wk)![ci] = r; });
+    return [...m.keys()].sort((a, b) => b.localeCompare(a)).map((wk) => ({ wk, cells: m.get(wk)! }));
+  }, [dayRows]);
+
   if (!d) return <div className={styles.wrap}>Loading options study…</div>;
   const stats = days.map(statOf).filter(Boolean) as NonNullable<ReturnType<typeof statOf>>[];
   const decayed = stats.filter((s) => s.decay < 0).length;
@@ -199,7 +250,7 @@ export default function OptionsStudy() {
 
   // registry of the line-charts so any of them can open fullscreen
   const chartsMap: Record<string, { title: string; opts: any; data: any }> = {};
-  if (c1) chartsMap.c1 = { title: 'Intraday ATM straddle premium', opts: c1.opts, data: c1.data };
+  if (c1) chartsMap.c1 = { title: 'Intraday ATM straddle premium' + (day ? ` — ${fmtDMY(day.date)} · ${day.weekday} · DTE${day.dte}` : ''), opts: c1.opts, data: c1.data };
   if (cOTM) chartsMap.cOTM = { title: 'ATM straddle vs OTM strangles — % normalised', opts: cOTM.opts, data: cOTM.data };
   if (cAbs) chartsMap.cAbs = { title: 'Short-straddle P&L — absolute ₹ kept as premium decays', opts: cAbs.opts, data: cAbs.data };
   if (c2) chartsMap.c2 = { title: (wd === 'All' ? 'All days' : wd + ' days') + ' — normalised to window-start = 100', opts: c2.opts, data: c2.data };
@@ -237,12 +288,12 @@ export default function OptionsStudy() {
         <Tile label={`Days (${wd})`} v={String(days.length)} />
         <Tile label={`Median decay ${startT}→${endT}`} v={medDecay + '%'} good={medDecay < 0} />
         <Tile label="Days straddle decayed (seller win)" v={stats.length ? Math.round((100 * decayed) / stats.length) + '%' : '—'} good />
-        {day && dStat && <Tile label={`${day.date} · ${day.weekday} · DTE${day.dte}`} v={`₹${dStat.entry} → ₹${dStat.close} (${dStat.decay}%) · spot ${day.spot_move >= 0 ? '+' : ''}${day.spot_move}`} good={dStat.decay < 0} />}
+        {day && dStat && <Tile label={`${fmtDMY(day.date)} · ${day.weekday} · DTE${day.dte}`} v={`₹${dStat.entry} → ₹${dStat.close} (${dStat.decay}%) · spot ${day.spot_move >= 0 ? '+' : ''}${day.spot_move}`} good={dStat.decay < 0} />}
       </div>
 
       <section className={styles.card}>
         <div className={styles.cardHead}><b>Intraday ATM straddle premium</b>
-          <select className={styles.sel} value={sel ?? ''} onChange={(e) => setSel(e.target.value)}>{[...days].reverse().map((x) => <option key={x.date} value={x.date}>{x.date} &middot; {x.weekday} &middot; DTE{x.dte}</option>)}</select>
+          <select className={styles.sel} value={sel ?? ''} onChange={(e) => setSel(e.target.value)}>{[...days].reverse().map((x) => <option key={x.date} value={x.date}>{fmtDMY(x.date)} &middot; {x.weekday} &middot; DTE{x.dte}</option>)}</select>
           <label className={styles.toggle}><input type="checkbox" checked={showLegs} onChange={(e) => setShowLegs(e.target.checked)} /> CE / PE split</label>
           <span className={styles.sub}>dotted grey = NIFTY spot (right axis)</span><ExpandBtn k="c1" /></div>
         {c1 && <Chart opts={c1.opts} data={c1.data} height={320} />}
@@ -316,6 +367,57 @@ export default function OptionsStudy() {
           ))}
         </div>
         <div className={styles.sub} style={{ marginTop: 8 }}>bar height = |decay %| (capped 100) · green = premium decayed (seller profit) · red = expanded (loss)</div>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><b>Every day &mdash; ATM straddle curve ({wd})</b>
+          <span className={styles.sub}>aligned by weekday · rows = weeks (newest top) · dashed = entry · gold dot = intraday peak · green decayed / red rose · <b>click a tile</b> to open it full-size with axes</span>
+        </div>
+        <div className={styles.spWeekGrid}>
+          {WDS.map((w) => <div key={'h' + w} className={styles.spColHead} style={{ color: WD_COLOR[w] }}>{w}</div>)}
+          {weekGrid.map(({ wk, cells }) => cells.map((r, i) => r ? (
+            <button key={wk + i} className={`${styles.spCell} ${r.x.date === sel ? styles.spSel : ''}`}
+              title={`${fmtDMY(r.x.date)} ${r.x.weekday} DTE${r.x.dte}\n₹${r.entry} → ₹${r.close} · peak ₹${r.hi}${r.peakT ? ' @ ' + r.peakT : ''} · decay ${r.decay}%`}
+              onClick={() => { setSel(r.x.date); setExpand('c1'); }}>
+              <div className={styles.spHead}>
+                <span>{fmtDMY(r.x.date)} <b>D{r.x.dte}</b></span>
+                <span style={{ color: r.decay < 0 ? '#3fb950' : '#f85149', fontWeight: 700 }}>{r.decay > 0 ? '+' : ''}{r.decay}%</span>
+              </div>
+              <Spark pts={win(getStrad(r.x)).map((b) => [toMin(b[0]), b[1]] as [number, number])} up={r.decay > 0} />
+            </button>
+          ) : <div key={wk + i} className={styles.spEmpty} title="no data — likely a market holiday">holiday</div>))}
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><b>Every day &mdash; ATM straddle decay ({wd})</b>
+          <span className={styles.sub}>window {startT}→{endT} · click a row to load its intraday curve above</span>
+          <select className={styles.sel} value={tableSort} onChange={(e) => setTableSort(e.target.value as 'date' | 'decay')}>
+            <option value="date">Newest first</option>
+            <option value="decay">Biggest decay first</option>
+          </select>
+        </div>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead><tr><th>Date</th><th>WD</th><th>DTE</th><th className={styles.num}>Entry ₹</th><th className={styles.num} title="highest straddle premium reached intraday — a seller's peak pain">Max ₹</th><th className={styles.num}>Close ₹</th><th className={styles.num}>Decay</th><th className={styles.num} title="peak premium above entry = max adverse excursion for a seller">Peak+%</th><th className={styles.num}>Range</th><th className={styles.num}>Spot</th></tr></thead>
+            <tbody>
+              {dayRows.map((r) => (
+                <tr key={r.x.date} onClick={() => setSel(r.x.date)} className={r.x.date === sel ? styles.trSel : ''}>
+                  <td>{fmtDMY(r.x.date)}</td>
+                  <td style={{ color: WD_COLOR[r.x.weekday] }}>{r.x.weekday}</td>
+                  <td>DTE{r.x.dte}</td>
+                  <td className={styles.num}>{r.entry}</td>
+                  <td className={styles.num} style={{ color: '#d29922' }} title={r.peakT ? `peaked at ${r.peakT}` : ''}>{r.hi}</td>
+                  <td className={styles.num}>{r.close}</td>
+                  <td className={styles.num} style={{ color: r.decay < 0 ? '#3fb950' : '#f85149', fontWeight: 700 }}>{r.decay > 0 ? '+' : ''}{r.decay}%</td>
+                  <td className={styles.num} style={{ color: r.mae > 0 ? '#f85149' : 'var(--ink-faint,#6e7681)' }}>+{r.mae}%</td>
+                  <td className={styles.num}>{r.rng}%</td>
+                  <td className={styles.num} style={{ color: r.x.spot_move < 0 ? '#f85149' : '#3fb950' }}>{r.x.spot_move >= 0 ? '+' : ''}{r.x.spot_move}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {expand && chartsMap[expand] && (
