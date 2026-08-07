@@ -769,6 +769,19 @@ def register(app, scheduler):
                       id="mp_rebalance", replace_existing=True)
     scheduler.add_job(eod_job, "cron", day_of_week="mon-fri", hour=15, minute=15,
                       id="mp_eod", replace_existing=True)
+
+    def _mp_eod_report_job():                              # EOD email report ~15:35 (after the EOD job)
+        try:
+            from services.trading_calendar import get_default_calendar
+            from datetime import date as _d
+            if not get_default_calendar().is_trading_day(_d.today()):
+                return
+            from services.momentum_eod_report import send_eod_report
+            send_eod_report()
+        except Exception as _e:
+            logger.error(f"[MP] eod-report job error: {_e}")
+    scheduler.add_job(_mp_eod_report_job, "cron", day_of_week="mon-fri", hour=15, minute=35,
+                      id="mp_eod_report", replace_existing=True)
     for jid in ("mp_daily", "mp_weekly", "mp_monthly"):     # drop legacy split jobs
         try:
             scheduler.remove_job(jid)
