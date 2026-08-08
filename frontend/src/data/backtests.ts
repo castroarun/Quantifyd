@@ -127,6 +127,316 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'momentum-put-hedge-overlay',
+    title: 'Put-Hedge Overlay vs the Cash-Exit Gate — can options replace selling the book?',
+    verdict:
+      'At a weekly risk-off gate the live book sells all 8 stocks to cash, realizing short-term capital-gains tax and taking re-entry timing risk. Could buying NIFTY puts instead — staying invested and hedging — do better after tax? Answer: a WEEKLY put hedge is modestly better (net Calmar 1.39 vs the 1.32 cash-exit baseline, +7pp net CAGR, 2019–2026), but a MONTHLY hedge fails in every window tested (0.61 full-cycle vs 0.96), and weekly options do not exist before 2019 — so the winning arm has NEVER faced a grinding bear. Verdict: SIGNAL, not deployable. Two further results are firm: NO trailing exit (SuperTrend across six configurations, EMA crosses, premium give-back) beats the plain gate-reversal exit; and the macro GATE, not the Donchian stop, is what prevents deep drawdowns — the same book without the cash exit falls −38.6% versus −16.6% with it, despite identical per-stock stops. This study also documents three modelling bugs found and fixed, which is the main reason it is published.',
+    status: 'COMPLETE',
+    date: '2026-08-07',
+    cardBlurb:
+      'Can buying NIFTY puts replace selling the book at a risk-off gate (and dodge the STCG bill)? Weekly puts edge the baseline (net Calmar 1.39 vs 1.32) but monthly puts fail everywhere, and weeklies did not exist before 2019 — so the winner has never seen a grinding bear. SIGNAL, not deployable. Firm side-findings: no trailing exit beats the plain gate exit, and the macro gate (not the Donchian stop) is what controls drawdown.',
+    cardStats: [
+      { label: 'Verdict', value: 'SIGNAL — not deployable' },
+      { label: 'Weekly hedge net Calmar', value: '1.39 vs 1.32' },
+      { label: 'Monthly hedge (full cycle)', value: '0.61 vs 0.96' },
+    ],
+
+    systemRules: {
+      intro: 'The base book is unchanged; only what happens at a weekly risk-off gate differs.',
+      sharedCoreTitle: 'The three arms',
+      sharedCore: [
+        { k: 'A0 — cash exit (current live)', v: 'Gate risk-off → liquidate all 8 stocks to cash; redeploy at the next rebalance once risk-on. Realizes STCG on every winner.' },
+        { k: 'A1 — hold naked (control)', v: 'Stay fully invested, no hedge. Isolates what the gate is actually worth.' },
+        { k: 'A2 — put hedge (the study)', v: 'Stay invested and buy NIFTY puts sized to ratio × equity. Swept structure (long put / bear put spread), moneyness (ITM2 / ATM / OTM2 / OTM5), tenor (weekly / monthly), ratio (0.5–2.5×) and exit rule.' },
+        { k: 'Hedge sizing', v: 'units = ratio × equity ÷ NIFTY spot, RE-SIZED DAILY as stocks stop out (see caveats — the original fixed-size version was a bug).' },
+        { k: 'Hedge exit', v: 'Primary: close when the gate flips risk-on. Roll to the next expiry while still risk-off. Trailing alternatives all tested and rejected.' },
+        { k: 'Costs', v: 'Option prices are EOD closes with open interest > 0; 0.3% slippage on premium; equity 0.15%/leg; STCG 20% tracked.' },
+      ],
+      riskLayer: {
+        title: 'Head-to-head, same 2019–2026 window (weekly options only exist from 2019)',
+        caption: 'The weekly hedge beats the cash exit on after-tax risk-adjusted return; the monthly hedge does not. All hedged arms use the corrected daily re-sizing.',
+        columns: ['Book', 'Net CAGR', 'Max DD', 'Net Calmar'],
+        rows: [
+          ['A0 cash exit (live baseline)', '31.3%', '−15.4%', '1.32'],
+          ['A1 hold naked', '38.9%', '−23.2%', '1.11'],
+          ['Monthly put hedge (r2.0)', '37.4%', '−18.3%', '1.24'],
+          ['Weekly put hedge (r2.0)', '38.7%', '−17.0%', '1.39'],
+        ],
+        highlightRows: [3],
+      },
+    },
+
+    system: {
+      intro: 'Tested on real NIFTY option EOD closes from nse_options_bhav (monthly 2011→, weekly 2019→) over the live momentum book.',
+      rows: [
+        { k: 'Data', v: 'NIFTY options EOD (open interest > 0); NIFTYBEES for the gate; the research/62 momentum book for the equity leg.' },
+        { k: 'Funding', v: 'Premium paid from idle cash; if short, holdings are trimmed pro-rata — the book runs ~fully invested, so a hedge must be funded honestly.' },
+        { k: 'Windows', v: 'Monthly-tenor arms run the full 2011–2026 cycle (5 risk-off episodes); weekly-tenor arms only 2019–2026.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls and the bugs found.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — the gate, hedge entry, rolls and exits all use data at or before each decision date; option marks are the held contracts’ own closes.' },
+        { k: 'BUG FIXED — hedge over-sizing', v: 'Hedge units were originally fixed at entry, so when stocks stopped out the put notional became 3–4× the remaining book (an unintended naked short). With daily re-sizing the weekly result fell from net Calmar 1.66 to 1.39 — a large part of the original "win" was that bug.' },
+        { k: 'BUG FIXED — SuperTrend', v: 'The first implementation could never turn bearish (100% bullish on every day, all six parameter sets), so every earlier SuperTrend arm placed zero hedges. Rebuilt correctly (55–63% bullish, 19–45 flips) — and then genuinely adds no value.' },
+        { k: 'BUG FIXED — trail re-entry', v: 'A trail exit originally blocked re-entry for the whole risk-off episode, which made any early-firing trail look identical to no hedge. Replaced with a unified want-hedge rule allowing natural re-entry.' },
+        { k: 'Regime gap', v: 'Weekly options begin in 2019, so the winning arm covers one V-shaped crash (COVID) and a strong bull — never a grinding bear like 2015–16, which is exactly where the monthly hedge failed worst.' },
+        { k: 'Lot granularity', v: 'Sizing is modelled continuously. At a ₹20L book one NIFTY lot ≈ ₹18L notional, so real ratios come in ~0.9× steps — a 2.0× hedge is ~2 lots and fine-tuning between 1.5× and 2.0× is not possible at that size.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Full cycle 2011–2026 — the monthly hedge fails badly',
+        caption: 'The only tenor testable across five risk-off episodes loses decisively to simply going to cash.',
+        columns: ['Book', 'Net CAGR', 'Max DD', 'Net Calmar'],
+        rows: [
+          ['A0 cash exit (live)', '29.4%', '−16.6%', '0.96'],
+          ['A1 hold naked', '30.7%', '−38.6%', '0.57'],
+          ['Monthly hedge r1.0 (re-sized)', '30.7%', '−34.4%', '0.63'],
+          ['Monthly hedge r2.0 (re-sized)', '30.6%', '−30.2%', '0.61'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Trailing exits — none beats the plain gate-reversal exit',
+        caption: 'Tested after fixing both the SuperTrend and the re-entry logic. Only the premium give-back edges the baseline, and it does so with a materially worse drawdown.',
+        columns: ['Exit rule', 'Net CAGR', 'Max DD', 'Net Calmar'],
+        rows: [
+          ['Plain gate reversal (baseline cash exit)', '31.3%', '−15.4%', '1.32'],
+          ['SuperTrend (14,3) — best of six', '38.6%', '−18.9%', '1.26'],
+          ['EMA-50 cross', '35.8%', '−20.3%', '1.24'],
+          ['Premium give-back 50%', '38.1%', '−21.9%', '1.37'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'The gate — not the Donchian stop — is what controls drawdown',
+        caption: 'Both arms carry the identical per-stock 15-day Donchian stop. Removing only the cash exit more than doubles the drawdown, because the book keeps re-entering a falling market every month.',
+        columns: ['Book (2011–2026)', 'Max DD', 'Net Calmar'],
+        rows: [
+          ['With the cash gate (live)', '−16.6%', '0.96'],
+          ['Without the cash gate (naked)', '−38.6%', '0.57'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Why the index hedge cannot cover the book',
+        caption: 'A NIFTY-notional put only neutralises the index component; the 8-stock book falls roughly twice as far. Raising the ratio cuts drawdown but the premium bill rises faster than the protection.',
+        columns: ['Hedge ratio (monthly, full cycle)', 'Max DD', 'Net Calmar'],
+        rows: [
+          ['1.0×', '−36.1%', '0.60'],
+          ['2.0×', '−33.8%', '0.59'],
+          ['2.5×', '−32.6%', '0.56'],
+        ],
+        highlightRows: [0],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Verdict', value: 'SIGNAL — not deployable', tone: 'neg' },
+        { label: 'Weekly hedge (2019–26) net Calmar', value: '1.39 vs 1.32 baseline' },
+        { label: 'Monthly hedge (full cycle)', value: '0.61 vs 0.96 baseline', tone: 'neg' },
+        { label: 'Best trailing exit', value: 'none beat the gate exit' },
+        { label: 'Gate vs no gate (drawdown)', value: '−16.6% vs −38.6%' },
+        { label: 'Modelling bugs found & fixed', value: '3' },
+      ],
+      tables: [],
+      embeds: [],
+    },
+
+    winners: [
+      {
+        config: 'None deployable — keep the cash-exit gate',
+        summary: 'The weekly put hedge is a genuine but modest signal (net Calmar 1.39 vs 1.32) that has never been tested through a grinding bear. Until weekly-option history covers such a regime, the plain cash exit remains the right rule.',
+        metrics: [
+          { k: 'Weekly hedge net Calmar', v: '1.39' },
+          { k: 'Baseline net Calmar', v: '1.32' },
+          { k: 'Monthly hedge (full cycle)', v: '0.61' },
+          { k: 'Margin', v: 'thin, single regime' },
+        ],
+        rejected: [
+          'Monthly put hedge — fails in every window tested (0.61 vs 0.96 full cycle)',
+          'Hedge ratios above 1.0× — cut drawdown but premium rises faster than protection',
+          'All trailing exits — SuperTrend (6 configs), EMA crosses, premium give-back',
+          'Hybrid partial de-risk + hedge — dominated in both windows',
+          'Single-stock put hedging — untestable: only 81 large-cap symbols have option data, and 14 of 15 typical momentum holdings have none',
+        ],
+      },
+    ],
+
+    caveats: [
+      'The winning weekly arm covers 2019–2026 only — one V-shaped crash and a strong bull. It has never faced a grinding bear, which is precisely where the monthly hedge failed worst. This is why the verdict is SIGNAL rather than STRATEGY.',
+      'Three modelling bugs were found and fixed during the study (hedge over-sizing, a SuperTrend that could never turn bearish, and trail re-entry blocking). Earlier figures quoted before those fixes were wrong and have been superseded.',
+      'Hedge sizing is continuous in the model; NIFTY lot granularity (~₹18L notional per lot) makes fine ratio control impossible at a ₹20L book.',
+      'All decisions and marks are end-of-day, matching how the book actually trades; intraday behaviour is not modelled.',
+      'Single-stock put hedging could not be evaluated — it is blocked by option-data coverage and, structurally, by momentum picking mid-caps outside the F&O universe.',
+    ],
+
+    githubLinks: [
+      { label: 'research/105 — put-hedge overlay', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/105_momentum_put_hedge' },
+      { label: '← Related: Universe bake-off', href: '/app/backtest/momentum-universe-bakeoff' },
+    ],
+    projectPaths: [
+      'research/105_momentum_put_hedge/scripts/run_hedge_sweep.py, run_hedge_g4.py (re-sizing fix), run_hedge_g5.py (fair trails)',
+      'research/105_momentum_put_hedge/scripts/hedge_diag.py, run_hedge_g3.py; research/107_stock_put_hedge/ (blocked)',
+    ],
+  },
+  {
+    slug: 'momentum-universe-bakeoff',
+    title: 'Momentum Book — Universe Bake-off (Nifty 200 vs 250 vs 51-250 vs Midcap 150 vs 500)',
+    verdict:
+      'Which universe should the momentum book select from? Five bands were tested over 2011-2026, each optimised on its OWN hold/buffer sizing so the comparison is best-versus-best. The answer: KEEP the live Nifty-200 book at 8/22/30. The durable finding is not a ranking but a mechanism — as large caps are stripped out, the drawdown deepens monotonically (Nifty 200 −17.0% → Nifty 250 −17.4% → 51-250 −25.5% → pure Midcap 150 −31.7%). Mega caps add little return but act as drawdown ballast. Pure midcap is the worst trade of all: no more return than Nifty 200 (27.8% vs 27.1%) with nearly double the drawdown. Nifty 250 edges the live book (Calmar 0.92 vs 0.91) but only within noise. Excluding the top 50 gives the highest return (31.0% vs 27.1% net CAGR) but at −25.5% drawdown — a real trade, not a free lunch. Nifty 500 is worse at every matched setting, and demanding more liquidity actively costs return (a ₹25cr ADV screen halves the CAGR), which is a capacity ceiling rather than a filter to apply today. A second robust lesson: optimal holdings scale with universe width (Nifty 200→8, 250→10, 500→16) — the live 8/22/30 is exactly right for Nifty 200.',
+    status: 'COMPLETE',
+    date: '2026-08-07',
+    cardBlurb:
+      'Five universes tested, each optimised on its own sizing. Keep Nifty 200 at 8/22/30. The real finding is a mechanism: strip out large caps and drawdown deepens monotonically (−17% → −25% → −32%) — mega caps are drawdown ballast. Pure midcap = same return, double the drawdown. Excluding the top 50 buys +3.9pp CAGR for a 50% deeper drawdown. Holdings must scale with universe width.',
+    cardStats: [
+      { label: 'Winner', value: 'Nifty 200 · 8/22/30' },
+      { label: 'Net Calmar (live book)', value: '0.91' },
+      { label: 'Pure-midcap drawdown', value: '−31.7%' },
+    ],
+
+    systemRules: {
+      intro: 'Rules held constant across every universe; only the selection band and the hold/buffer sizing change.',
+      sharedCoreTitle: 'Constant across all arms',
+      sharedCore: [
+        { k: 'Signal', v: '6m & 12m relative strength vs NIFTYBEES (rsblend), ranked within the universe band.' },
+        { k: 'Hold / buffer', v: 'Top-N equal-weight with a top-B anti-churn buffer; swept per universe (6/16, 8/22, 10/28, 12/33, 16/44).' },
+        { k: 'Stop', v: 'Per-stock 15-day Donchian EOD exit to cash; redeployed at the next rebalance.' },
+        { k: 'Gate', v: 'Weekly — NIFTYBEES < 100-day SMA → liquidate all to cash.' },
+        { k: 'Rebalance', v: 'Monthly, rotate-only (let winners run).' },
+        { k: 'Costs', v: '0.15%/leg, cash 6.5%, STCG 20% tracked; results quoted NET of STCG. 2011–2026 daily-marked.' },
+        { k: 'Universe bands', v: 'Point-in-time traded-value ranks (survivorship-free). Validated against real trackers: band returns correlate 0.94–0.99 with the real Nifty Smallcap 250 ETF.' },
+      ],
+      riskLayer: {
+        title: 'Best config per universe (each optimised on its own sizing)',
+        caption: 'Ranked by net Calmar. The monotonic drawdown progression as large caps are removed is the robust result; the 0.01 Calmar gaps at the top are noise.',
+        columns: ['Universe', 'Best hold/buffer/pool', 'Net CAGR', 'Max DD', 'Net Calmar', 'Sharpe'],
+        rows: [
+          ['Nifty 250 (1–250, LargeMid)', '10/28/38', '28.0%', '−17.4%', '0.92', '1.81'],
+          ['Nifty 200 (1–200) — LIVE', '8/22/30', '27.1%', '−17.0%', '0.91', '1.70'],
+          ['Nifty 500 (1–500)', '16/44/60', '26.9%', '−18.9%', '0.82', '2.00'],
+          ['Nifty 51–250 (ex top-50)', '8/22/30', '31.0%', '−25.5%', '0.75', '1.87'],
+          ['Midcap 150 (101–250)', '8/22/30', '27.8%', '−31.7%', '0.59', '1.80'],
+        ],
+        highlightRows: [1],
+      },
+    },
+
+    system: {
+      intro: 'Built on the research/62 live-book engine with the universe band and sizing parameterised.',
+      rows: [
+        { k: 'Data', v: 'market_data.db daily close+volume; PIT top-N-by-traded-value bands; NIFTYBEES gate + benchmark.' },
+        { k: 'Grid', v: '5 universes × 5 sizings = 25 configs, plus ADV-screen and cost-sensitivity arms.' },
+        { k: 'Basis', v: 'Daily-marked NAV; CAGR/DD/Calmar quoted net of 20% STCG on gains realized under 365 days.' },
+      ],
+    },
+
+    conditions: {
+      intro: 'Robustness controls.',
+      rows: [
+        { k: 'Look-ahead', v: 'None — momentum and traded-value ranks use only data at or before each decision date.' },
+        { k: 'Survivorship', v: 'Universe is a point-in-time traded-value band, not a current index list — free of survivorship bias.' },
+        { k: 'Multiple testing', v: '25 in-sample configs; the per-universe "optima" carry selection bias. Trust the monotonic mechanisms (large-cap ballast; sizing scales with width), not the 0.01-Calmar rankings.' },
+        { k: 'Proxy validity', v: 'Band proxies validated against the real Nifty Smallcap 250 ETF: monthly-return correlation 0.94–0.99. They do NOT reliably measure the small-minus-large SPREAD (68% agreement) — see the retracted regime finding below.' },
+        { k: 'Capacity', v: 'A ₹25cr ADV liquidity screen halves the CAGR (31%→21%) — part of the edge is compensation for liquidity risk. This is a capacity ceiling at scale (roughly ₹3–5cr+), not a filter to apply at ₹20L.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Sizing must scale with universe width',
+        caption: 'Each universe has its own optimum. Wider universe → more holdings. The Nifty-200 control proves it is not simply "more names is better".',
+        columns: ['Universe', 'hold 8', 'hold 10', 'hold 16', 'Best'],
+        rows: [
+          ['Nifty 200 (net Calmar)', '0.91', '0.87', '0.62', 'hold 8'],
+          ['Nifty 250 (net Calmar)', '0.83', '0.92', '0.70', 'hold 10'],
+          ['Nifty 500 (net Calmar)', '0.76', '0.75', '0.82', 'hold 16'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Liquidity screen and cost sensitivity (Nifty 200 vs 500)',
+        caption: 'Demanding more liquidity costs return — the edge partly lives in less-liquid names. Nifty 500 is worse at every cost level (both lose ≈4pp going 0.15%→0.50%).',
+        columns: ['Setting', 'N200 net CAGR', 'N500 net CAGR', 'N200 net Calmar', 'N500 net Calmar'],
+        rows: [
+          ['No ADV filter, 0.15% cost', '28.5%', '28.3%', '0.99', '0.86'],
+          ['ADV ≥ ₹10cr', '25.9%', '22.4%', '0.85', '0.73'],
+          ['ADV ≥ ₹25cr', '18.4%', '16.8%', '0.56', '0.51'],
+          ['ADV ≥ ₹10cr, 0.50% cost', '21.5%', '17.9%', '0.56', '0.47'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'RETRACTED — the smallcap regime-switch finding',
+        caption: 'An earlier result (switch to Nifty 500 when smallcaps lead → 28.3% CAGR, Calmar 1.01) was WITHDRAWN after reconciliation: the traded-value proxy for smallcap-vs-largecap leadership agrees with the real Nifty Smallcap 250 index only 68% of the time and is inverted at the 12-month horizon. Recorded here so the ground is not re-tilled without real index data.',
+        columns: ['Signal', 'Agreement vs real index', 'Current 6m read', 'Current 12m read'],
+        rows: [
+          ['Real Nifty Smallcap 250 ETF', '—', '+17.7% (leading)', '+9.7% (leading)'],
+          ['Traded-value proxy (best of 6)', '68%', '+5.1% (leading)', '−8.9% (LAGGING — wrong)'],
+        ],
+        highlightRows: [1],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Recommended universe', value: 'Nifty 200 · 8/22/30', tone: 'pos' },
+        { label: 'Net CAGR / Max DD', value: '27.1% / −17.0%' },
+        { label: 'Net Calmar', value: '0.91' },
+        { label: 'Highest-return band (51–250)', value: '31.0% but −25.5% DD' },
+        { label: 'Pure midcap (worst risk-adj)', value: 'Calmar 0.59, −31.7% DD', tone: 'neg' },
+        { label: 'Universes tested', value: '5 × 5 sizings' },
+      ],
+      tables: [],
+      embeds: [
+        { src: '/app/n200_vs_n500_tearsheet.html', height: 2100,
+          caption: 'Interactive Nifty 200 vs Nifty 500 comparison with a selectable date range — growth curves, drawdown curves, year-by-year returns and a pre-tax / net-of-STCG toggle.' },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Nifty 200, top-8 with top-22 buffer (the live book)',
+        summary: 'No wider or narrower universe beat it on risk-adjusted terms. Mega caps earn their place as drawdown ballast, and holdings are correctly sized for a 200-name universe.',
+        metrics: [
+          { k: 'Net CAGR', v: '27.1%' },
+          { k: 'Max DD', v: '−17.0%' },
+          { k: 'Net Calmar', v: '0.91' },
+          { k: 'Sharpe', v: '1.70' },
+        ],
+        rejected: [
+          'Pure Midcap 150 — same return as Nifty 200 with nearly double the drawdown (Calmar 0.59)',
+          'Nifty 500 — worse at every matched liquidity and cost setting',
+          'Nifty 51–250 — higher return (31.0%) but −25.5% drawdown; only if you actively want that trade',
+          'Nifty 250 — better on paper (0.92) but inside the noise band; not worth switching',
+          'ADV liquidity screens — cost return at current book size; a capacity ceiling, not a filter',
+        ],
+      },
+    ],
+
+    caveats: [
+      '25 in-sample configs — per-universe optima carry selection bias. The monotonic mechanisms are the trustworthy output, not the top-of-table ordering.',
+      'Universe bands are traded-value proxies, not real index membership. They track band RETURNS well (0.94–0.99) but not the small-minus-large spread.',
+      'The smallcap regime-switch result was retracted; redoing it properly needs real NIFTY Smallcap 250 index history.',
+      'Capacity: the edge partly compensates liquidity risk, so returns should decay as the book scales past roughly ₹3–5cr into only-liquid names.',
+      'Results are net of 20% STCG but pre-brokerage-nuance; real slippage on mid-caps may exceed the modelled 0.15%/leg.',
+    ],
+
+    githubLinks: [
+      { label: 'research/106 — universe bake-off', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/106_nifty500_universe' },
+      { label: '← Related: Momentum leverage frontier', href: '/app/backtest/momentum-250-leverage-frontier' },
+    ],
+    projectPaths: [
+      'research/106_nifty500_universe/scripts/run_universe_sweep.py, run_n500_sizing.py, run_n500.py',
+      'research/106_nifty500_universe/scripts/reconcile_smallcap.py, calibrate_smallcap.py, proxy_vs_real_bands.py',
+    ],
+  },
+  {
     slug: 'momentum-250-leverage-frontier',
     title: 'Momentum-250 Leverage Frontier — how far can the LIVE momentum book be pushed for return?',
     verdict:
