@@ -91,7 +91,11 @@ def run(mode, ratio=2.0, resize=0.25, tenor='weekly', start=None):
         p = px_now(d)
         proceeds = p * hedge['units'] * (1 - OPT_SLIP)
         cash += proceeds
+        nav_in = max(1e-9, hedge['entry_nav'])
         episodes.append(dict(
+            nav_in=round(nav_in, 4),
+            cost_book=round(100 * hedge['cost'] / nav_in, 3),
+            pnl_book=round(100 * (proceeds - hedge['cost']) / nav_in, 3),
             entry=hedge['entry_d'].strftime("%Y-%m-%d"), exit=d.strftime("%Y-%m-%d"),
             strike=int(hedge['K']), expiry=hedge['E'], spot=round(hedge['entry_spot']),
             prem_in=round(hedge['entry_px'], 1), prem_out=round(p, 1),

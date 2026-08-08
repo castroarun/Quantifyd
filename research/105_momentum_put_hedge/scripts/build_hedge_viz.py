@@ -59,9 +59,9 @@ th{color:var(--faint);font-weight:600;font-size:10.5px;position:sticky;top:0;bac
   <div class="panel" style="margin-top:14px"><b style="font-size:14px">Hedge value held (% of starting capital) — the premium at work</b>
     <svg id="hv" viewBox="0 0 1000 150" style="margin-top:8px"></svg></div>
 
-  <div class="eyebrow">Cumulative premium spent vs cumulative hedge P&amp;L</div>
-  <div class="panel"><svg id="cum" viewBox="0 0 1000 220"></svg>
-    <div class="foot" style="margin-top:8px">The gap between the two lines is the net cost of carrying the hedge across the whole test.</div></div>
+  <div class="eyebrow">What the hedge costs each year — % of the book at the time</div>
+  <div class="panel"><svg id="cum" viewBox="0 0 1000 240"></svg>
+    <div class="foot" style="margin-top:8px" id="dragnote"></div></div>
 
   <div class="eyebrow">Every put purchase (<span id="nEp"></span>)</div>
   <div class="panel"><div class="scroll"><table id="blot"></table></div>
@@ -83,17 +83,18 @@ function bind(){const d=D[CUR];H=d.hedged;B=d.baseline;G=d.gate;EP=d.episodes;BM
 bind();
 const xp=(ds,W,L,R)=>L+(+new Date(ds)-T0)/(T1-T0)*(W-L-R);
 function renderAll(){
-const totCost=EP.reduce((a,e)=>a+e.cost_pct,0), totPnl=EP.reduce((a,e)=>a+e.pnl_pct,0);
+const nYr=new Set(EP.map(e=>e.entry.slice(0,4))).size||1;
+ const totCost=EP.reduce((a,e)=>a+(e.cost_book||0),0)/nYr, totPnl=EP.reduce((a,e)=>a+(e.pnl_book||0),0)/nYr;
 const wins=EP.filter(e=>e.pnl_pct>0).length;
 const offDays=G.filter(g=>g[1]===1).length;
 $("#dnote").textContent=`${dates[0]} to ${dates[dates.length-1]} · ${EP.length} put purchases · hedge active on ${offDays} of ${G.length} days (${Math.round(100*offDays/G.length)}%)`;
 $("#kpis").innerHTML=[
  [EP.length,"put purchases"],
  [wins+" ("+Math.round(100*wins/EP.length)+"%)","were profitable"],
- [(totCost>=0?"":"")+totCost.toFixed(0)+"%","total premium spent"],
- [(totPnl>=0?"+":"")+totPnl.toFixed(0)+"%","NET hedge P&L"]
+ [totCost.toFixed(1)+"%","premium / year (of book)"],
+ [(totPnl>=0?"+":"")+totPnl.toFixed(1)+"%","NET drag / year (of book)"]
 ].map((k,i)=>`<div class="kpi"><div class="big" ${i===3?`style="color:var(--${totPnl>=0?'pos':'neg'})"`:""}>${k[0]}</div><div class="lab">${k[1]}</div></div>`).join("");
-$("#callout").innerHTML=`<b>The puts themselves LOST money.</b> Across ${EP.length} purchases only ${wins} (${Math.round(100*wins/EP.length)}%) paid off; the hedge cost <b>${totCost.toFixed(0)}%</b> of starting capital in premium and returned <b style="color:var(--neg)">${totPnl.toFixed(0)}%</b> net. The hedged book still edged the baseline — but that came from <b>staying invested</b> through the risk-off periods, not from the hedge working. That is why it was not deployed.`;
+$("#callout").innerHTML=`<b>The puts themselves LOST money.</b> Across ${EP.length} purchases only ${wins} (${Math.round(100*wins/EP.length)}%) paid off; the hedge cost <b>${totCost.toFixed(1)}% of the book per year</b> in premium and finished <b style="color:var(--neg)">${totPnl.toFixed(1)}% per year</b> net. The hedged book still edged the baseline — but that came from <b>staying invested</b> through the risk-off periods, not from the hedge working. That is why it was not deployed.`;
 // ── equity chart ──
 function drawEq(){
  const W=1000,Hh=360,L=54,R=14,T=14,Bm=26;
@@ -144,23 +145,33 @@ function drawHV(){
  $("#hv").innerHTML=g;
 }
 function drawCum(){
- const W=1000,Hh=220,L=58,R=14,T=12,Bm=24;
- let c=0,p=0;const cc=[],pp=[];
- EP.forEach(e=>{c+=e.cost_pct;p+=e.pnl_pct;cc.push([e.exit,c]);pp.push([e.exit,p]);});
- const all=cc.concat(pp);let lo=Math.min(...all.map(a=>a[1]),0),hi=Math.max(...all.map(a=>a[1]),1);
+ // ANNUAL bars, normalised to the book at the time (NOT % of starting capital, which inflates
+ // later years ~50x on a compounding book and made the old chart unreadable).
+ const W=1000,Hh=240,L=56,R=14,T=14,Bm=30;
+ const by={};
+ EP.forEach(e=>{const y=e.entry.slice(0,4);by[y]=by[y]||[0,0];
+   by[y][0]+=(e.cost_book||0);by[y][1]+=(e.pnl_book||0);});
+ const yrs=Object.keys(by).sort();
+ if(!yrs.length){$("#cum").innerHTML="";return;}
+ let hi=Math.max(...yrs.map(y=>by[y][0]),1),lo=Math.min(...yrs.map(y=>by[y][1]),-1);
  const y=v=>T+(hi-v)/(hi-lo)*(Hh-T-Bm);
  let g="";
  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,yy=y(v);
    g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}"/><text class="axt" x="${L-6}" y="${yy+3}" text-anchor="end">${v.toFixed(0)}%</text>`;}
- g+=`<line x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}" style="stroke:var(--bd2);stroke-dasharray:3 3"/>`;
- const pth=s=>s.map((q,i)=>(i?"L":"M")+xp(q[0],W,L,R).toFixed(1)+" "+y(q[1]).toFixed(1)).join(" ");
- g+=`<path d="${pth(cc)}" style="fill:none;stroke:var(--neg);stroke-width:2"/>`;
- g+=`<path d="${pth(pp)}" style="fill:none;stroke:var(--pos);stroke-width:2"/>`;
- g+=`<text class="axt" x="${W-R}" y="${y(cc[cc.length-1][1])-6}" text-anchor="end" style="fill:var(--neg)">premium spent ${c.toFixed(0)}%</text>`;
- g+=`<text class="axt" x="${W-R}" y="${y(pp[pp.length-1][1])+14}" text-anchor="end" style="fill:var(--pos)">net hedge P&L ${p.toFixed(0)}%</text>`;
- [...new Set(dates.map(d=>d.slice(0,4)))].forEach(yr=>{const xx=xp(yr+"-01-01",W,L,R);
-   if(xx>L&&xx<W-R)g+=`<text class="axt" x="${xx}" y="${Hh-6}" text-anchor="middle">${yr}</text>`;});
+ g+=`<line x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}" style="stroke:var(--bd2)"/>`;
+ const bw=(W-L-R)/yrs.length;
+ yrs.forEach((yr,i)=>{const x=L+i*bw;
+   const c=by[yr][0],p=by[yr][1];
+   g+=`<rect x="${(x+bw*0.12).toFixed(1)}" y="${y(c).toFixed(1)}" width="${(bw*0.34).toFixed(1)}" height="${Math.max(0,y(0)-y(c)).toFixed(1)}" fill="var(--neg)" opacity=".85"><title>${yr}: premium ${c.toFixed(1)}% of book</title></rect>`;
+   const py=p>=0?y(p):y(0);
+   g+=`<rect x="${(x+bw*0.52).toFixed(1)}" y="${py.toFixed(1)}" width="${(bw*0.34).toFixed(1)}" height="${Math.abs(y(p)-y(0)).toFixed(1)}" fill="var(--${p>=0?'pos':'neg'})" opacity=".6"><title>${yr}: net hedge P&L ${p.toFixed(1)}% of book</title></rect>`;
+   g+=`<text class="axt" x="${(x+bw/2).toFixed(1)}" y="${Hh-10}" text-anchor="middle">${yr}</text>`;});
+ g+=`<text class="axt" x="${L+4}" y="${T+10}" style="fill:var(--neg)">■ premium paid</text>`;
+ g+=`<text class="axt" x="${L+110}" y="${T+10}" style="fill:var(--pos)">■ net hedge P&L (below zero = cost)</text>`;
  $("#cum").innerHTML=g;
+ const tc=EP.reduce((a,e)=>a+(e.cost_book||0),0),tp=EP.reduce((a,e)=>a+(e.pnl_book||0),0);
+ const n=yrs.length;
+ $("#dragnote").innerHTML=`Averaged over ${n} years the hedge cost <b>${(tc/n).toFixed(1)}% of the book per year</b> in premium and finished <b style="color:var(--${tp>=0?'pos':'neg'})">${(tp/n).toFixed(1)}% per year</b> net — i.e. it recovered <b>${(100*(tp+tc)/tc).toFixed(0)}%</b> of every rupee paid (100% would be free insurance). <b>This is the number that matters</b>; earlier versions of this chart plotted % of STARTING capital, which on a book that compounds ~50× makes later years look ~50× larger than they are.`;
 }
 function drawBlot(){
  $("#nEp").textContent=EP.length+" trades";
