@@ -372,14 +372,15 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [0],
       },
       {
-        title: 'RETRACTED — the smallcap regime-switch finding',
-        caption: 'An earlier result (switch to Nifty 500 when smallcaps lead → 28.3% CAGR, Calmar 1.01) was WITHDRAWN after reconciliation: the traded-value proxy for smallcap-vs-largecap leadership agrees with the real Nifty Smallcap 250 index only 68% of the time and is inverted at the 12-month horizon. Recorded here so the ground is not re-tilled without real index data.',
-        columns: ['Signal', 'Agreement vs real index', 'Current 6m read', 'Current 12m read'],
+        title: 'RESOLVED — no smallcap regime effect exists (tested on the real index)',
+        caption: 'An earlier result (switch to Nifty 500 when smallcaps lead → Calmar 1.01) was retracted, then settled by downloading the REAL NIFTY Smallcap 250 index (2011–2026). On the true signal there is NO regime effect whatsoever: the two universes perform identically in both regimes. The original split was an artifact of a traded-value proxy that grades at only 69% agreement / +0.59 correlation over 122 months. Crucially this also proves the Nifty-200 book is NOT left behind in smallcap rallies — it earns 34.9% during smallcap-led months versus Nifty 500’s 34.8%, because the momentum ranking already rotates into the strongest mid-caps.',
+        columns: ['Regime (real Nifty Smallcap 250 signal)', 'Months', 'N200 book', 'N500 book', 'Difference'],
         rows: [
-          ['Real Nifty Smallcap 250 ETF', '—', '+17.7% (leading)', '+9.7% (leading)'],
-          ['Traded-value proxy (best of 6)', '68%', '+5.1% (leading)', '−8.9% (LAGGING — wrong)'],
+          ['Smallcaps leading', '103', '34.9%', '34.8%', '−0.1%'],
+          ['Largecaps leading', '83', '16.9%', '17.1%', '+0.2%'],
+          ['Regime-switched book (real signal)', '—', '26.1% CAGR / Calmar 0.98', 'vs live 27.1% / 0.91', 'no gain'],
         ],
-        highlightRows: [1],
+        highlightRows: [0],
       },
     ],
 
