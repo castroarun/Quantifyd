@@ -245,7 +245,10 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         { label: 'Modelling bugs found & fixed', value: '3' },
       ],
       tables: [],
-      embeds: [],
+      embeds: [
+        { src: '/app/hedge_viz_tearsheet.html', height: 2450,
+          caption: 'Interactive: every put purchase marked on the equity curve (green = profitable, red = loss, hover for strike/premium/P&L), risk-off regimes shaded, the hedge value held over time, cumulative premium spent vs cumulative hedge P&L, and the full 115-trade blotter. The puts lost money net — the hedged book only edged the baseline by staying invested.' },
+      ],
     },
 
     winners: [
