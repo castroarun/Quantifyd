@@ -19,8 +19,10 @@ RES = Path("/home/arun/quantifyd/research/105_momentum_put_hedge/results")
 START = pd.Timestamp("2019-02-01")
 
 
-def run(mode, ratio=2.0, resize=0.25):
-    ix = idx[idx >= START]
+def run(mode, ratio=2.0, resize=0.25, tenor='weekly', start=None):
+    start = start or START
+    lo, hi, want = (22, 45, 30) if tenor == 'monthly' else (3, 12, 7)
+    ix = idx[idx >= start]
     cash, held, prev, derisked, tax = 1.0, {}, None, False, 0.0
     hedge = None; gate_state = False
     nav, gate_log, episodes = [], [], []
@@ -65,7 +67,7 @@ def run(mode, ratio=2.0, resize=0.25):
         eq = E()
         if eq <= 0 or d not in S:
             return
-        Ex = hs.pick_expiry(d, 3, 12, 7)
+        Ex = hs.pick_expiry(d, lo, hi, want)
         if not Ex:
             return
         sp = S[d]
@@ -177,19 +179,19 @@ def run(mode, ratio=2.0, resize=0.25):
     return nav, gate_log, episodes
 
 
-print("running hedged book ...", flush=True)
-navH, gate, eps = run("hedge")
-print(f"  {len(eps)} put purchases recorded", flush=True)
-print("running cash-exit baseline ...", flush=True)
-navB, _, _ = run("cash_exit")
-nb = close[BENCH].loc[close.index >= START].dropna(); nb = nb / nb.iloc[0]
-out = dict(hedged=navH, baseline=navB, gate=gate, episodes=eps,
-           bench=[[d.strftime("%Y-%m-%d"), round(float(v), 5)] for d, v in nb.items()])
+SETS = [("monthly_full", "Monthly puts · full cycle 2011-2026", "monthly", pd.Timestamp("2011-01-01")),
+        ("weekly_2019", "Weekly puts · 2019-2026", "weekly", pd.Timestamp("2019-02-01"))]
+out = {}
+for key, label, tenor, st in SETS:
+    print(f"running {label} ...", flush=True)
+    navH, gate, eps = run("hedge", tenor=tenor, start=st)
+    navB, _, _ = run("cash_exit", tenor=tenor, start=st)
+    nb = close[BENCH].loc[close.index >= st].dropna(); nb = nb / nb.iloc[0]
+    tot_cost = sum(e["cost_pct"] for e in eps); tot_pnl = sum(e["pnl_pct"] for e in eps)
+    win = sum(1 for e in eps if e["pnl_pct"] > 0)
+    print(f"  {len(eps)} puts, {win} winners ({100*win/max(1,len(eps)):.0f}%), "
+          f"premium {tot_cost:.0f}%, net P&L {tot_pnl:+.0f}%, risk-off {sum(g[1] for g in gate)}/{len(gate)} days", flush=True)
+    out[key] = dict(label=label, hedged=navH, baseline=navB, gate=gate, episodes=eps,
+                    bench=[[d.strftime("%Y-%m-%d"), round(float(v), 5)] for d, v in nb.items()])
 json.dump(out, open(RES / "hedge_viz.json", "w"))
-tot_cost = sum(e['cost_pct'] for e in eps); tot_pnl = sum(e['pnl_pct'] for e in eps)
-win = sum(1 for e in eps if e['pnl_pct'] > 0)
-print(f"\nput purchases: {len(eps)}   winners: {win} ({100*win/max(1,len(eps)):.0f}%)")
-print(f"total premium spent: {tot_cost:.1f}% of initial capital")
-print(f"total hedge P&L:     {tot_pnl:+.1f}% of initial capital")
-print(f"risk-off days: {sum(g[1] for g in gate)} of {len(gate)}")
-print("wrote hedge_viz.json", flush=True)
+print("wrote hedge_viz.json with", list(out), flush=True)

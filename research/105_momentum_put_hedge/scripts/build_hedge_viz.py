@@ -33,6 +33,13 @@ th{color:var(--faint);font-weight:600;font-size:10.5px;position:sticky;top:0;bac
   <h1>Put-Hedge Overlay — where the puts were bought, and what they cost</h1>
   <div class="sub">The tested arm: at a weekly risk-off gate, <b>hold the 8 stocks and buy ATM NIFTY weekly puts at 2× equity</b> instead of selling to cash. Re-sized daily, rolled at expiry, closed when the gate turns risk-on. 2019–2026 (weekly options don't exist earlier). <b>Red bands = gate risk-off (hedge active).</b></div>
 
+  <div class="panel" style="padding:11px 14px;margin-bottom:12px">
+    <label style="font-size:12.5px;color:var(--mut)">Period / tenor &nbsp;
+      <select id="dsel" style="background:var(--panel2);color:inherit;border:1px solid var(--bd2);border-radius:6px;padding:6px 10px;font:inherit;font-size:13px"></select>
+    </label>
+    <span id="dnote" style="font-size:12px;color:var(--faint);margin-left:10px"></span>
+  </div>
+
   <div class="kpis" id="kpis"></div>
 
   <div class="callout" id="callout"></div>
@@ -67,13 +74,19 @@ th{color:var(--faint);font-weight:600;font-size:10.5px;position:sticky;top:0;bac
 <script>
 const D=""" + DATA + r""";
 const $=s=>document.querySelector(s),tip=$("#tip");
-const H=D.hedged,B=D.baseline,G=D.gate,EP=D.episodes,BM=D.bench;
-const dates=H.map(r=>r[0]);
-const T0=+new Date(dates[0]),T1=+new Date(dates[dates.length-1]);
+const KEYS=Object.keys(D);
+$("#dsel").innerHTML=KEYS.map(k=>`<option value="${k}">${D[k].label}</option>`).join("");
+let CUR=KEYS[0];
+let H,B,G,EP,BM,dates,T0,T1;
+function bind(){const d=D[CUR];H=d.hedged;B=d.baseline;G=d.gate;EP=d.episodes;BM=d.bench;
+  dates=H.map(r=>r[0]);T0=+new Date(dates[0]);T1=+new Date(dates[dates.length-1]);}
+bind();
 const xp=(ds,W,L,R)=>L+(+new Date(ds)-T0)/(T1-T0)*(W-L-R);
+function renderAll(){
 const totCost=EP.reduce((a,e)=>a+e.cost_pct,0), totPnl=EP.reduce((a,e)=>a+e.pnl_pct,0);
 const wins=EP.filter(e=>e.pnl_pct>0).length;
 const offDays=G.filter(g=>g[1]===1).length;
+$("#dnote").textContent=`${dates[0]} to ${dates[dates.length-1]} · ${EP.length} put purchases · hedge active on ${offDays} of ${G.length} days (${Math.round(100*offDays/G.length)}%)`;
 $("#kpis").innerHTML=[
  [EP.length,"put purchases"],
  [wins+" ("+Math.round(100*wins/EP.length)+"%)","were profitable"],
@@ -163,6 +176,9 @@ $("#read").innerHTML=`<b>Read the red bands first.</b> They mark every period th
 <b>The triangles are the individual put purchases</b> — green pointing up where the put made money, red pointing down where it expired or was closed at a loss. Hover any of them for the strike, premium in/out and P&L. The visual pattern is stark: a dense run of small red losses punctuated by a handful of large green wins around genuine selloffs (notably early 2020).<br><br>
 <b>The bottom chart is the verdict.</b> Cumulative premium spent climbs relentlessly while cumulative hedge P&L does not keep up — the puts finished <b style="color:var(--neg)">${totPnl.toFixed(0)}%</b> net across ${EP.length} purchases with only a ${Math.round(100*wins/EP.length)}% hit rate. The hedged book still edged the cash-exit baseline on risk-adjusted return, but that advantage came from <b>remaining invested in the 8 momentum stocks</b> through the risk-off windows — not from the hedge. Paying a losing insurance premium to justify staying invested is a far weaker thesis than it first appears, and it is the reason this was recorded as a SIGNAL and left out of the live book.`;
 drawEq();drawHV();drawCum();drawBlot();
+}
+renderAll();
+$("#dsel").onchange=e=>{CUR=e.target.value;bind();renderAll();};
 </script>"""
 open("/home/arun/quantifyd/frontend/public/hedge_viz_tearsheet.html", "w", encoding="utf-8").write(HTML)
 print("wrote hedge_viz_tearsheet.html", len(HTML), "chars")
