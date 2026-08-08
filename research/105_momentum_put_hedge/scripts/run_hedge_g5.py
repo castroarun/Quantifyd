@@ -78,7 +78,9 @@ print(flush=True)
 
 def run3(mode="hedge", tenor="weekly", moneyness=0.0, ratio=2.0, resize=0.25,
          trail=None, start=pd.Timestamp("2019-02-01")):
-    lo, hi, want = (22, 45, 30) if tenor == "monthly" else (3, 12, 7)
+    SPEC = {"weekly": (3, 12, 7), "biweekly": (8, 20, 14),
+            "triweekly": (15, 28, 21), "monthly": (22, 45, 30)}
+    lo, hi, want = SPEC.get(tenor, (3, 12, 7))
     ix = idx[idx >= start]
     cash, held, prev, derisked, tax = 1.0, {}, None, False, 0.0
     hedge = None; gate_state = False; prem_block_until = None
