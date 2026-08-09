@@ -36,6 +36,8 @@ def build_report() -> dict:
     issues = []
     if st.get("last_daily") != today:
         issues.append(f"EOD job may not have run today (last_daily={st.get('last_daily')}) — Donchian stops/gate not applied")
+    if st.get("gate") == "OFF" and not st.get("hedge"):
+        issues.append("Gate is RISK-OFF but NO hedge is open — the book is invested and unprotected")
     if st.get("mode") == "LIVE":
         # surface any live-execution concern for the alert flag
         if st.get("n_holdings", 0) == 0 and st.get("gate") == "ON":
@@ -48,7 +50,7 @@ def build_report() -> dict:
         n_holdings=st.get("n_holdings", 0), holdings=holdings,
         entries=entries, exits=exits, closed_today=closed_today, pnl_today=pnl_today,
         gate_last=st.get("gate_last"), gate_sma=st.get("gate_sma"), gate_gap=st.get("gate_gap_pct"),
-        stcg_booked=st.get("stcg_booked", 0), last_daily=st.get("last_daily"),
+        hedge=st.get("hedge"), stcg_booked=st.get("stcg_booked", 0), last_daily=st.get("last_daily"),
         last_monthly=st.get("last_monthly"), issues=issues)
 
 
@@ -95,6 +97,29 @@ def render_html(r) -> str:
         hold += f"<tr>{row_cells(cells)}</tr>"
     hold += "</table>"
 
+    h = r.get("hedge")
+    if h:
+        pc = h.get("pnl", 0)
+        col = "#1f9d55" if pc >= 0 else "#c0392b"
+        hedge_html = (
+            '<div style="margin:14px 0 4px;font-weight:600">Downside hedge '
+            '<span style="background:#c0392b;color:#fff;padding:1px 7px;border-radius:4px;font-size:11px">'
+            'HEDGE ACTIVE</span></div>'
+            '<table style="border-collapse:collapse;width:100%;font-size:13px">'
+            f'<tr><td style="padding:5px 9px;border-bottom:1px solid #eee"><b>{h["tsym"]}</b> '
+            f'({h.get("lots") or "?"} lot, {h["qty"]} qty, {h["dte"]}d left)</td>'
+            f'<td style="padding:5px 9px;border-bottom:1px solid #eee">premium {_inr(h["cost"])}</td>'
+            f'<td style="padding:5px 9px;border-bottom:1px solid #eee">now {_inr(h["value"])}</td>'
+            f'<td style="padding:5px 9px;border-bottom:1px solid #eee;color:{col}">'
+            f'{"+" if pc >= 0 else ""}{_inr(pc)}</td></tr></table>')
+    elif r["gate"] != "ON":
+        hedge_html = ('<div style="margin:14px 0;padding:9px 12px;background:#fff3cd;border:1px solid '
+                      '#ffe08a;border-radius:6px;font-size:13px;color:#8a6d00">Gate is RISK-OFF but no '
+                      'hedge is open — the book is invested and unprotected.</div>')
+    else:
+        hedge_html = ('<div style="margin:12px 0 2px;font-size:12.5px;color:#888">No hedge — gate is '
+                      'risk-on. A bi-weekly 2× NIFTY put is bought automatically at the next '
+                      'risk-off gate.</div>')
     flag = " ⚠️" if r["issues"] else ""
     issues_html = ""
     if r["issues"]:
@@ -120,6 +145,7 @@ def render_html(r) -> str:
         </tr></table>
         <div style="font-weight:600;margin:12px 0 2px">Today's activity</div>
         {act}
+        {hedge_html}
         <div style="font-weight:600;margin:14px 0 2px">Holdings</div>
         {hold}
         <div style="font-size:12px;color:#666;margin-top:10px">

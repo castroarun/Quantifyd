@@ -15,6 +15,16 @@ type Closed = {
   holding_days: number; stcg_tax: number;
 };
 type NavPt = { d: string; nav: number; bench: number | null; gate: string };
+type Hedge = {
+  tsym: string; strike: number; expiry: string; qty: number; lots: number | null;
+  entry_date: string; entry_price: number; price: number | null; cost: number;
+  value: number; pnl: number; pnl_pct: number; dte: number;
+} | null;
+type HedgeClosed = {
+  id: number; tsym: string; strike: number; expiry: string; qty: number; entry_date: string;
+  entry_price: number; exit_date: string; exit_price: number; cost: number; proceeds: number;
+  pnl: number; reason: string;
+};
 type State = {
   seeded: boolean; gate: string; inception: string | null; capital: number; nav: number;
   cash: number; equity: number; invested_pct: number; total_return_pct: number;
@@ -25,6 +35,7 @@ type State = {
   data_asof: string | null; target_basket: Target[]; gate_last: number | null;
   gate_sma: number | null; gate_gap_pct: number | null;
   holdings: Holding[]; navcurve: NavPt[]; closed: Closed[]; rules: [string, string, string][];
+  hedge: Hedge; hedge_closed: HedgeClosed[];
 };
 
 const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
@@ -107,6 +118,8 @@ export default function MomentumPaper() {
         <Kpi label="Realized (net)" value={inr(s.realized_net)} tone={s.realized_net >= 0 ? 'pos' : 'neg'} />
         <Kpi label={`Liquid yield @${s.cash_yield_pct}%`} value={inr(s.interest_earned)} tone="pos" />
       </div>
+
+      <HedgePanel s={s} />
 
       <CashPanel s={s} reload={load} />
 
@@ -275,6 +288,76 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
     <div className={styles.kpi}>
       <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
+    </div>
+  );
+}
+
+function HedgePanel({ s }: { s: State }) {
+  const h = s.hedge;
+  const hist = s.hedge_closed || [];
+  const riskOn = s.gate !== 'OFF';
+  const totPnl = hist.reduce((a, x) => a + x.pnl, 0);
+  const wins = hist.filter((x) => x.pnl > 0).length;
+  const box: React.CSSProperties = {
+    background: 'var(--panel2,#1c232c)', border: '1px solid var(--border,#333)',
+    borderRadius: 8, padding: '10px 13px', fontSize: 13,
+  };
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>
+        Downside hedge — bi-weekly NIFTY puts @ 2× equity
+        <span style={{
+          marginLeft: 10, padding: '2px 9px', borderRadius: 5, fontSize: 11, fontWeight: 700,
+          color: '#fff', background: h ? '#c0392b' : '#39424e',
+        }}>{h ? 'HEDGE ACTIVE' : 'NOT HEDGED'}</span>
+      </div>
+      {h ? (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 10 }}>
+            <div style={box}><b>{h.tsym}</b><div style={{ color: 'var(--ink-muted,#888)', fontSize: 12 }}>
+              {h.lots ?? '—'} lot{(h.lots ?? 0) === 1 ? '' : 's'} · {h.qty} qty · {h.dte}d to expiry</div></div>
+            <div style={box}>Premium paid<div><b>{inr(h.cost)}</b> @ {h.entry_price}</div></div>
+            <div style={box}>Now worth<div><b>{inr(h.value)}</b>{h.price ? ` @ ${h.price}` : ''}</div></div>
+            <div style={box}>Hedge P&amp;L<div style={{ color: h.pnl >= 0 ? '#1f9d55' : '#c0392b' }}>
+              <b>{h.pnl >= 0 ? '+' : ''}{inr(h.pnl)}</b> ({pct(h.pnl_pct)})</div></div>
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-muted,#888)' }}>
+            Bought {h.entry_date} on the risk-off gate. Strike {h.strike}, expiry {h.expiry}. It re-sizes if
+            holdings stop out, rolls at expiry while the gate stays risk-off, and is sold when the gate turns risk-on.
+          </div>
+        </>
+      ) : (
+        <div style={{ fontSize: 12.5, color: 'var(--ink-muted,#888)' }}>
+          {riskOn
+            ? 'Gate is risk-ON, so the book is fully invested and unhedged — as intended. A put is bought automatically at the next risk-off gate.'
+            : 'Gate is risk-OFF but no hedge is open — check the alert email (premium may have exceeded the cash or the 6%-of-NAV cap).'}
+        </div>
+      )}
+      {hist.length > 0 && (
+        <details style={{ marginTop: 12 }}>
+          <summary style={{ cursor: 'pointer', fontSize: 13 }}>
+            Past hedges ({hist.length}) — {wins} profitable, net{' '}
+            <b style={{ color: totPnl >= 0 ? '#1f9d55' : '#c0392b' }}>{totPnl >= 0 ? '+' : ''}{inr(totPnl)}</b>
+          </summary>
+          <div style={{ maxHeight: 260, overflow: 'auto', marginTop: 8 }}>
+            <table className={styles.table}>
+              <thead><tr><th>Contract</th><th>Held</th><th>Premium</th><th>Exit</th><th>P&amp;L</th><th>Why closed</th></tr></thead>
+              <tbody>
+                {hist.map((x) => (
+                  <tr key={x.id}>
+                    <td>{x.tsym}</td>
+                    <td>{x.entry_date} → {x.exit_date}</td>
+                    <td>{inr(x.cost)}</td>
+                    <td>{inr(x.proceeds)}</td>
+                    <td style={{ color: x.pnl >= 0 ? '#1f9d55' : '#c0392b' }}>{x.pnl >= 0 ? '+' : ''}{inr(x.pnl)}</td>
+                    <td style={{ color: 'var(--ink-muted,#888)' }}>{x.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      )}
     </div>
   );
 }
