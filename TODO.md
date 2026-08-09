@@ -2,6 +2,13 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-09 — research/110 alt-info intraday CONCLUDED: NO EDGE (0/14) — intraday line CLOSED
+Cross-sectional RS dead both directions; event-proxy fade fake (flips in Val); flow
+proxies negative everywhere. 58 intraday constructions total across r/89+109+110:
+OHLCV-derived intraday edge does not clear costs. Would need external data (news
+feeds, order-book depth) to reopen. Both new paper books (ORB revival Rs10L,
+OHOL first-candle 1-lot) LIVE from Mon 2026-08-10; /app pages pending.
+
 ## 2026-08-09 — research/109 intraday stocks CONCLUDED: NO EDGE net of costs
 9 families/35 cells/1.94M trades: best signal (narrow-CPR trend-day short) carries
 +5-9bps real excess vs ~10bps cost floor; all Val nets negative. 20%-CAGR intraday

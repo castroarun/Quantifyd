@@ -1,6 +1,6 @@
 # Intraday Alternative-Information Systems — Cross-Sectional RS, Flow Proxies, Event Drift (5-min, 150 Names)
 
-STATUS: RUNNING (wave 1)
+STATUS: DONE — NO EDGE, 0/14 cells (see results/RESULTS.md); intraday research line CLOSED
 
 ## 1. The Ask
 
