@@ -118,7 +118,13 @@ CFG = dict(
     hedge_dte_min=8, hedge_dte_max=20,
     hedge_resize_drift=0.25,  # re-size when notional drifts >25% from target (stocks stopping out)
     hedge_moneyness=0.0,      # ATM
-    hedge_max_premium_pct=0.06,  # refuse to spend more than 6% of NAV on one hedge (sanity cap)  # v1 monthly rebalance policy: never TRIM kept winners (top-up only) →
+    hedge_max_premium_pct=0.06,  # refuse to spend more than 6% of NAV on one hedge (sanity cap)
+    live_cash_sweep=False,    # True only once real LIQUIDCASE buy/sell orders are implemented.
+                              # While False, LIVE mode accrues NO cash yield (idle cash in the Zerodha
+                              # ledger genuinely earns 0) so live NAV is never overstated. PAPER keeps
+                              # the 6.5% accrual so it stays comparable with the backtest.
+    cash_reserve_pct=0.03,    # NEVER deploy the last 3% of NAV — keeps the hedge premium always fundable
+                              # (a 2x bi-weekly ATM put costs ~1.2-1.5% of NAV; 3% gives ~2x headroom)  # v1 monthly rebalance policy: never TRIM kept winners (top-up only) →
                                 # avoids partial-lot STCG churn; new names sized to equal weight
 )
 
@@ -136,8 +142,12 @@ RULES = [
      "If NIFTYBEES is below its 100-day SMA → liquidate ALL 8 to cash. Redeploys at the next month-end once it reclaims the 100-DMA."),
     ("Donchian stop", "DAILY — ~15:15 IST (pre-close, executable)",
      "If any holding is below its own prior-15-day low → exit just that one stock to cash."),
+    ("Hedge cash reserve", "continuous",
+     "Never deploy the last 3% of NAV — guarantees the bi-weekly put premium can always be funded, "
+     "so the book is never left invested and unhedged through a risk-off gate."),
     ("Idle cash", "continuous",
-     "Risk-off / un-deployed cash parked in a liquid fund (LIQUIDCASE) earning ~6.5% p.a."),
+     "PAPER: idle cash accrues a modelled ~6.5% p.a. (matches the backtest). LIVE: accrues 0 until "
+     "a real LIQUIDCASE sweep is implemented — idle cash in the Zerodha ledger earns nothing."),
     ("Costs", "per trade",
      "Net of ~0.3% round-trip (mostly STT; Zerodha delivery brokerage ≈ 0)."),
     ("Tax", "on booked gains",
@@ -670,6 +680,13 @@ def _cash():
     return float(_get("cash", 0.0))
 
 
+def _deployable_cash(nav=None):
+    """Cash available for STOCK purchases — always holds back cash_reserve_pct of NAV so a hedge
+    premium can be funded at any risk-off gate. Never returns a negative number."""
+    reserve = (nav if nav is not None else (_equity_value() + _cash())) * CFG["cash_reserve_pct"]
+    return max(0.0, _cash() - reserve)
+
+
 def _record_fill(symbol, side, price, qty, reason):
     value = price * qty; cost = value * (CFG["cost_rt"] / 2)
     c = _conn()
@@ -796,7 +813,7 @@ def seed(force=False):
     d = date.today().isoformat()
     if not risk_off:
         live = _live_prices(top8)
-        per = CFG["capital"] / len(top8)
+        per = (CFG["capital"] * (1 - CFG["cash_reserve_pct"])) / len(top8)
         for s in top8:
             p = live.get(s)
             if p:
@@ -813,8 +830,11 @@ def daily_job(panel=None):
     if not _get("seeded"):
         return
     # one trading-day of liquid-fund yield on idle/risk-off cash (LIQUIDCASE @6.5% p.a.)
-    if _cash() > 0:
-        new_cash = _cash() * (1 + CFG["cash_yield"]) ** (1 / 252)
+    # Modelled liquid-fund yield. In LIVE this is only real if the cash is actually swept into
+    # LIQUIDCASE — until that is implemented, accrue nothing so live NAV stays honest.
+    _yield = 0.0 if (_is_live() and not CFG["live_cash_sweep"]) else CFG["cash_yield"]
+    if _cash() > 0 and _yield > 0:
+        new_cash = _cash() * (1 + _yield) ** (1 / 252)
         _set("interest_earned", round(_get("interest_earned", 0.0) + (new_cash - _cash()), 2))
         _set("cash", new_cash)
     if panel is None:
@@ -871,7 +891,7 @@ def weekly_job(panel=None):
             if etf:
                 top8 = etf[:CFG["n_hold"]]
                 live = _live_prices(top8)
-                per = _cash() / len(top8)
+                per = _deployable_cash() / len(top8)
                 for s in top8:
                     px = live.get(s, close[s].loc[:asof].dropna().iloc[-1])
                     _buy(s, px, per, d, "GATE_REENTRY")
@@ -909,7 +929,7 @@ def monthly_job(panel=None):
     target = (kept + [s for s in top8 if s not in kept])[:CFG["n_hold"]]
     nav = sum(_positions()[s]["qty"] * live.get(s, _positions()[s]["entry_price"])
               for s in _positions()) + _cash()
-    per = nav / len(target)
+    per = (nav * (1 - CFG["cash_reserve_pct"])) / len(target)
     # Rotate-only in BOTH modes: sell names that fell out of the top-22 buffer, buy new names from
     # freed cash, and let winners RIDE (no equal-weight trim). Backtest-confirmed return-neutral vs
     # trimming (34.3% vs 34.6% CAGR), with ~13% less turnover cost and ~20% less realized STCG. The
@@ -942,7 +962,7 @@ def _rebalance_live_delta(target, per, live, close, asof, d):
     new_names = [s for s in target if s not in _positions() and live.get(s)]
     if not new_names:
         return
-    budget_each = _cash() / len(new_names)           # split available cash so we never go negative
+    budget_each = _deployable_cash() / len(new_names)   # keeps the hedge reserve intact
     for s in new_names:
         _buy(s, live[s], min(per, budget_each), d, "REBALANCE")
 
