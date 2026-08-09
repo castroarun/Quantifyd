@@ -110,7 +110,15 @@ CFG = dict(
     live_max_order_value=1_500_000,  # per-order sanity cap (₹) — refuse any single live order above this
     live_fill_timeout=90,     # seconds to poll a MARKET order for a COMPLETE fill before giving up
     live_slippage_alert=0.01,  # log a SLIPPAGE alert if |fill − expected| exceeds 1% of expected
-    live_rebalance_trim=False,  # v1 monthly rebalance policy: never TRIM kept winners (top-up only) →
+    live_rebalance_trim=False,
+    # ── PUT HEDGE (research/105: bi-weekly 2x is the best tenor/ratio) ──
+    hedge_enabled=True,       # at a risk-off gate: hold the stocks + buy NIFTY puts instead of selling
+    hedge_ratio=2.0,          # put notional = 2.0 x equity value
+    hedge_dte_target=14,      # bi-weekly — the next week's expiry (best tenor tested)
+    hedge_dte_min=8, hedge_dte_max=20,
+    hedge_resize_drift=0.25,  # re-size when notional drifts >25% from target (stocks stopping out)
+    hedge_moneyness=0.0,      # ATM
+    hedge_max_premium_pct=0.06,  # refuse to spend more than 6% of NAV on one hedge (sanity cap)  # v1 monthly rebalance policy: never TRIM kept winners (top-up only) →
                                 # avoids partial-lot STCG churn; new names sized to equal weight
 )
 
@@ -160,6 +168,13 @@ def init_db():
         d TEXT PRIMARY KEY, equity REAL, cash REAL, nav REAL, invested_pct REAL,
         gate TEXT, bench_close REAL, unrealized REAL);
       CREATE TABLE IF NOT EXISTS mp_state(key TEXT PRIMARY KEY, val TEXT);
+      CREATE TABLE IF NOT EXISTS mp_hedge(
+        id INTEGER PRIMARY KEY CHECK(id=1), tsym TEXT, token INTEGER, strike REAL, expiry TEXT,
+        lot INTEGER, qty REAL, entry_price REAL, entry_date TEXT, entry_spot REAL, cost REAL);
+      CREATE TABLE IF NOT EXISTS mp_hedge_closed(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, tsym TEXT, strike REAL, expiry TEXT, qty REAL,
+        entry_date TEXT, entry_price REAL, exit_date TEXT, exit_price REAL,
+        cost REAL, proceeds REAL, pnl REAL, reason TEXT);
     """)
     c.commit(); c.close()
 
@@ -407,6 +422,245 @@ def _donchian_low(close, sym, asof):
     return float(cs.iloc[-n - 1:-1].min()) if len(cs) > n else None
 
 
+
+# ───────────────────── PUT HEDGE (bi-weekly 2x) ─────────────────────
+def _hedge_get():
+    r = _conn().execute("SELECT * FROM mp_hedge WHERE id=1").fetchone()
+    return dict(r) if r else None
+
+
+def _hedge_save(d):
+    c = _conn()
+    c.execute("INSERT OR REPLACE INTO mp_hedge(id,tsym,token,strike,expiry,lot,qty,entry_price,"
+              "entry_date,entry_spot,cost) VALUES(1,?,?,?,?,?,?,?,?,?,?)",
+              (d["tsym"], d["token"], d["strike"], d["expiry"], d["lot"], d["qty"],
+               d["entry_price"], d["entry_date"], d["entry_spot"], d["cost"]))
+    c.commit()
+
+
+def _hedge_clear():
+    c = _conn(); c.execute("DELETE FROM mp_hedge WHERE id=1"); c.commit()
+
+
+def _nifty_spot():
+    q = _kite().quote(["NSE:NIFTY 50"])
+    return float(q["NSE:NIFTY 50"]["last_price"])
+
+
+def _opt_ltp(tsym):
+    q = _kite().quote([f"NFO:{tsym}"])
+    return float(q[f"NFO:{tsym}"]["last_price"])
+
+
+def _hedge_pick():
+    """Pick the ~14-DTE (bi-weekly) NIFTY PE nearest ATM. Returns contract dict or None."""
+    from datetime import date as _d
+    k = _kite()
+    inst = [i for i in k.instruments("NFO")
+            if i.get("name") == "NIFTY" and i.get("instrument_type") == "PE"]
+    if not inst:
+        return None
+    today = _d.today()
+
+    def dte(e):
+        e = e.date() if hasattr(e, "date") else e
+        return (e - today).days
+    cand = sorted({i["expiry"] for i in inst
+                   if CFG["hedge_dte_min"] <= dte(i["expiry"]) <= CFG["hedge_dte_max"]},
+                  key=lambda e: abs(dte(e) - CFG["hedge_dte_target"]))
+    if not cand:
+        logger.warning("[MP-HEDGE] no expiry in the %d-%d DTE window",
+                       CFG["hedge_dte_min"], CFG["hedge_dte_max"])
+        return None
+    exp = cand[0]
+    spot = _nifty_spot()
+    target = spot * (1 + CFG["hedge_moneyness"])
+    pool = [i for i in inst if i["expiry"] == exp]
+    best = min(pool, key=lambda i: abs(float(i["strike"]) - target))
+    e = best["expiry"]
+    return dict(tsym=best["tradingsymbol"], token=int(best["instrument_token"]),
+                strike=float(best["strike"]),
+                expiry=(e.date() if hasattr(e, "date") else e).isoformat(),
+                lot=int(best["lot_size"]), spot=spot, dte=dte(best["expiry"]))
+
+
+def _hedge_target_qty(equity, spot, lot):
+    """Whole lots closest to ratio x equity of notional."""
+    if spot <= 0 or lot <= 0:
+        return 0
+    lots = round(CFG["hedge_ratio"] * equity / (spot * lot))
+    return int(max(0, lots) * lot)
+
+
+def _equity_value(live=None):
+    pos = _positions()
+    if not pos:
+        return 0.0
+    live = live or _live_prices(list(pos))
+    return sum(p["qty"] * (live.get(s) or p["entry_price"]) for s, p in pos.items())
+
+
+def _place_opt_market(tsym, side, qty):
+    """Real NFO option MARKET order (NRML), blocking until filled. Mirrors _place_cnc_market,
+    including the two-key safety. Reached ONLY when live_mode is on."""
+    import time as _time
+    if str(_get("live_armed", "0")).lower() not in ("1", "true", "on", "yes"):
+        _alert("LIVE ORDER BLOCKED", f"{side} {tsym} x{int(qty)} blocked — live_armed not set.", "high")
+        raise RuntimeError("two-key safety: live_armed not set — option order blocked")
+    k = _kite()
+    oid = k.place_order(
+        variety=k.VARIETY_REGULAR, exchange=k.EXCHANGE_NFO, tradingsymbol=tsym,
+        transaction_type=(k.TRANSACTION_TYPE_BUY if side == "BUY" else k.TRANSACTION_TYPE_SELL),
+        quantity=int(qty), product=k.PRODUCT_NRML, order_type=k.ORDER_TYPE_MARKET,
+        validity=k.VALIDITY_DAY, tag="MOM-HEDGE")
+    logger.warning(f"[MP-HEDGE-LIVE] {side} {tsym} x{int(qty)} → order {oid} placed")
+    deadline = _time.time() + CFG["live_fill_timeout"]
+    while _time.time() < deadline:
+        _time.sleep(1.5)
+        try:
+            hist = k.order_history(oid)
+        except Exception as e:
+            logger.warning(f"[MP-HEDGE-LIVE] order_history({oid}) error: {e}")
+            continue
+        last = hist[-1] if hist else {}
+        status = (last.get("status") or "").upper()
+        if status == "COMPLETE":
+            avg = float(last.get("average_price") or 0)
+            fq = int(last.get("filled_quantity") or qty)
+            logger.warning(f"[MP-HEDGE-LIVE] {side} {tsym} FILLED {fq}@{avg:.2f}")
+            return avg, fq
+        if status in ("REJECTED", "CANCELLED"):
+            _alert(f"HEDGE ORDER {status}", f"{side} {tsym} x{int(qty)}: {last.get('status_message')}", "high")
+            raise RuntimeError(f"option order {oid} {status}: {last.get('status_message')}")
+    _alert("HEDGE ORDER TIMEOUT", f"{side} {tsym} x{int(qty)} not filled in {CFG['live_fill_timeout']}s", "high")
+    raise TimeoutError(f"option order {oid} not COMPLETE within {CFG['live_fill_timeout']}s")
+
+
+def _hedge_fund(amount, d):
+    """Premium is paid from idle cash only. The book normally carries enough (Donchian stop-outs and
+    the debt sleeve leave cash idle); if it does not, we SKIP the hedge rather than force-sell stock —
+    trimming winners to buy insurance is exactly the churn this book was fixed to avoid."""
+    if _cash() >= amount:
+        return True
+    logger.warning("[MP-HEDGE] insufficient idle cash (Rs%.0f) for premium Rs%.0f — skipping hedge",
+                   _cash(), amount)
+    _alert("HEDGE SKIPPED — NO CASH",
+           f"Needed Rs{amount:,.0f} premium but only Rs{_cash():,.0f} idle cash. Book is UNHEDGED "
+           f"and still fully invested through a risk-off gate.", "high")
+    return False
+
+
+def hedge_open(reason="GATE_RISK_OFF"):
+    """Buy the bi-weekly ATM put sized to hedge_ratio x equity."""
+    from datetime import date as _d
+    if not CFG["hedge_enabled"] or _hedge_get():
+        return None
+    eq = _equity_value()
+    if eq <= 0:
+        return None
+    try:
+        c = _hedge_pick()
+    except Exception as e:
+        logger.error(f"[MP-HEDGE] contract pick failed: {e}"); _alert("HEDGE PICK FAILED", str(e), "high")
+        return None
+    if not c:
+        return None
+    qty = _hedge_target_qty(eq, c["spot"], c["lot"])
+    if qty <= 0:
+        logger.warning("[MP-HEDGE] equity too small for one lot — no hedge")
+        return None
+    try:
+        ltp = _opt_ltp(c["tsym"])
+    except Exception as e:
+        logger.error(f"[MP-HEDGE] ltp failed: {e}"); return None
+    cost = ltp * qty
+    nav = eq + _cash()
+    if cost > nav * CFG["hedge_max_premium_pct"]:
+        logger.warning("[MP-HEDGE] premium %.0f > %.0f%% of NAV — skipping hedge",
+                       cost, CFG["hedge_max_premium_pct"] * 100)
+        _alert("HEDGE SKIPPED", f"Premium Rs{cost:,.0f} exceeds "
+               f"{CFG['hedge_max_premium_pct']*100:.0f}% of NAV Rs{nav:,.0f}", "normal")
+        return None
+    d = _d.today().isoformat()
+    if not _hedge_fund(cost, d):
+        logger.warning("[MP-HEDGE] could not fund premium"); return None
+    if _is_live():
+        try:
+            ltp, qty = _place_opt_market(c["tsym"], "BUY", qty)
+            cost = ltp * qty
+        except Exception as e:
+            logger.error(f"[MP-HEDGE] live buy failed: {e}")
+            _alert("HEDGE BUY FAILED", f"{c['tsym']} x{qty}: {e}", "high"); return None
+    _set("cash", _cash() - cost)
+    _hedge_save(dict(tsym=c["tsym"], token=c["token"], strike=c["strike"], expiry=c["expiry"],
+                     lot=c["lot"], qty=qty, entry_price=ltp, entry_date=d, entry_spot=c["spot"],
+                     cost=cost))
+    logger.warning(f"[MP-HEDGE] BOUGHT {qty} x {c['tsym']} @ {ltp:.2f} (Rs{cost:,.0f}, "
+                   f"{c['dte']}DTE, spot {c['spot']:.0f}) — {reason}")
+    return dict(tsym=c["tsym"], qty=qty, price=ltp, cost=cost)
+
+
+def hedge_close(reason="GATE_RISK_ON"):
+    from datetime import date as _d
+    h = _hedge_get()
+    if not h:
+        return None
+    try:
+        ltp = _opt_ltp(h["tsym"])
+    except Exception as e:
+        logger.error(f"[MP-HEDGE] ltp on close failed: {e}"); return None
+    qty = h["qty"]
+    if _is_live():
+        try:
+            ltp, qty = _place_opt_market(h["tsym"], "SELL", qty)
+        except Exception as e:
+            logger.error(f"[MP-HEDGE] live sell failed: {e}")
+            _alert("HEDGE SELL FAILED", f"{h['tsym']} x{qty}: {e}", "high"); return None
+    proceeds = ltp * qty
+    d = _d.today().isoformat()
+    _set("cash", _cash() + proceeds)
+    c = _conn()
+    c.execute("INSERT INTO mp_hedge_closed(tsym,strike,expiry,qty,entry_date,entry_price,exit_date,"
+              "exit_price,cost,proceeds,pnl,reason) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+              (h["tsym"], h["strike"], h["expiry"], qty, h["entry_date"], h["entry_price"], d,
+               ltp, h["cost"], proceeds, proceeds - h["cost"], reason))
+    c.commit(); _hedge_clear()
+    logger.warning(f"[MP-HEDGE] CLOSED {h['tsym']} @ {ltp:.2f} — P&L Rs{proceeds-h['cost']:,.0f} ({reason})")
+    return dict(pnl=proceeds - h["cost"], reason=reason)
+
+
+def hedge_maintain():
+    """Daily: roll at expiry while still risk-off, and re-size if equity has drifted."""
+    from datetime import date as _d
+    h = _hedge_get()
+    if not h:
+        return
+    today = _d.today()
+    risk_off = _get("gate", "ON") == "OFF"
+    # roll at (or just before) expiry
+    if date.fromisoformat(h["expiry"]) <= today:
+        hedge_close("EXPIRY_ROLL")
+        if risk_off:
+            hedge_open("EXPIRY_ROLL")
+        return
+    if not risk_off:
+        hedge_close("GATE_RISK_ON"); return
+    # re-size as stocks stop out (the notional must track CURRENT equity)
+    eq = _equity_value()
+    if eq <= 0:
+        hedge_close("NO_EQUITY_LEFT"); return
+    try:
+        spot = _nifty_spot()
+    except Exception:
+        return
+    tgt = _hedge_target_qty(eq, spot, h["lot"])
+    if tgt <= 0:
+        hedge_close("EQUITY_BELOW_ONE_LOT"); return
+    if abs(h["qty"] - tgt) / max(1, tgt) > CFG["hedge_resize_drift"]:
+        logger.warning(f"[MP-HEDGE] re-sizing {h['qty']} -> {tgt} (equity Rs{eq:,.0f})")
+        hedge_close("RESIZE"); hedge_open("RESIZE")
+
+
 # ───────────────────── book ops ─────────────────────
 def _positions():
     return {r["symbol"]: dict(r) for r in _conn().execute("SELECT * FROM mp_positions")}
@@ -575,6 +829,11 @@ def daily_job(panel=None):
         if low is not None and pr is not None and pr < low:
             _sell(s, pr, d, "DONCHIAN")
             logger.info(f"[MP] Donchian exit {s} @ {pr:.1f} (<15d low {low:.1f})")
+    if CFG["hedge_enabled"]:
+        try:
+            hedge_maintain()
+        except Exception as _e:
+            logger.error(f"[MP-HEDGE] maintain error: {_e}")
     _mark_nav(close, asof.isoformat(), live=live)
     _set("last_daily", d)
 
@@ -590,9 +849,15 @@ def weekly_job(panel=None):
     asof = close.index[-1]; d = date.today().isoformat()
     risk_off = _gate_risk_off(close, asof)
     if risk_off and _positions():
-        live = _live_prices(list(_positions()))
-        for s in list(_positions()):
-            _sell(s, live.get(s, close[s].loc[:asof].dropna().iloc[-1]), d, "GATE_RISK_OFF")
+        if CFG["hedge_enabled"]:
+            # HOLD the stocks and buy a bi-weekly 2x NIFTY put instead of liquidating (research/105)
+            _set("gate", "OFF")
+            if not _hedge_get():
+                hedge_open("GATE_RISK_OFF")
+        else:
+            live = _live_prices(list(_positions()))
+            for s in list(_positions()):
+                _sell(s, live.get(s, close[s].loc[:asof].dropna().iloc[-1]), d, "GATE_RISK_OFF")
         _set("gate", "OFF")
         logger.info("[MP] GATE risk-off → liquidated to cash")
     elif not risk_off:
@@ -683,6 +948,26 @@ def _rebalance_live_delta(target, per, live, close, asof, d):
 
 
 # ───────────────────── API getters ─────────────────────
+def _hedge_state():
+    """Current hedge marked to market (None when unhedged)."""
+    h = _hedge_get()
+    if not h:
+        return None
+    ltp = None
+    try:
+        ltp = _opt_ltp(h["tsym"])
+    except Exception:
+        pass
+    val = (ltp or h["entry_price"]) * h["qty"]
+    return dict(tsym=h["tsym"], strike=h["strike"], expiry=h["expiry"], qty=h["qty"],
+                lots=int(h["qty"] / h["lot"]) if h["lot"] else None,
+                entry_date=h["entry_date"], entry_price=round(h["entry_price"], 2),
+                price=round(ltp, 2) if ltp else None, cost=round(h["cost"]),
+                value=round(val), pnl=round(val - h["cost"]),
+                pnl_pct=round((val / h["cost"] - 1) * 100, 1) if h["cost"] else 0,
+                dte=(date.fromisoformat(h["expiry"]) - date.today()).days)
+
+
 def get_state():
     init_db()
     pos = _positions()
@@ -761,6 +1046,8 @@ def get_state():
         last_daily=_get("last_daily"), last_weekly=_get("last_weekly"),
         last_monthly=_get("last_monthly"),
         data_asof=(close.index[-1].date().isoformat() if close is not None else None),
+        hedge=_hedge_state(), hedge_closed=[dict(r) for r in _conn().execute(
+            "SELECT * FROM mp_hedge_closed ORDER BY id DESC LIMIT 50")],
         holdings=holdings, navcurve=navcurve, closed=closed, rules=RULES)
 
 
@@ -890,6 +1177,11 @@ def register(app, scheduler):
                      lambda: jsonify(_kill_switch()), methods=["POST"])
     app.add_url_rule("/api/momentum-paper/reconcile", "mp_reconcile",
                      lambda: jsonify(reconcile_holdings()))
+    app.add_url_rule("/api/momentum-paper/hedge", "mp_hedge",
+                     lambda: jsonify({"hedge": _hedge_state(), "enabled": CFG["hedge_enabled"],
+                                      "ratio": CFG["hedge_ratio"], "dte_target": CFG["hedge_dte_target"]}))
+    app.add_url_rule("/api/momentum-paper/hedge/close", "mp_hedge_close", methods=["POST"],
+                     view_func=lambda: jsonify(hedge_close("MANUAL") or {"ok": False, "note": "no hedge open"}))
     app.add_url_rule("/api/momentum-paper/deposit", "mp_deposit", methods=["POST"],
                      view_func=lambda: jsonify(cash_deposit(
                          (request.get_json(silent=True) or {}).get("amount"),
