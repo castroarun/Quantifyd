@@ -9807,6 +9807,20 @@ try:
 except Exception as _e:
     logger.warning(f"Could not register HA paper book: {_e}")
 
+# Gap-ORB 4-day revival — Rs10L PAPER book (research/89 candidate)
+try:
+    from services.orb_paper import register as _obp_register
+    _obp_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register ORB paper book: {_e}")
+
+# O=L/O=H first-candle break — 1-lot futures PAPER book (user spec 2026-08-09)
+try:
+    from services.ohol_paper import register as _ohp_register
+    _ohp_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register OHOL paper book: {_e}")
+
 # NSR-W v1.2 weekly strangle - Rs30/leg, 10 lots PAPER book (research/90 G5)
 try:
     from services.nsrw_paper import register as _nsrw_register
