@@ -119,6 +119,9 @@ CFG = dict(
     hedge_resize_drift=0.25,  # re-size when notional drifts >25% from target (stocks stopping out)
     hedge_moneyness=0.0,      # ATM
     hedge_max_premium_pct=0.06,  # refuse to spend more than 6% of NAV on one hedge (sanity cap)
+    sweep_symbol="LIQUIDCASE",  # Zerodha Fund House liquid ETF (growth-style; cleaner than
+                                # LIQUIDBEES which pays daily fractional-unit dividends)
+    sweep_min=25_000,         # don't bother sweeping less than this
     live_cash_sweep=False,    # True only once real LIQUIDCASE buy/sell orders are implemented.
                               # While False, LIVE mode accrues NO cash yield (idle cash in the Zerodha
                               # ledger genuinely earns 0) so live NAV is never overstated. PAPER keeps
@@ -431,6 +434,90 @@ def _donchian_low(close, sym, asof):
     n = CFG["donchian"]
     return float(cs.iloc[-n - 1:-1].min()) if len(cs) > n else None
 
+
+
+
+# ───────────────────── LIQUIDCASE sweep ─────────────────────
+def _sweep_units():
+    return float(_get("sweep_units", 0.0) or 0.0)
+
+
+def _sweep_price():
+    try:
+        q = _kite().quote([f"NSE:{CFG['sweep_symbol']}"])
+        return float(q[f"NSE:{CFG['sweep_symbol']}"]["last_price"])
+    except Exception:
+        return float(_get("sweep_last_px", 0.0) or 0.0)
+
+
+def _sweep_value():
+    u = _sweep_units()
+    return u * _sweep_price() if u else 0.0
+
+
+def sweep_idle_cash():
+    """Park cash ABOVE the hedge reserve into LIQUIDCASE. Never touches the reserve, so a put premium
+    is always payable from real cash on the same day."""
+    if not CFG["live_cash_sweep"]:
+        return None
+    nav = _equity_value() + _cash() + _sweep_value()
+    reserve = nav * CFG["cash_reserve_pct"]
+    spare = _cash() - reserve
+    if spare < CFG["sweep_min"]:
+        return None
+    px = _sweep_price()
+    if px <= 0:
+        return None
+    qty = int(spare // px)
+    if qty <= 0:
+        return None
+    if _is_live():
+        try:
+            px, qty = _place_cnc_market(CFG["sweep_symbol"], "BUY", qty)
+        except Exception as e:
+            logger.error(f"[MP-SWEEP] buy failed: {e}")
+            _alert("SWEEP BUY FAILED", str(e), "normal"); return None
+    cost = px * qty
+    _set("cash", _cash() - cost)
+    _set("sweep_units", _sweep_units() + qty)
+    _set("sweep_last_px", px)
+    logger.warning(f"[MP-SWEEP] parked Rs{cost:,.0f} in {CFG['sweep_symbol']} ({qty} @ {px:.2f})")
+    return dict(qty=qty, price=px, value=cost)
+
+
+def unsweep(amount=None):
+    """Sell LIQUIDCASE back to cash. amount=None sells everything (used before the monthly rebalance).
+    Proceeds are available for stock purchases the same day."""
+    u = _sweep_units()
+    if u <= 0:
+        return None
+    px = _sweep_price()
+    if px <= 0:
+        return None
+    qty = u if amount is None else min(u, int(amount // px) + 1)
+    qty = int(min(u, qty))
+    if qty <= 0:
+        return None
+    if _is_live():
+        try:
+            px, qty = _place_cnc_market(CFG["sweep_symbol"], "SELL", qty)
+        except Exception as e:
+            logger.error(f"[MP-SWEEP] sell failed: {e}")
+            _alert("SWEEP SELL FAILED — CASH MAY BE SHORT", str(e), "high"); return None
+    proceeds = px * qty
+    _set("cash", _cash() + proceeds)
+    _set("sweep_units", max(0.0, _sweep_units() - qty))
+    _set("sweep_last_px", px)
+    logger.warning(f"[MP-SWEEP] released Rs{proceeds:,.0f} from {CFG['sweep_symbol']}")
+    return dict(qty=qty, price=px, value=proceeds)
+
+
+def _days_to_rebalance():
+    """Calendar days until the month-end rebalance (when idle cash gets redeployed)."""
+    from datetime import date as _d, timedelta as _td
+    t = _d.today()
+    nxt = (t.replace(day=28) + _td(days=4)).replace(day=1) - _td(days=1)
+    return max(0, (nxt - t).days)
 
 
 # ───────────────────── PUT HEDGE (bi-weekly 2x) ─────────────────────
@@ -849,6 +936,11 @@ def daily_job(panel=None):
         if low is not None and pr is not None and pr < low:
             _sell(s, pr, d, "DONCHIAN")
             logger.info(f"[MP] Donchian exit {s} @ {pr:.1f} (<15d low {low:.1f})")
+    if CFG["live_cash_sweep"]:
+        try:
+            sweep_idle_cash()
+        except Exception as _e:
+            logger.error(f"[MP-SWEEP] error: {_e}")
     if CFG["hedge_enabled"]:
         try:
             hedge_maintain()
@@ -914,6 +1006,8 @@ def monthly_job(panel=None):
         logger.info("[MP] monthly: risk-off, staying in cash")
         return
     _set("gate", "ON")
+    if CFG["live_cash_sweep"] and _sweep_units() > 0:
+        unsweep()                      # release parked cash BEFORE buying stocks (same-day settled)
     etf = _rs_basket(close, tv, asof)
     if not etf:
         return
@@ -1066,6 +1160,11 @@ def get_state():
         last_daily=_get("last_daily"), last_weekly=_get("last_weekly"),
         last_monthly=_get("last_monthly"),
         data_asof=(close.index[-1].date().isoformat() if close is not None else None),
+        idle_cash=round(cash), idle_pct=round(cash / nav * 100, 1) if nav else 0,
+        days_to_rebalance=_days_to_rebalance(),
+        sweep=dict(enabled=CFG["live_cash_sweep"], symbol=CFG["sweep_symbol"],
+                   units=round(_sweep_units(), 2), value=round(_sweep_value())),
+        cash_reserve=round(nav * CFG["cash_reserve_pct"]),
         hedge=_hedge_state(), hedge_closed=[dict(r) for r in _conn().execute(
             "SELECT * FROM mp_hedge_closed ORDER BY id DESC LIMIT 50")],
         holdings=holdings, navcurve=navcurve, closed=closed, rules=RULES)
