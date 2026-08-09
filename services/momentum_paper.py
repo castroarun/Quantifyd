@@ -116,6 +116,8 @@ CFG = dict(
     hedge_ratio=2.0,          # put notional = 2.0 x equity value
     hedge_dte_target=14,      # bi-weekly — the next week's expiry (best tenor tested)
     hedge_dte_min=8, hedge_dte_max=20,
+    hedge_gate_daily=True,    # research/108b: check the 100-SMA EVERY EOD for the put decision
+                              # (netCal 1.32 -> 1.43). The STOCK book stays weekly/monthly.
     hedge_resize_drift=0.25,  # re-size when notional drifts >25% from target (stocks stopping out)
     hedge_moneyness=0.0,      # ATM
     hedge_max_premium_pct=0.06,  # refuse to spend more than 6% of NAV on one hedge (sanity cap)
@@ -143,6 +145,9 @@ RULES = [
      "Re-rank the 200 (the heavy step, run early to leave time to catch issues). Keep a holding while it stays in the top 22; if it drops out, sell it and buy the best-ranked name not already owned."),
     ("Macro gate", "WEEKLY — last trading day of week, ~15:15 IST (pre-close)",
      "If NIFTYBEES is below its 100-day SMA → liquidate ALL 8 to cash. Redeploys at the next month-end once it reclaims the 100-DMA."),
+    ("Hedge gate", "DAILY — ~15:15 IST",
+     "The put decision is checked every EOD against the NIFTYBEES 100-day SMA: buy on a breach, sell "
+     "when it is reclaimed (research/108b: net Calmar 1.32 -> 1.43 vs checking only weekly)."),
     ("Donchian stop", "DAILY — ~15:15 IST (pre-close, executable)",
      "If any holding is below its own prior-15-day low → exit just that one stock to cash."),
     ("Hedge cash reserve", "continuous",
@@ -733,7 +738,15 @@ def hedge_maintain():
     if not h:
         return
     today = _d.today()
-    risk_off = _get("gate", "ON") == "OFF"
+    if CFG["hedge_gate_daily"]:
+        try:
+            close, _tv = _panel()
+            risk_off = _gate_risk_off(close, close.index[-1])
+        except Exception as _e:
+            logger.error(f"[MP-HEDGE] daily gate check failed, falling back to weekly state: {_e}")
+            risk_off = _get("gate", "ON") == "OFF"
+    else:
+        risk_off = _get("gate", "ON") == "OFF"
     # roll at (or just before) expiry
     if date.fromisoformat(h["expiry"]) <= today:
         hedge_close("EXPIRY_ROLL")
@@ -943,6 +956,14 @@ def daily_job(panel=None):
             logger.error(f"[MP-SWEEP] error: {_e}")
     if CFG["hedge_enabled"]:
         try:
+            if CFG["hedge_gate_daily"] and not _hedge_get() and _positions():
+                # gate may break mid-week — buy the put the same EOD rather than waiting for Friday
+                try:
+                    _c, _t = _panel()
+                    if _gate_risk_off(_c, _c.index[-1]):
+                        hedge_open("GATE_RISK_OFF_DAILY")
+                except Exception as _ge:
+                    logger.error(f"[MP-HEDGE] daily gate open check failed: {_ge}")
             hedge_maintain()
         except Exception as _e:
             logger.error(f"[MP-HEDGE] maintain error: {_e}")
