@@ -2,6 +2,12 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-09 — research/109 intraday stocks CONCLUDED: NO EDGE net of costs
+9 families/35 cells/1.94M trades: best signal (narrow-CPR trend-day short) carries
++5-9bps real excess vs ~10bps cost floor; all Val nets negative. 20%-CAGR intraday
+goal ruled out for price/indicator signals; route ambition via multi-day books +
+ORB revival decision (still pending above) + NAS. OOS 2024+ untouched.
+
 ## 2026-08-09 — research/89 ORB reassessment CONCLUDED — revival decision PENDING (Arun)
 Verdict: live intraday build was the failure (never validated, negative every era);
 multi-day gap-ORB long alive (+16-22bps/trade 2024-26, IN-SAMPLE — OOS consumed).

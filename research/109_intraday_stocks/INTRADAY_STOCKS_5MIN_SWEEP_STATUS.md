@@ -1,6 +1,6 @@
 # Intraday Stocks Buy/Sell System Discovery — 9 Signal Families, 150 Names, 5-min (2015→)
 
-STATUS: RUNNING (wave-1 screen)
+STATUS: DONE — NO EDGE net of costs (both waves); see results/RESULTS.md
 
 ## 1. The Ask
 
