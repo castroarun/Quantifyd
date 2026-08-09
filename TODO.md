@@ -2,6 +2,13 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-09 — research/89 ORB reassessment CONCLUDED — revival decision PENDING (Arun)
+Verdict: live intraday build was the failure (never validated, negative every era);
+multi-day gap-ORB long alive (+16-22bps/trade 2024-26, IN-SAMPLE — OOS consumed).
+Best never-died config: 90-min OR, gap>=0.4%, 4-day hold, long, NIFTY>50DMA gate.
+Offer on the table: Rs-capped sleeve PAPER book, 90-day soak. Do NOT re-arm live.
+Details: research/89_orb_reassessment/results/RESULTS.md
+
 ## ⏳ 2026-08-07 — Breakout paper book: cash-model v2 (settlement realism) DEPLOYED, activates TODAY 15:32 IST
 `services/breakout_paper.py` rewritten (commit `f45f619`): 4 cash buckets — one slot's ₹
 held as a SETTLED buy buffer (earns 0), liquid fund earns 6.5% from T+1, redemptions +
