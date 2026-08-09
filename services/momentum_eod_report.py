@@ -50,7 +50,9 @@ def build_report() -> dict:
         n_holdings=st.get("n_holdings", 0), holdings=holdings,
         entries=entries, exits=exits, closed_today=closed_today, pnl_today=pnl_today,
         gate_last=st.get("gate_last"), gate_sma=st.get("gate_sma"), gate_gap=st.get("gate_gap_pct"),
-        hedge=st.get("hedge"), stcg_booked=st.get("stcg_booked", 0), last_daily=st.get("last_daily"),
+        hedge=st.get("hedge"), idle_cash=st.get("idle_cash", 0),
+        idle_pct=st.get("idle_pct", 0), days_to_rebalance=st.get("days_to_rebalance", 0),
+        cash_reserve=st.get("cash_reserve", 0), sweep=st.get("sweep") or {}, stcg_booked=st.get("stcg_booked", 0), last_daily=st.get("last_daily"),
         last_monthly=st.get("last_monthly"), issues=issues)
 
 
@@ -97,6 +99,10 @@ def render_html(r) -> str:
         hold += f"<tr>{row_cells(cells)}</tr>"
     hold += "</table>"
 
+    sw = r.get("sweep") or {}
+    sweep_note = (f" Parked in {sw.get('symbol','LIQUIDCASE')}: {_inr(sw.get('value',0))}."
+                  if sw.get("enabled") and sw.get("value") else
+                  (" Liquid sweep is OFF — this cash earns nothing in live." if r.get("mode") == "LIVE" else ""))
     h = r.get("hedge")
     if h:
         pc = h.get("pnl", 0)
@@ -143,6 +149,11 @@ def render_html(r) -> str:
           <td>Cash <b>{_inr(r['cash'])}</b></td>
           <td>Holdings <b>{r['n_holdings']}</b></td>
         </tr></table>
+        <div style="font-size:12.5px;color:#555;background:#f7f8fa;border-radius:6px;padding:8px 11px;margin:4px 0 2px">
+          Idle cash <b>{_inr(r['idle_cash'])}</b> ({r['idle_pct']}% of book) · hedge reserve
+          <b>{_inr(r['cash_reserve'])}</b> held back · next rebalance in <b>{r['days_to_rebalance']} days</b>,
+          when empty slots are refilled to 8.{sweep_note}
+        </div>
         <div style="font-weight:600;margin:12px 0 2px">Today's activity</div>
         {act}
         {hedge_html}

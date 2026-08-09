@@ -36,6 +36,8 @@ type State = {
   gate_sma: number | null; gate_gap_pct: number | null;
   holdings: Holding[]; navcurve: NavPt[]; closed: Closed[]; rules: [string, string, string][];
   hedge: Hedge; hedge_closed: HedgeClosed[];
+  idle_cash: number; idle_pct: number; days_to_rebalance: number; cash_reserve: number;
+  sweep: { enabled: boolean; symbol: string; units: number; value: number };
 };
 
 const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
@@ -118,6 +120,8 @@ export default function MomentumPaper() {
         <Kpi label="Realized (net)" value={inr(s.realized_net)} tone={s.realized_net >= 0 ? 'pos' : 'neg'} />
         <Kpi label={`Liquid yield @${s.cash_yield_pct}%`} value={inr(s.interest_earned)} tone="pos" />
       </div>
+
+      <CashStatus s={s} />
 
       <HedgePanel s={s} />
 
@@ -288,6 +292,47 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
     <div className={styles.kpi}>
       <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
+    </div>
+  );
+}
+
+function CashStatus({ s }: { s: State }) {
+  const deployable = Math.max(0, s.idle_cash - s.cash_reserve - (s.sweep?.value || 0));
+  const heavy = s.idle_pct >= 25;
+  const cell: React.CSSProperties = {
+    background: 'var(--panel2,#1c232c)', border: '1px solid var(--border,#333)',
+    borderRadius: 8, padding: '10px 13px',
+  };
+  const lab: React.CSSProperties = { fontSize: 11.5, color: 'var(--ink-muted,#888)' };
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>Cash &amp; redeployment</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
+        <div style={cell}><div style={lab}>Idle cash</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: heavy ? '#d97706' : 'inherit' }}>
+            {inr(s.idle_cash)}</div>
+          <div style={lab}>{s.idle_pct}% of book</div></div>
+        <div style={cell}><div style={lab}>Awaiting redeployment</div>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>{inr(deployable)}</div>
+          <div style={lab}>deployed at the month-end rebalance</div></div>
+        <div style={cell}><div style={lab}>Days to rebalance</div>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>{s.days_to_rebalance}</div>
+          <div style={lab}>then empty slots are refilled to 8</div></div>
+        <div style={cell}><div style={lab}>Hedge reserve (3%)</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#1f9d55' }}>{inr(s.cash_reserve)}</div>
+          <div style={lab}>never deployed — keeps the put fundable</div></div>
+        {s.sweep?.enabled && (
+          <div style={cell}><div style={lab}>Parked in {s.sweep.symbol}</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>{inr(s.sweep.value)}</div>
+            <div style={lab}>{s.sweep.units} units · sold before the rebalance</div></div>
+        )}
+      </div>
+      <div style={{ fontSize: 12.5, color: 'var(--ink-muted,#888)', marginTop: 10 }}>
+        {heavy
+          ? `A large idle balance is normal after stop-outs — research/108 showed redeploying sooner than month-end HALVES the Calmar (0.91→0.45), because empty slots exist precisely when the market is falling. The cash waits ${s.days_to_rebalance} days by design.`
+          : 'Stop-out proceeds wait for the month-end rebalance rather than being redeployed immediately — refilling faster was tested and performs much worse.'}
+        {!s.sweep?.enabled && ' Liquid-fund sweep is OFF, so in LIVE this cash would earn nothing.'}
+      </div>
     </div>
   );
 }
