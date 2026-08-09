@@ -1,6 +1,6 @@
 # ORB Reassessment — Live-Book Autopsy + Decay Characterization + Revival Sweep (5-min, F&O)
 
-STATUS: RUNNING (battery launched)
+STATUS: DONE — signal alive (regime-cyclic), live implementation was the failure; revival = gated paper book only (results/RESULTS.md)
 
 ## 1. The Ask
 

@@ -207,7 +207,7 @@ def main():
         for s, df5 in data.items():
             ent = orb_entries_long(df5, 12, 0.0025, "2015-02-01", "2026-07-21")
             tr = run_symbol(df5, ent, CFG3, symbol=s)
-            for ts, r in zip(tr.index, tr["net_ret"]):
+            for ts, r in zip(pd.to_datetime(tr["entry_time"]), tr["net_ret"]):
                 q = f"{ts.year}Q{(ts.month-1)//3+1}"
                 qrets.setdefault(q, []).append(r)
         with open(QOUT, "w", newline="") as f:
