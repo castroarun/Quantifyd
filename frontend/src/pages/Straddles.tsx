@@ -274,12 +274,16 @@ export default function Straddles() {
   const [v2busy, setV2busy] = useState(false);       // an action is in flight
   const [condor, setCondor] = useState<any>(null);   // research/80 Wed->Fri iron-condor paper book
   const [v2msg, setV2msg] = useState<string | null>(null);  // last action result message
+  const [ranks, setRanks] = useState<any>(null);     // weekly strategy leaderboard
+  const [variants, setVariants] = useState<any>(null); // v2 stop x wings variant lab
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
     fetch('/app/straddles/v2_2.0.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '2.0': d }))).catch(() => {});
     fetch('/app/straddles/v2_1.5.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '1.5': d }))).catch(() => {});
     fetch('/app/straddles/v1_daily.json').then((r) => r.json()).then(setDaily).catch(() => {});
+    fetch('/app/straddles/rankings.json?t=' + Date.now()).then((r) => r.json()).then(setRanks).catch(() => {});
+    fetch('/app/straddles/variants.json?t=' + Date.now()).then((r) => r.json()).then(setVariants).catch(() => {});
     const loadLive = () => {
       fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
       fetch('/api/v2-ironfly/state?t=' + Date.now()).then((r) => r.json()).then(setV2eng).catch(() => {});
@@ -410,11 +414,88 @@ export default function Straddles() {
 
   const cth2: React.CSSProperties = { fontSize: 9.5, color: C.muted, fontWeight: 600, textAlign: 'right', padding: '2px 8px', textTransform: 'uppercase', borderBottom: `1px solid ${C.hairSoft}` };
   const ctd2: React.CSSProperties = { fontSize: 11.5, color: C.ink, textAlign: 'right', padding: '4px 8px', borderTop: `1px solid ${C.hairSoft}`, fontVariantNumeric: 'tabular-nums' };
+  const thL: React.CSSProperties = { fontSize: 9.5, color: C.muted, fontWeight: 600, textAlign: 'left', padding: '2px 8px', textTransform: 'uppercase', borderBottom: `1px solid ${C.hairSoft}` };
+  const thR: React.CSSProperties = { ...thL, textAlign: 'right' };
+  const tdL: React.CSSProperties = { fontSize: 11.5, color: C.sec, textAlign: 'left', padding: '5px 8px', borderTop: `1px solid ${C.hairSoft}`, fontVariantNumeric: 'tabular-nums' };
+  const tdR: React.CSSProperties = { ...tdL, textAlign: 'right', color: C.ink };
+  const gradeBadge = (g: string) => {
+    const m: Record<string, [string, string]> = { A: [C.pos, '#E6F4EF'], B: [C.navy, C.navySoft], C: [C.amber, C.amberSoft], D: [C.neg, '#FBE9E9'], F: [C.neg, '#FBE9E9'] };
+    const [fg, bg] = m[g] || [C.muted, C.hairSoft];
+    return <span style={{ background: bg, color: fg, fontWeight: 800, fontSize: 11, padding: '1px 8px', borderRadius: 5 }}>{g}</span>;
+  };
   return (
     <div style={{ maxWidth: 1000 }}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
       <div className="page-title">Straddle Systems</div>
       <div className="page-subtitle">Two short-straddle systems on NIFTY · backtested on the recorded chain · paper-forward 10 lots</div>
+
+      {ranks && ranks.systems && (
+        <section style={{ ...card, marginTop: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Strategy Leaderboard</span>
+            <span style={{ fontSize: 11, color: C.faint }}>rated by risk-adjusted return (Calmar) · updated {ranks.generated_at} · {ranks.cadence}</span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>
+                <th style={thL}>#</th><th style={thL}>Grade</th><th style={thL}>System</th>
+                <th style={thR}>Net P&amp;L</th><th style={thR}>Calmar</th><th style={thR}>MaxDD</th>
+                <th style={thR}>Win</th><th style={thR}>N</th><th style={thL}>Confidence</th>
+              </tr></thead>
+              <tbody>
+                {ranks.systems.map((r: any) => (
+                  <tr key={r.label}>
+                    <td style={tdL}>{r.rank}</td>
+                    <td style={tdL}>{gradeBadge(r.grade)}</td>
+                    <td style={{ ...tdL, color: C.ink, fontWeight: 600 }}>{r.label}
+                      <div style={{ fontSize: 10, color: C.faint, fontWeight: 400 }}>{r.kind} · {r.note}</div></td>
+                    <td style={{ ...tdR, color: col(r.net), fontWeight: 700 }}>{inr(r.net)}</td>
+                    <td style={tdR}>{r.calmar ?? '—'}</td>
+                    <td style={{ ...tdR, color: C.neg }}>{inr(r.maxdd)}</td>
+                    <td style={tdR}>{r.win}%</td>
+                    <td style={tdR}>{r.n}</td>
+                    <td style={{ ...tdL, color: r.confidence === 'medium' ? C.sec : C.amber }}>{r.confidence}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: 11, color: C.amber, marginTop: 8 }}>⚠ {ranks.caveat}</div>
+        </section>
+      )}
+
+      {variants && variants.variants && (
+        <section style={{ ...card, marginTop: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 Variant Lab</span>
+            <span style={{ fontSize: 11, color: C.faint }}>same recorded chain · naked vs iron-fly × move-stop · {variants.note}</span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>
+                <th style={thL}>Variant</th><th style={thR}>Net</th><th style={thR}>Mean/tr</th>
+                <th style={thR}>Win</th><th style={thR}>MaxDD</th><th style={thR}>Calmar</th><th style={thR}>N</th>
+              </tr></thead>
+              <tbody>
+                {variants.variants.map((v: any) => (
+                  <tr key={v.label}>
+                    <td style={{ ...tdL, color: C.ink }}>{v.label}</td>
+                    <td style={{ ...tdR, color: col(v.net), fontWeight: 700 }}>{inr(v.net)}</td>
+                    <td style={{ ...tdR, color: col(v.mean) }}>{inr(v.mean)}</td>
+                    <td style={tdR}>{v.win}%</td>
+                    <td style={{ ...tdR, color: C.neg }}>{inr(v.maxdd)}</td>
+                    <td style={tdR}>{v.calmar ?? '—'}</td>
+                    <td style={tdR}>{v.trades}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: 11, color: C.faint, marginTop: 8 }}>
+            In this calm regime wide/no stop wins &amp; tight stops whipsaw — but naked's small drawdown is only because no crash hit the sample (unbounded tail). Signal, not a verdict.
+          </div>
+        </section>
+      )}
 
       {condor && (
         <section style={{ ...card, marginTop: 14, borderColor: C.amber }}>

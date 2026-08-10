@@ -11,7 +11,9 @@ ROOT = Path("/home/arun/quantifyd")
 OUT = ROOT / "research/58_intraday_recenter_straddle/results"; OUT.mkdir(parents=True, exist_ok=True)
 OPT = ROOT / "backtest_data" / "options_data.db"
 LOT = 65; LOTS = 10; QTY = LOT * LOTS; COST = 2 * 80
-MOVE = float(os.environ.get("V2_MOVE","2.0")); PT = 40; ROLL_DTE = 1; WING = 500
+MOVE = float(os.environ.get("V2_MOVE","2.0"))   # <=0 disables the move-stop (naked roll control)
+PT = int(os.environ.get("V2_PT","40")); ROLL_DTE = 1
+WING = int(os.environ.get("V2_WINGS","500"))     # 0 = naked (no overnight wings)
 
 oc = sqlite3.connect(str(OPT))
 oc.execute("CREATE INDEX IF NOT EXISTS idx_oc_lk ON option_chain(expiry_date,strike,instrument_type,snapshot_time)")
@@ -61,12 +63,12 @@ while i < len(DAYS):
             j += 1; continue
         mtm = (credit - (c + p)) * QTY
         series.append([d, round(mtm + wing_pnl)])
-        moved = abs(sp - s0) / s0 * 100 >= MOVE
+        moved = MOVE > 0 and abs(sp - s0) / s0 * 100 >= MOVE
         profit = mtm >= PT / 100.0 * credit * QTY
         if moved or profit:
             exit_reason = "move_stop" if moved else "profit_target"; exit_day = d; break
-        # carry overnight -> wings: buy 15:20 today, sell 09:20 next day
-        if j + 1 < len(DAYS):
+        # carry overnight -> wings: buy 15:20 today, sell 09:20 next day (skip if WING=0 = naked)
+        if WING > 0 and j + 1 < len(DAYS):
             nd = DAYS[j + 1]
             wc = ltp(K + WING, "CE", E, d, "15:20"); wp = ltp(K - WING, "PE", E, d, "15:20")
             wc2 = ltp(K + WING, "CE", E, nd, "09:20"); wp2 = ltp(K - WING, "PE", E, nd, "09:20")

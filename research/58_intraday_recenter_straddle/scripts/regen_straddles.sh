@@ -15,4 +15,7 @@ for m in 1.5 2.0; do
   cp $S/results/v2_positional.json static/app/straddles/v2_${m}.json 2>/dev/null
   cp $S/results/v2_positional.json frontend/public/straddles/v2_${m}.json 2>/dev/null
 done
-echo "$(date "+%F %T") regenerated v1_daily + v1 + v2_1.5 + v2_2.0"
+# V2 variant lab (naked vs iron-fly x move-stop) + strategy leaderboard (rate all systems)
+PYTHONPATH=. ./venv/bin/python $S/scripts/v2_variants.py >/dev/null 2>&1
+PYTHONPATH=. ./venv/bin/python $S/scripts/strategy_rankings.py >/dev/null 2>&1
+echo "$(date "+%F %T") regenerated v1_daily + v1 + v2_1.5 + v2_2.0 + variants + rankings"
