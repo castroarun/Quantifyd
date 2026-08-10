@@ -7814,6 +7814,24 @@ def _sensex_eod_squareoff():
             logger.error(f"[{name}] EOD squareoff error: {e}", exc_info=True)
 
 
+def _nas_eod_backstop():
+    """15:17 — re-run EVERY NAS EOD squareoff as a backstop. The individual 15:15 jobs can be
+    silently skipped by an APScheduler misfire under the 15:15 job pileup (2026-08-10: the squeeze
+    nas_atm + nas_atm4 were left ACTIVE past 15:15 while nas_atm2 closed). eod_squareoff is
+    idempotent (acts only on still-open legs), so calling them again here closes anything the 15:15
+    fire missed. Mirrors the SENSEX 15:16 SL-monitor backstop, extended to the whole NAS book."""
+    from datetime import datetime as _dt
+    if _dt.now().weekday() >= 5:
+        return
+    for _fn in (_nas_eod_squareoff, _nas_atm_eod_squareoff, _nas_atm2_eod_squareoff,
+                _nas_atm4_eod_squareoff, _nas_916_eod_squareoff, _sensex_eod_squareoff):
+        try:
+            _fn()
+        except Exception as _e:
+            logger.error(f"[NAS-EOD-BACKSTOP] {_fn.__name__} failed: {_e}")
+    logger.info("[NAS-EOD-BACKSTOP] 15:17 sweep complete — all NAS EOD squareoffs re-run")
+
+
 try:
     scheduler.add_job(_sensex_auto_entry, 'cron', day_of_week='mon-fri', hour=9, minute=16,
                       id='sensex_auto_entry', replace_existing=True)
@@ -7821,7 +7839,9 @@ try:
                       id='sensex_sl_monitor', replace_existing=True)
     scheduler.add_job(_sensex_eod_squareoff, 'cron', day_of_week='mon-fri', hour=15, minute=15,
                       id='sensex_eod_squareoff', replace_existing=True)
-    logger.info("SENSEX jobs registered: entry(9:16), SL monitor(10s), EOD(15:15) — Mon-Fri, PAPER")
+    scheduler.add_job(_nas_eod_backstop, 'cron', day_of_week='mon-fri', hour=15, minute=17,
+                      id='nas_eod_backstop', replace_existing=True, misfire_grace_time=600)
+    logger.info("SENSEX jobs registered: entry(9:16), SL monitor(10s), EOD(15:15) + NAS EOD backstop(15:17) — Mon-Fri, PAPER")
 except Exception as e:
     logger.error(f"SENSEX job registration failed: {e}")
 
