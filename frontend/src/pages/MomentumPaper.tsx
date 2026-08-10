@@ -40,6 +40,25 @@ type State = {
   sweep: { enabled: boolean; symbol: string; units: number; value: number };
 };
 
+/* Heat tints — intensity scales with the number, so the eye lands on what matters.
+   P&L: green/red, full strength at +/-10%. To-stop: red when a stop is imminent. */
+const pnlTint = (pctv: number | null | undefined): React.CSSProperties => {
+  if (pctv == null || !isFinite(pctv)) return {};
+  const t = Math.min(1, Math.abs(pctv) / 10);
+  const a = 0.10 + 0.34 * t;
+  return {
+    background: pctv >= 0 ? `rgba(47,145,82,${a})` : `rgba(224,86,79,${a})`,
+    fontWeight: Math.abs(pctv) >= 5 ? 700 : 600,
+  };
+};
+const stopTint = (dist: number | null | undefined): React.CSSProperties => {
+  if (dist == null || !isFinite(dist)) return {};
+  if (dist < 2) return { background: 'rgba(224,86,79,0.44)', fontWeight: 700 };   // about to stop
+  if (dist < 5) return { background: 'rgba(217,119,6,0.30)', fontWeight: 650 };   // close
+  if (dist < 10) return { background: 'rgba(217,119,6,0.13)' };                    // watch
+  return { background: 'rgba(47,145,82,0.15)' };                                   // safe
+};
+
 const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
 const lakh = (n: number) => '₹' + (n / 100000).toFixed(2) + 'L';
 const pct = (n: number | null) => (n == null ? '—' : (n >= 0 ? '+' : '') + n.toFixed(1) + '%');
@@ -121,6 +140,63 @@ export default function MomentumPaper() {
         <Kpi label={`Liquid yield @${s.cash_yield_pct}%`} value={inr(s.interest_earned)} tone="pos" />
       </div>
 
+      {/* Holdings — includes the LIQUIDCASE parked-cash row, treated like any holding */}
+      {s.holdings.length > 0 && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Holdings</div>
+          <table className={styles.table}>
+            <thead><tr>
+              <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th>
+              <th>Value</th><th>P&L ₹</th><th>P&L %</th><th>Days</th><th>Donchian stop</th><th>To stop</th>
+            </tr></thead>
+            <tbody>
+              {s.holdings.map((h) => (
+                <tr key={h.symbol} className={h.is_cash ? styles.cashRow : ''}>
+                  <td className={styles.sym}>
+                    {h.symbol}
+                    {h.is_cash && <span className={styles.cashTag}>liquid fund @6.5%</span>}
+                  </td>
+                  <td>{h.weight}%</td>
+                  <td className={styles.muted}>{h.entry_date}</td>
+                  <td>{h.entry_price ?? '—'}</td>
+                  <td>{h.is_cash ? lakh(h.value) : h.price}</td>
+                  <td>{lakh(h.value)}</td>
+                  <td className={(h.pnl ?? 0) >= 0 ? styles.pos : styles.neg}
+                      style={h.is_cash ? {} : pnlTint(h.pnl_pct)}>
+                    {(h.pnl ?? 0) >= 0 ? '+' : ''}{inr(h.pnl ?? 0)}</td>
+                  <td className={(h.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg}
+                      style={h.is_cash ? {} : pnlTint(h.pnl_pct)}>
+                    {h.is_cash ? '—' : pct(h.pnl_pct)}</td>
+                  <td>{h.days}</td>
+                  <td className={styles.muted}>{h.is_cash ? '—' : (h.stop ?? '—')}</td>
+                  <td style={h.is_cash ? {} : stopTint(h.stop_dist_pct)}
+                      title={h.is_cash ? '' : 'distance to the Donchian stop — red means a stop is imminent'}>
+                    {h.stop_dist_pct == null ? '—' : '+' + h.stop_dist_pct + '%'}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              {(() => {
+                const tv = s.holdings.reduce((a, h) => a + (h.value || 0), 0);
+                const tp = s.holdings.reduce((a, h) => a + (h.pnl || 0), 0);
+                const cost = tv - tp;
+                const tpc = cost > 0 ? (tp / cost) * 100 : 0;
+                return (
+                  <tr style={{ borderTop: '2px solid var(--border,#3a434e)', fontWeight: 700 }}>
+                    <td>TOTAL ({s.holdings.filter((h) => !h.is_cash).length} stocks + cash)</td>
+                    <td>100%</td><td /><td /><td />
+                    <td>{lakh(tv)}</td>
+                    <td className={tp >= 0 ? styles.pos : styles.neg}>{tp >= 0 ? '+' : ''}{inr(tp)}</td>
+                    <td className={tpc >= 0 ? styles.pos : styles.neg}>{pct(tpc)}</td>
+                    <td /><td /><td />
+                  </tr>
+                );
+              })()}
+            </tfoot>
+          </table>
+        </div>
+      )}
+
       <CashStatus s={s} />
 
       <HedgePanel s={s} />
@@ -171,59 +247,6 @@ export default function MomentumPaper() {
         <EquityCurve data={s.navcurve} />
       </div>
 
-      {/* Holdings — includes the LIQUIDCASE parked-cash row, treated like any holding */}
-      {s.holdings.length > 0 && (
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>Holdings</div>
-          <table className={styles.table}>
-            <thead><tr>
-              <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th>
-              <th>Value</th><th>P&L ₹</th><th>P&L %</th><th>Days</th><th>Donchian stop</th><th>To stop</th>
-            </tr></thead>
-            <tbody>
-              {s.holdings.map((h) => (
-                <tr key={h.symbol} className={h.is_cash ? styles.cashRow : ''}>
-                  <td className={styles.sym}>
-                    {h.symbol}
-                    {h.is_cash && <span className={styles.cashTag}>liquid fund @6.5%</span>}
-                  </td>
-                  <td>{h.weight}%</td>
-                  <td className={styles.muted}>{h.entry_date}</td>
-                  <td>{h.entry_price ?? '—'}</td>
-                  <td>{h.is_cash ? lakh(h.value) : h.price}</td>
-                  <td>{lakh(h.value)}</td>
-                  <td className={(h.pnl ?? 0) >= 0 ? styles.pos : styles.neg}>
-                    {(h.pnl ?? 0) >= 0 ? '+' : ''}{inr(h.pnl ?? 0)}</td>
-                  <td className={(h.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg}>
-                    {h.is_cash ? '—' : pct(h.pnl_pct)}</td>
-                  <td>{h.days}</td>
-                  <td className={styles.muted}>{h.is_cash ? '—' : (h.stop ?? '—')}</td>
-                  <td className={!h.is_cash && (h.stop_dist_pct ?? 9) < 3 ? styles.warn : ''}>
-                    {h.stop_dist_pct == null ? '—' : '+' + h.stop_dist_pct + '%'}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              {(() => {
-                const tv = s.holdings.reduce((a, h) => a + (h.value || 0), 0);
-                const tp = s.holdings.reduce((a, h) => a + (h.pnl || 0), 0);
-                const cost = tv - tp;
-                const tpc = cost > 0 ? (tp / cost) * 100 : 0;
-                return (
-                  <tr style={{ borderTop: '2px solid var(--border,#3a434e)', fontWeight: 700 }}>
-                    <td>TOTAL ({s.holdings.filter((h) => !h.is_cash).length} stocks + cash)</td>
-                    <td>100%</td><td /><td /><td />
-                    <td>{lakh(tv)}</td>
-                    <td className={tp >= 0 ? styles.pos : styles.neg}>{tp >= 0 ? '+' : ''}{inr(tp)}</td>
-                    <td className={tpc >= 0 ? styles.pos : styles.neg}>{pct(tpc)}</td>
-                    <td /><td /><td />
-                  </tr>
-                );
-              })()}
-            </tfoot>
-          </table>
-        </div>
-      )}
 
       {/* Target basket — what it will buy at the next risk-on month-end */}
       {!riskOn && (
@@ -268,8 +291,10 @@ export default function MomentumPaper() {
                   <td className={styles.muted}>{c.exit_date}</td>
                   <td>{c.entry_price}</td>
                   <td>{c.exit_price}</td>
-                  <td className={c.net_pnl >= 0 ? styles.pos : styles.neg}>{inr(c.net_pnl)}</td>
-                  <td className={c.gross_pct >= 0 ? styles.pos : styles.neg}>{pct(c.gross_pct)}</td>
+                  <td className={c.net_pnl >= 0 ? styles.pos : styles.neg} style={pnlTint(c.gross_pct)}>
+                    {inr(c.net_pnl)}</td>
+                  <td className={c.gross_pct >= 0 ? styles.pos : styles.neg} style={pnlTint(c.gross_pct)}>
+                    {pct(c.gross_pct)}</td>
                   <td>{c.holding_days}</td>
                   <td><span className={styles.reason}>{reasonLabel[c.reason] || c.reason}</span></td>
                 </tr>
