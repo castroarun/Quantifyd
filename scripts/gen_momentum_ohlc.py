@@ -35,10 +35,24 @@ def main():
             (s, since)).fetchall()
         if not rows:
             print(f"  no data: {s}"); continue
-        out[s] = [{"t": d, "o": float(o or c), "h": float(h or c), "l": float(l or c),
-                   "c": float(c), "v": int(v or 0)} for d, o, h, l, c, v in rows]
+        n = mp.CFG["donchian"]
+        bars = []
+        lows = [float(l or c) for d, o, h, l, c, v in rows]
+        for i, (d, o, h, l, c, v) in enumerate(rows):
+            # the live rule: exit when the close breaks the PRIOR n-day low
+            stop = min(lows[max(0, i - n):i]) if i >= n else None
+            bars.append({"t": d, "o": float(o or c), "h": float(h or c), "l": float(l or c),
+                         "c": float(c), "v": int(v or 0),
+                         "stop": round(stop, 2) if stop is not None else None})
+        out[s] = bars
     con.close()
-    json.dump({"updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "symbols": out},
+    # the book's own marks, so the chart can show WHY a position is held or about to be exited
+    pos = {h["symbol"]: {"entry": h.get("entry_price"), "entry_date": h.get("entry_date"),
+                         "stop": h.get("stop"), "qty": h.get("qty"),
+                         "pnl_pct": h.get("pnl_pct"), "days": h.get("days")}
+           for h in st.get("holdings", []) if not h.get("is_cash")}
+    json.dump({"updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+               "donchian": mp.CFG["donchian"], "positions": pos, "symbols": out},
               open(OUT, "w"))
     print(f"wrote {OUT}: {len(out)} symbols, "
           f"{sum(len(v) for v in out.values())} bars, "

@@ -6,13 +6,13 @@
  "lots": 2,
  "qty": 40,
  "lot_size": 20,
- "updated": "2026-08-10 14:28:02",
+ "updated": "2026-08-10 14:38:02",
  "today_day": "2026-08-10",
  "variants": {
   "straddle": {
    "all": {
     "n": 18,
-    "pnl": -386,
+    "pnl": 832,
     "win": 67
    },
    "system": {
@@ -22,7 +22,7 @@
    },
    "observational": {
     "n": 11,
-    "pnl": 28,
+    "pnl": 1246,
     "win": 64
    },
    "curve": [
@@ -126,7 +126,7 @@
     ],
     [
      "2026-08-10",
-     -386
+     832
     ]
    ]
   },
@@ -304,12 +304,12 @@
    "ce_entry": 433.9,
    "pe_entry": 460.85,
    "credit": 894.75,
-   "ce_exit": 381.1,
+   "ce_exit": 350.65,
    "pe_exit": 600.0,
    "exit_reason": "SL",
    "entry_time": "09:20",
    "exit_time": "15:15",
-   "pnl": -3494,
+   "pnl": -2276,
    "legs": [
     {
      "type": "CE",
@@ -317,8 +317,8 @@
      "strike": 78700,
      "qty": 40,
      "entry": 433.9,
-     "ltp": 381.1,
-     "pnl": 2112
+     "ltp": 350.65,
+     "pnl": 3330
     },
     {
      "type": "PE",

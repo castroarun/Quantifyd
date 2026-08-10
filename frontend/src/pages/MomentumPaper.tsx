@@ -1,8 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import BacktestCharts from '../components/BacktestCurve/BacktestCharts';
-import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
-import type { HoldingsRecord } from '../api/types';
+import MomentumCharts from '../components/MomentumCharts/MomentumCharts';
 import styles from './MomentumPaper.module.css';
 
 type Holding = {
@@ -200,31 +199,16 @@ export default function MomentumPaper() {
         </div>
       )}
 
-      {/* Price charts for the live positions — candles from our own market_data.db */}
+      {/* Price charts with the system's OWN levels drawn on them */}
       {s.holdings.filter((h) => !h.is_cash).length > 0 && (
         <div className={styles.card}>
           <div className={styles.cardTitle}>
             Charts — live positions
             <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--ink-muted,#888)', marginLeft: 8 }}>
-              daily candles, entry and Donchian stop overlaid
+              daily candles with the Donchian trailing stop and entry drawn on
             </span>
           </div>
-          <HoldingsCharts
-            ohlcUrl="/static/momentum_ohlc.json"
-            holdings={s.holdings.filter((h) => !h.is_cash).map((h) => ({
-              tradingsymbol: h.symbol,
-              qty: h.qty ?? 0,
-              avg_price: h.entry_price ?? 0,
-              ltp: h.price ?? 0,
-              prev_close: null,
-              day_pct: 0,
-              day_pnl_inr: 0,
-              invested: (h.value ?? 0) - (h.pnl ?? 0),
-              current: h.value ?? 0,
-              total_pnl_inr: h.pnl ?? 0,
-              total_pnl_pct: h.pnl_pct ?? 0,
-            })) as HoldingsRecord[]}
-          />
+          <MomentumCharts />
         </div>
       )}
 
