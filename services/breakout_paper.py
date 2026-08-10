@@ -55,6 +55,10 @@ CFG = dict(
     stcg_pct=0.20,            # short-term capital-gains tax, shown separately
     cash_yield=0.065,         # idle cash parked in a liquid fund @6.5% p.a.
     universe_size=500,        # working liquid universe refreshed daily from Kite
+    decision_cadence="weekly",  # research/109: check entries AND the trail on the WEEKLY close.
+                                # Same CAGR (18.9%), drawdown -33.7% -> -27.3%, Calmar 0.56 -> 0.69.
+                                # "daily" restores the old behaviour. Both decisions move together —
+                                # weekly entries with daily exits was the worst config tested (0.48).
     buffer_gate_aware=False,  # False = hold the buy buffer every day slots are free (user spec,
                               # G5b variant C); True = park it in the fund while the regime gate
                               # is OFF (G5b variant D: +0.85% CAGR, but flip-day entries slip T+1)
@@ -66,6 +70,9 @@ RULES = [
     ("Liquidity", "20-day MEDIAN turnover ≥ ₹5cr · price ≥ ₹20 · skip names up >15% today (unfillable chase)"),
     ("Selection", "Rank the day's qualifiers by today's %-run → take the TOP 1 (max 1 new entry/day)"),
     ("Regime gate", "Take NEW entries only when NIFTYBEES > its 200-day SMA (does not force-liquidate)"),
+    ("Decision cadence", "Entries and the trailing exit are decided on the WEEKLY close (research/109: "
+     "same CAGR, drawdown -33.7% → -27.3%, Calmar 0.56 → 0.69). Cash settlement, fund interest and NAV "
+     "still update daily."),
     ("Exit (trailing)", "Close below the prior-20-day low (Donchian-20 trail) → exit. NO profit target."),
     ("Exit (catastrophe)", "Price ≤ 20% below entry → hard stop."),
     ("Idle cash", "One slot's ₹ held SETTLED as the next-buy buffer (earns 0) whenever a slot is "
@@ -440,6 +447,25 @@ def seed(force=False):
     return {"ok": True, "held": list(_positions()), "gate": _get("gate")}
 
 
+def _is_week_close(today=None):
+    """True on the last TRADING day of the ISO week (Friday, or Thursday when Friday is a holiday)."""
+    from datetime import timedelta as _td
+    t = today or date.today()
+    try:
+        from services.trading_calendar import get_default_calendar
+        cal = get_default_calendar()
+        for i in range(1, 8):
+            nxt = t + _td(days=i)
+            if nxt.isocalendar()[1] != t.isocalendar()[1]:
+                return True                      # week ended with no further trading day
+            if cal.is_trading_day(nxt):
+                return False                     # another trading day remains this week
+        return True
+    except Exception as e:                       # calendar unavailable -> plain Friday
+        logger.warning(f"[BP] trading calendar unavailable ({e}); using Friday as the week close")
+        return t.weekday() == 4
+
+
 def daily_job():
     """Mon-Fri EOD: settle T+1 + accrue fund interest → exits → 1 new entry (from the settled
     buffer only) → refill/sweep the buffer so tomorrow's slot is ready."""
@@ -453,6 +479,16 @@ def daily_job():
     asof = close.index[-1]; d = today.isoformat()
     gate_on = _gate_on(close, asof)
     _set("gate", "ON" if gate_on else "OFF")
+    # research/109: entries and the trail are evaluated on the WEEKLY close. Settlement, interest,
+    # buffer discipline and NAV marking below still run every day.
+    decide = (CFG["decision_cadence"] == "daily") or _is_week_close(today)
+    _set("last_decision_day", d if decide else _get("last_decision_day", ""))
+    if not decide:
+        _rebalance_buffer()
+        _mark_nav(close, asof.isoformat(), live=_live_prices(list(_positions())))
+        _set("last_daily", d)
+        logger.info("[BP] mid-week: cash/NAV updated, no entry or trail decision (weekly cadence)")
+        return
     # 1) exits — Donchian-20 trail OR 20% catastrophe (proceeds settle T+1)
     live = _live_prices(list(_positions()))
     for s in list(_positions()):
