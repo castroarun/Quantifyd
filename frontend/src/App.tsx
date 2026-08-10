@@ -30,6 +30,8 @@ import BacktestStudy from './pages/BacktestStudy';
 import MomentumPaper from './pages/MomentumPaper';
 import BreakoutPaper from './pages/BreakoutPaper';
 import HaPaper from './pages/HaPaper';
+import OrbPaper from './pages/OrbPaper';
+import OholPaper from './pages/OholPaper';
 import Journal from './pages/Journal';
 import JournalDay from './pages/JournalDay';
 import JournalTrade from './pages/JournalTrade';
@@ -276,6 +278,26 @@ export default function App() {
           <Protected>
             <AppLayout active="ha-paper">
               <HaPaper />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/orb-paper"
+        element={
+          <Protected>
+            <AppLayout active="orb-paper">
+              <OrbPaper />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/ohol-paper"
+        element={
+          <Protected>
+            <AppLayout active="ohol-paper">
+              <OholPaper />
             </AppLayout>
           </Protected>
         }

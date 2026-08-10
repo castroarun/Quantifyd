@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { HoldingsRecord } from '../../api/types';
 import styles from './HoldingsCharts.module.css';
+import MomentumScanner from '../MomentumScanner/MomentumScanner';
 
 // Phase 1 — renders every holding's 1-year daily chart on one page, off the
 // `sparkline` (252 daily closes) already in /api/holdings/digest. No backend
@@ -452,10 +453,14 @@ function FocusChart({ s, win, bars }: { s: Series; win: number; bars?: Bar[] }) 
   const hasCandles = !!bars && bars.length >= 2;
   const n = hasCandles ? (bars as Bar[]).length : 0;
 
-  // reset viewport when the symbol or timeframe changes
+  // reset viewport when the symbol or timeframe changes. Leave a small right
+  // margin by default (~10% of the window) so the latest candle + price tag
+  // aren't jammed against the axis.
   useEffect(() => {
-    if (hasCandles) setView(clampView(Math.min(win, n), n - 1, n));
-    else setView(null);
+    if (hasCandles) {
+      const span = Math.min(win, n);
+      setView(clampView(span, (n - 1) + span * 0.1, n));
+    } else setView(null);
   }, [win, n, s.sym, hasCandles]);
 
   // draw
@@ -557,6 +562,18 @@ const FILTERS: [string, string][] = [
 ];
 const TFS: [string, number][] = [['3M', 63], ['6M', 126], ['1Y', 252]];
 
+// Watchlist flags — persisted in localStorage (per-browser; no backend).
+const FLAGS = ['green', 'yellow', 'red'] as const;
+type FlagColor = typeof FLAGS[number];
+const FLAG_HEX: Record<FlagColor, string> = { green: '#16a34a', yellow: '#ca8a04', red: '#dc2626' };
+const FLAG_RANK: Record<FlagColor, number> = { green: 0, yellow: 1, red: 2 };
+function loadFlags(): Record<string, FlagColor> {
+  try { return JSON.parse(localStorage.getItem('holdingsFlags') || '{}'); } catch { return {}; }
+}
+function saveFlags(f: Record<string, FlagColor>) {
+  try { localStorage.setItem('holdingsFlags', JSON.stringify(f)); } catch { /* ignore */ }
+}
+
 export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[] }) {
   const [view, setView] = useState<'wall' | 'focus'>('wall');
   const [sort, setSort] = useState('day');
@@ -565,6 +582,16 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
   const [density, setDensity] = useState<'comfy' | 'compact'>('comfy');
   const [currentSym, setCurrentSym] = useState<string | null>(null);
   const [ohlc, setOhlc] = useState<OhlcMap>({});
+  const [flags, setFlags] = useState<Record<string, FlagColor>>(loadFlags);
+  const setFlag = (sym: string, color: FlagColor) => setFlags((prev) => {
+    const next = { ...prev };
+    if (next[sym] === color) delete next[sym]; else next[sym] = color; // click active = unflag
+    saveFlags(next);
+    return next;
+  });
+  const clearFlag = (sym: string) => setFlags((prev) => {
+    const next = { ...prev }; delete next[sym]; saveFlags(next); return next;
+  });
 
   // Daily OHLC for candlesticks — a static file (static/holdings_ohlc.json)
   // regenerated out-of-band, same pattern as nifty_5m.json. No backend route.
@@ -591,14 +618,20 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
       if (filter === 'neg') return d.ret < 0;
       return true;
     });
-    f.sort((p, q) =>
-      sort === 'az' ? p.sym.localeCompare(q.sym)
-      : sort === 'pnl' ? q.ret - p.ret
-      : sort === 'ath' ? q.fromAth - p.fromAth
-      : sort === 'val' ? q.current - p.current
-      : q.day - p.day);
+    f.sort((p, q) => {
+      if (sort === 'flag') {
+        const pr = flags[p.sym] != null ? FLAG_RANK[flags[p.sym]] : 3;
+        const qr = flags[q.sym] != null ? FLAG_RANK[flags[q.sym]] : 3;
+        return pr !== qr ? pr - qr : q.day - p.day;
+      }
+      return sort === 'az' ? p.sym.localeCompare(q.sym)
+        : sort === 'pnl' ? q.ret - p.ret
+        : sort === 'ath' ? q.fromAth - p.fromAth
+        : sort === 'val' ? q.current - p.current
+        : q.day - p.day;
+    });
     return f;
-  }, [allSeries, filter, sort]);
+  }, [allSeries, filter, sort, flags]);
 
   const current = useMemo(() => {
     if (!list.length) return null;
@@ -615,9 +648,18 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
   useEffect(() => {
     if (view !== 'focus') return;
     const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
       if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
       else if (e.key === 'Escape') setView('wall');
+      else if (current) {
+        const k = e.key.toLowerCase();
+        if (k === 'g') setFlag(current.sym, 'green');
+        else if (k === 'y') setFlag(current.sym, 'yellow');
+        else if (k === 'r') setFlag(current.sym, 'red');
+        else if (k === 'u') clearFlag(current.sym);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -693,6 +735,7 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
             <option value="ath">Distance from ATH</option>
             <option value="val">Current value</option>
             <option value="az">A–Z</option>
+            <option value="flag">Flag (🟢🟡🔴)</option>
           </select>
         </div>
         <div className={styles.chips}>
@@ -737,7 +780,10 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFocus(d.sym); } }}
             >
               <div className={styles.tTop}>
-                <div className={styles.tSym}>{d.sym}</div>
+                <div className={styles.tSym}>
+                  {flags[d.sym] ? <span className={styles.flagDot} style={{ background: FLAG_HEX[flags[d.sym]] }} /> : null}
+                  {d.sym}
+                </div>
                 <div>
                   <div className={styles.tLtp}>{d.ltp.toFixed(1)}</div>
                   <div className={`${styles.tDay} ${upDn(d.day)}`}>{pct(d.day)}</div>
@@ -765,7 +811,10 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
                   className={`${styles.rRow} ${h.sym === current.sym ? styles.rRowOn : ''}`}
                   onClick={() => setCurrentSym(h.sym)}
                 >
-                  <span className={styles.rs}>{h.sym}</span>
+                  <span className={styles.rs}>
+                    {flags[h.sym] ? <span className={styles.flagDot} style={{ background: FLAG_HEX[flags[h.sym]] }} /> : null}
+                    {h.sym}
+                  </span>
                   <span className={`${styles.rv} ${upDn(rvn)}`}>{rv}</span>
                 </div>
               );
@@ -777,6 +826,22 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
               <div>
                 <div className={styles.stTitle}>{current.sym}</div>
                 <div className={styles.stSub}>{current.qty} sh @ ₹{current.avg.toFixed(0)} · daily {(ohlc[current.sym]?.length ?? 0) >= 2 ? 'candles' : 'close'}</div>
+                <div className={styles.flagRow}>
+                  <span className={styles.flagLbl}>Flag</span>
+                  {FLAGS.map((c) => (
+                    <button
+                      key={c}
+                      className={`${styles.flagBtn} ${flags[current.sym] === c ? styles.flagBtnOn : ''}`}
+                      onClick={() => setFlag(current.sym, c)}
+                      title={`${c} flag (press ${c[0].toUpperCase()})`}
+                    >
+                      <span className={styles.flagIco} style={{ background: FLAG_HEX[c] }} />
+                    </button>
+                  ))}
+                  {flags[current.sym] ? (
+                    <button className={styles.flagClearBtn} onClick={() => clearFlag(current.sym)} title="Unflag (press U)">clear</button>
+                  ) : null}
+                </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div><span className={styles.stPrice}>{current.ltp.toFixed(1)}</span><span className={`${styles.stDay} ${upDn(current.day)}`}>{pct(current.day)}</span></div>
@@ -927,6 +992,8 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
           </div>
         </div>
       )}
+
+      <MomentumScanner heldSyms={new Set(holdings.map((h) => h.tradingsymbol))} />
     </div>
   );
 }

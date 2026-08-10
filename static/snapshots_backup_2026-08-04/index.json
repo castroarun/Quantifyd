@@ -1,0 +1,445 @@
+{
+  "generated_at": "2026-08-04T15:32:01",
+  "days": [
+    {
+      "date": "2026-08-04",
+      "file": "nas_mtm_2026-08-04.json",
+      "combined_last": -9048.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-08-03",
+      "file": "nas_mtm_2026-08-03.json",
+      "combined_last": 3373.5,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-31",
+      "file": "nas_mtm_2026-07-31.json",
+      "combined_last": 3016.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-30",
+      "file": "nas_mtm_2026-07-30.json",
+      "combined_last": -12922.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-29",
+      "file": "nas_mtm_2026-07-29.json",
+      "combined_last": 741.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-28",
+      "file": "nas_mtm_2026-07-28.json",
+      "combined_last": 951.6,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-27",
+      "file": "nas_mtm_2026-07-27.json",
+      "combined_last": 11225.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-24",
+      "file": "nas_mtm_2026-07-24.json",
+      "combined_last": 3809.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-23",
+      "file": "nas_mtm_2026-07-23.json",
+      "combined_last": 5336.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 984
+    },
+    {
+      "date": "2026-07-22",
+      "file": "nas_mtm_2026-07-22.json",
+      "combined_last": 6929.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-21",
+      "file": "nas_mtm_2026-07-21.json",
+      "combined_last": 7017.4,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-20",
+      "file": "nas_mtm_2026-07-20.json",
+      "combined_last": 2041.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 976
+    },
+    {
+      "date": "2026-07-17",
+      "file": "nas_mtm_2026-07-17.json",
+      "combined_last": -13075.4,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 992
+    },
+    {
+      "date": "2026-07-16",
+      "file": "nas_mtm_2026-07-16.json",
+      "combined_last": -4030.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-15",
+      "file": "nas_mtm_2026-07-15.json",
+      "combined_last": -6087.9,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 992
+    },
+    {
+      "date": "2026-07-14",
+      "file": "nas_mtm_2026-07-14.json",
+      "combined_last": 17335.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 992
+    },
+    {
+      "date": "2026-07-13",
+      "file": "nas_mtm_2026-07-13.json",
+      "combined_last": -38789.4,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-10",
+      "file": "nas_mtm_2026-07-10.json",
+      "combined_last": 79846.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-09",
+      "file": "nas_mtm_2026-07-09.json",
+      "combined_last": -82244.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-08",
+      "file": "nas_mtm_2026-07-08.json",
+      "combined_last": -21268.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-07",
+      "file": "nas_mtm_2026-07-07.json",
+      "combined_last": 40397.5,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 992
+    },
+    {
+      "date": "2026-07-06",
+      "file": "nas_mtm_2026-07-06.json",
+      "combined_last": 38220.0,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 992
+    },
+    {
+      "date": "2026-07-03",
+      "file": "nas_mtm_2026-07-03.json",
+      "combined_last": 102862.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-02",
+      "file": "nas_mtm_2026-07-02.json",
+      "combined_last": 31947.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-07-01",
+      "file": "nas_mtm_2026-07-01.json",
+      "combined_last": 89472.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-30",
+      "file": "nas_mtm_2026-06-30.json",
+      "combined_last": 6922.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 992
+    },
+    {
+      "date": "2026-06-29",
+      "file": "nas_mtm_2026-06-29.json",
+      "combined_last": -14657.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 960
+    },
+    {
+      "date": "2026-06-26",
+      "file": "nas_mtm_2026-06-26.json",
+      "combined_last": 0.0,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 992
+    },
+    {
+      "date": "2026-06-25",
+      "file": "nas_mtm_2026-06-25.json",
+      "combined_last": -89277.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 888
+    },
+    {
+      "date": "2026-06-24",
+      "file": "nas_mtm_2026-06-24.json",
+      "combined_last": 1761.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 864
+    },
+    {
+      "date": "2026-06-23",
+      "file": "nas_mtm_2026-06-23.json",
+      "combined_last": -1777.75,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-22",
+      "file": "nas_mtm_2026-06-22.json",
+      "combined_last": 11797.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-19",
+      "file": "nas_mtm_2026-06-19.json",
+      "combined_last": 14452.75,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-18",
+      "file": "nas_mtm_2026-06-18.json",
+      "combined_last": 0.0,
+      "n_fired": 0,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-17",
+      "file": "nas_mtm_2026-06-17.json",
+      "combined_last": 0.0,
+      "n_fired": 0,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-16",
+      "file": "nas_mtm_2026-06-16.json",
+      "combined_last": 6477.25,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-15",
+      "file": "nas_mtm_2026-06-15.json",
+      "combined_last": 2951.0,
+      "n_fired": 3,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-12",
+      "file": "nas_mtm_2026-06-12.json",
+      "combined_last": -6558.5,
+      "n_fired": 6,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-11",
+      "file": "nas_mtm_2026-06-11.json",
+      "combined_last": -2983.5,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-10",
+      "file": "nas_mtm_2026-06-10.json",
+      "combined_last": -5001.75,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-09",
+      "file": "nas_mtm_2026-06-09.json",
+      "combined_last": 4771.0,
+      "n_fired": 7,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-08",
+      "file": "nas_mtm_2026-06-08.json",
+      "combined_last": -8440.25,
+      "n_fired": 7,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-05",
+      "file": "nas_mtm_2026-06-05.json",
+      "combined_last": -3237.0,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-04",
+      "file": "nas_mtm_2026-06-04.json",
+      "combined_last": 6051.5,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-03",
+      "file": "nas_mtm_2026-06-03.json",
+      "combined_last": 0.0,
+      "n_fired": 4,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-02",
+      "file": "nas_mtm_2026-06-02.json",
+      "combined_last": -4335.5,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-06-01",
+      "file": "nas_mtm_2026-06-01.json",
+      "combined_last": 7368.4,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-29",
+      "file": "nas_mtm_2026-05-29.json",
+      "combined_last": 3666.0,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-28",
+      "file": "nas_mtm_2026-05-28.json",
+      "combined_last": 0.0,
+      "n_fired": 1,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-27",
+      "file": "nas_mtm_2026-05-27.json",
+      "combined_last": 1774.5,
+      "n_fired": 2,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-26",
+      "file": "nas_mtm_2026-05-26.json",
+      "combined_last": -6825.0,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-25",
+      "file": "nas_mtm_2026-05-25.json",
+      "combined_last": 8251.75,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-22",
+      "file": "nas_mtm_2026-05-22.json",
+      "combined_last": 10143.25,
+      "n_fired": 8,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-21",
+      "file": "nas_mtm_2026-05-21.json",
+      "combined_last": 689.0,
+      "n_fired": 2,
+      "n_systems": 8,
+      "n_points": 1000
+    },
+    {
+      "date": "2026-05-20",
+      "file": "nas_mtm_2026-05-20.json",
+      "combined_last": 2054.0,
+      "n_fired": 2,
+      "n_systems": 8,
+      "n_points": 1000
+    }
+  ]
+}
