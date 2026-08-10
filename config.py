@@ -635,7 +635,9 @@ ORB_DEFAULTS = {
     # Off:   enabled=False
     # Paper: enabled=True, paper_trading_mode=True, live_trading_enabled=False
     # Live:  enabled=True, paper_trading_mode=False, live_trading_enabled=True
-    'enabled': True,                    # 2026-06-18: ON in PAPER (do paper trades for ORB cash)
+    'enabled': False,                   # 2026-08-10: OFF — not traded, and its 5-minutely
+                                        # margin alerts were spamming while it competed for
+                                        # the cash the momentum book now uses.
     'paper_trading_mode': True,        # Paper: signals + DB log + reports, no Kite orders
     'live_trading_enabled': False,     # MIS live trading (only when paper_trading_mode=False)
 
