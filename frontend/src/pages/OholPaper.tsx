@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './OholPaper.module.css';
 
-type Position = { symbol: string; side: string; lot_size: number; entry: number; since: string };
+type Position = { symbol: string; side: string; lot_size: number; entry: number; since: string; last: number | null; mtm: number | null };
 type Setup = { symbol: string; side: string; trigger: number; status: string };
 type NavPt = { d: string; nav: number; n_pos: number };
 type Fill = { ts: string; symbol: string; side: string; price: number; lot_size: number; reason: string; pnl: number | null };
@@ -96,6 +96,8 @@ export default function OholPaper() {
         <Kpi label="NAV" value={lakh(nav)} tone="" />
         <Kpi label="Total return" value={(totalRet >= 0 ? '+' : '') + totalRet.toFixed(2) + '%'} tone={totalRet >= 0 ? 'pos' : 'neg'} />
         <Kpi label="Realized P&L" value={inr(s.realized)} tone={s.realized >= 0 ? 'pos' : 'neg'} />
+        <Kpi label="Unrealized (live)" value={inr(s.positions.reduce((a, p) => a + (p.mtm ?? 0), 0))}
+             tone={s.positions.reduce((a, p) => a + (p.mtm ?? 0), 0) >= 0 ? 'pos' : 'neg'} />
         <Kpi label="Open positions" value={`${s.n_positions} / 10`} tone="" />
         <Kpi label="Today's setups" value={String(s.today_setups.length)} tone="" />
         <Kpi label="Margin pool" value={lakh(s.capital)} tone="" />
@@ -133,7 +135,7 @@ export default function OholPaper() {
           <div className={styles.chartEmpty}>No open positions.</div>
         ) : (
           <table className={styles.table}>
-            <thead><tr><th>Stock</th><th>Side</th><th>Lot size</th><th>Entry ₹</th><th>Since</th></tr></thead>
+            <thead><tr><th>Stock</th><th>Side</th><th>Lot size</th><th>Entry ₹</th><th>Now ₹</th><th>Unrealized</th><th>Since</th></tr></thead>
             <tbody>
               {s.positions.map((p) => (
                 <tr key={p.symbol}>
@@ -141,6 +143,9 @@ export default function OholPaper() {
                   <td className={p.side === 'LONG' ? styles.pos : styles.neg}>{p.side}</td>
                   <td>{p.lot_size}</td>
                   <td>{p.entry.toFixed(2)}</td>
+                  <td>{p.last == null ? '—' : p.last.toFixed(2)}</td>
+                  <td className={p.mtm == null ? styles.muted : p.mtm >= 0 ? styles.pos : styles.neg}>
+                    {p.mtm == null ? '—' : inr(p.mtm)}</td>
                   <td className={styles.muted}>{p.since}</td>
                 </tr>
               ))}

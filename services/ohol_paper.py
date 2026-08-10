@@ -299,6 +299,13 @@ def _state():
         navs = c.execute("SELECT d, nav, n_pos FROM ohp_nav ORDER BY d").fetchall()
         fills = c.execute("SELECT ts, symbol, side, price, lot_size, reason, pnl "
                           "FROM ohp_fills ORDER BY id DESC LIMIT 50").fetchall()
+    ltps = {}
+    if poss:
+        try:
+            q = _kite().ltp([f"NSE:{p[0]}" for p in poss])
+            ltps = {k.split(":")[1]: v["last_price"] for k, v in q.items()}
+        except Exception:
+            pass
     return {
         "mode": "PAPER",
         "system": "O=L/O=H first-candle break, 1-lot futures, ST(7,2) 5m trail",
@@ -308,7 +315,10 @@ def _state():
         "realized": round(float(_get("realized", 0.0)), 0),
         "n_positions": len(poss),
         "positions": [{"symbol": s, "side": sd, "lot_size": ls, "entry": e,
-                       "since": t} for s, sd, ls, e, t in poss],
+                       "since": t, "last": ltps.get(s),
+                       "mtm": round(((ltps[s] - e) if sd == "LONG" else (e - ltps[s])) * ls, 0)
+                              if s in ltps else None}
+                      for s, sd, ls, e, t in poss],
         "today_setups": [{"symbol": s, "side": sd, "trigger": tr, "status": st}
                          for s, sd, tr, st in setups],
         "navcurve": [{"d": d, "nav": round(n, 0), "n_pos": p} for d, n, p in navs],

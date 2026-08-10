@@ -275,6 +275,13 @@ def _state():
         navs = c.execute("SELECT d, nav, gate, bench FROM obp_nav ORDER BY d").fetchall()
         fills = c.execute("SELECT ts, symbol, side, price, reason, pnl FROM obp_fills "
                           "ORDER BY id DESC LIMIT 50").fetchall()
+    ltps = {}
+    if poss:
+        try:
+            q = _kite().ltp([f"NSE:{p[0]}" for p in poss])
+            ltps = {k.split(":")[1]: v["last_price"] for k, v in q.items()}
+        except Exception:
+            pass
     return {
         "mode": "PAPER",
         "system": "Gap-ORB 90min/0.4%/4-day long + NIFTY>50DMA gate (research/89)",
@@ -283,7 +290,9 @@ def _state():
         "cash": round(_get_cash(), 0), "n_positions": len(poss),
         "gate_on": bool((_get("gate_cache") or {}).get("on")),
         "positions": [{"symbol": s, "qty": round(q, 2), "entry": e, "since": t,
-                       "stop": st, "sessions": ss}
+                       "stop": st, "sessions": ss,
+                       "last": ltps.get(s),
+                       "mtm": round(q * (ltps[s] - e), 0) if s in ltps else None}
                       for s, q, e, t, st, ss in poss],
         "navcurve": [{"d": d, "nav": round(n, 0), "gate": g, "bench": b}
                      for d, n, g, b in navs],

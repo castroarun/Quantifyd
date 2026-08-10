@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './OrbPaper.module.css';
 
-type Position = { symbol: string; qty: number; entry: number; since: string; stop: number; sessions: number };
+type Position = { symbol: string; qty: number; entry: number; since: string; stop: number; sessions: number; last: number | null; mtm: number | null };
 type NavPt = { d: string; nav: number; gate: number; bench: number | null };
 type Fill = { ts: string; symbol: string; side: string; price: number; reason: string; pnl: number | null };
 type State = {
@@ -60,6 +60,7 @@ export default function OrbPaper() {
   const totalRet = ((nav - s.capital) / s.capital) * 100;
   const sells = s.recent_fills.filter((f) => f.side === 'SELL' && f.pnl != null);
   const realized = sells.reduce((a, f) => a + (f.pnl as number), 0);
+  const unreal = s.positions.reduce((a, p) => a + (p.mtm ?? 0), 0);
   const running = !s.killed;
 
   type Trade = { symbol: string; entryTs: string; entry: number; exitTs: string | null;
@@ -107,6 +108,7 @@ export default function OrbPaper() {
         <Kpi label="Cash" value={lakh(s.cash)} tone="" />
         <Kpi label="Open positions" value={`${s.n_positions} / 20`} tone="" />
         <Kpi label="Realized (recent)" value={inr(realized)} tone={realized >= 0 ? 'pos' : 'neg'} />
+        <Kpi label="Unrealized (live)" value={inr(unreal)} tone={unreal >= 0 ? 'pos' : 'neg'} />
         <Kpi label="Capital" value={lakh(s.capital)} tone="" />
       </div>
 
@@ -121,13 +123,16 @@ export default function OrbPaper() {
           <div className={styles.chartEmpty}>Flat — entries arrive on gap-up days that break the 90-min range (gate permitting).</div>
         ) : (
           <table className={styles.table}>
-            <thead><tr><th>Stock</th><th>Qty</th><th>Entry ₹</th><th>Stop (OR-low)</th><th>Session</th><th>Since</th></tr></thead>
+            <thead><tr><th>Stock</th><th>Qty</th><th>Entry ₹</th><th>Now ₹</th><th>Unrealized</th><th>Stop (OR-low)</th><th>Session</th><th>Since</th></tr></thead>
             <tbody>
               {s.positions.map((p) => (
                 <tr key={p.symbol}>
                   <td className={styles.sym}>{p.symbol}</td>
                   <td>{p.qty}</td>
                   <td>{p.entry.toFixed(2)}</td>
+                  <td>{p.last == null ? '—' : p.last.toFixed(2)}</td>
+                  <td className={p.mtm == null ? styles.muted : p.mtm >= 0 ? styles.pos : styles.neg}>
+                    {p.mtm == null ? '—' : inr(p.mtm)}</td>
                   <td className={styles.muted}>{p.stop.toFixed(2)}</td>
                   <td>{p.sessions} / 4</td>
                   <td className={styles.muted}>{p.since}</td>
