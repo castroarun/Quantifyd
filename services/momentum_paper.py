@@ -400,8 +400,9 @@ def reconcile_holdings():
     if not _is_live():
         return {"live": False, "note": "paper mode"}
     try:
-        k = _kite()
-        broker = {h["tradingsymbol"]: int(h["quantity"]) for h in k.holdings()}
+        # holdings() alone misses same-day CNC buys (equity settles T+1); _broker_qty() adds
+        # positions() so a freshly bought line is not mistaken for a missing one.
+        broker = _broker_qty()
     except Exception as e:
         return {"live": True, "error": str(e)}
     ours = {s: int(round(p["qty"])) for s, p in _positions().items()}
