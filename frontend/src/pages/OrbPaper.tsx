@@ -74,7 +74,15 @@ export default function OrbPaper() {
       if (t) { t.exitTs = f.ts; t.exit = f.price; t.exitVia = f.reason; t.pnl = f.pnl; }
     }
   });
-  trades.reverse();
+  const tkey = (ts: string) => ts.replace(' ', 'T');
+  trades.sort((a, b) => tkey(b.entryTs).localeCompare(tkey(a.entryTs)));
+  const fmtTs = (ts: string | null) => {
+    if (!ts) return '—';
+    const d = new Date(tkey(ts));
+    return isNaN(d.getTime()) ? ts
+      : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ' ' +
+        d.toTimeString().slice(0, 5);
+  };
 
   return (
     <div className={styles.root}>
@@ -144,9 +152,9 @@ export default function OrbPaper() {
               {trades.map((t, i) => (
                 <tr key={i}>
                   <td className={styles.sym}>{t.symbol}</td>
-                  <td className={styles.muted}>{t.entryTs}</td>
+                  <td className={styles.muted}>{fmtTs(t.entryTs)}</td>
                   <td>{t.entry.toFixed(2)}</td>
-                  <td className={styles.muted}>{t.exitTs ?? '—'}</td>
+                  <td className={styles.muted}>{fmtTs(t.exitTs)}</td>
                   <td>{t.exit == null ? '—' : t.exit.toFixed(2)}</td>
                   <td><span className={styles.reason}>{t.exitVia ?? 'OPEN'}</span></td>
                   <td className={t.pnl == null ? styles.muted : t.pnl >= 0 ? styles.pos : styles.neg}>
