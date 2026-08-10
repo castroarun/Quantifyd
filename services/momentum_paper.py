@@ -155,7 +155,7 @@ RULES = [
     ("Hedge gate", "DAILY — ~15:15 IST",
      "The put decision is checked every EOD against the NIFTYBEES 100-day SMA: buy on a breach, sell "
      "when it is reclaimed (research/108b: net Calmar 1.32 -> 1.43 vs checking only weekly)."),
-    ("Donchian stop", "DAILY — ~15:15 IST (pre-close, executable)",
+    ("Donchian stop", "DAILY — ~15:05 IST (before the 15:15-15:20 closing-auction window, when NSE rejects new orders)",
      "If any holding is below its own prior-15-day low → exit just that one stock to cash."),
     ("Hedge cash reserve", "continuous",
      "Never deploy the last 3% of NAV — guarantees the bi-weekly put premium can always be funded, "
@@ -1439,7 +1439,9 @@ def register(app, scheduler):
     # Monthly re-rank runs EARLY (~14:45) for runway; light Donchian+gate near close (~15:15).
     scheduler.add_job(rebalance_job, "cron", day_of_week="mon-fri", hour=14, minute=45,
                       id="mp_rebalance", replace_existing=True)
-    scheduler.add_job(eod_job, "cron", day_of_week="mon-fri", hour=15, minute=15,
+    # 15:05, NOT 15:15 — 15:15-15:20 is the NSE Closing Auction Session transition window where new
+    # orders are rejected. A Donchian stop that fires then simply cannot fill (seen live 2026-08-10).
+    scheduler.add_job(eod_job, "cron", day_of_week="mon-fri", hour=15, minute=5,
                       id="mp_eod", replace_existing=True)
 
     def _mp_eod_report_job():                              # EOD email report ~15:35 (after the EOD job)
