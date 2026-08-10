@@ -194,20 +194,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/momentum-paper"
-            icon={<IconBarChart />}
-            label="Momentum ₹20L"
-            active={active === 'momentum-paper'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/breakout-paper"
-            icon={<IconBarChart />}
-            label="Breakout ₹10L"
-            active={active === 'breakout-paper'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/ha-paper"
             icon={<IconBarChart />}
             label="HA 2-Green ₹20L"
@@ -243,13 +229,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/holdings"
-            icon={<IconBriefcase />}
-            label="Holdings"
-            active={active === 'holdings'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/journal"
             icon={<IconJournal />}
             label="Journal"
@@ -261,6 +240,33 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLightbulb />}
             label="Future plans"
             active={active === 'future-plans'}
+            collapsed={collapsed}
+          />
+        </nav>
+      </div>
+
+      <div className={styles.section}>
+        {!collapsed && <div className={styles.sectionLabel}>Holdings</div>}
+        <nav className={styles.nav}>
+          <NavItem
+            to="/holdings"
+            icon={<IconBriefcase />}
+            label="Holdings"
+            active={active === 'holdings'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/momentum-paper"
+            icon={<IconBarChart />}
+            label="Momentum ₹3L LIVE"
+            active={active === 'momentum-paper'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/breakout-paper"
+            icon={<IconBarChart />}
+            label="Breakout ₹10L"
+            active={active === 'breakout-paper'}
             collapsed={collapsed}
           />
         </nav>
