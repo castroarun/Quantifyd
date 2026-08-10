@@ -8863,6 +8863,20 @@ except Exception as e:
     logger.warning(f"Could not register ORB scheduled jobs: {e}")
 
 
+
+# ORB_DISABLED_JOB_SWEEP: ORB registers its jobs unconditionally above. When ORB is disabled in config, strip
+# them so it cannot trade, poll margin every 5 minutes, or email status. Flipping the flag back on
+# and restarting re-registers them normally.
+if not ORB_DEFAULTS.get('enabled', False):
+    for _jid in ('orb_init_day', 'orb_update_or', 'orb_eval_signals', 'orb_monitor_pos',
+                 'orb_midmorning_status', 'orb_activate_trail', 'orb_eod_squareoff',
+                 'orb_eod_report', 'orb_daily_backtest'):
+        try:
+            scheduler.remove_job(_jid)
+        except Exception:
+            pass
+    logger.warning('[ORB] disabled in config — scheduled jobs removed (no trading, no alerts)')
+
 # ============================================================================
 # Intraday 75% WR (Configs A, B, C) — scheduled jobs
 # ============================================================================
