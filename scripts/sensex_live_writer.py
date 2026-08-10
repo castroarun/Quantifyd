@@ -150,8 +150,9 @@ def build():
                 "status": r.get("status"),
                 "pnl": round(pnl),
             })
-        if live_any:
-            day_pnl += sys_pnl
+        # Header sums ALL systems (paper + live). Was live-only, which showed today=0 whenever
+        # the whole book runs paper (e.g. master-mode=paper).
+        day_pnl += sys_pnl
         systems.append({
             "key": key,
             "label": lab,
