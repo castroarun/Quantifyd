@@ -574,7 +574,7 @@ function saveFlags(f: Record<string, FlagColor>) {
   try { localStorage.setItem('holdingsFlags', JSON.stringify(f)); } catch { /* ignore */ }
 }
 
-export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[] }) {
+export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: HoldingsRecord[]; ohlcUrl?: string }) {
   const [view, setView] = useState<'wall' | 'focus'>('wall');
   const [sort, setSort] = useState('day');
   const [filter, setFilter] = useState('all');
@@ -597,7 +597,7 @@ export default function HoldingsCharts({ holdings }: { holdings: HoldingsRecord[
   // regenerated out-of-band, same pattern as nifty_5m.json. No backend route.
   useEffect(() => {
     let on = true;
-    fetch(`/static/holdings_ohlc.json?t=${Math.floor(Date.now() / 300000)}`, { cache: 'no-store' })
+    fetch(`${ohlcUrl || "/static/holdings_ohlc.json"}?t=${Math.floor(Date.now() / 300000)}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (on && d && d.symbols) setOhlc(d.symbols as OhlcMap); })
       .catch(() => {});
