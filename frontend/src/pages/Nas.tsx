@@ -22,9 +22,10 @@ import {
 interface LiveTicks {
   spot: number | null;
   legs: Record<string, number>; // tradingsymbol → ltp
+  highs: Record<string, number>; // tradingsymbol → day-high (max traded premium)
   connected: boolean;
 }
-const LiveTicksContext = createContext<LiveTicks>({ spot: null, legs: {}, connected: false });
+const LiveTicksContext = createContext<LiveTicks>({ spot: null, legs: {}, connected: false, highs: {} });
 const useLiveTicks = () => useContext(LiveTicksContext);
 
 /* ---------- system definitions ---------- */
@@ -532,7 +533,7 @@ function SensexLiveCard() {
       {m === 'live' ? 'LIVE' : (m || '').toUpperCase()}
     </span>
   );
-  const GRID = '54px 68px 46px 60px 60px 60px 1fr 78px 82px';
+  const GRID = '54px 68px 46px 60px 60px 60px 60px 1fr 78px 82px';
   const sessions = (hist && hist.sessions) || [];
   const anyLive = withLegs.some((x: any) => x.mode === 'live');
 
@@ -572,11 +573,11 @@ function SensexLiveCard() {
             </span>
           </div>
           <div style={{ overflowX: 'auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: GRID, gap: 8, minWidth: 620,
+            <div style={{ display: 'grid', gridTemplateColumns: GRID, gap: 8, minWidth: 700,
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
               <span style={{ ...head, textAlign: 'left' }}>C/P</span><span style={head}>STRIKE</span>
               <span style={head}>QTY</span><span style={{ ...head, textAlign: 'left' }}>MODE</span>
-              <span style={head}>ENTRY</span><span style={head}>LTP</span>
+              <span style={head}>ENTRY</span><span style={head}>LTP</span><span style={head}>MAX</span>
               <span style={{ ...head, textAlign: 'left' }}>ARM</span><span style={head}>STATUS</span>
               <span style={head}>P&amp;L</span>
               {(sy.legs || []).map((l: any, li: number) => (
@@ -587,6 +588,7 @@ function SensexLiveCard() {
                   <span style={{ ...cell, textAlign: 'left' }}>{modePill(l.mode)}</span>
                   <span style={cell}>{l.entry}</span>
                   <span style={cell}>{l.ltp ?? '—'}</span>
+                  <span style={{ ...cell, color: 'var(--ink-muted)' }}>{l.max ?? '—'}</span>
                   <span style={{ ...cell, textAlign: 'left',
                     color: (l.arm || '').includes('UNARMED') ? '#f85149' : 'var(--ink-muted)' }}>{l.arm}</span>
                   <span style={{ ...cell, color: l.status === 'ACTIVE' ? '#3fb950' : 'var(--ink-muted)' }}>{l.status}</span>
@@ -1177,8 +1179,27 @@ export default function Nas() {
     spot: null,
     legs: {},
     connected: false,
+    highs: {},
   });
   const evtRef = useRef<EventSource | null>(null);
+
+  // Poll per-leg DAY HIGH (max traded premium) written by scripts/leg_day_highs.py (cron, 1/min).
+  useEffect(() => {
+    let dead = false;
+    const load = () =>
+      fetch(`/app/leg_highs.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d) => {
+          if (!dead && d && d.highs) setLiveTicks((prev) => ({ ...prev, highs: d.highs }));
+        })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 30000);
+    return () => {
+      dead = true;
+      clearInterval(id);
+    };
+  }, []);
 
   // Poll the per-system intraday MTM curves every 30s. Cheap (one row per
   // system per 3 min), reuses the same snapshots the EOD report renders.
@@ -1251,11 +1272,12 @@ export default function Nas() {
               const ltp = (info as { ltp?: number }).ltp;
               if (typeof ltp === 'number') legs[tsym] = ltp;
             }
-            setLiveTicks({
+            setLiveTicks((prev) => ({
+              ...prev,
               spot: typeof d.spot === 'number' && d.spot > 0 ? d.spot : null,
               legs,
               connected: true,
-            });
+            }));
           } else if (d.type === 'offline') {
             setLiveTicks((prev) => ({ ...prev, connected: false }));
           }
@@ -2659,7 +2681,7 @@ function SystemPanel({ def, onStateChange, onToast, series, events, onExpand }: 
         {enriched.length === 0 ? (
           <div className={styles.noLegs}>No open legs</div>
         ) : (
-          enriched.map((p, i) => <LegRow key={(p.tradingsymbol ?? '') + i} leg={p} />)
+          enriched.map((p, i) => <LegRow key={(p.tradingsymbol ?? '') + i} leg={p} high={liveTicks.highs?.[p.tradingsymbol ?? '']} />)
         )}
       </div>
 
@@ -2811,10 +2833,12 @@ function LegRow({
   leg,
   closed = false,
   reason,
+  high,
 }: {
   leg: NASPosition;
   closed?: boolean;
   reason?: string;
+  high?: number;
 }) {
   // Show just the strike (e.g. "24300") — the CE/PE side is already shown as
   // the badge to the left, so the full contract code is noise. Fall back to
@@ -2849,6 +2873,9 @@ function LegRow({
           {ltp !== undefined ? formatNumber(ltp) : '—'}
           {exitTime ? <span className={styles.legTime}> @{exitTime}</span> : null}
         </span>
+        {!closed && high !== undefined ? (
+          <span className={styles.legSmall} style={{ opacity: 0.65 }}>max {formatNumber(high)}</span>
+        ) : null}
         <span className={pnlClass(pnl)} style={{ fontSize: 'var(--text-xs)' }}>
           {formatPnl(pnl)}
         </span>

@@ -96,13 +96,17 @@ def build():
                 all_syms.add(r["tradingsymbol"])
 
     ltp_map = {}
+    high_map = {}          # day-high (max traded premium) per leg, from quote()'s ohlc.high
     if all_syms:
         try:
-            q = kite.ltp(["BFO:" + s for s in all_syms]) or {}
+            q = kite.quote(["BFO:" + s for s in all_syms]) or {}
             for s in all_syms:
                 v = q.get("BFO:" + s)
                 if v and v.get("last_price") is not None:
                     ltp_map[s] = v["last_price"]
+                    _oh = v.get("ohlc") or {}
+                    if _oh.get("high") is not None:
+                        high_map[s] = _oh["high"]
         except Exception:
             pass
 
@@ -119,10 +123,13 @@ def build():
             mode = (r.get("mode") or "paper")
             if mode == "live":
                 live_any = True
+            mx = None
             if r.get("status") == "ACTIVE":
                 ltp = ltp_map.get(r.get("tradingsymbol"))
                 pnl = (entry - ltp) * qty if ltp is not None else 0
                 disp = round(ltp, 1) if ltp is not None else None
+                _h = high_map.get(r.get("tradingsymbol"))
+                mx = round(_h, 1) if _h is not None else None
                 arm = _arm(cfg, r, spot)
             else:
                 # exited today — realized P&L, show the exit price and reason in place of live/arm
@@ -138,6 +145,7 @@ def build():
                 "mode": mode,
                 "entry": round(entry, 1),
                 "ltp": disp,
+                "max": mx,
                 "arm": arm,
                 "status": r.get("status"),
                 "pnl": round(pnl),
