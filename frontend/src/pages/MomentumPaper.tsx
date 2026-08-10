@@ -178,7 +178,7 @@ export default function MomentumPaper() {
           <table className={styles.table}>
             <thead><tr>
               <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th>
-              <th>P&L</th><th>Days</th><th>Donchian stop</th><th>To stop</th>
+              <th>Value</th><th>P&L ₹</th><th>P&L %</th><th>Days</th><th>Donchian stop</th><th>To stop</th>
             </tr></thead>
             <tbody>
               {s.holdings.map((h) => (
@@ -191,8 +191,11 @@ export default function MomentumPaper() {
                   <td className={styles.muted}>{h.entry_date}</td>
                   <td>{h.entry_price ?? '—'}</td>
                   <td>{h.is_cash ? lakh(h.value) : h.price}</td>
+                  <td>{lakh(h.value)}</td>
+                  <td className={(h.pnl ?? 0) >= 0 ? styles.pos : styles.neg}>
+                    {(h.pnl ?? 0) >= 0 ? '+' : ''}{inr(h.pnl ?? 0)}</td>
                   <td className={(h.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg}>
-                    {h.is_cash ? '+' + inr(h.pnl) : pct(h.pnl_pct)}</td>
+                    {h.is_cash ? '—' : pct(h.pnl_pct)}</td>
                   <td>{h.days}</td>
                   <td className={styles.muted}>{h.is_cash ? '—' : (h.stop ?? '—')}</td>
                   <td className={!h.is_cash && (h.stop_dist_pct ?? 9) < 3 ? styles.warn : ''}>
@@ -200,6 +203,24 @@ export default function MomentumPaper() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              {(() => {
+                const tv = s.holdings.reduce((a, h) => a + (h.value || 0), 0);
+                const tp = s.holdings.reduce((a, h) => a + (h.pnl || 0), 0);
+                const cost = tv - tp;
+                const tpc = cost > 0 ? (tp / cost) * 100 : 0;
+                return (
+                  <tr style={{ borderTop: '2px solid var(--border,#3a434e)', fontWeight: 700 }}>
+                    <td>TOTAL ({s.holdings.filter((h) => !h.is_cash).length} stocks + cash)</td>
+                    <td>100%</td><td /><td /><td />
+                    <td>{lakh(tv)}</td>
+                    <td className={tp >= 0 ? styles.pos : styles.neg}>{tp >= 0 ? '+' : ''}{inr(tp)}</td>
+                    <td className={tpc >= 0 ? styles.pos : styles.neg}>{pct(tpc)}</td>
+                    <td /><td /><td />
+                  </tr>
+                );
+              })()}
+            </tfoot>
           </table>
         </div>
       )}
@@ -254,6 +275,23 @@ export default function MomentumPaper() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              {(() => {
+                const tp = s.closed.reduce((a, c) => a + (c.net_pnl || 0), 0);
+                const tax = s.closed.reduce((a, c) => a + (c.stcg_tax || 0), 0);
+                const wins = s.closed.filter((c) => c.net_pnl > 0).length;
+                return (
+                  <tr style={{ borderTop: '2px solid var(--border,#3a434e)', fontWeight: 700 }}>
+                    <td>TOTAL ({s.closed.length} closed · {wins} winners)</td>
+                    <td /><td /><td /><td />
+                    <td className={tp >= 0 ? styles.pos : styles.neg}>{tp >= 0 ? '+' : ''}{inr(tp)}</td>
+                    <td className={styles.muted} colSpan={3}>
+                      after {inr(tax)} STCG · net {inr(tp - tax)}
+                    </td>
+                  </tr>
+                );
+              })()}
+            </tfoot>
           </table>
         )}
       </div>
