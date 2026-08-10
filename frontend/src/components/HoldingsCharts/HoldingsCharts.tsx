@@ -84,7 +84,7 @@ function toSeries(r: HoldingsRecord, bars?: Bar[]): Series | null {
   };
 }
 
-interface Bar { t: string; o: number; h: number; l: number; c: number; v: number; }
+interface Bar { t: string; o: number; h: number; l: number; c: number; v: number; stop?: number | null; }
 type OhlcMap = Record<string, Bar[]>;
 
 function ymd(d: Date): string {
@@ -397,6 +397,22 @@ function drawFocusCandles(cv: HTMLCanvasElement, bars: Bar[], s: Series, view: V
     }
     x.stroke(); x.globalAlpha = 1;
   };
+  // Donchian trailing stop — the momentum book's actual exit level (only present on that feed)
+  if (all.some((b) => b.stop != null)) {
+    x.strokeStyle = readVar('--accent-neg'); x.lineWidth = 1.5;
+    x.setLineDash([5, 3]); x.beginPath();
+    let st = false;
+    for (let i = vs; i <= ve; i++) {
+      const v = all[i].stop; if (v == null) continue;
+      if (!st) { x.moveTo(px(i), py(v)); st = true; } else x.lineTo(px(i), py(v));
+    }
+    x.stroke(); x.setLineDash([]);
+    const lastStop = all[ve]?.stop;
+    if (lastStop != null) {
+      x.fillStyle = readVar('--accent-neg'); x.font = `700 10px ${font}`; x.textAlign = 'left';
+      x.fillText(`stop ${lastStop.toFixed(lastStop > 1000 ? 0 : 1)}`, padL + 3, py(lastStop) - 4);
+    }
+  }
   dma(d200All, readVar('--brand-navy'));
   dma(d50All, readVar('--brand-amber'));
   // candles
