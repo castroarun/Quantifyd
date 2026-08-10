@@ -1340,6 +1340,9 @@ export default function Nas() {
   };
   const squeezeDayPnl = squeezeSystems.reduce((acc, s) => acc + liveSystemPnl(s), 0);
   const nineSixteenDayPnl = nineSixteenSystems.reduce((acc, s) => acc + liveSystemPnl(s), 0);
+  const nineSixteenActive = nineSixteenSystems.filter(
+    (s) => (((s?.positions?.ce?.length ?? 0) + (s?.positions?.pe?.length ?? 0)) > 0),
+  ).length;
 
   const core = headerState?.state ?? {};
   const isSqueezing = !!core.is_squeezing;
@@ -1530,7 +1533,7 @@ export default function Nas() {
               {formatPnl(nineSixteenDayPnl)}
             </span>
           }
-          hint="All four 9:16 systems"
+          hint={`${nineSixteenActive} of ${ENTRY_916_SYSTEMS.length} systems traded today`}
         />
       </div>
 
