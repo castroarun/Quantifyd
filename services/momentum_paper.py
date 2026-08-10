@@ -94,7 +94,8 @@ def _mcap_tier(sym):
     return "Midcap"
 
 CFG = dict(
-    capital=2_000_000,        # ₹20 lakh
+    capital=300_000,          # Rs3L allocated inside the shared account (NAS + manual trades
+                              # + 30-odd personal holdings share the rest of the balance)        # ₹20 lakh
     n_hold=8,
     buffer=22,
     etf_size=30,
@@ -107,12 +108,18 @@ CFG = dict(
     liq_lookback=320,         # ~trailing 6mo (in trading days *1.6) for traded-value median
     refresh_candidates=380,   # how many top-liquidity names to refresh from Kite at rebalance
     # ── LIVE-execution guardrails (only consulted when live_mode is ON) ──
+    shared_account=True,      # the account also runs NAS + 30-odd personal holdings + manual trades
+    order_product="CNC",      # start unlevered. At Rs3L, 1.0x sizes all 8 slots cleanly and pays
+                              # no MTF interest. Switch to "MTF" when stepping up to 1.3x.      # Arun's choice: fund the book via the MTF facility, not full cash
+    clash_alert=True,         # email when the book buys a name already held personally (merged line)
     live_max_order_value=1_500_000,  # per-order sanity cap (₹) — refuse any single live order above this
     live_fill_timeout=90,     # seconds to poll a MARKET order for a COMPLETE fill before giving up
     live_slippage_alert=0.01,  # log a SLIPPAGE alert if |fill − expected| exceeds 1% of expected
     live_rebalance_trim=False,
     # ── PUT HEDGE (research/105: bi-weekly 2x is the best tenor/ratio) ──
-    hedge_enabled=True,       # at a risk-off gate: hold the stocks + buy NIFTY puts instead of selling
+    hedge_enabled=False,      # NOT VIABLE at Rs3L: one NIFTY lot is Rs16L notional = 5.3x this
+                              # book. Needs ~Rs8L equity to size to one lot. Until then the book
+                              # runs the cash-exit gate, which beat the hedge over the full cycle.       # at a risk-off gate: hold the stocks + buy NIFTY puts instead of selling
     hedge_ratio=2.0,          # put notional = 2.0 x equity value
     hedge_dte_target=14,      # bi-weekly — the next week's expiry (best tenor tested)
     hedge_dte_min=8, hedge_dte_max=20,
@@ -268,6 +275,90 @@ def _alert(title, msg, priority="normal"):
         logger.error(f"[MP] alert dispatch failed: {_e}")
 
 
+def _order_product(k):
+    """CNC by default; MTF when configured (shared account funds the book via margin trading)."""
+    p = (CFG.get("order_product") or "CNC").upper()
+    if p == "MTF":
+        return getattr(k, "PRODUCT_MTF", "MTF")
+    if p == "NRML":
+        return k.PRODUCT_NRML
+    return k.PRODUCT_CNC
+
+
+def _broker_qty():
+    """Total quantity per symbol at the broker (holdings + carry-forward positions), across products.
+    Includes Arun's personal shares — this is the ACCOUNT view, not the system's."""
+    out = {}
+    try:
+        k = _kite()
+        for h in k.holdings():
+            out[h["tradingsymbol"]] = out.get(h["tradingsymbol"], 0) + int(h.get("quantity") or 0)
+        for p in k.positions().get("net", []):
+            if p.get("product") in ("CNC", "MTF") and int(p.get("quantity") or 0):
+                out[p["tradingsymbol"]] = out.get(p["tradingsymbol"], 0) + int(p["quantity"])
+    except Exception as e:
+        logger.error(f"[MP-SHARED] broker view failed: {e}")
+    return out
+
+
+def _system_deployed(live=None):
+    """Rupee value the SYSTEM currently has deployed (its own ledger, not the account)."""
+    pos = _positions()
+    if not pos:
+        return 0.0
+    live = live or _live_prices(list(pos))
+    return sum(p["qty"] * (live.get(s) or p["entry_price"]) for s, p in pos.items())
+
+
+def _capital_fence_ok(add_rupees, live=None):
+    """The book may never exceed its allocated capital — the rest of the account belongs to NAS,
+    manual positions and personal holdings."""
+    cap = float(_get("capital", CFG["capital"]) or CFG["capital"])
+    used = _system_deployed(live)
+    if used + add_rupees <= cap * 1.02:
+        return True
+    logger.warning(f"[MP-SHARED] capital fence: deployed Rs{used:,.0f} + Rs{add_rupees:,.0f} "
+                   f"would exceed the allocated Rs{cap:,.0f} — order refused")
+    _alert("CAPITAL FENCE HIT",
+           f"Momentum tried to deploy Rs{add_rupees:,.0f} on top of Rs{used:,.0f}, beyond its "
+           f"allocated Rs{cap:,.0f}. Order refused. Raise the allocation if this is intended.", "normal")
+    return False
+
+
+def _flag_clash(symbol, sys_qty):
+    """Warn when the book buys into a name already held personally — the broker line is now merged."""
+    if not (CFG["shared_account"] and CFG["clash_alert"]):
+        return
+    try:
+        existing = _broker_qty().get(symbol, 0)
+    except Exception:
+        return
+    if existing > 0:
+        logger.warning(f"[MP-SHARED] CLASH {symbol}: you already hold {existing}; system adding {sys_qty}")
+        _alert("MERGED POSITION",
+               f"Momentum bought {sys_qty} {symbol}, which you ALREADY hold ({existing} shares).\n"
+               f"The broker now shows one merged line of {existing + sys_qty}.\n"
+               f"The system will only ever sell its own {sys_qty} — your {existing} are protected by "
+               f"the sell guard — but do not manually sell this line without adjusting the book.",
+               "normal")
+
+
+def _sellable_qty(symbol, want_qty):
+    """Never sell more than the system owns, and never more than the broker actually has."""
+    want = int(round(want_qty))
+    if not CFG["shared_account"] or not _is_live():
+        return want
+    have = _broker_qty().get(symbol, 0)
+    if have < want:
+        logger.error(f"[MP-SHARED] {symbol}: system wants to sell {want} but broker shows {have}")
+        _alert("SELL BLOCKED — LEDGER MISMATCH",
+               f"The book believes it owns {want} {symbol} but the broker shows only {have}. "
+               f"Selling only {max(0, have)}. Someone may have sold this line manually — reconcile "
+               f"the book before it trades again.", "high")
+        return max(0, have)
+    return want
+
+
 def _place_cnc_market(symbol, side, qty):
     """Place a real NSE CNC MARKET order and BLOCK until it fills. Returns (avg_price, filled_qty).
     Raises on rejection/timeout. Reached ONLY when live_mode is on — this spends real money."""
@@ -279,7 +370,7 @@ def _place_cnc_market(symbol, side, qty):
     oid = k.place_order(
         variety=k.VARIETY_REGULAR, exchange=k.EXCHANGE_NSE, tradingsymbol=symbol,
         transaction_type=(k.TRANSACTION_TYPE_BUY if side == "BUY" else k.TRANSACTION_TYPE_SELL),
-        quantity=int(qty), product=k.PRODUCT_CNC, order_type=k.ORDER_TYPE_MARKET,
+        quantity=int(qty), product=_order_product(k), order_type=k.ORDER_TYPE_MARKET,
         validity=k.VALIDITY_DAY, tag="MOMENTUM")
     logger.warning(f"[MP-LIVE] {side} {symbol} x{int(qty)} → order {oid} placed")
     deadline = _time.time() + CFG["live_fill_timeout"]
@@ -314,13 +405,26 @@ def reconcile_holdings():
     except Exception as e:
         return {"live": True, "error": str(e)}
     ours = {s: int(round(p["qty"])) for s, p in _positions().items()}
-    diffs = [{"symbol": s, "book": ours.get(s, 0), "broker": broker.get(s, 0)}
-             for s in sorted(set(ours) | set(broker)) if ours.get(s, 0) != broker.get(s, 0)]
+    if CFG["shared_account"]:
+        # The account holds NAS + 30-odd personal names, so broker > book is EXPECTED and not an
+        # error. Only the dangerous direction is a real mismatch: the book claiming more than exists.
+        diffs = [{"symbol": s, "book": ours[s], "broker": broker.get(s, 0), "issue": "book > broker"}
+                 for s in ours if broker.get(s, 0) < ours[s]]
+        merged = [{"symbol": s, "book": ours[s], "broker": broker.get(s, 0)}
+                  for s in ours if broker.get(s, 0) > ours[s]]
+        if merged:
+            logger.info(f"[MP-SHARED] {len(merged)} merged lines (system + personal): "
+                        + ", ".join(f"{m['symbol']} {m['book']}/{m['broker']}" for m in merged))
+    else:
+        diffs = [{"symbol": s, "book": ours.get(s, 0), "broker": broker.get(s, 0)}
+                 for s in sorted(set(ours) | set(broker)) if ours.get(s, 0) != broker.get(s, 0)]
+        merged = []
     if diffs:
         logger.warning(f"[MP-LIVE] HOLDINGS MISMATCH (book vs broker): {diffs}")
         _alert("HOLDINGS MISMATCH", "Book vs broker holdings differ:\n" +
                "\n".join(f"  {d['symbol']}: book {d['book']} vs broker {d['broker']}" for d in diffs), "high")
-    return {"live": True, "match": not diffs, "diffs": diffs}
+    return {"live": True, "match": not diffs, "diffs": diffs,
+            "merged": merged, "shared_account": CFG["shared_account"]}
 
 
 def _toggle_mode(body):
