@@ -200,13 +200,13 @@ export default function MomentumPaper() {
         </div>
       )}
 
-      {/* Charts — the holdings-page chart (theme-aware, zoom + pan + browse) with our stop drawn on */}
+      {/* Charts — rendered exactly like /app/holdings (no card wrapper) so it gets full width */}
       {s.holdings.filter((h) => !h.is_cash).length > 0 && (
-        <div className={styles.card}>
+        <div className={styles.chartsSection}>
           <div className={styles.cardTitle}>
             Charts — live positions
             <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--ink-muted,#888)', marginLeft: 8 }}>
-              scroll to zoom · drag to pan · the red dashed line is the Donchian trailing stop (the exit rule)
+              scroll to zoom · drag to pan · red dashed line = Donchian trailing stop (the exit rule)
             </span>
           </div>
           <HoldingsCharts

@@ -1,4 +1,6 @@
-.root { max-width: 1280px; }
+.root { max-width: 1440px; }
+/* charts render outside a card so they get the full page width, matching /app/holdings */
+.chartsSection { margin-bottom: 16px; }
 .loading { font-size: var(--text-sm); color: var(--ink-muted); padding: 24px 0; }
 
 .headerRow {
