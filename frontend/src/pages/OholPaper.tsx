@@ -52,6 +52,22 @@ export default function OholPaper() {
   const totalRet = ((nav - s.capital) / s.capital) * 100;
   const running = !s.killed;
 
+  // pair raw fills into round-trip trades (fills arrive newest-first)
+  type Trade = { symbol: string; dir: string; lot: number; entryTs: string; entry: number;
+                 exitTs: string | null; exit: number | null; exitVia: string | null; pnl: number | null };
+  const trades: Trade[] = [];
+  [...s.recent_fills].reverse().forEach((f) => {
+    if (f.reason === 'OHOL') {
+      const dir = f.side === 'SELL' ? 'SHORT' : 'LONG';
+      trades.push({ symbol: f.symbol, dir, lot: f.lot_size, entryTs: f.ts, entry: f.price,
+                    exitTs: null, exit: null, exitVia: null, pnl: null });
+    } else {
+      const t = trades.filter((x) => x.symbol === f.symbol && x.exit == null).pop();
+      if (t) { t.exitTs = f.ts; t.exit = f.price; t.exitVia = f.reason; t.pnl = f.pnl; }
+    }
+  });
+  trades.reverse();
+
   return (
     <div className={styles.root}>
       <div className={styles.headerRow}>
@@ -126,28 +142,38 @@ export default function OholPaper() {
       </div>
 
       <div className={styles.card}>
-        <div className={styles.cardTitle}>Recent fills</div>
-        {s.recent_fills.length === 0 ? (
-          <div className={styles.chartEmpty}>No fills yet — first scan runs tomorrow 09:21.</div>
+        <div className={styles.cardTitle}>Trades (entry ⇄ exit)</div>
+        {trades.length === 0 ? (
+          <div className={styles.chartEmpty}>No trades yet.</div>
         ) : (
           <table className={styles.table}>
-            <thead><tr><th>Time</th><th>Stock</th><th>Side</th><th>Price</th><th>Lot</th><th>Reason</th><th>P&L</th></tr></thead>
+            <thead><tr>
+              <th>Stock</th><th>Side</th><th>Lot</th><th>Entry time</th><th>Entry ₹</th>
+              <th>Exit time</th><th>Exit ₹</th><th>Exit via</th><th>P&L</th>
+            </tr></thead>
             <tbody>
-              {s.recent_fills.map((f, i) => (
+              {trades.map((t, i) => (
                 <tr key={i}>
-                  <td className={styles.muted}>{f.ts}</td>
-                  <td className={styles.sym}>{f.symbol}</td>
-                  <td className={f.side === 'BUY' ? styles.pos : styles.neg}>{f.side}</td>
-                  <td>{f.price.toFixed(2)}</td>
-                  <td>{f.lot_size}</td>
-                  <td><span className={styles.reason}>{f.reason}</span></td>
-                  <td className={f.pnl == null ? styles.muted : f.pnl >= 0 ? styles.pos : styles.neg}>
-                    {f.pnl == null ? '—' : inr(f.pnl)}</td>
+                  <td className={styles.sym}>{t.symbol}</td>
+                  <td className={t.dir === 'LONG' ? styles.pos : styles.neg}>{t.dir}</td>
+                  <td>{t.lot}</td>
+                  <td className={styles.muted}>{t.entryTs}</td>
+                  <td>{t.entry.toFixed(2)}</td>
+                  <td className={styles.muted}>{t.exitTs ?? '—'}</td>
+                  <td>{t.exit == null ? '—' : t.exit.toFixed(2)}</td>
+                  <td><span className={styles.reason}>{t.exitVia ?? 'OPEN'}</span></td>
+                  <td className={t.pnl == null ? styles.muted : t.pnl >= 0 ? styles.pos : styles.neg}>
+                    {t.pnl == null ? 'open' : inr(t.pnl)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
+        <p className={styles.note}>
+          A scanned setup becomes a trade only when its trigger level actually breaks — ARMED setups
+          that never break (e.g. a long whose first-candle high is never crossed) expire untraded at the close.
+          Shorts enter with a SELL fill and exit with a BUY; the P&L belongs to the round-trip, shown here as one row.
+        </p>
       </div>
 
       <div className={styles.card}>

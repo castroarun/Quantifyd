@@ -62,6 +62,20 @@ export default function OrbPaper() {
   const realized = sells.reduce((a, f) => a + (f.pnl as number), 0);
   const running = !s.killed;
 
+  type Trade = { symbol: string; entryTs: string; entry: number; exitTs: string | null;
+                 exit: number | null; exitVia: string | null; pnl: number | null };
+  const trades: Trade[] = [];
+  [...s.recent_fills].reverse().forEach((f) => {
+    if (f.side === 'BUY') {
+      trades.push({ symbol: f.symbol, entryTs: f.ts, entry: f.price,
+                    exitTs: null, exit: null, exitVia: null, pnl: null });
+    } else {
+      const t = trades.filter((x) => x.symbol === f.symbol && x.exit == null).pop();
+      if (t) { t.exitTs = f.ts; t.exit = f.price; t.exitVia = f.reason; t.pnl = f.pnl; }
+    }
+  });
+  trades.reverse();
+
   return (
     <div className={styles.root}>
       <div className={styles.headerRow}>
@@ -117,22 +131,26 @@ export default function OrbPaper() {
       </div>
 
       <div className={styles.card}>
-        <div className={styles.cardTitle}>Recent fills</div>
-        {s.recent_fills.length === 0 ? (
-          <div className={styles.chartEmpty}>No fills yet.</div>
+        <div className={styles.cardTitle}>Trades (entry ⇄ exit)</div>
+        {trades.length === 0 ? (
+          <div className={styles.chartEmpty}>No trades yet — entries need a ≥0.4% gap-up day whose 90-min range breaks (gate permitting).</div>
         ) : (
           <table className={styles.table}>
-            <thead><tr><th>Time</th><th>Stock</th><th>Side</th><th>Price</th><th>Reason</th><th>P&L</th></tr></thead>
+            <thead><tr>
+              <th>Stock</th><th>Entry time</th><th>Entry ₹</th><th>Exit time</th>
+              <th>Exit ₹</th><th>Exit via</th><th>P&L</th>
+            </tr></thead>
             <tbody>
-              {s.recent_fills.map((f, i) => (
+              {trades.map((t, i) => (
                 <tr key={i}>
-                  <td className={styles.muted}>{f.ts}</td>
-                  <td className={styles.sym}>{f.symbol}</td>
-                  <td className={f.side === 'BUY' ? styles.pos : styles.neg}>{f.side}</td>
-                  <td>{f.price.toFixed(2)}</td>
-                  <td><span className={styles.reason}>{f.reason}</span></td>
-                  <td className={f.pnl == null ? styles.muted : f.pnl >= 0 ? styles.pos : styles.neg}>
-                    {f.pnl == null ? '—' : inr(f.pnl)}</td>
+                  <td className={styles.sym}>{t.symbol}</td>
+                  <td className={styles.muted}>{t.entryTs}</td>
+                  <td>{t.entry.toFixed(2)}</td>
+                  <td className={styles.muted}>{t.exitTs ?? '—'}</td>
+                  <td>{t.exit == null ? '—' : t.exit.toFixed(2)}</td>
+                  <td><span className={styles.reason}>{t.exitVia ?? 'OPEN'}</span></td>
+                  <td className={t.pnl == null ? styles.muted : t.pnl >= 0 ? styles.pos : styles.neg}>
+                    {t.pnl == null ? 'open' : inr(t.pnl)}</td>
                 </tr>
               ))}
             </tbody>
