@@ -292,7 +292,10 @@ def _broker_qty():
     try:
         k = _kite()
         for h in k.holdings():
-            out[h["tradingsymbol"]] = out.get(h["tradingsymbol"], 0) + int(h.get("quantity") or 0)
+            # quantity = settled; t1_quantity = bought yesterday, not yet settled but still OURS and
+            # sellable. On T+1 quantity is 0 and the whole position sits in t1_quantity.
+            owned = int(h.get("quantity") or 0) + int(h.get("t1_quantity") or 0)
+            out[h["tradingsymbol"]] = out.get(h["tradingsymbol"], 0) + owned
         for p in k.positions().get("net", []):
             if p.get("product") in ("CNC", "MTF") and int(p.get("quantity") or 0):
                 out[p["tradingsymbol"]] = out.get(p["tradingsymbol"], 0) + int(p["quantity"])
