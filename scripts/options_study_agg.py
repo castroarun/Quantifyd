@@ -71,6 +71,17 @@ def build_day(day):
     entry, close, hi, lo = strad[0], strad[-1], max(strad), min(strad)
     last_t = grid[-1]
     spot_close = float(spot_s.loc[last_t]) if last_t in spot_s.index else spot0
+    # NIFTY 5-min OHLC candles over the session (from per-tick spot) — for the chart-pattern view
+    smask = [dtime(9, 15) <= ix.time() <= dtime(15, 30) for ix in spot_s.index]
+    win = spot_s[smask]
+    ohlc = []
+    if len(win) > 1:
+        c5 = win.resample("5min").agg(["first", "max", "min", "last"]).dropna()
+        for ts, r in c5.iterrows():
+            ohlc.append([ts.strftime("%H:%M"), round(float(r["first"])), round(float(r["max"])),
+                         round(float(r["min"])), round(float(r["last"]))])
+    day_hi = round(float(win.max())) if len(win) else round(spot0)
+    day_lo = round(float(win.min())) if len(win) else round(spot0)
     # OTM strangles at +/- offset points (CE above, PE below) -> combined 5-min series per offset
     otm = {}
     for off in (100, 200, 300):
@@ -89,15 +100,27 @@ def build_day(day):
                 atm=int(atm), entry=entry, close=close, high=hi, low=lo,
                 decay_pct=round((close / entry - 1) * 100, 1) if entry else 0,
                 rng=round(hi - lo, 1), spot_open=round(spot0), spot_close=round(spot_close),
-                spot_move=round(spot_close - spot0), series=series, otm=otm)
+                spot_move=round(spot_close - spot0), series=series, otm=otm,
+                ohlc=ohlc, day_hlc=[day_hi, day_lo, round(spot_close)])
 
 
 def main():
     out = []
-    for i, day in enumerate(days):
+    prev_hlc = None
+    for i, day in enumerate(sorted(days)):     # chronological -> CPR uses the prior trading day
         try:
             d = build_day(day)
             if d:
+                if prev_hlc:                    # CPR from PRIOR day's High/Low/Close
+                    H, L, Cl = prev_hlc
+                    piv = (H + L + Cl) / 3.0
+                    bc = (H + L) / 2.0
+                    tc = 2 * piv - bc
+                    lo_, hi_ = sorted([tc, bc])
+                    d["cpr"] = dict(tc=round(hi_, 1), pivot=round(piv, 1), bc=round(lo_, 1),
+                                    width_pct=round(abs(tc - bc) / piv * 100, 3))
+                prev_hlc = d.get("day_hlc")
+                d.pop("day_hlc", None)
                 out.append(d)
         except Exception as e:
             print("  skip", day, e, flush=True)

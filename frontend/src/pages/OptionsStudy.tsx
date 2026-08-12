@@ -9,6 +9,8 @@ type Day = {
   decay_pct: number; rng: number; spot_open: number; spot_close: number; spot_move: number;
   series: [string, number, number, number, number][]; // hhmm, straddle, ce, pe, spot
   otm?: Record<string, [string, number][]>;            // offset -> [hhmm, strangle]
+  ohlc?: [string, number, number, number, number][];   // hhmm, o, h, l, c (NIFTY 5-min candles)
+  cpr?: { tc: number; pivot: number; bc: number; width_pct: number };  // prior-day CPR
 };
 
 const WDS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -63,6 +65,38 @@ function Spark({ pts, up }: { pts: [number, number][]; up: boolean }) {
       <line x1={0} y1={yEntry} x2={W} y2={yEntry} stroke="rgba(139,148,158,0.35)" strokeWidth={0.6} strokeDasharray="3 3" />
       <path d={d} fill="none" stroke={c} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       <circle cx={sx(pts[pk][0])} cy={sy(pts[pk][1])} r={2.2} fill="#d29922" />
+    </svg>
+  );
+}
+
+// NIFTY intraday candlesticks + prior-day CPR band (inline SVG; responsive)
+function Candles({ ohlc, cpr, height = 240 }: { ohlc?: [string, number, number, number, number][]; cpr?: { tc: number; pivot: number; bc: number; width_pct: number }; height?: number }) {
+  if (!ohlc || ohlc.length < 2) return <div style={{ color: '#8b949e', fontSize: 12, padding: 10 }}>no NIFTY OHLC for this day</div>;
+  const n = ohlc.length, W = 960, padL = 46, padR = 8, padT = 8, padB = 18;
+  let yMin = Math.min(...ohlc.map((b) => b[3])), yMax = Math.max(...ohlc.map((b) => b[2]));
+  if (cpr) { yMin = Math.min(yMin, cpr.bc); yMax = Math.max(yMax, cpr.tc); }
+  const pad = (yMax - yMin) * 0.05 || 1; yMin -= pad; yMax += pad;
+  const cx = (i: number) => padL + ((i + 0.5) / n) * (W - padL - padR);
+  const bw = Math.max(1.5, ((W - padL - padR) / n) * 0.62);
+  const Y = (v: number) => padT + (1 - (v - yMin) / (yMax - yMin)) * (height - padT - padB);
+  const up = '#3fb950', down = '#f85149';
+  return (
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} preserveAspectRatio="none" style={{ display: 'block' }}>
+      {cpr && <g>
+        <rect x={padL} y={Y(cpr.tc)} width={W - padL - padR} height={Math.max(1, Y(cpr.bc) - Y(cpr.tc))} fill="rgba(180,83,9,0.10)" />
+        <line x1={padL} y1={Y(cpr.tc)} x2={W - padR} y2={Y(cpr.tc)} stroke="#b45309" strokeWidth={0.8} vectorEffect="non-scaling-stroke" />
+        <line x1={padL} y1={Y(cpr.bc)} x2={W - padR} y2={Y(cpr.bc)} stroke="#b45309" strokeWidth={0.8} vectorEffect="non-scaling-stroke" />
+        <line x1={padL} y1={Y(cpr.pivot)} x2={W - padR} y2={Y(cpr.pivot)} stroke="#b45309" strokeWidth={0.7} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+      </g>}
+      {ohlc.map((b, i) => { const o = b[1], h = b[2], l = b[3], c = b[4], x = cx(i), clr = c >= o ? up : down;
+        return <g key={i}>
+          <line x1={x} y1={Y(h)} x2={x} y2={Y(l)} stroke={clr} strokeWidth={0.8} vectorEffect="non-scaling-stroke" />
+          <rect x={x - bw / 2} y={Y(Math.max(o, c))} width={bw} height={Math.max(1, Y(Math.min(o, c)) - Y(Math.max(o, c)))} fill={clr} />
+        </g>; })}
+      {[yMax, cpr?.pivot, yMin].filter((v): v is number => v != null).map((v, i) => (
+        <text key={i} x={4} y={Y(v) + 3} fontSize={9} fill="#8b949e">{Math.round(v)}</text>))}
+      {[0, Math.floor(n / 2), n - 1].map((i) => (
+        <text key={'x' + i} x={cx(i)} y={height - 5} fontSize={9} fill="#8b949e" textAnchor="middle">{ohlc[i][0]}</text>))}
     </svg>
   );
 }
@@ -242,6 +276,15 @@ export default function OptionsStudy() {
     return [...m.keys()].sort((a, b) => b.localeCompare(a)).map((wk) => ({ wk, cells: m.get(wk)! }));
   }, [dayRows]);
 
+  // EOD decay captured by DTE (median decay a seller keeps by holding to window end)
+  const eodByDte = useMemo(() => DTES.map((k) => {
+    const ds = allDays.filter((x) => x.dte === k).map((x) => statOf(x)?.decay)
+      .filter((v): v is number => v != null).sort((a, b) => a - b);
+    if (!ds.length) return { dte: k, n: 0, med: null as number | null, win: 0 };
+    return { dte: k, n: ds.length, med: ds[Math.floor(ds.length / 2)],
+             win: Math.round(100 * ds.filter((x) => x < 0).length / ds.length) };
+  }), [allDays, startT, endT]);
+
   if (!d) return <div className={styles.wrap}>Loading options study…</div>;
   const stats = days.map(statOf).filter(Boolean) as NonNullable<ReturnType<typeof statOf>>[];
   const decayed = stats.filter((s) => s.decay < 0).length;
@@ -297,6 +340,12 @@ export default function OptionsStudy() {
           <label className={styles.toggle}><input type="checkbox" checked={showLegs} onChange={(e) => setShowLegs(e.target.checked)} /> CE / PE split</label>
           <span className={styles.sub}>dotted grey = NIFTY spot (right axis)</span><ExpandBtn k="c1" /></div>
         {c1 && <Chart opts={c1.opts} data={c1.data} height={320} />}
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><b>NIFTY intraday &mdash; candles + CPR</b>
+          <span className={styles.sub}>{day ? fmtDMY(day.date) : ''} · {day?.cpr ? `CPR width ${day.cpr.width_pct}% (prior-day pivot range: ${Math.round(day.cpr.bc)}–${Math.round(day.cpr.tc)})` : 'no CPR'} · amber band = CPR · green up / red down candle</span></div>
+        <Candles ohlc={day?.ohlc} cpr={day?.cpr} height={260} />
       </section>
 
       <section className={styles.card}>
@@ -367,6 +416,28 @@ export default function OptionsStudy() {
           ))}
         </div>
         <div className={styles.sub} style={{ marginTop: 8 }}>bar height = |decay %| (capped 100) · green = premium decayed (seller profit) · red = expanded (loss)</div>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><b>EOD decay captured by DTE</b>
+          <span className={styles.sub}>median premium a seller keeps by holding to {endT} · % of days that decayed (seller win) · window {startT}→{endT}</span></div>
+        <div className={styles.tableWrap} style={{ maxHeight: 'none' }}>
+          <table className={styles.table}>
+            <thead><tr><th>DTE</th><th className={styles.num}>Days</th><th className={styles.num}>Median EOD decay</th><th className={styles.num}>Seller win%</th><th className={styles.num}>Premium kept</th></tr></thead>
+            <tbody>
+              {eodByDte.filter((r) => r.n > 0).map((r) => (
+                <tr key={r.dte}>
+                  <td>DTE{r.dte}</td>
+                  <td className={styles.num}>{r.n}</td>
+                  <td className={styles.num} style={{ color: (r.med ?? 0) < 0 ? '#3fb950' : '#f85149', fontWeight: 700 }}>{r.med != null ? Math.round(r.med * 10) / 10 : '—'}%</td>
+                  <td className={styles.num}>{r.win}%</td>
+                  <td className={styles.num}>{r.med != null && r.med < 0 ? Math.round(-r.med) + '% of credit' : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className={styles.sub} style={{ marginTop: 8 }}>Decay accelerates into expiry (DTE0 biggest theta); DTE4 barely decays intraday (directional, not theta). DTE0 median ≫ mean = the gamma tail — a few expiry-day spikes drag the average.</div>
       </section>
 
       <section className={styles.card}>
