@@ -1799,6 +1799,39 @@ export default function Nas() {
 
       <WatchdogSection />
 
+      {/* Cross-book comparison: NAS-916 x3 vs V1+30% combined-premium SL (2026-08-12, research/111) */}
+      <section className={styles.sectionBlock}>
+        <div className={styles.sectionHead}>
+          <div className="section-title">vs V1 + 30% combined-premium SL (NIFTY straddle)</div>
+          <Chip>corr 0.04 - independent</Chip>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: 12.5, minWidth: 520 }}>
+            <thead><tr>{['', 'NAS-916 x3', 'V1 + 30% SL', 'Both stacked'].map((h) => (
+              <th key={h} style={{ textAlign: 'right', padding: '4px 12px', opacity: 0.6, fontWeight: 600 }}>{h}</th>))}
+            </tr></thead>
+            <tbody>
+              {[['Days', '67', '79', '66 common'],
+                ['Total', '+₹4,53,075', '+₹7,56,050', '+₹10,26,039'],
+                ['Mean/day', '+₹6,762', '+₹9,570', '+₹15,546'],
+                ['MaxDD', '−₹60,669', '−₹1,21,930', '−₹1,11,545'],
+                ['Return/DD', '7.5', '6.2', '9.2']].map((r) => (
+                <tr key={r[0]}>{r.map((cVal, i) => (
+                  <td key={i} style={{ textAlign: i ? 'right' : 'left', padding: '4px 12px',
+                    fontWeight: r[0] === 'Return/DD' || i === 3 ? 700 : 400,
+                    borderTop: '1px solid rgba(128,128,128,0.15)', fontVariantNumeric: 'tabular-nums' }}>{cVal}</td>))}
+                </tr>))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 6 }}>
+          Daily-P&L correlation 0.04 over 66 common days - independent streams; stacking beats either alone.
+          SL30 = recorded-chain backtest @10 lots; NAS = live paper @1-3 lots; single regime Apr-Aug 2026 (as of 12-AUG).
+          Rules, visual comparisons &amp; per-system charts: <a href="/app/straddles" style={{ color: 'inherit' }}>Strategy Leaderboard</a> -
+          <a href="/app/straddles#sl30-card" style={{ color: 'inherit' }}> SL30 card</a>.
+        </div>
+      </section>
+
       {/* Config footer */}
       <section className={styles.sectionBlock}>
         <div className={styles.configFooter}>
