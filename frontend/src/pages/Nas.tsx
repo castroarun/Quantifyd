@@ -503,6 +503,7 @@ function NasOptCard() {
 function SensexLiveCard() {
   const [d, setD] = useState<any>(null);
   const [hist, setHist] = useState<any>(null);
+  const [mtm, setMtm] = useState<any>(null);
   const [openHist, setOpenHist] = useState(false);
   const [openDay, setOpenDay] = useState<string | null>(null);
   useEffect(() => {
@@ -511,6 +512,8 @@ function SensexLiveCard() {
         .then((r) => r.json()).then(setD).catch(() => {});
       fetch(`/api/sensex/sessions`, { cache: 'no-store' })
         .then((r) => r.json()).then(setHist).catch(() => {});
+      fetch(`/app/sensex_mtm.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => r.json()).then(setMtm).catch(() => {});
     };
     load();
     const id = setInterval(load, 8000);
@@ -555,6 +558,50 @@ function SensexLiveCard() {
       <div style={{ fontSize: 10, color: 'var(--ink-faint, #6e7681)', marginBottom: 8 }}>
         9:16 systems on SENSEX (Wed/Thu 0/1-DTE) · {d ? `updated ${d.generated_at}` : 'after-hours — showing recorded sessions'}
       </div>
+
+      {mtm && mtm.points && mtm.points.length >= 2 ? (() => {
+        const pts = mtm.points as [string, number][];
+        const W = 900, H = 120, PL = 6, PR = 6, PT = 8, PB = 16;
+        const ys = pts.map((p) => p[1]);
+        const yMin = Math.min(0, ...ys), yMax = Math.max(0, ...ys), span = (yMax - yMin) || 1;
+        const xf = (i: number) => PL + (i / (pts.length - 1)) * (W - PL - PR);
+        const yf = (v: number) => PT + (1 - (v - yMin) / span) * (H - PT - PB);
+        const line = pts.map((p, i) => `${i ? 'L' : 'M'}${xf(i).toFixed(1)},${yf(p[1]).toFixed(1)}`).join(' ');
+        const zeroY = yf(0);
+        const area = `${line} L${xf(pts.length - 1).toFixed(1)},${zeroY.toFixed(1)} L${xf(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
+        const last = ys[ys.length - 1];
+        const col = last >= 0 ? '#3fb950' : '#f85149';
+        const ticks: Array<[number, string]> = [];
+        const step = Math.max(1, Math.floor(pts.length / 6));
+        for (let i = 0; i < pts.length; i += step) ticks.push([xf(i), pts[i][0]]);
+        return (
+          <div style={{ marginBottom: 10, border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px 2px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
+              <span style={{ fontSize: 10.5, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                SENSEX intraday P&amp;L · today
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: col }}>{rs(last)}</span>
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-faint, #6e7681)' }}>
+                lo {rs(mtm.lo)} · hi {rs(mtm.hi)}
+              </span>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" preserveAspectRatio="none" style={{ display: 'block' }}>
+              <defs>
+                <linearGradient id="sxmtmfill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={col} stopOpacity="0.18" />
+                  <stop offset="100%" stopColor={col} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <line x1={PL} y1={zeroY} x2={W - PR} y2={zeroY} stroke="var(--ink-muted)" strokeOpacity="0.3" strokeDasharray="3 3" />
+              <path d={area} fill="url(#sxmtmfill)" />
+              <path d={line} fill="none" stroke={col} strokeWidth={2} strokeLinejoin="round" />
+              {ticks.map(([tx, tl], i) => (
+                <text key={i} x={tx} y={H - 4} fontSize={9} fill="var(--ink-muted)" textAnchor="middle">{tl}</text>
+              ))}
+            </svg>
+          </div>
+        );
+      })() : null}
 
       {!withLegs.length && (
         <div style={{ fontSize: 11.5, color: 'var(--ink-faint, #6e7681)',
