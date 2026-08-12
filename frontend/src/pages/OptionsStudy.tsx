@@ -344,7 +344,7 @@ export default function OptionsStudy() {
 
       <section className={styles.card}>
         <div className={styles.cardHead}><b>NIFTY intraday &mdash; candles + CPR</b>
-          <span className={styles.sub}>{day ? fmtDMY(day.date) : ''} · {day?.cpr ? `CPR width ${day.cpr.width_pct}% (prior-day pivot range: ${Math.round(day.cpr.bc)}–${Math.round(day.cpr.tc)})` : 'no CPR'} · amber band = CPR · green up / red down candle</span></div>
+          <span className={styles.sub}>{day ? fmtDMY(day.date) : ''} · {day?.cpr ? `CPR width ${day.cpr.width_pct}% (prior-day pivot range: ${Math.round(day.cpr.bc)}–${Math.round(day.cpr.tc)})` : 'no CPR'} · amber band = CPR · green up / red down candle</span><ExpandBtn k="candles" /></div>
         <Candles ohlc={day?.ohlc} cpr={day?.cpr} height={260} />
       </section>
 
@@ -491,16 +491,35 @@ export default function OptionsStudy() {
         </div>
       </section>
 
-      {expand && chartsMap[expand] && (
-        <div className={styles.modal} onClick={() => setExpand(null)}>
-          <div className={styles.modalInner} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.cardHead}><b>{chartsMap[expand].title}</b>
-              <button className={styles.exp} style={{ marginLeft: 'auto' }} title="Close" onClick={() => setExpand(null)}>✕</button></div>
-            <Chart opts={chartsMap[expand].opts} data={chartsMap[expand].data}
-              height={Math.round((typeof window !== 'undefined' ? window.innerHeight : 720) * 0.74)} />
+      {expand && (chartsMap[expand] || expand === 'candles') && (() => {
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 720;
+        const cprTxt = day?.cpr ? ` · CPR width ${day.cpr.width_pct}%` : '';
+        return (
+          <div className={styles.modal} onClick={() => setExpand(null)}>
+            <div className={styles.modalInner} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.cardHead}>
+                <b>{expand === 'candles'
+                  ? `NIFTY intraday — candles + CPR${day ? ' — ' + fmtDMY(day.date) : ''}`
+                  : chartsMap[expand].title}</b>
+                <button className={styles.exp} style={{ marginLeft: 'auto' }} title="Close" onClick={() => setExpand(null)}>✕</button></div>
+              {expand === 'candles' ? (
+                <Candles ohlc={day?.ohlc} cpr={day?.cpr} height={Math.round(vh * 0.72)} />
+              ) : (
+                <>
+                  <Chart opts={chartsMap[expand].opts} data={chartsMap[expand].data}
+                    height={Math.round(vh * (expand === 'c1' && day?.ohlc ? 0.46 : 0.72))} />
+                  {expand === 'c1' && day?.ohlc && (
+                    <div style={{ marginTop: 10, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
+                      <div className={styles.sub} style={{ marginBottom: 4 }}>NIFTY candles{cprTxt} · amber band = CPR</div>
+                      <Candles ohlc={day.ohlc} cpr={day.cpr} height={Math.round(vh * 0.26)} />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
