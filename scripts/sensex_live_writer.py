@@ -56,6 +56,31 @@ def _arm(sys_cfg, leg, spot):
     return "SL %.0f%s" % (sl, tag)
 
 
+def _oc_day_highs(symbols):
+    """{tradingsymbol: max 1-min LTP today} from options_data.db option_chain — robust vs opening/
+    bad ticks (they don't survive the 1-min sampling) and covers CLOSED legs too (full-day history
+    by tradingsymbol). 2026-08-12: kite.quote ohlc.high showed a phantom 461.9 vs a real 367 high."""
+    out = {}
+    syms = [x for x in symbols if x]
+    if not syms:
+        return out
+    try:
+        dbp = os.path.join(_ROOT, "backtest_data", "options_data.db")
+        c = sqlite3.connect("file:%s?mode=ro" % dbp, uri=True)
+        today = datetime.now(IST).strftime("%Y-%m-%d")
+        qs = ",".join("?" * len(syms))
+        for ts, mx in c.execute(
+            "SELECT tradingsymbol, MAX(ltp) FROM option_chain "
+            "WHERE tradingsymbol IN (%s) AND snapshot_time LIKE ? GROUP BY tradingsymbol" % qs,
+            syms + [today + "%"]):
+            if mx is not None:
+                out[ts] = mx
+        c.close()
+    except Exception:
+        pass
+    return out
+
+
 def build():
     kite = _kite()
     spot = None
@@ -73,6 +98,7 @@ def build():
     # a live LTP round-trip.
     active_by_sys = {}
     all_syms = set()
+    all_leg_syms = set()   # every leg today (active + closed) for the day-high lookup
     for key, _lab, db, _cfg in SYS:
         if not os.path.exists(db):
             active_by_sys[key] = []
@@ -92,23 +118,23 @@ def build():
         c.close()
         active_by_sys[key] = rows
         for r in rows:
+            if r.get("tradingsymbol"):
+                all_leg_syms.add(r["tradingsymbol"])
             if r.get("status") == "ACTIVE" and r.get("tradingsymbol"):
                 all_syms.add(r["tradingsymbol"])
 
     ltp_map = {}
-    high_map = {}          # day-high (max traded premium) per leg, from quote()'s ohlc.high
     if all_syms:
         try:
-            q = kite.quote(["BFO:" + s for s in all_syms]) or {}
+            q = kite.ltp(["BFO:" + s for s in all_syms]) or {}
             for s in all_syms:
                 v = q.get("BFO:" + s)
                 if v and v.get("last_price") is not None:
                     ltp_map[s] = v["last_price"]
-                    _oh = v.get("ohlc") or {}
-                    if _oh.get("high") is not None:
-                        high_map[s] = _oh["high"]
         except Exception:
             pass
+    # robust day-high (max traded premium) per leg from the 1-min option_chain — active AND closed
+    high_map = _oc_day_highs(all_leg_syms)
 
     systems = []
     day_pnl = 0.0
@@ -123,13 +149,12 @@ def build():
             mode = (r.get("mode") or "paper")
             if mode == "live":
                 live_any = True
-            mx = None
+            _h = high_map.get(r.get("tradingsymbol"))
+            mx = round(_h, 1) if _h is not None else None
             if r.get("status") == "ACTIVE":
                 ltp = ltp_map.get(r.get("tradingsymbol"))
                 pnl = (entry - ltp) * qty if ltp is not None else 0
                 disp = round(ltp, 1) if ltp is not None else None
-                _h = high_map.get(r.get("tradingsymbol"))
-                mx = round(_h, 1) if _h is not None else None
                 arm = _arm(cfg, r, spot)
             else:
                 # exited today — realized P&L, show the exit price and reason in place of live/arm
