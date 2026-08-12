@@ -186,7 +186,7 @@ function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
         <th style={th}>Strike</th><th style={th}>Qty</th>
         <th style={th}>In</th><th style={th}>Entry</th><th style={th}>LTP</th>
         <th style={{ ...th, color: C.faint }} title="Max premium the leg reached since entry (max adverse excursion)">Peak</th>
-        <th style={th}>Out</th><th style={th}>P&amp;L</th>
+        <th style={th}>Out</th><th style={th} title="premium the leg was exited at">Out ₹</th><th style={th}>P&amp;L</th>
       </tr></thead>
       <tbody>
         {legs.map((l, i) => (
@@ -201,11 +201,12 @@ function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
             <td style={td}>{px(l.ltp)}</td>
             <td style={{ ...td, color: C.faint, fontSize: 11.5, fontWeight: 400 }}>{l.max_ltp == null ? '—' : l.max_ltp.toFixed(1)}</td>
             <td style={{ ...td, color: l.exit_time ? C.neg : C.faint }}>{tm(l.exit_time)}</td>
+            <td style={{ ...td, color: l.exit_time ? C.ink : C.faint }}>{l.exit_time ? px(l.ltp) : '—'}</td>
             <td style={{ ...td, fontWeight: 700, color: col(l.pnl) }}>{inr(l.pnl)}</td>
           </tr>
         ))}
         <tr>
-          <td style={{ ...td, textAlign: 'left', color: C.muted, borderTop: `1px solid ${C.hair}` }} colSpan={8}>
+          <td style={{ ...td, textAlign: 'left', color: C.muted, borderTop: `1px solid ${C.hair}` }} colSpan={9}>
             Net · paper position (incl. costs)
           </td>
           <td style={{ ...td, fontWeight: 800, color: col(total), borderTop: `1px solid ${C.hair}` }}>{inr(total)}</td>
@@ -265,6 +266,7 @@ export default function Straddles() {
   const [live, setLive] = useState<any>(null);
   const [liveTs, setLiveTs] = useState<number | null>(null);
   const [daily, setDaily] = useState<V1Daily | null>(null);
+  const [sl30, setSl30] = useState<any>(null);   // V1 + 30% premium SL backtest
   const [dayD, setDayD] = useState<string | null>(null);
   const [v2eng, setV2eng] = useState<any>(null);   // live paper executor state
   const [bo, setBo] = useState<any>(null);          // inside-week breakout sleeve
@@ -282,6 +284,7 @@ export default function Straddles() {
     fetch('/app/straddles/v2_2.0.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '2.0': d }))).catch(() => {});
     fetch('/app/straddles/v2_1.5.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '1.5': d }))).catch(() => {});
     fetch('/app/straddles/v1_daily.json').then((r) => r.json()).then(setDaily).catch(() => {});
+    fetch('/app/straddles/v1_sl30.json?t=' + Date.now()).then((r) => r.json()).then(setSl30).catch(() => {});
     fetch('/app/straddles/rankings.json?t=' + Date.now()).then((r) => r.json()).then(setRanks).catch(() => {});
     fetch('/app/straddles/variants.json?t=' + Date.now()).then((r) => r.json()).then(setVariants).catch(() => {});
     const loadLive = () => {
@@ -447,7 +450,10 @@ export default function Straddles() {
                   <tr key={r.label}>
                     <td style={tdL}>{r.rank}</td>
                     <td style={tdL}>{gradeBadge(r.grade)}</td>
-                    <td style={{ ...tdL, color: C.ink, fontWeight: 600 }}>{r.label}
+                    <td style={{ ...tdL, color: C.ink, fontWeight: 600 }}>
+                      {r.anchor
+                        ? <a href={'#' + r.anchor} onClick={(e) => { e.preventDefault(); document.getElementById(r.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} style={{ color: C.navy, textDecoration: 'none', cursor: 'pointer' }}>{r.label} ↗</a>
+                        : r.label}
                       <div style={{ fontSize: 10, color: C.faint, fontWeight: 400 }}>{r.kind} · {r.note}</div></td>
                     <td style={{ ...tdR, color: col(r.net), fontWeight: 700 }}>{inr(r.net)}</td>
                     <td style={tdR}>{r.calmar ?? '—'}</td>
@@ -465,7 +471,7 @@ export default function Straddles() {
       )}
 
       {variants && variants.variants && (
-        <section style={{ ...card, marginTop: 14 }}>
+        <section id="variant-lab" style={{ ...card, marginTop: 14, scrollMarginTop: 70 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 Variant Lab</span>
             <span style={{ fontSize: 11, color: C.faint }}>same recorded chain · naked vs iron-fly × move-stop · {variants.note}</span>
@@ -498,7 +504,7 @@ export default function Straddles() {
       )}
 
       {condor && (
-        <section style={{ ...card, marginTop: 14, borderColor: C.amber }}>
+        <section id="condor" style={{ ...card, marginTop: 14, borderColor: C.amber, scrollMarginTop: 70 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Wed&#8594;Fri Iron Condor</span>
             {chip(C.amberSoft, C.amber, 'PAPER · 2 lots')}
@@ -580,7 +586,7 @@ export default function Straddles() {
 
       {/* ===== TODAY · LIVE ===== */}
       {live && (
-        <section style={{ ...card, marginTop: 14, borderColor: C.navy }}>
+        <section id="live-box" style={{ ...card, marginTop: 14, borderColor: C.navy, scrollMarginTop: 70 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Today · Live</span>
             {chip('#E7F2EE', C.pos, 'PAPER · 10 lots')}
@@ -668,6 +674,59 @@ export default function Straddles() {
               );
             })}
           </div>
+
+          {sl30 && sl30.stats && (() => {
+            const s = sl30.stats;
+            const today = sl30.days[sl30.days.length - 1];
+            const tp = sl30.per_day[today];
+            const comp = sl30.trades.slice().reverse();
+            return (
+              <div id="sl30-card" style={{ marginTop: 14, border: `1px solid ${C.hair}`, borderRadius: 8, padding: 12, scrollMarginTop: 70 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, color: C.ink }}>V1 + 30% combined-premium SL</span>
+                  {chip(C.amberSoft, C.amber, 'BACKTEST · recorded chain')}
+                  <a href="/app/options-study" style={{ textDecoration: 'none' }} title="Peak+% / decay analysis behind this stop">{chip(C.navySoft, C.navy, 'Opt-Study report ↗')}</a>
+                  <span style={{ marginLeft: 'auto', fontSize: 22, fontWeight: 800, color: col(s.total) }}>{inr(s.total)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, margin: '2px 0 8px' }}>sell ATM ~09:20 · exit once if combined premium rises ≥30% (a 30%-of-credit loss), else hold to close · {s.n} recorded days · 10 lots</div>
+                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 8 }}>
+                  {[['Mean/day', inr(s.mean), col(s.mean)], ['Win', s.win + '%', C.ink], ['SL hit', s.sl_hit_pct + '%', C.ink], ['Max DD', inr(s.maxdd), C.neg], ['Worst day', inr(s.worst), C.neg]].map(([k, v, c]: any) => (
+                    <div key={k}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', color: C.faint }}>{k}</div><div style={{ fontSize: 14, fontWeight: 800, color: c }}>{v}</div></div>
+                  ))}
+                </div>
+                {tp && tp.series && tp.series.length >= 2 && (
+                  <LineChart pts={tp.series} h={110}
+                    marker={tp.exit && tp.exit.time ? { time: tp.exit.time, pnl: tp.exit.pnl, text: 'SL' } : null}
+                    label={`today (${today}) intraday · ${tp.exit && tp.exit.time ? 'SL-exit ' + tp.exit.time : 'held to close'}`} />
+                )}
+                <LineChart pts={sl30.book_curve} h={140} label={`cumulative paper P&L · ${s.n} days · 10 lots (qty ${(sl30.lot || 65) * (sl30.lots || 10)}) · recorded chain`} />
+                <div style={{ fontSize: 10.5, color: C.faint, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '6px 0 2px' }}>By DTE · {sl30.lots || 10} lots (NIFTY · qty {(sl30.lot || 65) * (sl30.lots || 10)})</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr><th style={{ ...ecth, textAlign: 'left' }}>DTE</th><th style={ecth}>Days</th><th style={ecth}>Total</th><th style={ecth}>Mean/day</th><th style={ecth}>Win</th><th style={ecth}>SL hit</th><th style={ecth}>Max DD</th></tr></thead>
+                  <tbody>{Object.keys(s.by_dte).map((k) => { const r = s.by_dte[k]; return (
+                    <tr key={k}><td style={{ ...ectd, textAlign: 'left' }}>DTE{k}</td><td style={ectd}>{r.n}</td>
+                      <td style={{ ...ectd, color: col(r.total), fontWeight: 700 }}>{inr(r.total)}</td>
+                      <td style={{ ...ectd, color: col(r.mean) }}>{inr(r.mean)}</td>
+                      <td style={ectd}>{r.win}%</td><td style={ectd}>{r.sl_hit_pct}%</td>
+                      <td style={{ ...ectd, color: C.neg }}>{inr(r.maxdd)}</td></tr>
+                  ); })}</tbody>
+                </table>
+                <details style={{ marginTop: 8 }}>
+                  <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 600, color: C.navy, listStyle: 'none' }}>▸ Completed days ({comp.length})</summary>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+                    <thead><tr><th style={{ ...ecth, textAlign: 'left' }}>Day</th><th style={ecth}>DTE</th><th style={ecth}>Peak+%</th><th style={{ ...ecth, textAlign: 'left' }}>Exit</th><th style={ecth}>P&amp;L</th></tr></thead>
+                    <tbody>{comp.map((t: any, i: number) => (
+                      <tr key={i}><td style={{ ...ectd, textAlign: 'left' }}>{t.day}</td><td style={ectd}>DTE{t.dte}</td>
+                        <td style={{ ...ectd, color: t.peak_pct >= 30 ? C.neg : C.faint }}>+{t.peak_pct}%</td>
+                        <td style={{ ...ectd, textAlign: 'left', color: t.stopped ? C.neg : C.muted }}>{t.stopped ? t.exit_time + ' · SL' : 'held to close'}</td>
+                        <td style={{ ...ectd, fontWeight: 700, color: col(t.final) }}>{inr(t.final)}</td></tr>
+                    ))}</tbody>
+                  </table>
+                </details>
+              </div>
+            );
+          })()}
+
           <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Live paper · live-quote P&amp;L ticks ~every 3s during market (positions/chart refresh every minute) · recorded daily. Backtest history below.</div>
           <RulesBlock />
         </section>
@@ -675,7 +734,7 @@ export default function Straddles() {
 
       {/* ===== V2 ENGINE · live paper executor ===== */}
       {v2eng && (
-        <section style={{ ...card, marginTop: 14, borderColor: C.pos }}>
+        <section id="v2-engine" style={{ ...card, marginTop: 14, borderColor: C.pos, scrollMarginTop: 70 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>V2 Engine · iron-fly executor</span>
             {v2eng.mode === 'live'

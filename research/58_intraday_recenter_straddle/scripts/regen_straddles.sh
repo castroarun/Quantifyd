@@ -18,4 +18,6 @@ done
 # V2 variant lab (naked vs iron-fly x move-stop) + strategy leaderboard (rate all systems)
 PYTHONPATH=. ./venv/bin/python $S/scripts/v2_variants.py >/dev/null 2>&1
 PYTHONPATH=. ./venv/bin/python $S/scripts/strategy_rankings.py >/dev/null 2>&1
-echo "$(date "+%F %T") regenerated v1_daily + v1 + v2_1.5 + v2_2.0 + variants + rankings"
+# V1 + 30% combined-premium SL backtest (reads the fresh options_study.json)
+./venv/bin/python $S/scripts/sl30_journeys.py >/dev/null 2>&1
+echo "$(date "+%F %T") regenerated v1_daily + v1 + v2 + variants + rankings + sl30"

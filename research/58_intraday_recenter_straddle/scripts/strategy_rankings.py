@@ -89,6 +89,26 @@ if d and isinstance(d, dict):
     add("Wed→Fri iron condor (research/80)", "live paper", s, "2 lots")
 
 
+# V1 + 30% combined-premium SL (from the sl30 backtest)
+d = load_json(PUB / "v1_sl30.json")
+if d and d.get("trades"):
+    add("V1 + 30% combined-premium SL", "backtest",
+        stats([t["final"] for t in d["trades"]]), "combined-premium 30% stop · recorded chain")
+
+# in-page anchors so the leaderboard links jump to each system's section/card
+ANCHOR = {
+    "V1 · intraday one-and-done (naked)": "live-box",
+    "V1 · daily re-enter (naked)": "live-box",
+    "V2 · positional iron-fly (stop 1.5%)": "variant-lab",
+    "V2 · positional iron-fly (stop 2.0%)": "variant-lab",
+    "V2 · positional bi-weekly (naked · legacy)": "live-box",
+    "LIVE · iron-fly executor (VIX-gated)": "v2-engine",
+    "LIVE · inside-week breakout sleeve": "v2-engine",
+    "V1 + 30% combined-premium SL": "sl30-card",
+    "Wed→Fri iron condor (research/80)": "condor",
+}
+
+
 def grade(r):
     if r["net"] <= 0:
         return "F" if r["net"] < -40000 else "D"
@@ -102,6 +122,7 @@ def confidence(r):
 for r in rows:
     r["grade"] = grade(r)
     r["confidence"] = confidence(r)
+    r["anchor"] = ANCHOR.get(r["label"])
 # rank: positive-net first, by Calmar desc (None last), then net
 rows.sort(key=lambda r: (r["net"] > 0, r.get("calmar") if r.get("calmar") is not None else -999, r["net"]), reverse=True)
 for i, r in enumerate(rows, 1):
