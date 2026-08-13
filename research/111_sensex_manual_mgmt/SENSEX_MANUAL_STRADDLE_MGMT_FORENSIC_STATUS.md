@@ -150,3 +150,21 @@ Runner: scripts/csl_mgmt_replay.py -> /tmp/csl_mgmt.log. Also this evening: book
 CSL_NIFTY->CSL_TIMEB_NIFTY, CSL_SENSEX->CSL_TIMEB_SENSEX (config/state/backfill migrated).
 
 | 2026-08-13 20:0x IST | RE-FREEZE: books renamed CSL_*->CSL_TIMEB_*; all SL 'none' cells -> SL30 (user: never run stopless) | config migrated in place; backfill history re-syncs at next 15:40 regen |
+
+### Sec 14 RESULT (2026-08-13 21:15 IST) — STATUS: DONE
+
+NIFTY 09:16->15:20 CSL20, 3 lots, n=51 days (20-APR->13-AUG), SL triggered 10 days:
+
+| Arm | Total | Mean/d | Win | MaxDD | Ratio |
+|---|---|---|---|---|---|
+| BASE (close both, done) | +115,939 | +2,273 | 71% | -15,953 | 7.3 |
+| TRAIL (loser out, trail winner 30%-bounce) | +122,765 | +2,407 | 71% | -16,530 | 7.4 |
+| SHIFT (re-center new ATM, max 3) | +133,864 | +2,625 | 75% | -27,507 | 4.9 |
+
+Trigger-days-only: BASE -89,458 / TRAIL -82,632 / SHIFT -71,533. TRAIL beat BASE 6/10.
+VERDICT: **SIGNAL, not conclusive** — n=10 trigger days. SHIFT recovers the most on bad
+days but at ~1.7x the drawdown (ratio 4.9 vs 7.3 — risk-adjusted WORSE). TRAIL ~neutral.
+Neither replaces BASE; the three books (NAS_COMB20 / NAS_C20_TRAIL / NAS_C20_SHIFT, 3 lots
+each) run as live paper A/Bs from 14-AUG — let the data decide. Data lesson recorded:
+options_data.db snapshot_time uses ISO 'T' separator; window predicates must use
+INDEXED BY idx_oc_symbol_time + T-format bounds (substr() dodges the index).

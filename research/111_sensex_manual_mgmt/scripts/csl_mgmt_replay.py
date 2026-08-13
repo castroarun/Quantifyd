@@ -30,9 +30,9 @@ def day_chain(day, E):
     """One scan: full NIFTY chain for the day/expiry -> {(strike,type): [(t,ltp)...]}"""
     m = {}
     for t, k, ty, v in oc.execute(
-        "SELECT snapshot_time,strike,instrument_type,ltp FROM option_chain "
-        "WHERE symbol=? AND expiry_date=? AND snapshot_time BETWEEN ? AND ? AND ltp>0 ORDER BY snapshot_time",
-            (SYM, E, day + " 09:00:00", day + " 15:26:00")):
+        "SELECT snapshot_time,strike,instrument_type,ltp FROM option_chain INDEXED BY idx_oc_symbol_time "
+        "WHERE symbol=? AND snapshot_time BETWEEN ? AND ? AND expiry_date=? AND ltp>0 ORDER BY snapshot_time",
+            (SYM, day + "T09:00:00", day + "T15:26:00", E)):
         m.setdefault((k, ty), []).append((t[11:19], float(v)))
     return m
 
@@ -59,13 +59,13 @@ res = {"BASE": [], "TRAIL": [], "SHIFT": []}
 detail = []
 for di, day in enumerate(days):
     exps = sorted({r[0] for r in oc.execute(
-        "SELECT DISTINCT expiry_date FROM option_chain WHERE symbol=? AND snapshot_time BETWEEN ? AND ? AND expiry_date>=?",
-        (SYM, day + " 09:00:00", day + " 15:26:00", day))})
+        "SELECT DISTINCT expiry_date FROM option_chain INDEXED BY idx_oc_symbol_time WHERE symbol=? AND snapshot_time BETWEEN ? AND ? AND expiry_date>=?",
+        (SYM, day + "T09:00:00", day + "T15:26:00", day))})
     if not exps: continue
     E = exps[0]
     sp = [(r[0][11:19], float(r[1])) for r in oc.execute(
         "SELECT snapshot_time,spot_price FROM underlying_spot WHERE symbol=? AND snapshot_time BETWEEN ? AND ? AND spot_price>0 ORDER BY snapshot_time",
-        (SYM, day + " 09:00:00", day + " 15:26:00"))]
+        (SYM, day + "T09:00:00", day + "T15:26:00"))]
     if not sp: continue
     spt = [a for a, _ in sp]
     j = bisect_right(spt, ENT_T + ":59")
