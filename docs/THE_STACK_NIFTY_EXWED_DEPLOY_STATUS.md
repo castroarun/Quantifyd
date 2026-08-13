@@ -118,6 +118,9 @@ paper-shadow size matched to live — the standing convention). Extend the inlin
 **config.py is read by the Flask process → requires `sudo systemctl restart quantifyd` — ONLY
 after 15:30 IST, never during market hours.** SENSEX lots: leave untouched (out of scope).
 Do NOT change `nas_day_matrix.json` (already correct) or master mode (§4.3).
+**Do NOT touch `rupee_stop_per_lot: 2500` (ATM2) or the portfolio stop (-1300/lot)** — both are
+per-lot and auto-scale with the 3→2 resize; both are validated (research/96, research/90) parts
+of the LIVE suite the stack deliberately keeps. Sleeves get NO such overlays (STATUS §17 test).
 
 ### Step B — Resize the two paper sleeves to 2L (qty 130 = 2 × lot 65)
 
