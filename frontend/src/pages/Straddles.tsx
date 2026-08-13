@@ -504,7 +504,12 @@ export default function Straddles() {
                       {r.anchor
                         ? <a href={'#' + r.anchor} onClick={(e) => { e.preventDefault(); document.getElementById(r.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} style={{ color: C.navy, textDecoration: 'none', cursor: 'pointer' }}>{r.label} ↗</a>
                         : (r.page ? <a href={r.page} style={{ color: C.navy, textDecoration: 'none' }}>{r.label} ↗</a> : r.label)}
-                      <div style={{ fontSize: 10, color: C.faint, fontWeight: 400 }}>{r.kind} · {r.note}
+                      <div style={{ fontSize: 10, color: C.faint, fontWeight: 400 }}>
+                        <span style={{ fontWeight: 800, padding: '0 6px', borderRadius: 4,
+                          color: r.kind === 'live-real' ? C.neg : (String(r.kind).includes('paper') ? C.pos : C.amber),
+                          background: r.kind === 'live-real' ? '#FBEEEE' : (String(r.kind).includes('paper') ? '#E7F2EE' : C.amberSoft) }}>
+                          {r.kind === 'live-real' ? 'LIVE REAL' : (String(r.kind).includes('paper') ? 'LIVE PAPER' : 'BACKTEST')}</span>
+                        {' '}· {r.note}
                         {r.report && <> · <a href={r.report} style={{ color: C.navy }}>📄 report</a></>}
                         {r.chart && <> · <a href={r.chart} style={{ color: C.navy }}>📈 tearsheet</a></>}
                       </div></td>
@@ -686,6 +691,7 @@ export default function Straddles() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>CSL Best-Config Lab</span>
               {chip(C.navySoft, C.navy, 'research/111')}
+              {chip(C.amberSoft, C.amber, 'BACKTEST · replay')}
               {chip(C.amberSoft, C.amber, 'weekly regen · Fri 15:45 IST')}
               <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>updated {cslCfg.generated_at}</span>
             </div>

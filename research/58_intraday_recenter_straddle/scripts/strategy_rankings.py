@@ -48,26 +48,26 @@ def add(label, kind, s, note=""):
 # V1 one-and-done (naked) — cum_curve
 d = load_json(PUB / "v1.json")
 if d and d.get("cum_curve"):
-    add("V1 · intraday one-and-done (naked)", "replay", stats(from_curve(d["cum_curve"])),
+    add("V1 · intraday one-and-done (naked)", "backtest", stats(from_curve(d["cum_curve"])),
         f"trigger {d.get('trigger_pct')}% · daily")
 
 # V1 daily re-enter — per_day finals
 d = load_json(PUB / "v1_daily.json")
 if d and d.get("per_day"):
-    add("V1 · daily re-enter (naked)", "replay",
+    add("V1 · daily re-enter (naked)", "backtest",
         stats([v.get("final") for v in d["per_day"].values()]), f"trigger {d.get('trigger_pct')}% · daily")
 
 # V2 iron-fly stop variants — trades pnl (already incl wings)
 for m in ("1.5", "2.0"):
     d = load_json(PUB / f"v2_{m}.json")
     if d and d.get("trades"):
-        add(f"V2 · positional iron-fly (stop {m}%)", "replay",
+        add(f"V2 · positional iron-fly (stop {m}%)", "backtest",
             stats([t["pnl"] for t in d["trades"]]), "+wings · re-enter")
 
 # V2 naked legacy (roll only) — exit_pnl
 d = load_json(BT / "straddle_v2_trades.json")
 if isinstance(d, list) and d:
-    add("V2 · positional bi-weekly (naked · legacy)", "live paper",
+    add("V2 · positional bi-weekly (naked · legacy)", "live-paper",
         stats([t.get("exit_pnl") for t in d]), "no move-stop · rolls to expiry")
 
 # LIVE iron-fly executor + breakout sleeve — v2_ironfly db
@@ -76,7 +76,7 @@ try:
     for sysname, lbl, note in [("v2", "LIVE · iron-fly executor (VIX-gated)", "real-time · combo skip-filter"),
                                ("breakout", "LIVE · inside-week breakout sleeve", "experimental")]:
         pnls = [r[0] for r in c.execute("SELECT pnl FROM v2_positions WHERE status='CLOSED' AND system=?", (sysname,)) if r[0] is not None]
-        add(lbl, "live paper", stats(pnls), note)
+        add(lbl, "live-paper", stats(pnls), note)
     c.close()
 except Exception as e:
     print("ironfly db:", e)
@@ -86,7 +86,7 @@ d = load_json(APP / "condor_paper.json") or load_json(BT / "condor_paper_state.j
 if d and isinstance(d, dict):
     tr = d.get("trades") or []
     s = stats([t.get("pnl") for t in tr]) if tr else None
-    add("Wed→Fri iron condor (research/80)", "live paper", s, "2 lots")
+    add("Wed→Fri iron condor (research/80)", "live-paper", s, "2 lots")
 
 
 # V1 + 30% combined-premium SL (from the sl30 backtest)
@@ -110,7 +110,7 @@ for name, lbl in (("nas_916_atm", "NAS 916 ATM (NIFTY · live)"),
         for r in c.execute("SELECT %s d,%s p FROM nas_atm_trades WHERE %s IS NOT NULL" % (dcol, pcol, pcol)):
             dd = str(r["d"])[:10]
             daily[dd] = daily.get(dd, 0) + r["p"]
-        add(lbl, "live", stats([daily[k] for k in sorted(daily)]), "as-traded 1→3 lots · per-leg SL + trail")
+        add(lbl, "live-real", stats([daily[k] for k in sorted(daily)]), "as-traded 1→3 lots · per-leg SL + trail")
         c.close()
     except Exception as e:
         print(name, e)
@@ -119,7 +119,7 @@ try:
     daily = {}
     for dd, p in c.execute("SELECT trade_date, net_pnl FROM nas_atm_trades WHERE net_pnl IS NOT NULL"):
         daily[str(dd)[:10]] = daily.get(str(dd)[:10], 0) + p
-    add("NAS ATM2 (SENSEX · live)", "live", stats([daily[k] for k in sorted(daily)]), "as-traded lots · young book")
+    add("NAS ATM2 (SENSEX · live)", "live-paper", stats([daily[k] for k in sorted(daily)]), "as-traded lots · young book")
     c.close()
 except Exception as e:
     print("sensex", e)
@@ -143,7 +143,7 @@ if d and d.get("records"):
     for sym, lbl, lots in (("NIFTY", "CSL Paper (NIFTY · 12 lots)", 12), ("SENSEX", "CSL Paper (SENSEX · 6 lots)", 6)):
         recs = [r["pnl"] for r in d["records"] if r.get("sym") == sym or r.get("book", "").endswith(sym)]
         if recs:
-            add(lbl, "paper", stats(recs), "frozen 13-AUG config · OOS validation")
+            add(lbl, "live-paper", stats(recs), "frozen 13-AUG config · OOS validation")
 
 # links: card anchor + backtest report + tearsheet per system (rendered as icons on the page)
 LINKS = {
