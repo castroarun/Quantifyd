@@ -11,6 +11,7 @@ type Day = {
   otm?: Record<string, [string, number][]>;            // offset -> [hhmm, strangle]
   ohlc?: [string, number, number, number, number][];   // hhmm, o, h, l, c (NIFTY 5-min candles)
   cpr?: { tc: number; pivot: number; bc: number; width_pct: number };  // prior-day CPR
+  tick_high?: number | null; tick_low?: number | null; tick_peak_time?: string | null; // TICK-level (~3s) extremes
 };
 
 const WDS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -111,6 +112,7 @@ export default function OptionsStudy() {
   const [grp, setGrp] = useState('none');
   const [expand, setExpand] = useState<string | null>(null);
   const [tableSort, setTableSort] = useState<'date' | 'decay'>('date');
+  const [slx, setSlx] = useState(30);   // interactive combined-SL explorer threshold (%)
 
   useEffect(() => {
     fetch(`/app/options_study.json?t=${Date.now()}`, { cache: 'no-store' })
@@ -162,7 +164,11 @@ export default function OptionsStudy() {
   const statOf = (dy: Day) => {
     const w = win(getStrad(dy)); if (w.length < 2) return null;
     const strad = w.map((b) => b[1]);
-    return { w, entry: w[0][1], close: w[w.length - 1][1], hi: Math.max(...strad), lo: Math.min(...strad),
+    // full default window -> use TICK-level (~3s) extremes when present (5-min marks understate)
+    const full = startT === '09:16' && endT === '15:30';
+    const hi = full && dy.tick_high ? dy.tick_high : Math.max(...strad);
+    const lo = full && dy.tick_low ? dy.tick_low : Math.min(...strad);
+    return { w, entry: w[0][1], close: w[w.length - 1][1], hi, lo, tickBased: full && !!dy.tick_high,
              decay: w[0][1] ? Math.round((w[w.length - 1][1] / w[0][1] - 1) * 1000) / 10 : 0 };
   };
 
@@ -257,7 +263,7 @@ export default function OptionsStudy() {
       const peakBar = s.w.find((b) => b[1] === s.hi);
       return { x, entry: s.entry, close: s.close, hi: s.hi, decay: s.decay,
         mae: s.entry ? Math.round((s.hi / s.entry - 1) * 1000) / 10 : 0,
-        peakT: peakBar ? peakBar[0] : '',
+        peakT: (s as any).tickBased && x.tick_peak_time ? x.tick_peak_time : (peakBar ? peakBar[0] : ''),
         rng: s.entry ? Math.round(((s.hi - s.lo) / s.entry) * 1000) / 10 : 0 }; })
       .filter(Boolean) as { x: Day; entry: number; close: number; hi: number; decay: number; mae: number; peakT: string; rng: number }[];
     rows.sort((a, b) => tableSort === 'decay' ? a.decay - b.decay : b.x.date.localeCompare(a.x.date));
@@ -284,6 +290,38 @@ export default function OptionsStudy() {
     return { dte: k, n: ds.length, med: ds[Math.floor(ds.length / 2)],
              win: Math.round(100 * ds.filter((x) => x < 0).length / ds.length) };
   }), [allDays, startT, endT]);
+
+  // interactive combined-SL explorer: tick-accurate hit detection (tick_high), fill-at-trigger
+  const slExp = useMemo(() => {
+    const QTY = 650, COST = 160;
+    const ds = allDays.filter((x) => x.series && x.series.length > 1);
+    const perDay = ds.map((x) => {
+      const ent = x.series[0][1], close = x.series[x.series.length - 1][1];
+      const thr = ent * (1 + slx / 100);
+      const hit = !!(x.tick_high && x.tick_high >= thr);
+      return { date: x.date, dte: x.dte, hit, pnl: hit ? (ent - thr) * QTY - COST : (ent - close) * QTY - COST };
+    });
+    const agg = (f: number[]) => { let c = 0, pk = 0, dd = 0, t = 0; f.forEach((v) => { c += v; pk = Math.max(pk, c); dd = Math.min(dd, c - pk); t += v; });
+      const n = f.length || 1; return { total: Math.round(t), mean: Math.round(t / n), win: Math.round(100 * f.filter((v) => v > 0).length / n), dd: Math.round(dd) }; };
+    const rows = DTES.map((k) => { const s = perDay.filter((r) => r.dte === k); if (!s.length) return null;
+      const a = agg(s.map((r) => r.pnl));
+      return { dte: k, n: s.length, ...a, hit: Math.round(100 * s.filter((r) => r.hit).length / s.length),
+        ratio: a.dd < 0 ? Math.round(10 * a.total / Math.abs(a.dd)) / 10 : null }; }).filter(Boolean) as any[];
+    const all = agg(perDay.map((r) => r.pnl));
+    const sorted = perDay.slice().sort((a, b) => a.date.localeCompare(b.date));
+    let c = 0; const xs: number[] = [], ys: number[] = [];
+    sorted.forEach((r, i) => { c += r.pnl; xs.push(i); ys.push(c); });
+    const hitAll = Math.round(100 * perDay.filter((r) => r.hit).length / (perDay.length || 1));
+    const tickN = ds.filter((x) => x.tick_high).length;
+    return { rows, all, xs, ys, hitAll, n: perDay.length, tickN, dates: sorted.map((r) => r.date) };
+  }, [allDays, slx]);
+  const slChart = useMemo(() => {
+    if (!slExp.xs.length) return null;
+    return { opts: { series: [{}, { label: 'cum P&L', stroke: '#3fb950', width: 2, points: { show: false } }],
+      axes: [{ stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((i) => slExp.dates[Math.round(i)] ? slExp.dates[Math.round(i)].slice(5) : '') },
+             { stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((x) => '₹' + Math.round(x / 1000) + 'k') }],
+      legend: { show: false }, cursor: { drag: { x: false, y: false } } }, data: [slExp.xs, slExp.ys] as any };
+  }, [slExp]);
 
   if (!d) return <div className={styles.wrap}>Loading options study…</div>;
   const stats = days.map(statOf).filter(Boolean) as NonNullable<ReturnType<typeof statOf>>[];
@@ -462,7 +500,7 @@ export default function OptionsStudy() {
 
       <section className={styles.card}>
         <div className={styles.cardHead}><b>Every day &mdash; ATM straddle decay ({wd})</b>
-          <span className={styles.sub}>window {startT}→{endT} · click a row to load its intraday curve above</span>
+          <span className={styles.sub}>window {startT}→{endT} · Max/Peak+%/Range at TICK (~3s) resolution on the full window (5-min marks otherwise) · click a row to load its curve</span>
           <select className={styles.sel} value={tableSort} onChange={(e) => setTableSort(e.target.value as 'date' | 'decay')}>
             <option value="date">Newest first</option>
             <option value="decay">Biggest decay first</option>
@@ -489,6 +527,38 @@ export default function OptionsStudy() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><b>Combined-SL explorer &mdash; vary the stop, see the result</b>
+          <span className={styles.sub}>sell ATM 09:16 · exit at SL trigger (tick-accurate hit via ~3s peaks{slExp.tickN < slExp.n ? ` · tick data on ${slExp.tickN}/${slExp.n} days, rest 5-min` : ''}) else hold to close · 10 lots (qty 650)</span>
+          <label className={styles.toggle} style={{ marginLeft: 'auto', gap: 8 }}>
+            SL <input type="range" min={10} max={60} step={5} value={slx} onChange={(e) => setSlx(Number(e.target.value))} style={{ width: 160 }} />
+            <b style={{ fontSize: 14 }}>{slx}%</b>
+          </label>
+        </div>
+        <div className={styles.tiles} style={{ marginBottom: 10 }}>
+          <Tile label="Total" v={`₹${slExp.all.total.toLocaleString('en-IN')}`} good={slExp.all.total > 0} />
+          <Tile label="Mean/day" v={`₹${slExp.all.mean.toLocaleString('en-IN')}`} good={slExp.all.mean > 0} />
+          <Tile label="Win" v={slExp.all.win + '%'} />
+          <Tile label="SL hit" v={slExp.hitAll + '%'} />
+          <Tile label="Max DD" v={`₹${slExp.all.dd.toLocaleString('en-IN')}`} good={false} />
+        </div>
+        {slChart && <Chart opts={slChart.opts} data={slChart.data} height={220} />}
+        <div className={styles.tableWrap} style={{ maxHeight: 'none', marginTop: 8 }}>
+          <table className={styles.table}>
+            <thead><tr><th>DTE</th><th className={styles.num}>Days</th><th className={styles.num}>Total</th><th className={styles.num}>Mean/day</th><th className={styles.num}>Win</th><th className={styles.num}>SL hit</th><th className={styles.num}>Max DD</th><th className={styles.num}>Ratio</th></tr></thead>
+            <tbody>{slExp.rows.map((r: any) => (
+              <tr key={r.dte}><td>DTE{r.dte}</td><td className={styles.num}>{r.n}</td>
+                <td className={styles.num} style={{ color: r.total >= 0 ? '#3fb950' : '#f85149', fontWeight: 700 }}>{r.total.toLocaleString('en-IN')}</td>
+                <td className={styles.num}>{r.mean.toLocaleString('en-IN')}</td>
+                <td className={styles.num}>{r.win}%</td><td className={styles.num}>{r.hit}%</td>
+                <td className={styles.num} style={{ color: '#f85149' }}>{r.dd.toLocaleString('en-IN')}</td>
+                <td className={styles.num} style={{ fontWeight: 700 }}>{r.ratio ?? '—'}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className={styles.sub} style={{ marginTop: 8 }}>Drag the slider — table, tiles &amp; curve recompute live. Fill-at-trigger model (no slippage); the running 1-min path sweep is the exact-fill validation.</div>
       </section>
 
       {expand && (chartsMap[expand] || expand === 'candles') && (() => {

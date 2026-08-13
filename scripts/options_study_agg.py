@@ -82,6 +82,29 @@ def build_day(day):
                          round(float(r["min"])), round(float(r["last"]))])
     day_hi = round(float(win.max())) if len(win) else round(spot0)
     day_lo = round(float(win.min())) if len(win) else round(spot0)
+    # TICK-level straddle extremes over the session (~3s recorder) — true Max/Min for
+    # Peak+%/Range; the 5-min series stays for charts but understates extremes.
+    tick_hi = tick_lo = tick_pt = None
+    try:
+        ta_c, la_c, _, _ = chain[ce]; ta_p, la_p, _, _ = chain[pe]
+        lo_b = np.datetime64(day + "T09:16:00"); hi_b = np.datetime64(day + "T15:30:00")
+        allt = np.union1d(ta_c, ta_p)
+        allt = allt[(allt >= lo_b) & (allt <= hi_b)]
+        if len(allt):
+            ic = np.searchsorted(ta_c, allt, side="right") - 1
+            ip = np.searchsorted(ta_p, allt, side="right") - 1
+            ok = (ic >= 0) & (ip >= 0)
+            cv = np.asarray(la_c, dtype=float)[ic[ok]]
+            pv = np.asarray(la_p, dtype=float)[ip[ok]]
+            tt = allt[ok]
+            m = (cv > 0) & (pv > 0)
+            if m.any():
+                comb = cv[m] + pv[m]; tt = tt[m]
+                iH = int(np.argmax(comb)); iL = int(np.argmin(comb))
+                tick_hi = round(float(comb[iH]), 1); tick_lo = round(float(comb[iL]), 1)
+                tick_pt = str(tt[iH])[11:16]
+    except Exception:
+        pass
     # OTM strangles at +/- offset points (CE above, PE below) -> combined 5-min series per offset
     otm = {}
     for off in (100, 200, 300):
@@ -101,7 +124,8 @@ def build_day(day):
                 decay_pct=round((close / entry - 1) * 100, 1) if entry else 0,
                 rng=round(hi - lo, 1), spot_open=round(spot0), spot_close=round(spot_close),
                 spot_move=round(spot_close - spot0), series=series, otm=otm,
-                ohlc=ohlc, day_hlc=[day_hi, day_lo, round(spot_close)])
+                ohlc=ohlc, day_hlc=[day_hi, day_lo, round(spot_close)],
+                tick_high=tick_hi, tick_low=tick_lo, tick_peak_time=tick_pt)
 
 
 def main():
