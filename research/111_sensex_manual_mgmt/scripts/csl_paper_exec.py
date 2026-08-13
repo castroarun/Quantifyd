@@ -16,6 +16,7 @@ sys.path.insert(0, Q)
 CONFIG = Q + "/backtest_data/csl_paper_config.json"
 STATE = Q + "/backtest_data/csl_paper_state.json"
 PUB = Q + "/static/app/csl_paper.json"
+PUBLIVE = Q + "/static/app/csl_paper_live.json"
 NIFTY_MKT = {"sym": "NIFTY", "step": 50, "lot": 65, "spot_key": "NSE:NIFTY 50", "seg": "NFO",
              "wd2dte": {0: 1, 1: 0, 2: 4, 3: 3, 4: 2}}
 SENSEX_MKT = {"sym": "SENSEX", "step": 100, "lot": 20, "spot_key": "BSE:SENSEX", "seg": "BFO",
@@ -34,6 +35,7 @@ BOOKS = {
 }
 BACKSTOP = 0.50   # for SL 'none' configs
 POLL = 5          # seconds
+SAMPLE_EVERY = 12  # record MTM every ~60s for day curves
 
 def log(m): print("[%s] %s" % (datetime.now().strftime("%H:%M:%S"), m), flush=True)
 
@@ -72,6 +74,15 @@ def save_state(st):
     try: json.dump(st, open(PUB, "w"))
     except Exception: pass
 
+def write_live(plans, today):
+    try:
+        json.dump({"day": today, "at": datetime.now().strftime("%H:%M:%S"),
+                   "books": {bk: {"state": P["state"], "credit": P.get("credit"),
+                                   "series": P.get("series", [])} for bk, P in plans.items()}},
+                  open(PUBLIVE, "w"))
+    except Exception:
+        pass
+
 def resolve_legs(k, B, strike):
     sym = B["sym"]; seg = B["seg"]
     ins = resolve_legs.cache.get(seg)
@@ -104,7 +115,8 @@ def main():
         if any(r["day"] == today and (r.get("book") == bk or (not r.get("book") and r.get("sym") == B["sym"])) for r in st["records"]):
             log("%s: already recorded today — skip" % bk); continue
         plans[bk] = {"dte": dte, **c, "state": "WAIT_ENTRY", "K": None, "legs": None,
-                     "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None}
+                     "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None,
+                     "series": [], "tick": 0}
         log("%s plan: DTE%d %s->%s SL%s qty %d (%d lots)" % (bk, dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
     if probe:
         for bk in plans:
@@ -144,6 +156,10 @@ def main():
                     ce_s, pe_s = P["legs"]
                     q = k.ltp(["%s:%s" % (B["seg"], ce_s), "%s:%s" % (B["seg"], pe_s)])
                     comb = q["%s:%s" % (B["seg"], ce_s)]["last_price"] + q["%s:%s" % (B["seg"], pe_s)]["last_price"]
+                    P["tick"] += 1
+                    if P["tick"] % SAMPLE_EVERY == 1:
+                        P["series"].append([now, round((P["credit"] - comb) * B["qty"])])
+                        write_live(plans, today)
                     sl = BACKSTOP if P["sl"] == "none" else P["sl"] / 100.0
                     thr = (1 + sl) * P["credit"]
                     reason = None
@@ -159,7 +175,7 @@ def main():
                         rec = {"day": today, "book": sym, "sym": B["sym"], "dte": P["dte"], "cfg": "%s->%s SL%s" % (P["entry"], P["exit"], P["sl"]),
                                "strike": P["K"], "expiry": P["expiry"], "credit": round(P["credit"], 2),
                                "entry_ts": P["entry_ts"], "exit_ts": datetime.now().strftime("%H:%M:%S"),
-                               "exit_comb": round(comb, 2), "reason": reason, "pnl": pnl,
+                               "exit_comb": round(comb, 2), "reason": reason, "pnl": pnl, "series": P.get("series", []),
                                "lots": B["lots"], "qty": B["qty"]}
                         st["records"].append(rec)
                         st["cum"][sym] = st["cum"].get(sym, 0) + pnl

@@ -284,6 +284,9 @@ export default function Straddles() {
   const [csl2nd, setCsl2nd] = useState(false);       // stack the next-best non-overlapping slot
   const [cslPaper, setCslPaper] = useState<any>(null);     // live paper book state
   const [cslPaperCfg, setCslPaperCfg] = useState<any>(null); // frozen config
+  const [cslPLive, setCslPLive] = useState<any>(null);     // intraday live series (today)
+  const [cslPDay, setCslPDay] = useState<string>('');      // selected day for curves
+  const [cslPBig, setCslPBig] = useState<string | null>(null); // expanded book curve
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -296,6 +299,8 @@ export default function Straddles() {
     fetch('/app/straddles/csl_best_configs.json?t=' + Date.now()).then((r) => r.json()).then(setCslCfg).catch(() => {});
     fetch('/app/csl_paper.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaper).catch(() => {});
     fetch('/app/csl_paper_config.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaperCfg).catch(() => {});
+    const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
+    loadPLive(); const pl = setInterval(loadPLive, 60000);
     const loadLive = () => {
       fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
       fetch('/api/v2-ironfly/state?t=' + Date.now()).then((r) => r.json()).then(setV2eng).catch(() => {});
@@ -353,7 +358,7 @@ export default function Straddles() {
         });
       };
     } catch { /* no SSE — 30s poll still refreshes */ }
-    return () => { clearInterval(id); if (es) es.close(); if (es2) es2.close(); };
+    return () => { clearInterval(id); clearInterval(pl); if (es) es.close(); if (es2) es2.close(); };
   }, []);
 
   const v1stats = useMemo(() => {
@@ -577,6 +582,48 @@ export default function Straddles() {
             </table>
           </div>
         )}
+        {(() => {
+          const recDays: string[] = Array.from(new Set(((cslPaper?.records) || []).filter((r: any) => r.series && r.series.length > 1).map((r: any) => r.day)));
+          if (cslPLive?.day && Object.values(cslPLive.books || {}).some((b: any) => (b.series || []).length > 1) && !recDays.includes(cslPLive.day)) recDays.push(cslPLive.day);
+          recDays.sort();
+          const selDay = cslPDay && recDays.includes(cslPDay) ? cslPDay : recDays[recDays.length - 1];
+          if (!selDay) return null;
+          const curves: { bk: string; pts: [string, number][]; live: boolean }[] = [];
+          (((cslPaper?.records) || []) as any[]).filter((r) => r.day === selDay && r.series && r.series.length > 1)
+            .forEach((r) => curves.push({ bk: r.book || r.sym, pts: r.series, live: false }));
+          if (cslPLive?.day === selDay) Object.entries(cslPLive.books || {}).forEach(([bk, b]: any) => {
+            if ((b.series || []).length > 1 && !curves.some((c2) => c2.bk === bk)) curves.push({ bk, pts: b.series, live: b.state === 'OPEN' });
+          });
+          if (!curves.length) return null;
+          const big = curves.find((c2) => c2.bk === cslPBig);
+          return (
+            <div style={{ margin: '10px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: C.ink }}>Day P&amp;L curves — all variants</span>
+                <select value={selDay} onChange={(e) => setCslPDay(e.target.value)}
+                  style={{ background: 'transparent', color: C.ink, border: `1px solid ${C.hair}`, borderRadius: 6, padding: '2px 8px', fontSize: 11.5 }}>
+                  {recDays.map((d2) => <option key={d2} value={d2}>{d2}</option>)}
+                </select>
+                <span style={{ fontSize: 10.5, color: C.faint }}>~60s samples · click a curve to expand/collapse</span>
+              </div>
+              {big && <div style={{ marginBottom: 8 }}>
+                <LineChart pts={big.pts} h={260} label={`${big.bk} · ${selDay}${big.live ? ' · LIVE (open)' : ''} — expanded (click tile to collapse)`} />
+              </div>}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+                {curves.map((c2) => (
+                  <div key={c2.bk} onClick={() => setCslPBig(cslPBig === c2.bk ? null : c2.bk)}
+                    style={{ border: `1px solid ${cslPBig === c2.bk ? C.navy : C.hair}`, borderRadius: 8, padding: '6px 8px', cursor: 'pointer' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>
+                      {c2.bk} {c2.live && <span style={{ color: C.pos }}>· LIVE</span>}
+                      <span style={{ float: 'right', color: col(c2.pts[c2.pts.length - 1][1]) }}>{inr(c2.pts[c2.pts.length - 1][1])}</span>
+                    </div>
+                    <LineChart pts={c2.pts} h={90} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {cslPaper && (cslPaper.records || []).length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
