@@ -279,6 +279,7 @@ export default function Straddles() {
   const [condor, setCondor] = useState<any>(null);   // research/80 Wed->Fri iron-condor paper book
   const [v2msg, setV2msg] = useState<string | null>(null);  // last action result message
   const [ranks, setRanks] = useState<any>(null);     // weekly strategy leaderboard
+  const dmon = (s: string) => s.slice(8, 10) + '-' + ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][+s.slice(5, 7) - 1];
   const [variants, setVariants] = useState<any>(null); // v2 stop x wings variant lab
   const [cslCfg, setCslCfg] = useState<any>(null);   // research/111 best-config lab (weekly regen)
   const [cslIdx, setCslIdx] = useState<'NIFTY' | 'SENSEX'>('NIFTY');
@@ -495,7 +496,7 @@ export default function Straddles() {
               <thead><tr>
                 <th style={thL}>#</th><th style={thL}>Grade</th><th style={thL}>System</th>
                 <th style={thR}>Net P&amp;L</th><th style={thR}>Calmar</th><th style={thR}>MaxDD</th>
-                <th style={thR}>Win</th><th style={thR}>N</th><th style={thL}>Confidence</th>
+                <th style={thR}>Win</th><th style={thR}>N</th><th style={thL}>Period</th><th style={thL}>Confidence</th>
               </tr></thead>
               <tbody>
                 {ranks.systems.map((r: any) => (
@@ -520,6 +521,7 @@ export default function Straddles() {
                     <td style={{ ...tdR, color: C.neg }}>{inr(r.maxdd)}</td>
                     <td style={tdR}>{r.win}%</td>
                     <td style={tdR}>{r.n}</td>
+                    <td style={{ ...tdL, whiteSpace: 'nowrap', fontSize: 11, color: C.muted }}>{r.from ? `${dmon(r.from)} → ${dmon(r.to)}` : '—'}</td>
                     <td style={{ ...tdL, color: r.confidence === 'medium' ? C.sec : C.amber }}>{r.confidence}</td>
                   </tr>
                 ))}

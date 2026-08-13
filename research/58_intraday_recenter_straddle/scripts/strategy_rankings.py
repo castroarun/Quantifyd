@@ -41,34 +41,46 @@ def load_json(p):
 
 rows = []
 
-def add(label, kind, s, note=""):
+def tdates(trs, *keys):
+    out = []
+    for t in trs:
+        for k in keys:
+            v = t.get(k)
+            if v:
+                out.append(str(v)[:10]); break
+    return out
+
+def add(label, kind, s, note="", dates=None):
     if s:
+        if dates:
+            ds = sorted(str(d)[:10] for d in dates if d)
+            if ds: s = {**s, "from": ds[0], "to": ds[-1]}
         rows.append({"label": label, "kind": kind, "note": note, **s})
 
 # V1 one-and-done (naked) — cum_curve
 d = load_json(PUB / "v1.json")
 if d and d.get("cum_curve"):
     add("V1 · intraday one-and-done (naked)", "backtest", stats(from_curve(d["cum_curve"])),
-        f"trigger {d.get('trigger_pct')}% · daily")
+        f"trigger {d.get('trigger_pct')}% · daily", dates=[p[0] for p in d["cum_curve"]])
 
 # V1 daily re-enter — per_day finals
 d = load_json(PUB / "v1_daily.json")
 if d and d.get("per_day"):
     add("V1 · daily re-enter (naked)", "backtest",
-        stats([v.get("final") for v in d["per_day"].values()]), f"trigger {d.get('trigger_pct')}% · daily")
+        stats([v.get("final") for v in d["per_day"].values()]), f"trigger {d.get('trigger_pct')}% · daily", dates=list(d["per_day"].keys()))
 
 # V2 iron-fly stop variants — trades pnl (already incl wings)
 for m in ("1.5", "2.0"):
     d = load_json(PUB / f"v2_{m}.json")
     if d and d.get("trades"):
         add(f"V2 · positional iron-fly (stop {m}%)", "backtest",
-            stats([t["pnl"] for t in d["trades"]]), "+wings · re-enter")
+            stats([t["pnl"] for t in d["trades"]]), "+wings · re-enter", dates=tdates(d["trades"], "exit_date", "exit", "date", "day", "entry_date", "entry"))
 
 # V2 naked legacy (roll only) — exit_pnl
 d = load_json(BT / "straddle_v2_trades.json")
 if isinstance(d, list) and d:
     add("V2 · positional bi-weekly (naked · legacy)", "live-paper",
-        stats([t.get("exit_pnl") for t in d]), "no move-stop · rolls to expiry")
+        stats([t.get("exit_pnl") for t in d]), "no move-stop · rolls to expiry", dates=tdates(d, "exit_date", "exit_time", "exit", "entry_date", "date"))
 
 # LIVE iron-fly executor + breakout sleeve — v2_ironfly db
 try:
@@ -76,7 +88,11 @@ try:
     for sysname, lbl, note in [("v2", "LIVE · iron-fly executor (VIX-gated)", "real-time · combo skip-filter"),
                                ("breakout", "LIVE · inside-week breakout sleeve", "experimental")]:
         pnls = [r[0] for r in c.execute("SELECT pnl FROM v2_positions WHERE status='CLOSED' AND system=?", (sysname,)) if r[0] is not None]
-        add(lbl, "live-paper", stats(pnls), note)
+        try:
+            dts = [r[0] for r in c.execute("SELECT entry_time FROM v2_positions WHERE status='CLOSED' AND system=?", (sysname,)) if r[0]]
+        except Exception:
+            dts = None
+        add(lbl, "live-paper", stats(pnls), note, dates=dts)
     c.close()
 except Exception as e:
     print("ironfly db:", e)
@@ -86,14 +102,14 @@ d = load_json(APP / "condor_paper.json") or load_json(BT / "condor_paper_state.j
 if d and isinstance(d, dict):
     tr = d.get("trades") or []
     s = stats([t.get("pnl") for t in tr]) if tr else None
-    add("Wed→Fri iron condor (research/80)", "live-paper", s, "2 lots")
+    add("Wed→Fri iron condor (research/80)", "live-paper", s, "2 lots", dates=tdates(tr, "day", "date", "entry_date", "entry"))
 
 
 # V1 + 30% combined-premium SL (from the sl30 backtest)
 d = load_json(PUB / "v1_sl30.json")
 if d and d.get("trades"):
     add("V1 + 30% combined-premium SL", "backtest",
-        stats([t["final"] for t in d["trades"]]), "combined-premium 30% stop · recorded chain")
+        stats([t["final"] for t in d["trades"]]), "combined-premium 30% stop · recorded chain", dates=tdates(d["trades"], "day", "date"))
 
 # NAS live books (as-traded lots) — per-book rows so the whole short-vol book ranks in ONE table
 import sqlite3
@@ -110,7 +126,7 @@ for name, lbl in (("nas_916_atm", "NAS 916 ATM (NIFTY · live)"),
         for r in c.execute("SELECT %s d,%s p FROM nas_atm_trades WHERE %s IS NOT NULL" % (dcol, pcol, pcol)):
             dd = str(r["d"])[:10]
             daily[dd] = daily.get(dd, 0) + r["p"]
-        add(lbl, "live-real", stats([daily[k] for k in sorted(daily)]), "as-traded 1→3 lots · per-leg SL + trail")
+        add(lbl, "live-real", stats([daily[k] for k in sorted(daily)]), "as-traded 1→3 lots · per-leg SL + trail", dates=sorted(daily))
         c.close()
     except Exception as e:
         print(name, e)
@@ -119,7 +135,7 @@ try:
     daily = {}
     for dd, p in c.execute("SELECT trade_date, net_pnl FROM nas_atm_trades WHERE net_pnl IS NOT NULL"):
         daily[str(dd)[:10]] = daily.get(str(dd)[:10], 0) + p
-    add("NAS ATM2 (SENSEX · live)", "live-paper", stats([daily[k] for k in sorted(daily)]), "as-traded lots · young book")
+    add("NAS ATM2 (SENSEX · live)", "live-paper", stats([daily[k] for k in sorted(daily)]), "as-traded lots · young book", dates=sorted(daily))
     c.close()
 except Exception as e:
     print("sensex", e)
@@ -135,15 +151,15 @@ if d and d.get("best"):
                 daily[dd] = daily.get(dd, 0) + v
         if daily:
             add(lbl, "backtest", stats([daily[k2] for k2 in sorted(daily)]),
-                "%d lots · time-blocked windows · IN-SAMPLE optimized (see walk-forward caveat)" % lots)
+                "%d lots · time-blocked windows · IN-SAMPLE optimized (see walk-forward caveat)" % lots, dates=sorted(daily))
 
 # CSL paper books (frozen-config validation) — appear once they have records
 d = load_json(BT / "csl_paper_state.json")
 if d and d.get("records"):
     for sym, lbl, lots in (("NIFTY", "CSL Paper (NIFTY · 12 lots)", 12), ("SENSEX", "CSL Paper (SENSEX · 6 lots)", 6)):
-        recs = [r["pnl"] for r in d["records"] if r.get("sym") == sym or r.get("book", "").endswith(sym)]
-        if recs:
-            add(lbl, "live-paper", stats(recs), "frozen 13-AUG config · OOS validation")
+        rs = [r for r in d["records"] if r.get("sym") == sym or r.get("book", "").endswith(sym)]
+        if rs:
+            add(lbl, "live-paper", stats([r["pnl"] for r in rs]), "frozen 13-AUG config · OOS validation", dates=[r["day"] for r in rs])
 
 # links: card anchor + backtest report + tearsheet per system (rendered as icons on the page)
 LINKS = {
