@@ -1,6 +1,7 @@
 # THE STACK (NIFTY): LIVE suite + COMB sleeve + TB-CSL, 2 lots/system (10L total), ex-Wednesday — Deployment Instructions
 
-STATUS: **PLANNED** (written 2026-08-13 ~23:30 IST, session with full research/111 context)
+STATUS: **DONE — DEPLOYED LIVE 2026-08-13 22:33 IST** — config at 2 lots/system; NAS master mode flipped PAPER->LIVE; first real-money trade Mon 2026-08-17 (NIFTY 916 DTE1); Fri 08-14 runs paper (DTE2/DTE4, no live day).
+> Executor directive during run: *"do not alter anything in the live system except the lots."* Portfolio stop-loss + profit-trail (nas_portfolio_stop.py) and ALL system-level / per-lot SLs UNTOUCHED; only lots_per_leg 3->2 changed.
 
 > **Absolute path of this file (laptop):** `c:\Users\arunc\Documents\Projects\Covered_Calls\docs\THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md`
 > **Same file on VPS (canonical repo):** `/home/arun/quantifyd/docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md`
@@ -192,6 +193,14 @@ tags days REAL/PAPER by actual order mode).
 | Date/time | Event | Notes |
 |---|---|---|
 | 2026-08-13 23:30 IST | Instructions written (this file), STATUS PLANNED | source session had full research/111 §14-16 context |
+| 2026-08-13 22:05 IST | Backup taken | backups/the_stack_deploy_20260813_220505 (8 files) |
+| 2026-08-13 22:12 IST | Step A: DTE4 popped from NAS_COMB20 + CSL_TIMEB_NIFTY (paper sleeves ex-Wed) | keys now 0-3 |
+| 2026-08-13 22:14 IST | Step B0: config.py NAS_916 lots_per_leg 3->2 + paper_lots 3->2 (SENSEX 3 untouched) | import OK |
+| 2026-08-13 22:18 IST | Step B: sleeves 12L/3L->2L/130 (exec+backfill); portfolio_lab per-record 2L + DEPLOYED label; Straddles.tsx text | lab: STACK ex-Wed +243,074 DD -11,667 ratio 20.8 |
+| 2026-08-13 22:21 IST | Restart quantifyd (book flat) -> 2-lot config live; master STILL paper | service active, no errors |
+| 2026-08-13 22:30 IST | Frontend built on VPS | static/app |
+| 2026-08-13 22:33 IST | master mode flipped PAPER->LIVE (user consent); armed-check OK (SL monitors 10s, no errors) | first live Mon 08-17 |
+| 2026-08-13 22:40 IST | User directive: only lots in live system -> portfolio stop + all SLs UNTOUCHED; committed to git; wrote LIVE rules doc | STATUS DONE |
 
 ---
 

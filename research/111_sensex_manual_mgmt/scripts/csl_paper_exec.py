@@ -22,20 +22,20 @@ NIFTY_MKT = {"sym": "NIFTY", "step": 50, "lot": 65, "spot_key": "NSE:NIFTY 50", 
 SENSEX_MKT = {"sym": "SENSEX", "step": 100, "lot": 20, "spot_key": "BSE:SENSEX", "seg": "BFO",
               "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}
 BOOKS = {
-    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 12, "qty": 780, "cfg_from": "lab"},
+    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "lab"},
     "CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 6, "qty": 120, "cfg_from": "lab"},
     # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
-    "NAS_COMB20": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed",
+    "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                    "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
     # FIXED-CSL30 books (the flat rule, un-windowed) — the variable-vs-fixed live A/B
-    "CSL30F_NIFTY": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed",
+    "CSL30F_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
     "CSL30F_SENSEX": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed",
                       "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
     # post-CSL management A/Bs (research/111 sec 14): on CSL hit, manage instead of quit
-    "NAS_C20_TRAIL": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed", "mgmt": "trail",
+    "NAS_C20_TRAIL": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed", "mgmt": "trail",
                       "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
-    "NAS_C20_SHIFT": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed", "mgmt": "shift",
+    "NAS_C20_SHIFT": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed", "mgmt": "shift",
                       "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
 }
 TRAIL_BOUNCE = 1.30   # trail arm: exit winner on >=30% bounce off post-trigger low

@@ -1,17 +1,19 @@
 """OPTIONS PORTFOLIO LAB (research/111 sec 16) -> static/app/straddles/portfolio_lab.json
 
 Tracks the NIFTY options-portfolio stack the research converged on:
-    LIVE suite (9L, Mon/Tue-gated) + COMB sleeve (NAS_COMB20, 3L) + TB-CSL (3L-scaled)
+    LIVE suite (6L = 2L/system, Mon/Tue-gated) + COMB sleeve (NAS_COMB20, 2L) + TB-CSL (2L)
 plus the SHIFT candidate (HYB_ATM4_30 model until NAS_C20_SHIFT accrues live days).
 Live-first: paper-book records override backfill; every component reports n-days by
 source (PAPER vs BACKTEST vs MODEL vs REAL+shadow). All-days AND ex-Wednesday rows.
-Runs daily in the 15:40 regen so the lab stays current as OOS paper days accrue."""
+Runs daily in the 15:40 regen so the lab stays current as OOS paper days accrue.
+THE STACK DEPLOYED 2026-08-13 at 2 lots/system, ex-Wednesday (docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md)."""
 import json
 from datetime import datetime
 from pathlib import Path
 
 Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/portfolio_lab.json", Q / "frontend/public/straddles/portfolio_lab.json"]
+TARGET_LOTS = 2   # 2026-08-13: THE STACK deployed at 2 lots/system; normalize all mixed-size history to 2L
 
 def load(p):
     try: return json.load(open(p))
@@ -22,34 +24,36 @@ bf = load(Q / "static/app/csl_paper_backfill.json") or {"records": []}
 nb = (load(Q / "static/app/nas_baseline.json") or {}).get("days", {})
 rp = load(Q / "research/111_sensex_manual_mgmt/results/nas_suite_csl_replay.json")
 
-def book_daily(bk, scale=1.0):
-    """{day: (pnl, source)} - live paper records take precedence over backfill."""
+def book_daily(bk):
+    """{day: (pnl, source)} normalized per-record to TARGET_LOTS - live paper records take precedence over backfill."""
     out = {}
     for r in bf.get("records", []):
         if (r.get("book") or r.get("sym")) == bk:
-            out[r["day"]] = (round(r["pnl"] * scale), "BACKTEST")
+            lots = r.get("lots") or TARGET_LOTS
+            out[r["day"]] = (round(r["pnl"] * TARGET_LOTS / lots), "BACKTEST")
     for r in state.get("records", []):
         if (r.get("book") or r.get("sym")) == bk:
-            out[r["day"]] = (round(r["pnl"] * scale), r.get("source", "PAPER"))
+            lots = r.get("lots") or TARGET_LOTS
+            out[r["day"]] = (round(r["pnl"] * TARGET_LOTS / lots), r.get("source", "PAPER"))
     return out
 
-# components (study basis: LIVE 9L, each sleeve 3L)
+# components (deployed basis: LIVE 6L = 2L/system, each sleeve 2L)
 comp = {}
 live = {}
 for d, rows in nb.items():
     t = 0; got = False
     for b in rows:
         if "SENSEX" in b["book"]: continue
-        t += (b["pnl"] / b["lots"] * 3 if b.get("lots") else b["pnl"]); got = True
+        t += (b["pnl"] / b["lots"] * TARGET_LOTS if b.get("lots") else b["pnl"]); got = True
     if got: live[d] = (round(t), "REAL+shadow")
-comp["LIVE_SUITE_9L"] = live
-comp["COMB_3L"] = book_daily("NAS_COMB20")
-comp["TBCSL_3L"] = book_daily("CSL_TIMEB_NIFTY", scale=3 / 12.0)
+comp["LIVE_SUITE_6L"] = live
+comp["COMB_2L"] = book_daily("NAS_COMB20")
+comp["TBCSL_2L"] = book_daily("CSL_TIMEB_NIFTY")
 shift = book_daily("NAS_C20_SHIFT")
-if rp:  # model history until the paper book accrues
+if rp:  # model history until the paper book accrues (model basis 3L -> normalize to TARGET_LOTS)
     for d, v in rp["arms"]["HYB_ATM4_30"]["series"]:
-        if d not in shift: shift[d] = (v, "MODEL")
-comp["SHIFT_CAND_3L"] = shift
+        if d not in shift: shift[d] = (round(v * TARGET_LOTS / 3.0), "MODEL")
+comp["SHIFT_CAND_2L"] = shift
 
 def is_wed(d):
     return datetime.strptime(d, "%Y-%m-%d").weekday() == 2
@@ -72,7 +76,7 @@ def corr(da, db):
     va = sum((p - ma) ** 2 for p in xa) ** 0.5; vb = sum((q - mb) ** 2 for q in xb) ** 0.5
     return round(num / (va * vb), 2) if va > 0 and vb > 0 else None
 
-NAMES = ["LIVE_SUITE_9L", "COMB_3L", "TBCSL_3L", "SHIFT_CAND_3L"]
+NAMES = ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_2L", "SHIFT_CAND_2L"]
 matrix = [[(1.0 if a == b else corr(comp[a], comp[b])) for b in NAMES] for a in NAMES]
 
 comps_out = {}
@@ -85,11 +89,11 @@ for n2, dd in comp.items():
                      "series": [[d, dd[d][0]] for d in ds]}
 
 PORTS = [
-    ("LIVE suite alone", 9, ["LIVE_SUITE_9L"]),
-    ("LIVE + COMB sleeve", 12, ["LIVE_SUITE_9L", "COMB_3L"]),
-    ("THE STACK: LIVE + COMB + TB-CSL", 15, ["LIVE_SUITE_9L", "COMB_3L", "TBCSL_3L"]),
-    ("LIVE + SHIFT-cand + TB-CSL", 15, ["LIVE_SUITE_9L", "SHIFT_CAND_3L", "TBCSL_3L"]),
-    ("ALL-CSL (COMB+SHIFT+TB, no live)", 9, ["COMB_3L", "SHIFT_CAND_3L", "TBCSL_3L"]),
+    ("LIVE suite alone", 6, ["LIVE_SUITE_6L"]),
+    ("LIVE + COMB sleeve", 8, ["LIVE_SUITE_6L", "COMB_2L"]),
+    ("THE STACK (DEPLOYED 10L ex-Wed): LIVE + COMB + TB-CSL", 10, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_2L"]),
+    ("LIVE + SHIFT-cand + TB-CSL", 10, ["LIVE_SUITE_6L", "SHIFT_CAND_2L", "TBCSL_2L"]),
+    ("ALL-CSL (COMB+SHIFT+TB, no live)", 6, ["COMB_2L", "SHIFT_CAND_2L", "TBCSL_2L"]),
 ]
 ports_out = []
 for label, lots, parts in PORTS:
@@ -106,11 +110,11 @@ for label, lots, parts in PORTS:
                               "series": ser})
 
 out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-       "basis": "study basis: LIVE suite 9L (3L/system, real+shadow as-traded normalized), sleeves 3L each; "
-                "TB-CSL scaled 12L->3L; SHIFT candidate = model until NAS_C20_SHIFT accrues; live-first merge",
+       "basis": "DEPLOYED 2026-08-13: LIVE suite 6L (2L/system, real+shadow as-traded normalized), sleeves 2L each; "
+                "per-record lots-normalized to 2L; TB-CSL from 12L history; SHIFT candidate = model until NAS_C20_SHIFT accrues; live-first merge",
        "names": NAMES, "components": comps_out, "matrix": matrix, "portfolios": ports_out,
-       "verdict": "Converged 2026-08-13: THE STACK (LIVE+COMB+TB-CSL, 15L) - high complementarity (avg corr ~0.26). "
-                  "SHIFT-cand ex-Wed ratio is the single-arm standout but in-sample; paper book adjudicates."}
+       "verdict": "DEPLOYED 2026-08-13 (10L ex-Wed): THE STACK (LIVE+COMB+TB-CSL) at 2 lots/system, Wednesday (DTE4) gated off. "
+                  "High complementarity (avg component corr ~0.18 ex-Wed). SHIFT-cand ex-Wed ratio is the single-arm standout but in-sample; paper book adjudicates."}
 for p in OUTS:
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -123,5 +127,5 @@ for n2, c2 in comps_out.items():
     print("  %-15s n=%3d %s->%s  src=%s  net %+d" % (n2, c2["n"], c2["from"], c2["to"], c2["sources"], c2["stats"]["total"]))
 print("\nPORTFOLIOS (all-days | ex-Wed):")
 for p2 in ports_out:
-    print("  %-34s %2dL %-7s total %+9d dd %+8d ratio %5.1f corr %s" % (
-        p2["label"][:34], p2["lots"], p2["scope"], p2["total"], p2["maxdd"], p2["ratio"], p2["corr_parts"]))
+    print("  %-45s %2dL %-7s total %+9d dd %+8d ratio %5.1f corr %s" % (
+        p2["label"][:45], p2["lots"], p2["scope"], p2["total"], p2["maxdd"], p2["ratio"], p2["corr_parts"]))

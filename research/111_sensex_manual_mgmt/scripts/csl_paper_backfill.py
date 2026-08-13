@@ -20,10 +20,10 @@ BACKSTOP = 50  # % for SL 'none'
 NIFTY = {"sym": "NIFTY", "step": 50}
 SENSEX = {"sym": "SENSEX", "step": 100}
 BOOKS = {
-    "CSL_TIMEB_NIFTY": {**NIFTY, "lots": 12, "qty": 780},
+    "CSL_TIMEB_NIFTY": {**NIFTY, "lots": 2, "qty": 130},
     "CSL_TIMEB_SENSEX": {**SENSEX, "lots": 6, "qty": 120},
-    "NAS_COMB20": {**NIFTY, "lots": 3, "qty": 195},
-    "CSL30F_NIFTY": {**NIFTY, "lots": 3, "qty": 195},
+    "NAS_COMB20": {**NIFTY, "lots": 2, "qty": 130},
+    "CSL30F_NIFTY": {**NIFTY, "lots": 2, "qty": 130},
     "CSL30F_SENSEX": {**SENSEX, "lots": 3, "qty": 60},
 }
 

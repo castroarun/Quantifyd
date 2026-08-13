@@ -694,7 +694,7 @@ export default function Straddles() {
                 <th style={thR}>Total</th><th style={thR}>Mean/d</th><th style={thR}>MaxDD</th><th style={thR}>Ratio</th><th style={thR}>corr(parts)</th><th style={thR}>N</th></tr></thead>
               <tbody>
                 {pfLab.portfolios.map((p2: any, i: number) => {
-                  const selI = pfSel ?? pfLab.portfolios.findIndex((q2: any) => q2.label.startsWith('THE STACK') && q2.scope === 'all');
+                  const selI = pfSel ?? pfLab.portfolios.findIndex((q2: any) => q2.label.startsWith('THE STACK') && q2.scope === 'ex-Wed');
                   return (
                   <tr key={i} onClick={() => setPfSel(i)}
                     style={{ cursor: 'pointer', outline: i === selI ? `2px solid ${C.navy}` : undefined,
@@ -715,7 +715,7 @@ export default function Straddles() {
             </table>
           </div>
           {(() => {
-            const selI = pfSel ?? pfLab.portfolios.findIndex((q2: any) => q2.label.startsWith('THE STACK') && q2.scope === 'all');
+            const selI = pfSel ?? pfLab.portfolios.findIndex((q2: any) => q2.label.startsWith('THE STACK') && q2.scope === 'ex-Wed');
             const sel = pfLab.portfolios[selI >= 0 ? selI : 0];
             if (!sel || !sel.series || sel.series.length < 2) return null;
             const dteOf = (d2: string) => WD_DTE.NIFTY[new Date(d2 + 'T00:00:00').getDay() - 1];
@@ -929,12 +929,12 @@ export default function Straddles() {
           <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C.navy }}>System rules — the 5 paper books (click to expand)</summary>
           <div style={{ fontSize: 11.5, color: C.sec, marginTop: 6, lineHeight: 1.7 }}>
             <div><b>Common mechanic (all 5):</b> sell 1× ATM straddle (strike from live spot at the entry moment, nearest weekly expiry) · combined premium polled ~every 5s · <b>combined-premium SL</b> = exit when CE+PE ≥ (1+SL%)×entry credit on <b>2 consecutive polls</b> (dwell), market exit at the next poll · otherwise hold to the config's exit time (15:26 hard force) · “SL ∅” books still carry a <b>50% disaster backstop</b> · entry skipped if the process starts &gt;15 min late · ₹160/day cost modeled.</div>
-            <div style={{ marginTop: 6 }}><b>CSL_TIMEB_NIFTY (12 lots · qty 780):</b> the <b>optimized time-blocked book (TB-CSL)</b> — per-DTE entry→exit windows + SL from the Lab sweep, <b>frozen 13-AUG</b> (schedule above; weekly Lab regens do NOT move it). 2-unit weight per the portfolio scan.</div>
+            <div style={{ marginTop: 6 }}><b>CSL_TIMEB_NIFTY (2 lots · qty 130):</b> the <b>optimized time-blocked book (TB-CSL)</b> — per-DTE entry→exit windows + SL from the Lab sweep, <b>frozen 13-AUG</b> (schedule above; weekly Lab regens do NOT move it). 2-unit weight per the portfolio scan.</div>
             <div><b>CSL_TIMEB_SENSEX (6 lots · qty 120):</b> same TB-CSL frozen schedule on SENSEX, 1-unit weight (optimizer proportion NIFTY 2u : SENSEX 1u).</div>
-            <div><b>NAS_COMB20 (3 lots · qty 195 · NIFTY):</b> the full CSL-replacement arm — same 09:16→15:20 full-day venue, but a <b>combined-premium SL, per-DTE frozen (DTE0→4: 25/30/30/20/30, sec-15 sweep)</b> replaces NAS's per-leg SLs + trail. Live test of “combined beats per-leg”.</div>
-            <div><b>NAS_C20_TRAIL (3 lots · qty 195 · NIFTY):</b> NAS_COMB20 + management — on CSL hit, close only the LOSER leg and <b>trail the winner</b> (exit on ≥30% bounce off its post-trigger low). The ATM-style rescue.</div>
-            <div><b>NAS_C20_SHIFT (3 lots · qty 195 · NIFTY):</b> NAS_COMB20 + management — on CSL hit, close both and <b>re-sell a fresh straddle at the new ATM</b> (own 20% CSL, max 3 shifts, none after 14:30). The ATM4-style recenter.</div>
-            <div><b>CSL30F_NIFTY (3 lots · qty 195):</b> <b>F = FIXED</b> — the flat un-windowed rule: 09:16→15:20 every day, combined <b>30% SL</b>, no per-DTE windows. Control arm for “do the time-blocks add value over plain CSL30?”.</div>
+            <div><b>NAS_COMB20 (2 lots · qty 130 · NIFTY):</b> the full CSL-replacement arm — same 09:16→15:20 full-day venue, but a <b>combined-premium SL, per-DTE frozen (DTE0→4: 25/30/30/20/30, sec-15 sweep)</b> replaces NAS's per-leg SLs + trail. Live test of “combined beats per-leg”.</div>
+            <div><b>NAS_C20_TRAIL (2 lots · qty 130 · NIFTY):</b> NAS_COMB20 + management — on CSL hit, close only the LOSER leg and <b>trail the winner</b> (exit on ≥30% bounce off its post-trigger low). The ATM-style rescue.</div>
+            <div><b>NAS_C20_SHIFT (2 lots · qty 130 · NIFTY):</b> NAS_COMB20 + management — on CSL hit, close both and <b>re-sell a fresh straddle at the new ATM</b> (own 20% CSL, max 3 shifts, none after 14:30). The ATM4-style recenter.</div>
+            <div><b>CSL30F_NIFTY (2 lots · qty 130):</b> <b>F = FIXED</b> — the flat un-windowed rule: 09:16→15:20 every day, combined <b>30% SL</b>, no per-DTE windows. Control arm for “do the time-blocks add value over plain CSL30?”.</div>
             <div><b>CSL30F_SENSEX (3 lots · qty 60):</b> the same fixed CSL30 rule on SENSEX.</div>
             <div style={{ marginTop: 6, color: C.faint }}>The three 3-lot books are sized to match the live NAS books for like-for-like daily comparison. Day curves below: BACKTEST = recorded-chain replay of these exact rules · LIVE PAPER records start 14-AUG.</div>
           </div>
