@@ -5018,6 +5018,136 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'mentor/reviews/2026-W30.md',
     ],
   },
+  {
+    slug: 'sensex-nifty-stop-by-dte',
+    title: 'SENSEX + NIFTY 9:16 short-straddle — stop calibration by DTE (combined-premium stop vs per-leg 30% vs HOLD)',
+    verdict:
+      'The live 9:16 straddle systems all run a per-leg 30% stop-loss (survivor then ST(7,3)-trailed). Tested against a COMBINED-premium stop (stop only when the whole straddle is down X%) and HOLD, per DTE, on 51 real 1-min-chain days per venue: the per-leg 30% is the weak link. A combined ~15-20% stop beats it on nearly every DTE for both books — for NIFTY the current per-leg 30% is actually net-NEGATIVE (−Rs303/lot) and a combined-20% flips it to +Rs765/lot. The two venues are INVERTED and must not be copied to each other: SENSEX expiry-day (Thu) wants HOLD (+Rs3,010/lot, 91% win, tiny drawdown — any stop gives the guaranteed decay away), while NIFTY expiry-day (Tue) wants a combined-20% stop (its HOLD tail is −9.3k); SENSEX-Wednesday is a structural loser (size down / skip) while NIFTY-Monday is the sweet spot (lean in). A real-mechanics validation (modelling the actual 30%-SL → survivor ST(7,3)-trail via the live calc_supertrend) CONFIRMS every conclusion — the trail is a modest tweak, not a rescue. Directional, not yet live-ready: n is small per DTE (9–32), one regime (Apr–Aug 2026), and ATM2 (move-stop+recenter) / ATM4 (roll) mechanics are not yet modelled.',
+    status: 'COMPLETE',
+    date: '2026-08-13',
+    cardBlurb:
+      'The 9:16 straddle books all use a per-leg 30% SL — and it is the weak link. A combined-premium stop (~15-20%) beats it on nearly every DTE, both venues (NIFTY per-leg 30% is net-NEGATIVE → combined-20% flips it positive). The venues are inverted: HOLD on SENSEX-Thursday, combined-stop on NIFTY-Tuesday. Confirmed against the real ST-trail mechanic.',
+    cardStats: [
+      { label: 'Verdict', value: 'Combined stop > per-leg 30% (validated, directional)' },
+      { label: 'NIFTY per-leg 30% → COMB-20', value: '−Rs303 → +Rs765 /lot' },
+      { label: 'SENSEX expiry-day', value: 'HOLD +Rs3,010/lot, 91% win' },
+    ],
+    systemRules: {
+      intro: 'One entry (sell the ATM straddle at 09:16, square by 15:25); the study varies only the STOP.',
+      sharedCoreTitle: 'The stop variants tested',
+      sharedCore: [
+        { k: 'Per-leg 30% (current)', v: 'Each leg buys back when ITS premium rises 30% from entry; the surviving leg is then trailed with SuperTrend(7,3) [the real ATM mechanic].' },
+        { k: 'Combined X% (the challenger)', v: 'Buy back BOTH legs only when the whole straddle premium is down X% (i.e. the net short is losing) — X swept 15/20/25/30/35/40.' },
+        { k: 'HOLD', v: 'No stop — hold both legs to the 15:25 square-off.' },
+        { k: 'Costs', v: 'Real 1-min option_chain fills; ~Rs290/lot NIFTY, ~Rs200/lot SENSEX (brokerage + slippage).' },
+        { k: 'DTE mapping', v: 'NIFTY expiry Tuesday (DTE0=Tue, DTE1=Mon); SENSEX expiry Thursday (DTE0=Thu, DTE1=Wed).' },
+      ],
+      riskLayer: {
+        title: 'The DTE-aware config the data points to',
+        caption: 'Do NOT copy one venue to the other — their DTE0/DTE1 profiles are inverted.',
+        columns: ['Venue', 'DTE0', 'DTE1', 'DTE2+'],
+        rows: [
+          ['NIFTY (live Mon/Tue)', 'Tue: Combined-20%', 'Mon: as-is / lean in', 'Combined-15%'],
+          ['SENSEX (live Wed/Thu)', 'Thu: HOLD / loose', 'Wed: Combined-20% + small/skip', 'Combined-15%'],
+        ],
+        highlightRows: [0, 1],
+      },
+    },
+    system: {
+      intro: 'ATM short straddle sold at 09:16 and squared by 15:25, evaluated on the real 1-minute option_chain (options_data.db), 51 clean days per venue over Apr–Aug 2026.',
+      rows: [
+        { k: 'Data', v: 'options_data.db option_chain — real 1-min LTP per strike; ATM chosen by CE≈PE parity at 09:16.' },
+        { k: 'Metric', v: 'Net Rs/lot after cost; win%; max drawdown of the daily equity curve.' },
+        { k: 'Validation', v: 'Real ATM mechanic (30% SL → survivor ST(7,3) via the live calc_supertrend) run alongside the proxies.' },
+      ],
+    },
+    conditions: {
+      intro: 'Why the per-leg 30% is the weak link:',
+      rows: [
+        { k: 'Per-leg stop fires too early', v: 'It stops a leg the moment IT pops, even when the other leg is offsetting — locking a loss on a move that reverts.' },
+        { k: 'Combined stop waits for the net', v: 'It only exits when the whole straddle is actually losing → dodges the whipsaw and truncates the fat tail.' },
+        { k: 'Expiry day is special', v: 'On SENSEX-Thu the straddle almost always decays to profit; any stop sabotages it → HOLD. NIFTY-Tue has a bigger tail → a stop helps.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'NIFTY — net Rs/lot by stop × DTE (expiry Tue)',
+        caption: 'Per-leg 30% is net-NEGATIVE overall; combined-20% is the best all-round.',
+        columns: ['Stop', 'DTE0 Tue', 'DTE1 Mon', 'DTE2+', 'ALL (mean)', 'ALL maxDD'],
+        rows: [
+          ['HOLD', '+1,438', '+1,098', '+362', '+696', '−13,192'],
+          ['Per-leg 30% (current)', '+116', '+990', '−824', '−303', '−26,450'],
+          ['Combined-15%', '+820', '+1,241', '+588', '+757', '−4,689'],
+          ['Combined-20%', '+1,482', '+1,167', '+431', '+761', '−5,859'],
+        ],
+        highlightRows: [3],
+        heatmap: true,
+      },
+      {
+        title: 'SENSEX — net Rs/lot by stop × DTE (expiry Thu)',
+        caption: 'HOLD dominates DTE0 (Thu); combined-20% is the only positive on DTE1 (Wed).',
+        columns: ['Stop', 'DTE0 Thu', 'DTE1 Wed', 'DTE2+', 'ALL (mean)', 'ALL maxDD'],
+        rows: [
+          ['HOLD', '+3,028', '−1,188', '+592', '+733', '−17,850'],
+          ['Per-leg 30% (current)', '+1,206', '−137', '+391', '+453', '−11,364'],
+          ['Combined-15%', '+939', '−158', '+780', '+612', '−9,450'],
+          ['Combined-20%', '+796', '+77', '+661', '+564', '−8,389'],
+        ],
+        highlightRows: [0],
+        heatmap: true,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'NIFTY: per-leg 30% (ALL)', value: '−Rs303/lot', tone: 'neg' },
+        { label: 'NIFTY: combined-20% (ALL)', value: '+Rs765/lot', tone: 'pos' },
+        { label: 'SENSEX-Thu HOLD', value: '+Rs3,010/lot · 91% win', tone: 'pos' },
+        { label: 'SENSEX-Wed (danger day)', value: 'only COMB-20 positive (+Rs77)', tone: 'neg' },
+      ],
+      tables: [
+        {
+          title: 'Real-mechanics validation — ATM_REAL (30% SL → survivor ST(7,3)) vs the proxies',
+          caption: 'The live calc_supertrend trail is a modest tweak, not a rescue — combined-20% / HOLD still win. Net Rs/lot mean.',
+          columns: ['Venue · DTE', 'ATM_REAL (real)', 'Per-leg 30% (proxy)', 'Combined-20%', 'HOLD'],
+          rows: [
+            ['NIFTY · ALL', '+73', '−298', '+765', '+701'],
+            ['NIFTY · DTE0 Tue', '+611', '+116', '+1,482', '+1,438'],
+            ['NIFTY · DTE2+', '−307', '−817', '+438', '+369'],
+            ['SENSEX · ALL', '+276', '+402', '+560', '+729'],
+            ['SENSEX · DTE0 Thu', '+1,321', '+971', '+777', '+3,010'],
+            ['SENSEX · DTE1 Wed', '−245', '−137', '+77', '−1,188'],
+          ],
+          highlightRows: [0, 4, 5],
+          heatmap: true,
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'Swap per-leg-30% → combined ~15-20%, plus HOLD on SENSEX-Thursday',
+        summary: 'The combined-premium stop beats the current per-leg 30% (even with its real ST-trail) on nearly every DTE for both venues; SENSEX expiry day is best held.',
+        metrics: [
+          { k: 'NIFTY combined-20% (ALL)', v: '+Rs765/lot vs current −Rs303' },
+          { k: 'SENSEX combined-15% (ALL)', v: '+Rs612/lot vs current +Rs453' },
+          { k: 'SENSEX-Thu HOLD', v: '+Rs3,010/lot, 91% win, DD −Rs475' },
+          { k: 'SENSEX-Wed', v: 'structural loser → size down / skip' },
+        ],
+        rejected: ['Per-leg 30% SL (net-negative on NIFTY)', 'Combined stop on SENSEX expiry (worse than HOLD)', 'Tight combined stops on DTE0 both venues'],
+      },
+    ],
+    caveats: [
+      'Small sample: 9–32 days per DTE cell (NIFTY DTE0/1 only ~9–10); one regime (Apr–Aug 2026).',
+      'Single-entry model — the "current" is a per-leg-30% + ST(7,3)-trail model of the ATM system; ATM2 (±0.4% move-stop + recenter) and ATM4 (roll-to-match) mechanics are NOT yet modelled.',
+      'Directional, NOT live-ready — validated for the ATM mechanic only. Needs the ATM2/ATM4 mechanics + another regime before any live parameter change.',
+      'Consistent with research/103 (DTE0 gamma trap), 104 (NIFTY Mon sweet-spot / SENSEX Wed fat tail), 97 (30% SL bad on expiry).',
+    ],
+    githubLinks: [
+      { label: 'Quantifyd repo', href: 'https://github.com/castroarun/Quantifyd' },
+    ],
+    projectPaths: [
+      'memory/sensex_stop_by_dte_study.md (finding)',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {
