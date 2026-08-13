@@ -5230,6 +5230,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'WALK-FORWARD (picks on Apr-Jun, scored Jul-Aug): edge survives but degrades ~35-45%/day and OOS DDs are 5-10x bigger — robust cells: NIFTY DTE0/DTE3, SENSEX DTE0; fragile: DTE1 both venues, SENSEX DTE3. Paper books trade the FULL schedule; data decides mid-Sep.',
       'CSL numbers are in-sample optimized replay; NAS comparisons are live reality — the paper books are the arbiter, not these tables.',
       'One regime (Apr-Aug 2026); weekday-DTE mapping ignores holiday-shifted expiries; single best slot per day (2nd-slot stacking is exploratory).',
+      'CPR probe (prior-day CPR width vs straddle-day outcome, ~50d/index): NO actionable edge (corr +0.06 NIFTY / +0.15 SENSEX); mild NIFTY narrow-CPR win-rate tilt (83% vs 62%) on watch-list only.',
       'Sibling study: /app/backtest/sensex-nifty-stop-by-dte (per-leg vs combined stop mechanics incl. real ST-trail validation).',
     ],
     githubLinks: [{ label: 'Quantifyd repo', href: 'https://github.com/castroarun/Quantifyd' }],

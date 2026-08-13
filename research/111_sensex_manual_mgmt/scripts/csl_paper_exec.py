@@ -26,6 +26,11 @@ BOOKS = {
     # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
     "NAS_COMB20": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed",
                    "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
+    # FIXED-CSL30 books (the flat rule, un-windowed) — the variable-vs-fixed live A/B
+    "CSL30F_NIFTY": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed",
+                     "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
+    "CSL30F_SENSEX": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed",
+                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
 }
 BACKSTOP = 0.50   # for SL 'none' configs
 POLL = 5          # seconds

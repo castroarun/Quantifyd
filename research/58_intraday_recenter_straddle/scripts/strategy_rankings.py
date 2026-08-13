@@ -124,6 +124,19 @@ try:
 except Exception as e:
     print("sensex", e)
 
+# TB-CSL (time-blocked CSL) best-config books — backtest rows from the Lab JSON
+d = load_json(PUB / "csl_best_configs.json")
+if d and d.get("best"):
+    for sym, lbl, lots in (("NIFTY", "TB-CSL best-config book (NIFTY · backtest)", 10),
+                            ("SENSEX", "TB-CSL best-config book (SENSEX · backtest)", 5)):
+        daily = {}
+        for k, b in d["best"].get(sym, {}).items():
+            for dd, v in b.get("series", []):
+                daily[dd] = daily.get(dd, 0) + v
+        if daily:
+            add(lbl, "backtest", stats([daily[k2] for k2 in sorted(daily)]),
+                "%d lots · time-blocked windows · IN-SAMPLE optimized (see walk-forward caveat)" % lots)
+
 # CSL paper books (frozen-config validation) — appear once they have records
 d = load_json(BT / "csl_paper_state.json")
 if d and d.get("records"):
@@ -150,6 +163,8 @@ LINKS = {
     "CSL Paper (NIFTY · 12 lots)": {"anchor": "csl-paper", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/nifty_csl_vs_nas.png"},
     "CSL Paper (SENSEX · 6 lots)": {"anchor": "csl-paper", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/sensex_csl_vs_nas.png"},
     "NAS-COMB20 Paper (NIFTY · 3 lots)": {"anchor": "csl-paper", "report": "/app/backtest/sensex-nifty-stop-by-dte", "chart": "/app/perleg_vs_comb.png"},
+    "TB-CSL best-config book (NIFTY · backtest)": {"anchor": "csl-lab", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/nifty_csl_vs_nas.png"},
+    "TB-CSL best-config book (SENSEX · backtest)": {"anchor": "csl-lab", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/sensex_csl_vs_nas.png"},
 }
 
 # in-page anchors so the leaderboard links jump to each system's section/card
