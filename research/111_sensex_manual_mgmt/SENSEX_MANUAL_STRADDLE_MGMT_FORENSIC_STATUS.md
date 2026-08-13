@@ -235,3 +235,17 @@ ratio 15.4 in-sample) rides as MODEL until NAS_C20_SHIFT accrues live paper days
 Recorded as a LIVING page section: /app/straddles#portfolio-lab, regenerated daily 15:40
 by scripts/portfolio_lab.py (live-first merge: paper records override backfill; source
 mix reported per component). Corr matrix + all-days/ex-Wed portfolio rows on-page.
+
+
+## 17. Portfolio SL / profit-trail overlay on THE STACK sleeves (2026-08-14 ~00:15) - NO, keep as-is
+
+User asked whether THE STACK needs a portfolio-level SL or profit trail like the live system.
+Tested on synchronized per-minute sleeve curves (COMB 3L + TB-CSL 3L-scaled, backfill, n=51/40):
+**every overlay is worse than none.** Ex-Wed: none +259,223 (ratio 24.1) vs pstop-1300/lot
++204,936 (12.1) vs best trail +178,201 (21.8). Mechanisms: portfolio stop double-stops
+(fires mid-dip while one book's CSL is already handling it - MaxDD WORSENS); profit trail
+amputates back-loaded theta afternoons (win% up, total down 80-130k). The live suite keeps
+its research/90 stop (it compensates for leaky per-leg SLs); the sleeves' CSL+windows+Wed-gate
+IS the risk system. All-stack overlay untestable yet (no LIVE intraday history; nas_mtm
+snapshots accruing since 2026-08-11 - revisit in 4-6 weeks). Caveats: minute-mark fills,
+modeled backfill curves. Script: scripts/sleeve_pstop_test.py.
