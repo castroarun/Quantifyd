@@ -16,10 +16,17 @@ sys.path.insert(0, Q)
 CONFIG = Q + "/backtest_data/csl_paper_config.json"
 STATE = Q + "/backtest_data/csl_paper_state.json"
 PUB = Q + "/static/app/csl_paper.json"
-BOOKS = {"NIFTY": {"units": 2, "lots": 12, "lot": 65, "qty": 780, "step": 50,
-                    "spot_key": "NSE:NIFTY 50", "seg": "NFO", "wd2dte": {0: 1, 1: 0, 2: 4, 3: 3, 4: 2}},
-         "SENSEX": {"units": 1, "lots": 6, "lot": 20, "qty": 120, "step": 100,
-                    "spot_key": "BSE:SENSEX", "seg": "BFO", "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}}
+NIFTY_MKT = {"sym": "NIFTY", "step": 50, "lot": 65, "spot_key": "NSE:NIFTY 50", "seg": "NFO",
+             "wd2dte": {0: 1, 1: 0, 2: 4, 3: 3, 4: 2}}
+SENSEX_MKT = {"sym": "SENSEX", "step": 100, "lot": 20, "spot_key": "BSE:SENSEX", "seg": "BFO",
+              "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}
+BOOKS = {
+    "CSL_NIFTY": {**NIFTY_MKT, "lots": 12, "qty": 780, "cfg_from": "lab"},
+    "CSL_SENSEX": {**SENSEX_MKT, "lots": 6, "qty": 120, "cfg_from": "lab"},
+    # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
+    "NAS_COMB20": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed",
+                   "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
+}
 BACKSTOP = 0.50   # for SL 'none' configs
 POLL = 5          # seconds
 
@@ -31,9 +38,12 @@ def freeze_config():
     cfg = {"frozen_at": datetime.now().isoformat()[:16], "source_generated_at": lab.get("generated_at"),
            "note": "FROZEN for out-of-sample paper validation; re-freeze consciously, never silently.",
            "books": {}}
-    for sym in BOOKS:
-        cfg["books"][sym] = {k: {kk: b[kk] for kk in ("entry", "exit", "sl")}
-                             for k, b in lab["best"][sym].items()}
+    for bk, B in BOOKS.items():
+        if B["cfg_from"] == "lab":
+            cfg["books"][bk] = {k: {kk: b[kk] for kk in ("entry", "exit", "sl")}
+                                for k, b in lab["best"][B["sym"]].items()}
+        else:
+            cfg["books"][bk] = {str(k): dict(B["fixed_cfg"]) for k in range(5)}
     json.dump(cfg, open(CONFIG, "w"), indent=1)
     log("config FROZEN from Lab (%s)" % cfg["source_generated_at"])
     return cfg
@@ -50,15 +60,15 @@ def kite():
 
 def load_state():
     try: return json.load(open(STATE))
-    except Exception: return {"records": [], "cum": {"NIFTY": 0, "SENSEX": 0}}
+    except Exception: return {"records": [], "cum": {}}
 
 def save_state(st):
     json.dump(st, open(STATE, "w"))
     try: json.dump(st, open(PUB, "w"))
     except Exception: pass
 
-def resolve_legs(k, sym, strike):
-    seg = BOOKS[sym]["seg"]
+def resolve_legs(k, B, strike):
+    sym = B["sym"]; seg = B["seg"]
     ins = resolve_legs.cache.get(seg)
     if ins is None:
         ins = [i for i in k.instruments(seg) if i["name"] == sym and i["instrument_type"] in ("CE", "PE")]
@@ -81,29 +91,30 @@ def main():
     wd = date.today().weekday()
     if wd > 4: return
     plans = {}
-    for sym, B in BOOKS.items():
+    for bk, B in BOOKS.items():
         dte = B["wd2dte"].get(wd)
-        c = cfg["books"][sym].get(str(dte))
+        c = (cfg["books"].get(bk) or {}).get(str(dte))
         if not c:
-            log("%s: no config for DTE%s — skip today" % (sym, dte)); continue
-        if any(r["day"] == today and r["sym"] == sym for r in st["records"]):
-            log("%s: already recorded today — skip" % sym); continue
-        plans[sym] = {"dte": dte, **c, "state": "WAIT_ENTRY", "K": None, "legs": None,
-                      "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None}
-        log("%s plan: DTE%d %s->%s SL%s qty %d (%d lots)" % (sym, dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
+            log("%s: no config for DTE%s — skip today" % (bk, dte)); continue
+        if any(r["day"] == today and (r.get("book") == bk or (not r.get("book") and r.get("sym") == B["sym"])) for r in st["records"]):
+            log("%s: already recorded today — skip" % bk); continue
+        plans[bk] = {"dte": dte, **c, "state": "WAIT_ENTRY", "K": None, "legs": None,
+                     "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None}
+        log("%s plan: DTE%d %s->%s SL%s qty %d (%d lots)" % (bk, dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
     if probe:
-        for sym in plans:
-            sp = k.ltp([BOOKS[sym]["spot_key"]])[BOOKS[sym]["spot_key"]]["last_price"]
-            K = round(sp / BOOKS[sym]["step"]) * BOOKS[sym]["step"]
-            ce, pe, E = resolve_legs(k, sym, K)
+        for bk in plans:
+            B = BOOKS[bk]
+            sp = k.ltp([B["spot_key"]])[B["spot_key"]]["last_price"]
+            K = round(sp / B["step"]) * B["step"]
+            ce, pe, E = resolve_legs(k, B, K)
             log("PROBE %s spot %.0f ATM %d exp %s CE %s PE %s" % (
-                sym, sp, K, E, ce and ce["tradingsymbol"], pe and pe["tradingsymbol"]))
+                bk, sp, K, E, ce and ce["tradingsymbol"], pe and pe["tradingsymbol"]))
         return
     while plans:
         now = datetime.now().strftime("%H:%M")
         if now >= "15:26": now_force = True
         else: now_force = False
-        for sym in list(plans):
+        for sym in list(plans):     # sym here = book key
             P = plans[sym]; B = BOOKS[sym]
             try:
                 if P["state"] == "WAIT_ENTRY":
@@ -115,7 +126,7 @@ def main():
                     if now >= P["entry"]:
                         sp = k.ltp([B["spot_key"]])[B["spot_key"]]["last_price"]
                         K = round(sp / B["step"]) * B["step"]
-                        ce, pe, E = resolve_legs(k, sym, K)
+                        ce, pe, E = resolve_legs(k, B, K)
                         if not (ce and pe):
                             log("%s: legs unresolved — abort today" % sym); del plans[sym]; continue
                         q = k.ltp(["%s:%s" % (B["seg"], ce["tradingsymbol"]), "%s:%s" % (B["seg"], pe["tradingsymbol"])])
@@ -140,7 +151,7 @@ def main():
                     if now_force: reason = reason or "EOD_FORCE"
                     if reason:
                         pnl = round((P["credit"] - comb) * B["qty"] - 160)
-                        rec = {"day": today, "sym": sym, "dte": P["dte"], "cfg": "%s->%s SL%s" % (P["entry"], P["exit"], P["sl"]),
+                        rec = {"day": today, "book": sym, "sym": B["sym"], "dte": P["dte"], "cfg": "%s->%s SL%s" % (P["entry"], P["exit"], P["sl"]),
                                "strike": P["K"], "expiry": P["expiry"], "credit": round(P["credit"], 2),
                                "entry_ts": P["entry_ts"], "exit_ts": datetime.now().strftime("%H:%M:%S"),
                                "exit_comb": round(comb, 2), "reason": reason, "pnl": pnl,

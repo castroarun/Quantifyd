@@ -118,3 +118,14 @@ window pick), SENSEX DTE3. Realistic paper-book bar: ~6.4k/day NIFTY + ~4k/day S
 USER DECISION: paper books trade the FULL frozen schedule (no de-rating) - data decides
 at the ~mid-Sep checkpoint.
 
+
+## 13. Command Center reorg + NAS-COMB20 book + CPR probe (2026-08-13 evening)
+- Unified Strategy Leaderboard v2: ALL short-vol systems in one ranked table (straddle
+  family + NAS 916x3 + SENSEX atm2 + CSL paper books when they trade) with per-row links
+  to card / backtest report / tearsheet. NAS SENSEX atm2 ranks #2 (Calmar 5.7), 916_atm #3.
+- Paper executor now runs 3 books: CSL_NIFTY 12L, CSL_SENSEX 6L, NAS_COMB20 3L (NIFTY
+  09:16->15:20 combined-20% - the live A/B against nas_916_atm's per-leg mechanic).
+- CPR width probe (prior-day CPR vs full-day straddle pnl, ~50d/index): NO actionable
+  edge (corr +0.06/+0.15); NIFTY narrow-CPR win-rate tilt (83% vs 62%) on watch-list only.
+  S/R-level interaction study deferred - data does not currently justify it.
+

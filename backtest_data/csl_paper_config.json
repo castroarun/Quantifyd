@@ -3,7 +3,7 @@
  "source_generated_at": "2026-08-13 12:47",
  "note": "FROZEN for out-of-sample paper validation; re-freeze consciously, never silently.",
  "books": {
-  "NIFTY": {
+  "CSL_NIFTY": {
    "0": {
     "entry": "09:30",
     "exit": "11:00",
@@ -30,7 +30,7 @@
     "sl": 20
    }
   },
-  "SENSEX": {
+  "CSL_SENSEX": {
    "0": {
     "entry": "09:20",
     "exit": "15:20",
@@ -54,6 +54,33 @@
    "4": {
     "entry": "10:30",
     "exit": "12:00",
+    "sl": 20
+   }
+  },
+  "NAS_COMB20": {
+   "0": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "1": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "2": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "3": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "4": {
+    "entry": "09:16",
+    "exit": "15:20",
     "sl": 20
    }
   }

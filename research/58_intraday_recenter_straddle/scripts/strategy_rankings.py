@@ -95,6 +95,63 @@ if d and d.get("trades"):
     add("V1 + 30% combined-premium SL", "backtest",
         stats([t["final"] for t in d["trades"]]), "combined-premium 30% stop · recorded chain")
 
+# NAS live books (as-traded lots) — per-book rows so the whole short-vol book ranks in ONE table
+import sqlite3
+LOTS_BY_MONTH = {"2026-03": 1, "2026-04": 5, "2026-05": 1, "2026-06": 1, "2026-07": 2, "2026-08": 3}
+for name, lbl in (("nas_916_atm", "NAS 916 ATM (NIFTY · live)"),
+                  ("nas_916_atm2", "NAS 916 ATM2 (NIFTY · live)"),
+                  ("nas_916_atm4", "NAS 916 ATM4 (NIFTY · live)")):
+    try:
+        c = sqlite3.connect(str(BT / (name + "_trading.db"))); c.row_factory = sqlite3.Row
+        cols = [x[1] for x in c.execute("PRAGMA table_info(nas_atm_trades)")]
+        pcol = "pnl" if "pnl" in cols else "net_pnl"
+        dcol = "entry_time" if "entry_time" in cols else "created_at"
+        daily = {}
+        for r in c.execute("SELECT %s d,%s p FROM nas_atm_trades WHERE %s IS NOT NULL" % (dcol, pcol, pcol)):
+            dd = str(r["d"])[:10]
+            daily[dd] = daily.get(dd, 0) + r["p"]
+        add(lbl, "live", stats([daily[k] for k in sorted(daily)]), "as-traded 1→3 lots · per-leg SL + trail")
+        c.close()
+    except Exception as e:
+        print(name, e)
+try:
+    c = sqlite3.connect(str(BT / "sensex_atm2_trading.db"))
+    daily = {}
+    for dd, p in c.execute("SELECT trade_date, net_pnl FROM nas_atm_trades WHERE net_pnl IS NOT NULL"):
+        daily[str(dd)[:10]] = daily.get(str(dd)[:10], 0) + p
+    add("NAS ATM2 (SENSEX · live)", "live", stats([daily[k] for k in sorted(daily)]), "as-traded lots · young book")
+    c.close()
+except Exception as e:
+    print("sensex", e)
+
+# CSL paper books (frozen-config validation) — appear once they have records
+d = load_json(BT / "csl_paper_state.json")
+if d and d.get("records"):
+    for sym, lbl, lots in (("NIFTY", "CSL Paper (NIFTY · 12 lots)", 12), ("SENSEX", "CSL Paper (SENSEX · 6 lots)", 6)):
+        recs = [r["pnl"] for r in d["records"] if r.get("sym") == sym or r.get("book", "").endswith(sym)]
+        if recs:
+            add(lbl, "paper", stats(recs), "frozen 13-AUG config · OOS validation")
+
+# links: card anchor + backtest report + tearsheet per system (rendered as icons on the page)
+LINKS = {
+    "V1 · intraday one-and-done (naked)": {"anchor": "live-box"},
+    "V1 · daily re-enter (naked)": {"anchor": "live-box"},
+    "V2 · positional iron-fly (stop 1.5%)": {"anchor": "variant-lab"},
+    "V2 · positional iron-fly (stop 2.0%)": {"anchor": "variant-lab"},
+    "V2 · positional bi-weekly (naked · legacy)": {"anchor": "live-box"},
+    "LIVE · iron-fly executor (VIX-gated)": {"anchor": "v2-engine"},
+    "LIVE · inside-week breakout sleeve": {"anchor": "v2-engine"},
+    "V1 + 30% combined-premium SL": {"anchor": "sl30-card", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/csl30_vs_nas916.png"},
+    "Wed→Fri iron condor (research/80)": {"anchor": "condor", "report": "/app/backtest/fardte-rescue"},
+    "NAS 916 ATM (NIFTY · live)": {"page": "/app/nas", "report": "/app/backtest/sensex-nifty-stop-by-dte", "chart": "/app/nifty_csl_vs_nas.png"},
+    "NAS 916 ATM2 (NIFTY · live)": {"page": "/app/nas", "report": "/app/backtest/sensex-nifty-stop-by-dte"},
+    "NAS 916 ATM4 (NIFTY · live)": {"page": "/app/nas", "report": "/app/backtest/sensex-nifty-stop-by-dte"},
+    "NAS ATM2 (SENSEX · live)": {"page": "/app/nas", "report": "/app/backtest/sensex-nifty-stop-by-dte", "chart": "/app/sensex_csl_vs_nas.png"},
+    "CSL Paper (NIFTY · 12 lots)": {"anchor": "csl-paper", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/nifty_csl_vs_nas.png"},
+    "CSL Paper (SENSEX · 6 lots)": {"anchor": "csl-paper", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/sensex_csl_vs_nas.png"},
+    "NAS-COMB20 Paper (NIFTY · 3 lots)": {"anchor": "csl-paper", "report": "/app/backtest/sensex-nifty-stop-by-dte", "chart": "/app/perleg_vs_comb.png"},
+}
+
 # in-page anchors so the leaderboard links jump to each system's section/card
 ANCHOR = {
     "V1 · intraday one-and-done (naked)": "live-box",
@@ -123,6 +180,8 @@ for r in rows:
     r["grade"] = grade(r)
     r["confidence"] = confidence(r)
     r["anchor"] = ANCHOR.get(r["label"])
+    for kk, vv in LINKS.get(r["label"], {}).items():
+        r[kk] = vv
 # rank: positive-net first, by Calmar desc (None last), then net
 rows.sort(key=lambda r: (r["net"] > 0, r.get("calmar") if r.get("calmar") is not None else -999, r["net"]), reverse=True)
 for i, r in enumerate(rows, 1):

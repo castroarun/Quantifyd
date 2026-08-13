@@ -496,8 +496,11 @@ export default function Straddles() {
                     <td style={{ ...tdL, color: C.ink, fontWeight: 600 }}>
                       {r.anchor
                         ? <a href={'#' + r.anchor} onClick={(e) => { e.preventDefault(); document.getElementById(r.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} style={{ color: C.navy, textDecoration: 'none', cursor: 'pointer' }}>{r.label} ↗</a>
-                        : r.label}
-                      <div style={{ fontSize: 10, color: C.faint, fontWeight: 400 }}>{r.kind} · {r.note}</div></td>
+                        : (r.page ? <a href={r.page} style={{ color: C.navy, textDecoration: 'none' }}>{r.label} ↗</a> : r.label)}
+                      <div style={{ fontSize: 10, color: C.faint, fontWeight: 400 }}>{r.kind} · {r.note}
+                        {r.report && <> · <a href={r.report} style={{ color: C.navy }}>📄 report</a></>}
+                        {r.chart && <> · <a href={r.chart} style={{ color: C.navy }}>📈 tearsheet</a></>}
+                      </div></td>
                     <td style={{ ...tdR, color: col(r.net), fontWeight: 700 }}>{inr(r.net)}</td>
                     <td style={tdR}>{r.calmar ?? '—'}</td>
                     <td style={{ ...tdR, color: C.neg }}>{inr(r.maxdd)}</td>
@@ -549,10 +552,12 @@ export default function Straddles() {
       <section id="csl-paper" style={{ ...card, marginTop: 14, borderColor: C.pos, scrollMarginTop: 70 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>CSL Paper Books</span>
-          {chip('#E7F2EE', C.pos, 'PAPER · NIFTY 12 lots + SENSEX 6 lots')}
+          {chip('#E7F2EE', C.pos, 'PAPER · CSL-N 12L + CSL-S 6L + NAS-COMB20 3L')}
           {chip(C.navySoft, C.navy, 'frozen config' + (cslPaperCfg ? ' · ' + String(cslPaperCfg.frozen_at || '').slice(0, 10) : ''))}
           <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700 }}>
-            {cslPaper ? <>NIFTY <span style={{ color: col(cslPaper.cum?.NIFTY || 0) }}>{inr(cslPaper.cum?.NIFTY || 0)}</span> · SENSEX <span style={{ color: col(cslPaper.cum?.SENSEX || 0) }}>{inr(cslPaper.cum?.SENSEX || 0)}</span></> : <span style={{ color: C.muted }}>no trades yet</span>}
+            {cslPaper && Object.keys(cslPaper.cum || {}).length
+              ? Object.entries(cslPaper.cum).map(([b, v]: any, i: number) => <span key={b}>{i > 0 && ' · '}{b} <span style={{ color: col(v) }}>{inr(v)}</span></span>)
+              : <span style={{ color: C.muted }}>no trades yet</span>}
           </span>
         </div>
         <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
@@ -577,7 +582,7 @@ export default function Straddles() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><th style={thL}>Day</th><th style={thL}>Book</th><th style={thL}>Cfg</th><th style={thR}>Strike</th><th style={thR}>Credit</th><th style={thR}>Exit</th><th style={thL}>Reason</th><th style={thR}>P&amp;L</th><th style={thR}>Lots</th></tr></thead>
               <tbody>{cslPaper.records.slice().reverse().map((r: any, i: number) => (
-                <tr key={i}><td style={tdL}>{r.day}</td><td style={tdL}>{r.sym} D{r.dte}</td><td style={tdL}>{r.cfg}</td>
+                <tr key={i}><td style={tdL}>{r.day}</td><td style={tdL}>{r.book || r.sym} D{r.dte}</td><td style={tdL}>{r.cfg}</td>
                   <td style={tdR}>{r.strike}</td><td style={tdR}>{r.credit}</td><td style={tdR}>{r.exit_comb} <span style={{ color: C.faint }}>@{String(r.exit_ts || '').slice(0, 5)}</span></td>
                   <td style={{ ...tdL, color: String(r.reason).startsWith('SL') ? C.neg : C.muted }}>{r.reason}</td>
                   <td style={{ ...tdR, fontWeight: 700, color: col(r.pnl) }}>{inr(r.pnl)}</td><td style={tdR}>{r.lots}</td></tr>))}
