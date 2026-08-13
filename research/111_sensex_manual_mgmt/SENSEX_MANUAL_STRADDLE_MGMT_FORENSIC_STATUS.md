@@ -224,3 +224,14 @@ Consistent with research/79+90 doctrine (NIFTY edge Mon/Tue, SENSEX covers Wed/T
 Caveat: n=9-11 Wednesdays, in-sample. Script: scripts/per_dte_elimination_check.py.
 RECOMMENDATION (pending user): gate NIFTY books out of DTE4/Wed (day-matrix already
 exists for live suite); keep paper books trading all DTEs for OOS evidence.
+
+
+## 16. OPTIONS PORTFOLIO LAB (2026-08-13 ~23:00) - the convergence point
+
+Where the research landed: **THE STACK = LIVE suite (9L, Mon/Tue-gated) + COMB sleeve
+(NAS_COMB20 3L, per-DTE CSL) + TB-CSL (3L-scaled)** - avg cross-corr ~0.26, ratio 7.6
+all-days (study window). Ex-Wed variants tracked. SHIFT candidate (HYB_ATM4_30, ex-Wed
+ratio 15.4 in-sample) rides as MODEL until NAS_C20_SHIFT accrues live paper days.
+Recorded as a LIVING page section: /app/straddles#portfolio-lab, regenerated daily 15:40
+by scripts/portfolio_lab.py (live-first merge: paper records override backfill; source
+mix reported per component). Corr matrix + all-days/ex-Wed portfolio rows on-page.

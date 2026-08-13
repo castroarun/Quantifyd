@@ -480,6 +480,7 @@ export default function Straddles() {
   const [cslPVenue, setCslPVenue] = useState<'ALL' | 'NIFTY' | 'SENSEX'>('ALL'); // inline grid venue filter
   const [lbVenue, setLbVenue] = useState<'ALL' | 'NIFTY' | 'SENSEX'>('ALL');     // leaderboard venue filter
   const [nasBase, setNasBase] = useState<any>(null);  // NAS live-book day P&L baseline
+  const [pfLab, setPfLab] = useState<any>(null);      // options portfolio lab (daily regen)
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -494,6 +495,7 @@ export default function Straddles() {
     fetch('/app/csl_paper_config.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaperCfg).catch(() => {});
     fetch('/app/csl_paper_backfill.json?t=' + Date.now()).then((r) => r.json()).then(setCslPBF).catch(() => {});
     fetch('/app/nas_baseline.json?t=' + Date.now()).then((r) => r.json()).then(setNasBase).catch(() => {});
+    fetch('/app/straddles/portfolio_lab.json?t=' + Date.now()).then((r) => r.json()).then(setPfLab).catch(() => {});
     const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
     loadPLive(); const pl = setInterval(loadPLive, 60000);
     const loadLive = () => {
@@ -659,7 +661,7 @@ export default function Straddles() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
           {[['/app/backtest/csl-best-config-straddles', '📄 Full study card (backtest page)'],
             ['#csl-paper', '📗 Paper Books (live validation)'], ['#csl-lab', '🔬 Best-Config Lab (weekly)'],
-            ['#leaderboard', '🏆 Strategy Leaderboard'], ['#variant-lab', '🧪 V2 Variant Lab'],
+            ['#portfolio-lab', '🎯 Options Portfolio Lab'], ['#leaderboard', '🏆 Strategy Leaderboard'], ['#variant-lab', '🧪 V2 Variant Lab'],
             ['/app/nifty_csl_vs_nas.png', '📈 NIFTY: CSL vs NAS (chart)'], ['/app/sensex_csl_vs_nas.png', '📈 SENSEX: CSL vs NAS (chart)'],
             ['/app/perleg_vs_comb.png', '📉 Per-leg vs Combined SL (chart)'], ['/app/csl30_vs_nas916.png', '📊 CSL30 vs NAS-916 (chart)'],
             ['/app/options-study', '🕯 Opt-Study (decay/CPR/candles)']].map(([href, label]) => (
@@ -674,6 +676,65 @@ export default function Straddles() {
           rules: 3-sec-first data, live-first backfill, dwell-mechanic fills, per-DTE per-index.
         </div>
       </section>
+
+      {pfLab && pfLab.portfolios && (
+        <section id="portfolio-lab" style={{ ...card, marginTop: 14, scrollMarginTop: 70, borderColor: C.pos }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>Options Portfolio Lab</span>
+            {chip('#E7F2EE', C.pos, 'NIFTY · the stack')}
+            {chip(C.amberSoft, C.amber, 'refreshed daily 15:40')}
+            <span style={{ fontSize: 11, color: C.faint }}>updated {pfLab.generated_at} · live-first merge (paper overrides backfill)</span>
+          </div>
+          <div style={{ fontSize: 12.5, color: C.sec, margin: '8px 0' }}>{pfLab.verdict}</div>
+          <div style={{ overflowX: 'auto', marginBottom: 10 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><th style={thL}>Portfolio</th><th style={thR}>Lots</th><th style={thL}>Scope</th>
+                <th style={thR}>Total</th><th style={thR}>Mean/d</th><th style={thR}>MaxDD</th><th style={thR}>Ratio</th><th style={thR}>corr(parts)</th><th style={thR}>N</th></tr></thead>
+              <tbody>
+                {pfLab.portfolios.map((p2: any, i: number) => (
+                  <tr key={i} style={p2.label.startsWith('THE STACK') ? { background: '#F0F7F4' } : undefined}>
+                    <td style={{ ...tdL, fontWeight: p2.label.startsWith('THE STACK') ? 800 : 600, color: C.ink }}>{p2.label}</td>
+                    <td style={tdR}>{p2.lots}L</td>
+                    <td style={{ ...tdL, color: p2.scope === 'ex-Wed' ? C.navy : C.muted, fontWeight: p2.scope === 'ex-Wed' ? 700 : 400 }}>{p2.scope}</td>
+                    <td style={{ ...tdR, fontWeight: 700, color: col(p2.total), fontVariantNumeric: 'tabular-nums' }}>{inr(p2.total)}</td>
+                    <td style={{ ...tdR, fontVariantNumeric: 'tabular-nums' }}>{inr(p2.mean)}</td>
+                    <td style={{ ...tdR, color: C.neg, fontVariantNumeric: 'tabular-nums' }}>{inr(p2.maxdd)}</td>
+                    <td style={{ ...tdR, fontWeight: 800, color: p2.ratio >= 7 ? C.pos : C.ink }}>{p2.ratio}</td>
+                    <td style={{ ...tdR, fontWeight: 700, color: p2.corr_parts == null ? C.faint : p2.corr_parts <= 0.4 ? C.pos : p2.corr_parts <= 0.7 ? C.amber : C.neg }}>
+                      {p2.corr_parts == null ? '—' : p2.corr_parts.toFixed(2)}</td>
+                    <td style={tdR}>{p2.n}</td>
+                  </tr>))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Correlation matrix (daily P&amp;L)</div>
+              <table style={{ borderCollapse: 'collapse', fontSize: 11 }}>
+                <thead><tr><th style={thL}></th>{pfLab.names.map((n2: string) => <th key={n2} style={thR}>{n2.replace(/_/g, ' ').slice(0, 10)}</th>)}</tr></thead>
+                <tbody>{pfLab.names.map((a: string, i: number) => (
+                  <tr key={a}><td style={{ ...tdL, fontWeight: 700 }}>{a.replace(/_/g, ' ')}</td>
+                    {pfLab.matrix[i].map((v2: number | null, j2: number) => (
+                      <td key={j2} style={{ ...tdR, fontWeight: i === j2 ? 400 : 700,
+                        color: v2 == null ? C.faint : i === j2 ? C.faint : v2 <= 0.4 ? C.pos : v2 <= 0.7 ? C.amber : C.neg }}>
+                        {v2 == null ? '—' : v2.toFixed(2)}</td>))}
+                  </tr>))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Components (n · range · source mix)</div>
+              {Object.entries(pfLab.components).map(([n2, c2]: any) => (
+                <div key={n2} style={{ fontSize: 11.5, color: C.sec, marginBottom: 3 }}>
+                  <b style={{ color: C.ink }}>{n2.replace(/_/g, ' ')}</b> · {c2.n}d {c2.from?.slice(5)}→{c2.to?.slice(5)} ·{' '}
+                  {Object.entries(c2.sources).map(([src, cnt]: any) => `${src} ${cnt}d`).join(' + ')} ·{' '}
+                  <span style={{ color: col(c2.stats.total), fontWeight: 700 }}>{inr(c2.stats.total)}</span>
+                </div>))}
+              <div style={{ fontSize: 10.5, color: C.faint, marginTop: 6 }}>{pfLab.basis}</div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {ranks && ranks.systems && (
         <section id="leaderboard" style={{ ...card, marginTop: 14, scrollMarginTop: 70 }}>
