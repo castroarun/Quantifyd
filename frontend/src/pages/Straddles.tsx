@@ -216,6 +216,143 @@ function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
   );
 }
 
+/* ---------- CSL paper-books curve explorer (full-screen popup: day navigator + by-system wall) ---------- */
+const CSL_BOOK_ORDER = ['CSL_NIFTY', 'CSL_SENSEX', 'NAS_COMB20', 'CSL30F_NIFTY', 'CSL30F_SENSEX'];
+const WD_DTE: Record<string, Record<number, number>> = {
+  NIFTY: { 0: 1, 1: 0, 2: 4, 3: 3, 4: 2 }, SENSEX: { 0: 3, 1: 2, 2: 1, 3: 0, 4: 4 },
+};
+const dmon2 = (s: string) => s.slice(8, 10) + '-' + ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][+s.slice(5, 7) - 1];
+const srcChipStyle = (s: string): React.CSSProperties => ({
+  fontSize: 9, fontWeight: 800, padding: '0 5px', borderRadius: 3,
+  color: s === 'REAL' ? C.neg : s === 'BACKTEST' ? C.amber : C.pos,
+  background: s === 'REAL' ? '#FBEEEE' : s === 'BACKTEST' ? C.amberSoft : '#E7F2EE',
+});
+const srcName = (s: string) => (s === 'REAL' ? 'LIVE REAL' : s === 'BACKTEST' ? 'BACKTEST' : 'LIVE PAPER');
+
+function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'day' | 'sys'; day0: string; onClose: () => void }) {
+  const [mode, setMode] = useState<'day' | 'sys'>(mode0);
+  const [day, setDay] = useState<string>(day0);
+  const [sys, setSys] = useState<string>('CSL_NIFTY');
+  const [sysDay, setSysDay] = useState<string>('');
+  const days = useMemo(() => Array.from(new Set(recs.map((r) => r.day))).sort(), [recs]);
+  const sysRecs = useMemo(() => recs.filter((r) => (r.book || r.sym) === sys).sort((a: any, b: any) => a.day.localeCompare(b.day)), [recs, sys]);
+  const sysDays = sysRecs.map((r: any) => r.day);
+  const move = (dir: number) => {
+    if (mode === 'day') {
+      const j = days.indexOf(day) + dir;
+      if (j >= 0 && j < days.length) setDay(days[j]);
+    } else {
+      const cur = sysDay || sysDays[sysDays.length - 1];
+      const j = sysDays.indexOf(cur) + dir;
+      if (j >= 0 && j < sysDays.length) setSysDay(sysDays[j]);
+    }
+  };
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); move(1); }
+      else if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  });
+  const navBtn: React.CSSProperties = { border: `1px solid ${C.hair}`, background: C.surface, color: C.navy, borderRadius: 6, padding: '3px 14px', fontSize: 15, fontWeight: 800, cursor: 'pointer' };
+  const tabBtn = (on: boolean): React.CSSProperties => ({ border: `1px solid ${on ? C.navy : C.hair}`, background: on ? C.navySoft : C.surface, color: on ? C.navy : C.sec, borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' });
+  const dayRecs = recs.filter((r) => r.day === day);
+  const selSysDay = sysDay || sysDays[sysDays.length - 1];
+  const sysRec = sysRecs.find((r: any) => r.day === selSysDay);
+  const symOf = sys.includes('SENSEX') ? 'SENSEX' : 'NIFTY';
+  const wdName = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: C.surface, border: `1px solid ${C.hair}`, borderRadius: 12, padding: '14px 18px', width: 'min(1550px, 97vw)', height: '94vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Paper-book day curves</span>
+          <button style={tabBtn(mode === 'day')} onClick={() => setMode('day')}>By day (all books)</button>
+          <button style={tabBtn(mode === 'sys')} onClick={() => setMode('sys')}>By system (all days)</button>
+          <span style={{ fontSize: 11, color: C.faint }}>← → arrow keys or on-screen arrows to traverse · Esc to close</span>
+          <button onClick={onClose} style={{ ...navBtn, marginLeft: 'auto', color: C.neg }}>✕ close</button>
+        </div>
+        {mode === 'day' ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <button style={navBtn} onClick={() => move(-1)} disabled={days.indexOf(day) <= 0}>◀</button>
+              <select value={day} onChange={(e) => setDay(e.target.value)}
+                style={{ background: 'transparent', color: C.ink, border: `1px solid ${C.hair}`, borderRadius: 6, padding: '4px 10px', fontSize: 13, fontWeight: 700 }}>
+                {days.map((d2) => <option key={d2} value={d2}>{dmon2(d2)} ({['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][new Date(d2 + 'T00:00:00').getDay()]})</option>)}
+              </select>
+              <button style={navBtn} onClick={() => move(1)} disabled={days.indexOf(day) >= days.length - 1}>▶</button>
+              <span style={{ fontSize: 12, color: C.muted }}>{dayRecs.length} book{dayRecs.length !== 1 ? 's' : ''} traded · day {days.indexOf(day) + 1}/{days.length}</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: 12 }}>
+              {CSL_BOOK_ORDER.filter((bk) => dayRecs.some((r) => (r.book || r.sym) === bk)).map((bk) => {
+                const r = dayRecs.find((r2) => (r2.book || r2.sym) === bk);
+                return (
+                  <div key={bk} style={{ border: `1px solid ${C.hair}`, borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 4 }}>
+                      {bk} <span style={srcChipStyle(r.source || 'BACKTEST')}>{srcName(r.source || 'BACKTEST')}</span>
+                      <span style={{ fontSize: 10.5, color: C.faint, fontWeight: 400 }}> · {r.cfg} · {r.lots} lots</span>
+                      <span style={{ float: 'right', color: col(r.pnl ?? r.series[r.series.length - 1][1]) }}>{inr(r.pnl ?? r.series[r.series.length - 1][1])}</span>
+                    </div>
+                    <LineChart pts={r.series} h={170} />
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+              {CSL_BOOK_ORDER.map((bk) => <button key={bk} style={tabBtn(sys === bk)} onClick={() => { setSys(bk); setSysDay(''); }}>{bk}</button>)}
+            </div>
+            {sysRec && (
+              <div style={{ border: `1px solid ${C.navy}`, borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <button style={navBtn} onClick={() => move(-1)} disabled={sysDays.indexOf(selSysDay) <= 0}>◀</button>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>
+                    {sys} · {dmon2(selSysDay)} ({['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][new Date(selSysDay + 'T00:00:00').getDay()]} · DTE{sysRec.dte})
+                    {' '}<span style={srcChipStyle(sysRec.source || 'BACKTEST')}>{srcName(sysRec.source || 'BACKTEST')}</span>
+                  </span>
+                  <button style={navBtn} onClick={() => move(1)} disabled={sysDays.indexOf(selSysDay) >= sysDays.length - 1}>▶</button>
+                  <span style={{ fontSize: 11, color: C.muted }}>{sysRec.cfg} · {sysRec.lots} lots · day {sysDays.indexOf(selSysDay) + 1}/{sysDays.length}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 700, color: col(sysRec.pnl) }}>{inr(sysRec.pnl)}</span>
+                </div>
+                <LineChart pts={sysRec.series} h={230} />
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+              {[0, 1, 2, 3, 4].map((w) => {
+                const colRecs = sysRecs.filter((r: any) => new Date(r.day + 'T00:00:00').getDay() - 1 === w);
+                const net = colRecs.reduce((a: number, r: any) => a + (r.pnl || 0), 0);
+                return (
+                  <div key={w}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: C.navy, borderBottom: `2px solid ${C.navySoft}`, paddingBottom: 3, marginBottom: 6 }}>
+                      {wdName[w]} · DTE{WD_DTE[symOf][w]}
+                      <span style={{ float: 'right', color: col(net), fontWeight: 700 }}>{colRecs.length ? inr(net) : '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {colRecs.map((r: any) => (
+                        <div key={r.day} onClick={() => setSysDay(r.day)}
+                          style={{ border: `1px solid ${r.day === selSysDay ? C.navy : C.hairSoft}`, borderRadius: 6, padding: '3px 6px', cursor: 'pointer', background: r.day === selSysDay ? C.navySoft : 'transparent' }}>
+                          <div style={{ fontSize: 10, color: C.sec, fontWeight: 700 }}>
+                            {dmon2(r.day)}{r.source && r.source !== 'BACKTEST' && <span style={{ ...srcChipStyle(r.source), marginLeft: 4 }}>{r.source}</span>}
+                            <span style={{ float: 'right', color: col(r.pnl) }}>{inr(r.pnl)}</span>
+                          </div>
+                          <LineChart pts={r.series} h={44} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ---------- collapsible system rules (both systems) ---------- */
 function RulesBlock() {
   const head: React.CSSProperties = { fontWeight: 700, color: C.ink, fontSize: 13, margin: '0 0 4px' };
@@ -291,6 +428,7 @@ export default function Straddles() {
   const [cslPDay, setCslPDay] = useState<string>('');      // selected day for curves
   const [cslPBig, setCslPBig] = useState<string | null>(null); // expanded book curve
   const [cslPBF, setCslPBF] = useState<any>(null);   // backfilled BACKTEST day curves (recorded chain replay)
+  const [cslPModal, setCslPModal] = useState<null | 'day' | 'sys'>(null); // full-screen curve explorer
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -634,11 +772,19 @@ export default function Straddles() {
             <div style={{ margin: '10px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.ink }}>Day P&amp;L curves — all variants</span>
+                <button onClick={() => setCslPDay(recDays[Math.max(0, recDays.indexOf(selDay) - 1)])} disabled={recDays.indexOf(selDay) <= 0}
+                  style={{ border: `1px solid ${C.hair}`, background: 'transparent', color: C.navy, borderRadius: 6, padding: '1px 9px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>◀</button>
                 <select value={selDay} onChange={(e) => setCslPDay(e.target.value)}
                   style={{ background: 'transparent', color: C.ink, border: `1px solid ${C.hair}`, borderRadius: 6, padding: '2px 8px', fontSize: 11.5 }}>
                   {recDays.map((d2) => <option key={d2} value={d2}>{d2}</option>)}
                 </select>
-                <span style={{ fontSize: 10.5, color: C.faint }}>~60s samples · click a curve to expand/collapse</span>
+                <button onClick={() => setCslPDay(recDays[Math.min(recDays.length - 1, recDays.indexOf(selDay) + 1)])} disabled={recDays.indexOf(selDay) >= recDays.length - 1}
+                  style={{ border: `1px solid ${C.hair}`, background: 'transparent', color: C.navy, borderRadius: 6, padding: '1px 9px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>▶</button>
+                <button onClick={() => setCslPModal('day')}
+                  style={{ border: `1px solid ${C.navy}`, background: C.navySoft, color: C.navy, borderRadius: 6, padding: '2px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>⤢ day navigator</button>
+                <button onClick={() => setCslPModal('sys')}
+                  style={{ border: `1px solid ${C.navy}`, background: C.navySoft, color: C.navy, borderRadius: 6, padding: '2px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>🗓 by system — all days</button>
+                <span style={{ fontSize: 10.5, color: C.faint }}>~60s samples · click a curve to expand/collapse · ← → in popup</span>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8, fontSize: 10 }}>
                 {bfR && <span style={{ fontWeight: 800, padding: '1px 7px', borderRadius: 4, color: C.amber, background: C.amberSoft }}>BACKTEST · recorded-chain replay · {bfR}</span>}
@@ -663,6 +809,7 @@ export default function Straddles() {
                   </div>
                 ))}
               </div>
+              {cslPModal && <CslCurvesModal recs={[...liveRecs, ...bfRecs]} mode0={cslPModal} day0={selDay} onClose={() => setCslPModal(null)} />}
             </div>
           );
         })()}
