@@ -278,6 +278,9 @@ export default function Straddles() {
   const [v2msg, setV2msg] = useState<string | null>(null);  // last action result message
   const [ranks, setRanks] = useState<any>(null);     // weekly strategy leaderboard
   const [variants, setVariants] = useState<any>(null); // v2 stop x wings variant lab
+  const [cslCfg, setCslCfg] = useState<any>(null);   // research/111 best-config lab (weekly regen)
+  const [cslIdx, setCslIdx] = useState<'NIFTY' | 'SENSEX'>('NIFTY');
+  const [cslDte, setCslDte] = useState<string>('all');
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -287,6 +290,7 @@ export default function Straddles() {
     fetch('/app/straddles/v1_sl30.json?t=' + Date.now()).then((r) => r.json()).then(setSl30).catch(() => {});
     fetch('/app/straddles/rankings.json?t=' + Date.now()).then((r) => r.json()).then(setRanks).catch(() => {});
     fetch('/app/straddles/variants.json?t=' + Date.now()).then((r) => r.json()).then(setVariants).catch(() => {});
+    fetch('/app/straddles/csl_best_configs.json?t=' + Date.now()).then((r) => r.json()).then(setCslCfg).catch(() => {});
     const loadLive = () => {
       fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
       fetch('/api/v2-ironfly/state?t=' + Date.now()).then((r) => r.json()).then(setV2eng).catch(() => {});
@@ -502,6 +506,97 @@ export default function Straddles() {
           </div>
         </section>
       )}
+
+      {!cslCfg && (
+        <section id="csl-lab" style={{ ...card, marginTop: 14, borderColor: C.navy }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>CSL Best-Config Lab</span>
+            {chip(C.navySoft, C.navy, 'research/111')}
+            {chip(C.amberSoft, C.amber, 'first data generation in progress…')}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>
+            The entry×exit×SL sweep (NIFTY + SENSEX, all recorded days, 3-sec dwell) is computing on the VPS.
+            This card fills in automatically when it finishes, and refreshes every Friday 15:45 IST thereafter.
+          </div>
+        </section>
+      )}
+
+      {cslCfg && cslCfg.best && (() => {
+        const DLBL: any = { NIFTY: { 0: 'Tue·exp', 1: 'Mon', 2: 'Fri', 3: 'Thu', 4: 'Wed' },
+                            SENSEX: { 0: 'Thu·exp', 1: 'Wed', 2: 'Tue', 3: 'Mon', 4: 'Fri' } };
+        const b = cslCfg.best[cslIdx] || {};
+        const dtes = Object.keys(b).sort();
+        const use = cslDte === 'all' ? dtes : dtes.filter((k) => k === cslDte);
+        const daily: Record<string, number> = {};
+        use.forEach((k) => (b[k]?.series || []).forEach(([d, v]: any) => { daily[d] = (daily[d] || 0) + v; }));
+        let cum = 0;
+        const pts: [string, number][] = Object.keys(daily).sort().map((d) => { cum += daily[d]; return [d, cum]; });
+        const mi = (cslCfg.meta || {})[cslIdx] || {};
+        const alts = cslDte === 'all' ? [] : (cslCfg.cells || [])
+          .filter((c: any) => c.sym === cslIdx && String(c.dte) === cslDte && c.n >= 8)
+          .sort((a: any, z: any) => (z.ratio ?? -9) - (a.ratio ?? -9)).slice(0, 6);
+        return (
+          <section id="csl-lab" style={{ ...card, marginTop: 14, borderColor: C.navy, scrollMarginTop: 70 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>CSL Best-Config Lab</span>
+              {chip(C.navySoft, C.navy, 'research/111')}
+              {chip(C.amberSoft, C.amber, 'weekly regen · Fri 15:45 IST')}
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>updated {cslCfg.generated_at}</span>
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+              Basis — NIFTY: <b>{(cslCfg.meta?.NIFTY?.days) ?? '—'} days</b> ({cslCfg.meta?.NIFTY?.from} → {cslCfg.meta?.NIFTY?.to}) @ {cslCfg.meta?.NIFTY?.lots} lots (qty {cslCfg.meta?.NIFTY?.qty}) ·
+              SENSEX: <b>{(cslCfg.meta?.SENSEX?.days) ?? '—'} days</b> ({cslCfg.meta?.SENSEX?.from} → {cslCfg.meta?.SENSEX?.to}) @ {cslCfg.meta?.SENSEX?.lots} lots (qty {cslCfg.meta?.SENSEX?.qty}) ·
+              3-sec dwell mechanic · ATM at entry moment
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+              {(['NIFTY', 'SENSEX'] as const).map((s2) => (
+                <button key={s2} onClick={() => setCslIdx(s2)} style={btn(cslIdx === s2, C.ink)}>{s2}</button>))}
+              <span style={{ width: 14 }} />
+              {['all', ...dtes].map((k) => (
+                <button key={k} onClick={() => setCslDte(k)} style={btn(cslDte === k, C.sec)}>
+                  {k === 'all' ? 'All DTEs (book)' : `DTE${k} · ${DLBL[cslIdx][k] || ''}`}</button>))}
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8 }}>
+                <thead><tr><th style={thL}>DTE</th><th style={thL}>Window</th><th style={thL}>SL</th>
+                  <th style={thR}>Total</th><th style={thR}>Mean/day</th><th style={thR}>Win</th>
+                  <th style={thR}>MaxDD</th><th style={thR}>Ratio</th><th style={thR}>n</th></tr></thead>
+                <tbody>{dtes.map((k) => { const r = b[k]; return (
+                  <tr key={k} style={{ background: cslDte === k ? C.navySoft : undefined }}>
+                    <td style={tdL}>DTE{k} <span style={{ color: C.faint }}>({DLBL[cslIdx][k]})</span></td>
+                    <td style={{ ...tdL, fontWeight: 700, color: C.ink }}>{r.entry} → {r.exit}</td>
+                    <td style={tdL}>{r.sl === 'none' ? 'none' : r.sl + '%'}</td>
+                    <td style={{ ...tdR, color: col(r.total), fontWeight: 700 }}>{inr(r.total)}</td>
+                    <td style={{ ...tdR, color: col(r.mean) }}>{inr(r.mean)}</td>
+                    <td style={tdR}>{r.win}%</td>
+                    <td style={{ ...tdR, color: C.neg }}>{inr(r.maxdd)}</td>
+                    <td style={{ ...tdR, fontWeight: 700 }}>{r.ratio}</td>
+                    <td style={tdR}>{r.n}</td></tr>); })}
+                </tbody>
+              </table>
+            </div>
+            {pts.length >= 2 && <LineChart pts={pts} h={150}
+              label={`cumulative P&L — ${cslIdx} ${cslDte === 'all' ? 'best-config book (all DTEs)' : 'DTE' + cslDte + ' best config'} · ${(cslCfg.meta || {})[cslIdx]?.lots} lots`} />}
+            {alts.length > 0 && (
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                <thead><tr><th style={thL}>Alternative configs (DTE{cslDte})</th><th style={thL}>SL</th>
+                  <th style={thR}>Total</th><th style={thR}>Win</th><th style={thR}>MaxDD</th><th style={thR}>Ratio</th><th style={thR}>n</th></tr></thead>
+                <tbody>{alts.map((c: any, i: number) => (
+                  <tr key={i}><td style={tdL}>{c.entry} → {c.exit}</td>
+                    <td style={tdL}>{c.sl === 'none' ? 'none' : c.sl + '%'}</td>
+                    <td style={{ ...tdR, color: col(c.total) }}>{inr(c.total)}</td>
+                    <td style={tdR}>{c.win}%</td>
+                    <td style={{ ...tdR, color: C.neg }}>{inr(c.maxdd)}</td>
+                    <td style={tdR}>{c.ratio}</td><td style={tdR}>{c.n}</td></tr>))}
+                </tbody>
+              </table>
+            )}
+            <div style={{ fontSize: 11, color: C.amber, marginTop: 8 }}>
+              ⚠ Grid maxima on ~15-day cells (multiple-testing risk) — SL-level invariance is the robustness signal; validate via paper before live sizing. Refreshed automatically every Friday 15:45 IST as recorded days accumulate.
+            </div>
+          </section>
+        );
+      })()}
 
       {condor && (
         <section id="condor" style={{ ...card, marginTop: 14, borderColor: C.amber, scrollMarginTop: 70 }}>

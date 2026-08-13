@@ -36,11 +36,14 @@ def agg(f):
     return dict(total=round(sum(f)), mean=round(sum(f) / n), win=round(100 * sum(1 for v in f if v > 0) / n),
                 maxdd=round(dd), n=n, ratio=(round(sum(f) / abs(dd), 1) if dd < 0 else 99.0))
 
-grid = {}      # (sym,dte,entry,exit,sl) -> [pnl,...]
+grid = {}      # (sym,dte,entry,exit,sl) -> [(day,pnl),...]
 sparse = {"NIFTY": 0, "SENSEX": 0}
+meta = {}
 for SYM, cfg in CFG.items():
     days = [r[0] for r in oc.execute(
         "SELECT DISTINCT substr(snapshot_time,1,10) FROM underlying_spot WHERE symbol=? AND spot_price>0 ORDER BY 1", (SYM,))]
+    meta[SYM] = {"days": len(days), "from": days[0] if days else None, "to": days[-1] if days else None,
+                 "lots": cfg["lots"], "qty": cfg["qty"]}
     print("START %s days=%d" % (SYM, len(days)), flush=True)
     for i, day in enumerate(days):
         exps = sorted({r[0] for r in oc.execute(
@@ -95,17 +98,36 @@ for SYM, cfg in CFG.items():
                                     break
                             else: streak = 0
                     if pnl is None: pnl = (ent - sub[-1][1]) * cfg["qty"] - COST
-                    grid.setdefault((SYM, k, ent_t, ex_t, sl), []).append(round(pnl))
+                    grid.setdefault((SYM, k, ent_t, ex_t, sl), []).append((day, round(pnl)))
         if day_sparse: sparse[SYM] += 1
         if i % 10 == 0: print("%s %d/%d" % (SYM, i, len(days)), flush=True)
 
-out = {"sparse_days": sparse, "cells": []}
-for (SYM, k, ent_t, ex_t, sl), f in grid.items():
-    if len(f) < 6: continue
-    a = agg(f)
-    out["cells"].append({"sym": SYM, "dte": k, "entry": ent_t, "exit": ex_t,
-                         "sl": ("none" if sl == 999 else sl), **a})
+out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"), "sparse_days": sparse,
+       "meta": meta, "cells": [], "best": {}}
+series_map = {}
+for (SYM, k, ent_t, ex_t, sl), fp in grid.items():
+    if len(fp) < 6: continue
+    fp = sorted(fp)
+    a = agg([v for _, v in fp])
+    cell = {"sym": SYM, "dte": k, "entry": ent_t, "exit": ex_t,
+            "sl": ("none" if sl == 999 else sl), **a}
+    out["cells"].append(cell)
+    series_map[(SYM, k, ent_t, ex_t, sl)] = fp
+# best config per (sym,dte) by ratio among n>=8, WITH its daily P&L series (for page curves)
+for SYM in CFG:
+    out["best"][SYM] = {}
+    for k in range(5):
+        cand = [c for c in out["cells"] if c["sym"] == SYM and c["dte"] == k and c["n"] >= 8]
+        if not cand: continue
+        cand.sort(key=lambda c: -(c["ratio"] if c["ratio"] is not None else -9))
+        b = dict(cand[0])
+        key = (SYM, k, b["entry"], b["exit"], (999 if b["sl"] == "none" else b["sl"]))
+        b["series"] = [[d, v] for d, v in series_map.get(key, [])]
+        out["best"][SYM][str(k)] = b
 json.dump(out, open(OUT, "w"))
+for extra in ("/home/arun/quantifyd/static/app/straddles/csl_best_configs.json",
+              "/home/arun/quantifyd/frontend/public/straddles/csl_best_configs.json"):
+    json.dump(out, open(extra, "w"))
 print("\nTOP CONFIGS by ratio (n>=8):")
 for SYM in CFG:
     for k in range(5):
