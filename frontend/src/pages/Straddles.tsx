@@ -457,7 +457,8 @@ export default function Straddles() {
           <b style={{ color: C.amber }}> Grade: strong SIGNAL, in-sample</b> — the paper books below convert it to STRATEGY (or kill it) by ~mid-Sep.
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
-          {[['#csl-paper', '📗 Paper Books (live validation)'], ['#csl-lab', '🔬 Best-Config Lab (weekly)'],
+          {[['/app/backtest/csl-best-config-straddles', '📄 Full study card (backtest page)'],
+            ['#csl-paper', '📗 Paper Books (live validation)'], ['#csl-lab', '🔬 Best-Config Lab (weekly)'],
             ['#leaderboard', '🏆 Strategy Leaderboard'], ['#variant-lab', '🧪 V2 Variant Lab'],
             ['/app/nifty_csl_vs_nas.png', '📈 NIFTY: CSL vs NAS (chart)'], ['/app/sensex_csl_vs_nas.png', '📈 SENSEX: CSL vs NAS (chart)'],
             ['/app/perleg_vs_comb.png', '📉 Per-leg vs Combined SL (chart)'], ['/app/csl30_vs_nas916.png', '📊 CSL30 vs NAS-916 (chart)'],

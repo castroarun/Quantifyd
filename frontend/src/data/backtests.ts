@@ -5148,6 +5148,97 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'memory/sensex_stop_by_dte_study.md (finding)',
     ],
   },
+  {
+    slug: 'csl-best-config-straddles',
+    title: 'CSL best-config straddles — entry x exit x combined-SL per DTE (NIFTY + SENSEX) + paper validation',
+    verdict:
+      'Swept 10 entry times x 6 exits x 5 combined-SL levels per DTE per index on the raw ~3-sec chain (80 days, dwell-confirm fills). THE WINDOW IS THE EDGE: inside the right time-box the SL level (20-30%) barely binds, and time-boxed exits cut drawdowns 10-25x while keeping most of the profit (NIFTY DTE0: 09:30-11:00 keeps ~98% of full-day P&L at 1/25th the DD). Every DTE on both indices turns net-positive in its right window — including the Wednesdays that lose money held all day. Full-day holds remain correct exactly twice: NIFTY-Thursday and SENSEX-expiry-Thursday (stops only subtract there; live carries a 50% disaster backstop). Portfolio scan across CSL + NAS sleeves (corr ~0) puts the optimum at CSL-NIFTY 2u : CSL-SENSEX 1u alongside the live NAS books. Grade: STRONG IN-SAMPLE SIGNAL (grid maxima on ~15-day cells) — frozen-config PAPER books (NIFTY 12 lots + SENSEX 6 lots) run since 14-AUG-26 to earn the STRATEGY upgrade by ~mid-Sep.',
+    status: 'COMPLETE',
+    date: '2026-08-13',
+    cardBlurb:
+      'The time window is the edge: entry x exit x combined-SL sweep per DTE (3-sec dwell fills, 80 days, both indices). Right-windowed, every DTE is positive and DDs collapse 10-25x; SL level barely matters inside the window. Best configs frozen + running as paper books (NIFTY 12L + SENSEX 6L). Weekly self-refreshing Lab on /app/straddles.',
+    cardStats: [
+      { label: 'Key finding', value: 'Window > stop: DD cut 10-25x' },
+      { label: 'NIFTY DTE0 best', value: '09:30-11:00 SL25-30 · r117.9' },
+      { label: 'Validation', value: 'Paper books live since 14-AUG' },
+    ],
+    system: {
+      intro: 'Short ATM straddle (strike at the ENTRY moment), combined-premium SL with 2-consecutive-snap dwell confirm and market exit at the next snap, time-boxed exit. Grid: entries 09:16-14:00 (10) x exits 11:00-15:20 (6) x SL 20/25/30/40/none x DTE0-4 x (NIFTY 10 lots qty 650, SENSEX 5 lots qty 100).',
+      rows: [
+        { k: 'Data', v: 'options_data.db raw ~3-sec chain, 80 days 2026-04-20 to 2026-08-13, both indices; per-day sparse tagging (resolution ladder).' },
+        { k: 'Fills', v: 'Accepted live mechanic: breach must persist >=2 snaps, exit at NEXT snap price (not at trigger).' },
+        { k: 'Home', v: 'CSL Best-Config Lab + Paper Books cards on /app/straddles — Lab self-refreshes weekly Fri 15:45 IST.' },
+      ],
+    },
+    conditions: {
+      intro: 'What the grid shows:',
+      rows: [
+        { k: 'The window does the risk work', v: 'Winning cells are SL-invariant (20/25/30 identical) — the time-box exits before stops bind; 30% stays as disaster backstop.' },
+        { k: 'Schedule beats stop-tuning', v: 'Wednesdays (both venues) lose held-to-EOD but earn in 10:30-12:00; the two full-day holds are NIFTY-Thu and SENSEX-expiry-Thu.' },
+        { k: 'Venues are inverted', v: 'NIFTY expiry (Tue) wants the morning box + stop; SENSEX expiry (Thu) wants HOLD (any stop subtracts).' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Best config per DTE (3-sec dwell, ~15 days/cell)',
+        caption: 'NIFTY @10 lots (qty 650) · SENSEX @5 lots (qty 100) · totals over the cell days.',
+        columns: ['Venue - DTE', 'Window', 'SL', 'Total', 'Win', 'MaxDD', 'Return/DD'],
+        rows: [
+          ['NIFTY DTE0 (Tue exp)', '09:30-11:00', '25-30%', '+1,98,967', '93%', '-1,687', '117.9'],
+          ['NIFTY DTE1 (Mon)', '13:00-14:00', '20-30%', '+56,848', '93%', '-1,395', '40.8'],
+          ['NIFTY DTE2 (Fri)', '10:00-12:00', '20-30%', '+82,003', '80%', '-1,102', '74.4'],
+          ['NIFTY DTE3 (Thu)', 'FULL DAY', 'any>=20%', '+1,69,968', '90%', '-1,395', '121.8'],
+          ['NIFTY DTE4 (Wed)', '10:30-12:00', '20-30%', '+46,810', '75%', '-9,614', '4.9'],
+          ['SENSEX DTE0 (Thu exp)', 'FULL DAY', 'none (50% backstop live)', '+2,04,435', '93%', '-775', '263.8'],
+          ['SENSEX DTE1 (Wed)', '10:30-12:00', '20-30%', '+25,785', '75%', '-5,975', '4.3'],
+          ['SENSEX DTE2 (Tue)', '09:25-11:00', '20-30%', '+53,465', '93%', '-30 (artifact)', 'n/m'],
+          ['SENSEX DTE3 (Mon)', '13:00-14:00', '20-30%', '+16,200', '80%', '-1,650', '9.8'],
+          ['SENSEX DTE4 (Fri)', '10:30-12:00', '20-30%', '+22,590', '79%', '-865', '26.1'],
+        ],
+        highlightRows: [0, 3, 5],
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'NIFTY best-config book (replay @6L)', value: '+Rs3.38L · DD -4.7k · r71.5', tone: 'pos' },
+        { label: 'SENSEX best-config book (replay @6L)', value: '+Rs3.99L · DD -5.9k · r68.2', tone: 'pos' },
+        { label: 'CSL x NAS daily correlation', value: '~ -0.07 (independent)' },
+        { label: 'Optimal portfolio (scan)', value: 'CSL-N 2u : CSL-S 1u : NAS-S 1u' },
+      ],
+      charts: [
+        { src: '/app/nifty_csl_vs_nas.png', caption: 'NIFTY — best-config CSL vs NAS-916x3 live, equity + drawdown, all @6 lots' },
+        { src: '/app/sensex_csl_vs_nas.png', caption: 'SENSEX — best-config CSL vs NAS atm2 live (14d), equity + drawdown, all @6 lots' },
+        { src: '/app/perleg_vs_comb.png', caption: 'Per-leg 30% vs combined 30% vs no stop — same trades, 3-sec dwell, 10 lots' },
+        { src: '/app/csl30_vs_nas916.png', caption: 'Flat CSL30 vs NAS-916x3, lot-normalized @6 lots (precursor study)' },
+      ],
+      tables: [],
+    },
+    winners: [
+      {
+        config: 'DTE-scheduled time-boxed CSL books: NIFTY 2u (12 lots) + SENSEX 1u (6 lots), frozen 13-AUG config',
+        summary: 'Deployed as PAPER (cron 09:12, dwell mechanic, 50% backstop on none-SL days) — the out-of-sample validation that decides the STRATEGY upgrade ~mid-Sep.',
+        metrics: [
+          { k: 'Replay ratios', v: 'NIFTY 71.5 / SENSEX 68.2 (in-sample — will degrade live)' },
+          { k: 'vs live NAS ratios', v: '2.5-3.4 (their reality includes every wart)' },
+          { k: 'Diversification', v: 'CSL x NAS corr ~0 -> stacking beats either' },
+        ],
+        rejected: ['Per-leg 30% SL (worse than no stop on identical trades)', 'Hold-to-EOD on Wednesdays', 'Equal-weight portfolio (NAS DD drags ratio 10.4 vs 80)'],
+      },
+    ],
+    caveats: [
+      'Grid maxima on ~15-16 day cells = multiple-testing; SL-invariance is the robustness signal; SENSEX DTE2 ratio is a tiny-DD artifact — not literal.',
+      'CSL numbers are in-sample optimized replay; NAS comparisons are live reality — the paper books are the arbiter, not these tables.',
+      'One regime (Apr-Aug 2026); weekday-DTE mapping ignores holiday-shifted expiries; single best slot per day (2nd-slot stacking is exploratory).',
+      'Sibling study: /app/backtest/sensex-nifty-stop-by-dte (per-leg vs combined stop mechanics incl. real ST-trail validation).',
+    ],
+    githubLinks: [{ label: 'Quantifyd repo', href: 'https://github.com/castroarun/Quantifyd' }],
+    projectPaths: [
+      'research/111_sensex_manual_mgmt/SENSEX_MANUAL_STRADDLE_MGMT_FORENSIC_STATUS.md',
+      'research/111_sensex_manual_mgmt/results/entry_exit_sweep.json',
+      'research/111_sensex_manual_mgmt/results/deliverable3_portfolio.json',
+    ],
+  },
+
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {

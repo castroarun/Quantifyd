@@ -1828,7 +1828,7 @@ export default function Nas() {
           Daily-P&L correlation 0.04 over 66 common days - independent streams; stacking beats either alone.
           SL30 = recorded-chain backtest @10 lots; NAS = live paper @1-3 lots; single regime Apr-Aug 2026 (as of 12-AUG).
           Rules, visual comparisons &amp; per-system charts: <a href="/app/straddles" style={{ color: 'inherit' }}>Strategy Leaderboard</a> -
-          <a href="/app/straddles#sl30-card" style={{ color: 'inherit' }}> SL30 card</a>.
+          <a href="/app/straddles#sl30-card" style={{ color: 'inherit' }}> SL30 card</a> - <a href="/app/backtest/csl-best-config-straddles" style={{ color: 'inherit' }}>full study card</a>.
         </div>
       </section>
 
