@@ -210,3 +210,17 @@ DTE4:30 (NOTE: DTE4/Wed NEGATIVE at every SL - consistent with all prior researc
 ACTION: NAS_COMB20 book re-frozen to per-DTE SLs 25/30/30/20/30 (user-delegated choice);
 name kept for continuity. VERDICT: **SIGNAL** - keep live suite, grow the CSL sleeve as
 the complement; paper books adjudicate OOS. SENSEX version: pending (NIFTY-first per user).
+
+### Sec 15b - PER-DTE ELIMINATION CHECK (2026-08-13 22:15 IST) - user hypothesis VALIDATED
+
+User: a system inferior overall may be superior once a weak DTE is eliminated -> then no
+replacement needed. Result: **every arm's worst DTE is DTE4/Wednesday** (live suite lost
+-58,701 on 9 Wednesdays at 3L/system-normalized). Ex-Wednesday, the LIVE suite jumps from
+ratio 1.7 -> 6.2 (+157,640/34d) - COMPETITIVE with COMB25 (8.0) / COMB30 (6.5): the live
+suite does NOT need mechanic replacement, it needs to not trade NIFTY Wednesdays.
+Standout: HYB_ATM4_30 ex-Wed ratio 15.4 (+168,072, dd -10,928, 3L). Portfolio
+LIVE(9L)+COMB30(3L) ex-Wed: +289,765, dd -19,381, ratio 15.0 (n=34).
+Consistent with research/79+90 doctrine (NIFTY edge Mon/Tue, SENSEX covers Wed/Thu).
+Caveat: n=9-11 Wednesdays, in-sample. Script: scripts/per_dte_elimination_check.py.
+RECOMMENDATION (pending user): gate NIFTY books out of DTE4/Wed (day-matrix already
+exists for live suite); keep paper books trading all DTEs for OOS evidence.
