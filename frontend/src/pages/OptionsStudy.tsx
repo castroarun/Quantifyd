@@ -113,6 +113,7 @@ export default function OptionsStudy() {
   const [expand, setExpand] = useState<string | null>(null);
   const [tableSort, setTableSort] = useState<'date' | 'decay'>('date');
   const [slx, setSlx] = useState(30);   // interactive combined-SL explorer threshold (%)
+  const [slDtes, setSlDtes] = useState<number[]>([0, 1, 2, 3, 4]);  // explorer DTE filter
 
   useEffect(() => {
     fetch(`/app/options_study.json?t=${Date.now()}`, { cache: 'no-store' })
@@ -294,7 +295,7 @@ export default function OptionsStudy() {
   // interactive combined-SL explorer: tick-accurate hit detection (tick_high), fill-at-trigger
   const slExp = useMemo(() => {
     const QTY = 650, COST = 160;
-    const ds = allDays.filter((x) => x.series && x.series.length > 1);
+    const ds = allDays.filter((x) => x.series && x.series.length > 1 && slDtes.includes(x.dte));
     const perDay = ds.map((x) => {
       const ent = x.series[0][1], close = x.series[x.series.length - 1][1];
       const thr = ent * (1 + slx / 100);
@@ -309,18 +310,25 @@ export default function OptionsStudy() {
         ratio: a.dd < 0 ? Math.round(10 * a.total / Math.abs(a.dd)) / 10 : null }; }).filter(Boolean) as any[];
     const all = agg(perDay.map((r) => r.pnl));
     const sorted = perDay.slice().sort((a, b) => a.date.localeCompare(b.date));
-    let c = 0; const xs: number[] = [], ys: number[] = [];
-    sorted.forEach((r, i) => { c += r.pnl; xs.push(i); ys.push(c); });
+    let c = 0, pk = 0; const xs: number[] = [], ys: number[] = [], dds: number[] = [];
+    sorted.forEach((r, i) => { c += r.pnl; pk = Math.max(pk, c); xs.push(i); ys.push(c); dds.push(Math.round(c - pk)); });
     const hitAll = Math.round(100 * perDay.filter((r) => r.hit).length / (perDay.length || 1));
     const tickN = ds.filter((x) => x.tick_high).length;
-    return { rows, all, xs, ys, hitAll, n: perDay.length, tickN, dates: sorted.map((r) => r.date) };
-  }, [allDays, slx]);
+    return { rows, all, xs, ys, dds, hitAll, n: perDay.length, tickN, dates: sorted.map((r) => r.date) };
+  }, [allDays, slx, slDtes]);
   const slChart = useMemo(() => {
     if (!slExp.xs.length) return null;
     return { opts: { series: [{}, { label: 'cum P&L', stroke: '#3fb950', width: 2, points: { show: false } }],
       axes: [{ stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((i) => slExp.dates[Math.round(i)] ? slExp.dates[Math.round(i)].slice(5) : '') },
              { stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((x) => '₹' + Math.round(x / 1000) + 'k') }],
       legend: { show: false }, cursor: { drag: { x: false, y: false } } }, data: [slExp.xs, slExp.ys] as any };
+  }, [slExp]);
+  const slDDChart = useMemo(() => {
+    if (!slExp.xs.length) return null;
+    return { opts: { series: [{}, { label: 'drawdown', stroke: '#f85149', width: 1.6, points: { show: false }, fill: 'rgba(248,81,73,0.08)' }],
+      axes: [{ stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((i) => slExp.dates[Math.round(i)] ? slExp.dates[Math.round(i)].slice(5) : '') },
+             { stroke: '#8b949e', grid: { stroke: 'rgba(139,148,158,0.10)' }, values: (_u: any, v: number[]) => v.map((x) => '₹' + Math.round(x / 1000) + 'k') }],
+      legend: { show: false }, cursor: { drag: { x: false, y: false } } }, data: [slExp.xs, slExp.dds] as any };
   }, [slExp]);
 
   if (!d) return <div className={styles.wrap}>Loading options study…</div>;
@@ -537,6 +545,16 @@ export default function OptionsStudy() {
             <b style={{ fontSize: 14 }}>{slx}%</b>
           </label>
         </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '2px 0 8px', fontSize: 12 }}>
+          <span style={{ color: 'var(--ink-faint,#6e7681)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em', alignSelf: 'center' }}>DTEs in curve/tiles</span>
+          {DTES.map((k) => (
+            <label key={k} className={styles.toggle} style={{ gap: 4 }}>
+              <input type="checkbox" checked={slDtes.includes(k)}
+                onChange={() => setSlDtes(slDtes.includes(k) ? slDtes.filter((x) => x !== k) : [...slDtes, k].sort())} />
+              <b style={{ color: DTE_COLOR[k] }}>DTE{k}</b>
+            </label>
+          ))}
+        </div>
         <div className={styles.tiles} style={{ marginBottom: 10 }}>
           <Tile label="Total" v={`₹${slExp.all.total.toLocaleString('en-IN')}`} good={slExp.all.total > 0} />
           <Tile label="Mean/day" v={`₹${slExp.all.mean.toLocaleString('en-IN')}`} good={slExp.all.mean > 0} />
@@ -545,6 +563,7 @@ export default function OptionsStudy() {
           <Tile label="Max DD" v={`₹${slExp.all.dd.toLocaleString('en-IN')}`} good={false} />
         </div>
         {slChart && <Chart opts={slChart.opts} data={slChart.data} height={220} />}
+        {slDDChart && <Chart opts={slDDChart.opts} data={slDDChart.data} height={110} />}
         <div className={styles.tableWrap} style={{ maxHeight: 'none', marginTop: 8 }}>
           <table className={styles.table}>
             <thead><tr><th>DTE</th><th className={styles.num}>Days</th><th className={styles.num}>Total</th><th className={styles.num}>Mean/day</th><th className={styles.num}>Win</th><th className={styles.num}>SL hit</th><th className={styles.num}>Max DD</th><th className={styles.num}>Ratio</th></tr></thead>
