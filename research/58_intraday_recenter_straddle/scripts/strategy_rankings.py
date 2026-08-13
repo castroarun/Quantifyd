@@ -40,6 +40,15 @@ def load_json(p):
 
 
 rows = []
+DAILY = {}   # label -> {day: pnl} for correlation-vs-book
+
+def reg(label, pairs):
+    dd = {}
+    for d, v in pairs:
+        if d and v is not None:
+            dd[str(d)[:10]] = dd.get(str(d)[:10], 0) + v
+    if len(dd) >= 5:
+        DAILY[label] = dd
 
 def tdates(trs, *keys):
     out = []
@@ -62,12 +71,14 @@ d = load_json(PUB / "v1.json")
 if d and d.get("cum_curve"):
     add("V1 · intraday one-and-done (naked)", "backtest", stats(from_curve(d["cum_curve"])),
         f"trigger {d.get('trigger_pct')}% · daily", dates=[p[0] for p in d["cum_curve"]])
+    reg("V1 · intraday one-and-done (naked)", zip([p[0] for p in d["cum_curve"]], from_curve(d["cum_curve"])))
 
 # V1 daily re-enter — per_day finals
 d = load_json(PUB / "v1_daily.json")
 if d and d.get("per_day"):
     add("V1 · daily re-enter (naked)", "backtest",
         stats([v.get("final") for v in d["per_day"].values()]), f"trigger {d.get('trigger_pct')}% · daily", dates=list(d["per_day"].keys()))
+    reg("V1 · daily re-enter (naked)", [(k, v.get("final")) for k, v in d["per_day"].items()])
 
 # V2 iron-fly stop variants — trades pnl (already incl wings)
 for m in ("1.5", "2.0"):
@@ -75,24 +86,24 @@ for m in ("1.5", "2.0"):
     if d and d.get("trades"):
         add(f"V2 · positional iron-fly (stop {m}%)", "backtest",
             stats([t["pnl"] for t in d["trades"]]), "+wings · re-enter", dates=tdates(d["trades"], "exit_date", "exit", "date", "day", "entry_date", "entry"))
+        reg(f"V2 · positional iron-fly (stop {m}%)", zip(tdates(d["trades"], "exit_date", "exit", "date", "day", "entry_date", "entry"), [t["pnl"] for t in d["trades"]]))
 
 # V2 naked legacy (roll only) — exit_pnl
 d = load_json(BT / "straddle_v2_trades.json")
 if isinstance(d, list) and d:
     add("V2 · positional bi-weekly (naked · legacy)", "live-paper",
         stats([t.get("exit_pnl") for t in d]), "no move-stop · rolls to expiry", dates=tdates(d, "exit_date", "exit_time", "exit", "entry_date", "date"))
+    reg("V2 · positional bi-weekly (naked · legacy)", zip(tdates(d, "exit_date", "exit_time", "exit", "entry_date", "date"), [t.get("exit_pnl") for t in d]))
 
 # LIVE iron-fly executor + breakout sleeve — v2_ironfly db
 try:
     c = sqlite3.connect(str(BT / "v2_ironfly_trading.db"))
     for sysname, lbl, note in [("v2", "LIVE · iron-fly executor (VIX-gated)", "real-time · combo skip-filter"),
                                ("breakout", "LIVE · inside-week breakout sleeve", "experimental")]:
-        pnls = [r[0] for r in c.execute("SELECT pnl FROM v2_positions WHERE status='CLOSED' AND system=?", (sysname,)) if r[0] is not None]
-        try:
-            dts = [r[0] for r in c.execute("SELECT entry_time FROM v2_positions WHERE status='CLOSED' AND system=?", (sysname,)) if r[0]]
-        except Exception:
-            dts = None
-        add(lbl, "live-paper", stats(pnls), note, dates=dts)
+        pr = [(r[0], r[1]) for r in c.execute("SELECT pnl, entry_time FROM v2_positions WHERE status='CLOSED' AND system=?", (sysname,)) if r[0] is not None]
+        pnls = [p_ for p_, _ in pr]
+        add(lbl, "live-paper", stats(pnls), note, dates=[d_ for _, d_ in pr if d_])
+        reg(lbl, [(d_, p_) for p_, d_ in pr if d_])
     c.close()
 except Exception as e:
     print("ironfly db:", e)
@@ -103,6 +114,7 @@ if d and isinstance(d, dict):
     tr = d.get("trades") or []
     s = stats([t.get("pnl") for t in tr]) if tr else None
     add("Wed→Fri iron condor (research/80)", "live-paper", s, "2 lots", dates=tdates(tr, "day", "date", "entry_date", "entry"))
+    reg("Wed→Fri iron condor (research/80)", zip(tdates(tr, "day", "date", "entry_date", "entry"), [t.get("pnl") for t in tr]))
 
 
 # V1 + 30% combined-premium SL (from the sl30 backtest)
@@ -110,6 +122,7 @@ d = load_json(PUB / "v1_sl30.json")
 if d and d.get("trades"):
     add("V1 + 30% combined-premium SL", "backtest",
         stats([t["final"] for t in d["trades"]]), "combined-premium 30% stop · recorded chain", dates=tdates(d["trades"], "day", "date"))
+    reg("V1 + 30% combined-premium SL", zip(tdates(d["trades"], "day", "date"), [t["final"] for t in d["trades"]]))
 
 # NAS live books (as-traded lots) — per-book rows so the whole short-vol book ranks in ONE table
 import sqlite3
@@ -127,6 +140,7 @@ for name, lbl in (("nas_916_atm", "NAS 916 ATM (NIFTY · live)"),
             dd = str(r["d"])[:10]
             daily[dd] = daily.get(dd, 0) + r["p"]
         add(lbl, "live-real", stats([daily[k] for k in sorted(daily)]), "as-traded 1→3 lots · per-leg SL + trail", dates=sorted(daily))
+        reg(lbl, daily.items())
         c.close()
     except Exception as e:
         print(name, e)
@@ -136,6 +150,7 @@ try:
     for dd, p in c.execute("SELECT trade_date, net_pnl FROM nas_atm_trades WHERE net_pnl IS NOT NULL"):
         daily[str(dd)[:10]] = daily.get(str(dd)[:10], 0) + p
     add("NAS ATM2 (SENSEX · live)", "live-paper", stats([daily[k] for k in sorted(daily)]), "as-traded lots · young book", dates=sorted(daily))
+    reg("NAS ATM2 (SENSEX · live)", daily.items())
     c.close()
 except Exception as e:
     print("sensex", e)
@@ -152,6 +167,7 @@ if d and d.get("best"):
         if daily:
             add(lbl, "backtest", stats([daily[k2] for k2 in sorted(daily)]),
                 "%d lots · time-blocked windows · IN-SAMPLE optimized (see walk-forward caveat)" % lots, dates=sorted(daily))
+            reg(lbl, daily.items())
 
 # CSL paper books (frozen-config validation) — appear once they have records
 d = load_json(BT / "csl_paper_state.json")
@@ -160,6 +176,29 @@ if d and d.get("records"):
         rs = [r for r in d["records"] if r.get("sym") == sym or r.get("book", "").endswith(sym)]
         if rs:
             add(lbl, "live-paper", stats([r["pnl"] for r in rs]), "frozen 13-AUG config · OOS validation", dates=[r["day"] for r in rs])
+            reg(lbl, [(r["day"], r["pnl"]) for r in rs])
+
+# correlation of each system's daily P&L vs the REST of the book (sum of all other systems)
+def _pearson(da, db):
+    ks = sorted(set(da) & set(db))
+    if len(ks) < 8: return None
+    xa = [da[k] for k in ks]; xb = [db[k] for k in ks]
+    ma = sum(xa) / len(xa); mb = sum(xb) / len(xb)
+    num = sum((p - ma) * (q - mb) for p, q in zip(xa, xb))
+    va = sum((p - ma) ** 2 for p in xa) ** 0.5
+    vb = sum((q - mb) ** 2 for q in xb) ** 0.5
+    return round(num / (va * vb), 2) if va > 0 and vb > 0 else None
+
+book = {}
+for _lbl, _dd in DAILY.items():
+    for _d, _v in _dd.items():
+        book[_d] = book.get(_d, 0) + _v
+for r in rows:
+    dd = DAILY.get(r["label"])
+    if dd:
+        rest = {d2: book[d2] - dd.get(d2, 0) for d2 in dd if d2 in book}
+        rest = {d2: v2 for d2, v2 in rest.items() if abs(v2) > 1e-9}
+        r["corr"] = _pearson(dd, rest)
 
 # links: card anchor + backtest report + tearsheet per system (rendered as icons on the page)
 LINKS = {

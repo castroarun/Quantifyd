@@ -692,7 +692,7 @@ export default function Straddles() {
               <thead><tr>
                 <th style={thL}>#</th><th style={thL}>Grade</th><th style={thL}>System</th>
                 <th style={thR}>Net P&amp;L</th><th style={thR}>Calmar</th><th style={thR}>MaxDD</th>
-                <th style={thR}>Win</th><th style={thR}>N</th><th style={thL}>Period</th><th style={thL}>Confidence</th>
+                <th style={thR}>Win</th><th style={thR}>N</th><th style={thL}>Period</th><th style={thR}>Corr·book</th><th style={thL}>Confidence</th>
               </tr></thead>
               <tbody>
                 {ranks.systems.filter((r: any) => lbVenue === 'ALL' || (lbVenue === 'SENSEX' ? r.label.includes('SENSEX') : !r.label.includes('SENSEX'))).map((r: any) => (
@@ -718,6 +718,9 @@ export default function Straddles() {
                     <td style={tdR}>{r.win}%</td>
                     <td style={tdR}>{r.n}</td>
                     <td style={{ ...tdL, whiteSpace: 'nowrap', fontSize: 11, color: C.muted }}>{r.from ? `${dmon(r.from)} → ${dmon(r.to)}` : '—'}</td>
+                    <td style={{ ...tdR, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+                      color: r.corr == null ? C.faint : r.corr <= 0.4 ? C.pos : r.corr <= 0.7 ? C.amber : C.neg }}>
+                      {r.corr == null ? '—' : r.corr.toFixed(2)}</td>
                     <td style={{ ...tdL, color: r.confidence === 'medium' ? C.sec : C.amber }}>{r.confidence}</td>
                   </tr>
                 ))}
