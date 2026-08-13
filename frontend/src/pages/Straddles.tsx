@@ -217,7 +217,7 @@ function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
 }
 
 /* ---------- CSL paper-books curve explorer (full-screen popup: day navigator + by-system wall) ---------- */
-const CSL_BOOK_ORDER = ['CSL_NIFTY', 'CSL_SENSEX', 'NAS_COMB20', 'CSL30F_NIFTY', 'CSL30F_SENSEX'];
+const CSL_BOOK_ORDER = ['CSL_TIMEB_NIFTY', 'CSL_TIMEB_SENSEX', 'NAS_COMB20', 'CSL30F_NIFTY', 'CSL30F_SENSEX'];
 const WD_DTE: Record<string, Record<number, number>> = {
   NIFTY: { 0: 1, 1: 0, 2: 4, 3: 3, 4: 2 }, SENSEX: { 0: 3, 1: 2, 2: 1, 3: 0, 4: 4 },
 };
@@ -229,11 +229,16 @@ const srcChipStyle = (s: string): React.CSSProperties => ({
 });
 const srcName = (s: string) => (s === 'REAL' ? 'LIVE REAL' : s === 'BACKTEST' ? 'BACKTEST' : 'LIVE PAPER');
 
-function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'day' | 'sys'; day0: string; onClose: () => void }) {
+function CslCurvesModal({ recs, mode0, day0, nasBase, onClose }: { recs: any[]; mode0: 'day' | 'sys'; day0: string; nasBase?: any; onClose: () => void }) {
   const [mode, setMode] = useState<'day' | 'sys'>(mode0);
   const [day, setDay] = useState<string>(day0);
-  const [sys, setSys] = useState<string>('CSL_NIFTY');
+  const [sys, setSys] = useState<string>('CSL_TIMEB_NIFTY');
   const [sysDay, setSysDay] = useState<string>('');
+  const [venue, setVenue] = useState<'ALL' | 'NIFTY' | 'SENSEX'>('ALL');
+  const [perLot, setPerLot] = useState(false);
+  const inVenue = (name: string) => venue === 'ALL' || (venue === 'SENSEX' ? name.includes('SENSEX') : !name.includes('SENSEX'));
+  const pv = (r: any, v: number) => (perLot ? Math.round(v / (r.lots || 1)) : v);
+  const scaled = (r: any): [string, number][] => (perLot ? r.series.map((q: any) => [q[0], Math.round(q[1] / (r.lots || 1))]) : r.series);
   const days = useMemo(() => Array.from(new Set(recs.map((r) => r.day))).sort(), [recs]);
   const sysRecs = useMemo(() => recs.filter((r) => (r.book || r.sym) === sys).sort((a: any, b: any) => a.day.localeCompare(b.day)), [recs, sys]);
   const sysDays = sysRecs.map((r: any) => r.day);
@@ -247,6 +252,9 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
       if (j >= 0 && j < sysDays.length) setSysDay(sysDays[j]);
     }
   };
+  useEffect(() => {
+    if (!inVenue(sys)) { const t = CSL_BOOK_ORDER.filter(inVenue)[0]; if (t) { setSys(t); setSysDay(''); } }
+  }, [venue]);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1); }
@@ -263,6 +271,22 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
   const sysRec = sysRecs.find((r: any) => r.day === selSysDay);
   const symOf = sys.includes('SENSEX') ? 'SENSEX' : 'NIFTY';
   const wdName = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+  const baseRow = (d2: string) => {
+    const rows = ((nasBase?.days || {})[d2] || []).filter((b: any) => inVenue(b.book));
+    if (!rows.length) return null;
+    return (
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', margin: '0 0 10px' }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: C.sec, letterSpacing: 0.4 }}>NAS BASELINE (live books)</span>
+        {rows.map((b: any) => (
+          <span key={b.book} style={{ fontSize: 11.5, border: `1px solid ${C.hair}`, borderRadius: 6, padding: '2px 8px', color: C.sec, background: C.surface }}>
+            {b.book} <span style={srcChipStyle(b.source === 'PAPER' ? 'PAPER' : 'REAL')}>{b.source === 'PAPER' ? 'PAPER' : 'REAL'}</span>{' '}
+            <b style={{ color: col(b.pnl), fontVariantNumeric: 'tabular-nums' }}>{inr(perLot && b.lots ? Math.round(b.pnl / b.lots) : b.pnl)}</b>
+            <span style={{ color: C.faint }}>{perLot && b.lots ? '/lot' : b.lots ? ` · ${b.lots}L` : ''}</span>
+          </span>
+        ))}
+      </div>
+    );
+  };
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: C.surface, border: `1px solid ${C.hair}`, borderRadius: 12, padding: '14px 18px', width: 'min(1550px, 97vw)', height: '94vh', overflowY: 'auto' }}>
@@ -270,6 +294,10 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
           <span style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: 0.2 }}>Paper-book day curves</span>
           <button style={tabBtn(mode === 'day')} onClick={() => setMode('day')}>By day (all books)</button>
           <button style={tabBtn(mode === 'sys')} onClick={() => setMode('sys')}>By system (all days)</button>
+          <span style={{ display: 'inline-flex', gap: 4, marginLeft: 6 }}>
+            {(['ALL', 'NIFTY', 'SENSEX'] as const).map((v) => <button key={v} style={tabBtn(venue === v)} onClick={() => setVenue(v)}>{v === 'ALL' ? 'Both' : v}</button>)}
+          </span>
+          <button style={tabBtn(perLot)} onClick={() => setPerLot(!perLot)}>₹ / lot</button>
           <span style={{ fontSize: 11, color: C.faint }}>← → arrow keys or on-screen arrows to traverse · Esc to close</span>
           <button onClick={onClose} style={{ ...navBtn, marginLeft: 'auto', color: C.neg }}>✕ close</button>
         </div>
@@ -284,17 +312,18 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
               <button style={navBtn} onClick={() => move(1)} disabled={days.indexOf(day) >= days.length - 1}>▶</button>
               <span style={{ fontSize: 12, color: C.muted }}>{dayRecs.length} book{dayRecs.length !== 1 ? 's' : ''} traded · day {days.indexOf(day) + 1}/{days.length}</span>
             </div>
+            {baseRow(day)}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: 12 }}>
-              {CSL_BOOK_ORDER.filter((bk) => dayRecs.some((r) => (r.book || r.sym) === bk)).map((bk) => {
+              {CSL_BOOK_ORDER.filter((bk) => inVenue(bk) && dayRecs.some((r) => (r.book || r.sym) === bk)).map((bk) => {
                 const r = dayRecs.find((r2) => (r2.book || r2.sym) === bk);
                 return (
                   <div key={bk} style={{ border: `1px solid ${C.hair}`, borderRadius: 8, padding: '8px 10px' }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 4 }}>
                       {bk} <span style={srcChipStyle(r.source || 'BACKTEST')}>{srcName(r.source || 'BACKTEST')}</span>
                       <span style={{ fontSize: 10.5, color: C.faint, fontWeight: 400 }}> · {r.cfg} · {r.lots} lots</span>
-                      <span style={{ float: 'right', color: col(r.pnl ?? r.series[r.series.length - 1][1]) }}>{inr(r.pnl ?? r.series[r.series.length - 1][1])}</span>
+                      <span style={{ float: 'right', color: col(r.pnl ?? r.series[r.series.length - 1][1]), fontVariantNumeric: 'tabular-nums' }}>{inr(pv(r, r.pnl ?? r.series[r.series.length - 1][1]))}{perLot ? '/lot' : ''}</span>
                     </div>
-                    <LineChart pts={r.series} h={200} />
+                    <LineChart pts={scaled(r)} h={200} />
                   </div>
                 );
               })}
@@ -303,7 +332,7 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-              {CSL_BOOK_ORDER.map((bk) => <button key={bk} style={tabBtn(sys === bk)} onClick={() => { setSys(bk); setSysDay(''); }}>{bk}</button>)}
+              {CSL_BOOK_ORDER.filter(inVenue).map((bk) => <button key={bk} style={tabBtn(sys === bk)} onClick={() => { setSys(bk); setSysDay(''); }}>{bk}</button>)}
             </div>
             {sysRec && (
               <div style={{ border: `1px solid ${C.navy}`, borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
@@ -315,15 +344,30 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
                   </span>
                   <button style={navBtn} onClick={() => move(1)} disabled={sysDays.indexOf(selSysDay) >= sysDays.length - 1}>▶</button>
                   <span style={{ fontSize: 11, color: C.muted }}>{sysRec.cfg} · {sysRec.lots} lots · day {sysDays.indexOf(selSysDay) + 1}/{sysDays.length}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 700, color: col(sysRec.pnl) }}>{inr(sysRec.pnl)}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 700, color: col(sysRec.pnl), fontVariantNumeric: 'tabular-nums' }}>{inr(pv(sysRec, sysRec.pnl))}{perLot ? '/lot' : ''}</span>
                 </div>
-                <LineChart pts={sysRec.series} h={280} />
+                <LineChart pts={scaled(sysRec)} h={280} />
               </div>
             )}
+            {baseRow(selSysDay)}
+            {(() => {
+              if (sysRecs.length < 2) return null;
+              let cum = 0;
+              const cpts: [string, number][] = sysRecs.map((r: any) => { cum += pv(r, r.pnl || 0); return [dmon2(r.day), Math.round(cum)]; });
+              return (
+                <div style={{ border: `1px solid ${C.hair}`, borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, marginBottom: 4 }}>
+                    Cumulative P&L — {sys} · all {sysRecs.length} days{perLot ? ' · per lot' : ''}
+                    <span style={{ float: 'right', color: col(cum), fontVariantNumeric: 'tabular-nums' }}>{inr(cum)}</span>
+                  </div>
+                  <LineChart pts={cpts} h={160} />
+                </div>
+              );
+            })()}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
               {[0, 1, 2, 3, 4].map((w) => {
                 const colRecs = sysRecs.filter((r: any) => new Date(r.day + 'T00:00:00').getDay() - 1 === w).slice().reverse();
-                const net = colRecs.reduce((a: number, r: any) => a + (r.pnl || 0), 0);
+                const net = colRecs.reduce((a: number, r: any) => a + pv(r, r.pnl || 0), 0);
                 return (
                   <div key={w}>
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: `2px solid ${C.navy}`, paddingBottom: 5, marginBottom: 8 }}>
@@ -340,9 +384,9 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
                             <span style={{ fontSize: 11.5, color: C.ink, fontWeight: 700, letterSpacing: 0.2 }}>
                               {dmon2(r.day)}{r.source && r.source !== 'BACKTEST' && <span style={{ ...srcChipStyle(r.source), marginLeft: 5 }}>{r.source}</span>}
                             </span>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: col(r.pnl), fontVariantNumeric: 'tabular-nums' }}>{inr(r.pnl)}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: col(r.pnl), fontVariantNumeric: 'tabular-nums' }}>{inr(pv(r, r.pnl))}{perLot ? '/lot' : ''}</span>
                           </div>
-                          <LineChart pts={r.series} h={80} />
+                          <LineChart pts={scaled(r)} h={80} />
                         </div>
                       ))}
                     </div>
@@ -433,6 +477,9 @@ export default function Straddles() {
   const [cslPBig, setCslPBig] = useState<string | null>(null); // expanded book curve
   const [cslPBF, setCslPBF] = useState<any>(null);   // backfilled BACKTEST day curves (recorded chain replay)
   const [cslPModal, setCslPModal] = useState<null | 'day' | 'sys'>(null); // full-screen curve explorer
+  const [cslPVenue, setCslPVenue] = useState<'ALL' | 'NIFTY' | 'SENSEX'>('ALL'); // inline grid venue filter
+  const [lbVenue, setLbVenue] = useState<'ALL' | 'NIFTY' | 'SENSEX'>('ALL');     // leaderboard venue filter
+  const [nasBase, setNasBase] = useState<any>(null);  // NAS live-book day P&L baseline
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -446,6 +493,7 @@ export default function Straddles() {
     fetch('/app/csl_paper.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaper).catch(() => {});
     fetch('/app/csl_paper_config.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaperCfg).catch(() => {});
     fetch('/app/csl_paper_backfill.json?t=' + Date.now()).then((r) => r.json()).then(setCslPBF).catch(() => {});
+    fetch('/app/nas_baseline.json?t=' + Date.now()).then((r) => r.json()).then(setNasBase).catch(() => {});
     const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
     loadPLive(); const pl = setInterval(loadPLive, 60000);
     const loadLive = () => {
@@ -632,6 +680,12 @@ export default function Straddles() {
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Strategy Leaderboard</span>
             <span style={{ fontSize: 11, color: C.faint }}>rated by risk-adjusted return (Calmar) · updated {ranks.generated_at} · {ranks.cadence}</span>
+            <span style={{ display: 'inline-flex', gap: 4 }}>
+              {(['ALL', 'NIFTY', 'SENSEX'] as const).map((v) => (
+                <button key={v} onClick={() => setLbVenue(v)}
+                  style={{ border: `1px solid ${lbVenue === v ? C.navy : C.hair}`, background: lbVenue === v ? C.navySoft : 'transparent', color: lbVenue === v ? C.navy : C.sec, borderRadius: 6, padding: '1px 8px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer' }}>{v === 'ALL' ? 'Both' : v}</button>
+              ))}
+            </span>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -641,7 +695,7 @@ export default function Straddles() {
                 <th style={thR}>Win</th><th style={thR}>N</th><th style={thL}>Period</th><th style={thL}>Confidence</th>
               </tr></thead>
               <tbody>
-                {ranks.systems.map((r: any) => (
+                {ranks.systems.filter((r: any) => lbVenue === 'ALL' || (lbVenue === 'SENSEX' ? r.label.includes('SENSEX') : !r.label.includes('SENSEX'))).map((r: any) => (
                   <tr key={r.label}>
                     <td style={tdL}>{r.rank}</td>
                     <td style={tdL}>{gradeBadge(r.grade)}</td>
@@ -739,8 +793,8 @@ export default function Straddles() {
           <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C.navy }}>System rules — the 5 paper books (click to expand)</summary>
           <div style={{ fontSize: 11.5, color: C.sec, marginTop: 6, lineHeight: 1.7 }}>
             <div><b>Common mechanic (all 5):</b> sell 1× ATM straddle (strike from live spot at the entry moment, nearest weekly expiry) · combined premium polled ~every 5s · <b>combined-premium SL</b> = exit when CE+PE ≥ (1+SL%)×entry credit on <b>2 consecutive polls</b> (dwell), market exit at the next poll · otherwise hold to the config's exit time (15:26 hard force) · “SL ∅” books still carry a <b>50% disaster backstop</b> · entry skipped if the process starts &gt;15 min late · ₹160/day cost modeled.</div>
-            <div style={{ marginTop: 6 }}><b>CSL_NIFTY (12 lots · qty 780):</b> the <b>optimized time-blocked book (TB-CSL)</b> — per-DTE entry→exit windows + SL from the Lab sweep, <b>frozen 13-AUG</b> (schedule above; weekly Lab regens do NOT move it). 2-unit weight per the portfolio scan.</div>
-            <div><b>CSL_SENSEX (6 lots · qty 120):</b> same TB-CSL frozen schedule on SENSEX, 1-unit weight (optimizer proportion NIFTY 2u : SENSEX 1u).</div>
+            <div style={{ marginTop: 6 }}><b>CSL_TIMEB_NIFTY (12 lots · qty 780):</b> the <b>optimized time-blocked book (TB-CSL)</b> — per-DTE entry→exit windows + SL from the Lab sweep, <b>frozen 13-AUG</b> (schedule above; weekly Lab regens do NOT move it). 2-unit weight per the portfolio scan.</div>
+            <div><b>CSL_TIMEB_SENSEX (6 lots · qty 120):</b> same TB-CSL frozen schedule on SENSEX, 1-unit weight (optimizer proportion NIFTY 2u : SENSEX 1u).</div>
             <div><b>NAS_COMB20 (3 lots · qty 195 · NIFTY):</b> A/B twin of the live nas_916_atm — same 09:16→15:20 full-day venue, but a <b>combined-premium 20% SL</b> replaces NAS's per-leg SLs + trail. Live test of “combined beats per-leg”.</div>
             <div><b>CSL30F_NIFTY (3 lots · qty 195):</b> <b>F = FIXED</b> — the flat un-windowed rule: 09:16→15:20 every day, combined <b>30% SL</b>, no per-DTE windows. Control arm for “do the time-blocks add value over plain CSL30?”.</div>
             <div><b>CSL30F_SENSEX (3 lots · qty 60):</b> the same fixed CSL30 rule on SENSEX.</div>
@@ -769,7 +823,8 @@ export default function Straddles() {
           });
           if (!curves.length) return null;
           curves.sort((a, b) => a.bk.localeCompare(b.bk));
-          const big = curves.find((c2) => c2.bk === cslPBig);
+          const shown = curves.filter((c2) => cslPVenue === 'ALL' || (cslPVenue === 'SENSEX' ? c2.bk.includes('SENSEX') : !c2.bk.includes('SENSEX')));
+          const big = shown.find((c2) => c2.bk === cslPBig);
           const rng = (rs: any[]) => { const ds = Array.from(new Set(rs.map((r) => r.day))).sort(); return ds.length ? `${ds.length}d ${ds[0].slice(5)}→${ds[ds.length - 1].slice(5)}` : null; };
           const bfR = rng(bfRecs); const lpR = rng(liveRecs.filter((r) => r.source !== 'REAL')); const rlR = rng(liveRecs.filter((r) => r.source === 'REAL'));
           return (
@@ -788,6 +843,10 @@ export default function Straddles() {
                   style={{ border: `1px solid ${C.navy}`, background: C.navySoft, color: C.navy, borderRadius: 6, padding: '2px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>⤢ day navigator</button>
                 <button onClick={() => setCslPModal('sys')}
                   style={{ border: `1px solid ${C.navy}`, background: C.navySoft, color: C.navy, borderRadius: 6, padding: '2px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>🗓 by system — all days</button>
+                {(['ALL', 'NIFTY', 'SENSEX'] as const).map((v) => (
+                  <button key={v} onClick={() => setCslPVenue(v)}
+                    style={{ border: `1px solid ${cslPVenue === v ? C.navy : C.hair}`, background: cslPVenue === v ? C.navySoft : 'transparent', color: cslPVenue === v ? C.navy : C.sec, borderRadius: 6, padding: '1px 8px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer' }}>{v === 'ALL' ? 'Both' : v}</button>
+                ))}
                 <span style={{ fontSize: 10.5, color: C.faint }}>~60s samples · click a curve to expand/collapse · ← → in popup</span>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8, fontSize: 10 }}>
@@ -800,7 +859,7 @@ export default function Straddles() {
                 <LineChart pts={big.pts} h={260} label={`${big.bk} · ${selDay} · ${big.live ? 'LIVE (open)' : srcLbl(big.src)} — expanded (click tile to collapse)`} />
               </div>}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-                {curves.map((c2) => (
+                {shown.map((c2) => (
                   <div key={c2.bk} onClick={() => setCslPBig(cslPBig === c2.bk ? null : c2.bk)}
                     style={{ border: `1px solid ${cslPBig === c2.bk ? C.navy : C.hair}`, borderRadius: 8, padding: '6px 8px', cursor: 'pointer' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>
@@ -813,7 +872,7 @@ export default function Straddles() {
                   </div>
                 ))}
               </div>
-              {cslPModal && <CslCurvesModal recs={[...liveRecs, ...bfRecs]} mode0={cslPModal} day0={selDay} onClose={() => setCslPModal(null)} />}
+              {cslPModal && <CslCurvesModal recs={[...liveRecs, ...bfRecs]} mode0={cslPModal} day0={selDay} nasBase={nasBase} onClose={() => setCslPModal(null)} />}
             </div>
           );
         })()}

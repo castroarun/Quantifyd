@@ -129,3 +129,24 @@ at the ~mid-Sep checkpoint.
   edge (corr +0.06/+0.15); NIFTY narrow-CPR win-rate tilt (83% vs 62%) on watch-list only.
   S/R-level interaction study deferred - data does not currently justify it.
 
+
+
+---
+
+## 14. Post-CSL management arms (2026-08-13 evening) — STATUS: RUNNING
+
+**What you asked:** on NAS_COMB20, once the combined-SL triggers there is no trail — test
+(a) closing only the hit side and TRAILING the surviving leg (ATM-style), and (b) SHIFTING
+the straddle to the new ATM on CSL hit (ATM4-style rollout). Add as NEW versions, don't replace.
+
+**Base:** NIFTY 09:16->15:20, combined-premium 20% SL, 2-snap dwell, 3 lots (qty 195),
+raw ~3-sec chain, Rs160/cycle. Arms: BASE (close both, done) / TRAIL (close loser leg,
+winner trailed: exit on >=30% bounce off its post-trigger low, dwell-2) / SHIFT (close both,
+re-sell new ATM straddle, own 20% CSL, max 3 shifts/day, no new entry after 14:30).
+
+**Plan:** replay all ~80 recorded NIFTY days -> results/csl_mgmt_replay.json; if an arm
+beats BASE on ratio with sane DD, deploy as new paper books (NAS_C20_TRAIL / NAS_C20_SHIFT).
+Runner: scripts/csl_mgmt_replay.py -> /tmp/csl_mgmt.log. Also this evening: books renamed
+CSL_NIFTY->CSL_TIMEB_NIFTY, CSL_SENSEX->CSL_TIMEB_SENSEX (config/state/backfill migrated).
+
+| 2026-08-13 20:0x IST | RE-FREEZE: books renamed CSL_*->CSL_TIMEB_*; all SL 'none' cells -> SL30 (user: never run stopless) | config migrated in place; backfill history re-syncs at next 15:40 regen |

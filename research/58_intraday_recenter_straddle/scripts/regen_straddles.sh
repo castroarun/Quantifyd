@@ -22,3 +22,4 @@ PYTHONPATH=. ./venv/bin/python $S/scripts/strategy_rankings.py >/dev/null 2>&1
 ./venv/bin/python $S/scripts/sl30_journeys.py >/dev/null 2>&1
 echo "$(date "+%F %T") regenerated v1_daily + v1 + v2 + variants + rankings + sl30"
 cd /home/arun/quantifyd && venv/bin/python3 research/111_sensex_manual_mgmt/scripts/csl_paper_backfill.py >> /tmp/csl_backfill.log 2>&1
+cd /home/arun/quantifyd && venv/bin/python3 research/111_sensex_manual_mgmt/scripts/nas_baseline.py >> /tmp/nas_baseline.log 2>&1
