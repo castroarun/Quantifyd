@@ -281,6 +281,9 @@ export default function Straddles() {
   const [cslCfg, setCslCfg] = useState<any>(null);   // research/111 best-config lab (weekly regen)
   const [cslIdx, setCslIdx] = useState<'NIFTY' | 'SENSEX'>('NIFTY');
   const [cslDte, setCslDte] = useState<string>('all');
+  const [csl2nd, setCsl2nd] = useState(false);       // stack the next-best non-overlapping slot
+  const [cslPaper, setCslPaper] = useState<any>(null);     // live paper book state
+  const [cslPaperCfg, setCslPaperCfg] = useState<any>(null); // frozen config
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -291,6 +294,8 @@ export default function Straddles() {
     fetch('/app/straddles/rankings.json?t=' + Date.now()).then((r) => r.json()).then(setRanks).catch(() => {});
     fetch('/app/straddles/variants.json?t=' + Date.now()).then((r) => r.json()).then(setVariants).catch(() => {});
     fetch('/app/straddles/csl_best_configs.json?t=' + Date.now()).then((r) => r.json()).then(setCslCfg).catch(() => {});
+    fetch('/app/csl_paper.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaper).catch(() => {});
+    fetch('/app/csl_paper_config.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaperCfg).catch(() => {});
     const loadLive = () => {
       fetch('/app/straddles_live.json?t=' + Date.now()).then((r) => r.json()).then(setLive).catch(() => {});
       fetch('/api/v2-ironfly/state?t=' + Date.now()).then((r) => r.json()).then(setV2eng).catch(() => {});
@@ -507,6 +512,49 @@ export default function Straddles() {
         </section>
       )}
 
+      <section id="csl-paper" style={{ ...card, marginTop: 14, borderColor: C.pos, scrollMarginTop: 70 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>CSL Paper Books</span>
+          {chip('#E7F2EE', C.pos, 'PAPER · NIFTY 12 lots + SENSEX 6 lots')}
+          {chip(C.navySoft, C.navy, 'frozen config' + (cslPaperCfg ? ' · ' + String(cslPaperCfg.frozen_at || '').slice(0, 10) : ''))}
+          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700 }}>
+            {cslPaper ? <>NIFTY <span style={{ color: col(cslPaper.cum?.NIFTY || 0) }}>{inr(cslPaper.cum?.NIFTY || 0)}</span> · SENSEX <span style={{ color: col(cslPaper.cum?.SENSEX || 0) }}>{inr(cslPaper.cum?.SENSEX || 0)}</span></> : <span style={{ color: C.muted }}>no trades yet</span>}
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+          Out-of-sample validation of the Lab's best configs (frozen 13-AUG-26; weekly Lab drift does NOT move this book) ·
+          entries/exits per frozen schedule · combined-SL, 5s polling, 2-poll dwell, market exit next poll · 'none'-SL days carry a 50% disaster backstop · runs 09:12 via cron, first trading day 14-AUG-26.
+        </div>
+        {cslPaperCfg && (
+          <div style={{ overflowX: 'auto', marginBottom: 8 }}>
+            <table style={{ borderCollapse: 'collapse', fontSize: 11.5 }}>
+              <thead><tr><th style={thL}>Book</th>{[0, 1, 2, 3, 4].map((k) => <th key={k} style={thL}>DTE{k}</th>)}</tr></thead>
+              <tbody>{Object.keys(cslPaperCfg.books || {}).map((sym) => (
+                <tr key={sym}><td style={{ ...tdL, fontWeight: 700 }}>{sym}</td>
+                  {[0, 1, 2, 3, 4].map((k) => { const c2 = cslPaperCfg.books[sym][String(k)];
+                    return <td key={k} style={tdL}>{c2 ? `${c2.entry}→${c2.exit} SL${c2.sl === 'none' ? '∅' : c2.sl}` : '—'}</td>; })}
+                </tr>))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {cslPaper && (cslPaper.records || []).length > 0 ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><th style={thL}>Day</th><th style={thL}>Book</th><th style={thL}>Cfg</th><th style={thR}>Strike</th><th style={thR}>Credit</th><th style={thR}>Exit</th><th style={thL}>Reason</th><th style={thR}>P&amp;L</th><th style={thR}>Lots</th></tr></thead>
+              <tbody>{cslPaper.records.slice().reverse().map((r: any, i: number) => (
+                <tr key={i}><td style={tdL}>{r.day}</td><td style={tdL}>{r.sym} D{r.dte}</td><td style={tdL}>{r.cfg}</td>
+                  <td style={tdR}>{r.strike}</td><td style={tdR}>{r.credit}</td><td style={tdR}>{r.exit_comb} <span style={{ color: C.faint }}>@{String(r.exit_ts || '').slice(0, 5)}</span></td>
+                  <td style={{ ...tdL, color: String(r.reason).startsWith('SL') ? C.neg : C.muted }}>{r.reason}</td>
+                  <td style={{ ...tdR, fontWeight: 700, color: col(r.pnl) }}>{inr(r.pnl)}</td><td style={tdR}>{r.lots}</td></tr>))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: C.faint }}>No completed paper trades yet — first entries fire Friday 14-AUG (NIFTY 10:00→12:00 · SENSEX 10:30→12:00). Records appear here automatically.</div>
+        )}
+      </section>
+
       {!cslCfg && (
         <section id="csl-lab" style={{ ...card, marginTop: 14, borderColor: C.navy }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -527,10 +575,20 @@ export default function Straddles() {
         const b = cslCfg.best[cslIdx] || {};
         const dtes = Object.keys(b).sort();
         const use = cslDte === 'all' ? dtes : dtes.filter((k) => k === cslDte);
+        // next-best NON-OVERLAPPING second slot for the selected DTE (quality-gated)
+        const second = (cslDte !== 'all' && b[cslDte]) ? ((cslCfg.cells || [])
+          .filter((c: any) => c.sym === cslIdx && String(c.dte) === cslDte && c.n >= 8 && c.total > 0 &&
+            (c.ratio ?? 0) >= 1.5 && c.series &&
+            (c.entry >= b[cslDte].exit || c.exit <= b[cslDte].entry))
+          .sort((a: any, z: any) => (z.ratio ?? -9) - (a.ratio ?? -9))[0] || null) : null;
         const daily: Record<string, number> = {};
         use.forEach((k) => (b[k]?.series || []).forEach(([d, v]: any) => { daily[d] = (daily[d] || 0) + v; }));
-        let cum = 0;
-        const pts: [string, number][] = Object.keys(daily).sort().map((d) => { cum += daily[d]; return [d, cum]; });
+        if (csl2nd && second) second.series.forEach(([d, v]: any) => { daily[d] = (daily[d] || 0) + v; });
+        let cum = 0, peak = 0, shownDD = 0;
+        const pts: [string, number][] = [], ddPts: [string, number][] = [];
+        Object.keys(daily).sort().forEach((d) => { cum += daily[d]; peak = Math.max(peak, cum);
+          shownDD = Math.min(shownDD, cum - peak); pts.push([d, cum]); ddPts.push([d, Math.round(cum - peak)]); });
+        const shownTotal = Math.round(cum);
         const mi = (cslCfg.meta || {})[cslIdx] || {};
         const alts = cslDte === 'all' ? [] : (cslCfg.cells || [])
           .filter((c: any) => c.sym === cslIdx && String(c.dte) === cslDte && c.n >= 8)
@@ -575,8 +633,18 @@ export default function Straddles() {
                 </tbody>
               </table>
             </div>
+            {second && (
+              <div style={{ margin: '4px 0 8px' }}>
+                <button onClick={() => setCsl2nd(!csl2nd)} style={btn(csl2nd, C.pos)}>
+                  {csl2nd ? '✓ ' : '+ '}2nd slot: {second.entry} → {second.exit} SL{second.sl === 'none' ? 'none' : second.sl + '%'}
+                  {'  '}({inr(second.total)} · win {second.win}% · DD {inr(second.maxdd)} · r{second.ratio})
+                </button>
+              </div>
+            )}
             {pts.length >= 2 && <LineChart pts={pts} h={150}
-              label={`cumulative P&L — ${cslIdx} ${cslDte === 'all' ? 'best-config book (all DTEs)' : 'DTE' + cslDte + ' best config'} · ${(cslCfg.meta || {})[cslIdx]?.lots} lots`} />}
+              label={`cumulative P&L — ${cslIdx} ${cslDte === 'all' ? 'best-config book (all DTEs)' : 'DTE' + cslDte + (csl2nd && second ? ' best + 2nd slot' : ' best config')} · ${(cslCfg.meta || {})[cslIdx]?.lots} lots · shown total ${inr(shownTotal)} · maxDD ${inr(shownDD)}`} />}
+            {ddPts.length >= 2 && <LineChart pts={ddPts} h={90}
+              label={`drawdown — same selection · trough ${inr(shownDD)}`} />}
             {alts.length > 0 && (
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
                 <thead><tr><th style={thL}>Alternative configs (DTE{cslDte})</th><th style={thL}>SL</th>

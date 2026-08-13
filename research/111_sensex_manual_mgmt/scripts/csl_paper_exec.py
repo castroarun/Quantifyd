@@ -1,0 +1,161 @@
+"""CSL PAPER BOOKS (research/111) — NIFTY @12 lots (2u) + SENSEX @6 lots (1u).
+Trades the FROZEN best-config schedule (backtest_data/csl_paper_config.json — snapshotted
+once from the Lab JSON; weekly Lab regen does NOT move this book's rules) as live PAPER:
+  - per index: today's trading-DTE (weekday map) -> config (entry, exit, SL)
+  - at entry: sell ATM straddle (strike from live spot), record entry premiums
+  - poll ~5s: combined-SL with 2-consecutive-poll dwell -> exit at next poll (market model)
+  - SL 'none' books carry a 50% DISASTER BACKSTOP (never truly stopless live)
+  - at exit time (or 15:25 hard stop): close at market ltp
+State: backtest_data/csl_paper_state.json (append per day) + copy to static/app/csl_paper.json.
+Launched by cron 09:12 Mon-Fri; standalone (no Flask/gunicorn involvement)."""
+import json, os, sys, time
+from datetime import datetime, date
+
+Q = "/home/arun/quantifyd"
+sys.path.insert(0, Q)
+CONFIG = Q + "/backtest_data/csl_paper_config.json"
+STATE = Q + "/backtest_data/csl_paper_state.json"
+PUB = Q + "/static/app/csl_paper.json"
+BOOKS = {"NIFTY": {"units": 2, "lots": 12, "lot": 65, "qty": 780, "step": 50,
+                    "spot_key": "NSE:NIFTY 50", "seg": "NFO", "wd2dte": {0: 1, 1: 0, 2: 4, 3: 3, 4: 2}},
+         "SENSEX": {"units": 1, "lots": 6, "lot": 20, "qty": 120, "step": 100,
+                    "spot_key": "BSE:SENSEX", "seg": "BFO", "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}}
+BACKSTOP = 0.50   # for SL 'none' configs
+POLL = 5          # seconds
+
+def log(m): print("[%s] %s" % (datetime.now().strftime("%H:%M:%S"), m), flush=True)
+
+def freeze_config():
+    if os.path.exists(CONFIG): return json.load(open(CONFIG))
+    lab = json.load(open(Q + "/static/app/straddles/csl_best_configs.json"))
+    cfg = {"frozen_at": datetime.now().isoformat()[:16], "source_generated_at": lab.get("generated_at"),
+           "note": "FROZEN for out-of-sample paper validation; re-freeze consciously, never silently.",
+           "books": {}}
+    for sym in BOOKS:
+        cfg["books"][sym] = {k: {kk: b[kk] for kk in ("entry", "exit", "sl")}
+                             for k, b in lab["best"][sym].items()}
+    json.dump(cfg, open(CONFIG, "w"), indent=1)
+    log("config FROZEN from Lab (%s)" % cfg["source_generated_at"])
+    return cfg
+
+def kite():
+    from kiteconnect import KiteConnect
+    tok = json.load(open(Q + "/backtest_data/access_token.json"))
+    try:
+        from config import KITE_API_KEY as AK
+    except Exception:
+        AK = tok.get("api_key")
+    k = KiteConnect(api_key=AK); k.set_access_token(tok["access_token"])
+    return k
+
+def load_state():
+    try: return json.load(open(STATE))
+    except Exception: return {"records": [], "cum": {"NIFTY": 0, "SENSEX": 0}}
+
+def save_state(st):
+    json.dump(st, open(STATE, "w"))
+    try: json.dump(st, open(PUB, "w"))
+    except Exception: pass
+
+def resolve_legs(k, sym, strike):
+    seg = BOOKS[sym]["seg"]
+    ins = resolve_legs.cache.get(seg)
+    if ins is None:
+        ins = [i for i in k.instruments(seg) if i["name"] == sym and i["instrument_type"] in ("CE", "PE")]
+        resolve_legs.cache[seg] = ins
+    today = date.today()
+    exps = sorted({i["expiry"] for i in ins if i["expiry"] >= today})
+    if not exps: return None, None, None
+    E = exps[0]
+    ce = next((i for i in ins if i["expiry"] == E and i["strike"] == strike and i["instrument_type"] == "CE"), None)
+    pe = next((i for i in ins if i["expiry"] == E and i["strike"] == strike and i["instrument_type"] == "PE"), None)
+    return ce, pe, E
+resolve_legs.cache = {}
+
+def main():
+    probe = "--probe" in sys.argv
+    cfg = freeze_config()
+    k = kite()
+    st = load_state()
+    today = date.today().isoformat()
+    wd = date.today().weekday()
+    if wd > 4: return
+    plans = {}
+    for sym, B in BOOKS.items():
+        dte = B["wd2dte"].get(wd)
+        c = cfg["books"][sym].get(str(dte))
+        if not c:
+            log("%s: no config for DTE%s — skip today" % (sym, dte)); continue
+        if any(r["day"] == today and r["sym"] == sym for r in st["records"]):
+            log("%s: already recorded today — skip" % sym); continue
+        plans[sym] = {"dte": dte, **c, "state": "WAIT_ENTRY", "K": None, "legs": None,
+                      "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None}
+        log("%s plan: DTE%d %s->%s SL%s qty %d (%d lots)" % (sym, dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
+    if probe:
+        for sym in plans:
+            sp = k.ltp([BOOKS[sym]["spot_key"]])[BOOKS[sym]["spot_key"]]["last_price"]
+            K = round(sp / BOOKS[sym]["step"]) * BOOKS[sym]["step"]
+            ce, pe, E = resolve_legs(k, sym, K)
+            log("PROBE %s spot %.0f ATM %d exp %s CE %s PE %s" % (
+                sym, sp, K, E, ce and ce["tradingsymbol"], pe and pe["tradingsymbol"]))
+        return
+    while plans:
+        now = datetime.now().strftime("%H:%M")
+        if now >= "15:26": now_force = True
+        else: now_force = False
+        for sym in list(plans):
+            P = plans[sym]; B = BOOKS[sym]
+            try:
+                if P["state"] == "WAIT_ENTRY":
+                    em = int(P["entry"][:2]) * 60 + int(P["entry"][3:5])
+                    nm = int(now[:2]) * 60 + int(now[3:5])
+                    if nm > em + 15:
+                        log("%s: entry window stale (now %s > %s+15m) — skip day" % (sym, now, P["entry"]))
+                        del plans[sym]; continue
+                    if now >= P["entry"]:
+                        sp = k.ltp([B["spot_key"]])[B["spot_key"]]["last_price"]
+                        K = round(sp / B["step"]) * B["step"]
+                        ce, pe, E = resolve_legs(k, sym, K)
+                        if not (ce and pe):
+                            log("%s: legs unresolved — abort today" % sym); del plans[sym]; continue
+                        q = k.ltp(["%s:%s" % (B["seg"], ce["tradingsymbol"]), "%s:%s" % (B["seg"], pe["tradingsymbol"])])
+                        P["ce0"] = q["%s:%s" % (B["seg"], ce["tradingsymbol"])]["last_price"]
+                        P["pe0"] = q["%s:%s" % (B["seg"], pe["tradingsymbol"])]["last_price"]
+                        P.update(K=K, legs=(ce["tradingsymbol"], pe["tradingsymbol"]), state="OPEN",
+                                 credit=P["ce0"] + P["pe0"], entry_ts=datetime.now().strftime("%H:%M:%S"), expiry=str(E))
+                        log("%s ENTER K=%d credit %.2f (%s+%s)" % (sym, K, P["credit"], P["ce0"], P["pe0"]))
+                elif P["state"] == "OPEN":
+                    ce_s, pe_s = P["legs"]
+                    q = k.ltp(["%s:%s" % (B["seg"], ce_s), "%s:%s" % (B["seg"], pe_s)])
+                    comb = q["%s:%s" % (B["seg"], ce_s)]["last_price"] + q["%s:%s" % (B["seg"], pe_s)]["last_price"]
+                    sl = BACKSTOP if P["sl"] == "none" else P["sl"] / 100.0
+                    thr = (1 + sl) * P["credit"]
+                    reason = None
+                    if P["last_comb"] is not None and P["streak"] >= 2:
+                        reason = "SL_DWELL"          # dwell confirmed on prior polls -> exit THIS poll
+                    if comb >= thr: P["streak"] += 1
+                    else: P["streak"] = 0
+                    P["last_comb"] = comb
+                    if now >= P["exit"]: reason = reason or "TIME_EXIT"
+                    if now_force: reason = reason or "EOD_FORCE"
+                    if reason:
+                        pnl = round((P["credit"] - comb) * B["qty"] - 160)
+                        rec = {"day": today, "sym": sym, "dte": P["dte"], "cfg": "%s->%s SL%s" % (P["entry"], P["exit"], P["sl"]),
+                               "strike": P["K"], "expiry": P["expiry"], "credit": round(P["credit"], 2),
+                               "entry_ts": P["entry_ts"], "exit_ts": datetime.now().strftime("%H:%M:%S"),
+                               "exit_comb": round(comb, 2), "reason": reason, "pnl": pnl,
+                               "lots": B["lots"], "qty": B["qty"]}
+                        st["records"].append(rec)
+                        st["cum"][sym] = st["cum"].get(sym, 0) + pnl
+                        save_state(st)
+                        log("%s EXIT %s pnl %+d (cum %+d)" % (sym, reason, pnl, st["cum"][sym]))
+                        del plans[sym]
+            except Exception as ex:
+                log("%s poll err: %s" % (sym, str(ex)[:80]))
+        time.sleep(POLL)
+        if datetime.now().strftime("%H:%M") >= "15:30" and not any(p["state"] == "OPEN" for p in plans.values()):
+            break
+    log("day done")
+
+if __name__ == "__main__":
+    main()

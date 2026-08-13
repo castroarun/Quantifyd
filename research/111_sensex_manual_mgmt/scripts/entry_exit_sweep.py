@@ -110,7 +110,8 @@ for (SYM, k, ent_t, ex_t, sl), fp in grid.items():
     fp = sorted(fp)
     a = agg([v for _, v in fp])
     cell = {"sym": SYM, "dte": k, "entry": ent_t, "exit": ex_t,
-            "sl": ("none" if sl == 999 else sl), **a}
+            "sl": ("none" if sl == 999 else sl), **a,
+            "series": [[d, v] for d, v in fp]}   # per-cell daily series -> page can stack slots
     out["cells"].append(cell)
     series_map[(SYM, k, ent_t, ex_t, sl)] = fp
 # best config per (sym,dte) by ratio among n>=8, WITH its daily P&L series (for page curves)
