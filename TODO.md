@@ -16,6 +16,8 @@ goal ruled out for price/indicator signals; route ambition via multi-day books +
 ORB revival decision (still pending above) + NAS. OOS 2024+ untouched.
 
 ## 2026-08-09 — research/89 ORB reassessment CONCLUDED — revival decision PENDING (Arun)
+
+- **DEPLOY THE STACK (NIFTY, 2 lots/system = 10L, ex-Wed)** - LIVE suite 3->2 lots (config.py, post-close restart) + NAS_COMB20/CSL_TIMEB_NIFTY resize to 2L + DTE4 gate. FULL INSTRUCTIONS: docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md (written 2026-08-13; execute in a session with build context).
 Verdict: live intraday build was the failure (never validated, negative every era);
 multi-day gap-ORB long alive (+16-22bps/trade 2024-26, IN-SAMPLE — OOS consumed).
 Best never-died config: 90-min OR, gap>=0.4%, 4-day hold, long, NIFTY>50DMA gate.
