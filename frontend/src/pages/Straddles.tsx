@@ -267,7 +267,7 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: C.surface, border: `1px solid ${C.hair}`, borderRadius: 12, padding: '14px 18px', width: 'min(1550px, 97vw)', height: '94vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Paper-book day curves</span>
+          <span style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: 0.2 }}>Paper-book day curves</span>
           <button style={tabBtn(mode === 'day')} onClick={() => setMode('day')}>By day (all books)</button>
           <button style={tabBtn(mode === 'sys')} onClick={() => setMode('sys')}>By system (all days)</button>
           <span style={{ fontSize: 11, color: C.faint }}>← → arrow keys or on-screen arrows to traverse · Esc to close</span>
@@ -294,7 +294,7 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
                       <span style={{ fontSize: 10.5, color: C.faint, fontWeight: 400 }}> · {r.cfg} · {r.lots} lots</span>
                       <span style={{ float: 'right', color: col(r.pnl ?? r.series[r.series.length - 1][1]) }}>{inr(r.pnl ?? r.series[r.series.length - 1][1])}</span>
                     </div>
-                    <LineChart pts={r.series} h={170} />
+                    <LineChart pts={r.series} h={200} />
                   </div>
                 );
               })}
@@ -317,28 +317,32 @@ function CslCurvesModal({ recs, mode0, day0, onClose }: { recs: any[]; mode0: 'd
                   <span style={{ fontSize: 11, color: C.muted }}>{sysRec.cfg} · {sysRec.lots} lots · day {sysDays.indexOf(selSysDay) + 1}/{sysDays.length}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 700, color: col(sysRec.pnl) }}>{inr(sysRec.pnl)}</span>
                 </div>
-                <LineChart pts={sysRec.series} h={230} />
+                <LineChart pts={sysRec.series} h={280} />
               </div>
             )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
               {[0, 1, 2, 3, 4].map((w) => {
-                const colRecs = sysRecs.filter((r: any) => new Date(r.day + 'T00:00:00').getDay() - 1 === w);
+                const colRecs = sysRecs.filter((r: any) => new Date(r.day + 'T00:00:00').getDay() - 1 === w).slice().reverse();
                 const net = colRecs.reduce((a: number, r: any) => a + (r.pnl || 0), 0);
                 return (
                   <div key={w}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: C.navy, borderBottom: `2px solid ${C.navySoft}`, paddingBottom: 3, marginBottom: 6 }}>
-                      {wdName[w]} · DTE{WD_DTE[symOf][w]}
-                      <span style={{ float: 'right', color: col(net), fontWeight: 700 }}>{colRecs.length ? inr(net) : '—'}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: `2px solid ${C.navy}`, paddingBottom: 5, marginBottom: 8 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 800, color: C.navy, letterSpacing: 0.4 }}>{wdName[w]} · DTE{WD_DTE[symOf][w]}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: col(net), fontVariantNumeric: 'tabular-nums' }}>{colRecs.length ? inr(net) : '—'}</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ fontSize: 9.5, color: C.faint, textAlign: 'right', margin: '-4px 0 6px' }}>{colRecs.length} day{colRecs.length !== 1 ? 's' : ''} · newest first</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {colRecs.map((r: any) => (
                         <div key={r.day} onClick={() => setSysDay(r.day)}
-                          style={{ border: `1px solid ${r.day === selSysDay ? C.navy : C.hairSoft}`, borderRadius: 6, padding: '3px 6px', cursor: 'pointer', background: r.day === selSysDay ? C.navySoft : 'transparent' }}>
-                          <div style={{ fontSize: 10, color: C.sec, fontWeight: 700 }}>
-                            {dmon2(r.day)}{r.source && r.source !== 'BACKTEST' && <span style={{ ...srcChipStyle(r.source), marginLeft: 4 }}>{r.source}</span>}
-                            <span style={{ float: 'right', color: col(r.pnl) }}>{inr(r.pnl)}</span>
+                          style={{ border: `1px solid ${r.day === selSysDay ? C.navy : C.hair}`, borderRadius: 8, padding: '6px 8px 3px', cursor: 'pointer',
+                            background: r.day === selSysDay ? C.navySoft : C.surface, boxShadow: r.day === selSysDay ? 'none' : '0 1px 2px rgba(0,0,0,0.04)' }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 2 }}>
+                            <span style={{ fontSize: 11.5, color: C.ink, fontWeight: 700, letterSpacing: 0.2 }}>
+                              {dmon2(r.day)}{r.source && r.source !== 'BACKTEST' && <span style={{ ...srcChipStyle(r.source), marginLeft: 5 }}>{r.source}</span>}
+                            </span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: col(r.pnl), fontVariantNumeric: 'tabular-nums' }}>{inr(r.pnl)}</span>
                           </div>
-                          <LineChart pts={r.series} h={44} />
+                          <LineChart pts={r.series} h={80} />
                         </div>
                       ))}
                     </div>
