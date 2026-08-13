@@ -482,6 +482,7 @@ export default function Straddles() {
   const [nasBase, setNasBase] = useState<any>(null);  // NAS live-book day P&L baseline
   const [pfLab, setPfLab] = useState<any>(null);      // options portfolio lab (daily regen)
   const [pfSel, setPfSel] = useState<number | null>(null); // selected lab portfolio row (charts)
+  const [pfDte, setPfDte] = useState<string>('ALL');       // lab charts DTE filter (NIFTY weekday map)
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -717,20 +718,45 @@ export default function Straddles() {
             const selI = pfSel ?? pfLab.portfolios.findIndex((q2: any) => q2.label.startsWith('THE STACK') && q2.scope === 'all');
             const sel = pfLab.portfolios[selI >= 0 ? selI : 0];
             if (!sel || !sel.series || sel.series.length < 2) return null;
-            let cum = 0; let pk = 0;
+            const dteOf = (d2: string) => WD_DTE.NIFTY[new Date(d2 + 'T00:00:00').getDay() - 1];
+            const fser: [string, number][] = pfDte === 'ALL' ? sel.series : sel.series.filter(([d2]: any) => dteOf(d2) === +pfDte);
+            const dteLbl = ['TUE', 'MON', 'FRI', 'THU', 'WED'];
+            const dteSel = (
+              <select value={pfDte} onChange={(e) => setPfDte(e.target.value)}
+                style={{ background: 'transparent', color: C.navy, border: `1px solid ${C.navy}`, borderRadius: 6, padding: '2px 8px', fontSize: 11.5, fontWeight: 700 }}>
+                <option value="ALL">All DTEs</option>
+                {[0, 1, 2, 3, 4].map((k) => <option key={k} value={String(k)}>DTE{k} · {dteLbl[k]}</option>)}
+              </select>);
+            if (fser.length < 2) {
+              return (
+                <div style={{ border: `1px solid ${C.navy}`, borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{sel.label} · {sel.lots}L · {sel.scope}</span>
+                    {dteSel}
+                    <span style={{ fontSize: 12, color: C.faint }}>fewer than 2 days at this DTE in this scope (ex-Wed excludes DTE4)</span>
+                  </div>
+                </div>);
+            }
+            let cum = 0; let pk = 0; let ddm = 0; let wins = 0;
             const cpts: [string, number][] = []; const dpts: [string, number][] = [];
-            sel.series.forEach(([d2, v2]: any) => {
-              cum += v2; pk = Math.max(pk, cum);
+            fser.forEach(([d2, v2]: any) => {
+              cum += v2; pk = Math.max(pk, cum); ddm = Math.min(ddm, cum - pk);
+              if (v2 > 0) wins++;
               cpts.push([dmon(d2), Math.round(cum)]); dpts.push([dmon(d2), Math.round(cum - pk)]);
             });
+            const fTotal = Math.round(cum); const fN = fser.length;
+            const fMean = Math.round(fTotal / fN); const fDD = Math.round(ddm);
+            const fRatio = fDD < 0 ? Math.round(fTotal / Math.abs(fDD) * 10) / 10 : 99;
             return (
               <div style={{ border: `1px solid ${C.navy}`, borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{sel.label} · {sel.lots}L · {sel.scope}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{sel.label} · {sel.lots}L · {sel.scope}{pfDte !== 'ALL' ? ` · DTE${pfDte}/${dteLbl[+pfDte]}` : ''}</span>
+                  {dteSel}
                   <span style={{ fontSize: 12, color: C.sec }}>
-                    net <b style={{ color: col(sel.total) }}>{inr(sel.total)}</b> · mean/day <b style={{ color: col(sel.mean) }}>{inr(sel.mean)}</b> ·
-                    maxDD <b style={{ color: C.neg }}>{inr(sel.maxdd)}</b> · ratio <b style={{ color: sel.ratio >= 7 ? C.pos : C.ink }}>{sel.ratio}</b> ·
-                    corr <b>{sel.corr_parts ?? '—'}</b> · {sel.n} days
+                    net <b style={{ color: col(fTotal) }}>{inr(fTotal)}</b> · mean/day <b style={{ color: col(fMean) }}>{inr(fMean)}</b> ·
+                    win <b>{Math.round(100 * wins / fN)}%</b> ·
+                    maxDD <b style={{ color: C.neg }}>{inr(fDD)}</b> · ratio <b style={{ color: fRatio >= 7 ? C.pos : C.ink }}>{fRatio}</b>
+                    {pfDte === 'ALL' && <> · corr <b>{sel.corr_parts ?? '—'}</b></>} · {fN} days
                   </span>
                   <span style={{ fontSize: 10.5, color: C.faint }}>click any row above to chart it</span>
                 </div>
@@ -738,9 +764,10 @@ export default function Straddles() {
                 <LineChart pts={dpts} h={90} label="Drawdown" />
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8, marginTop: 8 }}>
                   {Object.entries(pfLab.components).map(([n2, c2]: any) => {
-                    if (!c2.series || c2.series.length < 2) return null;
+                    const ser2 = pfDte === 'ALL' ? (c2.series || []) : (c2.series || []).filter(([d2]: any) => dteOf(d2) === +pfDte);
+                    if (ser2.length < 2) return null;
                     let cc = 0;
-                    const pts2: [string, number][] = c2.series.map(([d2, v2]: any) => { cc += v2; return [dmon(d2), Math.round(cc)]; });
+                    const pts2: [string, number][] = ser2.map(([d2, v2]: any) => { cc += v2; return [dmon(d2), Math.round(cc)]; });
                     return (
                       <div key={n2} style={{ border: `1px solid ${C.hairSoft}`, borderRadius: 6, padding: '4px 8px' }}>
                         <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sec }}>{n2.replace(/_/g, ' ')} (cum)
