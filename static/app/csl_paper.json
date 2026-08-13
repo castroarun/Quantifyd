@@ -1,0 +1,1 @@
+{"records": [], "cum": {}, "events": [{"ts": "2026-08-13 19:28:27", "book": "CSL_TIMEB_NIFTY", "type": "ENTRY", "source": "PAPER", "msg": "SAMPLE ALERT (test) - a real entry will look like this: SOLD 24700 straddle @ 210.50 credit (12 lots, DTE2, 10:00->12:00 SL30). Real alerts start 14-AUG ~10:00 IST."}]}

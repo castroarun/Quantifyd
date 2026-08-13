@@ -3,7 +3,7 @@
  "source_generated_at": "2026-08-13 12:47",
  "note": "FROZEN for out-of-sample paper validation; re-freeze consciously, never silently.",
  "books": {
-  "CSL_NIFTY": {
+  "CSL_TIMEB_NIFTY": {
    "0": {
     "entry": "09:30",
     "exit": "11:00",
@@ -30,11 +30,11 @@
     "sl": 20
    }
   },
-  "CSL_SENSEX": {
+  "CSL_TIMEB_SENSEX": {
    "0": {
     "entry": "09:20",
     "exit": "15:20",
-    "sl": "none"
+    "sl": 30
    },
    "1": {
     "entry": "10:30",
@@ -61,17 +61,17 @@
    "0": {
     "entry": "09:16",
     "exit": "15:20",
-    "sl": 20
+    "sl": 25
    },
    "1": {
     "entry": "09:16",
     "exit": "15:20",
-    "sl": 20
+    "sl": 30
    },
    "2": {
     "entry": "09:16",
     "exit": "15:20",
-    "sl": 20
+    "sl": 30
    },
    "3": {
     "entry": "09:16",
@@ -81,7 +81,7 @@
    "4": {
     "entry": "09:16",
     "exit": "15:20",
-    "sl": 20
+    "sl": 30
    }
   },
   "CSL30F_NIFTY": {
@@ -138,5 +138,7 @@
     "sl": 30
    }
   }
- }
+ },
+ "refrozen_at": "2026-08-13T20:51",
+ "refreeze_note": "2026-08-13: books renamed CSL_*->CSL_TIMEB_*; all SL none cells set to 30 (never run stopless), per user | 2026-08-13 21:55: NAS_COMB20 SLs set per-DTE from sec-15 sweep (25/30/30/20/30), user-delegated"
 }

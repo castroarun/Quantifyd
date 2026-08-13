@@ -3,7 +3,7 @@
 import json
 d = json.load(open("/home/arun/quantifyd/research/104_momentum_leverage/results/lev_curves.json"))
 DATA = json.dumps(d)
-HTML = r"""<title>Momentum-250 Leverage Frontier (radj_z N8)</title>
+HTML = r"""<title>Momentum-250 Leverage Frontier (existing live book)</title>
 <style>
 :root{--sans:'Segoe UI',system-ui,sans-serif;--bg:#0d1117;--panel:#161b22;--panel2:#1c232c;--bd:#293039;--bd2:#3a434e;--ink:#e6edf3;--mut:#9aa4af;--faint:#6b7581;
  --c0:#58a6ff;--c1:#2f9152;--c2:#e0a13a;--c3:#c76fe0;--bh:#8a94a1;--neg:#e0564f;--gl:#222a33;}
@@ -33,8 +33,8 @@ tr.hl td{background:var(--panel2)}
 </style>
 <div class="wrap">
   <h1>Momentum-250 — Leverage Frontier</h1>
-  <div class="sub">Risk-adjusted momentum, <b>top-8 equal-weight</b>, monthly rebalance, <b>NIFTYBEES&gt;EMA100 index cash gate</b>. Daily-marked, net of 0.3% cost, survivorship-free top-250 proxy, 2006–2026. Leverage applied only while the gate is risk-on; <b>financing 10.5% p.a. (MTF)</b>; 0 margin calls in 20 years.</div>
-  <div class="sub"><b>The idea:</b> the index gate moves the book to cash in downtrends, so leverage is only ever on during uptrends — that's what makes it survivable. Leverage buys raw CAGR at a proportional drawdown cost (Calmar drifts down); vol-targeting does <i>not</i> help (it de-levers into momentum's high-vol melt-ups).</div>
+  <div class="sub"><b>The existing live book</b> — relative-strength momentum, <b>top-8 with a top-22 anti-churn buffer</b>, monthly rebalance, a <b>15-day Donchian per-stock stop</b>, and the <b>NIFTYBEES&gt;100-SMA index cash gate</b>. Daily-marked, net of 0.3% cost, survivorship-free Nifty-200 proxy, <b>full cycle 2006–2026 (through the 2008 crash)</b>. Leverage applied only while the gate is risk-on; <b>financing 10.5% p.a. (MTF — the realistic vehicle for a stock book)</b>; 0 margin calls in 20 years.</div>
+  <div class="sub"><b>The idea:</b> the index gate moves the book to cash in downtrends, so leverage is only ever on during uptrends — that's what makes it survivable. And the Donchian stop + buffer keep drawdowns shallow, so the levered book holds a <b>high Calmar (~1.35–1.48) all the way up</b>. Vol-targeting does <i>not</i> help (it de-levers into momentum's high-vol melt-ups).</div>
 
   <div class="eyebrow">Headline · 10 lots-equivalent, ₹ grows from 1× base</div>
   <div class="kpis" id="kpis"></div>
@@ -47,20 +47,20 @@ tr.hl td{background:var(--panel2)}
   <div class="eyebrow">Year-by-year returns (%)</div>
   <div class="panel" style="overflow-x:auto"><table id="ytab"></table></div>
 
-  <div class="eyebrow">The leverage frontier — pick your point (radj_z N8, 10.5% MTF)</div>
+  <div class="eyebrow">The leverage frontier — pick your point (existing book, 10.5% MTF)</div>
   <div class="panel" style="overflow-x:auto"><table id="frontier"></table>
-    <div class="foot" style="margin-top:8px">1.0× uses <b>your own capital only</b> (no borrowing). 1.3–1.6× is the return sweet spot. Above 1.6× the Calmar dips below 1 and the drawdown exceeds −55%.</div></div>
+    <div class="foot" style="margin-top:8px">1.0× uses <b>your own capital only</b> (no borrowing). 1.3–1.6× is the return sweet spot at a drawdown you can size to. The Donchian stop + buffer keep the Calmar high (1.35–1.48) even under leverage — far above the plain top-8 book's ~1.1.</div></div>
 
   <div class="eyebrow">Borrow-rate sensitivity — 8% (futures basis) vs 10.5% (MTF)</div>
   <div class="panel" style="overflow-x:auto"><table id="borrow"></table>
-    <div class="foot" style="margin-top:8px">Financing costs little because leverage is only on ~76% of months (gate-on) and only on the borrowed slice — 10.5% vs 8% costs just 0.7–2.4% CAGR.</div></div>
+    <div class="foot" style="margin-top:8px">Financing costs little because leverage is only on ~75% of months (gate-on) and only on the borrowed slice — 10.5% vs 8% MTF costs just 0.1–1.1% CAGR. Stock-futures financing (~8%) needs all 8 rotating names to have liquid F&O every month, which mid-caps often lack — so MTF is the realistic assumption.</div></div>
 
-  <div class="eyebrow">Why vol-targeting does NOT help</div>
+  <div class="eyebrow">Why vol-targeting does NOT help <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--faint)">(tested on the momentum family; figures from the plain top-8 variant — the lesson transfers)</span></div>
   <div class="panel" style="overflow-x:auto"><table id="vt"></table>
     <div class="foot" style="margin-top:8px">Dynamic leverage from trailing vol lands <b>below</b> the static frontier at every matched average leverage. Two reasons: (1) the index gate already handles the downside, so vol-targeting duplicates it with lag + cost; (2) momentum's biggest up-years (2014 +108%, 2021 +101%) are <b>high-vol rallies</b> — vol-targeting de-levers straight into the melt-ups, amputating the fat right tail that is the edge.</div></div>
 
   <div class="eyebrow">Takeaway</div>
-  <div class="panel foot"><b>The index gate makes leverage survivable; keep leverage simple and static.</b> On the gated top-8 risk-adjusted momentum book, static <b>1.3–1.6× leverage → 40.7–47.3% CAGR at −39 to −48% drawdown, Calmar ~1.0, zero margin calls across 2006–2026 (incl. 2008 &amp; 2020)</b>. At 1.0× (own capital, no borrowing) it's still <b>33.8% CAGR / −30% DD</b> vs NIFTYBEES buy-hold's 11.7% / −60%. Leverage is a proportional trade of drawdown for return — not a free lunch, but survivable <i>because</i> of the gate. Vol-targeting and deeper concentration (N&lt;8) both reduce risk-adjusted return. This is the same momentum edge magnified, not new alpha.</div>
+  <div class="panel foot"><b>The index gate makes leverage survivable; the Donchian stop + buffer keep it efficient.</b> On the existing live book, static <b>1.3–1.6× leverage → 40.4–47.9% CAGR at −28 to −35% drawdown, Calmar ~1.4, zero margin calls across 2006–2026 (incl. 2008 &amp; 2020)</b>. At 1.0× (own capital, no borrowing) it's <b>32.7% CAGR / −22% DD</b> vs NIFTYBEES buy-hold's 11.7% / −60%. This book levers far better than the plain top-8 version — its Calmar holds ~1.35–1.48 across all leverage (vs the plain book's decay toward ~0.9) because the per-stock stop caps the drawdowns leverage would otherwise amplify. Leverage is a proportional trade of drawdown for return — not a free lunch, but a well-controlled one. Vol-targeting and deeper concentration (N&lt;8) both reduce risk-adjusted return. This is the same momentum edge magnified, not new alpha.</div>
 </div>
 <div class="tip" id="tip"></div>
 <script>
@@ -101,7 +101,7 @@ function drawDD(){const W=1000,H=220,L=52,R=14,T=10,B=22;const DD={};let mn=-1;
  names.forEach(n=>{const pth="M"+DD[n].map((p,i)=>(i?"L":"")+xp(p[0],W,L,R).toFixed(1)+" "+y(p[1]).toFixed(1)).join(" ");
    const bh=n==="NIFTY B&H";g+=`<path d="${pth}" style="fill:none;stroke:${COL[n]};stroke-width:${bh?1.4:1.8};opacity:${bh?.7:.9};${bh?'stroke-dasharray:4 3':''}"/>`;});
  $("#dd").innerHTML=g;
- $("#ddnote").innerHTML=`The gate keeps every leverage far shallower than NIFTYBEES' <b>−60%</b>. 1.0× bottoms at <b>−30%</b>; 1.6× at <b>−48%</b> — real and brutal, but never a margin call.`;}
+ $("#ddnote").innerHTML=`The gate + Donchian stop keep every leverage far shallower than NIFTYBEES' <b>−60%</b>. 1.0× bottoms at <b>−22%</b>; 1.6× at <b>−35%</b> — real, but never a margin call.`;}
 function drawYear(){const yrs=[];for(let y=Y0;y<=Y1;y++)yrs.push(y);
  let h=`<thead><tr><th>Year</th>`+names.map(n=>`<th style="color:${COL[n]}">${n.replace("Own capital · ","").replace("Levered · ","").replace("NIFTY B&H","B&H")}</th>`).join("")+`</tr></thead><tbody>`;
  yrs.forEach(y=>{h+=`<tr><td><b>${y}</b></td>`+names.map(n=>{const v=D.peryear[n][y];return v==null?`<td class="mut">·</td>`:`<td class="${v>=0?'pos':'neg'}">${v>0?"+":""}${v}%</td>`;}).join("")+`</tr>`;});
@@ -112,11 +112,11 @@ function tbl(id,head,rows,hlrow){let h=`<thead><tr>`+head.map(x=>`<th>${x}</th>`
  $(id).innerHTML=h+`</tbody>`;}
 renderKPI();drawEq();drawDD();drawYear();
 tbl("#frontier",["Leverage","CAGR","Max DD","Sharpe","Calmar","Margin calls / 20y"],
- [["1.0× (own capital)","33.8%","−29.9%","1.49","1.13","0"],["1.3×","40.7%","−38.9%","1.40","1.05","0"],
-  ["1.6×","47.3%","−47.9%","1.35","0.99","0"],["2.0×","55.4%","−59.7%","1.29","0.93","0"]],1);
+ [["1.0× (own capital)","32.7%","−22.0%","1.77","1.48","0"],["1.3×","40.4%","−28.5%","1.68","1.42","0"],
+  ["1.6×","47.9%","−34.9%","1.62","1.37","0"],["2.0×","57.6%","−42.8%","1.56","1.35","0"]],1);
 tbl("#borrow",["Leverage","CAGR @8%","CAGR @10.5%","Max DD","Calmar @10.5%"],
- [["1.0×","33.8%","33.8%","−30%","1.13"],["1.3×","41.4%","40.7%","−39%","1.05"],
-  ["1.6×","48.7%","47.3%","−48%","0.99"],["2.0×","57.8%","55.4%","−60%","0.93"]],2);
+ [["1.0×","32.7%","32.7%","−22%","1.48"],["1.3×","40.6%","40.4%","−29%","1.42"],
+  ["1.6×","48.4%","47.9%","−35%","1.37"],["2.0×","58.7%","57.6%","−43%","1.35"]],2);
 tbl("#vt",["Approach","Avg lev","CAGR","Max DD","Calmar"],
  [["Static leverage 1.3×","1.30","41.4%","−38.9%","1.06"],["Vol-target (vt25/lb60)","1.14","33.2%","−39.6%","0.84"],
   ["Static leverage 1.6×","1.60","48.7%","−47.8%","1.02"],["Vol-target (vt35/lb20)","1.60","43.2%","−52.3%","0.83"]],0);
