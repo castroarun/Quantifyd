@@ -289,6 +289,7 @@ export default function Straddles() {
   const [cslPLive, setCslPLive] = useState<any>(null);     // intraday live series (today)
   const [cslPDay, setCslPDay] = useState<string>('');      // selected day for curves
   const [cslPBig, setCslPBig] = useState<string | null>(null); // expanded book curve
+  const [cslPBF, setCslPBF] = useState<any>(null);   // backfilled BACKTEST day curves (recorded chain replay)
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -301,6 +302,7 @@ export default function Straddles() {
     fetch('/app/straddles/csl_best_configs.json?t=' + Date.now()).then((r) => r.json()).then(setCslCfg).catch(() => {});
     fetch('/app/csl_paper.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaper).catch(() => {});
     fetch('/app/csl_paper_config.json?t=' + Date.now()).then((r) => r.json()).then(setCslPaperCfg).catch(() => {});
+    fetch('/app/csl_paper_backfill.json?t=' + Date.now()).then((r) => r.json()).then(setCslPBF).catch(() => {});
     const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
     loadPLive(); const pl = setInterval(loadPLive, 60000);
     const loadLive = () => {
@@ -590,19 +592,30 @@ export default function Straddles() {
           </div>
         )}
         {(() => {
-          const recDays: string[] = Array.from(new Set(((cslPaper?.records) || []).filter((r: any) => r.series && r.series.length > 1).map((r: any) => r.day)));
+          // merge THREE sources, provenance-labeled: BACKTEST (chain replay) < PAPER (live paper) < REAL
+          const srcColor = (s: string) => (s === 'REAL' ? C.neg : s === 'BACKTEST' ? C.amber : C.pos);
+          const srcBg = (s: string) => (s === 'REAL' ? '#FBEEEE' : s === 'BACKTEST' ? C.amberSoft : '#E7F2EE');
+          const srcLbl = (s: string) => (s === 'REAL' ? 'LIVE REAL' : s === 'BACKTEST' ? 'BACKTEST' : 'LIVE PAPER');
+          const liveRecs = (((cslPaper?.records) || []) as any[]).filter((r) => r.series && r.series.length > 1)
+            .map((r) => ({ ...r, source: r.source || 'PAPER' }));
+          const bfRecs = (((cslPBF?.records) || []) as any[]).filter((r) => r.series && r.series.length > 1
+            && !liveRecs.some((lr) => lr.day === r.day && (lr.book || lr.sym) === (r.book || r.sym)));
+          const recDays: string[] = Array.from(new Set([...liveRecs, ...bfRecs].map((r: any) => r.day)));
           if (cslPLive?.day && Object.values(cslPLive.books || {}).some((b: any) => (b.series || []).length > 1) && !recDays.includes(cslPLive.day)) recDays.push(cslPLive.day);
           recDays.sort();
           const selDay = cslPDay && recDays.includes(cslPDay) ? cslPDay : recDays[recDays.length - 1];
           if (!selDay) return null;
-          const curves: { bk: string; pts: [string, number][]; live: boolean }[] = [];
-          (((cslPaper?.records) || []) as any[]).filter((r) => r.day === selDay && r.series && r.series.length > 1)
-            .forEach((r) => curves.push({ bk: r.book || r.sym, pts: r.series, live: false }));
+          const curves: { bk: string; pts: [string, number][]; live: boolean; src: string }[] = [];
+          liveRecs.filter((r) => r.day === selDay).forEach((r) => curves.push({ bk: r.book || r.sym, pts: r.series, live: false, src: r.source }));
+          bfRecs.filter((r) => r.day === selDay).forEach((r) => { if (!curves.some((c2) => c2.bk === (r.book || r.sym))) curves.push({ bk: r.book || r.sym, pts: r.series, live: false, src: 'BACKTEST' }); });
           if (cslPLive?.day === selDay) Object.entries(cslPLive.books || {}).forEach(([bk, b]: any) => {
-            if ((b.series || []).length > 1 && !curves.some((c2) => c2.bk === bk)) curves.push({ bk, pts: b.series, live: b.state === 'OPEN' });
+            if ((b.series || []).length > 1 && !curves.some((c2) => c2.bk === bk)) curves.push({ bk, pts: b.series, live: b.state === 'OPEN', src: 'PAPER' });
           });
           if (!curves.length) return null;
+          curves.sort((a, b) => a.bk.localeCompare(b.bk));
           const big = curves.find((c2) => c2.bk === cslPBig);
+          const rng = (rs: any[]) => { const ds = Array.from(new Set(rs.map((r) => r.day))).sort(); return ds.length ? `${ds.length}d ${ds[0].slice(5)}→${ds[ds.length - 1].slice(5)}` : null; };
+          const bfR = rng(bfRecs); const lpR = rng(liveRecs.filter((r) => r.source !== 'REAL')); const rlR = rng(liveRecs.filter((r) => r.source === 'REAL'));
           return (
             <div style={{ margin: '10px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
@@ -613,15 +626,23 @@ export default function Straddles() {
                 </select>
                 <span style={{ fontSize: 10.5, color: C.faint }}>~60s samples · click a curve to expand/collapse</span>
               </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8, fontSize: 10 }}>
+                {bfR && <span style={{ fontWeight: 800, padding: '1px 7px', borderRadius: 4, color: C.amber, background: C.amberSoft }}>BACKTEST · recorded-chain replay · {bfR}</span>}
+                {lpR && <span style={{ fontWeight: 800, padding: '1px 7px', borderRadius: 4, color: C.pos, background: '#E7F2EE' }}>LIVE PAPER · {lpR}</span>}
+                {rlR && <span style={{ fontWeight: 800, padding: '1px 7px', borderRadius: 4, color: C.neg, background: '#FBEEEE' }}>LIVE REAL · {rlR}</span>}
+                {!lpR && <span style={{ color: C.faint }}>live paper recording starts 14-AUG (books deployed 13-AUG)</span>}
+              </div>
               {big && <div style={{ marginBottom: 8 }}>
-                <LineChart pts={big.pts} h={260} label={`${big.bk} · ${selDay}${big.live ? ' · LIVE (open)' : ''} — expanded (click tile to collapse)`} />
+                <LineChart pts={big.pts} h={260} label={`${big.bk} · ${selDay} · ${big.live ? 'LIVE (open)' : srcLbl(big.src)} — expanded (click tile to collapse)`} />
               </div>}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
                 {curves.map((c2) => (
                   <div key={c2.bk} onClick={() => setCslPBig(cslPBig === c2.bk ? null : c2.bk)}
                     style={{ border: `1px solid ${cslPBig === c2.bk ? C.navy : C.hair}`, borderRadius: 8, padding: '6px 8px', cursor: 'pointer' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>
-                      {c2.bk} {c2.live && <span style={{ color: C.pos }}>· LIVE</span>}
+                      {c2.bk}{' '}
+                      {c2.live ? <span style={{ color: C.pos }}>· LIVE</span> :
+                        <span style={{ fontSize: 9, fontWeight: 800, padding: '0 5px', borderRadius: 3, color: srcColor(c2.src), background: srcBg(c2.src) }}>{srcLbl(c2.src)}</span>}
                       <span style={{ float: 'right', color: col(c2.pts[c2.pts.length - 1][1]) }}>{inr(c2.pts[c2.pts.length - 1][1])}</span>
                     </div>
                     <LineChart pts={c2.pts} h={90} />
@@ -636,7 +657,10 @@ export default function Straddles() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><th style={thL}>Day</th><th style={thL}>Book</th><th style={thL}>Cfg</th><th style={thR}>Strike</th><th style={thR}>Credit</th><th style={thR}>Exit</th><th style={thL}>Reason</th><th style={thR}>P&amp;L</th><th style={thR}>Lots</th></tr></thead>
               <tbody>{cslPaper.records.slice().reverse().map((r: any, i: number) => (
-                <tr key={i}><td style={tdL}>{r.day}</td><td style={tdL}>{r.book || r.sym} D{r.dte}</td><td style={tdL}>{r.cfg}</td>
+                <tr key={i}><td style={tdL}>{r.day}</td><td style={tdL}>{r.book || r.sym} D{r.dte}{' '}
+                  <span style={{ fontSize: 9, fontWeight: 800, padding: '0 4px', borderRadius: 3,
+                    color: r.source === 'REAL' ? C.neg : C.pos, background: r.source === 'REAL' ? '#FBEEEE' : '#E7F2EE' }}>
+                    {r.source === 'REAL' ? 'REAL' : 'PAPER'}</span></td><td style={tdL}>{r.cfg}</td>
                   <td style={tdR}>{r.strike}</td><td style={tdR}>{r.credit}</td><td style={tdR}>{r.exit_comb} <span style={{ color: C.faint }}>@{String(r.exit_ts || '').slice(0, 5)}</span></td>
                   <td style={{ ...tdL, color: String(r.reason).startsWith('SL') ? C.neg : C.muted }}>{r.reason}</td>
                   <td style={{ ...tdR, fontWeight: 700, color: col(r.pnl) }}>{inr(r.pnl)}</td><td style={tdR}>{r.lots}</td></tr>))}

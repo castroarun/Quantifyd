@@ -74,6 +74,13 @@ def save_state(st):
     try: json.dump(st, open(PUB, "w"))
     except Exception: pass
 
+def push_event(st, book, etype, msg):
+    """Alert feed consumed by the Windows watcher (scripts/csl_alert_watcher.pyw)."""
+    st.setdefault("events", []).append({
+        "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "book": book,
+        "type": etype, "source": "PAPER", "msg": msg})
+    st["events"] = st["events"][-200:]
+
 def write_live(plans, today):
     try:
         json.dump({"day": today, "at": datetime.now().strftime("%H:%M:%S"),
@@ -152,6 +159,9 @@ def main():
                         P.update(K=K, legs=(ce["tradingsymbol"], pe["tradingsymbol"]), state="OPEN",
                                  credit=P["ce0"] + P["pe0"], entry_ts=datetime.now().strftime("%H:%M:%S"), expiry=str(E))
                         log("%s ENTER K=%d credit %.2f (%s+%s)" % (sym, K, P["credit"], P["ce0"], P["pe0"]))
+                        push_event(st, sym, "ENTRY", "SOLD %d straddle @ %.2f credit (%d lots, DTE%d, %s->%s SL%s)" % (
+                            K, P["credit"], B["lots"], P["dte"], P["entry"], P["exit"], P["sl"]))
+                        save_state(st)
                 elif P["state"] == "OPEN":
                     ce_s, pe_s = P["legs"]
                     q = k.ltp(["%s:%s" % (B["seg"], ce_s), "%s:%s" % (B["seg"], pe_s)])
@@ -176,8 +186,10 @@ def main():
                                "strike": P["K"], "expiry": P["expiry"], "credit": round(P["credit"], 2),
                                "entry_ts": P["entry_ts"], "exit_ts": datetime.now().strftime("%H:%M:%S"),
                                "exit_comb": round(comb, 2), "reason": reason, "pnl": pnl, "series": P.get("series", []),
-                               "lots": B["lots"], "qty": B["qty"]}
+                               "lots": B["lots"], "qty": B["qty"], "source": "PAPER"}
                         st["records"].append(rec)
+                        push_event(st, sym, "EXIT", "%s: closed %d straddle @ %.2f -> P&L %+d (%d lots, cum %+d)" % (
+                            reason, P["K"], comb, pnl, B["lots"], st["cum"].get(sym, 0) + pnl))
                         st["cum"][sym] = st["cum"].get(sym, 0) + pnl
                         save_state(st)
                         log("%s EXIT %s pnl %+d (cum %+d)" % (sym, reason, pnl, st["cum"][sym]))
