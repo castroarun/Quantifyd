@@ -267,6 +267,8 @@ export default function Straddles() {
   const [liveTs, setLiveTs] = useState<number | null>(null);
   const [daily, setDaily] = useState<V1Daily | null>(null);
   const [sl30, setSl30] = useState<any>(null);   // V1 + 30% premium SL backtest
+  const [sl30Modal, setSl30Modal] = useState(false);   // deep-dive popup
+  const [sl30Day, setSl30Day] = useState<string>('');  // selected day in popup
   const [dayD, setDayD] = useState<string | null>(null);
   const [v2eng, setV2eng] = useState<any>(null);   // live paper executor state
   const [bo, setBo] = useState<any>(null);          // inside-week breakout sleeve
@@ -934,6 +936,7 @@ export default function Straddles() {
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: 700, color: C.ink }}>V1 + 30% combined-premium SL</span>
                   {chip(C.amberSoft, C.amber, 'BACKTEST · recorded chain')}
+                  <button onClick={() => setSl30Modal(true)} style={{ cursor: 'pointer', border: `1px solid ${C.hair}`, background: C.surface, color: C.navy, borderRadius: 6, padding: '2px 10px', fontSize: 11.5, fontWeight: 700 }}>⤢ deep-dive</button>
                   <a href="/app/options-study" style={{ textDecoration: 'none' }} title="Peak+% / decay analysis behind this stop">{chip(C.navySoft, C.navy, 'Opt-Study report ↗')}</a>
                   <span style={{ marginLeft: 'auto', fontSize: 22, fontWeight: 800, color: col(s.total) }}>{inr(s.total)}</span>
                 </div>
@@ -960,12 +963,56 @@ export default function Straddles() {
                       <td style={{ ...ectd, color: C.neg }}>{inr(r.maxdd)}</td></tr>
                   ); })}</tbody>
                 </table>
+                {sl30Modal && (() => {
+                  const days: string[] = sl30.days || [];
+                  const dSel = sl30Day && days.includes(sl30Day) ? sl30Day : days[days.length - 1];
+                  const idx = days.indexOf(dSel);
+                  const pd = (sl30.per_day || {})[dSel] || {};
+                  let cum2 = 0, pk2 = 0;
+                  const ddPts: [string, number][] = (sl30.book_curve || []).map(([d2, c2]: any) => { pk2 = Math.max(pk2, c2); return [d2, Math.round(c2 - pk2)]; });
+                  return (
+                    <div onClick={() => setSl30Modal(false)}
+                      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                      <div onClick={(e) => e.stopPropagation()}
+                        style={{ background: C.surface, border: `1px solid ${C.hair}`, borderRadius: 12, padding: '16px 20px', width: 'min(1250px, 96vw)', maxHeight: '92vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                          <b style={{ fontSize: 15, color: C.ink }}>CSL30 deep-dive</b>
+                          {chip(C.amberSoft, C.amber, `${s.n} days · 10 lots (qty 650) · refreshed daily 15:40 IST`)}
+                          <span style={{ fontSize: 12 }}>total <b style={{ color: col(s.total) }}>{inr(s.total)}</b> · mean/day <b style={{ color: col(s.mean) }}>{inr(s.mean)}</b> · win {s.win}% · SL-hit {s.sl_hit_pct}% · maxDD <b style={{ color: C.neg }}>{inr(s.maxdd)}</b></span>
+                          <button onClick={() => setSl30Modal(false)} style={{ marginLeft: 'auto', cursor: 'pointer', border: `1px solid ${C.hair}`, background: C.surface, borderRadius: 6, padding: '2px 10px' }}>✕</button>
+                        </div>
+                        <LineChart pts={sl30.book_curve} h={190} label={`cumulative P&L · ${s.n} days · recorded chain`} />
+                        {ddPts.length > 1 && <LineChart pts={ddPts} h={90} label={`drawdown · trough ${inr(s.maxdd)}`} />}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', margin: '12px 0 4px' }}>
+                          <b style={{ fontSize: 12.5, color: C.ink }}>Day navigator</b>
+                          <button disabled={idx <= 0} onClick={() => setSl30Day(days[idx - 1])} style={{ cursor: idx > 0 ? 'pointer' : 'not-allowed', border: `1px solid ${C.hair}`, background: C.surface, borderRadius: 6, padding: '2px 10px' }}>◀ prev</button>
+                          <select value={dSel} onChange={(e) => setSl30Day(e.target.value)}
+                            style={{ background: 'transparent', color: C.ink, border: `1px solid ${C.hair}`, borderRadius: 6, padding: '2px 8px', fontSize: 12 }}>
+                            {days.map((d2) => <option key={d2} value={d2}>{d2}</option>)}
+                          </select>
+                          <button disabled={idx >= days.length - 1} onClick={() => setSl30Day(days[idx + 1])} style={{ cursor: idx < days.length - 1 ? 'pointer' : 'not-allowed', border: `1px solid ${C.hair}`, background: C.surface, borderRadius: 6, padding: '2px 10px' }}>next ▶</button>
+                          <span style={{ fontSize: 12, color: C.muted }}>
+                            POSITION: sold {pd.strike} straddle · credit ₹{pd.credit} · DTE{pd.dte} · peak +{pd.peak_pct}% ·
+                            {pd.stopped && pd.exit ? ` SL exit ${pd.exit.time}` : ' held to close'} · P&L <b style={{ color: col(pd.final || 0) }}>{inr(pd.final || 0)}</b>
+                          </span>
+                        </div>
+                        {pd.series && pd.series.length > 1 &&
+                          <LineChart pts={pd.series} h={200}
+                            marker={pd.stopped && pd.exit ? { time: pd.exit.time, pnl: pd.exit.pnl, text: 'SL' } : null}
+                            label={`${dSel} intraday P&L (5-min marks, display only) · low ${inr(pd.low || 0)} · high ${inr(pd.high || 0)}`} />}
+                        <div style={{ fontSize: 10.5, color: C.faint, marginTop: 6 }}>Click any row in the card's "Completed days" table to jump here directly · data regenerates every trading day post-close (15:40 IST cron).</div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <details style={{ marginTop: 8 }}>
                   <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 600, color: C.navy, listStyle: 'none' }}>▸ Completed days ({comp.length})</summary>
                   <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
                     <thead><tr><th style={{ ...ecth, textAlign: 'left' }}>Day</th><th style={ecth}>DTE</th><th style={ecth}>Peak+%</th><th style={{ ...ecth, textAlign: 'left' }}>Exit</th><th style={ecth}>P&amp;L</th></tr></thead>
                     <tbody>{comp.map((t: any, i: number) => (
-                      <tr key={i}><td style={{ ...ectd, textAlign: 'left' }}>{t.day}</td><td style={ectd}>DTE{t.dte}</td>
+                      <tr key={i} onClick={() => { setSl30Day(t.day); setSl30Modal(true); }} style={{ cursor: 'pointer' }}
+                        title="click: open this day's position + intraday curve in the deep-dive">
+                        <td style={{ ...ectd, textAlign: 'left', color: C.navy }}>{t.day} ↗</td><td style={ectd}>DTE{t.dte}</td>
                         <td style={{ ...ectd, color: t.peak_pct >= 30 ? C.neg : C.faint }}>+{t.peak_pct}%</td>
                         <td style={{ ...ectd, textAlign: 'left', color: t.stopped ? C.neg : C.muted }}>{t.stopped ? t.exit_time + ' · SL' : 'held to close'}</td>
                         <td style={{ ...ectd, fontWeight: 700, color: col(t.final) }}>{inr(t.final)}</td></tr>
