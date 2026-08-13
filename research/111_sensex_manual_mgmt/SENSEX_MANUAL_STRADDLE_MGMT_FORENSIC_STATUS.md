@@ -105,3 +105,16 @@ config, cron 09:12, dwell mechanic, 50% backstop on none-SL); (4) hub + conclusi
 /app/straddles (#hub). VERDICT: strong in-sample SIGNAL - the window is the edge; combined-SL
 >> per-leg; schedule > stop-tuning; CSL x NAS corr ~0. STRATEGY decision ~mid-Sep from paper.
 
+
+## 12. WALK-FORWARD HONESTY CHECK (2026-08-13) + full-schedule decision
+Configs picked on Apr-Jun only, scored on unseen Jul-Aug (from per-cell series):
+NIFTY book IS +434,670 -> OOS +203,954 (~-35%/day; DDs 5-10x bigger OOS).
+SENSEX book IS +234,115 -> OOS +124,160 (~-45%/day).
+=> The in-sample smoothness was selection-polish, but the edge SURVIVES OOS on both
+indices. ROBUST cells: NIFTY DTE0 (09:30-11:00, OOS +67.7k dd -1.7k), NIFTY DTE3
+full-day (OOS +74.1k dd -648), SENSEX DTE0 full-day (OOS +89.5k, 100% win, 0 DD).
+FRAGILE: DTE1 both venues (SENSEX DTE1 OOS negative; NIFTY DTE1 win 93->50, unstable
+window pick), SENSEX DTE3. Realistic paper-book bar: ~6.4k/day NIFTY + ~4k/day SENSEX.
+USER DECISION: paper books trade the FULL frozen schedule (no de-rating) - data decides
+at the ~mid-Sep checkpoint.
+
