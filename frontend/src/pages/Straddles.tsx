@@ -481,6 +481,7 @@ export default function Straddles() {
   const [lbVenue, setLbVenue] = useState<'ALL' | 'NIFTY' | 'SENSEX'>('ALL');     // leaderboard venue filter
   const [nasBase, setNasBase] = useState<any>(null);  // NAS live-book day P&L baseline
   const [pfLab, setPfLab] = useState<any>(null);      // options portfolio lab (daily regen)
+  const [pfSel, setPfSel] = useState<number | null>(null); // selected lab portfolio row (charts)
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -691,8 +692,12 @@ export default function Straddles() {
               <thead><tr><th style={thL}>Portfolio</th><th style={thR}>Lots</th><th style={thL}>Scope</th>
                 <th style={thR}>Total</th><th style={thR}>Mean/d</th><th style={thR}>MaxDD</th><th style={thR}>Ratio</th><th style={thR}>corr(parts)</th><th style={thR}>N</th></tr></thead>
               <tbody>
-                {pfLab.portfolios.map((p2: any, i: number) => (
-                  <tr key={i} style={p2.label.startsWith('THE STACK') ? { background: '#F0F7F4' } : undefined}>
+                {pfLab.portfolios.map((p2: any, i: number) => {
+                  const selI = pfSel ?? pfLab.portfolios.findIndex((q2: any) => q2.label.startsWith('THE STACK') && q2.scope === 'all');
+                  return (
+                  <tr key={i} onClick={() => setPfSel(i)}
+                    style={{ cursor: 'pointer', outline: i === selI ? `2px solid ${C.navy}` : undefined,
+                      background: p2.label.startsWith('THE STACK') ? '#F0F7F4' : undefined }}>
                     <td style={{ ...tdL, fontWeight: p2.label.startsWith('THE STACK') ? 800 : 600, color: C.ink }}>{p2.label}</td>
                     <td style={tdR}>{p2.lots}L</td>
                     <td style={{ ...tdL, color: p2.scope === 'ex-Wed' ? C.navy : C.muted, fontWeight: p2.scope === 'ex-Wed' ? 700 : 400 }}>{p2.scope}</td>
@@ -703,10 +708,50 @@ export default function Straddles() {
                     <td style={{ ...tdR, fontWeight: 700, color: p2.corr_parts == null ? C.faint : p2.corr_parts <= 0.4 ? C.pos : p2.corr_parts <= 0.7 ? C.amber : C.neg }}>
                       {p2.corr_parts == null ? '—' : p2.corr_parts.toFixed(2)}</td>
                     <td style={tdR}>{p2.n}</td>
-                  </tr>))}
+                  </tr>);
+                })}
               </tbody>
             </table>
           </div>
+          {(() => {
+            const selI = pfSel ?? pfLab.portfolios.findIndex((q2: any) => q2.label.startsWith('THE STACK') && q2.scope === 'all');
+            const sel = pfLab.portfolios[selI >= 0 ? selI : 0];
+            if (!sel || !sel.series || sel.series.length < 2) return null;
+            let cum = 0; let pk = 0;
+            const cpts: [string, number][] = []; const dpts: [string, number][] = [];
+            sel.series.forEach(([d2, v2]: any) => {
+              cum += v2; pk = Math.max(pk, cum);
+              cpts.push([dmon(d2), Math.round(cum)]); dpts.push([dmon(d2), Math.round(cum - pk)]);
+            });
+            return (
+              <div style={{ border: `1px solid ${C.navy}`, borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{sel.label} · {sel.lots}L · {sel.scope}</span>
+                  <span style={{ fontSize: 12, color: C.sec }}>
+                    net <b style={{ color: col(sel.total) }}>{inr(sel.total)}</b> · mean/day <b style={{ color: col(sel.mean) }}>{inr(sel.mean)}</b> ·
+                    maxDD <b style={{ color: C.neg }}>{inr(sel.maxdd)}</b> · ratio <b style={{ color: sel.ratio >= 7 ? C.pos : C.ink }}>{sel.ratio}</b> ·
+                    corr <b>{sel.corr_parts ?? '—'}</b> · {sel.n} days
+                  </span>
+                  <span style={{ fontSize: 10.5, color: C.faint }}>click any row above to chart it</span>
+                </div>
+                <LineChart pts={cpts} h={200} label="Cumulative P&L" />
+                <LineChart pts={dpts} h={90} label="Drawdown" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8, marginTop: 8 }}>
+                  {Object.entries(pfLab.components).map(([n2, c2]: any) => {
+                    if (!c2.series || c2.series.length < 2) return null;
+                    let cc = 0;
+                    const pts2: [string, number][] = c2.series.map(([d2, v2]: any) => { cc += v2; return [dmon(d2), Math.round(cc)]; });
+                    return (
+                      <div key={n2} style={{ border: `1px solid ${C.hairSoft}`, borderRadius: 6, padding: '4px 8px' }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sec }}>{n2.replace(/_/g, ' ')} (cum)
+                          <span style={{ float: 'right', color: col(cc) }}>{inr(cc)}</span></div>
+                        <LineChart pts={pts2} h={64} />
+                      </div>);
+                  })}
+                </div>
+              </div>
+            );
+          })()}
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Correlation matrix (daily P&amp;L)</div>

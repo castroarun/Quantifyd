@@ -81,7 +81,8 @@ for n2, dd in comp.items():
     src = {}
     for d in ds: src[dd[d][1]] = src.get(dd[d][1], 0) + 1
     comps_out[n2] = {"n": len(ds), "from": ds[0] if ds else None, "to": ds[-1] if ds else None,
-                     "sources": src, "stats": agg([dd[d][0] for d in ds])}
+                     "sources": src, "stats": agg([dd[d][0] for d in ds]),
+                     "series": [[d, dd[d][0]] for d in ds]}
 
 PORTS = [
     ("LIVE suite alone", 9, ["LIVE_SUITE_9L"]),
@@ -97,10 +98,12 @@ for label, lots, parts in PORTS:
     cs = [corr(comp[p1], comp[p2]) for i, p1 in enumerate(parts) for p2 in parts[i + 1:]]
     cs = [c for c in cs if c is not None]
     for scope, kk in (("all", ks), ("ex-Wed", [k for k in ks if not is_wed(k)])):
-        a = agg([sum(comp[p][k][0] for p in parts) for k in kk])
+        ser = [[k, sum(comp[p][k][0] for p in parts)] for k in kk]
+        a = agg([v for _, v in ser])
         if a:
             ports_out.append({"label": label, "lots": lots, "scope": scope, **a,
-                              "corr_parts": (round(sum(cs) / len(cs), 2) if cs else None)})
+                              "corr_parts": (round(sum(cs) / len(cs), 2) if cs else None),
+                              "series": ser})
 
 out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
        "basis": "study basis: LIVE suite 9L (3L/system, real+shadow as-traded normalized), sleeves 3L each; "
