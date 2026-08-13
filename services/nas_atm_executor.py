@@ -851,6 +851,28 @@ class NasAtmExecutor:
 
     # --- Exit All -------------------------------------------------------
 
+    def _fallback_exit_premium(self, tradingsymbol, entry_price):
+        """When the live exit quote fails, use the last recorded option_chain LTP today rather than 0.
+        Booking a short's exit at 0 fakes a full-credit profit (the 08-11/08-12 SENSEX phantoms).
+        Falls back to entry (P&L-neutral) when the chain has nothing for the symbol today."""
+        if tradingsymbol:
+            try:
+                import sqlite3 as _sq, os as _os
+                from datetime import date as _date
+                _p = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+                                   "backtest_data", "options_data.db")
+                _c = _sq.connect("file:%s?mode=ro" % _p, uri=True)
+                _r = _c.execute(
+                    "SELECT ltp FROM option_chain WHERE tradingsymbol=? AND snapshot_time LIKE ? "
+                    "AND ltp IS NOT NULL ORDER BY snapshot_time DESC LIMIT 1",
+                    (tradingsymbol, _date.today().isoformat() + "%")).fetchone()
+                _c.close()
+                if _r and _r[0] is not None:
+                    return _r[0]
+            except Exception:
+                pass
+        return entry_price
+
     def exit_all_positions(self, exit_reason):
         """Close all active positions using live quotes."""
         active = self.db.get_active_positions()
@@ -876,7 +898,9 @@ class NasAtmExecutor:
                     pass
 
             if exit_price is None:
-                exit_price = 0
+                # live quote failed — DON'T book a short's exit at 0 (fakes a full-credit profit,
+                # e.g. the 08-11/08-12 SENSEX phantoms). Fall back to the last option_chain LTP.
+                exit_price = self._fallback_exit_premium(pos.get('tradingsymbol'), pos.get('entry_price') or 0)
 
             self._close_leg(pos, exit_price, exit_reason)
 
