@@ -24,11 +24,14 @@ for name, lbl in (("nas_916_atm", "NAS ATM"), ("nas_916_atm2", "NAS ATM2"), ("na
         pcol = "pnl" if "pnl" in cols else "net_pnl"
         dcol = "entry_time" if "entry_time" in cols else "created_at"
         lcol = "lots" if "lots" in cols else None
+        # per-day mode from the orders table: a day is REAL only if a live-mode order fired
+        live_days = {str(r[0])[:10] for r in c.execute(
+            "SELECT DISTINCT substr(created_at,1,10) FROM nas_atm_orders WHERE mode='live'")}
         for r in c.execute("SELECT %s d,%s p%s FROM nas_atm_trades WHERE %s IS NOT NULL" % (
                 dcol, pcol, (",%s l" % lcol) if lcol else "", pcol)):
             dd = str(r["d"])[:10]
             lots = (r["l"] if lcol and r["l"] else None) or LOTS_BY_MONTH.get(dd[:7])
-            put(dd, lbl, r["p"], lots, "REAL")
+            put(dd, lbl, r["p"], lots, "REAL" if dd in live_days else "PAPER")
         c.close()
     except Exception as e:
         print(name, e)
