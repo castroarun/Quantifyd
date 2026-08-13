@@ -168,3 +168,45 @@ Neither replaces BASE; the three books (NAS_COMB20 / NAS_C20_TRAIL / NAS_C20_SHI
 each) run as live paper A/Bs from 14-AUG — let the data decide. Data lesson recorded:
 options_data.db snapshot_time uses ISO 'T' separator; window predicates must use
 INDEXED BY idx_oc_symbol_time + T-format bounds (substr() dodges the index).
+
+
+---
+
+## 15. NAS suite vs CSL-replacement vs HYBRID (2026-08-13 ~21:45) - STATUS: RUNNING
+
+**Reframe (user):** goal is the best PORTFOLIO of complementary systems, not silo wins.
+BASE = the live 3-system suite (ATM/ATM2/ATM4) as it trades today. COMB = per-leg SL +
+trailing fully replaced by combined-SL X% (X swept 20/25/30/40, per-DTE view). HYBRID =
+CSL as trigger, then each system's own management (ATM: loser out + trail winner to cost +
+re-enter <=5; ATM4: roll to new ATM once; ATM2: both-out = COMB by construction).
+
+**Key structural fact from config.py:** all three live systems are the SAME 09:16 ATM
+straddle differing only in post-SL management (leg SL30; ATM trail-to-cost+re-enter,
+ATM2 one-and-done + Rs2500/lot rupee stop, ATM4 roll-once). Full CSL replacement therefore
+collapses the suite to 3 identical books - diversification dies; HYBRID preserves it.
+
+**Plan:** replay all arms on identical recorded days (3-sec dwell, 15:15 exit, Rs160/cycle,
+3 lots/system); suites SUITE_BASE / SUITE_COMB (=3x COMB) / SUITE_HYB (COMB+HYB_ATM+HYB_ATM4);
+correlations; live actuals from nas_baseline.json as ground truth (portfolio stop caveat).
+NIFTY first; SENSEX later. Runner: scripts/nas_suite_csl_replay.py -> /tmp/nas_suite.log.
+
+### Sec 15 RESULT (2026-08-13 22:00 IST) - STATUS: DONE
+
+n=51 replay days (20-APR->13-AUG), 3 lots/system, all arms on identical days.
+
+Singles: BASE_ATM -20,367 (r-0.4) / BASE_ATM2 +31,779 (2.4) / BASE_ATM4 +34,525 (1.3);
+COMB25 +126,198 (6.1) ~ COMB30 +130,955 (5.3) plateau; HYB_ATM~=COMB (corr .96);
+HYB_ATM4 more total, worse DD. Suites (9L): SUITE_BASE +45,937 (0.6) / SUITE_COMB30
++392,865 (5.3) / SUITE_HYB30 +394,507 (5.7). LIVE actuals same window +98,940
+(model omits portfolio stop -> modeled BASE pessimistic; live > model).
+
+**Portfolio finding (the headline): corr(LIVE suite, COMB30) = 0.31.** The CSL sleeve is
+genuinely complementary to the live suite; full replacement would also collapse the suite
+to 3 identical books (all are the same ATM straddle differing only post-SL management).
+LIVE + COMB30 (12L): +225,149, DD -41,921, ratio 5.4 vs LIVE alone 1.7.
+
+Per-DTE apt CSL (in-sample, n=9-11/DTE): DTE0:25 DTE1:30 DTE2:30 DTE3:20(SL never binds)
+DTE4:30 (NOTE: DTE4/Wed NEGATIVE at every SL - consistent with all prior research).
+ACTION: NAS_COMB20 book re-frozen to per-DTE SLs 25/30/30/20/30 (user-delegated choice);
+name kept for continuity. VERDICT: **SIGNAL** - keep live suite, grow the CSL sleeve as
+the complement; paper books adjudicate OOS. SENSEX version: pending (NIFTY-first per user).
