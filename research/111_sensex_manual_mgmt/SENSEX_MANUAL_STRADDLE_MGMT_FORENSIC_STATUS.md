@@ -96,3 +96,12 @@ time-boxed exits cut DD ~10-25x while keeping most of the profit. 30% stays as d
 CAVEATS: ~1500-cell grid maxima on 15-16d cells = multiple-testing; validate OOS/paper before live.
 Data: results/entry_exit_sweep.json + csl_3sec_dwell.json (full-days). Next: NAS comparisons w/
 visuals (live-first) -> portfolio optimization -> hub page + factsheet + final conclusion.
+
+## 11. STUDY CONCLUDED (2026-08-13) — hub live, paper validation running
+All four final deliverables shipped: (1) best configs per index x DTE incl. entry/exit timing
+(Lab, weekly Fri 15:45 refresh); (2) NAS-vs-CSL comparisons + charts; (3) portfolio scan
+(optimal 2:0:1:1) -> actioned as PAPER books NIFTY 12 lots + SENSEX 6 lots (frozen 13-AUG
+config, cron 09:12, dwell mechanic, 50% backstop on none-SL); (4) hub + conclusion on
+/app/straddles (#hub). VERDICT: strong in-sample SIGNAL - the window is the edge; combined-SL
+>> per-leg; schedule > stop-tuning; CSL x NAS corr ~0. STRATEGY decision ~mid-Sep from paper.
+

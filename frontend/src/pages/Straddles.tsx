@@ -441,8 +441,41 @@ export default function Straddles() {
       <div className="page-title">Straddle Systems</div>
       <div className="page-subtitle">Two short-straddle systems on NIFTY · backtested on the recorded chain · paper-forward 10 lots</div>
 
+      {/* ===== research/111 STUDY HUB ===== */}
+      <section id="hub" style={{ ...card, marginTop: 14, borderColor: C.ink }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>Short-Straddle Study Hub</span>
+          {chip(C.navySoft, C.navy, 'research/111 · concluded 13-AUG-26')}
+          {chip('#E7F2EE', C.pos, 'validation: paper-forward since 14-AUG')}
+        </div>
+        <div style={{ fontSize: 12.5, color: C.sec, lineHeight: 1.55, marginBottom: 8 }}>
+          <b style={{ color: C.ink }}>Conclusion:</b> (1) <b>Time-boxed, DTE-scheduled straddles with a combined-premium SL (CSL)</b> are the best-constructed
+          short-vol system on both indices — the <b>time window is the edge</b> (SL level barely binds inside it; 30% stays as disaster backstop; drawdowns cut 10–25×).
+          (2) <b>Combined-SL ≫ per-leg SL</b>: on identical trades the per-leg mechanic lost while combined earned (+₹5.7L swing, 10 lots, 50d) — NAS's per-leg books survive
+          only via their trail/adjust rescue layers. (3) <b>Schedule beats stop-tuning</b>: NIFTY-Thu &amp; SENSEX-expiry-Thu are the full-day holds; Wednesdays only in the
+          10:30→12:00 window. (4) <b>Portfolio</b>: CSL-NIFTY 2u : CSL-SENSEX 1u alongside the live NAS sleeves (corr ≈ 0 — genuine diversification).
+          <b style={{ color: C.amber }}> Grade: strong SIGNAL, in-sample</b> — the paper books below convert it to STRATEGY (or kill it) by ~mid-Sep.
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+          {[['#csl-paper', '📗 Paper Books (live validation)'], ['#csl-lab', '🔬 Best-Config Lab (weekly)'],
+            ['#leaderboard', '🏆 Strategy Leaderboard'], ['#variant-lab', '🧪 V2 Variant Lab'],
+            ['/app/nifty_csl_vs_nas.png', '📈 NIFTY: CSL vs NAS (chart)'], ['/app/sensex_csl_vs_nas.png', '📈 SENSEX: CSL vs NAS (chart)'],
+            ['/app/perleg_vs_comb.png', '📉 Per-leg vs Combined SL (chart)'], ['/app/csl30_vs_nas916.png', '📊 CSL30 vs NAS-916 (chart)'],
+            ['/app/options-study', '🕯 Opt-Study (decay/CPR/candles)']].map(([href, label]) => (
+            <a key={href} href={href}
+              onClick={(e) => { if (href.startsWith('#')) { e.preventDefault(); document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth' }); } }}
+              style={{ border: `1px solid ${C.hair}`, borderRadius: 8, padding: '6px 10px', textDecoration: 'none', color: C.navy, fontWeight: 600 }}>
+              {label}</a>
+          ))}
+        </div>
+        <div style={{ fontSize: 10.5, color: C.faint, marginTop: 8 }}>
+          Full artifacts: research/111_sensex_manual_mgmt (STATUS doc, sweeps, comparisons, portfolio scan) · basis stated on every card (lots · n-days · date range) ·
+          rules: 3-sec-first data, live-first backfill, dwell-mechanic fills, per-DTE per-index.
+        </div>
+      </section>
+
       {ranks && ranks.systems && (
-        <section style={{ ...card, marginTop: 14 }}>
+        <section id="leaderboard" style={{ ...card, marginTop: 14, scrollMarginTop: 70 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Strategy Leaderboard</span>
             <span style={{ fontSize: 11, color: C.faint }}>rated by risk-adjusted return (Calmar) · updated {ranks.generated_at} · {ranks.cadence}</span>
