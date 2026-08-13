@@ -32,7 +32,15 @@ BOOKS = {
                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
     "CSL30F_SENSEX": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed",
                       "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
+    # post-CSL management A/Bs (research/111 sec 14): on CSL hit, manage instead of quit
+    "NAS_C20_TRAIL": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed", "mgmt": "trail",
+                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
+    "NAS_C20_SHIFT": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed", "mgmt": "shift",
+                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
 }
+TRAIL_BOUNCE = 1.30   # trail arm: exit winner on >=30% bounce off post-trigger low
+MAX_SHIFTS = 3        # shift arm: max re-centers per day
+SHIFT_CUTOFF = "14:30"
 BACKSTOP = 0.50   # for SL 'none' configs
 POLL = 5          # seconds
 SAMPLE_EVERY = 12  # record MTM every ~60s for day curves
@@ -40,7 +48,15 @@ SAMPLE_EVERY = 12  # record MTM every ~60s for day curves
 def log(m): print("[%s] %s" % (datetime.now().strftime("%H:%M:%S"), m), flush=True)
 
 def freeze_config():
-    if os.path.exists(CONFIG): return json.load(open(CONFIG))
+    if os.path.exists(CONFIG):
+        cfg = json.load(open(CONFIG))
+        added = [bk for bk, B in BOOKS.items() if bk not in cfg["books"] and B["cfg_from"] == "fixed"]
+        for bk in added:
+            cfg["books"][bk] = {str(k): dict(BOOKS[bk]["fixed_cfg"]) for k in range(5)}
+        if added:
+            json.dump(cfg, open(CONFIG, "w"), indent=1)
+            log("config: added new fixed books %s" % added)
+        return cfg
     lab = json.load(open(Q + "/static/app/straddles/csl_best_configs.json"))
     cfg = {"frozen_at": datetime.now().isoformat()[:16], "source_generated_at": lab.get("generated_at"),
            "note": "FROZEN for out-of-sample paper validation; re-freeze consciously, never silently.",
@@ -123,7 +139,7 @@ def main():
             log("%s: already recorded today — skip" % bk); continue
         plans[bk] = {"dte": dte, **c, "state": "WAIT_ENTRY", "K": None, "legs": None,
                      "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None,
-                     "series": [], "tick": 0}
+                     "series": [], "tick": 0, "realized_rs": 0.0, "cost": 160, "shifts": 0}
         log("%s plan: DTE%d %s->%s SL%s qty %d (%d lots)" % (bk, dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
     if probe:
         for bk in plans:
@@ -168,7 +184,7 @@ def main():
                     comb = q["%s:%s" % (B["seg"], ce_s)]["last_price"] + q["%s:%s" % (B["seg"], pe_s)]["last_price"]
                     P["tick"] += 1
                     if P["tick"] % SAMPLE_EVERY == 1:
-                        P["series"].append([now, round((P["credit"] - comb) * B["qty"])])
+                        P["series"].append([now, round(P["realized_rs"] + (P["credit"] - comb) * B["qty"])])
                         write_live(plans, today)
                     sl = BACKSTOP if P["sl"] == "none" else P["sl"] / 100.0
                     thr = (1 + sl) * P["credit"]
@@ -180,8 +196,37 @@ def main():
                     P["last_comb"] = comb
                     if now >= P["exit"]: reason = reason or "TIME_EXIT"
                     if now_force: reason = reason or "EOD_FORCE"
+                    if reason == "SL_DWELL" and B.get("mgmt") == "trail":
+                        ce_l = q["%s:%s" % (B["seg"], ce_s)]["last_price"]
+                        pe_l = q["%s:%s" % (B["seg"], pe_s)]["last_price"]
+                        if (ce_l / max(P["ce0"], 0.05)) >= (pe_l / max(P["pe0"], 0.05)):
+                            lose_e, lose_x, win_sym, win_e, win_l = P["ce0"], ce_l, pe_s, P["pe0"], pe_l
+                        else:
+                            lose_e, lose_x, win_sym, win_e, win_l = P["pe0"], pe_l, ce_s, P["ce0"], ce_l
+                        P["realized_rs"] += (lose_e - lose_x) * B["qty"]
+                        P.update(state="TRAIL", win_sym=win_sym, win_e=win_e, win_lo=win_l, streak=0)
+                        push_event(st, sym, "ADJUST", "CSL hit: closed loser leg @ %.2f, TRAILING winner %s from %.2f (30%% bounce stop)" % (lose_x, win_sym, win_l))
+                        save_state(st)
+                        log("%s CSL->TRAIL: loser closed %.2f, winner %s @ %.2f" % (sym, lose_x, win_sym, win_l))
+                        continue
+                    if reason == "SL_DWELL" and B.get("mgmt") == "shift" and P["shifts"] < MAX_SHIFTS and now <= SHIFT_CUTOFF:
+                        P["realized_rs"] += (P["credit"] - comb) * B["qty"]
+                        sp = k.ltp([B["spot_key"]])[B["spot_key"]]["last_price"]
+                        K = round(sp / B["step"]) * B["step"]
+                        ce, pe, E = resolve_legs(k, B, K)
+                        if ce and pe:
+                            q2 = k.ltp(["%s:%s" % (B["seg"], ce["tradingsymbol"]), "%s:%s" % (B["seg"], pe["tradingsymbol"])])
+                            P["ce0"] = q2["%s:%s" % (B["seg"], ce["tradingsymbol"])]["last_price"]
+                            P["pe0"] = q2["%s:%s" % (B["seg"], pe["tradingsymbol"])]["last_price"]
+                            P.update(K=K, legs=(ce["tradingsymbol"], pe["tradingsymbol"]), credit=P["ce0"] + P["pe0"],
+                                     streak=0, last_comb=None, shifts=P["shifts"] + 1, expiry=str(E))
+                            P["cost"] += 160
+                            push_event(st, sym, "ADJUST", "CSL hit: SHIFTED to new ATM %d straddle @ %.2f credit (shift %d/%d)" % (K, P["credit"], P["shifts"], MAX_SHIFTS))
+                            save_state(st)
+                            log("%s CSL->SHIFT %d: new K=%d credit %.2f" % (sym, P["shifts"], K, P["credit"]))
+                            continue
                     if reason:
-                        pnl = round((P["credit"] - comb) * B["qty"] - 160)
+                        pnl = round(P["realized_rs"] + (P["credit"] - comb) * B["qty"] - P["cost"])
                         rec = {"day": today, "book": sym, "sym": B["sym"], "dte": P["dte"], "cfg": "%s->%s SL%s" % (P["entry"], P["exit"], P["sl"]),
                                "strike": P["K"], "expiry": P["expiry"], "credit": round(P["credit"], 2),
                                "entry_ts": P["entry_ts"], "exit_ts": datetime.now().strftime("%H:%M:%S"),
@@ -190,6 +235,34 @@ def main():
                         st["records"].append(rec)
                         push_event(st, sym, "EXIT", "%s: closed %d straddle @ %.2f -> P&L %+d (%d lots, cum %+d)" % (
                             reason, P["K"], comb, pnl, B["lots"], st["cum"].get(sym, 0) + pnl))
+                        st["cum"][sym] = st["cum"].get(sym, 0) + pnl
+                        save_state(st)
+                        log("%s EXIT %s pnl %+d (cum %+d)" % (sym, reason, pnl, st["cum"][sym]))
+                        del plans[sym]
+                elif P["state"] == "TRAIL":
+                    wkey = "%s:%s" % (B["seg"], P["win_sym"])
+                    wl = k.ltp([wkey])[wkey]["last_price"]
+                    P["tick"] += 1
+                    P["win_lo"] = min(P["win_lo"], wl)
+                    if P["tick"] % SAMPLE_EVERY == 1:
+                        P["series"].append([now, round(P["realized_rs"] + (P["win_e"] - wl) * B["qty"])])
+                        write_live(plans, today)
+                    reason = None
+                    if P["streak"] >= 2: reason = "TRAIL_EXIT"
+                    if wl >= P["win_lo"] * TRAIL_BOUNCE: P["streak"] += 1
+                    else: P["streak"] = 0
+                    if now >= P["exit"]: reason = reason or "TIME_EXIT"
+                    if now_force: reason = reason or "EOD_FORCE"
+                    if reason:
+                        pnl = round(P["realized_rs"] + (P["win_e"] - wl) * B["qty"] - P["cost"])
+                        rec = {"day": today, "book": sym, "sym": B["sym"], "dte": P["dte"],
+                               "cfg": "%s->%s SL%s+trail" % (P["entry"], P["exit"], P["sl"]),
+                               "strike": P["K"], "expiry": P.get("expiry"), "credit": round(P["credit"], 2),
+                               "entry_ts": P.get("entry_ts"), "exit_ts": datetime.now().strftime("%H:%M:%S"),
+                               "exit_comb": round(wl, 2), "reason": reason, "pnl": pnl, "series": P.get("series", []),
+                               "lots": B["lots"], "qty": B["qty"], "source": "PAPER"}
+                        st["records"].append(rec)
+                        push_event(st, sym, "EXIT", "%s: winner leg closed @ %.2f -> day P&L %+d (%d lots)" % (reason, wl, pnl, B["lots"]))
                         st["cum"][sym] = st["cum"].get(sym, 0) + pnl
                         save_state(st)
                         log("%s EXIT %s pnl %+d (cum %+d)" % (sym, reason, pnl, st["cum"][sym]))

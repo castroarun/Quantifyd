@@ -217,7 +217,7 @@ function LegsTable({ legs, total }: { legs?: Leg[]; total: number }) {
 }
 
 /* ---------- CSL paper-books curve explorer (full-screen popup: day navigator + by-system wall) ---------- */
-const CSL_BOOK_ORDER = ['CSL_TIMEB_NIFTY', 'CSL_TIMEB_SENSEX', 'NAS_COMB20', 'CSL30F_NIFTY', 'CSL30F_SENSEX'];
+const CSL_BOOK_ORDER = ['CSL_TIMEB_NIFTY', 'CSL_TIMEB_SENSEX', 'NAS_COMB20', 'NAS_C20_TRAIL', 'NAS_C20_SHIFT', 'CSL30F_NIFTY', 'CSL30F_SENSEX'];
 const WD_DTE: Record<string, Record<number, number>> = {
   NIFTY: { 0: 1, 1: 0, 2: 4, 3: 3, 4: 2 }, SENSEX: { 0: 3, 1: 2, 2: 1, 3: 0, 4: 4 },
 };
@@ -796,6 +796,8 @@ export default function Straddles() {
             <div style={{ marginTop: 6 }}><b>CSL_TIMEB_NIFTY (12 lots · qty 780):</b> the <b>optimized time-blocked book (TB-CSL)</b> — per-DTE entry→exit windows + SL from the Lab sweep, <b>frozen 13-AUG</b> (schedule above; weekly Lab regens do NOT move it). 2-unit weight per the portfolio scan.</div>
             <div><b>CSL_TIMEB_SENSEX (6 lots · qty 120):</b> same TB-CSL frozen schedule on SENSEX, 1-unit weight (optimizer proportion NIFTY 2u : SENSEX 1u).</div>
             <div><b>NAS_COMB20 (3 lots · qty 195 · NIFTY):</b> A/B twin of the live nas_916_atm — same 09:16→15:20 full-day venue, but a <b>combined-premium 20% SL</b> replaces NAS's per-leg SLs + trail. Live test of “combined beats per-leg”.</div>
+            <div><b>NAS_C20_TRAIL (3 lots · qty 195 · NIFTY):</b> NAS_COMB20 + management — on CSL hit, close only the LOSER leg and <b>trail the winner</b> (exit on ≥30% bounce off its post-trigger low). The ATM-style rescue.</div>
+            <div><b>NAS_C20_SHIFT (3 lots · qty 195 · NIFTY):</b> NAS_COMB20 + management — on CSL hit, close both and <b>re-sell a fresh straddle at the new ATM</b> (own 20% CSL, max 3 shifts, none after 14:30). The ATM4-style recenter.</div>
             <div><b>CSL30F_NIFTY (3 lots · qty 195):</b> <b>F = FIXED</b> — the flat un-windowed rule: 09:16→15:20 every day, combined <b>30% SL</b>, no per-DTE windows. Control arm for “do the time-blocks add value over plain CSL30?”.</div>
             <div><b>CSL30F_SENSEX (3 lots · qty 60):</b> the same fixed CSL30 rule on SENSEX.</div>
             <div style={{ marginTop: 6, color: C.faint }}>The three 3-lot books are sized to match the live NAS books for like-for-like daily comparison. Day curves below: BACKTEST = recorded-chain replay of these exact rules · LIVE PAPER records start 14-AUG.</div>
