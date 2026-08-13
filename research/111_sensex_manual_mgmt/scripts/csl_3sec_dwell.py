@@ -33,7 +33,7 @@ for SYM,cfg in CFG.items():
         E=exps[0]
         sp=[(r[0][11:19],float(r[1])) for r in oc.execute("SELECT snapshot_time,spot_price FROM underlying_spot WHERE symbol=? AND substr(snapshot_time,1,10)=? AND spot_price>0 ORDER BY snapshot_time",(SYM,day))]
         if not sp: continue
-        ts=[a for a,_ in sp]; j=bisect_right(ts,"09:16:30")
+        ts=[a for a,_ in sp]; j=bisect_right(ts,"09:45:00")
         if not j: continue
         K=round(sp[j-1][1]/cfg["step"])*cfg["step"]
         legs={}
@@ -49,7 +49,7 @@ for SYM,cfg in CFG.items():
             jp=bisect_right(pk_,t)
             if not jp: continue
             comb.append((t,cv[idx]+pv[jp-1]))
-        if len(comb)<50: continue
+        if len(comb)<20: continue
         ent=comb[0][1]
         rec={"day":day,"dte":tdte(E,day)}
         for sl in SLS:

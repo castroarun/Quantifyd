@@ -83,3 +83,16 @@ Grid sizing at phase 3; ~79 recorded days is the sample — single-regime caveat
 1. Fix STATIC arm (skip breach check when mode==STATIC) + rerun (~1h detached).
 2. Entry bake-off: 09:16 / ATR squeeze / ATR+BB squeeze / fixed-time grid / staggered.
 3. SENSEX theta EOD-decay by DTE (reuse NIFTY treatment). 4. Report page + leaderboard entry.
+
+## 10. ENTRY x EXIT x SL sweep — BEST CONFIGS (2026-08-13, 3-sec dwell, ~15d/cell)
+NIFTY (10 lots): DTE0 09:30->11:00 SL25-30 (+198,967, win93%, DD-1,687, r117.9) | DTE1 13:00->14:00
+(+56,848 r40.8) | DTE2 10:00->12:00 (+82,003 r74.4) | DTE3 FULL DAY any-SL (+169,968 r121.8) |
+DTE4 10:30->12:00 (+46,810 r4.9 — Wed becomes tradable in the window).
+SENSEX (5 lots): DTE0 FULL DAY no-SL (+204,435, win93%, DD-775, r263.8; live=wide 40-50% backstop) |
+DTE1 10:30->12:00 (+25,785 r4.3) | DTE2 09:25->11:00 (+53,465, DD-30 = artifact, flag) |
+DTE3 13:00->14:00 (+16,200 r9.8) | DTE4 10:30->12:00 (+22,590 r26.1).
+KEY INSIGHT: the TIME WINDOW is the edge — SL level (20/25/30) rarely binds inside the windows;
+time-boxed exits cut DD ~10-25x while keeping most of the profit. 30% stays as disaster backstop.
+CAVEATS: ~1500-cell grid maxima on 15-16d cells = multiple-testing; validate OOS/paper before live.
+Data: results/entry_exit_sweep.json + csl_3sec_dwell.json (full-days). Next: NAS comparisons w/
+visuals (live-first) -> portfolio optimization -> hub page + factsheet + final conclusion.
