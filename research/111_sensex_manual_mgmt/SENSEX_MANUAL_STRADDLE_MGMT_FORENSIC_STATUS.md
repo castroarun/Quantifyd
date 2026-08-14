@@ -273,3 +273,5 @@ Best cell 6/2/6 = +375,440 / -12,130 / ratio 31.0. In-sample caveat strongest on
 (worst recorded day -391 @2L vs ~-4-5k modeled SL hit). Lab rows: TB@4L + TB@6L stacks
 live on /app/straddles#portfolio-lab (daily live-first regen). Sizing decision: PENDING user.
 Script: scripts/comb_tb_overweight_grid.py.
+
+**Sec 18b DECISION (2026-08-14 14:4x IST, user): stack resized to 6/2/6 (TB-CSL -> 6 lots, 14L total).** Instructions: docs/STACK_TB6_RESIZE_DEPLOY_STATUS.md (execute in build-context session; effective Mon 17-AUG).
