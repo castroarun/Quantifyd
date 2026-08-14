@@ -1149,6 +1149,56 @@ function NsrwPaperCard() {
   );
 }
 
+function SleeveCard({ label, sub, rules, info }: { label: string; sub: string; rules: string; info: any }) {
+  const lv = info.live;
+  const status: 'live' | 'paper' | 'closed' | 'off' =
+    info.state === 'CLOSED' ? 'closed' : info.src === 'live' ? 'live' : info.src === 'paper' ? 'paper' : 'off';
+  const stTitle = info.state === 'CLOSED' ? 'Closed for the day' : info.src === 'live' ? 'Live - real money'
+    : info.src === 'paper' ? 'Paper - simulated' : 'Not trading today';
+  const qty = lv?.qty ?? info.qty ?? 130;
+  const legs = lv?.ce_sym ? [
+    { side: 'CE', color: '#d29922', e: lv.ce0, l: lv.ce_last },
+    { side: 'PE', color: '#a371f7', e: lv.pe0, l: lv.pe_last },
+  ] : [];
+  const legPnl = (e: number, l: number) => (Number(e) - Number(l)) * qty;
+  return (
+    <div className={styles.panel}>
+      <div className={styles.panelHead}>
+        <div className={styles.panelHeadLeft}>
+          <div className={styles.panelTitle}>{label}</div>
+          <div className={styles.panelSub}>{sub}</div>
+        </div>
+        <div className={styles.panelStatus}>
+          <StatusDot kind={status} title={stTitle} />
+          <div className={styles.panelStatusMeta}>{info.lots} lots · {info.state}</div>
+        </div>
+      </div>
+      <div className={styles.metricsRow}>
+        <MiniMetric label="Day P&L" value={<span className={pnlClass(info.pnl)}>{formatPnl(info.pnl)}</span>} />
+        <MiniMetric label="Credit" value={lv?.credit ?? info.rec?.credit ?? '—'} />
+      </div>
+      {info.series.length >= 2 ? <NsrwSpark series={info.series} /> : null}
+      <div className={styles.legs}>
+        {legs.length === 0 ? (
+          <div className={styles.noLegs}>{info.state === 'CLOSED' ? 'Closed today' : 'Legs appear from Monday'}</div>
+        ) : legs.map((lg) => (
+          <div key={lg.side} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '3px 7px' }}>
+            <span style={{ fontWeight: 700, color: lg.color }}>{lg.side}</span>
+            <span>{lv.K}</span>
+            <span style={{ color: 'var(--ink-muted)' }}>x{qty}</span>
+            <span style={{ color: 'var(--ink-muted)' }}>{Number(lg.e).toFixed(2)} @{lv.entry_ts} → {Number(lg.l).toFixed(2)}</span>
+            <span className={pnlClass(legPnl(lg.e, lg.l))} style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatPnl(legPnl(lg.e, lg.l))}</span>
+          </div>
+        ))}
+      </div>
+      <details className={styles.rules}>
+        <summary className={styles.rulesSummary}>Rules &amp; snapshot</summary>
+        <div className={styles.rulesBody}><div className={styles.rulesText}>{rules}</div></div>
+      </details>
+    </div>
+  );
+}
+
 export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
@@ -1777,55 +1827,6 @@ export default function Nas() {
         </section>
       ) : null}
 
-      {/* COMB + TimeB sleeves (research/111) — paper/live straddle books: summary + intraday spark */}
-      {(cslLive?.books?.NAS_COMB20 || cslLive?.books?.CSL_TIMEB_NIFTY) ? (
-        <section className={styles.combinedHero}>
-          <div className={styles.combinedHead}>
-            <div className="section-title">COMB + TimeB sleeves · today</div>
-            <div className={styles.combinedMeta}>NIFTY 2-lot · ex-Wed · before the squeeze book</div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
-            {SLEEVES.map((sv) => {
-              const info = sleeveInfo(sv.key);
-              if (!info.live && !info.rec) return null;
-              return (
-                <div key={sv.key} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', background: 'var(--card, transparent)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>{sv.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 2 }}>{sv.hint} · {info.lots} lots · {info.qty} qty</div>
-                    </div>
-                    <span
-                      title={info.state === 'CLOSED' ? 'Closed for the day' : info.src === 'live' ? 'LIVE - real money' : info.src === 'paper' ? 'Paper' : String(info.state)}
-                      style={{
-                        display: 'inline-block', width: 10, height: 10, borderRadius: 999, marginTop: 5, flex: '0 0 auto',
-                        background: info.state === 'CLOSED' ? '#9aa0a6' : info.src === 'live' ? '#22c55e' : '#3b82f6',
-                        boxShadow: `0 0 0 3px ${info.state === 'CLOSED' ? 'rgba(154,160,166,0.18)' : info.src === 'live' ? 'rgba(34,197,94,0.18)' : 'rgba(59,130,246,0.18)'}`,
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: 28, marginTop: 12, flexWrap: 'wrap' }}>
-                    <div>
-                      <div style={{ fontSize: 10, letterSpacing: '0.04em', color: 'var(--ink-faint, #6e7681)' }}>DAY P&amp;L</div>
-                      <div className={pnlClass(info.pnl)} style={{ fontSize: 20, fontWeight: 700 }}>{formatPnl(info.pnl)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, letterSpacing: '0.04em', color: 'var(--ink-faint, #6e7681)' }}>CREDIT</div>
-                      <div style={{ fontSize: 20, fontWeight: 600 }}>{info.live?.credit ?? info.rec?.credit ?? '—'}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, letterSpacing: '0.04em', color: 'var(--ink-faint, #6e7681)' }}>STRIKE</div>
-                      <div style={{ fontSize: 20, fontWeight: 600 }}>{info.rec?.strike ?? '—'}</div>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: 8 }}>{info.series.length >= 2 ? <NsrwSpark series={info.series} /> : null}</div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
       {/* Trade Book — grouped active+closed trades with group P&L (EOD report). Paper legs are
           restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
       <TradeBook
@@ -1844,6 +1845,19 @@ export default function Nas() {
       <SensexPaperCard />
 
       <NsrwPaperCard />
+
+      {(cslLive?.books?.NAS_COMB20 || cslLive?.books?.CSL_TIMEB_NIFTY) ? (
+        <section className={styles.sectionBlock} style={{ marginTop: 14 }}>
+          <div className={styles.colHead}>
+            <div className="section-title">COMB + TimeB sleeves</div>
+            <Chip>NIFTY 2-lot · ex-Wed · 2 books</Chip>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24, marginTop: 12 }}>
+            <SleeveCard label="COMB sleeve" sub="Full-day CSL · combined-premium SL · ex-Wed" rules="09:16 to 15:20. Combined-premium SL per DTE (DTE0 25 / DTE1 30 / DTE2 30 / DTE3 20). Replaces per-leg SLs + trail. 2 lots, Wednesday off." info={sleeveInfo('NAS_COMB20')} />
+            <SleeveCard label="TimeB" sub="Time-blocked windows + SL · ex-Wed" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
+          </div>
+        </section>
+      ) : null}
 
       <div className={styles.columns}>
         <div className={styles.col}>
