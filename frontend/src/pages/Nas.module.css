@@ -956,3 +956,14 @@
   font-size: var(--text-xxs);
   color: var(--accent-warn, #f0c860);
 }
+
+/* uniform card grid for the NIFTY systems sections (2026-08-14) */
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 12px;
+  align-items: start;
+}
+@media (max-width: 1040px) { .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 660px) { .grid3 { grid-template-columns: 1fr; } }

@@ -1539,8 +1539,8 @@ export default function Nas() {
   ];
   const sleeveInfo = (bk: string) => {
     const live = cslLive?.books?.[bk];
-    const series: [string, number][] = live?.series ?? [];
     const rec = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
+    const series: [string, number][] = (live?.series?.length ? live.series : (rec?.series ?? [])) as [string, number][];
     const pnl = rec ? Number(rec.pnl || 0) : (series.length ? Number(series[series.length - 1][1]) : 0);
     const state = rec ? 'CLOSED' : (live?.state ?? '—');
     const src = rec ? (rec.source === 'REAL' ? 'live' : 'paper') : null;
@@ -1865,63 +1865,57 @@ export default function Nas() {
       <NiftyChart />
 
       <Collapsible title="NIFTY · systems" meta="9:16 + Squeeze + COMB/TimeB sleeves" defaultOpen>
-      {(cslLive?.books?.NAS_COMB20 || cslLive?.books?.CSL_TIMEB_NIFTY) ? (
-        <section className={styles.sectionBlock} style={{ marginTop: 14 }}>
-          <div className={styles.colHead}>
-            <div className="section-title">COMB + TimeB sleeves</div>
-            <Chip>NIFTY 2-lot · ex-Wed · 2 books</Chip>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24, marginTop: 12 }}>
-            <SleeveCard label="COMB sleeve" sub="Full-day CSL · combined-premium SL · ex-Wed" rules="09:16 to 15:20. Combined-premium SL per DTE (DTE0 25 / DTE1 30 / DTE2 30 / DTE3 20). Replaces per-leg SLs + trail. 2 lots, Wednesday off." info={sleeveInfo('NAS_COMB20')} />
-            <SleeveCard label="TimeB" sub="Time-blocked windows + SL · ex-Wed" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
-          </div>
-        </section>
-      ) : null}
-
-      <div className={styles.columns}>
-        <div className={styles.col}>
-          <div className={styles.colHead}>
-            <div className="section-title">9:16 entry</div>
-            <Chip>{ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
-          </div>
-          <div className={styles.panelList}>
-            {ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
-              <SystemPanel
-                key={s.id}
-                def={s}
-                onStateChange={(rec) => updateState(s.id, rec)}
-                onToast={showToast}
-                series={mtmData[s.key]?.points || []}
-                events={mtmData[s.key]?.events || []}
-                onExpand={() => setExpandedKey(s.key)}
-              />
-            ))}
-            <NasOptCard />
-          </div>
+      {/* Section 1 — 9:16 ATMs */}
+      <section className={styles.sectionBlock} style={{ marginTop: 8 }}>
+        <div className={styles.colHead}>
+          <div className="section-title">9:16 · ATMs</div>
+          <Chip>{ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
         </div>
-
-        <div className={styles.divider} aria-hidden />
-
-        <div className={styles.col}>
-          <div className={styles.colHead}>
-            <div className="section-title">ATR squeeze</div>
-            <Chip>{SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
-          </div>
-          <div className={styles.panelList}>
-            {SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
-              <SystemPanel
-                key={s.id}
-                def={s}
-                onStateChange={(rec) => updateState(s.id, rec)}
-                onToast={showToast}
-                series={mtmData[s.key]?.points || []}
-                events={mtmData[s.key]?.events || []}
-                onExpand={() => setExpandedKey(s.key)}
-              />
-            ))}
-          </div>
+        <div className={styles.grid3}>
+          {ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
+            <SystemPanel key={s.id} def={s} onStateChange={(rec) => updateState(s.id, rec)} onToast={showToast} series={mtmData[s.key]?.points || []} events={mtmData[s.key]?.events || []} onExpand={() => setExpandedKey(s.key)} />
+          ))}
         </div>
-      </div>
+      </section>
+
+      {/* Section 2 — COMB + TimeB sleeves (3rd slot reserved) */}
+      <section className={styles.sectionBlock} style={{ marginTop: 22 }}>
+        <div className={styles.colHead}>
+          <div className="section-title">COMB + TimeB sleeves</div>
+          <Chip>NIFTY 2-lot · ex-Wed · 2 books</Chip>
+        </div>
+        <div className={styles.grid3}>
+          <SleeveCard label="COMB sleeve" sub="Full-day CSL · combined-premium SL · ex-Wed" rules="09:16 to 15:20. Combined-premium SL per DTE (DTE0 25 / DTE1 30 / DTE2 30 / DTE3 20). Replaces per-leg SLs + trail. 2 lots, Wednesday off." info={sleeveInfo('NAS_COMB20')} />
+          <SleeveCard label="TimeB" sub="Time-blocked windows + SL · ex-Wed" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
+          <div />
+        </div>
+      </section>
+
+      {/* Section 3 — Squeeze ATMs */}
+      <section className={styles.sectionBlock} style={{ marginTop: 22 }}>
+        <div className={styles.colHead}>
+          <div className="section-title">Squeeze · ATMs</div>
+          <Chip>{SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
+        </div>
+        <div className={styles.grid3}>
+          {SQUEEZE_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).map((s) => (
+            <SystemPanel key={s.id} def={s} onStateChange={(rec) => updateState(s.id, rec)} onToast={showToast} series={mtmData[s.key]?.points || []} events={mtmData[s.key]?.events || []} onExpand={() => setExpandedKey(s.key)} />
+          ))}
+        </div>
+      </section>
+
+      {/* Section 4 — NAS-OPT (lone) */}
+      <section className={styles.sectionBlock} style={{ marginTop: 22 }}>
+        <div className={styles.colHead}>
+          <div className="section-title">NAS-OPT</div>
+          <Chip>research/54 · paper</Chip>
+        </div>
+        <div className={styles.grid3}>
+          <NasOptCard />
+          <div />
+          <div />
+        </div>
+      </section>
 
       <CumulativePnL />
       </Collapsible>
