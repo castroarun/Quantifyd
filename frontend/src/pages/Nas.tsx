@@ -542,8 +542,8 @@ function SensexLiveCard() {
 
   return (
     <section className={styles.sectionBlock} style={{ marginTop: 14,
-      border: '1px solid rgba(63,185,80,0.35)', borderRadius: 10, padding: '12px 14px',
-      background: 'rgba(63,185,80,0.03)' }}>
+      border: '1px solid var(--line)', borderRadius: 10, padding: '12px 14px',
+      background: 'transparent' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
         <span className="section-title">SENSEX</span>
         {modePill(anyLive ? 'live' : 'paper')}
@@ -1199,6 +1199,18 @@ function SleeveCard({ label, sub, rules, info }: { label: string; sub: string; r
   );
 }
 
+function Collapsible({ title, meta, defaultOpen = true, children }: { title: string; meta?: any; defaultOpen?: boolean; children: any }) {
+  return (
+    <details open={defaultOpen} style={{ marginTop: 22 }}>
+      <summary style={{ cursor: 'pointer', padding: '8px 4px', borderBottom: '1px solid var(--line)' }}>
+        <span className="section-title">{title}</span>
+        {meta ? <span style={{ fontSize: 12, color: 'var(--ink-muted)', marginLeft: 10 }}>{meta}</span> : null}
+      </summary>
+      <div style={{ marginTop: 14 }}>{children}</div>
+    </details>
+  );
+}
+
 export default function Nas() {
   const [states, setStates] = useState<Record<string, SystemStateRecord>>({});
   const [toast, setToast] = useState<string | null>(null);
@@ -1829,22 +1841,23 @@ export default function Nas() {
 
       {/* Trade Book — grouped active+closed trades with group P&L (EOD report). Paper legs are
           restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
-      <TradeBook
-        systems={[...ENTRY_916_SYSTEMS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-        states={{ ...states, 'nas-opt': nasOptTb }}
-        liveLegs={liveTicks.legs}
-        basis={histBasis}
-      />
+      <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
+        <TradeBook
+          systems={[...ENTRY_916_SYSTEMS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
+          states={{ ...states, 'nas-opt': nasOptTb }}
+          liveLegs={liveTicks.legs}
+          basis={histBasis}
+        />
+      </Collapsible>
 
       {/* Live NIFTY index + SENSEX positions — moved below the NAS trade book so NAS
           positions sit with the NAS cards/curve (user 2026-08-14). */}
       <NiftyChart />
 
-      <SensexLiveCard />
-
-      <SensexPaperCard />
-
-      <NsrwPaperCard />
+      <Collapsible title="SENSEX" meta="Wed/Thu live · else paper" defaultOpen>
+        <SensexLiveCard />
+        <SensexPaperCard />
+      </Collapsible>
 
       {(cslLive?.books?.NAS_COMB20 || cslLive?.books?.CSL_TIMEB_NIFTY) ? (
         <section className={styles.sectionBlock} style={{ marginTop: 14 }}>
@@ -1906,7 +1919,8 @@ export default function Nas() {
 
       <CumulativePnL />
 
-      {/* What's next */}
+      {/* What's next - retained but hidden per user 2026-08-14; set to true to restore */}
+      {false && (
       <section className={styles.sectionBlock}>
         <div className={styles.sectionHead}>
           <div className="section-title">What's next</div>
@@ -1937,8 +1951,11 @@ export default function Nas() {
           ))}
         </div>
       </section>
+      )}
 
-      <WatchdogSection />
+      <Collapsible title="Integrity watchdog" meta="pipeline / candle-freeze health monitor" defaultOpen={false}>
+        <WatchdogSection />
+      </Collapsible>
 
       {/* Cross-book comparison: NAS-916 x3 vs V1+30% combined-premium SL (2026-08-12, research/111) */}
       <section className={styles.sectionBlock}>
@@ -1987,6 +2004,10 @@ export default function Nas() {
           </div>
         </div>
       </section>
+      <Collapsible title="Paper books — NSR-W weekly strangle" meta="paper · 10 lots each · research only" defaultOpen={false}>
+        <NsrwPaperCard />
+      </Collapsible>
+
     </div>
     </LiveTicksContext.Provider>
   );
