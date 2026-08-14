@@ -207,3 +207,38 @@ live state. Do not mark STATUS DONE until the Revision Log is complete.
 Outstanding for Monday 09:16: first successful REAL sleeve entry with the LIMIT fix.
 TB-CSL today 10:00 will attempt live, hit the same (now-fixed-on-disk) rejection in the
 RUNNING process, and fall back to paper — expected, safe, logged.
+
+---
+
+## Revision Log (Part E) — sleeve order-path fix, 2026-08-14
+
+**Incident (first live sleeve day):** Kite began rejecting bare MARKET orders on options
+("Market orders without market protection are not allowed via API"). Both live sleeves CE orders
+rejected -> safety rail fell them to PAPER (no naked legs). Suite unaffected (routes via
+services.kite_service.get_kite, which auto-injects market_protection). Secondary: un-batched sleeve
+LTP polling ate the shared 3 req/s limit -> 38 "Too many requests", degrading the live suite REST
+SL-backup + portfolio-stop (live SLs still enforced via the websocket ticker).
+
+**Fix - commit 2acaa72 (csl_paper_exec.py), effect Mon 09:12 (cron restarts fresh):**
+1. kite() -> services.kite_service.get_kite (market_protection wrap + suite guards); place_market
+   back to MARKET on the proven path (dropped the untested marketable-LIMIT patch 5b6e2ab).
+2. Batched all OPEN/TRAIL LTP polls into one k.ltp/cycle.
+py_compile OK. --probe (read-only): get_kite OK; both live sleeves mode=LIVE gates_ok margin_ok
+(need 429000 vs 3.34M free); legs resolve; no errors. Deviation from Part B plan: get_kite/MARKET
+instead of the LIMIT patch (proven path, lower risk) - logged per Part E rule 5.
+
+## Monday 2026-08-17 - first-live-sleeve WATCH checklist (run ~09:14-10:15 IST)
+
+The fixed order path has NEVER placed a real order yet. Watch the first cycle:
+1. ~09:13: tail -5 /tmp/csl_paper.log -> expect NAS_COMB20 plan [LIVE] + CSL_TIMEB_NIFTY plan [LIVE].
+2. ~09:16: grep -E "NAS_COMB20|EXC|fallback" /tmp/csl_paper.log | tail -> expect NAS_COMB20 ENTER [LIVE]
+   (NOT "CE entry order failed - paper fallback"). Kite orderbook: CSL_NAS_COMB20-tagged SELL CE+PE
+   COMPLETE at real fills.
+3. ~10:00: same for CSL_TIMEB_NIFTY (entry window 10:00->12:00).
+4. Rate limit: journalctl -u quantifyd --since 09:15 | grep -c "Too many requests" -> far below Fri 38.
+5. First SL/exit cycle: watch one book exit end-to-end - fills recorded, source":"REAL", no phantom.
+6. Guardian (owed, Part C): if check_csl_live_books() is added, one clean /tmp/nas_guardian.log cycle.
+
+**KILL LEVERS if wrong:** POST /api/nas/kill-switch (whole stack -> paper) OR set the two BOOKS
+"mode":"paper" + touch backtest_data/nas_manual_freeze.flag (blocks all incl paper). Naked leg
+(shouldnt happen - one-leg guard unwinds CE): buy back manually in Kite, read ORDERBOOK first.
