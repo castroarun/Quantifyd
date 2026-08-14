@@ -1472,7 +1472,9 @@ export default function Nas() {
     const pnl = rec ? Number(rec.pnl || 0) : (series.length ? Number(series[series.length - 1][1]) : 0);
     const state = rec ? 'CLOSED' : (live?.state ?? '—');
     const src = rec ? (rec.source === 'REAL' ? 'live' : 'paper') : null;
-    return { live, series, pnl, state, src, rec };
+    const lots = rec ? Number(rec.lots || 2) : 2;
+    const qty = rec ? Number(rec.qty || 130) : 130;
+    return { live, series, pnl, state, src, rec, lots, qty };
   };
   // Merge the sleeve intraday series into the Overall curve (convert HH:MM -> ISO to match mtm).
   const sleevePts: MtmPoint[] = useMemo(() => {
@@ -1635,7 +1637,7 @@ export default function Nas() {
               key={sv.key}
               label={sv.label}
               value={<span className={pnlClass(info.pnl)}>{formatPnl(info.pnl)}</span>}
-              hint={`${info.src ? (info.src === 'live' ? 'LIVE · ' : 'paper · ') : ''}${info.state} · ${sv.hint}`}
+              hint={`${info.lots} lots (${info.qty} qty) · ${info.src ? (info.src === 'live' ? 'LIVE · ' : 'paper · ') : ''}${info.state} · ${sv.hint}`}
             />
           );
         })}
@@ -1756,12 +1758,6 @@ export default function Nas() {
         </section>
       ) : null}
 
-      {/* Chart + positions sit ABOVE the system cards (user 2026-07-13): the live NIFTY and
-          what we are actually holding are what you look at first. */}
-      <NiftyChart />
-
-      <SensexLiveCard />
-
       {/* COMB + TimeB sleeves (research/111) — paper/live straddle books: summary + intraday spark */}
       {(cslLive?.books?.NAS_COMB20 || cslLive?.books?.CSL_TIMEB_NIFTY) ? (
         <section className={styles.combinedHero}>
@@ -1774,19 +1770,36 @@ export default function Nas() {
               const info = sleeveInfo(sv.key);
               if (!info.live && !info.rec) return null;
               return (
-                <div key={sv.key} style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-                    <span style={{ fontWeight: 700 }}>{sv.label}
-                      <span style={{ fontSize: 11, marginLeft: 6, color: info.src === 'live' ? '#ef4444' : 'var(--ink-muted)' }}>
-                        {info.src ? (info.src === 'live' ? 'LIVE' : 'paper') : info.state}
-                      </span>
-                    </span>
-                    <span className={pnlClass(info.pnl)} style={{ fontWeight: 700 }}>{formatPnl(info.pnl)}</span>
+                <div key={sv.key} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', background: 'var(--card, transparent)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{sv.label}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 2 }}>{sv.hint} · {info.lots} lots · {info.qty} qty</div>
+                    </div>
+                    <span
+                      title={info.state === 'CLOSED' ? 'Closed for the day' : info.src === 'live' ? 'LIVE - real money' : info.src === 'paper' ? 'Paper' : String(info.state)}
+                      style={{
+                        display: 'inline-block', width: 10, height: 10, borderRadius: 999, marginTop: 5, flex: '0 0 auto',
+                        background: info.state === 'CLOSED' ? '#9aa0a6' : info.src === 'live' ? '#22c55e' : '#3b82f6',
+                        boxShadow: `0 0 0 3px ${info.state === 'CLOSED' ? 'rgba(154,160,166,0.18)' : info.src === 'live' ? 'rgba(34,197,94,0.18)' : 'rgba(59,130,246,0.18)'}`,
+                      }}
+                    />
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 2 }}>
-                    {sv.hint} · {info.state}{info.rec?.strike ? ` · ${info.rec.strike}` : ''}{info.live?.credit ? ` · credit ${info.live.credit}` : ''}
+                  <div style={{ display: 'flex', gap: 28, marginTop: 12, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: 10, letterSpacing: '0.04em', color: 'var(--ink-faint, #6e7681)' }}>DAY P&amp;L</div>
+                      <div className={pnlClass(info.pnl)} style={{ fontSize: 20, fontWeight: 700 }}>{formatPnl(info.pnl)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, letterSpacing: '0.04em', color: 'var(--ink-faint, #6e7681)' }}>CREDIT</div>
+                      <div style={{ fontSize: 20, fontWeight: 600 }}>{info.live?.credit ?? info.rec?.credit ?? '—'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, letterSpacing: '0.04em', color: 'var(--ink-faint, #6e7681)' }}>STRIKE</div>
+                      <div style={{ fontSize: 20, fontWeight: 600 }}>{info.rec?.strike ?? '—'}</div>
+                    </div>
                   </div>
-                  {info.series.length >= 2 ? <NsrwSpark series={info.series} /> : null}
+                  <div style={{ marginTop: 8 }}>{info.series.length >= 2 ? <NsrwSpark series={info.series} /> : null}</div>
                 </div>
               );
             })}
@@ -1802,6 +1815,12 @@ export default function Nas() {
         liveLegs={liveTicks.legs}
         basis={histBasis}
       />
+
+      {/* Live NIFTY index + SENSEX positions — moved below the NAS trade book so NAS
+          positions sit with the NAS cards/curve (user 2026-08-14). */}
+      <NiftyChart />
+
+      <SensexLiveCard />
 
       <SensexPaperCard />
 
