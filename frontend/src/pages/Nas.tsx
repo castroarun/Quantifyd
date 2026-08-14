@@ -1200,14 +1200,24 @@ function SleeveCard({ label, sub, rules, info }: { label: string; sub: string; r
 }
 
 function Collapsible({ title, meta, defaultOpen = true, children }: { title: string; meta?: any; defaultOpen?: boolean; children: any }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <details open={defaultOpen} style={{ marginTop: 22 }}>
-      <summary style={{ cursor: 'pointer', padding: '8px 4px', borderBottom: '1px solid var(--line)' }}>
-        <span className="section-title">{title}</span>
-        {meta ? <span style={{ fontSize: 12, color: 'var(--ink-muted)', marginLeft: 10 }}>{meta}</span> : null}
-      </summary>
-      <div style={{ marginTop: 14 }}>{children}</div>
-    </details>
+    <section style={{ marginTop: 24, border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card-bg, transparent)' }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px',
+          background: 'rgba(0,0,0,0.025)', border: 'none', borderBottom: open ? '1px solid var(--line)' : 'none',
+          cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <span style={{ display: 'inline-block', transition: 'transform 0.15s ease', transform: open ? 'rotate(90deg)' : 'none', color: 'var(--ink-muted)', fontSize: 11 }}>▶</span>
+        <span className="section-title" style={{ margin: 0 }}>{title}</span>
+        {meta ? <span style={{ fontSize: 12, color: 'var(--ink-muted)', marginLeft: 4 }}>{meta}</span> : null}
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--ink-faint, #9aa0a6)' }}>{open ? 'collapse' : 'expand'}</span>
+      </button>
+      {open ? <div style={{ padding: 16 }}>{children}</div> : null}
+    </section>
   );
 }
 

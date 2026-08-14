@@ -26,6 +26,7 @@ export default function NiftyChart() {
   const [w, setW] = useState(900);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('niftyChartCollapsed') === '1');
   const [compact, setCompact] = useState(() => localStorage.getItem('niftyChartCompact') === '1');
+  const [venue, setVenue] = useState<'NIFTY' | 'SENSEX'>(() => (localStorage.getItem('nasChartVenue') === 'SENSEX' ? 'SENSEX' : 'NIFTY'));
   const wrapRef = useRef<HTMLDivElement>(null);
   const H = compact ? H_COMPACT : H_FULL;
 
@@ -46,14 +47,15 @@ export default function NiftyChart() {
   useEffect(() => {
     let on = true;
     const load = () =>
-      fetch(`/static/nifty_5m.json?t=${Date.now()}`, { cache: 'no-store' })
+      fetch(`/static/${venue === 'SENSEX' ? 'sensex' : 'nifty'}_5m.json?t=${Date.now()}`, { cache: 'no-store' })
         .then((r) => r.json()).then((d: Data) => { if (on) setData(d); }).catch(() => {});
     load();
     const id = setInterval(load, 20000);
     return () => { on = false; clearInterval(id); };
-  }, []);
+  }, [venue]);
 
   useEffect(() => {
+    if (venue !== 'NIFTY') { setLtp(null); return; }
     let on = true;
     const load = () =>
       fetch(`/api/nas/ticker/status`, { cache: 'no-store' })
@@ -61,7 +63,7 @@ export default function NiftyChart() {
     load();
     const id = setInterval(load, 5000);
     return () => { on = false; clearInterval(id); };
-  }, []);
+  }, [venue]);
 
   const padT = 14, padB = 24, padR = 58, padL = 8;
   const candles: Candle[] = data?.candles ? data.candles.map((c) => ({ ...c })) : [];
@@ -130,7 +132,14 @@ export default function NiftyChart() {
   return (
     <section style={{ margin: '0 0 18px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '0 0 8px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink,#e6e8ec)' }}>NIFTY 50 · 5-min</span>
+        <span style={{ display: 'inline-flex', gap: 2, border: '1px solid var(--border,#232936)', borderRadius: 8, overflow: 'hidden' }}>
+          {(['NIFTY', 'SENSEX'] as const).map((v) => (
+            <button key={v} onClick={() => { setVenue(v); localStorage.setItem('nasChartVenue', v); }}
+              style={{ padding: '3px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
+                background: venue === v ? 'var(--accent,#f5b301)' : 'transparent', color: venue === v ? '#111' : 'var(--ink-muted,#8b93a1)' }}>{v}</button>
+          ))}
+        </span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink,#e6e8ec)' }}>{venue === 'SENSEX' ? 'SENSEX' : 'NIFTY 50'} · 5-min</span>
         {cur != null && <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent,#f5b301)' }}>{cur.toFixed(2)}</span>}
         <span style={{ fontSize: 11, color: 'var(--ink-muted,#8b93a1)' }}>live {ltp ? '●' : '○'} · {data?.updated ?? '–'}</span>
         {!collapsed && <span style={{ fontSize: 10.5, color: DAILY }}>— Daily CPR</span>}
