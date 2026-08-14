@@ -1140,7 +1140,7 @@ function NsrwPaperCard() {
           {' · '}<a href="/app/nsrw-travel-research90.html" style={{ color: '#3987e5' }}>travel report</a>
         </span>
       </div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
         <NsrwBook id="t30" b={s.books.t30} />
         <NsrwBook id="t20" b={s.books.t20} />
       </div>
@@ -1864,11 +1864,7 @@ export default function Nas() {
           positions sit with the NAS cards/curve (user 2026-08-14). */}
       <NiftyChart />
 
-      <Collapsible title="SENSEX" meta="Wed/Thu live · else paper" defaultOpen>
-        <SensexLiveCard />
-        <SensexPaperCard />
-      </Collapsible>
-
+      <Collapsible title="NIFTY · systems" meta="9:16 + Squeeze + COMB/TimeB sleeves" defaultOpen>
       {(cslLive?.books?.NAS_COMB20 || cslLive?.books?.CSL_TIMEB_NIFTY) ? (
         <section className={styles.sectionBlock} style={{ marginTop: 14 }}>
           <div className={styles.colHead}>
@@ -1928,6 +1924,12 @@ export default function Nas() {
       </div>
 
       <CumulativePnL />
+      </Collapsible>
+
+      <Collapsible title="SENSEX" meta="Wed/Thu live · else paper" defaultOpen>
+        <SensexLiveCard />
+        <SensexPaperCard />
+      </Collapsible>
 
       {/* What's next - retained but hidden per user 2026-08-14; set to true to restore */}
       {false && (
