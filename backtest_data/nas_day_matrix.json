@@ -70,7 +70,7 @@
     "0": true,
     "1": true,
     "2": true,
-    "3": true,
+    "3": false,
     "4": false
    },
    "gap_up": false,
@@ -83,7 +83,7 @@
     "0": true,
     "1": true,
     "2": true,
-    "3": true,
+    "3": false,
     "4": false
    },
    "gap_up": false,
@@ -96,7 +96,7 @@
     "0": true,
     "1": true,
     "2": true,
-    "3": true,
+    "3": false,
     "4": false
    },
    "gap_up": false,

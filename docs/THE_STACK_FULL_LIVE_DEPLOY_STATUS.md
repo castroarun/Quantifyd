@@ -189,3 +189,6 @@ The implementing session MUST append to this file a **Revision Log** with, per c
 
 The originating session (this one) will then verify the implementation elaborately against this log +
 live state. Do not mark STATUS DONE until the Revision Log is complete.
+
+| 2026-08-14 07:5x IST | Sleeves LIVE order layer deployed (probe green: gates+legs+margin net Rs46.1L); popups for all books (nas_alert_feed + dual-feed watcher) | commit 33d5f50 |
+| 2026-08-14 07:5x IST | **DECISION (user, after sibling stop-by-DTE study input): suite Thu (DTE3) real-money REVERTED to shadow; Fri (DTE2) stays live.** Sibling study: NIFTY per-leg-30% net-negative DTE2+ (-Rs303/lot overall); sleeves' combined-SL is the validated DTE2+ mechanic and carries Thu exposure as paper | day-matrix dte3=false, dte2=true |
