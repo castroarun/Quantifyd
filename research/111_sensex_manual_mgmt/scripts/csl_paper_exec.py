@@ -183,10 +183,16 @@ def push_event(st, book, etype, msg, source="PAPER"):
 
 def write_live(plans, today):
     try:
+        def _bd(P):
+            d = {"state": P["state"], "credit": P.get("credit"), "series": P.get("series", [])}
+            lg = P.get("legs")
+            if lg:
+                d.update(K=P.get("K"), ce_sym=lg[0], pe_sym=lg[1], ce0=P.get("ce0"), pe0=P.get("pe0"),
+                         ce_last=P.get("ce_last"), pe_last=P.get("pe_last"), sl=P.get("sl"),
+                         live=bool(P.get("live")), entry_ts=P.get("entry_ts"), dte=P.get("dte"))
+            return d
         json.dump({"day": today, "at": datetime.now().strftime("%H:%M:%S"),
-                   "books": {bk: {"state": P["state"], "credit": P.get("credit"),
-                                   "series": P.get("series", [])} for bk, P in plans.items()}},
-                  open(PUBLIVE, "w"))
+                   "books": {bk: _bd(P) for bk, P in plans.items()}}, open(PUBLIVE, "w"))
     except Exception:
         pass
 
@@ -313,7 +319,9 @@ def main():
                     ce_s, pe_s = P["legs"]
                     _ck = "%s:%s" % (B["seg"], ce_s); _pk = "%s:%s" % (B["seg"], pe_s)
                     q = QB if (_ck in QB and _pk in QB) else k.ltp([_ck, _pk])
-                    comb = q["%s:%s" % (B["seg"], ce_s)]["last_price"] + q["%s:%s" % (B["seg"], pe_s)]["last_price"]
+                    P["ce_last"] = q["%s:%s" % (B["seg"], ce_s)]["last_price"]
+                    P["pe_last"] = q["%s:%s" % (B["seg"], pe_s)]["last_price"]
+                    comb = P["ce_last"] + P["pe_last"]
                     P["tick"] += 1
                     if P["tick"] % SAMPLE_EVERY == 1:
                         P["series"].append([now, round(P["realized_rs"] + (P["credit"] - comb) * B["qty"])])

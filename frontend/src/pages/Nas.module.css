@@ -47,10 +47,10 @@
 
 .headerMetrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-  margin-bottom: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+  margin-bottom: 32px;
 }
 @media (max-width: 1200px) {
   .headerMetrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
