@@ -72,14 +72,21 @@ def freeze_config():
     return cfg
 
 def kite():
-    from kiteconnect import KiteConnect
-    tok = json.load(open(Q + "/backtest_data/access_token.json"))
+    # Shared wrapped client: services.kite_service.get_kite monkey-wraps place_order to
+    # auto-inject market_protection (Kite rejects bare MARKET on options, 2026-08-14) and
+    # applies the suite's proven guards. Raw client only as last-resort fallback.
     try:
-        from config import KITE_API_KEY as AK
-    except Exception:
-        AK = tok.get("api_key")
-    k = KiteConnect(api_key=AK); k.set_access_token(tok["access_token"])
-    return k
+        from services.kite_service import get_kite
+        return get_kite()
+    except Exception as _e:
+        from kiteconnect import KiteConnect
+        tok = json.load(open(Q + "/backtest_data/access_token.json"))
+        try:
+            from config import KITE_API_KEY as AK
+        except Exception:
+            AK = tok.get("api_key")
+        k = KiteConnect(api_key=AK); k.set_access_token(tok["access_token"])
+        return k
 
 KILL_FLAG = Q + "/backtest_data/nas_kill.flag"
 FREEZE_FLAG = Q + "/backtest_data/nas_manual_freeze.flag"
@@ -110,12 +117,10 @@ def place_market(k, B, ts, side, qty, tag, ref_px=None):
     ref +/-3% fills like market but passes the API check. Timeout-verify per the
     2026-08-06 lesson: a timed-out request may have gone through - check the orderbook."""
     try:
-        if ref_px is None:
-            ref_px = k.ltp(["%s:%s" % (B["seg"], ts)])["%s:%s" % (B["seg"], ts)]["last_price"]
-        px = _tick(ref_px * (1.03 if side == "BUY" else 0.97))
+        # MARKET via the shared wrapped client (market_protection auto-injected upstream).
         return k.place_order(variety="regular", exchange=B["seg"], tradingsymbol=ts,
                              transaction_type=side, quantity=int(qty), product="MIS",
-                             order_type="LIMIT", price=px, tag=tag[:20])
+                             order_type="MARKET", tag=tag[:20])
     except Exception as ex:
         log("ORDER %s %s EXC: %s - verifying orderbook" % (side, ts, str(ex)[:70]))
         time.sleep(2)
@@ -236,6 +241,19 @@ def main():
         now = datetime.now().strftime("%H:%M")
         if now >= "15:26": now_force = True
         else: now_force = False
+        # BATCH LTP: one quote call for all OPEN/TRAIL legs (Kite 3 req/s shared limit;
+        # un-batched polling was starving the live suite SL/portfolio monitors, 2026-08-14).
+        QB = {}; _need = set()
+        for _s in list(plans):
+            _P = plans[_s]; _B = BOOKS[_s]
+            if _P.get("state") == "OPEN" and _P.get("legs"):
+                _need.add("%s:%s" % (_B["seg"], _P["legs"][0]))
+                _need.add("%s:%s" % (_B["seg"], _P["legs"][1]))
+            elif _P.get("state") == "TRAIL" and _P.get("win_sym"):
+                _need.add("%s:%s" % (_B["seg"], _P["win_sym"]))
+        if _need:
+            try: QB = k.ltp(list(_need))
+            except Exception as _ex: log("batch ltp err: %s" % str(_ex)[:60])
         for sym in list(plans):     # sym here = book key
             P = plans[sym]; B = BOOKS[sym]
             try:
@@ -293,7 +311,8 @@ def main():
                         save_state(st)
                 elif P["state"] == "OPEN":
                     ce_s, pe_s = P["legs"]
-                    q = k.ltp(["%s:%s" % (B["seg"], ce_s), "%s:%s" % (B["seg"], pe_s)])
+                    _ck = "%s:%s" % (B["seg"], ce_s); _pk = "%s:%s" % (B["seg"], pe_s)
+                    q = QB if (_ck in QB and _pk in QB) else k.ltp([_ck, _pk])
                     comb = q["%s:%s" % (B["seg"], ce_s)]["last_price"] + q["%s:%s" % (B["seg"], pe_s)]["last_price"]
                     P["tick"] += 1
                     if P["tick"] % SAMPLE_EVERY == 1:
@@ -377,7 +396,7 @@ def main():
                         del plans[sym]
                 elif P["state"] == "TRAIL":
                     wkey = "%s:%s" % (B["seg"], P["win_sym"])
-                    wl = k.ltp([wkey])[wkey]["last_price"]
+                    wl = (QB.get(wkey) or k.ltp([wkey])[wkey])["last_price"]
                     P["tick"] += 1
                     P["win_lo"] = min(P["win_lo"], wl)
                     if P["tick"] % SAMPLE_EVERY == 1:
