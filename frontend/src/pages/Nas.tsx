@@ -1174,6 +1174,21 @@ export default function Nas() {
     points2lot?: MtmPoint[];
   } | null>(null);
 
+  // COMB + TimeB sleeves (research/111 paper/live books) — static json, no backend.
+  const [cslLive, setCslLive] = useState<any>(null);
+  const [cslDay, setCslDay] = useState<any>(null);
+  useEffect(() => {
+    const load = () => {
+      fetch(`/app/csl_paper_live.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => r.json()).then(setCslLive).catch(() => {});
+      fetch(`/app/csl_paper.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => r.json()).then(setCslDay).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => clearInterval(id);
+  }, []);
+
   // NAS-OPT (paper) — fetched here so it can appear in the Trade Book like the 8 variants.
   const [nasOptTb, setNasOptTb] = useState<SystemStateRecord>({ state: null, err: null });
   useEffect(() => {
@@ -1445,6 +1460,37 @@ export default function Nas() {
   const nineMtmPts = useMemo(
     () => sumSeries(ENTRY_916_SYSTEMS.map((s) => mtmData[s.key]?.points ?? [])), [mtmData]);
 
+  // COMB + TimeB sleeves: today's series/P&L from the live json, cfg/source from the day record.
+  const SLEEVES: Array<{ key: string; label: string; hint: string }> = [
+    { key: 'NAS_COMB20', label: 'COMB sleeve', hint: 'combined-SL · ex-Wed' },
+    { key: 'CSL_TIMEB_NIFTY', label: 'TimeB', hint: 'time-windows · ex-Wed' },
+  ];
+  const sleeveInfo = (bk: string) => {
+    const live = cslLive?.books?.[bk];
+    const series: [string, number][] = live?.series ?? [];
+    const rec = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
+    const pnl = rec ? Number(rec.pnl || 0) : (series.length ? Number(series[series.length - 1][1]) : 0);
+    const state = rec ? 'CLOSED' : (live?.state ?? '—');
+    const src = rec ? (rec.source === 'REAL' ? 'live' : 'paper') : null;
+    return { live, series, pnl, state, src, rec };
+  };
+  // Merge the sleeve intraday series into the Overall curve (convert HH:MM -> ISO to match mtm).
+  const sleevePts: MtmPoint[] = useMemo(() => {
+    const day = cslLive?.day;
+    if (!day) return [];
+    const iso = (hm: string) => `${day}T${hm}:00`;
+    const lists = SLEEVES
+      .map((sv) => (cslLive?.books?.[sv.key]?.series ?? []) as [string, number][])
+      .filter((x) => x.length)
+      .map((x) => x.map(([hm, v]) => [iso(hm), v] as MtmPoint));
+    return lists.length ? sumSeries(lists) : [];
+  }, [cslLive]);
+  const overallPts: MtmPoint[] = useMemo(() => {
+    if (!mtmCombined) return [];
+    if (!sleevePts.length) return mtmCombined.points;
+    return sumSeries([mtmCombined.points, sleevePts]);
+  }, [mtmCombined, sleevePts]);
+
   return (
     <LiveTicksContext.Provider value={liveTicks}>
     <div className={styles.root}>
@@ -1582,6 +1628,17 @@ export default function Nas() {
           }
           hint={`${nineSixteenActive} of ${ENTRY_916_SYSTEMS.length} systems traded today`}
         />
+        {SLEEVES.map((sv) => {
+          const info = sleeveInfo(sv.key);
+          return (
+            <MetricCard
+              key={sv.key}
+              label={sv.label}
+              value={<span className={pnlClass(info.pnl)}>{formatPnl(info.pnl)}</span>}
+              hint={`${info.src ? (info.src === 'live' ? 'LIVE · ' : 'paper · ') : ''}${info.state} · ${sv.hint}`}
+            />
+          );
+        })}
       </div>
 
       {mtmCombined && mtmCombined.points.length >= 2 ? (
@@ -1600,12 +1657,12 @@ export default function Nas() {
           >
             <div className={styles.combinedBox}>
               <PnlChart
-                points={mtmCombined.points}
+                points={overallPts.length ? overallPts : mtmCombined.points}
                 events={mtmCombined.events}
               />
               <div className={styles.sparkMeta}>
                 {(() => {
-                  const ys = mtmCombined.points.map((p) => p[1]);
+                  const ys = (overallPts.length ? overallPts : mtmCombined.points).map((p) => p[1]);
                   const last = ys[ys.length - 1];
                   const yMin = Math.min(0, ...ys);
                   const yMax = Math.max(0, ...ys);
@@ -1615,7 +1672,7 @@ export default function Nas() {
                         now {fmtPnl(last)}
                       </span>
                       <span className={styles.sparkRange}>
-                        lo {fmtPnl(yMin)} · hi {fmtPnl(yMax)} · all 8 systems ⤢
+                        lo {fmtPnl(yMin)} · hi {fmtPnl(yMax)} · 8 systems + sleeves ⤢
                       </span>
                     </>
                   );
@@ -1704,6 +1761,38 @@ export default function Nas() {
       <NiftyChart />
 
       <SensexLiveCard />
+
+      {/* COMB + TimeB sleeves (research/111) — paper/live straddle books: summary + intraday spark */}
+      {(cslLive?.books?.NAS_COMB20 || cslLive?.books?.CSL_TIMEB_NIFTY) ? (
+        <section className={styles.combinedHero}>
+          <div className={styles.combinedHead}>
+            <div className="section-title">COMB + TimeB sleeves · today</div>
+            <div className={styles.combinedMeta}>NIFTY 2-lot · ex-Wed · before the squeeze book</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+            {SLEEVES.map((sv) => {
+              const info = sleeveInfo(sv.key);
+              if (!info.live && !info.rec) return null;
+              return (
+                <div key={sv.key} style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                    <span style={{ fontWeight: 700 }}>{sv.label}
+                      <span style={{ fontSize: 11, marginLeft: 6, color: info.src === 'live' ? '#ef4444' : 'var(--ink-muted)' }}>
+                        {info.src ? (info.src === 'live' ? 'LIVE' : 'paper') : info.state}
+                      </span>
+                    </span>
+                    <span className={pnlClass(info.pnl)} style={{ fontWeight: 700 }}>{formatPnl(info.pnl)}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 2 }}>
+                    {sv.hint} · {info.state}{info.rec?.strike ? ` · ${info.rec.strike}` : ''}{info.live?.credit ? ` · credit ${info.live.credit}` : ''}
+                  </div>
+                  {info.series.length >= 2 ? <NsrwSpark series={info.series} /> : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       {/* Trade Book — grouped active+closed trades with group P&L (EOD report). Paper legs are
           restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
