@@ -1,6 +1,6 @@
 # THE STACK — FULL LIVE: all systems real-money on tested days (Mon/Tue/Thu/Fri), 2 lots each
 
-STATUS: **PART A DONE (suite live Thu+Fri from TODAY 14-AUG) · PART B (sleeves) PLANNED** (updated 2026-08-14 07:35 IST)
+STATUS: **DEPLOYED 2026-08-14 - suite REAL Mon/Tue/Fri (Thu shadow per evidence); sleeves live-armed, first REAL fills Mon 17-AUG (marketable-LIMIT fix; 14-AUG attempt hit Kite MARKET-order policy, fell back to paper safely). Verified 09:25 guardian ALL CLEAR.**
 
 > **Absolute path (laptop):** `c:\Users\arunc\Documents\Projects\Covered_Calls\docs\THE_STACK_FULL_LIVE_DEPLOY_STATUS.md`
 > **VPS (canonical repo):** `/home/arun/quantifyd/docs/THE_STACK_FULL_LIVE_DEPLOY_STATUS.md`
