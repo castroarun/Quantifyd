@@ -22,10 +22,10 @@ NIFTY_MKT = {"sym": "NIFTY", "step": 50, "lot": 65, "spot_key": "NSE:NIFTY 50", 
 SENSEX_MKT = {"sym": "SENSEX", "step": 100, "lot": 20, "spot_key": "BSE:SENSEX", "seg": "BFO",
               "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}
 BOOKS = {
-    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "lab"},
+    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "lab", "mode": "live"},
     "CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 6, "qty": 120, "cfg_from": "lab"},
     # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
-    "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
+    "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed", "mode": "live",
                    "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
     # FIXED-CSL30 books (the flat rule, un-windowed) — the variable-vs-fixed live A/B
     "CSL30F_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
@@ -81,6 +81,77 @@ def kite():
     k = KiteConnect(api_key=AK); k.set_access_token(tok["access_token"])
     return k
 
+KILL_FLAG = Q + "/backtest_data/nas_kill.flag"
+FREEZE_FLAG = Q + "/backtest_data/nas_manual_freeze.flag"
+MASTER = Q + "/backtest_data/nas_master_mode.json"
+MARGIN_PER_LOT = 165000.0   # est short-straddle margin per NIFTY lot
+MARGIN_HEADROOM = 1.3
+
+def live_allowed():
+    """Global gates shared with the NAS suite: one panic lever stops the whole stack."""
+    if os.path.exists(KILL_FLAG): return False, "nas_kill.flag present"
+    if os.path.exists(FREEZE_FLAG): return False, "manual freeze"
+    try:
+        if json.load(open(MASTER)).get("mode") != "live": return False, "master mode != live"
+    except Exception:
+        return False, "master mode unreadable"
+    return True, ""
+
+def is_live_book(B):
+    # mgmt (trail/shift) books have no live order path yet -> always paper
+    return B.get("mode") == "live" and not B.get("mgmt")
+
+def place_market(k, B, ts, side, qty, tag):
+    """Market MIS order with timeout-verify (2026-08-06 lesson: a timed-out request may
+    have gone through - check the orderbook before declaring failure)."""
+    try:
+        return k.place_order(variety="regular", exchange=B["seg"], tradingsymbol=ts,
+                             transaction_type=side, quantity=int(qty), product="MIS",
+                             order_type="MARKET", tag=tag[:20])
+    except Exception as ex:
+        log("ORDER %s %s EXC: %s - verifying orderbook" % (side, ts, str(ex)[:70]))
+        time.sleep(2)
+        try:
+            for o in k.orders():
+                if (o.get("tag") or "") == tag[:20] and o["tradingsymbol"] == ts                         and o["transaction_type"] == side and o["status"] not in ("REJECTED", "CANCELLED"):
+                    log("ORDER %s %s found in book after exc (%s)" % (side, ts, o["status"]))
+                    return o["order_id"]
+        except Exception:
+            pass
+        return None
+
+def order_fill(k, oid, wait_s=20):
+    """Wait for COMPLETE; return average fill price, else None (rejected/timeout)."""
+    t0 = time.time()
+    while time.time() - t0 < wait_s:
+        try:
+            hist = k.order_history(oid)
+            stt = hist[-1]["status"]
+            if stt == "COMPLETE":
+                ap = float(hist[-1].get("average_price") or 0)
+                return ap if ap > 0 else None
+            if stt in ("REJECTED", "CANCELLED"):
+                log("ORDER %s %s: %s" % (oid, stt, str(hist[-1].get("status_message"))[:70]))
+                return None
+        except Exception as ex:
+            log("order_fill err: %s" % str(ex)[:60])
+        time.sleep(2)
+    return None
+
+def margin_ok(k, lots):
+    """Use total net margin (cash + pledged collateral - utilised) - option selling
+    is collateral-eligible; live_balance alone ignores pledges."""
+    try:
+        eq = k.margins()["equity"]
+        avail = float(eq.get("net") or 0)
+        if avail <= 0:
+            av = eq.get("available", {})
+            avail = float(av.get("live_balance") or 0) + float(av.get("collateral") or 0)
+        need = MARGIN_PER_LOT * lots * MARGIN_HEADROOM
+        return avail >= need, avail, need
+    except Exception:
+        return False, 0.0, 0.0
+
 def load_state():
     try: return json.load(open(STATE))
     except Exception: return {"records": [], "cum": {}}
@@ -90,11 +161,11 @@ def save_state(st):
     try: json.dump(st, open(PUB, "w"))
     except Exception: pass
 
-def push_event(st, book, etype, msg):
+def push_event(st, book, etype, msg, source="PAPER"):
     """Alert feed consumed by the Windows watcher (scripts/csl_alert_watcher.pyw)."""
     st.setdefault("events", []).append({
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "book": book,
-        "type": etype, "source": "PAPER", "msg": msg})
+        "type": etype, "source": source, "msg": msg})
     st["events"] = st["events"][-200:]
 
 def write_live(plans, today):
@@ -140,15 +211,18 @@ def main():
         plans[bk] = {"dte": dte, **c, "state": "WAIT_ENTRY", "K": None, "legs": None,
                      "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None,
                      "series": [], "tick": 0, "realized_rs": 0.0, "cost": 160, "shifts": 0}
-        log("%s plan: DTE%d %s->%s SL%s qty %d (%d lots)" % (bk, dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
+        log("%s plan%s: DTE%d %s->%s SL%s qty %d (%d lots)" % (bk, " [LIVE]" if is_live_book(B) else "", dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
     if probe:
         for bk in plans:
             B = BOOKS[bk]
             sp = k.ltp([B["spot_key"]])[B["spot_key"]]["last_price"]
             K = round(sp / B["step"]) * B["step"]
             ce, pe, E = resolve_legs(k, B, K)
-            log("PROBE %s spot %.0f ATM %d exp %s CE %s PE %s" % (
-                bk, sp, K, E, ce and ce["tradingsymbol"], pe and pe["tradingsymbol"]))
+            ok, why = live_allowed()
+            mok, avail, need = margin_ok(k, B["lots"])
+            log("PROBE %s spot %.0f ATM %d exp %s CE %s PE %s | mode=%s gates_ok=%s%s margin avail=%.0f need=%.0f ok=%s" % (
+                bk, sp, K, E, ce and ce["tradingsymbol"], pe and pe["tradingsymbol"],
+                "LIVE" if is_live_book(B) else "paper", ok, (" (%s)" % why) if why else "", avail, need, mok))
         return
     while plans:
         now = datetime.now().strftime("%H:%M")
@@ -172,11 +246,42 @@ def main():
                         q = k.ltp(["%s:%s" % (B["seg"], ce["tradingsymbol"]), "%s:%s" % (B["seg"], pe["tradingsymbol"])])
                         P["ce0"] = q["%s:%s" % (B["seg"], ce["tradingsymbol"])]["last_price"]
                         P["pe0"] = q["%s:%s" % (B["seg"], pe["tradingsymbol"])]["last_price"]
+                        P["live"] = False
+                        if is_live_book(B):
+                            ok, why = live_allowed()
+                            mok, avail, need = margin_ok(k, B["lots"]) if ok else (False, 0.0, 0.0)
+                            if not ok or not mok:
+                                why = why or ("margin %.0f < need %.0f" % (avail, need))
+                                log("%s: LIVE BLOCKED (%s) - paper fallback today" % (sym, why))
+                                push_event(st, sym, "WARN", "LIVE blocked (%s) - paper fallback today" % why, "REAL")
+                            else:
+                                tag = ("CSL_" + sym)[:20]
+                                oid_ce = place_market(k, B, ce["tradingsymbol"], "SELL", B["qty"], tag)
+                                f_ce = order_fill(k, oid_ce) if oid_ce else None
+                                if f_ce is None:
+                                    log("%s: CE entry order failed - paper fallback today" % sym)
+                                    push_event(st, sym, "WARN", "CE entry order failed - paper fallback today", "REAL")
+                                else:
+                                    oid_pe = place_market(k, B, pe["tradingsymbol"], "SELL", B["qty"], tag)
+                                    f_pe = order_fill(k, oid_pe) if oid_pe else None
+                                    if f_pe is None:
+                                        log("%s: PE entry failed - UNWINDING CE (no naked leg)" % sym)
+                                        push_event(st, sym, "WARN", "PE entry failed - unwinding CE leg, book skipped today. CHECK KITE.", "REAL")
+                                        save_state(st)
+                                        for _ in range(5):
+                                            oid_u = place_market(k, B, ce["tradingsymbol"], "BUY", B["qty"], tag)
+                                            if oid_u and order_fill(k, oid_u) is not None:
+                                                log("%s: CE unwound clean" % sym); break
+                                            time.sleep(3)
+                                        del plans[sym]; continue
+                                    P["ce0"], P["pe0"] = f_ce, f_pe
+                                    P["live"] = True
                         P.update(K=K, legs=(ce["tradingsymbol"], pe["tradingsymbol"]), state="OPEN",
                                  credit=P["ce0"] + P["pe0"], entry_ts=datetime.now().strftime("%H:%M:%S"), expiry=str(E))
-                        log("%s ENTER K=%d credit %.2f (%s+%s)" % (sym, K, P["credit"], P["ce0"], P["pe0"]))
-                        push_event(st, sym, "ENTRY", "SOLD %d straddle @ %.2f credit (%d lots, DTE%d, %s->%s SL%s)" % (
-                            K, P["credit"], B["lots"], P["dte"], P["entry"], P["exit"], P["sl"]))
+                        log("%s ENTER%s K=%d credit %.2f (%s+%s)" % (sym, " [LIVE]" if P["live"] else "", K, P["credit"], P["ce0"], P["pe0"]))
+                        push_event(st, sym, "ENTRY", "SOLD %d straddle @ %.2f credit (%d lots, DTE%d, %s->%s SL%s)%s" % (
+                            K, P["credit"], B["lots"], P["dte"], P["entry"], P["exit"], P["sl"],
+                            " [REAL MONEY]" if P["live"] else ""), "REAL" if P["live"] else "PAPER")
                         save_state(st)
                 elif P["state"] == "OPEN":
                     ce_s, pe_s = P["legs"]
@@ -196,6 +301,7 @@ def main():
                     P["last_comb"] = comb
                     if now >= P["exit"]: reason = reason or "TIME_EXIT"
                     if now_force: reason = reason or "EOD_FORCE"
+                    if "x_ce" in P or "x_pe" in P: reason = reason or "EXIT_RETRY"
                     if reason == "SL_DWELL" and B.get("mgmt") == "trail":
                         ce_l = q["%s:%s" % (B["seg"], ce_s)]["last_price"]
                         pe_l = q["%s:%s" % (B["seg"], pe_s)]["last_price"]
@@ -226,15 +332,37 @@ def main():
                             log("%s CSL->SHIFT %d: new K=%d credit %.2f" % (sym, P["shifts"], K, P["credit"]))
                             continue
                     if reason:
-                        pnl = round(P["realized_rs"] + (P["credit"] - comb) * B["qty"] - P["cost"])
+                        exit_comb = comb
+                        if P.get("live"):
+                            tag = ("CSL_" + sym)[:20]
+                            if "x_ce" not in P:
+                                oid_c = place_market(k, B, ce_s, "BUY", B["qty"], tag)
+                                f = order_fill(k, oid_c) if oid_c else None
+                                if f is not None: P["x_ce"] = f
+                            if "x_pe" not in P:
+                                oid_p = place_market(k, B, pe_s, "BUY", B["qty"], tag)
+                                f = order_fill(k, oid_p) if oid_p else None
+                                if f is not None: P["x_pe"] = f
+                            if "x_ce" not in P or "x_pe" not in P:
+                                P["exit_fail"] = P.get("exit_fail", 0) + 1
+                                log("%s LIVE EXIT INCOMPLETE (ce=%s pe=%s) attempt %d - retrying" % (
+                                    sym, P.get("x_ce"), P.get("x_pe"), P["exit_fail"]))
+                                if P["exit_fail"] in (1, 3, 6, 12):
+                                    push_event(st, sym, "WARN", "LIVE exit incomplete (attempt %d) - auto-retrying. CHECK KITE." % P["exit_fail"], "REAL")
+                                    save_state(st)
+                                time.sleep(2)
+                                continue
+                            exit_comb = P["x_ce"] + P["x_pe"]
+                        pnl = round(P["realized_rs"] + (P["credit"] - exit_comb) * B["qty"] - P["cost"])
                         rec = {"day": today, "book": sym, "sym": B["sym"], "dte": P["dte"], "cfg": "%s->%s SL%s" % (P["entry"], P["exit"], P["sl"]),
                                "strike": P["K"], "expiry": P["expiry"], "credit": round(P["credit"], 2),
                                "entry_ts": P["entry_ts"], "exit_ts": datetime.now().strftime("%H:%M:%S"),
-                               "exit_comb": round(comb, 2), "reason": reason, "pnl": pnl, "series": P.get("series", []),
-                               "lots": B["lots"], "qty": B["qty"], "source": "PAPER"}
+                               "exit_comb": round(exit_comb, 2), "reason": reason, "pnl": pnl, "series": P.get("series", []),
+                               "lots": B["lots"], "qty": B["qty"], "source": "REAL" if P.get("live") else "PAPER"}
                         st["records"].append(rec)
-                        push_event(st, sym, "EXIT", "%s: closed %d straddle @ %.2f -> P&L %+d (%d lots, cum %+d)" % (
-                            reason, P["K"], comb, pnl, B["lots"], st["cum"].get(sym, 0) + pnl))
+                        push_event(st, sym, "EXIT", "%s: closed %d straddle @ %.2f -> P&L %+d (%d lots, cum %+d)%s" % (
+                            reason, P["K"], exit_comb, pnl, B["lots"], st["cum"].get(sym, 0) + pnl,
+                            " [REAL MONEY]" if P.get("live") else ""), "REAL" if P.get("live") else "PAPER")
                         st["cum"][sym] = st["cum"].get(sym, 0) + pnl
                         save_state(st)
                         log("%s EXIT %s pnl %+d (cum %+d)" % (sym, reason, pnl, st["cum"][sym]))

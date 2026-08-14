@@ -10,7 +10,8 @@ Stdlib only — no pip installs needed."""
 import json, os, time, traceback, urllib.request, webbrowser
 
 BASE = "http://94.136.185.54:5000"
-URL = BASE + "/app/csl_paper.json"
+URLS = [BASE + "/app/csl_paper.json", BASE + "/app/nas_alerts.json"]
+URL = URLS[0]
 PAGE = BASE + "/app/straddles#csl-paper"
 SEEN = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "csl_alerts_seen.json")
 POLL = 30  # seconds
@@ -75,9 +76,14 @@ def main():
     last = load_seen()
     while True:
         try:
-            with urllib.request.urlopen(URL + "?t=%d" % time.time(), timeout=15) as r:
-                d = json.load(r)
-            evs = d.get("events", [])
+            evs = []
+            for u in URLS:
+                try:
+                    with urllib.request.urlopen(u + "?t=%d" % time.time(), timeout=15) as r:
+                        evs += json.load(r).get("events", [])
+                except Exception:
+                    pass
+            evs.sort(key=lambda e: e.get("ts", ""))
             new = [e for e in evs if e.get("ts", "") > last]
             if new:
                 last = max(e["ts"] for e in new)
@@ -91,8 +97,13 @@ def main():
 if __name__ == "__main__":
     if not load_seen():                  # first ever run: don't replay history
         try:
-            with urllib.request.urlopen(URL, timeout=15) as r:
-                evs = json.load(r).get("events", [])
+            evs = []
+            for u in URLS:
+                try:
+                    with urllib.request.urlopen(u, timeout=15) as r:
+                        evs += json.load(r).get("events", [])
+                except Exception:
+                    pass
             if evs:
                 save_seen(max(e.get("ts", "") for e in evs))
         except Exception:
