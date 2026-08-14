@@ -54,7 +54,7 @@ DATA_DIR = REPO_ROOT / 'backtest_data'
 
 # (system_label, db_path, table_prefix) — used by both reports
 PRIORITY_SYSTEMS = [
-    ('ORB cash',     'backtest_data/orb_trading.db',         'orb_'),
+    # ORB cash retired 2026-08-09 (research/89) — validator entry removed
     ('NAS OTM',      'backtest_data/nas_trading.db',         'nas_'),
     ('NAS ATM',      'backtest_data/nas_atm_trading.db',     'nas_atm_'),
     ('NAS ATM2',     'backtest_data/nas_atm2_trading.db',    'nas_atm_'),
@@ -69,15 +69,7 @@ PRIORITY_SYSTEMS = [
 # Scheduler job IDs that MUST be registered for the priority systems to work.
 # Pre-market check fails if any are missing or have no next-run.
 EXPECTED_JOBS = {
-    # ORB cash
-    'orb_init_day':                 'ORB cash daily init',
-    'orb_update_or':                'ORB cash OR update',
-    'orb_eval_signals':             'ORB cash signal evaluator',
-    'orb_monitor_pos':              'ORB cash position monitor',
-    'orb_activate_trail':           'ORB cash V9t_lock50 trail',
-    'orb_eod_squareoff':            'ORB cash EOD squareoff',
-    'orb_eod_report':               'ORB cash EOD report',
-    'orb_daily_backtest':           'ORB cash daily backtest',
+    # (ORB cash jobs removed — system retired, research/89)
     # NAS shared
     'nas_ticker_autostart':         'NAS WebSocket ticker autostart',
     'nas_eod_squareoff':            'NAS OTM EOD squareoff',
@@ -383,13 +375,6 @@ def _check_open_positions_carryforward() -> list[dict]:
             if n == 0:
                 out.append(_check(f'Open carry: {label}', PASS,
                                   '0 OPEN positions from prior days'))
-            elif label == 'ORB cash':
-                # ORB is intraday — OPEN before today is a clear FAIL
-                out.append(_check(
-                    f'Open carry: {label}', FAIL,
-                    f'{n} OPEN positions from prior days (intraday system!)',
-                    remediation='manual square-off then investigate squareoff handler',
-                ))
             else:
                 out.append(_check(
                     f'Open carry: {label}', WARN,
