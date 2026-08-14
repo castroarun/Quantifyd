@@ -249,3 +249,15 @@ its research/90 stop (it compensates for leaky per-leg SLs); the sleeves' CSL+wi
 IS the risk system. All-stack overlay untestable yet (no LIVE intraday history; nas_mtm
 snapshots accruing since 2026-08-11 - revisit in 4-6 weeks). Caveats: minute-mark fills,
 modeled backfill curves. Script: scripts/sleeve_pstop_test.py.
+
+
+## 18. TB-CSL overweight test (2026-08-14) - idea SOUND, sizing STAGED
+
+User hypothesis: overweight TB-CSL (time-boxed, ~1-2h exposure vs 6h) vs others. In-sample
+answer is emphatic (ex-Wed, 34d: 6/2/2 ratio 20.8 -> 4/2/4 = 31.6 -> 2/2/6 = 52.7; additive
+TB@6L ratio 31.0 with DD barely moving) BUT TB's history is the in-sample-optimized champion:
+its windows were CHOSEN on this data (walk-forward halves the edge), its worst recorded day
+(-1,398 @2L) understates a real SL20 window hit (~-4-5k @2L model), and it has ZERO live days.
+DECISION PATH: keep 6/2/2 through the ~4-week live soak; if TB's REAL days confirm the
+structural profile, step 5/2/3 -> 4/2/4 fortnightly. Genuine structural point: TB margin is
+consumed only ~2h/day (capital efficiency real regardless). Script: scripts/tb_overweight_test.py.
