@@ -5232,6 +5232,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'One regime (Apr-Aug 2026); weekday-DTE mapping ignores holiday-shifted expiries; single best slot per day (2nd-slot stacking is exploratory).',
       'CPR probe (prior-day CPR width vs straddle-day outcome, ~50d/index): NO actionable edge (corr +0.06 NIFTY / +0.15 SENSEX); mild NIFTY narrow-CPR win-rate tilt (83% vs 62%) on watch-list only.',
       'Sibling study: /app/backtest/sensex-nifty-stop-by-dte (per-leg vs combined stop mechanics incl. real ST-trail validation).',
+      'Portfolio sizing (sec 18/18b, 2026-08-14): TB-CSL is the overweight lever - marginal +2L of TB costs ~Rs72 of extra drawdown vs ~Rs8,669 for +2L of COMB (same profit); best grid cell LIVE6+COMB2+TB6 ratio 31.0 ex-Wed. Live rows on /app/straddles#portfolio-lab (in-sample caveat applies, TB most flattered).',
     ],
     githubLinks: [{ label: 'Quantifyd repo', href: 'https://github.com/castroarun/Quantifyd' }],
     projectPaths: [

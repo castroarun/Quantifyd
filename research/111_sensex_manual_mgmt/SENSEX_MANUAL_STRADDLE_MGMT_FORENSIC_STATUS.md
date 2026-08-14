@@ -261,3 +261,15 @@ its windows were CHOSEN on this data (walk-forward halves the edge), its worst r
 DECISION PATH: keep 6/2/2 through the ~4-week live soak; if TB's REAL days confirm the
 structural profile, step 5/2/3 -> 4/2/4 fortnightly. Genuine structural point: TB margin is
 consumed only ~2h/day (capital efficiency real regardless). Script: scripts/tb_overweight_test.py.
+
+### Sec 18b - COMB x TB overweight GRID (2026-08-14 ~14:30) - TB is the lever, COMB is not
+
+Grid (LIVE 6L fixed, ex-Wed n=34, NET/DD/ratio): TB axis RAISES ratio monotonically
+(20.8 -> 26.3 -> 31.0 at COMB@2); COMB axis LOWERS it (20.8 -> 15.5 -> 13.3 at TB@2).
+Marginal +2L from 6/2/2: TB +66,183 net for -72 DD; COMB +71,796 net for -8,669 DD
+(~120x the DD cost for the same profit). Cause: COMB is full-day, corr 0.31-0.37 to LIVE
+(bad days coincide); TB windowed, corr 0.18 (TB@6 even HEDGES COMB@4: DD -20,336 -> -17,400).
+Best cell 6/2/6 = +375,440 / -12,130 / ratio 31.0. In-sample caveat strongest on TB
+(worst recorded day -391 @2L vs ~-4-5k modeled SL hit). Lab rows: TB@4L + TB@6L stacks
+live on /app/straddles#portfolio-lab (daily live-first regen). Sizing decision: PENDING user.
+Script: scripts/comb_tb_overweight_grid.py.
