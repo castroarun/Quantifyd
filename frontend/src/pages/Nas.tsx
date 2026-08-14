@@ -1476,6 +1476,22 @@ export default function Nas() {
     const qty = rec ? Number(rec.qty || 130) : 130;
     return { live, series, pnl, state, src, rec, lots, qty };
   };
+  // Uniform card status: green live / blue paper / grey closed / faint off.
+  const famStatus = (defs: SystemDef[]): 'live' | 'paper' | 'closed' | 'off' => {
+    let anyLive = false, anyActive = false;
+    for (const sd of defs) {
+      const pos = states[sd.id]?.state?.positions as any;
+      const legs = [...((pos?.ce) ?? []), ...((pos?.pe) ?? [])];
+      if (legs.length) anyActive = true;
+      if (legs.some((l: any) => (l.mode || '').toLowerCase() === 'live')) anyLive = true;
+    }
+    if (anyLive) return 'live';
+    if (anyActive) return 'paper';
+    return marketOpen ? 'closed' : 'off';
+  };
+  const sleeveStatus = (info: any): 'live' | 'paper' | 'closed' | 'off' =>
+    info.state === 'CLOSED' ? 'closed' : info.src === 'live' ? 'live'
+      : info.src === 'paper' ? 'paper' : (marketOpen ? 'paper' : 'off');
   // Merge the sleeve intraday series into the Overall curve (convert HH:MM -> ISO to match mtm).
   const sleevePts: MtmPoint[] = useMemo(() => {
     const day = cslLive?.day;
@@ -1620,6 +1636,7 @@ export default function Nas() {
             </span>
           }
           hint="OTM + ATM + ATM 2.0 + ATM V4"
+          status={famStatus(SQUEEZE_SYSTEMS)}
         />
         <MetricCard
           label="9:16 day P&L"
@@ -1629,6 +1646,7 @@ export default function Nas() {
             </span>
           }
           hint={`${nineSixteenActive} of ${ENTRY_916_SYSTEMS.length} systems traded today`}
+          status={famStatus(ENTRY_916_SYSTEMS)}
         />
         {SLEEVES.map((sv) => {
           const info = sleeveInfo(sv.key);
@@ -1637,7 +1655,8 @@ export default function Nas() {
               key={sv.key}
               label={sv.label}
               value={<span className={pnlClass(info.pnl)}>{formatPnl(info.pnl)}</span>}
-              hint={`${info.lots} lots (${info.qty} qty) · ${info.src ? (info.src === 'live' ? 'LIVE · ' : 'paper · ') : ''}${info.state} · ${sv.hint}`}
+              hint={`${info.lots} lots (${info.qty} qty) · ${sv.hint}`}
+              status={sleeveStatus(info)}
             />
           );
         })}
@@ -2837,18 +2856,9 @@ function SystemPanel({ def, onStateChange, onToast, series, events, onExpand }: 
         </div>
         <div className={styles.panelStatus}>
           <StatusDot
-            kind={enabled ? (streamAlive ? 'connected' : 'warning') : 'disconnected'}
-            label={
-              !enabled
-                ? 'Disabled'
-                : paper
-                ? streamAlive
-                  ? 'Paper · live'
-                  : 'Paper'
-                : streamAlive
-                ? 'Live'
-                : 'Standby'
-            }
+            kind={!enabled ? 'off' : !streamAlive ? 'warn' : paper ? 'paper' : 'live'}
+            title={!enabled ? 'Disabled' : !streamAlive ? 'Stream down - check the system'
+              : paper ? 'Paper - simulated' : 'Live - real money'}
           />
           <div className={styles.panelStatusMeta}>
             {formatInt(state?.positions?.total_active ?? 0)} active · {formatInt(reentries)} re-entry

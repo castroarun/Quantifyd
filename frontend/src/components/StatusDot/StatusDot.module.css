@@ -20,3 +20,10 @@
   font-size: var(--text-xs);
   color: var(--ink-secondary);
 }
+
+/* uniform status language (2026-08-14) */
+.live { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.16); }
+.paper { background: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.16); }
+.closed { background: #9aa0a6; box-shadow: 0 0 0 3px rgba(154,160,166,0.14); }
+.warn { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+.off { background: #c9ccd1; }
