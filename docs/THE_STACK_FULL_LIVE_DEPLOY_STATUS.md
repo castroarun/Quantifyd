@@ -192,3 +192,18 @@ live state. Do not mark STATUS DONE until the Revision Log is complete.
 
 | 2026-08-14 07:5x IST | Sleeves LIVE order layer deployed (probe green: gates+legs+margin net Rs46.1L); popups for all books (nas_alert_feed + dual-feed watcher) | commit 33d5f50 |
 | 2026-08-14 07:5x IST | **DECISION (user, after sibling stop-by-DTE study input): suite Thu (DTE3) real-money REVERTED to shadow; Fri (DTE2) stays live.** Sibling study: NIFTY per-leg-30% net-negative DTE2+ (-Rs303/lot overall); sleeves' combined-SL is the validated DTE2+ mechanic and carries Thu exposure as paper | day-matrix dte3=false, dte2=true |
+
+### Revision Log — first live morning (2026-08-14, verified 09:25 IST)
+
+| Time | Event | Evidence |
+|---|---|---|
+| 09:12 | Executor first run: 7 plans, NAS_COMB20 + CSL_TIMEB_NIFTY [LIVE] | /tmp/csl_paper.log |
+| 09:16 | SUITE LIVE: 3 books filled real (SELL 3x130 24350CE avg ~106.4 + 3x130 24350PE avg ~85.2, positions -390/-390) | Kite orderbook COMPLETE |
+| 09:16:05 | Sleeve real order REJECTED by Kite API ("Market orders without market protection") -> **naked-leg guard worked: paper fallback, no position, WARN alert fired** | csl_paper.log + events feed |
+| 09:15-09:20 | Guardian FAIL: 6 legs not ticker-monitored (entry raced ticker startup). **Hard SL was covered throughout** (10s monitor + REST fallback, regression #1a). Defensive candle-close resubscribe healed it 09:20:16 | guardian log 09:20 vs 09:25 |
+| 09:25:11 | **GUARDIAN ALL CLEAR (13/13): 6/6 legs monitored, DB->Kite reconciled** | /tmp/nas_guardian.log |
+| 09:2x | FIX deployed for Monday: place_market -> marketable-LIMIT (ref +/-3%, tick 0.05) with fresh-LTP fallback for exits; entry refs use fetched LTPs | commit (this) |
+
+Outstanding for Monday 09:16: first successful REAL sleeve entry with the LIMIT fix.
+TB-CSL today 10:00 will attempt live, hit the same (now-fixed-on-disk) rejection in the
+RUNNING process, and fall back to paper — expected, safe, logged.

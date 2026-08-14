@@ -101,13 +101,21 @@ def is_live_book(B):
     # mgmt (trail/shift) books have no live order path yet -> always paper
     return B.get("mode") == "live" and not B.get("mgmt")
 
-def place_market(k, B, ts, side, qty, tag):
-    """Market MIS order with timeout-verify (2026-08-06 lesson: a timed-out request may
-    have gone through - check the orderbook before declaring failure)."""
+def _tick(px):
+    return max(0.05, round(round(px * 20) / 20.0, 2))
+
+def place_market(k, B, ts, side, qty, tag, ref_px=None):
+    """Marketable-LIMIT MIS order (Kite API rejects plain MARKET on options: 2026-08-14
+    'Market orders without market protection are not allowed'). Aggressive limit at
+    ref +/-3% fills like market but passes the API check. Timeout-verify per the
+    2026-08-06 lesson: a timed-out request may have gone through - check the orderbook."""
     try:
+        if ref_px is None:
+            ref_px = k.ltp(["%s:%s" % (B["seg"], ts)])["%s:%s" % (B["seg"], ts)]["last_price"]
+        px = _tick(ref_px * (1.03 if side == "BUY" else 0.97))
         return k.place_order(variety="regular", exchange=B["seg"], tradingsymbol=ts,
                              transaction_type=side, quantity=int(qty), product="MIS",
-                             order_type="MARKET", tag=tag[:20])
+                             order_type="LIMIT", price=px, tag=tag[:20])
     except Exception as ex:
         log("ORDER %s %s EXC: %s - verifying orderbook" % (side, ts, str(ex)[:70]))
         time.sleep(2)
@@ -256,13 +264,13 @@ def main():
                                 push_event(st, sym, "WARN", "LIVE blocked (%s) - paper fallback today" % why, "REAL")
                             else:
                                 tag = ("CSL_" + sym)[:20]
-                                oid_ce = place_market(k, B, ce["tradingsymbol"], "SELL", B["qty"], tag)
+                                oid_ce = place_market(k, B, ce["tradingsymbol"], "SELL", B["qty"], tag, P["ce0"])
                                 f_ce = order_fill(k, oid_ce) if oid_ce else None
                                 if f_ce is None:
                                     log("%s: CE entry order failed - paper fallback today" % sym)
                                     push_event(st, sym, "WARN", "CE entry order failed - paper fallback today", "REAL")
                                 else:
-                                    oid_pe = place_market(k, B, pe["tradingsymbol"], "SELL", B["qty"], tag)
+                                    oid_pe = place_market(k, B, pe["tradingsymbol"], "SELL", B["qty"], tag, P["pe0"])
                                     f_pe = order_fill(k, oid_pe) if oid_pe else None
                                     if f_pe is None:
                                         log("%s: PE entry failed - UNWINDING CE (no naked leg)" % sym)
