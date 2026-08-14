@@ -49,6 +49,8 @@ for d, rows in nb.items():
 comp["LIVE_SUITE_6L"] = live
 comp["COMB_2L"] = book_daily("NAS_COMB20")
 comp["TBCSL_2L"] = book_daily("CSL_TIMEB_NIFTY")
+comp["TBCSL_4L"] = {d: (v * 2, src) for d, (v, src) in comp["TBCSL_2L"].items()}   # sec-18 overweight arms
+comp["TBCSL_6L"] = {d: (v * 3, src) for d, (v, src) in comp["TBCSL_2L"].items()}
 shift = book_daily("NAS_C20_SHIFT")
 if rp:  # model history until the paper book accrues (model basis 3L -> normalize to TARGET_LOTS)
     for d, v in rp["arms"]["HYB_ATM4_30"]["series"]:
@@ -81,6 +83,7 @@ matrix = [[(1.0 if a == b else corr(comp[a], comp[b])) for b in NAMES] for a in 
 
 comps_out = {}
 for n2, dd in comp.items():
+    if n2 in ("TBCSL_4L", "TBCSL_6L"): continue   # virtual sec-18 arms, not real books
     ds = sorted(dd)
     src = {}
     for d in ds: src[dd[d][1]] = src.get(dd[d][1], 0) + 1
@@ -94,6 +97,8 @@ PORTS = [
     ("THE STACK (DEPLOYED 10L ex-Wed): LIVE + COMB + TB-CSL", 10, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_2L"]),
     ("LIVE + SHIFT-cand + TB-CSL", 10, ["LIVE_SUITE_6L", "SHIFT_CAND_2L", "TBCSL_2L"]),
     ("ALL-CSL (COMB+SHIFT+TB, no live)", 6, ["COMB_2L", "SHIFT_CAND_2L", "TBCSL_2L"]),
+    ("STACK TB-OVERWEIGHT x2 (sec 18): LIVE + COMB + TB@4L", 12, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_4L"]),
+    ("STACK TB-OVERWEIGHT x3 (sec 18): LIVE + COMB + TB@6L", 14, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_6L"]),
 ]
 ports_out = []
 for label, lots, parts in PORTS:
