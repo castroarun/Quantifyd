@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './HaPaper.module.css';
 
-type Position = { symbol: string; qty: number; entry: number; since: string };
+type Position = { symbol: string; qty: number; entry: number; since: string;
+                  last: number | null; mtm: number | null; mtm_pct: number | null };
 type NavPt = { d: string; nav: number; bench: number | null };
 type Fill = {
   ts: string; symbol: string; side: string; price: number;
@@ -71,7 +72,31 @@ export default function HaPaper() {
   const sells = s.recent_fills.filter((f) => f.side === 'SELL' && f.pnl != null);
   const realized = sells.reduce((a, f) => a + (f.pnl as number), 0);
   const wins = sells.filter((f) => (f.pnl as number) > 0).length;
+  const unreal = s.positions.reduce((a, p) => a + (p.mtm ?? 0), 0);
   const running = !s.killed;
+
+  // pair fills into round-trip trades: long-only, so BUY = entry, SELL = exit
+  type Trade = { symbol: string; entryTs: string; entry: number; exitTs: string | null;
+                 exit: number | null; exitVia: string | null; pnl: number | null };
+  const trades: Trade[] = [];
+  [...s.recent_fills].reverse().forEach((f) => {
+    if (f.side === 'BUY') {
+      trades.push({ symbol: f.symbol, entryTs: f.ts, entry: f.price,
+                    exitTs: null, exit: null, exitVia: null, pnl: null });
+    } else {
+      const t = trades.filter((x) => x.symbol === f.symbol && x.exit == null).pop();
+      if (t) { t.exitTs = f.ts; t.exit = f.price; t.exitVia = f.reason; t.pnl = f.pnl; }
+    }
+  });
+  const tkey = (ts: string) => ts.replace(' ', 'T');
+  trades.sort((a, b) => tkey(b.entryTs).localeCompare(tkey(a.entryTs)));
+  const fmtTs = (ts: string | null) => {
+    if (!ts) return '—';
+    const d = new Date(tkey(ts));
+    return isNaN(d.getTime()) ? ts
+      : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ' ' +
+        d.toTimeString().slice(0, 5);
+  };
 
   return (
     <div className={styles.root}>
@@ -98,6 +123,7 @@ export default function HaPaper() {
         <Kpi label="Sleeve cash" value={lakh(s.cash)} tone="" />
         <Kpi label="Open positions" value={`${s.n_positions} / 81`} tone="" />
         <Kpi label="Realized (recent)" value={inr(realized)} tone={realized >= 0 ? 'pos' : 'neg'} />
+        <Kpi label="Unrealized (live)" value={inr(unreal)} tone={unreal >= 0 ? 'pos' : 'neg'} />
         <Kpi label="Recent win rate" value={sells.length ? `${wins}/${sells.length}` : '—'} tone="" />
         <Kpi label="Capital" value={lakh(s.capital)} tone="" />
       </div>
@@ -118,7 +144,7 @@ export default function HaPaper() {
         ) : (
           <table className={styles.table}>
             <thead><tr>
-              <th>Stock</th><th>Qty</th><th>Entry ₹</th><th>Sleeve value at entry</th><th>Since</th>
+              <th>Stock</th><th>Qty</th><th>Entry ₹</th><th>Now ₹</th><th>P&L ₹</th><th>P&L %</th><th>Since</th>
             </tr></thead>
             <tbody>
               {s.positions.map((p) => (
@@ -126,8 +152,12 @@ export default function HaPaper() {
                   <td className={styles.sym}>{p.symbol}</td>
                   <td>{p.qty}</td>
                   <td>{p.entry.toFixed(2)}</td>
-                  <td>{inr(p.qty * p.entry)}</td>
-                  <td className={styles.muted}>{p.since}</td>
+                  <td>{p.last == null ? '—' : p.last.toFixed(2)}</td>
+                  <td className={p.mtm == null ? styles.muted : p.mtm >= 0 ? styles.pos : styles.neg}>
+                    {p.mtm == null ? '—' : inr(p.mtm)}</td>
+                  <td className={p.mtm_pct == null ? styles.muted : p.mtm_pct >= 0 ? styles.pos : styles.neg}>
+                    {p.mtm_pct == null ? '—' : (p.mtm_pct >= 0 ? '+' : '') + p.mtm_pct.toFixed(2) + '%'}</td>
+                  <td className={styles.muted}>{fmtTs(p.since)}</td>
                 </tr>
               ))}
             </tbody>
@@ -135,32 +165,38 @@ export default function HaPaper() {
         )}
       </div>
 
-      {/* Recent fills */}
+      {/* Trades */}
       <div className={styles.card}>
-        <div className={styles.cardTitle}>Recent fills (last {s.recent_fills.length})</div>
-        {s.recent_fills.length === 0 ? (
-          <div className={styles.chartEmpty}>No fills yet — entries arrive as fresh 2-green patterns fire and break.</div>
+        <div className={styles.cardTitle}>Trades (entry ⇄ exit — long only; a SELL is always the exit of a long)</div>
+        {trades.length === 0 ? (
+          <div className={styles.chartEmpty}>No trades yet — entries arrive as fresh 2-green patterns fire and break.</div>
         ) : (
           <table className={styles.table}>
             <thead><tr>
-              <th>Time</th><th>Stock</th><th>Side</th><th>Price</th><th>Reason</th><th>P&L</th>
+              <th>Stock</th><th>Entry time</th><th>Entry ₹</th><th>Exit time</th>
+              <th>Exit ₹</th><th>Exit via</th><th>P&L</th>
             </tr></thead>
             <tbody>
-              {s.recent_fills.map((f, i) => (
+              {trades.map((t, i) => (
                 <tr key={i}>
-                  <td className={styles.muted}>{f.ts}</td>
-                  <td className={styles.sym}>{f.symbol}</td>
-                  <td className={f.side === 'BUY' ? styles.pos : styles.neg}>{f.side}</td>
-                  <td>{f.price.toFixed(2)}</td>
-                  <td><span className={styles.reason}>{f.reason}</span></td>
-                  <td className={f.pnl == null ? styles.muted : f.pnl >= 0 ? styles.pos : styles.neg}>
-                    {f.pnl == null ? '—' : inr(f.pnl)}
-                  </td>
+                  <td className={styles.sym}>{t.symbol}</td>
+                  <td className={styles.muted}>{fmtTs(t.entryTs)}</td>
+                  <td>{t.entry.toFixed(2)}</td>
+                  <td className={styles.muted}>{fmtTs(t.exitTs)}</td>
+                  <td>{t.exit == null ? '—' : t.exit.toFixed(2)}</td>
+                  <td><span className={styles.reason}>{t.exitVia ?? 'OPEN'}</span></td>
+                  <td className={t.pnl == null ? styles.muted : t.pnl >= 0 ? styles.pos : styles.neg}>
+                    {t.pnl == null ? 'open' : inr(t.pnl)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
+        <p className={styles.note}>
+          The book is LONG ONLY. Entry = a bar closes above the 2-green pattern high (BUY).
+          Exit = a bar closes below the 2-red pattern low (SELL) — the exit of the long, not a short.
+          Trades still open show live P&L in the Open positions table above.
+        </p>
       </div>
 
       {/* Rules */}

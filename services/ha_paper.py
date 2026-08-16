@@ -299,12 +299,22 @@ def _state():
         navs = c.execute("SELECT d, nav, bench FROM hap_nav ORDER BY d").fetchall()
         fills = c.execute("SELECT ts, symbol, side, price, reason, pnl FROM hap_fills "
                           "ORDER BY id DESC LIMIT 50").fetchall()
+    ltps = {}
+    if poss:
+        try:
+            q = _kite().ltp([f"NSE:{p[0]}" for p in poss])
+            ltps = {k.split(":")[1]: v["last_price"] for k, v in q.items()}
+        except Exception:
+            pass
     return {
         "mode": "PAPER", "system": "HA 2-green no-wick break 30m long (research/86)",
         "capital": CFG["capital"], "inception": _get("inception"),
         "killed": bool(_get("killed")), "last_cycle": _get("last_cycle"),
         "cash": round(cash, 0), "n_positions": len(poss),
-        "positions": [{"symbol": s, "qty": round(q, 2), "entry": e, "since": t}
+        "positions": [{"symbol": s, "qty": round(q, 2), "entry": e, "since": t,
+                       "last": ltps.get(s),
+                       "mtm": round(q * (ltps[s] - e), 0) if s in ltps else None,
+                       "mtm_pct": round((ltps[s] / e - 1) * 100, 2) if s in ltps else None}
                       for s, q, e, t in poss],
         "navcurve": [{"d": d, "nav": round(n, 0), "bench": b} for d, n, b in navs],
         "recent_fills": [{"ts": t, "symbol": s, "side": sd, "price": p,
