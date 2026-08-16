@@ -9855,6 +9855,13 @@ try:
 except Exception as _e:
     logger.warning(f"Could not register OHOL paper book: {_e}")
 
+# F&O Multi-Signal — Rs20L PAPER book (research/23+26+27 walk-forward winners)
+try:
+    from services.fnoms_paper import register as _fms_register
+    _fms_register(app, scheduler)
+except Exception as _e:
+    logger.warning(f"Could not register FNO multi-signal paper book: {_e}")
+
 # NSR-W v1.2 weekly strangle - Rs30/leg, 10 lots PAPER book (research/90 G5)
 try:
     from services.nsrw_paper import register as _nsrw_register

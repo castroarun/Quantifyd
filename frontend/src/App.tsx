@@ -32,6 +32,7 @@ import BreakoutPaper from './pages/BreakoutPaper';
 import HaPaper from './pages/HaPaper';
 import OrbPaper from './pages/OrbPaper';
 import OholPaper from './pages/OholPaper';
+import FnomsPaper from './pages/FnomsPaper';
 import Journal from './pages/Journal';
 import JournalDay from './pages/JournalDay';
 import JournalTrade from './pages/JournalTrade';
@@ -298,6 +299,16 @@ export default function App() {
           <Protected>
             <AppLayout active="ohol-paper">
               <OholPaper />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/fnoms-paper"
+        element={
+          <Protected>
+            <AppLayout active="fnoms-paper">
+              <FnomsPaper />
             </AppLayout>
           </Protected>
         }

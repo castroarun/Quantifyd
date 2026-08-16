@@ -12,7 +12,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'straddles' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'straddles' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -212,6 +212,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconBarChart />}
             label="OHOL 1-Lot"
             active={active === 'ohol-paper'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/fnoms-paper"
+            icon={<IconBarChart />}
+            label="F&O Multi-Signal ₹20L"
+            active={active === 'fnoms-paper'}
             collapsed={collapsed}
           />
           <NavItem
