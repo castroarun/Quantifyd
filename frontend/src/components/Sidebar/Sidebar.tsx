@@ -194,34 +194,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/ha-paper"
-            icon={<IconBarChart />}
-            label="HA 2-Green ₹20L"
-            active={active === 'ha-paper'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/orb-paper"
-            icon={<IconBarChart />}
-            label="ORB Revival ₹10L"
-            active={active === 'orb-paper'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/ohol-paper"
-            icon={<IconBarChart />}
-            label="OHOL 1-Lot"
-            active={active === 'ohol-paper'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/fnoms-paper"
-            icon={<IconBarChart />}
-            label="F&O Multi-Signal ₹20L"
-            active={active === 'fnoms-paper'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/eod-breakout"
             icon={<IconBarChart />}
             label="EOD"
@@ -253,13 +225,20 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
       </div>
 
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>Holdings</div>}
+        {!collapsed && <div className={styles.sectionLabel}>Paper Books</div>}
         <nav className={styles.nav}>
           <NavItem
-            to="/holdings"
-            icon={<IconBriefcase />}
-            label="Holdings"
-            active={active === 'holdings'}
+            to="/ha-paper"
+            icon={<IconBarChart />}
+            label="HA 2-Green ₹20L"
+            active={active === 'ha-paper'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/fnoms-paper"
+            icon={<IconBarChart />}
+            label="F&O Multi-Signal ₹20L"
+            active={active === 'fnoms-paper'}
             collapsed={collapsed}
           />
           <NavItem
@@ -274,6 +253,33 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconBarChart />}
             label="Breakout ₹10L"
             active={active === 'breakout-paper'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/orb-paper"
+            icon={<IconBarChart />}
+            label="ORB Revival ₹10L"
+            active={active === 'orb-paper'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/ohol-paper"
+            icon={<IconBarChart />}
+            label="OHOL 1-Lot"
+            active={active === 'ohol-paper'}
+            collapsed={collapsed}
+          />
+        </nav>
+      </div>
+
+      <div className={styles.section}>
+        {!collapsed && <div className={styles.sectionLabel}>Holdings</div>}
+        <nav className={styles.nav}>
+          <NavItem
+            to="/holdings"
+            icon={<IconBriefcase />}
+            label="Holdings"
+            active={active === 'holdings'}
             collapsed={collapsed}
           />
         </nav>
