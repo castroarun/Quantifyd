@@ -503,6 +503,7 @@ export default function Straddles() {
   const [pfLab, setPfLab] = useState<any>(null);      // options portfolio lab (daily regen)
   const [pfSel, setPfSel] = useState<number | null>(null); // selected lab portfolio row (charts)
   const [pfDte, setPfDte] = useState<string>('ALL');       // lab charts DTE filter (NIFTY weekday map)
+  const [pfRe, setPfRe] = useState<any>(null);             // weekly stack re-assessment (Fri 16:35)
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -518,6 +519,7 @@ export default function Straddles() {
     fetch('/app/csl_paper_backfill.json?t=' + Date.now()).then((r) => r.json()).then(setCslPBF).catch(() => {});
     fetch('/app/nas_baseline.json?t=' + Date.now()).then((r) => r.json()).then(setNasBase).catch(() => {});
     fetch('/app/straddles/portfolio_lab.json?t=' + Date.now()).then((r) => r.json()).then(setPfLab).catch(() => {});
+    fetch('/app/straddles/reassessment.json?t=' + Date.now()).then((r) => r.json()).then(setPfRe).catch(() => {});
     const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
     loadPLive(); const pl = setInterval(loadPLive, 60000);
     const loadLive = () => {
@@ -827,7 +829,28 @@ export default function Straddles() {
                 ['Auto-refresh', 'daily 15:40 IST, last step of the regen chain (after backfill + NAS baseline)', 'venv/bin/python3 research/111_sensex_manual_mgmt/scripts/portfolio_lab.py'],
                 ['Inputs (live-first)', 'csl_paper_state.json (PAPER/REAL records override) + csl_paper_backfill.json (BACKTEST) + nas_baseline.json (suite actuals)'],
                 ['Sizing studies (sec 18/18b)', 're-run anytime; auto-include new live days', 'venv/bin/python3 research/111_sensex_manual_mgmt/scripts/comb_tb_overweight_grid.py'],
+                ['Weekly RE-ASSESSMENT', 'Fridays 16:35 IST — corr-drift, per-DTE shifts, TB-window revalidation, sizing revalidation, live-vs-model tracking (panel below)', 'venv/bin/python3 research/111_sensex_manual_mgmt/scripts/stack_reassessment.py'],
               ]} />
+              {pfRe && pfRe.checks && (
+                <details style={{ marginTop: 8, border: `1px solid ${pfRe.overall === 'DRIFT' ? C.amber : C.hair}`, borderRadius: 8, padding: '6px 10px' }}>
+                  <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, userSelect: 'none',
+                    color: pfRe.overall === 'DRIFT' ? C.amber : C.pos }}>
+                    🔬 Weekly re-assessment — overall: {pfRe.overall} · {pfRe.generated_at} · {pfRe.window?.n}d window (recent {pfRe.window?.recent_n}d)
+                  </summary>
+                  <div style={{ marginTop: 6 }}>
+                    {pfRe.checks.map((c2: any) => (
+                      <div key={c2.name} style={{ fontSize: 11.5, marginBottom: 5 }}>
+                        <span style={{ fontWeight: 800, padding: '0 6px', borderRadius: 4,
+                          color: c2.verdict === 'DRIFT' ? C.amber : c2.verdict === 'INFO' ? C.navy : C.pos,
+                          background: c2.verdict === 'DRIFT' ? C.amberSoft : c2.verdict === 'INFO' ? C.navySoft : '#E7F2EE' }}>
+                          {c2.verdict}</span>{' '}
+                        <b style={{ color: C.ink }}>{c2.name}</b>
+                        <span style={{ color: C.sec }}> — {c2.detail}</span>
+                      </div>))}
+                    <div style={{ fontSize: 10, color: C.faint }}>DRIFT = behavior changed vs the frozen/sized basis — review, nothing auto-changes. Small recent windows (15d) are noisy; confirm before acting.</div>
+                  </div>
+                </details>
+              )}
             </div>
           </div>
         </section>

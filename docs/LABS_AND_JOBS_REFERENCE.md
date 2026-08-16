@@ -25,6 +25,8 @@ Re-analyzes everything with the new day's data. Results land on **/app/straddles
 |---|---|---|---|
 | `entry_exit_sweep.py` | Fri 15:45 (`45 15 * * 5`) | TB-CSL **Best-Config Lab** regen (entry×exit×SL per DTE). Informational — does NOT move the frozen live book config | `setsid nohup venv/bin/python3 -u research/111_sensex_manual_mgmt/scripts/entry_exit_sweep.py > /tmp/eesweep.log 2>&1 &` |
 
+| `stack_reassessment.py` | Fri 16:35 (`35 16 * * 5`) | **System re-assessment**: corr-drift, per-DTE behavior shifts, TB frozen-windows vs latest sweep, sizing-grid revalidation, live-vs-model tracking → panel in Portfolio Lab | `venv/bin/python3 research/111_sensex_manual_mgmt/scripts/stack_reassessment.py` |
+
 ## 3. Intraday execution + monitoring (market hours, Mon–Fri)
 
 | Job | Cron | Role | Manual check |
