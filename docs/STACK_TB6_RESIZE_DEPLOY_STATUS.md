@@ -1,6 +1,6 @@
 # THE STACK resize 6/2/2 → 6/2/6 — TB-CSL to 6 lots (sec-18b decision) — Instructions
 
-STATUS: **PLANNED** (decision by Arun 2026-08-14 ~14:40 IST: "lets go for 6/2/6")
+STATUS: **DONE — executed 2026-08-16 21:18 IST, effective Mon 2026-08-17** (decision by Arun 2026-08-14 ~14:40 IST)
 
 > **Laptop:** `c:\Users\arunc\Documents\Projects\Covered_Calls\docs\STACK_TB6_RESIZE_DEPLOY_STATUS.md`
 > **VPS:** `/home/arun/quantifyd/docs/STACK_TB6_RESIZE_DEPLOY_STATUS.md`
@@ -62,3 +62,15 @@ Note Monday is ALSO the sleeves' first REAL-fill morning (LIMIT fix) — one ver
 
 ## 4. Rollback
 Set lots/qty back to 2/130 in the two BOOKS dicts (+ lab targets); effective next morning. No state migration needed.
+
+
+## Revision Log (executed 2026-08-16 21:18 IST)
+- A. csl_paper_exec.py: CSL_TIMEB_NIFTY 2/130 -> **6/390** (py_compile OK). Effective next cron Mon 09:12.
+- B. csl_paper_backfill.py: same 6/390.
+- C. portfolio_lab.py: promoted TB@6L to the DEPLOYED row -> **THE STACK (DEPLOYED 14L ex-Wed 6/2/6)**;
+  old 10L row demoted to "pre-18b reference"; x2 arm dropped; verdict/basis updated. Lab regen:
+  deployed 14L ex-Wed = **+388,926 / -12,582 / ratio 30.9 / corr 0.06**.
+- D. Straddles.tsx: TB text -> 6 lots / qty 390; npm run build OK.
+- LIVE suite + COMB + all frozen configs UNCHANGED. Wednesday still off. 0 stale positions.
+- VERIFY Mon 09:12+: /tmp/csl_paper.log "CSL_TIMEB_NIFTY plan [LIVE]: ... qty 390 (6 lots)"; entry in its
+  DTE1 window 13:00-14:00; margin gate clean (need ~12.9L during TB window vs ~46L net).

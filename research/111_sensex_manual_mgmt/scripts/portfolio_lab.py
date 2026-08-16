@@ -94,11 +94,10 @@ for n2, dd in comp.items():
 PORTS = [
     ("LIVE suite alone", 6, ["LIVE_SUITE_6L"]),
     ("LIVE + COMB sleeve", 8, ["LIVE_SUITE_6L", "COMB_2L"]),
-    ("THE STACK (DEPLOYED 10L ex-Wed): LIVE + COMB + TB-CSL", 10, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_2L"]),
+    ("pre-18b reference — 10L (TB@2L)", 10, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_2L"]),
     ("LIVE + SHIFT-cand + TB-CSL", 10, ["LIVE_SUITE_6L", "SHIFT_CAND_2L", "TBCSL_2L"]),
     ("ALL-CSL (COMB+SHIFT+TB, no live)", 6, ["COMB_2L", "SHIFT_CAND_2L", "TBCSL_2L"]),
-    ("STACK TB-OVERWEIGHT x2 (sec 18): LIVE + COMB + TB@4L", 12, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_4L"]),
-    ("STACK TB-OVERWEIGHT x3 (sec 18): LIVE + COMB + TB@6L", 14, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_6L"]),
+    ("THE STACK (DEPLOYED 14L ex-Wed · 6/2/6): LIVE + COMB + TB-CSL", 14, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_6L"]),
 ]
 ports_out = []
 for label, lots, parts in PORTS:
@@ -115,10 +114,10 @@ for label, lots, parts in PORTS:
                               "series": ser})
 
 out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-       "basis": "DEPLOYED 2026-08-13: LIVE suite 6L (2L/system, real+shadow as-traded normalized), sleeves 2L each; "
+       "basis": "DEPLOYED 2026-08-13: LIVE suite 6L (2L/system) + COMB 2L + TB-CSL 6L = 6/2/6, real+shadow normalized per-record; "
                 "per-record lots-normalized to 2L; TB-CSL from 12L history; SHIFT candidate = model until NAS_C20_SHIFT accrues; live-first merge",
        "names": NAMES, "components": comps_out, "matrix": matrix, "portfolios": ports_out,
-       "verdict": "DEPLOYED 2026-08-13 (10L ex-Wed): THE STACK (LIVE+COMB+TB-CSL) at 2 lots/system, Wednesday (DTE4) gated off. "
+       "verdict": "DEPLOYED 2026-08-13, resized 6/2/6 on 2026-08-17 (14L ex-Wed): LIVE 6L + COMB 2L + TB-CSL 6L, Wednesday (DTE4) gated off. "
                   "High complementarity (avg component corr ~0.18 ex-Wed). SHIFT-cand ex-Wed ratio is the single-arm standout but in-sample; paper book adjudicates."}
 for p in OUTS:
     try:
