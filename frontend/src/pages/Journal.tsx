@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DayReviewModal from './DayReviewModal';
 import styles from './Journal.module.css';
 import { apiGet, apiPost } from '../api/client';
 import type {
@@ -57,6 +58,7 @@ function shortStratLabel(s: string): string {
 
 export default function Journal() {
   const navigate = useNavigate();
+  const [dayModal, setDayModal] = useState<string | null>(null);
   const [now] = useState(() => new Date());
   const [year, setYear] = useState(now.getFullYear());
   const [monthIdx, setMonthIdx] = useState(now.getMonth());
@@ -314,7 +316,7 @@ export default function Journal() {
                   <div
                     key={idx}
                     className={`${styles.calCell} ${tint} ${isToday ? styles.today : ''}`}
-                    onClick={() => cell.date && navigate(`/journal/day/${cell.date}`)}
+                    onClick={() => cell.date && setDayModal(cell.date)}
                   >
                     <div className={styles.dayNum}>{cell.day}</div>
                     <div className={`${styles.dayPnl} ${pnl > 0 ? styles.pos : pnl < 0 ? styles.neg : ''}`}>
@@ -410,11 +412,18 @@ export default function Journal() {
 
       <div className={styles.footnote}>
         <div className={styles.footnoteLabel}>From the journal</div>
-        Auto-imported from <em>orb_trading.db</em>, <em>kc6_trading.db</em>, <em>nas_trading.db</em>
-        and <em>strangle_trading.db</em>. Tag a trade, write a post-trade note, grade the process.
+        Live NAS trades auto-sync daily at 15:50 from all 11 books (NIFTY OTM/ATM/ATM2/ATM4,
+        the 09:16 variants, and the three SENSEX books). Tag a trade, write a post-trade note, grade the process.
         The journal is a layer over execution data — it never re-records, it
         only enriches. (See <em>docs/Design/TRADING-JOURNAL-DESIGN.md</em>.)
       </div>
+      {dayModal && (
+        <DayReviewModal
+          date={dayModal}
+          onNavigate={(d) => setDayModal(d)}
+          onClose={() => setDayModal(null)}
+        />
+      )}
     </div>
   );
 }

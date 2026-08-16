@@ -606,3 +606,28 @@
 }
 .attrTable tr:last-child td { border-bottom: none; }
 .attrTable th.right, .attrTable td.right { text-align: right; }
+
+
+/* ---- Day-in-review popout ---- */
+.modalOverlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 40px 20px; overflow-y: auto;
+  backdrop-filter: blur(2px);
+}
+.modalDialog {
+  background: var(--surface); border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card, 12px);
+  width: min(1080px, 100%); max-height: calc(100vh - 80px);
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+.modalHead {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 18px 20px; border-bottom: 0.5px solid var(--hairline);
+}
+.modalNav { display: flex; gap: 6px; padding-top: 12px; }
+.modalTitle { font-size: 20px; font-weight: 600; color: var(--ink); margin: 2px 0 4px; }
+.modalHeadActions { display: flex; gap: 8px; align-items: center; }
+.modalBody { padding: 18px 20px 22px; overflow-y: auto; }
