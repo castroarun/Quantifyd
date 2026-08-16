@@ -2,6 +2,40 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-08-14 — Momentum live book: top-up ledger bug FIXED + DEPLOYED (restart 2026-08-16 21:08 IST)
+
+Arun added ₹1L via `/app/momentum-paper` "Immediate equal top-up". Broker fills were correct
+(BHEL 134 / NATIONALUM 147 / LAURUSLABS 30 / RADICO 11 / POWERINDIA 1) but the ledger corrupted:
+
+1. `_buy()` used `INSERT OR REPLACE` → the top-up OVERWROTE the held row, wiping prior qty,
+   cost basis and entry_date. `_sell()` sells the RECORDED qty, so the next Donchian stop would
+   have sold 45 BHEL and ORPHANED 89 shares at the broker with no stop on them.
+2. `cash_deposit()` double-deducted the spend (`_buy` already deducts cash) — cash ₹78,113 short.
+
+DONE: ledger repaired by replaying `mp_fills` + asserting vs `_broker_qty()`; NAV back to
+₹396,204 (capital ₹4L, cash ₹142,289). Code patched in `services/momentum_paper.py` at 14:57.
+
+DEPLOYED Sun 2026-08-16 21:08 IST (market closed). Verified by FUNCTIONAL test on a DB copy,
+not a source grep: top-up of a held name took qty 134 -> 144 (accumulated, not overwritten),
+entry_date preserved (STCG clock intact), cost basis = weighted average 415.54, cash debited
+once. `live_armed` now also exposed by the state API (was returning None) and reads True.
+"Immediate equal top-up" is safe to use again.
+
+Add-funds UI now shows the MINIMUM for a full even split (dearest share price x n_holdings =
+Rs1,78,600 today, constrained by POWERINDIA) plus a live breakdown of what deploys vs what falls
+back to cash and which names get skipped. Frontend-only, shipped 2026-08-14.
+
+## ✅ 2026-08-14 — research/112 fresh-deposit deployment timing: SIGNAL
+
+Settles which policy applies to DEPOSITED cash (r/108 monthly = stop-out cash; r/41 ph-27 weekly
+= all-cash gate re-entry; neither covered deposits). 4 arms × 12 phase offsets, identical cash
+flows, 2011-2026 net of STCG. Winner: **immediate EVEN top-up of names already HELD (12/12
+phases)**; filling empty slots fast loses (false-dawn penalty, consistent with r/108). Edge is
+small — +0.8% terminal over 15.6y (~5bps/yr), 12 phases share one price history so not 12
+independent trials. Live `immediate` mode already implements the winner.
+TODO: make `immediate` the DEFAULT deposit mode when the gate is risk-ON (park only on risk-OFF).
+Details: research/112_deposit_timing/results/RESULTS.md
+
 ## 2026-08-09 — research/110 alt-info intraday CONCLUDED: NO EDGE (0/14) — intraday line CLOSED
 Cross-sectional RS dead both directions; event-proxy fade fake (flips in Val); flow
 proxies negative everywhere. 58 intraday constructions total across r/89+109+110:

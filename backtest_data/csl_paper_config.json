@@ -23,11 +23,6 @@
     "entry": "09:16",
     "exit": "15:20",
     "sl": 20
-   },
-   "4": {
-    "entry": "10:30",
-    "exit": "12:00",
-    "sl": 20
    }
   },
   "CSL_TIMEB_SENSEX": {
@@ -77,11 +72,6 @@
     "entry": "09:16",
     "exit": "15:20",
     "sl": 20
-   },
-   "4": {
-    "entry": "09:16",
-    "exit": "15:20",
-    "sl": 30
    }
   },
   "CSL30F_NIFTY": {
@@ -137,8 +127,62 @@
     "exit": "15:20",
     "sl": 30
    }
+  },
+  "NAS_C20_TRAIL": {
+   "0": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "1": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "2": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "3": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "4": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   }
+  },
+  "NAS_C20_SHIFT": {
+   "0": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "1": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "2": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "3": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   },
+   "4": {
+    "entry": "09:16",
+    "exit": "15:20",
+    "sl": 20
+   }
   }
  },
- "refrozen_at": "2026-08-13T20:51",
- "refreeze_note": "2026-08-13: books renamed CSL_*->CSL_TIMEB_*; all SL none cells set to 30 (never run stopless), per user | 2026-08-13 21:55: NAS_COMB20 SLs set per-DTE from sec-15 sweep (25/30/30/20/30), user-delegated"
+ "refrozen_at": "2026-08-13T22:05",
+ "refreeze_note": "2026-08-13: books renamed CSL_*->CSL_TIMEB_*; all SL none cells set to 30 (never run stopless), per user | 2026-08-13 21:55: NAS_COMB20 SLs set per-DTE from sec-15 sweep (25/30/30/20/30), user-delegated | 2026-08-13: THE STACK ex-Wed deploy - DTE4 removed from NAS_COMB20 + CSL_TIMEB_NIFTY (docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md)"
 }

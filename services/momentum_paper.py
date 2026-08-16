@@ -924,8 +924,23 @@ def _buy(symbol, price, rupees, d, reason):
         qty = rupees / price                             # paper allows fractional shares
     cost = _record_fill(symbol, "BUY", price, qty, reason)
     c = _conn()
+    row = c.execute("SELECT qty,entry_date,entry_price,invested,peak_price FROM mp_positions "
+                    "WHERE symbol=?", (symbol,)).fetchone()
+    if row and (row["qty"] or 0) > 0:
+        # TOP-UP of a name already held. INSERT OR REPLACE alone would overwrite the row and discard
+        # the existing quantity — _sell() sells the RECORDED qty, so the next Donchian stop would
+        # sell only the top-up and orphan the rest at the broker with no stop on it (2026-08-14).
+        prev_qty = float(row["qty"])
+        prev_inv = float(row["invested"] or prev_qty * float(row["entry_price"] or price))
+        n_qty = prev_qty + qty
+        n_inv = prev_inv + qty * price
+        n_entry = row["entry_date"]                       # keep the ORIGINAL date — STCG clock
+        n_peak = max(float(row["peak_price"] or 0.0), price)
+        n_price = n_inv / n_qty                           # weighted-average cost basis
+    else:
+        n_qty, n_inv, n_entry, n_peak, n_price = qty, qty * price, d, price, price
     c.execute("INSERT OR REPLACE INTO mp_positions(symbol,qty,entry_date,entry_price,invested,peak_price) "
-              "VALUES(?,?,?,?,?,?)", (symbol, qty, d, price, qty * price, price))
+              "VALUES(?,?,?,?,?,?)", (symbol, n_qty, n_entry, n_price, n_inv, n_peak))
     c.commit(); c.close()
     _set("cash", _cash() - qty * price - cost)
 
@@ -1278,6 +1293,9 @@ def get_state():
     return dict(
         seeded=bool(_get("seeded")), gate=_get("gate", "ON"), inception=incep,
         mode=("LIVE" if _is_live() else "PAPER"), live_mode=_is_live(),
+        # the second key of the two-key safety — the page must be able to show whether the
+        # book is actually armed to place orders, not just that it is in live MODE
+        live_armed=str(_get("live_armed", "0")).lower() in ("1", "true", "on", "yes"),
         target_basket=target, gate_last=gate_last, gate_sma=gate_sma, gate_gap_pct=gate_gap,
         capital=cap, nav=round(nav), cash=round(cash), equity=round(equity),
         invested_pct=round(equity / nav * 100, 1) if nav else 0,
@@ -1346,14 +1364,13 @@ def cash_deposit(amount, mode="park", dry_run=True):
     res = {"ok": True, "action": "deposit", "mode": mode, "amount": round(amount),
            "plan": plan, "note": note, "dry_run": dry_run}
     if not dry_run:
+        # Credit the deposit FIRST, then let _buy() deduct as it spends. The old code let _buy()
+        # deduct AND then subtracted `spent` again, so cash came out at old + amount - 2*spent
+        # (the 2026-08-14 Rs1L top-up left cash Rs78,113 short).
+        _set("cash", _cash() + amount)
         if use_immediate:
-            spent = 0.0
             for p in plan:
                 _buy(p["symbol"], live.get(p["symbol"]) or pos[p["symbol"]]["entry_price"], p["value"], d, "DEPOSIT_TOPUP")
-                spent += p["value"]
-            _set("cash", _cash() + (amount - spent))
-        else:
-            _set("cash", _cash() + amount)
         _set("capital", float(_get("capital", CFG["capital"])) + amount)
         logger.warning(f"[MP] DEPOSIT Rs{amount:,.0f} ({mode})")
         res["executed"] = True

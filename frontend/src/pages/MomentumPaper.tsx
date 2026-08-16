@@ -559,6 +559,19 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
   const [dep, setDep] = useState<{ amount: string; mode: string; plan: any; busy: boolean }>({ amount: '', mode: 'park', plan: null, busy: false });
   const [wd, setWd] = useState<{ amount: string; plan: any; busy: boolean }>({ amount: '', plan: null, busy: false });
 
+  // An even top-up splits the deposit equally, but CNC buys WHOLE shares — so every holding needs at
+  // least one share of the DEAREST name or its whole slice falls back to cash (2026-08-14: POWERINDIA
+  // at Rs35,760 swallowed Rs20,000 of a Rs1L deposit without a word).
+  const stocks = s.holdings.filter((h) => !h.is_cash && (h.price ?? 0) > 0);
+  const dearest = stocks.reduce<Holding | null>((a, h) => ((h.price ?? 0) > (a?.price ?? 0) ? h : a), null);
+  const minFull = dearest ? Math.ceil((dearest.price ?? 0) * stocks.length) : 0;
+  const depAmt = parseFloat(dep.amount);
+  const perSlot = depAmt > 0 && stocks.length ? depAmt / stocks.length : 0;
+  const skipped = perSlot > 0 ? stocks.filter((h) => perSlot < (h.price ?? Infinity)) : [];
+  const willDeploy = perSlot > 0
+    ? stocks.reduce((a, h) => a + Math.floor(perSlot / (h.price ?? Infinity)) * (h.price ?? 0), 0)
+    : 0;
+
   const previewDep = async () => {
     const amt = parseFloat(dep.amount); if (!(amt > 0)) return;
     setDep((d) => ({ ...d, busy: true }));
@@ -619,6 +632,22 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
             </select>
             <button style={btn} onClick={previewDep} disabled={dep.busy}>Preview</button>
           </div>
+          {dep.mode === 'immediate' && stocks.length > 0 && dearest && (
+            <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-muted,#888)', lineHeight: 1.55 }}>
+              Minimum for a full even split across all {stocks.length}: <b>{inr(minFull)}</b>
+              {' '}— whole shares only, so each slot needs one share of the dearest holding
+              {' '}({dearest.symbol} at {inr(dearest.price ?? 0)}).
+              {perSlot > 0 && (
+                <div style={{ marginTop: 3, color: skipped.length ? '#c0392b' : '#1f9d55' }}>
+                  {inr(depAmt)} splits to {inr(perSlot)}/name → ~<b>{inr(willDeploy)}</b> deploys,
+                  {' '}~<b>{inr(Math.max(0, depAmt - willDeploy))}</b> stays in cash
+                  {skipped.length > 0 && (
+                    <> · skipped: <b>{skipped.map((h) => h.symbol).join(', ')}</b></>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {dep.plan && (
             <div style={{ marginTop: 8, fontSize: 12.5 }}>
               <div style={{ color: 'var(--ink-muted,#888)' }}>{dep.plan.note}</div>
