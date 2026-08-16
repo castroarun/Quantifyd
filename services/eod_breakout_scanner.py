@@ -262,6 +262,24 @@ def scan_eod(scan_date: Optional[date] = None) -> dict:
     return summary
 
 
+def _today_open_from_kite(symbol):
+    """Live fallback for the morning fill.
+
+    market_data.db daily bars refresh only after the close, so at 09:20
+    today's bar does not exist yet. Read the session open from Kite instead.
+    """
+    try:
+        from services.kite_service import get_kite_with_refresh
+        kite = get_kite_with_refresh()
+        key = "NSE:" + symbol
+        q = kite.quote([key])
+        o = (q.get(key) or {}).get("ohlc", {}).get("open")
+        return float(o) if o and float(o) > 0 else None
+    except Exception as e:
+        logger.warning("[EOD-FILL] kite open fetch failed %s: %s", symbol, e)
+        return None
+
+
 def record_morning_fills(fill_date: Optional[date] = None) -> dict:
     """Run after market open (~09:20 IST). For each PENDING signal, fill at
     today's open if max_concurrent allows. Mark as FILLED or SKIPPED_FULL or
@@ -287,14 +305,27 @@ def record_morning_fills(fill_date: Optional[date] = None) -> dict:
                 summary[sys_id]['skipped_full'] += 1
                 continue
 
-            # Read today's open
+            # Stale-signal guard: backtest fills at the NEXT session's open.
+            # Fri -> Mon is 3 calendar days; older than that is stale.
+            try:
+                sig_d = _dt.date.fromisoformat(str(sig['signal_date'])[:10])
+                stale_days = (fill_date - sig_d).days
+                if stale_days > 3:
+                    db.update_signal_status(sig['id'], 'EXPIRED',
+                                            notes='stale by %dd' % stale_days)
+                    continue
+            except Exception:
+                pass
+
+            # Today's open: market_data.db if present, else live from Kite
+            entry_price = None
             df = _load_daily_bars(sig['symbol'], n_back_days=10)
-            if df is None or fill_date not in df.index:
-                # Mark as SKIPPED_NO_DATA — try again tomorrow if signal still relevant
-                continue
-            row = df.loc[fill_date]
-            entry_price = float(row['open'])
-            if not (entry_price > 0):
+            if df is not None and fill_date in df.index:
+                entry_price = float(df.loc[fill_date]['open'])
+            if not entry_price or entry_price <= 0:
+                entry_price = _today_open_from_kite(sig['symbol'])
+            if not entry_price or entry_price <= 0:
+                summary[sys_id]['skipped_no_data'] += 1
                 continue
 
             atr = sig.get('atr') or 0
