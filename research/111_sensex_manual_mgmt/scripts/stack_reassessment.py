@@ -102,13 +102,19 @@ def ratio_of(f):
     c = pk = dd = 0
     for v in f: c += v; pk = max(pk, c); dd = min(dd, c - pk)
     return round(sum(f) / abs(dd), 1) if dd < 0 else 99.0
-tb_base = 6 if n_tb.endswith("6L") else 2
+import re as _re
+try:
+    _src = open(str(Q / "research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py")).read()
+    tb_deployed = int(_re.search(r'"CSL_TIMEB_NIFTY".*?"lots":\s*(\d+)', _src).group(1))
+except Exception:
+    tb_deployed = 6
+tb_base = 2 if n_tb.endswith("2L") else tb_deployed   # component basis (lab normalizes to 2L)
 grid = {}
 for tw in (2, 4, 6):
     for cw in (2, 4):
         f = [LIVE[k] + COMB[k] * cw / 2.0 + TB[k] * tw / float(tb_base) for k in ex]
         grid["6/%d/%d" % (cw, tw)] = ratio_of(f)
-deployed = "6/2/%d" % tb_base
+deployed = "6/2/%d" % tb_deployed
 best_cell = max(grid, key=grid.get)
 add("SIZING", "OK" if grid.get(deployed, 0) >= 0.8 * grid[best_cell] else "DRIFT",
     "deployed %s r%.1f vs best %s r%.1f | %s" % (deployed, grid.get(deployed, 0), best_cell, grid[best_cell],

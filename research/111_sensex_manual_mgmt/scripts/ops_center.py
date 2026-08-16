@@ -66,8 +66,8 @@ GROUPS = [
 REVIEWS = [
     ("Verify first REAL sleeve fills (marketable-LIMIT fix) + suite Monday", "2026-08-17", "PENDING",
      "Morning after 09:16: /tmp/csl_paper.log ENTER [LIVE], Kite CSL_* fills, REAL popups, guardian clean"),
-    ("Execute TB6 resize (6/2/6 decision) if not yet done", "2026-08-17", "PENDING",
-     "docs/STACK_TB6_RESIZE_DEPLOY_STATUS.md - executor still at TB 2L as of 16-AUG night"),
+    ("~~Execute TB6 resize~~ DONE 2026-08-16 (other session, commit aa09496; verified)", None, "PARKED",
+     "executor 6L/390, backfill matched, lab per-record normalization correct, deployed row 14L r30.9"),
     ("Suite FRIDAY (DTE2) review - keep live or revert", "2026-08-28", "SCHEDULED",
      "per-leg mechanic measured net-negative DTE2+ by stop-by-DTE study; weigh real Fridays (first: +1,259 on 14-AUG)"),
     ("TB-CSL 6L live-behavior validation", "2026-09-12", "SCHEDULED",
