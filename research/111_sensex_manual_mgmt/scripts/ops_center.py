@@ -1,0 +1,111 @@
+"""OPS & REVIEW CENTER registry -> static/app/straddles/ops_center.json
+THE standing registry of (a) every lab job with schedule + manual trigger, and
+(b) every periodic re-assessment / review item with its due date — rendered as the
+Operations & Review Center section on /app/straddles (#ops-center).
+
+BINDING CONVENTION (also in .claude/CLAUDE.md): any new lab, analyzer job, or
+periodic-review obligation created in ANY session MUST be registered here (and in
+docs/LABS_AND_JOBS_REFERENCE.md). Reviews carry due dates so the page shows DUE badges.
+Runs daily in the 15:40 regen (cheap) so due-flags stay current."""
+import json
+from datetime import date, datetime
+from pathlib import Path
+
+Q = Path("/home/arun/quantifyd")
+OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
+
+GROUPS = [
+    ("Daily auto-analysis (15:40 regen chain)", [
+        ("Whole regen chain", "15:40 Mon-Fri", "V1/V2 cards + leaderboard + SL30 + backfill + baseline + portfolio lab (~80 min)",
+         "./research/58_intraday_recenter_straddle/scripts/regen_straddles.sh"),
+        ("strategy_rankings", "in chain", "Strategy Leaderboard (grades, Corr-book, Period)",
+         "PYTHONPATH=. venv/bin/python3 research/58_intraday_recenter_straddle/scripts/strategy_rankings.py"),
+        ("csl_paper_backfill", "in chain (~75 min)", "BACKTEST day-curves for paper books; live records always win; avoid 09:00-15:40",
+         "setsid nohup venv/bin/python3 research/111_sensex_manual_mgmt/scripts/csl_paper_backfill.py > /tmp/csl_backfill.log 2>&1 &"),
+        ("nas_baseline", "in chain", "NAS suite day P&L with REAL/PAPER per-day tags",
+         "venv/bin/python3 research/111_sensex_manual_mgmt/scripts/nas_baseline.py"),
+        ("portfolio_lab", "in chain", "Options Portfolio Lab: stack rows, corr matrix, curves, source mix",
+         "venv/bin/python3 research/111_sensex_manual_mgmt/scripts/portfolio_lab.py"),
+    ]),
+    ("Weekly re-analysis & re-assessment", [
+        ("entry_exit_sweep", "Fri 15:45", "TB-CSL Best-Config Lab regen (informational; frozen config never auto-moves)",
+         "setsid nohup venv/bin/python3 -u research/111_sensex_manual_mgmt/scripts/entry_exit_sweep.py > /tmp/eesweep.log 2>&1 &"),
+        ("stack_reassessment", "Fri 16:35", "SYSTEM re-assessment: corr-drift, per-DTE shifts, TB windows vs sweep, sizing revalidation, live-vs-model (panel in Portfolio Lab)",
+         "venv/bin/python3 research/111_sensex_manual_mgmt/scripts/stack_reassessment.py"),
+    ]),
+    ("Intraday execution & monitoring (market hours)", [
+        ("csl_paper_exec", "09:12 cron", "The 7 CSL books (NAS_COMB20 + CSL_TIMEB_NIFTY REAL). Safe dry-run only while cron copy runs",
+         "venv/bin/python3 research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py --probe"),
+        ("nas_live_guardian", "*/5 min", "Hunts live failure classes; ALL-CLEAR/FAIL verdicts", "tail -20 /tmp/nas_guardian.log"),
+        ("nas_alert_feed + laptop watcher", "*/1 min + 30s poll", "Desktop popups for every book (REAL/PAPER tagged)", "tail /tmp/nas_alert_feed.log"),
+        ("integrity watchdog / fail-rejected / MTM dump", "*/5, */2, */1 min", "pipeline freeze email, rejected-order sweep, intraday MTM snapshots", ""),
+        ("SL + portfolio-stop monitors", "in-app 10s", "per-leg SLs, rupee stop, -1300/lot venue stop + trail/TP",
+         "journalctl -u quantifyd --since '10 min ago' | grep -i monitor"),
+    ]),
+    ("EOD analyzers", [
+        ("nas_analyzer (RAG report)", "15:45", "daily book verdict -> /app/reports", "venv/bin/python3 scripts/nas_analyzer.py"),
+        ("options_outlier_scan", "15:47", "outlier/drift scan -> /app/reports", "venv/bin/python3 scripts/options_outlier_scan.py"),
+        ("EOD snapshots + GitHub backup", "15:32 / 16:00", "state snapshots; repo backup", ""),
+    ]),
+    ("Manual-only study scripts (auto-include new live days)", [
+        ("comb_tb_overweight_grid", "on demand", "sec-18b sizing grid: is the deployed cell still right?",
+         "venv/bin/python3 research/111_sensex_manual_mgmt/scripts/comb_tb_overweight_grid.py"),
+        ("per_dte_elimination_check", "on demand", "per-DTE re-ranking: eliminate weak DTE before replacing a system",
+         "venv/bin/python3 research/111_sensex_manual_mgmt/scripts/per_dte_elimination_check.py"),
+        ("nas_suite_csl_replay / csl_mgmt_replay / sleeve_pstop_test", "on demand", "suite-vs-CSL arms, TRAIL/SHIFT arms, portfolio-overlay test (~2 min each)", ""),
+    ]),
+    ("Kill / pause levers", [
+        ("Freeze flag", "instant", "blocks ALL order placement (suite + sleeves)", "touch backtest_data/nas_manual_freeze.flag"),
+        ("Master mode", "instant", "whole stack to paper", "echo '{\"mode\": \"paper\"}' > backtest_data/nas_master_mode.json"),
+        ("Suite kill-switch", "instant", "suite to paper via API", "curl -X POST http://127.0.0.1:5000/api/nas/kill-switch"),
+        ("Per-book live flag", "next morning", "remove \"mode\": \"live\" from the book in csl_paper_exec.py BOOKS", ""),
+    ]),
+]
+
+# Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
+REVIEWS = [
+    ("Verify first REAL sleeve fills (marketable-LIMIT fix) + suite Monday", "2026-08-17", "PENDING",
+     "Morning after 09:16: /tmp/csl_paper.log ENTER [LIVE], Kite CSL_* fills, REAL popups, guardian clean"),
+    ("Execute TB6 resize (6/2/6 decision) if not yet done", "2026-08-17", "PENDING",
+     "docs/STACK_TB6_RESIZE_DEPLOY_STATUS.md - executor still at TB 2L as of 16-AUG night"),
+    ("Suite FRIDAY (DTE2) review - keep live or revert", "2026-08-28", "SCHEDULED",
+     "per-leg mechanic measured net-negative DTE2+ by stop-by-DTE study; weigh real Fridays (first: +1,259 on 14-AUG)"),
+    ("TB-CSL 6L live-behavior validation", "2026-09-12", "SCHEDULED",
+     "real SL-hit days should land near model (-12-15k/6L worst), fills near backfill; else downsize"),
+    ("SHIFT vs COMB slot race review", "2026-09-12", "SCHEDULED",
+     "NAS_C20_SHIFT paper days vs its model; if tracking, SHIFT challenges COMB for the sleeve slot"),
+    ("Sleeves paper-vs-model FULL checkpoint (STRATEGY upgrade / re-freeze / kill)", "2026-09-15", "SCHEDULED",
+     "the research/111 gate: live days vs backfill expectations at study lots"),
+    ("All-stack portfolio-overlay re-test on real intraday MTM", "2026-09-26", "SCHEDULED",
+     "sec-17 rerun once nas_mtm snapshots span ~6 weeks (started 2026-08-11)"),
+    ("Weekly: review stack_reassessment DRIFT flags", "every Friday evening", "SCHEDULED",
+     "panel in Portfolio Lab; DRIFT = review, nothing auto-changes"),
+    ("SENSEX stack version (NIFTY-first doctrine)", None, "PARKED",
+     "design the SENSEX equivalent once the NIFTY stack has a clean month"),
+]
+
+today = date.today()
+reviews_out = []
+for title, due, status, note in REVIEWS:
+    flag = status
+    if due and "-" in str(due):
+        dd = datetime.strptime(due, "%Y-%m-%d").date()
+        if dd < today and status != "PARKED": flag = "OVERDUE"
+        elif (dd - today).days <= 3 and status != "PARKED": flag = "DUE SOON"
+    reviews_out.append({"title": title, "due": due, "status": status, "flag": flag, "note": note})
+
+out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+       "groups": [{"title": t, "jobs": [{"name": a, "schedule": b, "what": c, "cmd": d} for a, b, c, d in rows]}
+                  for t, rows in GROUPS],
+       "reviews": reviews_out,
+       "note": "Registry convention (.claude/CLAUDE.md): every new lab job or periodic review MUST be added here + docs/LABS_AND_JOBS_REFERENCE.md."}
+for p in OUTS:
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        json.dump(out, open(p, "w"))
+    except Exception as e:
+        print("write", p, e)
+print("ops_center: %d groups, %d reviews (%d due/overdue)" % (
+    len(GROUPS), len(reviews_out), sum(1 for r in reviews_out if r["flag"] in ("DUE SOON", "OVERDUE"))))
+for r in reviews_out:
+    if r["flag"] in ("DUE SOON", "OVERDUE"): print("  !", r["flag"], r["title"])

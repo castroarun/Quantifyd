@@ -523,39 +523,19 @@ logging.disable(logging.WARNING)
 
 ## Centralized Database Reference
 
-### Primary: `backtest_data/market_data.db` — **16 GB, ~63.6M rows** (MEASURED 2026-07-16)
+### Primary: `backtest_data/market_data.db` (1.24 GB)
 
 Table: `market_data_unified` — Columns: `id, symbol, timeframe, date, open, high, low, close, volume, created_at`
-Index: `(symbol, timeframe, date)` composite — plus `(symbol, timeframe)` and `(date)`
+Index: `(symbol, timeframe, date)` composite
 
-| Timeframe | Rows | Note |
-|-----------|------|------|
-| **5minute** | **58.8M** | 92% of the table. Hundreds of F&O symbols (research/81 swing backfill), not 10. |
-| day | 3.5M | |
-| 60minute | 1.19M | |
-| 30minute | 44K | |
-| minute | growing | SENSEX only, from 2026-07-16 (`scripts/dl_sensex_1min.py`, daily cron 15:45) |
+| Timeframe | Symbols | Date Range | Rows |
+|-----------|---------|------------|------|
+| day | 1,621 | 2000-2026 | 3.4M |
+| 60minute | 93 | 2018-2025 | 1.2M |
+| 5minute | 10 | 2018-2025 | 1.3M |
+| 30minute | 49 | Sep-Nov 2025 | 24K |
 
-> **This table is ~63.6M rows on a 7.8 GB-RAM box, so it CANNOT be cached.** Any full scan reads
-> physical disk end-to-end (a bare `COUNT(*)` takes ~30s; a `GROUP BY` can take minutes).
-> **Always query by the composite index.** Never put a function on an indexed column in a WHERE
-> clause — `WHERE substr(date,1,10)=?` defeats the index and forces a 16 GB scan. Use a range
-> instead: `WHERE date>=? AND date<=?`. (Learned the hard way, 2026-07-16.)
-
-**The old figures in this doc (1.24 GB / 5minute=1.3M / "only 10 5-min stocks") were ~13x wrong
-and caused real mis-estimates of query cost. Re-measure before trusting any size here.**
-
-### `backtest_data/options_data.db` — **8.3 GB** (MEASURED 2026-07-16)
-
-`option_chain` records **NIFTY + SENSEX + BANKNIFTY** (not NIFTY-only — 59 days each as of
-2026-07-16; SENSEX ~7.1M rows alone). Indexes: `(symbol, snapshot_time)`,
-`(symbol, expiry_date, strike, instrument_type)`, `(snapshot_time)`, `(tradingsymbol, snapshot_time)`,
-`(expiry_date, strike, instrument_type, snapshot_time)`.
-A duplicate index (`idx_oc_sym_day`, identical to `idx_oc_symbol_time`) was dropped 2026-07-16.
-
-> An option is identified by **(expiry, strike, instrument_type)** — filtering on strike alone
-> silently picks up the monthlies/far months and the last row wins. Both research/79 and /80 were
-> corrupted by exactly this before it was caught.
+**5-min stocks (only 10):** BHARTIARTL, HDFCBANK, HINDUNILVR, ICICIBANK, INFY, ITC, KOTAKBANK, RELIANCE, SBIN, TCS
 
 ### Download: `services/data_manager.py` > `CentralizedDataManager`
 
@@ -680,3 +660,26 @@ Config ready: `Procfile` (single worker), `railway.json`, `DATA_DIR` reads `RAIL
 ### Full Handoff Doc
 
 For complete implementation details, code references, and next steps: `docs/KC6-SESSION-HANDOFF.md`
+
+
+---
+
+## OPS & REVIEW REGISTRY — BINDING (2026-08-16)
+
+**Every lab job, analyzer, monitor, or periodic re-assessment/review obligation created in
+ANY session MUST be registered in the Ops & Review Center** — no exceptions:
+
+1. **Registry source:** `research/111_sensex_manual_mgmt/scripts/ops_center.py` — add the job to
+   `GROUPS` (name, schedule, what, manual command) and/or the review to `REVIEWS`
+   (title, due date `YYYY-MM-DD` or cadence string, status PENDING/SCHEDULED/PARKED, evidence note).
+   It renders at **/app/straddles#ops-center** with automatic DUE SOON / OVERDUE badges and runs
+   daily in the 15:40 regen so due-flags stay current.
+2. **Reference doc:** mirror the entry in `docs/LABS_AND_JOBS_REFERENCE.md`.
+3. **Reviews need dates.** "We should re-check X later" is not done until it is a dated REVIEWS
+   entry. When a review completes, set its status/remove it and record the outcome (STATUS doc/TODO).
+4. Applies to: new cron jobs, new labs/dashboards, paper/live book validations, drift checks,
+   walk-forward re-runs, sizing revalidations, incident follow-ups with a re-check date.
+
+The weekly system re-assessment itself (`stack_reassessment.py`, Fri 16:35 — corr-drift, per-DTE
+shifts, TB-window revalidation, sizing revalidation, live-vs-model) is part of this registry;
+review its DRIFT flags every Friday evening (panel in the Portfolio Lab).

@@ -504,6 +504,7 @@ export default function Straddles() {
   const [pfSel, setPfSel] = useState<number | null>(null); // selected lab portfolio row (charts)
   const [pfDte, setPfDte] = useState<string>('ALL');       // lab charts DTE filter (NIFTY weekday map)
   const [pfRe, setPfRe] = useState<any>(null);             // weekly stack re-assessment (Fri 16:35)
+  const [opsC, setOpsC] = useState<any>(null);             // ops & review center registry
 
   useEffect(() => {
     fetch('/app/straddles/v1.json').then((r) => r.json()).then(setV1).catch(() => {});
@@ -520,6 +521,7 @@ export default function Straddles() {
     fetch('/app/nas_baseline.json?t=' + Date.now()).then((r) => r.json()).then(setNasBase).catch(() => {});
     fetch('/app/straddles/portfolio_lab.json?t=' + Date.now()).then((r) => r.json()).then(setPfLab).catch(() => {});
     fetch('/app/straddles/reassessment.json?t=' + Date.now()).then((r) => r.json()).then(setPfRe).catch(() => {});
+    fetch('/app/straddles/ops_center.json?t=' + Date.now()).then((r) => r.json()).then(setOpsC).catch(() => {});
     const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
     loadPLive(); const pl = setInterval(loadPLive, 60000);
     const loadLive = () => {
@@ -685,7 +687,7 @@ export default function Straddles() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
           {[['/app/backtest/csl-best-config-straddles', '📄 Full study card (backtest page)'],
             ['#csl-paper', '📗 Paper Books (live validation)'], ['#csl-lab', '🔬 Best-Config Lab (weekly)'],
-            ['#portfolio-lab', '🎯 Options Portfolio Lab'], ['#leaderboard', '🏆 Strategy Leaderboard'], ['#variant-lab', '🧪 V2 Variant Lab'],
+            ['#portfolio-lab', '🎯 Options Portfolio Lab'], ['#ops-center', '🛠 Ops & Reviews'], ['#leaderboard', '🏆 Strategy Leaderboard'], ['#variant-lab', '🧪 V2 Variant Lab'],
             ['/app/nifty_csl_vs_nas.png', '📈 NIFTY: CSL vs NAS (chart)'], ['/app/sensex_csl_vs_nas.png', '📈 SENSEX: CSL vs NAS (chart)'],
             ['/app/perleg_vs_comb.png', '📉 Per-leg vs Combined SL (chart)'], ['/app/csl30_vs_nas916.png', '📊 CSL30 vs NAS-916 (chart)'],
             ['/app/options-study', '🕯 Opt-Study (decay/CPR/candles)']].map(([href, label]) => (
@@ -909,10 +911,51 @@ export default function Straddles() {
             </table>
           </div>
           <div style={{ fontSize: 11, color: C.amber, marginTop: 8 }}>⚠ {ranks.caveat}</div>
-          <OpsInfo rows={[
-            ['Auto-refresh', 'daily 15:40 IST inside the regen chain (grades are weekly-cadence, data daily)', 'PYTHONPATH=. venv/bin/python3 research/58_intraday_recenter_straddle/scripts/strategy_rankings.py'],
-            ['Whole regen chain', 'V1/V2 cards + leaderboard + SL30 + backfill + baseline + portfolio lab in one shot (~80 min)', './research/58_intraday_recenter_straddle/scripts/regen_straddles.sh'],
-          ]} />
+          <div style={{ fontSize: 10.5, color: C.faint, marginTop: 4 }}>Refresh jobs &amp; manual triggers: see <a href="#ops-center" style={{ color: C.navy }}>Ops &amp; Review Center</a>.</div>
+        </section>
+      )}
+
+      {opsC && opsC.groups && (
+        <section id="ops-center" style={{ ...card, marginTop: 14, scrollMarginTop: 70 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>🛠 Operations &amp; Review Center</span>
+            {chip(C.navySoft, C.navy, 'the standing registry')}
+            <span style={{ fontSize: 11, color: C.faint }}>updated {opsC.generated_at} · every new lab job / periodic review is registered here (binding convention)</span>
+          </div>
+
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, margin: '10px 0 4px' }}>Periodic reviews &amp; re-assessments</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><th style={thL}></th><th style={thL}>Review</th><th style={thL}>Due</th><th style={thL}>How / evidence</th></tr></thead>
+              <tbody>
+                {opsC.reviews.map((r: any, i: number) => (
+                  <tr key={i} style={r.flag === 'OVERDUE' || r.flag === 'DUE SOON' ? { background: C.amberSoft } : undefined}>
+                    <td style={tdL}><span style={{ fontSize: 10, fontWeight: 800, padding: '0 6px', borderRadius: 4,
+                      color: r.flag === 'OVERDUE' ? C.neg : r.flag === 'DUE SOON' ? C.amber : r.status === 'PARKED' ? C.faint : C.navy,
+                      background: r.flag === 'OVERDUE' ? '#FBEEEE' : r.flag === 'DUE SOON' ? '#FFF' : 'transparent' }}>{r.flag}</span></td>
+                    <td style={{ ...tdL, fontWeight: 600, color: C.ink }}>{r.title}</td>
+                    <td style={{ ...tdL, whiteSpace: 'nowrap' }}>{r.due ?? '—'}</td>
+                    <td style={{ ...tdL, fontSize: 11, color: C.sec }}>{r.note}</td>
+                  </tr>))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, margin: '12px 0 2px' }}>All jobs &amp; manual triggers</div>
+          {opsC.groups.map((g: any) => (
+            <details key={g.title} style={{ marginTop: 6, borderTop: `1px solid ${C.hairSoft}`, paddingTop: 6 }}>
+              <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, color: C.navy, userSelect: 'none' }}>▸ {g.title} ({g.jobs.length})</summary>
+              <div style={{ marginTop: 6 }}>
+                {g.jobs.map((j: any, i: number) => (
+                  <div key={i} style={{ fontSize: 11.5, color: C.sec, marginBottom: 5 }}>
+                    <b style={{ color: C.ink }}>{j.name}</b> <span style={{ color: C.muted }}>· {j.schedule}</span> — {j.what}
+                    {j.cmd && <div><code style={{ display: 'inline-block', marginTop: 2, fontSize: 10.5, background: C.canvas,
+                      border: `1px solid ${C.hairSoft}`, borderRadius: 4, padding: '1px 6px', color: C.sec, overflowWrap: 'anywhere' }}>{j.cmd}</code></div>}
+                  </div>))}
+              </div>
+            </details>
+          ))}
+          <div style={{ fontSize: 10, color: C.faint, marginTop: 8 }}>Commands run on the VPS from /home/arun/quantifyd · full reference doc: docs/LABS_AND_JOBS_REFERENCE.md · registry source: research/111_sensex_manual_mgmt/scripts/ops_center.py</div>
         </section>
       )}
 

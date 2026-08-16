@@ -24,3 +24,4 @@ echo "$(date "+%F %T") regenerated v1_daily + v1 + v2 + variants + rankings + sl
 cd /home/arun/quantifyd && venv/bin/python3 research/111_sensex_manual_mgmt/scripts/csl_paper_backfill.py >> /tmp/csl_backfill.log 2>&1
 cd /home/arun/quantifyd && venv/bin/python3 research/111_sensex_manual_mgmt/scripts/nas_baseline.py >> /tmp/nas_baseline.log 2>&1
 cd /home/arun/quantifyd && venv/bin/python3 research/111_sensex_manual_mgmt/scripts/portfolio_lab.py >> /tmp/portfolio_lab.log 2>&1
+cd /home/arun/quantifyd && venv/bin/python3 research/111_sensex_manual_mgmt/scripts/ops_center.py >> /tmp/ops_center.log 2>&1
