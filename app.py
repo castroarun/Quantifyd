@@ -645,6 +645,44 @@ try:
 except Exception as _journal_err:
     logger.warning('[journal] blueprint failed to register: %s', _journal_err)
 
+# ---- Journal auto-sync: project live NAS trades into the journal daily ----
+def _journal_nas_sync_job():
+    """NAS books only (user scope, 2026-08-16). Idempotent upserts keyed on
+    (source_db, source_table, source_id), so re-running is safe."""
+    try:
+        from services.journal.journal_db import get_journal_db
+        from services.journal.sources import nas_source
+        db = get_journal_db()
+        rows = nas_source.fetch_closed_trades()
+        n = 0
+        for r in rows:
+            try:
+                db.upsert_trade(r)
+                n += 1
+            except Exception as e:
+                logger.warning('[journal] upsert failed %s %s: %s',
+                               r.get('strategy'), r.get('source_id'), e)
+        logger.info('[journal] NAS sync: %d trades projected', n)
+    except Exception as e:
+        logger.error('[journal] NAS sync failed: %s', e, exc_info=True)
+
+
+try:
+    scheduler.add_job(
+        _journal_nas_sync_job, 'cron', day_of_week='mon-fri',
+        hour=15, minute=50, id='journal_nas_sync', replace_existing=True,
+        misfire_grace_time=1800,
+    )
+    scheduler.add_job(
+        _journal_nas_sync_job, 'cron', day_of_week='mon-fri',
+        hour=21, minute=0, id='journal_nas_sync_catchup',
+        replace_existing=True, misfire_grace_time=3600,
+    )
+    logger.info('[journal] NAS auto-sync scheduled: 15:50 + 21:00 catch-up')
+except Exception as _e:
+    logger.warning('[journal] could not schedule NAS auto-sync: %s', _e)
+
+
 
 # Intraday 75% WR — three-config live trading engine (A, B, C).
 # All three configs default to PAPER MODE (paper_trading_mode=True,
