@@ -9775,7 +9775,7 @@ def _options_capture_job():
     """Every 1 min Mon-Fri 9:15-15:30 — Capture index option chains."""
     now = datetime.now()
     market_start = now.replace(hour=9, minute=15, second=0)
-    market_end = now.replace(hour=15, minute=30, second=0)
+    market_end = now.replace(hour=15, minute=40, second=0)   # user 2026-08-16: record until 15:40
     if now < market_start or now > market_end:
         return  # Outside market hours
     try:

@@ -5,9 +5,9 @@ All commands below run on the VPS from `/home/arun/quantifyd` unless marked LAPT
 
 ---
 
-## 1. Daily auto-analysis — the 15:40 regen chain (one cron, six analyzers)
+## 1. Daily auto-analysis — the 15:42 regen chain (moved 2026-08-16: all EOD jobs > 15:40; options recorder captures until 15:40) (one cron, six analyzers)
 
-Cron: `40 15 * * 1-5` → `research/58_intraday_recenter_straddle/scripts/regen_straddles.sh`
+Cron: `42 15 * * 1-5` → `research/58_intraday_recenter_straddle/scripts/regen_straddles.sh`
 Re-analyzes everything with the new day's data. Results land on **/app/straddles** within ~80 min.
 
 | Job (in order) | What it refreshes | Where it shows | Manual invoke |
@@ -46,7 +46,7 @@ Re-analyzes everything with the new day's data. Results land on **/app/straddles
 | `nas_analyzer.py` | 15:45 | Daily NAS RAG report → /app/reports |
 | `options_outlier_scan.py` | 15:47 | Options outlier/drift scan → /app/reports |
 | `options_study_agg.py` | 15:45 | Opt-Study aggregates (decay/CPR/candles) |
-| `snapshot_nas_eod.py` | 15:32 | EOD state snapshots |
+| `snapshot_nas_eod.py` | 15:42 | EOD state snapshots |
 | GitHub backup | 16:00 | `backup_to_github_release.sh` |
 
 ## 5. Watchers on the LAPTOP

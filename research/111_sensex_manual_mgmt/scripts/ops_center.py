@@ -15,8 +15,8 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
-    ("Daily auto-analysis (15:40 regen chain)", [
-        ("Whole regen chain", "15:40 Mon-Fri", "V1/V2 cards + leaderboard + SL30 + backfill + baseline + portfolio lab (~80 min)",
+    ("Daily auto-analysis (15:42 regen chain)", [
+        ("Whole regen chain", "15:42 Mon-Fri (moved outside the 15:40 F&O window, user 2026-08-16)", "V1/V2 cards + leaderboard + SL30 + backfill + baseline + portfolio lab (~80 min)",
          "./research/58_intraday_recenter_straddle/scripts/regen_straddles.sh"),
         ("strategy_rankings", "in chain", "Strategy Leaderboard (grades, Corr-book, Period)",
          "PYTHONPATH=. venv/bin/python3 research/58_intraday_recenter_straddle/scripts/strategy_rankings.py"),
@@ -45,7 +45,7 @@ GROUPS = [
     ("EOD analyzers", [
         ("nas_analyzer (RAG report)", "15:45", "daily book verdict -> /app/reports", "venv/bin/python3 scripts/nas_analyzer.py"),
         ("options_outlier_scan", "15:47", "outlier/drift scan -> /app/reports", "venv/bin/python3 scripts/options_outlier_scan.py"),
-        ("EOD snapshots + GitHub backup", "15:32 / 16:00", "state snapshots; repo backup", ""),
+        ("EOD snapshots + GitHub backup", "15:42 / 16:00", "state snapshots; repo backup", ""),
     ]),
     ("Manual-only study scripts (auto-include new live days)", [
         ("comb_tb_overweight_grid", "on demand", "sec-18b sizing grid: is the deployed cell still right?",
