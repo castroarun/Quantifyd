@@ -1398,6 +1398,20 @@ def cash_deposit(amount, mode="park", dry_run=True):
                 _buy(p["symbol"], live.get(p["symbol"]) or pos[p["symbol"]]["entry_price"], p["value"], d, "DEPOSIT_TOPUP")
         _set("capital", float(_get("capital", CFG["capital"])) + amount)
         logger.warning(f"[MP] DEPOSIT Rs{amount:,.0f} ({mode})")
+        # Park the leftover in the liquid ETF right away rather than letting it idle until the next
+        # 15:05 job — the whole amount in `park` mode, or the whole-share rounding remainder in
+        # `immediate` mode. sweep_idle_cash() already respects the cash reserve and the min size,
+        # and no-ops when the sweep is off or the market is shut.
+        if CFG["live_cash_sweep"]:
+            try:
+                sw = sweep_idle_cash()
+                if sw:
+                    res["swept"] = sw
+                    logger.warning(f"[MP] DEPOSIT → swept Rs{sw['value']:,.0f} into "
+                                   f"{CFG['sweep_symbol']}")
+            except Exception as _e:
+                logger.error(f"[MP] deposit sweep failed (cash stays idle, next daily job "
+                             f"will retry): {_e}")
         res["executed"] = True
     return res
 
@@ -1414,6 +1428,14 @@ def cash_withdraw(amount, dry_run=True):
     if amount <= 0:
         return {"ok": False, "error": "amount must be > 0"}
     d = _date.today().isoformat()
+    # Release parked ETF cash FIRST. _cash() is ledger cash only, so with the sweep on it reads far
+    # lower than the money actually available — without this a withdrawal would start SELLING STOCK
+    # while idle cash sat in CASHIETF.
+    if not dry_run and CFG["live_cash_sweep"] and _sweep_units() > 0 and amount > _cash():
+        try:
+            unsweep(amount - _cash())
+        except Exception as _e:
+            logger.error(f"[MP] withdraw unsweep failed — may sell stock unnecessarily: {_e}")
     pos = _positions(); cash = _cash()
     plan = []; raised = 0.0
     from_cash = min(cash, amount)
