@@ -2,6 +2,33 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-08-17 — NAS ST-trail confirm-counter bug FIXED + DEPLOYED (restart 15:48 IST, commit a792136)
+
+The intrabar ST-trail on naked ATM/ATM4 survivors never fired: the confirm counter lived in a
+throwaway LOCAL var (`self_atm_breach_ticks`) that read the instance attr via getattr but never
+wrote it back, so it reset to 1 every tick and never reached NAKED_TRAIL_CONFIRM_TICKS(3). Live
+symptom today: a NIFTY 24300 CE survivor breached its ~58.6 trail continuously for 40+s stuck at
+"1/3", never exiting (Arun had to exit manually). Renamed to instance attrs
+`self._atm_breach_ticks` / `self._atm4_breach_ticks` (ATM + ATM4). Deployed after close, service
+healthy, committed+pushed **a792136**.
+VERIFY (review 2026-08-21): next naked survivor should log 1/3->2/3->3/3 then TRAIL EXIT intrabar.
+
+## 2026-08-17 — Unified per-system position ledger (PENDING — "fix the overall stuff")
+
+Root cause of today's COMB mess: the portfolio stop flattens at the ACCOUNT level (it bought back
+COMB's CE without COMB knowing — COMB isn't even in the portfolio stop's system list), and COMB
+runs as a separate in-memory daemon. No shared tagged ledger, so trackers drift from the broker the
+moment any actor (system exit / portfolio stop / manual) touches a shared symbol. Also had to KILL
+the whole CSL daemon to stop COMB's 15:20 phantom-CE exit (freeze/kill flags don't gate an
+already-open book's exit; restart double-enters) — no per-book pause exists.
+
+BUILD: one position ledger where every leg is tagged by owning system; the portfolio stop, COMB, and
+manual fills all reconcile through it; broker-qty ASSERT before any exit buy (per the momentum ledger
+incident pattern); a per-book pause flag so one sleeve halts without killing the daemon or stranding
+the others. Registered in Ops Center REVIEWS (due 2026-08-24).
+Today's COMB rightful trade recorded as PAPER in csl_paper_state.json (−₹121 TIME_EXIT) for the
+later rules-vs-actual assessment.
+
 ## ✅ 2026-08-14 — Momentum live book: top-up ledger bug FIXED + DEPLOYED (restart 2026-08-16 21:08 IST)
 
 Arun added ₹1L via `/app/momentum-paper` "Immediate equal top-up". Broker fills were correct

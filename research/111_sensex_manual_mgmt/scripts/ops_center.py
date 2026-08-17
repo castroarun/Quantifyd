@@ -64,6 +64,10 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Build unified per-system position ledger (portfolio-stop/COMB/manual reconcile)", "2026-08-24", "PENDING",
+     "2026-08-17 incident: portfolio stop covered COMB CE at account level (COMB not in its system list, no tag) -> COMB book desynced from broker; had to kill the whole CSL daemon to stop COMB 15:20 phantom exit. BUILD: one tagged ledger every actor reconciles through + broker-qty assert before exit buy + per-book pause (no daemon-wide kill)."),
+    ("Verify ST-trail intrabar exit fires (confirm-counter fix a792136)", "2026-08-21", "PENDING",
+     "next naked ATM/ATM4 survivor breaching its trail: log should show 1/3->2/3->3/3 then TRAIL EXIT intrabar, not stuck at 1/3. Deployed+restarted 2026-08-17 15:48."),
     ("Verify first REAL sleeve fills (marketable-LIMIT fix) + suite Monday", "2026-08-17", "PENDING",
      "Morning after 09:16: /tmp/csl_paper.log ENTER [LIVE], Kite CSL_* fills, REAL popups, guardian clean"),
     ("~~Execute TB6 resize~~ DONE 2026-08-16 (other session, commit aa09496; verified)", None, "PARKED",
