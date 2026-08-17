@@ -820,7 +820,7 @@ STRANGLE_DEFAULTS = {
     'strike_scan_pct': 0.10,           # ±10% around spot
 
     # Safety
-    'enabled': True,   # 2026-06-18: ON in PAPER (ORB Index/strangle is paper-only by code)
+    'enabled': False,  # RETIRED 2026-08-17: 342 trades, net -Rs 1.97L, all 10 variants negative, gross negative before costs (paper book, no money lost)
     'paper_trading_mode': True,
     'live_trading_enabled': False,
 }
@@ -838,7 +838,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 84,
         'backtest_wins_per_year': 150,
         'backtest_trades_per_year': 180,
@@ -854,7 +854,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 82,
         'backtest_wins_per_year': 165,
         'backtest_trades_per_year': 200,
@@ -870,7 +870,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 79,
         'backtest_wins_per_year': 175,
         'backtest_trades_per_year': 220,
@@ -886,7 +886,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 75,
         'backtest_wins_per_year': 180,
         'backtest_trades_per_year': 240,
@@ -902,7 +902,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 70,
         'backtest_wins_per_year': 175,
         'backtest_trades_per_year': 250,
@@ -918,7 +918,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 78,
         'backtest_wins_per_year': 175,
         'backtest_trades_per_year': 225,
@@ -934,7 +934,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 86,
         'backtest_wins_per_year': 110,
         'backtest_trades_per_year': 130,
@@ -950,7 +950,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 88,
         'backtest_wins_per_year': 90,
         'backtest_trades_per_year': 105,
@@ -970,7 +970,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 96,
         'backtest_wins_per_year': 23,
         'backtest_trades_per_year': 24,
@@ -988,7 +988,7 @@ STRANGLE_VARIANTS = [
         'pe_delta_target_long': -0.22, 'ce_delta_target_long': 0.10,
         'pe_delta_target_short': -0.10, 'ce_delta_target_short': 0.22,
         'lot_size': 65,
-        'enabled': True,
+        'enabled': False,  # retired 2026-08-17
         'backtest_wr_pct': 93,
         'backtest_wins_per_year': 15,
         'backtest_trades_per_year': 16,

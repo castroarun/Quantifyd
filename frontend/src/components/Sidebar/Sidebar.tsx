@@ -124,13 +124,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/strangle"
-            icon={<IconLayers />}
-            label="ORB Index"
-            active={active === 'strangle'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/nas"
             icon={<IconLayers />}
             label="NAS"

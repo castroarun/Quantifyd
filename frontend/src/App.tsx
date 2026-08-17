@@ -173,16 +173,8 @@ export default function App() {
           </Protected>
         }
       />
-      <Route
-        path="/strangle"
-        element={
-          <Protected>
-            <AppLayout active="strangle">
-              <Strangle />
-            </AppLayout>
-          </Protected>
-        }
-      />
+      {/* ORB-index strangle retired 2026-08-17 — redirect old links */}
+      <Route path="/strangle" element={<Navigate to="/strategies" replace />} />
       <Route
         path="/mst"
         element={

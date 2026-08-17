@@ -3550,29 +3550,35 @@ def _strangle_daily_summary():
         logger.warning(f"[Strangle] daily summary error: {e}")
 
 
+# ORB-index strangle book RETIRED 2026-08-17 — 342 trades, net -Rs 1.97L,
+# all 10 variants negative, gross negative before costs, live win rate 43.9%
+# vs the 70-96% its backtest claimed. Jobs disabled; history kept; the API
+# endpoints still serve the record read-only.
 try:
-    # Master tick: every 60s during 9:15-15:30 IST Mon-Fri
-    scheduler.add_job(
-        _strangle_master_tick,
-        'cron', day_of_week='mon-fri',
-        hour='9-15', minute='*', second='5',
-        id='strangle_master_tick', replace_existing=True,
-    )
-    # Belt-and-suspenders EOD square-off
-    scheduler.add_job(
-        _strangle_eod_squareoff,
-        'cron', day_of_week='mon-fri', hour=15, minute=25,
-        id='strangle_eod_squareoff', replace_existing=True,
-    )
-    scheduler.add_job(
-        _strangle_daily_summary,
-        'cron', day_of_week='mon-fri', hour=16, minute=0,
-        id='strangle_daily_summary', replace_existing=True,
-    )
-    logger.info(
-        "Strangle scheduled jobs registered: master_tick(every 60s 9-15 Mon-Fri), "
-        "eod_squareoff(15:25), daily_summary(16:00)"
-    )
+    if False:  # retired — scheduler registration intentionally skipped
+        scheduler.add_job(
+            _strangle_master_tick,
+            'cron', day_of_week='mon-fri',
+            hour='9-15', minute='*', second='5',
+            id='strangle_master_tick', replace_existing=True,
+        )
+        scheduler.add_job(
+            _strangle_eod_squareoff,
+            'cron', day_of_week='mon-fri', hour=15, minute=25,
+            id='strangle_eod_squareoff', replace_existing=True,
+        )
+        scheduler.add_job(
+            _strangle_daily_summary,
+            'cron', day_of_week='mon-fri', hour=16, minute=0,
+            id='strangle_daily_summary', replace_existing=True,
+        )
+    for _jid in ('strangle_master_tick', 'strangle_eod_squareoff',
+                 'strangle_daily_summary'):
+        try:
+            scheduler.remove_job(_jid)
+        except Exception:
+            pass
+    logger.info("Strangle (ORB-index) RETIRED 2026-08-17 — no scheduled jobs")
 except Exception as e:
     logger.warning(f"Could not register Strangle scheduled jobs: {e}")
 
