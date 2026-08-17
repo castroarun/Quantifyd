@@ -40,11 +40,15 @@ def show_alert(events):
     root.lift()
     root.focus_force()
     root.configure(bg="#101418")
-    root.protocol("WM_DELETE_WINDOW", lambda: None)  # no X-close: must use a button
+    root.protocol("WM_DELETE_WINDOW", root.destroy)  # X closes too (2026-08-17: 25-event dialog pushed buttons off-screen)
     pad = {"padx": 16, "pady": 6}
     tk.Label(root, text="TB-CSL  •  %d new event%s" % (len(events), "s" if len(events) > 1 else ""),
              font=("Segoe UI", 12, "bold"), fg="#E8B04B", bg="#101418").pack(**pad)
-    for ev in events:
+    shown = events[-8:]
+    if len(events) > len(shown):
+        tk.Label(root, text="(showing latest %d of %d — all events are on the page)" % (len(shown), len(events)),
+                 font=("Segoe UI", 9), fg="#8A93A0", bg="#101418").pack()
+    for ev in shown:
         col = "#D9534F" if ev.get("source") == "REAL" else "#4BAE7F"
         head = "%s  %s  [%s %s]" % (ev.get("ts", ""), ev.get("book", ""),
                                     "LIVE REAL" if ev.get("source") == "REAL" else "LIVE PAPER",
