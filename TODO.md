@@ -2,6 +2,62 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-17 — App review follow-ups (PENDING — from `docs/APP_ASSESSMENT_2026-08-17.md`)
+
+Independent structural review of the whole app (37 pages, 391 backend routes, 90 scheduled jobs,
+128 research folders). Full findings + evidence in the doc; rendered artifact "Quantifyd App
+Assessment". **Guardrail (Arun, binding, now in `.claude/CLAUDE.md`): none of this touches live or
+paper trading logic** — read-only projections, display/routing, shared components over existing
+endpoints, and docs only.
+
+In the order to do them:
+
+1. **Dead-link hygiene** (half a day) — (a) Settings nav item points at `/settings`, which has no
+   React and no Flask route: build the page or remove the item; (b) `nas_analyzer.py:5`,
+   `options_outlier_scan.py:5` and `docs/LABS_AND_JOBS_REFERENCE.md:46-47` all say `/app/reports`,
+   which never existed (the page is `/app/report`, nav label "Performance", title "NAS performance
+   report" — pick one name); (c) `/api/v2-ironfly/` bare-prefix fetch in `Straddles.tsx` matches no
+   route; (d) ORB Index (`/strangle`) has no nav entry — put it in Paper Books; (e) NotFound has no
+   way back.
+2. **Register the morning token chain in the Ops Centre** — `auto_login.sh` 08:50, `token_heal.sh`
+   09:06, `preopen_restart.sh` 09:00, `killflag_premarket_check.py` 09:05 appear in NEITHER
+   `ops_center.py` nor the labs doc, and a stale-token cascade is a known way to lose the 09:16
+   one-shot. Ten-minute edit, highest-consequence gap found. Then: ops page diffs
+   `scheduler.get_jobs()` + `crontab -l` against the curated table with paper/parked families
+   filtered out by design (Arun's ruling: ops covers live + research/re-assessment only), showing
+   in-scope-but-unregistered jobs as **UNREGISTERED**. Also missing and in scope:
+   `sensex_live_writer`, `publish_nifty_5m`, `gen_momentum_scan`, holdings jobs (3 + 2 cron),
+   `db_integrity_watchdog`, `instruments_dump`, `premarket_brief_*`, and the research recorders
+   (`sl_reanchor_shadow`, `dl_sensex_1min`, r/56, r/80, r/82, r/90 travel, mentor capture). Four
+   more are in the labs doc but not ops_center: `snapshot_nas_eod`, `dump_nas_mtm`,
+   `options_study_agg`, `backup_to_github_release`.
+3. **Liveness rule per system** — mode + last trade + last signal + days idle, computed from the
+   trade tables, shown on the register and on each page. This is what would have caught I75WR
+   (7 jobs, empty DB), Pairs (same) and MST (dead since 07 May) months ago.
+4. **Journal = exactly the live book** (Arun's ruling: live-only by design). Today it misses 3 of
+   the 5 live systems — TB-CSL NIFTY, NAS_COMB20 (both in `csl_paper_state.json`) and Momentum ₹3L
+   — while ingesting 3 non-live ones: ORB Index 349 trades (−₹2,02,510), ORB Cash 46 (−₹21,888),
+   KC6 6 (−₹5,528), i.e. ≈ −₹2.3L of paper/parked P&L inside a real-money ledger. Cheapest first
+   step needs no new code: filter to live strategies. Then add a CSL source + a momentum source and
+   retire/tag the orb, strangle and kc6 sources.
+5. **Shared page furniture** — `<PageHeader>` (name, purpose, mode chip, size, Rules/Study/Journal
+   links), `<ModeChip>` and `<ModeControl>` to end the nine-words-for-three-states problem
+   (LIVE/PAPER/REAL/ARMED/Off/Disabled/Parked/"Live trading"/"Paper trading"), one money formatter
+   (formatPnl 16 pages vs toLocaleString 18 vs Math.round 17; "₹" 15 pages vs "Rs" 12). Apply to
+   the five paper-book pages first — their stylesheets are byte-identical (md5 `434740f8…`), so they
+   collapse into one `<PaperBook>` driven by a config record.
+6. **Register's second pass** — derive mode/size/last-activity instead of declaring them (the
+   hand-maintained register repeats the ops-centre failure mode); keep rules, evidence and change
+   log by hand. Do this AFTER 3, or it just moves the drift.
+
+Also queued from the same review: per-book history footer (N500M shows today only while its DB holds
+31 trades / 25 sessions / +₹13,852, and `n500m_equity` has 0 rows); generate `research/INDEX.md`
+(47 folders unindexed, and `109` is used by two folders); decide the 7 live-but-unlinked Jinja
+dashboards (`/agent /kc6 /collar /maruthi /bnf /tactical /trident` — `/maruthi` still offers controls
+for a strategy with 9 known correctness bugs); route-level `React.lazy` + polling tiers (one 1.25 MB
+chunk; 23 pages polling 1–60s with no shared policy); accessibility basics (12 aria attrs total,
+`:focus-visible` in 1 of 30 stylesheets).
+
 ## 2026-08-17 — Paper trading switched on for the labs; MST blocked on stale state
 
 Arun: "lets do paper trading for all of these... create a section Live above paper books".
@@ -146,7 +202,13 @@ OHOL first-candle 1-lot) LIVE from Mon 2026-08-10; /app pages pending.
 goal ruled out for price/indicator signals; route ambition via multi-day books +
 ORB revival decision (still pending above) + NAS. OOS 2024+ untouched.
 
-## 2026-08-09 — research/89 ORB reassessment CONCLUDED — revival decision PENDING (Arun)
+## ✅ RESOLVED 2026-08-10 — research/89 ORB reassessment: revival armed as a PAPER book
+
+**Closed 2026-08-17 during the app review:** the Rs-capped paper revival went live 10 Aug
+(ORB Revival ₹10L, `/app/orb-paper`, multi-day signal only — never the intraday variant that
+killed the live book). ORB Cash itself resumed PAPER 17 Aug. Original entry below.
+
+### (original) 2026-08-09 — research/89 ORB reassessment CONCLUDED — revival decision PENDING (Arun)
 
 - ~~DONE 2026-08-14~~ **THE STACK DEPLOYED LIVE** - suite REAL Mon/Tue/Fri 2L; sleeves live-armed, first REAL fills Mon 17-AUG post LIMIT-fix; Thu shadow per stop-by-DTE evidence. Docs: THE_STACK_FULL_LIVE_DEPLOY_STATUS.md + LIVE_TRADING_SYSTEM_RULES.md. NEXT GATES: Mon 09:16 sleeve fills verify; ~2wk suite-Friday review; ~4wk TB reweight sec-18; 15-SEP paper checkpoint.
 Verdict: live intraday build was the failure (never validated, negative every era);
@@ -276,7 +338,13 @@ survivor auto-arm. Guardian (`.claude/agents/nas-live-guardian.md`) mandate broa
   the squeeze wait gives it up + skips 15 no-squeeze days. **Recommend: paper squeeze family (nas_atm/atm2/
   atm4) drop the squeeze wait → enter 09:16/09:30** (sign-off needed). results/RESULTS.md.
 
-## ★ DECISION PENDING — research/94: NWV → jade lizard / iron condor automation — 2026-07-27
+## ✅ RESOLVED 2026-07-27 — research/94: NWV → jade lizard / IC automation
+
+**Closed 2026-08-17 during the app review:** `services/nwv_trade.py` PAPER book was deployed
+27 Jul with the only rule that survived the bake-off (never roll; exit the threatened side on a
+close beyond S1/R2). Directional JL/IC mapping stays NO EDGE. Original entry below.
+
+### (original) ★ DECISION PENDING — research/94: NWV → jade lizard / iron condor automation — 2026-07-27
 Arun's ask: automate the Nifty Weekly View into JL/IC trades ("construct like so" =
 his live 27-Jul position: short 23450 PE / long 22900 PE / short 24500 CE / long
 24700 CE, 10 lots, 4-Aug = pivot-anchored S1/R2 asymmetric condor). **Bake-off DONE
@@ -405,7 +473,13 @@ high (sell a green pause-bar's low, short mirror "NARROW TO WIDE") when price is
 Verdict: `research/91_sma20_200_pullback/results/RESULTS.md`. SHELVE — do not re-litigate intraday
 (loses gross). Engine + G1/G2/G3 runners committed. Mandatory drift-control rule (r/87-88) applied.
 
-## ★ PENDING DECISION — research/86 HA 2-green-no-wick 30m LONG: build the G5 paper book? — 2026-07-20
+## ✅ RESOLVED 2026-07-21 — research/86 HA 2-green-no-wick 30m LONG: G5 paper book BUILT
+
+**Closed 2026-08-17 during the app review:** the ₹20L paper book has been live since 21 Jul
+(`services/ha_paper.py`, 81 sleeves, cash sleeves — the construction question was answered by
+shipping it). Soak review ~Oct 2026. Original entry below for the evidence trail.
+
+### (original) ★ PENDING DECISION — research/86 HA 2-green-no-wick 30m LONG: build the G5 paper book? — 2026-07-20
 **STRATEGY CANDIDATE — the first full survivor of the r/81-86 program** (IS t3.7 → Val t6.0 →
 OOS t3.7 PASSED; OOS book 11.6% CAGR vs bench 5.6%, DD −11%, Calmar 1.03, beat bench all 3 OOS
 years incl. the 2026 down-tape). OOS consumed. Watch-item: per-trade fade 47→36→25bps across
