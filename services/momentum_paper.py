@@ -128,10 +128,18 @@ CFG = dict(
     hedge_resize_drift=0.25,  # re-size when notional drifts >25% from target (stocks stopping out)
     hedge_moneyness=0.0,      # ATM
     hedge_max_premium_pct=0.06,  # refuse to spend more than 6% of NAV on one hedge (sanity cap)
-    sweep_symbol="LIQUIDCASE",  # Zerodha Fund House liquid ETF (growth-style; cleaner than
+    sweep_symbol="CASHIETF",  # ICICI Pru BSE Liquid Rate ETF - GROWTH. Deliberately NOT
+                              # LIQUIDCASE: Arun holds 17,276 of those PLEDGED in the same
+                              # account, so the line would be ambiguous AND pledged units
+                              # hide in collateral_quantity where _broker_qty() cannot see
+                              # them. CASHIETF is unheld => every unit here is the book's.
+                              # (growth-style; cleaner than
                                 # LIQUIDBEES which pays daily fractional-unit dividends)
     sweep_min=25_000,         # don't bother sweeping less than this
-    live_cash_sweep=False,    # True only once real LIQUIDCASE buy/sell orders are implemented.
+    live_cash_sweep=True,     # ON 2026-08-16. Idle cash is stop-out cash awaiting the month-end
+                              # rebalance (research/108 says do NOT redeploy it early), so it should
+                              # at least EARN. Buy/sell orders are implemented; unsweep() caps the
+                              # sell at the system's own sweep_units so personal units are safe.
                               # While False, LIVE mode accrues NO cash yield (idle cash in the Zerodha
                               # ledger genuinely earns 0) so live NAV is never overstated. PAPER keeps
                               # the 6.5% accrual so it stays comparable with the backtest.
@@ -161,8 +169,10 @@ RULES = [
      "Never deploy the last 3% of NAV — guarantees the bi-weekly put premium can always be funded, "
      "so the book is never left invested and unhedged through a risk-off gate."),
     ("Idle cash", "continuous",
-     "PAPER: idle cash accrues a modelled ~6.5% p.a. (matches the backtest). LIVE: accrues 0 until "
-     "a real LIQUIDCASE sweep is implemented — idle cash in the Zerodha ledger earns nothing."),
+     "Idle cash is stop-out cash waiting for the month-end rebalance (research/108: do NOT "
+     "redeploy it early), so it is swept into CASHIETF (ICICI Pru liquid-rate ETF, ~6.5% p.a.) "
+     "at the daily 15:05 job and released before the rebalance buys. The last 3% of NAV is "
+     "never swept so a hedge premium stays payable in cash."),
     ("Costs", "per trade",
      "Net of ~0.3% round-trip (mostly STT; Zerodha delivery brokerage ≈ 0)."),
     ("Tax", "on booked gains",
@@ -423,6 +433,15 @@ def reconcile_holdings():
         diffs = [{"symbol": s, "book": ours.get(s, 0), "broker": broker.get(s, 0)}
                  for s in sorted(set(ours) | set(broker)) if ours.get(s, 0) != broker.get(s, 0)]
         merged = []
+    # LIQUIDCASE is not an mp_position, so it escaped reconciliation entirely. Check the one
+    # dangerous direction: the book claiming more swept units than the broker holds. Broker > book
+    # is EXPECTED here — Arun holds liquid funds personally in the same account.
+    _su = _sweep_units()
+    if _su > 0:
+        _bl = broker.get(CFG["sweep_symbol"], 0)
+        if _bl < int(_su):
+            diffs.append({"symbol": CFG["sweep_symbol"], "book": int(_su), "broker": _bl,
+                          "issue": "book > broker (swept units)"})
     if diffs:
         logger.warning(f"[MP-LIVE] HOLDINGS MISMATCH (book vs broker): {diffs}")
         _alert("HOLDINGS MISMATCH", "Book vs broker holdings differ:\n" +
@@ -784,7 +803,7 @@ def hedge_open(reason="GATE_RISK_OFF"):
     except Exception as e:
         logger.error(f"[MP-HEDGE] ltp failed: {e}"); return None
     cost = ltp * qty
-    nav = eq + _cash()
+    nav = eq + _cash() + _sweep_value()
     if cost > nav * CFG["hedge_max_premium_pct"]:
         logger.warning("[MP-HEDGE] premium %.0f > %.0f%% of NAV — skipping hedge",
                        cost, CFG["hedge_max_premium_pct"] * 100)
@@ -1001,7 +1020,9 @@ def _mark_nav(close, asof_iso, live=None):
         if peak > p["peak_price"]:
             c.execute("UPDATE mp_positions SET peak_price=? WHERE symbol=?", (peak, s))
     c.commit(); c.close()
-    cash = _cash(); nav = equity + cash
+    # Swept cash sits in CASHIETF units, not the cash ledger. It is still OUR money: if it is
+    # left out of NAV the equity curve shows a phantom crash the day the sweep first runs.
+    cash = _cash() + _sweep_value(); nav = equity + cash
     bench = None
     try:
         bench = float(close[BENCH].loc[:asof_iso].dropna().iloc[-1])
@@ -1152,6 +1173,8 @@ def monthly_job(panel=None):
     _set("gate", "ON")
     if CFG["live_cash_sweep"] and _sweep_units() > 0:
         unsweep()                      # release parked cash BEFORE buying stocks (same-day settled)
+        # NOTE: this ordering is load-bearing — the `nav` computed below is equity + cash and
+        # does NOT add _sweep_value(). It is only correct because sweep_units is 0 by now.
     etf = _rs_basket(close, tv, asof)
     if not etf:
         return
@@ -1251,6 +1274,8 @@ def get_state():
             pnl_pct=round((pr / p["entry_price"] - 1) * 100, 1), days=hold,
             stop=round(low, 1) if low else None,
             stop_dist_pct=round((pr / low - 1) * 100, 1) if low else None))
+    # fold swept ETF value back into cash — it is cash-equivalent, redeemable same-day
+    cash = cash + _sweep_value()
     nav = equity + cash
     n_stocks = len(holdings)
     for h in holdings:
@@ -1260,7 +1285,7 @@ def get_state():
     if cash > 1000:
         _incep = _get("inception") or date.today().isoformat()
         holdings.insert(0, dict(
-            symbol="LIQUIDCASE", qty=None, entry_date=_incep[:10], entry_price=None,
+            symbol=CFG["sweep_symbol"], qty=None, entry_date=_incep[:10], entry_price=None,
             price=None, value=round(cash), weight=round(cash / nav * 100, 1) if nav else 0,
             pnl=round(_get("interest_earned", 0.0)),
             pnl_pct=round(CFG["cash_yield"] * 100, 1), is_cash=True,

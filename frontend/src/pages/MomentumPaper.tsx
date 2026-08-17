@@ -399,7 +399,7 @@ function LivePnL({ s }: { s: State }) {
   const alpha = bookPct - niftyPct;
   const bookRs = nL - n0;
   const box: CSSProperties = {
-    background: 'var(--panel2,#1c232c)', border: '1px solid var(--border,#333)',
+    background: 'var(--canvas,#FAFAF9)', border: '1px solid var(--hairline,rgba(0,0,0,0.10))',
     borderRadius: 8, padding: '10px 13px',
   };
   const lab: CSSProperties = { fontSize: 11.5, color: 'var(--ink-muted,#888)' };
@@ -443,10 +443,12 @@ function LivePnL({ s }: { s: State }) {
 }
 
 function CashStatus({ s }: { s: State }) {
-  const deployable = Math.max(0, s.idle_cash - s.cash_reserve - (s.sweep?.value || 0));
+  // idle_cash now INCLUDES the swept CASHIETF value (it is cash-equivalent, redeemable same-day),
+  // so subtracting sweep.value again would understate what the book can actually deploy.
+  const deployable = Math.max(0, s.idle_cash - s.cash_reserve);
   const heavy = s.idle_pct >= 25;
   const cell: React.CSSProperties = {
-    background: 'var(--panel2,#1c232c)', border: '1px solid var(--border,#333)',
+    background: 'var(--canvas,#FAFAF9)', border: '1px solid var(--hairline,rgba(0,0,0,0.10))',
     borderRadius: 8, padding: '10px 13px',
   };
   const lab: React.CSSProperties = { fontSize: 11.5, color: 'var(--ink-muted,#888)' };
@@ -490,7 +492,7 @@ function HedgePanel({ s }: { s: State }) {
   const totPnl = hist.reduce((a, x) => a + x.pnl, 0);
   const wins = hist.filter((x) => x.pnl > 0).length;
   const box: React.CSSProperties = {
-    background: 'var(--panel2,#1c232c)', border: '1px solid var(--border,#333)',
+    background: 'var(--canvas,#FAFAF9)', border: '1px solid var(--hairline,rgba(0,0,0,0.10))',
     borderRadius: 8, padding: '10px 13px', fontSize: 13,
   };
   return (
@@ -603,8 +605,8 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
   };
   const reconcile = async () => setRec(await apiGet('/api/momentum-paper/reconcile').catch((e) => ({ error: String(e) })));
 
-  const btn: CSSProperties = { padding: '7px 12px', borderRadius: 6, border: '1px solid var(--border,#333)', cursor: 'pointer', fontSize: 13, background: 'var(--panel2,#1c232c)', color: 'inherit' };
-  const inp: CSSProperties = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border,#333)', background: 'transparent', color: 'inherit', width: 140, fontSize: 13 };
+  const btn: CSSProperties = { padding: '7px 12px', borderRadius: 6, border: '1px solid var(--hairline,rgba(0,0,0,0.10))', cursor: 'pointer', fontSize: 13, background: 'var(--canvas,#FAFAF9)', color: 'var(--ink,#1B1B1A)', fontWeight: 600 };
+  const inp: CSSProperties = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--hairline,rgba(0,0,0,0.10))', background: 'var(--surface,#FFFFFF)', color: 'var(--ink,#1B1B1A)', width: 140, fontSize: 13 };
 
   return (
     <div className={styles.card}>
