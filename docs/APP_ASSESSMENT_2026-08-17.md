@@ -16,7 +16,7 @@ without someone remembering. The top three problems are drift, not bugs.
 | Execution & safety | Strong | kill switches, freeze flag, guardians, 15:40 rule + deferred restart |
 | Research rigour | Strong | 26 published studies, 24 chart assets all present, no duplicate slugs |
 | Link integrity | Good | 1 of 27 nav links dead · 1 of 102 API literals unrouted |
-| Registry truth | **Drifting** | ops centre 22 of 90 jobs · journal 4 of 23 systems |
+| Registry truth | **Drifting** | 3 of 5 live systems absent from the ledger · ~24 in-scope jobs unregistered |
 | Uniformity | Uneven | 5 byte-identical CSS modules · 484 inline styles in one page |
 | Clarity | Uneven | 18 of 27 nav labels differ from the page's own title |
 | Front-end health | Uneven | one 1.25 MB chunk, no route splitting, 23 pages polling 1–60 s |
@@ -35,15 +35,36 @@ without someone remembering. The top three problems are drift, not bugs.
 
 ## P1 — registries that stopped being true
 
-4. **Journal sees 4 of 23 systems** (sources: nas, orb, kc6, strangle). Uncovered: momentum-3l,
-   ha-paper, fnoms-paper, breakout-paper, ohol-paper, nwv, n500m, i75wr, pairs, mst, maruthi. The
-   month P&L therefore looks complete and isn't. Two sources would fix most: one for JSON-state
-   paper books, one for the SQLite books (`n500m_positions`, `i75_positions`, `pair_trades`).
-5. **Ops & Review Centre covers 22 of 90 scheduler jobs** (6 groups / 22 rows / 18 reviews). Absent
-   families: orb (9), i75 (7), kc6 (6), maruthi (6), mq (4), n500m (4), eod (3), holdings (3),
-   strangle (3), nwv (2), bnf (2), premarket (2), trident (2), collar, db-integrity, instruments,
-   mst, pair, scanner ≈ 59 jobs. **Fix: read `scheduler.get_jobs()` and show unregistered jobs as
-   UNREGISTERED rows** instead of hand-maintaining existence.
+> **Re-scoped 2026-08-17 per the owner's rulings:** the Journal is **live-systems-only by design**, and the
+> ops centre needs to cover **live systems + research/re-assessment jobs only** — paper and parked books are
+> deliberately out of scope. Findings 4 and 5 are rewritten to that rule: 5 shrank, 4 got sharper.
+
+4. **Journal is live-only — and by that rule it is wrong in both directions.**
+   Of the 5 live systems, **3 cannot reach the ledger**: TB-CSL NIFTY and NAS_COMB20 (real money, state in
+   `csl_paper_state.json`) and Momentum ₹3L (own DB). Meanwhile the ledger **does** ingest 3 non-live
+   systems — ORB Index 349 trades (−₹2,02,510), ORB Cash 46 (−₹21,888), KC6 6 (−₹5,528) — i.e.
+   **≈ −₹2.3 lakh of paper/parked P&L is mixed into a real-money ledger**. NAS/SENSEX (691 trades, +₹12.8L)
+   is correctly covered.
+   **Fix:** filter the journal to live strategies (totals become true immediately, no new code), then add a
+   CSL source + a momentum source, and retire/tag the orb, strangle and kc6 sources. Read-only projection.
+5. **Ops gap, scoped to live + research: ≈24 jobs — including the chain the live book depends on.**
+   52 of 90 apscheduler jobs are out of scope (orb, i75, kc6, maruthi, mq, n500m, nwv, pair, mst, eod, bnf,
+   collar, trident, scanner). What remains and is **missing from both `ops_center.py` and the labs doc**:
+   - **The morning token chain** — `auto_login.sh` 08:50, `token_heal.sh` 09:06, `preopen_restart.sh` 09:00,
+     `killflag_premarket_check.py` 09:05. A stale-token cascade is a *known* failure class (dark ticker →
+     the 09:16 one-shot can't be replayed) and none of its four guards are registered anywhere.
+   - Per-minute live-page writers: `sensex_live_writer.py`, `publish_nifty_5m.py`
+   - Live momentum book: `gen_momentum_scan.py` 16:20
+   - Holdings: `holdings_snapshot/meta/events` (apscheduler) + `gen_holdings_ohlc.py`,
+     `update_holdings_today_candle.py`
+   - Guards: `db_integrity_watchdog`, `instruments_dump`, `premarket_brief_build/_fallback`
+   - Research/re-assessment recorders: `sl_reanchor_shadow.py`, `dl_sensex_1min.py`, r/56 dual-ST, r/80
+     condor, r/82 sensex-expiry, r/90 `regen_travel.sh`, mentor `capture_daily.py`
+   - In the labs doc but **not** in ops_center (the two registries disagree): `snapshot_nas_eod`,
+     `dump_nas_mtm`, `options_study_agg`, `backup_to_github_release`
+   **Fix:** ops page diffs `scheduler.get_jobs()` + `crontab -l` against the curated table with paper/parked
+   families filtered out by design; in-scope jobs with no entry render as **UNREGISTERED**. Register the
+   token chain first. Pure read-only introspection.
 6. **A book can be off for months invisibly.** I75WR: 7 jobs, 3 configs, dashboard, *empty DB*
    (every config `mode=off`). Pairs: same. MST: 10 positions on 07 May, nothing since, and it
    re-restores 6 legs on the dead 2026-05-19 expiry at every boot. Nothing surfaced any of it.
@@ -127,11 +148,26 @@ without someone remembering. The top three problems are drift, not bugs.
 ## Suggested order
 
 1. Half a day of dead-link hygiene (P0s + ORB Index into Paper Books + 404 link home).
-2. The liveness rule — the finding that would have caught I75WR / Pairs / MST months ago.
-3. Ops centre diffs the live scheduler; curate the 59 missing jobs over a week.
-4. Journal sources — momentum ₹3L first, then JSON paper books, then N500M / I75WR / Pairs.
+2. **Register the morning token chain** (4 cron entries) — highest-consequence gap, ten-minute edit.
+   Then make the ops page diff `scheduler.get_jobs()` + `crontab -l` with paper/parked filtered out.
+3. The liveness rule — the finding that would have caught I75WR / Pairs / MST months ago.
+4. **Journal = exactly the live book**: filter to live strategies today, then add CSL + momentum sources
+   and retire the paper/parked ones.
 5. Shared page furniture, applied to the five paper books first (they collapse anyway).
 6. Only then the register's second pass (derive mode/size/activity).
+
+## GUARDRAIL for all of the above (owner instruction, 2026-08-17)
+
+**No change to live or paper trading logic.** Engines, scanners, executors, stops, trails, sizing and
+entry/exit rules are off-limits for this cleanup. Every item in this plan is one of:
+
+- a **read-only projection** (journal sources, liveness queries, ops introspection),
+- a **display / routing** change (page furniture, nav, redirects, code splitting),
+- a **shared component** that renders existing endpoints without changing their semantics, or
+- **documentation**.
+
+If a fix would require touching an executor or engine, it stops and becomes a separate, explicitly
+approved strategy change with its own STATUS doc and an after-15:40 deploy.
 
 ## Not checked
 

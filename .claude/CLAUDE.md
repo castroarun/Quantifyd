@@ -105,6 +105,38 @@ revived.)
 
 ---
 
+## UX / REGISTRY WORK NEVER TOUCHES TRADING LOGIC (binding 2026-08-17)
+
+Arun's standing instruction for all app-quality work — cleanups, redesigns, registries,
+dashboards, journal/ops coverage, consistency passes:
+
+**The core backend logic of the live and paper trading systems must not be altered.**
+Off-limits unless the change is itself an explicitly approved *strategy* change:
+
+- executors and engines (`services/*_executor.py`, `*_engine.py`, `nas_*`, `csl_paper_exec.py`,
+  `momentum_paper.py`, `*_paper.py`, `orb_live_engine.py`, ...)
+- scanners / signal generation, entry and exit rules, stops, trails, TPs, sizing, gates
+- order placement, guardrails, kill switches and freeze logic
+
+Permitted for this class of work:
+
+- **read-only projections** over existing state (journal sources, liveness queries, ops
+  introspection, analytics that only read DBs / JSON state)
+- **display and routing** — React pages, CSS, nav, redirects, code splitting
+- **shared UI components** that render existing endpoints without changing their semantics
+- **documentation**, registries and indexes
+
+If a fix would require editing an engine, STOP and raise it as a separate strategy change with
+its own STATUS-MD, its own evidence, and an after-15:40 deploy — never as a side effect of a
+UI or registry task.
+
+**Two scope rulings that go with this (also 2026-08-17):**
+
+- The **Journal is live-systems-only by design.** Paper and parked books do not belong in the
+  ledger; live books that are missing (TB-CSL NIFTY, NAS_COMB20, Momentum ₹3L) do.
+- The **Ops & Review Centre covers live systems + research/re-assessment jobs only.** Paper and
+  parked books need no entry. Full assessment: `docs/APP_ASSESSMENT_2026-08-17.md`.
+
 ## THE STRATEGIES INDEX IS THE REGISTER OF RECORD (binding 2026-08-17)
 
 `/app/strategies` is the single index of every system we run: what is **live with
