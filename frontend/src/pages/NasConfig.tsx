@@ -480,7 +480,7 @@ export default function NasConfig() {
           </div>
 
           {/* ---- Portfolio stop ---- */}
-          <div className={styles.rulesGroupLabel}>Portfolio stop · book-level backstop</div>
+          <div className={styles.rulesGroupLabel}>9:16 book stop · ATM + ATM2 + ATM4 only (not COMB/TimeB)</div>
           <div className={styles.pstopGrid}>
             {rules.portfolioStop.map((p) => (
               <div key={p.venue} className={styles.pstopCard}>
