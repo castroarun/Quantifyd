@@ -5142,6 +5142,103 @@ def api_nas_day_matrix_post():
         return jsonify({'error': str(e)}), 400
 
 
+@app.route('/api/nas/rules-matrix', methods=['GET'])
+def api_nas_rules_matrix():
+    """Read-only RULES MATRIX for /app/nas-config. Every system's live rules
+    (entry/exit/stop/management/size/mode), read FRESH from the actual config
+    sources so any rule change reflects here automatically."""
+    try:
+        import json as _json
+        from services.nas_day_matrix import load as _mload, venue_of as _venue_of
+        import config as _cfg
+        M = _mload()
+        cfgmap = [
+            ('nas_916_atm',  '9:16 ATM',   getattr(_cfg, 'NAS_916_ATM_DEFAULTS', {})),
+            ('nas_916_atm2', '9:16 ATM2',  getattr(_cfg, 'NAS_916_ATM2_DEFAULTS', {})),
+            ('nas_916_atm4', '9:16 ATM4',  getattr(_cfg, 'NAS_916_ATM4_DEFAULTS', {})),
+            ('sensex_atm',   'SENSEX ATM',  getattr(_cfg, 'SENSEX_ATM_DEFAULTS', {})),
+            ('sensex_atm2',  'SENSEX ATM2', getattr(_cfg, 'SENSEX_ATM2_DEFAULTS', {})),
+            ('sensex_atm4',  'SENSEX ATM4', getattr(_cfg, 'SENSEX_ATM4_DEFAULTS', {})),
+        ]
+        MGMT_OVERRIDE = {'nas_916_atm4': 'roll-to-match (one-and-done)',
+                         'sensex_atm4': 'roll-to-match (one-and-done)'}
+
+        def _stop_desc(d):
+            rupee = d.get('rupee_stop_per_lot') or 0
+            move = d.get('move_stop_pct') or 0
+            leg = d.get('leg_sl_pct') or 0
+            parts = []
+            if rupee:
+                parts.append("Rs%s/lot MTM" % format(int(rupee), ','))
+            if move:
+                parts.append("%.1f%% move-stop" % (move * 100))
+            if leg:
+                parts.append("per-leg %d%%" % int(leg * 100))
+            return " + ".join(parts) if parts else "-"
+
+        def _mgmt_desc(key, d):
+            if key in MGMT_OVERRIDE:
+                return MGMT_OVERRIDE[key]
+            if d.get('re_enter_on_sl'):
+                return "naked ST-trail + re-enter cascade"
+            if d.get('move_stop_reenter'):
+                return "re-enter on move-stop"
+            return "one-and-done"
+
+        entry916 = []
+        for key, label, d in cfgmap:
+            row = (M.get('systems') or {}).get(key) or {}
+            dte_on = sorted([int(k) for k, v in (row.get('dte') or {}).items() if v])
+            entry916.append({
+                'key': key, 'label': label, 'venue': _venue_of(key).upper(),
+                'entry': d.get('entry_start_time', '09:16'),
+                'exit': d.get('eod_squareoff_time', '15:15'),
+                'stop': _stop_desc(d), 'mgmt': _mgmt_desc(key, d),
+                'lots': d.get('lots_per_leg'),
+                'live': bool(row.get('live')), 'live_dtes': dte_on,
+                'gap_up': bool(row.get('gap_up')), 'gap_down': bool(row.get('gap_down')),
+            })
+
+        sleeve_meta = [
+            ('NAS_COMB20', 'COMB (combined-SL)', 'NIFTY', 'live', 2, 130),
+            ('CSL_TIMEB_NIFTY', 'TimeB (time-window)', 'NIFTY', 'live', 6, 390),
+            ('CSL30F_NIFTY', 'CSL30-Fixed', 'NIFTY', 'paper', 2, 130),
+            ('NAS_C20_TRAIL', 'COMB-Trail', 'NIFTY', 'paper', 2, 130),
+            ('NAS_C20_SHIFT', 'COMB-Shift', 'NIFTY', 'paper', 2, 130),
+            ('CSL_TIMEB_SENSEX', 'TimeB (SENSEX)', 'SENSEX', 'paper', 6, 120),
+            ('CSL30F_SENSEX', 'CSL30-Fixed (SENSEX)', 'SENSEX', 'paper', 3, 60),
+        ]
+        try:
+            _cslp = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 'backtest_data', 'csl_paper_config.json')
+            cslcfg = (_json.load(open(_cslp)) or {}).get('books', {})
+        except Exception:
+            cslcfg = {}
+        sleeves = []
+        for book, label, venue, mode, lots, qty in sleeve_meta:
+            perdte = {}
+            for dstr, c in (cslcfg.get(book) or {}).items():
+                if isinstance(c, dict) and c.get('entry'):
+                    perdte[str(dstr)] = "%s-%s SL%s" % (c.get('entry'), c.get('exit'), c.get('sl'))
+            sleeves.append({'book': book, 'label': label, 'venue': venue, 'mode': mode,
+                            'lots': lots, 'qty': qty, 'perdte': perdte})
+
+        pstop = []
+        try:
+            from services.nas_portfolio_stop import VENUES as _V, STOP_PER_LOT as _SPL
+            for v, c in _V.items():
+                pstop.append({'venue': v.upper(), 'stop_per_lot': -abs(_SPL),
+                              'tp_per_lot': c.get('tp_per_lot'),
+                              'trail_arm': c.get('trail_arm_per_lot'),
+                              'trail_give': c.get('trail_giveback_per_lot')})
+        except Exception:
+            pass
+
+        return jsonify({'entry916': entry916, 'sleeves': sleeves, 'portfolioStop': pstop})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # The standalone Flask /nas-panic page was retired 2026-05-24 in favour
 # of the React page at /app/nas-panic. Keep a 302 so any stale bookmark
 # still lands at the right URL.

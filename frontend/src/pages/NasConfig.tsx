@@ -31,6 +31,21 @@ interface MatrixResponse {
   systems: SystemMeta[];
   today: TodayInfo;
 }
+interface Entry916Row {
+  key: string; label: string; venue: string; entry: string; exit: string;
+  stop: string; mgmt: string; lots: number | null; live: boolean; live_dtes: number[];
+}
+interface SleeveRow {
+  book: string; label: string; venue: string; mode: string;
+  lots: number; qty: number; perdte: Record<string, string>;
+}
+interface PStopRow {
+  venue: string; stop_per_lot: number; tp_per_lot: number | null;
+  trail_arm: number | null; trail_give: number | null;
+}
+interface RulesMatrix {
+  entry916: Entry916Row[]; sleeves: SleeveRow[]; portfolioStop: PStopRow[];
+}
 
 const DTE_COLS: { d: number; day: string }[] = [
   { d: 4, day: 'Wed' },
@@ -50,6 +65,7 @@ export default function NasConfig() {
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [rules, setRules] = useState<RulesMatrix | null>(null);
 
   const fetchMatrix = () => {
     setLoading(true);
@@ -65,6 +81,9 @@ export default function NasConfig() {
   };
 
   useEffect(fetchMatrix, []);
+  useEffect(() => {
+    apiGet<RulesMatrix>('/api/nas/rules-matrix').then(setRules).catch(() => undefined);
+  }, []);
 
   // immutable updates
   const editRow = (key: string, patch: Partial<SysRow>) => {
@@ -273,6 +292,90 @@ export default function NasConfig() {
           still forces paper for safety.
         </p>
       </div>
+
+      {rules && (
+        <div className={styles.rulesSection}>
+          <h2 className={styles.rulesTitle}>
+            Rules Matrix{' '}
+            <span className={styles.rulesNote}>· read live from config — any rule change reflects here</span>
+          </h2>
+
+          <div className={styles.rulesGroupLabel}>9:16 &amp; SENSEX entry systems</div>
+          <div className={styles.tableWrap}>
+            <table className={styles.rulesTable}>
+              <thead>
+                <tr>
+                  <th>System</th><th>Venue</th><th>Entry</th><th>Exit</th>
+                  <th>Stop</th><th>Management</th><th>Lots</th><th>Live on</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rules.entry916.map((r) => (
+                  <tr key={r.key}>
+                    <td className={styles.sysLabel}>{r.label}</td>
+                    <td>{r.venue}</td><td>{r.entry}</td><td>{r.exit}</td>
+                    <td>{r.stop}</td><td>{r.mgmt}</td><td>×{r.lots}</td>
+                    <td>
+                      {r.live
+                        ? r.live_dtes.length
+                          ? r.live_dtes.map((d) => `DTE${d}`).join(', ')
+                          : '—'
+                        : <span className={styles.paperTag}>paper</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.rulesGroupLabel}>CSL sleeves · per-DTE window (entry-exit SL%)</div>
+          <div className={styles.tableWrap}>
+            <table className={styles.rulesTable}>
+              <thead>
+                <tr>
+                  <th>Sleeve</th><th>Venue</th><th>Mode</th><th>Size</th>
+                  <th>DTE0</th><th>DTE1</th><th>DTE2</th><th>DTE3</th><th>DTE4</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rules.sleeves.map((sl) => (
+                  <tr key={sl.book}>
+                    <td className={styles.sysLabel}>{sl.label}</td>
+                    <td>{sl.venue}</td>
+                    <td>
+                      <span className={sl.mode === 'live' ? styles.liveTag : styles.paperTag}>{sl.mode}</span>
+                    </td>
+                    <td>{sl.lots}L ×{sl.qty}</td>
+                    {['0', '1', '2', '3', '4'].map((d) => (
+                      <td key={d} className={styles.dteWin}>{sl.perdte[d] || '—'}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.rulesGroupLabel}>Portfolio stop · book-level backstop</div>
+          <div className={styles.tableWrap}>
+            <table className={styles.rulesTable}>
+              <thead>
+                <tr><th>Venue</th><th>Hard stop</th><th>Take-profit</th><th>Trail arm</th><th>Trail giveback</th></tr>
+              </thead>
+              <tbody>
+                {rules.portfolioStop.map((p) => (
+                  <tr key={p.venue}>
+                    <td className={styles.sysLabel}>{p.venue}</td>
+                    <td>₹{p.stop_per_lot}/lot</td>
+                    <td>{p.tp_per_lot != null ? `₹${p.tp_per_lot}/lot` : '—'}</td>
+                    <td>{p.trail_arm != null ? `+₹${p.trail_arm}/lot` : '—'}</td>
+                    <td>{p.trail_give != null ? `₹${p.trail_give}/lot` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
