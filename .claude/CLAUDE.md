@@ -47,7 +47,7 @@ happen here, then push → pull on VPS.
 
 1. Build code on laptop, smoke-test against the snapshot DB
 2. Push to GitHub, pull on VPS
-3. Restart `quantifyd.service` (after market close — 15:30 IST)
+3. Restart `quantifyd.service` (after market close — **15:40 IST**)
 4. Live + paper signals fire from VPS
 
 **Operational checklist when starting a backtest:**
@@ -333,22 +333,35 @@ re-instructed.
 
 ---
 
-## NO BACKEND RESTART DURING MARKET HOURS
+## NO BACKEND RESTART BEFORE 15:40 IST (BINDING — updated 2026-08-17)
 
-NSE cash + F&O session: **09:15 – 15:30 IST, Mon–Fri**. During this window,
-`sudo systemctl restart quantifyd` on the VPS is **prohibited**.
+**No `sudo systemctl restart quantifyd` before 15:40 IST on a trading day. No exceptions
+without an explicit, same-conversation instruction from Arun that names the open risk.**
+
+NSE cash + F&O trade 09:15 – 15:30 IST, and the closing session runs to ~15:40. The cutoff is
+**15:40, not 15:30** — F&O positions and closing-auction activity are still live in that last
+ten minutes, and an executor restarted at 15:32 can still lose an open leg.
+
+**Check the clock every single time.** Conversations span days; an approval given on a Sunday
+evening is NOT valid on Monday afternoon. Run `TZ=Asia/Kolkata date` immediately before any
+restart and confirm it is past 15:40 on that day. A restart approval never carries across a
+session gap.
 
 **Why**
-- NAS executors (all 8 squeeze/916 variants currently in paper mode) hold
-  intraday state in memory. A restart loses today's open legs, closed-today
-  records, and daily P&L from the NAS page until the next entry cycle.
-- ORB open positions are exchange-safe (SL-M orders survive restart), but
-  in-memory state (OR levels, catchup bookkeeping) still hiccups.
-- Gunicorn worker teardown on SIGTERM can leave SQLite WAL inconsistent
-  mid-trade, with silent data loss on the rollback.
+- NAS / THE STACK executors hold intraday state in memory. A restart loses today's open legs,
+  closed-today records, and daily P&L until the next entry cycle.
+- **Short naked options are the real danger.** On 2026-08-17 the book held NIFTY 24300 CE −520
+  and PE −260 (MIS) with **no SL-M at the exchange** — the only stop was software-side, inside
+  the gunicorn process a restart would kill. Losing that monitor on a short option leaves
+  unbounded downside unprotected. Always check `kite.positions()` and `kite.orders()` for open
+  legs lacking exchange-side stops BEFORE restarting, and report what is open.
+- ORB open positions are exchange-safe (SL-M orders survive restart), but in-memory state
+  (OR levels, catchup bookkeeping) still hiccups.
+- Gunicorn worker teardown on SIGTERM can leave SQLite WAL inconsistent mid-trade, with silent
+  data loss on the rollback.
 
 **What this means in practice**
-- **Python / Flask / service changes** → deploy after 15:30 IST only.
+- **Python / Flask / service changes** → deploy after **15:40 IST** only.
 - **Frontend-only changes** (`frontend/src/**/*.tsx`, `templates/*.html`,
   static assets) → safe any time. Pull on VPS without restart; Flask serves
   updated static files on the next request. Hard-refresh the browser to
@@ -356,16 +369,17 @@ NSE cash + F&O session: **09:15 – 15:30 IST, Mon–Fri**. During this window,
 - **Config tweaks** (`config.py` constants like `ORB_DEFAULTS['risk_per_trade_pct']`)
   → technically requires restart to take effect. Queue for after-close
   unless the change is strictly needed before the next trading session.
-- **Emergency exceptions** (prod bug actively losing money, stuck order,
-  kill-switch needed): restart is acceptable — prefer `/api/<strategy>/kill-switch`
-  first if available.
+- **Emergency exceptions** (prod bug actively losing money, stuck order, kill-switch
+  needed): restart is acceptable — prefer `/api/<strategy>/kill-switch` first if
+  available. Staged fixes that cannot fire today are NOT an emergency: if the buggy code
+  path is disabled in the running process, the fix waits for 15:40.
 
 **Deployment cheatsheet** (during market):
 ```
 # Frontend only — no restart, safe
 git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/main'
 
-# Backend — wait until after 15:30 IST
+# Backend — wait until after 15:40 IST (verify with `TZ=Asia/Kolkata date` first)
 git push && ssh vps 'cd /home/arun/quantifyd && git reset --hard origin/main &&
                      sudo systemctl restart quantifyd'
 ```
