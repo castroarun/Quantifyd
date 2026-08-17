@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import NavItem from './NavItem';
+import { HOTKEY_ROUTES } from './hotkeys';
 import styles from './Sidebar.module.css';
 import {
   IconGrid,
@@ -66,6 +68,7 @@ function IconLightbulb() {
 const COLLAPSE_KEY = 'qf.sidebar.collapsed.v2';
 
 export default function Sidebar({ active, userName = 'Trader' }: Props) {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === '1';
@@ -82,6 +85,26 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
       /* ignore */
     }
   }, [collapsed]);
+
+  // Single-letter page shortcuts (badge rendered by NavItem from the same
+  // map). Ignored while typing in a field or when a modifier is held, so it
+  // never fights browser or app shortcuts.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.isContentEditable
+        || el.tagName === 'INPUT'
+        || el.tagName === 'TEXTAREA'
+        || el.tagName === 'SELECT')) return;
+      const to = HOTKEY_ROUTES[e.key.toLowerCase()];
+      if (!to) return;
+      e.preventDefault();
+      navigate(to);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigate]);
 
   const toggle = () => setCollapsed((c) => !c);
 
@@ -114,13 +137,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconGrid />}
             label="Strategies"
             active={active === 'strategies'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/orb"
-            icon={<IconBarChart />}
-            label="ORB Cash"
-            active={active === 'orb'}
             collapsed={collapsed}
           />
           <NavItem
@@ -235,13 +251,6 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/momentum-paper"
-            icon={<IconBarChart />}
-            label="Momentum ₹3L LIVE"
-            active={active === 'momentum-paper'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/breakout-paper"
             icon={<IconBarChart />}
             label="Breakout ₹10L"
@@ -262,6 +271,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             active={active === 'ohol-paper'}
             collapsed={collapsed}
           />
+          <NavItem
+            to="/orb"
+            icon={<IconBarChart />}
+            label="ORB Cash"
+            active={active === 'orb'}
+            collapsed={collapsed}
+          />
         </nav>
       </div>
 
@@ -273,6 +289,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconBriefcase />}
             label="Holdings"
             active={active === 'holdings'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/momentum-paper"
+            icon={<IconBarChart />}
+            label="Momentum ₹3L LIVE"
+            active={active === 'momentum-paper'}
             collapsed={collapsed}
           />
         </nav>

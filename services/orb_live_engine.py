@@ -473,7 +473,13 @@ class ORBLiveEngine:
             return None
 
     def _check_fund_alert(self):
-        """Check if available margin is below 1.2x allocation threshold."""
+        """Check if available margin is below 1.2x allocation threshold.
+
+        Silent in paper mode — no real margin is consumed there, so the
+        alert only produced noise (the reason ORB was switched off 08-10).
+        """
+        if self.cfg.get('paper_trading_mode', True):
+            return None
         if not self._last_margin:
             return None
         alloc = self.allocation_per_trade
@@ -1237,7 +1243,11 @@ class ORBLiveEngine:
                 required_capital = qty * entry_price
                 available = self._get_available_margin()
 
-                if available is not None and available < min_balance_required:
+                # Paper mode spends no real cash: a near-zero broker balance
+                # must not block paper signals or raise margin alerts.
+                _paper = bool(self.cfg.get('paper_trading_mode', True))
+
+                if (not _paper) and available is not None and available < min_balance_required:
                     logger.warning(
                         f"[ORB] {sym}: LOW FUNDS — available Rs {available:.0f} < "
                         f"required Rs {min_balance_required:.0f} (1.2x of {alloc}). SKIPPING TRADE."
