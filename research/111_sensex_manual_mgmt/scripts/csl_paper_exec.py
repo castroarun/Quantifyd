@@ -22,7 +22,7 @@ NIFTY_MKT = {"sym": "NIFTY", "step": 50, "lot": 65, "spot_key": "NSE:NIFTY 50", 
 SENSEX_MKT = {"sym": "SENSEX", "step": 100, "lot": 20, "spot_key": "BSE:SENSEX", "seg": "BFO",
               "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}
 BOOKS = {
-    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 6, "qty": 390, "cfg_from": "lab", "mode": "live"},
+    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "lab", "mode": "live"},  # 2026-08-17: 6->8 (sec-18b step-2, user)
     "CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 6, "qty": 120, "cfg_from": "lab"},
     # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
     "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed", "mode": "live",

@@ -110,7 +110,7 @@ except Exception:
     tb_deployed = 6
 tb_base = 2 if n_tb.endswith("2L") else tb_deployed   # component basis (lab normalizes to 2L)
 grid = {}
-for tw in (2, 4, 6):
+for tw in (2, 4, 6, 8, 10):
     for cw in (2, 4):
         f = [LIVE[k] + COMB[k] * cw / 2.0 + TB[k] * tw / float(tb_base) for k in ex]
         grid["6/%d/%d" % (cw, tw)] = ratio_of(f)

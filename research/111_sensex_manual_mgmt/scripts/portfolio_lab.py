@@ -51,6 +51,7 @@ comp["COMB_2L"] = book_daily("NAS_COMB20")
 comp["TBCSL_2L"] = book_daily("CSL_TIMEB_NIFTY")
 comp["TBCSL_4L"] = {d: (v * 2, src) for d, (v, src) in comp["TBCSL_2L"].items()}   # sec-18 overweight arms
 comp["TBCSL_6L"] = {d: (v * 3, src) for d, (v, src) in comp["TBCSL_2L"].items()}
+comp["TBCSL_8L"] = {d: (v * 4, src) for d, (v, src) in comp["TBCSL_2L"].items()}
 shift = book_daily("NAS_C20_SHIFT")
 if rp:  # model history until the paper book accrues (model basis 3L -> normalize to TARGET_LOTS)
     for d, v in rp["arms"]["HYB_ATM4_30"]["series"]:
@@ -83,7 +84,7 @@ matrix = [[(1.0 if a == b else corr(comp[a], comp[b])) for b in NAMES] for a in 
 
 comps_out = {}
 for n2, dd in comp.items():
-    if n2 in ("TBCSL_4L", "TBCSL_6L"): continue   # virtual sec-18 arms, not real books
+    if n2 in ("TBCSL_4L", "TBCSL_6L", "TBCSL_8L"): continue   # virtual sec-18 arms, not real books
     ds = sorted(dd)
     src = {}
     for d in ds: src[dd[d][1]] = src.get(dd[d][1], 0) + 1
@@ -97,7 +98,8 @@ PORTS = [
     ("pre-18b reference — 10L (TB@2L)", 10, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_2L"]),
     ("LIVE + SHIFT-cand + TB-CSL", 10, ["LIVE_SUITE_6L", "SHIFT_CAND_2L", "TBCSL_2L"]),
     ("ALL-CSL (COMB+SHIFT+TB, no live)", 6, ["COMB_2L", "SHIFT_CAND_2L", "TBCSL_2L"]),
-    ("THE STACK (DEPLOYED 14L ex-Wed · 6/2/6): LIVE + COMB + TB-CSL", 14, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_6L"]),
+    ("prior step — 14L (6/2/6)", 14, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_6L"]),
+    ("THE STACK (DEPLOYED 16L ex-Wed · 6/2/8): LIVE + COMB + TB-CSL", 16, ["LIVE_SUITE_6L", "COMB_2L", "TBCSL_8L"]),
 ]
 ports_out = []
 for label, lots, parts in PORTS:
@@ -117,7 +119,7 @@ out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
        "basis": "DEPLOYED 2026-08-13: LIVE suite 6L (2L/system) + COMB 2L + TB-CSL 6L = 6/2/6, real+shadow normalized per-record; "
                 "per-record lots-normalized to 2L; TB-CSL from 12L history; SHIFT candidate = model until NAS_C20_SHIFT accrues; live-first merge",
        "names": NAMES, "components": comps_out, "matrix": matrix, "portfolios": ports_out,
-       "verdict": "DEPLOYED 2026-08-13, resized 6/2/6 on 2026-08-17 (14L ex-Wed): LIVE 6L + COMB 2L + TB-CSL 6L, Wednesday (DTE4) gated off. "
+       "verdict": "DEPLOYED 2026-08-13, stepped 6/2/8 on 2026-08-18 (16L ex-Wed, sec-18b ladder): LIVE 6L + COMB 2L + TB-CSL 6L, Wednesday (DTE4) gated off. "
                   "High complementarity (avg component corr ~0.18 ex-Wed). SHIFT-cand ex-Wed ratio is the single-arm standout but in-sample; paper book adjudicates."}
 for p in OUTS:
     try:

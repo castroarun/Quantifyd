@@ -1886,7 +1886,7 @@ export default function Nas() {
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
           systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 390) }}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520) }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />
