@@ -230,11 +230,11 @@ function drawFocus(cv: HTMLCanvasElement, s: Series, win: number, hover: number 
   const line = up ? pos : neg;
 
   x.clearRect(0, 0, W, H);
-  // ticker watermark (right)
+  // ticker watermark (left)
   x.save();
-  x.font = `700 22px ${readVar('--font-family')}`; x.textAlign = 'right';
+  x.font = `700 22px ${readVar('--font-family')}`; x.textAlign = 'left';
   x.fillStyle = readVar('--ink'); x.globalAlpha = 0.08;
-  x.fillText(s.sym, W - padR - 10, top + 26);
+  x.fillText(s.sym, padL + 10, top + 26);
   x.restore();
   // grid + price axis
   x.strokeStyle = readVar('--hairline-soft'); x.fillStyle = readVar('--ink-faint');
@@ -359,11 +359,11 @@ function drawFocusCandles(cv: HTMLCanvasElement, bars: Bar[], s: Series, view: V
   const font = readVar('--font-family');
 
   x.clearRect(0, 0, W, H);
-  // ticker watermark (right)
+  // ticker watermark (left)
   x.save();
-  x.font = `700 22px ${font}`; x.textAlign = 'right';
+  x.font = `700 22px ${font}`; x.textAlign = 'left';
   x.fillStyle = readVar('--ink'); x.globalAlpha = 0.08;
-  x.fillText(s.sym, W - padR - 10, top + 26);
+  x.fillText(s.sym, padL + 10, top + 26);
   x.restore();
   // grid + price axis
   x.strokeStyle = readVar('--hairline-soft'); x.fillStyle = readVar('--ink-faint');
@@ -839,10 +839,10 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
 
           <div className={`${styles.panel} ${styles.stage}`}>
             <div className={styles.stHead}>
-              <div>
+              <div style={{ order: 2, textAlign: 'right' }}>
                 <div className={styles.stTitle}>{current.sym}</div>
                 <div className={styles.stSub}>{current.qty} sh @ ₹{current.avg.toFixed(0)} · daily {(ohlc[current.sym]?.length ?? 0) >= 2 ? 'candles' : 'close'}</div>
-                <div className={styles.flagRow}>
+                <div className={styles.flagRow} style={{ justifyContent: 'flex-end' }}>
                   <span className={styles.flagLbl}>Flag</span>
                   {FLAGS.map((c) => (
                     <button
@@ -859,15 +859,15 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
                   ) : null}
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div style={{ textAlign: 'left', order: 1 }}>
                 <div><span className={styles.stPrice}>{current.ltp.toFixed(1)}</span><span className={`${styles.stDay} ${upDn(current.day)}`}>{pct(current.day)}</span></div>
-                <div className={styles.navBtns}>
+                <div className={styles.navBtns} style={{ justifyContent: 'flex-start' }}>
                   <button onClick={() => step(-1)} title="Previous (←)">‹</button>
                   <button onClick={() => step(1)} title="Next (→)">›</button>
                 </div>
               </div>
             </div>
-            <div className={styles.metricStrip}>
+            <div className={styles.metricStrip} style={{ justifyContent: 'flex-end' }}>
               <div className={styles.metric}><span className={styles.mLabel}>Invested</span><span className={styles.mVal}>{fmtRs(current.invested)}</span></div>
               <div className={styles.metric}><span className={styles.mLabel}>Current</span><span className={styles.mVal}>{fmtRs(current.current)}</span></div>
               <div className={styles.metric}><span className={styles.mLabel}>Unrealized P&amp;L</span><span className={`${styles.mVal} ${upDn(current.pnl)}`}>{fmtRs(current.pnl)} · {pct(current.ret, 1)}</span></div>

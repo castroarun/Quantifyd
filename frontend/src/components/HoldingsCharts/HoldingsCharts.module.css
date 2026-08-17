@@ -91,9 +91,10 @@
 .dnBg { background: rgba(163,45,45,0.09); color: var(--accent-neg); }
 
 /* Focus */
-.focus { display: grid; grid-template-columns: 212px 1fr 268px; gap: 16px; align-items: start; }
+/* chart on the LEFT; holdings rail + stats on the RIGHT (order-based) */
+.focus { display: grid; grid-template-columns: 1fr 212px 268px; gap: 16px; align-items: start; }
 .panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; }
-.rail { padding: 8px; max-height: 600px; overflow-y: auto; }
+.rail { padding: 8px; max-height: 600px; overflow-y: auto; order: 1; }
 .railH { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; padding: 6px 8px 8px; }
 .rRow {
   display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 8px;
@@ -104,7 +105,7 @@
 .rs { font-size: 12.5px; font-weight: 600; }
 .rv { font-size: 11px; font-weight: 600; }
 
-.stage { padding: 15px 17px 16px; min-width: 0; }
+.stage { padding: 15px 17px 16px; min-width: 0; order: 0; }
 .stHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .stTitle { font-size: 20px; font-weight: 650; letter-spacing: -.02em; }
 .stSub { font-size: 11px; color: var(--ink-faint); font-weight: 500; margin-top: 2px; }
@@ -142,7 +143,7 @@
 .leg { display: flex; gap: 14px; font-size: 10.5px; color: var(--ink-muted); margin-top: 9px; flex-wrap: wrap; }
 .leg i { display: inline-block; width: 14px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 5px; }
 
-.stats { padding: 14px 15px; }
+.stats { padding: 14px 15px; order: 2; }
 .stats h4 { margin: 2px 0 12px; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
 .sRow { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--hairline-soft); font-size: 12.5px; }
 .sRow:last-child { border-bottom: 0; }
