@@ -1008,8 +1008,14 @@ MST_DEFAULTS = {
     # System control (paper-first; flip to live after shadow validation)
     # DISABLED 2026-05-15 after incident: live-tick pipeline froze May 7 14:45,
     # spurious credit_too_low rolls, REJECTED real-leg closes, mode reverted to
-    # paper on restart. Do NOT re-enable until root causes fixed + reconciled.
-    "enabled": False,                   # Master switch (off|paper|live in UI maps to enabled+paper_trading_mode)
+    # paper on restart.
+    # PAPER RE-ENABLED 2026-08-17 (Arun) after clearing the stale May-7 legs that
+    # made every boot restore a dead 2026-05-19 structure. LIVE REMAINS BARRED
+    # until the 2026-05-15 root causes are fixed + reconciled: (a) tick-pipeline
+    # freeze, (b) spurious credit_too_low=0/lot rolls, (c) rejected real-leg
+    # closes. Watch the paper book for (a) and (b) — they show up as 0.00-priced
+    # legs and repeated rolls in mst_events.
+    "enabled": True,                    # Master switch (off|paper|live in UI maps to enabled+paper_trading_mode)
     "paper_trading_mode": True,         # When enabled, true=paper, false=live
     "live_trading_enabled": False,      # Hard guard — also required for orders to actually go to Kite
 

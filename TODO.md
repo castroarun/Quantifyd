@@ -58,7 +58,7 @@ for a strategy with 9 known correctness bugs); route-level `React.lazy` + pollin
 chunk; 23 pages polling 1–60s with no shared policy); accessibility basics (12 aria attrs total,
 `:focus-visible` in 1 of 30 stylesheets).
 
-## 2026-08-17 — Paper trading switched on for the labs; MST blocked on stale state
+## 2026-08-17 — Paper trading switched on for the labs (MST included — activates 09:00 Tue 18 Aug)
 
 Arun: "lets do paper trading for all of these... create a section Live above paper books".
 
@@ -73,7 +73,33 @@ DONE:
 - Sidebar: new **Live** section (NAS, Straddles) above Paper Books; NWV / N500M / MST / I75WR /
   Pairs moved into Paper Books. Register updated to match (23 systems).
 
-PENDING — **MST cannot be enabled yet.** Every boot logs
+**MST — DONE, activates at the 09:00 pre-open restart (Tue 18 Aug).** Arun: "MST shud be paper
+trading". The blocker was its stale state, now cleared:
+
+- 6 rows still marked OPEN from 07 May were the incident itself — **ids 1,2 real legs**
+  (`paper_mode=0`: BUY NIFTY 24450 CE @266.80 / SELL 24650 CE @173.65, 65 qty each) on the
+  **expired 2026-05-19 weekly**, plus ids 7-10 priced **0.00** from the frozen-tick
+  `credit_too_low: credit=0/lot` rolls (see `mst_events` 11:15 and 14:45 that day).
+- All 6 marked CLOSED with `exit_reason='STALE_CLEARED_20260817'`, **rows kept, P&L left NULL**
+  (no knowable exit). A `state_cleared` event records why. DB backup:
+  `backtest_data/mst_trading.db.bak_20260817_mst_paper`.
+- `config.py MST_DEFAULTS['enabled'] = True`; `paper_trading_mode` True, `live_trading_enabled`
+  False. The do-not-go-live note is preserved and extended: **LIVE stays barred** until the
+  2026-05-15 causes are closed (tick-pipeline freeze, spurious credit_too_low rolls, rejected
+  real-leg closes).
+- Activation needs one process restart, which the existing `0 9 * * 1-5 preopen_restart.sh` cron
+  performs — so the engine boots FLAT in paper mode at 09:00, before the open. No manual step.
+- **Verify after 09:00 Tue:** boot log should NOT say "State RESTORED from N open legs";
+  `/api/mst/state` should show `enabled: true, paper_trading_mode: true` and a flat state.
+- **WATCH (this is what killed it in May):** any 0.00-priced leg or repeated `credit_too_low` roll
+  in `mst_events` means the tick-freeze is back. Worth a dated review — suggest 2026-09-01.
+
+**OPEN, separate:** the two REAL legs from 07 May expired 19 May with **no exit ever recorded** in
+the app, so that real-money outcome is missing from the ledger. It is knowable from the broker
+statement / May tradebook only. Decide whether to reconstruct it (the journal is live-only by
+design, and MST was live then).
+
+~~PENDING — MST cannot be enabled yet.~~ Original note: every boot logged
 `[MST] State RESTORED from 6 open legs → state=DEBIT_OPEN_L1 direction=1 L1_anchor=24450
 expiry=2026-05-19`. Those legs are from 07 May on an expiry three months dead; switching mode to
 paper would have the engine manage phantom legs on an expired series and produce garbage marks.
