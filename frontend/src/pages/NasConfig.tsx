@@ -48,18 +48,18 @@ interface RulesMatrix {
 }
 
 const DTE_COLS: { d: number; day: string }[] = [
+  { d: 1, day: 'Mon' },
+  { d: 0, day: 'Tue' },
   { d: 4, day: 'Wed' },
   { d: 3, day: 'Thu' },
   { d: 2, day: 'Fri' },
-  { d: 1, day: 'Mon' },
-  { d: 0, day: 'Tue' },
 ];
 
 /* ---------- rules-matrix helpers ---------- */
 
 const DTE_SEL: { d: number; day: string }[] = [
-  { d: 0, day: 'Tue' }, { d: 1, day: 'Mon' }, { d: 2, day: 'Fri' },
-  { d: 3, day: 'Thu' }, { d: 4, day: 'Wed' },
+  { d: 1, day: 'Mon' }, { d: 0, day: 'Tue' }, { d: 4, day: 'Wed' },
+  { d: 3, day: 'Thu' }, { d: 2, day: 'Fri' },
 ];
 const DAY_START = 9 * 60 + 15;
 const DAY_SPAN = 15 * 60 + 30 - DAY_START; // 09:15 -> 15:30
