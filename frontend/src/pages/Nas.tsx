@@ -1581,7 +1581,8 @@ export default function Nas() {
     if (b.state === 'OPEN' && b.ce_sym) {
       const thr = (b.credit && b.sl) ? Math.round((1 + b.sl / 100) * b.credit) : null;
       const curComb = (Number(b.ce_last) || 0) + (Number(b.pe_last) || 0);
-      const armTxt = thr != null ? `${curComb.toFixed(1)} · ${thr}` : undefined;
+      const entryComb = Number(b.credit) || ((Number(b.ce0) || 0) + (Number(b.pe0) || 0));
+      const armTxt = thr != null ? `${entryComb.toFixed(1)} · ${thr} (${curComb.toFixed(1)})` : undefined;
       const mk = (leg: string, sym: string, e: number, l: number): any => ({
         leg, tradingsymbol: sym, strike: b.K, qty, entry_price: e, ltp: l,
         mode: b.live ? 'live' : 'paper', entry_time: b.entry_ts, status: 'ACTIVE', sl_price: thr, arm_text: armTxt,
