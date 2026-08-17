@@ -1445,8 +1445,10 @@ INTRADAY_75WR_CONFIGS = {
 # margin pool: F&O carry-forward NRML vs MIS cash equity).
 
 PAIR_TRADING_DEFAULTS = {
-    # Mode (paper default)
-    'enabled': False,
+    # Mode (paper default). Enabled 2026-08-17 — the pair book records paper
+    # trades daily; toggle-mode only patches the running process, so this
+    # default is what survives a restart.
+    'enabled': True,
     'paper_trading_mode': True,         # PAPER MODE LOCK — no real Kite orders
     'live_trading_enabled': False,      # Hard guard — also required for live orders
 

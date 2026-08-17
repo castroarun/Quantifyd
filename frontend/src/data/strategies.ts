@@ -467,6 +467,86 @@ export const SYSTEMS: StrategySystem[] = [
     changeLog: [{ date: '—', text: 'Running as a recorder across all 10 variants.' }],
   },
 
+  {
+    id: 'n500m',
+    name: 'N500M',
+    subtitle: 'NSE cash intraday · Nifty 500 momentum · per-stock CCRB + vol-breakout',
+    status: 'paper',
+    size: '27 stocks · 30 per-stock rules',
+    since: '08 May 2026',
+    rule:
+      'Per-stock rules only: a symbol trades a signal (vol-breakout / CCRB) on the timeframe and exit policy its own backtest promoted. Entry in the 09:15-09:25 window, ATR-based SL, square off at EOD.',
+    rules: [
+      ['Universe', 'Nifty 500, 27 symbols that cleared per-stock promotion'],
+      ['Signal', 'Volume breakout (volbo) or CCRB, per symbol — 5 / 10 / 15-min as promoted'],
+      ['Entry', 'Signal window 09:15-09:25 after a pre-market setup check'],
+      ['Stop', 'ATR-based SL per rule; target / trail per the promoted exit policy'],
+      ['Exit policies', 'T_NO (EOD only) · T_R_TARGET_1.0R · T_STEP_TRAIL'],
+      ['Jobs', 'precompute + data refresh + scan + monitor, Mon-Fri'],
+      ['Record', '31 closed trades over 25 sessions (08 May → 17 Aug 2026), 58% win, +₹13,852'],
+    ],
+    rulesDoc: 'services/n500m_configs.py (per-stock promoted rules) + services/n500m_scanner.py',
+    dashboard: '/n500m',
+    studies: [],
+    studyGap: 'Per-stock promotion came from the intraday sweeps (research/109 + 110), which concluded NO EDGE for the family as a whole — this book is the surviving per-stock subset and has no published study of its own.',
+    changeLog: [
+      { date: '17 Aug 2026', text: 'Confirmed running: 1 trade today (COCHINSHIP short, +₹681 EOD). Moved into Paper Books in the sidebar.' },
+      { date: '08 May 2026', text: 'Paper book started; PAPER mode set 07 May.' },
+    ],
+    note: 'The page shows today only — the 25-session history lives in n500m_positions and is not surfaced yet.',
+  },
+  {
+    id: 'i75wr',
+    name: 'I75WR',
+    subtitle: 'NSE cash intraday · 3 configs (Diamond Short, Long-TC, Long-MR)',
+    status: 'paper',
+    size: '₹3,00,000 per config · ₹3,000 risk/trade',
+    since: '17 Aug 2026',
+    rule:
+      'Three parallel configs over the same three systems, differing only in cost assumptions and TP/SL: A original (TP 0.5 / SL 1.5), B cost-resilient (TP 2.0 / SL 1.5), C continuous scan.',
+    rules: [
+      ['Universe', 'NSE cash intraday'],
+      ['Systems', 'Diamond Short (09:45 single scan) · Long-TC (09:15-10:30, 5-min) · Long-MR (11:15-13:15, 5-min)'],
+      ['Config A / B', 'Same systems, TP 0.5 / SL 1.5 vs TP 2.0 / SL 1.5 — the cost-resilience test'],
+      ['Config C', 'Continuous scan 09:30-15:00'],
+      ['Risk', '₹3,000 per trade · ₹9,000 daily loss limit · max 5 concurrent across configs'],
+      ['Exit', 'TP/SL audit at 15:15, EOD square-off 15:25'],
+    ],
+    rulesDoc: 'services/intraday_75wr/config_{a,b,c}.py',
+    dashboard: '/intraday75wr',
+    studies: [],
+    studyGap: 'No published study — the three configs are themselves the experiment.',
+    changeLog: [
+      { date: '17 Aug 2026', text: 'All three configs switched from off to PAPER (persisted in intraday_75wr_mode_overrides.json). No trades recorded before this.' },
+    ],
+    note: 'Jobs were registered all along but every config sat at mode=off, so the book has an empty history to date.',
+  },
+  {
+    id: 'pairs',
+    name: 'Pairs',
+    subtitle: 'F&O futures · 6-pair cohort · z-score mean reversion',
+    status: 'paper',
+    size: '₹10,00,000 · ₹6,000 risk per pair',
+    since: '17 Aug 2026',
+    rule:
+      'Trade the spread of a cohort pair when its z-score stretches, sized ₹6,000 risk per pair (₹3,000 a leg), max 5 of 6 pairs open. Alpha/beta re-fit on a rolling 252 days.',
+    rules: [
+      ['Universe', '6-pair cohort from F&O futures, refreshed quarterly'],
+      ['Signal', 'Spread z-score against a rolling 252-day alpha/beta fit'],
+      ['Sizing', '₹6,000 risk per pair — ₹3,000 per leg'],
+      ['Concurrency', 'Max 5 of 6 pairs open'],
+      ['Costs', '0.03% per side per leg modelled; 0.10% stress case reported in paper mode'],
+      ['Job', 'Daily scan 16:00 IST'],
+    ],
+    rulesDoc: 'config.py PAIR_TRADING_DEFAULTS + services/pair_trading/',
+    dashboard: '/pair-trading',
+    studies: [],
+    studyGap: 'No published study yet.',
+    changeLog: [
+      { date: '17 Aug 2026', text: 'Switched from off to PAPER; PAIR_TRADING_DEFAULTS.enabled flipped to True so the change survives a restart (toggle-mode only patches the running process).' },
+    ],
+  },
+
   // ---------------------------------------------------------------- PARKED
   {
     id: 'kc6',
@@ -492,6 +572,33 @@ export const SYSTEMS: StrategySystem[] = [
     note: 'Journal shows KC6 rows tagged LIVE from the dashboard\'s own mode flag — confirm before reading them as real money.',
   },
   {
+    id: 'mst',
+    name: 'MST',
+    subtitle: 'NIFTY options · debit-spread structure engine with pyramiding',
+    status: 'parked',
+    size: '1 lot per leg (65)',
+    since: '07 May 2026',
+    rule:
+      'Stochastic-triggered debit spread on NIFTY with pyramiding to level 2. Mode is off, and it must stay off until its stale state is cleared.',
+    rules: [
+      ['Universe', 'NIFTY options, spread width 200, debit OTM offset 50'],
+      ['Trigger', 'Stochastic (14, 3) with 80 / 20 bands on 30-min bars, ATR(21) sizing'],
+      ['Pyramid', 'Up to level 2; exits on overbought/oversold thresholds 70 / 30'],
+      ['Guards', 'Min 6 DTE at entry · min credit ₹1,000/lot · abort on leg rejection'],
+      ['Why parked', 'On every boot the engine restores 6 open legs from 07 May on the 19 May 2026 expiry — three months dead. Enabling it would have it manage phantom legs on an expired series.'],
+      ['To re-enable', 'Close out the stale legs in mst_positions and reset engine state, then set mode=paper'],
+    ],
+    rulesDoc: 'services/mst_engine.py + config.py MST_DEFAULTS',
+    dashboard: '/mst',
+    studies: [],
+    studyGap: 'No published study.',
+    changeLog: [
+      { date: '17 Aug 2026', text: 'Left off during the paper-trading sweep — stale restored legs must be cleared first. Moved into Paper Books in the sidebar so it sits with its peers.' },
+      { date: '07 May 2026', text: '10 positions recorded on one day, then nothing; mode has been off since.' },
+    ],
+    note: 'Boot log every restart: "State RESTORED from 6 open legs → state=DEBIT_OPEN_L1 expiry=2026-05-19".',
+  },
+  {
     id: 'maruthi',
     name: 'Maruthi dual-SuperTrend',
     subtitle: 'MARUTI · single-name positional',
@@ -514,10 +621,7 @@ export const SYSTEMS: StrategySystem[] = [
 
 /** Labs and research pages that carry no capital — listed so nothing is silently dropped. */
 export const LAB_PAGES: Array<{ name: string; to: string; what: string }> = [
-  { name: 'MST', to: '/mst', what: 'Multi-signal tracker lab' },
-  { name: 'N500M', to: '/n500m', what: 'Nifty 500 momentum lab' },
-  { name: 'I75WR', to: '/intraday75wr', what: 'Intraday high-win-rate lab' },
-  { name: 'Pairs', to: '/pair-trading', what: 'Pair-trading lab' },
   { name: 'EOD', to: '/eod-breakout', what: 'EOD breakout scan' },
   { name: 'Opt Study', to: '/options-study', what: 'Options decay / CPR / candle aggregates' },
+  { name: 'Backtest', to: '/backtest', what: 'Published studies' },
 ];

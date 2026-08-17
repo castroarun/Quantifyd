@@ -2,6 +2,33 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-17 — Paper trading switched on for the labs; MST blocked on stale state
+
+Arun: "lets do paper trading for all of these... create a section Live above paper books".
+
+DONE:
+- **I75WR** — all 3 configs off → PAPER (persisted in `backtest_data/intraday_75wr_mode_overrides.json`).
+  Jobs were registered all along but every config sat at mode=off, so its DB is empty to date.
+- **Pairs** — off → PAPER. `/api/pair_trading/toggle-mode` only patches the running process, so
+  `config.py PAIR_TRADING_DEFAULTS['enabled']` was flipped to True as well (survives restart).
+- **N500M** — already PAPER and trading since 08 May: 31 closed trades / 25 sessions / 58% win /
+  **+₹13,852**. Nothing to enable.
+- **NWV** — already running as a paper book (`services/nwv_trade.py`, JSON state).
+- Sidebar: new **Live** section (NAS, Straddles) above Paper Books; NWV / N500M / MST / I75WR /
+  Pairs moved into Paper Books. Register updated to match (23 systems).
+
+PENDING — **MST cannot be enabled yet.** Every boot logs
+`[MST] State RESTORED from 6 open legs → state=DEBIT_OPEN_L1 direction=1 L1_anchor=24450
+expiry=2026-05-19`. Those legs are from 07 May on an expiry three months dead; switching mode to
+paper would have the engine manage phantom legs on an expired series and produce garbage marks.
+TO FIX: close out the 6 stale rows in `mst_positions` (mark CLOSED with a note — do not delete the
+07 May record), reset the engine state to FLAT, then `POST /api/mst/toggle-mode {"mode":"paper"}`
+(that route is `@login_required`, so it needs a browser session or a cookie).
+
+ALSO PENDING — **N500M page shows today only.** The 25-session history sits in `n500m_positions`
+and `n500m_equity` is empty (0 rows), so there is no equity curve. Worth surfacing past trades +
+a cumulative curve on `/app/n500m` the way the other paper books do.
+
 ## ✅ 2026-08-17 — Strategies page → register of live / paper / parked systems (SHIPPED)
 
 Arun picked mocks **A (Register)** and **C (Spec)** — both built at `/app/strategies` behind a

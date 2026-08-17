@@ -140,59 +140,10 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/nas"
-            icon={<IconLayers />}
-            label="NAS"
-            active={active === 'nas'}
-            collapsed={collapsed}
-          />
-          <NavItem
             to="/nas-config"
             icon={<IconSettings />}
             label="NAS Config"
             active={active === 'nas-config'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/straddles"
-            icon={<IconLayers />}
-            label="Straddles"
-            active={active === 'straddles'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/nwv"
-            icon={<IconLayers />}
-            label="NWV"
-            active={active === 'nwv'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/n500m"
-            icon={<IconLayers />}
-            label="N500M"
-            active={active === 'n500m'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/mst"
-            icon={<IconLayers />}
-            label="MST"
-            active={active === 'mst'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/intraday75wr"
-            icon={<IconLayers />}
-            label="I75WR"
-            active={active === 'intraday75wr'}
-            collapsed={collapsed}
-          />
-          <NavItem
-            to="/pair-trading"
-            icon={<IconLayers />}
-            label="Pairs"
-            active={active === 'pair-trading'}
             collapsed={collapsed}
           />
           <NavItem
@@ -228,6 +179,26 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLightbulb />}
             label="Future plans"
             active={active === 'future-plans'}
+            collapsed={collapsed}
+          />
+        </nav>
+      </div>
+
+      <div className={styles.section}>
+        {!collapsed && <div className={styles.sectionLabel}>Live</div>}
+        <nav className={styles.nav}>
+          <NavItem
+            to="/nas"
+            icon={<IconLayers />}
+            label="NAS"
+            active={active === 'nas'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/straddles"
+            icon={<IconLayers />}
+            label="Straddles"
+            active={active === 'straddles'}
             collapsed={collapsed}
           />
         </nav>
@@ -276,6 +247,41 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconBarChart />}
             label="ORB Cash"
             active={active === 'orb'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/nwv"
+            icon={<IconLayers />}
+            label="NWV"
+            active={active === 'nwv'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/n500m"
+            icon={<IconLayers />}
+            label="N500M"
+            active={active === 'n500m'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/mst"
+            icon={<IconLayers />}
+            label="MST"
+            active={active === 'mst'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/intraday75wr"
+            icon={<IconLayers />}
+            label="I75WR"
+            active={active === 'intraday75wr'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/pair-trading"
+            icon={<IconLayers />}
+            label="Pairs"
+            active={active === 'pair-trading'}
             collapsed={collapsed}
           />
         </nav>
