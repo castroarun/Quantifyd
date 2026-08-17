@@ -1580,9 +1580,11 @@ export default function Nas() {
     if (!b) return { state: null, err: null };
     if (b.state === 'OPEN' && b.ce_sym) {
       const thr = (b.credit && b.sl) ? Math.round((1 + b.sl / 100) * b.credit) : null;
+      const curComb = (Number(b.ce_last) || 0) + (Number(b.pe_last) || 0);
+      const armTxt = thr != null ? `${curComb.toFixed(1)} · ${thr}` : undefined;
       const mk = (leg: string, sym: string, e: number, l: number): any => ({
         leg, tradingsymbol: sym, strike: b.K, qty, entry_price: e, ltp: l,
-        mode: b.live ? 'live' : 'paper', entry_time: b.entry_ts, status: 'ACTIVE', sl_price: thr,
+        mode: b.live ? 'live' : 'paper', entry_time: b.entry_ts, status: 'ACTIVE', sl_price: thr, arm_text: armTxt,
       });
       return { state: { positions: { ce: [mk('CE', b.ce_sym, b.ce0, b.ce_last)], pe: [mk('PE', b.pe_sym, b.pe0, b.pe_last)], closed_today: [] } } as any, err: null };
     }
@@ -2067,6 +2069,7 @@ interface TBRow {
   inTime: string;        // entry time HH:MM
   outTime: string;       // exit time HH:MM ('' while open)
   arm: number | null;    // exit/SL monitoring trigger value (premium) while open
+  arm_text?: string;     // custom ARM display (sleeve combined-SL: current premium · exit level)
   armLive?: boolean;     // ticker actually subscribed/watching this leg right now
   armLo?: number;        // move-stop systems: NIFTY level below which BOTH legs close + re-center
   armHi?: number;        // move-stop systems: NIFTY level above which BOTH legs close + re-center
@@ -2144,6 +2147,7 @@ function buildTradeBook(
         inTime: formatLegTime(p.entry_time) ?? '',
         outTime: open ? '' : (formatLegTime(p.exit_time) ?? ''),
         arm: open ? (p.sl_price ?? null) : null,
+        arm_text: (p as any).arm_text,
         armLive: open ? p.arm_live : undefined,
         armLo: band ? (eSpot as number) * (1 - (msPct as number)) : undefined,
         armHi: band ? (eSpot as number) * (1 + (msPct as number)) : undefined,
@@ -2173,6 +2177,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   basis: 'per2' | 'raw';
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
+  const [liveOnly, setLiveOnly] = useState(false);
   const { spot } = useLiveTicks();   // live NIFTY -- distance to the move-stop band
   // ST-trail value for naked-survivor legs (sl_price sentinel 999999) — from the ticker.
   const [stTrail, setStTrail] = useState<Record<string, number>>({});
@@ -2195,7 +2200,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     const id = setInterval(load, 5000);
     return () => { on = false; clearInterval(id); };
   }, []);
-  const rows = buildTradeBook(systems, states, liveLegs, basis);
+  const rows = buildTradeBook(systems, states, liveLegs, basis).filter((r) => !liveOnly || r.mode === 'live');
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -2249,6 +2254,13 @@ function TradeBook({ systems, states, liveLegs, basis }: {
               {m === 'system' ? 'By system' : m === 'family' ? 'By family' : 'All together'}
             </button>
           ))}
+          <label
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--text-xs)', color: liveOnly ? '#ef4444' : 'var(--ink-muted)', cursor: 'pointer', marginLeft: 8, fontWeight: liveOnly ? 700 : 400 }}
+            title="Show only real-money (LIVE) legs; hide the paper systems"
+          >
+            <input type="checkbox" checked={liveOnly} onChange={(e) => setLiveOnly(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#ef4444' }} />
+            LIVE only
+          </label>
         </div>
       </div>
 
@@ -2334,6 +2346,14 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                     {r.entry != null ? r.entry.toFixed(1) : '—'} → {r.exit != null ? r.exit.toFixed(1) : '—'}
                   </span>
                   {(() => {
+                    if (r.open && r.arm_text) {
+                      return (
+                        <span style={{ color: '#d29922', whiteSpace: 'nowrap' }}
+                          title="Combined premium now · combined-SL exit level — the whole straddle exits when CE+PE reaches it">
+                          {r.arm_text}
+                        </span>
+                      );
+                    }
                     // Move-stop systems (ATM2 / OTM): the enforced arm is a NIFTY level, not a
                     // premium. Show the band that actually closes BOTH legs and re-centers.
                     if (r.open && r.armLo != null && r.armHi != null) {
