@@ -136,6 +136,9 @@ CFG = dict(
                               # (growth-style; cleaner than
                                 # LIQUIDBEES which pays daily fractional-unit dividends)
     sweep_min=25_000,         # don't bother sweeping less than this
+    sweep_yield_actual=0.052,  # MEASURED 2026-08-17: CASHIETF 5.18% p.a. since listing, LIQUIDCASE
+                              # 5.16%. The 6.5% in cash_yield is a backtest assumption that
+                              # overstates real liquid-ETF returns by ~130bps — do not show it live.
     live_cash_sweep=True,     # ON 2026-08-16. Idle cash is stop-out cash awaiting the month-end
                               # rebalance (research/108 says do NOT redeploy it early), so it should
                               # at least EARN. Buy/sell orders are implemented; unsweep() caps the
@@ -612,6 +615,7 @@ def sweep_idle_cash():
     cost = px * qty
     _set("cash", _cash() - cost)
     _set("sweep_units", _sweep_units() + qty)
+    _set("sweep_cost", float(_get("sweep_cost", 0.0) or 0.0) + cost)   # cost basis -> real gain
     _set("sweep_last_px", px)
     logger.warning(f"[MP-SWEEP] parked Rs{cost:,.0f} in {CFG['sweep_symbol']} ({qty} @ {px:.2f})")
     return dict(qty=qty, price=px, value=cost)
@@ -638,7 +642,11 @@ def unsweep(amount=None):
             _alert("SWEEP SELL FAILED — CASH MAY BE SHORT", str(e), "high"); return None
     proceeds = px * qty
     _set("cash", _cash() + proceeds)
-    _set("sweep_units", max(0.0, _sweep_units() - qty))
+    _u_before = _sweep_units()
+    _set("sweep_units", max(0.0, _u_before - qty))
+    # retire the cost basis proportionally, so the remaining units keep an honest gain
+    _c = float(_get("sweep_cost", 0.0) or 0.0)
+    _set("sweep_cost", max(0.0, _c * (max(0.0, _u_before - qty) / _u_before)) if _u_before else 0.0)
     _set("sweep_last_px", px)
     logger.warning(f"[MP-SWEEP] released Rs{proceeds:,.0f} from {CFG['sweep_symbol']}")
     return dict(qty=qty, price=px, value=proceeds)
@@ -1076,7 +1084,10 @@ def daily_job(panel=None):
     # one trading-day of liquid-fund yield on idle/risk-off cash (LIQUIDCASE @6.5% p.a.)
     # Modelled liquid-fund yield. In LIVE this is only real if the cash is actually swept into
     # LIQUIDCASE — until that is implemented, accrue nothing so live NAV stays honest.
-    _yield = 0.0 if (_is_live() and not CFG["live_cash_sweep"]) else CFG["cash_yield"]
+    # PAPER only. In LIVE the idle cash is really in CASHIETF and its return arrives as the ETF
+    # price rising inside _sweep_value() — accruing a modelled yield on top would invent rupees
+    # that do not exist at the broker and drift NAV upward on fictional money.
+    _yield = 0.0 if _is_live() else CFG["cash_yield"]
     if _cash() > 0 and _yield > 0:
         new_cash = _cash() * (1 + _yield) ** (1 / 252)
         _set("interest_earned", round(_get("interest_earned", 0.0) + (new_cash - _cash()), 2))
@@ -1327,13 +1338,20 @@ def get_state():
         total_return_pct=round((nav / cap - 1) * 100, 2) if cap else 0,
         unrealized=round(equity - sum(p["invested"] for p in pos.values())),
         realized_net=round(realized), n_holdings=n_stocks,
-        interest_earned=round(_get("interest_earned", 0.0)), cash_yield_pct=CFG["cash_yield"] * 100,
+        # in LIVE the "interest" IS the ETF's gain; the modelled accrual is paper-only and always 0
+        interest_earned=(round(_sweep_value() - float(_get("sweep_cost", 0.0) or 0.0))
+                         if (_is_live() and _sweep_units()) else round(_get("interest_earned", 0.0))),
+        cash_yield_pct=(CFG["sweep_yield_actual"] * 100 if _is_live() else CFG["cash_yield"] * 100),
         stcg_unbooked=round(stcg_open), stcg_booked=round(stcg_booked),
         last_daily=_get("last_daily"), last_weekly=_get("last_weekly"),
         last_monthly=_get("last_monthly"),
         data_asof=(close.index[-1].date().isoformat() if close is not None else None),
         idle_cash=round(cash), idle_pct=round(cash / nav * 100, 1) if nav else 0,
         days_to_rebalance=_days_to_rebalance(),
+        # ledger cash vs money parked in the ETF — the KPI strip showed one blended "CASH"
+        # figure, so it looked like 26% was sitting idle when almost all of it was in CASHIETF
+        ledger_cash=round(_cash()), swept_value=round(_sweep_value()),
+        sweep_gain=round(_sweep_value() - float(_get("sweep_cost", 0.0) or 0.0)) if _sweep_units() else 0,
         sweep=dict(enabled=CFG["live_cash_sweep"], symbol=CFG["sweep_symbol"],
                    units=round(_sweep_units(), 2), value=round(_sweep_value())),
         cash_reserve=round(nav * CFG["cash_reserve_pct"]),

@@ -39,6 +39,7 @@ type State = {
   holdings: Holding[]; navcurve: NavPt[]; closed: Closed[]; rules: [string, string, string][];
   hedge: Hedge; hedge_closed: HedgeClosed[];
   idle_cash: number; idle_pct: number; days_to_rebalance: number; cash_reserve: number;
+  ledger_cash?: number; swept_value?: number; sweep_gain?: number;
   sweep: { enabled: boolean; symbol: string; units: number; value: number };
 };
 
@@ -136,11 +137,13 @@ export default function MomentumPaper() {
         <Kpi label="NAV" value={lakh(s.nav)} tone="" />
         <Kpi label="Total return" value={pct(s.total_return_pct)} tone={retPos ? 'pos' : 'neg'} />
         <Kpi label="Invested" value={s.invested_pct.toFixed(0) + '%'} tone="" />
-        <Kpi label="Cash" value={lakh(s.cash)} tone="" />
+        <Kpi label={s.swept_value ? `Cash (${lakh(s.swept_value)} in ${s.sweep?.symbol || 'ETF'})` : 'Cash'}
+             value={lakh(s.cash)} tone="" />
         <Kpi label="Holdings" value={String(s.n_holdings)} tone="" />
         <Kpi label="Unrealized" value={inr(s.unrealized)} tone={s.unrealized >= 0 ? 'pos' : 'neg'} />
         <Kpi label="Realized (net)" value={inr(s.realized_net)} tone={s.realized_net >= 0 ? 'pos' : 'neg'} />
-        <Kpi label={`Liquid yield @${s.cash_yield_pct}%`} value={inr(s.interest_earned)} tone="pos" />
+        <Kpi label={`${s.sweep?.symbol || 'Liquid'} yield @${s.cash_yield_pct}%`}
+             value={inr(s.interest_earned)} tone={s.interest_earned >= 0 ? 'pos' : 'neg'} />
       </div>
 
       {/* Holdings — includes the LIQUIDCASE parked-cash row, treated like any holding */}
