@@ -958,20 +958,20 @@ class NasTicker:
             # a single print above it used to be enough to close the leg.
             _stv = getattr(self, '_atm_naked_st_val', None)
             if _stv is not None and ltp > _stv:
-                self_atm_breach_ticks = getattr(self, '_atm_breach_ticks', 0) + 1
-                if self_atm_breach_ticks >= NAKED_TRAIL_CONFIRM_TICKS:
+                self._atm_breach_ticks = getattr(self, '_atm_breach_ticks', 0) + 1
+                if self._atm_breach_ticks >= NAKED_TRAIL_CONFIRM_TICKS:
                     logger.warning(
                         f"[NAS-ATM] TRAIL EXIT: live {ltp:.1f} > stop {_stv:.1f} "
-                        f"for {self_atm_breach_ticks} consecutive ticks")
+                        f"for {self._atm_breach_ticks} consecutive ticks")
                     self._atm_naked_st_val = None
-                    self_atm_breach_ticks = 0
+                    self._atm_breach_ticks = 0
                     threading.Thread(target=self._fire_atm_st_exit, daemon=True).start()
                 else:
                     logger.info(
-                        f"[NAS-ATM] trail breach {self_atm_breach_ticks}/{NAKED_TRAIL_CONFIRM_TICKS} "
+                        f"[NAS-ATM] trail breach {self._atm_breach_ticks}/{NAKED_TRAIL_CONFIRM_TICKS} "
                         f"(live {ltp:.1f} > stop {_stv:.1f}) -- not confirmed yet")
             elif _stv is not None:
-                self_atm_breach_ticks = 0   # back below the stop -> start the count again
+                self._atm_breach_ticks = 0   # back below the stop -> start the count again
 
     def _check_atm_st_exit(self):
         """Exit the naked ATM leg if its premium closed above the trailing stop."""
@@ -1342,20 +1342,20 @@ class NasTicker:
             # a single print above it used to be enough to close the leg.
             _stv = getattr(self, '_atm4_naked_st_val', None)
             if _stv is not None and ltp > _stv:
-                self_atm4_breach_ticks = getattr(self, '_atm4_breach_ticks', 0) + 1
-                if self_atm4_breach_ticks >= NAKED_TRAIL_CONFIRM_TICKS:
+                self._atm4_breach_ticks = getattr(self, '_atm4_breach_ticks', 0) + 1
+                if self._atm4_breach_ticks >= NAKED_TRAIL_CONFIRM_TICKS:
                     logger.warning(
                         f"[NAS-ATM4] TRAIL EXIT: live {ltp:.1f} > stop {_stv:.1f} "
-                        f"for {self_atm4_breach_ticks} consecutive ticks")
+                        f"for {self._atm4_breach_ticks} consecutive ticks")
                     self._atm4_naked_st_val = None
-                    self_atm4_breach_ticks = 0
+                    self._atm4_breach_ticks = 0
                     threading.Thread(target=self._fire_atm4_st_exit, daemon=True).start()
                 else:
                     logger.info(
-                        f"[NAS-ATM4] trail breach {self_atm4_breach_ticks}/{NAKED_TRAIL_CONFIRM_TICKS} "
+                        f"[NAS-ATM4] trail breach {self._atm4_breach_ticks}/{NAKED_TRAIL_CONFIRM_TICKS} "
                         f"(live {ltp:.1f} > stop {_stv:.1f}) -- not confirmed yet")
             elif _stv is not None:
-                self_atm4_breach_ticks = 0   # back below the stop -> start the count again
+                self._atm4_breach_ticks = 0   # back below the stop -> start the count again
 
     def _check_atm4_st_exit(self):
         """Exit the naked V4 leg if its premium closed above the trailing stop."""
