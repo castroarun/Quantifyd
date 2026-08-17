@@ -1,6 +1,6 @@
 # Fresh-Deposit Deployment Timing — When Should New Cash Enter the Momentum Book?
 
-STATUS: RUNNING
+STATUS: DONE
 
 ## 1. The Ask
 
@@ -57,6 +57,8 @@ If the gate is risk-OFF every arm parks (matches the live code).
 | Date/time | Event | Notes |
 |---|---|---|
 | 2026-08-14 14:40 IST | Folder + STATUS written, study launched | 48 paths |
+| 2026-08-14 14:47 IST | All 48 paths complete | immediate_topup wins 12/12 |
+| 2026-08-14 14:52 IST | RESULTS.md written, verdict SIGNAL | see results/RESULTS.md |
 
 ## 6. Crash Recovery
 
@@ -79,4 +81,23 @@ If the gate is risk-OFF every arm parks (matches the live code).
 
 ## 8. Findings
 
-Pending.
+**VERDICT: SIGNAL — deploy fresh deposits IMMEDIATELY as an EVEN top-up of names already HELD.**
+
+| Policy | med gain_x | med MaxDD | beats park |
+|---|---|---|---|
+| park (was live default) | 1.566 | -22.8% | 0/12 |
+| weekly | 1.531 | -22.2% | 1/12 |
+| immediate (slot-fill first) | 1.560 | -22.4% | 3/12 |
+| **immediate_topup (held names only)** | **1.579** | -22.5% | **12/12** |
+
+Mechanism, and it RECONCILES r/108 rather than contradicting it: filling EMPTY SLOTS fast loses
+(those slots are empty because those names were stopped out — the false-dawn penalty), but topping
+up names already HELD wins (they survived the Donchian, so they are positively selected). Unifying
+rule: **deploy fresh cash into what is working; never rush it into what just broke.**
+
+Effect is small and honestly stated: +0.8% terminal over 15.6y (~5bps/yr). The 12 phases share one
+price history, so 12/12 is a consistent DIRECTION, not 12 independent trials. Tiebreaker, not a
+return driver.
+
+The live `immediate` deposit mode already implements the winner (equal rupee across existing
+positions only, no slot filling). Owed: make `immediate` the DEFAULT when the gate is risk-ON.
