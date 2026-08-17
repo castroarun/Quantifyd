@@ -2110,11 +2110,10 @@ function buildTradeBook(
 ): TBRow[] {
   const rows: TBRow[] = [];
   for (const sys of systems) {
-    const st = states[sys.id]?.state as any;
-    const pos = st?.positions;
+    const pos = states[sys.id]?.state?.positions;
     if (!pos) {
-      if (st?.planned) {
-        const pl = st.planned;
+      const pl = (states[sys.id]?.state as any)?.planned;
+      if (pl) {
         rows.push({ sysId: sys.id, sysLabel: sys.label, family: sys.group, side: '—', strike: null,
           qty: pl.qty ?? 0, entry: null, exit: null, pnl: 0, open: false,
           reason: `PLANNED · SL${pl.sl}`, inTime: pl.entry ?? '', outTime: pl.exit ?? '',
