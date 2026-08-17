@@ -160,7 +160,7 @@ export default function MomentumPaper() {
                 <tr key={h.symbol} className={h.is_cash ? styles.cashRow : ''}>
                   <td className={styles.sym}>
                     {h.symbol}
-                    {h.is_cash && <span className={styles.cashTag}>liquid fund @6.5%</span>}
+                    {h.is_cash && <span className={styles.cashTag}>liquid fund @{h.pnl_pct}%</span>}
                   </td>
                   <td>{h.weight}%</td>
                   <td className={styles.muted}>{h.entry_date}</td>

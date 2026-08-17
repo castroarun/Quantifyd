@@ -616,6 +616,8 @@ def sweep_idle_cash():
     _set("cash", _cash() - cost)
     _set("sweep_units", _sweep_units() + qty)
     _set("sweep_cost", float(_get("sweep_cost", 0.0) or 0.0) + cost)   # cost basis -> real gain
+    if not _get("sweep_since"):        # opened a fresh position -> start the holding clock today
+        _set("sweep_since", _dt.date.today().isoformat())
     _set("sweep_last_px", px)
     logger.warning(f"[MP-SWEEP] parked Rs{cost:,.0f} in {CFG['sweep_symbol']} ({qty} @ {px:.2f})")
     return dict(qty=qty, price=px, value=cost)
@@ -647,6 +649,8 @@ def unsweep(amount=None):
     # retire the cost basis proportionally, so the remaining units keep an honest gain
     _c = float(_get("sweep_cost", 0.0) or 0.0)
     _set("sweep_cost", max(0.0, _c * (max(0.0, _u_before - qty) / _u_before)) if _u_before else 0.0)
+    if _sweep_units() <= 0:            # flat again -> next buy restarts the holding clock
+        _set("sweep_since", "")
     _set("sweep_last_px", px)
     logger.warning(f"[MP-SWEEP] released Rs{proceeds:,.0f} from {CFG['sweep_symbol']}")
     return dict(qty=qty, price=px, value=proceeds)
@@ -1294,13 +1298,20 @@ def get_state():
     holdings.sort(key=lambda x: -x["value"])
     # idle/risk-off cash shown AS A HOLDING — parked in LIQUIDCASE (liquid fund @6.5%)
     if cash > 1000:
-        _incep = _get("inception") or date.today().isoformat()
+        # Date the ETF was actually BOUGHT — not the book's inception. Showing inception made a
+        # position opened today read as 7 days old. When nothing is swept this is plain cash, which
+        # has no entry date or holding period at all.
+        _u = _sweep_units()
+        _since = (_get("sweep_since") or "") if _u else ""
+        _gain = (_sweep_value() - float(_get("sweep_cost", 0.0) or 0.0)) if _u else 0.0
         holdings.insert(0, dict(
-            symbol=CFG["sweep_symbol"], qty=None, entry_date=_incep[:10], entry_price=None,
+            symbol=CFG["sweep_symbol"], qty=(round(_u, 2) if _u else None),
+            entry_date=(_since[:10] if _since else None), entry_price=None,
             price=None, value=round(cash), weight=round(cash / nav * 100, 1) if nav else 0,
-            pnl=round(_get("interest_earned", 0.0)),
-            pnl_pct=round(CFG["cash_yield"] * 100, 1), is_cash=True,
-            days=(date.today() - date.fromisoformat(_incep[:10])).days,
+            pnl=round(_gain if _is_live() else _get("interest_earned", 0.0)),
+            pnl_pct=round((CFG["sweep_yield_actual"] if _is_live() else CFG["cash_yield"]) * 100, 1),
+            is_cash=True,
+            days=((date.today() - date.fromisoformat(_since[:10])).days if _since else 0),
             stop=None, stop_dist_pct=None))
     navcurve = [dict(d=r["d"], nav=round(r["nav"]), bench=r["bench_close"], gate=r["gate"])
                 for r in _conn().execute("SELECT * FROM mp_nav ORDER BY d")]
