@@ -148,6 +148,12 @@ const NAS_OPT_DEF: SystemDef = {
   group: '916',
 };
 
+// COMB + TimeB sleeves in the Trade Book (after the 9:16 systems, before NAS-OPT).
+const SLEEVE_TB_DEFS: SystemDef[] = [
+  { id: 'csl-comb', key: 'csl-comb', label: 'COMB · combined-SL', subtitle: 'full-day CSL sleeve', rules: '', configNote: 'live · sec-16', group: '916' },
+  { id: 'csl-timeb', key: 'csl-timeb', label: 'TimeB · time-windows', subtitle: 'time-blocked sleeve', rules: '', configNote: 'live · sec-18b 6L', group: '916' },
+];
+
 // Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
 function nasOptTradeBookState(today: any, trades: any[]): NASState {
   const QTY = 130; // lots_per_leg 2 × 65
@@ -1564,6 +1570,29 @@ export default function Nas() {
   const sleeveStatus = (info: any): 'live' | 'paper' | 'closed' | 'off' =>
     info.state === 'CLOSED' ? 'closed' : info.src === 'live' ? 'live'
       : info.src === 'paper' ? 'paper' : (marketOpen ? 'paper' : 'off');
+  // Trade-Book state for a sleeve: OPEN -> CE/PE legs; WAIT_ENTRY -> planned window (by today's DTE).
+  const TB_WIN: Record<string, Record<number, [string, string, number]>> = {
+    NAS_COMB20: { 0: ['09:16', '15:20', 25], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 20] },
+    CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 1: ['13:00', '14:00', 20], 2: ['10:00', '12:00', 20], 3: ['09:16', '15:20', 20] },
+  };
+  const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
+    const b: any = cslLive?.books?.[bk];
+    if (!b) return { state: null, err: null };
+    if (b.state === 'OPEN' && b.ce_sym) {
+      const thr = (b.credit && b.sl) ? Math.round((1 + b.sl / 100) * b.credit) : null;
+      const mk = (leg: string, sym: string, e: number, l: number): any => ({
+        leg, tradingsymbol: sym, strike: b.K, qty, entry_price: e, ltp: l,
+        mode: b.live ? 'live' : 'paper', entry_time: b.entry_ts, status: 'ACTIVE', sl_price: thr,
+      });
+      return { state: { positions: { ce: [mk('CE', b.ce_sym, b.ce0, b.ce_last)], pe: [mk('PE', b.pe_sym, b.pe0, b.pe_last)], closed_today: [] } } as any, err: null };
+    }
+    const dte = cslLive?.books?.NAS_COMB20?.dte;   // COMB is open first, so it carries today's DTE
+    const w = (dte != null && TB_WIN[bk]) ? TB_WIN[bk][dte] : null;
+    if (b.state === 'WAIT_ENTRY' && w) {
+      return { state: { planned: { entry: w[0], exit: w[1], sl: w[2], qty, mode: b.live === false ? 'paper' : 'live' } } as any, err: null };
+    }
+    return { state: null, err: null };
+  };
   // Merge the sleeve intraday series into the Overall curve (convert HH:MM -> ISO to match mtm).
   const sleevePts: MtmPoint[] = useMemo(() => {
     const day = cslLive?.day;
@@ -1853,8 +1882,8 @@ export default function Nas() {
           restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
-          systems={[...ENTRY_916_SYSTEMS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb }}
+          systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 390) }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />
@@ -2081,8 +2110,18 @@ function buildTradeBook(
 ): TBRow[] {
   const rows: TBRow[] = [];
   for (const sys of systems) {
-    const pos = states[sys.id]?.state?.positions;
-    if (!pos) continue;
+    const st = states[sys.id]?.state as any;
+    const pos = st?.positions;
+    if (!pos) {
+      if (st?.planned) {
+        const pl = st.planned;
+        rows.push({ sysId: sys.id, sysLabel: sys.label, family: sys.group, side: '—', strike: null,
+          qty: pl.qty ?? 0, entry: null, exit: null, pnl: 0, open: false,
+          reason: `PLANNED · SL${pl.sl}`, inTime: pl.entry ?? '', outTime: pl.exit ?? '',
+          arm: null, mode: pl.mode ?? 'live' });
+      }
+      continue;
+    }
     const push = (p: NASPosition, open: boolean) => {
       const entry = (p.entry_price ?? p.entry_premium) ?? null;
       const ltp = open
