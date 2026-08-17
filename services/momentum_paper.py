@@ -117,7 +117,11 @@ CFG = dict(
     live_slippage_alert=0.01,  # log a SLIPPAGE alert if |fill − expected| exceeds 1% of expected
     live_rebalance_trim=False,
     # ── PUT HEDGE (research/105: bi-weekly 2x is the best tenor/ratio) ──
-    hedge_enabled=False,      # NOT VIABLE at Rs3L: one NIFTY lot is Rs16L notional = 5.3x this
+    hedge_enabled=False,      # NOT VIABLE yet — one NIFTY lot (75 x spot) is ~Rs18L of notional,
+                              # so a 2x-of-equity hedge needs ~Rs9.1L of equity (~Rs12.4L capital
+                              # at ~74% invested) before it lands on a whole lot. Below that the
+                              # only choice is a large over-hedge. Live maths on the /app page.
+                              # (was: NOT VIABLE at Rs3L: one NIFTY lot is Rs16L notional = 5.3x this
                               # book. Needs ~Rs8L equity to size to one lot. Until then the book
                               # runs the cash-exit gate, which beat the hedge over the full cycle.       # at a risk-off gate: hold the stocks + buy NIFTY puts instead of selling
     hedge_ratio=2.0,          # put notional = 2.0 x equity value
@@ -686,6 +690,59 @@ def _hedge_clear():
 def _nifty_spot():
     q = _kite().quote(["NSE:NIFTY 50"])
     return float(q["NSE:NIFTY 50"]["last_price"])
+
+
+def _nifty_spot_cached(max_age_s=900):
+    """Spot for DISPLAY maths only. get_state() runs on every page load and poll, so an uncached
+    Kite call there would add latency and fail outright on a stale token. Never use this for order
+    sizing — call _nifty_spot() directly for that."""
+    import time as _t
+    try:
+        ts = float(_get("nifty_spot_ts", 0.0) or 0.0)
+        px = float(_get("nifty_spot_px", 0.0) or 0.0)
+    except Exception:
+        ts, px = 0.0, 0.0
+    if px > 0 and (_t.time() - ts) < max_age_s:
+        return px
+    try:
+        px = _nifty_spot()
+        _set("nifty_spot_px", px); _set("nifty_spot_ts", _t.time())
+    except Exception:
+        pass                      # keep the stale value rather than showing nothing
+    return px
+
+
+NIFTY_LOT = 75                    # NSE NIFTY F&O lot size
+
+
+def _hedge_viability(equity, nav):
+    """Can a 2x-of-equity NIFTY put hedge be sized to a WHOLE lot at today's book size?
+
+    Below one lot the only options are no hedge, or one lot that massively over-hedges — which is
+    the research/105 failure mode: as stocks stop out the fixed put position becomes a net-short
+    directional bet rather than a hedge."""
+    spot = _nifty_spot_cached()
+    if not spot or not equity:
+        return None
+    ratio = CFG["hedge_ratio"]
+    lot_notional = spot * NIFTY_LOT
+    lots = (equity * ratio) / lot_notional
+    equity_needed = lot_notional / ratio
+    invested_frac = (equity / nav) if nav else 0.0
+    capital_needed = (equity_needed / invested_frac) if invested_frac else None
+    return dict(
+        enabled=CFG["hedge_enabled"], ratio=ratio, lot=NIFTY_LOT,
+        spot=round(spot, 1), lot_notional=round(lot_notional),
+        equity=round(equity), target_notional=round(equity * ratio),
+        lots_needed=round(lots, 2), viable=lots >= 1.0,
+        over_hedge_x=round(lot_notional / equity, 1) if equity else None,
+        equity_for_one_lot=round(equity_needed),
+        capital_needed=(round(capital_needed) if capital_needed else None),
+        capital_now=round(float(_get("capital", CFG["capital"]))),
+        shortfall=(round(max(0.0, capital_needed - float(_get("capital", CFG["capital"]))))
+                   if capital_needed else None),
+        dte_target=CFG["hedge_dte_target"],
+    )
 
 
 def _opt_ltp(tsym):
@@ -1361,6 +1418,7 @@ def get_state():
         days_to_rebalance=_days_to_rebalance(),
         # ledger cash vs money parked in the ETF — the KPI strip showed one blended "CASH"
         # figure, so it looked like 26% was sitting idle when almost all of it was in CASHIETF
+        hedge_viability=_hedge_viability(equity, nav),
         ledger_cash=round(_cash()), swept_value=round(_sweep_value()),
         sweep_gain=round(_sweep_value() - float(_get("sweep_cost", 0.0) or 0.0)) if _sweep_units() else 0,
         sweep=dict(enabled=CFG["live_cash_sweep"], symbol=CFG["sweep_symbol"],
@@ -1386,7 +1444,9 @@ def _held_weak_first():
     return sorted(list(_positions()), key=lambda s: score.get(s, -9)), score
 
 
-def cash_deposit(amount, mode="park", dry_run=True):
+def cash_deposit(amount, mode="immediate", dry_run=True):
+    # default = immediate even top-up of names already HELD (research/112: beat parking on
+    # 12/12 deposit calendars). Falls back to park by itself when the gate is risk-OFF.
     """Add funds. mode='park' (default) -> liquid, deploys at the next rebalance. mode='immediate' ->
     equal-rupee top-up across current holdings IF the gate is risk-on (else parks). Returns the plan;
     executes only when dry_run is False. Works in paper and (when live) via real orders."""
@@ -1526,7 +1586,7 @@ def register(app, scheduler):
     app.add_url_rule("/api/momentum-paper/deposit", "mp_deposit", methods=["POST"],
                      view_func=lambda: jsonify(cash_deposit(
                          (request.get_json(silent=True) or {}).get("amount"),
-                         (request.get_json(silent=True) or {}).get("mode", "park"),
+                         (request.get_json(silent=True) or {}).get("mode", "immediate"),  # research/112 winner
                          bool((request.get_json(silent=True) or {}).get("dry_run", True)))))
     app.add_url_rule("/api/momentum-paper/withdraw", "mp_withdraw", methods=["POST"],
                      view_func=lambda: jsonify(cash_withdraw(

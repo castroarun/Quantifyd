@@ -40,6 +40,12 @@ type State = {
   hedge: Hedge; hedge_closed: HedgeClosed[];
   idle_cash: number; idle_pct: number; days_to_rebalance: number; cash_reserve: number;
   ledger_cash?: number; swept_value?: number; sweep_gain?: number;
+  hedge_viability?: {
+    enabled: boolean; ratio: number; lot: number; spot: number; lot_notional: number;
+    equity: number; target_notional: number; lots_needed: number; viable: boolean;
+    over_hedge_x: number | null; equity_for_one_lot: number; capital_needed: number | null;
+    capital_now: number; shortfall: number | null; dte_target: number;
+  } | null;
   sweep: { enabled: boolean; symbol: string; units: number; value: number };
 };
 
@@ -505,7 +511,7 @@ function HedgePanel({ s }: { s: State }) {
         <span style={{
           marginLeft: 10, padding: '2px 9px', borderRadius: 5, fontSize: 11, fontWeight: 700,
           color: '#fff', background: h ? '#c0392b' : '#39424e',
-        }}>{h ? 'HEDGE ACTIVE' : 'NOT HEDGED'}</span>
+        }}>{h ? 'HEDGE ACTIVE' : (s.hedge_viability && !s.hedge_viability.viable ? 'NOT VIABLE YET' : 'NOT HEDGED')}</span>
       </div>
       {h ? (
         <>
@@ -529,6 +535,41 @@ function HedgePanel({ s }: { s: State }) {
             : 'Gate is risk-OFF but no hedge is open — check the alert email (premium may have exceeded the cash or the 6%-of-NAV cap).'}
         </div>
       )}
+      {!h && s.hedge_viability && !s.hedge_viability.viable && (() => {
+        const v = s.hedge_viability!;
+        const progress = v.capital_needed ? Math.min(100, (v.capital_now / v.capital_needed) * 100) : 0;
+        return (
+          <div style={{ marginTop: 12, ...box }}>
+            <div style={{ fontWeight: 650, marginBottom: 6 }}>
+              Why it is not running yet — one NIFTY lot is bigger than this book
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 8, marginBottom: 10 }}>
+              <div>1 lot ({v.lot} × {v.spot.toLocaleString('en-IN')})<div><b>{lakh(v.lot_notional)}</b> of notional</div></div>
+              <div>Book equity<div><b>{lakh(v.equity)}</b></div></div>
+              <div>{v.ratio}× target<div><b>{lakh(v.target_notional)}</b></div></div>
+              <div>Lots that buys<div><b style={{ color: '#c0392b' }}>{v.lots_needed}</b> — must be a whole 1</div></div>
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-muted,#888)', marginBottom: 10, lineHeight: 1.55 }}>
+              Buying one lot anyway would hedge <b>{v.over_hedge_x}× equity</b>, not {v.ratio}×. That is the
+              research/105 failure: as holdings stop out the fixed put position stops being a hedge and becomes
+              a net-short directional bet. So the book stays unhedged until a whole lot fits.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
+              <span>Capital now <b>{lakh(v.capital_now)}</b></span>
+              <span>Hedge unlocks at <b>{v.capital_needed ? lakh(v.capital_needed) : '—'}</b>
+                {v.shortfall ? <span style={{ color: '#c0392b' }}> · {lakh(v.shortfall)} to go</span> : null}</span>
+            </div>
+            <div style={{ height: 7, borderRadius: 4, background: 'var(--hairline,rgba(0,0,0,0.10))', overflow: 'hidden' }}>
+              <div style={{ width: `${progress}%`, height: '100%', background: '#1f9d55' }} />
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-muted,#888)', marginTop: 6 }}>
+              Needs equity of {lakh(v.equity_for_one_lot)} (half a lot's notional at {v.ratio}×). Target moves
+              with NIFTY, so it is recomputed live rather than fixed. Tenor when it starts: {v.dte_target}-day
+              (bi-weekly) puts, per research/105.
+            </div>
+          </div>
+        );
+      })()}
       {hist.length > 0 && (
         <details style={{ marginTop: 12 }}>
           <summary style={{ cursor: 'pointer', fontSize: 13 }}>
@@ -561,7 +602,7 @@ function HedgePanel({ s }: { s: State }) {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function CashPanel({ s, reload }: { s: State; reload: () => void }) {
   const [rec, setRec] = useState<any>(null);
-  const [dep, setDep] = useState<{ amount: string; mode: string; plan: any; busy: boolean }>({ amount: '', mode: 'park', plan: null, busy: false });
+  const [dep, setDep] = useState<{ amount: string; mode: string; plan: any; busy: boolean }>({ amount: '', mode: 'immediate', plan: null, busy: false });
   const [wd, setWd] = useState<{ amount: string; plan: any; busy: boolean }>({ amount: '', plan: null, busy: false });
 
   // An even top-up splits the deposit equally, but CNC buys WHOLE shares — so every holding needs at
@@ -591,7 +632,7 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
     if (!window.confirm(`Deposit ₹${amt.toLocaleString('en-IN')} (${dep.mode})? This ${s.live_mode ? 'PLACES REAL ORDERS' : 'updates the paper book'}.`)) return;
     setDep((d) => ({ ...d, busy: true }));
     await apiPost('/api/momentum-paper/deposit', { amount: amt, mode: dep.mode, dry_run: false }).catch(() => null);
-    setDep({ amount: '', mode: 'park', plan: null, busy: false }); reload();
+    setDep({ amount: '', mode: 'immediate', plan: null, busy: false }); reload();
   };
   const previewWd = async () => {
     const amt = parseFloat(wd.amount); if (!(amt > 0)) return;
@@ -635,8 +676,8 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <input style={inp} placeholder="₹ amount" value={dep.amount} onChange={(e) => setDep((d) => ({ ...d, amount: e.target.value, plan: null }))} />
             <select style={{ ...inp, width: 'auto' }} value={dep.mode} onChange={(e) => setDep((d) => ({ ...d, mode: e.target.value, plan: null }))}>
-              <option value="park">Park → deploy next rebalance (default)</option>
-              <option value="immediate">Immediate equal top-up</option>
+              <option value="immediate">Immediate equal top-up (default)</option>
+              <option value="park">Park → deploy at next rebalance</option>
             </select>
             <button style={btn} onClick={previewDep} disabled={dep.busy}>Preview</button>
           </div>
