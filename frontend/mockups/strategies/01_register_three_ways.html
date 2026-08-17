@@ -1,0 +1,769 @@
+<title>Strategies Register</title>
+<style>
+  /* Quantifyd tokens — mirrored from frontend/src/tokens/design-tokens.css so
+     these mocks read as the real app, not a separate visual world. The app is
+     light-only by design, so this page commits to that one world and paints
+     every surface explicitly. */
+  :root {
+    --canvas: #FAFAF9;
+    --surface: #FFFFFF;
+    --ink: #1B1B1A;
+    --ink-secondary: #5F5E5A;
+    --ink-muted: #888780;
+    --ink-faint: #B4B2A9;
+    --hairline: rgba(0, 0, 0, 0.10);
+    --hairline-soft: rgba(0, 0, 0, 0.06);
+    --navy: #1E3A8A;
+    --navy-soft: #EFF3FA;
+    --amber: #B45309;
+    --amber-soft: #FEF3C7;
+    --pos: #0F6E56;
+    --pos-soft: #E8F2EE;
+    --neg: #A32D2D;
+    --chip-bg: #F1EFE8;
+    --ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--ui);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* ---------- page head ---------- */
+  .eyebrow {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin: 0 0 2px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+  .lede {
+    max-width: 66ch;
+    color: var(--ink-secondary);
+    margin: 0;
+  }
+  .lede + .lede { margin-top: 10px; }
+  .lede b { font-weight: 500; color: var(--ink); }
+
+  /* ---------- mock framing ---------- */
+  .mock { display: flex; flex-direction: column; gap: 12px; }
+  .mockHead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .mockTag {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: var(--navy-soft);
+    border-radius: 4px;
+    padding: 3px 7px;
+  }
+  .mockName { font-size: 16px; font-weight: 500; }
+  .mockWhy { color: var(--ink-muted); font-size: 12px; max-width: 62ch; }
+  .screen {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .screenPad { padding: 20px 22px 24px; }
+  .scrollX { overflow-x: auto; }
+
+  /* ---------- shared bits ---------- */
+  .pageTitle { font-size: 20px; font-weight: 500; margin: 0; }
+  .pageSub { color: var(--ink-muted); font-size: 12px; margin: 3px 0 0; }
+  .groupLabel {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-muted);
+    margin: 0;
+  }
+  .groupLabel .count {
+    color: var(--ink-faint); letter-spacing: 0; text-transform: none; font-size: 11px;
+  }
+  .groupLabel::after {
+    content: ""; flex: 1; height: 1px; background: var(--hairline-soft);
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 500; line-height: 1;
+    padding: 4px 8px; border-radius: 20px; white-space: nowrap;
+  }
+  .pill .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.live { color: var(--pos); background: var(--pos-soft); }
+  .pill.paper { color: var(--amber); background: var(--amber-soft); }
+  .pill.parked { color: var(--ink-muted); background: var(--chip-bg); }
+
+  .chip {
+    display: inline-block; font-size: 11px; color: var(--ink-muted);
+    background: var(--chip-bg); border-radius: 4px; padding: 2px 6px; white-space: nowrap;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  .pnlPos { color: var(--pos); }
+  .pnlNeg { color: var(--neg); }
+
+  .links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .lk {
+    font-size: 11px; color: var(--navy); text-decoration: none;
+    border: 1px solid var(--hairline); border-radius: 4px;
+    padding: 3px 7px; white-space: nowrap; background: var(--surface);
+  }
+  .lk:hover { background: var(--navy-soft); border-color: var(--navy-soft); }
+  .lk:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
+  .lk.muted { color: var(--ink-faint); }
+
+  /* ================= MOCK A — the register ================= */
+  .mA table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .mA thead th {
+    text-align: left; font-size: 10.5px; font-weight: 500; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--ink-faint);
+    padding: 0 12px 7px; border-bottom: 1px solid var(--hairline);
+    white-space: nowrap;
+  }
+  .mA thead th.r, .mA td.r { text-align: right; }
+  .mA tbody td {
+    padding: 11px 12px; border-bottom: 1px solid var(--hairline-soft);
+    vertical-align: top;
+  }
+  .mA tbody tr:hover td { background: rgba(0, 0, 0, 0.015); }
+  .mA .sysName { font-weight: 500; font-size: 13px; }
+  .mA .sysVenue { color: var(--ink-muted); font-size: 11px; margin-top: 2px; }
+  .mA .rule { color: var(--ink-secondary); max-width: 44ch; }
+  .mA .stripe { padding: 0 !important; width: 3px; }
+  .mA .stripe span { display: block; width: 3px; height: 100%; min-height: 44px; }
+  .mA tr.gLive .stripe span { background: var(--pos); }
+  .mA tr.gPaper .stripe span { background: var(--amber); }
+  .mA tr.gParked .stripe span { background: var(--ink-faint); }
+  .mA .groupRow td {
+    padding: 22px 12px 8px; border-bottom: 1px solid var(--hairline);
+  }
+  .mA .groupRow:first-child td { padding-top: 4px; }
+
+  /* ================= MOCK B — roster cards ================= */
+  .mB .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  }
+  .mB .card {
+    border: 1px solid var(--hairline); border-radius: 10px; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px; background: var(--surface);
+  }
+  .mB .card.live { border-top: 2px solid var(--pos); }
+  .mB .card.paper { border-top: 2px solid var(--amber); }
+  .mB .card.parked { border-top: 2px solid var(--ink-faint); }
+  .mB .cHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .mB .cName { font-weight: 500; font-size: 13.5px; }
+  .mB .cVenue { color: var(--ink-muted); font-size: 11px; margin-top: 2px; }
+  .mB dl { margin: 0; display: grid; grid-template-columns: 46px 1fr; gap: 4px 10px; font-size: 11.5px; }
+  .mB dt { color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; font-size: 10px; padding-top: 1px; }
+  .mB dd { margin: 0; color: var(--ink-secondary); }
+  .mB .cFoot {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    border-top: 1px solid var(--hairline-soft); padding-top: 10px; margin-top: auto;
+  }
+  .mB .cSize { font-size: 11px; color: var(--ink-muted); }
+
+  /* ================= MOCK C — register + spec ================= */
+  .mC .split { display: grid; grid-template-columns: minmax(230px, 300px) 1fr; }
+  .mC .rail { border-right: 1px solid var(--hairline); padding: 14px 0; }
+  .mC .railGroup { padding: 12px 16px 4px; }
+  .mC .row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+    border-left: 2px solid transparent; cursor: default;
+  }
+  .mC .row:hover { background: rgba(0, 0, 0, 0.02); }
+  .mC .row.sel { background: var(--navy-soft); border-left-color: var(--navy); }
+  .mC .row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mC .row.sel .nm { font-weight: 500; }
+  .mC .row .pnl { font-size: 11.5px; }
+  .mC .row .sd { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .mC .row .sd.live { background: var(--pos); }
+  .mC .row .sd.paper { background: var(--amber); }
+  .mC .row .sd.parked { background: var(--ink-faint); }
+  .mC .spec { padding: 18px 22px 24px; display: flex; flex-direction: column; gap: 18px; }
+  .mC .specHead { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .mC .specName { font-size: 17px; font-weight: 500; margin: 0; }
+  .mC .specMeta { color: var(--ink-muted); font-size: 11.5px; margin: 3px 0 0; }
+  .mC .block { display: flex; flex-direction: column; gap: 8px; }
+  .mC .blockTitle {
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 500;
+  }
+  .mC .ruleList { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 12.5px; }
+  .mC .ruleList li { display: grid; grid-template-columns: 78px 1fr; gap: 12px; }
+  .mC .ruleList .k { color: var(--ink-muted); }
+  .mC .ruleList .v { color: var(--ink); }
+  /* Inline stat line — unboxed, hairline dividers only (replaced the boxed tiles) */
+  .mC .statLine {
+    display: flex; flex-wrap: wrap; gap: 0 26px; padding: 12px 0;
+    border-top: 1px solid var(--hairline-soft); border-bottom: 1px solid var(--hairline-soft);
+  }
+  .mC .stat {
+    display: flex; flex-direction: column; gap: 3px;
+    padding-right: 26px; border-right: 1px solid var(--hairline-soft);
+  }
+  .mC .stat:last-child { padding-right: 0; border-right: 0; }
+  .mC .statK { font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint); }
+  .mC .statV { font-size: 14px; font-weight: 500; }
+  .mC .evid { display: grid; gap: 6px; }
+  .mC .ev {
+    display: flex; align-items: center; gap: 10px; font-size: 12px;
+    border: 1px solid var(--hairline); border-radius: 8px; padding: 8px 10px;
+    text-decoration: none; color: var(--ink);
+  }
+  .mC .ev:hover { border-color: var(--navy); }
+  .mC .ev .vd {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.05em; padding: 2px 6px;
+    border-radius: 4px; white-space: nowrap;
+  }
+  .mC .ev .vd.strategy { color: var(--pos); background: var(--pos-soft); }
+  .mC .ev .vd.signal { color: var(--amber); background: var(--amber-soft); }
+  .mC .ev .vd.noedge { color: var(--ink-muted); background: var(--chip-bg); }
+  .mC .ev .t { flex: 1; }
+  .mC .log { font-size: 12px; display: grid; gap: 5px; }
+  .mC .log div { display: grid; grid-template-columns: 84px 1fr; gap: 12px; color: var(--ink-secondary); }
+  .mC .log .d { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+  /* ---------- closing note ---------- */
+  .note {
+    background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 10px; padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .note h2 { font-size: 15px; font-weight: 500; margin: 0; }
+  .note p { margin: 0; color: var(--ink-secondary); max-width: 72ch; }
+  .note ol, .note ul { margin: 0; padding-left: 20px; color: var(--ink-secondary); display: grid; gap: 5px; }
+  .note code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
+    background: var(--chip-bg); border-radius: 3px; padding: 1px 4px;
+  }
+  .quote {
+    border-left: 2px solid var(--navy); padding: 4px 0 4px 14px;
+    color: var(--ink-secondary); font-size: 12.5px;
+  }
+
+  @media (max-width: 820px) {
+    .mC .split { grid-template-columns: 1fr; }
+    .mC .rail { border-right: none; border-bottom: 1px solid var(--hairline); }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">the book, at a glance</p>
+    <h1>Strategies — three ways to read the register</h1>
+    <p class="lede">The page's job: answer <b>what is running with real money right now</b>, then
+      <b>what is on paper and why</b>, and from either one get to the rules and the study that
+      justified it in a single click. Same content in all three mocks — only the reading order changes.</p>
+    <p class="lede">Content below is the live inventory as it stands on <b>17 Aug 2026</b>. Sizes,
+      stops and study links are real; the LIVE / PAPER / PARKED split needs one confirmation
+      pass from you before it ships (KC6 and ORB Cash especially).</p>
+  </header>
+
+  <!-- ============================= MOCK A ============================= -->
+  <section class="mock mA">
+    <div class="mockHead">
+      <span class="mockTag">Mock A</span>
+      <span class="mockName">The Register</span>
+      <span class="mockWhy">One row per system, grouped by whose money is at risk. Densest and fastest to scan; every row carries its own links.</span>
+    </div>
+    <div class="screen">
+      <div class="screenPad">
+        <p class="pageTitle">Strategies</p>
+        <p class="pageSub">19 systems · 5 live with real money · updated 17 Aug 2026, 15:42</p>
+      </div>
+      <div class="scrollX">
+        <table>
+          <thead>
+            <tr>
+              <th class="stripe"></th>
+              <th>System</th>
+              <th>Size</th>
+              <th>The rule, in one line</th>
+              <th class="r">Day</th>
+              <th class="r">Since</th>
+              <th>Rules &amp; evidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="groupRow"><td class="stripe"></td><td colspan="6"><p class="groupLabel">Live · real money <span class="count">5 systems</span></p></td></tr>
+
+            <tr class="gLive">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">NAS Suite · NIFTY</div><div class="sysVenue">ATM / ATM2 / ATM4 + 09:16 one-shot</div></td>
+              <td class="num">2 lots · 130</td>
+              <td class="rule">Short ATM straddle at 09:16 (squeeze arms cascade later); per-leg SL 30%, ATM2 on a ₹2,500/lot rupee stop; venue stop −₹1,300/lot; square off 15:15.</td>
+              <td class="r num pnlNeg">−9,757</td>
+              <td class="r num">07 Jul</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study ×3</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gLive">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">NAS Suite · SENSEX</div><div class="sysVenue">ATM / ATM2 / ATM4 · BFO</div></td>
+              <td class="num">3 lots · 60</td>
+              <td class="rule">Same entry, BFO venue: SuperTrend(7,3) trail clamped at breakeven, venue stop −₹11,700, TP +₹15,003. DTE-aware — hold through Thursday expiry, size down Wednesday.</td>
+              <td class="r num pnlNeg">−5,673</td>
+              <td class="r num">05 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study ×2</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gLive">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">TB-CSL · NIFTY</div><div class="sysVenue">CSL_TIMEB_NIFTY · time-boxed straddle</div></td>
+              <td class="num">6 lots · 390</td>
+              <td class="rule">Entry/exit/SL frozen per DTE from the Best-Config Lab; the Friday sweep re-reads the window but never moves the live config on its own.</td>
+              <td class="r num pnlPos">+2,140</td>
+              <td class="r num">14 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gLive">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">NAS_COMB20</div><div class="sysVenue">NIFTY · combined-20% stop sleeve</div></td>
+              <td class="num">2 lots · 130</td>
+              <td class="rule">One straddle, stopped on <em>combined</em> premium +20% rather than per leg — the DTE-1 arm of the stop study.</td>
+              <td class="r num pnlPos">+867</td>
+              <td class="r num">14 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gLive">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">Momentum ₹3L</div><div class="sysVenue">NSE cash · Nifty 200 top-30</div></td>
+              <td class="num">₹3,00,000</td>
+              <td class="rule">Rank by blended momentum, hold 30, weekly index gate above the 200-DMA, Donchian trailing stop, monthly rebalance with a buffer.</td>
+              <td class="r num pnlPos">+1,284</td>
+              <td class="r num">24 Jul</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study ×4</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+
+            <tr class="groupRow"><td class="stripe"></td><td colspan="6"><p class="groupLabel">Paper · validating <span class="count">10 systems · review dates set</span></p></td></tr>
+
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">TB-CSL · SENSEX</div><div class="sysVenue">CSL_TIMEB_SENSEX</div></td>
+              <td class="num">6 lots · 120</td>
+              <td class="rule">NIFTY book's twin on BFO. Waiting on 6-lot REAL-window evidence before it earns real money.</td>
+              <td class="r num pnlPos">+1,010</td>
+              <td class="r num">14 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">CSL30F · NIFTY / SENSEX</div><div class="sysVenue">fixed 30% per-leg stop</div></td>
+              <td class="num">2 · 3 lots</td>
+              <td class="rule">Control arm: the uniform 30% per-leg stop the DTE study is trying to beat.</td>
+              <td class="r num pnlNeg">−1,320</td>
+              <td class="r num">14 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">NAS_C20_TRAIL / _SHIFT</div><div class="sysVenue">post-entry management arms</div></td>
+              <td class="num">2 lots each</td>
+              <td class="rule">COMB20 with a trail, and COMB20 that shifts the untested strike — isolating whether management adds anything after the stop.</td>
+              <td class="r num pnlNeg">−410</td>
+              <td class="r num">14 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">HA 2-Green ₹20L</div><div class="sysVenue">NSE cash · 30-min Heikin-Ashi</div></td>
+              <td class="num">₹20,00,000</td>
+              <td class="rule">Two green Heikin-Ashi bars with no lower wick, entry on the break; 81 sleeves running in parallel. Soak review Oct 2026.</td>
+              <td class="r num">—</td>
+              <td class="r num">21 Jul</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">Breakout ₹10L</div><div class="sysVenue">NSE cash · daily breakout</div></td>
+              <td class="num">₹10,00,000</td>
+              <td class="rule">One new breakout a day, only while NIFTY holds its 200-DMA and fewer than 8 names are held; trailing stop, never a profit target.</td>
+              <td class="r num pnlPos">+3,402</td>
+              <td class="r num">14 Jun</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">ORB Revival ₹10L</div><div class="sysVenue">NSE cash · multi-day ORB</div></td>
+              <td class="num">₹10,00,000</td>
+              <td class="rule">The multi-day signal that survived the post-mortem — deliberately <em>not</em> the intraday variant that killed the old live book.</td>
+              <td class="r num pnlNeg">−780</td>
+              <td class="r num">10 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">OHOL 1-Lot</div><div class="sysVenue">NIFTY · first-candle open-high/open-low</div></td>
+              <td class="num">1 lot · 65</td>
+              <td class="rule">First 5-min candle prints open=high or open=low, trade the continuation. Held to a 1-lot probe on purpose.</td>
+              <td class="r num pnlPos">+215</td>
+              <td class="r num">10 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">NWV</div><div class="sysVenue">NIFTY · weekly jade lizard / IC</div></td>
+              <td class="num">1 lot · 65</td>
+              <td class="rule">Never roll. Exit the threatened side on a close beyond S1/R2 — the only rule from the study that carried a real t-stat.</td>
+              <td class="r num pnlNeg">−1,150</td>
+              <td class="r num">27 Jul</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">Straddle V1 / V2</div><div class="sysVenue">NIFTY · positional iron fly</div></td>
+              <td class="num">10 lots · 650</td>
+              <td class="rule">Positional short straddle with ±500 wings (V2); V1 naked and unhedged, kept only as the baseline it is measured against.</td>
+              <td class="r num pnlPos">+4,875</td>
+              <td class="r num">24 Jun</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study ×2</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gPaper">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">F&amp;O Multi-Signal ₹20L</div><div class="sysVenue">F&amp;O cash universe</div></td>
+              <td class="num">₹20,00,000</td>
+              <td class="rule">Several independent entry signals sharing one book, to see which survive together rather than alone.</td>
+              <td class="r num pnlPos">+920</td>
+              <td class="r num">02 Aug</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk muted" href="#">Study pending</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+
+            <tr class="groupRow"><td class="stripe"></td><td colspan="6"><p class="groupLabel">Parked · not trading <span class="count">4 systems · reason recorded</span></p></td></tr>
+
+            <tr class="gParked">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">ORB Cash</div><div class="sysVenue">NSE cash · OR15 breakout, 15 stocks</div></td>
+              <td class="num">disabled</td>
+              <td class="rule">Live book died trading an unvalidated intraday variant. Signal itself is alive — revival lives in the paper book above.</td>
+              <td class="r num">—</td>
+              <td class="r num">17 Apr</td>
+              <td><div class="links"><a class="lk" href="#">Post-mortem</a><a class="lk" href="#">Study</a></div></td>
+            </tr>
+            <tr class="gParked">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">ORB Index</div><div class="sysVenue">NIFTY · delta-skewed short strangle, 10 variants</div></td>
+              <td class="num">disabled</td>
+              <td class="rule">Ten OR-window × filter variants recording paper trades only; no arm has cleared the cost floor.</td>
+              <td class="r num pnlNeg">−5,328</td>
+              <td class="r num">—</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a></div></td>
+            </tr>
+            <tr class="gParked">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">KC6</div><div class="sysVenue">Nifty 500 · Keltner mean reversion</div></td>
+              <td class="num">paper</td>
+              <td class="rule">Close below KC(6, 1.3 ATR) lower while above the 200-SMA; standing limit exit at the KC mid. Scheduler still runs; not funded.</td>
+              <td class="r num pnlNeg">−5,196</td>
+              <td class="r num">—</td>
+              <td><div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a><a class="lk" href="#">Dashboard</a></div></td>
+            </tr>
+            <tr class="gParked">
+              <td class="stripe"><span></span></td>
+              <td><div class="sysName">Maruthi dual-SuperTrend</div><div class="sysVenue">MARUTI · single-name</div></td>
+              <td class="num">disabled</td>
+              <td class="rule">Nine correctness bugs found 25 Mar 2026. Do not re-enable until every one is closed.</td>
+              <td class="r num">—</td>
+              <td class="r num">25 Mar</td>
+              <td><div class="links"><a class="lk" href="#">Bug list</a><a class="lk" href="#">Design</a></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= MOCK B ============================= -->
+  <section class="mock mB">
+    <div class="mockHead">
+      <span class="mockTag">Mock B</span>
+      <span class="mockName">The Roster</span>
+      <span class="mockWhy">A card per system, with the rule broken into entry / stop / exit so it reads without opening anything. Roomier — better on a phone, longer to scroll on desktop.</span>
+    </div>
+    <div class="screen screenPad">
+      <p class="pageTitle">Strategies</p>
+      <p class="pageSub">19 systems · 5 live with real money · updated 17 Aug 2026, 15:42</p>
+
+      <p class="groupLabel" style="margin: 22px 0 10px;">Live · real money <span class="count">5</span></p>
+      <div class="grid">
+        <div class="card live">
+          <div class="cHead">
+            <div><div class="cName">NAS Suite · NIFTY</div><div class="cVenue">ATM / ATM2 / ATM4 + 09:16</div></div>
+            <span class="pill live"><span class="dot"></span>Live</span>
+          </div>
+          <dl>
+            <dt>Entry</dt><dd>Short ATM straddle at 09:16; squeeze arms cascade later in the session</dd>
+            <dt>Stop</dt><dd>Per-leg 30% · ATM2 ₹2,500/lot · venue −₹1,300/lot</dd>
+            <dt>Exit</dt><dd>Square off 15:15, or stop / trail first</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize num">2 lots · qty 130 · since 07 Jul</span>
+            <div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study ×3</a></div>
+          </div>
+        </div>
+
+        <div class="card live">
+          <div class="cHead">
+            <div><div class="cName">NAS Suite · SENSEX</div><div class="cVenue">ATM / ATM2 / ATM4 · BFO</div></div>
+            <span class="pill live"><span class="dot"></span>Live</span>
+          </div>
+          <dl>
+            <dt>Entry</dt><dd>Short ATM straddle at 09:16, BFO weeklies</dd>
+            <dt>Stop</dt><dd>ST(7,3) trail clamped at breakeven · venue −₹11,700</dd>
+            <dt>Exit</dt><dd>TP +₹15,003 · hold through Thursday expiry</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize num">3 lots · qty 60 · since 05 Aug</span>
+            <div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study ×2</a></div>
+          </div>
+        </div>
+
+        <div class="card live">
+          <div class="cHead">
+            <div><div class="cName">TB-CSL · NIFTY</div><div class="cVenue">time-boxed straddle</div></div>
+            <span class="pill live"><span class="dot"></span>Live</span>
+          </div>
+          <dl>
+            <dt>Entry</dt><dd>Per-DTE entry window frozen from the Best-Config Lab</dd>
+            <dt>Stop</dt><dd>Per-DTE SL from the same frozen config</dd>
+            <dt>Exit</dt><dd>Time-boxed exit; Friday sweep informs, never auto-applies</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize num">6 lots · qty 390 · since 14 Aug</span>
+            <div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a></div>
+          </div>
+        </div>
+
+        <div class="card live">
+          <div class="cHead">
+            <div><div class="cName">Momentum ₹3L</div><div class="cVenue">NSE cash · Nifty 200 top-30</div></div>
+            <span class="pill live"><span class="dot"></span>Live</span>
+          </div>
+          <dl>
+            <dt>Entry</dt><dd>Blended-momentum rank, hold 30 names, weekly index gate</dd>
+            <dt>Stop</dt><dd>Donchian trailing stop per name</dd>
+            <dt>Exit</dt><dd>Monthly rebalance with a buffer; gate reversal exits the book</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize num">₹3,00,000 · since 24 Jul</span>
+            <div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study ×4</a></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="groupLabel" style="margin: 26px 0 10px;">Paper · validating <span class="count">10 · review dates set</span></p>
+      <div class="grid">
+        <div class="card paper">
+          <div class="cHead">
+            <div><div class="cName">HA 2-Green ₹20L</div><div class="cVenue">NSE cash · 30-min Heikin-Ashi</div></div>
+            <span class="pill paper"><span class="dot"></span>Paper</span>
+          </div>
+          <dl>
+            <dt>Entry</dt><dd>Two green HA bars, no lower wick, buy the break</dd>
+            <dt>Stop</dt><dd>Per-sleeve; 81 sleeves run in parallel</dd>
+            <dt>Exit</dt><dd>Sleeve-specific — the point of the soak</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize num">₹20,00,000 · review Oct 2026</span>
+            <div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a></div>
+          </div>
+        </div>
+        <div class="card paper">
+          <div class="cHead">
+            <div><div class="cName">Breakout ₹10L</div><div class="cVenue">NSE cash · daily breakout</div></div>
+            <span class="pill paper"><span class="dot"></span>Paper</span>
+          </div>
+          <dl>
+            <dt>Entry</dt><dd>≤1 new breakout/day, NIFTY above 200-DMA, &lt;8 held</dd>
+            <dt>Stop</dt><dd>Trailing stop — never a fixed profit target</dd>
+            <dt>Exit</dt><dd>Stop-out or gate failure</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize num">₹10,00,000 · since 14 Jun</span>
+            <div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a></div>
+          </div>
+        </div>
+        <div class="card paper">
+          <div class="cHead">
+            <div><div class="cName">NWV</div><div class="cVenue">NIFTY · jade lizard / IC</div></div>
+            <span class="pill paper"><span class="dot"></span>Paper</span>
+          </div>
+          <dl>
+            <dt>Entry</dt><dd>Weekly jade lizard or iron condor</dd>
+            <dt>Stop</dt><dd>None — the structure is the risk control</dd>
+            <dt>Exit</dt><dd>Never roll; exit threatened side on close beyond S1/R2</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize num">1 lot · qty 65 · since 27 Jul</span>
+            <div class="links"><a class="lk" href="#">Rules</a><a class="lk" href="#">Study</a></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="groupLabel" style="margin: 26px 0 10px;">Parked · not trading <span class="count">4 · reason recorded</span></p>
+      <div class="grid">
+        <div class="card parked">
+          <div class="cHead">
+            <div><div class="cName">ORB Cash</div><div class="cVenue">NSE cash · OR15, 15 stocks</div></div>
+            <span class="pill parked"><span class="dot"></span>Parked</span>
+          </div>
+          <dl>
+            <dt>Why</dt><dd>Live book traded an unvalidated intraday variant; signal survives, revival is on paper</dd>
+            <dt>Since</dt><dd>17 Apr 2026</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize">no capital at risk</span>
+            <div class="links"><a class="lk" href="#">Post-mortem</a></div>
+          </div>
+        </div>
+        <div class="card parked">
+          <div class="cHead">
+            <div><div class="cName">Maruthi dual-SuperTrend</div><div class="cVenue">MARUTI · single-name</div></div>
+            <span class="pill parked"><span class="dot"></span>Do not enable</span>
+          </div>
+          <dl>
+            <dt>Why</dt><dd>Nine correctness bugs found 25 Mar 2026, none closed</dd>
+            <dt>Since</dt><dd>25 Mar 2026</dd>
+          </dl>
+          <div class="cFoot">
+            <span class="cSize">no capital at risk</span>
+            <div class="links"><a class="lk" href="#">Bug list</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= MOCK C ============================= -->
+  <section class="mock mC">
+    <div class="mockHead">
+      <span class="mockTag">Mock C</span>
+      <span class="mockName">Register &amp; Spec</span>
+      <span class="mockWhy">Thin list on the left, full spec on the right — rules, live parameters, the studies behind them, and the change log that proves the index is current.</span>
+    </div>
+    <div class="screen">
+      <div class="split">
+        <div class="rail">
+          <div class="railGroup"><p class="groupLabel">Live <span class="count">5</span></p></div>
+          <div class="row sel"><span class="sd live"></span><span class="nm">NAS Suite · NIFTY</span><span class="pnl num pnlNeg">−9,757</span></div>
+          <div class="row"><span class="sd live"></span><span class="nm">NAS Suite · SENSEX</span><span class="pnl num pnlNeg">−5,673</span></div>
+          <div class="row"><span class="sd live"></span><span class="nm">TB-CSL · NIFTY</span><span class="pnl num pnlPos">+2,140</span></div>
+          <div class="row"><span class="sd live"></span><span class="nm">NAS_COMB20</span><span class="pnl num pnlPos">+867</span></div>
+          <div class="row"><span class="sd live"></span><span class="nm">Momentum ₹3L</span><span class="pnl num pnlPos">+1,284</span></div>
+          <div class="railGroup"><p class="groupLabel">Paper <span class="count">10</span></p></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">TB-CSL · SENSEX</span><span class="pnl num pnlPos">+1,010</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">CSL30F · NIFTY</span><span class="pnl num pnlNeg">−1,320</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">NAS_C20_TRAIL</span><span class="pnl num pnlNeg">−410</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">HA 2-Green ₹20L</span><span class="pnl num">—</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">Breakout ₹10L</span><span class="pnl num pnlPos">+3,402</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">ORB Revival ₹10L</span><span class="pnl num pnlNeg">−780</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">OHOL 1-Lot</span><span class="pnl num pnlPos">+215</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">NWV</span><span class="pnl num pnlNeg">−1,150</span></div>
+          <div class="row"><span class="sd paper"></span><span class="nm">Straddle V1 / V2</span><span class="pnl num pnlPos">+4,875</span></div>
+          <div class="railGroup"><p class="groupLabel">Parked <span class="count">4</span></p></div>
+          <div class="row"><span class="sd parked"></span><span class="nm">ORB Cash</span><span class="pnl num">—</span></div>
+          <div class="row"><span class="sd parked"></span><span class="nm">ORB Index</span><span class="pnl num pnlNeg">−5,328</span></div>
+          <div class="row"><span class="sd parked"></span><span class="nm">KC6</span><span class="pnl num pnlNeg">−5,196</span></div>
+          <div class="row"><span class="sd parked"></span><span class="nm">Maruthi</span><span class="pnl num">—</span></div>
+        </div>
+
+        <div class="spec">
+          <div class="specHead">
+            <div style="flex:1; min-width:200px;">
+              <h2 class="specName">NAS Suite · NIFTY</h2>
+              <p class="specMeta">Short ATM straddle · NFO weeklies · 4 arms (ATM, ATM2, ATM4, 09:16 one-shot) · real money since 07 Jul 2026</p>
+            </div>
+            <span class="pill live"><span class="dot"></span>Live · real money</span>
+          </div>
+
+          <div class="statLine">
+            <div class="stat"><span class="statK">Status</span><span class="statV" style="color: var(--pos);">Live · real money</span></div>
+            <div class="stat"><span class="statK">Size</span><span class="statV num">2 lots · qty 130</span></div>
+            <div class="stat"><span class="statK">Day P&amp;L</span><span class="statV num pnlNeg">−9,757</span></div>
+            <div class="stat"><span class="statK">Since</span><span class="statV num">07 Jul 2026</span></div>
+          </div>
+
+          <div class="block">
+            <div class="blockTitle">The rules, as they run today</div>
+            <ul class="ruleList">
+              <li><span class="k">Universe</span><span class="v">NIFTY weekly options, ATM strike at entry</span></li>
+              <li><span class="k">Entry</span><span class="v">09:16 one-shot; squeeze arms cascade up to 5 entries, one per candle</span></li>
+              <li><span class="k">Per-leg stop</span><span class="v">30% of leg premium, exchange-side where placed</span></li>
+              <li><span class="k">ATM2 stop</span><span class="v">₹2,500 per lot, rupee-denominated (DTE-agnostic)</span></li>
+              <li><span class="k">Venue stop</span><span class="v">−₹1,300 per lot, proportional across open legs</span></li>
+              <li><span class="k">Exit</span><span class="v">15:15 square-off, EOD backstop at 15:20</span></li>
+              <li><span class="k">Kill switch</span><span class="v">POST /api/nas/kill-switch → whole suite to paper</span></li>
+            </ul>
+          </div>
+
+          <div class="block">
+            <div class="blockTitle">Evidence — why this is live</div>
+            <div class="evid">
+              <a class="ev" href="#"><span class="vd signal">SIGNAL</span><span class="t">NAS-OPT replayed on every recorded chain day — is the 0/1-DTE gate the edge?</span><span class="chip">research/68</span></a>
+              <a class="ev" href="#"><span class="vd strategy">STRATEGY</span><span class="t">Portfolio stop −₹1,300/lot — the only positive sizing lever found</span><span class="chip">research/90</span></a>
+              <a class="ev" href="#"><span class="vd noedge">NO EDGE</span><span class="t">₹2,500 rupee stop on expiry day — refuted, move-stop kept</span><span class="chip">research/103</span></a>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="blockTitle">Change log</div>
+            <div class="log">
+              <div><span class="d">17 Aug 2026</span><span>Suite confirmed full-live; first real sleeve fills observed.</span></div>
+              <div><span class="d">14 Aug 2026</span><span>MARKET-order rejection handled; sleeves fell back to paper safely.</span></div>
+              <div><span class="d">05 Aug 2026</span><span>Scaled to 3 lots on SENSEX arms; NIFTY held at 2.</span></div>
+              <div><span class="d">07 Jul 2026</span><span>09:16 arms armed with real money.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= NOTE ============================= -->
+  <section class="note">
+    <h2>What shipped, and the rule that keeps it true</h2>
+    <p><b>A and C are both live at <code>/app/strategies</code></b>, behind a Register / Spec switch
+      in the page header (the choice sticks per browser). Clicking a system name — or its Rules chip
+      — in the Register jumps straight to that system's Spec. The boxed metric tiles are gone:
+      the Spec pane now opens on an unboxed stat line with hairline dividers, as shown in Mock C
+      above. B stayed a mock.</p>
+    <p>Every row carries three link slots, and a missing one is a visible gap rather than a silent
+      omission: <b>Rules</b> (the STATUS/design doc), <b>Study</b> (<code>/app/backtest/&lt;slug&gt;</code>,
+      with its verdict), <b>Dashboard</b> (the live page). "Study pending" in grey is a to-do you can
+      see from across the room.</p>
+    <div class="quote">Proposed addition to <code>.claude/CLAUDE.md</code> — <b>THE STRATEGIES INDEX IS THE
+      REGISTER OF RECORD.</b> Whenever a system goes live, goes to paper, is parked, changes size, or
+      has a rule changed, the same commit updates the Strategies index — status, size, the rule line,
+      and a dated change-log entry. A rule change that is not in the index is not deployed.</div>
+    <p>The register ships with the split resolved from the repo: <b>Momentum ₹3L = live</b> (real
+      money, moved under Holdings), <b>ORB Cash = paper</b> (resumed in paper mode with a paper-aware
+      margin gate), <b>KC6 = parked</b> (scheduler runs, strategy not being pursued). Day P&amp;L is
+      shown only where a live feed is already wired — ORB Cash, ORB Index, NAS NIFTY, NAS SENSEX —
+      and reads "—" elsewhere rather than inventing a number.</p>
+  </section>
+
+</div>

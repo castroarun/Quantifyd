@@ -11,7 +11,7 @@ import sqlite3
 import threading
 import logging
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 
 from config import DATA_DIR
@@ -19,6 +19,31 @@ from config import DATA_DIR
 logger = logging.getLogger(__name__)
 
 DB_PATH = DATA_DIR / 'journal.db'
+
+# ---------------------------------------------------------------------------
+# Strategy filter families
+#
+# The UI filters by book *family* ("NAS"), while stored labels are per-system
+# ("NAS-ATM2", "SENSEX-ATM4", "ORB-INDEX-OR60-STD", ...). Map each family to
+# the LIKE patterns that belong to it; an unmapped value falls through to an
+# exact-label match so drilling into a single system still works.
+# ---------------------------------------------------------------------------
+STRATEGY_FAMILIES: Dict[str, Tuple[str, ...]] = {
+    'NAS': ('NAS-%', 'SENSEX-%'),      # NAS strangle books, both venues
+    'ORB-CASH': ('ORB-CASH',),
+    'ORB-INDEX': ('ORB-INDEX-%',),
+    'KC6': ('KC6',),
+}
+
+
+def strategy_clause(strategy: Optional[str]) -> Tuple[str, List[str]]:
+    """(sql_fragment, params) matching a strategy family or an exact label."""
+    if not strategy or strategy == 'ALL':
+        return '', []
+    patterns = STRATEGY_FAMILIES.get(strategy.upper(), (strategy,))
+    frag = '(' + ' OR '.join(['strategy LIKE ?'] * len(patterns)) + ')'
+    return frag, list(patterns)
+
 
 # Coarse lock — journal writes are infrequent (sync, tag, note edits)
 db_lock = threading.Lock()
@@ -285,9 +310,10 @@ class JournalDB:
         if date_to:
             clauses.append("date(entry_time) <= ?")
             params.append(date_to)
-        if strategy and strategy != 'ALL':
-            clauses.append("strategy = ?")
-            params.append(strategy)
+        strat_frag, strat_params = strategy_clause(strategy)
+        if strat_frag:
+            clauses.append(strat_frag)
+            params.extend(strat_params)
         if instrument:
             clauses.append("instrument = ?")
             params.append(instrument)
@@ -351,9 +377,10 @@ class JournalDB:
     def daily_summary(self, date_from: str, date_to: str, strategy: Optional[str] = None) -> List[Dict[str, Any]]:
         params: List[Any] = [date_from, date_to]
         strat_clause = ''
-        if strategy and strategy != 'ALL':
-            strat_clause = ' AND strategy = ?'
-            params.append(strategy)
+        strat_frag, strat_params = strategy_clause(strategy)
+        if strat_frag:
+            strat_clause = ' AND ' + strat_frag
+            params.extend(strat_params)
         sql = f"""
             SELECT
                 date(entry_time) AS trade_date,
@@ -474,8 +501,9 @@ class JournalDB:
             clauses.append("date(entry_time) >= ?"); params.append(date_from)
         if date_to:
             clauses.append("date(entry_time) <= ?"); params.append(date_to)
-        if strategy and strategy != 'ALL':
-            clauses.append("strategy = ?"); params.append(strategy)
+        strat_frag, strat_params = strategy_clause(strategy)
+        if strat_frag:
+            clauses.append(strat_frag); params.extend(strat_params)
         where = 'WHERE ' + ' AND '.join(clauses)
         with self._conn() as c:
             rows = c.execute(
@@ -544,8 +572,9 @@ class JournalDB:
             clauses.append("date(entry_time) >= ?"); params.append(date_from)
         if date_to:
             clauses.append("date(entry_time) <= ?"); params.append(date_to)
-        if strategy and strategy != 'ALL':
-            clauses.append("strategy = ?"); params.append(strategy)
+        strat_frag, strat_params = strategy_clause(strategy)
+        if strat_frag:
+            clauses.append(strat_frag); params.extend(strat_params)
         where = 'WHERE ' + ' AND '.join(clauses)
         with self._conn() as c:
             rows = c.execute(

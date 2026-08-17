@@ -2,6 +2,49 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-08-17 — Strategies page → register of live / paper / parked systems (SHIPPED)
+
+Arun picked mocks **A (Register)** and **C (Spec)** — both built at `/app/strategies` behind a
+Register / Spec switch in the page header (choice persists in localStorage; clicking a system name
+or its Rules chip opens that system's Spec). Boxed metric tiles dropped at his request — the Spec
+pane opens on an unboxed stat line with hairline dividers.
+
+- `frontend/src/data/strategies.ts` — **the register of record**: 19 systems, each with status,
+  size, one-line rule, the rules as they run, source-of-truth doc path, published studies (real
+  slugs → `/app/backtest/<slug>`) or a visible "Study pending" gap, and a dated change log.
+  Plus `LAB_PAGES` so the no-capital lab pages aren't silently dropped.
+- `frontend/src/pages/Strategies.tsx` + `.module.css` — rewritten; old StrategyCard grid and
+  "Today at a glance" mini-stats removed.
+- Status split resolved from the repo: Momentum ₹3L = LIVE (real money), ORB Cash = PAPER
+  (resumed 08-17, paper-aware margin gate), KC6 = PARKED (scheduler runs, unfunded).
+- Day P&L only where a feed already exists (ORB `/api/orb/state`, ORB Index `/api/strangle/state`,
+  NAS NIFTY 8×state + SSE LTPs, NAS SENSEX `/app/sensex_live.json`); everything else reads "—".
+
+Mocks: `frontend/mockups/strategies/01_register_three_ways.html`. `tsc --noEmit` clean, built,
+frontend-only (no restart). OPEN: KC6 rows in the journal are tagged LIVE from the dashboard's own
+mode flag — confirm before reading them as real money. Uncommitted.
+
+Binding rule already added to `.claude/CLAUDE.md` — **THE STRATEGIES INDEX IS THE REGISTER OF
+RECORD**: any system going live/paper/parked, changing size, or changing a rule updates the
+index in the same commit (status, size, rule line, Rules/Study/Dashboard links, dated change-log
+entry). Uncommitted as of writing.
+
+## ✅ 2026-08-17 — Journal NAS filter fixed (live) + sidebar page shortcuts
+
+Journal showed "0 trades · Rs0" with the NAS chip selected even though the 15:50 sync had
+projected all 10 of today's NAS cycles. Cause: the chip sends `strategy=NAS` and
+`journal_db.py` matched `strategy = ?` exactly, while stored labels are per-system
+(`NAS-ATM2`, `NAS-916-ATM`, `SENSEX-ATM4`, `ORB-INDEX-OR60-STD`...). Added
+`STRATEGY_FAMILIES` + `strategy_clause()` (family → LIKE patterns, unmapped value still
+matches exactly) and used it in `list_trades`, `daily_summary`, `equity_curve`,
+`r_distribution`. NAS = `NAS-%` + `SENSEX-%`. Verified over HTTP after the 18:06 restart:
+NAS Aug = 11 sessions / 101 trades / +₹1,79,688; 17 Aug = 10 cycles, net −₹13,228.
+
+Also: single-letter page shortcuts in the sidebar (`frontend/src/components/Sidebar/hotkeys.ts`
+is the single source for both the badge and the key listener) — J journal, N nas, H holdings,
+M momentum, O opt-study, etc. Keyed by route, so moving an item between sections keeps its letter.
+`journal_db.py` + mockups + CLAUDE.md still uncommitted.
+
 ## ✅ 2026-08-17 — NAS ST-trail confirm-counter bug FIXED + DEPLOYED (restart 15:48 IST, commit a792136)
 
 The intrabar ST-trail on naked ATM/ATM4 survivors never fired: the confirm counter lived in a

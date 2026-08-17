@@ -103,6 +103,42 @@ revived.)
 
 ---
 
+---
+
+## THE STRATEGIES INDEX IS THE REGISTER OF RECORD (binding 2026-08-17)
+
+`/app/strategies` is the single index of every system we run: what is **live with
+real money**, what is on **paper**, what is **parked**, each with its size, its
+one-line rule, a pointer to its rules doc, and a pointer to the backtest study
+that justified it.
+
+**The rule:** whenever a system
+
+- goes live, goes to paper, or is parked / disabled,
+- changes size (lots or capital),
+- has any rule changed — entry window, stop, trail, TP, exit, universe, gate,
+
+**the same commit updates the Strategies index**: status, size, the rule line,
+the Rules / Study / Dashboard links, and a dated change-log entry. A rule change
+that is not reflected in the index is not considered deployed.
+
+Every row carries three link slots; a missing one renders as a visible gap
+(e.g. grey "Study pending") rather than being silently omitted:
+
+| Slot | Points to |
+|---|---|
+| Rules | the system's STATUS-MD / design doc |
+| Study | `/app/backtest/<slug>` — the published study and its verdict |
+| Dashboard | the live page for that book |
+
+Grouping is by **whose money is at risk** (Live · real money / Paper ·
+validating / Parked · not trading), not by asset class — that is the question
+the page exists to answer.
+
+Related bindings: publish every COMPLETE study to `frontend/src/data/backtests.ts`
+(playbook section above), and register every job, monitor or dated review in the
+Ops & Review Center (section below).
+
 ## QUANT RESEARCH PLAYBOOK — READ BEFORE ANY BACKTEST (binding)
 
 Before conducting **any** investment/trading backtest, sweep, or strategy research,

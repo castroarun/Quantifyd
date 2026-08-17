@@ -1,13 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
+/**
+ * Strategies — the register of record for every system we run.
+ *
+ * Two views over the same registry (frontend/src/data/strategies.ts):
+ *   Register — one row per system, grouped by whose money is at risk.
+ *   Spec     — rail + full spec: rules as they run, evidence, change log.
+ *
+ * Day P&L is shown only for systems with a live feed wired (see dayPnlFeed);
+ * everything else reads "—" and is read on its own dashboard, rather than
+ * inventing a number here.
+ */
+
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import styles from './Strategies.module.css';
-import StrategyCard from '../components/Cards/StrategyCard';
-import { IconBarChart, IconLayers } from '../components/Icons';
 import { apiGet } from '../api/client';
 import type { ORBState, NASState, StrangleState } from '../api/types';
-import { formatInt, formatPnl, pnlClass } from '../utils/format';
+import { formatPnl, pnlClass } from '../utils/format';
+import {
+  SYSTEMS,
+  STATUS_LABEL,
+  REGISTER_UPDATED,
+  LAB_PAGES,
+} from '../data/strategies';
+import type { DayPnlFeed, StrategySystem, SystemStatus } from '../data/strategies';
 
-// All 8 NAS sub-system endpoints so the Strategies card reflects the whole
-// NAS footprint, not just OTM.
+// All 8 NIFTY NAS sub-system endpoints — the suite's day P&L is their sum.
 const NAS_SYSTEMS = [
   'nas',
   'nas-atm',
@@ -19,59 +36,57 @@ const NAS_SYSTEMS = [
   'nas-916-atm4',
 ] as const;
 
-type NasAgg = {
-  activeLegs: number;
-  dayPnl: number;       // realized + unrealized across all 8 systems
-  totalPnl: number;     // all-time
-  anyEnabled: boolean;
-  anyLive: boolean;
-};
+const VIEW_KEY = 'qf.strategies.view';
+const GROUPS: SystemStatus[] = ['live', 'paper', 'parked'];
 
 // Polled /api/{key}/state returns p.ltp=None for some open legs (the 916
-// executors write to separate ticker caches that _enrich_nas_positions_with_ltp
-// doesn't see). The NAS page masks this by reading LTPs from /api/nas/stream
-// SSE, so its per-card + top-line totals reconcile. This aggregator must do
-// the same or the Strategies card under-reports unrealized on those legs,
-// leaving only the realized loss visible (e.g. −Rs 66K after morning SLs).
-function aggregateNas(
+// executors write to separate ticker caches). The NAS page masks this by
+// reading LTPs off /api/nas/stream; this aggregator does the same or it
+// under-reports unrealized and shows only the realized loss.
+function aggregateNasDayPnl(
   states: (NASState | null)[],
   liveLegLtps: Record<string, number>,
-): NasAgg {
-  let activeLegs = 0;
+): number {
   let dayPnl = 0;
-  let totalPnl = 0;
-  let anyEnabled = false;
-  let anyLive = false;
   for (const s of states) {
     if (!s) continue;
-    activeLegs += s.positions?.total_active ?? 0;
-    // Realized (stats.today_pnl computed server-side from closed_today)
     dayPnl += (s.stats?.today_pnl as number | undefined) ?? 0;
-    // Unrealized — prefer live SSE tick, fall back to polled p.ltp
     const legs = [...(s.positions?.ce ?? []), ...(s.positions?.pe ?? [])];
     for (const p of legs) {
       const entry = p.entry_price ?? p.entry_premium;
       const liveLtp = p.tradingsymbol ? liveLegLtps[p.tradingsymbol] : undefined;
       const ltp = liveLtp ?? p.ltp;
       const qty = p.qty ?? 0;
-      if (entry != null && ltp != null && qty) {
-        dayPnl += (entry - ltp) * qty;
-      }
+      if (entry != null && ltp != null && qty) dayPnl += (entry - ltp) * qty;
     }
-    totalPnl += (s.stats?.total_pnl as number | undefined) ?? 0;
-    if (s.config?.enabled) anyEnabled = true;
-    if (s.config?.enabled && !s.config?.paper_trading_mode) anyLive = true;
   }
-  return { activeLegs, dayPnl: Math.round(dayPnl * 100) / 100, totalPnl, anyEnabled, anyLive };
+  return Math.round(dayPnl * 100) / 100;
 }
 
 export default function Strategies() {
+  const [view, setView] = useState<'register' | 'spec'>(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === 'spec' ? 'spec' : 'register';
+    } catch {
+      return 'register';
+    }
+  });
+  const [selectedId, setSelectedId] = useState<string>(SYSTEMS[0].id);
   const [orb, setOrb] = useState<ORBState | null>(null);
-  const [nasStates, setNasStates] = useState<(NASState | null)[]>([]);
   const [strangle, setStrangle] = useState<StrangleState | null>(null);
+  const [nasStates, setNasStates] = useState<(NASState | null)[]>([]);
+  const [sensexDayPnl, setSensexDayPnl] = useState<number | null>(null);
   const [liveLegLtps, setLiveLegLtps] = useState<Record<string, number>>({});
   const [err, setErr] = useState<string | null>(null);
   const evtRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      /* ignore */
+    }
+  }, [view]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,13 +95,16 @@ export default function Strategies() {
         const [o, st, ...ns] = await Promise.all([
           apiGet<ORBState>('/api/orb/state').catch(() => null),
           apiGet<StrangleState>('/api/strangle/state').catch(() => null),
-          ...NAS_SYSTEMS.map((s) =>
-            apiGet<NASState>(`/api/${s}/state`).catch(() => null),
-          ),
+          ...NAS_SYSTEMS.map((s) => apiGet<NASState>(`/api/${s}/state`).catch(() => null)),
         ]);
+        // SENSEX arms are written by a standalone writer, not a Flask route.
+        const sx = await fetch(`/app/sensex_live.json?t=${Date.now()}`, { cache: 'no-store' })
+          .then((r) => (r.ok ? (r.json() as Promise<{ day_pnl?: number }>) : null))
+          .catch(() => null);
         if (cancelled) return;
         setOrb(o);
         setStrangle(st);
+        setSensexDayPnl(typeof sx?.day_pnl === 'number' ? sx.day_pnl : null);
         setNasStates(ns);
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Failed to load');
@@ -100,8 +118,7 @@ export default function Strategies() {
     };
   }, []);
 
-  // Subscribe to the NAS SSE tick stream so the aggregator has live LTPs for
-  // every open leg — matches what the NAS dashboard already consumes.
+  // NAS SSE tick stream — live LTPs for every open leg.
   useEffect(() => {
     let cancelled = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -143,130 +160,353 @@ export default function Strategies() {
     };
   }, []);
 
-  const orbOpen = orb?.open_positions?.length ?? 0;
-  const orbClosed = orb?.today_closed?.length ?? 0;
-  const orbPnl = orb?.today_pnl ?? 0;
-  const orbEnabled = !!orb?.enabled;
-  const orbLive = !!orb?.live_trading;
+  const dayPnl = useMemo<Partial<Record<DayPnlFeed, number>>>(() => {
+    const strangleTotal = (strangle?.variants ?? []).reduce(
+      (s, v) => s + (v.today_pnl ?? 0),
+      0,
+    );
+    const out: Partial<Record<DayPnlFeed, number>> = {
+      'nas-nifty': aggregateNasDayPnl(nasStates, liveLegLtps),
+    };
+    if (orb) out.orb = orb.today_pnl ?? 0;
+    if (strangle) out.strangle = strangleTotal;
+    if (sensexDayPnl != null) out['nas-sensex'] = sensexDayPnl;
+    return out;
+  }, [orb, strangle, nasStates, liveLegLtps, sensexDayPnl]);
 
-  const nasAgg = aggregateNas(nasStates, liveLegLtps);
-  const nasOpen = nasAgg.activeLegs;
-  const nasPnl = nasAgg.dayPnl;
-  const nasEnabled = nasAgg.anyEnabled;
-  const nasPaper = nasAgg.anyEnabled && !nasAgg.anyLive;
+  const counts = useMemo(() => {
+    const c: Record<SystemStatus, number> = { live: 0, paper: 0, parked: 0 };
+    for (const s of SYSTEMS) c[s.status] += 1;
+    return c;
+  }, []);
 
-  // Strangle: aggregate across all 10 variants from a single payload.
-  const strangleVariants = strangle?.variants ?? [];
-  const strangleEnabled = strangleVariants.some((v) => v.enabled);
-  const strangleOpen = strangleVariants.reduce(
-    (s, v) => s + (v.open_positions ?? 0),
-    0,
-  );
-  const strangleTodayPnl = strangleVariants.reduce(
-    (s, v) => s + (v.today_pnl ?? 0),
-    0,
-  );
-  const strangleVariantsCount = strangleVariants.length;
+  const openSpec = useCallback((id: string) => {
+    setSelectedId(id);
+    setView('spec');
+  }, []);
+
+  const selected = SYSTEMS.find((s) => s.id === selectedId) ?? SYSTEMS[0];
 
   return (
     <div className={styles.root}>
-      <div className="page-title">Strategies</div>
-      <div className="page-subtitle">
-        Live automated strategies. Click a card to open its dashboard.
-      </div>
-
-      {err ? <div className={styles.error}>Failed to load: {err}</div> : null}
-
-      <div className={styles.grid}>
-        <StrategyCard
-          to="/orb"
-          icon={<IconBarChart size={15} />}
-          title="ORB Cash"
-          description="Cash intraday on 15 stocks. OR15 breakout with VWAP, RSI, CPR filters. Runs 9:14 AM to 3:20 PM."
-          status={orbEnabled ? 'connected' : 'disconnected'}
-          statusLabel={
-            orbEnabled ? (orbLive ? 'Live trading' : 'Paper trading') : 'Disabled'
-          }
-          dayPnl={orbPnl}
-          stats={[
-            { label: 'Open', value: formatInt(orbOpen) },
-            { label: 'Closed today', value: formatInt(orbClosed) },
-            { label: 'Universe', value: formatInt(orb?.universe?.length) },
-          ]}
-        />
-        <StrategyCard
-          to="/strangle"
-          icon={<IconLayers size={15} />}
-          title="ORB Index"
-          description="ORB break on Nifty index → delta-skewed short strangle (PE -0.22, CE +0.10). 10 variants across 5/15/30/45/60-min OR windows + RSI/calm/CPR-against filters."
-          status={strangleEnabled ? 'connected' : 'disconnected'}
-          statusLabel={strangleEnabled ? 'Paper trading' : 'Disabled'}
-          dayPnl={strangleTodayPnl}
-          stats={[
-            { label: 'Open positions', value: formatInt(strangleOpen) },
-            { label: 'Variants', value: formatInt(strangleVariantsCount) },
-            { label: 'Spot', value: formatInt(strangle?.spot_ltp ?? null) },
-          ]}
-        />
-        <StrategyCard
-          to="/nas"
-          icon={<IconLayers size={15} />}
-          title="NAS options"
-          description="Nifty ATR squeeze + 9:16 entry. Eight variants running in parallel across OTM, ATM, ATM 2.0 and ATM V4."
-          status={nasEnabled ? 'connected' : 'disconnected'}
-          statusLabel={nasEnabled ? (nasPaper ? 'Paper trading' : 'Live trading') : 'Disabled'}
-          dayPnl={nasPnl}
-          stats={[
-            { label: 'Active legs', value: formatInt(nasOpen) },
-            { label: 'Systems', value: '8' },
-            {
-              label: 'Total P&L',
-              value: (
-                <span className={pnlClass(nasAgg.totalPnl)}>
-                  {formatPnl(nasAgg.totalPnl)}
-                </span>
-              ),
-            },
-          ]}
-        />
-      </div>
-
-      <div className={styles.section}>
-        <div className="section-title">Today at a glance</div>
-        <div className={styles.miniGrid}>
-          <MiniStat
-            label="ORB Cash day P&L"
-            value={formatPnl(orbPnl)}
-            cls={pnlClass(orbPnl)}
-          />
-          <MiniStat
-            label="ORB Index day P&L"
-            value={formatPnl(strangleTodayPnl)}
-            cls={pnlClass(strangleTodayPnl)}
-          />
-          <MiniStat label="NAS day P&L" value={formatPnl(nasPnl)} cls={pnlClass(nasPnl)} />
-          <MiniStat label="ORB Cash open" value={formatInt(orbOpen)} />
-          <MiniStat label="ORB Index open" value={formatInt(strangleOpen)} />
-          <MiniStat label="NAS open legs" value={formatInt(nasOpen)} />
+      <div className={styles.head}>
+        <div>
+          <div className="page-title">Strategies</div>
+          <div className="page-subtitle">
+            The register of record — {counts.live} live with real money · {counts.paper} on paper ·{' '}
+            {counts.parked} parked. Updated {REGISTER_UPDATED}.
+          </div>
         </div>
+        <div className={styles.switch} role="group" aria-label="View">
+          <button
+            type="button"
+            className={`${styles.switchBtn} ${view === 'register' ? styles.switchOn : ''}`}
+            onClick={() => setView('register')}
+            aria-pressed={view === 'register'}
+          >
+            Register
+          </button>
+          <button
+            type="button"
+            className={`${styles.switchBtn} ${view === 'spec' ? styles.switchOn : ''}`}
+            onClick={() => setView('spec')}
+            aria-pressed={view === 'spec'}
+          >
+            Spec
+          </button>
+        </div>
+      </div>
+
+      {err ? <div className={styles.error}>Failed to load live state: {err}</div> : null}
+
+      {view === 'register' ? (
+        <RegisterView dayPnl={dayPnl} onOpenSpec={openSpec} />
+      ) : (
+        <SpecView
+          selected={selected}
+          onSelect={setSelectedId}
+          dayPnl={dayPnl}
+        />
+      )}
+
+      <div className={styles.labs}>
+        <span className={styles.labsLabel}>Labs &amp; research pages — no capital</span>
+        {LAB_PAGES.map((l) => (
+          <Link key={l.to} to={l.to} className={styles.labLink} title={l.what}>
+            {l.name}
+          </Link>
+        ))}
       </div>
     </div>
   );
 }
 
-function MiniStat({
-  label,
-  value,
-  cls,
+/* ------------------------------------------------------------------ register */
+
+function RegisterView({
+  dayPnl,
+  onOpenSpec,
 }: {
-  label: string;
-  value: string;
-  cls?: string;
+  dayPnl: Partial<Record<DayPnlFeed, number>>;
+  onOpenSpec: (id: string) => void;
 }) {
   return (
-    <div className={styles.mini}>
-      <div className={styles.miniLabel}>{label}</div>
-      <div className={`${styles.miniValue} ${cls ?? ''}`}>{value}</div>
+    <div className={styles.tableWrap}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th className={styles.stripeCell} />
+            <th>System</th>
+            <th>Size</th>
+            <th>The rule, in one line</th>
+            <th className={styles.r}>Day</th>
+            <th className={styles.r}>Since</th>
+            <th>Rules &amp; evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {GROUPS.map((group) => {
+            const rows = SYSTEMS.filter((s) => s.status === group);
+            if (!rows.length) return null;
+            return (
+              <Fragment key={group}>
+                <tr className={styles.groupRow}>
+                  <td className={styles.stripeCell} />
+                  <td colSpan={6}>
+                    <div className={styles.groupLabel}>
+                      {STATUS_LABEL[group]}
+                      <span className={styles.groupCount}>
+                        {rows.length} {rows.length === 1 ? 'system' : 'systems'}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                {rows.map((s) => {
+                  const pnl = s.dayPnlFeed ? dayPnl[s.dayPnlFeed] : undefined;
+                  return (
+                    <tr key={s.id} className={styles[group]}>
+                      <td className={styles.stripeCell}>
+                        <span className={styles.stripe} />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.sysName}
+                          onClick={() => onOpenSpec(s.id)}
+                          title="Open the full spec"
+                        >
+                          {s.name}
+                        </button>
+                        <div className={styles.sysSub}>{s.subtitle}</div>
+                      </td>
+                      <td className={styles.num}>{s.size}</td>
+                      <td className={styles.rule}>
+                        {s.rule}
+                        {s.note ? <div className={styles.rowNote}>{s.note}</div> : null}
+                      </td>
+                      <td className={`${styles.r} ${styles.num}`}>
+                        {pnl == null ? (
+                          <span className={styles.dash}>—</span>
+                        ) : (
+                          <span className={pnlClass(pnl)}>{formatPnl(pnl)}</span>
+                        )}
+                      </td>
+                      <td className={`${styles.r} ${styles.num} ${styles.since}`}>{s.since}</td>
+                      <td>
+                        <div className={styles.links}>
+                          <button
+                            type="button"
+                            className={styles.lk}
+                            onClick={() => onOpenSpec(s.id)}
+                          >
+                            Rules
+                          </button>
+                          <StudyLink system={s} onOpenSpec={onOpenSpec} />
+                          {s.dashboard ? (
+                            <Link className={styles.lk} to={s.dashboard}>
+                              Dashboard
+                            </Link>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function StudyLink({
+  system,
+  onOpenSpec,
+}: {
+  system: StrategySystem;
+  onOpenSpec: (id: string) => void;
+}) {
+  if (!system.studies.length) {
+    return (
+      <span className={`${styles.lk} ${styles.lkGap}`} title={system.studyGap ?? 'No published study'}>
+        Study pending
+      </span>
+    );
+  }
+  if (system.studies.length === 1) {
+    return (
+      <Link className={styles.lk} to={`/backtest/${system.studies[0].slug}`}>
+        Study
+      </Link>
+    );
+  }
+  return (
+    <button type="button" className={styles.lk} onClick={() => onOpenSpec(system.id)}>
+      Study ×{system.studies.length}
+    </button>
+  );
+}
+
+/* ---------------------------------------------------------------------- spec */
+
+function SpecView({
+  selected,
+  onSelect,
+  dayPnl,
+}: {
+  selected: StrategySystem;
+  onSelect: (id: string) => void;
+  dayPnl: Partial<Record<DayPnlFeed, number>>;
+}) {
+  const pnl = selected.dayPnlFeed ? dayPnl[selected.dayPnlFeed] : undefined;
+  return (
+    <div className={styles.split}>
+      <div className={styles.rail}>
+        {GROUPS.map((group) => {
+          const rows = SYSTEMS.filter((s) => s.status === group);
+          if (!rows.length) return null;
+          return (
+            <div key={group}>
+              <div className={styles.railGroup}>
+                <div className={styles.groupLabel}>
+                  {STATUS_LABEL[group]}
+                  <span className={styles.groupCount}>{rows.length}</span>
+                </div>
+              </div>
+              {rows.map((s) => {
+                const rp = s.dayPnlFeed ? dayPnl[s.dayPnlFeed] : undefined;
+                return (
+                  <button
+                    type="button"
+                    key={s.id}
+                    className={`${styles.railRow} ${s.id === selected.id ? styles.railOn : ''}`}
+                    onClick={() => onSelect(s.id)}
+                  >
+                    <span className={`${styles.dot} ${styles[`dot_${group}`]}`} />
+                    <span className={styles.railName}>{s.name}</span>
+                    <span className={`${styles.num} ${rp == null ? styles.dash : pnlClass(rp)}`}>
+                      {rp == null ? '—' : formatPnl(rp)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={styles.spec}>
+        <div className={styles.specHead}>
+          <div>
+            <h2 className={styles.specName}>{selected.name}</h2>
+            <p className={styles.specSub}>{selected.subtitle}</p>
+          </div>
+          <div className={styles.specActions}>
+            {selected.dashboard ? (
+              <Link className={styles.lk} to={selected.dashboard}>
+                Dashboard
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Inline stat line — no boxes. */}
+        <div className={styles.statLine}>
+          <div className={styles.stat}>
+            <span className={styles.statK}>Status</span>
+            <span className={`${styles.statV} ${styles[`ink_${selected.status}`]}`}>
+              {STATUS_LABEL[selected.status]}
+            </span>
+          </div>
+          <div className={styles.stat}>
+            <span className={styles.statK}>Size</span>
+            <span className={`${styles.statV} ${styles.num}`}>{selected.size}</span>
+          </div>
+          <div className={styles.stat}>
+            <span className={styles.statK}>Day P&amp;L</span>
+            <span className={`${styles.statV} ${styles.num} ${pnl == null ? styles.dash : pnlClass(pnl)}`}>
+              {pnl == null ? '—' : formatPnl(pnl)}
+            </span>
+          </div>
+          <div className={styles.stat}>
+            <span className={styles.statK}>Since</span>
+            <span className={`${styles.statV} ${styles.num}`}>{selected.since}</span>
+          </div>
+        </div>
+
+        {selected.note ? <p className={styles.specNote}>{selected.note}</p> : null}
+
+        <section className={styles.block}>
+          <div className={styles.blockTitle}>The rules, as they run today</div>
+          <dl className={styles.ruleList}>
+            {selected.rules.map(([k, v]) => (
+              <div className={styles.ruleRow} key={k}>
+                <dt>{k}</dt>
+                <dd>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          {selected.rulesDoc ? (
+            <div className={styles.docPath}>
+              Source of truth: <code>{selected.rulesDoc}</code>
+            </div>
+          ) : null}
+        </section>
+
+        <section className={styles.block}>
+          <div className={styles.blockTitle}>Evidence</div>
+          {selected.studies.length ? (
+            <div className={styles.evid}>
+              {selected.studies.map((st) => (
+                <Link key={st.slug} className={styles.ev} to={`/backtest/${st.slug}`}>
+                  {st.verdict ? (
+                    <span className={`${styles.vd} ${styles[`vd_${st.verdict.split(/[ -]/)[0].toLowerCase()}`]}`}>
+                      {st.verdict}
+                    </span>
+                  ) : null}
+                  <span className={styles.evTitle}>{st.title}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.gap}>{selected.studyGap ?? 'No published study yet.'}</p>
+          )}
+        </section>
+
+        <section className={styles.block}>
+          <div className={styles.blockTitle}>Change log</div>
+          <div className={styles.log}>
+            {selected.changeLog.map((c, i) => (
+              <div className={styles.logRow} key={`${c.date}-${i}`}>
+                <span className={`${styles.logDate} ${styles.num}`}>{c.date}</span>
+                <span>{c.text}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
