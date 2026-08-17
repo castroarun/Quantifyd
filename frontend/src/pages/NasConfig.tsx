@@ -55,6 +55,25 @@ const DTE_COLS: { d: number; day: string }[] = [
   { d: 0, day: 'Tue' },
 ];
 
+/* ---------- rules-matrix helpers ---------- */
+
+const DTE_SEL: { d: number; day: string }[] = [
+  { d: 0, day: 'Tue' }, { d: 1, day: 'Mon' }, { d: 2, day: 'Fri' },
+  { d: 3, day: 'Thu' }, { d: 4, day: 'Wed' },
+];
+const DAY_START = 9 * 60 + 15;
+const DAY_SPAN = 15 * 60 + 30 - DAY_START; // 09:15 -> 15:30
+const HOURS = [10, 11, 12, 13, 14, 15];
+const toMin = (t: string) => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+const pctOf = (t: string) => Math.max(0, Math.min(100, ((toMin(t) - DAY_START) / DAY_SPAN) * 100));
+const parseWin = (s?: string) => {
+  const m = s ? s.match(/(\d{2}:\d{2})-(\d{2}:\d{2})\s*SL(\d+)/) : null;
+  return m ? { entry: m[1], exit: m[2], sl: m[3] } : null;
+};
+
 /* ---------- component ---------- */
 
 export default function NasConfig() {
@@ -66,6 +85,7 @@ export default function NasConfig() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [rules, setRules] = useState<RulesMatrix | null>(null);
+  const [dteSel, setDteSel] = useState<number | null>(null);
 
   const fetchMatrix = () => {
     setLoading(true);
@@ -139,6 +159,25 @@ export default function NasConfig() {
     return out;
   }, [matrix, today, systems]);
 
+  const dte = dteSel ?? today?.dte ?? 0;
+
+  // timeline rows for the selected DTE: 916 (constant window, live/paper by DTE) + sleeves (per-DTE window)
+  const timelineRows = useMemo(() => {
+    if (!rules) return [] as { label: string; venue: string; mode: string; entry: string; exit: string }[];
+    const rows: { label: string; venue: string; mode: string; entry: string; exit: string }[] = [];
+    for (const r of rules.entry916) {
+      const isLive = r.live && r.live_dtes.includes(dte);
+      rows.push({ label: r.label, venue: r.venue, mode: isLive ? 'live' : 'paper', entry: r.entry, exit: r.exit });
+    }
+    for (const s of rules.sleeves) {
+      const w = parseWin(s.perdte[String(dte)]);
+      if (w) rows.push({ label: s.label, venue: s.venue, mode: s.mode, entry: w.entry, exit: w.exit });
+    }
+    return rows.sort((a, b) =>
+      a.mode === b.mode ? toMin(a.entry) - toMin(b.entry) : a.mode === 'live' ? -1 : 1
+    );
+  }, [rules, dte]);
+
   if (loading && !matrix) {
     return <div className={styles.loading}>Loading day-matrix…</div>;
   }
@@ -152,6 +191,7 @@ export default function NasConfig() {
       ? 'gap n/a'
       : `${today.gap_pct >= 0 ? '+' : ''}${today.gap_pct.toFixed(2)}%`;
   const gapKind = today?.is_gap_up ? 'gap-UP' : today?.is_gap_down ? 'gap-DOWN' : 'no gap';
+  const dteDay = DTE_SEL.find((x) => x.d === dte)?.day ?? '';
 
   return (
     <div className={styles.page}>
@@ -295,84 +335,182 @@ export default function NasConfig() {
 
       {rules && (
         <div className={styles.rulesSection}>
-          <h2 className={styles.rulesTitle}>
-            Rules Matrix{' '}
-            <span className={styles.rulesNote}>· read live from config — any rule change reflects here</span>
-          </h2>
-
-          <div className={styles.rulesGroupLabel}>9:16 &amp; SENSEX entry systems</div>
-          <div className={styles.tableWrap}>
-            <table className={styles.rulesTable}>
-              <thead>
-                <tr>
-                  <th>System</th><th>Venue</th><th>Entry</th><th>Exit</th>
-                  <th>Stop</th><th>Management</th><th>Lots</th><th>Live on</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rules.entry916.map((r) => (
-                  <tr key={r.key}>
-                    <td className={styles.sysLabel}>{r.label}</td>
-                    <td>{r.venue}</td><td>{r.entry}</td><td>{r.exit}</td>
-                    <td>{r.stop}</td><td>{r.mgmt}</td><td>×{r.lots}</td>
-                    <td>
-                      {r.live
-                        ? r.live_dtes.length
-                          ? r.live_dtes.map((d) => `DTE${d}`).join(', ')
-                          : '—'
-                        : <span className={styles.paperTag}>paper</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.rulesHead}>
+            <div>
+              <h2 className={styles.rulesTitle}>Rules Matrix</h2>
+              <span className={styles.rulesNote}>reads live config — any rule change reflects here</span>
+            </div>
+            <div className={styles.dteSeg} role="tablist" aria-label="Expiry day">
+              {DTE_SEL.map(({ d, day }) => (
+                <button
+                  key={d}
+                  className={`${styles.dteSegBtn} ${d === dte ? styles.dteSegOn : ''}`}
+                  onClick={() => setDteSel(d)}
+                >
+                  <span className={styles.dteSegD}>DTE{d}</span>
+                  <span className={styles.dteSegDay}>{day}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className={styles.rulesGroupLabel}>CSL sleeves · per-DTE window (entry-exit SL%)</div>
-          <div className={styles.tableWrap}>
-            <table className={styles.rulesTable}>
-              <thead>
-                <tr>
-                  <th>Sleeve</th><th>Venue</th><th>Mode</th><th>Size</th>
-                  <th>DTE0</th><th>DTE1</th><th>DTE2</th><th>DTE3</th><th>DTE4</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rules.sleeves.map((sl) => (
-                  <tr key={sl.book}>
-                    <td className={styles.sysLabel}>{sl.label}</td>
-                    <td>{sl.venue}</td>
-                    <td>
-                      <span className={sl.mode === 'live' ? styles.liveTag : styles.paperTag}>{sl.mode}</span>
-                    </td>
-                    <td>{sl.lots}L ×{sl.qty}</td>
-                    {['0', '1', '2', '3', '4'].map((d) => (
-                      <td key={d} className={styles.dteWin}>{sl.perdte[d] || '—'}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* ---- Trading-day timeline ---- */}
+          <div className={styles.tlCaption}>
+            Trading day · <strong>DTE{dte}</strong> ({dteDay})
+            <span className={styles.tlLegend}>
+              <i className={styles.legLive} /> live&nbsp;₹ <i className={styles.legPaper} /> paper
+            </span>
+          </div>
+          <div className={styles.timeline}>
+            <div className={styles.tlAxis}>
+              {HOURS.map((h) => (
+                <span key={h} className={styles.tlTick} style={{ left: `${pctOf(`${h}:00`)}%` }}>
+                  {h}:00
+                </span>
+              ))}
+            </div>
+            <div className={styles.tlRows}>
+              {timelineRows.map((r, i) => {
+                const left = pctOf(r.entry);
+                const width = Math.max(1.2, pctOf(r.exit) - left);
+                return (
+                  <div key={`${r.label}-${i}`} className={styles.tlRow}>
+                    <div className={styles.tlName}>{r.label}</div>
+                    <div className={styles.tlTrack}>
+                      {HOURS.map((h) => (
+                        <span key={h} className={styles.tlGrid} style={{ left: `${pctOf(`${h}:00`)}%` }} />
+                      ))}
+                      <div
+                        className={`${styles.tlBar} ${r.mode === 'live' ? styles.tlBarLive : styles.tlBarPaper}`}
+                        style={{ left: `${left}%`, width: `${width}%` }}
+                        title={`${r.label}: ${r.entry}–${r.exit} (${r.mode})`}
+                      >
+                        <span className={styles.tlBarTime}>{r.entry}–{r.exit}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
+          {/* ---- Entry-system cards ---- */}
+          <div className={styles.rulesGroupLabel}>Entry systems</div>
+          <div className={styles.cardGrid}>
+            {rules.entry916.map((r) => {
+              const isLive = r.live && r.live_dtes.includes(dte);
+              return (
+                <div key={r.key} className={`${styles.ruleCard} ${isLive ? styles.cardLive : ''}`}>
+                  <div className={styles.cardTop}>
+                    <span className={styles.cardName}>{r.label}</span>
+                    <span className={styles.venueChip}>{r.venue}</span>
+                    <span className={`${styles.modeBadge} ${isLive ? styles.badgeLive : styles.badgePaper}`}>
+                      {isLive ? 'LIVE' : 'paper'}
+                    </span>
+                  </div>
+                  <div className={styles.cardWindow}>
+                    {r.entry} <span className={styles.arrow}>→</span> {r.exit}
+                  </div>
+                  <div className={styles.chipRow}>
+                    <span className={styles.stopChip} title="Stop">⊘ {r.stop}</span>
+                  </div>
+                  <div className={styles.chipRow}>
+                    <span className={styles.mgmtChip} title="Management">↻ {r.mgmt}</span>
+                  </div>
+                  <div className={styles.cardFoot}>
+                    <span className={styles.lotTag}>×{r.lots} lots</span>
+                    <span className={styles.dtePills} title="Live on these DTEs">
+                      {[0, 1, 2, 3, 4].map((d) => (
+                        <span
+                          key={d}
+                          className={`${styles.dtePill} ${r.live && r.live_dtes.includes(d) ? styles.pillLive : ''} ${d === dte ? styles.pillSel : ''}`}
+                        >
+                          {d}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ---- CSL sleeve cards ---- */}
+          <div className={styles.rulesGroupLabel}>CSL sleeves</div>
+          <div className={styles.cardGrid}>
+            {rules.sleeves.map((s) => {
+              const w = parseWin(s.perdte[String(dte)]);
+              const isLive = s.mode === 'live';
+              return (
+                <div key={s.book} className={`${styles.ruleCard} ${isLive ? styles.cardLive : ''}`}>
+                  <div className={styles.cardTop}>
+                    <span className={styles.cardName}>{s.label}</span>
+                    <span className={styles.venueChip}>{s.venue}</span>
+                    <span className={`${styles.modeBadge} ${isLive ? styles.badgeLive : styles.badgePaper}`}>
+                      {isLive ? 'LIVE' : 'paper'}
+                    </span>
+                  </div>
+                  <div className={styles.cardWindow}>
+                    {w ? (
+                      <>
+                        {w.entry} <span className={styles.arrow}>→</span> {w.exit}
+                      </>
+                    ) : (
+                      <span className={styles.noWin}>no window · DTE{dte}</span>
+                    )}
+                  </div>
+                  <div className={styles.chipRow}>
+                    <span className={styles.stopChip}>⊘ combined-SL {w ? `${w.sl}%` : '—'}</span>
+                    <span className={styles.sizeChip}>{s.lots}L ×{s.qty}</span>
+                  </div>
+                  <div className={styles.miniDte}>
+                    {[0, 1, 2, 3, 4].map((d) => {
+                      const ww = parseWin(s.perdte[String(d)]);
+                      return (
+                        <div key={d} className={`${styles.miniCell} ${d === dte ? styles.miniOn : ''}`}>
+                          <span className={styles.miniLbl}>D{d}</span>
+                          <span className={styles.miniVal}>{ww ? ww.entry : '—'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ---- Portfolio stop ---- */}
           <div className={styles.rulesGroupLabel}>Portfolio stop · book-level backstop</div>
-          <div className={styles.tableWrap}>
-            <table className={styles.rulesTable}>
-              <thead>
-                <tr><th>Venue</th><th>Hard stop</th><th>Take-profit</th><th>Trail arm</th><th>Trail giveback</th></tr>
-              </thead>
-              <tbody>
-                {rules.portfolioStop.map((p) => (
-                  <tr key={p.venue}>
-                    <td className={styles.sysLabel}>{p.venue}</td>
-                    <td>₹{p.stop_per_lot}/lot</td>
-                    <td>{p.tp_per_lot != null ? `₹${p.tp_per_lot}/lot` : '—'}</td>
-                    <td>{p.trail_arm != null ? `+₹${p.trail_arm}/lot` : '—'}</td>
-                    <td>{p.trail_give != null ? `₹${p.trail_give}/lot` : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.pstopGrid}>
+            {rules.portfolioStop.map((p) => (
+              <div key={p.venue} className={styles.pstopCard}>
+                <div className={styles.pstopVenue}>{p.venue}</div>
+                <div className={styles.pstopTiles}>
+                  <div className={`${styles.pstopTile} ${styles.tileStop}`}>
+                    <span className={styles.pstopVal}>−₹{Math.abs(p.stop_per_lot)}</span>
+                    <span className={styles.pstopLbl}>hard stop / lot</span>
+                  </div>
+                  {p.tp_per_lot != null && (
+                    <div className={`${styles.pstopTile} ${styles.tileTp}`}>
+                      <span className={styles.pstopVal}>₹{p.tp_per_lot}</span>
+                      <span className={styles.pstopLbl}>take-profit / lot</span>
+                    </div>
+                  )}
+                  {p.trail_arm != null && (
+                    <div className={styles.pstopTile}>
+                      <span className={styles.pstopVal}>+₹{p.trail_arm}</span>
+                      <span className={styles.pstopLbl}>trail arm / lot</span>
+                    </div>
+                  )}
+                  {p.trail_give != null && (
+                    <div className={styles.pstopTile}>
+                      <span className={styles.pstopVal}>₹{p.trail_give}</span>
+                      <span className={styles.pstopLbl}>giveback / lot</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
