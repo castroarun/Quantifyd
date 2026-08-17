@@ -360,6 +360,13 @@ session gap.
 - Gunicorn worker teardown on SIGTERM can leave SQLite WAL inconsistent mid-trade, with silent
   data loss on the rollback.
 
+**How to defer a restart:** `scripts/deferred_restart.sh "<reason>"` — sleeps until 15:40,
+then **re-checks the clock at wake time** (a sleep is not a gate: it can fire early after
+suspend, or days later than intended) and aborts if it is still before 15:40 on a weekday.
+Launch detached — `setsid nohup scripts/deferred_restart.sh "reason" </dev/null >/dev/null 2>&1 &`
+— then verify the PID is alive. Never compose `date && sudo systemctl restart` in one chain:
+the date prints but gates nothing (that exact bundling caused the 2026-08-14 incident).
+
 **What this means in practice**
 - **Python / Flask / service changes** → deploy after **15:40 IST** only.
 - **Frontend-only changes** (`frontend/src/**/*.tsx`, `templates/*.html`,
