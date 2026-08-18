@@ -103,7 +103,7 @@ export const SYSTEMS: StrategySystem[] = [
     name: 'NAS Suite · SENSEX',
     subtitle: 'BFO weeklies · short ATM straddle · ATM / ATM2 / ATM4',
     status: 'live',
-    size: '3 lots · qty 60 per arm',
+    size: '2 lots · qty 40 per arm',
     since: '05 Aug 2026',
     rule:
       'Same 09:16 entry on BFO: SuperTrend(7,3) trail clamped at breakeven, venue stop −₹11,700, TP +₹15,003. DTE-aware — hold through Thursday expiry, size down Wednesday.',
@@ -124,6 +124,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'nifty-straddle-lookahead-audit', title: 'Straddle & iron-fly look-ahead audit — honest comparison' },
     ],
     changeLog: [
+      { date: '18 Aug 2026', text: 'Suite resized 3 → 2 lots/system — notional parity with the NIFTY book (₹31L vs ₹31.5L per leg; 3 lots was 148%). Restores the portfolio-stop study sizing.' },
       { date: '18 Aug 2026', text: 'ATM4 rolled-leg SL re-anchored to max(price_x, roll premium) × 1.3 (shared executor with the NIFTY suite — research/113).' },
       { date: '13 Aug 2026', text: 'DTE study: Thursday = hold (no stop), Wednesday = tight combined-20%, DTE2+ keeps per-leg 30%.' },
       { date: '05 Aug 2026', text: 'Scaled to 3 lots; ST(7,3) trail + venue TP added.' },

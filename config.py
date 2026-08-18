@@ -545,8 +545,8 @@ NAS_916_ATM4_DEFAULTS = {
 SENSEX_ATM_DEFAULTS = {
     **NAS_916_ATM_DEFAULTS,
     'strike_interval': 100,      # SENSEX strikes are 100 apart
-    'lots_per_leg': 3,           # 3 lots x 20 = 60 qty (SENSEX lot is 20, verified 2026-07-20)
-    'paper_lots_per_leg': 3,
+    'lots_per_leg': 2,           # 2026-08-18: user 3->2 — notional parity with the NIFTY suite (2x20x~77.4k = Rs31L ~ 98% of NIFTY 2x65; 3 lots was 148%); SENSEX lot 20 verified 2026-07-20
+    'paper_lots_per_leg': 2,
     'paper_trading_mode': True,  # PAPER until validated
     'force_paper': False,        # LIVE-enabled 2026-07-21 (user): Wed/Thu real money
     'matrix_key': 'sensex_atm',
@@ -561,8 +561,8 @@ SENSEX_ATM2_DEFAULTS = {
     'move_stop_pct': 0.004,
     'move_stop_reenter': True,
     'strike_interval': 100,
-    'lots_per_leg': 3,  # 2026-08-04: user 2->3 lots
-    'paper_lots_per_leg': 3,
+    'lots_per_leg': 2,  # 2026-08-04: 2->3; 2026-08-18: user 3->2 (notional parity with NIFTY suite)
+    'paper_lots_per_leg': 2,
     'paper_trading_mode': True,
     'force_paper': False,
     'matrix_key': 'sensex_atm2',
@@ -570,8 +570,8 @@ SENSEX_ATM2_DEFAULTS = {
 SENSEX_ATM4_DEFAULTS = {
     **NAS_916_ATM4_DEFAULTS,
     'strike_interval': 100,
-    'lots_per_leg': 3,  # 2026-08-04: user 2->3 lots
-    'paper_lots_per_leg': 3,
+    'lots_per_leg': 2,  # 2026-08-04: 2->3; 2026-08-18: user 3->2 (notional parity with NIFTY suite)
+    'paper_lots_per_leg': 2,
     'paper_trading_mode': True,
     'force_paper': False,
     'matrix_key': 'sensex_atm4',
