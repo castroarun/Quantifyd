@@ -185,9 +185,9 @@ the whole CSL daemon to stop COMB's 15:20 phantom-CE exit (freeze/kill flags don
 already-open book's exit; restart double-enters) — no per-book pause exists.
 
 BUILD: one position ledger where every leg is tagged by owning system; the portfolio stop, COMB, and
-manual fills all reconcile through it; broker-qty ASSERT before any exit buy (per the momentum ledger
-incident pattern); a per-book pause flag so one sleeve halts without killing the daemon or stranding
-the others. Registered in Ops Center REVIEWS (due 2026-08-24).
+manual fills all reconcile through it; ~~broker-qty ASSERT before any exit buy~~ **DONE 2026-08-18**
+(commit 0b581e7 - CSL exit path now checks broker-held qty: manual close -> reconcile, partial -> capped
+buyback); a per-book pause flag so one sleeve halts without killing the daemon or stranding the others. Registered in Ops Center REVIEWS (due 2026-08-24).
 Today's COMB rightful trade recorded as PAPER in csl_paper_state.json (−₹121 TIME_EXIT) for the
 later rules-vs-actual assessment.
 
