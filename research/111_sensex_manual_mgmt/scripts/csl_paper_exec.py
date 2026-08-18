@@ -168,6 +168,22 @@ def margin_ok(k, lots):
     except Exception:
         return False, 0.0, 0.0
 
+def broker_short_qty(k, tradingsymbol):
+    """Broker-truth guard (ported from the 916 executors, 2026-08-18 after the 08-17
+    COMB desync): positive = MIS qty actually SHORT at the broker for this leg;
+    0 = leg no longer held (manual close / covered at account level) -> caller must
+    RECONCILE, not buy; -1 = positions API failed (UNKNOWN) -> caller falls back to
+    placing the exit, because protecting a real short outranks avoiding a phantom buy."""
+    try:
+        for _p in k.positions().get("net", []):
+            if _p.get("tradingsymbol") == tradingsymbol and _p.get("product") == "MIS":
+                return max(0, -int(_p.get("quantity") or 0))
+        return 0
+    except Exception as ex:
+        log("broker_short_qty err %s: %s" % (tradingsymbol, str(ex)[:60]))
+        return -1
+
+
 def load_state():
     try: return json.load(open(STATE))
     except Exception: return {"records": [], "cum": {}}
@@ -374,13 +390,33 @@ def main():
                         if P.get("live"):
                             tag = ("CSL_" + sym)[:20]
                             if "x_ce" not in P:
-                                oid_c = place_market(k, B, ce_s, "BUY", B["qty"], tag)
-                                f = order_fill(k, oid_c) if oid_c else None
-                                if f is not None: P["x_ce"] = f
+                                held_ce = broker_short_qty(k, ce_s)
+                                if held_ce == 0:
+                                    try: P["x_ce"] = q["%s:%s" % (B["seg"], ce_s)]["last_price"]
+                                    except Exception: P["x_ce"] = P.get("ce_last") or P["ce0"]
+                                    push_event(st, sym, "WARN", "MANUAL/EXTERNAL close detected on %s - no exit order placed, reconciled @ %.2f" % (ce_s, P["x_ce"]), "REAL")
+                                    log("%s RECONCILE %s: broker holds no short - manual/external close, no BUY placed" % (sym, ce_s))
+                                else:
+                                    q_ce = B["qty"] if held_ce < 0 else min(B["qty"], held_ce)
+                                    if q_ce != B["qty"]:
+                                        log("%s PARTIAL RECONCILE %s: buying back %d of %d (broker-held)" % (sym, ce_s, q_ce, B["qty"]))
+                                    oid_c = place_market(k, B, ce_s, "BUY", q_ce, tag)
+                                    f = order_fill(k, oid_c) if oid_c else None
+                                    if f is not None: P["x_ce"] = f
                             if "x_pe" not in P:
-                                oid_p = place_market(k, B, pe_s, "BUY", B["qty"], tag)
-                                f = order_fill(k, oid_p) if oid_p else None
-                                if f is not None: P["x_pe"] = f
+                                held_pe = broker_short_qty(k, pe_s)
+                                if held_pe == 0:
+                                    try: P["x_pe"] = q["%s:%s" % (B["seg"], pe_s)]["last_price"]
+                                    except Exception: P["x_pe"] = P.get("pe_last") or P["pe0"]
+                                    push_event(st, sym, "WARN", "MANUAL/EXTERNAL close detected on %s - no exit order placed, reconciled @ %.2f" % (pe_s, P["x_pe"]), "REAL")
+                                    log("%s RECONCILE %s: broker holds no short - manual/external close, no BUY placed" % (sym, pe_s))
+                                else:
+                                    q_pe = B["qty"] if held_pe < 0 else min(B["qty"], held_pe)
+                                    if q_pe != B["qty"]:
+                                        log("%s PARTIAL RECONCILE %s: buying back %d of %d (broker-held)" % (sym, pe_s, q_pe, B["qty"]))
+                                    oid_p = place_market(k, B, pe_s, "BUY", q_pe, tag)
+                                    f = order_fill(k, oid_p) if oid_p else None
+                                    if f is not None: P["x_pe"] = f
                             if "x_ce" not in P or "x_pe" not in P:
                                 P["exit_fail"] = P.get("exit_fail", 0) + 1
                                 log("%s LIVE EXIT INCOMPLETE (ce=%s pe=%s) attempt %d - retrying" % (
