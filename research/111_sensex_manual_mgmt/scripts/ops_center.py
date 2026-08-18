@@ -88,6 +88,8 @@ REVIEWS = [
      "sec-17 rerun once nas_mtm snapshots span ~6 weeks (started 2026-08-11)"),
     ("Weekly: review stack_reassessment DRIFT flags", "every Friday evening", "SCHEDULED",
      "panel in Portfolio Lab; DRIFT = review, nothing auto-changes"),
+    ("TB2 second-slots paper book review (merge into TB-CSL or drop)", "2026-09-05", "SCHEDULED",
+     "CSL_TIMEB2_NIFTY 2L PAPER since 08-18 (Mon 10:00-12:00 + Tue 13:00-14:00 SL25); merge as 2nd slots if tracking sweep model (Mon r46 / Tue r265 combined, in-sample)"),
     ("SENSEX stack version (NIFTY-first doctrine)", None, "PARKED",
      "design the SENSEX equivalent once the NIFTY stack has a clean month"),
 ]
