@@ -22,7 +22,7 @@
 .off .dot { background: var(--accent-neg, #d23f3f); }
 
 .kpis {
-  display: grid; grid-template-columns: repeat(8, 1fr); gap: 1px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 1px;
   background: var(--hairline); border: 0.5px solid var(--hairline);
   border-radius: var(--radius-control, 8px); overflow: hidden; margin-bottom: 20px;
 }
@@ -31,7 +31,7 @@
 .kpiLabel { font-size: 11px; color: var(--ink-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); } }
 
 .card {
   background: var(--surface); border: 0.5px solid var(--hairline);
