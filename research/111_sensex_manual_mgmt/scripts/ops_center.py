@@ -90,6 +90,10 @@ REVIEWS = [
      "panel in Portfolio Lab; DRIFT = review, nothing auto-changes"),
     ("TB2 second-slots paper book review (merge into TB-CSL or drop)", "2026-09-05", "SCHEDULED",
      "CSL_TIMEB2_NIFTY 2L PAPER since 08-18 (Mon 10:00-12:00 + Tue 13:00-14:00 SL25); merge as 2nd slots if tracking sweep model (Mon r46 / Tue r265 combined, in-sample)"),
+    ("TB-SENSEX first REAL window verify (if other session deploys tonight)", "2026-08-19", "PENDING",
+     "docs/CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md - Wed 10:30-12:00 SL20 first live; check BFO fills/slippage, margin gate, REAL tags"),
+    ("SENSEX Wednesday exposure review (suite 9L real on the venue's fat-tail day)", "2026-09-04", "SCHEDULED",
+     "studies: Wed p05 -17k/lot, prescription = window+tight-CSL or size-down/skip; weigh 2-3 more live Wednesdays of suite vs TB-window results"),
     ("SENSEX stack version (NIFTY-first doctrine)", None, "PARKED",
      "design the SENSEX equivalent once the NIFTY stack has a clean month"),
 ]
