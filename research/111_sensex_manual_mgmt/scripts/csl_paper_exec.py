@@ -23,7 +23,7 @@ SENSEX_MKT = {"sym": "SENSEX", "step": 100, "lot": 20, "spot_key": "BSE:SENSEX",
               "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}
 BOOKS = {
     "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "lab", "mode": "live"},  # 2026-08-17: 6->8 (sec-18b step-2, user)
-    "CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 6, "qty": 120, "cfg_from": "lab"},
+    "CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 8, "qty": 160, "cfg_from": "lab", "mode": "live"},  # 2026-08-18: 6L->8L REAL (notional parity w/ NIFTY TB@8L); suite Wed->paper same night
     # 2026-08-18: SECOND time-slots evidence book (sweep sec: Mon+Tue have a 2nd earnings pocket)
     "CSL_TIMEB2_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                          "fixed_cfg": {"entry": "13:00", "exit": "14:00", "sl": 25}},

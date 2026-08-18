@@ -1,7 +1,7 @@
 # SENSEX Wednesday restructure: TB-SENSEX → REAL @ 8 lots · suite Wednesday → PAPER
 
-STATUS: **PLANNED — execute TONIGHT (18-AUG) before tomorrow's 09:12** (user decisions 2026-08-18
-evening; SUPERSEDES the earlier 6L-only version of this doc)
+STATUS: **EXECUTED 2026-08-18 ~19:5x IST — verify tomorrow 09:12/10:30, then mark DONE** (user
+decisions 2026-08-18 evening; SUPERSEDES the earlier 6L-only version of this doc)
 
 > **Laptop:** `c:\Users\arunc\Documents\Projects\Covered_Calls\docs\CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md`
 > **VPS:** `/home/arun/quantifyd/docs/CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md`
@@ -65,3 +65,8 @@ shadow data). Update the review note when marking this DONE.
 | Date/time | Event | Evidence |
 |---|---|---|
 | 2026-08-18 late eve | Superseding instructions written (8L + Wed-suite-paper) | — |
+| 2026-08-18 ~19:5x | A: matrix `sensex_*` dte1→false (dte0 stays true); backup `.bak_tbsx` | verified via matrix json + gate() |
+| 2026-08-18 ~19:5x | B: exec `CSL_TIMEB_SENSEX` → lots 8 / qty 160 / mode live (+dated comment); py_compile OK | csl_paper_exec.py:26 |
+| 2026-08-18 ~19:5x | C: backfill → 8L/160 | csl_paper_backfill.py:24 |
+| 2026-08-18 ~19:5x | D: frontend — Straddles.tsx text, Nas.tsx TimeB-SENSEX card→LIVE 8L + tradebook qty 160, strategies register (TB-SENSEX status live/8L/since 19-Aug + suite-Wed-paper changelog); npm build OK | commit on main |
+| 2026-08-18 ~19:5x | **Margin note updated for the 2-lot suite resize done midday**: Thursday suite is now 6L (~₹10L) not 9L (~₹15L) → available at TB-SENSEX's 09:20 Thu entry ≈ 45 − (10 + 3.3 + 13) ≈ **₹18.7L vs ₹17.2L need → likely CLEARS, but only ~₹1.5L spare**. User decision (a/b/c) still owed — surfaced in chat. | notional math in chat |

@@ -21,7 +21,7 @@ NIFTY = {"sym": "NIFTY", "step": 50}
 SENSEX = {"sym": "SENSEX", "step": 100}
 BOOKS = {
     "CSL_TIMEB_NIFTY": {**NIFTY, "lots": 8, "qty": 520},
-    "CSL_TIMEB_SENSEX": {**SENSEX, "lots": 6, "qty": 120},
+    "CSL_TIMEB_SENSEX": {**SENSEX, "lots": 8, "qty": 160},
     "CSL_TIMEB2_NIFTY": {**NIFTY, "lots": 2, "qty": 130},
     "NAS_COMB20": {**NIFTY, "lots": 2, "qty": 130},
     "CSL30F_NIFTY": {**NIFTY, "lots": 2, "qty": 130},
