@@ -1594,6 +1594,18 @@ export default function Nas() {
     if (b.state === 'WAIT_ENTRY' && w) {
       return { state: { planned: { entry: w[0], exit: w[1], sl: w[2], qty, mode: b.live === false ? 'paper' : 'live' } } as any, err: null };
     }
+    // CLOSED: sleeve traded and exited today -> keep it in the book as one done combined
+    // straddle line (the live book is nulled on exit; the record holds combined credit/exit).
+    const rec: any = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
+    if (rec) {
+      const closed: any = {
+        leg: 'C+P', tradingsymbol: undefined, strike: rec.strike, qty: rec.qty ?? qty,
+        entry_price: rec.credit, exit_price: rec.exit_comb, pnl_inr: rec.pnl,
+        entry_time: rec.entry_ts, exit_time: rec.exit_ts, exit_reason: rec.reason,
+        status: 'CLOSED', mode: rec.source === 'REAL' ? 'live' : 'paper',
+      };
+      return { state: { positions: { ce: [], pe: [], closed_today: [closed] } } as any, err: null };
+    }
     return { state: null, err: null };
   };
   // Merge the sleeve intraday series into the Overall curve (convert HH:MM -> ISO to match mtm).
@@ -2316,7 +2328,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                   {mode !== 'system' && (
                     <span style={{ color: 'var(--ink-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.sysLabel}</span>
                   )}
-                  <span style={{ fontWeight: 700, color: r.side === 'CE' ? '#d29922' : '#a371f7' }}>{r.side}</span>
+                  <span style={{ fontWeight: 700, color: r.side === 'CE' ? '#d29922' : r.side === 'PE' ? '#a371f7' : 'var(--ink-muted)' }}>{r.side}</span>
                   <span>{r.strike ?? '—'}</span>
                   <span
                     style={{ color: r.restated ? '#58a6ff' : 'var(--ink-muted)' }}
@@ -2411,10 +2423,25 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                       </span>
                     );
                   })()}
-                  <span style={{
-                    color: r.open ? '#3fb950' : 'var(--ink-faint, #6e7681)',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{r.open ? 'OPEN' : shortReason(r.reason)}</span>
+                  {(() => {
+                    if (r.open) {
+                      return (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#3fb950', fontWeight: 700, fontSize: 10, background: 'rgba(63,185,80,0.15)', padding: '1px 7px', borderRadius: 9, whiteSpace: 'nowrap' }}>
+                          &#9679; OPEN
+                        </span>
+                      );
+                    }
+                    const up = (r.reason || '').toUpperCase();
+                    const c = up.includes('SL') ? '#f85149'
+                      : up.includes('ST') ? '#58a6ff'
+                      : (up.includes('ROLL') || up.includes('ADJ') || up.includes('SHIFT')) ? '#d29922'
+                      : '#8b949e';
+                    return (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: c, fontWeight: 600, fontSize: 10, background: `${c}22`, padding: '1px 7px', borderRadius: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {shortReason(r.reason)}
+                      </span>
+                    );
+                  })()}
                   <span style={{ color: 'var(--ink-muted)' }}>{r.inTime || '—'}</span>
                   <span style={{ color: 'var(--ink-muted)' }}>{r.outTime || '—'}</span>
                   <span style={{ textAlign: 'right', color: col(r.pnl), fontWeight: 600 }}>{inr(r.pnl)}</span>
