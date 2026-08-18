@@ -143,6 +143,11 @@ export default function MomentumPaper() {
         <Kpi label="NAV" value={lakh(s.nav)} tone="" />
         <Kpi label="Total return" value={pct(s.total_return_pct)} tone={retPos ? 'pos' : 'neg'} />
         <Kpi label="Invested" value={s.invested_pct.toFixed(0) + '%'} tone="" />
+        <Kpi label={`Gate gap · ${s.gate_sma ? 'NIFTYBEES vs 100-DMA' : 'to 100-DMA'}`}
+             value={s.gate_gap_pct == null ? '—'
+               : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
+             tone={s.gate_gap_pct == null ? ''
+               : s.gate_gap_pct < 0 ? 'neg' : s.gate_gap_pct < 2 ? 'warn' : 'pos'} />
         <Kpi label={s.swept_value ? `Cash (${lakh(s.swept_value)} in ${s.sweep?.symbol || 'ETF'})` : 'Cash'}
              value={lakh(s.cash)} tone="" />
         <Kpi label="Holdings" value={String(s.n_holdings)} tone="" />
@@ -390,7 +395,8 @@ export default function MomentumPaper() {
 function Kpi({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
     <div className={styles.kpi}>
-      <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}>{value}</div>
+      <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}
+           style={tone === 'warn' ? { color: 'var(--status-warning,#C97B20)' } : undefined}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
     </div>
   );
