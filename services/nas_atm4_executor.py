@@ -390,8 +390,14 @@ class NasAtm4Executor(NasAtmExecutor):
         new_tsym = self._build_roll_tradingsymbol(
             pos['instrument_type'], new_strike, expiry_date)
 
-        # 5. New rolled leg SL = new_entry_premium * 1.3
-        new_sl = round(new_prem * 1.3, 2)
+        # 5. New rolled leg SL = price_x * 1.3 -- SAME absolute stop as the survivor
+        # (research/113, 2026-08-18): the old rule (new_prem * 1.3) based the stop on
+        # whatever undershot premium the >=50-pt OTM floor allowed (e.g. 12.1 when
+        # price_x was 18.1 -> SL 15.7, stopped by noise in 6 min). On 81 days of real
+        # 1-min chain (63 rolls) that rule was the churniest variant (32% restop);
+        # parity with the survivor (1.3 x price_x) dominates it on total, tail, win%
+        # and churn, and is best on DTE0. One pair, one stop level.
+        new_sl = round(price_x * 1.3, 2)
 
         # 6. Surviving leg SL = price_x * 1.3
         surviving_new_sl = round(price_x * 1.3, 2)

@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Verify ATM4 SURV roll-stop live behaviour (research/113 deploy)", "2026-08-28", "PENDING",
+     "next live roll: log must show rolled-leg SL = 1.3 x price_x (not 1.3 x roll premium); confirm no noise re-stop; deployed 2026-08-18 after close"),
     ("Build unified per-system position ledger (portfolio-stop/COMB/manual reconcile)", "2026-08-24", "PENDING",
      "2026-08-17 incident: portfolio stop covered COMB CE at account level (COMB not in its system list, no tag) -> COMB book desynced from broker; had to kill the whole CSL daemon to stop COMB 15:20 phantom exit. BUILD: one tagged ledger every actor reconciles through + broker-qty assert before exit buy + per-book pause (no daemon-wide kill)."),
     ("Verify ST-trail intrabar exit fires (confirm-counter fix a792136)", "2026-08-21", "PENDING",
