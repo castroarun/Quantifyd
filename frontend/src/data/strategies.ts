@@ -76,7 +76,7 @@ export const SYSTEMS: StrategySystem[] = [
       ['Universe', 'NIFTY weekly options, ATM strike at entry'],
       ['Entry', '09:16 one-shot; ATR-squeeze arms cascade up to 5 entries, one per candle'],
       ['Per-leg stop', '30% of leg premium'],
-      ['ATM4 roll', 'First SL rolls to a premium-matched strike; rolled leg + survivor share ONE stop = 1.3 × price_x (research/113)'],
+      ['ATM4 roll', 'First SL rolls to a premium-matched strike; rolled-leg SL = max(price_x, roll premium) × 1.3 — never tighter than the survivor anchor or its own 30% (research/113)'],
       ['ATM2 stop', '₹2,500 per lot — rupee-denominated, DTE-agnostic'],
       ['Book stop', '−₹1,300 per lot, proportional across open legs'],
       ['Naked survivor', 'SuperTrend(7,3) intrabar trail, 3-tick confirm'],
@@ -92,7 +92,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'fardte-rescue', title: 'Rescuing the far-from-expiry days — five ideas, four dead, one that works', verdict: 'SIGNAL' },
     ],
     changeLog: [
-      { date: '18 Aug 2026', text: 'ATM4 rolled-leg SL re-anchored to 1.3 × price_x, parity with the survivor (research/113: old 1.3×roll-premium rule was the churniest variant — 32% of rolls re-stopped).' },
+      { date: '18 Aug 2026', text: 'ATM4 rolled-leg SL re-anchored to max(price_x, roll premium) × 1.3 (research/113 MAXV: old 1.3×roll-premium rule was the churniest variant, 32% restop; max() keeps the survivor anchor without going tight on overshoot rolls).' },
       { date: '17 Aug 2026', text: 'ST-trail confirm-counter bug fixed (counter lived in a throwaway local, never reached 3/3).' },
       { date: '14 Aug 2026', text: 'Kite MARKET-order rejection handled; sleeves fall back to paper safely.' },
       { date: '07 Jul 2026', text: '09:16 arms armed with real money.' },
@@ -124,7 +124,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'nifty-straddle-lookahead-audit', title: 'Straddle & iron-fly look-ahead audit — honest comparison' },
     ],
     changeLog: [
-      { date: '18 Aug 2026', text: 'ATM4 rolled-leg SL re-anchored to 1.3 × price_x (shared executor with the NIFTY suite — research/113).' },
+      { date: '18 Aug 2026', text: 'ATM4 rolled-leg SL re-anchored to max(price_x, roll premium) × 1.3 (shared executor with the NIFTY suite — research/113).' },
       { date: '13 Aug 2026', text: 'DTE study: Thursday = hold (no stop), Wednesday = tight combined-20%, DTE2+ keeps per-leg 30%.' },
       { date: '05 Aug 2026', text: 'Scaled to 3 lots; ST(7,3) trail + venue TP added.' },
     ],

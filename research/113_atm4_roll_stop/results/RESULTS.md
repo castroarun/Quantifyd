@@ -60,3 +60,21 @@ mechanically grounded, not curve-fit. Correlation: n/a. Capacity: 2 lots, trivia
 Deploy SURV to `nas_atm4_executor.py` (one line + comment) after 15:40 with sign-off,
 or paper-shadow it first. Re-check after ~20 more recorded days (the window doubles by
 late Sep).
+
+
+## Addendum (2026-08-18 midday) — MAXV, the deployed rule
+
+Arun's refinement on review: `SL = max(price_x, roll_prem) x 1.3` — pure survivor-parity
+(SURV) turns dangerous when the premium match OVERSHOOTS (roll_prem > price_x puts the
+1.3 x price_x stop just above entry). Re-ran the sweep with MAXV:
+
+| Variant | Total | Mean/day | p05 | Win% | Restop% |
+|---|---|---|---|---|---|
+| **MAXV (deployed)** | **+151,866** | 1,875 | **-1,067** | 84% | 19% |
+| SURV | +146,396 | 1,807 | -1,067 | 83% | 22% |
+| SQ (old live) | +143,362 | 1,770 | -1,272 | 79% | 32% |
+
+MAXV strictly dominates SURV (differs on only 6/63 rolls — the overshoots: saves
++3,705 and +3,559 on 2026-04-30 / 2026-05-21, gives back <600 on four small days) and
+is the best risk-adjusted variant tested. **Deployed 2026-08-18** (restart 15:40),
+`services/nas_atm4_executor.py` — verify review due 2026-08-28.

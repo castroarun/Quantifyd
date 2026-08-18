@@ -390,14 +390,16 @@ class NasAtm4Executor(NasAtmExecutor):
         new_tsym = self._build_roll_tradingsymbol(
             pos['instrument_type'], new_strike, expiry_date)
 
-        # 5. New rolled leg SL = price_x * 1.3 -- SAME absolute stop as the survivor
-        # (research/113, 2026-08-18): the old rule (new_prem * 1.3) based the stop on
-        # whatever undershot premium the >=50-pt OTM floor allowed (e.g. 12.1 when
-        # price_x was 18.1 -> SL 15.7, stopped by noise in 6 min). On 81 days of real
-        # 1-min chain (63 rolls) that rule was the churniest variant (32% restop);
-        # parity with the survivor (1.3 x price_x) dominates it on total, tail, win%
-        # and churn, and is best on DTE0. One pair, one stop level.
-        new_sl = round(price_x * 1.3, 2)
+        # 5. New rolled leg SL = max(price_x, roll premium) * 1.3 (research/113 MAXV,
+        # 2026-08-18, Arun's refinement). The old rule (new_prem * 1.3) based the stop
+        # on whatever undershot premium the >=50-pt OTM floor allowed (12.1 when
+        # price_x was 18.1 -> SL 15.7, noise-stopped in 6 min; churniest variant on 81
+        # days / 63 rolls, 32% restop). Pure survivor-parity (1.3 x price_x) fixes
+        # that but turns dangerous when the match OVERSHOOTS (roll prem > price_x ->
+        # stop lands just above entry). max() keeps the survivor anchor in undershoot
+        # and guarantees the leg's own 30% room in overshoot: best tail (p05 -1067)
+        # and 19% restop vs 32% live. One pair, one floor.
+        new_sl = round(max(price_x, new_prem) * 1.3, 2)
 
         # 6. Surviving leg SL = price_x * 1.3
         surviving_new_sl = round(price_x * 1.3, 2)

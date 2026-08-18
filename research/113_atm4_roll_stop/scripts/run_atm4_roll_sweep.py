@@ -25,7 +25,7 @@ EOD_HM = "15:15"
 STEP = 50
 ROLL_MIN_OTM = 50
 
-VARIANTS = ["SQ", "P150", "P200", "F8", "F12", "SURV", "NOSL", "MIN15", "NOROLL"]
+VARIANTS = ["SQ", "P150", "P200", "F8", "F12", "SURV", "MAXV", "NOSL", "MIN15", "NOROLL"]
 
 FIELDS = ["variant", "day", "dte", "gross", "net", "legs_traded", "rolled",
           "roll_prem", "roll_sl_gap", "roll_restopped", "roll_restop_min",
@@ -104,6 +104,8 @@ def roll_sl(variant, rp, price_x):
         return rp + max(0.3 * rp, 12.0)
     if variant == "SURV":
         return price_x * 1.3
+    if variant == "MAXV":
+        return max(price_x, rp) * 1.3
     return None  # NOSL
 
 

@@ -7,7 +7,7 @@ Cross-session source of truth for pending work. Each item: what / why / when.
 Arun watched the live ATM4 roll (24150 PE @12.1, SL 15.7) die in 6 minutes and asked for a
 data assessment. 81 days real 1-min NIFTY chain, 63 roll events: live rule (1.3x roll_prem)
 is the churniest variant (32% restop, 6% <=15min). Rolling itself is strongly validated
-(never-roll = -49k vs +143k). **Recommended: rolled-leg SL = 1.3 x price_x (SURV)** — beats
+(never-roll = -49k vs +143k). **DEPLOYED: rolled-leg SL = max(price_x, roll_prem) x 1.3 (MAXV — Arun refinement over SURV; best tail p05 -1,067, 19% restop, +8.5k over old rule)** — beats
 live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py (~L395),
 SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
 Re-check when the data window doubles (~late Sep 2026).

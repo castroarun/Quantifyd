@@ -95,4 +95,4 @@ One axis: the ROLLED leg's stop rule (everything else frozen):
 
 ## 8. Findings
 
-**Verdict: SIGNAL (mechanic upgrade) — see results/RESULTS.md.** Live rule (1.3x roll_prem) = churniest variant (32% restop). Rolling itself strongly validated (NOROLL -49k vs +143k). Recommended: SURV — rolled-leg SL = 1.3 x price_x — strictly dominates live rule on total/tail/win/churn and is best on DTE0. P200 = max-total alternative with fatter tail. 81 days, 1 window, no OOS.
+**Verdict: SIGNAL (mechanic upgrade) — see results/RESULTS.md.** Live rule (1.3x roll_prem) = churniest variant (32% restop). Rolling itself strongly validated (NOROLL -49k vs +143k). DEPLOYED: MAXV — rolled-leg SL = max(price_x, roll_prem) x 1.3 (Arun refinement; +5.5k over SURV, same best tail, 19% restop) — SURV strictly dominates live rule on total/tail/win/churn and is best on DTE0. P200 = max-total alternative with fatter tail. 81 days, 1 window, no OOS.
