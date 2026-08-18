@@ -154,6 +154,58 @@ if not already(db4, "nas_atm_positions"):
 else:
     log("ATM4 as-is rows already present - skip")
 
+# CSL30F_SENSEX (paper, frozen OPEN at the 14:16 daemon kill): rightful record.
+def _csl30f_sensex():
+    K, CRED, QTYS, LOTS, EXP = 77500, 575.2, 60, 3, "2026-08-20"
+    THR = CRED * 1.30
+    STATE = "/home/arun/quantifyd/backtest_data/csl_paper_state.json"
+    stx = json.load(open(STATE))
+    if any(r.get("book") == "CSL30F_SENSEX" and r.get("day") == TODAY for r in stx.get("records", [])):
+        log("CSL30F_SENSEX: already recorded"); return
+    c = sqlite3.connect("file:%s?mode=ro" % CHAIN, uri=True)
+    rows = c.execute(
+        "SELECT substr(snapshot_time,12,5) hm, instrument_type, ltp FROM option_chain "
+        "WHERE symbol='SENSEX' AND strike=? AND expiry_date=? AND snapshot_time LIKE ? "
+        "AND ltp IS NOT NULL ORDER BY snapshot_time", (K, EXP, TODAY + "%")).fetchall()
+    c.close()
+    per = {}
+    for hm, it, ltp in rows:
+        per.setdefault(hm, {})[it] = ltp
+    streak, exit_hm, exit_comb, reason = 0, None, None, "TIME_EXIT"
+    last_comb = None
+    for hm in sorted(per):
+        if hm < "09:17":
+            continue
+        d = per[hm]
+        if "CE" not in d or "PE" not in d:
+            continue
+        comb = d["CE"] + d["PE"]
+        last_comb = (hm, comb)
+        if hm >= "15:20":
+            exit_hm, exit_comb = hm, comb; break
+        if streak >= 2:
+            exit_hm, exit_comb, reason = hm, comb, "SL_DWELL"; break
+        streak = streak + 1 if comb >= THR else 0
+    if exit_comb is None:
+        if not last_comb:
+            log("CSL30F_SENSEX: no chain data - skip"); return
+        exit_hm, exit_comb = last_comb
+    pnl = round((CRED - exit_comb) * QTYS - 160)
+    shutil.copy(STATE, STATE + ".bak_sx30f")
+    stx.setdefault("records", []).append({
+        "day": TODAY, "book": "CSL30F_SENSEX", "sym": "SENSEX", "dte": 2,
+        "cfg": "09:16->15:20 SL30", "strike": K, "expiry": EXP, "credit": CRED,
+        "entry_ts": "09:16:08", "exit_ts": exit_hm + ":00", "exit_comb": round(exit_comb, 2),
+        "reason": reason, "pnl": pnl, "series": [], "lots": LOTS, "qty": QTYS,
+        "source": "PAPER",
+        "recon": "RIGHTFUL reconstruction: daemon killed 14:16 (manual close-all watcher) with this paper book frozen OPEN; replayed to its rules exit on the recorded 1-min SENSEX chain."})
+    stx.setdefault("cum", {})["CSL30F_SENSEX"] = round(stx["cum"].get("CSL30F_SENSEX", 0) + pnl)
+    tmp = STATE + ".tmp2"
+    json.dump(stx, open(tmp, "w"))
+    shutil.move(tmp, STATE)
+    log("CSL30F_SENSEX rightful: %s @ %.1f -> pnl %+d" % (reason, exit_comb, pnl))
+_csl30f_sensex()
+
 # COMB: sync rightful record (STATE) -> PUB + close the frozen live book in the UI json
 STATE = B + "csl_paper_state.json"
 PUB = "/home/arun/quantifyd/static/app/csl_paper.json"
@@ -164,8 +216,11 @@ try:
         shutil.copy(PUB, PUB + ".bak_asis")
         json.dump(stx, open(PUB, "w"))
         lv = json.load(open(LIVEJ))
-        if lv.get("books", {}).get("NAS_COMB20", {}).get("state") == "OPEN":
-            lv["books"]["NAS_COMB20"]["state"] = "CLOSED"
+        changed = False
+        for bk in ("NAS_COMB20", "CSL30F_SENSEX"):
+            if lv.get("books", {}).get(bk, {}).get("state") == "OPEN":
+                lv["books"][bk]["state"] = "CLOSED"; changed = True
+        if changed:
             json.dump(lv, open(LIVEJ, "w"))
         log("COMB: rightful record synced to PUB; frozen live book marked CLOSED")
     else:

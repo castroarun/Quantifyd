@@ -152,6 +152,8 @@ const NAS_OPT_DEF: SystemDef = {
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'COMB · combined-SL', subtitle: 'full-day CSL sleeve', rules: '', configNote: 'live · sec-16', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'TimeB · time-windows', subtitle: 'time-blocked sleeve', rules: '', configNote: 'live · sec-18b 6L', group: '916' },
+  { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'COMB SENSEX · CSL30F', subtitle: 'full-day CSL sleeve (paper)', rules: '', configNote: 'paper A/B', group: '916' },
+  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TimeB SENSEX', subtitle: 'time-blocked sleeve (paper)', rules: '', configNote: 'paper 6L', group: '916' },
 ];
 
 // Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
@@ -1898,7 +1900,7 @@ export default function Nas() {
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
           systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520) }}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 120) }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />
@@ -1967,6 +1969,17 @@ export default function Nas() {
       <Collapsible title="SENSEX" meta="Wed/Thu live · else paper" defaultOpen>
         <SensexLiveCard />
         <SensexPaperCard />
+        <section className={styles.sectionBlock} style={{ marginTop: 22 }}>
+          <div className={styles.colHead}>
+            <div className="section-title">SENSEX sleeves</div>
+            <Chip>paper · CSL A/B books</Chip>
+          </div>
+          <div className={styles.grid3}>
+            <SleeveCard label="COMB (CSL30F)" sub="Full-day combined-SL 30% · paper" rules="09:16 to 15:20, combined-premium SL 30%. The SENSEX arm of the fixed-CSL A/B (variable-vs-fixed live comparison). 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
+            <SleeveCard label="TimeB (SENSEX)" sub="Time-blocked windows + SL · paper" rules="Per-DTE windows + SL from the lab config (today DTE2: 09:25-11:00 SL20). 6 lots, paper — validating before any live promotion." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
+            <div />
+          </div>
+        </section>
       </Collapsible>
 
       {/* What's next - retained but hidden per user 2026-08-14; set to true to restore */}
