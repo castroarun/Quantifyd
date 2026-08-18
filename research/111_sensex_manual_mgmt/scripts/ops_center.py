@@ -91,7 +91,7 @@ REVIEWS = [
     ("TB2 second-slots paper book review (merge into TB-CSL or drop)", "2026-09-05", "SCHEDULED",
      "CSL_TIMEB2_NIFTY 2L PAPER since 08-18 (Mon 10:00-12:00 + Tue 13:00-14:00 SL25); merge as 2nd slots if tracking sweep model (Mon r46 / Tue r265 combined, in-sample)"),
     ("TB-SENSEX first REAL window verify (if other session deploys tonight)", "2026-08-19", "PENDING",
-     "docs/CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md - Wed 10:30-12:00 SL20 first live; check BFO fills/slippage, margin gate, REAL tags"),
+     "SUPERSEDED SCOPE 18-AUG: TB-SENSEX 8L REAL + suite Wednesday->PAPER (doc updated); verify Wed 10:30 first REAL window at qty 160, suite paper-mode logs, BFO slippage; THURSDAY margin decision pending user (doc sec 3)"),
     ("SENSEX Wednesday exposure review (suite 9L real on the venue's fat-tail day)", "2026-09-04", "SCHEDULED",
      "studies: Wed p05 -17k/lot, prescription = window+tight-CSL or size-down/skip; weigh 2-3 more live Wednesdays of suite vs TB-window results"),
     ("SENSEX stack version (NIFTY-first doctrine)", None, "PARKED",

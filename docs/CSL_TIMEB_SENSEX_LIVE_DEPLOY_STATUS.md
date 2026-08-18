@@ -1,55 +1,67 @@
-# CSL_TIMEB_SENSEX → REAL MONEY (6 lots, BFO) — Deployment Instructions
+# SENSEX Wednesday restructure: TB-SENSEX → REAL @ 8 lots · suite Wednesday → PAPER
 
-STATUS: **PLANNED** (user decision 2026-08-18 evening: "this has to be real live")
+STATUS: **PLANNED — execute TONIGHT (18-AUG) before tomorrow's 09:12** (user decisions 2026-08-18
+evening; SUPERSEDES the earlier 6L-only version of this doc)
 
 > **Laptop:** `c:\Users\arunc\Documents\Projects\Covered_Calls\docs\CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md`
 > **VPS:** `/home/arun/quantifyd/docs/CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md`
-> Context: `docs/LIVE_TRADING_SYSTEM_RULES.md` + `docs/THE_STACK_FULL_LIVE_DEPLOY_STATUS.md` (the
-> NIFTY sleeves' live order layer — already built, venue-generic, proven since Mon 17-AUG).
 
-## 1. The change (one line of config — the order layer already handles BFO)
+## 1. The decisions (user, 18-AUG)
 
-`/home/arun/quantifyd/research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py` BOOKS:
+Per the Wednesday numbers (window +₹1,612/day at 5L is the ONLY earning construction; suite's
+per-leg mechanic ≈ −₹137/lot on Wed with a −₹17k/lot p05 tail):
+
+1. **Tomorrow (Wed) only the TB-SENSEX 10:30→12:00 window trades REAL. The SENSEX suite's
+   Wednesday goes to PAPER** (Thursday stays real — it's the harvest day).
+2. **TB-SENSEX resized 6L → 8 lots (qty 160)** — notional parity with NIFTY TB@8L
+   (8×20×~78,000 ≈ ₹1.25Cr vs 8×65×~24,300 ≈ ₹1.26Cr), and goes **REAL** (mode live).
+
+## 2. Changes (three edits, all before 09:12 tomorrow; no gunicorn restart needed)
+
+### A. Day-matrix: suite Wednesday real OFF
+`/home/arun/quantifyd/backtest_data/nas_day_matrix.json`: for `sensex_atm`, `sensex_atm2`,
+`sensex_atm4` set `"dte": {"1": false}` (keep `"0": true` = Thursday). `gate()` reads at decision
+time — effective immediately; paper-shadow continues on Wed automatically (evidence keeps flowing).
+Do NOT touch NIFTY rows. Verify via GET `/api/nas/day-matrix`.
+
+### B. Executor: TB-SENSEX 8L + live
+`research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py` BOOKS:
 `"CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 6, "qty": 120, "cfg_from": "lab"},`
-→ append `"mode": "live"` (+ dated comment). That's the entire trading change: `place_market()`
-uses `B["seg"]` (=BFO) and the marketable-LIMIT/±3%/tick-0.05 logic is venue-generic; gates
-(master mode, kill flag, freeze flag), fill-anchored SLs, per-leg idempotent exits, naked-leg
-unwind, margin gate, REAL-tagged records/alerts all apply automatically.
+→ `"lots": 8, "qty": 160, "cfg_from": "lab", "mode": "live"` (+ dated comment).
+The order layer is venue-generic (BFO seg, marketable-LIMIT ±3%, fill-anchored SLs, per-leg
+idempotent exits, naked-leg unwind, gates) — no other code change. py_compile + commit.
 
-**Deploy before the next 09:12 cron** (executor is standalone; no gunicorn restart). If deployed
-tonight, the first REAL window is **tomorrow Wed 10:30→12:00 SL20 (DTE1)** — note this is the
-venue's danger day, but the TB window IS the studies' prescription for SENSEX-Wed (compressed
-slice + tight combined SL); Thursday (DTE0 full-day SL30) follows as the venue's harvest day.
+### C. Backfill: match sizes
+`csl_paper_backfill.py`: same `"lots": 8, "qty": 160` so history regenerates at deployed size
+(records carry their own lots; mixed history self-describes).
 
-## 2. Checks the implementing session must make
+Also: frontend rules text "CSL_TIMEB_SENSEX (6 lots · qty 120" → "(8 lots · qty 160 — REAL,
+notional-parity with NIFTY TB@8L"; npm build (safe anytime).
 
-1. **Margin arithmetic:** SENSEX 6L short straddle ≈ ₹10–12L (contract ≈ NIFTY's; the gate's
-   `MARGIN_PER_LOT=165000` estimate is close enough). Concurrent worst case is THURSDAY:
-   SENSEX suite 9L (~₹15L) + TB-SENSEX 6L (~₹10L) + NIFTY books closed (Thu = suite shadow,
-   COMB live 2L ~₹3L, TB-NIFTY 8L live Thu full-day ~₹13L!) → peak ≈ ₹41L vs ~₹45L net.
-   **TIGHT.** Verify with `--probe` (prints avail vs need) and check `k.margins()` net that
-   morning; the live gate falls back to paper if short — that is acceptable behavior, not a bug.
-2. **BFO liquidity:** SENSEX weeklies are thinner than NIFTY. The ±3% marketable-LIMIT band
-   should still fill instantly ATM; watch the FIRST fill's slippage vs LTP in the revision log —
-   if >0.5% of premium, flag for band review.
-3. **Tag length:** `("CSL_" + "CSL_TIMEB_SENSEX")[:20]` = `CSL_CSL_TIMEB_SENSEX` (20 chars, fits) —
-   verify the tag actually applied in the orderbook (Kite truncates silently).
-4. Do NOT touch: the frozen schedule (incl. Thu SL30 = "never stopless" insurance), the 6L size,
-   any NIFTY book, the SENSEX suite.
+## 3. ⚠ THE MARGIN DECISION (Thursday, not tomorrow — surface to the user)
 
-## 3. Verify (first live morning)
+Tomorrow (Wed) is trivial: TB-SENSEX 8L alone ≈ ₹13L vs ~₹45L net (NIFTY is ex-Wed; suite Wed
+now paper). **Thursday is the squeeze**: SENSEX suite 9L real (~₹15L) + TB-SENSEX full-day 8L
+(need ₹17.2L at its 09:20 entry with 1.3× headroom) + NIFTY COMB 2L (~₹3.3L) + NIFTY TB 8L
+full-day Thu (~₹13L) → available at TB-SENSEX's entry ≈ 45 − 31 ≈ **₹14L < ₹17.2L need → the
+margin gate will likely PAPER-FALLBACK TB-SENSEX on Thursday** (safe, by design, but Thursday
+is the venue's harvest day). Options for the user: (a) add/pledge ~₹5–8L before Thursday,
+(b) accept Thursday fallback (Wed window real, Thu paper), (c) trim another book Thursday.
+Record the user's choice in the Revision Log. Do NOT silently lower the headroom factor.
 
-`/tmp/csl_paper.log`: `CSL_TIMEB_SENSEX plan [LIVE]` at 09:12; at the window: `ENTER [LIVE]` with
-FILL prices; desktop popup tagged REAL; Kite orderbook BFO pair with the tag; record row
-`"source": "REAL"` after exit; guardian cycle clean. Add all of it to the Revision Log below.
+## 4. Verify (tomorrow)
 
-## 4. Registry (already done by the originating session)
+09:12: `CSL_TIMEB_SENSEX plan [LIVE]: DTE1 10:30->12:00 SL20 qty 160 (8 lots)`; suite logs show
+Wed paper-mode orders (matrix gate); 10:30 ENTER [LIVE] with BFO fill prices + REAL popup +
+tagged orderbook pair; log first-fill slippage vs LTP (>0.5% of premium → flag band review);
+record `"source": "REAL"`; guardian clean. Append all to Revision Log; STATUS → DONE.
 
-Ops Center: "TB-SENSEX first REAL window verify" (due 19-AUG) + "SENSEX Wednesday exposure
-review" (due 04-SEP) are registered. On completion, update this STATUS → DONE + Revision Log.
+## 5. Registry
+Ops Center items already dated: 19-AUG first-REAL-window verify · 04-SEP Wednesday review (its
+question is now partially ANSWERED BY ACTION — suite Wed to paper; the review validates with
+shadow data). Update the review note when marking this DONE.
 
-## 5. Revision Log (append)
-
+## 6. Revision Log (append)
 | Date/time | Event | Evidence |
 |---|---|---|
-| 2026-08-18 | Instructions written | — |
+| 2026-08-18 late eve | Superseding instructions written (8L + Wed-suite-paper) | — |
