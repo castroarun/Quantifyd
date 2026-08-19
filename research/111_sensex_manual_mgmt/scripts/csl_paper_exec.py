@@ -203,7 +203,8 @@ def push_event(st, book, etype, msg, source="PAPER"):
 def write_live(plans, today):
     try:
         def _bd(P):
-            d = {"state": P["state"], "credit": P.get("credit"), "series": P.get("series", [])}
+            d = {"state": P["state"], "credit": P.get("credit"), "series": P.get("series", []),
+                 "dte": P.get("dte"), "entry": P.get("entry"), "exit": P.get("exit"), "sl": P.get("sl")}
             lg = P.get("legs")
             if lg:
                 d.update(K=P.get("K"), ce_sym=lg[0], pe_sym=lg[1], ce0=P.get("ce0"), pe0=P.get("pe0"),

@@ -1576,10 +1576,19 @@ export default function Nas() {
   const TB_WIN: Record<string, Record<number, [string, string, number]>> = {
     NAS_COMB20: { 0: ['09:16', '15:20', 25], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 20] },
     CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 1: ['13:00', '14:00', 20], 2: ['10:00', '12:00', 20], 3: ['09:16', '15:20', 20] },
+    CSL_TIMEB_SENSEX: { 0: ['09:20', '15:20', 30], 1: ['10:30', '12:00', 20], 2: ['09:25', '11:00', 20], 3: ['13:00', '14:00', 20], 4: ['10:30', '12:00', 20] },
+    CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
   const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
     const b: any = cslLive?.books?.[bk];
     if (!b) return { state: null, err: null };
+    // venue-aware trading-DTE: executor-published if present, else weekday table
+    // (NIFTY Tue-expiry: Mon..Fri -> 1,0,4,3,2 · SENSEX Thu-expiry: 3,2,1,0,4).
+    // Fixes the Wed bug where COMB (ex-Wed) carried no dte and armed rows vanished.
+    const wd = new Date().getDay() - 1;
+    const dteTbl = bk.includes('SENSEX') ? [3, 2, 1, 0, 4] : [1, 0, 4, 3, 2];
+    const dte = b.dte ?? (bk.includes('SENSEX') ? null : cslLive?.books?.NAS_COMB20?.dte) ?? (wd >= 0 && wd <= 4 ? dteTbl[wd] : null);
+    const w = (dte != null && TB_WIN[bk]) ? TB_WIN[bk][dte] : null;
     if (b.state === 'OPEN' && b.ce_sym) {
       const thr = (b.credit && b.sl) ? Math.round((1 + b.sl / 100) * b.credit) : null;
       const curComb = (Number(b.ce_last) || 0) + (Number(b.pe_last) || 0);
@@ -1588,11 +1597,10 @@ export default function Nas() {
       const mk = (leg: string, sym: string, e: number, l: number): any => ({
         leg, tradingsymbol: sym, strike: b.K, qty, entry_price: e, ltp: l,
         mode: b.live ? 'live' : 'paper', entry_time: b.entry_ts, status: 'ACTIVE', sl_price: thr, arm_text: armTxt,
+        exit_planned: w ? w[1] : undefined,
       });
       return { state: { positions: { ce: [mk('CE', b.ce_sym, b.ce0, b.ce_last)], pe: [mk('PE', b.pe_sym, b.pe0, b.pe_last)], closed_today: [] } } as any, err: null };
     }
-    const dte = cslLive?.books?.NAS_COMB20?.dte;   // COMB is open first, so it carries today's DTE
-    const w = (dte != null && TB_WIN[bk]) ? TB_WIN[bk][dte] : null;
     if (b.state === 'WAIT_ENTRY' && w) {
       return { state: { planned: { entry: w[0], exit: w[1], sl: w[2], qty, mode: b.live === false ? 'paper' : 'live' } } as any, err: null };
     }
@@ -2145,7 +2153,7 @@ function buildTradeBook(
       if (pl) {
         rows.push({ sysId: sys.id, sysLabel: sys.label, family: sys.group, side: '—', strike: null,
           qty: pl.qty ?? 0, entry: null, exit: null, pnl: 0, open: false,
-          reason: `PLANNED · SL${pl.sl}`, inTime: pl.entry ?? '', outTime: pl.exit ?? '',
+          reason: `PLANNED · SL${pl.sl}`, inTime: pl.entry ? pl.entry + '*' : '', outTime: pl.exit ? pl.exit + '*' : '',
           arm: null, mode: pl.mode ?? 'live' });
       }
       continue;
@@ -2171,7 +2179,7 @@ function buildTradeBook(
         side: (p.leg ?? '').toUpperCase(), strike: p.strike ?? null, qty,
         entry, exit: ltp, pnl, open, reason: p.exit_reason ?? undefined,
         inTime: formatLegTime(p.entry_time) ?? '',
-        outTime: open ? '' : (formatLegTime(p.exit_time) ?? ''),
+        outTime: open ? ((p as any).exit_planned ? (p as any).exit_planned + '*' : '') : (formatLegTime(p.exit_time) ?? ''),
         arm: open ? (p.sl_price ?? null) : null,
         arm_text: (p as any).arm_text,
         armLive: open ? p.arm_live : undefined,
