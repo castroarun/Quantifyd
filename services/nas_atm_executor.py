@@ -380,12 +380,22 @@ class NasAtmExecutor:
 
     def _reconcile_phantom(self, legs, reason='MANUAL_CLOSE_RECONCILED'):
         """Mark DB-active legs CLOSED without placing any order -- they are gone at the broker
-        (closed outside the system). Books each at its entry price (P&L neutral in the DB; the real
-        manual fill is on the user's contract note)."""
+        (closed outside the system). Books each at the LIVE market premium when available
+        (2026-08-19: entry-price marking buried the P&L Arun actually realized on his
+        2026-08-18 manual close-all -- the day showed -4,007 instead of +7,871. A manual
+        close is a proxy exit of the system's own position; its real economics belong in
+        the book). Falls back to entry price only if no quote is available."""
         for p in legs:
             try:
                 if p.get('status') == 'ACTIVE':
-                    self.db.close_position(p['id'], p.get('entry_price') or 0, reason)
+                    px = None
+                    try:
+                        px = self.scanner.get_live_option_premium(p.get('tradingsymbol', ''))
+                    except Exception:
+                        px = None
+                    if not px or px <= 0:
+                        px = p.get('entry_price') or 0
+                    self.db.close_position(p['id'], px, reason)
                     logger.critical("[%s] %s reconciled to CLOSED (broker flat -- closed outside "
                                     "the system); no order placed", self.EXCHANGE, p.get('tradingsymbol'))
             except Exception as e:
