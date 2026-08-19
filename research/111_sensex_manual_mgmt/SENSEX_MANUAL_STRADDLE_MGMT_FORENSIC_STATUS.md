@@ -310,3 +310,5 @@ sweep-best. Cells (16 Thursdays, 5L): SLnone +229,155/dd-775/r295.7/win94%% vs S
 - keeps a pct stop per never-stopless preference while halving the noise-trips vs SL30.
 Effective 2026-08-20 09:12 (first real Thursday). 50%% disaster backstop unchanged.
 Also first-run: SX-CROSS-CORR full -0.04 (excellent diversification) but recent15 0.47 - watch.
+
+**Sec 19c (2026-08-19): NIFTY-Thu (DTE3) SL20 QUESTIONED AND KEPT (user).** SL20/25/30/40 historically identical on NIFTY Thursdays (no stop ever fired; SL20 was a tie-break). Loosening to 30/40 offered for OOS robustness (post the SENSEX-Thu noise-trip lesson); user decision: keep SL20 as frozen. Applies to TB-NIFTY DTE3 + NAS_COMB20 DTE3. No config change.
