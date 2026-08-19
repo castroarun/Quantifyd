@@ -662,6 +662,7 @@ def api_breakout_scan():
             'consol_days': _rq.args.get('consol_days', type=int),
             'consol_max_range_pct': _rq.args.get('consol_max_range_pct', type=float),
             'min_turnover_cr': _rq.args.get('min_turnover_cr', type=float),
+            'fresh_min_gap': _rq.args.get('fresh_min_gap', type=int),
         }
         key = repr(sorted(args.items()))
         ttl = 45 if args['asof'] == 'live' else 600

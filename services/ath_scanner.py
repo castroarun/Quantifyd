@@ -161,7 +161,8 @@ def _session_fraction(now: Optional[datetime] = None) -> float:
 def scan(asof: str = 'eod', universe: str = 'nifty500',
          vol_mult: float = None, vol_window: int = None,
          consol_days: int = None, consol_max_range_pct: float = None,
-         min_turnover_cr: float = None) -> Dict[str, Any]:
+         min_turnover_cr: float = None,
+         fresh_min_gap: int = 0) -> Dict[str, Any]:
     """asof: live | eod | t1 | t2 | t3   (t1 = one session before the last close)."""
     vol_mult = float(vol_mult or DEFAULTS['vol_mult'])
     vol_window = int(vol_window or DEFAULTS['vol_window'])
@@ -169,6 +170,7 @@ def scan(asof: str = 'eod', universe: str = 'nifty500',
     consol_max = float(consol_max_range_pct or DEFAULTS['consol_max_range_pct'])
     min_turn = float(min_turnover_cr if min_turnover_cr is not None
                      else DEFAULTS['min_turnover_cr'])
+    fresh_min_gap = int(fresh_min_gap or 0)
 
     syms = _universe(universe)
     sessions = _trading_dates(12)
@@ -226,6 +228,9 @@ def scan(asof: str = 'eod', universe: str = 'nifty500',
 
         avg10 = float(np.mean(v[-10:]))
         avg20 = float(np.mean(v[-20:]))
+        med20 = float(np.median(v[-20:]))
+        vt_full = vol_today / sess_frac if live else vol_today
+        vol_rank = int(np.sum(np.array(v[-20:]) > vt_full)) + 1
         turnover_cr = float(np.median(c[-20:] * v[-20:])) / 1e7
         if turnover_cr < min_turn:
             continue
@@ -240,26 +245,46 @@ def scan(asof: str = 'eod', universe: str = 'nifty500',
 
         pa = prior_ath.get(sym)
         if pa and cur > pa:
-            ath_rows.append({
-                'symbol': sym,
-                'price': round(cur, 2),
-                'day_high': round(day_high, 2),
-                'prior_ath': round(pa, 2),
-                'pct_above_prior_ath': round((cur / pa - 1) * 100, 2),
-                'chg_pct': round((cur / prev_close - 1) * 100, 2),
-                'vol_x_10d': r10,
-                'vol_x_20d': r20,
-                'vol_spike': spike,
-                'turnover_cr': round(turnover_cr, 2),
-                'asof': ref_date,
-            })
+            # sessions since the prior ATH was last touched (continuation
+            # detector): a stock that printed its previous high yesterday is
+            # an ATH *continuation*, not a fresh breakout
+            touch = np.flatnonzero(c >= pa * 0.999)
+            ath_gap = int(len(c) - touch[-1]) if len(touch) else 999
+            if fresh_min_gap and ath_gap < fresh_min_gap:
+                pass_ath = False
+            else:
+                pass_ath = True
+            if pass_ath:
+                ath_rows.append({
+                    'symbol': sym,
+                    'price': round(cur, 2),
+                    'day_high': round(day_high, 2),
+                    'prior_ath': round(pa, 2),
+                    'pct_above_prior_ath': round((cur / pa - 1) * 100, 2),
+                    'chg_pct': round((cur / prev_close - 1) * 100, 2),
+                    'vol_x_10d': r10,
+                    'vol_x_20d': r20,
+                    'vol_spike': spike,
+                    'turnover_cr': round(turnover_cr, 2),
+                    'asof': ref_date,
+                    'vol_x_med20': round(vt_full / med20, 2) if med20 > 0 else None,
+                    'vol_rank21': vol_rank,
+                    'ath_gap_sessions': ath_gap,
+                })
 
         if len(h) >= consol_days:
             box_h = float(np.max(h[-consol_days:]))
             box_l = float(np.min(l[-consol_days:]))
             base = box_h if box_h > 0 else 1.0
             range_pct = (box_h - box_l) / base * 100
-            if cur > box_h and range_pct <= consol_max:
+            # a real consolidation is FLAT: the net drift through the box
+            # must be small relative to the box, and the box high must be a
+            # few sessions old — otherwise it is a rising trend printing
+            # daily highs (the RADICO false positive, 2026-08-19)
+            drift_pct = (float(c[-1]) / float(c[-consol_days]) - 1) * 100
+            box_age = consol_days - 1 - int(np.argmax(h[-consol_days:]))
+            is_flat = abs(drift_pct) <= 0.5 * range_pct
+            if cur > box_h and range_pct <= consol_max and is_flat and box_age >= 3:
                 consol_rows.append({
                     'symbol': sym,
                     'price': round(cur, 2),
@@ -274,6 +299,10 @@ def scan(asof: str = 'eod', universe: str = 'nifty500',
                     'vol_spike': spike,
                     'turnover_cr': round(turnover_cr, 2),
                     'asof': ref_date,
+                    'vol_x_med20': round(vt_full / med20, 2) if med20 > 0 else None,
+                    'vol_rank21': vol_rank,
+                    'drift_pct': round(drift_pct, 2),
+                    'box_high_age': box_age,
                 })
 
     key = 'vol_x_20d' if vol_window == 20 else 'vol_x_10d'
@@ -292,7 +321,7 @@ def scan(asof: str = 'eod', universe: str = 'nifty500',
         'params': {
             'vol_mult': vol_mult, 'vol_window': vol_window,
             'consol_days': consol_days, 'consol_max_range_pct': consol_max,
-            'min_turnover_cr': min_turn,
+            'min_turnover_cr': min_turn, 'fresh_min_gap': fresh_min_gap,
         },
         'sessions': sessions[:5],
         'ath': ath_rows,

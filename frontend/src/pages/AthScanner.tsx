@@ -35,6 +35,7 @@ export default function AthScanner() {
   const [consolDays, setConsolDays] = useState('12');
   const [minTurn, setMinTurn] = useState('1');
   const [onlyVol, setOnlyVol] = useState(false);
+  const [hideCont, setHideCont] = useState(true);
   const [res, setRes] = useState<Res | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export default function AthScanner() {
     const qs = new URLSearchParams({
       asof: asofs.join(','), universe, vol_window: String(volWindow), vol_mult: volMult,
       consol_days: consolDays, min_turnover_cr: minTurn,
+      fresh_min_gap: hideCont ? '20' : '0',
     });
     apiGet<Res>(`/api/breakout-scan?${qs}`)
       .then((r) => { r.error ? setErr(r.error) : setRes(r); setLoading(false); })
@@ -129,6 +131,11 @@ export default function AthScanner() {
                    onChange={(e) => setOnlyVol(e.target.checked)} />
             volume-confirmed only
           </label>
+          <label className={styles.chk}>
+            <input type="checkbox" checked={hideCont}
+                   onChange={(e) => setHideCont(e.target.checked)} />
+            hide ATH continuations (prior high touched &lt;20 sessions ago)
+          </label>
         </div>
       </div>
 
@@ -181,8 +188,9 @@ export default function AthScanner() {
           </span>
         </div>
         <p className={styles.note}>
-          Price traded inside a box no wider than {res?.params.consol_max_range_pct ?? 8}% for the last
-          {' '}{res?.params.consol_days ?? 12} sessions, and is now above the box high.
+          Price traded inside a FLAT box (range ≤ {res?.params.consol_max_range_pct ?? 8}%, net drift ≤ half the range,
+          box high ≥3 sessions old) for the last {res?.params.consol_days ?? 12} sessions, and is now above the box high —
+          rising channels that merely stay inside a narrow band no longer qualify.
         </p>
         {!res || filt(res.consolidation_breakout).length === 0 ? (
           <div className={styles.empty}>No box breakouts {onlyVol ? 'with volume confirmation ' : ''}for this selection.</div>
