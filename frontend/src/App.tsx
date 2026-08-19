@@ -27,6 +27,7 @@ import PairTrading from './pages/PairTrading';
 import Scanner from './pages/Scanner';
 import BreakoutScanner from './pages/BreakoutScanner';
 import AthScanner from './pages/AthScanner';
+import IndexPulse from './pages/IndexPulse';
 import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
 import MomentumPaper from './pages/MomentumPaper';
@@ -181,6 +182,16 @@ export default function App() {
           <Protected>
             <AppLayout active="n500m">
               <N500m />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/indices"
+        element={
+          <Protected>
+            <AppLayout active="indices">
+              <IndexPulse />
             </AppLayout>
           </Protected>
         }
