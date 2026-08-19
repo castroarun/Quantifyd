@@ -132,11 +132,29 @@ for bk in ("NAS_COMB20", "CSL_TIMEB_NIFTY"):
         notes.append("%s: no live days yet" % bk)
 add("LIVE-TRACKING", "INFO", "; ".join(notes) + " | full paper-vs-model checkpoint ~15-SEP")
 
+OBJECTIVES = {
+    "CORR-DRIFT": "Is the diversification basis (component correlations) still what we sized on?",
+    "DTE-SHIFT": "Has any component's per-DTE behavior flipped sign recently?",
+    "TB-WINDOWS": "Are the frozen TB windows still competitive vs the latest weekly sweep?",
+    "SIZING": "Is the deployed lots-split still the right grid cell on latest data?",
+    "LIVE-TRACKING": "Are the live sleeves tracking their backfill/model expectations?",
+}
+for c in checks:
+    c["objective"] = OBJECTIVES.get(c["name"], "")
 out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
        "window": {"n": len(all_keys), "from": all_keys[0] if all_keys else None,
                   "to": all_keys[-1] if all_keys else None, "recent_n": len(recent)},
        "checks": checks,
        "overall": ("DRIFT" if any(c["verdict"] == "DRIFT" for c in checks) else "OK")}
+# append this run to the PERMANENT history (capped 60 runs) - the app shows the trail
+hp = Q / "static/app/straddles/reassessment_history.json"
+hist = (load(hp) or {"runs": []})
+hist["runs"] = ([r for r in hist.get("runs", []) if r.get("generated_at") != out["generated_at"]] + [out])[-60:]
+for p2 in (hp, Q / "frontend/public/straddles/reassessment_history.json"):
+    try:
+        json.dump(hist, open(p2, "w"))
+    except Exception as e:
+        print("hist write", e)
 for p in OUTS:
     try:
         p.parent.mkdir(parents=True, exist_ok=True)

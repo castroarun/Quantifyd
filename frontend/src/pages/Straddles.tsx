@@ -523,6 +523,7 @@ export default function Straddles() {
   const [pfSel, setPfSel] = useState<number | null>(null); // selected lab portfolio row (charts)
   const [pfDte, setPfDte] = useState<string>('ALL');       // lab charts DTE filter (NIFTY weekday map)
   const [pfRe, setPfRe] = useState<any>(null);             // weekly stack re-assessment (Fri 16:35)
+  const [pfReH, setPfReH] = useState<any>(null);           // re-assessment run history (permanent trail)
   const [opsC, setOpsC] = useState<any>(null);             // ops & review center registry
 
   useEffect(() => {
@@ -540,6 +541,7 @@ export default function Straddles() {
     fetch('/app/nas_baseline.json?t=' + Date.now()).then((r) => r.json()).then(setNasBase).catch(() => {});
     fetch('/app/straddles/portfolio_lab.json?t=' + Date.now()).then((r) => r.json()).then(setPfLab).catch(() => {});
     fetch('/app/straddles/reassessment.json?t=' + Date.now()).then((r) => r.json()).then(setPfRe).catch(() => {});
+    fetch('/app/straddles/reassessment_history.json?t=' + Date.now()).then((r) => r.json()).then(setPfReH).catch(() => {});
     fetch('/app/straddles/ops_center.json?t=' + Date.now()).then((r) => r.json()).then(setOpsC).catch(() => {});
     const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
     loadPLive(); const pl = setInterval(loadPLive, 60000);
@@ -869,6 +871,38 @@ export default function Straddles() {
                         <span style={{ color: C.sec }}> — {c2.detail}</span>
                       </div>))}
                     <div style={{ fontSize: 10, color: C.faint }}>DRIFT = behavior changed vs the frozen/sized basis — review, nothing auto-changes. Small recent windows (15d) are noisy; confirm before acting.</div>
+                    {pfReH && pfReH.runs && pfReH.runs.length > 0 && (
+                      <details style={{ marginTop: 8, borderTop: `1px solid ${C.hairSoft}`, paddingTop: 6 }}>
+                        <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 700, color: C.navy, userSelect: 'none' }}>
+                          📜 Assessment run history ({pfReH.runs.length} logged)</summary>
+                        <div style={{ marginTop: 6 }}>
+                          {pfReH.runs.slice().reverse().map((run2: any, ri: number) => (
+                            <details key={ri} style={{ marginBottom: 4 }}>
+                              <summary style={{ cursor: 'pointer', fontSize: 11, userSelect: 'none' }}>
+                                <span style={{ fontWeight: 800, color: run2.overall === 'DRIFT' ? C.amber : C.pos }}>{run2.overall}</span>
+                                <b style={{ color: C.ink }}> {run2.generated_at}</b>
+                                <span style={{ color: C.faint }}> · data {run2.window?.from?.slice(5)}→{run2.window?.to?.slice(5)} ({run2.window?.n}d, recent {run2.window?.recent_n}d) · </span>
+                                {run2.checks?.map((c2: any) => (
+                                  <span key={c2.name} title={c2.name} style={{ fontSize: 9, fontWeight: 800, padding: '0 4px', marginRight: 2, borderRadius: 3,
+                                    color: c2.verdict === 'DRIFT' ? C.amber : c2.verdict === 'INFO' ? C.navy : C.pos,
+                                    background: c2.verdict === 'DRIFT' ? C.amberSoft : c2.verdict === 'INFO' ? C.navySoft : '#E7F2EE' }}>
+                                    {c2.name.split('-')[0]}</span>
+                                ))}
+                              </summary>
+                              <div style={{ margin: '4px 0 6px 14px' }}>
+                                {run2.checks?.map((c2: any) => (
+                                  <div key={c2.name} style={{ fontSize: 10.5, color: C.sec, marginBottom: 3 }}>
+                                    <b style={{ color: c2.verdict === 'DRIFT' ? C.amber : C.ink }}>{c2.verdict} · {c2.name}</b>
+                                    {c2.objective && <span style={{ color: C.faint }}> — {c2.objective}</span>}
+                                    <div style={{ marginLeft: 8 }}>{c2.detail}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      </details>
+                    )}
                   </div>
                 </details>
               )}
