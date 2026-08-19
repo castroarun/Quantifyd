@@ -2167,9 +2167,12 @@ function buildTradeBook(
         : (p.exit_price ?? null);
       const rawQty = p.qty ?? 0;
       const isLive = (p.mode || '').toLowerCase() === 'live';
-      // Restate PAPER legs at the uniform 2-lot size. LIVE legs are real money and are
-      // NEVER restated -- they must always show exactly what hit the account.
-      const sc = basis === 'per2' && !isLive && rawQty > 0 ? TARGET_QTY / rawQty : 1;
+      // Restate PAPER legs at the uniform 2-lot size PER VENUE: NIFTY 2x65=130,
+      // SENSEX 2x20=40 (restating SENSEX to 130 inflated its rows 2.17x - user
+      // catch 20-Aug). LIVE legs are real money and are NEVER restated.
+      const isSensex = (p.tradingsymbol || '').startsWith('SENSEX') || (p.strike ?? 0) >= 40000;
+      const targetQty = isSensex ? 40 : TARGET_QTY;
+      const sc = basis === 'per2' && !isLive && rawQty > 0 ? targetQty / rawQty : 1;
       const qty = Math.round(rawQty * sc);
       const rawComputed = entry != null && ltp != null && rawQty ? (entry - ltp) * rawQty : 0;
       const pnl = (open ? rawComputed : (p.pnl_inr ?? rawComputed)) * sc;

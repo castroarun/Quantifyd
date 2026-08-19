@@ -33,6 +33,8 @@ BOOKS = {
     # FIXED-CSL30 books (the flat rule, un-windowed) — the variable-vs-fixed live A/B
     "CSL_TIMEB_NIFTY_THU": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed", "mode": "live",
                             "fixed_cfg": {"entry": "09:25", "exit": "15:20", "sl": 20}},  # 2026-08-19: Thursday-only TB-N at reduced size (Option B) - DTE3 is the 2nd-best NIFTY cell; 3L is the max that clears every margin gate at current capital. Config json trimmed to DTE3 only.
+    "CSL30F_SENSEX_WED": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed", "mode": "live",
+                          "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},  # 2026-08-20 USER OVERRIDE vs study: Wed full-day cell is -571/day 64% (n=11) and verdict Q4 said windows-only - Arun chose live anyway after seeing the table. Config json trimmed to DTE1 only. Review after 4 live Wednesdays (Ops). Paper control book unchanged.
     "CSL30F_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
     "CSL30F_SENSEX": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed",

@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("CSL30F_SENSEX_WED live override vs study - keep or kill", "2026-09-18", "PENDING",
+     "user 20-Aug: Wed full-day SENSEX COMB live at 3L AGAINST the -571/day 64% cell (verdict Q4 windows-only); judge on 4 live Wednesdays (26-Aug on)"),
     ("Monday 24-Aug: bump TB-NIFTY and TB-SENSEX 8 -> 10 lots (1.0x plan)", "2026-08-24", "PENDING",
      "edit BOOKS lots/qty in csl_paper_exec.py + backfill before 09:12; scale-up page row-1 target assumes it"),
     ("Weekly: append the weeks actual P&L/DD to /app/scaleup vs the 1.0x target", "every Friday evening", "SCHEDULED",
