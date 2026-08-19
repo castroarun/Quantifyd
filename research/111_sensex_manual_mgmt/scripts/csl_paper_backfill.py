@@ -71,9 +71,9 @@ for SYM in ("NIFTY", "SENSEX"):
             return legcache[key]
         for bk in books:
             if (day, bk) in live: continue          # live paper/real record exists -> never overwrite
-            B = BOOKS[bk]
             c = (cfg["books"].get(bk) or {}).get(str(k))
             if not c: continue                       # book doesn't trade this DTE
+            B = {**BOOKS[bk], "lots": c.get("lots", BOOKS[bk]["lots"]), "qty": c.get("qty", BOOKS[bk]["qty"])}
             ent_t, ex_t = c["entry"], c["exit"]
             sl = BACKSTOP if c["sl"] == "none" else float(c["sl"])
             j = bisect_right(st, ent_t + ":59")

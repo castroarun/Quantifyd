@@ -249,10 +249,12 @@ def main():
             log("%s: no config for DTE%s — skip today" % (bk, dte)); continue
         if any(r["day"] == today and (r.get("book") == bk or (not r.get("book") and r.get("sym") == B["sym"])) for r in st["records"]):
             log("%s: already recorded today — skip" % bk); continue
+        effB = {**B, "lots": c.get("lots", B["lots"]), "qty": c.get("qty", B["qty"])}
         plans[bk] = {"dte": dte, **c, "state": "WAIT_ENTRY", "K": None, "legs": None,
                      "ce0": None, "pe0": None, "credit": None, "streak": 0, "last_comb": None,
-                     "series": [], "tick": 0, "realized_rs": 0.0, "cost": 160, "shifts": 0}
-        log("%s plan%s: DTE%d %s->%s SL%s qty %d (%d lots)" % (bk, " [LIVE]" if is_live_book(B) else "", dte, c["entry"], c["exit"], c["sl"], B["qty"], B["lots"]))
+                     "series": [], "tick": 0, "realized_rs": 0.0, "cost": 160, "shifts": 0,
+                     "B": effB}
+        log("%s plan%s: DTE%d %s->%s SL%s qty %d (%d lots)" % (bk, " [LIVE]" if is_live_book(B) else "", dte, c["entry"], c["exit"], c["sl"], effB["qty"], effB["lots"]))
     if probe:
         for bk in plans:
             B = BOOKS[bk]
@@ -283,7 +285,7 @@ def main():
             try: QB = k.ltp(list(_need))
             except Exception as _ex: log("batch ltp err: %s" % str(_ex)[:60])
         for sym in list(plans):     # sym here = book key
-            P = plans[sym]; B = BOOKS[sym]
+            P = plans[sym]; B = P.get("B") or BOOKS[sym]
             try:
                 if P["state"] == "WAIT_ENTRY":
                     em = int(P["entry"][:2]) * 60 + int(P["entry"][3:5])

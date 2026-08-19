@@ -153,7 +153,7 @@ const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'COMB · combined-SL', subtitle: 'full-day CSL sleeve', rules: '', configNote: 'live · sec-16', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'TimeB · time-windows', subtitle: 'time-blocked sleeve', rules: '', configNote: 'live · sec-18b 6L', group: '916' },
   { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'COMB SENSEX · CSL30F', subtitle: 'full-day CSL sleeve (paper)', rules: '', configNote: 'paper A/B', group: '916' },
-  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TimeB SENSEX', subtitle: 'time-blocked sleeve', rules: '', configNote: 'live 8L · Wed/Thu windows', group: '916' },
+  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'COMB SENSEX', subtitle: 'Wed window + Thu full-day', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
 
 // Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
@@ -1984,7 +1984,7 @@ export default function Nas() {
           </div>
           <div className={styles.grid3}>
             <SleeveCard label="COMB (CSL30F)" sub="Full-day combined-SL 30% · paper" rules="09:16 to 15:20, combined-premium SL 30%. The SENSEX arm of the fixed-CSL A/B (variable-vs-fixed live comparison). 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
-            <SleeveCard label="TimeB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE windows + SL from the lab config (Wed DTE1: 10:30-12:00 SL20). 8 lots (qty 160), REAL from 19-Aug — the Wed window is the venue's only earning construction; the 9:16 suite's Wednesday went to paper the same night." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
+            <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE windows + SL from the lab config (Wed DTE1: 10:30-12:00 SL20). 8 lots (qty 160), REAL from 19-Aug — the Wed window is the venue's only earning construction; the 9:16 suite's Wednesday went to paper the same night." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
             <div />
           </div>
         </section>
