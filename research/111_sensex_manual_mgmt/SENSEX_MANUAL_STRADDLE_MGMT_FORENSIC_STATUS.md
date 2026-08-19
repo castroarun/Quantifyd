@@ -312,3 +312,5 @@ Effective 2026-08-20 09:12 (first real Thursday). 50%% disaster backstop unchang
 Also first-run: SX-CROSS-CORR full -0.04 (excellent diversification) but recent15 0.47 - watch.
 
 **Sec 19c (2026-08-19): NIFTY-Thu (DTE3) SL20 QUESTIONED AND KEPT (user).** SL20/25/30/40 historically identical on NIFTY Thursdays (no stop ever fired; SL20 was a tie-break). Loosening to 30/40 offered for OOS robustness (post the SENSEX-Thu noise-trip lesson); user decision: keep SL20 as frozen. Applies to TB-NIFTY DTE3 + NAS_COMB20 DTE3. No config change.
+
+**Sec 19d (2026-08-19 night): VERDICT FORM returned** (docs/TIMEB_COMB_NAMING_AND_PLAN_VERDICT_HANDOFF.md sec 6). Rulings: naming RATIFIED labels-only; SENSEX-Thu study prescription = none(HOLD)+backstop but Arun's same-evening SL40 decision STANDS (revisit n>=4 live Thu); NIFTY-Thu merge to 5L single COMB via drafted per-DTE lots override at a quiet window; Row-1 target haircut Rs89k -> Rs45k/wk (walk-forward 50% rule); bases confirmed NIFTY 10L / SENSEX 5L. This session's in-flight thu_consolidate deployment ABANDONED (Option B supersedes; capability draft handed over).

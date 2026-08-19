@@ -1,8 +1,7 @@
 # TimeB/COMB Naming + Live-Plan-vs-Study Verdict — HANDOFF for the research/111 session
 
-STATUS: **AWAITING VERDICT** (packaged 2026-08-19 eve by the ops session; the receiving
-session holds the deeper research/111 context and should return the filled VERDICT FORM
-in section 6. Until it returns, the live config runs AS DEPLOYED — Option B, unchanged.)
+STATUS: **VERDICT RETURNED 2026-08-19 night (research/111 session)** — see §6. Live config
+unchanged tonight; implementation items + owners listed under the form.
 
 > Laptop: `docs/TIMEB_COMB_NAMING_AND_PLAN_VERDICT_HANDOFF.md` · VPS: same path under
 > `/home/arun/quantifyd/`. Companion context: `docs/CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md`,
@@ -100,18 +99,48 @@ Recommend (b) now, (a) only if the receiving session wants canonical keys.
 ## 6. VERDICT FORM (the other session fills and returns; ops session implements)
 
 ```
-Q1 naming:        RATIFIED / AMENDED: ____________________  (keys-migrate | labels-only)
-Q2 SENSEX Thu SL: KEEP SL40 / CHANGE TO none(HOLD) / OTHER: ____
-Q3 NIFTY Thu:     KEEP 2L+3L split / MERGE AS ____L single book / RESIZE TO: ____
-Q4 day cuts:      CONFIRMED / AMEND: ____________________
-Q5 next scale:    LADDER 1.25x AS-IS / PREFER SENSEX-THU CONCENTRATION: ____ / WAIT n=__ days
-Q6 Row-1 target:  KEEP 89k LAB BASIS / SET TO: ₹____k (haircut rule: ________)
-Q7 bases:         CONFIRMED 10L/5L / CORRECT TO: ____
+Q1 naming:        RATIFIED - labels-only NOW (zero risk); keys stay. Canonical-key
+                  migration = optional weekend job (daemon stopped, one-shot state+config).
+Q2 SENSEX Thu SL: THE STUDY SAYS none(HOLD) + the executor's 50% disaster backstop.
+                  Evidence (16 Thu, 09:20-15:20): SLnone +229,155 / DD -775 / r295.7 / 94%
+                  vs SL40 +119,960 / DD -29,855 / r4.0 / 75% vs SL30 r2.3; r/113 concurs
+                  (expiry gamma noise trips every % stop, then premium decays).
+                  HOWEVER: Arun chose SL40 THIS EVENING (19-AUG) with exactly this table on
+                  screen (none was the recommended option). That sign-off STANDS - SL40 is a
+                  fresh user decision, not a frozen-config artifact. Revisit n>=4 live Thu.
+Q3 NIFTY Thu:     KEEP 2L+3L split for tomorrow (margin-gate sequencing accepted);
+                  MERGE AS 5L single COMB book (NAS_COMB20 DTE3 lots-override) at the next
+                  quiet window. Per-DTE lots/qty override capability is ALREADY DRAFTED and
+                  compile-checked by this session (laptop thu_consolidate.py: executor effB
+                  pattern + backfill override + config-cell lots/qty keys; NOT deployed -
+                  written before this handoff was read). Hand to whichever session merges.
+Q4 day cuts:      CONFIRMED. Wed full-day negative on BOTH venues (NIFTY -75/d, SENSEX
+                  -571/d cell basis); windows-only is the study verdict (secs 15b/19,
+                  stop-by-DTE, r/104 fat-tail). Deployed cuts match exactly.
+Q5 next scale:    WAIT n=4 live Thursdays. Then PREFER SENSEX-Thu concentration over the
+                  generic 1.25x ladder IF live tracks lab - noting the pure-hold twin's
+                  15,042/100% is the most in-sample-flattered cell in the book (optimizer-
+                  grading-own-homework class; walk-forward halved such edges). Doctrine per
+                  secs 18/18b: scale the low-time-in-market axis first, evidence-gated,
+                  never directly off a 100%-win in-sample cell.
+Q6 Row-1 target:  SET TO Rs45k/wk - 50% haircut of the Rs89k lab basis. Rule: walk-forward
+                  (STATUS sec 12) retained ~half the in-sample edge OOS; early live-vs-lab
+                  gaps (TB-N Tue +276/lot vs lab 1,326/lot) point the same way. Restore
+                  toward lab basis only after 4 consecutive live weeks >= the haircut bar.
+Q7 bases:         CONFIRMED - NIFTY cells 10 lots / qty 650, SENSEX 5 lots / qty 100
+                  (entry_exit_sweep.py CFG dict, verified at source).
 Constraints honoured: no restart before 15:40 IST; daemon config edits land before 09:12;
 any SL/size change is a strategy change needing Arun's sign-off in that session or this.
 ```
 
 ## 7. Standing state while awaiting verdict
+
+**Implementation items from this verdict (owner):**
+1. Labels-only renames per §4 - ops session, any time (display strings only).
+2. NIFTY-Thu 5L merge via per-DTE lots override - either session, quiet window, drafted capability.
+3. /app/scaleup Row-1 bar -> Rs45k with the haircut rule stated on-page - ops session.
+4. Ops Center: dated reviews added by this session (SENSEX-Thu SL re-decision + scale-step, both 2026-09-11).
+5. Q2 divergence (study=none vs decided SL40) recorded in research/111 STATUS §19b/§19d.
 
 - Tomorrow (Thu 20-Aug) trades **Option B exactly as deployed** (§2 table).
 - Monday 24-Aug: TB books step 8→10 (registered in Ops) — proceeds unless the verdict

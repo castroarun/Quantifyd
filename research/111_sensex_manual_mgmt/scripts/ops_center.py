@@ -98,6 +98,10 @@ REVIEWS = [
      "SUPERSEDED SCOPE 18-AUG: TB-SENSEX 8L REAL + suite Wednesday->PAPER (doc updated); verify Wed 10:30 first REAL window at qty 160, suite paper-mode logs, BFO slippage; THURSDAY margin decision pending user (doc sec 3)"),
     ("SENSEX Wednesday exposure review (suite 9L real on the venue's fat-tail day)", "2026-09-04", "SCHEDULED",
      "studies: Wed p05 -17k/lot, prescription = window+tight-CSL or size-down/skip; weigh 2-3 more live Wednesdays of suite vs TB-window results"),
+    ("SENSEX-Thu SL re-decision at n>=4 live Thursdays (study=none+backstop vs decided SL40)", "2026-09-11", "SCHEDULED",
+     "verdict handoff Q2: compare live Thu results vs the none/SL40 cells; Arun re-decides with live evidence"),
+    ("Scale-step decision at n=4 live Thursdays (SENSEX-Thu concentration vs 1.25x ladder)", "2026-09-11", "SCHEDULED",
+     "verdict handoff Q5: prefer SENSEX-Thu step IF live tracks lab; never scale off the 100%-win in-sample cell directly"),
     ("SENSEX stack version (NIFTY-first doctrine)", None, "PARKED",
      "design the SENSEX equivalent once the NIFTY stack has a clean month"),
 ]
