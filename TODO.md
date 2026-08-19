@@ -12,6 +12,42 @@ live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py 
 SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
 Re-check when the data window doubles (~late Sep 2026).
 
+## 2026-08-19 — Breakout gate question: ALREADY ANSWERED by research/109 (no new study run)
+
+Arun, looking at 4 strong qualifiers the gate skipped: "the qualifying stocks picked up are excellent
+picks, in fact entry must hv been few days earlier too". Before running a gate-cost study I checked
+the shelf — **research/109 already swept exactly this**, from 2006, same rules and costs.
+
+Its verdict: **changing the gate threshold is a dead end; cadence was the lever.**
+
+| Gate (daily cadence) | CAGR | MaxDD | Calmar |
+|---|---|---|---|
+| ma200 (current) | 18.9% | -33.7% | 0.56 |
+| ma150 | 17.5% | -30.7% | 0.57 |
+| ma200 hysteresis +/-3% | 16.4% | -28.7% | 0.57 |
+| ma200 hysteresis +/-1% | 16.1% | -29.8% | 0.54 |
+| ema200 | 14.9% | -34.5% | 0.43 |
+| ma200 + rising slope | 13.6% | -30.7% | 0.44 |
+
+Note WHY hysteresis was tested: the book was paralysed with NIFTY 0.19% below its 200-DMA — the same
+complaint as today (NIFTYBEES -1.38% below). It bought essentially nothing (0.57 vs 0.56). The lever
+found instead was the WEEKLY cadence (same 18.9% CAGR, MaxDD -33.7% -> -27.3%, Calmar 0.56 -> 0.69),
+and that is already live in the book (`decision_cadence="weekly"`).
+
+Live-window context: since inception 01 Jul the gate has been ON for **1 of 33 sessions** (06 Aug).
+That single open window is what bought NAVINFLUOR, currently -4.6%. A 33-session sample cannot
+overturn a 20-year sweep, and re-testing a settled negative is the multiple-testing sin the playbook
+warns about — so **no new gate study was run**.
+
+**QUEUED (after 15:40, not during market hours):** the one interaction research/109 did NOT test —
+hysteresis +/-1% *combined with* the weekly cadence (its gate variants were all swept at daily
+cadence). ONE pre-registered cell vs the base config, using the existing harness
+`research/109_breakout_gate_freq/scripts/run_breakout_opt.py`. Deliberately not launched during
+market hours: heavy compute on this box has starved live monitors before.
+
+Housekeeping from the app review, same folder: **research/109 is used TWICE**
+(`109_breakout_gate_freq` and `109_intraday_stocks`) and neither is in `research/INDEX.md`.
+
 ## 2026-08-19 — P0 ORB Cash: paper entries never booked since 05 May (FIX WRITTEN, NOT APPLIED)
 
 Arun asked why the paper books are not trading. ORB Cash is not "filtered out" — it is **broken**.
