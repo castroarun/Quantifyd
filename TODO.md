@@ -12,6 +12,42 @@ live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py 
 SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
 Re-check when the data window doubles (~late Sep 2026).
 
+## 2026-08-19 — P0 ORB Cash: paper entries never booked since 05 May (FIX WRITTEN, NOT APPLIED)
+
+Arun asked why the paper books are not trading. ORB Cash is not "filtered out" — it is **broken**.
+
+**Root cause:** `services/orb_live_engine.py:1870` calls
+`self._verify_order(kite, order_id_str, instrument, 'entry')` where **`kite` is undefined** in that
+scope. Every entry raises `NameError: name 'kite' is not defined`; the enclosing `except` logs
+"Entry order FAILED", writes a REJECTED order row and returns None, so the caller skips on and
+**no position is ever recorded**. The exit path (line 2284) does it correctly, guarded by
+`if not self._is_paper(): kite = self._get_kite()`.
+
+**Regression:** commit `03fc917` (2026-05-05) added the `_kite_place_order` paper wrapper, removing
+the inline `kite = self._get_kite()` that had been defining the name. Last position recorded
+05 May 13:05. Since then PAPER-placed orders equal REJECTED rows 1:1 every month (Jun 225/225,
+Jul 200/200, Aug 83/83) with **0 positions**.
+
+**Severity:** in LIVE mode the real Kite order is placed BEFORE the NameError fires, so the engine
+would hold an untracked real intraday position with no SL and no monitoring. Currently PAPER, so
+nothing is at risk today — but the Live button is one click away.
+
+**Fix (one line, mirrors the exit path) — NOT applied; needs approval + after-15:40 deploy:**
+
+    if not self._is_paper():
+        kite = self._get_kite()
+        self._verify_order(kite, order_id_str, instrument, 'entry')
+
+Verify next session: `orb_positions` gains rows, and PAPER-placed no longer pairs 1:1 with REJECTED.
+
+Full forensic: `research/113_orb_paper_entry_forensic/ORB_PAPER_ENTRY_FORENSIC_STATUS.md`.
+
+**Side finding — this kills the filter-cost study for this question.** The filters were never the
+reason the book is flat. Stored counterfactuals in `backtest_data/orb_backtest.db` (186 run days,
+2025-08-18 to 2026-08-18): TAKEN 675 trades **+Rs 34,260**; BLOCKED 376 signals would-be
+**-Rs 25,104** — the filter stack SAVED about Rs 25k over the year. Separately, 1,105 ERROR rows in
+that table point at data-pipeline noise in the 15:45 backtest job, worth its own look.
+
 ## 2026-08-17 — App review follow-ups (PENDING — from `docs/APP_ASSESSMENT_2026-08-17.md`)
 
 Independent structural review of the whole app (37 pages, 391 backend routes, 90 scheduled jobs,
