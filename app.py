@@ -5210,29 +5210,51 @@ def api_nas_rules_matrix():
                 'gap_up': bool(row.get('gap_up')), 'gap_down': bool(row.get('gap_down')),
             })
 
-        sleeve_meta = [
-            ('NAS_COMB20', 'COMB (combined-SL)', 'NIFTY', 'live', 2, 130),
-            ('CSL_TIMEB_NIFTY', 'TimeB (time-window)', 'NIFTY', 'live', 6, 390),
-            ('CSL30F_NIFTY', 'CSL30-Fixed', 'NIFTY', 'paper', 2, 130),
-            ('NAS_C20_TRAIL', 'COMB-Trail', 'NIFTY', 'paper', 2, 130),
-            ('NAS_C20_SHIFT', 'COMB-Shift', 'NIFTY', 'paper', 2, 130),
-            ('CSL_TIMEB_SENSEX', 'TimeB (SENSEX)', 'SENSEX', 'paper', 6, 120),
-            ('CSL30F_SENSEX', 'CSL30-Fixed (SENSEX)', 'SENSEX', 'paper', 3, 60),
-        ]
+        # sleeves: SINGLE SOURCE OF TRUTH = the executor's BOOKS dict (parsed fresh
+        # every request) + the frozen per-DTE config. No hardcoded roster: any book
+        # added/resized/mode-flipped in csl_paper_exec.py reflects here automatically.
+        import re as _re
         try:
             _cslp = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  'backtest_data', 'csl_paper_config.json')
             cslcfg = (_json.load(open(_cslp)) or {}).get('books', {})
         except Exception:
             cslcfg = {}
+        _exec_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  'research', '111_sensex_manual_mgmt', 'scripts', 'csl_paper_exec.py')
+        try:
+            _exec_src = open(_exec_path).read()
+        except Exception:
+            _exec_src = ''
+        # ratified taxonomy (labels-only, 19-Aug verdict): construction is decided by the window
+        _SLEEVE_LABELS = {
+            'NAS_COMB20': 'COMB · combined-SL',
+            'CSL_TIMEB_NIFTY': 'TimeB · windows',
+            'CSL_TIMEB_NIFTY_THU': 'COMB-Thu · full-day',
+            'CSL_TIMEB2_NIFTY': 'TimeB-2 · second slots',
+            'CSL_TIMEB_SENSEX': 'TimeB-Wed + COMB-Thu',
+            'CSL30F_NIFTY': 'COMB30 · control',
+            'CSL30F_SENSEX': 'COMB30 · control',
+            'NAS_C20_TRAIL': 'COMB+Trail',
+            'NAS_C20_SHIFT': 'COMB+Shift',
+        }
         sleeves = []
-        for book, label, venue, mode, lots, qty in sleeve_meta:
+        for _m in _re.finditer(
+                r'"([A-Z0-9_]+)":\s*\{\*\*(NIFTY|SENSEX)_MKT[^}]*?"lots":\s*(\d+),\s*"qty":\s*(\d+)([^}]*)',
+                _exec_src):
+            book, venue = _m.group(1), _m.group(2)
+            lots, qty, rest = int(_m.group(3)), int(_m.group(4)), _m.group(5)
+            mode = 'live' if '"mode": "live"' in rest else 'paper'
             perdte = {}
             for dstr, c in (cslcfg.get(book) or {}).items():
                 if isinstance(c, dict) and c.get('entry'):
-                    perdte[str(dstr)] = "%s-%s SL%s" % (c.get('entry'), c.get('exit'), c.get('sl'))
-            sleeves.append({'book': book, 'label': label, 'venue': venue, 'mode': mode,
-                            'lots': lots, 'qty': qty, 'perdte': perdte})
+                    perdte[str(dstr)] = {
+                        'win': "%s-%s" % (c.get('entry'), c.get('exit')), 'sl': c.get('sl'),
+                        'lots': c.get('lots', lots), 'qty': c.get('qty', qty),
+                    }
+            sleeves.append({'book': book, 'label': _SLEEVE_LABELS.get(book, book),
+                            'venue': venue, 'mode': mode, 'lots': lots, 'qty': qty,
+                            'perdte': perdte})
 
         pstop = []
         try:
