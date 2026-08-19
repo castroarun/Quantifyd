@@ -14,7 +14,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -349,6 +349,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconBarChart />}
             label="Breakout Scanner"
             active={active === 'breakout-scanner'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/ath-scanner"
+            icon={<IconBarChart />}
+            label="ATH & Breakouts"
+            active={active === 'ath-scanner'}
             collapsed={collapsed}
           />
         </nav>

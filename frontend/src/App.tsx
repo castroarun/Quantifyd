@@ -26,6 +26,7 @@ import Intraday75wr from './pages/Intraday75wr';
 import PairTrading from './pages/PairTrading';
 import Scanner from './pages/Scanner';
 import BreakoutScanner from './pages/BreakoutScanner';
+import AthScanner from './pages/AthScanner';
 import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
 import MomentumPaper from './pages/MomentumPaper';
@@ -180,6 +181,16 @@ export default function App() {
           <Protected>
             <AppLayout active="n500m">
               <N500m />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/ath-scanner"
+        element={
+          <Protected>
+            <AppLayout active="ath-scanner">
+              <AthScanner />
             </AppLayout>
           </Protected>
         }
