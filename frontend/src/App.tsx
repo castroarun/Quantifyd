@@ -8,6 +8,7 @@ import Strategies from './pages/Strategies';
 import Orb from './pages/Orb';
 import Nas from './pages/Nas';
 import NasConfig from './pages/NasConfig';
+import ScaleUp from './pages/ScaleUp';
 import Straddles from './pages/Straddles';
 import NasPanic from './pages/NasPanic';
 import Nwv from './pages/Nwv';
@@ -99,6 +100,16 @@ export default function App() {
           <Protected>
             <AppLayout active="strategies">
               <Strategies />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/scaleup"
+        element={
+          <Protected>
+            <AppLayout active="scaleup">
+              <ScaleUp />
             </AppLayout>
           </Protected>
         }

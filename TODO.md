@@ -2,6 +2,16 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-19 — 1.0x scale plan LOCKED (Option B) + Thursday restructure DEPLOYED
+
+Data-driven split (lab per-DTE cells): Thursday is BOTH venues' best day (NIFTY DTE3 mean
+16,956/91% · SENSEX DTE0 14,322/94%) — so NIFTY Thursday is NOT dark: it runs via a new
+dedicated **CSL_TIMEB_NIFTY_THU book at 3 lots (entry 09:25)** — the max that clears every
+1.3x margin gate at Rs44.7L capital. TB-SENSEX restricted to **Wed+Thu only** (its Mon/Tue/Fri
+cells are the grid's weakest and collide with NIFTY). Main TB-N dark Thu. Config json is FROZEN
+so the trims persist. **PENDING Mon 24-Aug: bump TB-N and TB-SX 8 -> 10 lots** (registered in
+Ops). Weekly targets & progress page: /app/scaleup (append actuals every Friday).
+
 ## ✅ 2026-08-18 — research/113: ATM4 roll-leg stop — SIGNAL — DEPLOY STAGED (restart 15:40)
 
 Arun watched the live ATM4 roll (24150 PE @12.1, SL 15.7) die in 6 minutes and asked for a

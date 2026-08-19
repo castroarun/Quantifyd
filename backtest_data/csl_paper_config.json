@@ -18,35 +18,15 @@
     "entry": "10:00",
     "exit": "12:00",
     "sl": 20
-   },
-   "3": {
-    "entry": "09:16",
-    "exit": "15:20",
-    "sl": 20
    }
   },
   "CSL_TIMEB_SENSEX": {
    "0": {
     "entry": "09:20",
     "exit": "15:20",
-    "sl": 30
+    "sl": 40
    },
    "1": {
-    "entry": "10:30",
-    "exit": "12:00",
-    "sl": 20
-   },
-   "2": {
-    "entry": "09:25",
-    "exit": "11:00",
-    "sl": 20
-   },
-   "3": {
-    "entry": "13:00",
-    "exit": "14:00",
-    "sl": 20
-   },
-   "4": {
     "entry": "10:30",
     "exit": "12:00",
     "sl": 20
@@ -193,8 +173,15 @@
     "exit": "12:00",
     "sl": 25
    }
+  },
+  "CSL_TIMEB_NIFTY_THU": {
+   "3": {
+    "entry": "09:25",
+    "exit": "15:20",
+    "sl": 20
+   }
   }
  },
- "refrozen_at": "2026-08-18T13:39",
- "refreeze_note": "2026-08-13: books renamed CSL_*->CSL_TIMEB_*; all SL none cells set to 30 (never run stopless), per user | 2026-08-13 21:55: NAS_COMB20 SLs set per-DTE from sec-15 sweep (25/30/30/20/30), user-delegated | 2026-08-13: THE STACK ex-Wed deploy - DTE4 removed from NAS_COMB20 + CSL_TIMEB_NIFTY (docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md) | 2026-08-18: CSL_TIMEB2_NIFTY added (2L PAPER, second slots: DTE0 13:00-14:00 SL25, DTE1 10:00-12:00 SL25 only)"
+ "refrozen_at": "2026-08-19T11:52",
+ "refreeze_note": "2026-08-13: books renamed CSL_*->CSL_TIMEB_*; all SL none cells set to 30 (never run stopless), per user | 2026-08-13 21:55: NAS_COMB20 SLs set per-DTE from sec-15 sweep (25/30/30/20/30), user-delegated | 2026-08-13: THE STACK ex-Wed deploy - DTE4 removed from NAS_COMB20 + CSL_TIMEB_NIFTY (docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md) | 2026-08-18: CSL_TIMEB2_NIFTY added (2L PAPER, second slots: DTE0 13:00-14:00 SL25, DTE1 10:00-12:00 SL25 only) | 2026-08-19: TB-SENSEX DTE0 SL30->40 (user, sec-19b evidence: every pct-stop fires on Thu expiry gamma noise; SL40 = loosest compromise vs none; 50pct backstop unchanged)"
 }

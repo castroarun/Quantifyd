@@ -64,6 +64,10 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Monday 24-Aug: bump TB-NIFTY and TB-SENSEX 8 -> 10 lots (1.0x plan)", "2026-08-24", "PENDING",
+     "edit BOOKS lots/qty in csl_paper_exec.py + backfill before 09:12; scale-up page row-1 target assumes it"),
+    ("Weekly: append the weeks actual P&L/DD to /app/scaleup vs the 1.0x target", "every Friday evening", "SCHEDULED",
+     "frontend/src/data/scaleup.ts WEEKS row; numbers from the stack reassessment + SENSEX day records; adjust targets only via the reassessment"),
     ("Verify ATM4 SURV roll-stop live behaviour (research/113 deploy)", "2026-08-28", "PENDING",
      "next live roll: log must show rolled-leg SL = max(price_x, roll prem) x 1.3; confirm no noise re-stop; deployed 2026-08-18 after close (MAXV, Arun refinement)"),
     ("Build unified per-system position ledger (portfolio-stop/COMB/manual reconcile)", "2026-08-24", "PENDING",

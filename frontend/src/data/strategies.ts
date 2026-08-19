@@ -137,7 +137,7 @@ export const SYSTEMS: StrategySystem[] = [
     name: 'TB-CSL · NIFTY',
     subtitle: 'NFO · time-boxed short straddle · CSL_TIMEB_NIFTY',
     status: 'live',
-    size: '6 lots · qty 390',
+    size: '8 lots · qty 520 (10 lots from 24-Aug)',
     since: '14 Aug 2026',
     rule:
       'Entry window, exit and combined-SL frozen per DTE from the Best-Config Lab; the Friday sweep re-reads the window but never moves the live config on its own.',
@@ -148,6 +148,7 @@ export const SYSTEMS: StrategySystem[] = [
       ['Exit', 'Time-boxed exit per DTE'],
       ['Config policy', 'Friday sweep is informational — a config change is a deliberate commit, never automatic'],
       ['Margin gate', 'Skips entry when broker margin is short of the requirement + headroom'],
+      ['Days', 'Mon(DTE1) / Tue(DTE0) / Fri(DTE2). Thursday runs via the dedicated 3-lot Thursday book (entry 09:25) so the DTE3 edge stays alive within capital'],
     ],
     rulesDoc: 'research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py (BOOKS)',
     dashboard: '/straddles',
@@ -155,6 +156,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'csl-best-config-straddles', title: 'CSL best-config straddles — entry × exit × combined-SL per DTE' },
     ],
     changeLog: [
+      { date: '19 Aug 2026', text: 'Thursday split out into CSL_TIMEB_NIFTY_THU at 3 lots (entry 09:25, exit 15:20, SL20): DTE3 is the grid\'s 2nd-best NIFTY cell (mean ₹16,956, 91%) but full size collides with SENSEX\'s best day at current capital. Main book dark on Thu. 8→10 lots scheduled 24-Aug.' },
       { date: '17 Aug 2026', text: 'First 6-lot REAL window (13:00 entry) observed.' },
       { date: '14 Aug 2026', text: 'Promoted to real money at 6 lots (qty 390).' },
     ],
@@ -231,6 +233,7 @@ export const SYSTEMS: StrategySystem[] = [
       ['Universe', 'SENSEX weekly ATM straddle'],
       ['Entry / stop / exit', 'Per-DTE frozen config, same lab as the NIFTY twin (Wed DTE1: 10:30-12:00 SL20)'],
       ['Margin gate', 'Marketable-LIMIT + 1.3x headroom check at entry; paper-fallback if short'],
+      ['Days', 'Wed(DTE1) + Thu(DTE0) ONLY — its Mon/Tue/Fri cells are the grid\'s weakest (₹1,080–3,564) and collide with NIFTY margin'],
     ],
     rulesDoc: 'research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py (BOOKS)',
     dashboard: '/straddles',
@@ -238,6 +241,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'csl-best-config-straddles', title: 'CSL best-config straddles — entry × exit × combined-SL per DTE' },
     ],
     changeLog: [
+      { date: '19 Aug 2026', text: 'Live days restricted to Wed+Thu (weak Mon/Tue/Fri cells removed — data-driven venue split). 8→10 lots scheduled 24-Aug.' },
       { date: '18 Aug 2026', text: 'REAL from 19-Aug at 8 lots (6L→8L, notional parity with NIFTY TB@8L). Deploy doc: docs/CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md.' },
       { date: '14 Aug 2026', text: 'Sized to 6 lots on paper alongside the NIFTY promotion.' },
     ],
