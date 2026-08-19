@@ -275,3 +275,28 @@ live on /app/straddles#portfolio-lab (daily live-first regen). Sizing decision: 
 Script: scripts/comb_tb_overweight_grid.py.
 
 **Sec 18b DECISION (2026-08-14 14:4x IST, user): stack resized to 6/2/6 (TB-CSL -> 6 lots, 14L total).** Instructions: docs/STACK_TB6_RESIZE_DEPLOY_STATUS.md (execute in build-context session; effective Mon 17-AUG).
+
+
+## 19. Spot-ATM vs Forward-ATM strike selection (2026-08-19) - STATUS: RUNNING
+
+Live observation (TB-SENSEX 10:30 entry): CE-PE skew 124 vs spot-K +40 -> implied forward
+~84pts above cash; fills verified mid-market, spot-ATM selection correct per mechanic.
+Question: would selecting K nearest the SYNTHETIC FORWARD (parity at the spot-ATM strike)
+improve the books? Replay of frozen configs (TB-N 8L, TB-SX 8L, COMB 2L) on the recorded
+chain, both arms, same windows/dwell-SL/Rs160. Runner: scripts/sec19_fwd_atm.py.
+
+### Sec 19 RESULT (2026-08-19) - STATUS: DONE - KEEP SPOT-ATM (current mechanic validated)
+
+| Book | n | K differs | basis mean/p90 | SPOT-ATM | FWD-ATM |
+|---|---|---|---|---|---|
+| TB-NIFTY 8L | 60 | 16 | +8.6/+42 | +423,456 dd -4,328 r97.8 | +386,224 dd -17,744 r21.8 |
+| TB-SENSEX 8L | 81 | 42 | +45.9/+114 | +333,680 dd -45,304 r7.4 | +312,864 dd -48,816 r6.4 |
+| COMB 2L | 43 | 9 | +6.5/+37 | +111,908 r13.9 | +115,522 r14.3 (noise) |
+
+Even on SENSEX - where the forward premium is largest and K differs on HALF the days -
+spot-ATM beats forward-ATM on totals, DD and ratio; on NIFTY forward-ATM quadruples the
+DD. Working hypothesis: the basis decays intraday, and the spot-centered straddle is
+short the basis-rich call side, harvesting that decay; forward-centering gives it away.
+NO mechanic change. Live fills note (10:30 TB-SX): CE 282.92/PE 158.70 both mid-market
+vs recorded chain - BFO marketable-LIMIT slippage cleared. Caveat: differing-day n=16/42/9,
+in-sample. Script: scripts/sec19_fwd_atm.py; results/sec19_fwd_atm.json.
