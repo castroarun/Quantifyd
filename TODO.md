@@ -22,6 +22,29 @@ live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py 
 SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
 Re-check when the data window doubles (~late Sep 2026).
 
+## 2026-08-19 — KC6 audit: paper all along, but mislabelled in two places
+
+Chased the "KC6 shows 5 trades in 30 days while the register says parked" flag from the liveness
+projection. Verdict: **never real money, but the records are wrong in two ways.**
+
+- Every KC6 order ever placed is `status='PAPER'` / `'PAPER_TARGET'` with `kite_order_id NULL`.
+  No broker exposure at any point.
+- It was NOT dormant: 6 closed trades total, **5 between 23 Jul and 17 Aug** (BANDHANBNK −4,999,
+  ADANIGREEN +935, PHOENIXLTD +1,582, ADANIPORTS +2,756, NH −4,979), net **−₹4,202**, 67% win.
+- `config.enabled` is **False** now with 0 open positions, so "parked" is accurate today — the
+  register's old note ("scheduler runs, unfunded") just undersold a month of paper activity.
+  Register corrected 19 Aug.
+
+**STILL OPEN — journal mislabel:** `services/journal/sources/kc6_source.py:66` hardcodes
+`'mode': 'LIVE'`, so ₹5,528 of PAPER P&L sits in a ledger that is supposed to be live-only. Same
+class of problem as the ORB-Index and ORB-Cash sources. Fix it with the journal live-only work
+(item 4 of the app-review follow-ups) — one filter fixes all three.
+
+**Also noted:** the service was restarted at **14:08 IST on 19 Aug, during market hours** (not by
+this session). Side effect: the ORB entry fix and the liveness endpoint went live early, and the
+15:40 deferred restart was therefore cancelled as redundant. Worth knowing who/what triggered it —
+the standing rule is no restart before 15:40.
+
 ## 2026-08-19 — Per-book activity audit: 5 of 6 are fine, ORB was the only break
 
 Arun: "i see no paper trades in orb cash ... nwv, n500, mst, 175wr, pairs ... breakout 10L as well".
