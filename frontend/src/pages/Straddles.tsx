@@ -462,6 +462,25 @@ function RulesBlock() {
 
 /* ---------- page ---------- */
 export default function Straddles() {
+  // Deep-link support: the TB-CSL alert opens /app/straddles#csl-paper, but the
+  // sections mount after data fetches, so the browser's native anchor jump misses.
+  // Retry until the element exists (~6s), then smooth-scroll to it.
+  useEffect(() => {
+    const h = window.location.hash.replace('#', '');
+    if (!h) return;
+    let tries = 0;
+    const t = window.setInterval(() => {
+      const el = document.getElementById(h);
+      tries += 1;
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.clearInterval(t);
+      } else if (tries > 20) {
+        window.clearInterval(t);
+      }
+    }, 300);
+    return () => window.clearInterval(t);
+  }, []);
   const [v1, setV1] = useState<V1 | null>(null);
   const [v2, setV2] = useState<V2 | null>(null);
   const [v2all, setV2all] = useState<{ [k: string]: V2 }>({});
