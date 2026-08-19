@@ -21,16 +21,17 @@ export const CONFIG_PLAN: DayPlan[] = [
 
 export const TARGET = {
   label: '1.0× · locked 19-Aug-2026',
-  pnlWeek: 89000,        // Rs, lab in-sample basis (see basis note)
+  pnlWeek: 45000,        // Rs — the LIVE bar: 50% walk-forward haircut of the Rs89k lab basis (verdict Q6, 19-Aug)
   ddFloor: -30000,       // Rs, worst-week guide (joint study maxDDs)
   peakMarginL: 40.9,     // Rs lakh, Thursday
   capitalL: 44.7,        // Rs lakh, current
   cashEquivL: 20.8,      // cash + liquid-fund collateral (50% rule basis)
   basis:
-    'Lab in-sample per-DTE cells at deployed lots: NIFTY suite ₹2.8k/d ×3d + COMB ₹1.3k/d ×4d + ' +
-    'TB-N (Mon 3.8k · Tue 13.3k · Fri 5.5k) + TB-N-Thu 3L ₹5.1k + TB-SX (Wed 3.2k · Thu 28.6k) + ' +
-    'SENSEX suite Thu ₹16.5k ≈ ₹89k/wk. Live runs are expected to land BELOW an in-sample lab mean — ' +
-    'the weekly reassessment is what adjusts this target, never a single week.',
+    'The bar is ₹45k/wk = a 50% haircut of the ₹89k lab in-sample sum (research/111 verdict, 19-Aug: ' +
+    'walk-forward retained ~half the in-sample edge OOS, and early live-vs-lab gaps point the same way — ' +
+    'e.g. TB-N Tue live +276/lot vs lab 1,326/lot). Lab decomposition: NIFTY suite 2.8k/d ×3d + COMB 1.3k/d ×4d + ' +
+    'TB-N (Mon 3.8k · Tue 13.3k · Fri 5.5k) + COMB-Thu 3L 5.1k + TB-SX (Wed 3.2k · Thu 28.6k) + SENSEX suite Thu 16.5k. ' +
+    'Restore toward the lab basis only after 4 consecutive live weeks ≥ the ₹45k bar.',
 };
 
 export type WeekStatus = 'transition' | 'progress' | 'ontrack' | 'miss';

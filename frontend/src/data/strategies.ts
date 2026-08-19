@@ -134,7 +134,7 @@ export const SYSTEMS: StrategySystem[] = [
   },
   {
     id: 'csl-timeb-nifty',
-    name: 'TB-CSL · NIFTY',
+    name: 'NIFTY TimeB (TB-CSL)',
     subtitle: 'NFO · time-boxed short straddle · CSL_TIMEB_NIFTY',
     status: 'live',
     size: '8 lots · qty 520 (10 lots from 24-Aug)',
@@ -163,7 +163,7 @@ export const SYSTEMS: StrategySystem[] = [
   },
   {
     id: 'nas-comb20',
-    name: 'NAS_COMB20',
+    name: 'NIFTY COMB (NAS_COMB20)',
     subtitle: 'NFO · combined-20% stop sleeve',
     status: 'live',
     size: '2 lots · qty 130',
@@ -223,7 +223,7 @@ export const SYSTEMS: StrategySystem[] = [
   // ----------------------------------------------------------------- PAPER
   {
     id: 'csl-timeb-sensex',
-    name: 'TB-CSL · SENSEX',
+    name: 'SENSEX TimeB-Wed / COMB-Thu',
     subtitle: 'BFO · time-boxed short straddle · CSL_TIMEB_SENSEX',
     status: 'live',
     size: '8 lots · qty 160',
