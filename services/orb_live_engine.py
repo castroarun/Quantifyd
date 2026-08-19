@@ -1866,8 +1866,15 @@ class ORBLiveEngine:
                 notes=f'ENTRY {direction}',
             )
 
-            # Verify order status
-            self._verify_order(kite, order_id_str, instrument, 'entry')
+            # Verify order status.
+            # `kite` must be fetched here — before 2026-05-05 the inline
+            # `kite = self._get_kite()` in this function defined it, and the
+            # _kite_place_order paper wrapper removed it, leaving a NameError
+            # that swallowed EVERY entry (no position was ever recorded).
+            # Paper mode has nothing to verify: the id is a synthetic PAPER-*.
+            if not self._is_paper():
+                kite = self._get_kite()
+                self._verify_order(kite, order_id_str, instrument, 'entry')
 
             logger.info(f"[ORB] Entry order placed: {transaction_type} {qty} {instrument} "
                         f"@ MARKET, order_id={order_id_str}")
