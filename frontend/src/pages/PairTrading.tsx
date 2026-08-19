@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import styles from './PairTrading.module.css';
 import { apiGet, apiPost } from '../api/client';
 import { formatPnl, formatRs, pnlClass } from '../utils/format';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Mode = 'off' | 'paper' | 'live';
 
@@ -301,6 +302,7 @@ export default function PairTrading() {
           </button>
         </div>
       </div>
+      <BookActivity bookId="pairs" />
 
       <div className={styles.bannerInfo}>
         <div className={styles.eyebrow}>Default state</div>

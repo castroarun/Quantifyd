@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import styles from './Intraday75wr.module.css';
 import { apiGet, apiPost } from '../api/client';
 import { formatPnl, formatRs, pnlClass } from '../utils/format';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Mode = 'off' | 'paper' | 'live';
 type ConfigId = 'A' | 'B' | 'C';
@@ -349,6 +350,7 @@ export default function Intraday75wr() {
           </div>
         </div>
       </div>
+      <BookActivity bookId="i75wr" />
 
       <div className={styles.bannerInfo}>
         <div className={styles.eyebrow}>Default state</div>

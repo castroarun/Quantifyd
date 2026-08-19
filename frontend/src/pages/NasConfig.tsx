@@ -69,9 +69,14 @@ const toMin = (t: string) => {
   return h * 60 + m;
 };
 const pctOf = (t: string) => Math.max(0, Math.min(100, ((toMin(t) - DAY_START) / DAY_SPAN) * 100));
-const parseWin = (s?: string) => {
-  const m = s ? s.match(/(\d{2}:\d{2})-(\d{2}:\d{2})\s*SL(\d+)/) : null;
-  return m ? { entry: m[1], exit: m[2], sl: m[3] } : null;
+const parseWin = (c?: any): { entry: string; exit: string; sl: any; lots?: number; qty?: number } | null => {
+  if (!c) return null;
+  if (typeof c === 'string') {
+    const m = c.match(/(\d{2}:\d{2})-(\d{2}:\d{2})\s*SL(\w+)/);
+    return m ? { entry: m[1], exit: m[2], sl: m[3] } : null;
+  }
+  const [en, ex] = String(c.win || '').split('-');
+  return en && ex ? { entry: en, exit: ex, sl: c.sl, lots: c.lots, qty: c.qty } : null;
 };
 
 /* ---------- component ---------- */
@@ -160,18 +165,34 @@ export default function NasConfig() {
   }, [matrix, today, systems]);
 
   const dte = dteSel ?? today?.dte ?? 0;
+  // The tabs are NIFTY-calendar DTEs. SENSEX (Thu expiry) uses its own calendar:
+  // NIFTY-dte -> weekday(Mon..Fri) -> SENSEX-dte. Fixes SENSEX rows showing the wrong day.
+  const NIFTY_DTE_TO_WD: Record<number, number> = { 1: 0, 0: 1, 4: 2, 3: 3, 2: 4 };
+  const SX_WD2DTE = [3, 2, 1, 0, 4];
+  const venueDte = (venue: string) =>
+    venue === 'SENSEX' ? SX_WD2DTE[NIFTY_DTE_TO_WD[dte] ?? 0] : dte;
 
   // timeline rows for the selected DTE: 916 (constant window, live/paper by DTE) + sleeves (per-DTE window)
   const timelineRows = useMemo(() => {
-    if (!rules) return [] as { label: string; venue: string; mode: string; entry: string; exit: string }[];
-    const rows: { label: string; venue: string; mode: string; entry: string; exit: string }[] = [];
+    type Row = { label: string; venue: string; mode: string; entry: string; exit: string; sl?: string | number; lots?: number };
+    if (!rules) return [] as Row[];
+    const rows: Row[] = [];
     for (const r of rules.entry916) {
-      const isLive = r.live && r.live_dtes.includes(dte);
-      rows.push({ label: r.label, venue: r.venue, mode: isLive ? 'live' : 'paper', entry: r.entry, exit: r.exit });
+      const isLive = r.live && r.live_dtes.includes(venueDte(r.venue));
+      rows.push({ label: r.label, venue: r.venue, mode: isLive ? 'live' : 'paper',
+        entry: r.entry, exit: r.exit, lots: r.lots ?? undefined });
     }
     for (const s of rules.sleeves) {
-      const w = parseWin(s.perdte[String(dte)]);
-      if (w) rows.push({ label: s.label, venue: s.venue, mode: s.mode, entry: w.entry, exit: w.exit });
+      const cRaw: any = s.perdte[String(venueDte(s.venue))];
+      if (!cRaw) continue;
+      if (typeof cRaw === 'string') {           // old API shape (pre-restart) fallback
+        const w = parseWin(cRaw);
+        if (w) rows.push({ label: s.label, venue: s.venue, mode: s.mode, entry: w.entry, exit: w.exit, lots: s.lots });
+      } else {
+        const [en, ex] = String(cRaw.win || '').split('-');
+        if (en && ex) rows.push({ label: s.label, venue: s.venue, mode: s.mode,
+          entry: en, exit: ex, sl: cRaw.sl, lots: cRaw.lots ?? s.lots });
+      }
     }
     return rows.sort((a, b) =>
       a.mode === b.mode ? toMin(a.entry) - toMin(b.entry) : a.mode === 'live' ? -1 : 1
@@ -375,7 +396,9 @@ export default function NasConfig() {
                 const width = Math.max(1.2, pctOf(r.exit) - left);
                 return (
                   <div key={`${r.label}-${i}`} className={styles.tlRow}>
-                    <div className={styles.tlName}>{r.label}</div>
+                    <div className={styles.tlName}>
+                      <b style={{ opacity: 0.55, marginRight: 4 }}>{r.venue === 'SENSEX' ? 'SX' : 'N'}</b>{r.label}
+                    </div>
                     <div className={styles.tlTrack}>
                       {HOURS.map((h) => (
                         <span key={h} className={styles.tlGrid} style={{ left: `${pctOf(`${h}:00`)}%` }} />
@@ -383,9 +406,11 @@ export default function NasConfig() {
                       <div
                         className={`${styles.tlBar} ${r.mode === 'live' ? styles.tlBarLive : styles.tlBarPaper}`}
                         style={{ left: `${left}%`, width: `${width}%` }}
-                        title={`${r.label}: ${r.entry}–${r.exit} (${r.mode})`}
+                        title={`${r.venue} · ${r.label}: ${r.entry}–${r.exit}${r.sl != null ? ` · SL${r.sl}%` : ''}${r.lots ? ` · ${r.lots} lots` : ''} (${r.mode})`}
                       >
-                        <span className={styles.tlBarTime}>{r.entry}–{r.exit}</span>
+                        <span className={styles.tlBarTime}>
+                          {r.entry}–{r.exit}{r.sl != null ? ` · SL${r.sl}` : ''}{r.lots ? ` · ${r.lots}L` : ''}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -398,7 +423,7 @@ export default function NasConfig() {
           <div className={styles.rulesGroupLabel}>Entry systems</div>
           <div className={styles.cardGrid}>
             {rules.entry916.map((r) => {
-              const isLive = r.live && r.live_dtes.includes(dte);
+              const isLive = r.live && r.live_dtes.includes(venueDte(r.venue));
               return (
                 <div key={r.key} className={`${styles.ruleCard} ${isLive ? styles.cardLive : ''}`}>
                   <div className={styles.cardTop}>
@@ -439,7 +464,7 @@ export default function NasConfig() {
           <div className={styles.rulesGroupLabel}>CSL sleeves</div>
           <div className={styles.cardGrid}>
             {rules.sleeves.map((s) => {
-              const w = parseWin(s.perdte[String(dte)]);
+              const w = parseWin(s.perdte[String(venueDte(s.venue))]);
               const isLive = s.mode === 'live';
               return (
                 <div key={s.book} className={`${styles.ruleCard} ${isLive ? styles.cardLive : ''}`}>
@@ -461,13 +486,13 @@ export default function NasConfig() {
                   </div>
                   <div className={styles.chipRow}>
                     <span className={styles.stopChip}>⊘ combined-SL {w ? `${w.sl}%` : '—'}</span>
-                    <span className={styles.sizeChip}>{s.lots}L ×{s.qty}</span>
+                    <span className={styles.sizeChip}>{(w?.lots ?? s.lots)}L ×{(w?.qty ?? s.qty)}</span>
                   </div>
                   <div className={styles.miniDte}>
                     {[0, 1, 2, 3, 4].map((d) => {
                       const ww = parseWin(s.perdte[String(d)]);
                       return (
-                        <div key={d} className={`${styles.miniCell} ${d === dte ? styles.miniOn : ''}`}>
+                        <div key={d} className={`${styles.miniCell} ${d === venueDte(s.venue) ? styles.miniOn : ''}`}>
                           <span className={styles.miniLbl}>D{d}</span>
                           <span className={styles.miniVal}>{ww ? ww.entry : '—'}</span>
                         </div>

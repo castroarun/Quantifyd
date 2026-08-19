@@ -4,6 +4,7 @@ import BacktestCharts from '../components/BacktestCurve/BacktestCharts';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Holding = {
   symbol: string; qty: number | null; entry_date: string; entry_price: number | null;
@@ -137,6 +138,7 @@ export default function MomentumPaper() {
           </div>
         </div>
       </div>
+      <BookActivity bookId="momentum-3l" />
 
       {/* KPI strip */}
       <div className={styles.kpis}>

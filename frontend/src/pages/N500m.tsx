@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import styles from './N500m.module.css';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Mode = 'OFF' | 'PAPER' | 'LIVE';
 
@@ -219,6 +220,7 @@ export default function N500m() {
           </button>
         </div>
       </div>
+      <BookActivity bookId="n500m" />
 
       {err && <div className={styles.error}>{err}</div>}
       {toast && <div className={styles.toast}>{toast}</div>}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './BreakoutPaper.module.css';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Holding = {
   symbol: string; qty: number | null; entry_date: string | null; entry_price: number | null;
@@ -87,6 +88,7 @@ export default function BreakoutPaper() {
           {riskOn ? 'RISK-ON · taking entries' : 'RISK-OFF · no new entries'}
         </div>
       </div>
+      <BookActivity bookId="breakout-paper" />
 
       {/* KPI strip */}
       <div className={styles.kpis}>

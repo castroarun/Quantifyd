@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './FnomsPaper.module.css';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Position = { symbol: string; system: string; qty: number; entry: number; since: string;
                   stop: number; target: number; last: number | null;
@@ -110,6 +111,7 @@ export default function FnomsPaper() {
           <span className={styles.dot} />{running ? 'PAPER · running' : 'KILLED'}
         </div>
       </div>
+      <BookActivity bookId="fnoms-paper" />
 
       <div className={styles.kpis}>
         <Kpi label="NAV" value={lakh(nav)} tone="" />

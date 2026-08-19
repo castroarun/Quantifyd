@@ -22,6 +22,7 @@ import {
   pnlClass,
 } from '../utils/format';
 import { formatTime } from '../utils/time';
+import BookActivity from '../components/BookActivity/BookActivity';
 // action buttons removed — header is title/subtitle only, consistent across pages
 
 /* ---------- helpers ---------- */
@@ -469,6 +470,7 @@ export default function Orb() {
           </button>
         </div>
       </div>
+      <BookActivity bookId="orb-cash" />
 
       {err ? <div className={styles.error}>{err}</div> : null}
 

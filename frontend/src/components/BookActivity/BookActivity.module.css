@@ -1,0 +1,68 @@
+/* One-line book record strip, sits directly under the page header. */
+.strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.item b {
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.dim {
+  color: var(--ink-faint);
+}
+
+.quiet {
+  color: var(--ink-muted);
+}
+
+.warn {
+  color: var(--brand-amber) !important;
+}
+
+.stale {
+  color: var(--accent-neg) !important;
+}
+
+.spark {
+  display: block;
+  margin-left: auto;
+  overflow: visible;
+}
+
+.zero {
+  stroke: var(--hairline);
+  stroke-width: 1;
+}
+
+.pos {
+  fill: none;
+  stroke: var(--accent-pos);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.neg {
+  fill: none;
+  stroke: var(--accent-neg);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}

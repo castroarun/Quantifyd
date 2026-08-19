@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './OholPaper.module.css';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Position = { symbol: string; side: string; lot_size: number; entry: number; since: string; last: number | null; mtm: number | null };
 type Setup = { symbol: string; side: string; trigger: number; status: string };
@@ -91,6 +92,7 @@ export default function OholPaper() {
           {running ? 'PAPER · running' : 'KILLED'}
         </div>
       </div>
+      <BookActivity bookId="ohol-paper" />
 
       <div className={styles.kpis}>
         <Kpi label="NAV" value={lakh(nav)} tone="" />

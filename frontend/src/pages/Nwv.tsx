@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import styles from './Nwv.module.css';
 import NwvPaperCard from './NwvPaperCard';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type StackedLevel = {
   price: number;
@@ -148,6 +149,7 @@ export default function Nwv() {
           </button>
         </div>
       </div>
+      <BookActivity bookId="nwv" />
 
       {err ? <div className={styles.error}>{err}</div> : null}
 

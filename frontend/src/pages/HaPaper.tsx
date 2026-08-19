@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './HaPaper.module.css';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Position = { symbol: string; qty: number; entry: number; since: string;
                   last: number | null; mtm: number | null; mtm_pct: number | null };
@@ -114,6 +115,7 @@ export default function HaPaper() {
           {running ? 'PAPER · running' : 'KILLED · cycles paused'}
         </div>
       </div>
+      <BookActivity bookId="ha-paper" />
 
       {/* KPI strip */}
       <div className={styles.kpis}>

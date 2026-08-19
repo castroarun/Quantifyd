@@ -11,6 +11,7 @@ import Chip from '../components/Chip/Chip';
 import StatusDot from '../components/StatusDot/StatusDot';
 import { formatNumber, formatPnl, formatRs, pnlClass } from '../utils/format';
 import { formatTime } from '../utils/time';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 function modeLabel(state: MSTState | null): { label: string; tone: 'pos' | 'neg' | 'neutral' } {
   if (!state || !state.enabled) return { label: 'Disabled', tone: 'neutral' };
@@ -183,6 +184,7 @@ export default function Mst() {
           </div>
         </div>
       </div>
+      <BookActivity bookId="mst" />
 
       {err ? <div className={styles.error}>{err}</div> : null}
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './OrbPaper.module.css';
+import BookActivity from '../components/BookActivity/BookActivity';
 
 type Position = { symbol: string; qty: number; entry: number; since: string; stop: number; sessions: number; last: number | null; mtm: number | null };
 type NavPt = { d: string; nav: number; gate: number; bench: number | null };
@@ -101,6 +102,7 @@ export default function OrbPaper() {
           {!running ? 'KILLED' : s.gate_on ? 'GATE ON · taking entries' : 'GATE OFF · no new entries'}
         </div>
       </div>
+      <BookActivity bookId="orb-paper" />
 
       <div className={styles.kpis}>
         <Kpi label="NAV (EOD mark)" value={lakh(nav)} tone="" />
