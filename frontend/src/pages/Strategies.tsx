@@ -24,6 +24,55 @@ import {
 } from '../data/strategies';
 import type { DayPnlFeed, StrategySystem, SystemStatus } from '../data/strategies';
 
+/** One book's own trade record, from /api/books/liveness (read-only projection). */
+export interface BookLiveness {
+  trades: number;
+  last_trade: string | null;
+  days_idle: number | null;
+  trades_30d: number;
+  net_total: number | null;
+  net_30d: number | null;
+  win_rate: number | null;
+  series: Array<{ d: string; c: number }>;
+}
+
+/** Tiny cumulative-P&L sparkline. No axes — it answers "shape?", not "how much?". */
+function Spark({ series }: { series: Array<{ d: string; c: number }> }) {
+  if (!series || series.length < 2) return null;
+  const vals = series.map((p) => p.c);
+  const min = Math.min(...vals, 0);
+  const max = Math.max(...vals, 0);
+  const span = max - min || 1;
+  const w = 132;
+  const h = 30;
+  const pts = series.map((p, i) => {
+    const x = (i / (series.length - 1)) * w;
+    const y = h - ((p.c - min) / span) * h;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const last = vals[vals.length - 1];
+  const zeroY = h - ((0 - min) / span) * h;
+  return (
+    <svg className={styles.spark} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+      <line x1="0" y1={zeroY} x2={w} y2={zeroY} className={styles.sparkZero} />
+      <polyline points={pts.join(' ')} className={last >= 0 ? styles.sparkPos : styles.sparkNeg} />
+    </svg>
+  );
+}
+
+/** "3d ago" / "today" / "—", with a warning tone once a book goes quiet. */
+function IdleCell({ lv }: { lv?: BookLiveness }) {
+  if (!lv || !lv.last_trade) return <span className={styles.dash}>—</span>;
+  const d = lv.days_idle;
+  const label = d === 0 ? 'today' : d === 1 ? 'yesterday' : `${d}d ago`;
+  const cls = d != null && d >= 30 ? styles.idleStale : d != null && d >= 7 ? styles.idleWarn : '';
+  return (
+    <span className={cls} title={`${lv.last_trade} · ${lv.trades} trades all-time`}>
+      {label}
+    </span>
+  );
+}
+
 // All 8 NIFTY NAS sub-system endpoints — the suite's day P&L is their sum.
 const NAS_SYSTEMS = [
   'nas',
@@ -76,6 +125,7 @@ export default function Strategies() {
   const [strangle, setStrangle] = useState<StrangleState | null>(null);
   const [nasStates, setNasStates] = useState<(NASState | null)[]>([]);
   const [sensexDayPnl, setSensexDayPnl] = useState<number | null>(null);
+  const [liveness, setLiveness] = useState<Record<string, BookLiveness>>({});
   const [liveLegLtps, setLiveLegLtps] = useState<Record<string, number>>({});
   const [err, setErr] = useState<string | null>(null);
   const evtRef = useRef<EventSource | null>(null);
@@ -87,6 +137,25 @@ export default function Strategies() {
       /* ignore */
     }
   }, [view]);
+
+  // Each book's own trade record. Absent until the backend restarts, so a
+  // failure here must leave the page working with em-dashes.
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      fetch(`/api/books/liveness?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!cancelled && d?.books) setLiveness(d.books);
+        })
+        .catch(() => undefined);
+    load();
+    const id = setInterval(load, 120_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -220,12 +289,13 @@ export default function Strategies() {
       {err ? <div className={styles.error}>Failed to load live state: {err}</div> : null}
 
       {view === 'register' ? (
-        <RegisterView dayPnl={dayPnl} onOpenSpec={openSpec} />
+        <RegisterView dayPnl={dayPnl} liveness={liveness} onOpenSpec={openSpec} />
       ) : (
         <SpecView
           selected={selected}
           onSelect={setSelectedId}
           dayPnl={dayPnl}
+          liveness={liveness}
         />
       )}
 
@@ -245,9 +315,11 @@ export default function Strategies() {
 
 function RegisterView({
   dayPnl,
+  liveness,
   onOpenSpec,
 }: {
   dayPnl: Partial<Record<DayPnlFeed, number>>;
+  liveness: Record<string, BookLiveness>;
   onOpenSpec: (id: string) => void;
 }) {
   return (
@@ -260,7 +332,9 @@ function RegisterView({
             <th>Size</th>
             <th>The rule, in one line</th>
             <th className={styles.r}>Day</th>
-            <th className={styles.r}>Since</th>
+            <th className={styles.r}>Last trade</th>
+            <th className={styles.r}>30d</th>
+            <th className={styles.r}>Book net</th>
             <th>Rules &amp; evidence</th>
           </tr>
         </thead>
@@ -272,7 +346,7 @@ function RegisterView({
               <Fragment key={group}>
                 <tr className={styles.groupRow}>
                   <td className={styles.stripeCell} />
-                  <td colSpan={6}>
+                  <td colSpan={8}>
                     <div className={styles.groupLabel}>
                       {STATUS_LABEL[group]}
                       <span className={styles.groupCount}>
@@ -311,7 +385,21 @@ function RegisterView({
                           <span className={pnlClass(pnl)}>{formatPnl(pnl)}</span>
                         )}
                       </td>
-                      <td className={`${styles.r} ${styles.num} ${styles.since}`}>{s.since}</td>
+                      <td className={`${styles.r} ${styles.num} ${styles.since}`}>
+                        <IdleCell lv={liveness[s.id]} />
+                      </td>
+                      <td className={`${styles.r} ${styles.num} ${styles.since}`}>
+                        {liveness[s.id]?.trades_30d ?? <span className={styles.dash}>—</span>}
+                      </td>
+                      <td className={`${styles.r} ${styles.num}`}>
+                        {liveness[s.id]?.net_total == null ? (
+                          <span className={styles.dash}>—</span>
+                        ) : (
+                          <span className={pnlClass(liveness[s.id].net_total as number)}>
+                            {formatPnl(liveness[s.id].net_total as number)}
+                          </span>
+                        )}
+                      </td>
                       <td>
                         <div className={styles.links}>
                           <button
@@ -375,12 +463,15 @@ function SpecView({
   selected,
   onSelect,
   dayPnl,
+  liveness,
 }: {
   selected: StrategySystem;
   onSelect: (id: string) => void;
   dayPnl: Partial<Record<DayPnlFeed, number>>;
+  liveness: Record<string, BookLiveness>;
 }) {
   const pnl = selected.dayPnlFeed ? dayPnl[selected.dayPnlFeed] : undefined;
+  const lv = liveness[selected.id];
   return (
     <div className={styles.split}>
       <div className={styles.rail}>
@@ -454,7 +545,30 @@ function SpecView({
             <span className={styles.statK}>Since</span>
             <span className={`${styles.statV} ${styles.num}`}>{selected.since}</span>
           </div>
+          <div className={styles.stat}>
+            <span className={styles.statK}>Last trade</span>
+            <span className={`${styles.statV} ${styles.num}`}>
+              <IdleCell lv={lv} />
+            </span>
+          </div>
+          <div className={styles.stat}>
+            <span className={styles.statK}>Book net</span>
+            <span className={`${styles.statV} ${styles.num} ${lv?.net_total == null ? styles.dash : pnlClass(lv.net_total)}`}>
+              {lv?.net_total == null ? '—' : formatPnl(lv.net_total)}
+            </span>
+          </div>
         </div>
+
+        {lv && lv.trades > 0 ? (
+          <div className={styles.activity}>
+            <Spark series={lv.series} />
+            <div className={styles.activityText}>
+              <b>{lv.trades}</b> trades all-time · <b>{lv.trades_30d}</b> in the last 30 days
+              {lv.win_rate != null ? <> · <b>{lv.win_rate.toFixed(0)}%</b> wins</> : null}
+              {lv.net_30d != null ? <> · 30d {formatPnl(lv.net_30d)}</> : null}
+            </div>
+          </div>
+        ) : null}
 
         {selected.note ? <p className={styles.specNote}>{selected.note}</p> : null}
 

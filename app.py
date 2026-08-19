@@ -645,6 +645,17 @@ try:
 except Exception as _journal_err:
     logger.warning('[journal] blueprint failed to register: %s', _journal_err)
 
+# Book liveness — READ-ONLY projection over each book's own trade record
+# (last trade, days idle, trades in 30d, cumulative net, win rate, sparkline).
+# Answers "is this book actually trading?" on the page instead of by a DB query.
+# Reads only; imports no engine and writes nothing.
+try:
+    from services.book_liveness import book_liveness_bp
+    app.register_blueprint(book_liveness_bp)
+    logger.info('[liveness] blueprint registered at /api/books/liveness')
+except Exception as _liveness_err:
+    logger.warning('[liveness] blueprint failed to register: %s', _liveness_err)
+
 # ---- Journal auto-sync: project live NAS trades into the journal daily ----
 def _journal_nas_sync_job():
     """NAS books only (user scope, 2026-08-16). Idempotent upserts keyed on
