@@ -1598,7 +1598,60 @@ def register(app, scheduler):
     # 15:05, NOT 15:15 — 15:15-15:20 is the NSE Closing Auction Session transition window where new
     # orders are rejected. A Donchian stop that fires then simply cannot fill (seen live 2026-08-10).
     scheduler.add_job(eod_job, "cron", day_of_week="mon-fri", hour=15, minute=5,
-                      id="mp_eod", replace_existing=True)
+                      id="mp_eod", replace_existing=True,
+                      misfire_grace_time=900, coalesce=True)
+
+    def _mp_eod_catchup(source):
+        """Run today's EOD if its scheduled firing was LOST.
+
+        2026-08-19: the service was restarted 7 times during the session, twice within a minute of
+        15:05 — the EOD firing fell into the gap and was gone. APScheduler's default memory job
+        store recomputes next_run_time forward on startup, so a run missed across a process restart
+        is never replayed and nothing complains. That day no Donchian stop was breached, so nothing
+        was lost, but the book spent a full session with its only exit rule unapplied.
+
+        Donchian stops must SELL, and _sell() refuses once the market is shut, so a catch-up is only
+        useful before ~15:29. Past that the honest move is a loud alert, not a silent skip."""
+        try:
+            from services.trading_calendar import get_default_calendar
+            from datetime import date as _d, datetime as _dtm
+            today = _d.today()
+            if not get_default_calendar().is_trading_day(today):
+                return
+            if not _get("seeded"):
+                return
+            if _get("last_daily") == today.isoformat():
+                return                                    # already ran — nothing to do
+            mins = _dtm.now().hour * 60 + _dtm.now().minute
+            if mins < 15 * 60 + 5:
+                return                                    # not due yet today
+            if mins >= 15 * 60 + 29:
+                if _get("eod_miss_alerted") != today.isoformat():
+                    _set("eod_miss_alerted", today.isoformat())
+                    logger.error(f"[MP] EOD NEVER RAN TODAY ({source}) — stops unapplied, market shut")
+                    _alert("MOMENTUM EOD DID NOT RUN",
+                           f"last_daily={_get('last_daily')} but today is {today}. The Donchian stop "
+                           f"and macro gate were NOT applied and the market is now closed, so a stop "
+                           f"cannot be filled today. Check positions against their 15-day lows before "
+                           f"the next open.", "high")
+                return
+            logger.warning(f"[MP] EOD CATCH-UP ({source}) — last_daily={_get('last_daily')}, running now")
+            eod_job()
+            _alert("MOMENTUM EOD CATCH-UP",
+                   f"The 15:05 EOD run was missed (likely a restart landed on it). It has been "
+                   f"re-run at {_dtm.now().strftime('%H:%M')} and stops/gate are now applied.", "normal")
+        except Exception as _e:
+            logger.error(f"[MP] eod catch-up error: {_e}")
+
+    # (a) on every boot — covers a restart that swallowed the 15:05 firing
+    from datetime import datetime as _dtm0, timedelta as _td0
+    scheduler.add_job(lambda: _mp_eod_catchup("startup"), "date",
+                      run_date=_dtm0.now() + _td0(seconds=45),
+                      id="mp_eod_catchup_boot", replace_existing=True)
+    # (b) a standing backstop while the market is still open, for a miss with no restart at all
+    scheduler.add_job(lambda: _mp_eod_catchup("15:25 backstop"), "cron", day_of_week="mon-fri",
+                      hour=15, minute=25, id="mp_eod_backstop", replace_existing=True,
+                      misfire_grace_time=600, coalesce=True)
 
     def _mp_eod_report_job():                              # EOD email report ~15:35 (after the EOD job)
         try:
