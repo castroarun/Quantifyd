@@ -300,3 +300,13 @@ short the basis-rich call side, harvesting that decay; forward-centering gives i
 NO mechanic change. Live fills note (10:30 TB-SX): CE 282.92/PE 158.70 both mid-market
 vs recorded chain - BFO marketable-LIMIT slippage cleared. Caveat: differing-day n=16/42/9,
 in-sample. Script: scripts/sec19_fwd_atm.py; results/sec19_fwd_atm.json.
+
+### Sec 19b (2026-08-19) - SX-assessment first run catches Thursday SL config; re-frozen SL30->SL40
+
+New SENSEX assessment section flagged SX-TB-WINDOWS: frozen Thu (09:20-15:20 SL30) at 1%% of
+sweep-best. Cells (16 Thursdays, 5L): SLnone +229,155/dd-775/r295.7/win94%% vs SL30
++81,040/dd-34,630/r2.3/win62%% - expiry gamma noise trips every pct stop, then premium decays
+(the stop-by-DTE HOLD finding, quantified). USER DECISION: SL40 compromise (+119,960/r4.0)
+- keeps a pct stop per never-stopless preference while halving the noise-trips vs SL30.
+Effective 2026-08-20 09:12 (first real Thursday). 50%% disaster backstop unchanged.
+Also first-run: SX-CROSS-CORR full -0.04 (excellent diversification) but recent15 0.47 - watch.
