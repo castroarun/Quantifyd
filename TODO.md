@@ -22,6 +22,35 @@ live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py 
 SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
 Re-check when the data window doubles (~late Sep 2026).
 
+## 2026-08-19 — Per-book activity audit: 5 of 6 are fine, ORB was the only break
+
+Arun: "i see no paper trades in orb cash ... nwv, n500, mst, 175wr, pairs ... breakout 10L as well".
+Audited each one against its own store rather than its page.
+
+| Book | Trades | Last | Status |
+|---|---|---|---|
+| **NWV** | **2 cycles, both winners** | 03 Aug | WORKING. 27 Jul bullish -> PT **+Rs 14,586**; 03 Aug neutral -> TIME **+Rs 12,187**. 10 + 17 Aug the weekly view said `ignore`, so it correctly skipped (`SKIP_IGNORE` rows in history). Next decision Mon 09:50. |
+| **N500M** | 31 since 08 May | 17 Aug | WORKING. +Rs 13,852, 58% wins. Sparse by design — the per-stock volbo trigger fires ~2x/week across 27 names. |
+| **I75WR** | 1 | 18 Aug | WORKING. First paper trade booked the day after enabling: AARTIIND SHORT 570 @525.85 -> EOD 530.10, -Rs 2,422. 35 other signals correctly BLOCKED. |
+| **Pairs** | 0 | — | WORKING, no trigger yet. The 16:00 scan logs all 6 cohort pairs with their z-scores; none has breached the entry band since it was enabled on 17 Aug. |
+| **MST** | 0 since re-enable | 07 May | WORKING, no trigger yet. Booted FLAT, 30-min bars aggregating; needs a stochastic cross with >=6 DTE. |
+| **Breakout Rs10L** | 1 open | 06 Aug | WORKING. Gate ON only 1 of 33 sessions since 01 Jul; that window bought NAVINFLUOR (-4.6%). Gate settled by research/109 — do not re-litigate. |
+| **ORB Cash** | 0 since 05 May | 05 May | **WAS BROKEN** — undefined-name in the entry path, fix deploys at 15:40 today, first paper trades expected Thu 20 Aug. |
+
+**Conclusion: only ORB was broken.** The other five are running correctly and are simply
+low-frequency; two of them (NWV, N500M) have real P&L that the pages never show.
+
+**ROOT CAUSE OF THE PERCEPTION GAP (and the fix worth building):** every one of these pages shows
+*today* and hides the book's own history. NWV has +Rs 26,773 of closed cycles sitting in a JSON the
+page does not render; N500M has 31 closed trades and an EMPTY `n500m_equity` table so there is no
+curve to draw. This is finding #14 in `docs/APP_ASSESSMENT_2026-08-17.md`.
+
+**TO BUILD (read-only projection, no engine touched — inside the standing guardrail):**
+a per-book history footer on every paper page — last trade date, days since, trades in 30d,
+cumulative net, win rate, and a sparkline derived from the trade table. Plus the liveness rule
+(mode + last-trade + days-idle) so "is this thing running?" is answered on the page itself instead
+of by a database query.
+
 ## 2026-08-19 — Breakout gate question: ALREADY ANSWERED by research/109 (no new study run)
 
 Arun, looking at 4 strong qualifiers the gate skipped: "the qualifying stocks picked up are excellent
