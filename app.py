@@ -655,7 +655,7 @@ def api_breakout_scan():
     try:
         from services.ath_scanner import scan
         args = {
-            'asof': _rq.args.get('asof', 'eod'),
+            'asof': _rq.args.get('asof', 'eod'),  # comma-separated ok
             'universe': _rq.args.get('universe', 'nifty500'),
             'vol_mult': _rq.args.get('vol_mult', type=float),
             'vol_window': _rq.args.get('vol_window', type=int),
@@ -670,7 +670,9 @@ def api_breakout_scan():
             out = dict(hit[1])
             out['cached'] = True
             return jsonify(out)
-        res = scan(**args)
+        asofs = [x.strip() for x in str(args.pop('asof')).split(',') if x.strip()]
+        from services.ath_scanner import scan_multi
+        res = scan_multi(asofs, **args)
         _bscan_cache[key] = (_t.time(), res)
         res = dict(res)
         res['cached'] = False

@@ -70,10 +70,14 @@ def _universe(name: str) -> List[str]:
 
 
 def _trading_dates(limit: int = 12) -> List[str]:
+    """Completed sessions only: a date counts when a broad set of STOCKS has
+    bars, so a partial day (e.g. only the index top-up has written) is not
+    mistaken for the latest close."""
     con = sqlite3.connect(f'file:{MARKET_DB}?mode=ro', uri=True)
     try:
         rows = con.execute(
-            "SELECT DISTINCT date FROM market_data_unified WHERE timeframe='day' "
+            "SELECT date, COUNT(DISTINCT symbol) n FROM market_data_unified "
+            "WHERE timeframe='day' GROUP BY date HAVING n >= 200 "
             "ORDER BY date DESC LIMIT ?", (limit,)).fetchall()
     finally:
         con.close()
@@ -296,3 +300,45 @@ def scan(asof: str = 'eod', universe: str = 'nifty500',
         'consolidation_breakout': consol_rows,
         'consolidation_with_volume': [r for r in consol_rows if r['vol_spike']],
     }
+
+
+WHEN_LABEL = {'live': 'LIVE', 'eod': 'EOD', 't1': 'T-1', 't2': 'T-2', 't3': 'T-3'}
+
+
+def scan_multi(asofs: List[str], **kw) -> Dict[str, Any]:
+    """Run scan() for each selected as-of and merge, tagging every row with
+    the day it triggered (LIVE / EOD / T-1 / T-2 / T-3). A symbol may appear
+    once per day it fired — that recurrence is itself signal."""
+    merged: Dict[str, Any] = {'ath': [], 'consolidation_breakout': [],
+                              'runs': [], 'error': None}
+    first = None
+    for a in [x for x in asofs if x in WHEN_LABEL]:
+        r = scan(asof=a, **kw)
+        if r.get('error'):
+            merged['runs'].append({'asof': a, 'error': r['error']})
+            continue
+        first = first or r
+        lbl = WHEN_LABEL[a]
+        for row in r['ath']:
+            row = dict(row); row['when'] = lbl
+            merged['ath'].append(row)
+        for row in r['consolidation_breakout']:
+            row = dict(row); row['when'] = lbl
+            merged['consolidation_breakout'].append(row)
+        merged['runs'].append({'asof': a, 'label': lbl,
+                               'date': r['asof_date'],
+                               'ath': len(r['ath']),
+                               'consol': len(r['consolidation_breakout'])})
+    if first is None:
+        return {'error': merged['runs'][0]['error'] if merged['runs']
+                else 'no valid as-of selected'}
+    order = {'LIVE': 0, 'EOD': 1, 'T-1': 2, 'T-2': 3, 'T-3': 4}
+    volkey = 'vol_x_20d' if first['params']['vol_window'] == 20 else 'vol_x_10d'
+    for k in ('ath', 'consolidation_breakout'):
+        merged[k].sort(key=lambda r: (order.get(r['when'], 9),
+                                      -(r[volkey] or 0)))
+    out = {kk: vv for kk, vv in first.items()
+           if kk not in ('ath', 'ath_with_volume', 'consolidation_breakout',
+                         'consolidation_with_volume')}
+    out.update(merged)
+    return out

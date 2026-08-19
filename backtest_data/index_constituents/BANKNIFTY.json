@@ -1,0 +1,37 @@
+{
+ "index": "NIFTY BANK",
+ "symbols": [
+  "HDFCBANK",
+  "ICICIBANK",
+  "SBIN",
+  "AXISBANK",
+  "KOTAKBANK",
+  "FEDERALBNK",
+  "INDUSINDBK",
+  "AUBANK",
+  "IDFCFIRSTB",
+  "BANKBARODA",
+  "CANBK",
+  "PNB",
+  "YESBANK",
+  "UNIONBANK"
+ ],
+ "weights": {
+  "HDFCBANK": 30.164,
+  "ICICIBANK": 27.399,
+  "SBIN": 11.805,
+  "AXISBANK": 9.695,
+  "KOTAKBANK": 7.872,
+  "FEDERALBNK": 2.421,
+  "INDUSINDBK": 1.824,
+  "AUBANK": 1.674,
+  "IDFCFIRSTB": 1.548,
+  "BANKBARODA": 1.241,
+  "CANBK": 1.182,
+  "PNB": 1.103,
+  "YESBANK": 1.089,
+  "UNIONBANK": 0.983
+ },
+ "source": "nse_ffmc",
+ "fetched": "2026-08-19T14:13:23"
+}

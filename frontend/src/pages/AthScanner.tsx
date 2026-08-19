@@ -7,7 +7,7 @@ type Row = {
   pct_above_prior_ath?: number; box_high?: number; box_low?: number;
   box_days?: number; range_pct?: number; pct_above_box?: number;
   chg_pct: number; vol_x_10d: number | null; vol_x_20d: number | null;
-  vol_spike: boolean; turnover_cr: number; asof: string;
+  vol_spike: boolean; turnover_cr: number; asof: string; when?: string;
 };
 type Res = {
   error?: string; asof: string; asof_date: string; session_fraction: number;
@@ -15,6 +15,7 @@ type Res = {
   params: { vol_mult: number; vol_window: number; consol_days: number;
             consol_max_range_pct: number; min_turnover_cr: number };
   ath: Row[]; consolidation_breakout: Row[]; cached?: boolean;
+  runs?: { asof: string; label?: string; date?: string; ath?: number; consol?: number; error?: string }[];
 };
 
 const ASOF = [
@@ -27,7 +28,7 @@ const UNIVERSES = [
 ] as const;
 
 export default function AthScanner() {
-  const [asof, setAsof] = useState('eod');
+  const [asofs, setAsofs] = useState<string[]>(['eod']);
   const [universe, setUniverse] = useState('nifty500');
   const [volWindow, setVolWindow] = useState(20);
   const [volMult, setVolMult] = useState('1.5');
@@ -42,7 +43,7 @@ export default function AthScanner() {
     setLoading(true);
     setErr(null);
     const qs = new URLSearchParams({
-      asof, universe, vol_window: String(volWindow), vol_mult: volMult,
+      asof: asofs.join(','), universe, vol_window: String(volWindow), vol_mult: volMult,
       consol_days: consolDays, min_turnover_cr: minTurn,
     });
     apiGet<Res>(`/api/breakout-scan?${qs}`)
@@ -71,7 +72,10 @@ export default function AthScanner() {
           <h1 className={styles.title}>ATH &amp; Breakout Scanner</h1>
           <p className={styles.sub}>
             New all-time highs and consolidation-box breakouts, with volume confirmation ·
-            {res ? ` as of ${res.asof_date} · ${res.scanned}/${res.universe_size} scanned · ATH = highest close since ${res.history_since}` : ' loading…'}
+            {res ? ` ${res.scanned}/${res.universe_size} scanned · ATH = highest close since ${res.history_since}` : ' loading…'}
+            {res?.runs && ' · ' + res.runs.map((r) => r.error
+              ? `${r.asof}: ${r.error}`
+              : `${r.label} (${r.date}): ${r.ath} ATH / ${r.consol} box`).join(' · ')}
             {res?.asof === 'live' && res.session_fraction < 1 &&
               ` · live volume pro-rated to ${(res.session_fraction * 100).toFixed(0)}% of session`}
           </p>
@@ -87,9 +91,12 @@ export default function AthScanner() {
           <label>As of</label>
           <div className={styles.segRow}>
             {ASOF.map(([k, lbl]) => (
-              <button key={k} className={`${styles.seg} ${asof === k ? styles.segActive : ''}`}
-                      onClick={() => setAsof(k)}>{lbl}</button>
+              <button key={k} className={`${styles.seg} ${asofs.includes(k) ? styles.segActive : ''}`}
+                      onClick={() => setAsofs((cur) =>
+                        cur.includes(k) ? (cur.length > 1 ? cur.filter((x) => x !== k) : cur)
+                                        : [...cur, k])}>{lbl}</button>
             ))}
+            <span className={styles.hint}>multi-select — rows are tagged by day</span>
           </div>
         </div>
         <div className={styles.ctrl}>
@@ -140,13 +147,14 @@ export default function AthScanner() {
         ) : (
           <table className={styles.table}>
             <thead><tr>
-              <th>Stock</th><th>Price</th><th>Prior ATH</th><th>Above ATH</th>
+              <th>Day</th><th>Stock</th><th>Price</th><th>Prior ATH</th><th>Above ATH</th>
               <th>Day chg</th><th>Vol vs {volWindow}d</th><th>Vol vs {volWindow === 20 ? 10 : 20}d</th>
               <th>Turnover</th>
             </tr></thead>
             <tbody>
-              {filt(res.ath).map((r) => (
-                <tr key={r.symbol}>
+              {filt(res.ath).map((r, i) => (
+                <tr key={r.symbol + (r.when ?? '') + i}>
+                  <td><span className={styles.dayTag}>{r.when ?? 'EOD'}</span></td>
                   <td className={styles.sym}>{r.symbol}</td>
                   <td>{r.price.toFixed(2)}</td>
                   <td className={styles.muted}>{r.prior_ath?.toFixed(2)}</td>
@@ -181,12 +189,13 @@ export default function AthScanner() {
         ) : (
           <table className={styles.table}>
             <thead><tr>
-              <th>Stock</th><th>Price</th><th>Box</th><th>Box width</th>
+              <th>Day</th><th>Stock</th><th>Price</th><th>Box</th><th>Box width</th>
               <th>Above box</th><th>Day chg</th><th>Vol vs {volWindow}d</th><th>Turnover</th>
             </tr></thead>
             <tbody>
-              {filt(res.consolidation_breakout).map((r) => (
-                <tr key={r.symbol}>
+              {filt(res.consolidation_breakout).map((r, i) => (
+                <tr key={r.symbol + (r.when ?? '') + i}>
+                  <td><span className={styles.dayTag}>{r.when ?? 'EOD'}</span></td>
                   <td className={styles.sym}>{r.symbol}</td>
                   <td>{r.price.toFixed(2)}</td>
                   <td className={styles.muted}>{r.box_low?.toFixed(1)} – {r.box_high?.toFixed(1)}</td>

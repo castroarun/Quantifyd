@@ -1,0 +1,29 @@
+{
+ "index": "NIFTY REALTY",
+ "symbols": [
+  "DLF",
+  "PHOENIXLTD",
+  "LODHA",
+  "GODREJPROP",
+  "PRESTIGE",
+  "OBEROIRLTY",
+  "BRIGADE",
+  "ANANTRAJ",
+  "ABREL",
+  "SOBHA"
+ ],
+ "weights": {
+  "DLF": 19.41,
+  "PHOENIXLTD": 16.227,
+  "LODHA": 15.04,
+  "GODREJPROP": 12.233,
+  "PRESTIGE": 12.007,
+  "OBEROIRLTY": 9.943,
+  "BRIGADE": 4.909,
+  "ANANTRAJ": 4.357,
+  "ABREL": 3.288,
+  "SOBHA": 2.585
+ },
+ "source": "nse_ffmc",
+ "fetched": "2026-08-19T14:13:33"
+}

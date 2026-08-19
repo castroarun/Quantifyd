@@ -83,8 +83,25 @@ def _conn():
     return sqlite3.connect(f'file:{DB}?mode=ro', uri=True)
 
 
+CONST_DIR = REPO / 'backtest_data' / 'index_constituents'
+
+
+def _nse_json(index_sym: str) -> Optional[dict]:
+    f = CONST_DIR / f'{index_sym}.json'
+    if f.exists():
+        try:
+            import json as _json
+            return _json.loads(f.read_text())
+        except Exception:
+            return None
+    return None
+
+
 @lru_cache(maxsize=8)
 def _constituents(index_sym: str) -> List[str]:
+    j = _nse_json(index_sym)
+    if j and j.get('symbols'):
+        return list(j['symbols'])
     p = _LISTS.get(index_sym)
     if p and p.exists():
         out = []
@@ -203,21 +220,30 @@ def drilldown(index_sym: str, window: str = '1m') -> Dict[str, Any]:
         rows.append({
             'symbol': sym,
             'last': round(float(c[-1]), 2),
-            'chg_1d_pct': round(float(c[-1] / c[-2] - 1) * 100, 2),
-            'ret_window_pct': round(float(c[-1] / c[-1 - lookback] - 1) * 100, 2),
-            'turnover_cr': round(float(turn_cr), 1),
+            'chg_1d_pct': round((c[-1] / c[-2] - 1) * 100, 2),
+            'ret_window_pct': round((c[-1] / c[-1 - lookback] - 1) * 100, 2),
+            'turnover_cr': round(turn_cr, 1),
         })
-    total_turn = sum(r['turnover_cr'] for r in rows) or 1.0
-    for r in rows:
-        r['weight_proxy_pct'] = round(r['turnover_cr'] / total_turn * 100, 2)
-    by_weight = sorted(rows, key=lambda r: -r['turnover_cr'])[:10]
+    j = _nse_json(index_sym)
+    real_w = (j or {}).get('weights') or {}
+    if real_w:
+        for r in rows:
+            r['weight_proxy_pct'] = real_w.get(r['symbol'], 0.0)
+        by_weight = sorted(rows, key=lambda r: -r['weight_proxy_pct'])[:10]
+        note = ('true index weightages (free-float market-cap share, NSE), '
+                'fetched ' + str((j or {}).get('fetched', ''))[:10])
+    else:
+        total_turn = sum(r['turnover_cr'] for r in rows) or 1.0
+        for r in rows:
+            r['weight_proxy_pct'] = round(r['turnover_cr'] / total_turn * 100, 2)
+        by_weight = sorted(rows, key=lambda r: -r['turnover_cr'])[:10]
+        note = ('weightage shown is a 20-day turnover share PROXY — '
+                'true index weights unavailable for this index')
     by_ret = sorted(rows, key=lambda r: -r['ret_window_pct'])
     return {
         'index': index_sym, 'label': label, 'window': window,
         'n_constituents': len(cons), 'n_with_data': len(rows),
-        'weight_note': ('weightage shown is a 20-day turnover share PROXY — '
-                        'true index weights are free-float market cap, which '
-                        'we do not store'),
+        'weight_note': note,
         'top_by_weight': by_weight,
         'leaders': by_ret[:10],
         'laggards': by_ret[-10:][::-1],

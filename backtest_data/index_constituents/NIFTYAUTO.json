@@ -1,0 +1,39 @@
+{
+ "index": "NIFTY AUTO",
+ "symbols": [
+  "M&M",
+  "MARUTI",
+  "BAJAJ-AUTO",
+  "EICHERMOT",
+  "TVSMOTOR",
+  "MOTHERSON",
+  "HEROMOTOCO",
+  "TMPV",
+  "BHARATFORG",
+  "ASHOKLEY",
+  "BOSCHLTD",
+  "SONACOMS",
+  "TIINDIA",
+  "UNOMINDA",
+  "EXIDEIND"
+ ],
+ "weights": {
+  "M&M": 23.478,
+  "MARUTI": 13.729,
+  "BAJAJ-AUTO": 9.765,
+  "EICHERMOT": 8.481,
+  "TVSMOTOR": 7.895,
+  "MOTHERSON": 5.796,
+  "HEROMOTOCO": 5.687,
+  "TMPV": 5.193,
+  "BHARATFORG": 4.232,
+  "ASHOKLEY": 3.839,
+  "BOSCHLTD": 3.235,
+  "SONACOMS": 2.844,
+  "TIINDIA": 2.433,
+  "UNOMINDA": 1.785,
+  "EXIDEIND": 1.608
+ },
+ "source": "nse_ffmc",
+ "fetched": "2026-08-19T14:13:28"
+}

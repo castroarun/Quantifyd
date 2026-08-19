@@ -1,0 +1,33 @@
+{
+ "index": "NIFTY PSU BANK",
+ "symbols": [
+  "SBIN",
+  "BANKBARODA",
+  "CANBK",
+  "PNB",
+  "UNIONBANK",
+  "INDIANB",
+  "BANKINDIA",
+  "MAHABANK",
+  "CENTRALBK",
+  "IOB",
+  "UCOBANK",
+  "PSB"
+ ],
+ "weights": {
+  "SBIN": 63.958,
+  "BANKBARODA": 6.727,
+  "CANBK": 6.401,
+  "PNB": 5.977,
+  "UNIONBANK": 5.326,
+  "INDIANB": 4.559,
+  "BANKINDIA": 2.556,
+  "MAHABANK": 2.414,
+  "CENTRALBK": 0.782,
+  "IOB": 0.718,
+  "UCOBANK": 0.433,
+  "PSB": 0.151
+ },
+ "source": "nse_ffmc",
+ "fetched": "2026-08-19T14:13:34"
+}

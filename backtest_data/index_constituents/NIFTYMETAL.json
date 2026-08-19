@@ -1,0 +1,39 @@
+{
+ "index": "NIFTY METAL",
+ "symbols": [
+  "TATASTEEL",
+  "HINDALCO",
+  "JSWSTEEL",
+  "ADANIENT",
+  "VEDL",
+  "JINDALSTEL",
+  "APLAPOLLO",
+  "NATIONALUM",
+  "NMDC",
+  "HINDZINC",
+  "WELCORP",
+  "SAIL",
+  "LLOYDSME",
+  "JSL",
+  "HINDCOPPER"
+ ],
+ "weights": {
+  "TATASTEEL": 18.055,
+  "HINDALCO": 17.771,
+  "JSWSTEEL": 14.261,
+  "ADANIENT": 10.628,
+  "VEDL": 5.281,
+  "JINDALSTEL": 4.918,
+  "APLAPOLLO": 4.565,
+  "NATIONALUM": 4.088,
+  "NMDC": 3.407,
+  "HINDZINC": 3.185,
+  "WELCORP": 3.063,
+  "SAIL": 2.967,
+  "LLOYDSME": 2.947,
+  "JSL": 2.69,
+  "HINDCOPPER": 2.175
+ },
+ "source": "nse_ffmc",
+ "fetched": "2026-08-19T14:13:29"
+}

@@ -1,0 +1,39 @@
+{
+ "index": "NIFTY FMCG",
+ "symbols": [
+  "ITC",
+  "HINDUNILVR",
+  "NESTLEIND",
+  "TATACONSUM",
+  "BRITANNIA",
+  "VBL",
+  "MARICO",
+  "UNITDSPR",
+  "GODREJCP",
+  "RADICO",
+  "COLPAL",
+  "DABUR",
+  "PATANJALI",
+  "UBL",
+  "EMAMILTD"
+ ],
+ "weights": {
+  "ITC": 26.333,
+  "HINDUNILVR": 18.321,
+  "NESTLEIND": 10.714,
+  "TATACONSUM": 7.136,
+  "BRITANNIA": 6.623,
+  "VBL": 6.094,
+  "MARICO": 4.609,
+  "UNITDSPR": 4.597,
+  "GODREJCP": 3.844,
+  "RADICO": 3.739,
+  "COLPAL": 2.519,
+  "DABUR": 2.422,
+  "PATANJALI": 1.242,
+  "UBL": 0.999,
+  "EMAMILTD": 0.807
+ },
+ "source": "nse_ffmc",
+ "fetched": "2026-08-19T14:13:30"
+}

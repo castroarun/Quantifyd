@@ -1,0 +1,29 @@
+{
+ "index": "NIFTY IT",
+ "symbols": [
+  "INFY",
+  "TCS",
+  "HCLTECH",
+  "TECHM",
+  "COFORGE",
+  "PERSISTENT",
+  "WIPRO",
+  "LTM",
+  "MPHASIS",
+  "OFSS"
+ ],
+ "weights": {
+  "INFY": 34.469,
+  "TCS": 20.503,
+  "HCLTECH": 12.197,
+  "TECHM": 8.809,
+  "COFORGE": 5.535,
+  "PERSISTENT": 5.259,
+  "WIPRO": 4.261,
+  "LTM": 3.722,
+  "MPHASIS": 2.804,
+  "OFSS": 2.44
+ },
+ "source": "nse_ffmc",
+ "fetched": "2026-08-19T14:13:25"
+}
