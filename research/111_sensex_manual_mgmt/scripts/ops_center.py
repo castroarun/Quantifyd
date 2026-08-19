@@ -87,7 +87,7 @@ REVIEWS = [
     ("SHIFT vs COMB slot race review", "2026-09-12", "SCHEDULED",
      "NAS_C20_SHIFT paper days vs its model; if tracking, SHIFT challenges COMB for the sleeve slot"),
     ("Sleeves paper-vs-model FULL checkpoint (STRATEGY upgrade / re-freeze / kill)", "2026-09-15", "SCHEDULED",
-     "the research/111 gate: live days vs backfill expectations at study lots"),
+     "the research/111 gate: live days vs backfill expectations at study lots. AGENDA also: Thursday book-structure cleanup - TB-NIFTY and COMB coincide Thu (same full-day SL20 trade, 10L across two labels; exposure = the studied 10-lot sweep cell, sec-19c chat 19-AUG) - decide whether one book should carry Thursday for clean accounting (economics unchanged)"),
     ("All-stack portfolio-overlay re-test on real intraday MTM", "2026-09-26", "SCHEDULED",
      "sec-17 rerun once nas_mtm snapshots span ~6 weeks (started 2026-08-11)"),
     ("Weekly: review stack_reassessment DRIFT flags", "every Friday evening", "SCHEDULED",
