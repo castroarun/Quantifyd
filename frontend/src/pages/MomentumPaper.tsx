@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import BacktestCharts from '../components/BacktestCurve/BacktestCharts';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
+import LiveCurve from '../components/LiveCurve/LiveCurve';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
 import BookActivity from '../components/BookActivity/BookActivity';
@@ -405,56 +406,15 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
 }
 
 function LivePnL({ s }: { s: State }) {
-  const pts = (s.navcurve || []).filter((p) => p.nav != null);
-  const withB = pts.filter((p) => p.bench != null);
-  const n0 = pts.length ? pts[0].nav : 0;
-  const nL = pts.length ? pts[pts.length - 1].nav : 0;
-  const b0 = withB.length ? (withB[0].bench as number) : 0;
-  const bL = withB.length ? (withB[withB.length - 1].bench as number) : 0;
-  const bookPct = n0 ? (nL / n0 - 1) * 100 : 0;
-  const niftyPct = b0 ? (bL / b0 - 1) * 100 : 0;
-  const alpha = bookPct - niftyPct;
-  const bookRs = nL - n0;
-  const box: CSSProperties = {
-    background: 'var(--canvas,#FAFAF9)', border: '1px solid var(--hairline,rgba(0,0,0,0.10))',
-    borderRadius: 8, padding: '10px 13px',
-  };
-  const lab: CSSProperties = { fontSize: 11.5, color: 'var(--ink-muted,#888)' };
   return (
     <div className={styles.card}>
       <div className={styles.cardTitle}>
-        P&amp;L since go-live — book vs Nifty 50
+        P&amp;L since go-live — book vs market indices
         <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--ink-muted,#888)', marginLeft: 8 }}>
-          both rebased to their first day{s.inception ? ` (${s.inception})` : ''}
+          percent return, deposits excluded{s.inception ? ` · live since ${s.inception}` : ''}
         </span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 12 }}>
-        <div style={box}><div style={lab}>Book</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: bookPct >= 0 ? '#1f9d55' : '#c0392b' }}>
-            {pct(bookPct)}</div>
-          <div style={lab}>{bookRs >= 0 ? '+' : ''}{inr(bookRs)}</div></div>
-        <div style={box}><div style={lab}>Nifty 50</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: niftyPct >= 0 ? '#1f9d55' : '#c0392b' }}>
-            {pct(niftyPct)}</div>
-          <div style={lab}>NIFTYBEES {bL || '—'}</div></div>
-        <div style={box}><div style={lab}>Vs Nifty 50</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: alpha >= 0 ? '#1f9d55' : '#c0392b' }}>
-            {pct(alpha)}</div>
-          <div style={lab}>{alpha >= 0 ? 'ahead of the index' : 'behind the index'}</div></div>
-        <div style={box}><div style={lab}>Days live</div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{pts.length}</div>
-          <div style={lab}>trading days recorded</div></div>
-      </div>
-      <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--ink-muted,#888)', marginBottom: 6 }}>
-        <span><i style={{ display: 'inline-block', width: 14, height: 3, background: '#1f9d55', verticalAlign: 'middle', marginRight: 6 }} />Book NAV</span>
-        <span><i style={{ display: 'inline-block', width: 14, height: 0, borderTop: '2px dashed var(--ink-muted,#888)', verticalAlign: 'middle', marginRight: 6 }} />Nifty 50 (NIFTYBEES)</span>
-      </div>
-      {pts.length < 2
-        ? <div className={styles.chartEmpty}>
-            The curve starts building from the next daily mark — the book went live today, so there is
-            only one point. Both lines will be rebased to go-live day.
-          </div>
-        : <EquityCurve data={s.navcurve} />}
+      <LiveCurve />
     </div>
   );
 }

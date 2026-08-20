@@ -1,0 +1,61 @@
+.wrap { display: flex; flex-direction: column; gap: 10px; }
+
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.spacer { flex: 1; }
+
+/* series toggles — identity chips, colour comes inline per series */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--hairline, rgba(0,0,0,0.10)); background: var(--surface, #fff);
+  color: var(--ink, #1B1B1A); border-radius: 999px; padding: 4px 11px 4px 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer; line-height: 1.4;
+}
+.chip[data-on='0'] { color: var(--ink-muted, #888780); background: var(--canvas, #FAFAF9); }
+.chip[data-on='0'] .dot { opacity: 0.28; }
+.dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+
+.seg { display: inline-flex; border: 1px solid var(--hairline, rgba(0,0,0,0.10)); border-radius: 7px; overflow: hidden; }
+.segBtn {
+  background: transparent; border: 0; padding: 4px 10px; font-size: 11.5px; font-weight: 600;
+  color: var(--ink-muted, #888780); cursor: pointer; font-family: inherit;
+}
+.segBtn[data-on='1'] { background: var(--canvas, #FAFAF9); color: var(--ink, #1B1B1A); }
+.segBtn:disabled { opacity: 0.35; cursor: default; }
+
+.btn {
+  border: 1px solid var(--hairline, rgba(0,0,0,0.10)); background: var(--canvas, #FAFAF9);
+  color: var(--ink, #1B1B1A); border-radius: 6px; padding: 4px 11px; font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+}
+
+.plot { position: relative; width: 100%; }
+.plot svg { display: block; width: 100%; height: auto; touch-action: none; }
+
+.hint { font-size: 11.5px; color: var(--ink-muted, #888780); }
+
+/* tooltip */
+.tip {
+  position: absolute; pointer-events: none; z-index: 5;
+  background: var(--surface, #fff); border: 1px solid var(--hairline, rgba(0,0,0,0.12));
+  border-radius: 8px; padding: 8px 10px; font-size: 12px; min-width: 172px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+}
+.tipDate { font-weight: 700; margin-bottom: 5px; color: var(--ink, #1B1B1A); }
+.tipRow { display: flex; align-items: center; gap: 7px; margin-top: 2px; color: var(--ink-secondary, #5F5E5A); }
+.tipName { flex: 1; }
+.tipVal { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink, #1B1B1A); }
+
+/* expanded overlay */
+.overlay {
+  position: fixed; inset: 0; z-index: 90; background: var(--surface, #fff);
+  padding: 22px 26px; overflow: auto; display: flex; flex-direction: column; gap: 12px;
+}
+
+.tableWrap { max-height: 300px; overflow: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.table th, .table td { text-align: right; padding: 5px 9px; border-bottom: 1px solid var(--hairline-soft, rgba(0,0,0,0.06)); }
+.table th:first-child, .table td:first-child { text-align: left; }
+.table th { color: var(--ink-muted, #888780); font-weight: 600; }
+
+.summary { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px;
+  color: var(--ink-secondary, #5F5E5A); font-variant-numeric: tabular-nums; }

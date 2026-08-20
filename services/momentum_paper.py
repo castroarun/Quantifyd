@@ -668,6 +668,75 @@ def _days_to_rebalance():
     return max(0, (nxt - t).days)
 
 
+# ───────────────────── benchmark series (for the live P&L chart) ─────────────────────
+# Real NSE index closes from market_data.db — NOT ETF proxies. research/86 burned us once by
+# reasoning about smallcaps off a proxy that agreed with the real index only 68% of the time.
+BENCH_SERIES = [
+    ("NIFTY50",        "Nifty 50"),
+    ("NIFTY500",       "Nifty 500"),
+    ("NIFTYMIDCAP150", "Midcap 150"),
+    ("NIFTYSMLCAP250", "Smallcap 250"),
+]
+
+
+def book_curve():
+    """The book's cumulative return with DEPOSITS REMOVED (time-weighted).
+
+    Raw NAV cannot be compared to an index: capital went Rs3L -> Rs7.69L in nine days, so plotting
+    NAV growth would have shown +156% against Nifty 50's -2.15% when the book had in truth done
+    almost nothing. Each day's return is measured against the PREVIOUS day's NAV after backing out
+    that day's deposit or withdrawal, then chained — so adding cash moves the line by exactly zero,
+    which is the entire point.
+    """
+    rows = list(_conn().execute(
+        "SELECT d, nav, COALESCE(capital,0) FROM mp_nav WHERE nav > 0 ORDER BY d"))
+    if not rows:
+        return []
+    out, cum = [], 1.0
+    prev_nav, prev_cap = None, None
+    for d, nav, cap in rows:
+        if prev_nav:
+            flow = (cap - prev_cap) if (cap and prev_cap) else 0.0
+            r = ((nav - flow) / prev_nav) - 1.0 if prev_nav else 0.0
+            cum *= (1.0 + r)
+        out.append({"d": d[:10], "r": round((cum - 1.0) * 100, 4), "nav": round(nav)})
+        prev_nav, prev_cap = nav, (cap or prev_cap)
+    return out
+
+
+def benchmark_series(start=None):
+    """Daily closes for each comparison index from the book's inception.
+
+    Cached for an hour: this feeds a chart that re-fetches on every page load, and the underlying
+    daily bars only change once a day after the market closes."""
+    import time as _t
+    start = start or (_get("inception") or date.today().isoformat())[:10]
+    ck = f"{start}"
+    try:
+        if _get("bench_cache_key") == ck and (_t.time() - float(_get("bench_cache_ts", 0) or 0)) < 3600:
+            return json.loads(_get("bench_cache") or "{}")
+    except Exception:
+        pass
+    out = {}
+    try:
+        con = sqlite3.connect(str(ROOT / "backtest_data" / "market_data.db"))
+        for sym, label in BENCH_SERIES:
+            rows = con.execute(
+                "SELECT date, close FROM market_data_unified WHERE symbol=? AND timeframe='day' "
+                "AND date >= ? AND close > 0 ORDER BY date", (sym, start)).fetchall()
+            if rows:
+                out[sym] = dict(label=label, points=[{"d": d[:10], "c": float(c)} for d, c in rows])
+        con.close()
+    except Exception as e:
+        logger.error(f"[MP] benchmark_series failed: {e}")
+        return {}
+    try:
+        _set("bench_cache", json.dumps(out)); _set("bench_cache_key", ck); _set("bench_cache_ts", _t.time())
+    except Exception:
+        pass
+    return out
+
+
 # ───────────────────── PUT HEDGE (bi-weekly 2x) ─────────────────────
 def _hedge_get():
     r = _conn().execute("SELECT * FROM mp_hedge WHERE id=1").fetchone()
@@ -1099,10 +1168,10 @@ def _mark_nav(close, asof_iso, live=None):
         pass
     gate = _get("gate", "ON")
     c = _conn()
-    c.execute("INSERT OR REPLACE INTO mp_nav(d,equity,cash,nav,invested_pct,gate,bench_close,unrealized) "
-              "VALUES(?,?,?,?,?,?,?,?)",
+    c.execute("INSERT OR REPLACE INTO mp_nav(d,equity,cash,nav,invested_pct,gate,bench_close,unrealized,capital) "
+              "VALUES(?,?,?,?,?,?,?,?,?)",
               (asof_iso[:10], equity, cash, nav, (equity / nav * 100) if nav else 0,
-               gate, bench, unreal))
+               gate, bench, unreal, float(_get("capital", CFG["capital"]))))
     c.commit(); c.close()
     return nav
 
@@ -1588,6 +1657,10 @@ def register(app, scheduler):
                          (request.get_json(silent=True) or {}).get("amount"),
                          (request.get_json(silent=True) or {}).get("mode", "immediate"),  # research/112 winner
                          bool((request.get_json(silent=True) or {}).get("dry_run", True)))))
+    app.add_url_rule("/api/momentum-paper/benchmarks", "mp_benchmarks", methods=["GET"],
+                     view_func=lambda: jsonify(dict(
+                         inception=(_get("inception") or "")[:10],
+                         book=book_curve(), series=benchmark_series())))
     app.add_url_rule("/api/momentum-paper/withdraw", "mp_withdraw", methods=["POST"],
                      view_func=lambda: jsonify(cash_withdraw(
                          (request.get_json(silent=True) or {}).get("amount"),
