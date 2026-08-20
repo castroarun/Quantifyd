@@ -1624,10 +1624,15 @@ export default function Nas() {
     const dte = b.dte ?? (bk.includes('SENSEX') ? null : cslLive?.books?.NAS_COMB20?.dte) ?? (wd >= 0 && wd <= 4 ? dteTbl[wd] : null);
     const w = (dte != null && TB_WIN[bk]) ? TB_WIN[bk][dte] : null;
     if (b.state === 'OPEN' && b.ce_sym) {
-      const thr = (b.credit && b.sl) ? Math.round((1 + b.sl / 100) * b.credit) : null;
+      const slNone = b.sl === 'none' || b.sl == null;
+      const thr = b.credit
+        ? Math.round((slNone ? 1.5 : 1 + b.sl / 100) * b.credit)
+        : null;
       const curComb = (Number(b.ce_last) || 0) + (Number(b.pe_last) || 0);
       const entryComb = Number(b.credit) || ((Number(b.ce0) || 0) + (Number(b.pe0) || 0));
-      const armTxt = thr != null ? `${entryComb.toFixed(1)} · ${thr} (${curComb.toFixed(1)})` : undefined;
+      const armTxt = thr != null
+        ? `${entryComb.toFixed(1)} · ${thr}${slNone ? ' bkstp' : ''} (${curComb.toFixed(1)})`
+        : undefined;
       const mk = (leg: string, sym: string, e: number, l: number): any => ({
         leg, tradingsymbol: sym, strike: b.K, qty, entry_price: e, ltp: l,
         mode: b.live ? 'live' : 'paper', entry_time: b.entry_ts, status: 'ACTIVE', sl_price: thr, arm_text: armTxt,
@@ -1663,11 +1668,21 @@ export default function Nas() {
       .map((x) => x.map(([hm, v]) => [iso(hm), v] as MtmPoint));
     return lists.length ? sumSeries(lists) : [];
   }, [cslLive]);
+  const [sxMtm, setSxMtm] = useState<any>(null);
+  useEffect(() => {
+    const load = () =>
+      fetch(`/app/sensex_mtm.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => r.json()).then(setSxMtm).catch(() => {});
+    load();
+    const id = setInterval(load, 15000);
+    return () => clearInterval(id);
+  }, []);
+  const sxPts: MtmPoint[] = useMemo(() => (sxMtm?.points ?? []) as MtmPoint[], [sxMtm]);
   const overallPts: MtmPoint[] = useMemo(() => {
-    if (!mtmCombined) return [];
-    if (!sleevePts.length) return mtmCombined.points;
-    return sumSeries([mtmCombined.points, sleevePts]);
-  }, [mtmCombined, sleevePts]);
+    const lists = [mtmCombined?.points ?? [], sleevePts, sxPts].filter((x) => x.length);
+    if (!lists.length) return [];
+    return lists.length === 1 ? lists[0] : sumSeries(lists);
+  }, [mtmCombined, sleevePts, sxPts]);
 
   return (
     <LiveTicksContext.Provider value={liveTicks}>
@@ -1716,7 +1731,7 @@ export default function Nas() {
         }
         points={
           expandedKey === '_combined'
-            ? (mtmCombined?.points || [])
+            ? overallPts
             : expandedKey
             ? (mtmData[expandedKey]?.points || [])
             : []
@@ -1731,7 +1746,9 @@ export default function Nas() {
         extraSeries={expandedKey === '_combined' ? [
           { label: '9:16', color: '#3b82f6', points: nineMtmPts },
           { label: 'Squeeze', color: '#f59e0b', points: squeezeMtmPts },
-        ] : undefined}
+          { label: 'Sleeves', color: '#a371f7', points: sleevePts },
+          { label: 'SENSEX', color: '#0F6E56', points: sxPts },
+        ].filter((x) => x.points.length) : undefined}
         onClose={() => setExpandedKey(null)}
       />
 
@@ -2186,7 +2203,7 @@ function buildTradeBook(
       if (pl) {
         rows.push({ sysId: sys.id, sysLabel: sys.label, family: sys.group, side: '—', strike: null,
           qty: pl.qty ?? 0, entry: null, exit: null, pnl: 0, open: false,
-          reason: `PLANNED · SL${pl.sl}`, inTime: pl.entry ? pl.entry + '*' : '', outTime: pl.exit ? pl.exit + '*' : '',
+          reason: (pl.sl === 'none' || pl.sl == null) ? 'PLANNED · SL none · 50% bkstp' : `PLANNED · SL${pl.sl}`, inTime: pl.entry ? pl.entry + '*' : '', outTime: pl.exit ? pl.exit + '*' : '',
           arm: null, mode: pl.mode ?? 'live' });
       }
       continue;
