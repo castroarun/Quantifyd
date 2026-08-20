@@ -223,7 +223,7 @@ export const SYSTEMS: StrategySystem[] = [
   // ----------------------------------------------------------------- PAPER
   {
     id: 'csl-timeb-sensex',
-    name: 'SENSEX TimeB-Wed / COMB-Thu',
+    name: 'TIMEB SENSEX',
     subtitle: 'BFO · time-boxed short straddle · CSL_TIMEB_SENSEX',
     status: 'live',
     size: '8 lots · qty 160',

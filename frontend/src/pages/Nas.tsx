@@ -168,7 +168,7 @@ const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
   { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB · all-week', subtitle: 'study per-DTE stops · all 5 days (paper)', rules: '', configNote: 'paper A/B', group: '916' },
-  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'COMB SENSEX', subtitle: 'Wed window + Thu full-day', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
+  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TIMEB SENSEX', subtitle: 'Wed + Thu windows', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
 
 // Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
@@ -2066,7 +2066,7 @@ export default function Nas() {
           </div>
           <div className={styles.grid3}>
             <SleeveCard label="SENSEX COMB · all-week" sub="Full-day · study per-DTE stops · paper" rules="09:16 to 15:20, combined-premium SL 30%. Same construction and stops as the live COMB, but it trades ALL five days — so the ex-Wed rule is measured on real days rather than assumed. 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
-            <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
+            <SleeveCard label="TIMEB SENSEX" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
             <div />
           </div>
         </section>
