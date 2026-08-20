@@ -1615,8 +1615,11 @@ export default function Nas() {
       pe: act.filter((l: any) => l.cp === 'PE').map(mk),
       closed_today: done.map(mk) } } as any, err: null };
   };
-  const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
+  const sleeveTbState = (bk: string, qtyDefault: number): SystemStateRecord => {
     const b: any = cslLive?.books?.[bk];
+    // the book publishes its real deployed size (incl. per-DTE overrides); the passed
+    // value is only a fallback for older payloads
+    const qty: number = Number(b?.qty) > 0 ? Number(b.qty) : qtyDefault;
     if (!b) return { state: null, err: null };
     // venue-aware trading-DTE: executor-published if present, else weekday table
     // (NIFTY Tue-expiry: Mon..Fri -> 1,0,4,3,2 · SENSEX Thu-expiry: 3,2,1,0,4).
@@ -2372,8 +2375,8 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 50px 104px 124px 96px 116px 48px 48px 86px'
-    : '120px 34px 58px 46px 50px 104px 124px 96px 116px 48px 48px 86px';
+    ? '34px 58px 46px 50px 104px 168px 84px 108px 44px 44px 86px'
+    : '116px 34px 58px 46px 50px 104px 168px 84px 108px 44px 44px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -2509,7 +2512,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                     if (r.open && r.arm_text) {
                       const isBand = /move-stop/i.test(r.arm_text);
                       return (
-                        <span style={{ color: isBand ? '#58a6ff' : '#d29922', whiteSpace: 'nowrap' }}
+                        <span style={{ color: isBand ? '#58a6ff' : '#d29922', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}
                           title={isBand
                             ? 'Move-stop band on the underlying: both legs exit and re-center when spot leaves it'
                             : 'Combined premium now · combined-SL exit level — the whole straddle exits when CE+PE reaches it'}>

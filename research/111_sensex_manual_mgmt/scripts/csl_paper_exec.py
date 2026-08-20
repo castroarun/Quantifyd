@@ -206,9 +206,13 @@ def push_event(st, book, etype, msg, source="PAPER"):
 
 def write_live(plans, today):
     try:
-        def _bd(P):
+        def _bd(P, bk=None):
+            _B = BOOKS.get(bk, {}) if bk else {}
             d = {"state": P["state"], "credit": P.get("credit"), "series": P.get("series", []),
-                 "dte": P.get("dte"), "entry": P.get("entry"), "exit": P.get("exit"), "sl": P.get("sl")}
+                 "dte": P.get("dte"), "entry": P.get("entry"), "exit": P.get("exit"), "sl": P.get("sl"),
+                 # real deployed size incl. any per-DTE override (the app showed a hardcoded
+                 # 130 on Thursday while the account held 325 -- user, 2026-08-20)
+                 "lots": P.get("lots", _B.get("lots")), "qty": P.get("qty", _B.get("qty"))}
             lg = P.get("legs")
             if lg:
                 d.update(K=P.get("K"), ce_sym=lg[0], pe_sym=lg[1], ce0=P.get("ce0"), pe0=P.get("pe0"),
@@ -216,7 +220,7 @@ def write_live(plans, today):
                          live=bool(P.get("live")), entry_ts=P.get("entry_ts"), dte=P.get("dte"))
             return d
         json.dump({"day": today, "at": datetime.now().strftime("%H:%M:%S"),
-                   "books": {bk: _bd(P) for bk, P in plans.items()}}, open(PUBLIVE, "w"))
+                   "books": {bk: _bd(P, bk) for bk, P in plans.items()}}, open(PUBLIVE, "w"))
     except Exception:
         pass
 
