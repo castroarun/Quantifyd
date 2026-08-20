@@ -237,6 +237,16 @@ def check_and_apply(venue: str, dry_run: bool = False):
         logger.warning("[PORT] DTE check failed (%s) - using the standard stop", _e)
     stop_threshold = -_stop_per_lot * lots
     tp_per_lot = VENUES[venue].get("tp_per_lot")
+    # research/114 + the Wednesday companion run: the wide TP is a THURSDAY result. On
+    # Wednesday the early TP is the only thing that beats the fat tail (TP1667 +211/lot,
+    # 75% win, worst -3,778 vs HOLD -1,112/lot, worst -16,502), so it stays tight there.
+    if venue == "sensex" and tp_per_lot:
+        try:
+            from services.nas_day_matrix import trading_dte as _tdte, EXPIRY_WEEKDAY as _EW
+            if _tdte(None, _EW["sensex"]) != 0:
+                tp_per_lot = 1667.0
+        except Exception as _e:
+            logger.warning("[PORT] TP DTE check failed (%s) - using the configured TP", _e)
     tp_threshold = (tp_per_lot * lots) if tp_per_lot else None
     arm_pl = VENUES[venue].get("trail_arm_per_lot")
     give_pl = VENUES[venue].get("trail_giveback_per_lot")
