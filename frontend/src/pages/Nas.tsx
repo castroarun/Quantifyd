@@ -2328,6 +2328,27 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   const [mode, setMode] = useState<TBGroupMode>('system');
   const [liveOnly, setLiveOnly] = useState(false);
   const [venue, setVenue] = useState<'all' | 'nifty' | 'sensex'>('all');
+  // Broker truth: which symbols the account actually still holds (MIS, non-zero).
+  const [heldSyms, setHeldSyms] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    let on = true;
+    const load = () =>
+      fetch('/api/positions', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d) => {
+          if (!on) return;
+          const net = (d?.net || []) as any[];
+          const held = new Set<string>();
+          for (const p of net) {
+            if (p?.product === 'MIS' && Number(p?.quantity)) held.add(String(p.tradingsymbol));
+          }
+          setHeldSyms(held);
+        })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 15000);
+    return () => { on = false; clearInterval(id); };
+  }, []);
   // ARMED FOR TODAY -- the day's plan straight from the rules matrix, visible
   // before anything enters (executors arm at 09:00/09:12; this needs neither).
   const [rulesRm, setRulesRm] = useState<any | null>(null);
@@ -2378,7 +2399,16 @@ function TradeBook({ systems, states, liveLegs, basis }: {
      (r.tradingsymbol || '').startsWith('SENSEX') || (r.strike ?? 0) >= 40000) ? 'sensex' : 'nifty';
   const rows = buildTradeBook(systems, states, liveLegs, basis)
     .filter((r) => !liveOnly || r.mode === 'live')
-    .filter((r) => venue === 'all' || rowVenue(r) === venue);
+    .filter((r) => venue === 'all' || rowVenue(r) === venue)
+    .map((r) => {
+      // a LIVE leg the account no longer holds was closed outside the system: show it as
+      // closed and drop its risk, even though the book still tracks it until its exit
+      if (r.open && r.mode === 'live' && r.tradingsymbol && heldSyms && heldSyms.size >= 0
+          && !heldSyms.has(r.tradingsymbol)) {
+        return { ...r, open: false, reason: 'CLOSED OUTSIDE', arm: null, arm_text: undefined, maxLoss: undefined };
+      }
+      return r;
+    });
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -2658,6 +2688,14 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                       );
                     }
                     const up = (r.reason || '').toUpperCase();
+                    if (up.includes('CLOSED OUTSIDE')) {
+                      return (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#8b949e', fontWeight: 700, fontSize: 10, background: 'rgba(139,148,158,0.16)', padding: '1px 7px', borderRadius: 9, whiteSpace: 'nowrap' }}
+                          title="You closed this leg yourself — the account no longer holds it. The system will reconcile at its exit time and place no order.">
+                          ✋ MANUAL
+                        </span>
+                      );
+                    }
                     const c = up.includes('SL') ? '#f85149'
                       : up.includes('ST') ? '#58a6ff'
                       : (up.includes('ROLL') || up.includes('ADJ') || up.includes('SHIFT')) ? '#d29922'
