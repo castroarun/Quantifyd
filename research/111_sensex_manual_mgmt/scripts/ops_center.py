@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("research/116 ratcheting vs static backstop - run and decide", "2026-08-21", "PENDING",
+     "Arun 20-Aug: a backstop anchored to entry becomes a huge give-back once the trade wins (TB-SX: 180 pts / ~Rs29k away at +Rs15k open). Test breakeven-clamp, multiplicative ratchet, peak-giveback, time-scaled. Applies to every combined-SL book."),
     ("research/114 SENSEX-Thursday rule change - decide and deploy", "2026-08-21", "PENDING",
      "drop per-leg 30% on SX Thursday + raise/retire the Rs1,667 TP, keep the 50% backstop; needs Arun sign-off, deploy after 15:40; re-run the bake-off when Thursdays double (~Nov)"),
     ("SENSEX venue TP Rs1,667/lot - re-test says it COSTS money vs holding to 15:15", "2026-08-22", "PENDING",
