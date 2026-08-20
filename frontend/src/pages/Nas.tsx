@@ -1573,10 +1573,10 @@ export default function Nas() {
     info.state === 'CLOSED' ? 'closed' : info.src === 'live' ? 'live'
       : info.src === 'paper' ? 'paper' : (marketOpen ? 'paper' : 'off');
   // Trade-Book state for a sleeve: OPEN -> CE/PE legs; WAIT_ENTRY -> planned window (by today's DTE).
-  const TB_WIN: Record<string, Record<number, [string, string, number]>> = {
+  const TB_WIN: Record<string, Record<number, [string, string, number | string]>> = {
     NAS_COMB20: { 0: ['09:16', '15:20', 25], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 20] },
     CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 1: ['13:00', '14:00', 20], 2: ['10:00', '12:00', 20] },
-    CSL_TIMEB_SENSEX: { 0: ['09:20', '15:20', 40], 1: ['10:30', '12:00', 20] },
+    CSL_TIMEB_SENSEX: { 0: ['13:00', '15:20', 'none'], 1: ['10:30', '12:00', 20] },
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
   const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
@@ -1983,7 +1983,7 @@ export default function Nas() {
           </div>
           <div className={styles.grid3}>
             <SleeveCard label="COMB (CSL30F)" sub="Full-day combined-SL 30% · paper" rules="09:16 to 15:20, combined-premium SL 30%. The SENSEX arm of the fixed-CSL A/B (variable-vs-fixed live comparison). 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
-            <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots (the true window keeps the overweight); Thu full-day 09:20-15:20 SL40 at 5 lots (full-day exposure sized at the studied basis, no window-overweight). REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
+            <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
             <div />
           </div>
         </section>
