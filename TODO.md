@@ -22,6 +22,40 @@ live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py 
 SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
 Re-check when the data window doubles (~late Sep 2026).
 
+## ✅ 2026-08-20 — Live-vs-app reconciliation job LIVE (11:00 + 14:00, email + WhatsApp)
+
+Arun spotted NIFTY COMB showing **2 lots on the app while the account held 5**. Diagnosis: the
+trade was RIGHT and the page was wrong. `csl_paper_config.json` records the 19-Aug decision —
+*"NIFTY Thursday CONSOLIDATED into NAS_COMB20 DTE3 5L/qty325 09:16-15:20 SL20 ... Total NIFTY-Thu
+size unchanged at 5L"* — and the broker order confirms it: one SELL, qty 325, tag `CSL_NAS_COMB20`,
+avg 133.95/73.80. The page renders the book's static 2L/130 because `csl_paper_live.json` carries no
+lots/qty, so displayed size AND P&L were 2.5x light (+Rs 448 shown vs +Rs 1,218 real).
+
+**Built: `scripts/live_vs_app_recon.py`** — read-only, cron **11:00 + 14:00 Mon-Fri**, emails and
+WhatsApps the report every run (`get_notification_service()`), writes `static/app/live_recon.json`
+and appends to `docs/LIVE_RECON_LOG.md`.
+
+Four checks: **ORPHAN** (broker leg no book claims) · **SIZE** (broker qty != app qty) ·
+**GHOST** (app records a leg the broker lacks) · **NAKED** (short option with no SL resting at the
+exchange). Manual equity holdings are INFO, not alerts.
+
+Getting it honest took four passes, each a lesson about where truth lives:
+1. `*_positions WHERE exit_time IS NULL` → 16 false GHOSTs (May/June expiries never marked closed).
+2. App state endpoints → SENSEX legs invisible (sensex_live.json has no leg detail) = false ORPHAN.
+3. `config.paper_trading_mode` → reads False on the 916 arms while they trade paper-shadow.
+4. **The day/gap matrix ALSO lies** (`nas_916_atm: live=true`) — a per-DTE gate forced paper anyway.
+**Truth = each position row's own `mode` column.** Only `mode='live'` legs are expected at the broker.
+
+First clean run 11:57 IST: 7 broker legs, **0 alerts**, 4 NAKED warnings, 3 manual holdings.
+It resolves COMB20 correctly at 325 = 325.
+
+**The 4 NAKED warnings are real and worth a decision:** SENSEX 77500 CE/PE and NIFTY 24200 CE/PE are
+short with software-side stops only — the same exposure as the 2026-08-17 incident.
+
+**STILL OPEN (display bug):** make the Straddles page show each CSL sleeve's EFFECTIVE per-DTE
+lots/qty instead of the static book default. The data is already in `csl_paper_config.json`; the
+page just needs to read it (or the feed writer should emit it, which touches the executor).
+
 ## 2026-08-20 — P0 ORB Cash: paper stops fire instantly (my entry fix exposed a 2nd defect)
 
 The 05-May entry fix works — ORB booked 8 positions today, the first since May. But **all 8 closed

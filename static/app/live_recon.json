@@ -1,0 +1,156 @@
+{
+ "generated_at": "2026-08-20T11:57:12",
+ "broker_legs": {
+  "SENSEX2682077500CE": {
+   "qty": -120,
+   "avg": 126.25,
+   "ltp": 81.5,
+   "pnl": 5370.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
+  "SENSEX2682077500PE": {
+   "qty": -120,
+   "avg": 139.1,
+   "ltp": 107.55,
+   "pnl": 3786.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
+  "NIFTY26AUG24200CE": {
+   "qty": -325,
+   "avg": 133.95,
+   "ltp": 146.0,
+   "pnl": -3916.3,
+   "product": "MIS",
+   "exchange": "NFO"
+  },
+  "NIFTY26AUG24200PE": {
+   "qty": -325,
+   "avg": 73.8,
+   "ltp": 59.2,
+   "pnl": 4745.0,
+   "product": "MIS",
+   "exchange": "NFO"
+  },
+  "EBGNG": {
+   "qty": 75,
+   "avg": 626.05,
+   "ltp": 631.45,
+   "pnl": 405.0,
+   "product": "MTF",
+   "exchange": "NSE"
+  },
+  "EMMVEE": {
+   "qty": 30,
+   "avg": 333.25,
+   "ltp": 329.9,
+   "pnl": -100.5,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "LUMAXIND": {
+   "qty": 2,
+   "avg": 5722.25,
+   "ltp": 5857.0,
+   "pnl": 269.5,
+   "product": "CNC",
+   "exchange": "NSE"
+  }
+ },
+ "app_claimed": {
+  "SENSEX2682077500CE": {
+   "qty": -120,
+   "books": [
+    "sensex_atm2",
+    "sensex_atm4",
+    "sensex_atm"
+   ]
+  },
+  "SENSEX2682077500PE": {
+   "qty": -120,
+   "books": [
+    "sensex_atm2",
+    "sensex_atm4",
+    "sensex_atm"
+   ]
+  },
+  "NIFTY26AUG24200CE": {
+   "qty": -325,
+   "books": [
+    "NAS_COMB20"
+   ]
+  },
+  "NIFTY26AUG24200PE": {
+   "qty": -325,
+   "books": [
+    "NAS_COMB20"
+   ]
+  }
+ },
+ "findings": [
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "EBGNG",
+   "broker_qty": 75,
+   "app_qty": 0,
+   "detail": "manual holding, 75 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "EMMVEE",
+   "broker_qty": 30,
+   "app_qty": 0,
+   "detail": "manual holding, 30 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "LUMAXIND",
+   "broker_qty": 2,
+   "app_qty": 0,
+   "detail": "manual holding, 2 \u2014 no book tracks it"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX2682077500CE",
+   "broker_qty": -120,
+   "app_qty": -120,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX2682077500PE",
+   "broker_qty": -120,
+   "app_qty": -120,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "NIFTY26AUG24200CE",
+   "broker_qty": -325,
+   "app_qty": -325,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "NIFTY26AUG24200PE",
+   "broker_qty": -325,
+   "app_qty": -325,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  }
+ ],
+ "filled_by_tag": {
+  "CSL_NAS_COMB20": 650,
+  "untagged": 347
+ },
+ "alerts": 0,
+ "warns": 4,
+ "infos": 3
+}
