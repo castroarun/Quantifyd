@@ -149,6 +149,13 @@ const NAS_OPT_DEF: SystemDef = {
 };
 
 // COMB + TimeB sleeves in the Trade Book (after the 9:16 systems, before NAS-OPT).
+// SENSEX 9:16 suite in the Trade Book (legs from static/app/sensex_live.json).
+const SENSEX_TB_DEFS: SystemDef[] = [
+  { id: 'sx-atm', key: 'sx-atm', label: 'SENSEX ATM', subtitle: '9:16 straddle', rules: '', configNote: 'Wed/Thu', group: '916' },
+  { id: 'sx-atm2', key: 'sx-atm2', label: 'SENSEX ATM2', subtitle: '9:16 straddle · move-stop', rules: '', configNote: 'Wed/Thu', group: '916' },
+  { id: 'sx-atm4', key: 'sx-atm4', label: 'SENSEX ATM4', subtitle: '9:16 straddle · roll', rules: '', configNote: 'Wed/Thu', group: '916' },
+];
+
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
@@ -1579,6 +1586,33 @@ export default function Nas() {
     CSL_TIMEB_SENSEX: { 0: ['13:00', '15:20', 'none'], 1: ['10:30', '12:00', 20] },
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
+  const [sxLive, setSxLive] = useState<any>(null);
+  useEffect(() => {
+    const load = () =>
+      fetch(`/app/sensex_live.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((r) => r.json()).then(setSxLive).catch(() => {});
+    load();
+    const id = setInterval(load, 8000);
+    return () => clearInterval(id);
+  }, []);
+  const sxTbState = (label: string): SystemStateRecord => {
+    const sys = (sxLive?.systems || []).find((x: any) => x.label === label);
+    if (!sys || !(sys.legs || []).length) return { state: null, err: null };
+    const mk = (l: any): any => ({
+      leg: l.cp, strike: l.strike, qty: l.qty, entry_price: l.entry,
+      ltp: l.ltp, exit_price: l.status === 'ACTIVE' ? null : l.ltp,
+      pnl_inr: l.pnl, mode: l.mode, status: l.status === 'ACTIVE' ? 'ACTIVE' : 'CLOSED',
+      exit_reason: l.status === 'ACTIVE' ? undefined : l.status,
+      sl_price: (typeof l.arm === 'string' && l.arm.startsWith('SL ')) ? parseFloat(l.arm.slice(3)) : undefined,
+      entry_time: '09:16',
+    });
+    const act = (sys.legs || []).filter((l: any) => l.status === 'ACTIVE');
+    const done = (sys.legs || []).filter((l: any) => l.status !== 'ACTIVE');
+    return { state: { positions: {
+      ce: act.filter((l: any) => l.cp === 'CE').map(mk),
+      pe: act.filter((l: any) => l.cp === 'PE').map(mk),
+      closed_today: done.map(mk) } } as any, err: null };
+  };
   const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
     const b: any = cslLive?.books?.[bk];
     if (!b) return { state: null, err: null };
@@ -1907,8 +1941,8 @@ export default function Nas() {
           restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
-          systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160) }}
+          systems={[...ENTRY_916_SYSTEMS, ...SENSEX_TB_DEFS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160), 'sx-atm': sxTbState('SENSEX ATM'), 'sx-atm2': sxTbState('SENSEX ATM2'), 'sx-atm4': sxTbState('SENSEX ATM4') }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />
