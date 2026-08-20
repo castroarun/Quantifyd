@@ -159,7 +159,7 @@ const SENSEX_TB_DEFS: SystemDef[] = [
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
-  { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30', subtitle: 'fixed 30% combined-SL (paper)', rules: '', configNote: 'paper A/B', group: '916' },
+  { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB · all-week', subtitle: 'study per-DTE stops · all 5 days (paper)', rules: '', configNote: 'paper A/B', group: '916' },
   { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'COMB SENSEX', subtitle: 'Wed window + Thu full-day', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
 
@@ -2033,7 +2033,7 @@ export default function Nas() {
             <Chip>paper · CSL A/B books</Chip>
           </div>
           <div className={styles.grid3}>
-            <SleeveCard label="SENSEX COMB30" sub="Full-day · fixed 30% combined-SL · paper" rules="09:16 to 15:20, combined-premium SL 30%. The untuned twin of COMB: same construction, one flat stop, all five days — so the per-DTE tuning and the ex-Wed rule can be measured against it. 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
+            <SleeveCard label="SENSEX COMB · all-week" sub="Full-day · study per-DTE stops · paper" rules="09:16 to 15:20, combined-premium SL 30%. Same construction and stops as the live COMB, but it trades ALL five days — so the ex-Wed rule is measured on real days rather than assumed. 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
             <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
             <div />
           </div>
@@ -2265,6 +2265,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
   const [liveOnly, setLiveOnly] = useState(false);
+  const [venue, setVenue] = useState<'all' | 'nifty' | 'sensex'>('all');
   // ARMED FOR TODAY -- the day's plan straight from the rules matrix, visible
   // before anything enters (executors arm at 09:00/09:12; this needs neither).
   const [rulesRm, setRulesRm] = useState<any | null>(null);
@@ -2310,7 +2311,12 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     const id = setInterval(load, 5000);
     return () => { on = false; clearInterval(id); };
   }, []);
-  const rows = buildTradeBook(systems, states, liveLegs, basis).filter((r) => !liveOnly || r.mode === 'live');
+  const rowVenue = (r: TBRow): 'nifty' | 'sensex' =>
+    (r.sysId.startsWith('sx-') || /SENSEX/i.test(r.sysLabel) ||
+     (r.tradingsymbol || '').startsWith('SENSEX') || (r.strike ?? 0) >= 40000) ? 'sensex' : 'nifty';
+  const rows = buildTradeBook(systems, states, liveLegs, basis)
+    .filter((r) => !liveOnly || r.mode === 'live')
+    .filter((r) => venue === 'all' || rowVenue(r) === venue);
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -2371,6 +2377,25 @@ function TradeBook({ systems, states, liveLegs, basis }: {
             <input type="checkbox" checked={liveOnly} onChange={(e) => setLiveOnly(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#ef4444' }} />
             LIVE only
           </label>
+          <div style={{ display: 'inline-flex', gap: 2, marginLeft: 8 }}>
+            {(['all', 'nifty', 'sensex'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setVenue(v)}
+                title={v === 'all' ? 'Both venues' : v === 'nifty' ? 'NIFTY legs only' : 'SENSEX legs only'}
+                style={{
+                  fontSize: 'var(--text-xs)', padding: '3px 9px', borderRadius: 6,
+                  border: '1px solid var(--line)', cursor: 'pointer',
+                  background: venue === v ? (v === 'sensex' ? '#0F6E56' : v === 'nifty' ? '#2f81f7' : 'var(--ink-muted)') : 'transparent',
+                  color: venue === v ? '#fff' : 'var(--ink-muted)',
+                  fontWeight: venue === v ? 700 : 400,
+                }}
+              >
+                {v === 'all' ? 'Both' : v.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -133,7 +133,7 @@ def book_daily(bk):
 
 # ---- 5 LIVE-TRACKING: sleeves' live days vs backfill-model means
 notes = []
-for bk in ("NAS_COMB20", "CSL_TIMEB_NIFTY"):
+for bk in ("NAS_COMB20", "CSL_TIMEB_NIFTY", "CSL30F_NIFTY", "CSL_TIMEB_NIFTY_THU"):
     lrec = [r for r in state.get("records", []) if r.get("book") == bk]
     if lrec:
         lots0 = lrec[0].get("lots") or 1
@@ -170,7 +170,7 @@ add("SX-TB-WINDOWS", "DRIFT" if flag else "OK",
 
 # 7 SX-LIVE-TRACKING
 notes = []
-for bk in ("CSL_TIMEB_SENSEX", "CSL30F_SENSEX"):
+for bk in ("CSL_TIMEB_SENSEX", "CSL30F_SENSEX", "CSL30F_SENSEX_WED"):
     lrec = [r for r in state.get("records", []) if r.get("book") == bk]
     if lrec:
         lm = sum(r["pnl"] / (r.get("lots") or 1) for r in lrec) / len(lrec)
