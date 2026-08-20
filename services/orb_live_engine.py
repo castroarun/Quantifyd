@@ -1327,6 +1327,7 @@ class ORBLiveEngine:
                     conviction_grade=conv['conviction_grade'],
                     conviction_score=conv['conviction_score'],
                     conviction_stars=_json_conv.dumps(conv['conviction_stars']),
+                    paper_mode=1 if self._is_paper() else 0,
                 )
 
                 # Update trades_taken FIRST so the DB-level dedup is in place
@@ -1569,6 +1570,13 @@ class ORBLiveEngine:
                     continue
                 sl_order_id = pos.get('kite_sl_order_id')
                 if not sl_order_id:
+                    continue
+                # LIVE-only. In paper mode _kite_order_history returns a
+                # synthetic COMPLETE (so SL-poll loops terminate), which this
+                # block would read as "the stop filled" and close the position
+                # at its stop the moment it opens. Paper stops are decided by
+                # the price-based monitor below, from the LTP.
+                if self._is_paper() or str(sl_order_id).startswith('PAPER-'):
                     continue
                 hist = self._kite_order_history(sl_order_id)
                 if not hist:
