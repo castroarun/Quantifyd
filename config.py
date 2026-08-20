@@ -544,6 +544,10 @@ NAS_916_ATM4_DEFAULTS = {
 # live from the day matrix ONLY once that evidence exists.
 SENSEX_ATM_DEFAULTS = {
     **NAS_916_ATM_DEFAULTS,
+    # research/114 (2026-08-20, Arun signed off): no per-leg stop on expiry day. On 12 clean
+    # Thursdays the 30% leg stop turned +2,630/lot/day (92% win) into -227 (25% win) - expiry
+    # gamma trips it, then the premium decays without us. DTE0 only; Wed and other days keep it.
+    'leg_sl_disabled_dtes': (0,),
     'strike_interval': 100,      # SENSEX strikes are 100 apart
     'lots_per_leg': 2,           # 2026-08-18: user 3->2 — notional parity with the NIFTY suite (2x20x~77.4k = Rs31L ~ 98% of NIFTY 2x65; 3 lots was 148%); SENSEX lot 20 verified 2026-07-20
     'paper_lots_per_leg': 2,
@@ -569,6 +573,7 @@ SENSEX_ATM2_DEFAULTS = {
 }
 SENSEX_ATM4_DEFAULTS = {
     **NAS_916_ATM4_DEFAULTS,
+    'leg_sl_disabled_dtes': (0,),   # research/114 - see SENSEX_ATM_DEFAULTS
     'strike_interval': 100,
     'lots_per_leg': 2,  # 2026-08-04: 2->3; 2026-08-18: user 3->2 (notional parity with NIFTY suite)
     'paper_lots_per_leg': 2,

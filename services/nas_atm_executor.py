@@ -568,6 +568,20 @@ class NasAtmExecutor:
         lots = cfg.get('paper_lots_per_leg', cfg.get('lots_per_leg', 5)) if _is_paper_size else cfg.get('lots_per_leg', 5)
         qty = lots * self._lot_size()
         leg_sl_pct = cfg.get('leg_sl_pct', 0.30)
+        # research/114: per-leg stop disabled on the configured DTEs (SENSEX expiry day).
+        # A huge sl_price alone would NOT mean "no stop" on SENSEX - app.py's naked-survivor
+        # guard re-arms any leg with sl_price >= 900000 at breakeven - so the legs are also
+        # tagged NO_LEG_SL and that guard skips them.
+        _no_leg_sl = False
+        _dis = cfg.get('leg_sl_disabled_dtes')
+        if _dis:
+            try:
+                from services.nas_day_matrix import trading_dte, EXPIRY_WEEKDAY, venue_of
+                _dte = trading_dte(None, EXPIRY_WEEKDAY[venue_of(cfg.get('matrix_key', ''))])
+                _no_leg_sl = _dte in _dis
+            except Exception as _e:
+                logger.warning("[%s] leg-SL DTE check failed (%s) - keeping the stop", self.EXCHANGE, _e)
+                _no_leg_sl = False
 
         # Get current spot if not provided
         if spot is None:
@@ -652,8 +666,13 @@ class NasAtmExecutor:
             return None, f'Invalid premiums CE={ce_premium} PE={pe_premium}'
 
         # Compute SL per leg: entry_premium x (1 + leg_sl_pct)
-        ce_sl = round(ce_premium * (1 + leg_sl_pct), 2)
-        pe_sl = round(pe_premium * (1 + leg_sl_pct), 2)
+        if _no_leg_sl:
+            ce_sl = pe_sl = 999999.0          # tagged NO_LEG_SL below; nothing re-arms it
+            logger.critical("[%s] research/114: per-leg stop DISABLED for this expiry-day "
+                            "straddle (hold to the time exit; book stop is the guard)", self.EXCHANGE)
+        else:
+            ce_sl = round(ce_premium * (1 + leg_sl_pct), 2)
+            pe_sl = round(pe_premium * (1 + leg_sl_pct), 2)
 
         strangle_id = self.db.get_next_strangle_id()
 
@@ -688,6 +707,18 @@ class NasAtmExecutor:
             sl_price=pe_sl,
             entry_spot=spot,
         )
+
+        # research/114: mark the legs that intentionally carry no per-leg stop. The
+        # SENSEX naked-survivor guard (app.py) keys off this tag and leaves them alone;
+        # without it, it would re-arm them at breakeven and reinstate the very stop the
+        # study says destroys the expiry-day edge.
+        if _no_leg_sl:
+            for _pid in (pos_ce, pos_pe):
+                if _pid:
+                    try:
+                        self.db.update_position(_pid, notes='NO_LEG_SL (research/114 expiry-day hold)')
+                    except Exception as _e:
+                        logger.error("[%s] NO_LEG_SL tag failed for %s: %s", self.EXCHANGE, _pid, _e)
 
         # Partial-fill rollback: if exactly one leg succeeded, close the
         # survivor to prevent a naked short. Common cause: Kite rejected the

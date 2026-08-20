@@ -50,7 +50,10 @@ VENUES = {
     },
     "sensex": {
         "exchange": "BFO",
-        "tp_per_lot": 1667.0,        # research/91: SENSEX fades its intraday gains into the close
+        "tp_per_lot": 4000.0,        # research/114 (2026-08-20): TP1667 kept only 57% of the edge
+                                     # (mean 1,495 vs 2,630 for holding) - widened so it caps a
+                                     # runaway without capping ordinary good days. Was 1667 per
+                                     # research/91: SENSEX fades its intraday gains into the close
                                      # (median EOD -396) -> a ~Rs1667/lot (Rs10k on 6 lots) daily
                                      # take-profit HELPS (best total, both halves positive). Venue-
                                      # specific: the opposite holds for NIFTY.
@@ -222,7 +225,17 @@ def check_and_apply(venue: str, dry_run: bool = False):
     if incomplete or lots <= 0:
         return None
 
-    stop_threshold = -STOP_PER_LOT * lots
+    # research/114: on SENSEX expiry day every stop tested lost to holding (win 92%->58%,
+    # worst day -4,384 that holding never had). The raw data prefers no book stop at all, but
+    # 12 benign Thursdays cannot price the tail - so widen on DTE0 rather than remove.
+    _stop_per_lot = STOP_PER_LOT
+    try:
+        from services.nas_day_matrix import trading_dte, EXPIRY_WEEKDAY
+        if venue == "sensex" and trading_dte(None, EXPIRY_WEEKDAY["sensex"]) == 0:
+            _stop_per_lot = 3000.0
+    except Exception as _e:
+        logger.warning("[PORT] DTE check failed (%s) - using the standard stop", _e)
+    stop_threshold = -_stop_per_lot * lots
     tp_per_lot = VENUES[venue].get("tp_per_lot")
     tp_threshold = (tp_per_lot * lots) if tp_per_lot else None
     arm_pl = VENUES[venue].get("trail_arm_per_lot")

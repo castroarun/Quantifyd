@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Verify SENSEX Thursday no-stop behaviour live (research/114 deploy)", "2026-08-28", "PENDING",
+     "first Thursday under the new rules 27-Aug: legs must carry NO_LEG_SL and never re-arm at breakeven, TP fires only at 4,000/lot, book stop at 3,000/lot; confirm the straddle actually holds to the time exit"),
     ("research/117 VIX-shock study - launch and report", "2026-08-21", "PENDING",
      "Arun 20-Aug: after a VIX jump/crush of X% what follows, and should we gate entry/size/exit on it? Threshold swept (not fixed at 5%), gap-shock vs intraday-shock separated, judged on our own straddle P&L not just index moves."),
     ("research/116 ratcheting vs static backstop - run and decide", "2026-08-21", "PENDING",

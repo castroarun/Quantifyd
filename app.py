@@ -8048,6 +8048,11 @@ def _sensex_sl_monitor():
                 _notes = _p.get('notes') or ''
                 _naked = ((_p.get('sl_price') or 0) >= 900000
                           or 'SENSEX_ST_TRAIL' in _notes or 'SENSEX_BE_PROTECT' in _notes)
+                # research/114: an expiry-day leg deliberately carries NO per-leg stop. Without
+                # this skip the guard below would re-arm it at breakeven - the exact tight stop
+                # the study says destroys the edge.
+                if 'NO_LEG_SL' in _notes:
+                    continue
                 if not _naked or not _p.get('entry_price'):
                     continue
                 _be = round(_p['entry_price'], 1)

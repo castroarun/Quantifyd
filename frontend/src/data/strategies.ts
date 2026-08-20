@@ -59,7 +59,7 @@ export const STATUS_LABEL: Record<SystemStatus, string> = {
   parked: 'Parked · not trading',
 };
 
-export const REGISTER_UPDATED = '18 Aug 2026';
+export const REGISTER_UPDATED = '20 Aug 2026';
 
 export const SYSTEMS: StrategySystem[] = [
   // ------------------------------------------------------------------ LIVE
@@ -234,6 +234,7 @@ export const SYSTEMS: StrategySystem[] = [
       ['Entry / stop / exit', 'Per-DTE frozen config, same lab as the NIFTY twin (Wed DTE1: 10:30-12:00 SL20)'],
       ['Margin gate', 'Marketable-LIMIT + 1.3x headroom check at entry; paper-fallback if short'],
       ['Days', 'Wed(DTE1) + Thu(DTE0) ONLY — its Mon/Tue/Fri cells are the grid\'s weakest (₹1,080–3,564) and collide with NIFTY margin'],
+      ['Thursday stops', 'NO per-leg stop on expiry day (research/114); book stop widened to −₹3,000/lot, take-profit ₹4,000/lot'],
     ],
     rulesDoc: 'research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py (BOOKS)',
     dashboard: '/straddles',
@@ -241,6 +242,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'csl-best-config-straddles', title: 'CSL best-config straddles — entry × exit × combined-SL per DTE' },
     ],
     changeLog: [
+      { date: '20 Aug 2026', text: 'Thursday rules rebuilt on research/114: per-leg 30% stop OFF on expiry day (it turned +2,630/lot/day at 92% win into −227 at 25%), take-profit widened ₹1,667→₹4,000/lot (the old one kept only 57% of the edge), book stop widened −₹1,300→−₹3,000/lot on DTE0. The 50% disaster backstop stays — 12 benign Thursdays cannot price the tail.' },
       { date: '19 Aug 2026', text: 'Live days restricted to Wed+Thu (weak Mon/Tue/Fri cells removed — data-driven venue split). 8→10 lots scheduled 24-Aug.' },
       { date: '18 Aug 2026', text: 'REAL from 19-Aug at 8 lots (6L→8L, notional parity with NIFTY TB@8L). Deploy doc: docs/CSL_TIMEB_SENSEX_LIVE_DEPLOY_STATUS.md.' },
       { date: '14 Aug 2026', text: 'Sized to 6 lots on paper alongside the NIFTY promotion.' },
