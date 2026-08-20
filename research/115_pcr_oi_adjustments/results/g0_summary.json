@@ -1,0 +1,16 @@
+{
+  "NIFTY": {
+    "days": 85,
+    "mean_pct_minutes_oi_changed": 86.41,
+    "mean_pct_minutes_ltp_changed": 93.88,
+    "mean_pct_minutes_vol_changed": 96.46,
+    "mean_median_run_len": 14.29
+  },
+  "SENSEX": {
+    "days": 85,
+    "mean_pct_minutes_oi_changed": 35.81,
+    "mean_pct_minutes_ltp_changed": 95.56,
+    "mean_pct_minutes_vol_changed": 96.26,
+    "mean_median_run_len": 15.96
+  }
+}

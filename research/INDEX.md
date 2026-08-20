@@ -19,3 +19,4 @@ LIVE · CONCLUDED/SHELVED.
 
 | 113 | [ATM4 roll-leg stop calibration](113_atm4_roll_stop/) | **SIGNAL** — live 1.3x roll-prem SL churniest (32% restop); SURV (1.3x price_x) dominates; NOROLL disastrous | 2026-08-18 |
 | 114 | [SENSEX Thursday exit rules](114_sensex_thursday_exits/) | **SIGNAL** — holding wins (+2,630/lot, 92%); live per-leg 30% turns it NEGATIVE (−227, 25% win); TP1667 costs 43% of the edge | 2026-08-20 |
+| 115 | [PCR / OI-change adjustment signals for short straddles](115_pcr_oi_adjustments/) | **NO EDGE** — a zero-information placebo (minus intraday price deviation) scores raw IC +0.51, beating every real signal; pcr_oi_all keeps 3.6% of its raw −0.41 IC after controls. 0/96 adjustment arms beat HOLD (+₹238/lot/day), 67/96 lose to a random-minute trigger. G0 byproduct: SENSEX OI is published on a strict 3-min cadence | 2026-08-20 |

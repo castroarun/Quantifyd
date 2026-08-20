@@ -1,0 +1,58 @@
+{
+  "arms": 96,
+  "better": 27,
+  "significant": 0,
+  "hold_pooled": [
+    {
+      "venue": "NIFTY",
+      "trigger": "-",
+      "action": "HOLD",
+      "n": 84,
+      "mean": 282.86,
+      "t": 0.65,
+      "win": 65.48,
+      "p05": -5373.75,
+      "med": 1173.75,
+      "worst": -18866.25,
+      "best": 9228.75,
+      "fired_pct": 100.0,
+      "diff_vs_hold": 0.0,
+      "t_diff": 0.0,
+      "beats_random": ""
+    },
+    {
+      "venue": "SENSEX",
+      "trigger": "-",
+      "action": "HOLD",
+      "n": 84,
+      "mean": 193.68,
+      "t": 1.12,
+      "win": 67.86,
+      "p05": -2384.0,
+      "med": 525.0,
+      "worst": -8311.0,
+      "best": 4036.0,
+      "fired_pct": 100.0,
+      "diff_vs_hold": 0.0,
+      "t_diff": 0.0,
+      "beats_random": ""
+    },
+    {
+      "venue": "BOTH",
+      "trigger": "-",
+      "action": "HOLD",
+      "n": 168,
+      "mean": 238.27,
+      "t": 1.02,
+      "win": 66.67,
+      "p05": -4305.0,
+      "med": 709.0,
+      "worst": -18866.25,
+      "best": 9228.75,
+      "fired_pct": 100.0,
+      "diff_vs_hold": 0.0,
+      "t_diff": 0.0,
+      "beats_random": ""
+    }
+  ]
+}

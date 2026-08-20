@@ -1,0 +1,14 @@
+# The repo-wide rule (.gitignore:167) hides research/**/results/*.csv because most
+# studies emit hundreds of MB.  This study's evidence tables are all < 75 KB and ARE the
+# reproducible record, so re-include them explicitly.
+!results/g0_day_coverage.csv
+!results/g0_oi_staleness.csv
+!results/g1_ic_table.csv
+!results/g1b_controls.csv
+!results/g1c_controls2.csv
+!results/g1d_skew_probe.csv
+!results/g2_rule_bakeoff.csv
+
+# Heavy regenerable artifact (~46 MB) -- rebuild with scripts/build_features.py (~4 min).
+results/features_master.csv
+results/features/
