@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("research/117 VIX-shock study - launch and report", "2026-08-21", "PENDING",
+     "Arun 20-Aug: after a VIX jump/crush of X% what follows, and should we gate entry/size/exit on it? Threshold swept (not fixed at 5%), gap-shock vs intraday-shock separated, judged on our own straddle P&L not just index moves."),
     ("research/116 ratcheting vs static backstop - run and decide", "2026-08-21", "PENDING",
      "Arun 20-Aug: a backstop anchored to entry becomes a huge give-back once the trade wins (TB-SX: 180 pts / ~Rs29k away at +Rs15k open). Test breakeven-clamp, multiplicative ratchet, peak-giveback, time-scaled. Applies to every combined-SL book."),
     ("research/114 SENSEX-Thursday rule change - decide and deploy", "2026-08-21", "PENDING",
