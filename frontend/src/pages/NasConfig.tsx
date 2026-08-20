@@ -34,6 +34,7 @@ interface MatrixResponse {
 interface Entry916Row {
   key: string; label: string; venue: string; entry: string; exit: string;
   stop: string; mgmt: string; lots: number | null; live: boolean; live_dtes: number[];
+  explain?: string;
 }
 interface SleeveRow {
   book: string; label: string; venue: string; mode: string;
@@ -42,6 +43,7 @@ interface SleeveRow {
 interface PStopRow {
   venue: string; stop_per_lot: number; tp_per_lot: number | null;
   trail_arm: number | null; trail_give: number | null;
+  dte_note?: string; stop_per_lot_dte0?: number; tp_per_lot_other?: number;
 }
 interface RulesMatrix {
   entry916: Entry916Row[]; sleeves: SleeveRow[]; portfolioStop: PStopRow[];
@@ -425,7 +427,8 @@ export default function NasConfig() {
             {rules.entry916.map((r) => {
               const isLive = r.live && r.live_dtes.includes(venueDte(r.venue));
               return (
-                <div key={r.key} className={`${styles.ruleCard} ${isLive ? styles.cardLive : ''}`}>
+                <div key={r.key} className={`${styles.ruleCard} ${isLive ? styles.cardLive : ''}`}
+                  title={r.explain || undefined}>
                   <div className={styles.cardTop}>
                     <span className={styles.cardName}>{r.label}</span>
                     <span className={styles.venueChip}>{r.venue}</span>
@@ -433,14 +436,17 @@ export default function NasConfig() {
                       {isLive ? 'LIVE' : 'paper'}
                     </span>
                   </div>
-                  <div className={styles.cardWindow}>
+                  <div className={styles.cardWindow}
+                    title={`Entry ${r.entry}, square-off ${r.exit}. ` + (r.explain || '')}>
                     {r.entry} <span className={styles.arrow}>→</span> {r.exit}
                   </div>
                   <div className={styles.chipRow}>
-                    <span className={styles.stopChip} title="Stop">⊘ {r.stop}</span>
+                    <span className={styles.stopChip}
+                      title={'What closes a losing position. ' + (r.explain || '')}>⊘ {r.stop}</span>
                   </div>
                   <div className={styles.chipRow}>
-                    <span className={styles.mgmtChip} title="Management">↻ {r.mgmt}</span>
+                    <span className={styles.mgmtChip}
+                      title={'What happens after a leg stops out - rolling, trailing or nothing. ' + (r.explain || '')}>↻ {r.mgmt}</span>
                   </div>
                   <div className={styles.cardFoot}>
                     <span className={styles.lotTag}>×{r.lots} lots</span>
@@ -508,21 +514,28 @@ export default function NasConfig() {
           <div className={styles.rulesGroupLabel}>9:16 book stop · ATM + ATM2 + ATM4 only (not COMB/TimeB)</div>
           <div className={styles.pstopGrid}>
             {rules.portfolioStop.map((p) => (
-              <div key={p.venue} className={styles.pstopCard}>
+              <div key={p.venue} className={styles.pstopCard} title={p.dte_note || undefined}>
                 <div className={styles.pstopVenue}>{p.venue}</div>
                 <div className={styles.pstopTiles}>
-                  <div className={`${styles.pstopTile} ${styles.tileStop}`}>
+                  <div className={`${styles.pstopTile} ${styles.tileStop}`}
+                    title="The whole venue's 9:16 book closes if combined P&L falls this far. Sleeves are not covered.">
                     <span className={styles.pstopVal}>−₹{Math.abs(p.stop_per_lot)}</span>
-                    <span className={styles.pstopLbl}>hard stop / lot</span>
+                    <span className={styles.pstopLbl}>
+                      hard stop / lot{p.stop_per_lot_dte0 ? ` · −₹${Math.abs(p.stop_per_lot_dte0)} on expiry` : ''}
+                    </span>
                   </div>
                   {p.tp_per_lot != null && (
-                    <div className={`${styles.pstopTile} ${styles.tileTp}`}>
+                    <div className={`${styles.pstopTile} ${styles.tileTp}`}
+                      title="The book banks the day once combined P&L reaches this. SENSEX uses a fixed target because it fades its gains into the close; NIFTY deliberately has none.">
                       <span className={styles.pstopVal}>₹{p.tp_per_lot}</span>
-                      <span className={styles.pstopLbl}>take-profit / lot</span>
+                      <span className={styles.pstopLbl}>
+                        take-profit / lot{p.tp_per_lot_other ? ` · ₹${p.tp_per_lot_other} other days` : ''}
+                      </span>
                     </div>
                   )}
                   {p.trail_arm != null && (
-                    <div className={styles.pstopTile}>
+                    <div className={styles.pstopTile}
+                      title="Once the book is up this much per lot, a trailing profit-lock arms; it then exits on the giveback shown next to it.">
                       <span className={styles.pstopVal}>+₹{p.trail_arm}</span>
                       <span className={styles.pstopLbl}>trail arm / lot</span>
                     </div>

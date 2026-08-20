@@ -5281,7 +5281,10 @@ def api_nas_rules_matrix():
         MGMT_OVERRIDE = {'nas_916_atm4': 'roll-to-match (one-and-done)',
                          'sensex_atm4': 'roll-to-match (one-and-done)'}
 
-        def _stop_desc(d):
+        def _stop_desc(d, key=''):
+            # research/114: per-leg stop disabled on the configured DTEs (SENSEX expiry day).
+            # Say so, rather than printing a stop that will not exist that day.
+            _dis = d.get('leg_sl_disabled_dtes')
             rupee = d.get('rupee_stop_per_lot') or 0
             move = d.get('move_stop_pct') or 0
             leg = d.get('leg_sl_pct') or 0
@@ -5292,7 +5295,10 @@ def api_nas_rules_matrix():
                 parts.append("%.1f%% move-stop" % (move * 100))
             if leg:
                 parts.append("per-leg %d%%" % int(leg * 100))
-            return " + ".join(parts) if parts else "-"
+            txt = " + ".join(parts) if parts else "-"
+            if _dis:
+                txt += "  (NO per-leg stop on DTE%s)" % "/".join(str(x) for x in _dis)
+            return txt
 
         def _mgmt_desc(key, d):
             if key in MGMT_OVERRIDE:
@@ -5303,6 +5309,68 @@ def api_nas_rules_matrix():
                 return "re-enter on move-stop"
             return "one-and-done"
 
+        def _explain(key, d):
+            """Plain-English account of how this system actually behaves, for the hover."""
+            sx = key.startswith('sensex')
+            venue = 'SENSEX' if sx else 'NIFTY'
+            e = []
+            e.append("ENTRY: one short ATM straddle (sell CE + PE at the strike nearest spot) at %s, "
+                     "one shot for the day - it does not re-enter if it misses."
+                     % d.get('entry_start_time', '09:16'))
+            _dis = d.get('leg_sl_disabled_dtes')
+            if d.get('rupee_stop_per_lot'):
+                e.append("STOP: a rupee stop on the WHOLE straddle - both legs close together once "
+                         "the position is down Rs%s per lot. Deliberately not a per-leg stop: a "
+                         "premium-based leg stop fires on noise while the pair is still fine "
+                         "(research/96)." % format(int(d['rupee_stop_per_lot']), ','))
+            elif d.get('move_stop_pct'):
+                e.append("STOP: a MOVE stop on the underlying, not on premium - both legs close and "
+                         "re-centre if %s travels more than %.2f%% from the entry level. The per-leg "
+                         "premium stop is deliberately disabled and never fires."
+                         % (venue, d['move_stop_pct'] * 100))
+            else:
+                e.append("STOP: per-leg %d%% - a leg closes on its own when its premium rises %d%% "
+                         "above what we sold it for." % (int(d.get('leg_sl_pct', .3) * 100),
+                                                         int(d.get('leg_sl_pct', .3) * 100)))
+            if _dis:
+                e.append("EXPIRY-DAY EXCEPTION: on DTE%s there is NO per-leg stop at all - the straddle "
+                         "is held to the time exit. On 12 clean expiry days the stop turned "
+                         "+Rs2,630/lot/day at a 92%% win rate into -Rs227 at 25%%: expiry gamma trips it, "
+                         "then the premium decays without us (research/114). The book stop is the guard "
+                         "on those days, and the real expiry-day tail is wide - about -Rs21,500/lot at "
+                         "worst over 127 days (research/118), so size for that."
+                         % "/".join(str(x) for x in _dis))
+            if key.endswith('atm4'):
+                e.append("MANAGEMENT: roll-to-match. When one leg stops out we close it and re-sell the "
+                         "same side at a further strike whose premium matches the surviving leg, so the "
+                         "pair is balanced again. The rolled leg's stop is max(surviving premium, its own "
+                         "premium) x 1.3 - never tighter than the survivor's anchor nor than its own 30% "
+                         "(research/113: the old rule re-stopped 32% of rolls). One roll only.")
+            elif key.endswith('atm2'):
+                e.append("MANAGEMENT: one-and-done. It does not roll or re-enter; when the stop fires the "
+                         "day is over for this system.")
+            else:
+                e.append("MANAGEMENT: if one leg stops out the survivor is left naked and trailed on a "
+                         "SuperTrend(7,3) of its own premium, clamped so the trail can never sit above "
+                         "our entry - it can only lock profit, never turn a winner into a loss. Confirmed "
+                         "over 3 consecutive ticks before it acts. It may re-enter after a stop.")
+            e.append("TIME EXIT: everything is squared off at %s; an EOD backstop sweeps anything left."
+                     % d.get('eod_squareoff_time', '15:15'))
+            if sx:
+                e.append("BOOK LEVEL (all three SENSEX systems together): hard stop -Rs1,300/lot, widened "
+                         "to -Rs3,000/lot on expiry day; profit target Rs1,667/lot, widened to Rs4,000/lot "
+                         "on expiry day. There is NO trailing lock on SENSEX - it uses the fixed target "
+                         "because the venue fades its gains into the close (research/91).")
+            else:
+                e.append("BOOK LEVEL (all three NIFTY 9:16 systems together): hard stop -Rs1,300/lot. No "
+                         "fixed profit target - a target measurably hurts NIFTY, which grinds up - so "
+                         "instead a TRAILING lock arms once the book is +Rs2,000/lot and exits if it gives "
+                         "back Rs350/lot from its peak (research/90).")
+            e.append("SIZE: %s lots per leg. Sleeves (COMB / TimeB) are separate books with their own "
+                     "combined-premium stops and are NOT covered by the book stop above."
+                     % d.get('lots_per_leg'))
+            return " ".join(e)
+
         entry916 = []
         for key, label, d in cfgmap:
             row = (M.get('systems') or {}).get(key) or {}
@@ -5311,7 +5379,8 @@ def api_nas_rules_matrix():
                 'key': key, 'label': label, 'venue': _venue_of(key).upper(),
                 'entry': d.get('entry_start_time', '09:16'),
                 'exit': d.get('eod_squareoff_time', '15:15'),
-                'stop': _stop_desc(d), 'mgmt': _mgmt_desc(key, d),
+                'stop': _stop_desc(d, key), 'mgmt': _mgmt_desc(key, d),
+                'explain': _explain(key, d),
                 'lots': d.get('lots_per_leg'),
                 'live': bool(row.get('live')), 'live_dtes': dte_on,
                 'gap_up': bool(row.get('gap_up')), 'gap_down': bool(row.get('gap_down')),
@@ -5367,10 +5436,22 @@ def api_nas_rules_matrix():
         try:
             from services.nas_portfolio_stop import VENUES as _V, STOP_PER_LOT as _SPL
             for v, c in _V.items():
-                pstop.append({'venue': v.upper(), 'stop_per_lot': -abs(_SPL),
-                              'tp_per_lot': c.get('tp_per_lot'),
-                              'trail_arm': c.get('trail_arm_per_lot'),
-                              'trail_give': c.get('trail_giveback_per_lot')})
+                _row = {'venue': v.upper(), 'stop_per_lot': -abs(_SPL),
+                        'tp_per_lot': c.get('tp_per_lot'),
+                        'trail_arm': c.get('trail_arm_per_lot'),
+                        'trail_give': c.get('trail_giveback_per_lot')}
+                if v == 'sensex':
+                    _row['dte_note'] = ('Expiry day (DTE0): stop -Rs3,000/lot, target Rs4,000/lot. '
+                                        'Every other day: stop -Rs1,300/lot, target Rs1,667/lot. '
+                                        'Covers the three 9:16 systems only - the COMB/TimeB sleeves '
+                                        'run their own combined-premium stops.')
+                    _row['stop_per_lot_dte0'] = -3000.0
+                    _row['tp_per_lot_other'] = 1667.0
+                else:
+                    _row['dte_note'] = ('Same every day. No fixed target: a target hurts NIFTY, so a '
+                                        'trailing lock arms at +Rs2,000/lot and exits on a Rs350/lot '
+                                        'giveback. Covers the three 9:16 systems only.')
+                pstop.append(_row)
         except Exception:
             pass
 

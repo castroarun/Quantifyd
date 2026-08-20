@@ -107,7 +107,7 @@
   "sensex_atm": {
    "dte": {
     "0": true,
-    "1": false,
+    "1": true,
     "2": false,
     "3": false,
     "4": false
@@ -120,7 +120,7 @@
   "sensex_atm2": {
    "dte": {
     "0": true,
-    "1": false,
+    "1": true,
     "2": false,
     "3": false,
     "4": false
@@ -133,7 +133,7 @@
   "sensex_atm4": {
    "dte": {
     "0": true,
-    "1": false,
+    "1": true,
     "2": false,
     "3": false,
     "4": false
