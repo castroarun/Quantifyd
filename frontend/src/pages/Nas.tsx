@@ -136,6 +136,14 @@ const HIDDEN_CARDS = new Set(['nas', 'nas-916-otm']);
 // The uniform size everything is restated to (2 lots x 65).
 const TARGET_QTY = 130;
 
+// Book-level (venue) caps from services/nas_portfolio_stop.py. These govern the 9:16
+// suite ONLY — the COMB/TimeB sleeves are not in the portfolio stop's universe and run
+// their own combined-SL.
+const BOOK_RULES: Record<string, { stop: number; tp: number | null; arm: number | null; give: number | null; lot: number }> = {
+  nifty:  { stop: -1300, tp: null, arm: 2000, give: 350, lot: 65 },
+  sensex: { stop: -1300, tp: 1667, arm: null, give: null, lot: 20 },
+};
+
 // NAS-OPT (research/54 paper system) — shown in the Trade Book alongside the 8 variants.
 const NAS_OPT_DEF: SystemDef = {
   id: 'nas-opt',
@@ -2453,6 +2461,33 @@ function TradeBook({ systems, states, liveLegs, basis }: {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '2px 0 8px' }}>
+        {(['nifty', 'sensex'] as const).map((v) => {
+          const R = BOOK_RULES[v];
+          // the venue book stop covers the 9:16 suite only
+          const suite = rows.filter((r) => r.mode === 'live' && rowVenue(r) === v &&
+            (r.sysId.startsWith('sx-') || /^nas-916/.test(r.sysId) || /NIFTY (ATM|OTM)/.test(r.sysLabel)));
+          if (!suite.length) return null;
+          const qty = suite.reduce((a, r) => a + (r.qty || 0), 0);
+          const lots = Math.round((qty / (R.lot * 2)) * 10) / 10;   // 2 legs per straddle
+          const pnl = suite.reduce((a, r) => a + r.pnl, 0);
+          const stopRs = R.stop * lots, tpRs = R.tp != null ? R.tp * lots : null;
+          const armRs = R.arm != null ? R.arm * lots : null;
+          const hitTp = tpRs != null && pnl >= tpRs;
+          return (
+            <span key={v} style={{ fontSize: 'var(--text-xs)', padding: '3px 10px', borderRadius: 7,
+              border: '1px solid var(--line)', color: 'var(--ink-muted)', whiteSpace: 'nowrap' }}
+              title={`Book-level cap for the ${v.toUpperCase()} 9:16 suite (sleeves excluded — they run their own combined-SL). Stop −₹${Math.abs(R.stop)}/lot${R.tp ? `, take-profit ₹${R.tp}/lot` : ''}${R.arm ? `, trailing lock arms at +₹${R.arm}/lot and exits on a ₹${R.give}/lot giveback` : ''}.`}>
+              <b style={{ color: 'var(--ink)' }}>{v.toUpperCase()} book</b> · {lots}L ·
+              {' '}stop <b style={{ color: '#f85149' }}>{inr(stopRs)}</b>
+              {tpRs != null && <> · TP <b style={{ color: '#3fb950' }}>{inr(tpRs)}</b></>}
+              {armRs != null && <> · trail arms {inr(armRs)}</>}
+              {' '}· now <b style={{ color: col(pnl) }}>{inr(pnl)}</b>
+              {hitTp && <b style={{ color: '#3fb950' }}> ✓ TP hit</b>}
+            </span>
+          );
+        })}
+      </div>
       <div style={{ display: 'flex', gap: 18, alignItems: 'baseline', margin: '4px 0 12px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 18, fontWeight: 700, color: col(dayPnl) }}>Day P&amp;L {inr(dayPnl)}</span>
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--ink-muted)' }}>
