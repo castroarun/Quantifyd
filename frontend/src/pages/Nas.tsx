@@ -2214,6 +2214,29 @@ function TradeBook({ systems, states, liveLegs, basis }: {
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
   const [liveOnly, setLiveOnly] = useState(false);
+  // ARMED FOR TODAY -- the day's plan straight from the rules matrix, visible
+  // before anything enters (executors arm at 09:00/09:12; this needs neither).
+  const [rulesRm, setRulesRm] = useState<any | null>(null);
+  useEffect(() => {
+    fetch('/api/nas/rules-matrix').then(r => r.json()).then(setRulesRm).catch(() => {});
+  }, []);
+  const armedToday = useMemo(() => {
+    if (!rulesRm) return [] as { name: string; venue: string; win: string; stop: string; lots: number }[];
+    const wd = new Date().getDay();
+    const DTE: Record<string, number> = { NIFTY: [-1, 1, 0, 4, 3, 2, -1][wd], SENSEX: [-1, 3, 2, 1, 0, 4, -1][wd] };
+    const out: { name: string; venue: string; win: string; stop: string; lots: number }[] = [];
+    for (const e of (rulesRm.entry916 || [])) {
+      if (e.live && (e.live_dtes || []).includes(DTE[e.venue]))
+        out.push({ name: e.label, venue: e.venue, win: `${e.entry}*→${e.exit}*`, stop: e.stop, lots: e.lots });
+    }
+    for (const s of (rulesRm.sleeves || [])) {
+      if (s.mode !== 'live') continue;
+      const c = (s.perdte || {})[String(DTE[s.venue])];
+      if (c) out.push({ name: s.label, venue: s.venue, win: `${String(c.win).replace('-', '*→')}*`,
+                        stop: c.sl === 'none' ? 'no %-SL · 50% backstop' : `combined-SL ${c.sl}%`, lots: c.lots });
+    }
+    return out;
+  }, [rulesRm]);
   const { spot } = useLiveTicks();   // live NIFTY -- distance to the move-stop band
   // ST-trail value for naked-survivor legs (sl_price sentinel 999999) — from the ticker.
   const [stTrail, setStTrail] = useState<Record<string, number>>({});
@@ -2473,6 +2496,22 @@ function TradeBook({ systems, states, liveLegs, basis }: {
             </div>
           );
         })}
+        {armedToday.length > 0 && (
+          <div style={{ margin: '6px 0 4px', border: '1px dashed #30363d', borderRadius: 8, padding: '6px 10px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: 'var(--ink-muted)', marginBottom: 4 }}>
+              ARMED FOR TODAY · plan from the rules matrix · * = planned time
+            </div>
+            {armedToday.map((a, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, fontSize: 11, padding: '2px 0', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 600, minWidth: 120 }}>{a.name}</span>
+                <span style={{ color: a.venue === 'SENSEX' ? '#d29922' : '#58a6ff', fontSize: 10, fontWeight: 700, minWidth: 48 }}>{a.venue}</span>
+                <span style={{ fontFamily: 'monospace' }}>{a.win}</span>
+                <span style={{ color: 'var(--ink-muted)', minWidth: 40 }}>{a.lots}L</span>
+                <span style={{ color: 'var(--ink-muted)' }}>{a.stop}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {rows.length === 0 && <div style={{ color: 'var(--ink-muted)', padding: 8 }}>No trades today yet.</div>}
         </div>
       </div>
