@@ -159,7 +159,7 @@ const SENSEX_TB_DEFS: SystemDef[] = [
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
-  { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30 · control', subtitle: 'fixed-SL30 control arm (paper)', rules: '', configNote: 'paper A/B', group: '916' },
+  { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30', subtitle: 'fixed 30% combined-SL (paper)', rules: '', configNote: 'paper A/B', group: '916' },
   { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'COMB SENSEX', subtitle: 'Wed window + Thu full-day', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
 
@@ -2033,7 +2033,7 @@ export default function Nas() {
             <Chip>paper · CSL A/B books</Chip>
           </div>
           <div className={styles.grid3}>
-            <SleeveCard label="COMB (CSL30F)" sub="Full-day combined-SL 30% · paper" rules="09:16 to 15:20, combined-premium SL 30%. The SENSEX arm of the fixed-CSL A/B (variable-vs-fixed live comparison). 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
+            <SleeveCard label="SENSEX COMB30" sub="Full-day · fixed 30% combined-SL · paper" rules="09:16 to 15:20, combined-premium SL 30%. The untuned twin of COMB: same construction, one flat stop, all five days — so the per-DTE tuning and the ex-Wed rule can be measured against it. 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
             <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
             <div />
           </div>
