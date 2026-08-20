@@ -2252,18 +2252,32 @@ function buildTradeBook(
       const msPct = MOVE_STOP_PCT[sys.id];
       const eSpot = p.entry_spot ?? null;
       const band = open && msPct != null && eSpot != null && eSpot > 0;
-      // Binding downside for this leg: the system's own cap if it has one, else the
-      // venue book stop (-Rs1,300/lot, shared across that venue's 9:16 systems).
+      // Binding downside. Straddle-level caps (combined-SL, ATM2's rupee stop, the venue
+      // book stop) belong to the PAIR, not to one leg: compute them from the combined
+      // premium and show them once, on the CE leg. Per-leg premium stops stay per leg.
       const lotSz = (p.strike ?? 0) >= 40000 ? 20 : 65;
       const legLots = rawQty > 0 ? rawQty / lotSz : 0;
+      const isCe = (p.leg ?? '').toUpperCase() === 'CE';
       let maxLoss: { rs: number; src: string } | undefined;
       if (open) {
-        if (sys.id.includes('atm2') && !sys.id.startsWith('sx-')) {
-          maxLoss = { rs: -2500 * legLots, src: 'ATM2 rupee stop ₹2,500/lot (whole straddle)' };
+        const at: string | undefined = (p as any).arm_text;
+        const combo = at && !/move-stop/i.test(at) ? at.match(/([\d.]+)\s*·\s*([\d.]+)/) : null;
+        if (combo) {
+          // combined-SL: (exit level - entry credit) x qty, whole straddle
+          maxLoss = isCe
+            ? { rs: -Math.round((parseFloat(combo[2]) - parseFloat(combo[1])) * rawQty),
+                src: `combined-SL: exits the straddle at ${combo[2]} vs ${combo[1]} credit` }
+            : { rs: 0, src: 'paired' };
+        } else if (sys.id.includes('atm2') && !sys.id.startsWith('sx-')) {
+          maxLoss = isCe
+            ? { rs: -2500 * legLots, src: 'ATM2 rupee stop ₹2,500/lot — caps the whole straddle' }
+            : { rs: 0, src: 'paired' };
         } else if (entry != null && p.sl_price && p.sl_price > 0 && p.sl_price < 900000) {
           maxLoss = { rs: -Math.round((p.sl_price - entry) * rawQty), src: 'per-leg stop at the armed premium' };
         } else {
-          maxLoss = { rs: -1300 * legLots, src: 'venue book stop −₹1,300/lot (no leg-level cap)' };
+          maxLoss = isCe
+            ? { rs: -1300 * legLots * 2, src: 'venue book stop −₹1,300/lot — book level, shared across the venue' }
+            : { rs: 0, src: 'paired' };
         }
       }
       rows.push({
@@ -2589,8 +2603,12 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                     );
                   })()}
                   <span style={{ color: r.maxLoss ? '#f85149' : 'var(--ink-faint, #6e7681)', whiteSpace: 'nowrap', fontSize: 11 }}
-                    title={r.maxLoss ? `Worst case from here: ${r.maxLoss.src}` : 'Closed — no open risk'}>
-                    {r.maxLoss ? '−₹' + Math.abs(Math.round(r.maxLoss.rs)).toLocaleString('en-IN') : '—'}
+                    title={!r.maxLoss ? 'Closed — no open risk'
+                      : r.maxLoss.src === 'paired' ? 'Counted once on the CE leg — this cap applies to the straddle, not the single leg'
+                      : `Worst case from here: ${r.maxLoss.src}`}>
+                    {r.maxLoss && r.maxLoss.src !== 'paired'
+                      ? '−₹' + Math.abs(Math.round(r.maxLoss.rs)).toLocaleString('en-IN')
+                      : r.maxLoss ? '↑ pair' : '—'}
                   </span>
                   {(() => {
                     if (r.open) {
