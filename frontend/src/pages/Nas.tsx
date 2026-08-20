@@ -1677,7 +1677,14 @@ export default function Nas() {
     const id = setInterval(load, 15000);
     return () => clearInterval(id);
   }, []);
-  const sxPts: MtmPoint[] = useMemo(() => (sxMtm?.points ?? []) as MtmPoint[], [sxMtm]);
+  const sxPts: MtmPoint[] = useMemo(() => {
+    const raw = (sxMtm?.points ?? []) as [string, number][];
+    if (!raw.length) return [];
+    // SENSEX writer emits 'HH:MM'; the NAS mtm feed emits full ISO. Normalise so
+    // sumSeries can merge them (new Date('09:16') is Invalid Date).
+    const day = cslLive?.day || new Date().toLocaleDateString('en-CA');
+    return raw.map(([t, v]) => [t.length <= 5 ? `${day}T${t}:00` : t, v] as MtmPoint);
+  }, [sxMtm, cslLive]);
   const overallPts: MtmPoint[] = useMemo(() => {
     const lists = [mtmCombined?.points ?? [], sleevePts, sxPts].filter((x) => x.length);
     if (!lists.length) return [];
