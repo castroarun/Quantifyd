@@ -2537,12 +2537,16 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                   {(() => {
                     if (r.open && r.arm_text) {
                       const isBand = /move-stop/i.test(r.arm_text);
+                      // 'move-stop 77141–77761 (298 away)' -> '77141-77761 (298)'
+                      const shown = isBand
+                        ? r.arm_text.replace(/^move-stop\s*/i, '').replace(/\s*away\s*/i, '').replace(/–/g, '-')
+                        : r.arm_text;
                       return (
                         <span style={{ color: isBand ? '#58a6ff' : '#d29922', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}
                           title={isBand
-                            ? 'Move-stop band on the underlying: both legs exit and re-center when spot leaves it'
+                            ? 'Move-stop band on the underlying. Both legs exit and re-center when spot leaves this range; the number in brackets is how many points spot is from the nearer edge right now, so it moves with the market.'
                             : 'Combined premium now · combined-SL exit level — the whole straddle exits when CE+PE reaches it'}>
-                          {r.arm_text}
+                          {shown}
                         </span>
                       );
                     }
