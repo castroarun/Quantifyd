@@ -1,0 +1,397 @@
+{
+ "generated_at": "2026-08-20 12:19",
+ "rule": "venue take-profit, services/nas_portfolio_stop.py VENUES[*]['tp_per_lot']",
+ "venues": [
+  {
+   "venue": "SENSEX",
+   "sessions": 34,
+   "tp_days": 16,
+   "tp_hit_pct": 47,
+   "mean_uplift_on_tp_days": -4241,
+   "total_uplift": -67850,
+   "worst_giveup": -26163,
+   "best_save": 10572,
+   "verdict": "TP COSTS MONEY vs holding to 15:15",
+   "rows": [
+    {
+     "day": "2026-07-21",
+     "strike": 77500,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 1962,
+     "delta": 0
+    },
+    {
+     "day": "2026-07-22",
+     "strike": 76800,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": true,
+     "tp_time": "15:14",
+     "tp_pnl": 3440,
+     "eod_pnl": 3044,
+     "delta": 396
+    },
+    {
+     "day": "2026-07-22",
+     "strike": 77100,
+     "lots": 6.0,
+     "tp_threshold": 10002,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 910,
+     "delta": 0
+    },
+    {
+     "day": "2026-07-23",
+     "strike": 76400,
+     "lots": 8.0,
+     "tp_threshold": 13336,
+     "tp_hit": true,
+     "tp_time": "12:27",
+     "tp_pnl": 13404,
+     "eod_pnl": 39388,
+     "delta": -25984
+    },
+    {
+     "day": "2026-07-23",
+     "strike": 76700,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": -3644,
+     "delta": 0
+    },
+    {
+     "day": "2026-07-24",
+     "strike": 75900,
+     "lots": 6.0,
+     "tp_threshold": 10002,
+     "tp_hit": true,
+     "tp_time": "15:09",
+     "tp_pnl": 10012,
+     "eod_pnl": 4858,
+     "delta": 5154
+    },
+    {
+     "day": "2026-07-24",
+     "strike": 76200,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 2732,
+     "delta": 0
+    },
+    {
+     "day": "2026-07-27",
+     "strike": 76700,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": true,
+     "tp_time": "11:14",
+     "tp_pnl": 3348,
+     "eod_pnl": 4512,
+     "delta": -1164
+    },
+    {
+     "day": "2026-07-27",
+     "strike": 76800,
+     "lots": 4.0,
+     "tp_threshold": 6668,
+     "tp_hit": true,
+     "tp_time": "11:20",
+     "tp_pnl": 6980,
+     "eod_pnl": 10008,
+     "delta": -3028
+    },
+    {
+     "day": "2026-07-28",
+     "strike": 76900,
+     "lots": 6.0,
+     "tp_threshold": 10002,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 5256,
+     "delta": 0
+    },
+    {
+     "day": "2026-07-29",
+     "strike": 77400,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 350,
+     "delta": 0
+    },
+    {
+     "day": "2026-07-29",
+     "strike": 77500,
+     "lots": 4.0,
+     "tp_threshold": 6668,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 2704,
+     "delta": 0
+    },
+    {
+     "day": "2026-07-30",
+     "strike": 77500,
+     "lots": 4.0,
+     "tp_threshold": 6668,
+     "tp_hit": true,
+     "tp_time": "14:12",
+     "tp_pnl": 7142,
+     "eod_pnl": -3430,
+     "delta": 10572
+    },
+    {
+     "day": "2026-07-30",
+     "strike": 77600,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": true,
+     "tp_time": "11:00",
+     "tp_pnl": 3388,
+     "eod_pnl": 2332,
+     "delta": 1056
+    },
+    {
+     "day": "2026-07-31",
+     "strike": 78100,
+     "lots": 6.0,
+     "tp_threshold": 10002,
+     "tp_hit": true,
+     "tp_time": "12:00",
+     "tp_pnl": 10014,
+     "eod_pnl": 11532,
+     "delta": -1518
+    },
+    {
+     "day": "2026-08-04",
+     "strike": 78400,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": true,
+     "tp_time": "09:15",
+     "tp_pnl": 5966,
+     "eod_pnl": 9104,
+     "delta": -3138
+    },
+    {
+     "day": "2026-08-04",
+     "strike": 78700,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": -4002,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-04",
+     "strike": 78800,
+     "lots": 4.0,
+     "tp_threshold": 6668,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": -11474,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-05",
+     "strike": 79000,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": -34674,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-06",
+     "strike": 78700,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": -5148,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-07",
+     "strike": 78700,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": true,
+     "tp_time": "15:14",
+     "tp_pnl": 15492,
+     "eod_pnl": 15492,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-10",
+     "strike": 78600,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": true,
+     "tp_time": "10:53",
+     "tp_pnl": 15174,
+     "eod_pnl": 25731,
+     "delta": -10557
+    },
+    {
+     "day": "2026-08-11",
+     "strike": 78400,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": true,
+     "tp_time": "13:04",
+     "tp_pnl": 15741,
+     "eod_pnl": 24345,
+     "delta": -8604
+    },
+    {
+     "day": "2026-08-12",
+     "strike": 77800,
+     "lots": 3.0,
+     "tp_threshold": 5001,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 2388,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-12",
+     "strike": 78100,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": true,
+     "tp_time": "14:47",
+     "tp_pnl": 15327,
+     "eod_pnl": 24912,
+     "delta": -9585
+    },
+    {
+     "day": "2026-08-13",
+     "strike": 77900,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": true,
+     "tp_time": "10:51",
+     "tp_pnl": 15309,
+     "eod_pnl": 41472,
+     "delta": -26163
+    },
+    {
+     "day": "2026-08-14",
+     "strike": 77900,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": true,
+     "tp_time": "12:06",
+     "tp_pnl": 15189,
+     "eod_pnl": 10284,
+     "delta": 4905
+    },
+    {
+     "day": "2026-08-17",
+     "strike": 77800,
+     "lots": 9.0,
+     "tp_threshold": 15003,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 678,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-18",
+     "strike": 77500,
+     "lots": 3.0,
+     "tp_threshold": 5001,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 2445,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-18",
+     "strike": 77600,
+     "lots": 6.0,
+     "tp_threshold": 10002,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 3036,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-19",
+     "strike": 76900,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 1718,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-19",
+     "strike": 77100,
+     "lots": 4.0,
+     "tp_threshold": 6668,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 4108,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-19",
+     "strike": 77200,
+     "lots": 2.0,
+     "tp_threshold": 3334,
+     "tp_hit": false,
+     "tp_time": null,
+     "tp_pnl": null,
+     "eod_pnl": 1238,
+     "delta": 0
+    },
+    {
+     "day": "2026-08-20",
+     "strike": 77500,
+     "lots": 6.0,
+     "tp_threshold": 10002,
+     "tp_hit": true,
+     "tp_time": "12:14",
+     "tp_pnl": 10260,
+     "eod_pnl": 10452,
+     "delta": -192
+    }
+   ]
+  },
+  {
+   "venue": "NIFTY",
+   "note": "no fixed TP on this venue (trailing lock instead)"
+  }
+ ]
+}

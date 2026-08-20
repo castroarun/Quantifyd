@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("SENSEX venue TP Rs1,667/lot - re-test says it COSTS money vs holding to 15:15", "2026-08-22", "PENDING",
+     "tp_validation.py on 34 recorded sessions: TP fired 16 (47%), mean -4,241 per TP day, -67,850 total vs 15:15 hold, worst give-up -26,163. Conflicts with research/91 (SENSEX fades into close). NOT changed live - needs the study sessions verification of method (credit/lots reconstruction) before any rule change."),
     ("CSL30F_SENSEX_WED live override vs study - keep or kill", "2026-09-18", "PENDING",
      "user 20-Aug: Wed full-day SENSEX COMB live at 3L AGAINST the -571/day 64% cell (verdict Q4 windows-only); judge on 4 live Wednesdays (26-Aug on)"),
     ("Monday 24-Aug: bump TB-NIFTY and TB-SENSEX 8 -> 10 lots (1.0x plan)", "2026-08-24", "PENDING",
