@@ -1604,6 +1604,8 @@ export default function Nas() {
       pnl_inr: l.pnl, mode: l.mode, status: l.status === 'ACTIVE' ? 'ACTIVE' : 'CLOSED',
       exit_reason: l.status === 'ACTIVE' ? undefined : l.status,
       sl_price: (typeof l.arm === 'string' && l.arm.startsWith('SL ')) ? parseFloat(l.arm.slice(3)) : undefined,
+      // non-premium arms (SENSEX ATM2's +/-0.4% move-stop band) come through as text
+      arm_text: (typeof l.arm === 'string' && !l.arm.startsWith('SL ')) ? l.arm : undefined,
       entry_time: '09:16',
     });
     const act = (sys.legs || []).filter((l: any) => l.status === 'ACTIVE');
@@ -2161,6 +2163,7 @@ interface TBRow {
   outTime: string;       // exit time HH:MM ('' while open)
   arm: number | null;    // exit/SL monitoring trigger value (premium) while open
   arm_text?: string;     // custom ARM display (sleeve combined-SL: current premium · exit level)
+  maxLoss?: { rs: number; src: string };  // binding cap: system-level if any, else the venue book stop
   armLive?: boolean;     // ticker actually subscribed/watching this leg right now
   armLo?: number;        // move-stop systems: NIFTY level below which BOTH legs close + re-center
   armHi?: number;        // move-stop systems: NIFTY level above which BOTH legs close + re-center
@@ -2234,7 +2237,22 @@ function buildTradeBook(
       const msPct = MOVE_STOP_PCT[sys.id];
       const eSpot = p.entry_spot ?? null;
       const band = open && msPct != null && eSpot != null && eSpot > 0;
+      // Binding downside for this leg: the system's own cap if it has one, else the
+      // venue book stop (-Rs1,300/lot, shared across that venue's 9:16 systems).
+      const lotSz = (p.strike ?? 0) >= 40000 ? 20 : 65;
+      const legLots = rawQty > 0 ? rawQty / lotSz : 0;
+      let maxLoss: { rs: number; src: string } | undefined;
+      if (open) {
+        if (sys.id.includes('atm2') && !sys.id.startsWith('sx-')) {
+          maxLoss = { rs: -2500 * legLots, src: 'ATM2 rupee stop ₹2,500/lot (whole straddle)' };
+        } else if (entry != null && p.sl_price && p.sl_price > 0 && p.sl_price < 900000) {
+          maxLoss = { rs: -Math.round((p.sl_price - entry) * rawQty), src: 'per-leg stop at the armed premium' };
+        } else {
+          maxLoss = { rs: -1300 * legLots, src: 'venue book stop −₹1,300/lot (no leg-level cap)' };
+        }
+      }
       rows.push({
+        maxLoss,
         sysId: sys.id, sysLabel: sys.label, family: sys.group,
         side: (p.leg ?? '').toUpperCase(), strike: p.strike ?? null, qty,
         entry, exit: ltp, pnl, open, reason: p.exit_reason ?? undefined,
@@ -2354,8 +2372,8 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 50px 104px 124px 116px 48px 48px 86px'
-    : '120px 34px 58px 46px 50px 104px 124px 116px 48px 48px 86px';
+    ? '34px 58px 46px 50px 104px 124px 96px 116px 48px 48px 86px'
+    : '120px 34px 58px 46px 50px 104px 124px 96px 116px 48px 48px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -2423,7 +2441,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
         }}>
           {mode !== 'system' && <span>SYSTEM</span>}
           <span>C/P</span><span>STRIKE</span><span>QTY</span><span>MODE</span><span>ENTRY→EXIT</span>
-          <span>ARM</span><span>STATUS</span><span>IN</span><span>OUT</span>
+          <span>ARM</span><span>MAX&nbsp;LOSS</span><span>STATUS</span><span>IN</span><span>OUT</span>
           <span style={{ textAlign: 'right' }}>P&amp;L</span>
         </div>
         {groups.map((g) => {
@@ -2489,9 +2507,12 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                   </span>
                   {(() => {
                     if (r.open && r.arm_text) {
+                      const isBand = /move-stop/i.test(r.arm_text);
                       return (
-                        <span style={{ color: '#d29922', whiteSpace: 'nowrap' }}
-                          title="Combined premium now · combined-SL exit level — the whole straddle exits when CE+PE reaches it">
+                        <span style={{ color: isBand ? '#58a6ff' : '#d29922', whiteSpace: 'nowrap' }}
+                          title={isBand
+                            ? 'Move-stop band on the underlying: both legs exit and re-center when spot leaves it'
+                            : 'Combined premium now · combined-SL exit level — the whole straddle exits when CE+PE reaches it'}>
                           {r.arm_text}
                         </span>
                       );
@@ -2552,6 +2573,10 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                       </span>
                     );
                   })()}
+                  <span style={{ color: r.maxLoss ? '#f85149' : 'var(--ink-faint, #6e7681)', whiteSpace: 'nowrap', fontSize: 11 }}
+                    title={r.maxLoss ? `Worst case from here: ${r.maxLoss.src}` : 'Closed — no open risk'}>
+                    {r.maxLoss ? '−₹' + Math.abs(Math.round(r.maxLoss.rs)).toLocaleString('en-IN') : '—'}
+                  </span>
                   {(() => {
                     if (r.open) {
                       return (
