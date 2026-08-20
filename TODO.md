@@ -22,6 +22,33 @@ live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py 
 SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
 Re-check when the data window doubles (~late Sep 2026).
 
+## 2026-08-20 — P0 ORB Cash: paper stops fire instantly (my entry fix exposed a 2nd defect)
+
+The 05-May entry fix works — ORB booked 8 positions today, the first since May. But **all 8 closed
+at exactly their stop 13-42 seconds after entry** (`SL_HIT_EXCHANGE`), and today's -Rs 21,029 is
+**fictitious**. Arun caught it: AXISBANK entered 1,247.00 at 09:40:05 and "stopped" at 1,236.20 at
+09:40:47, a price it never traded after entry (it rallied to 1,250.10, +1.22%).
+
+**No real money at any point** — every order today is `PAPER-xxxx`; no broker exposure.
+
+**Root cause:** `_kite_order_history()` (orb_live_engine.py) returns a SYNTHETIC
+`status: "COMPLETE"` in paper mode, by design, "so SL-poll loops terminate cleanly". The
+exchange-SL reconciliation at ~line 1560 (`Step 1b`) reads any COMPLETE as "the stop filled" and
+closes the position at `average_price or pos['sl_price']` — `average_price` is None for the
+synthetic row, so it books the exit at exactly the stop. Before my fix no positions existed, so
+this path never ran; fixing entries exposed it.
+
+**Fix (engine code — needs approval + after-15:40 deploy):**
+1. Skip Step 1b entirely in paper mode: `if self._is_paper() or str(sl_order_id).startswith('PAPER-'): continue`
+   — let the existing price-based SL monitor decide stops from the LTP, as it does for live.
+2. Record `paper_mode=1` on positions created in paper mode. Today's 8 rows are written with
+   `paper_mode=0`, so paper trades masquerade as live in orb_positions (pollutes the journal and
+   the liveness reader).
+3. Delete or tag today's 8 phantom rows so the book's record is not poisoned.
+
+**Meanwhile:** ORB Cash should go to Off (mode toggle, reversible, no code) or it keeps writing
+false trades every few minutes. Awaiting Arun's word.
+
 ## 2026-08-19 — KC6 audit: paper all along, but mislabelled in two places
 
 Chased the "KC6 shows 5 trades in 30 days while the register says parked" flag from the liveness
