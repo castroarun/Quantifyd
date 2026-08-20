@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("research/114 SENSEX-Thursday rule change - decide and deploy", "2026-08-21", "PENDING",
+     "drop per-leg 30% on SX Thursday + raise/retire the Rs1,667 TP, keep the 50% backstop; needs Arun sign-off, deploy after 15:40; re-run the bake-off when Thursdays double (~Nov)"),
     ("SENSEX venue TP Rs1,667/lot - re-test says it COSTS money vs holding to 15:15", "2026-08-22", "PENDING",
      "tp_validation.py on 34 recorded sessions: TP fired 16 (47%), mean -4,241 per TP day, -67,850 total vs 15:15 hold, worst give-up -26,163. Conflicts with research/91 (SENSEX fades into close). NOT changed live - needs the study sessions verification of method (credit/lots reconstruction) before any rule change."),
     ("CSL30F_SENSEX_WED live override vs study - keep or kill", "2026-09-18", "PENDING",

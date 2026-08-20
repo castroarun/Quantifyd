@@ -2,6 +2,17 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-20 — research/114 SENSEX Thursday exits: SIGNAL — deploy decision PENDING
+
+Arun questioned the venue TP after it closed the SENSEX book at 12:13 (+10,194). Two
+independent tests agree it hurts: tp_validation (34 mixed sessions, -4,241 per TP day) and
+research/114 (12 clean Thursdays). The bake-off found the bigger problem: the suite's
+per-leg 30% stop turns +2,630/lot/day at 92% win into -227 at 25% win on expiry day.
+Recommendation, needs sign-off: (1) drop per-leg 30% on SENSEX Thursday, (2) raise TP to
+~4,000/lot or retire it, (3) keep the 50% disaster backstop, (4) add no book stop.
+CAVEAT: 12 benign Thursdays cannot price the tail - this is "remove destructive stops",
+NOT "run naked". Full: research/114_sensex_thursday_exits/results/RESULTS.md
+
 ## 2026-08-19 — 1.0x scale plan LOCKED (Option B) + Thursday restructure DEPLOYED
 
 Data-driven split (lab per-DTE cells): Thursday is BOTH venues' best day (NIFTY DTE3 mean
