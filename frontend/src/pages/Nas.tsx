@@ -87,7 +87,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-otm',
     key: 'nas-916-otm',
-    label: '9:16 · OTM',
+    label: 'NIFTY OTM',
     subtitle: 'Time-based 9:16 entry, OTM legs',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL OTM CE+PE at approx Rs 20. Adj: Cross-leg imbalance >= 2x → ROLL_OUT or ROLL_IN alternating. Exit: Time 14:45, EOD 15:15.',
@@ -97,7 +97,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-atm',
     key: 'nas-916-atm',
-    label: '9:16 · ATM',
+    label: 'NIFTY ATM',
     subtitle: 'Time-based 9:16 entry, ATM legs',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,3) exit. EOD 15:15.',
@@ -107,7 +107,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-atm2',
     key: 'nas-916-atm2',
-    label: '9:16 · ATM 2.0',
+    label: 'NIFTY ATM2',
     subtitle: '9:16 entry, ±0.4% move-stop → re-center (cascade)',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE. Exit: ±0.4% underlying move closes BOTH legs AND re-enters (cascades) at the new ATM with the same ±0.4% stop. Move-stop is the sole trigger (no per-leg SL). Max 5 re-centers/day. EOD 15:15.',
@@ -117,7 +117,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-atm4',
     key: 'nas-916-atm4',
-    label: '9:16 · ATM V4',
+    label: 'NIFTY ATM4',
     subtitle: '9:16 entry, ATM V4 cross-leg',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP. 2nd SL: Close stopped leg, naked surviving leg uses ST(7,3) exit. EOD 15:15.',
@@ -1744,7 +1744,7 @@ export default function Nas() {
             : []
         }
         extraSeries={expandedKey === '_combined' ? [
-          { label: '9:16', color: '#3b82f6', points: nineMtmPts },
+          { label: 'NIFTY 9:16', color: '#3b82f6', points: nineMtmPts },
           { label: 'Squeeze', color: '#f59e0b', points: squeezeMtmPts },
           { label: 'Sleeves', color: '#a371f7', points: sleevePts },
           { label: 'SENSEX', color: '#0F6E56', points: sxPts },
@@ -1973,7 +1973,7 @@ export default function Nas() {
       {/* Section 1 — 9:16 ATMs */}
       <section className={styles.sectionBlock} style={{ marginTop: 8 }}>
         <div className={styles.colHead}>
-          <div className="section-title">9:16 · ATMs</div>
+          <div className="section-title">NIFTY ATMs</div>
           <Chip>{ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
         </div>
         <div className={styles.grid3}>
