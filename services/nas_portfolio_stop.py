@@ -237,9 +237,14 @@ def check_and_apply(venue: str, dry_run: bool = False):
         logger.warning("[PORT] DTE check failed (%s) - using the standard stop", _e)
     stop_threshold = -_stop_per_lot * lots
     tp_per_lot = VENUES[venue].get("tp_per_lot")
-    # research/114 + the Wednesday companion run: the wide TP is a THURSDAY result. On
-    # Wednesday the early TP is the only thing that beats the fat tail (TP1667 +211/lot,
-    # 75% win, worst -3,778 vs HOLD -1,112/lot, worst -16,502), so it stays tight there.
+    # research/114 + the Wednesday companion run: the wide TP is a THURSDAY result, so
+    # Wednesday keeps the tight one.
+    # CAVEAT (research/118): the Wednesday "fat tail" that motivated this did NOT replicate.
+    # Across 46 Wednesdays in the same Thursday-expiry regime the bucket earns +105.7 pts/day
+    # at an 80% win rate, and Wednesday is the CALMEST weekday over 1,354 days of 1-min index
+    # data (1 catastrophic day in 125 = 0.8%, the fewest of any weekday). The -16,502 day sits
+    # inside that larger sample. The tight Wednesday TP is therefore retained as the status quo,
+    # NOT as an evidenced rule, pending a dedicated study of the per-leg stop on the 1-min chain.
     if venue == "sensex" and tp_per_lot:
         try:
             from services.nas_day_matrix import trading_dte as _tdte, EXPIRY_WEEKDAY as _EW

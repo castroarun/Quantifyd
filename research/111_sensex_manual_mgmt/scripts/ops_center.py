@@ -64,6 +64,10 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Wednesday per-leg stop: G2 study on the 1-min chain (r/118 voided the basis)", "2026-08-27", "PENDING",
+     "r/118: Wednesday is the CALMEST weekday (0.8% catastrophic, fewest of any) and the -16,502 day sits inside a 46-day bucket earning +105.7 pts/day at 80% win. The Wed per-leg 30% is now status quo, not evidence. Also: r/118 found bse_options_bhav (290k rows, 2024-2026, real BSE option prices) - use it."),
+    ("Re-size SENSEX Thursday for its REAL tail (r/118)", "2026-08-26", "PENDING",
+     "DTE0 is the fattest-tailed slot: 34% losers, 8.7% worse than -500pts, worst ~-21,500/lot over 127 days - not the 92%/-127 the 12-day window suggested. Book stop -3,000/lot is the cap; confirm sizing is right before 27-Aug."),
     ("Verify SENSEX Thursday no-stop behaviour live (research/114 deploy)", "2026-08-28", "PENDING",
      "first Thursday under the new rules 27-Aug: legs must carry NO_LEG_SL and never re-arm at breakeven, TP fires only at 4,000/lot, book stop at 3,000/lot; confirm the straddle actually holds to the time exit"),
     ("research/117 VIX-shock study - launch and report", "2026-08-21", "PENDING",

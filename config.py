@@ -544,9 +544,15 @@ NAS_916_ATM4_DEFAULTS = {
 # live from the day matrix ONLY once that evidence exists.
 SENSEX_ATM_DEFAULTS = {
     **NAS_916_ATM_DEFAULTS,
-    # research/114 (2026-08-20, Arun signed off): no per-leg stop on expiry day. On 12 clean
-    # Thursdays the 30% leg stop turned +2,630/lot/day (92% win) into -227 (25% win) - expiry
-    # gamma trips it, then the premium decays without us. DTE0 only; Wed and other days keep it.
+    # research/114 (2026-08-20, Arun signed off): no per-leg stop on expiry day. The 30% leg
+    # stop trips on expiry gamma and the premium then decays without us; expectancy is positive
+    # in every independent cut (r114 +2,709/lot n=12; r118 +1,105/lot n=41; DTE0 overall
+    # +413/lot n=127).
+    # RISK CORRECTION (research/118, same day): the original "92% win, worst -127" came from a
+    # 12-day window and is NOT the real distribution. Over 127 real DTE0 days: ~34% losers,
+    # 8.7% worse than -500 points, worst about -21,500/lot. DTE0 is the FATTEST-tailed slot in
+    # the dataset - which is exactly why the venue book stop was widened to -3,000/lot rather
+    # than removed. That book stop, not the per-leg stop, is what caps this. Size accordingly.
     'leg_sl_disabled_dtes': (0,),
     'strike_interval': 100,      # SENSEX strikes are 100 apart
     'lots_per_leg': 2,           # 2026-08-18: user 3->2 — notional parity with the NIFTY suite (2x20x~77.4k = Rs31L ~ 98% of NIFTY 2x65; 3 lots was 148%); SENSEX lot 20 verified 2026-07-20
