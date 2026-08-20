@@ -1586,6 +1586,11 @@ export default function Nas() {
     CSL_TIMEB_SENSEX: { 0: ['13:00', '15:20', 'none'], 1: ['10:30', '12:00', 20] },
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
+  const [cslCfg, setCslCfg] = useState<any>(null);
+  useEffect(() => {
+    fetch(`/app/csl_config.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json()).then(setCslCfg).catch(() => {});
+  }, []);
   const [sxLive, setSxLive] = useState<any>(null);
   useEffect(() => {
     const load = () =>
@@ -1617,9 +1622,16 @@ export default function Nas() {
   };
   const sleeveTbState = (bk: string, qtyDefault: number): SystemStateRecord => {
     const b: any = cslLive?.books?.[bk];
-    // the book publishes its real deployed size (incl. per-DTE overrides); the passed
-    // value is only a fallback for older payloads
-    const qty: number = Number(b?.qty) > 0 ? Number(b.qty) : qtyDefault;
+    // Real deployed size, best source first: the book payload (daemon >= 20-Aug), then
+    // the frozen config cell for today's DTE (covers per-DTE overrides without needing a
+    // daemon restart), then the old constant.
+    const cfgBooks: any = cslCfg?.books?.[bk];
+    const cfgCell: any = (b?.dte != null && cfgBooks) ? cfgBooks[String(b.dte)] : undefined;
+    const qty: number =
+      Number(b?.qty) > 0 ? Number(b.qty)
+      : Number(cfgCell?.qty) > 0 ? Number(cfgCell.qty)
+      : Number(cslCfg?.base?.[bk]?.qty) > 0 ? Number(cslCfg.base[bk].qty)
+      : qtyDefault;
     if (!b) return { state: null, err: null };
     // venue-aware trading-DTE: executor-published if present, else weekday table
     // (NIFTY Tue-expiry: Mon..Fri -> 1,0,4,3,2 · SENSEX Thu-expiry: 3,2,1,0,4).
@@ -2216,7 +2228,7 @@ function buildTradeBook(
       if (pl) {
         rows.push({ sysId: sys.id, sysLabel: sys.label, family: sys.group, side: '—', strike: null,
           qty: pl.qty ?? 0, entry: null, exit: null, pnl: 0, open: false,
-          reason: (pl.sl === 'none' || pl.sl == null) ? 'PLANNED · SL none · 50% bkstp' : `PLANNED · SL${pl.sl}`, inTime: pl.entry ? pl.entry + '*' : '', outTime: pl.exit ? pl.exit + '*' : '',
+          reason: (pl.sl === 'none' || pl.sl == null) ? 'PLANNED · 50% bkstp' : `PLANNED · SL${pl.sl}`, inTime: pl.entry ? pl.entry + '*' : '', outTime: pl.exit ? pl.exit + '*' : '',
           arm: null, mode: pl.mode ?? 'live' });
       }
       continue;
@@ -2375,8 +2387,8 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 50px 104px 168px 84px 108px 44px 44px 86px'
-    : '116px 34px 58px 46px 50px 104px 168px 84px 108px 44px 44px 86px';
+    ? '34px 58px 46px 52px 104px 210px 96px 158px 46px 46px 88px'
+    : '116px 34px 58px 46px 52px 104px 210px 96px 158px 46px 46px 88px';
 
   return (
     <section className={styles.sectionBlock}>
