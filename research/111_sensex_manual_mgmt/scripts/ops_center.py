@@ -64,6 +64,12 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Re-run r/121 non-expiry filters at ~28 days per cell", "2026-11-14", "PENDING",
+     "r/121 ran at ~16 days per cell and found nothing: 540 skip rules produced 10 winners vs ~27 expected by chance, and placebo_noise (a Gaussian random number) beat 97% of random skips. Re-run once each cell has ~28 recorded days. Do NOT act on any filter before then."),
+    ("MON_NIFTY_DTE1 size decision - cut 8 lots to 3, or drop the cell", "2026-08-24", "PENDING",
+     "r/121: Monday is the only cell where 1:2.5 is arithmetically impossible - it keeps 0.83% of credit as its median day and the Rs250/lot round trip is 20% of that. Rs998/day at 10 lots vs Wed 1,922 and Fri 3,994. Size is the only dial that shrinks the rupee tail without touching expectancy. Decide BEFORE the Monday 8->10 bump."),
+    ("DATA RULE (r/121): INDIAVIX daily bars are unusable for overnight shocks", None, "PARKED",
+     "INDIAVIX daily carries open(d)==close(d-1) on 82.5% of rows, so any overnight VIX shock computed from them is structurally zero and yields a confident FALSE NULL. Rebuild from the 5-minute series (4.1% degenerate). Also: for MAX EXCURSION inside a fixed window, 5-min bars equal 1-min exactly (0 differing rows over 4,068 SENSEX window-days) - the no-5-min rule bites on the PATH only. Third frozen-chain holiday found: 2026-05-28 (adds to r/120s 05-01 and 06-26)."),
     ("CSL_TIMEB2_NIFTY Friday leg - answered: no Friday cell", "2026-09-05", "PENDING",
      "r/120: the TIMEB2 shape (13:00-14:00 SL25) returns -521/lot on Fridays with a -3,786 worst day. Do not add a Friday cell."),
     ("COMB on Friday - weakest component of the stack (r/120 byproduct)", "2026-09-12", "PENDING",
