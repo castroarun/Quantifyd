@@ -1640,7 +1640,17 @@ export default function Nas() {
       : Number(cfgCell?.qty) > 0 ? Number(cfgCell.qty)
       : Number(cslCfg?.base?.[bk]?.qty) > 0 ? Number(cslCfg.base[bk].qty)
       : qtyDefault;
-    if (!b) return { state: null, err: null };
+    // A finished sleeve must stay in the book. The daemon nulls the live entry on exit,
+    // so look the completed trade up FIRST and use it whether or not `b` still exists.
+    const recDone: any = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
+    const closedState = (): SystemStateRecord => ({
+      state: { positions: { ce: [], pe: [], closed_today: [{
+        leg: 'C+P', tradingsymbol: undefined, strike: recDone.strike, qty: recDone.qty ?? qty,
+        entry_price: recDone.credit, exit_price: recDone.exit_comb, pnl_inr: recDone.pnl,
+        entry_time: recDone.entry_ts, exit_time: recDone.exit_ts, exit_reason: recDone.reason,
+        status: 'CLOSED', mode: recDone.source === 'REAL' ? 'live' : 'paper',
+      }] } } as any, err: null });
+    if (!b) return recDone ? closedState() : { state: null, err: null };
     // venue-aware trading-DTE: executor-published if present, else weekday table
     // (NIFTY Tue-expiry: Mon..Fri -> 1,0,4,3,2 · SENSEX Thu-expiry: 3,2,1,0,4).
     // Fixes the Wed bug where COMB (ex-Wed) carried no dte and armed rows vanished.
@@ -1670,16 +1680,7 @@ export default function Nas() {
     }
     // CLOSED: sleeve traded and exited today -> keep it in the book as one done combined
     // straddle line (the live book is nulled on exit; the record holds combined credit/exit).
-    const rec: any = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
-    if (rec) {
-      const closed: any = {
-        leg: 'C+P', tradingsymbol: undefined, strike: rec.strike, qty: rec.qty ?? qty,
-        entry_price: rec.credit, exit_price: rec.exit_comb, pnl_inr: rec.pnl,
-        entry_time: rec.entry_ts, exit_time: rec.exit_ts, exit_reason: rec.reason,
-        status: 'CLOSED', mode: rec.source === 'REAL' ? 'live' : 'paper',
-      };
-      return { state: { positions: { ce: [], pe: [], closed_today: [closed] } } as any, err: null };
-    }
+    if (recDone) return closedState();
     return { state: null, err: null };
   };
   // Merge the sleeve intraday series into the Overall curve (convert HH:MM -> ISO to match mtm).
