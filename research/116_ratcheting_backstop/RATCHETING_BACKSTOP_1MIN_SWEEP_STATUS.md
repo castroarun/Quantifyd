@@ -1,7 +1,7 @@
 # Static vs Ratcheting Backstop — Should the Defence Move as the Trade Wins?
 
-STATUS: **QUEUED** — runs after 15:40 IST on 2026-08-20 (read-only; queued behind the
-live deploy so nothing competes for attention during market hours)
+STATUS: **DONE** (2026-08-21) — verdict **NO EDGE**, no live change. Read-only replay; nothing
+in services/, config or the live books was touched.
 
 ## 2. The Ask
 
@@ -60,6 +60,11 @@ worse. Both must be reported side by side.
 | Date/time | Event | Notes |
 |---|---|---|
 | 2026-08-20 ~13:4x IST | Question raised, study queued | runs after the 15:40 deploy |
+| 2026-08-21 ~13:0x IST | Sweep launched (read-only, niced) | 17 defence variants x 4 live constructions x 85 recorded days; today (08-21) excluded as partial |
+| 2026-08-21 ~13:3x IST | Sweep DONE | 4,012 rows / 236 construction-days written to `results/ratchet_detail.csv` |
+| 2026-08-21 ~13:4x IST | Aggregation DONE | pooled + per-construction + per venue-DTE tables; **no variant beats STATIC** |
+| 2026-08-21 ~14:0x IST | Give-back anatomy DONE | peak sits at 90th pct of window (median); only 2/236 days went deep-then-hit-stop |
+| 2026-08-21 ~14:1x IST | RESULTS.md written, STATUS closed | verdict **NO EDGE** — leave the defence alone |
 
 ## 6. Crash Recovery
 
@@ -77,4 +82,53 @@ Read-only replay; no live state. Scripts in `scripts/`, outputs in `results/`. R
 
 ## 8. Findings
 
-(pending)
+**Verdict: NO EDGE — do not ratchet the defence. Leave the live rule exactly as it is.**
+Full write-up + all tables: `results/RESULTS.md`.
+
+### The premise is right; the feared event is not there
+
+- At the moment of **peak** open profit the stop really is a median **Rs 5,185/lot away**
+  (p90 8,294, max 13,019). Arun's observation is quantitatively correct.
+- But of 236 construction-days, **38 (16%) ever went deep** (open profit >= 40% of credit),
+  and of those **exactly 2 later came back and touched the static stop** — 0.85% of all days
+  (COMB_NIFTY DTE0 on 2026-06-02 and 2026-06-30).
+- And there is little to trail: peak open profit lands at the **90th percentile of the window
+  (median)** and in the **last 10% of the window on 50% of days**. Median give-back peak->close
+  is **Rs 289/lot**, about one round trip's costs.
+
+### Every ratchet loses, and none improves the give-back
+
+Pooled, net Rs/lot, n=236: **STATIC 136,683**. Best defended alternative RATCHET_K2.5 =
+135,334 (-1,349). The shapes that actually engage cost -51k to **-82k**, up to **60% of the
+book's entire profit**. Median give-back gets **worse** as the rule tightens
+(289 -> 302 -> 324 -> 373 -> 428) — a trailing rule can only fire *after* a retrace, so it
+manufactures the give-back it is meant to prevent. Only RS_GB_1000 halves the p90 give-back
+(3,401 -> 1,590), for -Rs 81,520.
+
+### Monotonicity: the gradient runs to the boundary
+
+k = 1.5 / 1.75 / 2.0 / 2.5 / STATIC -> 78,882 / 112,401 / 132,648 / 135,334 / **136,683**.
+No interior optimum. The best ratchet is no ratchet.
+
+### My stated prior was WRONG
+
+I predicted the breakeven clamp would be the strongest candidate. It is nearly inert
+(changes 0-6 of 236 days) but produced **more cut-shorts than rescues at every trigger level**
+(0/2, 1/4, 3/6) and a negative uplift (-2,449 / -4,383 / -10,472), with gb_p50 unchanged and
+gb_p90 slightly worse. Asymmetry only pays if the bad tail exists at meaningful frequency.
+
+### Byproduct for a SEPARATE study (not acted on here)
+
+The NO_DEFENCE control prices the existing defence: pooled it costs Rs 4,913 and buys a worst
+day of -6,667 instead of -16,527 — a sane premium, keep it. But it is paid almost entirely on
+**SENSEX expiry Thursday**, where 4 backstop firings cost **Rs 28,059** while improving the
+worst day by Rs 370. Independently reproduces research/114 and the 2026-08-19 config note. That
+is a *level* question with n=4 — own STATUS-MD, own evidence, alongside the 11-SEP SX-Thu review.
+
+### Recommendation
+
+**Leave the defence alone.** For the position that prompted this (TimeB NIFTY, credit 175.13,
+8 lots, 20% combined-SL at 210.2, Rs 18,214 max loss): that Rs 18,214 is a fixed ceiling, it does
+not grow as the trade wins. The right lever for discomfort with the distance is **size**, not
+stop placement. Re-open only if the recorder accumulates a stressed regime, or if the
+deep-then-reverse rate rises materially above the 2-in-236 observed here.

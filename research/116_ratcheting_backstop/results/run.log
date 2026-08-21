@@ -1,0 +1,12 @@
+constructions: COMB_NIFTY, TIMEB_NIFTY, COMB_SENSEX, TIMEB_SENSEX
+variants (17): NO_DEFENCE, STATIC, BE_CLAMP_50, BE_CLAMP_60, BE_CLAMP_70, RATCHET_K1.3, RATCHET_K1.5, RATCHET_K1.75, RATCHET_K2, RATCHET_K2.5, GIVEBACK_30, GIVEBACK_50, RS_GB_1000, RS_GB_2000, RS_GB_3000, TIME_RATCHET_MID, HYBRID_BE60_GB50
+NIFTY 2026-04-20 TIMEB_NIFTY: no series
+  NIFTY 20/86 days
+  NIFTY 40/86 days
+  NIFTY 60/86 days
+  NIFTY 80/86 days
+  SENSEX 20/86 days
+  SENSEX 40/86 days
+  SENSEX 60/86 days
+  SENSEX 80/86 days
+detail written: /home/arun/quantifyd/research/116_ratcheting_backstop/results/ratchet_detail.csv
