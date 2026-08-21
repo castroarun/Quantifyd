@@ -64,6 +64,12 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("CSL_TIMEB2_NIFTY Friday leg - answered: no Friday cell", "2026-09-05", "PENDING",
+     "r/120: the TIMEB2 shape (13:00-14:00 SL25) returns -521/lot on Fridays with a -3,786 worst day. Do not add a Friday cell."),
+    ("COMB on Friday - weakest component of the stack (r/120 byproduct)", "2026-09-12", "PENDING",
+     "r/120: COMB Friday earns +191/lot with a -5,853 worst day, and +656 without a single day. A dedicated Friday review of COMB is a cheaper win than any new slot. Not previously registered."),
+    ("DATA RULE (r/120): reject frozen-chain holidays in every options backtest", None, "PARKED",
+     "The chain recorder polls on exchange holidays and stores a frozen chain, so 2026-05-01 and 2026-06-26 booked cost-only losses on every window and read as real losing Fridays. Guard: a day with <50 distinct spot prints is not a trading day - reject it. Also note market_data_unified has NO NIFTY 1-minute series (NIFTY50 is 5-min only, ends 2026-07-17); SENSEX 1-min is the only trustworthy long intraday clock."),
     ("SENSEX-Thu backstop LEVEL (not shape) - r/116 byproduct, n=4", "2026-09-11", "PENDING",
      "r/116 NO_DEFENCE control: the defence costs Rs4,913 pooled and buys a worst day of -6,667 vs -16,527 - worth keeping. But that premium is paid almost entirely on SENSEX expiry Thursday: 4 backstop firings cost Rs28,059 for Rs370 of tail improvement. Independently reproduces r/114 at a different stop level on a different construction. Level question with n=4 - needs its own study, do NOT change off this."),
     ("SETTLED (research/119): the 9:16 suite and the CSL books WILL pick different strikes", None, "PARKED",
