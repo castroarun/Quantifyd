@@ -1,0 +1,98 @@
+========================================================================================================
+1) BLOCK TEST - the surface's SHAPE as a 3-parameter claim (mean net Rs/lot/Friday, n = all clean Fridays)
+   Each block = the average of its cells on that day, so the day is the unit and the
+   comparison is paired. Durations 90 and 120 only (45/60 are cost-dominated everywhere).
+========================================================================================================
+  venue    arm     block                      mean   median    win%       t
+  NIFTY    SL20    MORNING 09:35-11:05         223      287      86    2.54
+  NIFTY    SL20    MIDDAY  11:20-13:20        -326     -262      36   -1.72
+  NIFTY    SL20    LATE    13:35-14:30         226      273      71    1.24
+
+  NIFTY    NOSTOP  MORNING 09:35-11:05         223      287      86    2.54
+  NIFTY    NOSTOP  MIDDAY  11:20-13:20        -420     -262      36   -1.56
+  NIFTY    NOSTOP  LATE    13:35-14:30         203      273      71    1.01
+
+  SENSEX   SL20    MORNING 09:35-11:05         261      324      86    3.12
+  SENSEX   SL20    MIDDAY  11:20-13:20        -350     -187      43   -1.47
+  SENSEX   SL20    LATE    13:35-14:30         -65      250      57   -0.25
+
+  SENSEX   NOSTOP  MORNING 09:35-11:05         261      324      86    3.12
+  SENSEX   NOSTOP  MIDDAY  11:20-13:20        -426     -187      43   -1.41
+  SENSEX   NOSTOP  LATE    13:35-14:30         -67      250      57   -0.26
+
+  MORNING minus MIDDAY, paired by Friday (the single claim the surface makes):
+    NIFTY   SL20     diff =    +550 Rs/lot/Fri   t =  2.56   p = 0.0239   positive on 11/14 Fridays
+    NIFTY   NOSTOP   diff =    +643 Rs/lot/Fri   t =  2.18   p = 0.0478   positive on 11/14 Fridays
+    SENSEX  SL20     diff =    +611 Rs/lot/Fri   t =  2.48   p = 0.0275   positive on 12/14 Fridays
+    SENSEX  NOSTOP   diff =    +687 Rs/lot/Fri   t =  2.23   p = 0.0442   positive on 12/14 Fridays
+
+========================================================================================================
+2) CONCENTRATION - leave-one-out on every book that matters (research/118's lesson)
+========================================================================================================
+  book                         mean worst day mean ex-worst mean ex-best sign flips?
+  COMB_NIFTY_full               191    -5853        656         22       no
+  A_LIVE_TimeB_N_10_12          399     -344        457        359       no
+  ALT_N_0935_1135               572     -448        651        517       no
+  ALT_N_0950_1150               434      -68        473        381       no
+  B_N_1405_1535cap              369    -1579        519        292       no
+  B_N_1400_1520                 269    -1638        416        204       no
+  B_N_1300_1400_SL25           -521    -3786       -270       -588       no
+  SX_0935_1135                  660     -631        759        609       no
+  SX_0950_1120                  423     -187        470        392       no
+  SX_1000_1200                  385     -794        476        343       no
+
+========================================================================================================
+3) STAGE-A (clean Fridays of option truth) JOINED TO STAGE-B (274 SENSEX / 542 NIFTY Fridays
+   of underlying risk). Does the window that PAYS sit where the index is CALM?
+========================================================================================================
+  NIFTY   vs NIFTY50_5min   cells=110
+      Spearman( long-run mean excursion , Friday-sample mean net ) = +0.307  (p=0.0011)
+      Spearman( long-run %days >30bp     , Friday-sample mean net ) = +0.333  (p=0.0004)
+      5 CALMEST windows over the long sample, and what they actually earned:
+        11:35  45     long-run mean exc  21.7 bp (17.3% days >30bp)   sample net   -141
+        11:20  45     long-run mean exc  22.2 bp (17.9% days >30bp)   sample net    -90
+        11:05  45     long-run mean exc  22.5 bp (20.3% days >30bp)   sample net    -34
+        12:05  45     long-run mean exc  22.7 bp (19.9% days >30bp)   sample net   -394
+        11:50  45     long-run mean exc  23.1 bp (20.5% days >30bp)   sample net   -159
+      5 MOST DANGEROUS windows over the long sample, and what they earned:
+        10:20  HOLD   long-run mean exc  71.3 bp (84.7% days >30bp)   sample net   +143
+        10:05  HOLD   long-run mean exc  75.1 bp (87.6% days >30bp)   sample net   +162
+        09:50  HOLD   long-run mean exc  78.6 bp (89.7% days >30bp)   sample net   +582
+        09:35  HOLD   long-run mean exc  80.7 bp (92.4% days >30bp)   sample net   +756
+        09:20  HOLD   long-run mean exc  83.3 bp (92.1% days >30bp)   sample net   +543
+
+  SENSEX  vs SENSEX_1min    cells=110
+      Spearman( long-run mean excursion , Friday-sample mean net ) = +0.136  (p=0.1555)
+      Spearman( long-run %days >30bp     , Friday-sample mean net ) = +0.173  (p=0.0706)
+      5 CALMEST windows over the long sample, and what they actually earned:
+        11:35  45     long-run mean exc  20.2 bp (17.6% days >30bp)   sample net   -100
+        12:50  45     long-run mean exc  20.7 bp (19.0% days >30bp)   sample net   -187
+        11:20  45     long-run mean exc  20.8 bp (17.2% days >30bp)   sample net    -93
+        11:50  45     long-run mean exc  21.1 bp (19.7% days >30bp)   sample net   -164
+        12:35  45     long-run mean exc  21.2 bp (19.3% days >30bp)   sample net   -283
+      5 MOST DANGEROUS windows over the long sample, and what they earned:
+        10:20  HOLD   long-run mean exc  66.3 bp (84.3% days >30bp)   sample net    +44
+        10:05  HOLD   long-run mean exc  68.8 bp (88.0% days >30bp)   sample net    +34
+        09:50  HOLD   long-run mean exc  70.9 bp (89.8% days >30bp)   sample net   +159
+        09:35  HOLD   long-run mean exc  74.3 bp (91.2% days >30bp)   sample net   +519
+        09:20  HOLD   long-run mean exc  77.8 bp (90.5% days >30bp)   sample net   +256
+
+========================================================================================================
+4) PER-DAY, the books that matter (net Rs/lot)
+========================================================================================================
+  Friday        A_LIVE_TimeB_N_10_12       ALT_N_0935_1135      B_N_1405_1535cap    B_N_1300_1400_SL25       COMB_NIFTY_full          SX_0935_1135
+  2026-05-08                    +611                  +608                  +686                   +94                 +2051                  +891
+  2026-05-15                    +290                  +475                  +286                 -1007                 +1749                  +318
+  2026-05-22                    +562                 +1174                  +205                  +225                 +2392                 +1318
+  2026-05-29                    +634                  +979                  +442                 -1384                 -5853                 +1115
+  2026-06-05                    +832                 +1294                 +1186                  -321                 +1707                  +743
+  2026-06-12                    +504                  +263                 -1579                 -3786                 -3903                  +452
+  2026-06-19                    +130                  +829                 +1369                  +348                 +1586                  +933
+  2026-07-03                    +312                  +796                  +907                  -877                 +2262                  +725
+  2026-07-10                    +923                  +650                  +127                   +55                 +1651                  +899
+  2026-07-17                    -344                  -448                  -711                  +302                 -4585                  -631
+  2026-07-24                    +286                   +10                  +683                   +16                   +88                  +565
+  2026-07-31                    +202                  +423                  +387                   -32                 +1034                  +629
+  2026-08-07                    +247                  +309                  +884                  +280                 +1843                  +244
+  2026-08-14                    +403                  +653                  +296                 -1212                  +654                 +1040
+  MEAN                          +399                  +572                  +369                  -521                  +191                  +660

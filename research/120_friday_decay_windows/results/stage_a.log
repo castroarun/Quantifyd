@@ -1,0 +1,35 @@
+NIFTY: 16 complete Fridays 2026-05-01 .. 2026-08-14  (cost Rs250/lot round trip)
+  NIFTY 2026-05-01 SKIP no data
+  NIFTY 2026-05-08 exp=2026-05-12 dte_cal=4 mins=361 gridrows=220
+  NIFTY 2026-05-15 exp=2026-05-19 dte_cal=4 mins=361 gridrows=220
+  NIFTY 2026-05-22 exp=2026-05-26 dte_cal=4 mins=361 gridrows=220
+  NIFTY 2026-05-29 exp=2026-06-02 dte_cal=4 mins=361 gridrows=220
+  NIFTY 2026-06-05 exp=2026-06-09 dte_cal=4 mins=360 gridrows=220
+  NIFTY 2026-06-12 exp=2026-06-16 dte_cal=4 mins=360 gridrows=220
+  NIFTY 2026-06-19 exp=2026-06-23 dte_cal=4 mins=360 gridrows=220
+  NIFTY 2026-06-26 SKIP no data
+  NIFTY 2026-07-03 exp=2026-07-07 dte_cal=4 mins=359 gridrows=220
+  NIFTY 2026-07-10 exp=2026-07-14 dte_cal=4 mins=359 gridrows=220
+  NIFTY 2026-07-17 exp=2026-07-21 dte_cal=4 mins=357 gridrows=220
+  NIFTY 2026-07-24 exp=2026-07-28 dte_cal=4 mins=361 gridrows=220
+  NIFTY 2026-07-31 exp=2026-08-04 dte_cal=4 mins=361 gridrows=220
+  NIFTY 2026-08-07 exp=2026-08-11 dte_cal=4 mins=359 gridrows=220
+  NIFTY 2026-08-14 exp=2026-08-18 dte_cal=4 mins=359 gridrows=220
+SENSEX: 16 complete Fridays 2026-05-01 .. 2026-08-14  (cost Rs200/lot round trip)
+  SENSEX 2026-05-01 SKIP no data
+  SENSEX 2026-05-08 exp=2026-05-14 dte_cal=6 mins=361 gridrows=220
+  SENSEX 2026-05-15 exp=2026-05-21 dte_cal=6 mins=358 gridrows=220
+  SENSEX 2026-05-22 exp=2026-05-27 dte_cal=5 mins=361 gridrows=220
+  SENSEX 2026-05-29 exp=2026-06-04 dte_cal=6 mins=361 gridrows=220
+  SENSEX 2026-06-05 exp=2026-06-11 dte_cal=6 mins=359 gridrows=220
+  SENSEX 2026-06-12 exp=2026-06-18 dte_cal=6 mins=360 gridrows=220
+  SENSEX 2026-06-19 exp=2026-06-25 dte_cal=6 mins=361 gridrows=220
+  SENSEX 2026-06-26 SKIP no data
+  SENSEX 2026-07-03 exp=2026-07-09 dte_cal=6 mins=357 gridrows=220
+  SENSEX 2026-07-10 exp=2026-07-16 dte_cal=6 mins=360 gridrows=220
+  SENSEX 2026-07-17 exp=2026-07-23 dte_cal=6 mins=358 gridrows=220
+  SENSEX 2026-07-24 exp=2026-07-30 dte_cal=6 mins=359 gridrows=220
+  SENSEX 2026-07-31 exp=2026-08-06 dte_cal=6 mins=356 gridrows=220
+  SENSEX 2026-08-07 exp=2026-08-13 dte_cal=6 mins=350 gridrows=220
+  SENSEX 2026-08-14 exp=2026-08-20 dte_cal=6 mins=354 gridrows=220
+DONE

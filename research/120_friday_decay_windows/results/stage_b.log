@@ -1,0 +1,8 @@
+loading SENSEX 1-minute 2021-01-01 ->
+  SENSEX days=1363  fridays=275
+  SENSEX 1-min Friday windows built (274 Fridays)
+resampling SENSEX to 5-minute (resolution control)
+loading NIFTY50 5-minute 2015-02-02 ->
+  NIFTY50 days=2772 fridays=544
+  NIFTY50 5-min Friday windows built (542 Fridays)
+DONE
