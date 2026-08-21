@@ -1,0 +1,128 @@
+==============================================================================================================
+DATA - the three live non-expiry cells on the recorded chain (live weekday only)
+==============================================================================================================
+FRI_NIFTY_DTE2   n=14  2026-05-08 .. 2026-08-14   median P&L 2.56% of credit   worst -2.05%   win 93%
+MON_NIFTY_DTE1   n=17  2026-04-27 .. 2026-08-17   median P&L 0.83% of credit   worst -4.62%   win 71%
+WED_SENSEX_DTE1  n=17  2026-04-29 .. 2026-08-19   median P&L 3.33% of credit   worst -8.40%   win 71%
+
+Coverage of the option-book signals (non-null share):
+   pcr_oi_all         100%
+   pcr_oi_atm         100%
+   pcr_vol_all        100%
+   oi_atm_share       100%
+   dist_ce_wall_bp    100%
+   dist_pe_wall_bp    100%
+   wall_span_bp       100%
+   maxpain_drift_bp   100%
+   d_pcr_oi_all       98%
+   d_oi_total_pct     98%
+   d_oi_atm_pct       98%
+   d_oi_wing_pct      98%
+
+==============================================================================================================
+INFORMATION COEFFICIENTS on the options sample (pooled across the 3 cells, n=48)
+  a positive IC vs pnl_pct_credit  = higher signal -> BETTER day  (so you would skip LOW)
+  a positive IC vs exc_over_credit = higher signal -> BIGGER move relative to premium
+==============================================================================================================
+                  exc_over_credit_rho  pnl_pct_credit_rho  exc_over_credit_p  pnl_pct_credit_p
+signal                                                                                        
+cpr_today                       0.326              -0.022              0.024             0.880
+cpr_prev                       -0.085               0.336              0.564             0.019
+wcpr_this                      -0.041               0.174              0.782             0.238
+wcpr_prev                       0.082              -0.106              0.579             0.473
+gap_abs                        -0.019               0.103              0.900             0.486
+gap_pct                        -0.267               0.233              0.067             0.111
+pdr_pct                         0.367               0.033              0.010             0.824
+pdr_rel                         0.335              -0.089              0.020             0.547
+atr14_pct                       0.231               0.236              0.114             0.106
+vix_open                        0.242               0.163              0.098             0.269
+vix_chg_oc_pct                 -0.121              -0.090              0.412             0.545
+vix_chg_oc_pts                 -0.121              -0.090              0.412             0.545
+vix_chg_cc_pct                  0.034              -0.100              0.818             0.498
+vix_chg_cc_pts                  0.011              -0.109              0.940             0.460
+pre_move_bp                     0.205               0.025              0.162             0.868
+pre_range_bp                    0.277              -0.016              0.057             0.913
+pcr_oi_all                     -0.070               0.124              0.635             0.402
+pcr_oi_atm                      0.176              -0.006              0.232             0.970
+pcr_vol_all                     0.140              -0.140              0.344             0.342
+oi_atm_share                   -0.307              -0.223              0.034             0.128
+dist_ce_wall_bp                 0.267               0.355              0.067             0.013
+dist_pe_wall_bp                 0.240               0.068              0.100             0.647
+wall_span_bp                    0.280               0.288              0.054             0.047
+maxpain_drift_bp               -0.346               0.254              0.016             0.082
+d_pcr_oi_all                    0.014               0.157              0.927             0.291
+d_oi_total_pct                  0.375               0.086              0.009             0.567
+d_oi_atm_pct                    0.415               0.136              0.004             0.362
+d_oi_wing_pct                   0.299               0.107              0.041             0.473
+placebo_noise                   0.069               0.185              0.642             0.207
+placebo_prepath                -0.014               0.088              0.923             0.550
+
+==============================================================================================================
+SKIP RULES vs an EXACT RANDOM-SKIP NULL (skip 33% of the days of each cell)
+  rand_total_pctile = where the filter's kept-P&L sits in the distribution of
+  randomly skipping the same number of days. >95 would be a real filter;
+  ~50 means it is doing nothing; <50 means it is worse than random.
+==============================================================================================================
+### FRI_NIFTY_DTE2
+          signal      side  skipped  total_all  total_kept  pnl_retained_pct  worst_all  worst_kept  rand_total_pctile  rand_worst_pctile
+        cpr_prev  skip_low        5      55920       48850              87.4      -3440        1300               99.2               89.0
+ dist_ce_wall_bp  skip_low        5      55920       48530              86.8      -3440        2860               99.1              100.0
+    oi_atm_share skip_high        5      55920       47720              85.3      -3440        1300               98.4               89.0
+         pdr_rel  skip_low        5      55920       46130              82.5      -3440        2020               96.0               97.3
+maxpain_drift_bp skip_high        5      55920       45700              81.7      -3440        1300               95.1               89.0
+    wall_span_bp  skip_low        5      55920       44210              79.1      -3440        2020               91.5               97.3
+       wcpr_this  skip_low        5      55920       43690              78.1      -3440        1300               89.9               89.0
+         pdr_pct  skip_low        5      55920       43400              77.6      -3440        1300               89.0               89.0
+   ... worst 3:
+         signal      side  total_kept  pnl_retained_pct  rand_total_pctile
+      cpr_today skip_high       23740              42.5                1.0
+dist_ce_wall_bp skip_high       23780              42.5                1.0
+       cpr_prev skip_high       21600              38.6                0.2
+
+### MON_NIFTY_DTE1
+         signal      side  skipped  total_all  total_kept  pnl_retained_pct  worst_all  worst_kept  rand_total_pctile  rand_worst_pctile
+   oi_atm_share skip_high        6      16980       20800             122.5      -4840       -3730               96.9               89.0
+      atr14_pct  skip_low        6      16980       20310             119.6      -4840       -3730               96.2               89.0
+  d_oi_wing_pct  skip_low        6      16980       19690             116.0      -4840       -3730               94.9               89.0
+ vix_chg_cc_pts skip_high        6      16980       19370             114.1      -4840        -390               94.2               99.4
+ vix_chg_cc_pct skip_high        6      16980       19370             114.1      -4840        -390               94.2               99.4
+        gap_abs  skip_low        6      16980       18750             110.4      -4840       -4840               92.7               64.7
+ d_oi_total_pct  skip_low        6      16980       17450             102.8      -4840       -3730               88.7               89.0
+dist_ce_wall_bp  skip_low        6      16980       16380              96.5      -4840        -610               84.4               97.1
+   ... worst 3:
+         signal      side  total_kept  pnl_retained_pct  rand_total_pctile
+        gap_pct skip_high        -190              -1.1                0.9
+dist_ce_wall_bp skip_high        -290              -1.7                0.9
+   wall_span_bp skip_high        -290              -1.7                0.9
+
+### WED_SENSEX_DTE1
+          signal      side  skipped  total_all  total_kept  pnl_retained_pct  worst_all  worst_kept  rand_total_pctile  rand_worst_pctile
+maxpain_drift_bp  skip_low        6      32690       49280             150.7     -11440       -9110               98.9               89.0
+   placebo_noise  skip_low        6      32690       44720             136.8     -11440       -3440               96.9               99.4
+  vix_chg_cc_pct  skip_low        6      32690       40500             123.9     -11440       -5120               93.6               97.1
+         gap_abs  skip_low        6      32690       37870             115.8     -11440       -9110               90.5               89.0
+    d_oi_atm_pct  skip_low        6      32690       37210             113.8     -11440      -11440               89.6               64.7
+   d_oi_wing_pct skip_high        6      32690       36000             110.1     -11440       -5120               87.8               97.1
+    pre_range_bp  skip_low        6      32690       35070             107.3     -11440      -11440               86.3               64.7
+     pcr_vol_all skip_high        6      32690       33890             103.7     -11440      -11440               84.2               64.7
+   ... worst 3:
+          signal      side  total_kept  pnl_retained_pct  rand_total_pctile
+    d_pcr_oi_all skip_high       -3730             -11.4                1.6
+maxpain_drift_bp skip_high       -6830             -20.9                0.6
+    d_oi_atm_pct skip_high       -9090             -27.8                0.3
+
+Rules tried in this confirmation stage: 540  (signals 30 x sides 2 x skip-fracs 3 x cells 3)
+Rules whose kept-P&L beat 95% of random skips AND retained >=100% of total P&L: 10
+           cell           signal      side  skipped  pnl_retained_pct  worst_all  worst_kept  rand_total_pctile
+ MON_NIFTY_DTE1  dist_ce_wall_bp  skip_low        4             136.1      -4840        -610               98.3
+ MON_NIFTY_DTE1        atr14_pct  skip_low        6             119.6      -4840       -3730               96.2
+ MON_NIFTY_DTE1     oi_atm_share skip_high        6             122.5      -4840       -3730               96.9
+ MON_NIFTY_DTE1     oi_atm_share skip_high        8             109.8      -4840       -3730               96.2
+WED_SENSEX_DTE1   vix_chg_cc_pct  skip_low        4             144.9     -11440       -5120               97.6
+WED_SENSEX_DTE1   vix_chg_cc_pts  skip_low        4             144.9     -11440       -5120               97.6
+WED_SENSEX_DTE1 maxpain_drift_bp  skip_low        6             150.7     -11440       -9110               98.9
+WED_SENSEX_DTE1    placebo_noise  skip_low        6             136.8     -11440       -3440               96.9
+WED_SENSEX_DTE1 maxpain_drift_bp  skip_low        8             166.5     -11440        2360              100.0
+WED_SENSEX_DTE1     d_pcr_oi_all  skip_low        8             126.9     -11440       -9110               96.9
+
+Expected number of such rules under the pure null (5% x 2 outcomes-ish): ~27

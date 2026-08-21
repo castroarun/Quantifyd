@@ -1,0 +1,156 @@
+====================================================================================================
+DATA TRAP - the INDIAVIX DAILY series is not usable for an overnight shock
+====================================================================================================
+  open(d) == close(d-1) on 2800 of 3395 daily bars (82.5%).
+  Any close-to-open VIX change read off that series is identically zero for
+  most of the sample. Rebuilding from the 5-minute series instead.
+
+INDIAVIX 5-minute: 2825 session days 2015-02-02 .. 2026-07-17
+  open(d) == close(d-1) on 115 of 2824 days (4.1%)  <- a genuine opening print
+
+====================================================================================================
+THE VIX FAMILY vs the window excursion, on the long sample
+  exc_bp   = raw excursion
+  exc_norm = excursion / VIX-implied 1-day sigma (premium-relative)
+====================================================================================================
+### MON_NIFTY_DTE1  (NIFTY50_5MIN, n=548)
+  exc_bp     vix_open5 +0.492* | vix_gap_pct -0.021  | vix_gap_pts -0.006  | vix_cc_pct -0.003  | vix_cc_pts -0.024  | vix_at_entry +0.531* | vix_intraday_pct +0.184*
+  exc_norm   vix_open5 +0.064  | vix_gap_pct -0.026  | vix_gap_pts -0.027  | vix_cc_pct -0.014  | vix_cc_pts -0.011  | vix_at_entry +0.117* | vix_intraday_pct +0.237*
+  shock sweep vix_gap_pct   [all days: exc 27.3bp / norm 0.263]
+  >=p50 (0.07%, n=273): exc 27.1bp / norm 0.258
+  >=p60 (0.23%, n=219): exc 27.0bp / norm 0.258
+  >=p70 (0.43%, n=164): exc 28.1bp / norm 0.271
+  >=p80 (0.64%, n=110): exc 28.2bp / norm 0.273
+  >=p90 (0.95%, n=55): exc 30.9bp / norm 0.304
+  >=p95 (1.42%, n=28): exc 36.0bp / norm 0.350
+  shock sweep vix_gap_pts   [all days: exc 27.3bp / norm 0.263]
+  >=p50 (0.01pts, n=283): exc 27.1bp / norm 0.257
+  >=p60 (0.04pts, n=220): exc 27.5bp / norm 0.258
+  >=p70 (0.07pts, n=166): exc 29.5bp / norm 0.268
+  >=p80 (0.10pts, n=115): exc 31.2bp / norm 0.275
+  >=p90 (0.16pts, n=57): exc 35.9bp / norm 0.286
+  >=p95 (0.22pts, n=29): exc 40.3bp / norm 0.322
+  shock sweep vix_cc_pct   [all days: exc 27.3bp / norm 0.263]
+  >=p50 (-0.92%, n=273): exc 27.7bp / norm 0.261
+  >=p60 (-0.06%, n=219): exc 28.2bp / norm 0.266
+  >=p70 (1.07%, n=164): exc 29.7bp / norm 0.275
+  >=p80 (2.91%, n=110): exc 30.7bp / norm 0.282
+  >=p90 (5.16%, n=55): exc 33.6bp / norm 0.302
+  >=p95 (7.66%, n=28): exc 38.0bp / norm 0.314
+  shock sweep vix_cc_pts   [all days: exc 27.3bp / norm 0.263]
+  >=p50 (-0.14pts, n=274): exc 26.8bp / norm 0.257
+  >=p60 (-0.01pts, n=220): exc 28.0bp / norm 0.265
+  >=p70 (0.16pts, n=164): exc 29.9bp / norm 0.276
+  >=p80 (0.41pts, n=110): exc 31.5bp / norm 0.282
+  >=p90 (0.82pts, n=55): exc 36.9bp / norm 0.299
+  >=p95 (1.31pts, n=28): exc 40.4bp / norm 0.321
+
+### WED_SENSEX_DTE1  (SENSEX_1MIN, n=277)
+  exc_bp     vix_open5 +0.310* | vix_gap_pct +0.024  | vix_gap_pts +0.033  | vix_cc_pct +0.051  | vix_cc_pts +0.040  | vix_at_entry +0.317* | vix_intraday_pct +0.033 
+  exc_norm   vix_open5 -0.137* | vix_gap_pct +0.033  | vix_gap_pts +0.013  | vix_cc_pct +0.029  | vix_cc_pts +0.034  | vix_at_entry -0.128* | vix_intraday_pct +0.097 
+  shock sweep vix_gap_pct   [all days: exc 30.8bp / norm 0.317]
+  >=p50 (0.13%, n=136): exc 31.4bp / norm 0.330
+  >=p60 (0.23%, n=109): exc 29.6bp / norm 0.316
+  >=p70 (0.37%, n=82): exc 31.7bp / norm 0.331
+  >=p80 (0.47%, n=55): exc 32.1bp / norm 0.332
+  >=p90 (0.72%, n=28): exc 33.4bp / norm 0.326
+  >=p95 (1.03%, n=14): exc 43.3bp / norm 0.385
+  shock sweep vix_gap_pts   [all days: exc 30.8bp / norm 0.317]
+  >=p50 (0.02pts, n=143): exc 31.7bp / norm 0.330
+  >=p60 (0.04pts, n=111): exc 31.1bp / norm 0.317
+  >=p70 (0.05pts, n=84): exc 31.6bp / norm 0.310
+  >=p80 (0.08pts, n=55): exc 31.1bp / norm 0.290
+  >=p90 (0.11pts, n=28): exc 34.7bp / norm 0.303
+  >=p95 (0.15pts, n=14): exc 45.3bp / norm 0.397
+  shock sweep vix_cc_pct   [all days: exc 30.8bp / norm 0.317]
+  >=p50 (-1.04%, n=136): exc 32.7bp / norm 0.329
+  >=p60 (0.13%, n=109): exc 34.5bp / norm 0.340
+  >=p70 (1.21%, n=82): exc 34.6bp / norm 0.334
+  >=p80 (2.47%, n=55): exc 35.7bp / norm 0.337
+  >=p90 (4.75%, n=28): exc 40.5bp / norm 0.360
+  >=p95 (7.14%, n=14): exc 44.7bp / norm 0.393
+  shock sweep vix_cc_pts   [all days: exc 30.8bp / norm 0.317]
+  >=p50 (-0.13pts, n=136): exc 32.4bp / norm 0.329
+  >=p60 (0.02pts, n=110): exc 34.4bp / norm 0.338
+  >=p70 (0.18pts, n=82): exc 34.7bp / norm 0.332
+  >=p80 (0.41pts, n=56): exc 36.5bp / norm 0.332
+  >=p90 (0.85pts, n=28): exc 38.4bp / norm 0.324
+  >=p95 (1.11pts, n=14): exc 44.1bp / norm 0.329
+
+### FRI_NIFTY_DTE2  (NIFTY50_5MIN, n=543)
+  exc_bp     vix_open5 +0.362* | vix_gap_pct -0.139* | vix_gap_pts -0.120* | vix_cc_pct +0.106* | vix_cc_pts +0.072  | vix_at_entry +0.371* | vix_intraday_pct +0.059 
+  exc_norm   vix_open5 -0.082  | vix_gap_pct -0.083  | vix_gap_pts -0.089* | vix_cc_pct +0.086* | vix_cc_pts +0.097* | vix_at_entry -0.066  | vix_intraday_pct +0.114*
+  shock sweep vix_gap_pct   [all days: exc 44.4bp / norm 0.416]
+  >=p50 (0.13%, n=272): exc 40.3bp / norm 0.394
+  >=p60 (0.28%, n=217): exc 41.0bp / norm 0.395
+  >=p70 (0.45%, n=163): exc 40.8bp / norm 0.401
+  >=p80 (0.66%, n=109): exc 37.6bp / norm 0.391
+  >=p90 (0.95%, n=55): exc 37.5bp / norm 0.402
+  >=p95 (1.28%, n=28): exc 38.0bp / norm 0.420
+  shock sweep vix_gap_pts   [all days: exc 44.4bp / norm 0.416]
+  >=p50 (0.02pts, n=286): exc 40.3bp / norm 0.390
+  >=p60 (0.04pts, n=219): exc 41.3bp / norm 0.393
+  >=p70 (0.07pts, n=168): exc 43.4bp / norm 0.398
+  >=p80 (0.10pts, n=111): exc 46.4bp / norm 0.391
+  >=p90 (0.16pts, n=58): exc 54.5bp / norm 0.410
+  >=p95 (0.20pts, n=32): exc 61.0bp / norm 0.420
+  shock sweep vix_cc_pct   [all days: exc 44.4bp / norm 0.416]
+  >=p50 (-1.64%, n=272): exc 47.8bp / norm 0.442
+  >=p60 (-0.70%, n=217): exc 51.9bp / norm 0.468
+  >=p70 (0.22%, n=163): exc 55.9bp / norm 0.491
+  >=p80 (1.74%, n=109): exc 62.7bp / norm 0.518
+  >=p90 (4.19%, n=55): exc 74.6bp / norm 0.543
+  >=p95 (6.76%, n=28): exc 100.9bp / norm 0.613
+  shock sweep vix_cc_pts   [all days: exc 44.4bp / norm 0.416]
+  >=p50 (-0.24pts, n=273): exc 47.6bp / norm 0.447
+  >=p60 (-0.11pts, n=219): exc 51.9bp / norm 0.474
+  >=p70 (0.04pts, n=165): exc 55.6bp / norm 0.489
+  >=p80 (0.24pts, n=111): exc 63.9bp / norm 0.519
+  >=p90 (0.69pts, n=55): exc 77.8bp / norm 0.537
+  >=p95 (1.13pts, n=28): exc 98.4bp / norm 0.570
+
+====================================================================================================
+THE VIX SHOCK AS A SKIP RULE - does standing aside on jump days cut the tail?
+  randPct = where the kept days' p90 premium-relative excursion sits vs skipping
+  the same number of days at random. LOW = the filter is doing something.
+====================================================================================================
+cell             signal         cut  skip%  p90_all p90_kept  randPct   max_all  max_kept
+MON_NIFTY_DTE1   vix_gap_pts     80   21.1    0.431    0.426     22.1     1.081     1.081
+MON_NIFTY_DTE1   vix_gap_pts     90   10.4    0.431    0.427     22.7     1.081     1.081
+MON_NIFTY_DTE1   vix_gap_pts     95    5.3    0.431    0.428     16.8     1.081     1.081
+MON_NIFTY_DTE1   vix_gap_pct     80   20.1    0.431    0.427     24.1     1.081     1.081
+MON_NIFTY_DTE1   vix_gap_pct     90   10.1    0.431    0.418      2.4     1.081     1.081
+MON_NIFTY_DTE1   vix_gap_pct     95    5.1    0.431    0.421      0.5     1.081     1.081
+MON_NIFTY_DTE1   vix_cc_pts      80   20.1    0.431    0.420     10.5     1.081     1.081
+MON_NIFTY_DTE1   vix_cc_pts      90   10.1    0.431    0.426     10.0     1.081     1.081
+MON_NIFTY_DTE1   vix_cc_pts      95    5.1    0.431    0.428     15.3     1.081     1.081
+MON_NIFTY_DTE1   vix_cc_pct      80   20.1    0.431    0.420     10.8     1.081     1.081
+MON_NIFTY_DTE1   vix_cc_pct      90   10.1    0.431    0.426     11.1     1.081     1.081
+MON_NIFTY_DTE1   vix_cc_pct      95    5.1    0.431    0.428     15.4     1.081     1.081
+
+WED_SENSEX_DTE1  vix_gap_pts     80   20.2    0.552    0.578     90.4     1.277     1.017
+WED_SENSEX_DTE1  vix_gap_pts     90   10.3    0.552    0.560     78.5     1.277     1.017
+WED_SENSEX_DTE1  vix_gap_pts     95    5.1    0.552    0.546     41.2     1.277     1.017
+WED_SENSEX_DTE1  vix_gap_pct     80   20.2    0.552    0.547     47.8     1.277     1.017
+WED_SENSEX_DTE1  vix_gap_pct     90   10.3    0.552    0.560     77.2     1.277     1.017
+WED_SENSEX_DTE1  vix_gap_pct     95    5.1    0.552    0.546     42.0     1.277     1.017
+WED_SENSEX_DTE1  vix_cc_pts      80   20.6    0.552    0.542     34.4     1.277     1.017
+WED_SENSEX_DTE1  vix_cc_pts      90   10.3    0.552    0.550     55.0     1.277     1.017
+WED_SENSEX_DTE1  vix_cc_pts      95    5.1    0.552    0.546     40.8     1.277     1.017
+WED_SENSEX_DTE1  vix_cc_pct      80   20.2    0.552    0.535     21.0     1.277     1.017
+WED_SENSEX_DTE1  vix_cc_pct      90   10.3    0.552    0.543     31.3     1.277     1.017
+WED_SENSEX_DTE1  vix_cc_pct      95    5.1    0.552    0.542     16.7     1.277     1.017
+
+FRI_NIFTY_DTE2   vix_gap_pts     80   20.4    0.690    0.686     34.6     5.213     5.213
+FRI_NIFTY_DTE2   vix_gap_pts     90   10.7    0.690    0.684     14.1     5.213     5.213
+FRI_NIFTY_DTE2   vix_gap_pts     95    5.9    0.690    0.686     21.9     5.213     5.213
+FRI_NIFTY_DTE2   vix_gap_pct     80   20.1    0.690    0.690     45.0     5.213     5.213
+FRI_NIFTY_DTE2   vix_gap_pct     90   10.1    0.690    0.687     33.7     5.213     5.213
+FRI_NIFTY_DTE2   vix_gap_pct     95    5.2    0.690    0.686     14.4     5.213     5.213
+FRI_NIFTY_DTE2   vix_cc_pts      80   20.4    0.690    0.676      8.0     5.213     1.594
+FRI_NIFTY_DTE2   vix_cc_pts      90   10.1    0.690    0.689     47.5     5.213     5.213
+FRI_NIFTY_DTE2   vix_cc_pts      95    5.2    0.690    0.709     76.2     5.213     5.213
+FRI_NIFTY_DTE2   vix_cc_pct      80   20.1    0.690    0.680     10.8     5.213     1.594
+FRI_NIFTY_DTE2   vix_cc_pct      90   10.1    0.690    0.686     30.5     5.213     5.213
+FRI_NIFTY_DTE2   vix_cc_pct      95    5.2    0.690    0.709     77.9     5.213     5.213
+

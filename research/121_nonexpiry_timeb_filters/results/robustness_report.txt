@@ -1,0 +1,150 @@
+====================================================================================================
+A. RESOLUTION EQUIVALENCE - is the NIFTY 5-minute long sample admissible?
+====================================================================================================
+SENSEX, same 4068 window-days measured at 1-min and at 5-min:
+  mean(exc5 - exc1) = 0.0000 bp   max|diff| = 0.0000 bp   rows differing = 0
+  start-price mismatch rows = 0
+  => the maximum excursion inside a fixed window is RESOLUTION-INVARIANT
+     (a window's high is the max of the bar highs however you bucket them).
+     The no-5-min rule bites on the PATH - which minute a stop fires - and that
+     part of this study is done on the real 1-minute option chain, not on bars.
+
+====================================================================================================
+B. MONOTONICITY - full quintile response curves (never just the best cut)
+   exc_bp = raw excursion; exc_norm = excursion / VIX-implied 1-day sigma
+====================================================================================================
+### MON_NIFTY_DTE1  (MON_1300_1400 on NIFTY50_5MIN)
+  exc_bp (mean by signal quintile):
+quintile         Q1     Q2     Q3     Q4     Q5  Q5/Q1
+signal                                                
+pre_range_bp  16.76  21.20  26.38  29.69  43.04   2.57
+pdr_rel       26.32  26.68  24.03  27.32  32.77   1.25
+cpr_today     24.87  23.26  24.89  25.22  38.82   1.56
+wcpr_this     24.42  23.14  25.29  29.06  35.18   1.44
+vix_open      17.23  22.63  25.08  32.70  39.45   2.29
+gap_abs       24.55  24.24  25.66  25.31  37.30   1.52
+  exc_norm (mean by signal quintile):
+quintile        Q1    Q2    Q3    Q4    Q5  Q5/Q1
+signal                                           
+pre_range_bp  0.19  0.23  0.27  0.28  0.34   1.79
+pdr_rel       0.25  0.26  0.25  0.26  0.29   1.16
+cpr_today     0.26  0.24  0.26  0.25  0.31   1.19
+wcpr_this     0.25  0.25  0.26  0.28  0.28   1.12
+vix_open      0.24  0.27  0.26  0.30  0.26   1.08
+gap_abs       0.25  0.25  0.26  0.26  0.30   1.20
+
+### WED_SENSEX_DTE1  (WED_1030_1200 on SENSEX_1MIN)
+  exc_bp (mean by signal quintile):
+quintile         Q1     Q2     Q3     Q4     Q5  Q5/Q1
+signal                                                
+pre_range_bp  23.69  24.36  28.74  31.55  44.72   1.89
+pdr_rel       24.44  31.91  30.16  27.74  38.71   1.58
+cpr_today     27.40  28.22  27.84  31.25  38.40   1.40
+wcpr_this     32.79  30.90  28.07  30.95  30.44   0.93
+vix_open      23.84  26.82  33.68  29.66  38.91   1.63
+gap_abs       30.75  27.16  30.06  31.76  33.41   1.09
+  exc_norm (mean by signal quintile):
+quintile        Q1    Q2    Q3    Q4    Q5  Q5/Q1
+signal                                           
+pre_range_bp  0.29  0.29  0.30  0.31  0.40   1.38
+pdr_rel       0.28  0.33  0.32  0.28  0.38   1.36
+cpr_today     0.32  0.31  0.30  0.30  0.34   1.06
+wcpr_this     0.35  0.35  0.31  0.30  0.28   0.80
+vix_open      0.34  0.33  0.37  0.27  0.28   0.82
+gap_abs       0.35  0.29  0.33  0.33  0.28   0.80
+
+### FRI_NIFTY_DTE2  (FRI_1000_1200 on NIFTY50_5MIN)
+  exc_bp (mean by signal quintile):
+quintile         Q1     Q2     Q3     Q4     Q5  Q5/Q1
+signal                                                
+pre_range_bp  31.42  33.05  41.60  41.50  74.12   2.36
+pdr_rel       39.75  38.25  42.01  47.84  53.96   1.36
+cpr_today     38.03  39.21  37.31  39.43  67.76   1.78
+wcpr_this     39.25  40.56  40.19  39.84  61.91   1.58
+vix_open      29.53  34.88  44.49  43.79  69.06   2.34
+gap_abs       40.56  36.90  37.34  44.51  62.46   1.54
+  exc_norm (mean by signal quintile):
+quintile        Q1    Q2    Q3    Q4    Q5  Q5/Q1
+signal                                           
+pre_range_bp  0.36  0.36  0.45  0.40  0.52   1.44
+pdr_rel       0.38  0.38  0.39  0.46  0.46   1.21
+cpr_today     0.39  0.40  0.39  0.41  0.49   1.26
+wcpr_this     0.40  0.41  0.43  0.40  0.45   1.12
+vix_open      0.41  0.41  0.46  0.40  0.40   0.98
+gap_abs       0.43  0.39  0.38  0.44  0.44   1.02
+
+====================================================================================================
+C. COMBINATION FILTERS (6 pre-registered), long sample, live weekday
+   'skip' = the combination is TRUE -> stand aside that day
+   rand_pctile: where the kept-days' p90 excursion sits vs skipping the same
+   number of days at random. LOW is good (a real filter cuts the tail).
+====================================================================================================
+--- outcome = exc_bp ---
+           cell                             combo  skip_pct  p90_all  p90_kept  max_all  max_kept  rand_pctile
+ MON_NIFTY_DTE1 wide_daily_cpr_AND_big_prev_range      20.8   49.404    45.769   141.39    124.95          0.6
+ MON_NIFTY_DTE1  wide_daily_cpr_AND_narrow_weekly       5.8   49.404    48.460   141.39    141.39         11.0
+ MON_NIFTY_DTE1              big_gap_AND_high_vix      15.1   49.404    44.736   141.39    110.51          0.0
+ MON_NIFTY_DTE1    hot_preopen_range_AND_wide_cpr      13.7   49.404    43.622   141.39    124.95          0.0
+ MON_NIFTY_DTE1      hot_preopen_range_OR_big_gap      32.5   49.404    41.981   141.39    110.51          0.0
+ MON_NIFTY_DTE1   vix_shock_up_AND_big_prev_range      29.4   49.404    45.480   141.39    124.95          1.3
+WED_SENSEX_DTE1 wide_daily_cpr_AND_big_prev_range      21.3   52.016    50.969   215.13     96.87         38.3
+WED_SENSEX_DTE1  wide_daily_cpr_AND_narrow_weekly       7.7   52.016    49.910   215.13    215.13          6.3
+WED_SENSEX_DTE1              big_gap_AND_high_vix      16.5   52.016    51.546   215.13     96.87         46.5
+WED_SENSEX_DTE1    hot_preopen_range_AND_wide_cpr      14.7   52.016    49.718   215.13     96.87          3.8
+WED_SENSEX_DTE1      hot_preopen_range_OR_big_gap      34.6   52.016    48.323   215.13     96.87          1.1
+WED_SENSEX_DTE1   vix_shock_up_AND_big_prev_range      29.8   52.016    52.190   215.13     96.87         70.9
+ FRI_NIFTY_DTE2 wide_daily_cpr_AND_big_prev_range      20.6   72.114    71.970  1304.49    456.83         46.6
+ FRI_NIFTY_DTE2  wide_daily_cpr_AND_narrow_weekly       7.9   72.114    71.988  1304.49   1304.49         43.0
+ FRI_NIFTY_DTE2              big_gap_AND_high_vix      15.3   72.114    67.811  1304.49    510.64          0.2
+ FRI_NIFTY_DTE2    hot_preopen_range_AND_wide_cpr      12.7   72.114    67.208  1304.49    510.64          0.1
+ FRI_NIFTY_DTE2      hot_preopen_range_OR_big_gap      33.0   72.114    61.295  1304.49    510.64          0.0
+ FRI_NIFTY_DTE2   vix_shock_up_AND_big_prev_range      29.5   72.114    73.698  1304.49    456.83         72.8
+
+--- outcome = exc_norm ---
+           cell                             combo  skip_pct  p90_all  p90_kept  max_all  max_kept  rand_pctile
+ MON_NIFTY_DTE1 wide_daily_cpr_AND_big_prev_range      20.8    0.435     0.418    1.081     1.081          3.8
+ MON_NIFTY_DTE1  wide_daily_cpr_AND_narrow_weekly       5.8    0.435     0.439    1.081     1.081         84.2
+ MON_NIFTY_DTE1              big_gap_AND_high_vix      15.1    0.435     0.432    1.081     1.068         45.6
+ MON_NIFTY_DTE1    hot_preopen_range_AND_wide_cpr      13.7    0.435     0.416    1.081     1.081          0.5
+ MON_NIFTY_DTE1      hot_preopen_range_OR_big_gap      32.5    0.435     0.398    1.081     1.068          0.1
+ MON_NIFTY_DTE1   vix_shock_up_AND_big_prev_range      29.4    0.435     0.411    1.081     1.081          1.4
+WED_SENSEX_DTE1 wide_daily_cpr_AND_big_prev_range      21.3    0.552     0.547    1.277     1.017         38.0
+WED_SENSEX_DTE1  wide_daily_cpr_AND_narrow_weekly       7.7    0.552     0.542    1.277     1.277         18.0
+WED_SENSEX_DTE1              big_gap_AND_high_vix      16.5    0.552     0.578    1.277     1.017         93.2
+WED_SENSEX_DTE1    hot_preopen_range_AND_wide_cpr      14.7    0.552     0.543    1.277     1.017         39.9
+WED_SENSEX_DTE1      hot_preopen_range_OR_big_gap      34.6    0.552     0.534    1.277     1.017         28.0
+WED_SENSEX_DTE1   vix_shock_up_AND_big_prev_range      29.8    0.552     0.553    1.277     1.017         58.7
+ FRI_NIFTY_DTE2 wide_daily_cpr_AND_big_prev_range      20.6    0.690     0.728    5.213     1.594         86.5
+ FRI_NIFTY_DTE2  wide_daily_cpr_AND_narrow_weekly       7.9    0.690     0.721    5.213     5.213         82.1
+ FRI_NIFTY_DTE2              big_gap_AND_high_vix      15.3    0.690     0.723    5.213     5.213         83.8
+ FRI_NIFTY_DTE2    hot_preopen_range_AND_wide_cpr      12.7    0.690     0.712    5.213     5.213         69.0
+ FRI_NIFTY_DTE2      hot_preopen_range_OR_big_gap      33.0    0.690     0.676    5.213     5.213         10.5
+ FRI_NIFTY_DTE2   vix_shock_up_AND_big_prev_range      29.5    0.690     0.728    5.213     1.594         86.1
+
+====================================================================================================
+D. SIZE ARITHMETIC - the one lever that is guaranteed to work, and what it
+   does NOT do (it does not change the reward:risk ratio at all)
+====================================================================================================
+cell               lots    medProfit     SL20 cap    SL20 as %      R:R
+FRI_NIFTY_DTE2       10         3575        36930 20% of credit    10.33
+FRI_NIFTY_DTE2        8         2860        29544 20% of credit    10.33
+FRI_NIFTY_DTE2        5         1787        18465 20% of credit    10.33
+FRI_NIFTY_DTE2        3         1072        11079 20% of credit    10.33
+FRI_NIFTY_DTE2        2          715         7386 20% of credit    10.33
+
+MON_NIFTY_DTE1       10         1240        25987 20% of credit    20.96
+MON_NIFTY_DTE1        8          992        20789 20% of credit    20.96
+MON_NIFTY_DTE1        5          620        12993 20% of credit    20.96
+MON_NIFTY_DTE1        3          372         7796 20% of credit    20.96
+MON_NIFTY_DTE1        2          248         5197 20% of credit    20.96
+
+WED_SENSEX_DTE1      10         3830        26284 20% of credit     6.86
+WED_SENSEX_DTE1       8         3064        21027 20% of credit     6.86
+WED_SENSEX_DTE1       5         1915        13142 20% of credit     6.86
+WED_SENSEX_DTE1       3         1149         7885 20% of credit     6.86
+WED_SENSEX_DTE1       2          766         5256 20% of credit     6.86
+
+R:R is invariant to size by construction. Cutting lots cuts the rupee tail
+proportionally and cuts the rupee profit by exactly the same proportion; it
+leaves expectancy per rupee of margin untouched. That is the honest lever:
+it changes how much the bad day HURTS, which is the actual complaint.

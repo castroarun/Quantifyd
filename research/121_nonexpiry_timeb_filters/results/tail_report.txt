@@ -1,0 +1,160 @@
+====================================================================================================
+ROUTE B - STOP LADDER on the recorded chain (live weekday only, Rs at 10 lots, NET of cost)
+====================================================================================================
+### FRI_NIFTY_DTE2   n=14 days
+   arm  total_rs_10lot  mean_rs_10lot  median_rs_10lot  worst_rs_10lot  win_pct  fire_pct  RR_observed  pnl_vs_SL20_pct
+NOSTOP           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+  SL25           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+  SL20           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+  SL15           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+  SL12           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+  SL10           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+   SL8           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+   SL6           44150           3153             3575          -15210     92.9       7.1         4.25            -21.0
+RC2500           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+RC2000           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+RC1600           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+RC1400           55920           3994             3575           -3440     92.9       0.0         0.96              0.0
+RC1200           44150           3153             3575          -15210     92.9       7.1         4.25            -21.0
+RC1000           44150           3153             3575          -15210     92.9       7.1         4.25            -21.0
+ RC800           44150           3153             3575          -15210     92.9       7.1         4.25            -21.0
+
+### MON_NIFTY_DTE1   n=17 days
+   arm  total_rs_10lot  mean_rs_10lot  median_rs_10lot  worst_rs_10lot  win_pct  fire_pct  RR_observed  pnl_vs_SL20_pct
+NOSTOP           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+  SL25           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+  SL20           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+  SL15           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+  SL12           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+  SL10           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+   SL8           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+   SL6           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+RC2500           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+RC2000           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+RC1600           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+RC1400           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+RC1200           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+RC1000           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+ RC800           16980            998             1240           -4840     70.6       0.0          3.9              0.0
+
+### WED_SENSEX_DTE1   n=17 days
+   arm  total_rs_10lot  mean_rs_10lot  median_rs_10lot  worst_rs_10lot  win_pct  fire_pct  RR_observed  pnl_vs_SL20_pct
+NOSTOP           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+  SL25           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+  SL20           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+  SL15           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+  SL12           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+  SL10           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+   SL8           24060           1415             3830          -15620     70.6      11.8         4.08            -26.4
+   SL6           19110           1124             3830          -12630     70.6      23.5         3.30            -41.5
+RC2500           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+RC2000           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+RC1600           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+RC1400           32690           1922             3830          -11440     70.6       0.0         2.99              0.0
+RC1200           26180           1540             3830          -15620     70.6       5.9         4.08            -19.9
+RC1000           24990           1470             3830          -15620     70.6      11.8         4.08            -23.6
+ RC800           30330           1784             3830          -12630     70.6      11.8         3.30             -7.2
+
+====================================================================================================
+THE MOVE -> PREMIUM MAP (fitted on the real chain; xrel = excursion bp / (credit% x 100))
+====================================================================================================
+FRI_NIFTY_DTE2   n=   50 pairs  rise% = 9.729 * xrel +0.322   (Theil-Sen, pearson r=0.410)
+MON_NIFTY_DTE1   n=   52 pairs  rise% = 11.258 * xrel +0.120   (Theil-Sen, pearson r=0.884)
+WED_SENSEX_DTE1  n=   59 pairs  rise% = 12.807 * xrel -1.335   (Theil-Sen, pearson r=0.815)
+
+====================================================================================================
+STOP LEVEL -> TRIGGERING MOVE -> TRUE FIRING FREQUENCY
+  observed  = the 14-17 recorded option days
+  long      = the same window on hundreds of comparable days (the real clock)
+====================================================================================================
+### FRI_NIFTY_DTE2   window FRI_1000_1200   mean credit 1.105% of spot
+    recorded-sample excursion bp : med 19.1  p90 40.8  MAX 50.4  (n=14)
+    long NIFTY50_5MIN  excursion bp : med 33.6  p90 72.1  p99 158.6  MAX 1304.5  (n=543, 2015-02-06..2026-07-17)
+    long SENSEX_1MIN   excursion bp : med 34.8  p90 68.2  p99 125.4  MAX 160.1  (n=274, 2021-01-01..2026-08-14)
+    long SENSEX_5MIN   excursion bp : med 34.8  p90 68.2  p99 125.4  MAX 160.1  (n=274, 2021-01-01..2026-08-14)
+ stop_pct  move_bp_trigger  fire_pct_observed  fire_pct_long
+       25            280.2                0.0            0.6
+       20            223.5                0.0            0.6
+       15            166.7                0.0            0.7
+       12            132.6                0.0            2.0
+       10            109.9                0.0            2.6
+        8             87.2                0.0            6.6
+        6             64.5                0.0           13.6
+        4             41.8               14.3           34.1
+        3             30.4               14.3           57.5
+        2             19.1               50.0           87.1
+
+### MON_NIFTY_DTE1   window MON_1300_1400   mean credit 0.753% of spot
+    recorded-sample excursion bp : med 14.0  p90 32.8  MAX 39.4  (n=17)
+    long NIFTY50_5MIN  excursion bp : med 22.9  p90 49.4  p99 97.9  MAX 141.4  (n=548, 2015-02-02..2026-07-13)
+    long SENSEX_1MIN   excursion bp : med 20.1  p90 43.5  p99 84.5  MAX 97.0  (n=280, 2021-01-04..2026-08-17)
+    long SENSEX_5MIN   excursion bp : med 20.1  p90 43.5  p99 84.5  MAX 97.0  (n=280, 2021-01-04..2026-08-17)
+ stop_pct  move_bp_trigger  fire_pct_observed  fire_pct_long
+       25            166.4                0.0            0.0
+       20            133.0                0.0            0.2
+       15             99.5                0.0            1.1
+       12             79.5                0.0            2.9
+       10             66.1                0.0            4.6
+        8             52.7                0.0            7.7
+        6             39.3                5.9           17.7
+        4             26.0               23.5           40.1
+        3             19.3               41.2           59.7
+        2             12.6               58.8           84.1
+
+### WED_SENSEX_DTE1   window WED_1030_1200   mean credit 0.794% of spot
+    recorded-sample excursion bp : med 20.9  p90 39.9  MAX 51.6  (n=17)
+    long SENSEX_1MIN   excursion bp : med 26.4  p90 52.1  p99 92.3  MAX 215.1  (n=277, 2021-01-06..2026-08-19)
+    long NIFTY50_5MIN  excursion bp : med 24.6  p90 55.1  p99 134.0  MAX 316.4  (n=557, 2015-02-04..2026-07-08)
+    long SENSEX_5MIN   excursion bp : med 26.4  p90 52.1  p99 92.3  MAX 215.1  (n=277, 2021-01-06..2026-08-19)
+ stop_pct  move_bp_trigger  fire_pct_observed  fire_pct_long
+       25            163.3                0.0            0.4
+       20            132.3                0.0            0.4
+       15            101.3                0.0            0.4
+       12             82.7                0.0            1.4
+       10             70.3                0.0            2.9
+        8             57.9                0.0            6.5
+        6             45.5                5.9           17.7
+        4             33.1               29.4           32.9
+        3             26.9               47.1           48.4
+        2             20.7               52.9           66.1
+
+====================================================================================================
+THE R:R ARITHMETIC - what max loss does each stop actually promise, and what is
+the implied reward:risk against the cell's OBSERVED median profit?
+(loss cap = credit x stop%% x lot + round-trip cost; slippage on the stop leg is
+ NOT modelled and makes the real cap worse.)
+====================================================================================================
+cell               stop%  medProfit    lossCap        R:R  fire_obs fire_long  P&Lcost%
+FRI_NIFTY_DTE2        25       3575      45538      12.74       0.0       0.6      +0.0
+FRI_NIFTY_DTE2        20       3575      36930      10.33       0.0       0.6      +0.0
+FRI_NIFTY_DTE2        15       3575      28323       7.92       0.0       0.7      +0.0
+FRI_NIFTY_DTE2        12       3575      23158       6.48       0.0       2.0      +0.0
+FRI_NIFTY_DTE2        10       3575      19715       5.51       0.0       2.6      +0.0
+FRI_NIFTY_DTE2         8       3575      16272       4.55       0.0       6.6      +0.0
+FRI_NIFTY_DTE2         6       3575      12829       3.59       0.0      13.6     -21.0
+FRI_NIFTY_DTE2         4       3575       9386       2.63      14.3      34.1         -
+FRI_NIFTY_DTE2         3       3575       7664       2.14      14.3      57.5         -
+FRI_NIFTY_DTE2         2       3575       5943       1.66      50.0      87.1         -
+
+MON_NIFTY_DTE1        25       1240      31858      25.69       0.0       0.0      +0.0
+MON_NIFTY_DTE1        20       1240      25987      20.96       0.0       0.2      +0.0
+MON_NIFTY_DTE1        15       1240      20115      16.22       0.0       1.1      +0.0
+MON_NIFTY_DTE1        12       1240      16592      13.38       0.0       2.9      +0.0
+MON_NIFTY_DTE1        10       1240      14243      11.49       0.0       4.6      +0.0
+MON_NIFTY_DTE1         8       1240      11894       9.59       0.0       7.7      +0.0
+MON_NIFTY_DTE1         6       1240       9546       7.70       5.9      17.7      +0.0
+MON_NIFTY_DTE1         4       1240       7197       5.80      23.5      40.1         -
+MON_NIFTY_DTE1         3       1240       6023       4.86      41.2      59.7         -
+MON_NIFTY_DTE1         2       1240       4848       3.91      58.8      84.1         -
+
+WED_SENSEX_DTE1       25       3830      32356       8.45       0.0       0.4      +0.0
+WED_SENSEX_DTE1       20       3830      26284       6.86       0.0       0.4      +0.0
+WED_SENSEX_DTE1       15       3830      20213       5.28       0.0       0.4      +0.0
+WED_SENSEX_DTE1       12       3830      16570       4.33       0.0       1.4      +0.0
+WED_SENSEX_DTE1       10       3830      14142       3.69       0.0       2.9      +0.0
+WED_SENSEX_DTE1        8       3830      11713       3.06       0.0       6.5     -26.4
+WED_SENSEX_DTE1        6       3830       9285       2.42       5.9      17.7     -41.5
+WED_SENSEX_DTE1        4       3830       6856       1.79      29.4      32.9         -
+WED_SENSEX_DTE1        3       3830       5642       1.47      47.1      48.4         -
+WED_SENSEX_DTE1        2       3830       4428       1.16      52.9      66.1         -
+
