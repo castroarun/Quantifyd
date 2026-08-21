@@ -2498,9 +2498,17 @@ function TradeBook({ systems, states, liveLegs, basis }: {
           const suite = rows.filter((r) => r.mode === 'live' && rowVenue(r) === v &&
             (r.sysId.startsWith('sx-') || /^nas-916/.test(r.sysId) || /NIFTY (ATM|OTM)/.test(r.sysLabel)));
           if (!suite.length) return null;
-          const qty = suite.reduce((a, r) => a + (r.qty || 0), 0);
-          const lots = Math.round((qty / (R.lot * 2)) * 10) / 10;   // 2 legs per straddle
-          const pnl = suite.reduce((a, r) => a + r.pnl, 0);
+          // Lots per system = its largest OPEN leg / lot size (a straddle's two legs are the
+          // same size, and a stopped-out leg must not inflate the count). Sum across systems -
+          // this is how services/nas_portfolio_stop.py counts deployed lots.
+          const perSys = new Map<string, number>();
+          for (const r of suite) {
+            if (!r.open) continue;
+            perSys.set(r.sysId, Math.max(perSys.get(r.sysId) || 0, r.qty || 0));
+          }
+          const lots = Math.round(([...perSys.values()].reduce((a, q) => a + q / R.lot, 0)) * 10) / 10;
+          if (!lots) return null;
+          const pnl = suite.reduce((a, r) => a + r.pnl, 0);   // realised + open, all suite legs
           const stopRs = R.stop * lots, tpRs = R.tp != null ? R.tp * lots : null;
           const armRs = R.arm != null ? R.arm * lots : null;
           const hitTp = tpRs != null && pnl >= tpRs;
@@ -2508,7 +2516,8 @@ function TradeBook({ systems, states, liveLegs, basis }: {
             <span key={v} style={{ fontSize: 'var(--text-xs)', padding: '3px 10px', borderRadius: 7,
               border: '1px solid var(--line)', color: 'var(--ink-muted)', whiteSpace: 'nowrap' }}
               title={`Book-level cap for the ${v.toUpperCase()} 9:16 suite (sleeves excluded — they run their own combined-SL). Stop −₹${Math.abs(R.stop)}/lot${R.tp ? `, take-profit ₹${R.tp}/lot` : ''}${R.arm ? `, trailing lock arms at +₹${R.arm}/lot and exits on a ₹${R.give}/lot giveback` : ''}.`}>
-              <b style={{ color: 'var(--ink)' }}>{v.toUpperCase()} book</b> · {lots}L ·
+              <b style={{ color: 'var(--ink)' }}>{v.toUpperCase()} 9:16 suite</b>
+              <span style={{ opacity: 0.7 }}> (sleeves excluded)</span> · {lots}L ·
               {' '}stop <b style={{ color: '#f85149' }}>{inr(stopRs)}</b>
               {tpRs != null && <> · TP <b style={{ color: '#3fb950' }}>{inr(tpRs)}</b></>}
               {armRs != null && <> · trail arms {inr(armRs)}</>}
