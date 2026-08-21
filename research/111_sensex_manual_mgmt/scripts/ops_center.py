@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("SENSEX-Thu backstop LEVEL (not shape) - r/116 byproduct, n=4", "2026-09-11", "PENDING",
+     "r/116 NO_DEFENCE control: the defence costs Rs4,913 pooled and buys a worst day of -6,667 vs -16,527 - worth keeping. But that premium is paid almost entirely on SENSEX expiry Thursday: 4 backstop firings cost Rs28,059 for Rs370 of tail improvement. Independently reproduces r/114 at a different stop level on a different construction. Level question with n=4 - needs its own study, do NOT change off this."),
     ("SETTLED (research/119): the 9:16 suite and the CSL books WILL pick different strikes", None, "PARKED",
      "The suite re-snaps to the synthetic forward, the CSL daemon uses spot-ATM. They diverge on ~31% of NIFTY and ~48% of SENSEX mornings - it is a cost-of-carry basis, widening with DTE. Tested: forward-snapping the CSL books earns -65/lot/day and does NOT reduce directional risk (there is none to reduce - these books are short GAMMA, not delta). Both rules stay. Do not re-open on the next divergence."),
     ("Wednesday per-leg stop: G2 study on the 1-min chain (r/118 voided the basis)", "2026-08-27", "PENDING",
