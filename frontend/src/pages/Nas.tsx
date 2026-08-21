@@ -1643,13 +1643,28 @@ export default function Nas() {
     // A finished sleeve must stay in the book. The daemon nulls the live entry on exit,
     // so look the completed trade up FIRST and use it whether or not `b` still exists.
     const recDone: any = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
-    const closedState = (): SystemStateRecord => ({
-      state: { positions: { ce: [], pe: [], closed_today: [{
-        leg: 'C+P', tradingsymbol: undefined, strike: recDone.strike, qty: recDone.qty ?? qty,
-        entry_price: recDone.credit, exit_price: recDone.exit_comb, pnl_inr: recDone.pnl,
+    const closedState = (): SystemStateRecord => {
+      const q = recDone.qty ?? qty;
+      const md = recDone.source === 'REAL' ? 'live' : 'paper';
+      const base = {
+        strike: recDone.strike, qty: q, status: 'CLOSED', mode: md,
         entry_time: recDone.entry_ts, exit_time: recDone.exit_ts, exit_reason: recDone.reason,
-        status: 'CLOSED', mode: recDone.source === 'REAL' ? 'live' : 'paper',
-      }] } } as any, err: null });
+      };
+      // Both legs when the record carries them (daemon >= 2026-08-21); otherwise fall back
+      // to the single combined line older records can support.
+      const perLeg = recDone.ce0 != null && recDone.pe0 != null
+        && recDone.ce_exit != null && recDone.pe_exit != null;
+      const closed: any[] = perLeg ? [
+        { ...base, leg: 'CE', tradingsymbol: recDone.ce_sym, entry_price: recDone.ce0,
+          exit_price: recDone.ce_exit, pnl_inr: Math.round((recDone.ce0 - recDone.ce_exit) * q) },
+        { ...base, leg: 'PE', tradingsymbol: recDone.pe_sym, entry_price: recDone.pe0,
+          exit_price: recDone.pe_exit, pnl_inr: Math.round((recDone.pe0 - recDone.pe_exit) * q) },
+      ] : [
+        { ...base, leg: 'C+P', tradingsymbol: undefined, entry_price: recDone.credit,
+          exit_price: recDone.exit_comb, pnl_inr: recDone.pnl },
+      ];
+      return { state: { positions: { ce: [], pe: [], closed_today: closed } } as any, err: null };
+    };
     if (!b) return recDone ? closedState() : { state: null, err: null };
     // venue-aware trading-DTE: executor-published if present, else weekday table
     // (NIFTY Tue-expiry: Mon..Fri -> 1,0,4,3,2 · SENSEX Thu-expiry: 3,2,1,0,4).

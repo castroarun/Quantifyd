@@ -449,7 +449,14 @@ def main():
                                "strike": P["K"], "expiry": P["expiry"], "credit": round(P["credit"], 2),
                                "entry_ts": P["entry_ts"], "exit_ts": datetime.now().strftime("%H:%M:%S"),
                                "exit_comb": round(exit_comb, 2), "reason": reason, "pnl": pnl, "series": P.get("series", []),
-                               "lots": B["lots"], "qty": B["qty"], "source": "REAL" if P.get("live") else "PAPER"}
+                               "lots": B["lots"], "qty": B["qty"], "source": "REAL" if P.get("live") else "PAPER",
+                               # per-leg detail so a booked trade can still be shown leg by leg
+                               # (the live book is nulled on exit and used to take these with it)
+                               "ce_sym": (P.get("legs") or [None, None])[0],
+                               "pe_sym": (P.get("legs") or [None, None])[1],
+                               "ce0": P.get("ce0"), "pe0": P.get("pe0"),
+                               "ce_exit": P.get("x_ce", P.get("ce_last")),
+                               "pe_exit": P.get("x_pe", P.get("pe_last"))}
                         st["records"].append(rec)
                         push_event(st, sym, "EXIT", "%s: closed %d straddle @ %.2f -> P&L %+d (%d lots, cum %+d)%s" % (
                             reason, P["K"], exit_comb, pnl, B["lots"], st["cum"].get(sym, 0) + pnl,
