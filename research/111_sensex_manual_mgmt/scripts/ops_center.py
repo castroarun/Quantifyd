@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("SETTLED (research/119): the 9:16 suite and the CSL books WILL pick different strikes", None, "PARKED",
+     "The suite re-snaps to the synthetic forward, the CSL daemon uses spot-ATM. They diverge on ~31% of NIFTY and ~48% of SENSEX mornings - it is a cost-of-carry basis, widening with DTE. Tested: forward-snapping the CSL books earns -65/lot/day and does NOT reduce directional risk (there is none to reduce - these books are short GAMMA, not delta). Both rules stay. Do not re-open on the next divergence."),
     ("Wednesday per-leg stop: G2 study on the 1-min chain (r/118 voided the basis)", "2026-08-27", "PENDING",
      "r/118: Wednesday is the CALMEST weekday (0.8% catastrophic, fewest of any) and the -16,502 day sits inside a 46-day bucket earning +105.7 pts/day at 80% win. The Wed per-leg 30% is now status quo, not evidence. Also: r/118 found bse_options_bhav (290k rows, 2024-2026, real BSE option prices) - use it."),
     ("Re-size SENSEX Thursday for its REAL tail (r/118)", "2026-08-26", "PENDING",

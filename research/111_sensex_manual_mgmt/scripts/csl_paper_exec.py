@@ -265,6 +265,12 @@ def main():
         for bk in plans:
             B = BOOKS[bk]
             sp = k.ltp([B["spot_key"]])[B["spot_key"]]["last_price"]
+            # spot-ATM by design. The 9:16 suite instead re-snaps to the synthetic
+            # forward, so the two families choose different strikes on ~31% of NIFTY and
+            # ~48% of SENSEX mornings (a cost-of-carry basis that widens with DTE).
+            # research/119 tested porting the snap here: -65/lot/day, and there is no
+            # directional tilt to fix - these books are short GAMMA, not delta. Keeping
+            # spot-ATM also keeps r/111 per-DTE windows and SLs on their validated credit.
             K = round(sp / B["step"]) * B["step"]
             ce, pe, E = resolve_legs(k, B, K)
             ok, why = live_allowed()
