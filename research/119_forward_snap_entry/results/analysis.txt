@@ -1,0 +1,226 @@
+================================================================================================
+research/119 - FORWARD-ATM (B) vs SPOT-ATM (A) ENTRY, live CSL constructions, real 1-min chain
+================================================================================================
+days covered: 86  (2026-04-20 .. 2026-08-21)   detail rows: 482
+books x DTE cells: 14
+
+------------------------------------------------------------------------------------------------
+1. DIVERGENCE - how often do the two rules even differ?
+------------------------------------------------------------------------------------------------
+venue              n |  mean|g|   med|g|   p90|g|   max|g| | strike changed
+NIFTY            121 |     16.4     10.3     42.0     69.2 | 37/121 = 31%
+SENSEX           120 |     54.4     40.0    126.7    266.4 | 58/120 = 48%
+
+signed forward-spot gap (basis; +ve = forward above spot):
+  NIFTY    mean    +9.8  median    +6.0  min   -33.1  max   +69.2  (0.025% of spot at median)
+  SENSEX   mean   +43.3  median   +32.5  min   -50.5  max  +266.4  (0.042% of spot at median)
+
+by DTE - the basis is a cost-of-carry term, so it shrinks toward 0 on expiry day:
+  NIFTY    DTE0 n= 34  mean gap    -2.2  mean |gap|    5.5  strike changed   3%
+  NIFTY    DTE1 n= 36  mean gap    +7.9  mean |gap|   17.3  strike changed  42%
+  NIFTY    DTE2 n= 34  mean gap   +21.3  mean |gap|   24.5  strike changed  41%
+  NIFTY    DTE3 n= 17  mean gap   +14.7  mean |gap|   20.2  strike changed  41%
+  SENSEX   DTE0 n= 34  mean gap   +16.3  mean |gap|   29.9  strike changed  24%
+  SENSEX   DTE1 n= 34  mean gap   +30.4  mean |gap|   44.3  strike changed  50%
+  SENSEX   DTE2 n= 17  mean gap   +32.6  mean |gap|   38.6  strike changed  41%
+  SENSEX   DTE3 n= 18  mean gap   +67.2  mean |gap|   78.3  strike changed  72%
+  SENSEX   DTE4 n= 17  mean gap  +108.1  mean |gap|  113.9  strike changed  76%
+
+by entry time (09:16/09:20 = the COMB books incl. recorder-gap slippage; rest = TimeB windows):
+  NIFTY    09:16  n= 44  mean gap    +9.3  |gap| mean   16.7  changed 23%
+  NIFTY    09:20  n= 20  mean gap   +16.5  |gap| mean   20.5  changed 55%
+  NIFTY    09:30  n= 16  mean gap    -0.8  |gap| mean    4.7  changed 0%
+  NIFTY    10:00  n= 17  mean gap   +19.5  |gap| mean   23.9  changed 41%
+  NIFTY    13:00  n= 16  mean gap    +9.7  |gap| mean   15.0  changed 38%
+  SENSEX   09:16  n= 53  mean gap   +42.0  |gap| mean   57.1  changed 47%
+  SENSEX   09:20  n= 27  mean gap   +72.3  |gap| mean   77.4  changed 70%
+  SENSEX   10:30  n= 16  mean gap   +28.3  |gap| mean   41.1  changed 50%
+  SENSEX   13:00  n= 16  mean gap   +21.2  |gap| mean   29.6  changed 19%
+
+------------------------------------------------------------------------------------------------
+3. ENTRY SKEW (CE-PE at the strike actually sold) - the mechanism
+------------------------------------------------------------------------------------------------
+book           arm      |      n mean|skew| med|skew| p90|skew| mean skew
+COMB_NIFTY     A        |     69      21.4      18.9      45.3      10.1
+COMB_NIFTY     B        |     69      12.8      12.6      22.6      -0.1
+COMB_SENSEX    A        |     86      65.9      55.0     129.5      45.8
+COMB_SENSEX    B        |     86      27.8      31.1      45.9       0.0
+TIMEB_NIFTY    A        |     52      19.4      15.1      42.2       6.0
+TIMEB_NIFTY    B        |     52      12.3      11.2      22.0      -0.6
+TIMEB_SENSEX   A        |     34      48.4      38.0      97.5      24.9
+TIMEB_SENSEX   B        |     34      22.5      22.3      38.9      -9.4
+
+paired |skew| reduction B vs A (same day/book/dte):
+  NIFTY    n=121  mean d|skew|   -7.98   median   +0.00   t  -5.74   improved on 31% of days
+  SENSEX   n=120  mean d|skew|  -34.63   median   +0.00   t  -7.46   improved on 48% of days
+
+------------------------------------------------------------------------------------------------
+2. P&L - net Rs per LOT (NIFTY lot 65, SENSEX lot 20), same days both arms
+------------------------------------------------------------------------------------------------
+
+-- pooled --
+cell                   arm  |    n     total     mean   median   win%     worst       p05
+ALL                    A    |  241    141427      587      620    71%     -6817     -3734
+ALL                    B    |  241    125818      522      569    69%     -8755     -3690
+  -> B minus A         d    |  241    -15609      -65        0   16%             t=-1.79
+NIFTY (all books)      A    |  121     86488      715      562    73%     -6269     -2177
+NIFTY (all books)      B    |  121     82152      679      605    69%     -8755     -2177
+  -> B minus A         d    |  121     -4336      -36        0   12%             t=-1.00
+SENSEX (all books)     A    |  120     54939      458      723    69%     -6817     -4127
+SENSEX (all books)     B    |  120     43666      364      558    68%     -7690     -4188
+  -> B minus A         d    |  120    -11273      -94        0   20%             t=-1.49
+
+-- per book --
+cell                   arm  |    n     total     mean   median   win%     worst       p05
+COMB_NIFTY             A    |   69     63547      921     1323    70%     -6269     -3026
+COMB_NIFTY             B    |   69     62449      905     1255    70%     -8755     -3350
+  -> B minus A         d    |   69     -1098      -16        0   16%             t=-0.28
+COMB_SENSEX            A    |   86     31127      362      988    69%     -6817     -4211
+COMB_SENSEX            B    |   86     20623      240      622    66%     -7690     -4447
+  -> B minus A         d    |   86    -10504     -122        0   22%             t=-1.48
+TIMEB_NIFTY            A    |   52     22941      441      301    77%      -484      -321
+TIMEB_NIFTY            B    |   52     19703      379      266    69%     -1807      -403
+  -> B minus A         d    |   52     -3238      -62        0    8%             t=-1.85
+TIMEB_SENSEX           A    |   34     23812      700      390    71%     -4127     -2203
+TIMEB_SENSEX           B    |   34     23043      678      444    74%     -4127     -3080
+  -> B minus A         d    |   34      -769      -23        0   15%             t=-0.29
+
+-- per book x DTE --
+cell                   arm  |    n     total     mean   median   win%     worst       p05
+COMB_NIFTY DTE0        A    |   17     25002     1471     1602    65%     -3026     -2778
+COMB_NIFTY DTE0        B    |   17     24430     1437     1602    65%     -3350     -3026
+  -> B minus A         d    |   17      -572      -34        0    0%             t=-1.00
+COMB_NIFTY DTE1        A    |   18     14902      828     1349    67%     -3822     -3620
+COMB_NIFTY DTE1        B    |   18     15843      880     1240    67%     -3822     -3620
+  -> B minus A         d    |   18       941       52        0   28%             t=+0.49
+COMB_NIFTY DTE2        A    |   17      5871      345     1034    71%     -6269     -2990
+COMB_NIFTY DTE2        B    |   17      4097      241      914    71%     -8755     -2990
+  -> B minus A         d    |   17     -1774     -104        0   12%             t=-0.61
+COMB_NIFTY DTE3        A    |   17     17772     1045     1057    76%      -952      -373
+COMB_NIFTY DTE3        B    |   17     18079     1063     1255    76%      -952      -373
+  -> B minus A         d    |   17       307       18        0   24%             t=+0.16
+COMB_SENSEX DTE0       A    |   17     20714     1218      997    71%     -4751     -4447
+COMB_SENSEX DTE0       B    |   17     15021      884      689    59%     -5199     -4751
+  -> B minus A         d    |   17     -5693     -335        0    6%             t=-0.93
+COMB_SENSEX DTE1       A    |   17     -2058     -121      340    65%     -4210     -3936
+COMB_SENSEX DTE1       B    |   17     -2783     -164      340    59%     -3936     -3425
+  -> B minus A         d    |   17      -725      -43        0   18%             t=-0.33
+COMB_SENSEX DTE2       A    |   17      4840      285     1113    76%     -4508     -3801
+COMB_SENSEX DTE2       B    |   17      2171      128      978    71%     -5302     -3690
+  -> B minus A         d    |   17     -2669     -157        0   12%             t=-1.84
+COMB_SENSEX DTE3       A    |   18      4012      223      763    61%     -3554     -3219
+COMB_SENSEX DTE3       B    |   18      3208      178      493    72%     -4188     -3554
+  -> B minus A         d    |   18      -804      -45        0   44%             t=-0.35
+COMB_SENSEX DTE4       A    |   17      3619      213     1066    71%     -6817     -4121
+COMB_SENSEX DTE4       B    |   17      3006      177      759    71%     -7690     -3495
+  -> B minus A         d    |   17      -613      -36        0   29%             t=-0.42
+TIMEB_NIFTY DTE0       A    |   17     16111      948     1066    82%      -403      -153
+TIMEB_NIFTY DTE0       B    |   17     16111      948     1066    82%      -403      -153
+  -> B minus A         d    |   17         0        0        0    0%             t=+nan
+TIMEB_NIFTY DTE1       A    |   18      1747       97       93    72%      -484      -373
+TIMEB_NIFTY DTE1       B    |   18      -161       -9       31    50%     -1807      -214
+  -> B minus A         d    |   18     -1908     -106        0   17%             t=-1.24
+TIMEB_NIFTY DTE2       A    |   17      5083      299      290    76%      -321      -250
+TIMEB_NIFTY DTE2       B    |   17      3753      221      286    76%      -656      -432
+  -> B minus A         d    |   17     -1330      -78        0    6%             t=-1.59
+TIMEB_SENSEX DTE0      A    |   17     20543     1208     1202    71%     -4127     -3080
+TIMEB_SENSEX DTE0      B    |   17     20743     1220     1243    76%     -4127     -3404
+  -> B minus A         d    |   17       200       12        0    6%             t=+0.08
+TIMEB_SENSEX DTE1      A    |   17      3269      192      383    71%     -1144      -911
+TIMEB_SENSEX DTE1      B    |   17      2300      135      383    71%     -1144     -1048
+  -> B minus A         d    |   17      -969      -57        0   24%             t=-0.94
+
+-- restricted to days where B actually picked a DIFFERENT strike --
+  NIFTY    n= 37  A mean      444  B mean      326  diff     -117  t -1.00  B better on 41%
+  SENSEX   n= 58  A mean      110  B mean      -84  diff     -194  t -1.50  B better on 41%
+
+exit-reason mix (stop-out frequency is where a skewed entry shows up):
+  arm A: TIME_EXIT 212 (88%)  SL_DWELL 26 (11%)  EOD 3 (1%)
+  arm B: TIME_EXIT 210 (87%)  SL_DWELL 28 (12%)  EOD 3 (1%)
+
+------------------------------------------------------------------------------------------------
+4. DIRECTIONALITY - regress day net P&L (Rs/lot) on the index move over the hold
+------------------------------------------------------------------------------------------------
+cell                   arm  |    n  slope Rs/%        r        t | |r| verdict
+ALL                    A    |  241         439    0.076     1.18 | no sig. tilt
+ALL                    B    |  241         771    0.126     1.97 | no sig. tilt
+NIFTY                  A    |  121         566    0.103     1.13 | no sig. tilt
+NIFTY                  B    |  121         992    0.171     1.89 | no sig. tilt
+SENSEX                 A    |  120         361    0.061     0.66 | no sig. tilt
+SENSEX                 B    |  120         640    0.102     1.12 | no sig. tilt
+COMB_NIFTY             A    |   69         624    0.112     0.93 | no sig. tilt
+COMB_NIFTY             B    |   69        1085    0.185     1.54 | no sig. tilt
+COMB_SENSEX            A    |   86         285    0.051     0.47 | no sig. tilt
+COMB_SENSEX            B    |   86         560    0.095     0.88 | no sig. tilt
+TIMEB_NIFTY            A    |   52          50    0.013     0.09 | no sig. tilt
+TIMEB_NIFTY            B    |   52         143    0.031     0.22 | no sig. tilt
+TIMEB_SENSEX           A    |   34        1239    0.134     0.77 | no sig. tilt
+TIMEB_SENSEX           B    |   34        1589    0.166     0.96 | no sig. tilt
+
+same, on ABS index move (a neutral straddle should be short |move|; both arms will be):
+  NIFTY    A    n=121 slope    -3669 r -0.488 t  -6.10
+  NIFTY    B    n=121 slope    -4274 r -0.535 t  -6.91
+  SENSEX   A    n=120 slope    -6155 r -0.714 t -11.08
+  SENSEX   B    n=120 slope    -6661 r -0.733 t -11.71
+
+up-days vs down-days mean net (a delta tilt shows as an asymmetry):
+  NIFTY    A    up n= 57 mean      633 | down n= 59 mean      875 | asymmetry     -242
+  NIFTY    B    up n= 57 mean      654 | down n= 59 mean      782 | asymmetry     -129
+  SENSEX   A    up n= 54 mean      423 | down n= 62 mean      531 | asymmetry     -108
+  SENSEX   B    up n= 54 mean      442 | down n= 62 mean      332 | asymmetry     +110
+
+------------------------------------------------------------------------------------------------
+5. MONOTONICITY - does (B-A) scale with the size of the spot-forward gap?
+------------------------------------------------------------------------------------------------
+  NIFTY (n=121) quartiles of |forward-spot|:
+    Q1 |gap|    0.2-   4.3  n= 30  mean (B-A) net       +0  t  +nan  mean d|skew|    +0.0
+    Q2 |gap|    4.8-  10.1  n= 30  mean (B-A) net      -50  t -1.37  mean d|skew|    -0.5
+    Q3 |gap|   10.3-  25.5  n= 30  mean (B-A) net      -50  t -0.58  mean d|skew|    -7.2
+    Q4 |gap|   25.9-  69.2  n= 31  mean (B-A) net      -43  t -0.40  mean d|skew|   -23.7
+    regression (B-A) on |gap|: slope -3.2 Rs per gap-point, r -0.126, t -1.38
+  SENSEX (n=120) quartiles of |forward-spot|:
+    Q1 |gap|    0.5-  13.6  n= 30  mean (B-A) net       +0  t  +nan  mean d|skew|    +0.0
+    Q2 |gap|   14.5-  39.7  n= 30  mean (B-A) net     -220  t -0.98  mean d|skew|   -14.7
+    Q3 |gap|   40.3-  78.7  n= 30  mean (B-A) net     -104  t -1.46  mean d|skew|   -28.7
+    Q4 |gap|   79.8- 266.4  n= 30  mean (B-A) net      -52  t -0.55  mean d|skew|   -95.1
+    regression (B-A) on |gap|: slope -0.3 Rs per gap-point, r -0.020, t -0.21
+  ALL (n=241) quartiles of |forward-spot|:
+    Q1 |gap|    0.2-   7.2  n= 60  mean (B-A) net       +1  t +1.00  mean d|skew|    -0.2
+    Q2 |gap|    7.4-  18.8  n= 60  mean (B-A) net      -71  t -1.42  mean d|skew|    -4.3
+    Q3 |gap|   20.1-  45.2  n= 60  mean (B-A) net      -84  t -0.71  mean d|skew|   -14.3
+    Q4 |gap|   45.7- 266.4  n= 61  mean (B-A) net     -105  t -1.53  mean d|skew|   -65.5
+    regression (B-A) on |gap|: slope -0.7 Rs per gap-point, r -0.053, t -0.82
+
+------------------------------------------------------------------------------------------------
+6. COST OF SWITCHING - bid-ask at the strike actually sold (% of mid, entry minute)
+------------------------------------------------------------------------------------------------
+  NIFTY    A    n=116  mean  0.220%  median  0.227%  p90  0.285%
+  NIFTY    B    n=116  mean  0.217%  median  0.225%  p90  0.280%
+           paired d(bid-ask%) B-A: mean -0.0034  t -1.13  (>0 = B is the wider/less liquid strike)
+  SENSEX   A    n=116  mean  0.262%  median  0.247%  p90  0.378%
+  SENSEX   B    n=116  mean  0.253%  median  0.242%  p90  0.348%
+           paired d(bid-ask%) B-A: mean -0.0092  t -1.87  (>0 = B is the wider/less liquid strike)
+
+credit collected (B sells the balanced strike; if it collects less, that is a real cost):
+  NIFTY    paired d(credit) B-A: mean -0.73 pts  median +0.00  t -4.38
+  SENSEX   paired d(credit) B-A: mean -2.35 pts  median +0.00  t -4.98
+
+------------------------------------------------------------------------------------------------
+ROBUSTNESS - same test with the SL dwell removed (exit on first breach minute)
+------------------------------------------------------------------------------------------------
+  NIFTY    n=121  A mean      663  B mean      643  diff      -20  t -0.64
+  SENSEX   n=120  A mean      456  B mean      378  diff      -78  t -1.30
+
+------------------------------------------------------------------------------------------------
+PER-MONTH stability of (B-A), net Rs/lot
+------------------------------------------------------------------------------------------------
+  NIFTY    2026-04  n=  7  mean (B-A)     +227
+  NIFTY    2026-05  n= 30  mean (B-A)     -171
+  NIFTY    2026-06  n= 32  mean (B-A)      -36
+  NIFTY    2026-07  n= 31  mean (B-A)      -47
+  NIFTY    2026-08  n= 21  mean (B-A)      +85
+  SENSEX   2026-04  n=  7  mean (B-A)     -101
+  SENSEX   2026-05  n= 29  mean (B-A)     -353
+  SENSEX   2026-06  n= 30  mean (B-A)      -41
+  SENSEX   2026-07  n= 33  mean (B-A)      +65
+  SENSEX   2026-08  n= 21  mean (B-A)      -60

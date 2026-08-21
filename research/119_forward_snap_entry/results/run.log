@@ -1,0 +1,10 @@
+== NIFTY: 86 recorded days (2026-04-20 .. 2026-08-21)
+NIFTY 2026-04-20: DTE map=1 cal=0 (fexp 2026-04-21) -> using MAP (live behaviour)
+== SENSEX: 86 recorded days (2026-04-20 .. 2026-08-21)
+SENSEX 2026-04-20: DTE map=3 cal=0 (fexp 2026-04-23) -> using MAP (live behaviour)
+SENSEX 2026-05-22: DTE map=4 cal=3 (fexp 2026-05-27) -> using MAP (live behaviour)
+SENSEX 2026-05-25: DTE map=3 cal=2 (fexp 2026-05-27) -> using MAP (live behaviour)
+SENSEX 2026-05-26: DTE map=2 cal=1 (fexp 2026-05-27) -> using MAP (live behaviour)
+SENSEX 2026-05-27: DTE map=1 cal=0 (fexp 2026-05-27) -> using MAP (live behaviour)
+SENSEX 2026-05-28: DTE map=0 cal=5 (fexp 2026-06-04) -> using MAP (live behaviour)
+rows written: 964 -> /home/arun/quantifyd/research/119_forward_snap_entry/scripts/../results/fs_detail.csv
