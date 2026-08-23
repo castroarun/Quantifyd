@@ -1,0 +1,50 @@
+=== RECONCILIATION vs r/122 (must match to the rupee) ===
+NIFTY DEP_1300_1400 SL20: 82/82 days match to the rupee PASS 
+NIFTY DEP_1000_1200 SL20: 82/82 days match to the rupee PASS 
+SENSEX DEP_1030_1200 SL20: 82/82 days match to the rupee PASS 
+
+=== G5 sign-flip family-wise null (2000 draws) ===
+NIFTY: family=1507 cells, max|t| observed=4.69, null-95 of max|t|=4.52, cells clearing=1
+SENSEX: family=1507 cells, max|t| observed=4.23, null-95 of max|t|=4.20, cells clearing=1
+
+=== G6 label-shuffle null: best Monday cell vs best cell of random 17-day draws ===
+NIFTY: Monday best med@8L (win>=60%) = +5880 | shuffled-best null: med +5408, q95 +7280 -> empirical p=0.329 (does NOT beat null-95)
+SENSEX: Monday best med@8L (win>=60%) = +3392 | shuffled-best null: med +5480, q95 +7744 -> empirical p=0.969 (does NOT beat null-95)
+
+=== GATE SUMMARY ===
+NIFTY: cells=1507  G1&G2=137  +G3=113  +G4=36  +G5&G6=0
+  top G1&G2 cells by rr_p95 (1:X):
+   W_0916_1116 NOSTOP n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=2.18 nb=3/3 G31 G41 G50 G60 worst=-22016 stop%=0.0
+   W_0916_1116 R1000  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=3.43 nb=3/3 G31 G41 G50 G60 worst=-10688 stop%=5.9
+   W_0916_1116 R1500  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=2.61 nb=3/3 G31 G41 G50 G60 worst=-17472 stop%=5.9
+   W_0916_1116 R2500  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=2.06 nb=3/3 G31 G41 G50 G60 worst=-23424 stop%=5.9
+   W_0916_1116 SLP10  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=3.03 nb=3/3 G31 G41 G50 G60 worst=-13776 stop%=5.9
+   W_0916_1116 SLP15  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=2.61 nb=3/3 G31 G41 G50 G60 worst=-17472 stop%=5.9
+   W_0916_1116 SLP20  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=2.06 nb=3/3 G31 G41 G50 G60 worst=-23424 stop%=5.9
+   W_0916_1116 SLP25  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=1.89 nb=3/3 G31 G41 G50 G60 worst=-25632 stop%=5.9
+   W_0916_1116 SLP30  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=2.18 nb=3/3 G31 G41 G50 G60 worst=-22016 stop%=0.0
+   W_0916_1116 SLP40  n=17 med8= +5880 win=82.4 rr=1:1.0 rr_ov=1:1.0 plm=19.3 t=2.18 nb=3/3 G31 G41 G50 G60 worst=-22016 stop%=0.0
+   W_0916_1101 NOSTOP n=17 med8= +4632 win=64.7 rr=1:1.21 rr_ov=1:1.21 plm=26.6 t=2.27 nb=3/4 G31 G41 G50 G60 worst=-13776 stop%=0.0
+   W_0916_1101 R1000  n=17 med8= +4632 win=64.7 rr=1:1.21 rr_ov=1:1.21 plm=26.6 t=2.54 nb=3/4 G31 G41 G50 G60 worst=-10688 stop%=5.9
+   W_0916_1101 R1500  n=17 med8= +4632 win=64.7 rr=1:1.21 rr_ov=1:1.21 plm=26.6 t=1.97 nb=3/4 G31 G41 G50 G60 worst=-17472 stop%=5.9
+   W_0916_1101 R2500  n=17 med8= +4632 win=64.7 rr=1:1.21 rr_ov=1:1.21 plm=26.6 t=1.56 nb=3/4 G31 G41 G50 G60 worst=-23424 stop%=5.9
+   W_0916_1101 SLP10  n=17 med8= +4632 win=64.7 rr=1:1.21 rr_ov=1:1.21 plm=26.6 t=2.27 nb=3/4 G31 G41 G50 G60 worst=-13776 stop%=5.9
+  [dropped-cell ref] NIFTY W_1300_1400 SLP20: med8=+992 win=70.6 rr=1:12.19 plm=52.1
+SENSEX: cells=1507  G1&G2=43  +G3=43  +G4=10  +G5&G6=0
+  top G1&G2 cells by rr_p95 (1:X):
+   W_1315_1515 NOSTOP n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 R1500  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 R2500  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 SLP10  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 SLP15  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 SLP20  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 SLP25  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 SLP30  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1515 SLP40  n=17 med8= +3392 win=70.6 rr=1:1.49 rr_ov=1:1.49 plm= 2.3 t=2.21 nb=3/5 G31 G41 G50 G60 worst=-5728 stop%=0.0
+   W_1315_1500 NOSTOP n=17 med8= +2568 win=64.7 rr=1:2.0 rr_ov=1:2.0 plm=23.5 t=2.95 nb=2/7 G31 G40 G50 G60 worst=-2064 stop%=0.0
+   W_1315_1500 R1000  n=17 med8= +2568 win=64.7 rr=1:2.0 rr_ov=1:2.0 plm=23.5 t=2.07 nb=2/7 G31 G40 G50 G60 worst=-9616 stop%=5.9
+   W_1315_1500 R1500  n=17 med8= +2568 win=64.7 rr=1:2.0 rr_ov=1:2.0 plm=23.5 t=2.95 nb=2/7 G31 G40 G50 G60 worst=-2064 stop%=0.0
+   W_1315_1500 R2500  n=17 med8= +2568 win=64.7 rr=1:2.0 rr_ov=1:2.0 plm=23.5 t=2.95 nb=2/7 G31 G40 G50 G60 worst=-2064 stop%=0.0
+   W_1315_1500 R500   n=17 med8= +2568 win=64.7 rr=1:2.0 rr_ov=1:2.0 plm=23.5 t=1.57 nb=1/7 G31 G40 G50 G60 worst=-8392 stop%=17.6
+   W_1315_1500 SLP10  n=17 med8= +2568 win=64.7 rr=1:2.0 rr_ov=1:2.0 plm=23.5 t=2.95 nb=2/7 G31 G40 G50 G60 worst=-2064 stop%=0.0
+  [dropped-cell ref] SENSEX W_1300_1400 SLP20: med8=-232 win=41.2 rr=1: plm=70.5
