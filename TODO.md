@@ -2,6 +2,31 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-20 - research/119 45-DTE short straddle: STRATEGY-CANDIDATE - stress-margin test OWED
+
+Arun asked us to verify Sandeep Rao's "The Long & The Short Ep. 48" 45-DTE NIFTY short-straddle
+backtest, test 1h vs 30m monitoring, and his VIX percentile filter. **His table replicates on real
+NSE bhavcopy** (89 trades vs 83, win 70.8 vs 69.9%): net **+78.0 pts/trade, t 3.12**.
+**On Arun's margin basis (Rs 3L/lot x 10 lots, Rs 36L blocked; NIFTY lot is 65 not 75, so 1 pt =
+Rs 650): CAGR 11.47% vs NIFTY 11.60%, MaxDD -13.8% vs the index's -38.4%, Calmar 0.83 vs 0.30.**
+Six positive years, worst -3.2% (2019), 2020 POSITIVE. Monitoring settled on REAL 1-minute data:
+0 of 60 sessions in the DTE>=21 band travelled >=50% from their close, and the 3 real 45-DTE trades
+our recorder overlaps stayed within 0.55x-1.08x of credit - neither trigger ever approached.
+Hourly beats daily on the tail only (worst trade -29%, MaxDD -23%); 30m/15m/5m identical.
+VIX >25 is the best risk-adjusted cell (Calmar 1.05); >75 is the WORST on capital (6.95% CAGR) and
+his 85.7% win rate does not reproduce.
+
+**PENDING - the one thing blocking a live decision: STRESS-MARGIN TEST.** Rs 3L/lot is today's
+margin at India VIX 10.83. VIX peaked 83.61 on 2020-03-24 and SPAN scales with vol, so Rs 36L would
+very likely have been breached in Mar-2020 - forcing a top-up or liquidation exactly when the book
+was losing. Reconstruct per-lot SPAN+exposure across 2019-26 and re-run the equity curve with a
+margin-call rule. **Until then 11.47% CAGR is an UPPER BOUND.** Also owed before any sizing:
+correlation vs THE STACK / NAS / straddle paper books (all short-vol, all lose the same week).
+NO deploy, NO paper book opened yet.
+Report: /app/backtest/nifty-45dte-short-straddle - Full: research/119_45dte_short_straddle/results/RESULTS.md
+
+
+
 ## 2026-08-20 — research/114 SENSEX Thursday exits: SIGNAL — deploy decision PENDING
 
 Arun questioned the venue TP after it closed the SENSEX book at 12:13 (+10,194). Two

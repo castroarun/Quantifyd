@@ -35,6 +35,8 @@ BOOKS = {
                             "fixed_cfg": {"entry": "09:25", "exit": "15:20", "sl": 20}},  # 2026-08-19: Thursday-only TB-N at reduced size (Option B) - DTE3 is the 2nd-best NIFTY cell; 3L is the max that clears every margin gate at current capital. Config json trimmed to DTE3 only.
     "CSL30F_SENSEX_WED": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed", "mode": "live",
                           "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},  # 2026-08-20 USER OVERRIDE vs study: Wed full-day cell is -571/day 64% (n=11) and verdict Q4 said windows-only - Arun chose live anyway after seeing the table. Config json trimmed to DTE1 only. Review after 4 live Wednesdays (Ops). Paper control book unchanged.
+    "CSL_TIMEB_NIFTY_MON": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "fixed",
+                            "fixed_cfg": {"entry": "13:00", "exit": "14:00", "sl": 20}},  # 2026-08-23 (rev same day): only MONDAY dropped from the live TimeB book (condemned by r/120+121+122; Arun first dropped Fri too, then kept it on its KEEP verdict). This PAPER twin keeps the Monday cell trading for the 2026-11 re-run. Config seeded with DTE1 only. Thu SX bump to 10L declined same day - stays 8L.
     "CSL30F_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
     "CSL30F_SENSEX": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed",

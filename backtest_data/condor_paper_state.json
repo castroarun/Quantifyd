@@ -2,6 +2,58 @@
   "open": null,
   "history": [
     {
+      "entry_day": "2026-08-19",
+      "exit_day": "2026-08-21",
+      "expiry": "2026-08-25",
+      "spot_at_entry": 24040.0,
+      "spot_at_exit": 24236.75,
+      "credit": 68.35,
+      "exit_value": 89.7,
+      "pnl": -2856,
+      "legs": [
+        {
+          "strike": 24250,
+          "type": "CE",
+          "side": "SELL",
+          "qty": 130,
+          "entry": 61.4,
+          "ltp": 101.8,
+          "pnl": -5252,
+          "entry_time": "15:10"
+        },
+        {
+          "strike": 23850,
+          "type": "PE",
+          "side": "SELL",
+          "qty": 130,
+          "entry": 33.2,
+          "ltp": 4.95,
+          "pnl": 3673,
+          "entry_time": "15:10"
+        },
+        {
+          "strike": 24500,
+          "type": "CE",
+          "side": "BUY",
+          "qty": 130,
+          "entry": 16.5,
+          "ltp": 14.35,
+          "pnl": -280,
+          "entry_time": "15:10"
+        },
+        {
+          "strike": 23600,
+          "type": "PE",
+          "side": "BUY",
+          "qty": 130,
+          "entry": 9.75,
+          "ltp": 2.7,
+          "pnl": -916,
+          "entry_time": "15:10"
+        }
+      ]
+    },
+    {
       "entry_day": "2026-08-12",
       "exit_day": "2026-08-14",
       "expiry": "2026-08-18",

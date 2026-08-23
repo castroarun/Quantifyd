@@ -124,3 +124,63 @@ Filled today by tag:
   CSL_NAS_COMB20              650
   untagged                    347
 ```
+
+## 2026-08-20 14:00 IST — 2 alerts, 2 warnings
+
+```
+Live vs app reconciliation · 2026-08-20 14:00 IST
+5 broker legs · 2 alerts · 2 warnings
+
+[INFO] MANUAL EBGNG: manual holding, 75 — no book tracks it
+[INFO] MANUAL EMMVEE: manual holding, 30 — no book tracks it
+[INFO] MANUAL LUMAXIND: manual holding, 2 — no book tracks it
+[ALERT] GHOST NIFTY26AUG24200CE: NAS_COMB20 records -325, broker holds none
+[ALERT] GHOST NIFTY26AUG24200PE: NAS_COMB20 records -325, broker holds none
+[WARN] NAKED SENSEX2682077600CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX2682077600PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1237
+  CSL_NAS_COMB20              650
+  CSL_CSL_TIMEB_SENSEX        320
+```
+
+## 2026-08-21 11:00 IST — 0 alerts, 5 warnings
+
+```
+Live vs app reconciliation · 2026-08-21 11:00 IST
+6 broker legs · 0 alerts · 5 warnings
+
+[INFO] MANUAL PAISALO: manual holding, 142 — no book tracks it
+[WARN] NAKED NIFTY26AUG24150PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24250CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24250PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24300CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24300PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1312
+  CSL_CSL_TIMEB_NIFTY        1040
+  CSL_NAS_COMB20              260
+```
+
+## 2026-08-21 14:00 IST — 0 alerts, 5 warnings
+
+```
+Live vs app reconciliation · 2026-08-21 14:00 IST
+8 broker legs · 0 alerts · 5 warnings
+
+[INFO] MANUAL GVT&D: manual holding, 3 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 6 — no book tracks it
+[INFO] MANUAL PAISALO: manual holding, 142 — no book tracks it
+[WARN] NAKED NIFTY26AUG24150PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24250CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24250PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24300CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24300PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  CSL_CSL_TIMEB_NIFTY        2080
+  untagged                   1321
+  CSL_NAS_COMB20              260
+```

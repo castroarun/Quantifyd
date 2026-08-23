@@ -64,6 +64,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("DONE 2026-08-23: Monday dropped from live TimeB NIFTY; paper twin studies on; Friday KEPT", None, "PARKED",
+     "Arun after r/122: live TimeB NIFTY = Tue DTE0 + Fri DTE2. Monday condemned by three studies (R:R@p95 1:11.8, P(loss) 52%) -> dropped live; Friday initially dropped too, then KEPT on its atlas KEEP verdict (93% win, 1:6.9). CSL_TIMEB_NIFTY_MON (paper, 8L) keeps the Monday cell trading for the 2026-11 re-run; weekly reassessment covers it. SAME DAY: Thu TIMEB SENSEX 10L bump DECLINED - stays 8 lots (p95 tail ~Rs38k at 8L was the deciding number)."),
     ("Re-run r/121 non-expiry filters at ~28 days per cell", "2026-11-14", "PENDING",
      "r/121 ran at ~16 days per cell and found nothing: 540 skip rules produced 10 winners vs ~27 expected by chance, and placebo_noise (a Gaussian random number) beat 97% of random skips. Re-run once each cell has ~28 recorded days. Do NOT act on any filter before then."),
     ("MON_NIFTY_DTE1 size decision - cut 8 lots to 3, or drop the cell", "2026-08-24", "PENDING",
@@ -97,7 +99,7 @@ REVIEWS = [
     ("CSL30F_SENSEX_WED live override vs study - keep or kill", "2026-09-18", "PENDING",
      "user 20-Aug: Wed full-day SENSEX COMB live at 3L AGAINST the -571/day 64% cell (verdict Q4 windows-only); judge on 4 live Wednesdays (26-Aug on)"),
     ("Monday 24-Aug: bump TB-NIFTY and TB-SENSEX 8 -> 10 lots (1.0x plan)", "2026-08-24", "PENDING",
-     "edit BOOKS lots/qty in csl_paper_exec.py + backfill before 09:12; scale-up page row-1 target assumes it. r/122 ATLAS VERDICTS now apply: bump is EARNED on Tue (R:R@p95 1:1.5) and Thu (1:3.1 but p95 tail Rs47k/p99 Rs70k at 10L - one 1-in-20 Thursday costs ~3 median Thursdays; weigh before 10L), NOT earned on Mon (1:11.8, DOWNSIZE/DROP per r/120+121+122), marginal on Wed (1:2.9) and Fri (1:6.9). Recommended split: Tue/Thu 10L, Wed/Fri hold 8L, Mon cut to 3L or drop. Needs Arun sign-off."),
+     "edit BOOKS lots/qty in csl_paper_exec.py + backfill before 09:12; scale-up page row-1 target assumes it. r/122 ATLAS VERDICTS now apply: bump is EARNED on Tue (R:R@p95 1:1.5) and Thu (1:3.1 but p95 tail Rs47k/p99 Rs70k at 10L - one 1-in-20 Thursday costs ~3 median Thursdays; weigh before 10L), NOT earned on Mon (1:11.8, DOWNSIZE/DROP per r/120+121+122), marginal on Wed (1:2.9) and Fri (1:6.9). RESOLVED 23-Aug: Mon DROPPED live (paper twin), Thu bump DECLINED (stays 8L, Arun weighed the p95 tail). Still open: Tue 8->10L (atlas says earned, 1:1.5) - needs explicit Arun sign-off before editing lots."),
     ("Weekly: append the weeks actual P&L/DD to /app/scaleup vs the 1.0x target", "every Friday evening", "SCHEDULED",
      "frontend/src/data/scaleup.ts WEEKS row; numbers from the stack reassessment + SENSEX day records; adjust targets only via the reassessment"),
     ("Verify ATM4 SURV roll-stop live behaviour (research/113 deploy)", "2026-08-28", "PENDING",

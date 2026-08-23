@@ -1,0 +1,328 @@
+# RESULTS — NIFTY 45-DTE Short Straddle (research/119)
+
+## VERDICT: **STRATEGY-CANDIDATE** — matches NIFTY's return on a third of the drawdown. One open item: stress margin.
+
+Sandeep Rao's published backtest ("The Long & The Short Ep. 48") **replicates** on real NSE
+option prices. Net of cost the strategy earns **+78.0 points per trade, t = 3.12, across 89
+non-overlapping monthly trades**, Jan-2019 → Jun-2026.
+
+At **10 lots on ₹36 lakh of blocked margin** (₹3L/lot × 10, plus a 20% buffer):
+
+| | This strategy | NIFTY 50 buy-and-hold |
+|---|---|---|
+| CAGR | **11.47%** | 11.60% |
+| Max drawdown | **−13.8%** | −38.4% |
+| **Calmar** | **0.83** | 0.30 |
+| Worst single event | −10.4% of capital | — |
+
+Same return as the index, **less than half the drawdown, 2.8× the Calmar.** That is a real
+product, not a curiosity.
+
+> **Correction to the first version of this study.** I originally sized the book against
+> *notional* exposure and reported ~7.8%/yr, calling it "below an index fund." That framing
+> was wrong for the decision at hand — a short straddle is margin-financed, and the capital
+> actually committed is the blocked margin, not the notional. On the correct basis the
+> strategy is competitive with the index on return and clearly better on risk. I also had
+> the **NIFTY lot size wrong (75; it is 65)**, which inflated every rupee figure by 15%.
+> Both are fixed throughout. All point-based figures were unaffected.
+
+---
+
+## 1. Replication — is the published table correct?
+
+Real NSE bhavcopy option prices (`nse_options_bhav`, 5.13M NIFTY rows, 2011 → 2026-07-21).
+89 monthly trades vs his 83. Cost = 0.25% slippage per side + STT + exchange + brokerage
+(avg round trip **5.5 pts**).
+
+| Metric | Published | Ours (real data) | Read |
+|---|---|---|---|
+| Trades | 83 | 89 | convention |
+| Win rate | 69.9% | 70.8% | **matches** |
+| Avg premium sold | 758.9 pts | 786.3 pts | matches |
+| Exits — target / stop / 21-DTE | 1 / 4 / 78 | 1 / 3 / 85 | **matches** — the 50% target almost never fires |
+| Total P&L | 5,951.6 pts | 7,283.7 gross / **6,952.4 net** | ~17% richer |
+| Avg P&L per trade | 71.7 pts | 81.8 gross / **78.1 net** | ~9% richer |
+| Avg win / avg loss | +196.1 / −216.8 | +200.2 / −217.8 | **matches almost exactly** |
+| Best trade | +805.3 | +866.4 | matches |
+| Worst trade | −1,062.6 | −811.8 | ours milder |
+| Max drawdown | −1,062.6 | −998.4 | matches |
+
+**The report is correct.** Win rate, average win, average loss and the exit mix — the numbers
+that describe the *shape* of the strategy — reproduce almost exactly on data he never touched.
+The residual gap is entry convention (his 15:15 vs our 15:30 bhav close, holiday rolling); all
+four combinations were tested and land between 75.5 and 82.2 points per trade.
+
+---
+
+## 2. Returns on ₹36 lakh blocked margin
+
+Sizing basis: **₹3 lakh margin per lot** (Arun's broker figure) × 10 lots = ₹30L, block **₹36L**
+with buffer. NIFTY lot = **65**, so 10 lots = 650 qty and **1 point = ₹650**.
+
+| | Value |
+|---|---|
+| Period | 2019-01-14 → 2026-07-07 (7.48 years) |
+| Trades | 89, non-overlapping |
+| Total net | 6,939 pts = **₹45.10 lakh** |
+| Equity | ₹36.0L → **₹81.1L** |
+| **CAGR** | **11.47%** |
+| Simple return p.a. | 16.76% |
+| Max drawdown | ₹4.97L = **13.8% of capital** |
+| Worst single trade | ₹3.76L = 10.4% of capital |
+| **Calmar** | **0.83** |
+| Win rate | 70.8% |
+
+### Year by year
+
+| Year | Trades | Net pts | Net ₹ | Return on ₹36L | Win% | Equity end |
+|---|---|---|---|---|---|---|
+| 2019 | 12 | −178.0 | −1,15,727 | −3.2% | 66.7% | ₹34.84L |
+| 2020 | 12 | +807.6 | +5,24,960 | +14.6% | 58.3% | ₹40.09L |
+| 2021 | 12 | +928.3 | +6,03,413 | +16.8% | 66.7% | ₹46.13L |
+| 2022 | 12 | +1,039.4 | +6,75,582 | +18.8% | 75.0% | ₹52.88L |
+| 2023 | 12 | −7.1 | −4,603 | −0.1% | 66.7% | ₹52.84L |
+| 2024 | 12 | +971.2 | +6,31,287 | +17.5% | 66.7% | ₹59.15L |
+| 2025 | 12 | +1,915.5 | +12,45,082 | +34.6% | 83.3% | ₹71.60L |
+| 2026 H1 | 5 | +1,462.2 | +9,50,446 | +26.4% | 100% | ₹81.10L |
+
+Returns are on the fixed ₹36L base — the rule trades a **fixed 10 lots** and does not
+compound. Six positive years, one flat (2023), one mildly negative (2019). No year worse
+than −3.2%. **2020 was positive (+14.6%)**: the 21-DTE exit cleared the February trade before
+the worst of the COVID crash, and the March trade sold into panic-priced premium for the best
+single result in the sample (+866 pts).
+
+### The same year by year, under each VIX filter
+
+Each variant starts from its own ₹36L. Return is on the fixed ₹36L base; DD is the deepest
+intra-year drawdown; equity compounds that variant's own rupee flow.
+
+| Year | n | none Ret | none DD | none Equity | n | >25 Ret | >25 DD | >25 Equity | n | >50 Ret | >50 DD | >50 Equity | n | >75 Ret | >75 DD | >75 Equity |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2019 | 12 | −3.2% | −9.6% | ₹34.84L | 9 | **+2.4%** | −4.8% | ₹36.85L | 5 | −3.1% | −6.2% | ₹34.88L | 2 | −0.4% | −1.5% | ₹35.87L |
+| 2020 | 12 | +14.6% | −8.4% | ₹40.09L | 10 | +19.7% | −7.8% | ₹43.96L | 8 | +27.6% | −6.2% | ₹44.80L | 4 | +16.6% | −6.2% | ₹41.84L |
+| 2021 | 12 | +16.8% | −8.8% | ₹46.13L | 7 | +22.6% | 0.0% | ₹52.10L | 3 | +10.3% | 0.0% | ₹48.50L | **0** | — | — | ₹41.84L |
+| 2022 | 12 | +18.8% | −8.2% | ₹52.88L | 10 | +13.5% | −8.2% | ₹56.97L | 8 | +6.9% | −8.3% | ₹51.00L | 4 | +14.0% | 0.0% | ₹46.89L |
+| 2023 | 12 | −0.1% | **−13.8%** | ₹52.84L | 3 | **+1.9%** | −3.4% | ₹57.64L | 1 | −3.4% | −3.4% | ₹49.78L | **0** | — | — | ₹46.89L |
+| 2024 | 12 | +17.5% | −3.8% | ₹59.15L | 10 | +12.9% | −3.8% | ₹62.29L | 9 | +15.0% | −3.8% | ₹55.18L | 5 | +9.5% | −3.8% | ₹50.31L |
+| 2025 | 12 | +34.6% | −10.2% | ₹71.60L | 7 | +14.7% | −10.2% | ₹67.59L | 4 | +5.1% | −8.0% | ₹57.00L | 3 | +3.9% | −8.0% | ₹51.71L |
+| 2026 H1 | 5 | +26.4% | 0.0% | ₹81.10L | 5 | +26.4% | 0.0% | ₹77.09L | 4 | +22.1% | 0.0% | ₹64.97L | 3 | +21.6% | 0.0% | ₹59.48L |
+| **Whole period** | **89** | **11.47%** CAGR | **13.8%** MaxDD | **₹81.10L** | **61** | **10.72%** | **10.2%** | **₹77.09L** | **42** | **8.22%** | **11.7%** | **₹64.97L** | **21** | **6.95%** | **8.0%** | **₹59.48L** |
+
+| Variant | Trades | Net ₹ | CAGR | Max DD | Calmar | Equity end | Losing years |
+|---|---|---|---|---|---|---|---|
+| No filter | 89 | +45,10,439 | 11.47% | −13.8% | 0.83 | ₹81.10L | 2 |
+| **VIX > 25** | 61 | +41,09,314 | 10.72% | **−10.2%** | **1.05** | ₹77.09L | **0** |
+| VIX > 50 | 42 | +28,97,001 | 8.22% | −11.7% | 0.70 | ₹64.97L | 2 |
+| VIX > 75 | 21 | +23,48,240 | 6.95% | −8.0% | 0.87 | ₹59.48L | 1 (+2 idle) |
+| NIFTY 50 buy-and-hold | — | — | 11.60% | −38.4% | 0.30 | — | 1 |
+
+**Reading down the columns changes what the filter appears to be for.**
+
+- **VIX > 25 has no losing year in eight.** It turns 2019 from −3.2% into +2.4% and 2023 from
+  −0.1% into +1.9%, because the months it drops are exactly the thin-premium ones that lose. It
+  gives up the fat 2025 (+14.7% vs +34.6%) and finishes ₹4L behind, but with a 10.2% max drawdown
+  against 13.8%.
+- **VIX > 75 has two completely dead years** — zero trades in 2021 and zero in 2023, with ₹36L
+  blocked throughout. That is why 172 points per trade collapses into a 6.95% CAGR. High
+  per-trade economics with no opportunities is a statistic, not a strategy.
+- **VIX > 50 is the worst of the four** (Calmar 0.70): enough selectivity to halve the trade
+  count, not enough to improve the drawdown.
+- Every variant's drawdown lands in the same episodes, so the filters trim opportunity rather
+  than removing a distinct risk.
+
+### Versus the benchmark
+
+| | CAGR | MaxDD | Calmar |
+|---|---|---|---|
+| 45-DTE straddle, 10 lots on ₹36L | 11.47% | −13.8% | **0.83** |
+| NIFTY 50 (price index, same window) | 11.60% | −38.4% | 0.30 |
+
+NIFTY's figure excludes dividends (~1.2%/yr), so on total return the index is modestly ahead
+on raw return — and still far behind on risk.
+
+### Capital-buffer sensitivity
+
+| Margin blocked | CAGR | MaxDD as % of capital | Calmar |
+|---|---|---|---|
+| ₹36L (₹3L/lot + 20% buffer) | 11.47% | 13.8% | 0.83 |
+| ₹54L (1.5× buffer) | 8.46% | 9.2% | 0.92 |
+| ₹72L (2× buffer) | 6.72% | 6.9% | 0.97 |
+
+---
+
+## 3. Monitoring frequency — now answered on REAL 1-minute option prices
+
+**What we could and could not get.** There is no intraday option history for 2019–2026, and
+this was verified rather than assumed: Kite returns **`invalid token`** for expired contracts
+— tested against NIFTY 24000/24050/24100 CE on the *July-2026* expiry, one month old, on both
+`60minute` and `day` intervals. Expired-contract intraday data is not obtainable.
+
+What we do have is our own recorder: `option_chain`, **28.3M real 1-minute NIFTY option
+quotes** from 2026-04-20. It picks each contract up only ~27 days before expiry, so it cannot
+host a 45-DTE *entry* — but it covers the DTE 27→0 window at 1-minute resolution, and the
+monitoring question lives entirely inside the holding window.
+
+### 3a. Real intraday travel of the ATM straddle (240 recorded day-contracts)
+
+How far the combined premium ranged intraday versus where it closed — exactly what a
+daily-close backtest is blind to:
+
+| DTE band | Day-contracts | Travel above close (mean / p95 / max) | Travel below close (mean / p95 / max) |
+|---|---|---|---|
+| **≥ 21 — the strategy's band** | 60 | **6.3% / 14.2% / 36.5%** | **4.3% / 20.9% / 27.7%** |
+| 3–20 (after our exit) | 153 | 8.8% / 20.9% / 35.3% | 4.4% / 21.1% / 44.2% |
+| 0–2 (expiry week, never held) | 27 | 381% / 966% / 7669% | 22.6% / 66.9% / 70.2% |
+
+In the DTE ≥ 21 band, across 60 real sessions: **zero days travelled ≥50% in either
+direction**, and exactly one travelled ≥30%. The strategy's triggers sit **+100%** (stop) and
+**−50%** (target) away from entry credit. Nothing observed comes close to jumping a trigger
+within a single session.
+
+The DTE 0–2 row is the gamma cliff the strategy exists to avoid — and it is spectacular
+(premium collapsing to near-zero at the close makes "travel above close" explode). It is also
+irrelevant here, because the position is closed at 21 DTE. That contrast is the clearest
+possible vindication of the 21-DTE exit rule.
+
+### 3b. The three real 45-DTE trades the recorder overlaps
+
+For each, the real 1-minute combined premium as a multiple of entry credit:
+
+| Expiry | Entry | Strike | Credit | Overlap days | Real intraday range (× credit) | Trigger touched? |
+|---|---|---|---|---|---|---|
+| 2026-05-26 | 2026-04-10 | 24050 | 1,189.7 | 4 (DTE 27→21) | 0.66 – 0.79 | no |
+| 2026-06-30 | 2026-05-15 | 23650 | 1,155.4 | 5 (DTE 27→21) | 0.55 – 0.74 | no |
+| 2026-07-28 | 2026-06-12 | 23600 | 951.4 | 5 (DTE 27→21) | 0.82 – 1.08 | no |
+
+Across 14 real sessions the premium never left the **0.55× – 1.08×** band. The 0.50 target and
+2.00 stop were never approached, at any minute, on any of them.
+
+**Bhav fidelity check (a bonus).** The real 1-minute last quote versus the bhavcopy close we
+used for the 7.5-year study differed by at most **17.8 points on ~900** (≈2%), and typically
+under 8. The EOD data underpinning the whole replication is faithful.
+
+### 3c. What the sweep says
+
+| Check frequency | n | Win% | Net pts | Net/trade | t | Max DD | Worst trade | T/S/21-DTE |
+|---|---|---|---|---|---|---|---|---|
+| Daily close | 89 | 70.8 | 6,952.4 | 78.1 | 3.03 | −998.4 | −811.8 | 1 / 2 / 86 |
+| **60-min (his)** | 89 | 70.8 | 6,939.1 | 78.0 | 3.12 | **−765.3** | **−578.7** | 1 / 3 / 85 |
+| 30-min | 89 | 70.8 | 6,939.1 | 78.0 | 3.12 | −765.3 | −578.7 | 1 / 3 / 85 |
+| 15-min | 89 | 70.8 | 6,939.1 | 78.0 | 3.12 | −765.3 | −578.7 | 1 / 3 / 85 |
+| 5-min | 89 | 70.8 | 6,939.1 | 78.0 | 3.12 | −765.3 | −578.7 | 1 / 3 / 85 |
+
+**Use hourly; nothing finer earns its keep.** Daily → hourly changes one trade: P&L flat, but
+the worst trade improves 29% (−812 → −579 pts, ₹5.28L → ₹3.76L) and max drawdown 23%. Hourly
+→ 30 → 15 → 5-minute changes nothing at all. The real 1-minute evidence in §3a/§3b explains
+why: in this DTE band the premium simply does not travel far enough within a session.
+
+*(Rows below daily are computed on a reconstructed path — real 5-min NIFTY spot, forward and
+IV backed out of real option closes using the previous session's IV, snapped back to the real
+price at each daily close. §3a/§3b are the real-tick check on that reconstruction, and they
+agree with it.)*
+
+---
+
+## 4. India VIX percentile filter (rank vs previous 252 sessions)
+
+| VIX rank | n (his) | n (ours) | Win% (his / ours) | Avg premium | Net/trade | t | CAGR on ₹36L | MaxDD | Calmar |
+|---|---|---|---|---|---|---|---|---|---|
+| No filter | 83 | 89 | 69.9 / 70.8 | 786.3 | 78.0 | 3.12 | **11.47%** | 13.8% | 0.83 |
+| **> 25** | 55 | 61 | 74.5 / 72.1 | 857.5 | 103.6 | **3.55** | 10.72% | **10.2%** | **1.05** |
+| > 50 | 39 | 42 | 76.9 / 71.4 | 919.8 | 106.1 | 2.77 | 8.22% | 11.7% | 0.70 |
+| > 75 | 21 | 21 | 85.7 / 71.4 | 1,052.9 | 172.0 | 2.71 | 6.95% | 8.0% | 0.87 |
+
+**His filter works; his explanation of why does not.** Trade counts line up almost exactly
+(21 vs 21 at >75), so we are selecting the same days — but the 85.7% win rate **does not
+reproduce** (ours 71.4%). What improves is the **size of the win, not the frequency**: average
+premium sold rises 786 → 1,053 points and net per trade more than doubles. You are paid more
+for the same hit rate. That is the more durable description.
+
+**On capital, >25 is the best cell** (Calmar 1.05 vs 0.83) and no filter has the highest CAGR.
+**>75 is worst of both worlds** on this basis — 21 trades in 7.5 years for a 6.95% CAGR.
+
+---
+
+## 5. Robustness
+
+**Convention** — irrelevant: roll back/close 78.1 · roll back/settle 75.5 · roll forward/close
+82.2 · roll forward/settle 78.7 pts per trade.
+
+**Parameters** — 45 and 21 are each a local maximum (data-snooping flag), but the *risk*
+gradient is cleanly monotonic, which is the part to trust:
+
+| Entry DTE | Net/tr | t | MaxDD | | Exit DTE | Net/tr | t | MaxDD |
+|---|---|---|---|---|---|---|---|---|
+| 40 | 63.9 | 2.69 | −709 | | 0 (expiry) | 60.6 | 1.20 | −2,803 |
+| **45** | **78.1** | **3.03** | −998 | | 7 | 69.3 | 1.55 | −1,840 |
+| 50 | 62.1 | 2.05 | −1,421 | | 14 | 69.1 | 1.86 | −1,215 |
+| 60 | 59.8 | 1.33 | −3,144 | | **21** | **78.1** | **3.03** | **−998** |
+| | | | | | 28 | 41.6 | 2.19 | −1,057 |
+
+Drawdown worsens steadily the later you enter and the longer you hold into expiry. The design
+idea — collect fat premium early, leave before gamma — is real and mechanical. "Exactly 45 and
+exactly 21" is not special; every neighbouring parameter is still profitable.
+
+**Cost** — not the binding constraint: net/trade 81.8 (gross) → 78.1 (0.25%) → 74.4 (0.5%) →
+66.9 (1.0%) → 52.1 (2.0%). Break-even slippage is far beyond anything realistic on ATM NIFTY
+monthlies.
+
+**Concentration** — top-3 trades = 25% of total profit; five worst trades cost −2,347 pts
+against +6,939 total.
+
+**Seven deadly sins** — look-ahead controlled (causal IV, trailing-252 VIX rank, entry priced
+on its own day's close); survivorship N/A (single instrument, every monthly taken); overfitting
+— rules fixed by the video, not fitted, with 45/21 flagged as peaks; cost — gross and net plus
+a sweep; regime — per-year table above; correlation — one non-overlapping trade at a time, so
+the t-stat is honest; capacity — entry requires both legs actually traded, and ATM NIFTY
+monthlies are the deepest options in India.
+
+---
+
+## 6. The open item: stress margin
+
+**This is now the main risk, and it is not in the numbers above.**
+
+₹3 lakh per lot is today's margin, with India VIX at **10.83**. SPAN scales with volatility.
+India VIX peaked at **83.61 on 2020-03-24** — nearly 8× today's level — and short-option margin
+would have risen by a large multiple with it. A ₹36L block would very likely have been
+breached in March 2020, forcing either a top-up or a liquidation **at the worst possible
+moment**, which the fixed-capital CAGR above does not model.
+
+The buffer table in §2 is a partial answer (at ₹72L the CAGR is 6.7%), but the honest position
+is that **a proper stress-margin test is owed before this is sized live**: reconstruct
+per-lot SPAN+exposure across 2019-26 from the actual margin files and re-run the equity curve
+with a margin-call rule. Until that is done, the 11.47% CAGR is an upper bound.
+
+**Two further risks:**
+
+- **Gap risk.** The stop is evaluated on candle closes; a gap-open past 200% of credit fills
+  wherever the market opens. Three stop events in the sample and no overnight catastrophe.
+  Short-straddle losses are left-skewed by construction and 89 trades cannot price that tail.
+- **Correlation.** This is another short-vol NIFTY position, alongside THE STACK, the NAS book
+  and the straddle paper books — they lose in the same week. It adds concentration, not
+  diversification. research/89 separately found the *unconditional* monthly NIFTY straddle
+  net-negative over 2015-26; the 45→21 window plus a stop is what rescues it.
+
+---
+
+## 7. Recommendation
+
+1. **Believe the table.** It replicates on independent real data.
+2. **Use hourly checks.** Free 29% improvement in the worst trade and 23% in drawdown; below
+   60 minutes there is provably nothing to gain — now confirmed on real 1-minute quotes.
+3. **Use VIX > 25 if you want the best risk-adjusted version** (Calmar 1.05); use no filter if
+   you want maximum CAGR (11.47%). Do **not** use > 75 — worst of both on a capital basis.
+4. **Run the stress-margin test before sizing live.** This is the one thing standing between
+   STRATEGY-CANDIDATE and STRATEGY.
+5. **Paper first (G5)**, sized against margin with a margin-call rule, and measure its
+   correlation with the existing short-vol book before adding capital.
+
+**Stage gates: G3 robustness PASSED. G4 portfolio CONDITIONAL PASS** — the return-on-capital
+objection that killed the first version does not survive the correct (margin) capital basis;
+what remains open is stress margin and short-vol correlation, not the edge.
+
+---
+
+*Reproduce:* `run_phase_a.py` (replication) · `run_phase_bc.py` (timeframe + VIX grid) ·
+`run_phase_d_intraday.py` (real 1-minute evidence) · `diag_convention.py` · `diag_touch.py`.
+All read-only against `market_data.db` and `options_data.db` on the VPS.

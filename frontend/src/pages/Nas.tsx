@@ -166,7 +166,8 @@ const SENSEX_TB_DEFS: SystemDef[] = [
 
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
-  { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
+  { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Tue/Fri (Mon dropped 23-Aug)', group: '916' },
+  { id: 'csl-timeb-mf', key: 'csl-timeb-mf', label: 'NIFTY TimeB study', subtitle: 'Monday window (paper)', rules: '', configNote: 'paper 8L · r/121 Nov re-run evidence', group: '916' },
   { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB · all-week', subtitle: 'study per-DTE stops · all 5 days (paper)', rules: '', configNote: 'paper A/B', group: '916' },
   { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TIMEB SENSEX', subtitle: 'Wed + Thu windows', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
@@ -1590,7 +1591,8 @@ export default function Nas() {
   // Trade-Book state for a sleeve: OPEN -> CE/PE legs; WAIT_ENTRY -> planned window (by today's DTE).
   const TB_WIN: Record<string, Record<number, [string, string, number | string]>> = {
     NAS_COMB20: { 0: ['09:16', '15:20', 25], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 20] },
-    CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 1: ['13:00', '14:00', 20], 2: ['10:00', '12:00', 20] },
+    CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 2: ['10:00', '12:00', 20] },
+    CSL_TIMEB_NIFTY_MON: { 1: ['13:00', '14:00', 20] },
     CSL_TIMEB_SENSEX: { 0: ['13:00', '15:20', 'none'], 1: ['10:30', '12:00', 20] },
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
@@ -2007,7 +2009,7 @@ export default function Nas() {
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
           systems={[...ENTRY_916_SYSTEMS, ...SENSEX_TB_DEFS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160), 'sx-atm': sxTbState('SENSEX ATM'), 'sx-atm2': sxTbState('SENSEX ATM2'), 'sx-atm4': sxTbState('SENSEX ATM4') }}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160), 'csl-timeb-mf': sleeveTbState('CSL_TIMEB_NIFTY_MON', 520), 'sx-atm': sxTbState('SENSEX ATM'), 'sx-atm2': sxTbState('SENSEX ATM2'), 'sx-atm4': sxTbState('SENSEX ATM4') }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />
@@ -2039,7 +2041,7 @@ export default function Nas() {
         </div>
         <div className={styles.grid3}>
           <SleeveCard label="NIFTY COMB" sub="Full-day combined-SL · ex-Wed" rules="09:16 to 15:20. Combined-premium SL per DTE (DTE0 25 / DTE1 30 / DTE2 30 / DTE3 20). Replaces per-leg SLs + trail. 2 lots — except Thursday, which trades 5 lots (the two former Thursday books merged into this single trade, 19-Aug). Wednesday off." info={sleeveInfo('NAS_COMB20')} />
-          <SleeveCard label="NIFTY TimeB" sub="Windowed combined-SL · Mon/Tue/Fri" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
+          <SleeveCard label="NIFTY TimeB" sub="Windowed combined-SL · Tue/Fri (Mon on paper)" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
         </div>
       </section>
 

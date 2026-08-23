@@ -1831,6 +1831,240 @@
      "pnl": 438
     }
    ]
+  },
+  {
+   "day": "2026-08-19",
+   "weekday": "Wed",
+   "dte": 1,
+   "signal_class": "system",
+   "variant": "straddle",
+   "entry_spot": 77126.76,
+   "ce_strike": 77100,
+   "pe_strike": 77100,
+   "ce_entry": 263.3,
+   "pe_entry": 192.85,
+   "credit": 456.15,
+   "ce_exit": 164.35,
+   "pe_exit": 252.2,
+   "exit_reason": "SL",
+   "entry_time": "09:20",
+   "exit_time": "15:15",
+   "pnl": 1544,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 77100,
+     "qty": 40,
+     "entry": 263.3,
+     "ltp": 164.35,
+     "pnl": 3958
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 77100,
+     "qty": 40,
+     "entry": 192.85,
+     "ltp": 252.2,
+     "pnl": -2374
+    }
+   ]
+  },
+  {
+   "day": "2026-08-19",
+   "weekday": "Wed",
+   "dte": 1,
+   "signal_class": "system",
+   "variant": "strangle",
+   "entry_spot": 77126.76,
+   "ce_strike": 77400,
+   "pe_strike": 76800,
+   "ce_entry": 134.3,
+   "pe_entry": 88.55,
+   "credit": 222.85,
+   "ce_exit": 71.5,
+   "pe_exit": 105.2,
+   "exit_reason": "time1445",
+   "entry_time": "09:20",
+   "exit_time": "14:45",
+   "pnl": 1806,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 77400,
+     "qty": 40,
+     "entry": 134.3,
+     "ltp": 71.5,
+     "pnl": 2512
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 76800,
+     "qty": 40,
+     "entry": 88.55,
+     "ltp": 105.2,
+     "pnl": -666
+    }
+   ]
+  },
+  {
+   "day": "2026-08-20",
+   "weekday": "Thu",
+   "dte": 0,
+   "signal_class": "system",
+   "variant": "straddle",
+   "entry_spot": 77392.1,
+   "ce_strike": 77400,
+   "pe_strike": 77400,
+   "ce_entry": 143.45,
+   "pe_entry": 109.0,
+   "credit": 252.45,
+   "ce_exit": 196.35,
+   "pe_exit": 29.6,
+   "exit_reason": "SL",
+   "entry_time": "09:20",
+   "exit_time": "15:15",
+   "pnl": 1020,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 77400,
+     "qty": 40,
+     "entry": 143.45,
+     "ltp": 196.35,
+     "pnl": -2116
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 77400,
+     "qty": 40,
+     "entry": 109.0,
+     "ltp": 29.6,
+     "pnl": 3176
+    }
+   ]
+  },
+  {
+   "day": "2026-08-20",
+   "weekday": "Thu",
+   "dte": 0,
+   "signal_class": "system",
+   "variant": "strangle",
+   "entry_spot": 77392.1,
+   "ce_strike": 77700,
+   "pe_strike": 77100,
+   "ce_entry": 37.5,
+   "pe_entry": 27.6,
+   "credit": 65.1,
+   "ce_exit": 21.85,
+   "pe_exit": 2.7,
+   "exit_reason": "time1445",
+   "entry_time": "09:20",
+   "exit_time": "14:45",
+   "pnl": 1582,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 77700,
+     "qty": 40,
+     "entry": 37.5,
+     "ltp": 21.85,
+     "pnl": 626
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 77100,
+     "qty": 40,
+     "entry": 27.6,
+     "ltp": 2.7,
+     "pnl": 996
+    }
+   ]
+  },
+  {
+   "day": "2026-08-21",
+   "weekday": "Fri",
+   "dte": 6,
+   "signal_class": "observational",
+   "variant": "straddle",
+   "entry_spot": 77528.45,
+   "ce_strike": 77500,
+   "pe_strike": 77500,
+   "ce_entry": 505.6,
+   "pe_entry": 299.0,
+   "credit": 804.6,
+   "ce_exit": 501.05,
+   "pe_exit": 272.3,
+   "exit_reason": "time1515",
+   "entry_time": "09:20",
+   "exit_time": "15:15",
+   "pnl": 1210,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 77500,
+     "qty": 40,
+     "entry": 505.6,
+     "ltp": 501.05,
+     "pnl": 182
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 77500,
+     "qty": 40,
+     "entry": 299.0,
+     "ltp": 272.3,
+     "pnl": 1068
+    }
+   ]
+  },
+  {
+   "day": "2026-08-21",
+   "weekday": "Fri",
+   "dte": 6,
+   "signal_class": "observational",
+   "variant": "strangle",
+   "entry_spot": 77528.45,
+   "ce_strike": 77800,
+   "pe_strike": 77200,
+   "ce_entry": 341.2,
+   "pe_entry": 198.5,
+   "credit": 539.7,
+   "ce_exit": 334.45,
+   "pe_exit": 174.1,
+   "exit_reason": "time1445",
+   "entry_time": "09:20",
+   "exit_time": "14:45",
+   "pnl": 1206,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 77800,
+     "qty": 40,
+     "entry": 341.2,
+     "ltp": 334.45,
+     "pnl": 270
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 77200,
+     "qty": 40,
+     "entry": 198.5,
+     "ltp": 174.1,
+     "pnl": 976
+    }
+   ]
   }
  ]
 }

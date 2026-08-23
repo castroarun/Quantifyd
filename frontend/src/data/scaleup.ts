@@ -12,7 +12,7 @@ export interface DayPlan {
 
 // The locked 1.0x configuration (steady state from Mon 24-Aug; TB books 8L until then).
 export const CONFIG_PLAN: DayPlan[] = [
-  { day: 'Mon', books: 'NIFTY suite + COMB + TB-N (13:00–14:00)', lots: '6 + 2 + 10', margin: 29.7 },
+  { day: 'Mon', books: 'NIFTY suite + COMB (TimeB dropped 23-Aug — paper study only)', lots: '6 + 2', margin: 13.2 },
   { day: 'Tue', books: 'NIFTY suite + COMB + TB-N (09:30–11:00) — NIFTY expiry', lots: '6 + 2 + 10', margin: 29.7 },
   { day: 'Wed', books: 'TB-SENSEX window (10:30–12:00) only', lots: '10', margin: 20.4 },
   { day: 'Thu', books: 'SENSEX suite + TB-SX full-day + NIFTY COMB + TB-N-Thu (09:25) — SENSEX expiry', lots: '6 + 10 + 2 + 3', margin: 40.9 },
@@ -21,7 +21,7 @@ export const CONFIG_PLAN: DayPlan[] = [
 
 export const TARGET = {
   label: '1.0× · locked 19-Aug-2026',
-  pnlWeek: 45000,        // Rs — the LIVE bar: 50% walk-forward haircut of the Rs89k lab basis (verdict Q6, 19-Aug)
+  pnlWeek: 44000,        // Rs — 50% haircut of the ~Rs87k lab basis after Monday TimeB was dropped (23-Aug; Fri kept)
   ddFloor: -30000,       // Rs, worst-week guide (joint study maxDDs)
   peakMarginL: 40.9,     // Rs lakh, Thursday
   capitalL: 44.7,        // Rs lakh, current

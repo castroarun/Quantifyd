@@ -67,3 +67,24 @@ EXTRA MARGIN (the null alternative: 2x on the best existing cell instead).
 
 ## 7-8. Standard: read-only, niced, scripts/ + results/ + RESULTS.md with bold verdict, STATUS
 log updated, INDEX row 123, commit only the study folder + INDEX. Findings by the agent.
+
+## Plan (locked before launch)
+
+- **Stage A grid:** entries {NIFTY 09:16/09:30/10:00, SENSEX 09:16/10:30} x T {20..65 step 5}
+  x arms {NOSTOP, CSL15/20/25/30, PERLEG30, RUP2500, MOVE04} = 5 x 10 x 8 = 400 cells/day,
+  ~85 days/venue. Stage 0 = deployed-book marks at wall clock 09:36..10:21 on live-DTE days.
+  RECON cells reproduce the three morning TimeB windows vs the r/122 atlas.
+- **Stage B:** same entries x T on SENSEX 1-min 2021-> and NIFTY50 5-min 2015->, DTE-era
+  labels, + per-day features gap_bp / cpr_t_bp / cpr_y_bp / cpr_w_bp.
+- **Filters (pre-registered):** gap (signed, |gap|, direction), CPR today/yday/weekly;
+  tercile skip rules; long-sample fit first, options-day confirmation second; every rule vs
+  a 2,000-draw random-skip null of equal frequency; placebos: Gaussian noise + day-of-month
+  parity; monotone tercile response required; family haircut stated.
+- **Success gate:** per STATUS s6 (net + haircut + per-DTE/month robustness + p95 tail +
+  fundable margin + beats 2x-on-Tue-TimeB null).
+
+## Status log
+
+| Date/time | Event | Notes |
+|---|---|---|
+|  IST | Stage A + Stage B launched | 400 cells/day x ~85 days/venue; long sample 2015->/2021-> |

@@ -133,7 +133,7 @@ def book_daily(bk):
 
 # ---- 5 LIVE-TRACKING: sleeves' live days vs backfill-model means
 notes = []
-for bk in ("NAS_COMB20", "CSL_TIMEB_NIFTY", "CSL30F_NIFTY", "CSL_TIMEB_NIFTY_THU"):
+for bk in ("NAS_COMB20", "CSL_TIMEB_NIFTY", "CSL30F_NIFTY", "CSL_TIMEB_NIFTY_MON", "CSL_TIMEB_NIFTY_THU"):
     lrec = [r for r in state.get("records", []) if r.get("book") == bk]
     if lrec:
         lots0 = lrec[0].get("lots") or 1

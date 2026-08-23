@@ -97,3 +97,20 @@ PAPER-placed no longer pairs 1:1 with REJECTED.
 |---|---|
 | 2026-08-19 11:07 IST | Diagnosed during the paper-book liveness sweep; market OPEN, so read-only only |
 | 2026-08-19 11:20 IST | Root cause + regression commit identified; fix written up, awaiting approval |
+
+## Phantom-row purge — 2026-08-20 15:40 IST
+
+Removed 10 rows from `orb_positions` for 2026-08-20 (exit_reason=SL_HIT_EXCHANGE), fictitious P&L Rs -25,522. DB backed up to `orb_trading.db.bak_20260820_phantom_purge`. PAPER order rows kept as an audit trail.
+
+```
+  id=  47 AXISBANK    LONG  qty  240 entry    1247.0 exit    1236.2 held   42s pnl   -2592.0
+  id=  48 APOLLOHOSP  SHORT qty   34 entry    8710.0 exit    8788.0 held   42s pnl   -2652.0
+  id=  49 HAL         SHORT qty   59 entry    5010.4 exit    5049.0 held   42s pnl   -2277.4
+  id=  50 ADANIENT    LONG  qty   99 entry    3008.5 exit    2990.0 held   13s pnl   -1831.5
+  id=  51 VEDL        LONG  qty  697 entry     269.5 exit     265.2 held   13s pnl   -2997.1
+  id=  52 GODREJPROP  LONG  qty  148 entry    2021.0 exit    2001.3 held   42s pnl   -2915.6
+  id=  53 BPCL        LONG  qty  810 entry     309.1 exit     305.4 held   13s pnl   -2997.0
+  id=  54 M&M         LONG  qty   87 entry    3432.8 exit    3401.0 held   13s pnl   -2766.6
+  id=  55 RELIANCE    LONG  qty  227 entry    1316.0 exit    1307.0 held   42s pnl   -2043.0
+  id=  56 TRENT       LONG  qty  100 entry    2971.6 exit    2947.1 held   12s pnl   -2450.0
+```
