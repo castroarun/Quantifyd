@@ -1,6 +1,6 @@
 # Opening-Hour Double-Entry — Is Booking Half Early a Real Edge, and Where Is the Sweet Spot?
 
-STATUS: **RUNNING** (launched 2026-08-23 by the ops session; executed by a research agent)
+STATUS: **DONE** (2026-08-23; verdict NO EDGE - CONCLUDED)
 
 ## 2. The Ask
 
@@ -88,3 +88,46 @@ log updated, INDEX row 123, commit only the study folder + INDEX. Findings by th
 | Date/time | Event | Notes |
 |---|---|---|
 |  IST | Stage A + Stage B launched | 400 cells/day x ~85 days/venue; long sample 2015->/2021-> |
+| 2026-08-23 15:45 IST | Stage A done (83+83 days kept) | results/stage_a_scalp.csv |
+| 2026-08-23 15:47 IST | Stage 0 + sweep aggregated | Premise weekday-dependent (Wed/Fri FALSE); 0/400 scalp cells reach t2; best t=2.07 = Tue-TimeB-at-more-size (the null itself) |
+| 2026-08-23 15:50 IST | Filters + bridge + margin done | 0/33 rules beat the null; the day-of-month PLACEBO "won" at 97%; doubling fundable ONLY on Monday |
+| 2026-08-23 16:05 IST | RESULTS.md written, STATUS -> DONE | Verdict: NO EDGE - CONCLUDED |
+
+## Crash recovery (how to resume without Claude)
+
+Everything is already DONE; to regenerate from scratch, in order (all READ-ONLY on DBs):
+
+```
+cd /home/arun/quantifyd/research/123_opening_scalp
+nice -n 10 python3 scripts/stage_a_scalp.py     # ~2 min -> results/stage_a_scalp.csv (+ stage_a.log)
+nice -n 10 python3 scripts/stage_b_scalp.py     # ~3 min -> results/stage_b_scalp_days.csv
+nice -n 10 python3 scripts/analyze_all.py       # ~2 min -> stage0_premise/sweetspot/tail_bridge/filters_report/margin_null
+```
+
+Safe to inspect: everything under results/. Do NOT touch: backtest_data/*.db (read-only).
+Heavy CSVs (stage_a_scalp.csv 4.6MB, stage_b_scalp_days.csv 8.2MB) are gitignored via the
+folder .gitignore; all committable outputs are small.
+
+## Findings (final)
+
+1. STAGE 0 - the premise is weekday folklore: "always Rs4-5k up" holds ~47-71% of Mondays
+   and late-morning Tue/Thu; on Wednesday the aggregate morning book MEDIAN is negative
+   most of the opening hour (12-24% of days reach Rs4k) and on Friday it is negative
+   throughout (0-33%). Per book, only TimeB-Tue 8L and COMB-Thu 5L ever look like "Rs4-5k
+   up"; the per-leg-30% sleeves have median open P&L ~zero all morning.
+2. THE SWEEP - 400 cells (5 entries x 10 T x 8 arms): ZERO cells reach t>=2 vs a
+   ~400-comparison family. Doubling the live 09:16 books under their own stops is NEGATIVE
+   at every T (per-leg-30% t to -3.8; SENSEX ATM2 move-stop t to -2.9; CSL30F Wed t -3.3).
+   T<=30 min - the horizons the question hoped for - are the most significantly negative.
+3. Best cell = TimeB Tue T=65 (+515/lot, t 2.07, n 16) which is just 72% of the deployed
+   Tuesday window at extra size - strictly dominated by the null alternative (+755/lot on
+   the full window, r/122). No sweet spot exists.
+4. FILTERS - CPR today/yday/weekly + gap: 0/33 pre-registered rules beat the 2,000-draw
+   random-skip null at 95%; the day-of-month-parity PLACEBO beat 97%. NO.
+5. MARGIN - doubling every morning entry is fundable only on MONDAY (39.6L of 44.7L), the
+   weakest morning; Tue/Wed/Thu/Fri doubled peaks 53-82L all exceed capital.
+6. Tail (long sample, bridged): scalp p95 ~Rs1.1-1.5k/lot, p99 ~Rs1.4-2.4k/lot - floors,
+   observed worsts already exceed them (to -Rs5.1k/lot); survivable but irrelevant since
+   expectancy is absent.
+
+Full report: results/RESULTS.md (verdict NO EDGE - CONCLUDED).

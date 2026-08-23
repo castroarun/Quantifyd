@@ -1,0 +1,14 @@
+Margin arithmetic (NIFTY 1.65L/lot, SENSEX 2.04L/lot, capital 44.7L)
+Assumed lots: NAS sleeves 3 each (ATM/ATM2/ATM4/COMB), COMB Thu 5, TimeB 8,
+CSL30F_WED 3. Doubling = +1x of every morning entry, concurrent.
+
+Mon: base peak  19.8L  doubled  39.6L  vs capital 44.7L -> FUNDABLE
+Tue: base peak  33.0L  doubled  66.0L  vs capital 44.7L -> NOT FUNDABLE
+Wed: base peak  40.8L  doubled  81.6L  vs capital 44.7L -> NOT FUNDABLE
+Thu: base peak  26.6L  doubled  53.2L  vs capital 44.7L -> NOT FUNDABLE
+Fri: base peak  33.0L  doubled  66.0L  vs capital 44.7L -> NOT FUNDABLE
+
+Null alternative: +1 lot on TUE TimeB (09:30-11:00 SL25) earns mean +Rs755/lot
+per Tuesday (r/122 atlas, n=16) at 1.65L margin held ~90 min, R:R@p95 1:1.5.
+Best scalp candidate (same day, same margin, 65 min) earns mean +Rs515/lot
+(t=2.07, n=16) - strictly dominated by the existing cell.
