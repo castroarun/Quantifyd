@@ -1,0 +1,42 @@
+
+=== MON_NIFTY_DTE1 (NIFTY DTE1 13:00-14:00 SL20): median +1240  p95adv 14591 ===
+  top-5 grid cells by median: G_10:20_H +8910/p95 26290; G_09:20_H +8780/p95 28116; G_10:50_H +7450/p95 27168; G_09:50_H +7250/p95 27070; G_09:20_120 +6310/p95 15819
+  DOMINATOR G_13:20_120 median +4940 p95adv 9757  neighbours[G_12:50_120 +1170, G_13:50_120 +4160, G_13:20_90 +2180, G_13:20_H +4940]  plateau=PASS
+  DOMINATOR G_13:20_H median +4940 p95adv 9757  neighbours[G_12:50_H +5010, G_13:50_H +4160, G_13:20_120 +4940]  plateau=PASS
+  DOMINATOR G_09:20_90 median +4650 p95adv 9161  neighbours[G_09:50_90 +1690, G_09:20_60 +2470, G_09:20_120 +6310]  plateau=PASS
+  DOMINATOR G_13:50_120 median +4160 p95adv 4507  neighbours[G_13:20_120 +4940, G_14:20_120 +1820, G_13:50_90 +4160, G_13:50_H +4160]  plateau=PASS
+  DOMINATOR G_13:50_90 median +4160 p95adv 4507  neighbours[G_13:20_90 +2180, G_14:20_90 +1820, G_13:50_60 -840, G_13:50_120 +4160]  plateau=FAIL
+  DOMINATOR G_13:50_H median +4160 p95adv 4507  neighbours[G_13:20_H +4940, G_14:20_H +1820, G_13:50_120 +4160]  plateau=PASS
+  DOMINATOR G_09:20_60 median +2470 p95adv 6056  neighbours[G_09:50_60 -290, G_09:20_90 +4650]  plateau=FAIL
+  DOMINATOR G_09:50_120 median +2180 p95adv 11790  neighbours[G_09:20_120 +6310, G_10:20_120 -450, G_09:50_90 +1690, G_09:50_H +7250]  plateau=FAIL
+  DOMINATOR G_14:30_120 median +1860 p95adv 13127  neighbours[G_14:30_90 +1860, G_14:30_H +1860]  plateau=PASS
+  DOMINATOR G_14:30_60 median +1860 p95adv 13127  neighbours[G_14:30_90 +1860]  plateau=PASS
+  DOMINATOR G_14:30_90 median +1860 p95adv 13127  neighbours[G_14:30_60 +1860, G_14:30_120 +1860]  plateau=PASS
+  DOMINATOR G_14:30_H median +1860 p95adv 13127  neighbours[G_14:30_120 +1860]  plateau=PASS
+  DOMINATOR G_14:20_120 median +1820 p95adv 13405  neighbours[G_13:50_120 +4160, G_14:20_90 +1820, G_14:20_H +1820]  plateau=PASS
+  DOMINATOR G_14:20_60 median +1820 p95adv 13405  neighbours[G_13:50_60 -840, G_14:20_90 +1820]  plateau=FAIL
+  DOMINATOR G_14:20_90 median +1820 p95adv 13405  neighbours[G_13:50_90 +4160, G_14:20_60 +1820, G_14:20_120 +1820]  plateau=PASS
+  DOMINATOR G_14:20_H median +1820 p95adv 13405  neighbours[G_13:50_H +4160, G_14:20_120 +1820]  plateau=PASS
+  DOMINATOR G_09:50_90 median +1690 p95adv 9528  neighbours[G_09:20_90 +4650, G_10:20_90 -780, G_09:50_60 -290, G_09:50_120 +2180]  plateau=FAIL
+
+=== TUE_NIFTY_DTE0 (NIFTY DTE0 09:30-11:00 SL25): median +9525  p95adv 14554 ===
+  top-5 grid cells by median: G_09:50_90 +7350/p95 12405; G_09:50_120 +6140/p95 16156; G_09:20_90 +5820/p95 17535; G_13:50_120 +5690/p95 9962; G_13:50_90 +5690/p95 9962
+  DOMINATORS: none
+
+=== WED_SENSEX_DTE1 (SENSEX DTE1 10:30-12:00 SL20): median +3370  p95adv 9701 ===
+  top-5 grid cells by median: G_13:50_120 +7350/p95 13672; G_13:50_90 +7350/p95 13672; G_13:50_H +7350/p95 13672; G_14:20_120 +5040/p95 12313; G_14:20_60 +5040/p95 12313
+  DOMINATOR G_14:30_120 median +4800 p95adv 6151  neighbours[G_14:30_90 +4800, G_14:30_H +4800]  plateau=PASS
+  DOMINATOR G_14:30_60 median +4800 p95adv 6151  neighbours[G_14:30_90 +4800]  plateau=PASS
+  DOMINATOR G_14:30_90 median +4800 p95adv 6151  neighbours[G_14:30_60 +4800, G_14:30_120 +4800]  plateau=PASS
+  DOMINATOR G_14:30_H median +4800 p95adv 6151  neighbours[G_14:30_120 +4800]  plateau=PASS
+
+=== THU_SENSEX_DTE0 (SENSEX DTE0 13:00-15:20 NOSTOP): median +15070  p95adv 46852 ===
+  top-5 grid cells by median: G_09:50_H +35100/p95 60010; G_09:20_H +26380/p95 52671; G_12:50_H +13120/p95 34723; G_10:20_H +12200/p95 76133; G_09:20_120 +10920/p95 34326
+  DOMINATORS: none
+
+=== FRI_NIFTY_DTE2 (NIFTY DTE2 10:00-12:00 SL20): median +3120  p95adv 21654 ===
+  top-5 grid cells by median: G_09:20_H +14990/p95 35598; G_10:20_H +9230/p95 34526; G_09:50_H +8160/p95 25741; G_12:50_H +6630/p95 32496; G_10:50_H +4450/p95 36098
+  DOMINATOR G_09:50_120 median +3770 p95adv 8378  neighbours[G_09:20_120 +2050, G_10:20_120 +1660, G_09:50_90 +2280, G_09:50_H +8160]  plateau=PASS
+  DOMINATOR G_13:50_120 median +3380 p95adv 18195  neighbours[G_13:20_120 +2470, G_14:20_120 +2830, G_13:50_90 +3380, G_13:50_H +3380]  plateau=PASS
+  DOMINATOR G_13:50_90 median +3380 p95adv 18195  neighbours[G_13:20_90 -1560, G_14:20_90 +2830, G_13:50_60 -2660, G_13:50_120 +3380]  plateau=FAIL
+  DOMINATOR G_13:50_H median +3380 p95adv 18195  neighbours[G_13:20_H +2470, G_14:20_H +2830, G_13:50_120 +3380]  plateau=PASS
