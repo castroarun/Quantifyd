@@ -160,6 +160,7 @@ to stored trade legs (no re-run needed). ~50 evaluated cells, all cheap (~90 tra
 | 2026-08-20 22:30 | **BUG FOUND — lot size** | Used 75; Kite live master says **65**. Every rupee figure was 15% too high. Points unaffected. Fixed in `engine45.py` and all docs |
 | 2026-08-20 22:45 | Arun: capital basis = Rs 3L/lot margin, Rs 36L blocked | Re-cut every result as CAGR / MaxDD / Calmar on Rs 36L + a year-by-year returns sheet + NIFTY benchmark |
 | 2026-08-20 23:00 | **Phase D — real 1-minute evidence** | 240 day-contracts. DTE>=21: travel 6.3% above / 4.3% below close, **0 of 60 sessions >=50%**. 3 real 45-DTE trades overlap: premium stayed **0.55x-1.08x** of credit, neither trigger approached. Bhav close faithful to within 17.8 pts on ~900 |
+| 2026-08-23 | **Phase E — delta management** | Arun: "keep the straddle until x% underlying move, then exit, redeploy at new ATM". Swept 7 thresholds x 3 arms x 3 re-entry caps x 2 trigger conventions. **EVERY variant loses to holding.** Cycles cut on a move: **−28.6 pts, 38% win**; cycles left to 21 DTE: **+83.0 pts, 81% win**. Best managed cell (1.5% exit-only) keeps 36% of the return. Friction is only ~12 of the 67-pt shortfall; the rest is the mechanism. Intraday triggering (real 5-min spot) makes it worse. Up-move cuts cost ~3x down-move cuts (vega offset thrown away). **Hold @ 5 lots dominates the best managed arm @ 10 lots on return, DD and Calmar simultaneously** |
 | 2026-08-20 23:10 | **VERDICT REVISED** | On the margin basis the G4 failure does not hold: **CAGR 11.47% vs NIFTY 11.60%, MaxDD −13.8% vs −38.4%, Calmar 0.83 vs 0.30** -> STRATEGY-CANDIDATE, open item = stress margin |
 
 ---
@@ -227,6 +228,18 @@ kill and restart at any point; each script rewrites its own CSV from scratch.
    **11.47% is an upper bound**. Gap risk and short-vol correlation with THE STACK / NAS / the
    straddle paper books remain live concerns.
 
-**Recommendation:** believe the table; hourly checks; VIX>25 for best risk-adjusted or no filter
-for best CAGR (never >75); **run the stress-margin test before sizing live**; paper-first with a
-margin-call rule. This study does not recommend arming it live today.
+7. **Delta management makes it worse — every variant (Phase E).** Holding the straddle to an x%
+   underlying move then cutting (and optionally re-centring at the new ATM) was tested across
+   7 thresholds, 3 arms, 3 re-entry caps and both close/intraday triggers. Not one cell beats
+   the 78.1 pts/campaign baseline. The mechanism is explicit: **a cycle cut by the move rule
+   realises −28.6 pts at a 38% win rate; a cycle left to run to 21 DTE earns +83.0 pts at 81%.**
+   Cost explains only ~12 of the 67-pt shortfall — the rest is forfeited decay. Re-deployment
+   adds nothing (2nd cycle −10.2, 3rd −6.2). Cutting on UP moves costs ~3x cutting on down moves
+   (rallies come with falling IV, so the position repairs itself if left alone).
+   **If the goal is a smaller drawdown, size down, do not manage: hold @ 5 lots (6.73% CAGR /
+   9.0% DD / Calmar 0.75) strictly dominates 1.5% exit-only @ 10 lots (5.16% / 9.6% / 0.54).**
+
+**Recommendation:** believe the table; hourly checks; **do not delta-manage — to cut risk, cut
+lots**; VIX>25 for best risk-adjusted or no filter for best CAGR (never >75); **run the
+stress-margin test before sizing live**; paper-first with a margin-call rule. This study does
+not recommend arming it live today.

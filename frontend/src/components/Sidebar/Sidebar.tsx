@@ -14,7 +14,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'indices' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'straddle45' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'indices' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -213,6 +213,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLayers />}
             label="Straddles"
             active={active === 'straddles'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/straddle45"
+            icon={<IconLayers />}
+            label="45-DTE Straddle"
+            active={active === 'straddle45'}
             collapsed={collapsed}
           />
         </nav>

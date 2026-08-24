@@ -18,6 +18,13 @@ At **10 lots on ₹36 lakh of blocked margin** (₹3L/lot × 10, plus a 20% buff
 Same return as the index, **less than half the drawdown, 2.8× the Calmar.** That is a real
 product, not a curiosity.
 
+**Delta management does not improve it (§5).** Cutting the straddle at an x% underlying move
+and re-centring on the new ATM was tested across 7 thresholds, 3 arms and both trigger
+conventions: *every* variant is worse than holding. Cycles cut on a move realise **−28.6 pts**;
+cycles left to run to 21 DTE earn **+83.0 pts**. If the goal is a smaller drawdown, **hold and
+trade 5 lots instead of 10** — that dominates the best managed variant on return, drawdown
+and Calmar simultaneously.
+
 > **Correction to the first version of this study.** I originally sized the book against
 > *notional* exposure and reported ~7.8%/yr, calling it "below an index fund." That framing
 > was wrong for the decision at hand — a short straddle is margin-financed, and the capital
@@ -242,7 +249,118 @@ for the same hit rate. That is the more durable description.
 
 ---
 
-## 5. Robustness
+## 5. Delta management — hold to an x% move, then exit and re-centre?
+
+**Verdict: NO. Every move-managed variant is worse than doing nothing, and re-centring
+is worse than the exit alone. If you want less drawdown, trade fewer lots — do not manage.**
+
+The idea is intuitive: a short straddle is hurt by *movement*, not by time, so cut when the
+underlying has moved x% and re-sell at the new ATM. Tested on real bhavcopy prices, with the
+campaign (one month's expiry, 45 → 21 DTE) as the unit of account so n stays 89 and the
+t-stats are directly comparable to §1.
+
+Three arms: **hold** (baseline), **exit_only** (cut on the move, stay flat to 21 DTE), and
+**recentre** (cut and immediately sell the new ATM on the same expiry, cap of 1 / 2 / unlimited).
+
+| Move threshold | Arm | Net/campaign | t | CAGR | MaxDD | Calmar | Cycles/campaign |
+|---|---|---|---|---|---|---|---|
+| — | **hold (baseline)** | **78.1** | **3.03** | **11.48%** | 18.0% | **0.64** | 1.00 |
+| 1.0% | recentre (uncapped) | 3.0 | 0.15 | 0.62% | 32.8% | 0.02 | 5.85 |
+| 1.0% | exit_only | 10.1 | 1.29 | 2.02% | 9.0% | 0.23 | 1.00 |
+| 1.5% | recentre (uncapped) | 18.4 | 0.88 | 3.53% | 25.1% | 0.14 | 4.06 |
+| 1.5% | **exit_only** (best managed) | 28.5 | 2.84 | 5.16% | **9.6%** | 0.54 | 1.00 |
+| 2.0% | recentre (uncapped) | 11.0 | 0.47 | 2.20% | 25.0% | 0.09 | 3.17 |
+| 2.0% | exit_only | 21.2 | 1.60 | 3.99% | 11.1% | 0.36 | 1.00 |
+| 2.5% | recentre (uncapped) | 27.9 | 1.15 | 5.07% | 35.0% | 0.15 | 2.47 |
+| 3.0% | recentre (uncapped) | 20.8 | 0.84 | 3.93% | 27.0% | 0.15 | 2.10 |
+| 4.0% | recentre (uncapped) | 6.5 | 0.23 | 1.33% | 60.4% | 0.02 | 1.62 |
+| 5.0% | recentre (uncapped) | 8.6 | 0.30 | 1.74% | 56.6% | 0.03 | 1.35 |
+
+Not one cell beats 78.1 pts. The best managed variant keeps **36%** of the baseline's return.
+
+### Why — the mechanism, not just the number
+
+Decomposing the 2% re-centre arm by how each cycle ended:
+
+| Cycle ended by | n | Avg net | Win rate |
+|---|---|---|---|
+| **MOVE cut** | 201 | **−28.6 pts** | 38.3% |
+| Ran to 21 DTE | 81 | **+83.0 pts** | 81.5% |
+
+**That is the whole story.** A straddle allowed to run to 21 DTE earns +83 points at an 81%
+win rate. The same position, cut when the underlying moves 2%, realises −28.6 points at a 38%
+win rate. The move rule systematically converts a winner-in-waiting into a booked loser,
+because the edge *is* sitting through the move and collecting the decay.
+
+Cost is the minor part of the damage. At 2% the arm runs 3.17 cycles per campaign at 5.5 pts
+a round trip = **17.4 pts/campaign of friction against the baseline's 5.5** — roughly 12 points
+of the 67-point shortfall. **The other ~55 points is the mechanism.**
+
+Re-deployment adds nothing on top:
+
+| Cycle position in the campaign | n | Avg net |
+|---|---|---|
+| 1st (the original straddle) | 89 | +21.2 |
+| 2nd | 78 | −10.2 |
+| 3rd | 50 | −6.2 |
+| 4th and later | 65 | +3.1 |
+
+Every re-centre after the first is a coin flip that pays a round trip to play.
+
+### Two checks that could have rescued it, and didn't
+
+**Trigger timing.** Perhaps the rule only loses because a daily-close check reacts a day late.
+Re-run with the trigger on the **real 5-minute NIFTY spot** — the first day the intraday range
+breaches x% from the anchor, exit at that day's real close. Trigger and fill both real.
+
+| Move | Arm | Close trigger | Intraday trigger |
+|---|---|---|---|
+| 1.5% | recentre | 18.4 pts | **4.0** |
+| 1.5% | exit_only | 28.5 | **13.4** |
+| 2.0% | recentre | 11.0 | **5.3** |
+| 2.0% | exit_only | 21.2 | 21.4 |
+| 3.0% | recentre | 20.8 | 29.6 |
+
+Reacting *earlier* mostly makes it worse, which is what you would expect if cutting is the
+problem. (60 of 89 campaigns have complete 5-min coverage; the rest fall back to the close on
+missing days.)
+
+**Direction.** Are the cuts symmetric? No — and not in the direction folklore suggests:
+
+| Move | Arm | Up-move cuts | Avg | Down-move cuts | Avg |
+|---|---|---|---|---|---|
+| 2.0% | recentre | 118 | **−40.7** | 83 | −11.3 |
+| 3.0% | recentre | 65 | **−84.9** | 37 | −65.5 |
+
+**Cutting on the way up costs about 3× more than cutting on the way down.** The likely reason
+is vega: NIFTY rallies come with falling IV, so a straddle losing on delta is simultaneously
+being helped on vol, and it often repairs itself if left alone. Selling out of that move
+banks the delta loss and throws away the vol gain.
+
+### The decision that actually matters
+
+The one honest attraction of managing is drawdown: 1.5% exit_only halves MaxDD from 18.0% to
+9.6%. But you can buy the same drawdown far more cheaply by just trading smaller:
+
+| Configuration | CAGR | MaxDD | Calmar |
+|---|---|---|---|
+| Hold, 10 lots | 11.49% | 18.0% | 0.64 |
+| Hold, 7 lots | 8.80% | 12.6% | 0.70 |
+| **Hold, 5 lots** | **6.73%** | **9.0%** | **0.75** |
+| Hold, 4 lots | 5.59% | 7.2% | 0.78 |
+| 1.5% exit_only, 10 lots | 5.16% | 9.6% | 0.54 |
+
+**Hold at 5 lots strictly dominates the best managed variant at 10 lots** — more return
+(6.73% vs 5.16%), less drawdown (9.0% vs 9.6%), better Calmar (0.75 vs 0.54). Sizing is a
+free lever; management is a lever you pay for twice, in friction and in forfeited decay.
+
+*Reproduce:* `run_phase_e_recentre.py` (grid) and `run_phase_e2_diag.py` (direction +
+intraday trigger). The baseline arm inside Phase E reproduces §1 exactly (78.1 pts, t 3.03),
+which is the control that validates the campaign machinery.
+
+---
+
+## 6. Robustness
 
 **Convention** — irrelevant: roll back/close 78.1 · roll back/settle 75.5 · roll forward/close
 82.2 · roll forward/settle 78.7 pts per trade.
@@ -278,7 +396,7 @@ monthlies are the deepest options in India.
 
 ---
 
-## 6. The open item: stress margin
+## 7. The open item: stress margin
 
 **This is now the main risk, and it is not in the numbers above.**
 
@@ -305,16 +423,18 @@ with a margin-call rule. Until that is done, the 11.47% CAGR is an upper bound.
 
 ---
 
-## 7. Recommendation
+## 8. Recommendation
 
 1. **Believe the table.** It replicates on independent real data.
 2. **Use hourly checks.** Free 29% improvement in the worst trade and 23% in drawdown; below
    60 minutes there is provably nothing to gain — now confirmed on real 1-minute quotes.
-3. **Use VIX > 25 if you want the best risk-adjusted version** (Calmar 1.05); use no filter if
+3. **Do not delta-manage it.** No move threshold, exit rule or re-centring scheme beats
+   simply holding to 21 DTE. To cut risk, cut lots.
+4. **Use VIX > 25 if you want the best risk-adjusted version** (Calmar 1.05); use no filter if
    you want maximum CAGR (11.47%). Do **not** use > 75 — worst of both on a capital basis.
-4. **Run the stress-margin test before sizing live.** This is the one thing standing between
+5. **Run the stress-margin test before sizing live.** This is the one thing standing between
    STRATEGY-CANDIDATE and STRATEGY.
-5. **Paper first (G5)**, sized against margin with a margin-call rule, and measure its
+6. **Paper first (G5)**, sized against margin with a margin-call rule, and measure its
    correlation with the existing short-vol book before adding capital.
 
 **Stage gates: G3 robustness PASSED. G4 portfolio CONDITIONAL PASS** — the return-on-capital

@@ -13,7 +13,23 @@ CFG = {"NIFTY": {"step": 50, "qty": 650, "lots": 10}, "SENSEX": {"step": 100, "q
 ENTRIES = ["09:16", "09:20", "09:25", "09:30", "10:00", "10:30", "11:15", "12:00", "13:00", "14:00"]
 EXITS = ["11:00", "12:00", "13:00", "14:00", "15:00", "15:20"]
 SLS = (20, 25, 30, 40, 999)
-COST = 160
+# --- ROUND-TRIP COST MODEL (2026-08-24) -------------------------------------------------
+# WAS: a flat COST=160 per straddle round trip -- Rs16/lot on 10 NIFTY lots. That is
+# brokerage scale ONLY and charges ZERO slippage (fills were taken at observed chain
+# prices), so every cell on this panel read near-GROSS. Monday DTE1 13:00->14:00 SL20
+# showed +3,703/day at 94% win; net of real costs it is +1,363/day at 75%. The panel
+# drives live sizing decisions, so it must be net.
+# NOW: the r/123 convention, venue- and size-aware --
+#   cost = SLIP_PT x qty x 4 leg-sides  +  BROK_PER_LEGSIDE_PER_LOT x 4 x lots
+# 4 leg-sides = sell CE + sell PE (entry) and buy CE + buy PE (exit).
+#   NIFTY 10 lots (650) -> Rs2,500 | SENSEX 5 lots (100) -> Rs800
+SLIP_PT = 0.50                   # points per leg-side crossed (r/123 standard)
+BROK_PER_LEGSIDE_PER_LOT = 30.0  # brokerage + STT + exchange + GST + stamp, bundled
+SENS_SLIPS = (0.25, 0.50, 1.00)  # published as a cost-sensitivity band on every best cell
+
+def cost_of(c, slip=SLIP_PT):
+    """Round-trip cost of one straddle at this venue's size."""
+    return slip * c["qty"] * 4 + BROK_PER_LEGSIDE_PER_LOT * 4 * c["lots"]
 MIN_HOLD_MIN = 45
 
 oc = sqlite3.connect(DB)
@@ -42,7 +58,9 @@ meta = {}
 for SYM, cfg in CFG.items():
     days = [r[0] for r in oc.execute(
         "SELECT DISTINCT substr(snapshot_time,1,10) FROM underlying_spot WHERE symbol=? AND spot_price>0 ORDER BY 1", (SYM,))]
-    meta[SYM] = {"days": len(days), "from": days[0] if days else None, "to": days[-1] if days else None,
+    meta[SYM] = {"cost": round(cost_of(cfg)), "slip_pt": SLIP_PT,
+                 "brok_per_legside_per_lot": BROK_PER_LEGSIDE_PER_LOT,
+                 "days": len(days), "from": days[0] if days else None, "to": days[-1] if days else None,
                  "lots": cfg["lots"], "qty": cfg["qty"]}
     print("START %s days=%d" % (SYM, len(days)), flush=True)
     for i, day in enumerate(days):
@@ -94,15 +112,18 @@ for SYM, cfg in CFG.items():
                                 streak += 1
                                 if streak >= 2:
                                     nx = sub[m + 1][1] if m + 1 < len(sub) else sub[m][1]
-                                    pnl = (ent - nx) * cfg["qty"] - COST
+                                    pnl = (ent - nx) * cfg["qty"] - cost_of(cfg)
                                     break
                             else: streak = 0
-                    if pnl is None: pnl = (ent - sub[-1][1]) * cfg["qty"] - COST
+                    if pnl is None: pnl = (ent - sub[-1][1]) * cfg["qty"] - cost_of(cfg)
                     grid.setdefault((SYM, k, ent_t, ex_t, sl), []).append((day, round(pnl)))
         if day_sparse: sparse[SYM] += 1
         if i % 10 == 0: print("%s %d/%d" % (SYM, i, len(days)), flush=True)
 
-out = {"generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"), "sparse_days": sparse,
+out = {"cost_model": {"slip_pt": SLIP_PT, "brok_per_legside_per_lot": BROK_PER_LEGSIDE_PER_LOT,
+                     "sens_slips": list(SENS_SLIPS), "leg_sides": 4,
+                     "note": "net of slippage + brokerage/STT/exchange/GST/stamp; 4 leg-sides per straddle round trip"},
+       "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"), "sparse_days": sparse,
        "meta": meta, "cells": [], "best": {}}
 series_map = {}
 for (SYM, k, ent_t, ex_t, sl), fp in grid.items():
@@ -124,6 +145,10 @@ for SYM in CFG:
         b = dict(cand[0])
         key = (SYM, k, b["entry"], b["exit"], (999 if b["sl"] == "none" else b["sl"]))
         b["series"] = [[d, v] for d, v in series_map.get(key, [])]
+        # cost-sensitivity band: mean is net at SLIP_PT; restate at each slippage assumption
+        _c0 = cost_of(CFG[SYM])
+        b["cost"] = round(_c0)
+        b["sens"] = {("%.2f" % _s): round(b["mean"] + _c0 - cost_of(CFG[SYM], _s)) for _s in SENS_SLIPS}
         out["best"][SYM][str(k)] = b
 json.dump(out, open(OUT, "w"))
 for extra in ("/home/arun/quantifyd/static/app/straddles/csl_best_configs.json",

@@ -59,7 +59,7 @@ export const STATUS_LABEL: Record<SystemStatus, string> = {
   parked: 'Parked · not trading',
 };
 
-export const REGISTER_UPDATED = '20 Aug 2026';
+export const REGISTER_UPDATED = '24 Aug 2026';
 
 export const SYSTEMS: StrategySystem[] = [
   // ------------------------------------------------------------------ LIVE
@@ -565,6 +565,41 @@ export const SYSTEMS: StrategySystem[] = [
   },
 
   // ---------------------------------------------------------------- PARKED
+  {
+    id: 'straddle45',
+    name: '45-DTE Straddle',
+    subtitle: 'NIFTY monthly \u2014 short ATM straddle, 45 \u2192 21 DTE',
+    status: 'parked',
+    size: '3 lots (195 qty) configured \u2014 nothing armed',
+    since: '24 Aug 2026',
+    rule: 'Sell the ATM straddle 45 calendar days before the NIFTY monthly expiry; close at 21 DTE, or earlier on a 50% target / 200% stop. No executor \u2014 study and sizing only.',
+    rules: [
+      ['Instrument', 'NIFTY monthly expiry \u2014 the last expiry of the month already listed 45 days out (from 2025 a weekly can expire AFTER the monthly)'],
+      ['Entry', 'Expiry \u2212 45 calendar days at the close; sell 1\u00d7 ATM CE + 1\u00d7 ATM PE, both legs must have traded that day'],
+      ['Target', 'Combined premium \u2264 50% of entry credit \u2014 fires once in 89 trades'],
+      ['Stop', 'Combined premium \u2265 200% of entry credit \u2014 fires 2\u20133 times in 89 trades'],
+      ['Time exit', 'Expiry \u2212 21 calendar days \u2014 how 85 of 89 trades end, and the whole design'],
+      ['Monitoring', 'Hourly candle closes; nothing below 60-min changes a single trade'],
+      ['Do NOT delta-manage', 'Every move-threshold exit and re-centring scheme tested is worse than holding \u2014 cycles cut on a move realise \u221228.6 pts, cycles left alone earn +83.0'],
+      ['Sizing', 'Capital = 3%-adverse-move margin (\u20b92.69L/lot) + 2\u00d7 MaxDD. At 3 lots that is \u20b912.0L'],
+      ['Why parked', 'Passed G3 robustness; owes a stress-margin test before real money \u2014 SPAN inflates in the same event that drives the drawdown'],
+    ],
+    rulesDoc: 'research/119_45dte_short_straddle/NIFTY_45DTE_SHORT_STRADDLE_MULTITF_BACKTEST_STATUS.md',
+    dashboard: '/straddle45',
+    studies: [
+      {
+        slug: 'nifty-45dte-short-straddle',
+        title: '45-DTE NIFTY short straddle \u2014 replication, monitoring frequency, VIX filter, delta management',
+        verdict: 'STRATEGY-CANDIDATE',
+      },
+    ],
+    changeLog: [
+      { date: '24 Aug 2026', text: 'Registered. Control-room page added at /app/straddle45 with lot config (default 3), payoff, per-DTE margin and the study links. Nothing armed \u2014 no executor exists.' },
+      { date: '23 Aug 2026', text: 'Delta management REFUTED (Phase E): 7 move thresholds \u00d7 3 arms \u00d7 3 re-entry caps \u00d7 close/intraday triggers, not one cell beats holding. To cut risk, cut lots.' },
+      { date: '20 Aug 2026', text: 'Published study: the video table replicates on real bhavcopy (+78.1 pts/trade, t 3.03, 89 campaigns). Two own-errors corrected \u2014 notional sizing and NIFTY lot 75\u219265.' },
+    ],
+    note: 'NOT ARMED and not funded. Margin measured live from Kite on 24 Aug 2026: \u20b92.24L/lot at 45 DTE, rising to \u20b92.69L once spot is 3% away \u2014 and a \u22653% move happens in 66% of campaigns, so the book is sized on the stressed number, not the entry number.',
+  },
   {
     id: 'kc6',
     name: 'KC6',

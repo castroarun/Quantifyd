@@ -184,3 +184,45 @@ Filled today by tag:
   untagged                   1321
   CSL_NAS_COMB20              260
 ```
+
+## 2026-08-24 11:00 IST — 0 alerts, 5 warnings
+
+```
+Live vs app reconciliation · 2026-08-24 11:00 IST
+11 broker legs · 0 alerts · 5 warnings
+
+[INFO] MANUAL ANTHEM: manual holding, 12 — no book tracks it
+[INFO] MANUAL DIVGIITTS: manual holding, 8 — no book tracks it
+[INFO] MANUAL FRONTSP: manual holding, -66 — no book tracks it
+[INFO] MANUAL GVT&D: manual holding, 3 — no book tracks it
+[INFO] MANUAL OFSS: manual holding, 1 — no book tracks it
+[INFO] MANUAL SWARAJENG: manual holding, -15 — no book tracks it
+[WARN] NAKED NIFTY26AUG24200PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24300CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24300PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24350CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24350PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1275
+  CSL_NAS_COMB20              260
+```
+
+## 2026-08-24 14:00 IST — 0 alerts, 1 warnings
+
+```
+Live vs app reconciliation · 2026-08-24 14:00 IST
+7 broker legs · 0 alerts · 1 warnings
+
+[INFO] MANUAL ANTHEM: manual holding, 12 — no book tracks it
+[INFO] MANUAL DIVGIITTS: manual holding, 8 — no book tracks it
+[INFO] MANUAL FRONTSP: manual holding, -66 — no book tracks it
+[INFO] MANUAL GVT&D: manual holding, 3 — no book tracks it
+[INFO] MANUAL OFSS: manual holding, 1 — no book tracks it
+[INFO] MANUAL SWARAJENG: manual holding, -105 — no book tracks it
+[WARN] NAKED NIFTY26AUG24350CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1755
+  CSL_NAS_COMB20              520
+```

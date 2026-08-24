@@ -31,6 +31,7 @@ import IndexPulse from './pages/IndexPulse';
 import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
 import MomentumPaper from './pages/MomentumPaper';
+import Straddle45 from './pages/Straddle45';
 import BreakoutPaper from './pages/BreakoutPaper';
 import HaPaper from './pages/HaPaper';
 import OrbPaper from './pages/OrbPaper';
@@ -274,6 +275,16 @@ export default function App() {
           <Protected>
             <AppLayout active="backtest">
               <BacktestStudy />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/straddle45"
+        element={
+          <Protected>
+            <AppLayout active="straddle45">
+              <Straddle45 />
             </AppLayout>
           </Protected>
         }

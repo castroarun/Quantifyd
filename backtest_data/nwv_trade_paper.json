@@ -181,6 +181,13 @@
    "reason": "SKIP_IGNORE",
    "net_rs": 0,
    "net_pts": 0
+  },
+  {
+   "week": "2026-08-24",
+   "view": "ignore",
+   "reason": "SKIP_IGNORE",
+   "net_rs": 0,
+   "net_pts": 0
   }
  ],
  "killed": false,

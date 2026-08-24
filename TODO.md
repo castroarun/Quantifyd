@@ -2,6 +2,27 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-24 - 45-DTE straddle: control-room page LIVE at /app/straddle45 (NOT ARMED)
+
+Arun asked for an app page under Live, in line with NAS/Momentum. Built:
+`frontend/src/pages/Straddle45.tsx` + module.css, route + sidebar entry, and a row in the
+Strategies register (status PARKED - nothing is armed, there is no executor). The page carries
+a **lot selector defaulted to 3** and everything on it re-prices from that: capital to block,
+margin headroom, KPI strip, the year-by-year table, and the payoff graph. Study is stored in
+POINTS so rupees derive as pts x 65 x lots.
+
+Margin measured LIVE from Kite `basket_order_margins` on 24-Aug-2026 (read-only, no orders):
+**Rs 2.13-2.42L/lot, NRML = MIS to the rupee** (no intraday benefit on short index options).
+Margin does NOT rise into expiry - it is flat 1-22 DTE and rises with tenor. What does move it
+is **moneyness**: +26% once spot is 3% away, +41% at 5%, and down-moves cost more than up-moves.
+Since a >=3% move happens in 66% of campaigns, the page sizes capital on the **3%-adverse
+margin (Rs 2.69L/lot) + 2x MaxDD** - at 3 lots that is Rs 12.0L.
+
+**PENDING before this can ever be armed:** (1) the STRESS-MARGIN test (reconstruct per-lot SPAN
+across 2019-26 and re-run with a margin-call rule) - still the one blocking item; (2) an executor
++ positions feed, none exists today; (3) correlation vs THE STACK / NAS / straddle paper books.
+
+
 ## 2026-08-20 - research/119 45-DTE short straddle: STRATEGY-CANDIDATE - stress-margin test OWED
 
 Arun asked us to verify Sandeep Rao's "The Long & The Short Ep. 48" 45-DTE NIFTY short-straddle
@@ -15,6 +36,16 @@ our recorder overlaps stayed within 0.55x-1.08x of credit - neither trigger ever
 Hourly beats daily on the tail only (worst trade -29%, MaxDD -23%); 30m/15m/5m identical.
 VIX >25 is the best risk-adjusted cell (Calmar 1.05); >75 is the WORST on capital (6.95% CAGR) and
 his 85.7% win rate does not reproduce.
+
+**2026-08-23 - Phase E (delta management) REFUTED.** Arun asked: keep the straddle until an x%
+underlying move, then exit and redeploy at the new ATM. Swept 7 thresholds x 3 arms x 3 re-entry
+caps x close/intraday triggers on real bhavcopy prices: **every variant loses to holding.** A cycle
+cut by the move rule realises **-28.6 pts (38% win)**; a cycle left to run to 21 DTE earns **+83.0
+pts (81% win)**. Best managed cell keeps 36% of the return. Cost is only ~12 of the 67-pt shortfall
+- the rest is forfeited theta. Cutting on UP moves costs ~3x cutting on down moves. **Actionable:
+to reduce drawdown, size down rather than manage - hold @ 5 lots (6.73% CAGR / 9.0% DD / Calmar
+0.75) dominates the best managed arm @ 10 lots (5.16% / 9.6% / 0.54).** No further management
+variants worth testing on this structure.
 
 **PENDING - the one thing blocking a live decision: STRESS-MARGIN TEST.** Rs 3L/lot is today's
 margin at India VIX 10.83. VIX peaked 83.61 on 2020-03-24 and SPAN scales with vol, so Rs 36L would

@@ -1242,6 +1242,12 @@ export default function Straddles() {
               SENSEX: <b>{(cslCfg.meta?.SENSEX?.days) ?? '—'} days</b> ({cslCfg.meta?.SENSEX?.from} → {cslCfg.meta?.SENSEX?.to}) @ {cslCfg.meta?.SENSEX?.lots} lots (qty {cslCfg.meta?.SENSEX?.qty}) ·
               3-sec dwell mechanic · ATM at entry moment
             </div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+              Costs charged — <b>NET, not gross</b>. {(cslCfg.cost_model?.slip_pt ?? 0.5)}pt slippage per leg-side × 4 leg-sides
+              (sell CE + sell PE in, buy CE + buy PE out) + ₹{cslCfg.cost_model?.brok_per_legside_per_lot ?? 30}/leg-side/lot
+              brokerage &amp; statutory (STT · exchange · GST · stamp) = <b>₹{cslCfg.meta?.NIFTY?.cost ?? '—'}</b> per NIFTY
+              straddle round trip · <b>₹{cslCfg.meta?.SENSEX?.cost ?? '—'}</b> per SENSEX.
+            </div>
             <OpsInfo rows={[
               ['Weekly sweep', 'Fridays 15:45 IST — entry×exit×SL grid per DTE per venue on all recorded days (informational: the live books’ FROZEN config does NOT move with it)', 'setsid nohup venv/bin/python3 -u research/111_sensex_manual_mgmt/scripts/entry_exit_sweep.py > /tmp/eesweep.log 2>&1 &'],
               ['Monitor a running sweep', 'progress + final tables', 'tail -f /tmp/eesweep.log'],
@@ -1302,6 +1308,21 @@ export default function Straddles() {
             <div style={{ fontSize: 11, color: C.amber, marginTop: 8 }}>
               ⚠ Grid maxima on ~15-day cells (multiple-testing risk) — SL-level invariance is the robustness signal; validate via paper before live sizing. Refreshed automatically every Friday 15:45 IST as recorded days accumulate.
             </div>
+            {b && (
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+                Cost sensitivity — mean/day per DTE at 0.25 / <b>0.50 (shown above)</b> / 1.00 pt slippage:{' '}
+                {dtes.map((k) => {
+                  const cs: any = b[k];
+                  if (!cs?.sens) return null;
+                  return (
+                    <span key={k} style={{ marginRight: 10 }}>
+                      DTE{k} <b>{inr(cs.sens['0.25'])}</b>/<b>{inr(cs.sens['0.50'])}</b>/<b>{inr(cs.sens['1.00'])}</b>
+                    </span>
+                  );
+                })}
+                — a cell that only survives at 0.25pt is not tradable.
+              </div>
+            )}
           </section>
         );
       })()}
