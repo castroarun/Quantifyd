@@ -1,8 +1,9 @@
 """NAS Integrity Watchdog — independent read-only poller (every 5 min, 09:15-15:30 IST).
-Verifies the live automation WITHOUT placing any order, and emits static/app/watchdog.json for the
+Verifies the LIVE automation WITHOUT placing any order (paper legs are excluded
+from every check - they carry no risk and used to raise false FAILs), and emits static/app/watchdog.json for the
 /app/nas "Integrity Watchdog" section. Emails on a NEW fail (de-duped). Distinct from the pipeline
 heartbeat in services/nas_watchdog.py."""
-import os, json, hashlib
+import os, json, hashlib, re
 from datetime import datetime
 import urllib.request
 
@@ -57,8 +58,14 @@ db_live_qty, naked_legs, bad_qty, rej_active, imbalanced, accum = {}, [], [], []
 day_real = day_open = 0.0
 for key, name in VARIANTS:
     pos = (states.get(key) or {}).get("positions", {}) or {}
-    legs = (pos.get("ce") or []) + (pos.get("pe") or [])
+    # LIVE ONLY. Paper legs (squeeze books, and any variant toggled to paper) carry no risk;
+    # including them raised naked-leg FAILs on positions that have no broker order at all,
+    # and polluted the day-P&L max-loss check with paper P&L.
+    legs = [x for x in ((pos.get("ce") or []) + (pos.get("pe") or []))
+            if (x.get("mode") or "live") == "live"]
     for x in (pos.get("closed_today") or []):
+        if (x.get("mode") or "live") != "live":
+            continue
         if x.get("entry_price") is not None and x.get("exit_price") is not None:
             day_real += ((x["entry_price"] or 0) - (x["exit_price"] or 0)) * (x.get("qty") or 0)
     if len(legs) > 2:
@@ -98,8 +105,10 @@ for ts, q in db_live_qty.items():
         (ghost if bq == 0 else desync).append("%s: DB %d vs broker %d" % (ts, q, bq))
 
 day_pnl = round(day_real + day_open)
-n_open = sum(len((states.get(k) or {}).get("positions", {}).get("ce", []) or []) +
-             len((states.get(k) or {}).get("positions", {}).get("pe", []) or []) for k, _ in VARIANTS)
+n_open = sum(1 for k, _ in VARIANTS
+             for _side in ("ce", "pe")
+             for _x in ((states.get(k) or {}).get("positions", {}).get(_side, []) or [])
+             if (_x.get("mode") or "live") == "live")
 hhmm = datetime.now().strftime("%H:%M")
 
 def chk(check, scope, status, detail):
@@ -154,12 +163,16 @@ groups = [
     ]},
 ]
 ok = warn = fail = 0
-fails = []
+fails, fail_sigs = [], []
 for g in groups:
     for c in g["checks"]:
         ok += c["status"] == "ok"; warn += c["status"] == "warn"; fail += c["status"] == "fail"
         if c["status"] == "fail":
             fails.append("%s — %s" % (c["check"], c["detail"]))
+            # Signature = the failure's IDENTITY with every number stripped. The detail text
+            # carries live values (ST/SL levels, P&L) that move on every 5-min poll; hashing
+            # them made each poll look like a NEW fail and mailed the same problem ~12x/day.
+            fail_sigs.append("%s — %s" % (c["check"], re.sub(r"[\d][\d.,+-]*", "#", c["detail"])))
 out = {"polled_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
        "summary": {"ok": ok, "warn": warn, "fail": fail}, "groups": groups}
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -168,7 +181,7 @@ print("integrity-watchdog: %d OK / %d warn / %d fail" % (ok, warn, fail))
 
 # ---- email on a NEW fail (de-duped by fail signature) --------------------
 if fails:
-    sig = hashlib.md5("\n".join(sorted(fails)).encode()).hexdigest()
+    sig = hashlib.md5("\n".join(sorted(fail_sigs)).encode()).hexdigest()
     last = ""
     try:
         last = json.load(open(STATE)).get("sig", "")
