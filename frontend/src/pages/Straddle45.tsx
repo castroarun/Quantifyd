@@ -1,15 +1,15 @@
 /* 45-DTE NIFTY short straddle — research/119.
  *
- * NOT ARMED. There is no executor and no book behind this page; it is the
- * control room for a strategy that has passed G3 but still owes a stress-margin
- * test before real money. The positions table is wired to the same shape the
- * live books use so it fills in the day it is armed, and reads empty until then.
+ * PAPER. Backed by services/straddle45_paper.py, which seeds completed campaigns
+ * from real NSE bhavcopy closes and marks the open position from the broker. It
+ * publishes a static JSON, so this page needs no API route and no backend restart.
+ * Still owes a stress-margin test before it could ever be real money.
  *
  * Everything numeric here scales off the lot selector. The study is stored in
  * POINTS (lot-size agnostic); rupees are derived as points x 65 x lots, so
  * changing lots re-prices the whole page — returns, drawdown, margin and payoff.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Straddle45.module.css';
 
@@ -68,9 +68,29 @@ const inr = (v: number) => (v < 0 ? '-' : '') + '₹' + Math.abs(Math.round(v)).
 const lakh = (v: number) => (v < 0 ? '-' : '') + '₹' + (Math.abs(v) / 1e5).toFixed(2) + 'L';
 const pct = (v: number) => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
 
-type Position = {
-  leg: string; strike: number; expiry: string; dte: number; qty: number;
-  entry_date: string; entry_price: number; price: number | null; pnl: number;
+/* Paper book state, published by services/straddle45_paper.py as a static JSON.
+   No API route, so nothing here needs a backend restart. */
+type PaperTrade = {
+  id: number; expiry: string; strike: number; entry_date: string; entry_spot: number;
+  credit: number; qty: number; lots: number;
+  exit_date: string | null; exit_prem: number | null; exit_reason: string | null;
+  gross_pts: number | null; cost_pts: number | null; net_pts: number | null; net_rs: number | null;
+  status: 'OPEN' | 'CLOSED';
+  mark_prem: number | null; mark_date: string | null; mark_src: string | null; mtm_rs: number | null;
+  exit_due: string; dte: number;
+  curve?: Array<{ d: string; prem: number; mtm: number }>;
+};
+type Paper = {
+  asof: string; mode: string; lots: number; qty: number; capital: number;
+  bhav_through: string; realised: number; unrealised: number; nav: number;
+  n_closed: number; n_open: number; win_rate: number | null;
+  open_positions: PaperTrade[]; closed_trades: PaperTrade[];
+};
+
+const SRC_LABEL: Record<string, string> = {
+  'kite-ltp': 'live LTP',
+  'chain-1min': 'live 1-min',
+  bhav: 'EOD close',
 };
 
 export default function Straddle45() {
@@ -86,7 +106,18 @@ export default function Straddle45() {
     try { localStorage.setItem('straddle45.lots', String(n)); } catch { /* private mode */ }
   };
 
-  const positions: Position[] = [];      // no executor yet — see the banner
+  const [paper, setPaper] = useState<Paper | null>(null);
+  useEffect(() => {
+    const load = () =>
+      fetch('/app/straddle45_paper.json?t=' + Date.now())
+        .then((r) => (r.ok ? r.json() : null))
+        .then(setPaper)
+        .catch(() => setPaper(null));
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, []);
+  const live = paper?.open_positions?.[0] ?? null;
 
   const m = useMemo(() => {
     const qty = LOT * lots;
@@ -121,18 +152,24 @@ export default function Straddle45() {
             <Link className={styles.link} to="/backtest/nifty-45dte-short-straddle">Full study →</Link>
           </p>
         </div>
-        <div className={`${styles.gateBadge} ${styles.off}`}>
+        <div className={`${styles.gateBadge} ${paper ? styles.paperOn : styles.off}`}>
           <span className={styles.dot} />
-          NOT ARMED — study only
+          {paper ? `PAPER — ${paper.n_open} open, ${paper.n_closed} closed` : 'NOT ARMED'}
         </div>
       </div>
 
       <div className={styles.warn}>
-        <b>No executor is running for this system.</b> It has passed robustness (G3) but still owes
-        a <b>stress-margin test</b> — SPAN inflates in the same event that drives the drawdown, and
-        that has not been reconstructed across 2019–26 yet. This page is the control room and the
-        sizing calculator; it does not place, hold or monitor anything. The positions table below
-        will populate the day it is armed.
+        <b>Paper only — no real money, no orders.</b> The book is seeded by backtracing completed
+        campaigns from real NSE bhavcopy closes and marks the open position live from the broker.
+        Before this could ever go live it still owes a <b>stress-margin test</b> — SPAN inflates in
+        the same event that drives the drawdown, and that has not been reconstructed across 2019–26.
+        {paper && (
+          <>
+            {' '}Marks: EOD bhavcopy through <b>{paper.bhav_through}</b>, open position on the
+            broker&apos;s live price. The 1-minute recorder only picks a contract up at ~27 DTE, so
+            it cannot price a 45-DTE entry — entries always come from the EOD close.
+          </>
+        )}
       </div>
 
       {/* ── lot configuration — everything on this page scales from here ────── */}
@@ -172,6 +209,35 @@ export default function Straddle45() {
         </p>
       </div>
 
+      {/* ── the paper book itself ───────────────────────────────────────────── */}
+      {paper && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>
+            Paper book — {paper.lots} lots ({paper.qty} qty) · as of {paper.asof}
+          </div>
+          <div className={styles.gateRow}>
+            <div><b>{lakh(paper.nav)}</b><span className={styles.muted}>NAV</span></div>
+            <div>
+              <b className={paper.realised >= 0 ? styles.pos : styles.neg}>{inr(paper.realised)}</b>
+              <span className={styles.muted}>realised · {paper.n_closed} closed</span>
+            </div>
+            <div>
+              <b className={paper.unrealised >= 0 ? styles.pos : styles.neg}>{inr(paper.unrealised)}</b>
+              <span className={styles.muted}>unrealised · {paper.n_open} open</span>
+            </div>
+            <div>
+              <b>{paper.win_rate == null ? '—' : paper.win_rate.toFixed(0) + '%'}</b>
+              <span className={styles.muted}>win rate so far</span>
+            </div>
+            <div><b>{lakh(paper.capital)}</b><span className={styles.muted}>book capital</span></div>
+          </div>
+          <p className={styles.note}>
+            The book trades a fixed <b>{paper.lots} lots</b>. The lot selector above re-prices the
+            <i> study</i> tables for planning; it does not resize the running book.
+          </p>
+        </div>
+      )}
+
       {/* ── KPI strip, scaled to the configured lots ────────────────────────── */}
       <div className={styles.kpis}>
         <Kpi label="CAGR" value={m.cagr.toFixed(2) + '%'} tone="pos" />
@@ -190,31 +256,104 @@ export default function Straddle45() {
         <div className={styles.cardTitle}>Open position</div>
         <table className={styles.table}>
           <thead><tr>
-            <th>Leg</th><th>Strike</th><th>Expiry</th><th>DTE</th><th>Qty</th>
-            <th>Entry</th><th>Entry ₹</th><th>Now ₹</th><th>P&amp;L ₹</th>
+            <th>Straddle</th><th>Strike</th><th>Expiry</th><th>DTE</th><th>Qty</th>
+            <th>Entered</th><th>Credit</th><th>Now</th><th>% of credit</th>
+            <th>MTM ₹</th><th>Exit due</th><th>Mark</th>
           </tr></thead>
           <tbody>
-            {positions.length === 0 ? (
-              <tr><td colSpan={9} className={styles.emptyCell}>
-                Nothing open — the system is not armed. When it is, both legs appear here with
-                live marks, exactly as the Momentum and NAS books show theirs.
+            {!live ? (
+              <tr><td colSpan={12} className={styles.emptyCell}>
+                {paper
+                  ? 'Flat — the next entry is 45 days before the following monthly expiry.'
+                  : 'Paper state not published yet.'}
               </td></tr>
-            ) : positions.map((p) => (
-              <tr key={p.leg}>
-                <td className={styles.sym}>{p.leg}</td>
-                <td>{p.strike}</td>
-                <td className={styles.muted}>{p.expiry}</td>
-                <td>{p.dte}</td>
-                <td>{p.qty}</td>
-                <td className={styles.muted}>{p.entry_date}</td>
-                <td>{p.entry_price}</td>
-                <td>{p.price ?? '—'}</td>
-                <td className={p.pnl >= 0 ? styles.pos : styles.neg}>{inr(p.pnl)}</td>
-              </tr>
-            ))}
+            ) : (() => {
+              const ratio = live.mark_prem != null ? live.mark_prem / live.credit : null;
+              const up = (live.mtm_rs ?? 0) >= 0;
+              return (
+                <tr>
+                  <td className={styles.sym}>NIFTY ATM CE + PE</td>
+                  <td>{live.strike.toFixed(0)}</td>
+                  <td className={styles.muted}>{live.expiry}</td>
+                  <td>{live.dte}</td>
+                  <td>{live.qty}</td>
+                  <td className={styles.muted}>{live.entry_date}</td>
+                  <td>{live.credit.toFixed(1)}</td>
+                  <td>{live.mark_prem == null ? '—' : live.mark_prem.toFixed(1)}</td>
+                  <td className={ratio == null ? '' : ratio <= 0.6 ? styles.pos : ratio >= 1.6 ? styles.neg : ''}>
+                    {ratio == null ? '—' : (ratio * 100).toFixed(0) + '%'}
+                  </td>
+                  <td className={up ? styles.pos : styles.neg}>{inr(live.mtm_rs ?? 0)}</td>
+                  <td className={styles.muted}>{live.exit_due}</td>
+                  <td className={styles.muted}>
+                    <span className={styles.srcTag}>{SRC_LABEL[live.mark_src ?? ''] ?? live.mark_src}</span>
+                  </td>
+                </tr>
+              );
+            })()}
           </tbody>
         </table>
+        {live && (
+          <p className={styles.note}>
+            Exits are ratios to the entry credit of <b>{live.credit.toFixed(1)} pts</b> ({inr(live.credit * live.qty)}):
+            target at <b>{(live.credit * 0.5).toFixed(1)}</b>, stop at <b>{(live.credit * 2).toFixed(1)}</b>,
+            otherwise close on <b>{live.exit_due}</b> (21 DTE) whatever the P&amp;L.
+          </p>
+        )}
       </div>
+
+      {/* ── trade history ───────────────────────────────────────────────────── */}
+      {paper && paper.closed_trades.length > 0 && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Trade history — {paper.n_closed} closed</div>
+          <table className={styles.table}>
+            <thead><tr>
+              <th>Expiry</th><th>Strike</th><th>Entered</th><th>Exited</th><th>Held</th>
+              <th>Credit</th><th>Exit</th><th>Gross pts</th><th>Cost</th><th>Net pts</th>
+              <th>Net ₹</th><th>Why</th>
+            </tr></thead>
+            <tbody>
+              {paper.closed_trades.map((t) => {
+                const days = Math.round(
+                  (new Date(t.exit_date!).getTime() - new Date(t.entry_date).getTime()) / 86400000);
+                const win = (t.net_rs ?? 0) >= 0;
+                return (
+                  <tr key={t.id}>
+                    <td className={styles.sym}>{t.expiry}</td>
+                    <td>{t.strike.toFixed(0)}</td>
+                    <td className={styles.muted}>{t.entry_date}</td>
+                    <td className={styles.muted}>{t.exit_date}</td>
+                    <td>{days}d</td>
+                    <td>{t.credit.toFixed(1)}</td>
+                    <td>{t.exit_prem?.toFixed(1)}</td>
+                    <td className={(t.gross_pts ?? 0) >= 0 ? styles.pos : styles.neg}>
+                      {t.gross_pts?.toFixed(1)}</td>
+                    <td className={styles.muted}>{t.cost_pts?.toFixed(1)}</td>
+                    <td className={win ? styles.pos : styles.neg}>{t.net_pts?.toFixed(1)}</td>
+                    <td className={win ? styles.pos : styles.neg}>{inr(t.net_rs ?? 0)}</td>
+                    <td><span className={styles.srcTag}>{t.exit_reason}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className={styles.totalRow}>
+                <td colSpan={9}>REALISED — {paper.n_closed} trades</td>
+                <td className={paper.realised >= 0 ? styles.pos : styles.neg}>
+                  {(paper.closed_trades.reduce((a, t) => a + (t.net_pts ?? 0), 0)).toFixed(1)}
+                </td>
+                <td className={paper.realised >= 0 ? styles.pos : styles.neg}>{inr(paper.realised)}</td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+          <p className={styles.note}>
+            Backtraced from real NSE bhavcopy closes using the same rules the study tested — these
+            are the actual campaigns the system would have run, not simulated draws. Costs are
+            0.25% slippage per side plus STT, exchange charges and brokerage.
+          </p>
+        </div>
+      )}
 
       {/* ── payoff ──────────────────────────────────────────────────────────── */}
       <div className={styles.card}>

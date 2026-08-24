@@ -2,6 +2,75 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-24 - Monday dropped from live TimeB, and the Best-Config Lab now reports NET
+
+**Monday is dark live; Friday stays.** r/122's atlas condemned the Monday cell (R:R@p95 1:11.8,
+modelled P(loss) 52%) as the third independent study to do so. Arun dropped Mon, briefly dropped
+Fri too, then kept Friday on its KEEP verdict (93% win, 1:6.9). Live TB-NIFTY = **Tue DTE0 +
+Fri DTE2**. The Monday cell keeps trading on PAPER as `CSL_TIMEB_NIFTY_MON` (8L) so the Nov
+re-run has evidence. Thursday SENSEX 10-lot bump **DECLINED** - stays 8 lots (the p95 tail
+~Rs38k at 8L was the deciding number). Commit 00d62a3.
+
+**research/124 - can Monday be rehabilitated? NO EDGE, CONCLUDED.** Swept 3,014 cells (137
+windows <=120min x 11 stop arms incl. rupee stops) on 17 Mondays + the 2015-> calm-zone study.
+137 cells passed the raw screen; **zero survived Westfall-Young + label-shuffle**. The best cell
+(+5,880@8L) sits at p=0.33 against best-of-2,000-random-draws (null-95 = +7,280) - i.e. it is
+what mining noise produces. Monday is the WIDEST morning of the week, not the calmest; the only
+calm zone (lunch) earns nothing. Kill-sheet: revisit 09:16-11:16 + Rs1,000 rupee stop at >=40
+recorded Mondays. Commits f17a6e9, a9498a2.
+
+**The Best-Config Lab was near-GROSS - fixed.** It charged a flat COST=160 per straddle round
+trip (Rs16/lot on 10 NIFTY lots): brokerage scale only, ZERO slippage, fills at observed chain
+prices. Monday DTE1 read +3,703/day 94% win; net of real costs it is **+1,363/day 75%**, which
+reconciles with r/122 (+1,200 median @8L) and r/124 (+992). Cost is now venue/size-aware
+(0.5pt/leg-side x4 + Rs30/leg-side/lot = Rs2,500 NIFTY, Rs800 SENSEX), the panel STATES the
+basis, and every DTE carries a 0.25/0.50/1.00pt sensitivity band. **Re-costed live rows:
+Tue +10,164 · Fri +3,122 · Thu +13,270 · Wed +367 (was +2,708 - effectively dead).**
+Commit 15edff9; full sweep regen ran after 15:40 via scripts/deferred_lab_regen.sh.
+
+**NAS watchdog was mailing ~12x/day about PAPER books - fixed.** (1) No check looked at leg mode,
+so the paper squeeze books raised naked-leg FAILs on positions with no broker order, and day-P&L
+vs max-loss summed paper + live. Every check is now live-only. (2) The de-dupe hashed the full
+detail text, which carries live ST/SL values - each 5-min poll looked like a NEW fail. Signature
+is now the failure identity with numbers stripped. Verified 13 OK / 0 fail. Commit 3e1288d.
+
+**Live NAS today: flat, -Rs3,601** (916-ATM +2,132 · ATM2 -5,252 · ATM4 -481) - well inside the
+-Rs7,800 venue floor, portfolio stop never armed. Both naked survivors exited ST_EXIT @15.70,
+which also CONFIRMS the a792136 trail-counter fix fires live.
+
+**PENDING - needs Arun's call:** the 1.0x lot bump, reshaped by the Monday drop. Atlas says Tue
+8->10L is earned (R:R@p95 1:1.5); TB-SENSEX Wed 8L / Thu 5L unchanged unless he says otherwise.
+Also still open: unified per-system position ledger (was due today).
+
+
+## 2026-08-24 - 45-DTE straddle now runs as a 3-lot PAPER book (/app/straddle45)
+
+`services/straddle45_paper.py` + `backtest_data/straddle45_paper.db`. Seeds completed campaigns
+from REAL NSE bhavcopy closes and marks the open position from the broker. Publishes a static
+JSON (`/app/straddle45_paper.json`) so the page needs NO API route and NO backend restart.
+
+State at open: **3 closed, realised +Rs 1,31,704** (2026-05-15/06-09 +453.8 pts, 2026-06-12/07-07
++31.0, 2026-07-10/08-04 +190.6 - all TIME_21DTE) and **1 LIVE: Sep-29 monthly, entered 14-Aug @
+24350, credit 749.7 pts, marked ~597 from Kite LTP, MTM ~+Rs 29,900, exit due 08-Sep**.
+
+**Found and fixed: bhav had NO download cron** - it sat stale from 2026-07-21 to 2026-08-24, so
+every EOD-priced book was silently ageing. Backfilled the gap and added a 16:10 daily cron.
+Also fixed a real bug in the paper engine: `prev_session()` collapsed FUTURE dates onto the last
+known session, which closed the open trade 18 days early and invented entries for long-dated
+contracts. Future dates now stay unknown.
+
+Crons: mark */5 during market hours; bhav 16:10; seed+mark 16:20. All registered in ops_center
+(new group) with two dated REVIEWS. Strategies register flipped parked -> paper.
+
+**Data limit worth remembering:** the 1-min recorder only picks a contract up at ~27 DTE, so it
+can NEVER price a 45-DTE entry. Entries come from the EOD close; the live mark uses Kite LTP
+until the contract enters the recorder window, then the 1-min feed takes over.
+
+**PENDING before this can go live:** (1) STRESS-MARGIN test - reconstruct per-lot SPAN 2019-26 and
+re-run with a margin-call rule (Ops review due 2026-09-30); (2) paper-vs-study tracking review
+after ~3 completed campaigns (due 2026-11-30); (3) correlation vs THE STACK / NAS / straddle books.
+
+
 ## 2026-08-24 - 45-DTE straddle: control-room page LIVE at /app/straddle45 (NOT ARMED)
 
 Arun asked for an app page under Live, in line with NAS/Momentum. Built:

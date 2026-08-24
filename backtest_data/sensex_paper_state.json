@@ -2078,12 +2078,12 @@
    "ce_entry": 368.6,
    "pe_entry": 273.65,
    "credit": 642.25,
-   "ce_exit": 182.65,
+   "ce_exit": 190.0,
    "pe_exit": 360.25,
    "exit_reason": "SL",
    "entry_time": "09:20",
    "exit_time": "15:15",
-   "pnl": 3934,
+   "pnl": 3640,
    "legs": [
     {
      "type": "CE",
@@ -2091,8 +2091,8 @@
      "strike": 77800,
      "qty": 40,
      "entry": 368.6,
-     "ltp": 182.65,
-     "pnl": 7438
+     "ltp": 190.0,
+     "pnl": 7144
     },
     {
      "type": "PE",

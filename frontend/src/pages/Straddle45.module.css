@@ -17,6 +17,13 @@
 }
 .gateBadge .dot { width: 8px; height: 8px; border-radius: 50%; }
 .off { color: var(--accent-warn, #d98a00); }
+.paperOn { color: var(--accent, #4f8bd6); }
+.paperOn .dot { background: var(--accent, #4f8bd6); }
+.srcTag {
+  font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--surface-sunken, rgba(0,0,0,0.05)); color: var(--ink-muted);
+  text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
+}
 .off .dot { background: var(--accent-warn, #d98a00); }
 
 .warn {

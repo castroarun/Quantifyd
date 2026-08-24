@@ -569,8 +569,8 @@ export const SYSTEMS: StrategySystem[] = [
     id: 'straddle45',
     name: '45-DTE Straddle',
     subtitle: 'NIFTY monthly \u2014 short ATM straddle, 45 \u2192 21 DTE',
-    status: 'parked',
-    size: '3 lots (195 qty) configured \u2014 nothing armed',
+    status: 'paper',
+    size: '3 lots (195 qty)',
     since: '24 Aug 2026',
     rule: 'Sell the ATM straddle 45 calendar days before the NIFTY monthly expiry; close at 21 DTE, or earlier on a 50% target / 200% stop. No executor \u2014 study and sizing only.',
     rules: [
