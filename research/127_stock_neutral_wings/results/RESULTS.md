@@ -17,21 +17,21 @@ at 0.5%-of-premium costs, t=+5.06, win 64.8%**, p05 −1.96%. Survives 1% cost
 (+0.166%, t=2.58). 89% of trades reach the time exit (same shape as r/119 NIFTY).
 
 Portfolio (10 slots, ₹1Cr, margin modeled = 1.25×max-loss+2% ≈ 6.7% of notional,
-idle capital at 6.5%):
+idle capital at 5% — liquid-ETF assumption per Arun 2026-08-25):
 
 | Margin assumption | Era | CAGR | MaxDD | Calmar | Sharpe |
 |---|---|---|---|---|---|
-| base (6.7%) | 2016–26 | 29.3% | −20.9% | 1.40 | 0.81 |
-| base (6.7%) | 2021–26 (dense) | **39.4%** | −20.9% | 1.88 | 1.03 |
-| ×1.5 (10%) | 2021–26 | 27.2% | −13.8% | 1.97 | 0.97 |
-| ×2.0 (13.4%) | 2021–26 | 21.1% | −10.1% | 2.09 | 0.91 |
+| base (6.7%) | 2016–26 | 28.2% | −21.2% | 1.33 | 0.78 |
+| base (6.7%) | 2021–26 (dense) | **38.5%** | −21.2% | 1.81 | 1.00 |
+| ×1.5 (10%) | 2021–26 | 26.3% | −14.1% | 1.86 | 0.93 |
+| ×2.0 (13.4%) | 2021–26 | 20.2% | −10.4% | 1.94 | 0.87 |
 
 **Correlation with NIFTY monthly returns: −0.09.** In the 11 months NIFTY fell
->3%, the strategy averaged **+1.71%/month** — genuine diversification for a book
+>3%, the strategy averaged **+1.65%/month** — genuine diversification for a book
 full of NIFTY short-vol.
 
-Per-year (base margin): 2021 +57.7 / 2022 +17.0 / 2023 +47.3 / 2024 +18.9 /
-2025 +40.0 / 2026 +49.5 (9mo). 2016–20 slightly negative on 1–2 positions/cycle
+Per-year (base margin): 2021 +56.1 / 2022 +16.0 / 2023 +46.1 / 2024 +18.2 /
+2025 +39.5 / 2026 +49.2 (9mo). 2016–20 slightly negative on 1–2 positions/cycle
 (universe barely tradeable then — capital mostly idle).
 
 ## Robustness (G3) — all passed

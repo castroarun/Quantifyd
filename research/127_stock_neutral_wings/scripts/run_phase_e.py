@@ -20,6 +20,7 @@ import engine as E
 
 RESULTS = HERE.parent / "results"
 COST, N_MAX, C0, RF = 0.005, 10, 10_000_000.0, 0.065
+IDLE_YIELD = 0.05   # liquid-ETF assumption (Arun 2026-08-25); RF kept for Sharpe hurdle
 
 tr = pd.read_csv(RESULTS / "phase_b2_trades.csv")
 tr = tr[(tr.config == "C1_E45X21W7K25_noSL") & (tr.atm_vol >= 100) & (tr.wing_vol_min >= 10)].copy()
@@ -46,7 +47,7 @@ for cyc, g in tr.groupby("cycle"):
         pnl += t["net_pct"] * notional
     idle = N_MAX - len(g)
     hold_frac = g["hold_days"].mean() / 30.0 if len(g) else 0
-    pnl += (idle / N_MAX) * equity * RF / 12.0 + (len(g) / N_MAX) * equity * RF / 12.0 * max(0.0, 1 - hold_frac)
+    pnl += (idle / N_MAX) * equity * IDLE_YIELD / 12.0 + (len(g) / N_MAX) * equity * IDLE_YIELD / 12.0 * max(0.0, 1 - hold_frac)
     ret = pnl / equity
     equity *= (1 + ret)
     rows.append(dict(cycle=str(cyc), n_pos=len(g), ret=ret, equity=equity,

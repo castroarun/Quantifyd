@@ -1,28 +1,26 @@
-/home/arun/quantifyd/research/127_stock_neutral_wings/scripts/run_phase_e.py:91: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
-  joint = pd.concat([mm, nm], axis=1, keys=["strat", "nifty"]).dropna()
 ========================================================================================================
 PHASE E — C1 portfolio, C0=Rs1Cr, 10 slots, margin=1.25xMaxLoss+2%, idle @6.5%
 ========================================================================================================
-FULL 2016-2026         months=87  CAGR=29.28%  MaxDD=-20.9%  Calmar=1.40  Sharpe=0.81  worst-mo=-9.84%  avg n_pos=5.7
-DENSE ERA 2021-2026    months=69  CAGR=39.44%  MaxDD=-20.9%  Calmar=1.88  Sharpe=1.03  worst-mo=-9.84%  avg n_pos=6.8
+FULL 2016-2026         months=87  CAGR=28.24%  MaxDD=-21.2%  Calmar=1.33  Sharpe=0.78  worst-mo=-9.86%  avg n_pos=5.7
+DENSE ERA 2021-2026    months=69  CAGR=38.50%  MaxDD=-21.2%  Calmar=1.81  Sharpe=1.00  worst-mo=-9.86%  avg n_pos=6.8
 
 per-year:
-  2016:   +8.79%   (n_pos avg 1.2, months 4)
-  2017:   +1.64%   (n_pos avg 1.0, months 1)
-  2018:   -6.68%   (n_pos avg 1.7, months 3)
-  2019:   -3.38%   (n_pos avg 1.2, months 4)
-  2020:   -4.55%   (n_pos avg 1.7, months 6)
-  2021:  +57.65%   (n_pos avg 4.2, months 12)
-  2022:  +17.00%   (n_pos avg 5.0, months 12)
-  2023:  +47.33%   (n_pos avg 5.6, months 12)
-  2024:  +18.92%   (n_pos avg 7.7, months 12)
-  2025:  +39.97%   (n_pos avg 9.5, months 12)
-  2026:  +49.51%   (n_pos avg 9.2, months 9)
+  2016:   +8.30%   (n_pos avg 1.2, months 4)
+  2017:   +1.52%   (n_pos avg 1.0, months 1)
+  2018:   -6.99%   (n_pos avg 1.7, months 3)
+  2019:   -3.81%   (n_pos avg 1.2, months 4)
+  2020:   -5.17%   (n_pos avg 1.7, months 6)
+  2021:  +56.10%   (n_pos avg 4.2, months 12)
+  2022:  +15.97%   (n_pos avg 5.0, months 12)
+  2023:  +46.13%   (n_pos avg 5.6, months 12)
+  2024:  +18.23%   (n_pos avg 7.7, months 12)
+  2025:  +39.49%   (n_pos avg 9.5, months 12)
+  2026:  +49.15%   (n_pos avg 9.2, months 9)
 
 avg margin_pct per position: 6.7% of notional (=> leverage ~14.9x notional per slot-rupee)
 avg notional/slot at Rs10L slot: Rs149L
 
 corr(monthly, NIFTY) = -0.09  (n=86 months)
-NIFTY down>3% months (n=11): strategy avg +1.71%/mo
+NIFTY down>3% months (n=11): strategy avg +1.65%/mo
 
 saved -> results/phase_e_equity.csv
