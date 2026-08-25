@@ -19,9 +19,9 @@ GROUPS = [
         ("expiry_lab_assessment", "Tue+Thu 16:05 IST cron",
          "re-runs the DTE0 afternoon sweep, re-scores frozen slots (TimeB2 live Tue 13:15-14:30 CSL30 8L), flags DRIFT/WEAK, appends permanent run history to /app/straddles#expiry-lab",
          "venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/expiry_lab_assessment.py"),
-        ("timeb2_oneshot (live slot)", "manual arm on expiry Tuesday pre-13:15 (one-shot)",
-         "NIFTY Tue 13:15->14:30 combined-SL30 8L REAL; gates+margin checked at entry; records to results/timeb2_live_days.json",
-         "setsid nohup venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/timeb2_oneshot.py </dev/null >/tmp/timeb2_live.log 2>&1 &"),
+        ("TimeB2 standing book (CSL_TIMEB2_LIVE)", "daemon 09:12 cron, Tuesdays (NIFTY DTE0) only",
+         "NIFTY Tue 13:15->14:30 combined-SL30 8L REAL - formalized 25-Aug post-close; trades land in the CSL day records; one-shot runner retired (25-Aug precedent -2,990)",
+         "grep CSL_TIMEB2_LIVE /tmp/csl_paper.log"),
     ]),
 
     ("Daily auto-analysis (15:42 regen chain)", [

@@ -58,6 +58,18 @@ ref = [{"sym": s, "entry": e, "exit": xx, "sl": c["sl"], "mean_lot": round(c["me
                                          key=lambda c: c["ratio"] or -9, default=None)] if c]
 
 live_days = json.load(open(LIVE)) if os.path.exists(LIVE) else []
+# from 2026-08-26 TimeB2 is the daemon book CSL_TIMEB2_LIVE - its trades live in the
+# CSL day records, not the one-shot file
+try:
+    st = json.load(open(Q + "/backtest_data/csl_paper_state.json"))
+    recs = st.get("records") or (st if isinstance(st, list) else [])
+    for r in recs:
+        if isinstance(r, dict) and r.get("book") == "CSL_TIMEB2_LIVE":
+            live_days.append({"day": r.get("day"), "status": "DONE", "reason": r.get("reason"),
+                              "credit": r.get("credit"), "pnl": r.get("pnl"),
+                              "qty": r.get("qty"), "lots": r.get("lots")})
+except Exception:
+    pass
 # live-vs-model: match each DONE live day to the TimeB2 model cell's same-day value
 model = {dd: v for dd, v in (winners[0]["series"] if winners else [])}
 lvm = []
