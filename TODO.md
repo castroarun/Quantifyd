@@ -2,6 +2,16 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ 2026-08-25 — research/127 STRATEGY-candidate: stock 45→21 DTE winged strangle — next: margin check, then paper book
+One universal ruleset across ~80 F&O stocks (real NSE bhav EOD): sell ±2.5% strangle at
+45 DTE, buy 7% wings, NO stop, TP 50%, exit 21 DTE, ATM vol≥100 + wings traded. Net
++0.264%S0/trade (t=5.06, n=628); portfolio 39% CAGR dense-era at modeled margin, 21%/−10%DD
+at 2× margin; corr to NIFTY −0.09 (+EV in NIFTY crash months). G3 PASSED (super-winner, OOS,
+liquidity-monotone, DTE placebo 35/55≈0, lag). Full verdict research/127_stock_neutral_wings/
+results/RESULTS.md (commit 964753e). **Open items:** (1) real margin check via Kite basket
+margin API (G4 full pass gate); (2) paper book on top-liquidity tier (5-10 slots); (3) earnings
+-date source → test earnings-skip; (4) tearsheet + publish to /app/backtest registry.
+
 ## 2026-08-25 - 45-DTE straddle paper book: VIX-rank filter ADOPTED + LIQUID1 idle sweep
 
 **Filter is now the plan: India VIX PERCENTILE RANK > 25** vs the previous 252 sessions - NOT a VIX
