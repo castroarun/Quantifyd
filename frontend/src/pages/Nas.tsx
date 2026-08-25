@@ -2539,6 +2539,15 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                 <span style={{ color: 'var(--ink-muted)' }}>{a.stop}</span>
               </div>
             ))}
+            {tb2 && new Date().getDay() === 2 && ['ARMED', 'OPEN', 'EXITING', 'DONE'].includes(tb2.status) && (
+              <div style={{ display: 'flex', gap: 12, fontSize: 11, padding: '2px 0', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 600, minWidth: 120 }}>TimeB2 · one-shot</span>
+                <span style={{ color: '#58a6ff', fontSize: 10, fontWeight: 700, minWidth: 48 }}>NIFTY</span>
+                <span style={{ fontFamily: 'monospace' }}>13:15*→14:30*</span>
+                <span style={{ color: 'var(--ink-muted)', minWidth: 40 }}>8L</span>
+                <span style={{ color: 'var(--ink-muted)' }}>combined-SL 30% · research/125, today only · {tb2.status}</span>
+              </div>
+            )}
           </div>
         )}
         {rows.length === 0 && <div style={{ color: 'var(--ink-muted)', padding: 8 }}>No trades today yet.</div>}
