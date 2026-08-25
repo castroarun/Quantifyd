@@ -1580,8 +1580,9 @@ export default function Nas() {
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
   const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
-    const b: any = cslLive?.books?.[bk];
-    if (!b) return { state: null, err: null };
+    // NOTE: the daemon drops a book from csl_paper_live.json once it exits - a missing
+    // key must still fall through to the CLOSED-record branch (user: booked sleeves stay visible).
+    const b: any = cslLive?.books?.[bk] ?? {};
     // venue-aware trading-DTE: executor-published if present, else weekday table
     // (NIFTY Tue-expiry: Mon..Fri -> 1,0,4,3,2 · SENSEX Thu-expiry: 3,2,1,0,4).
     // Fixes the Wed bug where COMB (ex-Wed) carried no dte and armed rows vanished.
