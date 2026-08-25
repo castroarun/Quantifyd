@@ -28,7 +28,7 @@ from collections import defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "..", "results")
 LOT = {"NIFTY": 65, "SENSEX": 20}
-COST = {"NIFTY": 250.0, "SENSEX": 200.0}   # Rs/lot round trip (0.5/1.0 pt slip + 30/leg-side)
+COST = {"NIFTY": 250.0, "SENSEX": 200.0}   # LEGACY constant, reporting only -- net now carries the MEASURED outcome-aware cost charged in stage A (2026-08-25)
 
 DEPLOYED = {  # name -> (venue, dte, cell, arm, sl_frac)
     "MON_NIFTY_DTE1":  ("NIFTY", 1, "DEP_1300_1400", "SL20", 0.20),

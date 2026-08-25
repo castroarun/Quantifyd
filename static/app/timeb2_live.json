@@ -1,1 +1,1 @@
-{"ts": "13:11:50", "status": "ARMED", "window": "13:15-14:30", "sl": "CSL30", "lots": 8, "qty": 520}
+{"ts": "13:17:13", "status": "OPEN", "window": "13:15-14:30", "sl": "CSL30", "lots": 8, "qty": 520, "ce": "NIFTY26AUG24150CE", "pe": "NIFTY26AUG24150PE", "credit": 53.75, "ce_fill": 21.3, "pe_fill": 32.45, "sl_trigger": 69.88, "comb": 52.05, "open_pnl": 884}

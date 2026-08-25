@@ -30,6 +30,28 @@ VENUE = {
 }
 CHG = 30.0            # Rs per leg-side per lot
 LEG_SIDES = 4         # 2 legs x (sell + buy back)
+
+# --- MEASURED cost model (2026-08-25) ----------------------------------------
+# From 443 real live leg-sides (Kite fill vs chain LTP, same minute), live NAS 916 books:
+#   entry (sell) -0.228 pt (favourable -> booked 0) | time-exit +0.178 | SL-exit +6.548
+# Slippage lives in stop-outs. Charges are the exact Zerodha F&O option rate card; brokerage
+# is Rs20 per ORDER (4 per straddle round trip), so it is divided across the study lot count.
+SLIP_ENTRY = 0.0
+SLIP_TIME  = 0.178
+SLIP_STOP  = 6.548
+NLOTS_REF  = 8
+
+def cost_per_lot(credit, exitp, lot, reason):
+    sell = credit * lot; buy = exitp * lot; tot = sell + buy
+    brok = 80.0 / NLOTS_REF          # Rs20 x 4 orders, spread over the study lot count
+    stt = 0.001 * sell
+    txn = 0.0003503 * tot
+    ipft = 0.0000050 * tot
+    sebi = 0.0000010 * tot
+    stamp = 0.00003 * buy
+    gst = 0.18 * (brok + txn + ipft + sebi)
+    slip = 2 * SLIP_ENTRY + 2 * (SLIP_STOP if reason == "SL" else SLIP_TIME)
+    return brok + stt + txn + ipft + sebi + stamp + gst + slip * lot
 SESS_END_M = 15 * 60 + 20
 
 STARTS = [9 * 60 + 16] + list(range(9 * 60 + 30, 14 * 60 + 1, 15))   # 20 starts
@@ -180,7 +202,7 @@ def main():
     WD = ["Mon", "Tue", "Wed", "Thu", "Fri"]
     for sym, V in VENUE.items():
         lot, step, slip = V["lot"], V["step"], V["slip"]
-        cost = LEG_SIDES * slip * lot + LEG_SIDES * CHG
+        cost = cost_per_lot(100.0, 85.0, lot, "TIME")  # nominal, for the log only
         days = all_days(c, sym)
         log("%s: %d candidate days %s..%s (cost Rs%.0f/lot RT)" % (sym, len(days), days[0], days[-1], cost))
         kept = 0
@@ -211,12 +233,13 @@ def main():
                     if not r:
                         continue
                     gross = (r["credit"] - r["exit_comb"]) * lot
+                    _c = cost_per_lot(r["credit"], r["exit_comb"], lot, r["reason"])
                     w.writerow(dict(
                         venue=sym, day=day, weekday=wd, expiry=fexp, dte_trd=dte_t,
                         cell=lbl, arm=arm, start=m2hm(s), end=m2hm(m1),
                         strike=K, spot0=round(sp0, 2), credit=round(r["credit"], 2),
                         exit_hm=m2hm(r["exit_m"]), exit_comb=round(r["exit_comb"], 2),
-                        reason=r["reason"], gross=round(gross), net=round(gross - cost),
+                        reason=r["reason"], gross=round(gross), net=round(gross - _c),
                         mae_full_rs=round(r["mae_full"] * lot),
                         mae_full_pct=round(100.0 * r["mae_full"] / r["credit"], 2),
                         und_exc_pts=round(r["und_exc"], 1),
