@@ -81,6 +81,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Monday AM live cell (CSL_TIMEB_NIFTY_MON_AM) - keep or kill after 4 live Mondays", "2026-09-22", "PENDING",
+     "Went live 2026-08-25 at 8 lots, 09:16-11:16, Rs1,000/lot rupee stop, as an Arun OVERRIDE against r/124 (best Monday cell on measured costs, median +6,920@8L/88.9% win, but FAILS the label-shuffle null p=0.376 on n=18). Judge on 4 real Mondays: realised median vs +6,920, how often the rupee stop fires (modelled 5.6%), realised worst day vs the modelled -15,752, and whether entering 8 lots at 09:16 on the SAME strike as the 6-lot suite + 2-lot COMB shows the r/126 Arm C concentration effect. Paper control: CSL_TIMEB_NIFTY_MON (13:00-14:00)."),
     ("TimeB2 (expiry-Tue afternoon straddle) live-vs-model review after 4 Tuesdays", "2026-09-22", "SCHEDULED",
      "research/125 slot went live 2026-08-25 (8L one-shot); judge live fills vs model in /app/straddles#expiry-lab live_vs_model; also decide SENSEX Thu 13:30-15:00 CSL30 deployment then"),
 

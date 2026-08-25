@@ -2,6 +2,33 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 2026-08-25 - 45-DTE straddle paper book: VIX-rank filter ADOPTED + LIQUID1 idle sweep
+
+**Filter is now the plan: India VIX PERCENTILE RANK > 25** vs the previous 252 sessions - NOT a VIX
+level of 25 (that would be 7 of 89 entries; the rank keeps 61 of 89). Study basis: Calmar 1.09 vs
+0.66 unfiltered, zero losing years vs one, worst trade halved (-Rs 1.58L -> -Rs 88k at 3 lots), for
+Rs 1.1L less profit over 7.5 years.
+
+Arun's call: sub-threshold campaigns are **still paper-traded but tagged OFF-PLAN**, so the filter's
+value is measured live rather than assumed. The open Sep-29 position entered at rank 22.6 and is
+retained with that tag. Book now reports NAV "as traded" AND "on plan" side by side.
+All 3 closed trades were ON-PLAN, so realised P&L is unchanged at Rs 1,31,704.
+
+**Idle cash -> LIQUID1** (Kotak Nifty 1D Rate Liquid ETF). Chosen over 17 other NSE liquid ETFs:
+highest measured yield (5.11%) and 3x the depth of any other GROWTH-structure liquid ETF not already
+in use (LIQUIDCASE is pledged, CASHIETF is Momentum's). The Rs 1000.00-pinned ones (LIQUIDBEES etc)
+are the daily-dividend model the project already avoids. Accrual uses the ETF's REAL close-to-close
+prices over each flat span - Rs 3,544 earned over 3 spans so far.
+
+**Also fixed a latent bug:** the monthly-expiry picker would have chosen the 31-Dec-26 legacy Thursday
+contract (listed 2024) over the real 29-Dec-26 Tuesday monthly, and would have fired mid-Nov. Now
+guarded by the prevailing monthly weekday, derived from data rather than hardcoded.
+
+**STILL OPEN:** (1) stress-margin test - the blocking item for live (Ops review 2026-09-30);
+(2) the live mark does NOT evaluate target/stop intraday - exits are only tested on EOD closes, which
+contradicts the hourly-monitoring recommendation. Small fix, not yet done.
+
+
 ## 2026-08-24 - Monday dropped from live TimeB, and the Best-Config Lab now reports NET
 
 **Monday is dark live; Friday stays.** r/122's atlas condemned the Monday cell (R:R@p95 1:11.8,

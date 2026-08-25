@@ -39,7 +39,9 @@ LEG_SIDES = 4         # 2 legs x (sell + buy back)
 SLIP_ENTRY = 0.0
 SLIP_TIME  = 0.178
 SLIP_STOP  = 6.548
-NLOTS_REF  = 8
+NLOTS_REF  = 10   # MUST match r/122 stage A: r/124 reconciles to it to the rupee, and the
+                  # Rs80/4-order brokerage term is divided by this. 8 vs 10 put a Rs2/lot
+                  # wedge between the two studies and correctly tripped r/124 recon gate.
 
 def cost_per_lot(credit, exitp, lot, reason):
     sell = credit * lot; buy = exitp * lot; tot = sell + buy

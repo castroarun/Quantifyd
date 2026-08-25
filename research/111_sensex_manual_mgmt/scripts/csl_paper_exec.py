@@ -40,7 +40,9 @@ BOOKS = {
                             "fixed_cfg": {"entry": "09:25", "exit": "15:20", "sl": 20}},  # 2026-08-19: Thursday-only TB-N at reduced size (Option B) - DTE3 is the 2nd-best NIFTY cell; 3L is the max that clears every margin gate at current capital. Config json trimmed to DTE3 only.
     "CSL30F_SENSEX_WED": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed", "mode": "live",
                           "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},  # 2026-08-20 USER OVERRIDE vs study: Wed full-day cell is -571/day 64% (n=11) and verdict Q4 said windows-only - Arun chose live anyway after seeing the table. Config json trimmed to DTE1 only. Review after 4 live Wednesdays (Ops). Paper control book unchanged.
-    "CSL_TIMEB_NIFTY_MON": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "fixed",
+"CSL_TIMEB_NIFTY_MON_AM": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "fixed", "mode": "live",
+                               "fixed_cfg": {"entry": "09:16", "exit": "11:16", "sl": "rs1000"}},  # 2026-08-25 USER OVERRIDE vs study: r/124 re-run makes this the best Monday cell (median +6,920@8L, win 88.9%, R:R@p95 1:1.0, stop-invariant) BUT it FAILS the label-shuffle null (p=0.376, n=18) - indistinguishable from mined noise. Arun chose live anyway at 8L with the Rs1,000/lot rupee stop, which caps the worst day best (-15,752 vs -20,464 nostop / -28,496 SLP20). Enters 09:16 alongside the 6-lot suite + 2-lot COMB on the SAME strike - the r/126 Arm C concentration caveat applies. Review after 4 live Mondays (Ops).
+        "CSL_TIMEB_NIFTY_MON": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "fixed",
                             "fixed_cfg": {"entry": "13:00", "exit": "14:00", "sl": 20}},  # 2026-08-23 (rev same day): only MONDAY dropped from the live TimeB book (condemned by r/120+121+122; Arun first dropped Fri too, then kept it on its KEEP verdict). This PAPER twin keeps the Monday cell trading for the 2026-11 re-run. Config seeded with DTE1 only. Thu SX bump to 10L declined same day - stays 8L.
     "CSL30F_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                      "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},
@@ -369,8 +371,18 @@ def main():
                     if P["tick"] % SAMPLE_EVERY == 1:
                         P["series"].append([now, round(P["realized_rs"] + (P["credit"] - comb) * B["qty"])])
                         write_live(plans, today)
-                    sl = BACKSTOP if P["sl"] == "none" else P["sl"] / 100.0
-                    thr = (1 + sl) * P["credit"]
+                    # Stop threshold. Three shapes:
+                    #   "none"   -> 50% disaster backstop (never truly stopless live)
+                    #   <number> -> percent of credit (scales with the credit collected)
+                    #   "rsN"    -> Rs N per LOT, converted to points via the lot size. DTE-agnostic
+                    #               (research/96 shape): it does NOT scale with credit, so a thin
+                    #               credit day gets the same rupee risk as a fat one.
+                    _slcfg = P["sl"]
+                    if isinstance(_slcfg, str) and _slcfg.startswith("rs"):
+                        thr = P["credit"] + float(_slcfg[2:]) / float(B["lot"])
+                    else:
+                        sl = BACKSTOP if _slcfg == "none" else _slcfg / 100.0
+                        thr = (1 + sl) * P["credit"]
                     reason = None
                     if P["last_comb"] is not None and P["streak"] >= 2:
                         reason = "SL_DWELL"          # dwell confirmed on prior polls -> exit THIS poll

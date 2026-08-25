@@ -148,7 +148,7 @@ export const SYSTEMS: StrategySystem[] = [
       ['Exit', 'Time-boxed exit per DTE'],
       ['Config policy', 'Friday sweep is informational — a config change is a deliberate commit, never automatic'],
       ['Margin gate', 'Skips entry when broker margin is short of the requirement + headroom'],
-      ['Days', 'Tue(DTE0) + Fri(DTE2) from 25-Aug — Monday dropped live (condemned by r/120+121+122: R:R@p95 1:11.8, P(loss) 52%). The Monday cell keeps trading on paper via CSL_TIMEB_NIFTY_MON for the Nov re-run. Thursday runs via the dedicated Thursday book'],
+      ['Days', 'Tue(DTE0) 09:30-11:00 SL25 + Fri(DTE2) 10:00-12:00 SL20. MONDAY IS BACK LIVE from 25-Aug as a separate book (CSL_TIMEB_NIFTY_MON_AM, 8 lots, 09:16-11:16, Rs1,000/lot rupee stop) - Arun override: r/124 makes it the best Monday cell but it FAILS the shuffle null (p=0.376, n=18). The old 13:00-14:00 Monday cell stays PAPER'],
     ],
     rulesDoc: 'research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py (BOOKS)',
     dashboard: '/straddles',
@@ -156,6 +156,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'csl-best-config-straddles', title: 'CSL best-config straddles — entry × exit × combined-SL per DTE' },
     ],
     changeLog: [
+      { date: '25 Aug 2026', text: 'Monday returns live in a NEW book, CSL_TIMEB_NIFTY_MON_AM: 09:16-11:16, 8 lots, Rs1,000/lot rupee stop. The r/124 re-run on measured costs made this the best Monday cell (median +Rs6,920/day @8L, win 88.9%, R:R@p95 1:1.0, stop-invariant across every arm) and the rupee stop caps its worst day best (-15,752 vs -20,464 unstopped, -28,496 at SL20). USER OVERRIDE: the cell still fails the label-shuffle null at p=0.376 on 18 Mondays, so it is not statistically distinguishable from mined noise - Arun chose live after seeing that. The old 13:00-14:00 Monday cell continues on paper. Engine change: the CSL daemon gained rupee-per-lot stop support (rsN), additive - percent and none arms unchanged.' },
       { date: '23 Aug 2026', text: 'Monday dropped from live trading — the window atlas (r/122) condemned it by a third independent route (R:R@p95 1:11.8, modelled P(loss) 52%; r/120 and r/121 agree). Friday was briefly dropped in the same decision, then KEPT on its atlas KEEP verdict (93% win, 1:6.9). The Monday cell continues on paper (CSL_TIMEB_NIFTY_MON, 8L) so the November re-run has live-shaped evidence. Same day: Thursday TIMEB SENSEX 10-lot bump declined — stays 8 lots.' },
       { date: '19 Aug 2026', text: 'Thursday split out into CSL_TIMEB_NIFTY_THU at 3 lots (entry 09:25, exit 15:20, SL20): DTE3 is the grid\'s 2nd-best NIFTY cell (mean ₹16,956, 91%) but full size collides with SENSEX\'s best day at current capital. Main book dark on Thu. 8→10 lots scheduled 24-Aug.' },
       { date: '17 Aug 2026', text: 'First 6-lot REAL window (13:00 entry) observed.' },

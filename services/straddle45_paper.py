@@ -44,6 +44,14 @@ TARGET, STOP = 0.50, 2.00
 DTE_IN, DTE_OUT = 45, 21
 SLIP = 0.0025
 SEED_FROM = "2026-05-01"       # backtrace campaigns entered on/after this
+VIX_RANK_MIN = 25              # the PLAN: enter only when India VIX ranks above the
+                               # 25th percentile of the previous 252 sessions.
+                               # Campaigns below it are still traded on paper but
+                               # tagged OFF-PLAN, so the filter's value is measured
+                               # live instead of assumed.
+IDLE_ETF = "LIQUID1"           # Kotak Nifty 1D Rate Liquid ETF - growth structure,
+                               # 5.11% measured, deepest growth liquid ETF not already
+                               # used (LIQUIDCASE is pledged, CASHIETF is Momentum's).
 
 
 # ------------------------------------------------------------------ helpers --
@@ -77,6 +85,7 @@ def init_db():
       exit_date TEXT, exit_prem REAL, exit_reason TEXT, exit_spot REAL,
       gross_pts REAL, cost_pts REAL, net_pts REAL, net_rs REAL,
       status TEXT,                       -- OPEN | CLOSED
+      vix_level REAL, vix_rank REAL, on_plan INTEGER,
       mark_prem REAL, mark_date TEXT, mark_src TEXT, mtm_rs REAL, mark_spot REAL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(expiry, entry_date));
@@ -110,18 +119,82 @@ def prev_session(days, target):
     return days[i - 1] if i > 0 else None
 
 
+def _monthly_weekday(cands):
+    """The weekday NIFTY monthlies currently expire on, learned from the data.
+
+    NSE moved the monthly from the last Thursday to the last Tuesday in Sep-2025,
+    and may move it again — so this is derived, never hardcoded.
+    """
+    recent = [e for e in sorted(cands) if e >= "2025-10-01"][-8:]
+    if not recent:
+        return None
+    wd = {}
+    for e in recent:
+        w = dparse(e).weekday()
+        wd[w] = wd.get(w, 0) + 1
+    return max(wd, key=wd.get)
+
+
 def monthly_expiries(con, days, start, end):
-    """Monthly = last expiry of the month already listed 45 days out."""
+    """Monthly = last expiry of the month already listed 45 days out, on the
+    prevailing monthly weekday.
+
+    The weekday guard matters: legacy far-dated contracts (2026-12-31, 2027-06-24,
+    2027-12-30 — all Thursdays, listed years ahead) survive alongside the real
+    monthlies and are LATER in the month. Without it, "last expiry of the month"
+    picks the legacy contract and the book trades the wrong instrument. Verified
+    against Dec-2026: the rule must pick 12-29 (Tue), not 12-31 (Thu).
+    """
     rows = con.execute(
         "SELECT expiry_date, MIN(trade_date) FROM nse_options_bhav WHERE symbol='NIFTY' "
         "AND expiry_date>=? AND expiry_date<=? GROUP BY expiry_date ORDER BY expiry_date",
         (start, end)).fetchall()
-    out = {}
+    listed = {}
     for exp, first in rows:
         ed = prev_session(days, dstr(dparse(exp) - timedelta(days=DTE_IN)))
         if ed and first <= ed:
-            out[exp[:7]] = exp
+            listed.setdefault(exp[:7], []).append(exp)
+    mw = _monthly_weekday([e for v in listed.values() for e in v])
+    out = {}
+    for ym, cands in listed.items():
+        same = [e for e in cands if mw is None or dparse(e).weekday() == mw]
+        out[ym] = max(same) if same else max(cands)
     return dict(sorted(out.items()))
+
+
+def upcoming_entries(con, days, n=3):
+    """The forward schedule: when the book next puts money to work.
+
+    Future NSE holidays are unknown, so the planned entry only rolls off weekends;
+    a holiday could pull it one session earlier. Flagged in the payload.
+    """
+    today = dstr(datetime.now())
+    rows = con.execute(
+        "SELECT expiry_date, MIN(trade_date) FROM nse_options_bhav WHERE symbol='NIFTY' "
+        "AND expiry_date>? GROUP BY expiry_date ORDER BY expiry_date", (today,)).fetchall()
+    bym = {}
+    for exp, first in rows:
+        bym.setdefault(exp[:7], []).append(exp)
+    mw = _monthly_weekday([e for v in bym.values() for e in v])
+    out = []
+    for ym in sorted(bym):
+        cands = [e for e in bym[ym] if mw is None or dparse(e).weekday() == mw]
+        exp = max(cands) if cands else max(bym[ym])
+        ent = dparse(exp) - timedelta(days=DTE_IN)
+        rolled = False
+        while ent.weekday() >= 5:                 # Sat/Sun -> previous Friday
+            ent -= timedelta(days=1)
+            rolled = True
+        if dstr(ent) <= today:
+            continue                              # entry already passed
+        out.append(dict(expiry=exp, entry_date=dstr(ent),
+                        entry_weekday=ent.strftime("%a"),
+                        exit_due=dstr(dparse(exp) - timedelta(days=DTE_OUT)),
+                        days_away=(ent - datetime.now()).days + 1,
+                        weekend_rolled=rolled))
+        if len(out) >= n:
+            break
+    return out
 
 
 def bhav_day(con, expiry, day):
@@ -133,6 +206,22 @@ def bhav_day(con, expiry, day):
     for k, ot, c, ct in rows:
         d.setdefault(float(k), {})[ot] = (c or 0.0, ct or 0)
     return d
+
+
+def vix_series(con):
+    return [(r[0][:10], float(r[1])) for r in con.execute(
+        "SELECT date, close FROM market_data_unified WHERE symbol='INDIAVIX' "
+        "AND timeframe='day' ORDER BY date") if r[1]]
+
+
+def vix_rank_at(vx, idx, day):
+    """(level, percentile rank vs the PREVIOUS 252 sessions). Causal."""
+    i = idx.get(day)
+    if i is None or i < 252:
+        return None, None
+    lvl = vx[i][1]
+    w = [v for _, v in vx[i - 252:i]]
+    return lvl, 100.0 * sum(1 for x in w if x < lvl) / len(w)
 
 
 def spot_close(con, day):
@@ -252,6 +341,8 @@ def seed():
     con = init_db()
     m = ro(MKT)
     days = sessions(m)
+    vx = vix_series(m)
+    vidx = {d: i for i, (d, _) in enumerate(vx)}
     today = dstr(datetime.now())
     exps = monthly_expiries(m, days, "2026-01-01", "2027-06-30")
     print("bhav sessions to %s | monthly expiries %s" % (days[-1], list(exps.values())))
@@ -273,11 +364,15 @@ def seed():
             print("  skip %s entry %s — no ATM with both legs traded" % (exp, ed))
             continue
         credit = combined_bhav(m, exp, K, ed)
+        lvl, rk = vix_rank_at(vx, vidx, ed)
+        on_plan = 1 if (rk is not None and rk > VIX_RANK_MIN) else 0
         con.execute(
-            "INSERT INTO trades(expiry,strike,entry_date,entry_spot,credit,qty,lots,status) "
-            "VALUES(?,?,?,?,?,?,?,'OPEN')", (exp, K, ed, sp, credit, QTY, LOTS))
-        print("  OPENED %s  entry %s  K %.0f  credit %.1f pts (Rs %s)"
-              % (exp, ed, K, credit, "{:,.0f}".format(credit * QTY)))
+            "INSERT INTO trades(expiry,strike,entry_date,entry_spot,credit,qty,lots,status,"
+            "vix_level,vix_rank,on_plan) VALUES(?,?,?,?,?,?,?,'OPEN',?,?,?)",
+            (exp, K, ed, sp, credit, QTY, LOTS, lvl, rk, on_plan))
+        print("  OPENED %s  entry %s  K %.0f  credit %.1f pts (Rs %s)  VIX %.2f rank %.1f  %s"
+              % (exp, ed, K, credit, "{:,.0f}".format(credit * QTY), lvl or 0, rk or 0,
+                 "ON-PLAN" if on_plan else "OFF-PLAN (filter would skip)"))
     con.commit()
     con.close()
     m.close()
@@ -355,6 +450,54 @@ def mark():
     m.close()
 
 
+def idle_cash(con, days, trades):
+    """Real accrual on IDLE_ETF over every span where the book holds nothing.
+
+    Uses the ETF's own close-to-close accretion — not an assumed rate — so the
+    number is as real as the option marks. Cached in the paper DB.
+    """
+    spans = []
+    closed = sorted([t for t in trades if t["exit_date"]], key=lambda t: t["exit_date"])
+    entries = sorted(t["entry_date"] for t in trades)
+    for t in closed:
+        nxt = next((e for e in entries if e > t["exit_date"]), dstr(datetime.now()))
+        if nxt > t["exit_date"]:
+            spans.append((t["exit_date"], nxt))
+    if not spans:
+        return 0.0, [], None
+    try:
+        from kiteconnect import KiteConnect
+        api = os.environ.get("KITE_API_KEY")
+        tokf = os.path.join(ROOT, "backtest_data", "access_token.json")
+        if not api or not os.path.exists(tokf):
+            return 0.0, spans, None
+        k = KiteConnect(api_key=api)
+        k.set_access_token(json.load(open(tokf))["access_token"])
+        tok = next((i["instrument_token"] for i in k.instruments("NSE")
+                    if i["tradingsymbol"] == IDLE_ETF), None)
+        if not tok:
+            return 0.0, spans, None
+        lo = min(a for a, _ in spans)
+        h = k.historical_data(tok, dparse(lo) - timedelta(days=5), datetime.now(), "day")
+        px = {d["date"].strftime("%Y-%m-%d"): d["close"] for d in h}
+    except Exception:
+        return 0.0, spans, None
+    ks = sorted(px)
+    def near(d):
+        c = [x for x in ks if x <= d]
+        return px[c[-1]] if c else None
+    total, detail = 0.0, []
+    for a, b in spans:
+        pa, pb = near(a), near(b)
+        if not pa or not pb or pb <= pa:
+            continue
+        gain = CAPITAL * (pb / pa - 1.0)
+        total += gain
+        detail.append(dict(frm=a, to=b, days=(dparse(b) - dparse(a)).days,
+                           px_from=pa, px_to=pb, gain=round(gain, 2)))
+    return total, detail, IDLE_ETF
+
+
 def publish(con, m, days):
     cols = [d[0] for d in con.execute("SELECT * FROM trades LIMIT 1").description]
     rows = [dict(zip(cols, t)) for t in
@@ -373,11 +516,29 @@ def publish(con, m, days):
     realised = sum(x["net_rs"] or 0 for x in closed)
     unreal = sum(x["mtm_rs"] or 0 for x in openp)
     wins = [x for x in closed if (x["net_rs"] or 0) > 0]
+    # the PLAN is the filtered book; everything else is tagged, not hidden
+    onp = [x for x in closed if x.get("on_plan")]
+    offp = [x for x in closed if not x.get("on_plan")]
+    realised_plan = sum(x["net_rs"] or 0 for x in onp)
+    realised_off = sum(x["net_rs"] or 0 for x in offp)
+    unreal_plan = sum(x["mtm_rs"] or 0 for x in openp if x.get("on_plan"))
+    unreal_off = sum(x["mtm_rs"] or 0 for x in openp if not x.get("on_plan"))
+    idle_total, idle_detail, idle_sym = idle_cash(con, days, rows)
+    upcoming = upcoming_entries(m, days)
     state = dict(
         asof=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        upcoming=upcoming, entry_time="15:30", exit_time="15:30",
         mode="PAPER", lots=LOTS, qty=QTY, capital=CAPITAL,
         bhav_through=days[-1],
-        realised=realised, unrealised=unreal, nav=CAPITAL + realised + unreal,
+        realised=realised, unrealised=unreal,
+        nav=CAPITAL + realised + unreal + idle_total,
+        filter_name="India VIX percentile rank > %d (vs previous 252 sessions)" % VIX_RANK_MIN,
+        vix_rank_min=VIX_RANK_MIN,
+        realised_plan=realised_plan, realised_off=realised_off,
+        unrealised_plan=unreal_plan, unrealised_off=unreal_off,
+        nav_plan=CAPITAL + realised_plan + unreal_plan + idle_total,
+        n_off_plan=len([x for x in rows if not x.get("on_plan")]),
+        idle_etf=idle_sym, idle_earned=round(idle_total, 2), idle_spans=idle_detail,
         n_closed=len(closed), n_open=len(openp),
         win_rate=(100.0 * len(wins) / len(closed)) if closed else None,
         open_positions=openp, closed_trades=list(reversed(closed)),

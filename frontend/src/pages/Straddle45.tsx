@@ -18,25 +18,30 @@ const STUDY = '/app/backtest/nifty-45dte-short-straddle';
 
 /* ---- the study, in points. Real NSE bhavcopy prices, daily-close monitoring,
    Jan-2019 -> Jun-2026, 89 non-overlapping monthly campaigns. ---------------- */
+/* The PLAN is the filtered book: India VIX percentile rank > 25 at entry.
+   These are the filtered study figures; the unfiltered set is kept below purely
+   to show what the filter costs and buys. */
 const YEARS = [
-  { y: '2019', n: 12, pts: 15.2, dd: -337.0, win: 66.7 },
-  { y: '2020', n: 12, pts: 860.7, dd: -466.3, win: 58.3 },
-  { y: '2021', n: 12, pts: 928.3, dd: -489.8, win: 66.7 },
-  { y: '2022', n: 12, pts: 1039.4, dd: -452.3, win: 75.0 },
-  { y: '2023', n: 12, pts: -240.1, dd: -998.4, win: 66.7 },
-  { y: '2024', n: 12, pts: 971.2, dd: -212.2, win: 66.7 },
-  { y: '2025', n: 12, pts: 1915.5, dd: -564.1, win: 83.3 },
+  { y: '2019', n: 9, pts: 130.9, dd: -263.2, win: 66.7 },
+  { y: '2020', n: 10, pts: 1146.6, dd: -432.4, win: 60.0 },
+  { y: '2021', n: 7, pts: 1252.2, dd: 0.0, win: 100.0 },
+  { y: '2022', n: 10, pts: 748.9, dd: -452.3, win: 70.0 },
+  { y: '2023', n: 3, pts: 103.1, dd: -186.6, win: 66.7 },
+  { y: '2024', n: 10, pts: 715.7, dd: -212.2, win: 60.0 },
+  { y: '2025', n: 7, pts: 815.5, dd: -564.1, win: 71.4 },
   { y: '2026 H1', n: 5, pts: 1462.2, dd: 0.0, win: 100.0 },
 ];
-const TOTAL_PTS = 6952.4;
-const MAXDD_PTS = -998.4;
-const WORST_TRADE_PTS = -811.8;
-const AVG_CREDIT = 786.3;
-const AVG_DAYS = 24.2;
-const WIN_RATE = 70.8;
-const TSTAT = 3.03;
-const N_TRADES = 89;
+const TOTAL_PTS = 6375.1;
+const MAXDD_PTS = -564.1;
+const WORST_TRADE_PTS = -452.3;
+const AVG_CREDIT = 857.5;
+const AVG_DAYS = 24.3;
+const WIN_RATE = 72.1;
+const TSTAT = 3.54;
+const N_TRADES = 61;
 const YEARS_SPAN = 7.48;
+/* Same 7.5 years with NO filter — the comparison, not the plan. */
+const UNFILTERED = { n: 89, pts: 6952.4, maxdd: -998.4, worst: -811.8, win: 70.8, t: 3.03 };
 
 /* ---- margin, measured live from Kite basket_order_margins on 2026-08-24,
    NIFTY ATM straddle, consider_positions=false. NRML == MIS to the rupee. ---- */
@@ -92,13 +97,25 @@ type PaperTrade = {
   gross_pts: number | null; cost_pts: number | null; net_pts: number | null; net_rs: number | null;
   status: 'OPEN' | 'CLOSED';
   exit_spot: number | null;
+  vix_level: number | null; vix_rank: number | null; on_plan: number;
   mark_prem: number | null; mark_date: string | null; mark_src: string | null; mtm_rs: number | null;
   mark_spot: number | null;
   exit_due: string; dte: number;
   curve?: Array<{ d: string; prem: number; mtm: number }>;
 };
+type Upcoming = {
+  expiry: string; entry_date: string; entry_weekday: string; exit_due: string;
+  days_away: number; weekend_rolled: boolean;
+};
 type Paper = {
   asof: string; mode: string; lots: number; qty: number; capital: number;
+  upcoming?: Upcoming[]; entry_time?: string; exit_time?: string;
+  filter_name?: string; vix_rank_min?: number;
+  realised_plan: number; realised_off: number;
+  unrealised_plan: number; unrealised_off: number;
+  nav_plan?: number; n_off_plan?: number;
+  idle_etf?: string; idle_earned?: number;
+  idle_spans?: Array<{ frm: string; to: string; days: number; px_from: number; px_to: number; gain: number }>;
   bhav_through: string; realised: number; unrealised: number; nav: number;
   n_closed: number; n_open: number; win_rate: number | null;
   open_positions: PaperTrade[]; closed_trades: PaperTrade[];
@@ -135,6 +152,11 @@ export default function Straddle45() {
     return () => clearInterval(t);
   }, []);
   const live = paper?.open_positions?.[0] ?? null;
+  const next = paper?.upcoming?.[0] ?? null;
+  /** Days the book sits flat between this exit and the next entry. */
+  const flatGap = live && next
+    ? Math.round((new Date(next.entry_date).getTime() - new Date(live.exit_due).getTime()) / 86400000)
+    : null;
 
   const m = useMemo(() => {
     const qty = LOT * lots;
@@ -165,7 +187,8 @@ export default function Straddle45() {
             Sell the <b>ATM straddle 45 calendar days</b> before the NIFTY monthly expiry,
             close it at <b>21 DTE</b> — collecting the fat part of the decay and leaving before
             gamma turns. Replication of “The Long &amp; The Short Ep. 48” on real NSE bhavcopy
-            prices: <b>+78.1 pts/trade, t = {TSTAT}</b> across {N_TRADES} non-overlapping campaigns.{' '}
+            prices, filtered to <b>India VIX percentile rank &gt; 25</b>:{' '}
+            <b>+104.5 pts/trade, t = {TSTAT}</b> across {N_TRADES} non-overlapping campaigns.{' '}
             <Link className={styles.link} to="/backtest/nifty-45dte-short-straddle">Full study →</Link>
           </p>
         </div>
@@ -233,7 +256,13 @@ export default function Straddle45() {
             Paper book — {paper.lots} lots ({paper.qty} qty) · as of {paper.asof}
           </div>
           <div className={styles.gateRow}>
-            <div><b>{lakh(paper.nav)}</b><span className={styles.muted}>NAV</span></div>
+            <div><b>{lakh(paper.nav)}</b><span className={styles.muted}>NAV as traded</span></div>
+            {paper.nav_plan != null && (
+              <div>
+                <b>{lakh(paper.nav_plan)}</b>
+                <span className={styles.muted}>NAV on plan (filter applied)</span>
+              </div>
+            )}
             <div>
               <b className={paper.realised >= 0 ? styles.pos : styles.neg}>{inr(paper.realised)}</b>
               <span className={styles.muted}>realised · {paper.n_closed} closed</span>
@@ -247,7 +276,26 @@ export default function Straddle45() {
               <span className={styles.muted}>win rate so far</span>
             </div>
             <div><b>{lakh(paper.capital)}</b><span className={styles.muted}>book capital</span></div>
+            {paper.idle_earned != null && (
+              <div>
+                <b className={styles.pos}>{inr(paper.idle_earned)}</b>
+                <span className={styles.muted}>
+                  earned idle in {paper.idle_etf} ({paper.idle_spans?.length ?? 0} flat spans)
+                </span>
+              </div>
+            )}
           </div>
+          {paper.n_off_plan ? (
+            <p className={styles.offPlanNote}>
+              <b>{paper.n_off_plan} campaign{paper.n_off_plan > 1 ? 's' : ''} OFF-PLAN.</b>{' '}
+              The plan is {paper.filter_name}. Off-plan campaigns are still traded on paper and
+              carried in “as traded”, but excluded from “on plan”, so the filter&apos;s value gets
+              measured live instead of assumed. Off-plan P&amp;L so far:{' '}
+              <b className={(paper.realised_off + paper.unrealised_off) >= 0 ? styles.pos : styles.neg}>
+                {inr(paper.realised_off + paper.unrealised_off)}
+              </b>.
+            </p>
+          ) : null}
           <p className={styles.note}>
             The book trades a fixed <b>{paper.lots} lots</b>. The lot selector above re-prices the
             <i> study</i> tables for planning; it does not resize the running book.
@@ -276,11 +324,11 @@ export default function Straddle45() {
             <th>Straddle</th><th>Strike</th><th>Expiry</th><th>DTE</th><th>Qty</th>
             <th>Entered</th><th>NIFTY in</th><th>Credit</th>
             <th>Marked</th><th>NIFTY now</th><th>Now</th><th>% of credit</th>
-            <th>MTM ₹</th><th>Exit due</th><th>Source</th>
+            <th>MTM ₹</th><th>Exit due</th><th>VIX rank</th><th>Plan</th><th>Source</th>
           </tr></thead>
           <tbody>
             {!live ? (
-              <tr><td colSpan={15} className={styles.emptyCell}>
+              <tr><td colSpan={17} className={styles.emptyCell}>
                 {paper
                   ? 'Flat — the next entry is 45 days before the following monthly expiry.'
                   : 'Paper state not published yet.'}
@@ -311,6 +359,15 @@ export default function Straddle45() {
                   </td>
                   <td className={up ? styles.pos : styles.neg}>{inr(live.mtm_rs ?? 0)}</td>
                   <td className={styles.muted}>{dmy(live.exit_due)}<span className={styles.tm}>{CLOSE_TIME}</span></td>
+                  <td className={live.on_plan ? '' : styles.warnVal}>
+                    {live.vix_rank == null ? '—' : live.vix_rank.toFixed(1)}
+                    {live.vix_level != null && <span className={styles.tm}>VIX {live.vix_level.toFixed(2)}</span>}
+                  </td>
+                  <td>
+                    <span className={live.on_plan ? styles.planOn : styles.planOff}>
+                      {live.on_plan ? 'ON PLAN' : 'OFF PLAN'}
+                    </span>
+                  </td>
                   <td className={styles.muted}>
                     <span className={styles.srcTag}>{SRC_LABEL[live.mark_src ?? ''] ?? live.mark_src}</span>
                   </td>
@@ -332,6 +389,58 @@ export default function Straddle45() {
         )}
       </div>
 
+      {/* ── forward plan ────────────────────────────────────────────────────── */}
+      {paper && paper.upcoming && paper.upcoming.length > 0 && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Forward plan — when the book next trades</div>
+          {next && (
+            <div className={styles.gateRow}>
+              <div>
+                <b>{dmy(next.entry_date)}<span className={styles.tm}>{paper.entry_time ?? CLOSE_TIME}</span></b>
+                <span className={styles.muted}>next entry · {next.entry_weekday}</span>
+              </div>
+              <div><b>{next.days_away}d</b><span className={styles.muted}>from today</span></div>
+              <div><b>{dmy(next.expiry)}</b><span className={styles.muted}>monthly it sells</span></div>
+              <div><b>{dmy(next.exit_due)}</b><span className={styles.muted}>its 21-DTE exit</span></div>
+              {flatGap != null && (
+                <div>
+                  <b className={flatGap > 0 ? styles.warnVal : ''}>{flatGap}d</b>
+                  <span className={styles.muted}>flat between trades</span>
+                </div>
+              )}
+            </div>
+          )}
+          <table className={styles.table} style={{ marginTop: 14 }}>
+            <thead><tr>
+              <th>Entry</th><th>Day</th><th>Sells the monthly</th><th>Exit due (21 DTE)</th><th>Days away</th>
+            </tr></thead>
+            <tbody>
+              {paper.upcoming.map((u, i) => (
+                <tr key={u.expiry} className={i === 0 ? styles.hiRow : ''}>
+                  <td className={styles.sym}>
+                    {dmy(u.entry_date)}<span className={styles.tm}>{paper.entry_time ?? CLOSE_TIME}</span>
+                  </td>
+                  <td className={styles.muted}>
+                    {u.entry_weekday}{u.weekend_rolled ? ' (rolled off a weekend)' : ''}
+                  </td>
+                  <td>{dmy(u.expiry)}</td>
+                  <td className={styles.muted}>{dmy(u.exit_due)}</td>
+                  <td>{u.days_away}d</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className={styles.note}>
+            Entry is <b>expiry − 45 calendar days</b>, struck on the session close. Dates here roll
+            off <b>weekends only</b> — future NSE holidays are not known, so a holiday would pull an
+            entry one session earlier. The monthly is picked by the prevailing monthly weekday
+            (Tuesday since Sep-2025), which is what keeps the book off the legacy far-dated
+            contracts that share the month — Dec-2026 correctly resolves to <b>29-Dec-26</b>, not
+            the 31-Dec-26 Thursday contract listed back in 2024.
+          </p>
+        </div>
+      )}
+
       {/* ── trade history ───────────────────────────────────────────────────── */}
       {paper && paper.closed_trades.length > 0 && (
         <div className={styles.card}>
@@ -341,7 +450,7 @@ export default function Straddle45() {
               <th>Expiry</th><th>Strike</th><th>Entered</th><th>NIFTY in</th>
               <th>Exited</th><th>NIFTY out</th><th>Move</th><th>Held</th>
               <th>Credit</th><th>Exit</th><th>Gross pts</th><th>Cost</th><th>Net pts</th>
-              <th>Net ₹</th><th>Why</th>
+              <th>Net ₹</th><th>VIX rank</th><th>Plan</th><th>Why</th>
             </tr></thead>
             <tbody>
               {paper.closed_trades.map((t) => {
@@ -373,6 +482,14 @@ export default function Straddle45() {
                     <td className={styles.muted}>{t.cost_pts?.toFixed(1)}</td>
                     <td className={win ? styles.pos : styles.neg}>{t.net_pts?.toFixed(1)}</td>
                     <td className={win ? styles.pos : styles.neg}>{inr(t.net_rs ?? 0)}</td>
+                    <td className={t.on_plan ? '' : styles.warnVal}>
+                      {t.vix_rank == null ? '—' : t.vix_rank.toFixed(1)}
+                    </td>
+                    <td>
+                      <span className={t.on_plan ? styles.planOn : styles.planOff}>
+                        {t.on_plan ? 'ON' : 'OFF'}
+                      </span>
+                    </td>
                     <td><span className={styles.srcTag}>{t.exit_reason}</span></td>
                   </tr>
                 );
@@ -445,7 +562,8 @@ export default function Straddle45() {
             <Rule k="Entry" v="Expiry − 45 calendar days, at the close. Sell 1× ATM CE + 1× ATM PE. ATM = strike nearest spot. Both legs must have actually traded that day." />
             <Rule k="Size" v={`${lots} lot${lots > 1 ? 's' : ''} = ${m.qty} qty. Fixed — the rule does not compound.`} />
             <Rule k="Monitoring" v="Hourly candle closes. Nothing below 60-min changes a single trade — confirmed on 28.3M real 1-minute quotes." />
-            <Rule k="Optional filter" v="India VIX rank > 25 vs the previous 252 sessions. Fewer trades, no losing year, better Calmar. Off by default." />
+            <Rule k="Entry filter — ACTIVE" v="India VIX PERCENTILE RANK > 25 versus the previous 252 sessions — not a VIX level of 25, which would be a once-in-a-crisis event. It keeps ~2 of every 3 months and skips the cheapest-premium quarter. Campaigns below the line are still traded on paper but tagged OFF-PLAN, so the filter is measured rather than assumed." />
+            <Rule k="Idle cash" v="Whenever the book is flat between campaigns, capital sits in LIQUID1 (Kotak Nifty 1D Rate Liquid ETF) — a growth-structure liquid ETF, 5.11% measured, chosen because LIQUIDCASE is pledged and CASHIETF is the Momentum book's sweep." />
           </div>
         </div>
         <div className={styles.card}>

@@ -1,0 +1,22 @@
+[
+ {
+  "day": "2026-08-25",
+  "status": "DONE",
+  "reason": "TIME_EXIT",
+  "strike": 24150,
+  "expiry": "2026-08-25",
+  "credit": 53.75,
+  "debit": 59.5,
+  "pnl": -2990,
+  "qty": 520,
+  "lots": 8,
+  "entry_fills": {
+   "CE": 21.3,
+   "PE": 32.45
+  },
+  "exit_fills": {
+   "NIFTY26AUG24150CE": 49.5,
+   "NIFTY26AUG24150PE": 10.0
+  }
+ }
+]
