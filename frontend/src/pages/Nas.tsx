@@ -2232,7 +2232,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   basis: 'per2' | 'raw';
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
-  const [liveOnly, setLiveOnly] = useState(false);
+  const [liveOnly, setLiveOnly] = useState(true);   // default ON (user 2026-08-25): real-money view first
   // ARMED FOR TODAY -- the day's plan straight from the rules matrix, visible
   // before anything enters (executors arm at 09:00/09:12; this needs neither).
   const [rulesRm, setRulesRm] = useState<any | null>(null);
