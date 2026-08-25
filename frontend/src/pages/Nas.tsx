@@ -2268,6 +2268,34 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     return () => { on = false; clearInterval(id); };
   }, []);
   const rows = buildTradeBook(systems, states, liveLegs, basis).filter((r) => !liveOnly || r.mode === 'live');
+  // TimeB2 one-shot (research/125): rows fed from /app/timeb2_live.json, not daemon state
+  if (tb2 && new Date().getDay() === 2 && ['ARMED', 'OPEN', 'EXITING', 'DONE'].includes(tb2.status)) {
+    const lbl = 'NIFTY TimeB2';
+    if (!tb2.ce || tb2.status === 'ARMED') {
+      rows.push({ sysId: 'timeb2', sysLabel: lbl, family: '916', side: '—', strike: null, qty: 520,
+        entry: null, exit: null, pnl: 0, open: false, reason: 'PLANNED · CSL30',
+        inTime: '13:15*', outTime: '14:30*', arm: null, mode: 'live' } as any);
+    } else {
+      const tbOpen = tb2.status !== 'DONE';
+      const strike = parseInt((tb2.ce.match(/(\d+)CE$/) || [])[1] || '0', 10) || null;
+      const legs: [string, string, number | undefined, number | undefined][] = [
+        ['CE', tb2.ce, tb2.ce_fill, tb2.exit_ce], ['PE', tb2.pe, tb2.pe_fill, tb2.exit_pe]];
+      for (const [side, ts, fill, exitFill] of legs) {
+        const w = fill != null && tb2.credit ? fill / tb2.credit : 0.5;
+        const ltp = tbOpen
+          ? (liveLegs[ts] ?? (tb2.comb != null ? +(tb2.comb * w).toFixed(2) : null))
+          : (exitFill ?? (tb2.debit != null ? +(tb2.debit * w).toFixed(2) : null));
+        const pnl = fill != null && ltp != null ? Math.round((fill - ltp) * 520)
+          : (tb2.pnl != null ? Math.round(tb2.pnl * w) : 0);
+        rows.push({ sysId: 'timeb2', sysLabel: lbl, family: '916', side, strike, qty: 520,
+          entry: fill ?? null, exit: ltp, pnl, open: tbOpen,
+          reason: tbOpen ? undefined : (tb2.reason || 'TIME_EXIT'),
+          inTime: '13:15', outTime: tbOpen ? '14:30*' : (tb2.exit_ts || '14:30'),
+          arm: null, arm_text: tbOpen && tb2.sl_trigger ? `${tb2.comb ?? '—'} · ${tb2.sl_trigger} (30%)` : undefined,
+          mode: 'live' } as any);
+      }
+    }
+  }
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -2289,6 +2317,11 @@ function TradeBook({ systems, states, liveLegs, basis }: {
       const sr = rows.filter((r) => r.sysId === sys.id).sort(tbSort);
       if (sr.length) groups.push({ key: sys.id, label: sys.label, rows: sr });
     }
+    // ad-hoc row sources (e.g. TimeB2 one-shot) whose sysId has no systems entry
+    const known = new Set(systems.map((s) => s.id));
+    const extras: Record<string, TBRow[]> = {};
+    for (const r of rows) if (!known.has(r.sysId)) (extras[r.sysId] = extras[r.sysId] || []).push(r);
+    for (const idd of Object.keys(extras)) groups.push({ key: idd, label: extras[idd][0].sysLabel, rows: extras[idd].sort(tbSort) });
   }
 
   const stamp = new Date().toLocaleString('en-IN', {
@@ -2504,27 +2537,6 @@ function TradeBook({ systems, states, liveLegs, basis }: {
             </div>
           );
         })}
-        {tb2 && new Date().getDay() === 2 && ['ARMED', 'OPEN', 'EXITING', 'DONE'].includes(tb2.status) && (
-          <div style={{ margin: '8px 0 4px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>
-              NIFTY TimeB2 <span style={{ color: 'var(--ink-muted)', fontWeight: 400 }}>· one-shot LIVE · expiry-Tue 13:15→14:30 · CSL30 · 8L (520)</span>
-            </div>
-            <div style={{ display: 'flex', gap: 14, fontSize: 11, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, color: tb2.status === 'OPEN' ? '#3fb950' : tb2.status === 'DONE' ? '#58a6ff' : '#d29922' }}>
-                {tb2.status === 'OPEN' ? '● OPEN' : tb2.status}{tb2.reason ? ` · ${tb2.reason}` : ''}
-              </span>
-              {tb2.ce && <span style={{ fontFamily: 'monospace' }}>{tb2.ce.replace('NIFTY', '')} / {tb2.pe.replace('NIFTY', '')}</span>}
-              {tb2.credit != null && <span>credit {tb2.credit}{tb2.sl_trigger ? ` · SL ${tb2.sl_trigger}` : ''}</span>}
-              {tb2.comb != null && <span>comb now {tb2.comb}</span>}
-              {(tb2.pnl ?? tb2.open_pnl) != null && (
-                <span style={{ fontWeight: 700, color: (tb2.pnl ?? tb2.open_pnl) >= 0 ? '#3fb950' : '#ef4444' }}>
-                  {(tb2.pnl ?? tb2.open_pnl) >= 0 ? '+' : ''}₹{(tb2.pnl ?? tb2.open_pnl).toLocaleString('en-IN')}{tb2.status !== 'DONE' ? ' open' : ''}
-                </span>
-              )}
-              <span style={{ color: 'var(--ink-muted)' }}>as of {tb2.ts}</span>
-            </div>
-          </div>
-        )}
         {armedToday.length > 0 && (
           <div style={{ margin: '6px 0 4px', border: '1px dashed #30363d', borderRadius: 8, padding: '6px 10px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: 'var(--ink-muted)', marginBottom: 4 }}>
