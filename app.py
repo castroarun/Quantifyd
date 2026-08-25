@@ -5408,7 +5408,7 @@ def api_nas_rules_matrix():
             'CSL_TIMEB_NIFTY': 'TimeB · windows',
             'CSL_TIMEB_NIFTY_THU': 'COMB-Thu · full-day',
             'CSL_TIMEB2_NIFTY': 'TimeB-2 · second slots',
-            'CSL_TIMEB_SENSEX': 'COMB \u00b7 SENSEX',
+            'CSL_TIMEB_SENSEX': 'TimeB \u00b7 SENSEX',
             'CSL30F_NIFTY': 'COMB30 · control',
             'CSL30F_SENSEX': 'COMB30 · control',
             'NAS_C20_TRAIL': 'COMB+Trail',

@@ -153,7 +153,7 @@ const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
   { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30 · control', subtitle: 'fixed-SL30 control arm (paper)', rules: '', configNote: 'paper A/B', group: '916' },
-  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'COMB SENSEX', subtitle: 'Wed window + Thu full-day', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
+  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TimeB SENSEX', subtitle: 'Wed + Thu windows', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
 
 // Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
@@ -1638,21 +1638,11 @@ export default function Nas() {
     if (!day) return [];
     const iso = (hm: string) => `${day}T${hm}:00`;
     const lists = SLEEVES
-      .map((sv) => {
-        // A sleeve that has CLOSED is dropped from csl_paper_live.json by the daemon, so the
-        // live payload alone loses its P&L from the Overall curve the moment it books (TimeB
-        // closing at 11:00 took Rs3,402 off the curve while its card still showed it).
-        // Fall back to the closed day record - the same source sleeveInfo() uses for the card.
-        const liveSeries = (cslLive?.books?.[sv.key]?.series ?? []) as [string, number][];
-        if (liveSeries.length) return liveSeries;
-        const rec = (cslDay?.records ?? []).find(
-          (r: any) => r.day === day && r.book === sv.key);
-        return ((rec?.series ?? []) as [string, number][]);
-      })
+      .map((sv) => (cslLive?.books?.[sv.key]?.series ?? []) as [string, number][])
       .filter((x) => x.length)
       .map((x) => x.map(([hm, v]) => [iso(hm), v] as MtmPoint));
     return lists.length ? sumSeries(lists) : [];
-  }, [cslLive, cslDay]);
+  }, [cslLive]);
   const overallPts: MtmPoint[] = useMemo(() => {
     if (!mtmCombined) return [];
     if (!sleevePts.length) return mtmCombined.points;
@@ -1662,9 +1652,25 @@ export default function Nas() {
   return (
     <LiveTicksContext.Provider value={liveTicks}>
     <div className={styles.root}>
+      {/* Tier 1 (exchange-side SL-M) not yet built — remove this block when it ships. */}
+      <div className={styles.slmWarning} role="alert">
+        <span className={styles.slmWarningIcon} aria-hidden="true">⚠</span>
+        <div className={styles.slmWarningText}>
+          <strong>NAS LIVE — exchange-side SL-M not yet implemented.</strong>
+          <span className={styles.slmWarningDetail}>
+            {' '}If Flask or ticker dies during an open position, the short is
+            unprotected until the process recovers. Tier 1 build pending.
+          </span>
+        </div>
+      </div>
+
       <div className={styles.titleRow}>
         <div>
           <div className="page-title">NAS options</div>
+          <div className="page-subtitle">
+            Eight Nifty options systems running in parallel. ATR squeeze entries on the
+            left, time-based 9:16 entries on the right.
+          </div>
         </div>
         <div className={styles.titleRowActions}>
           <MasterModeToggle onToast={setToast} />
@@ -1723,19 +1729,6 @@ export default function Nas() {
         events={historyModal?.events ?? []}
         onClose={() => setHistoryModal(null)}
       />
-
-      {/* Tier 1 (exchange-side SL-M) not yet built — remove this block when it ships.
-          Sits BELOW the metrics so positions stay high on the page. */}
-      <div className={styles.slmWarning} role="alert">
-        <span className={styles.slmWarningIcon} aria-hidden="true">⚠</span>
-        <div className={styles.slmWarningText}>
-          <strong>NAS LIVE — exchange-side SL-M not yet implemented.</strong>
-          <span className={styles.slmWarningDetail}>
-            {' '}If Flask or ticker dies during an open position, the short is
-            unprotected until the process recovers. Tier 1 build pending.
-          </span>
-        </div>
-      </div>
 
       {/* Shared ATR squeeze header */}
       <div className={styles.headerMetrics}>
@@ -2004,7 +1997,7 @@ export default function Nas() {
           </div>
           <div className={styles.grid3}>
             <SleeveCard label="COMB (CSL30F)" sub="Full-day combined-SL 30% · paper" rules="09:16 to 15:20, combined-premium SL 30%. The SENSEX arm of the fixed-CSL A/B (variable-vs-fixed live comparison). 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
-            <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
+            <SleeveCard label="TimeB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE windows from the lab config: Wed 10:30-12:00 SL20, Thu 13:00-15:20 no %-SL (50% backstop) - both true time-windows, hence TimeB (renamed back 25-Aug). 8 lots (qty 160), REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
             <div />
           </div>
         </section>
