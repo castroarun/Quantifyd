@@ -151,6 +151,7 @@ const NAS_OPT_DEF: SystemDef = {
 // COMB + TimeB sleeves in the Trade Book (after the 9:16 systems, before NAS-OPT).
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
+  { id: 'csl-timeb2', key: 'csl-timeb2', label: 'NIFTY TimeB2', subtitle: 'expiry-Tue afternoon window', rules: '', configNote: 'live 8L · 13:15→14:30 CSL30', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
   { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30 · control', subtitle: 'fixed-SL30 control arm (paper)', rules: '', configNote: 'paper A/B', group: '916' },
   { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TimeB SENSEX', subtitle: 'Wed + Thu windows', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
@@ -1577,6 +1578,7 @@ export default function Nas() {
     NAS_COMB20: { 0: ['09:16', '15:20', 25], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 20] },
     CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 1: ['13:00', '14:00', 20], 2: ['10:00', '12:00', 20] },
     CSL_TIMEB_SENSEX: { 0: ['13:00', '15:20', 'none'], 1: ['10:30', '12:00', 20] },
+    CSL_TIMEB2_LIVE: { 0: ['13:15', '14:30', 30] },
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
   const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
@@ -1922,7 +1924,7 @@ export default function Nas() {
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
           systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160) }}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-timeb2': sleeveTbState('CSL_TIMEB2_LIVE', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160) }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />
@@ -1953,7 +1955,8 @@ export default function Nas() {
           <Chip>NIFTY 2-lot · ex-Wed · 2 books</Chip>
         </div>
         <div className={styles.grid3}>
-          <SleeveCard label="NIFTY COMB" sub="Full-day combined-SL · ex-Wed" rules="09:16 to 15:20. Combined-premium SL per DTE (DTE0 25 / DTE1 30 / DTE2 30 / DTE3 20). Replaces per-leg SLs + trail. 2 lots — except Thursday, which trades 5 lots (the two former Thursday books merged into this single trade, 19-Aug). Wednesday off." info={sleeveInfo('NAS_COMB20')} />
+          <SleeveCard label="NIFTY TimeB2" sub="Expiry-Tue 13:15→14:30 · LIVE" rules="research/125 winner slot: sell spot-ATM straddle 13:15, combined-SL 30%, exit 14:30. Tuesday (NIFTY expiry) only. 8 lots (qty 520), REAL from 26-Aug (one-shot precedent 25-Aug: -2,990). Old paper 13:00-14:00 book relabeled 2nd-Slots." info={sleeveInfo('CSL_TIMEB2_LIVE')} />
+            <SleeveCard label="NIFTY COMB" sub="Full-day combined-SL · ex-Wed" rules="09:16 to 15:20. Combined-premium SL per DTE (DTE0 25 / DTE1 30 / DTE2 30 / DTE3 20). Replaces per-leg SLs + trail. 2 lots — except Thursday, which trades 5 lots (the two former Thursday books merged into this single trade, 19-Aug). Wednesday off." info={sleeveInfo('NAS_COMB20')} />
           <SleeveCard label="NIFTY TimeB" sub="Windowed combined-SL · Mon/Tue/Fri" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
         </div>
       </section>
@@ -2256,14 +2259,6 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     }
     return out;
   }, [rulesRm]);
-  // TimeB2 one-shot (research/125): live JSON published by timeb2_publish.py on expiry Tuesdays
-  const [tb2, setTb2] = useState<any | null>(null);
-  useEffect(() => {
-    const pull = () => fetch('/app/timeb2_live.json?t=' + Date.now()).then(r => r.json()).then(setTb2).catch(() => {});
-    pull();
-    const h = setInterval(pull, 15000);
-    return () => clearInterval(h);
-  }, []);
   const { spot } = useLiveTicks();   // live NIFTY -- distance to the move-stop band
   // ST-trail value for naked-survivor legs (sl_price sentinel 999999) — from the ticker.
   const [stTrail, setStTrail] = useState<Record<string, number>>({});
@@ -2287,34 +2282,6 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     return () => { on = false; clearInterval(id); };
   }, []);
   const rows = buildTradeBook(systems, states, liveLegs, basis).filter((r) => !liveOnly || r.mode === 'live');
-  // TimeB2 one-shot (research/125): rows fed from /app/timeb2_live.json, not daemon state
-  if (tb2 && new Date().getDay() === 2 && ['ARMED', 'OPEN', 'EXITING', 'DONE'].includes(tb2.status)) {
-    const lbl = 'NIFTY TimeB2';
-    if (!tb2.ce || tb2.status === 'ARMED') {
-      rows.push({ sysId: 'timeb2', sysLabel: lbl, family: '916', side: '—', strike: null, qty: 520,
-        entry: null, exit: null, pnl: 0, open: false, reason: 'PLANNED · CSL30',
-        inTime: '13:15*', outTime: '14:30*', arm: null, mode: 'live' } as any);
-    } else {
-      const tbOpen = tb2.status !== 'DONE';
-      const strike = parseInt((tb2.ce.match(/(\d+)CE$/) || [])[1] || '0', 10) || null;
-      const legs: [string, string, number | undefined, number | undefined][] = [
-        ['CE', tb2.ce, tb2.ce_fill, tb2.exit_ce], ['PE', tb2.pe, tb2.pe_fill, tb2.exit_pe]];
-      for (const [side, ts, fill, exitFill] of legs) {
-        const w = fill != null && tb2.credit ? fill / tb2.credit : 0.5;
-        const ltp = tbOpen
-          ? (liveLegs[ts] ?? (tb2.comb != null ? +(tb2.comb * w).toFixed(2) : null))
-          : (exitFill ?? (tb2.debit != null ? +(tb2.debit * w).toFixed(2) : null));
-        const pnl = fill != null && ltp != null ? Math.round((fill - ltp) * 520)
-          : (tb2.pnl != null ? Math.round(tb2.pnl * w) : 0);
-        rows.push({ sysId: 'timeb2', sysLabel: lbl, family: '916', side, strike, qty: 520,
-          entry: fill ?? null, exit: ltp, pnl, open: tbOpen,
-          reason: tbOpen ? undefined : (tb2.reason || 'TIME_EXIT'),
-          inTime: '13:15', outTime: tbOpen ? '14:30*' : (tb2.exit_ts || '14:30'),
-          arm: null, arm_text: tbOpen && tb2.sl_trigger ? `${tb2.credit} · ${tb2.sl_trigger} (${tb2.comb ?? '—'})` : undefined,
-          mode: 'live' } as any);
-      }
-    }
-  }
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -2588,15 +2555,6 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                 <span style={{ color: 'var(--ink-muted)' }}>{a.stop}</span>
               </div>
             ))}
-            {tb2 && new Date().getDay() === 2 && ['ARMED', 'OPEN', 'EXITING', 'DONE'].includes(tb2.status) && (
-              <div style={{ display: 'flex', gap: 12, fontSize: 11, padding: '2px 0', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 600, minWidth: 120 }}>TimeB2 · one-shot</span>
-                <span style={{ color: '#58a6ff', fontSize: 10, fontWeight: 700, minWidth: 48 }}>NIFTY</span>
-                <span style={{ fontFamily: 'monospace' }}>13:15*→14:30*</span>
-                <span style={{ color: 'var(--ink-muted)', minWidth: 40 }}>8L</span>
-                <span style={{ color: 'var(--ink-muted)' }}>combined-SL 30% · research/125, today only · {tb2.status}</span>
-              </div>
-            )}
           </div>
         )}
         {rows.length === 0 && <div style={{ color: 'var(--ink-muted)', padding: 8 }}>No trades today yet.</div>}

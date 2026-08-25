@@ -27,6 +27,11 @@ BOOKS = {
     # 2026-08-18: SECOND time-slots evidence book (sweep sec: Mon+Tue have a 2nd earnings pocket)
     "CSL_TIMEB2_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                          "fixed_cfg": {"entry": "13:00", "exit": "14:00", "sl": 25}},
+    # research/125 expiry-Tuesday afternoon window - REAL (user 2026-08-25). One-shot
+    # precedent traded 25-Aug (-2,990); standing book from 26-Aug. Tuesday (DTE0) only -
+    # config json carries the single cell, so fixed_cfg is bootstrap-only.
+    "CSL_TIMEB2_LIVE": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "fixed", "mode": "live",
+                        "fixed_cfg": {"entry": "13:15", "exit": "14:30", "sl": 30}},
     # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
     "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed", "mode": "live",
                    "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},

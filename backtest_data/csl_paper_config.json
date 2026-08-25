@@ -193,8 +193,17 @@
     "exit": "14:00",
     "sl": 20
    }
+  },
+  "CSL_TIMEB2_LIVE": {
+   "0": {
+    "entry": "13:15",
+    "exit": "14:30",
+    "sl": 30,
+    "lots": 8,
+    "qty": 520
+   }
   }
  },
- "refrozen_at": "2026-08-20T07:41",
- "refreeze_note": "2026-08-13: books renamed CSL_*->CSL_TIMEB_*; all SL none cells set to 30 (never run stopless), per user | 2026-08-13 21:55: NAS_COMB20 SLs set per-DTE from sec-15 sweep (25/30/30/20/30), user-delegated | 2026-08-13: THE STACK ex-Wed deploy - DTE4 removed from NAS_COMB20 + CSL_TIMEB_NIFTY (docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md) | 2026-08-18: CSL_TIMEB2_NIFTY added (2L PAPER, second slots: DTE0 13:00-14:00 SL25, DTE1 10:00-12:00 SL25 only) | 2026-08-19: TB-SENSEX DTE0 SL30->40 (user, sec-19b evidence: every pct-stop fires on Thu expiry gamma noise; SL40 = loosest compromise vs none; 50pct backstop unchanged) | 2026-08-19: SX Thursday RIGHT-SIZED 8L->5L/qty100 (user: full-day exposure gets no window-overweight; 5L = the studied sweep basis ~ suite parity; Wed 90-min window keeps 8L). Per-DTE lots/qty override capability deployed. | 2026-08-19 (2): NIFTY Thursday CONSOLIDATED into NAS_COMB20 DTE3 5L/qty325 09:16-15:20 SL20 (single trade = the studied construction, half the 10L study basis). CSL_TIMEB_NIFTY_THU cell removed (book retained for history only). Total NIFTY-Thu size unchanged at 5L. | 2026-08-20 07:5x pre-open (user decision): SX Thursday full-day 5L SL40 -> WINDOW 13:00-15:20 8L SL-none (50pc disaster backstop). Basis: Thursday decay-clock ranking - afternoon window keeps ~70pc of full-day profit in 2.3h; margin cannot run both; window construction re-earns the 8L overweight. Review with the 11-SEP SX-Thu item."
+ "refrozen_at": "2026-08-25T15:52",
+ "refreeze_note": "2026-08-13: books renamed CSL_*->CSL_TIMEB_*; all SL none cells set to 30 (never run stopless), per user | 2026-08-13 21:55: NAS_COMB20 SLs set per-DTE from sec-15 sweep (25/30/30/20/30), user-delegated | 2026-08-13: THE STACK ex-Wed deploy - DTE4 removed from NAS_COMB20 + CSL_TIMEB_NIFTY (docs/THE_STACK_NIFTY_EXWED_DEPLOY_STATUS.md) | 2026-08-18: CSL_TIMEB2_NIFTY added (2L PAPER, second slots: DTE0 13:00-14:00 SL25, DTE1 10:00-12:00 SL25 only) | 2026-08-19: TB-SENSEX DTE0 SL30->40 (user, sec-19b evidence: every pct-stop fires on Thu expiry gamma noise; SL40 = loosest compromise vs none; 50pct backstop unchanged) | 2026-08-19: SX Thursday RIGHT-SIZED 8L->5L/qty100 (user: full-day exposure gets no window-overweight; 5L = the studied sweep basis ~ suite parity; Wed 90-min window keeps 8L). Per-DTE lots/qty override capability deployed. | 2026-08-19 (2): NIFTY Thursday CONSOLIDATED into NAS_COMB20 DTE3 5L/qty325 09:16-15:20 SL20 (single trade = the studied construction, half the 10L study basis). CSL_TIMEB_NIFTY_THU cell removed (book retained for history only). Total NIFTY-Thu size unchanged at 5L. | 2026-08-20 07:5x pre-open (user decision): SX Thursday full-day 5L SL40 -> WINDOW 13:00-15:20 8L SL-none (50pc disaster backstop). Basis: Thursday decay-clock ranking - afternoon window keeps ~70pc of full-day profit in 2.3h; margin cannot run both; window construction re-earns the 8L overweight. Review with the 11-SEP SX-Thu item. | 2026-08-25 post-close: CSL_TIMEB2_LIVE formalized (research/125 winner, expiry-Tue 13:15-14:30 CSL30 8L REAL, Tuesday-only). Replaces the one-shot runner. Old CSL_TIMEB2_NIFTY relabeled 2nd-Slots (paper); its cells unchanged pending the 05-Sep review."
 }
