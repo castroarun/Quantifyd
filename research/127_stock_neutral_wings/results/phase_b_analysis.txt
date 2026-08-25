@@ -1,0 +1,66 @@
+======================================================================================================================
+PHASE B — 59299 rows total; LIQUID sample (atm_vol>=100 & wing_vol_min>=10): 13399 rows
+cost model: net = gross − 0.50% × premium-turnover
+======================================================================================================================
+
+--- DTE_entry axis (exit 21, W5, SL200/TP50, ATM) ---
+E30        n= 4141  gross=+0.009%  net=-0.098%S0  t(net)=-8.98  win=48.8%  p05=-1.06%  credit=3.70%  hold=9d
+E40        n= 1377  gross=+0.155%  net=+0.048%S0  t(net)=+1.76  win=55.7%  p05=-1.34%  credit=3.74%  hold=21d
+BASE       n=  581  gross=+0.241%  net=+0.129%S0  t(net)=+3.06  win=57.1%  p05=-1.19%  credit=3.75%  hold=25d
+E50        n=  266  gross=+0.103%  net=-0.011%S0  t(net)=-0.16  win=51.1%  p05=-1.33%  credit=3.82%  hold=29d
+E60        n=   94  gross=+0.571%  net=+0.467%S0  t(net)=+2.81  win=66.0%  p05=-1.82%  credit=3.85%  hold=39d
+
+--- DTE_exit axis ---
+X10        n=  581  gross=+0.262%  net=+0.149%S0  t(net)=+2.53  win=53.9%  p05=-1.73%  credit=3.75%  hold=36d
+X15        n=  581  gross=+0.250%  net=+0.137%S0  t(net)=+2.62  win=57.1%  p05=-1.55%  credit=3.75%  hold=31d
+BASE       n=  581  gross=+0.241%  net=+0.129%S0  t(net)=+3.06  win=57.1%  p05=-1.19%  credit=3.75%  hold=25d
+X28        n=  581  gross=+0.195%  net=+0.080%S0  t(net)=+2.11  win=51.5%  p05=-0.99%  credit=3.75%  hold=19d
+
+--- Wing width axis ---
+W3         n=  539  gross=+0.178%  net=+0.053%S0  t(net)=+1.42  win=46.8%  p05=-0.94%  credit=2.66%  hold=25d
+BASE       n=  581  gross=+0.241%  net=+0.129%S0  t(net)=+3.06  win=57.1%  p05=-1.19%  credit=3.75%  hold=25d
+W7         n=  568  gross=+0.248%  net=+0.143%S0  t(net)=+2.71  win=61.3%  p05=-1.98%  credit=4.65%  hold=25d
+W10        n=  493  gross=+0.315%  net=+0.215%S0  t(net)=+2.75  win=62.9%  p05=-2.61%  credit=5.71%  hold=25d
+
+--- Stop/target axis ---
+SL150      n=  581  gross=+0.185%  net=+0.072%S0  t(net)=+1.59  win=56.5%  p05=-1.48%  credit=3.75%  hold=25d
+BASE       n=  581  gross=+0.241%  net=+0.129%S0  t(net)=+3.06  win=57.1%  p05=-1.19%  credit=3.75%  hold=25d
+SL300      n=  581  gross=+0.248%  net=+0.135%S0  t(net)=+3.27  win=57.1%  p05=-1.18%  credit=3.75%  hold=25d
+SLnone     n=  581  gross=+0.250%  net=+0.137%S0  t(net)=+3.33  win=57.1%  p05=-1.18%  credit=3.75%  hold=25d
+TPnone     n=  581  gross=+0.207%  net=+0.095%S0  t(net)=+2.32  win=56.1%  p05=-1.22%  credit=3.75%  hold=25d
+
+--- Short-strike offset axis ---
+BASE       n=  581  gross=+0.241%  net=+0.129%S0  t(net)=+3.06  win=57.1%  p05=-1.19%  credit=3.75%  hold=25d
+K2.5       n=  675  gross=+0.224%  net=+0.143%S0  t(net)=+3.62  win=61.3%  p05=-1.56%  credit=2.82%  hold=25d
+K5         n=  598  gross=+0.178%  net=+0.116%S0  t(net)=+2.75  win=65.4%  p05=-1.87%  credit=2.07%  hold=24d
+
+--- cost sensitivity on BASE (liquid) ---
+c=0.25%    n=  581  gross=+0.241%  net=+0.185%S0  t(net)=+4.46  win=60.8%  p05=-1.13%  credit=3.75%  hold=25d
+c=0.50%    n=  581  gross=+0.241%  net=+0.129%S0  t(net)=+3.06  win=57.1%  p05=-1.19%  credit=3.75%  hold=25d
+c=1.00%    n=  581  gross=+0.241%  net=+0.016%S0  t(net)=+0.37  win=49.1%  p05=-1.35%  credit=3.75%  hold=25d
+
+--- per-year (net) for BASE and best-by-t config ---
+best t(net): K2.5 (+3.62)
+  [BASE]
+    2016       n=    1  gross=-0.209%  net=-0.394%S0  t(net)=+nan  win=0.0%  p05=-0.39%  credit=4.44%  hold=24d
+    2018       n=    3  gross=+0.910%  net=+0.726%S0  t(net)=+0.93  win=66.7%  p05=-0.22%  credit=3.62%  hold=24d
+    2019       n=    5  gross=-0.406%  net=-0.557%S0  t(net)=-1.12  win=40.0%  p05=-2.05%  credit=3.71%  hold=24d
+    2020       n=    8  gross=+0.188%  net=-0.014%S0  t(net)=-0.08  win=50.0%  p05=-0.67%  credit=4.12%  hold=24d
+    2021       n=   39  gross=+0.089%  net=-0.042%S0  t(net)=-0.23  win=56.4%  p05=-2.43%  credit=3.70%  hold=22d
+    2022       n=   63  gross=+0.353%  net=+0.227%S0  t(net)=+2.23  win=57.1%  p05=-0.84%  credit=3.97%  hold=23d
+    2023       n=   67  gross=+0.105%  net=-0.030%S0  t(net)=-0.32  win=50.7%  p05=-1.48%  credit=3.86%  hold=24d
+    2024       n=  112  gross=-0.004%  net=-0.119%S0  t(net)=-1.74  win=52.7%  p05=-1.22%  credit=3.70%  hold=24d
+    2025       n=  165  gross=+0.158%  net=+0.063%S0  t(net)=+1.17  win=58.8%  p05=-0.96%  credit=3.64%  hold=25d
+    2026       n=  118  gross=+0.676%  net=+0.577%S0  t(net)=+4.04  win=64.4%  p05=-1.13%  credit=3.76%  hold=29d
+  [K2.5]
+    2016       n=    4  gross=+0.398%  net=+0.246%S0  t(net)=+0.24  win=50.0%  p05=-1.27%  credit=3.98%  hold=19d
+    2017       n=    1  gross=+0.663%  net=+0.600%S0  t(net)=+nan  win=100.0%  p05=+0.60%  credit=2.74%  hold=24d
+    2018       n=    6  gross=-0.441%  net=-0.624%S0  t(net)=-1.63  win=33.3%  p05=-1.92%  credit=2.92%  hold=28d
+    2019       n=    6  gross=+0.420%  net=+0.341%S0  t(net)=+1.56  win=83.3%  p05=-0.44%  credit=2.93%  hold=24d
+    2020       n=   11  gross=-0.420%  net=-0.592%S0  t(net)=-2.99  win=18.2%  p05=-1.30%  credit=3.09%  hold=25d
+    2021       n=   47  gross=+0.180%  net=+0.090%S0  t(net)=+0.50  win=70.2%  p05=-1.56%  credit=2.95%  hold=23d
+    2022       n=   67  gross=+0.158%  net=+0.067%S0  t(net)=+0.73  win=61.2%  p05=-1.32%  credit=3.00%  hold=24d
+    2023       n=   88  gross=+0.351%  net=+0.266%S0  t(net)=+2.73  win=69.3%  p05=-1.38%  credit=2.80%  hold=24d
+    2024       n=  150  gross=+0.114%  net=+0.033%S0  t(net)=+0.45  win=58.7%  p05=-1.54%  credit=2.82%  hold=24d
+    2025       n=  179  gross=+0.165%  net=+0.097%S0  t(net)=+1.41  win=60.9%  p05=-1.72%  credit=2.67%  hold=24d
+    2026       n=  116  gross=+0.491%  net=+0.419%S0  t(net)=+3.33  win=60.3%  p05=-1.56%  credit=2.81%  hold=29d

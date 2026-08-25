@@ -1,0 +1,39 @@
+====================================================================================================
+PHASE D — robustness on C1 (net @0.5% turnover cost, liquid sample)
+====================================================================================================
+C1 reference                       n= 628  net=+0.264%S0  t=+5.06  win=64.8%  p05=-1.96%
+
+--- 1. SUPER-WINNER GUARD (drop top-3 contributing symbols) ---
+top-3 contributors: ['ADANIPORTS', 'TATAMOTORS', 'TCS']
+C1 without top-3                   n= 548  net=+0.228%S0  t=+4.12  win=63.1%  p05=-1.98%
+C1 without top-5                   n= 520  net=+0.199%S0  t=+3.49  win=62.1%  p05=-1.99%
+breadth: 76% of symbols have positive mean net (70 symbols)
+
+--- 2. OOS ERA SPLITS ---
+2016-2023 (older era)              n= 215  net=+0.213%S0  t=+2.48  win=67.0%  p05=-2.21%
+2024-2026 (modern era)             n= 413  net=+0.290%S0  t=+4.44  win=63.7%  p05=-1.89%
+2021-2024 (ex the strong 25/26)    n= 320  net=+0.168%S0  t=+2.46  win=64.4%  p05=-1.98%
+
+--- 3. LIQUIDITY THRESHOLD SENSITIVITY (re-filter from full C1 rows) ---
+atm_vol>=50 & wing>=1              n=1798  net=+0.108%S0  t=+3.14  win=61.2%  p05=-2.47%
+atm_vol>=100 & wing>=10            n= 628  net=+0.264%S0  t=+5.06  win=64.8%  p05=-1.96%
+atm_vol>=200 & wing>=10            n= 340  net=+0.351%S0  t=+4.90  win=66.5%  p05=-1.84%
+atm_vol>=500 & wing>=25            n=  69  net=+0.435%S0  t=+2.58  win=59.4%  p05=-1.49%
+
+--- 4. PARAMETER NEIGHBORHOOD (want: plateau, no lone peak) ---
+N_X18                              n= 628  net=+0.237%S0  t=+4.07  win=63.5%  p05=-2.48%
+N_X24                              n= 628  net=+0.168%S0  t=+3.35  win=62.1%  p05=-2.12%
+N_W6                               n= 647  net=+0.222%S0  t=+4.79  win=63.7%  p05=-1.80%
+N_W8                               n= 619  net=+0.245%S0  t=+4.19  win=64.6%  p05=-2.47%
+N_K2                               n= 639  net=+0.218%S0  t=+4.05  win=63.2%  p05=-2.12%
+N_K3                               n= 640  net=+0.237%S0  t=+4.65  win=66.7%  p05=-2.15%
+
+--- 5. DTE-WINDOW PLACEBO (same structure at 35/55 entry) ---
+P_E35                              n=2528  net=+0.020%S0  t=+0.93  win=59.9%  p05=-2.04%
+P_E55                              n= 241  net=+0.059%S0  t=+0.54  win=60.2%  p05=-2.74%
+
+--- 6. ENTRY-LAG (enter next session after anchor) ---
+LAG1 (next-session entry)          n= 842  net=+0.158%S0  t=+3.53  win=62.6%  p05=-2.09%
+
+--- 7. MULTIPLE-TESTING NOTE ---
+configs tried across B/B2/D: ~31. Bonferroni-ish deflation: a t of 5.0 at n_cfg=31 retains ~t_eff 3.5-4; C1 t must stay >3 after guards above to pass G3.

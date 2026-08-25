@@ -1,0 +1,34 @@
+Phase A trades matched to IV: 100%  (iv_rank available: 92%)
+LIQUID sample n=403
+
+--- IV level (entry ATM IV) ---
+IV 0.00-0.25                   n= 184  gross=+0.239%S0  t=+2.94  win=56.5%  p05=-1.05%
+IV 0.25-0.35                   n= 145  gross=+0.327%S0  t=+4.51  win=72.4%  p05=-0.76%
+IV 0.35-0.50                   n=  68  gross=+0.125%S0  t=+1.21  win=57.4%  p05=-1.13%
+IV 0.50-2.00                   n=   6  gross=-0.021%S0  t=-0.07  win=83.3%  p05=-1.07%
+
+--- IV RANK (own trailing 252d) ---
+IVR 0.00-0.25                  n= 181  gross=+0.205%S0  t=+3.05  win=61.3%  p05=-0.95%
+IVR 0.25-0.50                  n= 107  gross=+0.398%S0  t=+3.26  win=62.6%  p05=-1.07%
+IVR 0.50-0.75                  n=  60  gross=+0.219%S0  t=+2.01  win=63.3%  p05=-0.89%
+IVR 0.75-1.01                  n=  21  gross=+0.255%S0  t=+2.27  win=76.2%  p05=-0.60%
+
+--- VRP = IV / RV20 (premium richness) ---
+VRP 0.0-0.9                    n= 104  gross=+0.129%S0  t=+1.31  win=57.7%  p05=-1.10%
+VRP 0.9-1.1                    n=  93  gross=+0.168%S0  t=+1.69  win=61.3%  p05=-1.08%
+VRP 1.1-1.4                    n= 119  gross=+0.395%S0  t=+4.09  win=65.5%  p05=-0.77%
+VRP 1.4-99.0                   n=  87  gross=+0.271%S0  t=+3.00  win=66.7%  p05=-0.83%
+
+--- combos ---
+IVR>0.5 (rich vs own history)  n=  81  gross=+0.229%S0  t=+2.66  win=66.7%  p05=-0.88%
+IVR>0.5 & VRP>1.1              n=  33  gross=+0.530%S0  t=+3.26  win=78.8%  p05=-0.57%
+IVR>0.5 & RV-rank<0.5 (rich IV, calm stock) n=  19  gross=+0.376%S0  t=+2.08  win=73.7%  p05=-0.56%
+IVR<0.25 (cheap — expect worst) n= 181  gross=+0.205%S0  t=+3.05  win=61.3%  p05=-0.95%
+
+--- per-year of best combo (if it beats no-gate) ---
+2020                           n=   2  gross=+0.555%S0  t=+0.81  win=50.0%  p05=-0.06%
+2021                           n=   1  gross=+1.473%S0  t=+nan  win=100.0%  p05=+1.47%
+2023                           n=   2  gross=-0.066%S0  t=-0.05  win=50.0%  p05=-1.31%
+2024                           n=   4  gross=-0.011%S0  t=-0.06  win=50.0%  p05=-0.42%
+2025                           n=   8  gross=+0.484%S0  t=+1.94  win=87.5%  p05=-0.20%
+2026                           n=   2  gross=+0.432%S0  t=+1.64  win=100.0%  p05=+0.19%

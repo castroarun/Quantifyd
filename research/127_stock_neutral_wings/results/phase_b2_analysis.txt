@@ -1,0 +1,69 @@
+PHASE B2 — 15778 rows; liquid 2486; IV matched 100%
+
+--- composites, liquid, NO gate (net @0.5% turnover cost) ---
+C1_E45X21W7K25_noSL        n= 628  gross=+0.339%  net=+0.264%S0  t=+5.06  win=64.8%  p05=-1.96%
+C2_W10                     n= 557  gross=+0.366%  net=+0.291%S0  t=+4.07  win=64.8%  p05=-2.94%
+C3_ATM                     n= 568  gross=+0.248%  net=+0.143%S0  t=+2.71  win=61.3%  p05=-1.98%
+C4_E60                     n= 105  gross=+0.464%  net=+0.377%S0  t=+2.15  win=64.8%  p05=-2.95%
+C5_X15                     n= 628  gross=+0.302%  net=+0.226%S0  t=+3.59  win=61.8%  p05=-2.79%
+
+--- composites + VRP>1.1 gate ---
+C1_E45X21W7K25_noSL        n= 398  gross=+0.323%  net=+0.244%S0  t=+3.85  win=64.1%  p05=-1.87%
+C2_W10                     n= 347  gross=+0.364%  net=+0.286%S0  t=+3.27  win=64.3%  p05=-2.74%
+C3_ATM                     n= 348  gross=+0.262%  net=+0.155%S0  t=+2.48  win=63.2%  p05=-1.79%
+C4_E60                     n=  41  gross=+0.239%  net=+0.144%S0  t=+0.46  win=56.1%  p05=-3.28%
+C5_X15                     n= 398  gross=+0.289%  net=+0.210%S0  t=+2.70  win=61.1%  p05=-2.85%
+
+--- best composite per-year, no gate vs VRP>1.1 ---
+best gated composite: C1_E45X21W7K25_noSL (t=+3.85)
+  [C1_E45X21W7K25_noSL | no-gate]
+    2016                       n=   5  gross=+0.611%  net=+0.476%S0  t=+0.54  win=60.0%  p05=-1.25%
+    2017                       n=   1  gross=+0.847%  net=+0.790%S0  t=+nan  win=100.0%  p05=+0.79%
+    2018                       n=   6  gross=-0.754%  net=-0.871%S0  t=-1.12  win=50.0%  p05=-3.74%
+    2019                       n=   5  gross=-0.155%  net=-0.274%S0  t=-0.40  win=60.0%  p05=-2.20%
+    2020                       n=  11  gross=-0.264%  net=-0.434%S0  t=-1.30  win=45.5%  p05=-2.35%
+    2021                       n=  55  gross=+0.495%  net=+0.401%S0  t=+2.18  win=70.9%  p05=-2.01%
+    2022                       n=  63  gross=+0.181%  net=+0.099%S0  t=+0.70  win=60.3%  p05=-1.58%
+    2023                       n=  69  gross=+0.441%  net=+0.372%S0  t=+2.71  win=75.4%  p05=-2.06%
+    2024                       n= 133  gross=+0.079%  net=-0.001%S0  t=-0.01  win=57.9%  p05=-1.99%
+    2025                       n= 165  gross=+0.349%  net=+0.286%S0  t=+3.30  win=66.7%  p05=-1.83%
+    2026                       n= 115  gross=+0.698%  net=+0.632%S0  t=+4.21  win=66.1%  p05=-1.84%
+  [C1_E45X21W7K25_noSL | VRP>1.1]
+    2016                       n=   3  gross=-0.277%  net=-0.418%S0  t=-0.57  win=33.3%  p05=-1.28%
+    2018                       n=   3  gross=-1.864%  net=-2.004%S0  t=-1.52  win=0.0%  p05=-4.24%
+    2019                       n=   1  gross=+0.873%  net=+0.824%S0  t=+nan  win=100.0%  p05=+0.82%
+    2020                       n=  10  gross=-0.077%  net=-0.252%S0  t=-0.81  win=50.0%  p05=-1.91%
+    2021                       n=  44  gross=+0.414%  net=+0.314%S0  t=+1.40  win=63.6%  p05=-2.07%
+    2022                       n=  42  gross=+0.054%  net=-0.025%S0  t=-0.13  win=54.8%  p05=-1.82%
+    2023                       n=  55  gross=+0.448%  net=+0.377%S0  t=+2.39  win=74.5%  p05=-1.96%
+    2024                       n=  96  gross=+0.101%  net=+0.019%S0  t=+0.16  win=57.3%  p05=-1.76%
+    2025                       n=  96  gross=+0.383%  net=+0.320%S0  t=+3.14  win=69.8%  p05=-1.59%
+    2026                       n=  48  gross=+0.900%  net=+0.836%S0  t=+3.72  win=70.8%  p05=-1.64%
+
+--- gated best composite: cost sensitivity ---
+cost 0.25%                 n= 398  gross=+0.323%  net=+0.283%S0  t=+4.51  win=65.1%  p05=-1.82%
+cost 0.50%                 n= 398  gross=+0.323%  net=+0.244%S0  t=+3.85  win=64.1%  p05=-1.87%
+cost 0.75%                 n= 398  gross=+0.323%  net=+0.205%S0  t=+3.21  win=62.8%  p05=-1.92%
+cost 1.00%                 n= 398  gross=+0.323%  net=+0.166%S0  t=+2.58  win=61.6%  p05=-1.97%
+
+--- gated best composite: per-symbol (n>=8) ---
+            count      mean
+symbol                     
+HCLTECH         9  0.008972
+TATAPOWER      12  0.008494
+TCS            20  0.006599
+TATAMOTORS     18  0.004714
+KOTAKBANK      12  0.003568
+TATASTEEL      10  0.002977
+LT             16  0.002715
+INDUSINDBK     15  0.002253
+ASIANPAINT      9  0.001255
+ICICIBANK      16  0.001095
+HAL            12  0.000572
+ADANIENT       12  0.000243
+INFY           24  0.000220
+MARUTI         14 -0.000217
+SBIN           27 -0.000223
+HINDUNILVR     15 -0.000896
+VEDL            9 -0.005027
+M&M             9 -0.006802
