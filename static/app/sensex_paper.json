@@ -6,13 +6,13 @@
  "lots": 2,
  "qty": 40,
  "lot_size": 20,
- "updated": "2026-08-25 13:16:01",
+ "updated": "2026-08-25 13:52:01",
  "today_day": "2026-08-25",
  "variants": {
   "straddle": {
    "all": {
     "n": 29,
-    "pnl": -2828,
+    "pnl": -3392,
     "win": 69
    },
    "system": {
@@ -22,7 +22,7 @@
    },
    "observational": {
     "n": 18,
-    "pnl": 1232,
+    "pnl": 668,
     "win": 67
    },
    "curve": [
@@ -186,14 +186,14 @@
     ],
     [
      "2026-08-25",
-     -2828
+     -3392
     ]
    ]
   },
   "strangle": {
    "all": {
     "n": 29,
-    "pnl": 25678,
+    "pnl": 26010,
     "win": 72
    },
    "system": {
@@ -203,7 +203,7 @@
    },
    "observational": {
     "n": 18,
-    "pnl": 12914,
+    "pnl": 13246,
     "win": 67
    },
    "curve": [
@@ -367,7 +367,7 @@
     ],
     [
      "2026-08-25",
-     25678
+     26010
     ]
    ]
   }
@@ -385,12 +385,12 @@
    "ce_entry": 214.1,
    "pe_entry": 129.65,
    "credit": 343.75,
-   "ce_exit": 132.8,
-   "pe_exit": 146.6,
+   "ce_exit": 138.25,
+   "pe_exit": 132.85,
    "exit_reason": "time1445",
    "entry_time": "09:20",
    "exit_time": "14:45",
-   "pnl": 2534,
+   "pnl": 2866,
    "legs": [
     {
      "type": "CE",
@@ -398,8 +398,8 @@
      "strike": 77600,
      "qty": 40,
      "entry": 214.1,
-     "ltp": 132.8,
-     "pnl": 3252
+     "ltp": 138.25,
+     "pnl": 3034
     },
     {
      "type": "PE",
@@ -407,8 +407,8 @@
      "strike": 77000,
      "qty": 40,
      "entry": 129.65,
-     "ltp": 146.6,
-     "pnl": -678
+     "ltp": 132.85,
+     "pnl": -128
     }
    ]
   },
@@ -424,12 +424,12 @@
    "ce_entry": 360.3,
    "pe_entry": 234.3,
    "credit": 594.6,
-   "ce_exit": 249.9,
+   "ce_exit": 264.0,
    "pe_exit": 308.95,
    "exit_reason": "SL",
    "entry_time": "09:20",
    "exit_time": "15:15",
-   "pnl": 1390,
+   "pnl": 826,
    "legs": [
     {
      "type": "CE",
@@ -437,8 +437,8 @@
      "strike": 77300,
      "qty": 40,
      "entry": 360.3,
-     "ltp": 249.9,
-     "pnl": 4416
+     "ltp": 264.0,
+     "pnl": 3852
     },
     {
      "type": "PE",

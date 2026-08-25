@@ -27,8 +27,12 @@ while True:
         if m:
             d.update(status="OPEN", credit=float(m.group(1)), ce_fill=float(m.group(2)),
                      pe_fill=float(m.group(3)), sl_trigger=float(m.group(4)))
-        m = re.search(r"EXIT trigger: (\w+)", t)
-        if m: d.update(status="EXITING", reason=m.group(1))
+        m = re.search(r"\[(\d\d:\d\d):\d\d\] EXIT trigger: (\w+)", t)
+        if m: d.update(status="EXITING", reason=m.group(2), exit_ts=m.group(1))
+        m = re.search(r"EXIT (\S+CE) buy fill ([\d.]+)", t)
+        if m: d["exit_ce"] = float(m.group(2))
+        m = re.search(r"EXIT (\S+PE) buy fill ([\d.]+)", t)
+        if m: d["exit_pe"] = float(m.group(2))
         m = re.search(r"DONE \[LIVE\] (\w+) credit ([\d.]+) -> debit ([\d.]+) \| P&L ([+-]?\d+)", t)
         if m:
             d.update(status="DONE", reason=m.group(1), credit=float(m.group(2)),

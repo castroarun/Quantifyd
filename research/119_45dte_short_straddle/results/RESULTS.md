@@ -247,6 +247,105 @@ for the same hit rate. That is the more durable description.
 **On capital, >25 is the best cell** (Calmar 1.05 vs 0.83) and no filter has the highest CAGR.
 **>75 is worst of both worlds** on this basis — 21 trades in 7.5 years for a 6.95% CAGR.
 
+
+### Why the filter works — the mechanism, and what it says about December
+
+The filter above is an empirical association until you can say *what* it is selecting for.
+It turns out to be one thing, and it is measurable at entry.
+
+**Movement relative to premium is the whole game.** Across all 89 campaigns:
+
+| Predictor | Correlation with net P&L |
+|---|---|
+| \|move\| (entry spot → exit spot) | −0.770 |
+| **\|move\| ÷ breakeven width** | **−0.898** |
+| breakeven width alone | +0.330 |
+
+Breakeven width = entry credit ÷ entry spot, i.e. how far NIFTY can travel before the straddle
+loses. It is known the moment you sell. The direct test:
+
+**Every campaign where NIFTY moved ≥ +4%: 15 of 17 were losses, average −209 points.** Big
+up-moves are the defining risk, and they are not a seasonal artefact.
+
+**Grouped by expiry month** (one campaign per month; the Dec-expiry campaign is held mid-Nov to
+early-Dec):
+
+| Month | n | Avg pts | Avg move | \|move\| | Breakeven | move/BE | Win% |
+|---|---|---|---|---|---|---|---|
+| Jan | 7 | +7.2 | +0.62% | 2.65% | 3.83% | 0.67 | 57% |
+| Feb | 8 | +182.1 | −0.01% | 2.10% | 4.43% | 0.46 | **100%** |
+| Mar | 7 | +39.9 | −1.02% | 2.62% | 4.47% | 0.65 | 71% |
+| **Apr** | 8 | **+230.7** | +1.74% | 2.09% | **6.55%** | **0.44** | 75% |
+| May | 8 | +57.0 | +0.58% | 3.19% | 5.90% | 0.62 | 62% |
+| Jun | 8 | +169.8 | +3.24% | **3.84%** | 5.72% | 0.61 | 62% |
+| Jul | 8 | +10.3 | +3.29% | 3.43% | 4.67% | 0.70 | 62% |
+| Aug | 7 | +12.0 | +0.74% | 3.46% | 4.07% | 0.85 | 57% |
+| Sep | 7 | +70.0 | +1.59% | 2.26% | 4.05% | 0.60 | 71% |
+| Oct | 7 | +101.5 | +0.13% | 2.17% | 3.78% | 0.56 | 86% |
+| Nov | 7 | +71.2 | +1.13% | 2.72% | 4.22% | 0.64 | 71% |
+| **Dec** | 7 | **−51.4** | +1.94% | 2.95% | **3.75%** | **0.80** | 71% |
+
+**June is the tell.** It has the *largest* average move of any month (3.84%) and is still the
+third-best month, because it is paid 5.72% of breakeven. Move alone does not decide the outcome;
+move relative to premium does.
+
+**Why December is the only losing month.** Not because the move is large — 2.95% is middling.
+Because it is **paid the least of any month (3.75% breakeven, the thinnest in the study)** while
+the market drifts up +1.94%. Thin credit against upward drift is a genuinely bad setup, and
+December is where that combination clusters. Its average entry VIX rank is 34, among the lowest.
+
+**The "NIFTY rallies in Nov/Dec" premise does not survive a longer sample.** NIFTY 50 calendar
+returns, 2011–2026, independent of this study: **Nov +0.95% (53% win), Dec +0.68% (53%)** — both
+middling against an all-month average of +0.91%, and far behind Apr (+2.30%) and Oct (+2.07%).
+October is the strongest up-month and is our *fourth-best* straddle month. The seasonal premise is
+not what drives the December result; the thin premium is.
+
+**And December's total is one trade.** Dec-2023 lost 811.8 points — the worst in the study — sold
+on a **2.95% breakeven** into a **+6.39%** move. Strip it and December averages **+75.3**,
+mid-table. Both December losses (2023, 2020) were its two largest up-moves.
+
+### Can breakeven width replace the VIX filter? No — but it explains it
+
+If move/premium is the mechanism, filtering directly on breakeven width should work. It does,
+monotonically — but it does not beat filtering on VIX.
+
+| Filter | n | Avg pts | t | CAGR | MaxDD | Calmar | Losing years |
+|---|---|---|---|---|---|---|---|
+| None | 89 | 78.1 | 3.03 | 11.49% | 18.0% | 0.64 | 1 |
+| BE ≥ 3.5% | 67 | 91.1 | 3.26 | 10.45% | 10.2% | 1.03 | **0** |
+| BE ≥ 4.0% | 49 | 105.3 | 3.03 | 9.20% | 8.9% | 1.04 | 1 |
+| BE ≥ 4.5% | 34 | 109.0 | 2.33 | 7.09% | 8.2% | 0.87 | 2 |
+| BE ≥ 5.0% | 26 | 113.4 | 2.13 | 5.87% | 11.0% | 0.53 | 2 |
+| BE ≥ 6.0% | 13 | 181.4 | 2.34 | 4.86% | 6.2% | 0.79 | 1 |
+| **VIX > 25** | 61 | 104.5 | **3.54** | **10.78%** | 10.2% | **1.06** | **0** |
+| BE ≥ 4.0% AND VIX > 25 | 46 | 109.3 | 2.97 | 9.02% | 8.9% | 1.02 | 1 |
+
+Average points per trade rises **monotonically** with the breakeven threshold (78 → 91 → 105 →
+109 → 113 → 181), which is the signature of a real effect rather than a lucky cell. But VIX > 25
+beats every breakeven cell on t-stat, CAGR and Calmar at the same drawdown, and **combining the
+two is worse than either alone**.
+
+They are not the same filter — correlation between breakeven width and VIX rank is **0.570**, and
+they skip 22 and 28 trades respectively with only 18 in common (56% overlap). What separates them
+is visible in the worst trades:
+
+| Worst trade | Net | BE% | VIX rank | BE ≥ 3.5% | VIX > 25 |
+|---|---|---|---|---|---|
+| **Dec-2023** | **−811.8** | **2.95%** | 21 | **skipped** | **skipped** |
+| Mar-2020 | −466.3 | 3.68% | 23 | taken | **skipped** |
+| Aug-2022 | −452.3 | 5.01% | 53 | taken | taken |
+| May-2025 | −443.9 | 5.54% | 97 | taken | taken |
+| Jul-2023 | −405.9 | 3.11% | 2 | **skipped** | **skipped** |
+| Sep-2021 | −314.9 | 3.19% | 13 | **skipped** | **skipped** |
+
+Both filters would have skipped the worst trade in the study, on information available at entry.
+Neither catches Aug-2022 or May-2025 — fat-premium entries (5.0%, 5.5%) where the move simply
+exceeded even a generous breakeven. That residue is the tail no entry filter removes.
+
+**Conclusion: keep VIX > 25.** The breakeven work does not improve it, but it converts it from a
+statistical association into a mechanism — the filter is selecting for *being paid enough for the
+move you are about to get* — and it explains the December result far better than the calendar does.
+
 ---
 
 ## 5. Delta management — hold to an x% move, then exit and re-centre?

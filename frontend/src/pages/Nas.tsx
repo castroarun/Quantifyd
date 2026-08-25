@@ -1638,11 +1638,21 @@ export default function Nas() {
     if (!day) return [];
     const iso = (hm: string) => `${day}T${hm}:00`;
     const lists = SLEEVES
-      .map((sv) => (cslLive?.books?.[sv.key]?.series ?? []) as [string, number][])
+      .map((sv) => {
+        // A sleeve that has CLOSED is dropped from csl_paper_live.json by the daemon, so the
+        // live payload alone loses its P&L from the Overall curve the moment it books (TimeB
+        // closing at 11:00 took Rs3,402 off the curve while its card still showed it).
+        // Fall back to the closed day record - the same source sleeveInfo() uses for the card.
+        const liveSeries = (cslLive?.books?.[sv.key]?.series ?? []) as [string, number][];
+        if (liveSeries.length) return liveSeries;
+        const rec = (cslDay?.records ?? []).find(
+          (r: any) => r.day === day && r.book === sv.key);
+        return ((rec?.series ?? []) as [string, number][]);
+      })
       .filter((x) => x.length)
       .map((x) => x.map(([hm, v]) => [iso(hm), v] as MtmPoint));
     return lists.length ? sumSeries(lists) : [];
-  }, [cslLive]);
+  }, [cslLive, cslDay]);
   const overallPts: MtmPoint[] = useMemo(() => {
     if (!mtmCombined) return [];
     if (!sleevePts.length) return mtmCombined.points;
@@ -1652,25 +1662,9 @@ export default function Nas() {
   return (
     <LiveTicksContext.Provider value={liveTicks}>
     <div className={styles.root}>
-      {/* Tier 1 (exchange-side SL-M) not yet built — remove this block when it ships. */}
-      <div className={styles.slmWarning} role="alert">
-        <span className={styles.slmWarningIcon} aria-hidden="true">⚠</span>
-        <div className={styles.slmWarningText}>
-          <strong>NAS LIVE — exchange-side SL-M not yet implemented.</strong>
-          <span className={styles.slmWarningDetail}>
-            {' '}If Flask or ticker dies during an open position, the short is
-            unprotected until the process recovers. Tier 1 build pending.
-          </span>
-        </div>
-      </div>
-
       <div className={styles.titleRow}>
         <div>
           <div className="page-title">NAS options</div>
-          <div className="page-subtitle">
-            Eight Nifty options systems running in parallel. ATR squeeze entries on the
-            left, time-based 9:16 entries on the right.
-          </div>
         </div>
         <div className={styles.titleRowActions}>
           <MasterModeToggle onToast={setToast} />
@@ -1729,6 +1723,19 @@ export default function Nas() {
         events={historyModal?.events ?? []}
         onClose={() => setHistoryModal(null)}
       />
+
+      {/* Tier 1 (exchange-side SL-M) not yet built — remove this block when it ships.
+          Sits BELOW the metrics so positions stay high on the page. */}
+      <div className={styles.slmWarning} role="alert">
+        <span className={styles.slmWarningIcon} aria-hidden="true">⚠</span>
+        <div className={styles.slmWarningText}>
+          <strong>NAS LIVE — exchange-side SL-M not yet implemented.</strong>
+          <span className={styles.slmWarningDetail}>
+            {' '}If Flask or ticker dies during an open position, the short is
+            unprotected until the process recovers. Tier 1 build pending.
+          </span>
+        </div>
+      </div>
 
       {/* Shared ATR squeeze header */}
       <div className={styles.headerMetrics}>
