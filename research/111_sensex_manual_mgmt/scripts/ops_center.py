@@ -15,6 +15,15 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
+    ("Expiry-Afternoon Lab (research/125)", [
+        ("expiry_lab_assessment", "Tue+Thu 16:05 IST cron",
+         "re-runs the DTE0 afternoon sweep, re-scores frozen slots (TimeB2 live Tue 13:15-14:30 CSL30 8L), flags DRIFT/WEAK, appends permanent run history to /app/straddles#expiry-lab",
+         "venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/expiry_lab_assessment.py"),
+        ("timeb2_oneshot (live slot)", "manual arm on expiry Tuesday pre-13:15 (one-shot)",
+         "NIFTY Tue 13:15->14:30 combined-SL30 8L REAL; gates+margin checked at entry; records to results/timeb2_live_days.json",
+         "setsid nohup venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/timeb2_oneshot.py </dev/null >/tmp/timeb2_live.log 2>&1 &"),
+    ]),
+
     ("Daily auto-analysis (15:42 regen chain)", [
         ("Whole regen chain", "15:42 Mon-Fri (moved outside the 15:40 F&O window, user 2026-08-16)", "V1/V2 cards + leaderboard + SL30 + backfill + baseline + portfolio lab (~80 min)",
          "./research/58_intraday_recenter_straddle/scripts/regen_straddles.sh"),
@@ -72,6 +81,9 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("TimeB2 (expiry-Tue afternoon straddle) live-vs-model review after 4 Tuesdays", "2026-09-22", "SCHEDULED",
+     "research/125 slot went live 2026-08-25 (8L one-shot); judge live fills vs model in /app/straddles#expiry-lab live_vs_model; also decide SENSEX Thu 13:30-15:00 CSL30 deployment then"),
+
     ("45-DTE straddle: stress-margin test before any live sizing",
      "2026-09-30", "PENDING",
      "research/119 passed G3 and now runs as a 3-lot PAPER book. Blocking item for live: reconstruct per-lot SPAN across 2019-26 and re-run the equity curve with a margin-call rule. Margin inflates +26% once spot is 3% away and a >=3% move happens in 66% of campaigns, so the fixed-capital CAGR is an upper bound."),

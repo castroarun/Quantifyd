@@ -506,6 +506,7 @@ export default function Straddles() {
   const dmon = (s: string) => s.slice(8, 10) + '-' + ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][+s.slice(5, 7) - 1];
   const [variants, setVariants] = useState<any>(null); // v2 stop x wings variant lab
   const [cslCfg, setCslCfg] = useState<any>(null);   // research/111 best-config lab (weekly regen)
+  const [expLab, setExpLab] = useState<any>(null);   // research/125 expiry-afternoon lab (Tue+Thu 16:05 regen)
   const [cslIdx, setCslIdx] = useState<'NIFTY' | 'SENSEX'>('NIFTY');
   const [cslDte, setCslDte] = useState<string>('all');
   const [csl2nd, setCsl2nd] = useState(false);       // stack the next-best non-overlapping slot
@@ -543,6 +544,7 @@ export default function Straddles() {
     fetch('/app/straddles/reassessment.json?t=' + Date.now()).then((r) => r.json()).then(setPfRe).catch(() => {});
     fetch('/app/straddles/reassessment_history.json?t=' + Date.now()).then((r) => r.json()).then(setPfReH).catch(() => {});
     fetch('/app/straddles/ops_center.json?t=' + Date.now()).then((r) => r.json()).then(setOpsC).catch(() => {});
+    fetch('/app/straddles/expiry_lab.json?t=' + Date.now()).then((r) => r.json()).then(setExpLab).catch(() => {});
     const loadPLive = () => fetch('/app/csl_paper_live.json?t=' + Date.now()).then((r) => r.json()).then(setCslPLive).catch(() => {});
     loadPLive(); const pl = setInterval(loadPLive, 60000);
     const loadLive = () => {
@@ -707,7 +709,7 @@ export default function Straddles() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
           {[['/app/backtest/csl-best-config-straddles', '📄 Full study card (backtest page)'],
-            ['#csl-paper', '📗 Paper Books (live validation)'], ['#csl-lab', '🔬 Best-Config Lab (weekly)'],
+            ['#csl-paper', '📗 Paper Books (live validation)'], ['#csl-lab', '🔬 Best-Config Lab (weekly)'], ['#expiry-lab', '⏱ Expiry-Afternoon Lab'],
             ['#portfolio-lab', '🎯 Options Portfolio Lab'], ['#ops-center', '🛠 Ops & Reviews'], ['#leaderboard', '🏆 Strategy Leaderboard'], ['#variant-lab', '🧪 V2 Variant Lab'],
             ['/app/nifty_csl_vs_nas.png', '📈 NIFTY: CSL vs NAS (chart)'], ['/app/sensex_csl_vs_nas.png', '📈 SENSEX: CSL vs NAS (chart)'],
             ['/app/perleg_vs_comb.png', '📉 Per-leg vs Combined SL (chart)'], ['/app/csl30_vs_nas916.png', '📊 CSL30 vs NAS-916 (chart)'],
@@ -1189,6 +1191,58 @@ export default function Straddles() {
           ['Kill levers', 'nas_manual_freeze.flag (blocks ALL orders) · master mode paper (whole stack) · per-book mode flag · POST /api/nas/kill-switch (suite)'],
         ]} />
       </section>
+
+      {expLab && (
+        <section id="expiry-lab" style={{ ...card, marginTop: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>⏱ Expiry-Afternoon Lab</span>
+            <span style={{ fontSize: 11, color: C.sec }}>research/125 · DTE0 afternoon straddle slots · re-assessed Tue+Thu 16:05 · regen {expLab.generated_at}</span>
+          </div>
+          <div style={{ fontSize: 11, color: C.sec, margin: '6px 0' }}>
+            Spot-ATM straddle on expiry afternoons. The old 13:45→15:00 idea is real but sub-optimal: the money is
+            13:15–13:30 → 14:15–15:00, before the last-hour gamma storm (variability triples after 14:30, drift turns positive — the late IV pop).
+            All figures net (r/123 cost model), sized as shown. TimeB2 = the live Tuesday slot.
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', fontSize: 12, minWidth: 620 }}>
+              <thead><tr style={{ color: C.sec, textAlign: 'left' }}>
+                <th style={{ padding: '3px 10px' }}>Slot</th><th>SL</th><th>Lots</th><th>Mean/day</th><th>Win</th><th>MaxDD</th><th>Ratio</th><th>n</th></tr></thead>
+              <tbody>
+                {(expLab.winners || []).map((w: any, i: number) => (
+                  <tr key={i} style={{ borderTop: `1px solid ${C.hair}`, fontWeight: i === 0 ? 700 : 400 }}>
+                    <td style={{ padding: '3px 10px' }}>{w.sym} {w.entry}→{w.exit}{i === 0 ? ' · TimeB2' : ''}</td>
+                    <td>{String(w.sl) === 'none' ? 'none+50%BS' : `CSL${w.sl}%`}</td><td>{w.lots}L</td>
+                    <td style={{ color: w.mean >= 0 ? '#22a06b' : '#e5484d' }}>{w.mean >= 0 ? '+' : ''}{w.mean.toLocaleString('en-IN')}</td>
+                    <td>{w.win}%</td><td>{w.maxdd.toLocaleString('en-IN')}</td><td>{w.ratio}</td><td>{w.n}</td>
+                  </tr>))}
+                {(expLab.algotest_ref || []).map((w: any, i: number) => (
+                  <tr key={'r' + i} style={{ borderTop: `1px solid ${C.hair}`, color: C.sec }}>
+                    <td style={{ padding: '3px 10px' }}>{w.sym} {w.entry}→{w.exit} (old AlgoTest slot)</td>
+                    <td>best SL{w.sl}</td><td>—</td><td>{w.mean_lot >= 0 ? '+' : ''}{w.mean_lot}/lot</td>
+                    <td>{w.win}%</td><td>—</td><td>{w.ratio}</td><td>—</td>
+                  </tr>))}
+              </tbody>
+            </table>
+          </div>
+          {(expLab.live_vs_model || []).length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 12 }}>
+              <span style={{ fontWeight: 700, color: C.navy }}>TimeB2 live days vs model:</span>{' '}
+              {(expLab.live_vs_model || []).map((r: any) => `${r.day}: live ${r.live >= 0 ? '+' : ''}${r.live} vs model ${r.model ?? 'n/a'} (${r.reason})`).join(' · ')}
+            </div>
+          )}
+          {(expLab.runs || []).length > 0 && (
+            <div style={{ marginTop: 6, fontSize: 11, color: C.sec }}>
+              Assessment history: {(expLab.runs || []).slice(-5).map((r: any) => `${r.at} — ${r.verdict}`).join(' · ')}
+            </div>
+          )}
+          <OpsInfo rows={[
+            ['Cadence', 'Tue+Thu 16:05 IST cron re-runs the sweep on all recorded expiry days, re-scores the frozen slots, flags DRIFT/WEAK, appends run history'],
+            ['Manual run', 'venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/expiry_lab_assessment.py'],
+            ['Live slot', 'TimeB2: NIFTY Tue 13:15→14:30 CSL30 8L — one-shot runner timeb2_oneshot.py (results/timeb2_live_days.json)'],
+            ['Study docs', 'research/125_expiry_afternoon_straddle/ — STATUS-MD + results/RESULTS.md · verdict: SIGNAL, paper/live-forward validating'],
+          ]} />
+        </section>
+      )}
 
       {!cslCfg && (
         <section id="csl-lab" style={{ ...card, marginTop: 14, borderColor: C.navy }}>
