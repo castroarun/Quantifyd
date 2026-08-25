@@ -1608,11 +1608,24 @@ export default function Nas() {
     // straddle line (the live book is nulled on exit; the record holds combined credit/exit).
     const rec: any = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
     if (rec) {
+      const q = rec.qty ?? qty;
+      const md = rec.source === 'REAL' ? 'live' : 'paper';
+      if (rec.ce0 != null && rec.ce_exit != null && rec.pe0 != null && rec.pe_exit != null) {
+        const mkc = (leg: string, sym: string | undefined, e: number, xx: number): any => ({
+          leg, tradingsymbol: sym, strike: rec.strike, qty: q,
+          entry_price: e, exit_price: xx, pnl_inr: Math.round((e - xx) * q),
+          entry_time: rec.entry_ts, exit_time: rec.exit_ts, exit_reason: rec.reason,
+          status: 'CLOSED', mode: md,
+        });
+        return { state: { positions: { ce: [], pe: [], closed_today: [
+          mkc('CE', rec.ce_sym, rec.ce0, rec.ce_exit), mkc('PE', rec.pe_sym, rec.pe0, rec.pe_exit),
+        ] } } as any, err: null };
+      }
       const closed: any = {
-        leg: 'C+P', tradingsymbol: undefined, strike: rec.strike, qty: rec.qty ?? qty,
+        leg: 'C+P', tradingsymbol: undefined, strike: rec.strike, qty: q,
         entry_price: rec.credit, exit_price: rec.exit_comb, pnl_inr: rec.pnl,
         entry_time: rec.entry_ts, exit_time: rec.exit_ts, exit_reason: rec.reason,
-        status: 'CLOSED', mode: rec.source === 'REAL' ? 'live' : 'paper',
+        status: 'CLOSED', mode: md,
       };
       return { state: { positions: { ce: [], pe: [], closed_today: [closed] } } as any, err: null };
     }
@@ -2123,6 +2136,11 @@ const MOVE_STOP_PCT: Record<string, number> = {
   'nas-opt': 0.004,
 };
 
+// Rs/lot pair-level MTM stop (research/96): worst-case rupees for the MAX LOSS column.
+const MTM_STOP_PER_LOT: Record<string, number> = {
+  'nas-atm2': 2500, 'nas-916-atm2': 2500, 'nas-opt': 2500,
+};
+
 // Compact status tags so the column stays narrow and the P&L stays next to it.
 const REASON_SHORT: Record<string, string> = {
   adj_boundary_exit_no_strike: 'BOUNDARY',
@@ -2291,7 +2309,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
           entry: fill ?? null, exit: ltp, pnl, open: tbOpen,
           reason: tbOpen ? undefined : (tb2.reason || 'TIME_EXIT'),
           inTime: '13:15', outTime: tbOpen ? '14:30*' : (tb2.exit_ts || '14:30'),
-          arm: null, arm_text: tbOpen && tb2.sl_trigger ? `${tb2.comb ?? '—'} · ${tb2.sl_trigger} (30%)` : undefined,
+          arm: null, arm_text: tbOpen && tb2.sl_trigger ? `${tb2.credit} · ${tb2.sl_trigger} (${tb2.comb ?? '—'})` : undefined,
           mode: 'live' } as any);
       }
     }
@@ -2331,8 +2349,8 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 50px 104px 124px 116px 48px 48px 86px'
-    : '120px 34px 58px 46px 50px 104px 124px 116px 48px 48px 86px';
+    ? '34px 58px 46px 50px 104px 124px 74px 116px 48px 48px 86px'
+    : '120px 34px 58px 46px 50px 104px 124px 74px 116px 48px 48px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -2381,7 +2399,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
         }}>
           {mode !== 'system' && <span>SYSTEM</span>}
           <span>C/P</span><span>STRIKE</span><span>QTY</span><span>MODE</span><span>ENTRY→EXIT</span>
-          <span>ARM</span><span>STATUS</span><span>IN</span><span>OUT</span>
+          <span>ARM</span><span>MAX LOSS</span><span>STATUS</span><span>IN</span><span>OUT</span>
           <span style={{ textAlign: 'right' }}>P&amp;L</span>
         </div>
         {groups.map((g) => {
@@ -2509,6 +2527,24 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                         {icon} {v}
                       </span>
                     );
+                  })()}
+                  {(() => {   // MAX LOSS: absolute worst-case at the armed stop (pair-level constructs)
+                    if (!r.open) return <span style={{ color: 'var(--ink-muted)' }}>—</span>;
+                    const red = { color: '#e5484d', whiteSpace: 'nowrap' as const };
+                    const pairTag = <span style={{ color: '#d29922', fontSize: 10, whiteSpace: 'nowrap' }}>↑ pair</span>;
+                    const pm = r.arm_text ? String(r.arm_text).match(/^([\d.]+) · ([\d.]+)/) : null;
+                    if (pm) {
+                      return r.side === 'CE'
+                        ? <span style={red}>-₹{Math.round((parseFloat(pm[2]) - parseFloat(pm[1])) * r.qty).toLocaleString('en-IN')}</span>
+                        : pairTag;
+                    }
+                    const mtm = MTM_STOP_PER_LOT[r.sysId];
+                    if (mtm) {
+                      return r.side === 'CE'
+                        ? <span style={red}>-₹{(mtm * Math.max(1, Math.round(r.qty / 65))).toLocaleString('en-IN')}</span>
+                        : pairTag;
+                    }
+                    return <span style={{ color: 'var(--ink-muted)' }}>—</span>;
                   })()}
                   {(() => {
                     if (r.open) {
