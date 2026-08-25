@@ -75,3 +75,15 @@ All in `research/111_sensex_manual_mgmt/scripts/`, run with `venv/bin/python3` f
 | `touch backtest_data/nas_manual_freeze.flag` | blocks ALL order placement (suite + sleeves) |
 | `backtest_data/nas_master_mode.json` → `{"mode":"paper"}` | whole stack (suite + live sleeves) to paper |
 | Remove a book's `"mode": "live"` in `csl_paper_exec.py` BOOKS | that sleeve to paper from next morning |
+
+## Expiry-Afternoon Lab (research/125) - added 2026-08-25
+
+| Item | Detail |
+|---|---|
+| What | DTE0 afternoon straddle slots (NIFTY Tue / SENSEX Thu); winner TimeB2 = Tue 13:15->14:30 CSL30 8L LIVE |
+| Page | /app/straddles#expiry-lab (winners, AlgoTest reference, live-vs-model, run history) |
+| Job | cron Tue+Thu 16:05 IST: expiry_lab_assessment.py (re-sweep + DRIFT/WEAK flags + history) |
+| Manual | venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/expiry_lab_assessment.py |
+| Live runner | timeb2_oneshot.py (one-shot, arm pre-13:15 on expiry Tuesday) |
+| Review | 2026-09-22: TimeB2 live-vs-model after 4 Tuesdays + SENSEX Thu slot decision |
+
