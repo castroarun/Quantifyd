@@ -1,0 +1,29 @@
+====================================================================================================
+2026-08-25 WORKED EXAMPLE - the full live book, TIMEB2's 8 REAL LOTS INCLUDED
+====================================================================================================
+
+TIMEB2 (standalone one-shot ledger + broker fills; the daemon never recorded it):
+  qty=520 lots=8 window 13:15-14:30 TIME_EXIT credit=53.75 debit=59.50 booked=-2990
+
+Portfolio curve (LIVE-money books only):
+  time      portfolio   916_ATM           916_ATM2          916_ATM4          CSL_TIMEB2_NIFTY  CSL_TIMEB_NIFTY   NAS_COMB20      
+  13:15        +11498   +1306             +3835             -1008             -26               +3640             +3750           
+  13:45        +15814   +1306             +4563             -1008             +2808             +3640             +4504           
+  14:00        +18083   +1306             +4888             -1008             +4342             +3640             +4914           
+  14:03        +18025   +1306             +4862             -1008             +4160             +3640             +5064           
+  14:15        +17062   +1306             +4667             -1008             +3796             +3640             +4660           
+  14:30         +7650   +1306             +2698             -1008             -2080             +3640             +3094           
+  14:33          +890   +1306             -708              -1008             -2080             +3640             -260            
+  15:00         -7240   +1306             -5388             -1008             -2080             +3640             -3711           
+  15:27         -7240   +1306             -5388             -1008             -2080             +3640             -3711           
+
+  PEAK +18817 at 14:01   |   FINAL -7240 at 15:27   |   GIVE-BACK 26058
+
+What each Arm-B2 trigger would have done on THIS day:
+  trigger           arms?    arm_hm       spot wing strikes (100-wide)
+  ABS_5000            YES     09:41    24169.2 24250 CE / 24050 PE
+  ABS_8000            YES     10:48    24148.3 24250 CE / 24050 PE
+  ABS_10000           YES     10:50    24154.5 24250 CE / 24050 PE
+  ABS_12000           YES     13:00    24157.0 24250 CE / 24050 PE
+  ABS_15000           YES     13:38    24132.8 24250 CE / 24050 PE
+  ABS_20000            no         -          - never reached

@@ -1,0 +1,219 @@
+armc cells: 166 venue-days
+
+========================================================================================================
+1. THE INTERACTION THAT COULD NOT BE ASSUMED AWAY - exit rules were calibrated AT the money
+========================================================================================================
+
+--- NIFTY (n=83 days) ---
+system    offset    credit net_total     mean     win% stop_rate      worst
+HOLD          -4     310.1     88818     1070     57.8       0.0     -23763
+HOLD          -3     283.2    103413     1245     56.6       0.0     -22121
+HOLD          -2     261.9    109821     1323     63.9       0.0     -19046
+HOLD          -1     247.4     95987     1156     67.5       0.0     -25860
+HOLD           0     240.8     64324      774     67.5       0.0     -32421
+HOLD           1     242.8     34930      420     68.7       0.0     -36763
+HOLD           2     252.7     14419      173     66.3       0.0     -40157
+HOLD           3     270.0      2975       35     67.5       0.0     -42343
+HOLD           4     293.5     -3563      -42     62.7       0.0     -43640
+COMB          -4     310.1   -105230    -1267     49.4      27.7     -18858
+COMB          -3     283.2    -71081     -856     50.6      28.9     -17916
+COMB          -2     261.9      3630       43     57.8      22.9     -17311
+COMB          -1     247.4     87747     1057     65.1      15.7     -13482
+COMB           0     240.8    124199     1496     72.3      12.0     -13626
+COMB           1     242.8     47870      576     67.5      22.9     -15403
+COMB           2     252.7     42763      515     67.5      25.3     -14742
+COMB           3     270.0     33133      399     63.9      27.7     -15647
+COMB           4     293.5      3973       47     57.8      30.1     -17377
+RUPEE2500     -4     310.1   -121125    -1459     39.8      53.0      -8836
+RUPEE2500     -3     283.2   -101263    -1220     39.8      48.2     -10680
+RUPEE2500     -2     261.9    -65961     -794     49.4      43.4     -10707
+RUPEE2500     -1     247.4     15540      187     57.8      32.5      -9158
+RUPEE2500      0     240.8     39331      473     62.7      28.9      -9002
+RUPEE2500      1     242.8    -27979     -337     60.2      34.9     -11215
+RUPEE2500      2     252.7    -10319     -124     57.8      36.1      -9570
+RUPEE2500      3     270.0    -31049     -374     54.2      42.2     -10873
+RUPEE2500      4     293.5    -37307     -449     48.2      47.0     -11697
+
+--- SENSEX (n=83 days) ---
+system    offset    credit net_total     mean     win% stop_rate      worst
+HOLD          -4     875.3     55179      664     62.7       0.0     -18538
+HOLD          -3     837.7     73506      885     61.4       0.0     -20749
+HOLD          -2     807.6     92538     1114     63.9       0.0     -25083
+HOLD          -1     787.8    103052     1241     66.3       0.0     -29082
+HOLD           0     778.2    103311     1244     72.3       0.0     -32770
+HOLD           1     779.2    104201     1255     69.9       0.0     -35898
+HOLD           2     790.5    110544     1331     68.7       0.0     -34947
+HOLD           3     812.1    119756     1442     65.1       0.0     -34328
+HOLD           4     842.2    113567     1368     65.1       0.0     -32526
+COMB          -4     875.3    -75827     -913     51.8      34.9     -16821
+COMB          -3     837.7    -38211     -460     54.2      31.3     -16193
+COMB          -2     807.6      3905       47     55.4      25.3     -13695
+COMB          -1     787.8      5235       63     60.2      24.1     -11492
+COMB           0     778.2     16515      198     66.3      24.1     -15205
+COMB           1     779.2     12882      155     63.9      25.3     -15553
+COMB           2     790.5     39482      475     62.7      25.3     -18569
+COMB           3     812.1     79345      955     62.7      24.1     -15046
+COMB           4     842.2     76018      915     61.4      24.1     -16846
+RUPEE2500     -4     875.3    -43885     -528     48.2      43.4     -12434
+RUPEE2500     -3     837.7    -12666     -152     50.6      37.3     -10294
+RUPEE2500     -2     807.6    -15697     -189     53.0      37.3      -8753
+RUPEE2500     -1     787.8      2231       26     56.6      33.7     -12245
+RUPEE2500      0     778.2     41133      495     62.7      30.1      -9024
+RUPEE2500      1     779.2     25531      307     62.7      32.5     -10204
+RUPEE2500      2     790.5     19368      233     56.6      37.3      -7451
+RUPEE2500      3     812.1     21951      264     50.6      38.6      -7991
+RUPEE2500      4     842.2     32424      390     53.0      38.6      -8468
+
+READ: SYS_ATM2's stop is a FIXED Rs2,500/lot. Watch its stop_rate as |offset| grows -
+      the same rupee stop is a larger %-of-credit move off-ATM, so it should fire LESS.
+
+========================================================================================================
+2. EQUAL-LOTS PORTFOLIOS (3 systems x 2 lots) - and the three nulls
+========================================================================================================
+
+--- NIFTY   ALL_ATM null: n=83 total=227854 mean=2745 worst=-50146 credit=722 ---
+portfolio          n     total     mean   median   win%     worst       p10   credit    d_mean         t  DOWNSZ
+ALL_ATM           83    227854     2745     5964   65.1    -50146    -19506      722         0      0.00    WINS
+SYM_1             83    192207     2315     5900   67.5    -48775    -17858      731      -429     -0.79    WINS
+ALLUP_1           83     54821      660     5603   62.7    -57597    -22425      728     -2084     -1.73    WINS
+ALLDOWN_1         83    199274     2400     5586   60.2    -44740    -21805      742      -344     -0.28    WINS
+LADDER_UP_1       83    101875     1227     5457   60.2    -50327    -19629      736     -1517     -1.28    WINS
+LADDER_DN_1       83     86110     1037     4143   60.2    -49087    -20445      750     -1707     -1.58    WINS
+SYM_2             83    223701     2695     5254   69.9    -39987    -12625      755       -50     -0.06   loses
+ALLUP_2           83     46863      564     5957   61.4    -56700    -26319      758     -2180     -1.14    WINS
+ALLDOWN_2         83     47490      572     1982   56.6    -39732    -27955      786     -2173     -1.15    WINS
+LADDER_UP_2       83     69780      840     1482   54.2    -49402    -20602      787     -1904     -1.18    WINS
+LADDER_DN_2       83    -53171     -640     1024   53.0    -48256    -24825      813     -3385     -2.09    WINS
+SYM_3             83    196563     2368     5030   65.1    -35416    -12852      794      -377     -0.36   loses
+ALLUP_3           83      5059       60     3802   59.0    -59793    -28578      810     -2684     -1.12    WINS
+ALLDOWN_3         83    -68931     -830     -273   49.4    -40425    -29438      849     -3575     -1.47    WINS
+SYM_4             83    175710     2116     5093   66.3    -31747    -12985      844      -628     -0.51   loses
+ALLUP_4           83    -36897     -444     3429   54.2    -64129    -30879      880     -3189     -1.13    WINS
+ALLDOWN_4         83   -137537    -1657     -629   49.4    -41760    -32126      930     -4402     -1.58    WINS
+
+--- SENSEX   ALL_ATM null: n=83 total=160959 mean=1939 worst=-48122 credit=2335 ---
+portfolio          n     total     mean   median   win%     worst       p10   credit    d_mean         t  DOWNSZ
+ALL_ATM           83    160959     1939     6495   62.7    -48122    -21689     2335         0      0.00    WINS
+SYM_1             83    145098     1748     6318   63.9    -46962    -20733     2345      -191     -1.06    WINS
+ALLUP_1           83    142614     1718     5183   66.3    -56306    -21142     2338      -221     -0.40    WINS
+ALLDOWN_1         83    110518     1331     4834   61.4    -44974    -19187     2364      -607     -0.71    WINS
+LADDER_UP_1       83    135561     1633     4935   66.3    -48962    -21565     2348      -306     -0.45    WINS
+LADDER_DN_1       83     92849     1118     4094   60.2    -47512    -20735     2374      -820     -0.87    WINS
+SYM_2             83    128421     1547     5948   65.1    -38747    -22100     2376      -392     -0.83    WINS
+ALLUP_2           83    169394     2040     4364   60.2    -53122    -20618     2371       101      0.08    WINS
+ALLDOWN_2         83     80746      972     4287   57.8    -40644    -20568     2423      -966     -0.73    WINS
+LADDER_UP_2       83    175217     2111     3646   57.8    -50662    -20471     2411       171      0.14   loses
+LADDER_DN_2       83     63331      763     2185   56.6    -48744    -18808     2461     -1176     -0.96    WINS
+SYM_3             83    111972     1349     5477   68.7    -36416    -20905     2428      -590     -0.93    WINS
+ALLUP_3           83    221052     2663     4747   56.6    -56469    -20850     2436       724      0.38   loses
+ALLDOWN_3         83     22629      272     3100   55.4    -36881    -25234     2513     -1666     -0.98    WINS
+SYM_4             83    104118     1254     4633   69.9    -31428    -19652     2496      -684     -0.90    WINS
+ALLUP_4           83    222009     2674     5042   57.8    -47642    -23629     2526       735      0.34   loses
+ALLDOWN_4         83    -64533     -777     1181   55.4    -38203    -28112     2626     -2716     -1.28    WINS
+
+DOWNSZ column = null (c). 'WINS' means simply trading ALL_ATM smaller achieves the
+same worst day while KEEPING MORE MEAN than the strike spread does. If that column is
+mostly WINS, Arm C is downsizing in a costume.
+
+========================================================================================================
+3. PLATEAU over offset magnitude (symmetric family) - monotone/broad = signal, spike = noise
+========================================================================================================
+venue    metric           k=0       k=1       k=2       k=3       k=4
+NIFTY    mean           2745     2316     2695     2368     2117
+NIFTY    worst        -50146   -48775   -39987   -35416   -31747
+NIFTY    credit          722      731      755      794      844
+SENSEX   mean           1939     1748     1547     1349     1254
+SENSEX   worst        -48122   -46962   -38747   -36416   -31428
+SENSEX   credit         2335     2345     2376     2428     2496
+
+========================================================================================================
+4. SKEW ASYMMETRY - up-offsets vs down-offsets are NOT mirror images
+========================================================================================================
+venue    family            mean     worst    credit  t_vs_ATM
+NIFTY    ALLUP_1            660    -57597       728     -1.73
+NIFTY    ALLDOWN_1         2400    -44740       742     -0.28
+NIFTY    ALLUP_2            564    -56700       758     -1.14
+NIFTY    ALLDOWN_2          572    -39732       786     -1.15
+NIFTY    ALLUP_3             60    -59793       810     -1.12
+NIFTY    ALLDOWN_3         -830    -40425       849     -1.47
+NIFTY    ALLUP_4           -444    -64129       880     -1.13
+NIFTY    ALLDOWN_4        -1657    -41760       930     -1.58
+SENSEX   ALLUP_1           1718    -56306      2338     -0.40
+SENSEX   ALLDOWN_1         1331    -44974      2364     -0.71
+SENSEX   ALLUP_2           2040    -53122      2371      0.08
+SENSEX   ALLDOWN_2          972    -40644      2423     -0.73
+SENSEX   ALLUP_3           2663    -56469      2436      0.38
+SENSEX   ALLDOWN_3          272    -36881      2513     -0.98
+SENSEX   ALLUP_4           2674    -47642      2526      0.34
+SENSEX   ALLDOWN_4         -777    -38203      2626     -1.28
+
+========================================================================================================
+5. NULL (b) - RANDOM-LEG PLACEBO (500 random offset triples from the same menu)
+========================================================================================================
+
+--- NIFTY ---
+  placebo total : p05=-107048 median=40764 p95=178204
+  placebo worst : p05=-62430 median=-50795 p95=-36814
+  ALL_ATM  total=  227854 (pctile  98.6)   worst=  -50146 (pctile  52.6)
+  SYM_1    total=  192207 (pctile  97.2)   worst=  -48775 (pctile  57.0)
+  SYM_2    total=  223701 (pctile  98.4)   worst=  -39987 (pctile  82.0)
+  SYM_3    total=  196563 (pctile  97.2)   worst=  -35416 (pctile  97.4)
+  SYM_4    total=  175710 (pctile  94.4)   worst=  -31747 (pctile  99.8)
+
+--- SENSEX ---
+  placebo total : p05=27672 median=119923 p95=211494
+  placebo worst : p05=-55689 median=-48427 p95=-35759
+  ALL_ATM  total=  160959 (pctile  77.8)   worst=  -48122 (pctile  51.8)
+  SYM_1    total=  145098 (pctile  66.6)   worst=  -46962 (pctile  59.4)
+  SYM_2    total=  128421 (pctile  54.4)   worst=  -38747 (pctile  82.8)
+  SYM_3    total=  111972 (pctile  44.4)   worst=  -36416 (pctile  93.0)
+  SYM_4    total=  104118 (pctile  37.8)   worst=  -31428 (pctile  99.6)
+
+========================================================================================================
+6. OUT-OF-SAMPLE SPLIT (fit on the earlier half, confirm on the later) + FAMILY-WISE HAIRCUT
+========================================================================================================
+
+--- NIFTY  IS: 2026-04-27..2026-06-24 (n=41)   OOS: 2026-06-25..2026-08-24 (n=42) ---
+portfolio       IS d_mean   IS worst OOS d_mean  OOS worst
+SYM_2                 989     -31924      -1064     -39987
+SYM_4                 978     -31747      -2196     -30743
+SYM_3                 790     -28889      -1516     -35416
+LADDER_UP_2          -342     -49402      -3429     -49195
+LADDER_UP_1          -345     -46180      -2662     -50327
+ALLUP_2              -363     -55294      -3954     -56700
+SYM_1                -554     -39368       -307     -48775
+ALLDOWN_1            -640     -44176        -55     -44740
+  family size=16  max|t| observed=2.09  null-95th=2.97  -> FAILS the family-wise haircut
+
+--- SENSEX  IS: 2026-04-27..2026-06-24 (n=41)   OOS: 2026-06-25..2026-08-24 (n=42) ---
+portfolio       IS d_mean   IS worst OOS d_mean  OOS worst
+ALLUP_4              3254     -39001      -1723     -47642
+ALLUP_3              2571     -36409      -1079     -56469
+LADDER_UP_2           658     -37793       -303     -50662
+ALLUP_2               594     -42515       -379     -53122
+ALLUP_1               208     -36910       -639     -56306
+LADDER_DN_2          -186     -29925      -2142     -48744
+LADDER_DN_1          -269     -28363      -1358     -47512
+LADDER_UP_1          -306     -34845       -305     -48962
+  family size=16  max|t| observed=1.28  null-95th=2.98  -> FAILS the family-wise haircut
+
+========================================================================================================
+7. MECHANISM - is the tail gain real risk reduction, or just less premium sold?
+========================================================================================================
+venue    portfolio        cred_r   mean_r  worst_r    reading
+NIFTY    SYM_1             1.012    0.844    0.973 structural
+NIFTY    SYM_2             1.046    0.982    0.797 structural
+NIFTY    SYM_3             1.099    0.863    0.706 structural
+NIFTY    SYM_4             1.169    0.771    0.633 structural
+SENSEX   SYM_1             1.005    0.901    0.976 downsizing
+SENSEX   SYM_2             1.018    0.798    0.805 structural
+SENSEX   SYM_3             1.040    0.696    0.757 structural
+SENSEX   SYM_4             1.069    0.647    0.653 structural
+
+cred_r/mean_r/worst_r are ratios to ALL_ATM. If all three move together, the spread is
+simply selling less premium -> the honest label is DOWNSIZING, not diversification.
+
+MARGIN (peak concurrent, 3 systems x 2 lots): NIFTY 3x2x1.65L = 9.9L, SENSEX 3x2x2.04L = 12.2L
+Capital ~%.1fL. Strike spreading does NOT change lot count, so margin is unchanged vs
+ALL_ATM (an OTM short is marginally cheaper on SPAN, which only helps). Credit-matching
+by RAISING lots would raise margin proportionally - reported but not recommended.

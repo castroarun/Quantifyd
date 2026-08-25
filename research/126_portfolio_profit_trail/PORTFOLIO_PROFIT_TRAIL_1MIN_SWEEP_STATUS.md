@@ -1,10 +1,15 @@
-# Portfolio Profit Trail — should the WHOLE book lock its intraday peak, and/or BUY OTM WINGS?
+# Portfolio Defence Bake-off — trail the peak, buy wings, or spread the strikes?
 
-STATUS: **DONE** (commissioned 2026-08-25 by Arun, mid-session, after a live give-back;
+> **RENUMBERED 125 → 126 on 2026-08-25.** `research/125` collided with a parallel session's
+> `125_expiry_afternoon_straddle`. Folder, INDEX row and all paths now read **126**.
+
+STATUS: **DONE (v2)** (commissioned 2026-08-25 by Arun, mid-session, after a live give-back;
 scope extended twice the same day — bought OTM wings, then strike/entry diversification)
 
-**VERDICT: NO EDGE for the trail (Arm A) and for wings at deployable size (Arm B);
-SIGNAL for strike diversification (Arm C).** Full write-up in `results/RESULTS.md`.
+**VERDICT: NO EDGE — portfolio profit trail (Arm A), entry-time wings (Arm B).
+SIGNAL (not investable) — profit-triggered portfolio wings (Arm B2), symmetric strike
+spread (Arm C).** Plus a **GOVERNANCE DEFECT** found while fixing a scope error: an 8-lot
+real-money book invisible to every automated view. Full write-up in `results/RESULTS.md`.
 
 ## 2. The Ask
 
@@ -160,6 +165,53 @@ the retired flat ₹250/lot constant. Implementation: `cost_per_lot()` shape fro
 5. Wing purchase pays the same rate card plus brokerage ₹20/order on 2 extra legs per sleeve;
    STT on the sell-back of the long option is modelled explicitly.
 
+
+---
+
+## 3D. Arm B2 — PROFIT-TRIGGERED PORTFOLIO WINGS (added 2026-08-25, third scope addition)
+
+Arun, precisely: *"buying wings only after we achieve a profit level at the PORTFOLIO in
+order to lock it, not wings from the beginning."* Arm B's §2.3 AFTERUP probe was the
+closest thing but triggered **per-sleeve** at one level and one distance on n=11 — it did
+not answer the question. Promoted here to a full arm.
+
+**Mechanism under test.** When the book is UP it is up *because premium has decayed*, so at
+the moment protection is wanted the wings are at their cheapest of the day and are funded
+out of profit already earned. Unlike the trail, a wing **caps the tail without surrendering
+the remaining theta** and without paying the measured +6.548 pt/leg-side forced-exit
+slippage. **Counter-hypothesis to test honestly:** wings bought when the book is up are far
+from the money (the market has not moved), so they are cheap but rarely pay.
+
+| axis | values |
+|---|---|
+| trigger | portfolio P&L ≥ ₹5k/8k/10k/12k/15k/20k · ≥20/30/40% of total credit · time-conditioned (arm only after 13:00 / 14:00) |
+| distance | NIFTY 100–500, SENSEX 400–2000 |
+| coverage | every open book · only the largest exposure · only the venue moving against us |
+| unwind | hold to EOD · sell back if the book recovers above the trigger |
+| nulls | naked · the trail · entry-time wings · **and the incumbent champion, TimeB's CLOCK EXIT** |
+
+## 3E. Arm C v2 — the engine that failed reconciliation and was rebuilt
+
+The first Arm-C engine replayed `config.py`'s documented 9:16 rules (per-leg 30% SL,
+trail-to-cost, re-enter ×5). It produced **−₹437,588** against the live book's **+₹164,988**
+(4.04 cycles/day vs 1.04 live). Cause, from the live trade table: real `916_ATM` exit
+reasons are **58 eod_squareoff, 10 ST_EXIT, ZERO SL_HIT** — the documented per-leg stop is
+**dormant live**. Numbers discarded; Arm C re-based on three constructions that reconcile:
+**HOLD** (09:16→15:15 no stop, what the suite actually does 84% of days), **COMB** (r/116
+per-DTE combined SL) and **RUPEE2500** (the ATM2 ₹2,500/lot stop, isolated). Offsets
+0/±1/±2/±3/±4; configurations symmetric / all-up / all-down / laddered / random control;
+nulls = ALL_ATM, random-leg placebo, **and plain downsizing at equal worst-day**.
+
+## 5D. Scope error found and fixed — TIMEB2's 8 real lots
+
+`CSL_TIMEB2_NIFTY` sold **520 qty (8 lots)** on 2026-08-25 (tag `TIMEB2_NIFTY`, booked
+−₹2,990) — larger than COMB — and was missing from v1 because the harness derived the book
+universe from the daemon's `BOOKS` dict. The real book is a standalone one-shot with the
+**same name** as a 2-lot PAPER book, publishing only its own JSON. It was created and first
+run 2026-08-25 (commit `1b78873`), so the historical samples are **not** understated; what
+it corrupted was the worked example and the method. Full defect list in RESULTS §1.
+
+
 ## 6. Data
 
 - **Live truth (small n, high fidelity):** `nas_mtm_snapshots` in each live NAS DB (per-minute
@@ -229,3 +281,11 @@ recommendation goes to Arun for sign-off with its own after-15:40 deploy.
 | 2026-08-25 ~15:08 IST | **Arm C DONE — SIGNAL.** Concentration proved from **config**, not from one day | but the "correlation ≈ 1 when it matters" hypothesis is **REFUTED**: worst-decile pairwise corr is **−0.58 / −0.19 / −0.32**; every book lost on only 2 of 9 worst-decile days. Exit clustering also atypical (median span 9,220 s; only 7% of days inside 120 s) |
 | 2026-08-25 ~15:08 IST | Arm C result: ±2-step strike spread — NIFTY worst −33,753 → **−23,582** for a mean cost that is **not significant** (t −1.26); SENSEX worst −29,166 → **−20,392 AND +₹63,748 total** (t +1.79) | placebo honesty: SENSEX CLONE_SAME's tail is **worse than the p05 of random 3-leg portfolios** (concentration penalty is real); the NIFTY tail gain sits **inside** the placebo band |
 | 2026-08-25 ~15:15 IST | **RESULTS.md written; STATUS → DONE.** Recommendation: deploy nothing; take Arm C to G3 OOS + paper twin; the real answer to the give-back is a **window/time exit** (r/122), not a trail | no live change proposed — sign-off item for Arun |
+| 2026-08-25 ~15:35 IST | **SCOPE ERROR caught by Arun: TIMEB2's 8 REAL lots excluded.** Universe rebuilt from broker evidence, not the daemon's BOOKS dict | name collision (real 8L one-shot vs paper 2L daemon book); `journal_kite_reconciliation` is EMPTY; journal `mode` flags force-paper squeeze variants as LIVE; no broker orderbook is persisted (Kite = today-only). TimeB2 created 2026-08-25 (commit 1b78873) → historical samples unaffected |
+| 2026-08-25 ~15:40 IST | Worked example corrected: **peak +₹18,817 @14:01 → −₹7,240, give-back ₹26,058** | reconciles to the coordinator's booked +19,201/−8,402 — the gap is gross MTM vs booked net (TimeB2 marks −2,080, books −2,990 after the +6.548 pt exit slippage) |
+| 2026-08-25 ~15:45 IST | **Arm C v1 DISCARDED on reconciliation failure** (−437,588 replay vs +164,988 live) | live exit reasons: 58 eod_squareoff / 10 ST_EXIT / **0 SL_HIT** — config's per-leg 30% SL is dormant. Re-based on HOLD / COMB / RUPEE2500 |
+| 2026-08-25 ~15:55 IST | **Arm C v2 DONE — SIGNAL, tail only.** Symmetric ±4: NIFTY worst −50,146→−31,747, SENSEX −48,122→−31,428, **monotone in k on both venues** | **credit RISES** (722→844) → NOT downsizing; clears the random-leg placebo (99.8th / 99.6th pctile on worst-day). But **FAILS the family-wise haircut** (max&#124;t&#124; 2.09 vs 2.97) and the **mean advantage reverses OOS** (+989 → −1,064/day). Only SYMMETRIC works; all-up/all-down add directional delta |
+| 2026-08-25 ~15:55 IST | Arm C interaction: **the stated prior is REFUTED** — the ₹2,500/lot stop fires MORE off-ATM (28.9% → 47–53%), not less | an off-ATM straddle carries intrinsic + delta, so it moves more in rupees. Both stops are minimised AT the money; for stopped constructions ATM is optimal |
+| 2026-08-25 ~16:05 IST | **Arm B2 DONE — SIGNAL, not established.** 504 cells; **71 beat naked**; plateau clean (every trigger ≥₹12k positive at every distance, ≤₹10k negative) | mechanism VERIFIED on the days that matter: 07-08 peaked +21,425 → naked −72,351 → hedged **+39,468**; 06-12 peaked +21,161 → −54,614 → **+40,940**; and it never armed on the bad days that were never up |
+| 2026-08-25 ~16:10 IST | Arm B2 robustness: **super-winner guard fails the best cells** (07-08 = 163% of ABS_15000's total; ex-top1 −98,391) | only **ABS_20000** survives: ex-top1 +42,098, t +0.32, same sign in both OOS halves. No cell reaches t=2. Rests on 2–3 events in 84 days |
+| 2026-08-25 ~16:15 IST | **Renumbered 125 → 126** (collision with the parallel `125_expiry_afternoon_straddle`); RESULTS v2 written; STATUS → DONE | recommendation: fix the governance gap first; paper twins for Arm B2 (₹20k/100–300/ALL/EOD) and Arm C (NIFTY symmetric ±2..±4); no live change |

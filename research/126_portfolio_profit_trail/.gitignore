@@ -6,3 +6,5 @@ results/diversify_cells.csv
 results/trail_daily.csv
 results/stage0_live_portfolio.csv
 scripts/__pycache__/
+results/armc_cells.csv
+results/b2_cells.csv

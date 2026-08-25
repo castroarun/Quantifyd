@@ -1,404 +1,335 @@
-# research/125 — Portfolio Profit Trail vs Bought Wings vs Strike Diversification — RESULTS
+# research/126 — Four ways to defend a short-premium book — RESULTS
 
-**Verdict: NO EDGE for the portfolio profit trail (Arm A) — a fourth independent
-reproduction of "static wins". NO EDGE for bought OTM wings at deployable size (Arm B):
-they are measurable and they do cap the tail, but the premium costs 28–100 % of the
-book's entire P&L, and the cost is *theta* — the very thing the book earns. The one
-positive is Arm C, the arm nobody asked for first: SIGNAL — spreading the same
-notional across strikes cuts the tail for no premium and no firing cost, and on SENSEX
-it improves the mean as well.**
+**Verdict: NO EDGE for the portfolio profit trail (Arm A) and for entry-time wings
+(Arm B). SIGNAL — not yet investable — for the two shapes that only pay when the book is
+already winning: profit-triggered portfolio wings (Arm B2) and symmetric strike
+spreading (Arm C). Neither clears its full bar, both have a coherent mechanism and a
+real tail effect, and both are proposed as paper twins, not live changes.**
 
-Stage: **G2 (mechanics, real data, net of the measured cost model).**
-Sample: 62 full-book sessions (2026-05-20 → 2026-08-24) for Arms A/B, 83–84 sessions
-(2026-04-27 → 2026-08-24) for the sleeve-only and Arm-C samples. Real 1-minute option
-chain + the real per-minute live MTM of the 9:16 suite.
+**Plus one finding that is not about trading at all: an 8-lot real-money book was
+invisible to every automated view of the account (§1). That is a risk-control defect and
+it is reported first because it is the most important thing in this document.**
 
----
-
-## 0. Stage-0 reconciliation — the day that triggered the commission
-
-2026-08-25, rebuilt independently from the DBs before any sweep:
-
-| minute | portfolio | TimeB | COMB | 916-ATM | 916-ATM2 | 916-ATM4 |
-|---|---|---|---|---|---|---|
-| 14:00 | **+13,741** | +3,640 | +4,914 | +1,306 | +4,888 | −1,008 |
-| **14:03 (peak)** | **+13,865** | +3,640 | +5,064 | +1,306 | +4,862 | −1,008 |
-| 14:30 | +9,730 | +3,640 | +3,094 | +1,306 | +2,698 | −1,008 |
-| 14:33 | +2,970 | +3,640 | −260 | +1,306 | −708 | −1,008 |
-| 15:03 | **−5,160** | +3,402 | −3,725 | +1,306 | — | — |
-
-- **The structural claim is confirmed exactly.** The 9:16 suite peaked at **+₹5,187**
-  against its **+₹12,000** arm threshold — the existing venue trail **could never have
-  armed**, on this day or on any day like it.
-- Portfolio peak **+₹13,865 at 14:03**, give-back to close **₹19,026**. (The commission
-  quoted +₹14,983; the ₹1,118 gap is book scope — this figure counts **live-money books
-  only**, per the STATUS-MD scope. The peak *minute* and the mechanism reconcile exactly.)
-- TimeB was the only book that kept its gain, because it had **already exited at 11:00**.
-  That is the shape of the whole answer: what protected the profit was a *time exit*,
-  not a trail.
+Stage: **G2/G3 (mechanics + robustness, real data, measured cost model).**
+Data: real 1-minute option chain (`options_data.db`, 2026-04-20 → 2026-08-24) + the live
+9:16 suite's real per-minute MTM. Cost model throughout: forced mid-session exit
++6.548 pt/leg-side vs +0.178 for a time exit (443 real live leg-sides), plus the exact
+Zerodha rate card. READ-ONLY on every database. **No live rule was changed.**
 
 ---
 
-## 1. Arm A — the portfolio profit trail. **NO EDGE, and not marginally.**
-
-Baseline, as deployed, no defence (n = 62): **total ₹626,965 · mean ₹10,112/day ·
-median ₹9,668 · win 75.8 % · worst day −₹29,950 · p10 −₹11,516.**
-Give-back (peak MTM − final MTM): **median ₹4,137**, p75 ₹10,701, p90 ₹19,401, max ₹46,101.
-Peak MTM: median ₹17,158, p90 ₹34,294; 57 of 62 days peaked ≥ ₹5k, 46 ≥ ₹10k.
-
-### 1.1 Nothing beats doing nothing
-
-| variant | total | mean | median | win% | worst | **Δ vs no-trail** | fires | needless | rescues |
-|---|---|---|---|---|---|---|---|---|---|
-| **NULL_NAKED (as deployed)** | **626,966** | 10,112 | 9,669 | 75.8 | −29,950 | **0** | 0 | 0 | 0 |
-| NULL_SUITETRAIL_2000_350 *(the live overlay)* | 605,593 | 9,768 | 10,007 | 75.8 | −29,950 | **−21,373** | 10 | 7 | 3 |
-| TRAIL_A5000_G2500_ONLYLOSERS *(best of 132)* | 542,539 | 8,751 | 9,280 | 72.6 | −29,950 | **−84,427** | 55 | 12 | 4 |
-| NULL_FIXEDTP_30000 | 541,245 | 8,730 | 10,007 | 75.8 | −29,950 | −85,721 | 12 | 8 | 4 |
-| TRAIL_A12000_G4000_ONLYLOSERS | 526,486 | 8,492 | 7,991 | 74.2 | −29,294 | −100,480 | 34 | 9 | 2 |
-| TRAILPCT_A20000_P50 | 517,567 | 8,348 | 7,165 | 71.0 | −29,950 | −109,398 | 9 | 8 | 1 |
-| TRAIL_A20000_G2500 *(best flat cell)* | 451,873 | 7,288 | 8,771 | 77.4 | −29,950 | −175,093 | 20 | 16 | 4 |
-| TRAIL_PERVENUE_A5000_G2500 | −239,675 | −3,866 | — | — | −33,512 | −866,640 | 58 | 49 | 8 |
-
-**0 of 132 trail cells beat the null.** The best one costs **₹84,427 — 13.5 % of the
-book's entire P&L** — and does not improve the worst day by a single rupee.
-
-### 1.2 The plateau map runs monotonically to the boundary, and the boundary is "no trail"
-
-Δ total (₹ vs no-trail), flat trail, ARM × GIVEBACK:
-
-| ARM \ GB | 1,000 | 1,500 | 2,000 | 2,500 | 3,000 | 4,000 | 5,000 | 7,500 |
-|---|---|---|---|---|---|---|---|---|
-| 3,000 | −781,246 | −744,165 | −688,654 | −679,084 | — | — | — | — |
-| 5,000 | −722,580 | −663,540 | −625,550 | −618,855 | −614,996 | −603,972 | — | — |
-| 8,000 | −625,794 | −614,414 | −597,050 | −582,646 | −554,706 | −546,082 | −501,117 | −486,805 |
-| 10,000 | −575,489 | −568,510 | −540,032 | −507,474 | −476,280 | −448,885 | −348,691 | −365,772 |
-| 12,000 | −535,120 | −512,911 | −511,146 | −465,799 | −453,253 | −408,042 | −296,684 | −329,325 |
-| 15,000 | −332,260 | −285,739 | −289,045 | −278,708 | −270,188 | −253,712 | −234,497 | −263,772 |
-| 20,000 | −218,174 | −178,158 | −182,391 | −175,093 | −176,929 | −195,956 | −175,400 | −205,924 |
-
-Every row improves as the arm rises; every row improves as the give-back widens. **There
-is no interior optimum — the gradient runs to "never fire", which is the live rule.**
-This is precisely the r/116 signature, reproduced on a different construction (portfolio
-rather than sleeve) and a different sample.
-
-### 1.3 Why — the arithmetic that decides it
-
-- **The give-back is small and the right tail is large.** Median give-back ₹4,137, but the
-  median *peak* is ₹17,158 and the book's mean day is ₹10,112. A rule that harvests a
-  ₹4k median give-back must forgo the days that finish above their mid-session dip.
-- **Firing is expensive and certain.** A forced mid-session exit pays **+6.548 pt/leg-side**
-  against +0.178 for a time exit (measured, 443 real live leg-sides). The live suite trail
-  fired 10 times, of which **7 were needless**, at a cost of **₹35,661** on those 7 — about
-  **₹5,094 per needless fire**.
-- **The tail is untouched.** 59 of 132 cells "improve" the worst day — by **+₹656**. The
-  worst day is a day that never reached profit, so a *profit* trail never arms on it.
-  A profit trail is structurally incapable of fixing the left tail.
-
-### 1.4 The placebo — the trail is *skilful*, and skill is not the problem
-
-Random-minute exit after the book first clears ARM (200 draws per level):
-
-| ARM | placebo p05 | placebo median | placebo p95 | best real trail | NULL_NAKED |
-|---|---|---|---|---|---|
-| 5,000 | 34,147 | 132,755 | 226,838 | 542,539 | **626,965** |
-| 8,000 | 85,226 | 172,946 | 261,461 | 517,022 | **626,965** |
-| 10,000 | 136,632 | 219,412 | 314,747 | 508,510 | **626,965** |
-| 12,000 | 206,816 | 285,512 | 349,407 | 526,486 | **626,965** |
-| 20,000 | 363,572 | 417,468 | 486,691 | 451,873 | **626,965** |
-
-The peak-tracking machinery beats random exiting decisively — it is *not* a coin flip.
-**It is skilful early exiting, and skilful early exiting still destroys value here.** That
-is a stronger negative than "the rule is noise": the rule works as designed, and the design
-is wrong for this book.
-
-### 1.5 The fixed-TP null reproduces r/90 exactly
-
-TP 30k → −85,721 · 20k → −239,779 · 15k → −362,209 · 10k → −541,391 · 7.5k → −683,847 ·
-5k → −730,276. Monotone-bad as the target tightens, independently reproducing r/90's
-"a daily take-profit is value-destructive; it caps the fat right tail that carries the edge".
-**A profit trail is a soft take-profit, and it inherits the same defect.**
-
-### 1.6 Byproduct: the currently deployed suite trail is itself mildly negative
-
-`NULL_SUITETRAIL_2000_350` costs **−₹21,373** over 62 days (10 fires, 7 needless, 3 rescues).
-**Do not act on this here** — n = 10 firings, one regime, and the overlay was justified by
-r/90 on a different sample. It is logged as a dated re-check, not a recommendation.
-
----
-
-## 2. Arm B — buy OTM wings. **Measurable (the trap was checked). Uneconomic.**
-
-### 2.1 The staleness audit — PASSED, and this is the part to read first
-
-A held-wing intraday backtest on this project was previously invalidated by stale far-OTM
-quotes. That failure does **not** reproduce in this strike band:
-
-| venue | dist | sleeve-days | minutes | zero-bid % | zero-ask % | median spread %mid | max identical-print run | mean run | days wing never traded |
-|---|---|---|---|---|---|---|---|---|---|
-| NIFTY | 100 | 98 | 27,139 | 0.0 | 0.0 | 0.3 | 4 | 1.0 | **0** |
-| NIFTY | 200 | 98 | 27,139 | 0.0 | 0.0 | 0.3 | 7 | 1.1 | **0** |
-| NIFTY | 300 | 98 | 27,102 | 0.0 | 0.0 | 0.4 | 7 | 1.1 | **0** |
-| NIFTY | 500 | 98 | 25,535 | 0.0 | 0.0 | 0.9 | 8 | 1.2 | **0** |
-| SENSEX | 400 | 51 | 9,908 | 0.0 | 0.0 | 0.3 | 6 | 1.0 | **0** |
-| SENSEX | 1200 | 51 | 9,825 | 0.0 | 0.0 | 0.5 | 4 | 1.0 | **0** |
-| SENSEX | 2000 | 51 | **2,076** | 0.0 | 0.0 | 1.5 | 5 | 1.2 | **0** |
-
-Every wing minute carries a **two-sided quote**; the median bid-ask is **0.3–1.5 % of mid**;
-identical-print runs average **1.0–1.2 minutes**, i.e. the quote moves essentially every
-minute; and **every wing strike traded on every sleeve-day** (r/89 liquidity rule passes
-with zero exclusions). The one caveat: **SENSEX 2000-wide is present on only 2,076 of ~9,900
-minutes** — that strike is thin in coverage and its numbers are the least trustworthy row.
-
-Wings are priced **bought at the ASK, sold back at the BID** throughout. So the previous
-invalidation was a property of *that* construction (far-OTM, LTP-marked, held overnight),
-not of this data at these distances. **Arm B is measurable.**
-
-### 2.2 And having established we can trust the numbers — the numbers are bad
-
-Per-sleeve, wings bought at entry and held to the sleeve's own exit:
-
-| sleeve | dist | n | naked total | wing cost | hedged total | **of which spread** | **of which decay** | naked worst | hedged worst |
-|---|---|---|---|---|---|---|---|---|---|
-| TB_NIFTY | 100 | 32 | 184,837 | −168,103 | 16,733 | −4,341 | **−157,794** | −26,668 | −10,951 |
-| TB_NIFTY | 200 | 32 | 184,837 | −101,018 | 83,818 | −2,860 | −93,443 | −26,668 | −16,864 |
-| TB_NIFTY | 500 | 32 | 184,837 | −26,487 | 158,349 | −1,871 | −21,190 | −26,668 | **−26,272** |
-| COMB20 | 100 | 66 | 188,892 | −206,716 | **−17,824** | −3,974 | −193,401 | −13,076 | −4,625 |
-| COMB20 | 500 | 66 | 188,892 | −78,857 | 110,034 | −1,673 | −70,453 | −13,076 | −12,917 |
-| TB_SENSEX | 400 | 34 | 245,040 | −145,392 | 99,647 | −2,768 | −137,703 | −29,233 | −23,088 |
-| TB_SENSEX | 800 | 34 | 245,040 | −75,774 | 169,265 | −1,527 | −70,288 | −29,233 | **−29,073** |
-| **SXWED** | 400 | 17 | **−25,136** | **+12,733** | **−12,402** | −1,011 | **+15,984** | −15,741 | **−3,153** |
-
-**The decisive line is the decomposition.** For TB_NIFTY at 100-wide the wing costs
-₹168,103, of which **₹4,341 is bid-ask and ₹157,794 is decay**. This is not an execution
-problem that better fills could fix — **the wing simply hands back theta, and theta is the
-entire edge of a short-premium book.** Buying protection here is structurally equivalent to
-turning the strategy down.
-
-Portfolio-level totals: NIFTY 100-wide costs **₹374,819 against ₹373,729 of naked P&L —
-100 % of the book** — to improve the worst day by ₹15,716. NIFTY 500-wide costs ₹105,345
-(28 %) to improve the worst day by **₹396**. On SENSEX, every wing **≥ 600 points leaves
-the worst day essentially unchanged** (−29,233 → −29,126 / −29,074 / −28,962): the SENSEX
-tail is a slow grind inside the wing, not a gap through it, so the insurance never pays.
-
-### 2.3 The two shapes that are *not* silly
-
-- **"Lock the profit with wings" (AFTERUP)** — buy wings only once the sleeve is up ≥ 40 %
-  of its credit. It arms on only **11 of 98 sleeve-days**, costs little (NIFTY 100-wide:
-  −₹4,998 total, mean −₹454), and turned the worst of those 11 days from −₹6,275 to
-  **+₹955**. This is the cheapest wing shape by a wide margin. **n = 11 — a hint, not a
-  finding**, and it protects days that were already winning.
-- **Hedging a losing sleeve.** SXWED (the full-day SENSEX-Wednesday cell) is net **−₹25,136**
-  over 17 days; 400-wide wings **pay +₹12,733** and cut its worst day from −₹15,741 to
-  −₹3,153. Correct reading: **wings rescue a sleeve that should not be trading.** The
-  cheaper fix is the sleeve, not the hedge. (Config note records this cell was deployed as
-  a user override against the study verdict.)
-
----
-
-## 3. Arm C — strike / entry diversification. **SIGNAL — the cheapest defence of the three.**
-
-### 3.1 The concentration is real, and it is provable from config, not from one day
-
-`NAS_916_ATM_DEFAULTS`, `NAS_916_ATM2_DEFAULTS`, `NAS_916_ATM4_DEFAULTS` all inherit
-`NAS_ATM_DEFAULTS` and set `entry_start_time: '09:16'`. They sell the **same ATM straddle,
-same venue, same expiry, at the same minute**. They differ **only in exit machinery**
-(ATM2 = ₹2,500/lot rupee stop, one-and-done; ATM4 = `max_rolls: 1`).
-
-Measured on the sample:
-
-- all live NIFTY books on **one strike on 46 %** of multi-book days (36 of 78);
-- **the three suite systems alone share a strike on 78 %** of days (45 of 58).
-
-So "three systems at 2 lots" is, on most days, **one position at 6 lots with three exit
-rules**.
-
-### 3.2 But the "correlation ≈ 1 when it matters" hypothesis is REFUTED
-
-Worst-decile days (n = 9), pairwise correlation of daily net P&L:
-
-| pair | corr, all days | **corr, worst decile** |
-|---|---|---|
-| 916_ATM ↔ 916_ATM2 | +0.50 | **−0.58** |
-| 916_ATM ↔ 916_ATM4 | +0.81 | **−0.19** |
-| 916_ATM2 ↔ 916_ATM4 | +0.55 | **−0.32** |
-| COMB20 ↔ TB_NIFTY | −0.07 | n/a (1 common day) |
-
-**Every book lost on only 2 of the 9 worst-decile days.** The differing *exit rules* do
-de-correlate the clones precisely when it matters — which is the strongest available
-defence of the current design. Exit clustering is likewise not typical: across 30 days with
-≥ 2 mid-session suite exits, the median span between first and last is **9,220 s (2.6 h)**,
-and only **7 %** of days saw all exits inside 120 s (2026-08-25's own suite exits spanned
-10,678 s: 11:55, 13:01, 14:53). The 90-second cluster that prompted this question was a
-cross-book coincidence on one day, **not the standing behaviour of the book.**
-
-### 3.3 The equal-notional test — and here the tail really does move
-
-Three clones × 2 lots of the COMB-shape construction, 84 days per venue, net of the same
-cost model:
-
-| portfolio | NIFTY total | NIFTY worst | NIFTY p10 | SENSEX total | SENSEX worst | SENSEX p10 |
-|---|---|---|---|---|---|---|
-| **CLONE_SAME** *(today's shape)* | **428,547** | **−33,753** | −16,776 | 541,728 | **−29,166** | −10,156 |
-| DIV_STRIKE_1 (−1/0/+1) | 347,845 | −30,016 | −16,001 | 519,099 | −27,478 | −10,357 |
-| **DIV_STRIKE_2 (−2/0/+2)** | 335,518 | **−23,582** | **−11,209** | **605,476** | **−20,392** | **−7,789** |
-| DIV_ENTRY (09:16/09:31/09:46) | 314,332 | −30,858 | −16,657 | 468,995 | −23,102 | −9,927 |
-| DIV_BOTH | 273,218 | −30,339 | −10,307 | 479,182 | −20,001 | −8,347 |
-
-Paired per-day deltas vs CLONE_SAME:
-
-| | mean Δ/day | median Δ | t | worst day |
-|---|---|---|---|---|
-| NIFTY DIV_STRIKE_2 | −1,107 | −366 | **−1.26 (NS)** | −33,753 → **−23,582 (+10,171)** |
-| SENSEX DIV_STRIKE_2 | **+759** | +258 | **+1.79** | −29,166 → **−20,392 (+8,774)** |
-| NIFTY DIV_ENTRY | −1,360 | −1,126 | −2.16 | +2,895 |
-| SENSEX DIV_ENTRY_WIDE | −1,712 | −1,244 | −2.08 | +8,756 |
-
-**Entry-time staggering is the worse idea** (significantly negative mean on both venues,
-small tail gain) — consistent with r/95's "early time entry wins; don't wait". **Strike
-spreading is the good one**: on NIFTY it buys ₹10,171 of worst-day for a mean cost that is
-statistically indistinguishable from zero; on SENSEX it buys ₹8,774 of worst-day **and
-pays ₹63,748 for the privilege**.
-
-### 3.4 Placebo discipline on Arm C — where it holds and where it does not
-
-200 random 3-leg portfolios drawn from the same cell menu:
-
-| | CLONE_SAME | placebo p05 | placebo median | placebo p95 |
-|---|---|---|---|---|
-| NIFTY worst day | −33,753 | −41,711 | −29,317 | −22,064 |
-| SENSEX worst day | **−29,166** | **−22,871** | −16,752 | −12,801 |
-| NIFTY total | **428,547** | 128,050 | 228,319 | **356,827** |
-| SENSEX total | 541,728 | 348,424 | 477,858 | **597,551** |
-
-Two honest readings:
-
-1. **The concentration penalty is real on SENSEX.** CLONE_SAME's worst day (−29,166) is
-   *worse than the 5th percentile* of random 3-leg portfolios (−22,871). Selling the same
-   strike three times measurably fattens the SENSEX tail relative to almost any spread of
-   legs. That is the concentration finding, quantified and independent of 2026-08-25.
-2. **The NIFTY tail gain is inside the noise band.** DIV_STRIKE_2's −23,582 sits between
-   the placebo median (−29,317) and p95 (−22,064) — a gain of the magnitude that
-   *leg-choice noise alone* produces at n = 84. And CLONE_SAME's NIFTY *total* sits above
-   the placebo p95, i.e. the ATM-at-09:16 cell genuinely is the best-performing cell, which
-   is exactly why moving off it costs return.
-
----
-
-## 4. The three defences on one axis — cost per rupee of tail removed
-
-| defence | ₹ cost over the sample | worst-day improvement | **₹ paid per ₹1 of tail cut** |
-|---|---|---|---|
-| Portfolio profit trail (best of 132) | 84,427 | **₹0** | **∞ — buys nothing** |
-| Existing suite trail (live today) | 21,373 | ₹0 | ∞ |
-| Wings, NIFTY 100-wide at entry | 374,819 | 15,716 | 23.8 |
-| Wings, NIFTY 200-wide at entry | 261,108 | 9,804 | 26.6 |
-| Wings, SENSEX ≥600-wide at entry | 96,226+ | ~100 | ~1,000 |
-| **Strike spread ±2, NIFTY** | 93,029 | **10,171** | **9.1** |
-| **Strike spread ±2, SENSEX** | **−63,748 (it PAYS)** | **8,774** | **free** |
-
-**Strike diversification is ~2.6× cheaper than wings for the same tail benefit on NIFTY,
-and on SENSEX it is better than free.** The profit trail is the only one of the three that
-buys no tail protection at all.
-
----
-
-## 5. Success criteria (STATUS-MD §7) — scored
-
-| criterion | Arm A trail | Arm B wings | Arm C strike spread |
-|---|---|---|---|
-| (a) raises mean/median, or cuts tail without cutting mean | **FAIL** (0/132 cells; tail untouched) | FAIL — caps tail but at 28–100 % of P&L | **PASS on SENSEX**, marginal on NIFTY |
-| (b) plateau, not a peak | **FAIL** — monotone to the boundary "no trail" | PASS (monotone in distance) but monotone *toward not buying* | PASS — ±1 and ±2 both cut the tail |
-| (c) survives a family-wise haircut | n/a — **nothing beat the null**, so no haircut is needed (r/116 precedent) | n/a | **FAIL as stated** — t=+1.79 over 12 portfolio×venue cells does not survive; needs OOS |
-| (d) beats all three nulls | **FAIL** on all three | FAIL | beats naked on SENSEX only |
-| (e) fire count + cost when needless | 10 fires / 7 needless / ₹35,661 (live overlay) | n/a — paid every day | **no firing at all** |
-| (f) wing staleness + liquidity audit | n/a | **PASS** — 0 % one-sided, meanrun 1.0–1.2, 0 excluded days | n/a |
-
----
-
-## 6. The seven deadly sins — how each is controlled
-
-| sin | control |
+## 1. GOVERNANCE GAP — an 8-lot real-money book that nothing was watching
+
+On 2026-08-25 `CSL_TIMEB2_NIFTY` sold **520 qty (8 lots)** of NIFTY 24150 CE+PE at 13:15
+and bought them back at 14:30, booking **−₹2,990**. Broker order tags: `TIMEB2_NIFTY`.
+That position was **larger than COMB (520 vs 130 qty)** and it did not appear in any
+automated view of the book. This study's first harness missed it for exactly the reason
+every other view misses it.
+
+| defect | detail |
 |---|---|
-| **Look-ahead** | The trail tests the peak **carried in from prior bars**, then updates it with the current bar; a bar can never fire a trail it just set. Sleeve stops are tested on the printed bar only. Strikes are chosen from `underlying_spot` at the entry minute. Wings are bought at the **ask** of the buy minute and sold at the **bid** of the exit minute — never a same-bar mid. |
-| **Survivorship** | Every recorded session is replayed; the only exclusions are the three frozen-chain holidays (<50 distinct spot prints), partial sessions (last snapshot < 15:15), and 2026-08-25 (market still open at build time). All skips are logged in `results/stage1.log`. |
-| **Overfitting / multiple testing** | 139 Arm-A cells, 28 Arm-B cells, 12 Arm-C portfolio×venue cells. **No haircut is needed for Arm A because nothing beat the null** (0/132). Arm C's positive SENSEX cell is explicitly declared **not** to survive a family-wise haircut and is labelled OOS-pending. A random-minute placebo (Arm A) and a 200-draw random-leg placebo (Arm C) are reported. |
-| **Cost neglect** | The **measured outcome-aware** model throughout: forced exit +6.548 pt/leg-side vs +0.178 for a time exit (443 real live leg-sides), plus the exact Zerodha rate card. The retired flat ₹250/lot constant is not used. Wings pay ask/bid plus the rate card, and the cost is **decomposed into spread vs decay**. |
-| **Regime dependence** | **The binding weakness.** One regime, ~4 months, 62 full-book days, no VIX shock and no gap-down cluster. Reported per venue and per sleeve; the Arm-A conclusion is directionally identical in every slice and reproduces three prior studies on different constructions. |
-| **Correlation / single-factor** | Directly measured, and it is a headline finding (§3.1–3.2): the books share a strike 46–78 % of the time, yet worst-decile correlations are **negative** because the exit rules differ. Arm C prices the concentration explicitly at equal notional. |
-| **Capacity / liquidity** | Front-expiry strikes within ±500 (NIFTY) / ±2000 (SENSEX); the wing audit confirms two-sided quotes and non-zero traded volume on every used strike. **SENSEX 2000-wide is flagged as thin** (2,076 of ~9,900 minutes). Book size 2–8 lots; no capacity constraint, but §7 notes the one impact effect that the lot-rescale cannot capture. |
+| **Name collision on real money** | `BOOKS["CSL_TIMEB2_NIFTY"]` in `csl_paper_exec.py` is a **PAPER, 2-lot (qty 130)** book, and it recorded its own separate paper trade the same day (+₹867). The **REAL 8-lot** book has the *same name* and is run by a standalone one-shot, `research/125_expiry_afternoon_straddle/scripts/timeb2_oneshot.py`. Two different things, one name, one of them real. |
+| **Not in the daemon's state** | The one-shot publishes only `static/app/timeb2_live.json` + its own `timeb2_live_days.json`. It never writes a `source: REAL` record into `csl_paper_state.json`, so **any harness that derives "live books" from the daemon's `BOOKS` dict or its state file silently drops it.** |
+| **Not monitored** | The NAS integrity watchdog scans the NAS variant APIs only; a standalone one-shot is outside its field of view. |
+| **The reconciliation table is EMPTY** | `journal.db :: journal_kite_reconciliation` has **0 rows**. The one table designed to catch broker-vs-DB divergence has never been populated. |
+| **The journal's `mode` field is wrong** | `journal_trades` flags the force-paper squeeze variants (`NAS-ATM/ATM2/ATM4`) as `LIVE` across 76 days. Anything trusting that field over-counts real money badly. (The `mode` column in the *positions* tables **is** reliable — 287 live legs, every one carrying a real Kite order id, zero live-without-id.) |
+| **No broker orderbook is persisted** | Kite `orders()` is today-only and nothing snapshots it daily, so the account's true fill history **cannot be reconstructed for any past date**. Every historical "what was live" claim in this repo is an inference from per-strategy DBs, not from the broker. |
+
+**Scope consequence for this study, stated precisely.** TimeB2's one-shot was written and
+first run on 2026-08-25 (commit `1b78873`, same day), and its ledger contains exactly one
+day. **The 62–84-day historical samples are therefore not understated by TimeB2** — it did
+not exist for them. What the miss did corrupt was the *worked example*, which is corrected
+in §2, and the *method*: a book universe must be derived from broker fills, not from a
+daemon's dictionary.
+
+**A second scope fact this exposed**, worth Arun's attention independently: the real-money
+footprint is far patchier than the book list suggests, by design —
+`NAS_ATM_DEFAULTS['live_weekdays'] = (0, 1, 4)` means **real Kite orders only on
+Mon/Tue/Fri**. Measured by real order ids: the 9:16 suite has real broker orders on **29**
+days, the SENSEX suite on **6** (2026-07-22 → 08-20), the squeeze variants on 10–11 (May–Jul),
+916_OTM on 5. This study follows the r/90 convention — *replay the currently-deployed book
+over history* — rather than "what was real money that day", because the latter is not
+recoverable. That choice is stated everywhere it matters.
+
+**Recommendations (risk control, not trading):** give the one-shot a distinct name; have it
+write a `source: REAL` record into the shared state; add a daily broker-orderbook snapshot
+so history becomes reconstructable; populate `journal_kite_reconciliation`; and make the
+watchdog enumerate positions from the broker rather than from a book list.
 
 ---
 
-## 7. Honest caveats a reader must carry
+## 2. The worked example — 2026-08-25, corrected
 
-- **One regime, 62 full-book days.** Four months. A trail's and a wing's whole case rests on
-  tail days; this sample can say "defence does not pay for itself in a normal regime", it
-  cannot say "wings would not have helped in March 2020". Wings in particular are insurance
-  against an event this window does not contain.
-- **The suite MTM was rescaled** from its 5 / 1 / 10 / 2 / 3-lot eras to the currently
-  deployed **2 lots/system**. P&L is linear in lots so the rescale is exact — but it cannot
-  rescale the *market impact* of a bigger clip, so the 10-lot era's real slippage is
-  understated at the rescaled size.
-- **Hybrid sourcing, deliberately.** The 9:16 suite is **live truth** (never modelled — its
-  cascade/ST-trail/rupee-stop machinery is not faithfully replayable); the CSL sleeves are
-  **replayed** from the frozen config. Live sources: 62 days for the suite, 9 REAL CSL
-  book-days. Replay: 83 days, 149 sleeve-days. `csl_paper_state.json` keeps only a rolling
-  ~8-day window, which is why replay is the workhorse.
-- **Sleeve stops are modelled as immediate on the breaching minute**, not with the live
-  2-poll dwell. This is consistent with r/116/122/124 for comparability, and it applies
-  identically to every variant, so it cancels in the comparison.
-- **1-minute granularity understates intrabar breaches.** The bias runs **in the trail's
-  favour** (a finer series would fire it more often); it loses anyway.
-- **Arm C tests a COMB-shape proxy, not the suite itself.** It answers "does spreading the
-  same notional across strikes help a 3-clone book of this shape?" — not "what happens if
-  you re-strike ATM2/ATM4", whose exit machinery differs. Treat the magnitudes as
-  indicative and the sign as the finding.
-- **Wings are held to the sleeve's own exit and never rolled.**
-- **Margin relief is NOT modelled.** A defined-risk structure needs materially less margin
-  than a naked short, which is a genuine economic argument for wings that this study does
-  not price. If the binding constraint is capital rather than risk, Arm B deserves a second
-  look on that axis alone.
-- **Give-back is measured on gross MTM**; costs are identical across variants and cancel.
-- Live-money scope only (per STATUS-MD §3); paper and parked books are excluded consistently.
+Rebuilt independently from the live MTM tables, the CSL state, the live JSON, and TimeB2's
+own ledger, with TimeB2's curve reconstructed from the 1-minute chain:
 
----
+| time | portfolio | 916_ATM | 916_ATM2 | 916_ATM4 | **TIMEB2** | TimeB | COMB |
+|---|---|---|---|---|---|---|---|
+| 13:15 | +11,498 | +1,306 | +3,835 | −1,008 | −26 | +3,640 | +3,750 |
+| **14:01 (peak)** | **+18,817** | +1,306 | +4,888 | −1,008 | +4,342 | +3,640 | +4,914 |
+| 14:30 | +7,650 | +1,306 | +2,698 | −1,008 | −2,080 | +3,640 | +3,094 |
+| 14:33 | +890 | +1,306 | −708 | −1,008 | −2,080 | +3,640 | −260 |
+| 15:27 | **−7,240** | +1,306 | −5,388 | −1,008 | −2,080 | +3,640 | −3,711 |
 
-## 8. Recommendation — for Arun's sign-off. **No live change is proposed by this study.**
+**Peak +₹18,817 at 14:01 → −₹7,240. Give-back ₹26,058.** Against the coordinator's booked
+figures (peak +₹19,201 @14:00, booked −₹8,402, give-back ₹27,603) this reconciles: the
+difference is **gross MTM vs booked net** — TimeB2 marks −2,080 on the chain but booked
+−2,990 once the +6.548 pt/leg-side exit slippage and charges are paid, and TimeB marks
++3,640 vs +3,402 booked. The mechanism, the peak minute, and the shape agree exactly.
 
-1. **Do not deploy a portfolio profit trail, in any shape.** 0 of 132 configurations beat
-   doing nothing; the best costs 13.5 % of the book's P&L and protects the left tail by
-   ₹0. This is the fourth independent reproduction (r/114, r/116, r/121/122, now r/125) of
-   the same result: **tightening defence on this book manufactures losses.**
-2. **Do not buy wings at deployable size as a P&L measure.** They work exactly as advertised
-   — they cap the disaster day — but at 28–100 % of the book's P&L, and the bill is theta,
-   not execution. *If* the motivation is margin rather than P&L, that is a different study.
-3. **The real answer to "the ₹19k give-back" is TimeB's answer: a time exit.** The only book
-   that kept its gain on 2026-08-25 kept it by being flat at 11:00. Windowed books already
-   do this; the full-day books (COMB, the 9:16 suite) are the ones that hand profit back.
-   That is a **window** question, and r/122's atlas is the instrument for it — not a trail.
-4. **The one thing worth taking further is Arm C — strike spreading.** It costs no premium
-   and no firing cost, it cuts the NIFTY worst day by ₹10,171 for a statistically
-   insignificant mean cost, and on SENSEX it improves the tail *and* the mean. **It is not
-   ready to deploy**: it does not survive a family-wise haircut, and it is tested on a
-   COMB-shape proxy. **Proposed next step: a G3 out-of-sample re-run and a paper twin**,
-   not a live change.
-5. **Dated re-check:** the existing suite trail (arm ₹2,000/lot, give-back ₹350/lot) is
-   −₹21,373 on this sample with 7 of 10 firings needless. n is far too small to act on.
-   Register a re-assessment for **2026-11** alongside the r/122 window re-run.
+The structural point from the original commission is unchanged and confirmed: **the 9:16
+suite peaked at +₹5,187 against its +₹12,000 arm threshold — the deployed venue trail could
+never have armed.**
+
+What each Arm-B2 trigger would have done **on this specific day** (reported as one day,
+not as evidence):
+
+| trigger | arms? | arm time | spot | wings (100-wide) |
+|---|---|---|---|---|
+| ABS ₹12,000 | YES | 13:00 | 24,157.0 | 24250 CE / 24050 PE |
+| ABS ₹15,000 | YES | 13:38 | 24,132.8 | 24250 CE / 24050 PE |
+| **ABS ₹20,000** | **no** | — | — | peak 18,817 never reached 20k |
+
+The cell that survives this study's robustness tests (ABS ₹20,000) **would not have fired
+today.** The cells that would have fired are the ones that fail the super-winner guard.
+That tension is the honest state of Arm B2.
 
 ---
 
-## 9. Next levers
+## 3. Arm A — the portfolio profit trail. **NO EDGE.** (unchanged by the scope fix)
 
-- **Window, not trail** — take the full-day books (COMB20, the 9:16 suite) to the r/122
-  atlas and ask whether a *scheduled* exit beats holding to 15:15/15:20. That is where the
-  give-back actually lives, and it costs a time exit (+0.178 pt), not a forced one (+6.548).
-- **Arm C G3** — walk-forward the ±2-step strike spread, per venue and per DTE, on a proper
-  hold-out; if it survives, a paper twin before any live re-strike.
-- **Wings on the margin axis** — price the defined-risk structure against margin released
-  and lots gained, which is the only frame in which it can win.
-- **Re-open Arm A only if** the recorder accumulates a genuinely stressed regime, or if the
-  peak-then-round-trip event rate rises materially above what these 62 days show.
+62 full-book sessions, 2026-05-20 → 2026-08-24. Baseline **₹626,965 total, mean ₹10,112/day,
+worst −₹29,950**; give-back median ₹4,137.
+
+- **0 of 132 trail cells beat doing nothing.** Best (`A5000_G2500_ONLYLOSERS`) = **−₹84,427**,
+  13.5% of the book's P&L, and improves the worst day by **₹0**.
+- The ARM × GIVEBACK plateau map is **monotone to the boundary "no trail"** — the r/116
+  signature reproduced on a portfolio construction.
+- The deployed suite trail is itself **−₹21,373** (10 fires, 7 needless, ₹35,661 on those).
+- Fixed-TP ladder independently reproduces r/90: 30k −85,721 → 5k −730,276.
+- **Placebo:** the real trail beats random-minute exiting decisively (arm 10k: 508,510 vs
+  placebo p95 314,747) and still loses to naked 626,965 — **skilful early exiting, and skill
+  is not the problem.**
+- **Why it cannot work on the tail:** a *profit* trail can only arm on a day that reached
+  profit. The worst days never do. Structurally incapable of fixing the left tail.
+
+---
+
+## 4. Arm B — wings bought at entry. **NO EDGE.**
+
+The staleness audit **passed** (0% one-sided quotes, median spread 0.3–1.5% of mid,
+identical-print runs 1.0–1.2 min, zero sleeve-days excluded by the r/89 volume rule; bought
+at ASK, sold at BID), so the numbers are trustworthy — and they are bad. Wings cost
+**28–100% of the book's entire P&L**. NIFTY 500-wide costs ₹105,345 to improve the worst day
+by **₹396**; SENSEX ≥600-wide leaves the worst day essentially unchanged.
+
+**The decomposition is the finding:** TB_NIFTY 100-wide costs ₹168,103 = **₹4,341 spread +
+₹157,794 decay**. Not an execution problem. The wing hands back the theta the book earns.
+
+---
+
+## 5. Arm B2 — wings bought only once the PORTFOLIO is up. **SIGNAL, not established.**
+
+This is the shape Arun actually asked for. 84 days (2026-04-20 → 08-24). Baseline here
+**includes TimeB2 replayed on every day as a deployed book** (a modelling choice — it really
+ran once): naked total **₹829,145**, mean ₹9,870, worst **−₹72,351**.
+
+**504 cells swept** (12 triggers × 7 distances × 3 coverage × 2 unwind).
+**71 beat naked; 118 improve the worst day.**
+
+| cell | armed | total | Δ vs naked | worst | Δ worst | t | wing paid |
+|---|---|---|---|---|---|---|---|
+| ABS_15000 / 100 / ALL / EOD | 48/84 | 985,207 | **+156,062** | −63,092 | +9,259 | 0.53 | 14 |
+| ABS_20000 / 100 / ALL / EOD | 39/84 | 983,062 | **+153,917** | −63,092 | +9,259 | 0.90 | 14 |
+| ABS_12000 / 100 / ALL / EOD | 59/84 | 928,183 | +99,038 | **−38,721** | **+33,630** | 0.32 | 14 |
+| ABS_20000 / 300 / ALL / EOD | 39/84 | 933,338 | +104,193 | −63,092 | +9,259 | 1.01 | 14 |
+
+**The plateau is broad and interpretable** (Δ total, coverage ALL, unwind EOD):
+
+| trigger | 100 | 150 | 200 | 250 | 300 | 400 | 500 |
+|---|---|---|---|---|---|---|---|
+| ABS 5,000 | −210,063 | −170,158 | −142,492 | −138,432 | −119,013 | −72,498 | −60,790 |
+| ABS 8,000 | −5,944 | −2,410 | −14,951 | −39,933 | −45,265 | −26,275 | −35,573 |
+| ABS 10,000 | −15,568 | −38,309 | −35,169 | −10,317 | +4,396 | +1,083 | −13,920 |
+| **ABS 12,000** | **+99,038** | +57,394 | +47,052 | +60,868 | +61,560 | +39,706 | +10,533 |
+| **ABS 15,000** | **+156,062** | +108,614 | +105,480 | +111,456 | +102,965 | +66,221 | +31,044 |
+| **ABS 20,000** | **+153,917** | +135,760 | +121,178 | +119,030 | +104,193 | +66,628 | +35,079 |
+| T1400_8000 | −248,598 | −178,038 | −132,820 | −105,636 | −88,816 | −70,465 | −66,323 |
+
+Everything ≥ ₹12,000 is positive at **every distance**; everything ≤ ₹10,000 is negative.
+The dividing line is **how often you arm**: ABS 5,000 arms on 92% of days, 10,000 on 75%,
+15,000 on 57%, **20,000 on 46%**. Arm too readily and you buy insurance on days that never
+needed it. Coverage `ALL` > `BIGGEST` > `ADVERSE`; unwind `EOD` > `RECOVER` (selling the
+wings back when the book recovers throws away exactly the protection you bought).
+
+### 5.1 The mechanism — verified, and it is the right one
+
+The overlay is designed to catch **peak-then-collapse** days. There were three such days,
+and it caught the two biggest:
+
+| day | portfolio peak | armed | naked close | wing P&L | hedged close |
+|---|---|---|---|---|---|
+| 2026-07-08 | +21,425 | 13:03 | **−72,351** | +111,819 | **+39,468** |
+| 2026-06-12 | +21,161 | 13:27 | **−54,614** | +95,555 | **+40,940** |
+
+And on the bad days that were **never up**, it correctly never armed and cost nothing:
+2026-05-06 (peak +14,445, closed −63,092), 2026-04-30 (peak +6,029), 2026-06-03 (peak 0).
+That asymmetry — insure only when there is profit to protect — is precisely why this shape
+behaves differently from Arm A's trail and Arm B's entry-time wing.
+
+### 5.2 And the reason it is NOT yet investable
+
+- **Super-winner guard fails for the best cells.** 2026-07-08 alone contributes **+₹254,453**
+  of ABS_15000/100's +₹156,062 total — **163%**. Remove that one day and the cell is
+  **−₹98,391 (t −0.67)**. ABS_12000/100 is worse: top-day 244% of total, ex-top-1 −₹142,197.
+- **Only the ABS_20000 family survives it**: top day 73% of total, **ex-top-1 +₹42,098
+  (t +0.32)**; ABS_20000/300 ex-top-1 +₹29,192 (t +0.41). Positive, but nowhere near
+  significant.
+- **OOS:** ABS_20000/100 IS +113,222 → OOS +40,695 and ABS_20000/300 IS +40,215 → OOS +63,978
+  (same sign both halves — good). But ABS_12000/100 flips to −4,649 and ABS_15000/250 flips
+  the other way (−7,840 → +119,296). Only the high-trigger family is stable.
+- **No cell reaches t = 2**, let alone a family-wise bar over 504 cells.
+- The whole case rests on **2–3 events in 84 days**. The expectation may well be real; the
+  estimate is not precise enough to act on.
+
+**Verdict: SIGNAL.** Coherent mechanism, broad plateau, correct behaviour on the days that
+matter, stable sign OOS for the high-trigger family — but one-day-dominated and statistically
+indistinguishable from zero. **Paper twin, not a live change.**
+
+---
+
+## 6. Arm C — strike / entry diversification. **SIGNAL on the tail; fails its bar.**
+
+### 6.1 A replay was built, failed reconciliation, and was discarded — read this first
+
+The first Arm-C engine implemented `config.py`'s documented 9:16 rules faithfully: per-leg
+30% SL, trail-to-cost, re-enter up to 5×. It produced **−₹437,588** on NIFTY against the live
+book's **+₹164,988**, because it cascaded **4.04 cycles/day** against the live book's **1.04
+trades/day**. The live trade table says why: real `916_ATM` exit reasons are **58
+eod_squareoff, 10 ST_EXIT, and ZERO SL_HIT** — the documented per-leg 30% SL is **dormant in
+the live system** (a SuperTrend trail exits first). Those numbers were discarded.
+
+**This is itself worth recording:** the config documents a stop that the live book never
+hits, so any study reasoning from config alone — including the exit-rule × offset
+interaction this arm was commissioned to measure — would have been wrong. Arm C was
+re-based onto three constructions that *do* reconcile: **HOLD** (09:16→15:15, no stop — what
+the live suite actually does on 84% of days), **COMB** (the r/116-validated per-DTE combined
+SL), and **RUPEE2500** (the ATM2 rupee stop, isolated).
+
+### 6.2 The interaction — the stated prior is REFUTED
+
+The prediction was that a fixed ₹2,500/lot stop is a *larger %-of-credit* move off-ATM and
+would therefore fire **less**. It fires **more** (NIFTY stop rate by offset):
+
+| offset | −4 | −2 | 0 | +2 | +4 |
+|---|---|---|---|---|---|
+| RUPEE2500 stop rate | 53.0% | 43.4% | **28.9%** | 36.1% | 47.0% |
+| COMB stop rate | 27.7% | 22.9% | **12.0%** | 25.3% | 30.1% |
+| credit (pts) | 310.1 | 261.9 | **240.8** | 252.7 | 293.5 |
+
+The reason is in the credit row: a "straddle" struck away from spot carries **intrinsic
+value and net delta**, so it moves *more* in rupees. Both stops are minimised **at the
+money**, and for the COMB construction ATM is also the best cell on mean (+₹1,496/day at
+offset 0, worse at every offset). **For stopped constructions, spreading strikes hurts.**
+
+### 6.3 Where it does work: symmetric spreading of an unstopped book
+
+Equal-notional, 3 clones × 2 lots, 83 days per venue:
+
+| | NIFTY mean | NIFTY worst | NIFTY credit | SENSEX mean | SENSEX worst | SENSEX credit |
+|---|---|---|---|---|---|---|
+| ALL_ATM (deployed) | 2,745 | −50,146 | 722 | 1,939 | −48,122 | 2,335 |
+| SYM ±1 | 2,316 | −48,775 | 731 | 1,748 | −46,962 | 2,345 |
+| SYM ±2 | 2,695 | −39,987 | 755 | 1,547 | −38,747 | 2,376 |
+| SYM ±3 | 2,368 | −35,416 | 794 | 1,349 | −36,416 | 2,428 |
+| **SYM ±4** | 2,117 | **−31,747** | 844 | 1,254 | **−31,428** | 2,496 |
+
+- **The worst day improves monotonically in k on both venues** — a ~37% tail cut. That is a
+  plateau, not a spike.
+- **Credit RISES with k** (722→844, 2,335→2,496). So this is **not** "selling less premium".
+  The mechanism column reads *structural*, not *downsizing*, for SYM ±2/±3/±4 on both venues.
+- **Only SYMMETRIC works.** ALL-UP, ALL-DOWN and LADDER families are erratic and mostly worse
+  (NIFTY ALLUP_4 mean −444, worst −64,129), because a one-sided offset adds **directional
+  delta**. Symmetric spreading is the only configuration that decorrelates the clones without
+  taking a view.
+
+### 6.4 The three nulls — two cleared, the decisive ones not
+
+| null | result |
+|---|---|
+| (a) deployed ALL_ATM | **cleared on the tail** (−50,146 → −31,747), mean cost not significant in-sample (t −0.06 to −0.51) |
+| (b) random-leg placebo (500 draws) | **CLEARED** — NIFTY SYM_4 worst is at the **99.8th percentile**, SYM_3 97.4th; SENSEX SYM_4 99.6th, SYM_3 93.0th |
+| (c) just trade smaller at ATM | **SPLIT** — NIFTY SYM_2/3/4 beat downsizing; **SENSEX SYM_k all lose to it** |
+| family-wise haircut | **FAILS both venues** (NIFTY max&#124;t&#124; 2.09 vs null-95th 2.97; SENSEX 1.28 vs 2.98) |
+| out-of-sample | **FAILS on the mean** — NIFTY SYM_2 IS +989/day → **OOS −1,064**; SYM_3 +790 → −1,516; SYM_4 +978 → −2,196 |
+
+**Verdict: SIGNAL, tail-only.** The tail reduction is real, monotone, placebo-clearing and
+mechanistically explained. The claim that it is *free* is **not** established: the mean cost
+is unmeasurable in-sample and turns clearly negative out-of-sample. Margin is unchanged
+(same lot count; an OTM short is marginally cheaper on SPAN). **Not deployable as measured.**
+
+---
+
+## 7. The four defences on one axis
+
+| defence | cost over sample | worst-day improvement | ₹ per ₹1 of tail cut | verdict |
+|---|---|---|---|---|
+| Portfolio profit trail (best of 132) | 84,427 | **₹0** | ∞ — buys nothing | NO EDGE |
+| Existing suite trail (live today) | 21,373 | ₹0 | ∞ | negative, n too small to act |
+| Entry-time wings (NIFTY 200) | 261,108 | 9,804 | 26.6 | NO EDGE |
+| **Profit-triggered wings (ABS 20k/100)** | **pays +153,917** | **9,259** | **free** | SIGNAL, one-day dominated |
+| **Symmetric strike spread ±4** | 52,144 (NIFTY mean cost) | **18,399** | 2.8 | SIGNAL, fails FWER + OOS |
+
+---
+
+## 8. Honest caveats
+
+- **One regime, ~84 days.** No VIX shock, no gap-down cluster. Arm B2's entire case rests on
+  2–3 peak-then-collapse events; Arm C's tail case on a handful of large days.
+- **Arm B2's baseline replays TimeB2 (8 lots) on all 84 days.** It really traded once. This
+  inflates the book's size and its tail (worst −72,351) relative to what was actually at risk
+  on most of those days.
+- **The 9:16 suite is never modelled** — it is real per-minute MTM, **rescaled** from its
+  5/1/10/2/3-lot eras to the deployed 2 lots/system. Exact in P&L (linear in lots); it cannot
+  rescale the market impact of a bigger clip.
+- **Arm C tests HOLD/COMB/RUPEE2500 proxies, not the live suite** (whose SuperTrend trail is
+  not replayable — see §6.1). Treat the sign as the finding and the magnitudes as indicative.
+- **Config documents a dormant stop** (§6.1). Anything in this repo reasoning from
+  `leg_sl_pct` should be re-checked against live exit reasons.
+- **1-minute granularity understates intrabar breaches**; the bias runs in the trail's favour
+  and it loses anyway.
+- **Multiple testing:** 139 Arm-A cells, 28 Arm-B, 504 Arm-B2, 12 Arm-C portfolio×venue. No
+  haircut is needed for Arm A (nothing beat the null). Arm B2 and Arm C are both explicitly
+  declared **not** to survive a family-wise haircut.
+- **Margin relief from defined-risk structures is not modelled** — a real argument for wings
+  that this study does not price.
+- **The broker orderbook cannot be reconstructed historically** (§1), so "which books were
+  real money on day X" is an inference, not a fact, for every day before today.
+
+---
+
+## 9. Recommendation — for Arun's sign-off. No live change is proposed.
+
+1. **Do not deploy a portfolio profit trail.** Fourth independent reproduction of "tightening
+   defence manufactures losses" (r/114, r/116, r/121–122, now r/126).
+2. **Do not buy wings at entry.** The bill is theta, which is the book's own edge.
+3. **Fix the governance gap (§1) — this is the highest-priority item in the document** and it
+   is independent of every trading question here.
+4. **Consider a paper twin of Arm B2** at **trigger ₹20,000, 100–300 wide, coverage ALL,
+   unwind EOD**. It is the only cell that survives the super-winner guard with a stable OOS
+   sign, its mechanism is verified on the two days that matter, and it costs nothing on days
+   the book was never up. Paper first — it would not have armed today.
+5. **Consider a paper twin of Arm C** at **symmetric ±2 to ±4 steps**, NIFTY only (SENSEX
+   loses to plain downsizing). Expect ~35% less tail for a mean cost of roughly ₹1–2k/day
+   that this sample cannot measure precisely.
+6. **The incumbent champion remains the clock.** The only book that kept its gain on
+   2026-08-25 did so by being flat at 11:00. Before adding any overlay, the higher-EV question
+   is whether the full-day books (COMB, the 9:16 suite) should have scheduled exits at all —
+   an r/122 window question, priced at a time exit (+0.178 pt) rather than a forced one
+   (+6.548 pt).
+7. **Dated re-checks for the Ops & Review Center:** Arm B2 and Arm C re-run at ~40 more
+   sessions (**2026-11**); the deployed suite trail (−₹21,373 here, 7 of 10 firings needless)
+   at the same time.
 
 ---
 
@@ -406,32 +337,37 @@ buys no tail protection at all.
 
 | file | purpose | committable |
 |---|---|---|
-| `scripts/stage0_live_recon.py` | rebuilds the REAL live portfolio curve; reconciles 2026-08-25 | yes |
-| `scripts/stage1_build_book.py` | one chain pass → sleeve minute paths + wing price paths | yes |
+| `scripts/stage0_live_recon.py` | live portfolio curve + reconciliation | yes |
+| `scripts/stage1_build_book.py` | chain pass → sleeve minute paths + wing price paths | yes |
 | `scripts/stage2_trail_sweep.py` | Arm A: 139 variants + nulls + random-minute placebo | yes |
 | `scripts/stage3_concentration.py` | strike overlap, cross-book correlation, exit clustering | yes |
-| `scripts/stage4_diversify.py` | Arm C data: alt-strike / alt-entry replay | yes |
+| `scripts/stage4_diversify.py` / `stage6_analyse_c.py` | Arm C first pass (COMB shape) | yes |
 | `scripts/stage5_wings.py` | Arm B: staleness+liquidity audit, then economics | yes |
-| `scripts/stage6_analyse_c.py` | Arm C portfolios + random-leg placebo | yes |
-| `results/stage0_recon.txt` | the reconciliation + per-day peak/give-back table | yes |
-| `results/trail_grid.csv` | 139 Arm-A variants | yes |
-| `results/wing_audit.txt`, `results/wing_grid.csv` | Arm B audit + economics | yes |
-| `results/concentration.txt`, `results/diversify_summary.txt` | Arm C | yes |
-| `results/sleeve_days.csv` | 149 replayed sleeve-days | yes |
-| `results/book_minute.csv.gz`, `results/wing_minute.csv.gz`, `results/trail_daily.csv`, `results/diversify_cells.csv`, `results/stage0_live_portfolio.csv` | heavy intermediates | **NO — gitignored** |
+| `scripts/stage7_armc_engine.py` | Arm C v2 engine (HOLD / COMB / RUPEE2500 × 9 offsets) | yes |
+| `scripts/stage8_b2_wings.py` | Arm B2 engine (504 cells, TimeB2 included) | yes |
+| `scripts/stage9_analyse_c.py` | Arm C analysis: interaction, plateau, 3 nulls, OOS, FWER | yes |
+| `scripts/stage10_analyse_b2.py`, `stage11_b2_robust.py` | Arm B2 grid + super-winner/OOS | yes |
+| `scripts/stage12_worked_0825.py` | the corrected 2026-08-25 worked example | yes |
+| `results/*.txt`, `results/*_grid.csv`, `results/sleeve_days.csv` | summaries | yes |
+| `results/book_minute.csv.gz`, `wing_minute.csv.gz`, `armc_cells.csv`, `b2_cells.csv`, `diversify_cells.csv`, `trail_daily.csv`, `stage0_live_portfolio.csv` | heavy intermediates | **NO — gitignored** |
 
-**Regeneration** (VPS, `/home/arun/quantifyd`, READ-ONLY on all DBs, ~6 min total):
+**Regeneration** (VPS, `/home/arun/quantifyd`, READ-ONLY, ~12 min total):
 
 ```bash
-nice -n 15 python3 research/125_portfolio_profit_trail/scripts/stage1_build_book.py    # ~3.5 min
-nice -n 15 python3 research/125_portfolio_profit_trail/scripts/stage4_diversify.py      # ~2 min
-for s in stage0_live_recon stage2_trail_sweep stage3_concentration stage5_wings stage6_analyse_c; do
-  nice -n 15 python3 research/125_portfolio_profit_trail/scripts/$s.py
+cd /home/arun/quantifyd
+for s in stage1_build_book stage4_diversify stage7_armc_engine stage8_b2_wings; do
+  nice -n 15 python3 research/126_portfolio_profit_trail/scripts/$s.py
+done
+for s in stage0_live_recon stage2_trail_sweep stage3_concentration stage5_wings \
+         stage6_analyse_c stage9_analyse_c stage10_analyse_b2 stage11_b2_robust \
+         stage12_worked_0825; do
+  nice -n 15 python3 research/126_portfolio_profit_trail/scripts/$s.py
 done
 ```
 
 **Reproducibility stamp:** `options_data.db` snapshot 2026-08-25 (88 recorded days from
 2026-04-20); `nas_916_atm{,2,4}_trading.db` MTM through 2026-08-25; live rules from
-`backtest_data/csl_paper_config.json` frozen 2026-08-13T14:17. Cost model: SLIP_ENTRY 0.0,
-SLIP_TIME 0.178, SLIP_STOP 6.548 pt/leg-side + exact Zerodha rate card. Suite rescaled to
-2 lots/system. Placebo seed 20260825.
+`csl_paper_config.json` frozen 2026-08-13T14:17; TimeB2 from
+`research/125_expiry_afternoon_straddle/results/timeb2_live_days.json`. Cost model:
+SLIP_ENTRY 0.0, SLIP_TIME 0.178, SLIP_STOP 6.548 pt/leg-side + exact Zerodha rate card.
+Suite rescaled to 2 lots/system. Seeds: placebo 20260825, FWER 7.
