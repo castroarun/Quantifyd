@@ -1297,10 +1297,12 @@ export default function Straddles() {
               3-sec dwell mechanic · ATM at entry moment
             </div>
             <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
-              Costs charged — <b>NET, not gross</b>. {(cslCfg.cost_model?.slip_pt ?? 0.5)}pt slippage per leg-side × 4 leg-sides
-              (sell CE + sell PE in, buy CE + buy PE out) + ₹{cslCfg.cost_model?.brok_per_legside_per_lot ?? 30}/leg-side/lot
-              brokerage &amp; statutory (STT · exchange · GST · stamp) = <b>₹{cslCfg.meta?.NIFTY?.cost ?? '—'}</b> per NIFTY
-              straddle round trip · <b>₹{cslCfg.meta?.SENSEX?.cost ?? '—'}</b> per SENSEX.
+              Costs charged — <b>NET, and MEASURED</b> from 443 real live fills (Kite average_price vs
+              chain LTP at the same minute). Entry sells land ~0.23pt <i>favourable</i> (booked at 0); a
+              time-exit buy-back costs ~{cslCfg.cost_model?.slip_time ?? 0.18}pt per leg-side; an <b>SL-exit costs ~{cslCfg.cost_model?.slip_stop ?? 6.55}pt per leg-side</b> —
+              slippage lives almost entirely in stop-outs, so a window that time-exits is nearly free and a
+              stop-heavy book is not. Charged per outcome, plus the exact Zerodha rate card. A typical
+              time-exit round trip ≈ <b>₹{cslCfg.meta?.NIFTY?.cost ?? '—'}</b> NIFTY · <b>₹{cslCfg.meta?.SENSEX?.cost ?? '—'}</b> SENSEX.
             </div>
             <OpsInfo rows={[
               ['Weekly sweep', 'Fridays 15:45 IST — entry×exit×SL grid per DTE per venue on all recorded days (informational: the live books’ FROZEN config does NOT move with it)', 'setsid nohup venv/bin/python3 -u research/111_sensex_manual_mgmt/scripts/entry_exit_sweep.py > /tmp/eesweep.log 2>&1 &'],
@@ -1364,17 +1366,17 @@ export default function Straddles() {
             </div>
             {b && (
               <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
-                Cost sensitivity — mean/day per DTE at 0.25 / <b>0.50 (shown above)</b> / 1.00 pt slippage:{' '}
+                Cost sensitivity — mean/day per DTE at 0.5x / <b>1x (measured, shown above)</b> / 2x slippage:{' '}
                 {dtes.map((k) => {
                   const cs: any = b[k];
                   if (!cs?.sens) return null;
                   return (
                     <span key={k} style={{ marginRight: 10 }}>
-                      DTE{k} <b>{inr(cs.sens['0.25'])}</b>/<b>{inr(cs.sens['0.50'])}</b>/<b>{inr(cs.sens['1.00'])}</b>
+                      DTE{k} <b>{inr(cs.sens['0.5x'])}</b>/<b>{inr(cs.sens['1.0x'])}</b>/<b>{inr(cs.sens['2.0x'])}</b>
                     </span>
                   );
                 })}
-                — a cell that only survives at 0.25pt is not tradable.
+                — a cell that only survives at 0.5x measured slippage is not tradable.
               </div>
             )}
           </section>

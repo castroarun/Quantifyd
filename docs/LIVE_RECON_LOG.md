@@ -226,3 +226,22 @@ Filled today by tag:
   untagged                   1755
   CSL_NAS_COMB20              520
 ```
+
+## 2026-08-25 11:00 IST — 2 alerts, 3 warnings
+
+```
+Live vs app reconciliation · 2026-08-25 11:00 IST
+4 broker legs · 2 alerts · 3 warnings
+
+[INFO] MANUAL THYROCARE: manual holding, 152 — no book tracks it
+[ALERT] GHOST NIFTY26AUG24200CE: CSL_TIMEB_NIFTY records -520, broker holds none
+[ALERT] GHOST NIFTY26AUG24200PE: CSL_TIMEB_NIFTY records -520, broker holds none
+[WARN] NAKED NIFTY26AUG24150CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24150PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY26AUG24250CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  CSL_CSL_TIMEB_NIFTY        2080
+  untagged                   1452
+  CSL_NAS_COMB20              260
+```

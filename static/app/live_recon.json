@@ -1,69 +1,71 @@
 {
- "generated_at": "2026-08-24T14:00:02",
+ "generated_at": "2026-08-25T11:00:01",
  "broker_legs": {
-  "NIFTY26AUG24350CE": {
+  "NIFTY26AUG24150CE": {
    "qty": -260,
-   "avg": 52.75,
-   "ltp": 13.4,
-   "pnl": 13903.5,
+   "avg": 37.925,
+   "ltp": 34.1,
+   "pnl": -2229.5,
    "product": "MIS",
    "exchange": "NFO"
   },
-  "ANTHEM": {
-   "qty": 12,
-   "avg": 889.6,
-   "ltp": 885.0,
-   "pnl": -55.2,
-   "product": "CNC",
-   "exchange": "NSE"
+  "NIFTY26AUG24150PE": {
+   "qty": -390,
+   "avg": 45.175,
+   "ltp": 28.65,
+   "pnl": 7013.5,
+   "product": "MIS",
+   "exchange": "NFO"
   },
-  "DIVGIITTS": {
-   "qty": 8,
-   "avg": 1259.55,
-   "ltp": 1227.0,
-   "pnl": -260.4,
-   "product": "CNC",
-   "exchange": "NSE"
+  "NIFTY26AUG24250CE": {
+   "qty": -130,
+   "avg": 15.05,
+   "ltp": 7.5,
+   "pnl": 981.5,
+   "product": "MIS",
+   "exchange": "NFO"
   },
-  "FRONTSP": {
-   "qty": -66,
-   "avg": 1248.0143939393938,
-   "ltp": 1270.6,
-   "pnl": -1490.6,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "GVT&D": {
-   "qty": 3,
-   "avg": 4233.0,
-   "ltp": 4177.5,
-   "pnl": -166.5,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "OFSS": {
-   "qty": 1,
-   "avg": 11862.0,
-   "ltp": 11607.0,
-   "pnl": -255.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "SWARAJENG": {
-   "qty": -105,
-   "avg": 3556.8038095238094,
-   "ltp": 3558.8,
-   "pnl": -209.6,
+  "THYROCARE": {
+   "qty": 152,
+   "avg": 592.0,
+   "ltp": 588.25,
+   "pnl": -570.0,
    "product": "CNC",
    "exchange": "NSE"
   }
  },
  "app_claimed": {
-  "NIFTY26AUG24350CE": {
+  "NIFTY26AUG24150CE": {
    "qty": -260,
    "books": [
-    "nas_916_atm4",
-    "nas_916_atm"
+    "nas_916_atm2",
+    "NAS_COMB20"
+   ]
+  },
+  "NIFTY26AUG24150PE": {
+   "qty": -390,
+   "books": [
+    "nas_916_atm2",
+    "nas_916_atm",
+    "NAS_COMB20"
+   ]
+  },
+  "NIFTY26AUG24250CE": {
+   "qty": -130,
+   "books": [
+    "nas_916_atm4"
+   ]
+  },
+  "NIFTY26AUG24200CE": {
+   "qty": -520,
+   "books": [
+    "CSL_TIMEB_NIFTY"
+   ]
+  },
+  "NIFTY26AUG24200PE": {
+   "qty": -520,
+   "books": [
+    "CSL_TIMEB_NIFTY"
    ]
   }
  },
@@ -71,65 +73,58 @@
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "ANTHEM",
-   "broker_qty": 12,
+   "symbol": "THYROCARE",
+   "broker_qty": 152,
    "app_qty": 0,
-   "detail": "manual holding, 12 \u2014 no book tracks it"
+   "detail": "manual holding, 152 \u2014 no book tracks it"
   },
   {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "DIVGIITTS",
-   "broker_qty": 8,
-   "app_qty": 0,
-   "detail": "manual holding, 8 \u2014 no book tracks it"
+   "level": "ALERT",
+   "kind": "GHOST",
+   "symbol": "NIFTY26AUG24200CE",
+   "broker_qty": 0,
+   "app_qty": -520,
+   "detail": "CSL_TIMEB_NIFTY records -520, broker holds none"
   },
   {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "FRONTSP",
-   "broker_qty": -66,
-   "app_qty": 0,
-   "detail": "manual holding, -66 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "GVT&D",
-   "broker_qty": 3,
-   "app_qty": 0,
-   "detail": "manual holding, 3 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "OFSS",
-   "broker_qty": 1,
-   "app_qty": 0,
-   "detail": "manual holding, 1 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "SWARAJENG",
-   "broker_qty": -105,
-   "app_qty": 0,
-   "detail": "manual holding, -105 \u2014 no book tracks it"
+   "level": "ALERT",
+   "kind": "GHOST",
+   "symbol": "NIFTY26AUG24200PE",
+   "broker_qty": 0,
+   "app_qty": -520,
+   "detail": "CSL_TIMEB_NIFTY records -520, broker holds none"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
-   "symbol": "NIFTY26AUG24350CE",
+   "symbol": "NIFTY26AUG24150CE",
    "broker_qty": -260,
    "app_qty": -260,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "NIFTY26AUG24150PE",
+   "broker_qty": -390,
+   "app_qty": -390,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "NIFTY26AUG24250CE",
+   "broker_qty": -130,
+   "app_qty": -130,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   }
  ],
  "filled_by_tag": {
-  "untagged": 1755,
-  "CSL_NAS_COMB20": 520
+  "CSL_CSL_TIMEB_NIFTY": 2080,
+  "untagged": 1452,
+  "CSL_NAS_COMB20": 260
  },
- "alerts": 0,
- "warns": 1,
- "infos": 6
+ "alerts": 2,
+ "warns": 3,
+ "infos": 1
 }

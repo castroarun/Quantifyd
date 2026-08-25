@@ -13,23 +13,39 @@ CFG = {"NIFTY": {"step": 50, "qty": 650, "lots": 10}, "SENSEX": {"step": 100, "q
 ENTRIES = ["09:16", "09:20", "09:25", "09:30", "10:00", "10:30", "11:15", "12:00", "13:00", "14:00"]
 EXITS = ["11:00", "12:00", "13:00", "14:00", "15:00", "15:20"]
 SLS = (20, 25, 30, 40, 999)
-# --- ROUND-TRIP COST MODEL (2026-08-24) -------------------------------------------------
-# WAS: a flat COST=160 per straddle round trip -- Rs16/lot on 10 NIFTY lots. That is
-# brokerage scale ONLY and charges ZERO slippage (fills were taken at observed chain
-# prices), so every cell on this panel read near-GROSS. Monday DTE1 13:00->14:00 SL20
-# showed +3,703/day at 94% win; net of real costs it is +1,363/day at 75%. The panel
-# drives live sizing decisions, so it must be net.
-# NOW: the r/123 convention, venue- and size-aware --
-#   cost = SLIP_PT x qty x 4 leg-sides  +  BROK_PER_LEGSIDE_PER_LOT x 4 x lots
-# 4 leg-sides = sell CE + sell PE (entry) and buy CE + buy PE (exit).
-#   NIFTY 10 lots (650) -> Rs2,500 | SENSEX 5 lots (100) -> Rs800
-SLIP_PT = 0.50                   # points per leg-side crossed (r/123 standard)
-BROK_PER_LEGSIDE_PER_LOT = 30.0  # brokerage + STT + exchange + GST + stamp, bundled
-SENS_SLIPS = (0.25, 0.50, 1.00)  # published as a cost-sensitivity band on every best cell
+# --- ROUND-TRIP COST MODEL - MEASURED, NOT ASSUMED (2026-08-25) ---------------
+# Rebuilt from 443 REAL live leg-sides (Kite average_price vs option_chain LTP at the
+# same minute, across the live NAS 916 books):
+#     entry (sell)     mean -0.228 pt  -> booked 0 (favourable; we take no credit)
+#     exit, time/EOD   mean +0.178 pt
+#     exit, SL_HIT     mean +6.548 pt  (median +4.80, p95 +17.85)
+# Slippage lives almost entirely in STOP-OUTS - the stop fires precisely because price is
+# running, so the market order lands after the move. A window that TIME-exits is nearly free.
+# Two earlier models were both wrong: the flat COST=160 charged no slippage at all, and the
+# 0.5pt-per-leg-side "fix" charged Rs2,500 on cells that stop out <1% of the time (~5x too
+# much). Charge per OUTCOME instead. Charges are the exact Zerodha F&O option rate card.
+SLIP_ENTRY = 0.0      # pt per leg-side, sell (measured -0.228; not booked as a credit)
+SLIP_TIME  = 0.178    # pt per leg-side, buy-back on a time/EOD exit
+SLIP_STOP  = 6.548    # pt per leg-side, buy-back when the combined SL fired
+SENS_SLIPS = (0.5, 1.0, 2.0)   # multipliers on the measured slippage, published as a band
 
-def cost_of(c, slip=SLIP_PT):
-    """Round-trip cost of one straddle at this venue's size."""
-    return slip * c["qty"] * 4 + BROK_PER_LEGSIDE_PER_LOT * 4 * c["lots"]
+def _charges(credit, exitp, qty):
+    """Exact Zerodha F&O option charges on a 4-order straddle round trip."""
+    sell = credit * qty; buy = exitp * qty; tot = sell + buy
+    brok = 4 * 20.0
+    stt = 0.001 * sell                      # 0.1% on sell-side premium
+    txn = 0.0003503 * tot                   # exchange transaction charge
+    ipft = 0.0000050 * tot
+    sebi = 0.0000010 * tot
+    stamp = 0.00003 * buy                   # buy side only
+    gst = 0.18 * (brok + txn + ipft + sebi)
+    return brok + stt + txn + ipft + sebi + stamp + gst
+
+def cost_rt(c, credit, exitp, stopped, mult=1.0):
+    """Round-trip cost of one straddle: exact charges + measured, outcome-aware slippage."""
+    slip = 2 * SLIP_ENTRY + 2 * (SLIP_STOP if stopped else SLIP_TIME) * mult
+    return _charges(credit, exitp, c["qty"]) + slip * c["qty"]
+
 MIN_HOLD_MIN = 45
 
 oc = sqlite3.connect(DB)
@@ -58,8 +74,8 @@ meta = {}
 for SYM, cfg in CFG.items():
     days = [r[0] for r in oc.execute(
         "SELECT DISTINCT substr(snapshot_time,1,10) FROM underlying_spot WHERE symbol=? AND spot_price>0 ORDER BY 1", (SYM,))]
-    meta[SYM] = {"cost": round(cost_of(cfg)), "slip_pt": SLIP_PT,
-                 "brok_per_legside_per_lot": BROK_PER_LEGSIDE_PER_LOT,
+    meta[SYM] = {"cost": round(cost_rt(cfg, 100.0, 85.0, False)), "slip_time": SLIP_TIME,
+                 "slip_stop": SLIP_STOP, "slip_entry": SLIP_ENTRY,
                  "days": len(days), "from": days[0] if days else None, "to": days[-1] if days else None,
                  "lots": cfg["lots"], "qty": cfg["qty"]}
     print("START %s days=%d" % (SYM, len(days)), flush=True)
@@ -112,17 +128,19 @@ for SYM, cfg in CFG.items():
                                 streak += 1
                                 if streak >= 2:
                                     nx = sub[m + 1][1] if m + 1 < len(sub) else sub[m][1]
-                                    pnl = (ent - nx) * cfg["qty"] - cost_of(cfg)
+                                    pnl = (ent - nx) * cfg["qty"] - cost_rt(cfg, ent, nx, True)
                                     break
                             else: streak = 0
-                    if pnl is None: pnl = (ent - sub[-1][1]) * cfg["qty"] - cost_of(cfg)
+                    if pnl is None:
+                        _x = sub[-1][1]
+                        pnl = (ent - _x) * cfg["qty"] - cost_rt(cfg, ent, _x, False)
                     grid.setdefault((SYM, k, ent_t, ex_t, sl), []).append((day, round(pnl)))
         if day_sparse: sparse[SYM] += 1
         if i % 10 == 0: print("%s %d/%d" % (SYM, i, len(days)), flush=True)
 
-out = {"cost_model": {"slip_pt": SLIP_PT, "brok_per_legside_per_lot": BROK_PER_LEGSIDE_PER_LOT,
-                     "sens_slips": list(SENS_SLIPS), "leg_sides": 4,
-                     "note": "net of slippage + brokerage/STT/exchange/GST/stamp; 4 leg-sides per straddle round trip"},
+out = {"cost_model": {"slip_entry": SLIP_ENTRY, "slip_time": SLIP_TIME, "slip_stop": SLIP_STOP,
+                     "sens_slips": list(SENS_SLIPS), "leg_sides": 4, "measured_n": 443,
+                     "note": "MEASURED from 443 real live leg-sides (Kite fill vs chain LTP): entry -0.23pt (booked 0), time-exit +0.18pt, SL-exit +6.55pt; plus exact Zerodha charges"},
        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"), "sparse_days": sparse,
        "meta": meta, "cells": [], "best": {}}
 series_map = {}
@@ -145,10 +163,11 @@ for SYM in CFG:
         b = dict(cand[0])
         key = (SYM, k, b["entry"], b["exit"], (999 if b["sl"] == "none" else b["sl"]))
         b["series"] = [[d, v] for d, v in series_map.get(key, [])]
-        # cost-sensitivity band: mean is net at SLIP_PT; restate at each slippage assumption
-        _c0 = cost_of(CFG[SYM])
-        b["cost"] = round(_c0)
-        b["sens"] = {("%.2f" % _s): round(b["mean"] + _c0 - cost_of(CFG[SYM], _s)) for _s in SENS_SLIPS}
+        # cost-sensitivity band: restate the mean at 0.5x/1x/2x the MEASURED slippage
+        _cf = CFG[SYM]
+        b["cost"] = round(cost_rt(_cf, 100.0, 85.0, False))
+        b["sens"] = {("%.1fx" % _s): round(b["mean"] - 2 * SLIP_TIME * (_s - 1.0) * _cf["qty"])
+                     for _s in SENS_SLIPS}
         out["best"][SYM][str(k)] = b
 json.dump(out, open(OUT, "w"))
 for extra in ("/home/arun/quantifyd/static/app/straddles/csl_best_configs.json",

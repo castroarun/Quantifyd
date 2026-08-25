@@ -68,6 +68,21 @@ const inr = (v: number) => (v < 0 ? '-' : '') + '₹' + Math.abs(Math.round(v)).
 const lakh = (v: number) => (v < 0 ? '-' : '') + '₹' + (Math.abs(v) / 1e5).toFixed(2) + 'L';
 const pct = (v: number) => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
 
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** DD-MON-YY, e.g. 14-Aug-26. Accepts 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'. */
+const dmy = (v: string | null | undefined) => {
+  if (!v) return '—';
+  const [y, m, d] = v.slice(0, 10).split('-');
+  return `${d}-${MON[parseInt(m, 10) - 1]}-${y.slice(2)}`;
+};
+/** The clock part of a mark timestamp, when there is one. */
+const hhmm = (v: string | null | undefined) =>
+  v && v.length > 10 ? v.slice(11, 16) : null;
+/** Entries and EOD exits are struck on the session close, not an intraday fill. */
+const CLOSE_TIME = '15:30';
+const spotFmt = (v: number | null | undefined) =>
+  v == null ? '—' : Math.round(v).toLocaleString('en-IN');
+
 /* Paper book state, published by services/straddle45_paper.py as a static JSON.
    No API route, so nothing here needs a backend restart. */
 type PaperTrade = {
@@ -76,7 +91,9 @@ type PaperTrade = {
   exit_date: string | null; exit_prem: number | null; exit_reason: string | null;
   gross_pts: number | null; cost_pts: number | null; net_pts: number | null; net_rs: number | null;
   status: 'OPEN' | 'CLOSED';
+  exit_spot: number | null;
   mark_prem: number | null; mark_date: string | null; mark_src: string | null; mtm_rs: number | null;
+  mark_spot: number | null;
   exit_due: string; dte: number;
   curve?: Array<{ d: string; prem: number; mtm: number }>;
 };
@@ -257,12 +274,13 @@ export default function Straddle45() {
         <table className={styles.table}>
           <thead><tr>
             <th>Straddle</th><th>Strike</th><th>Expiry</th><th>DTE</th><th>Qty</th>
-            <th>Entered</th><th>Credit</th><th>Now</th><th>% of credit</th>
-            <th>MTM ₹</th><th>Exit due</th><th>Mark</th>
+            <th>Entered</th><th>NIFTY in</th><th>Credit</th>
+            <th>Marked</th><th>NIFTY now</th><th>Now</th><th>% of credit</th>
+            <th>MTM ₹</th><th>Exit due</th><th>Source</th>
           </tr></thead>
           <tbody>
             {!live ? (
-              <tr><td colSpan={12} className={styles.emptyCell}>
+              <tr><td colSpan={15} className={styles.emptyCell}>
                 {paper
                   ? 'Flat — the next entry is 45 days before the following monthly expiry.'
                   : 'Paper state not published yet.'}
@@ -274,17 +292,25 @@ export default function Straddle45() {
                 <tr>
                   <td className={styles.sym}>NIFTY ATM CE + PE</td>
                   <td>{live.strike.toFixed(0)}</td>
-                  <td className={styles.muted}>{live.expiry}</td>
+                  <td className={styles.muted}>{dmy(live.expiry)}</td>
                   <td>{live.dte}</td>
                   <td>{live.qty}</td>
-                  <td className={styles.muted}>{live.entry_date}</td>
+                  <td className={styles.muted}>
+                    {dmy(live.entry_date)}<span className={styles.tm}>{CLOSE_TIME}</span>
+                  </td>
+                  <td>{spotFmt(live.entry_spot)}</td>
                   <td>{live.credit.toFixed(1)}</td>
+                  <td className={styles.muted}>
+                    {dmy(live.mark_date)}
+                    <span className={styles.tm}>{hhmm(live.mark_date) ?? CLOSE_TIME}</span>
+                  </td>
+                  <td>{spotFmt(live.mark_spot)}</td>
                   <td>{live.mark_prem == null ? '—' : live.mark_prem.toFixed(1)}</td>
                   <td className={ratio == null ? '' : ratio <= 0.6 ? styles.pos : ratio >= 1.6 ? styles.neg : ''}>
                     {ratio == null ? '—' : (ratio * 100).toFixed(0) + '%'}
                   </td>
                   <td className={up ? styles.pos : styles.neg}>{inr(live.mtm_rs ?? 0)}</td>
-                  <td className={styles.muted}>{live.exit_due}</td>
+                  <td className={styles.muted}>{dmy(live.exit_due)}<span className={styles.tm}>{CLOSE_TIME}</span></td>
                   <td className={styles.muted}>
                     <span className={styles.srcTag}>{SRC_LABEL[live.mark_src ?? ''] ?? live.mark_src}</span>
                   </td>
@@ -297,7 +323,11 @@ export default function Straddle45() {
           <p className={styles.note}>
             Exits are ratios to the entry credit of <b>{live.credit.toFixed(1)} pts</b> ({inr(live.credit * live.qty)}):
             target at <b>{(live.credit * 0.5).toFixed(1)}</b>, stop at <b>{(live.credit * 2).toFixed(1)}</b>,
-            otherwise close on <b>{live.exit_due}</b> (21 DTE) whatever the P&amp;L.
+            otherwise close on <b>{dmy(live.exit_due)}</b> (21 DTE) whatever the P&amp;L.
+            NIFTY has moved <b>{live.mark_spot == null ? '—'
+              : pct(((live.mark_spot / live.entry_spot) - 1) * 100)}</b> since entry.
+            Entry and 21-DTE exit are struck on the <b>session close ({CLOSE_TIME})</b> — that is
+            the bhavcopy print, not an intraday fill.
           </p>
         )}
       </div>
@@ -308,7 +338,8 @@ export default function Straddle45() {
           <div className={styles.cardTitle}>Trade history — {paper.n_closed} closed</div>
           <table className={styles.table}>
             <thead><tr>
-              <th>Expiry</th><th>Strike</th><th>Entered</th><th>Exited</th><th>Held</th>
+              <th>Expiry</th><th>Strike</th><th>Entered</th><th>NIFTY in</th>
+              <th>Exited</th><th>NIFTY out</th><th>Move</th><th>Held</th>
               <th>Credit</th><th>Exit</th><th>Gross pts</th><th>Cost</th><th>Net pts</th>
               <th>Net ₹</th><th>Why</th>
             </tr></thead>
@@ -317,12 +348,23 @@ export default function Straddle45() {
                 const days = Math.round(
                   (new Date(t.exit_date!).getTime() - new Date(t.entry_date).getTime()) / 86400000);
                 const win = (t.net_rs ?? 0) >= 0;
+                const mv = t.exit_spot != null && t.entry_spot
+                  ? ((t.exit_spot / t.entry_spot) - 1) * 100 : null;
                 return (
                   <tr key={t.id}>
-                    <td className={styles.sym}>{t.expiry}</td>
+                    <td className={styles.sym}>{dmy(t.expiry)}</td>
                     <td>{t.strike.toFixed(0)}</td>
-                    <td className={styles.muted}>{t.entry_date}</td>
-                    <td className={styles.muted}>{t.exit_date}</td>
+                    <td className={styles.muted}>
+                      {dmy(t.entry_date)}<span className={styles.tm}>{CLOSE_TIME}</span>
+                    </td>
+                    <td>{spotFmt(t.entry_spot)}</td>
+                    <td className={styles.muted}>
+                      {dmy(t.exit_date)}<span className={styles.tm}>{CLOSE_TIME}</span>
+                    </td>
+                    <td>{spotFmt(t.exit_spot)}</td>
+                    <td className={mv == null ? '' : Math.abs(mv) >= 3 ? styles.neg : ''}>
+                      {mv == null ? '—' : pct(mv)}
+                    </td>
                     <td>{days}d</td>
                     <td>{t.credit.toFixed(1)}</td>
                     <td>{t.exit_prem?.toFixed(1)}</td>
@@ -338,7 +380,7 @@ export default function Straddle45() {
             </tbody>
             <tfoot>
               <tr className={styles.totalRow}>
-                <td colSpan={9}>REALISED — {paper.n_closed} trades</td>
+                <td colSpan={12}>REALISED — {paper.n_closed} trades</td>
                 <td className={paper.realised >= 0 ? styles.pos : styles.neg}>
                   {(paper.closed_trades.reduce((a, t) => a + (t.net_pts ?? 0), 0)).toFixed(1)}
                 </td>
@@ -350,7 +392,10 @@ export default function Straddle45() {
           <p className={styles.note}>
             Backtraced from real NSE bhavcopy closes using the same rules the study tested — these
             are the actual campaigns the system would have run, not simulated draws. Costs are
-            0.25% slippage per side plus STT, exchange charges and brokerage.
+            0.25% slippage per side plus STT, exchange charges and brokerage. Both legs are struck
+            on the session close ({CLOSE_TIME}), so the time column is the close, not a fill clock.
+            <b> Move</b> is NIFTY from entry to exit — note every one of these paid out despite
+            moves of up to {'\u00b1'}3%, which is the decay doing the work.
           </p>
         </div>
       )}
@@ -358,14 +403,36 @@ export default function Straddle45() {
       {/* ── payoff ──────────────────────────────────────────────────────────── */}
       <div className={styles.card}>
         <div className={styles.cardTitle}>
-          Payoff at expiry — {lots} lot{lots > 1 ? 's' : ''}, average credit {AVG_CREDIT} pts
+          {live
+            ? `Payoff — the open ${live.strike.toFixed(0)} straddle, ${live.lots} lots, credit ${live.credit.toFixed(1)} pts`
+            : `Payoff at expiry — ${lots} lot${lots > 1 ? 's' : ''}, study-average credit ${AVG_CREDIT} pts`}
         </div>
-        <Payoff credit={AVG_CREDIT} qty={m.qty} />
+        <Payoff
+          credit={live ? live.credit : AVG_CREDIT}
+          qty={live ? live.qty : m.qty}
+          strike={live ? live.strike : null}
+          spot={live ? live.mark_spot : null}
+          mtm={live ? live.mtm_rs : null}
+        />
         <p className={styles.note}>
-          Drawn at expiry for shape. <b>The rule never gets there</b> — it closes at 21 DTE, which is
-          why the realised loss distribution is far tamer than this diagram suggests. Breakevens sit
-          at ±{AVG_CREDIT} points ({(AVG_CREDIT / 24170 * 100).toFixed(1)}% of spot); the 200% stop
-          fires long before either.
+          {live ? (
+            <>
+              Live position: strike <b>{live.strike.toFixed(0)}</b>, breakevens{' '}
+              <b>{(live.strike - live.credit).toFixed(0)}</b> and{' '}
+              <b>{(live.strike + live.credit).toFixed(0)}</b>, NIFTY now{' '}
+              <b>{spotFmt(live.mark_spot)}</b>. Drawn at expiry for shape — <b>the rule never gets
+              there</b>, it closes on {dmy(live.exit_due)} at 21 DTE, so the real loss distribution
+              is far tamer than this diagram. The dot is <b>today&apos;s mark-to-market</b>; the
+              point above it on the curve is what this position would pay <i>at expiry</i> if NIFTY
+              simply stayed here. The vertical gap between them is the time value still to decay —
+              and collecting it is the entire strategy.
+            </>
+          ) : (
+            <>
+              No open position, so this is the study average. Drawn at expiry for shape —
+              <b> the rule never gets there</b>, it closes at 21 DTE.
+            </>
+          )}
         </p>
       </div>
 
@@ -530,7 +597,10 @@ function Rule({ k, v }: { k: string; v: string }) {
 }
 
 /* Short-straddle payoff at expiry, in rupees for the configured size. */
-function Payoff({ credit, qty }: { credit: number; qty: number }) {
+function Payoff({ credit, qty, strike, spot, mtm }: {
+  credit: number; qty: number;
+  strike?: number | null; spot?: number | null; mtm?: number | null;
+}) {
   const W = 900, H = 240, padL = 62, padR = 16, padT = 14, padB = 26;
   const span = credit * 2.2;                       // x-axis: strike ± 2.2 x credit
   const maxProfit = credit * qty;
@@ -552,12 +622,38 @@ function Payoff({ credit, qty }: { credit: number; qty: number }) {
         <g key={d}>
           <line x1={X(d)} y1={padT} x2={X(d)} y2={H - padB} className={styles.beDash} />
           <text x={X(d)} y={H - 8} className={styles.axLab} textAnchor="middle">
-            breakeven {d > 0 ? '+' : '−'}{credit.toFixed(0)}
+            {strike ? (strike + d).toFixed(0) : `${d > 0 ? '+' : '−'}${credit.toFixed(0)}`}
           </text>
         </g>
       ))}
       <line x1={X(0)} y1={padT} x2={X(0)} y2={H - padB} className={styles.strikeDash} />
-      <text x={X(0)} y={H - 8} className={styles.axLab} textAnchor="middle">ATM strike</text>
+      <text x={X(0)} y={H - 8} className={styles.axLab} textAnchor="middle">
+        {strike ? `strike ${strike.toFixed(0)}` : 'ATM strike'}
+      </text>
+      {strike != null && spot != null && Math.abs(spot - strike) <= span && (
+        <g>
+          <line x1={X(spot - strike)} y1={padT} x2={X(spot - strike)} y2={H - padB}
+                className={styles.spotLine} />
+          {/* the dot sits at TODAY'S mark-to-market, not at the expiry payoff for
+              today's spot — the gap between the two is the time value still to decay */}
+          <circle cx={X(spot - strike)} cy={Y(mtm != null ? mtm : pl(spot - strike))} r={4}
+                  className={styles.spotDot} />
+          {mtm != null && (
+            <line x1={X(spot - strike)} y1={Y(mtm)} x2={X(spot - strike)} y2={Y(pl(spot - strike))}
+                  className={styles.decayLine} />
+          )}
+          <text x={X(spot - strike)} y={padT + 10} className={styles.spotLab} textAnchor="middle">
+            NIFTY {Math.round(spot).toLocaleString('en-IN')}
+            {mtm != null ? `  ·  MTM now ${mtm >= 0 ? '+' : '-'}₹${Math.abs(Math.round(mtm)).toLocaleString('en-IN')}` : ''}
+          </text>
+          {mtm != null && (
+            <text x={X(spot - strike)} y={Y(pl(spot - strike)) - 7} className={styles.axLab}
+                  textAnchor="middle">
+              at expiry here: ₹{Math.round(pl(spot - strike)).toLocaleString('en-IN')}
+            </text>
+          )}
+        </g>
+      )}
       <circle cx={X(0)} cy={Y(maxProfit)} r={3.5} className={styles.peak} />
       <text x={X(0) + 8} y={Y(maxProfit) + 4} className={styles.peakLab}>
         max {inr(maxProfit)} if it pins

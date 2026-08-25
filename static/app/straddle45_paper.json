@@ -1,13 +1,13 @@
 {
- "asof": "2026-08-24 16:22:15",
+ "asof": "2026-08-25 13:10:03",
  "mode": "PAPER",
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
  "bhav_through": "2026-08-21",
  "realised": 131703.64278000002,
- "unrealised": 31521.75000000002,
- "nav": 1359225.39278,
+ "unrealised": 34203.000000000015,
+ "nav": 1361906.64278,
  "n_closed": 3,
  "n_open": 1,
  "win_rate": 100.0,
@@ -24,18 +24,20 @@
    "exit_date": null,
    "exit_prem": null,
    "exit_reason": null,
+   "exit_spot": null,
    "gross_pts": null,
    "cost_pts": null,
    "net_pts": null,
    "net_rs": null,
    "status": "OPEN",
-   "mark_prem": 588.05,
-   "mark_date": "2026-08-24 16:22:15",
+   "mark_prem": 574.3,
+   "mark_date": "2026-08-25 13:10:02",
    "mark_src": "kite-ltp",
-   "mtm_rs": 31521.75000000002,
-   "created_at": "2026-08-24 09:15:44",
+   "mtm_rs": 34203.000000000015,
+   "mark_spot": 24140.9,
+   "created_at": "2026-08-24 11:19:52",
    "exit_due": "2026-09-08",
-   "dte": 35,
+   "dte": 34,
    "curve": [
     {
      "d": "2026-08-17",
@@ -78,6 +80,7 @@
    "exit_date": "2026-08-04",
    "exit_prem": 607.0,
    "exit_reason": "TIME_21DTE",
+   "exit_spot": 24614.9,
    "gross_pts": 196.25,
    "cost_pts": 5.6450250641025645,
    "net_pts": 190.60497493589745,
@@ -87,9 +90,10 @@
    "mark_date": "2026-08-04",
    "mark_src": "bhav",
    "mtm_rs": 37167.9701125,
-   "created_at": "2026-08-24 09:15:44",
+   "mark_spot": null,
+   "created_at": "2026-08-24 11:19:52",
    "exit_due": "2026-08-04",
-   "dte": 0
+   "dte": -1
   },
   {
    "id": 2,
@@ -103,6 +107,7 @@
    "exit_date": "2026-07-07",
    "exit_prem": 913.15,
    "exit_reason": "TIME_21DTE",
+   "exit_spot": 24398.7,
    "gross_pts": 38.200000000000045,
    "cost_pts": 7.196757564102564,
    "net_pts": 31.003242435897484,
@@ -112,9 +117,10 @@
    "mark_date": "2026-07-07",
    "mark_src": "bhav",
    "mtm_rs": 6045.632275000009,
-   "created_at": "2026-08-24 09:15:44",
+   "mark_spot": null,
+   "created_at": "2026-08-24 11:19:52",
    "exit_due": "2026-07-07",
-   "dte": -28
+   "dte": -29
   },
   {
    "id": 1,
@@ -128,6 +134,7 @@
    "exit_date": "2026-06-09",
    "exit_prem": 694.25,
    "exit_reason": "TIME_21DTE",
+   "exit_spot": 23242.1,
    "gross_pts": 461.1500000000001,
    "cost_pts": 7.354921064102565,
    "net_pts": 453.79507893589755,
@@ -137,9 +144,10 @@
    "mark_date": "2026-06-09",
    "mark_src": "bhav",
    "mtm_rs": 88490.04039250003,
-   "created_at": "2026-08-24 09:15:44",
+   "mark_spot": null,
+   "created_at": "2026-08-24 11:19:51",
    "exit_due": "2026-06-09",
-   "dte": -56
+   "dte": -57
   }
  ]
 }

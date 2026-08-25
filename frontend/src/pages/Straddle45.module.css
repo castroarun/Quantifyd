@@ -19,6 +19,14 @@
 .off { color: var(--accent-warn, #d98a00); }
 .paperOn { color: var(--accent, #4f8bd6); }
 .paperOn .dot { background: var(--accent, #4f8bd6); }
+.tm {
+  display: inline-block; margin-left: 6px; font-size: 10.5px; color: var(--ink-muted);
+  opacity: 0.75; font-variant-numeric: tabular-nums;
+}
+.spotLine { stroke: var(--accent-warn, #d98a00); stroke-width: 1.2; stroke-dasharray: 3 2; }
+.decayLine { stroke: var(--accent-warn, #d98a00); stroke-width: 1; stroke-dasharray: 2 2; opacity: 0.55; }
+.spotDot { fill: var(--accent-warn, #d98a00); stroke: var(--surface); stroke-width: 1.5; }
+.spotLab { font-size: 10.5px; font-weight: 600; fill: var(--accent-warn, #d98a00); font-family: inherit; }
 .srcTag {
   font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
   background: var(--surface-sunken, rgba(0,0,0,0.05)); color: var(--ink-muted);
