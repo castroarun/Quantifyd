@@ -1,0 +1,8 @@
+# Heavy intermediates - regenerate with the commands in results/RESULTS.md section 10.
+# (Scoped to this study so the repo-root .gitignore is not touched.)
+results/book_minute.csv.gz
+results/wing_minute.csv.gz
+results/diversify_cells.csv
+results/trail_daily.csv
+results/stage0_live_portfolio.csv
+scripts/__pycache__/

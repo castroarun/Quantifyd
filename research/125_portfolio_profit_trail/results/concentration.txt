@@ -1,0 +1,65 @@
+==============================================================================
+1. STRIKE OVERLAP - do the live NIFTY books sell the same strike?
+==============================================================================
+NIFTY days with >=2 live books trading: 78
+  ALL books on the SAME strike : 36  (46%)
+  distinct strikes across the book: {1: 36, 2: 39, 3: 3}
+  the 3 suite systems alone identical strike: 45 / 58 (78%)
+
+  last 12 days:
+   2026-08-10  books=4 distinct=2  {'916_ATM': 24600.0, '916_ATM2': 24600.0, '916_ATM4': 24600.0, 'COMB20': 24550.0}
+   2026-08-11  books=5 distinct=2  {'916_ATM': 24550.0, '916_ATM2': 24550.0, '916_ATM4': 24550.0, 'COMB20': 24550.0, 'TB_NIFTY': 24500.0}
+   2026-08-12  books=3 distinct=1  {'916_ATM': 24500.0, '916_ATM2': 24500.0, '916_ATM4': 24500.0}
+   2026-08-13  books=4 distinct=2  {'916_ATM': 24400.0, '916_ATM2': 24400.0, '916_ATM4': 24400.0, 'COMB20': 24350.0}
+   2026-08-14  books=5 distinct=1  {'916_ATM': 24350.0, '916_ATM2': 24350.0, '916_ATM4': 24350.0, 'COMB20': 24350.0, 'TB_NIFTY': 24350.0}
+   2026-08-17  books=4 distinct=1  {'916_ATM': 24300.0, '916_ATM2': 24300.0, '916_ATM4': 24300.0, 'COMB20': 24300.0}
+   2026-08-18  books=2 distinct=1  {'COMB20': 24250.0, 'TB_NIFTY': 24250.0}
+   2026-08-19  books=3 distinct=1  {'916_ATM': 24150.0, '916_ATM2': 24150.0, '916_ATM4': 24150.0}
+   2026-08-20  books=4 distinct=2  {'916_ATM': 24250.0, '916_ATM2': 24250.0, '916_ATM4': 24250.0, 'COMB20': 24200.0}
+   2026-08-21  books=2 distinct=1  {'COMB20': 24250.0, 'TB_NIFTY': 24250.0}
+   2026-08-24  books=4 distinct=2  {'916_ATM': 24350.0, '916_ATM2': 24350.0, '916_ATM4': 24350.0, 'COMB20': 24300.0}
+   2026-08-25  books=3 distinct=1  {'916_ATM': 24150.0, '916_ATM2': 24150.0, '916_ATM4': 24150.0}
+
+==============================================================================
+2. CROSS-BOOK CORRELATION of daily net P&L - overall vs the worst decile
+==============================================================================
+n days=87 ; worst-decile cutoff = Rs-10126 ; worst-decile days = 9
+
+book A      book B       n_all corr_all  n_bad corr_bad
+916_ATM     916_ATM2        60     0.50      7    -0.58
+916_ATM     916_ATM4        59     0.81      7    -0.19
+916_ATM     COMB20          49    -0.20      3     0.57
+916_ATM     TB_NIFTY        21     0.32      1      nan
+916_ATM     TB_SENSEX       29     0.16      6     0.11
+916_ATM     SXWED           15    -0.51      4    -0.84
+916_ATM2    916_ATM4        59     0.55      7    -0.32
+916_ATM2    COMB20          52     0.44      4     0.89
+916_ATM2    TB_NIFTY        24     0.10      1      nan
+916_ATM2    TB_SENSEX       25     0.10      7    -0.55
+916_ATM2    SXWED           13    -0.20      4     0.32
+916_ATM4    COMB20          45    -0.17      3    -0.35
+916_ATM4    TB_NIFTY        22     0.27      1      nan
+916_ATM4    TB_SENSEX       22     0.01      6    -0.01
+916_ATM4    SXWED           13    -0.32      4     0.76
+COMB20      TB_NIFTY        32    -0.07      1      nan
+COMB20      TB_SENSEX       17    -0.13      3     0.97
+TB_SENSEX   SXWED           17    -0.24      5    -0.84
+
+days where EVERY live book lost: 5 ; where any lost: 59 ; of 84 multi-book days
+  on the WORST DECILE days, every book lost on 2 of 9
+
+==============================================================================
+3. EXIT CLUSTERING - do the books flatten into the same 90 seconds?
+==============================================================================
+days with >=2 non-EOD suite exits: 30
+  span between first and last mid-session exit: median=9220s p25=2168s p75=12912s
+  days where ALL mid-session exits fell inside 120s: 2 (7%)
+  recent examples:
+   2026-07-17  n=3 span=12679s  ['10:18:46', '13:50:05', '13:50:05']
+   2026-07-20  n=2 span=4202s  ['12:50:03', '14:00:05']
+   2026-07-23  n=2 span=5149s  ['11:05:13', '12:31:02']
+   2026-07-24  n=2 span= 389s  ['12:25:01', '12:31:30']
+   2026-08-12  n=2 span=   0s  ['14:35:00', '14:35:00']
+   2026-08-17  n=3 span=1620s  ['12:20:02', '12:46:58', '12:47:02']
+   2026-08-24  n=3 span=12297s  ['11:06:08', '14:31:05', '14:31:05']
+   2026-08-25  n=3 span=10678s  ['11:55:28', '13:01:18', '14:53:26']

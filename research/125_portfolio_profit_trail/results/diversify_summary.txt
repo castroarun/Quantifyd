@@ -1,0 +1,45 @@
+diversify cells: 168 venue-days
+
+====================================================================================================
+ARM C - NIFTY : equal-notional 3-clone portfolios (COMB shape, 2 lots each clone)
+====================================================================================================
+portfolio             n      total     mean   median   win%      worst        p05        p10   vs_clone
+CLONE_SAME           84     428547     5101     7398   70.2     -33753     -18708     -16776          0
+DIV_STRIKE_1         84     347845     4141     7262   70.2     -30016     -18125     -16001     -80702
+DIV_STRIKE_2         84     335518     3994     6599   67.9     -23582     -16910     -11209     -93029
+DIV_ENTRY            84     314332     3742     6749   67.9     -30858     -19859     -16657    -114215
+DIV_BOTH             84     273218     3252     5947   67.9     -30339     -18056     -10307    -155329
+DIV_ENTRY_WIDE       84     293266     3491     6446   65.5     -25655     -19385     -16621    -135281
+
+Paired per-day delta vs CLONE_SAME (common days only):
+  DIV_STRIKE_1      n= 84  mean_delta=    -961  median=     -92  t=-1.72  worst -33753 -> -30016 (+3737)
+  DIV_STRIKE_2      n= 84  mean_delta=   -1107  median=    -366  t=-1.26  worst -33753 -> -23582 (+10171)
+  DIV_ENTRY         n= 84  mean_delta=   -1360  median=   -1126  t=-2.16  worst -33753 -> -30858 (+2895)
+  DIV_BOTH          n= 84  mean_delta=   -1849  median=   -1418  t=-1.86  worst -33753 -> -30339 (+3414)
+  DIV_ENTRY_WIDE    n= 84  mean_delta=   -1610  median=   -1180  t=-2.30  worst -33753 -> -25655 (+8098)
+
+  PLACEBO (200 random 3-leg portfolios from the same cell menu):
+    worst-day: p05=-41711 median=-29317 p95=-22064   [CLONE_SAME=-33753]
+    total    : p05=128050 median=228319 p95=356827   [CLONE_SAME=428547]
+
+====================================================================================================
+ARM C - SENSEX : equal-notional 3-clone portfolios (COMB shape, 2 lots each clone)
+====================================================================================================
+portfolio             n      total     mean   median   win%      worst        p05        p10   vs_clone
+CLONE_SAME           84     541728     6449     7476   75.0     -29166     -16154     -10156          0
+DIV_STRIKE_1         84     519099     6179     7659   73.8     -27478     -15179     -10357     -22629
+DIV_STRIKE_2         84     605476     7208     8737   76.2     -20392     -12442      -7789      63748
+DIV_ENTRY            84     468995     5583     6745   70.2     -23102     -14615      -9927     -72733
+DIV_BOTH             84     479182     5704     6814   73.8     -20001     -12649      -8347     -62546
+DIV_ENTRY_WIDE       84     397913     4737     6314   69.0     -20410     -13993     -11097    -143815
+
+Paired per-day delta vs CLONE_SAME (common days only):
+  DIV_STRIKE_1      n= 84  mean_delta=    -269  median=     -67  t=-0.96  worst -29166 -> -27478 (+1688)
+  DIV_STRIKE_2      n= 84  mean_delta=    +759  median=    +258  t=+1.79  worst -29166 -> -20392 (+8774)
+  DIV_ENTRY         n= 84  mean_delta=    -866  median=    -694  t=-1.22  worst -29166 -> -23102 (+6064)
+  DIV_BOTH          n= 84  mean_delta=    -745  median=    -254  t=-0.86  worst -29166 -> -20001 (+9165)
+  DIV_ENTRY_WIDE    n= 84  mean_delta=   -1712  median=   -1244  t=-2.08  worst -29166 -> -20410 (+8756)
+
+  PLACEBO (200 random 3-leg portfolios from the same cell menu):
+    worst-day: p05=-22871 median=-16752 p95=-12801   [CLONE_SAME=-29166]
+    total    : p05=348424 median=477858 p95=597551   [CLONE_SAME=541728]

@@ -1,0 +1,61 @@
+wing series loaded: 1043 (day,sleeve,dist) combos
+sleeve P&L paths loaded: 149 sleeve-days
+
+================================================================================================
+S5-AUDIT - are the far-OTM wing quotes LIVE or STALE? (the trap that voided the
+           previous held-wing backtest on this project)
+================================================================================================
+venue     dist   n_d   n_min zero_bid zero_ask spread%mid    maxrun  meanrun   vol0_d
+NIFTY      100    98   27139      0.0      0.0       0.3         4      1.0        0
+NIFTY      150    98   27139      0.0      0.0       0.3         6      1.0        0
+NIFTY      200    98   27139      0.0      0.0       0.3         7      1.1        0
+NIFTY      250    98   27126      0.0      0.0       0.3         7      1.1        0
+NIFTY      300    98   27102      0.0      0.0       0.4         7      1.1        0
+NIFTY      400    98   26986      0.0      0.0       0.6        11      1.2        0
+NIFTY      500    98   25535      0.0      0.0       0.9         8      1.2        0
+SENSEX     400    51    9908      0.0      0.0       0.3         6      1.0        0
+SENSEX     600    51    9900      0.0      0.0       0.3         4      1.0        0
+SENSEX     800    51    9853      0.0      0.0       0.3         4      1.0        0
+SENSEX    1000    51    9836      0.0      0.0       0.4         5      1.0        0
+SENSEX    1200    51    9825      0.0      0.0       0.5         4      1.0        0
+SENSEX    1600    51    8912      0.0      0.0       0.8         8      1.1        0
+SENSEX    2000    51    2076      0.0      0.0       1.5         5      1.2        0
+
+Reading: zero_bid/zero_ask = %% of minutes with no two-sided quote (untradable).
+         spread%%mid = median bid-ask spread as %% of mid (the cost of a round trip).
+         maxrun/meanrun = consecutive identical LTP prints -> the staleness signature.
+         vol0_d = sleeve-days on which the wing strike NEVER traded (r/89 rule: drop).
+
+================================================================================================
+S5-ECON - wings bought at the ASK, sold back at the BID, on audited days only
+================================================================================================
+
+venue     dist mode        n   naked_tot   wing_cost  hedged_tot wing_mean  wing_med   paid naked_wrst hedgd_wrst
+NIFTY      100 AFTERUP    11       67192       -4998       62194      -454     -1226      3      -6275        955
+NIFTY      150 AFTERUP    11       67192       -3300       63892      -300      -706      1      -6275      -1678
+NIFTY      200 AFTERUP    11       67192       -2118       65074      -193      -407      1      -6275      -3722
+NIFTY      250 AFTERUP    11       67192       -2180       65012      -198      -329      1      -6275      -4987
+NIFTY      300 AFTERUP    11       67192       -2204       64988      -200      -283      1      -6275      -5682
+NIFTY      400 AFTERUP    11       67192       -2236       64956      -203      -244      1      -6275      -6214
+NIFTY      500 AFTERUP    11       67192       -2190       65002      -199      -231      0      -6275      -6331
+NIFTY      100 ATENTRY    98      373729     -374819       -1090     -3825     -4182     19     -26668     -10952
+NIFTY      150 ATENTRY    98      373729     -314212       59517     -3206     -3477     18     -26668     -14099
+NIFTY      200 ATENTRY    98      373729     -261108      112621     -2664     -2681     16     -26668     -16864
+NIFTY      250 ATENTRY    98      373729     -220654      153075     -2252     -2178     16     -26668     -19973
+NIFTY      300 ATENTRY    98      373729     -185486      188243     -1893     -1506     12     -26668     -22357
+NIFTY      400 ATENTRY    98      373729     -139102      234627     -1419      -780     10     -26668     -25131
+NIFTY      500 ATENTRY    98      373729     -105345      268384     -1075      -508     10     -26668     -26272
+SENSEX     400 AFTERUP    11      235785      -15815      219970     -1438     -1119      0      -2237      -4084
+SENSEX     600 AFTERUP    11      235785       -7715      228070      -701      -583      0      -2237      -3212
+SENSEX     800 AFTERUP    11      235785       -5217      230568      -474      -447      0      -2237      -2932
+SENSEX    1000 AFTERUP    11      235785       -4144      231641      -377      -351      0      -2237      -2812
+SENSEX    1200 AFTERUP    11      235785       -3784      232001      -344      -327      0      -2237      -2772
+SENSEX    1600 AFTERUP    11      235785       -3288      232497      -299      -303      0      -2237      -2708
+SENSEX    2000 AFTERUP    11      235785       -1856      233929      -169      -127      0      -2237      -2364
+SENSEX     400 ATENTRY    51      219904     -132660       87244     -2601     -3416     13     -29233     -23088
+SENSEX     600 ATENTRY    51      219904      -96226      123678     -1887     -2191     12     -29233     -29126
+SENSEX     800 ATENTRY    51      219904      -69021      150883     -1353     -1610     11     -29233     -29074
+SENSEX    1000 ATENTRY    51      219904      -48346      171558      -948     -1176     11     -29233     -28499
+SENSEX    1200 ATENTRY    51      219904      -36287      183617      -712      -933     11     -29233     -28962
+SENSEX    1600 ATENTRY    51      219904      -28418      191486      -557      -607      9     -29233     -29313
+SENSEX    2000 ATENTRY    51      219904      -20521      199383      -402      -297      1     -29233     -29480
