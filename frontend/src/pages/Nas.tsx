@@ -87,7 +87,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-otm',
     key: 'nas-916-otm',
-    label: 'NIFTY OTM',
+    label: '9:16 · OTM',
     subtitle: 'Time-based 9:16 entry, OTM legs',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL OTM CE+PE at approx Rs 20. Adj: Cross-leg imbalance >= 2x → ROLL_OUT or ROLL_IN alternating. Exit: Time 14:45, EOD 15:15.',
@@ -97,7 +97,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-atm',
     key: 'nas-916-atm',
-    label: 'NIFTY ATM',
+    label: '9:16 · ATM',
     subtitle: 'Time-based 9:16 entry, ATM legs',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE, SL = entry x 1.3 (30%). 1st SL: Close stopped leg. Naked leg: ST(7,3) exit. EOD 15:15.',
@@ -107,7 +107,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-atm2',
     key: 'nas-916-atm2',
-    label: 'NIFTY ATM2',
+    label: '9:16 · ATM 2.0',
     subtitle: '9:16 entry, ±0.4% move-stop → re-center (cascade)',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL ATM CE+PE. Exit: ±0.4% underlying move closes BOTH legs AND re-enters (cascades) at the new ATM with the same ±0.4% stop. Move-stop is the sole trigger (no per-leg SL). Max 5 re-centers/day. EOD 15:15.',
@@ -117,7 +117,7 @@ const ENTRY_916_SYSTEMS: SystemDef[] = [
   {
     id: 'nas-916-atm4',
     key: 'nas-916-atm4',
-    label: 'NIFTY ATM4',
+    label: '9:16 · ATM V4',
     subtitle: '9:16 entry, ATM V4 cross-leg',
     rules:
       'Entry: Auto-enter at 9:16 AM. SELL ATM, SL = 1.3x. 1st SL: Roll stopped leg to match surviving leg CMP. 2nd SL: Close stopped leg, naked surviving leg uses ST(7,3) exit. EOD 15:15.',
@@ -136,14 +136,6 @@ const HIDDEN_CARDS = new Set(['nas', 'nas-916-otm']);
 // The uniform size everything is restated to (2 lots x 65).
 const TARGET_QTY = 130;
 
-// Book-level (venue) caps from services/nas_portfolio_stop.py. These govern the 9:16
-// suite ONLY — the COMB/TimeB sleeves are not in the portfolio stop's universe and run
-// their own combined-SL.
-const BOOK_RULES: Record<string, { stop: number; tp: number | null; arm: number | null; give: number | null; lot: number }> = {
-  nifty:  { stop: -1300, tp: null, arm: 2000, give: 350, lot: 65 },
-  sensex: { stop: -1300, tp: 1667, arm: null, give: null, lot: 20 },
-};
-
 // NAS-OPT (research/54 paper system) — shown in the Trade Book alongside the 8 variants.
 const NAS_OPT_DEF: SystemDef = {
   id: 'nas-opt',
@@ -157,19 +149,11 @@ const NAS_OPT_DEF: SystemDef = {
 };
 
 // COMB + TimeB sleeves in the Trade Book (after the 9:16 systems, before NAS-OPT).
-// SENSEX 9:16 suite in the Trade Book (legs from static/app/sensex_live.json).
-const SENSEX_TB_DEFS: SystemDef[] = [
-  { id: 'sx-atm', key: 'sx-atm', label: 'SENSEX ATM', subtitle: '9:16 straddle', rules: '', configNote: 'Wed/Thu', group: '916' },
-  { id: 'sx-atm2', key: 'sx-atm2', label: 'SENSEX ATM2', subtitle: '9:16 straddle · move-stop', rules: '', configNote: 'Wed/Thu', group: '916' },
-  { id: 'sx-atm4', key: 'sx-atm4', label: 'SENSEX ATM4', subtitle: '9:16 straddle · roll', rules: '', configNote: 'Wed/Thu', group: '916' },
-];
-
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
-  { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Tue/Fri (Mon dropped 23-Aug)', group: '916' },
-  { id: 'csl-timeb-mf', key: 'csl-timeb-mf', label: 'NIFTY TimeB study', subtitle: 'Monday window (paper)', rules: '', configNote: 'paper 8L · r/121 Nov re-run evidence', group: '916' },
-  { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB · all-week', subtitle: 'study per-DTE stops · all 5 days (paper)', rules: '', configNote: 'paper A/B', group: '916' },
-  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TIMEB SENSEX', subtitle: 'Wed + Thu windows', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
+  { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
+  { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30 · control', subtitle: 'fixed-SL30 control arm (paper)', rules: '', configNote: 'paper A/B', group: '916' },
+  { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'COMB SENSEX', subtitle: 'Wed window + Thu full-day', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
 
 // Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
@@ -1591,83 +1575,13 @@ export default function Nas() {
   // Trade-Book state for a sleeve: OPEN -> CE/PE legs; WAIT_ENTRY -> planned window (by today's DTE).
   const TB_WIN: Record<string, Record<number, [string, string, number | string]>> = {
     NAS_COMB20: { 0: ['09:16', '15:20', 25], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 20] },
-    CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 2: ['10:00', '12:00', 20] },
-    CSL_TIMEB_NIFTY_MON: { 1: ['13:00', '14:00', 20] },
+    CSL_TIMEB_NIFTY: { 0: ['09:30', '11:00', 25], 1: ['13:00', '14:00', 20], 2: ['10:00', '12:00', 20] },
     CSL_TIMEB_SENSEX: { 0: ['13:00', '15:20', 'none'], 1: ['10:30', '12:00', 20] },
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
   };
-  const [cslCfg, setCslCfg] = useState<any>(null);
-  useEffect(() => {
-    fetch(`/app/csl_config.json?t=${Date.now()}`, { cache: 'no-store' })
-      .then((r) => r.json()).then(setCslCfg).catch(() => {});
-  }, []);
-  const [sxLive, setSxLive] = useState<any>(null);
-  useEffect(() => {
-    const load = () =>
-      fetch(`/app/sensex_live.json?t=${Date.now()}`, { cache: 'no-store' })
-        .then((r) => r.json()).then(setSxLive).catch(() => {});
-    load();
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
-  }, []);
-  const sxTbState = (label: string): SystemStateRecord => {
-    const sys = (sxLive?.systems || []).find((x: any) => x.label === label);
-    if (!sys || !(sys.legs || []).length) return { state: null, err: null };
-    const mk = (l: any): any => ({
-      leg: l.cp, strike: l.strike, qty: l.qty, entry_price: l.entry,
-      ltp: l.ltp, exit_price: l.status === 'ACTIVE' ? null : l.ltp,
-      pnl_inr: l.pnl, mode: l.mode, status: l.status === 'ACTIVE' ? 'ACTIVE' : 'CLOSED',
-      exit_reason: l.status === 'ACTIVE' ? undefined : l.status,
-      sl_price: (typeof l.arm === 'string' && l.arm.startsWith('SL ')) ? parseFloat(l.arm.slice(3)) : undefined,
-      // non-premium arms (SENSEX ATM2's +/-0.4% move-stop band) come through as text
-      arm_text: (typeof l.arm === 'string' && !l.arm.startsWith('SL ')) ? l.arm : undefined,
-      entry_time: '09:16',
-    });
-    const act = (sys.legs || []).filter((l: any) => l.status === 'ACTIVE');
-    const done = (sys.legs || []).filter((l: any) => l.status !== 'ACTIVE');
-    return { state: { positions: {
-      ce: act.filter((l: any) => l.cp === 'CE').map(mk),
-      pe: act.filter((l: any) => l.cp === 'PE').map(mk),
-      closed_today: done.map(mk) } } as any, err: null };
-  };
-  const sleeveTbState = (bk: string, qtyDefault: number): SystemStateRecord => {
+  const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
     const b: any = cslLive?.books?.[bk];
-    // Real deployed size, best source first: the book payload (daemon >= 20-Aug), then
-    // the frozen config cell for today's DTE (covers per-DTE overrides without needing a
-    // daemon restart), then the old constant.
-    const cfgBooks: any = cslCfg?.books?.[bk];
-    const cfgCell: any = (b?.dte != null && cfgBooks) ? cfgBooks[String(b.dte)] : undefined;
-    const qty: number =
-      Number(b?.qty) > 0 ? Number(b.qty)
-      : Number(cfgCell?.qty) > 0 ? Number(cfgCell.qty)
-      : Number(cslCfg?.base?.[bk]?.qty) > 0 ? Number(cslCfg.base[bk].qty)
-      : qtyDefault;
-    // A finished sleeve must stay in the book. The daemon nulls the live entry on exit,
-    // so look the completed trade up FIRST and use it whether or not `b` still exists.
-    const recDone: any = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
-    const closedState = (): SystemStateRecord => {
-      const q = recDone.qty ?? qty;
-      const md = recDone.source === 'REAL' ? 'live' : 'paper';
-      const base = {
-        strike: recDone.strike, qty: q, status: 'CLOSED', mode: md,
-        entry_time: recDone.entry_ts, exit_time: recDone.exit_ts, exit_reason: recDone.reason,
-      };
-      // Both legs when the record carries them (daemon >= 2026-08-21); otherwise fall back
-      // to the single combined line older records can support.
-      const perLeg = recDone.ce0 != null && recDone.pe0 != null
-        && recDone.ce_exit != null && recDone.pe_exit != null;
-      const closed: any[] = perLeg ? [
-        { ...base, leg: 'CE', tradingsymbol: recDone.ce_sym, entry_price: recDone.ce0,
-          exit_price: recDone.ce_exit, pnl_inr: Math.round((recDone.ce0 - recDone.ce_exit) * q) },
-        { ...base, leg: 'PE', tradingsymbol: recDone.pe_sym, entry_price: recDone.pe0,
-          exit_price: recDone.pe_exit, pnl_inr: Math.round((recDone.pe0 - recDone.pe_exit) * q) },
-      ] : [
-        { ...base, leg: 'C+P', tradingsymbol: undefined, entry_price: recDone.credit,
-          exit_price: recDone.exit_comb, pnl_inr: recDone.pnl },
-      ];
-      return { state: { positions: { ce: [], pe: [], closed_today: closed } } as any, err: null };
-    };
-    if (!b) return recDone ? closedState() : { state: null, err: null };
+    if (!b) return { state: null, err: null };
     // venue-aware trading-DTE: executor-published if present, else weekday table
     // (NIFTY Tue-expiry: Mon..Fri -> 1,0,4,3,2 · SENSEX Thu-expiry: 3,2,1,0,4).
     // Fixes the Wed bug where COMB (ex-Wed) carried no dte and armed rows vanished.
@@ -1676,15 +1590,10 @@ export default function Nas() {
     const dte = b.dte ?? (bk.includes('SENSEX') ? null : cslLive?.books?.NAS_COMB20?.dte) ?? (wd >= 0 && wd <= 4 ? dteTbl[wd] : null);
     const w = (dte != null && TB_WIN[bk]) ? TB_WIN[bk][dte] : null;
     if (b.state === 'OPEN' && b.ce_sym) {
-      const slNone = b.sl === 'none' || b.sl == null;
-      const thr = b.credit
-        ? Math.round((slNone ? 1.5 : 1 + b.sl / 100) * b.credit)
-        : null;
+      const thr = (b.credit && b.sl) ? Math.round((1 + b.sl / 100) * b.credit) : null;
       const curComb = (Number(b.ce_last) || 0) + (Number(b.pe_last) || 0);
       const entryComb = Number(b.credit) || ((Number(b.ce0) || 0) + (Number(b.pe0) || 0));
-      const armTxt = thr != null
-        ? `${entryComb.toFixed(1)} · ${thr}${slNone ? ' bkstp' : ''} (${curComb.toFixed(1)})`
-        : undefined;
+      const armTxt = thr != null ? `${entryComb.toFixed(1)} · ${thr} (${curComb.toFixed(1)})` : undefined;
       const mk = (leg: string, sym: string, e: number, l: number): any => ({
         leg, tradingsymbol: sym, strike: b.K, qty, entry_price: e, ltp: l,
         mode: b.live ? 'live' : 'paper', entry_time: b.entry_ts, status: 'ACTIVE', sl_price: thr, arm_text: armTxt,
@@ -1697,7 +1606,16 @@ export default function Nas() {
     }
     // CLOSED: sleeve traded and exited today -> keep it in the book as one done combined
     // straddle line (the live book is nulled on exit; the record holds combined credit/exit).
-    if (recDone) return closedState();
+    const rec: any = (cslDay?.records ?? []).find((r: any) => r.day === cslLive?.day && r.book === bk);
+    if (rec) {
+      const closed: any = {
+        leg: 'C+P', tradingsymbol: undefined, strike: rec.strike, qty: rec.qty ?? qty,
+        entry_price: rec.credit, exit_price: rec.exit_comb, pnl_inr: rec.pnl,
+        entry_time: rec.entry_ts, exit_time: rec.exit_ts, exit_reason: rec.reason,
+        status: 'CLOSED', mode: rec.source === 'REAL' ? 'live' : 'paper',
+      };
+      return { state: { positions: { ce: [], pe: [], closed_today: [closed] } } as any, err: null };
+    }
     return { state: null, err: null };
   };
   // Merge the sleeve intraday series into the Overall curve (convert HH:MM -> ISO to match mtm).
@@ -1711,28 +1629,11 @@ export default function Nas() {
       .map((x) => x.map(([hm, v]) => [iso(hm), v] as MtmPoint));
     return lists.length ? sumSeries(lists) : [];
   }, [cslLive]);
-  const [sxMtm, setSxMtm] = useState<any>(null);
-  useEffect(() => {
-    const load = () =>
-      fetch(`/app/sensex_mtm.json?t=${Date.now()}`, { cache: 'no-store' })
-        .then((r) => r.json()).then(setSxMtm).catch(() => {});
-    load();
-    const id = setInterval(load, 15000);
-    return () => clearInterval(id);
-  }, []);
-  const sxPts: MtmPoint[] = useMemo(() => {
-    const raw = (sxMtm?.points ?? []) as [string, number][];
-    if (!raw.length) return [];
-    // SENSEX writer emits 'HH:MM'; the NAS mtm feed emits full ISO. Normalise so
-    // sumSeries can merge them (new Date('09:16') is Invalid Date).
-    const day = cslLive?.day || new Date().toLocaleDateString('en-CA');
-    return raw.map(([t, v]) => [t.length <= 5 ? `${day}T${t}:00` : t, v] as MtmPoint);
-  }, [sxMtm, cslLive]);
   const overallPts: MtmPoint[] = useMemo(() => {
-    const lists = [mtmCombined?.points ?? [], sleevePts, sxPts].filter((x) => x.length);
-    if (!lists.length) return [];
-    return lists.length === 1 ? lists[0] : sumSeries(lists);
-  }, [mtmCombined, sleevePts, sxPts]);
+    if (!mtmCombined) return [];
+    if (!sleevePts.length) return mtmCombined.points;
+    return sumSeries([mtmCombined.points, sleevePts]);
+  }, [mtmCombined, sleevePts]);
 
   return (
     <LiveTicksContext.Provider value={liveTicks}>
@@ -1781,7 +1682,7 @@ export default function Nas() {
         }
         points={
           expandedKey === '_combined'
-            ? overallPts
+            ? (mtmCombined?.points || [])
             : expandedKey
             ? (mtmData[expandedKey]?.points || [])
             : []
@@ -1794,11 +1695,9 @@ export default function Nas() {
             : []
         }
         extraSeries={expandedKey === '_combined' ? [
-          { label: 'NIFTY 9:16', color: '#3b82f6', points: nineMtmPts },
+          { label: '9:16', color: '#3b82f6', points: nineMtmPts },
           { label: 'Squeeze', color: '#f59e0b', points: squeezeMtmPts },
-          { label: 'Sleeves', color: '#a371f7', points: sleevePts },
-          { label: 'SENSEX', color: '#0F6E56', points: sxPts },
-        ].filter((x) => x.points.length) : undefined}
+        ] : undefined}
         onClose={() => setExpandedKey(null)}
       />
 
@@ -2008,8 +1907,8 @@ export default function Nas() {
           restated at 2 lots on the 'per 2 lots' basis; live legs always show as traded. */}
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
-          systems={[...ENTRY_916_SYSTEMS, ...SENSEX_TB_DEFS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160), 'csl-timeb-mf': sleeveTbState('CSL_TIMEB_NIFTY_MON', 520), 'sx-atm': sxTbState('SENSEX ATM'), 'sx-atm2': sxTbState('SENSEX ATM2'), 'sx-atm4': sxTbState('SENSEX ATM4') }}
+          systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160) }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />
@@ -2023,7 +1922,7 @@ export default function Nas() {
       {/* Section 1 — 9:16 ATMs */}
       <section className={styles.sectionBlock} style={{ marginTop: 8 }}>
         <div className={styles.colHead}>
-          <div className="section-title">NIFTY ATMs</div>
+          <div className="section-title">9:16 · ATMs</div>
           <Chip>{ENTRY_916_SYSTEMS.filter((x) => !HIDDEN_CARDS.has(x.id)).length} systems</Chip>
         </div>
         <div className={styles.grid3}>
@@ -2041,7 +1940,7 @@ export default function Nas() {
         </div>
         <div className={styles.grid3}>
           <SleeveCard label="NIFTY COMB" sub="Full-day combined-SL · ex-Wed" rules="09:16 to 15:20. Combined-premium SL per DTE (DTE0 25 / DTE1 30 / DTE2 30 / DTE3 20). Replaces per-leg SLs + trail. 2 lots — except Thursday, which trades 5 lots (the two former Thursday books merged into this single trade, 19-Aug). Wednesday off." info={sleeveInfo('NAS_COMB20')} />
-          <SleeveCard label="NIFTY TimeB" sub="Windowed combined-SL · Tue/Fri (Mon on paper)" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
+          <SleeveCard label="NIFTY TimeB" sub="Windowed combined-SL · Mon/Tue/Fri" rules="Per-DTE entry-to-exit windows + SL: DTE0 09:30-11:00 SL25 / DTE1 13:00-14:00 SL20 / DTE2 10:00-12:00 SL20 / DTE3 full-day SL20. 2 lots, Wednesday off. Frozen 13-Aug." info={sleeveInfo('CSL_TIMEB_NIFTY')} />
         </div>
       </section>
 
@@ -2083,8 +1982,8 @@ export default function Nas() {
             <Chip>paper · CSL A/B books</Chip>
           </div>
           <div className={styles.grid3}>
-            <SleeveCard label="SENSEX COMB · all-week" sub="Full-day · study per-DTE stops · paper" rules="09:16 to 15:20, combined-premium SL 30%. Same construction and stops as the live COMB, but it trades ALL five days — so the ex-Wed rule is measured on real days rather than assumed. 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
-            <SleeveCard label="TIMEB SENSEX" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
+            <SleeveCard label="COMB (CSL30F)" sub="Full-day combined-SL 30% · paper" rules="09:16 to 15:20, combined-premium SL 30%. The SENSEX arm of the fixed-CSL A/B (variable-vs-fixed live comparison). 3 lots, paper." info={sleeveInfo('CSL30F_SENSEX')} />
+            <SleeveCard label="COMB (SENSEX)" sub="Time-blocked windows + SL · LIVE" rules="Per-DTE from the lab config: Wed 10:30-12:00 SL20 at 8 lots; Thu 13:00-15:20 at 8 lots, no %-SL (50% disaster backstop) - the afternoon decay window, chosen 20-Aug over the full-day for 62% less time-in-market. REAL from 19-Aug." info={sleeveInfo('CSL_TIMEB_SENSEX')} />
             <div />
           </div>
         </section>
@@ -2204,7 +2103,6 @@ interface TBRow {
   outTime: string;       // exit time HH:MM ('' while open)
   arm: number | null;    // exit/SL monitoring trigger value (premium) while open
   arm_text?: string;     // custom ARM display (sleeve combined-SL: current premium · exit level)
-  maxLoss?: { rs: number; src: string };  // binding cap: system-level if any, else the venue book stop
   armLive?: boolean;     // ticker actually subscribed/watching this leg right now
   armLo?: number;        // move-stop systems: NIFTY level below which BOTH legs close + re-center
   armHi?: number;        // move-stop systems: NIFTY level above which BOTH legs close + re-center
@@ -2254,7 +2152,7 @@ function buildTradeBook(
       if (pl) {
         rows.push({ sysId: sys.id, sysLabel: sys.label, family: sys.group, side: '—', strike: null,
           qty: pl.qty ?? 0, entry: null, exit: null, pnl: 0, open: false,
-          reason: (pl.sl === 'none' || pl.sl == null) ? 'PLANNED · 50% bkstp' : `PLANNED · SL${pl.sl}`, inTime: pl.entry ? pl.entry + '*' : '', outTime: pl.exit ? pl.exit + '*' : '',
+          reason: `PLANNED · SL${pl.sl}`, inTime: pl.entry ? pl.entry + '*' : '', outTime: pl.exit ? pl.exit + '*' : '',
           arm: null, mode: pl.mode ?? 'live' });
       }
       continue;
@@ -2278,36 +2176,7 @@ function buildTradeBook(
       const msPct = MOVE_STOP_PCT[sys.id];
       const eSpot = p.entry_spot ?? null;
       const band = open && msPct != null && eSpot != null && eSpot > 0;
-      // Binding downside. Straddle-level caps (combined-SL, ATM2's rupee stop, the venue
-      // book stop) belong to the PAIR, not to one leg: compute them from the combined
-      // premium and show them once, on the CE leg. Per-leg premium stops stay per leg.
-      const lotSz = (p.strike ?? 0) >= 40000 ? 20 : 65;
-      const legLots = rawQty > 0 ? rawQty / lotSz : 0;
-      const isCe = (p.leg ?? '').toUpperCase() === 'CE';
-      let maxLoss: { rs: number; src: string } | undefined;
-      if (open) {
-        const at: string | undefined = (p as any).arm_text;
-        const combo = at && !/move-stop/i.test(at) ? at.match(/([\d.]+)\s*·\s*([\d.]+)/) : null;
-        if (combo) {
-          // combined-SL: (exit level - entry credit) x qty, whole straddle
-          maxLoss = isCe
-            ? { rs: -Math.round((parseFloat(combo[2]) - parseFloat(combo[1])) * rawQty),
-                src: `combined-SL: exits the straddle at ${combo[2]} vs ${combo[1]} credit` }
-            : { rs: 0, src: 'paired' };
-        } else if (sys.id.includes('atm2') && !sys.id.startsWith('sx-')) {
-          maxLoss = isCe
-            ? { rs: -2500 * legLots, src: 'ATM2 rupee stop ₹2,500/lot — caps the whole straddle' }
-            : { rs: 0, src: 'paired' };
-        } else if (entry != null && p.sl_price && p.sl_price > 0 && p.sl_price < 900000) {
-          maxLoss = { rs: -Math.round((p.sl_price - entry) * rawQty), src: 'per-leg stop at the armed premium' };
-        } else {
-          maxLoss = isCe
-            ? { rs: -1300 * legLots * 2, src: 'venue book stop −₹1,300/lot — book level, shared across the venue' }
-            : { rs: 0, src: 'paired' };
-        }
-      }
       rows.push({
-        maxLoss,
         sysId: sys.id, sysLabel: sys.label, family: sys.group,
         side: (p.leg ?? '').toUpperCase(), strike: p.strike ?? null, qty,
         entry, exit: ltp, pnl, open, reason: p.exit_reason ?? undefined,
@@ -2345,28 +2214,6 @@ function TradeBook({ systems, states, liveLegs, basis }: {
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
   const [liveOnly, setLiveOnly] = useState(false);
-  const [venue, setVenue] = useState<'all' | 'nifty' | 'sensex'>('all');
-  // Broker truth: which symbols the account actually still holds (MIS, non-zero).
-  const [heldSyms, setHeldSyms] = useState<Set<string> | null>(null);
-  useEffect(() => {
-    let on = true;
-    const load = () =>
-      fetch('/api/positions', { cache: 'no-store' })
-        .then((r) => r.json())
-        .then((d) => {
-          if (!on) return;
-          const net = (d?.net || []) as any[];
-          const held = new Set<string>();
-          for (const p of net) {
-            if (p?.product === 'MIS' && Number(p?.quantity)) held.add(String(p.tradingsymbol));
-          }
-          setHeldSyms(held);
-        })
-        .catch(() => {});
-    load();
-    const id = setInterval(load, 15000);
-    return () => { on = false; clearInterval(id); };
-  }, []);
   // ARMED FOR TODAY -- the day's plan straight from the rules matrix, visible
   // before anything enters (executors arm at 09:00/09:12; this needs neither).
   const [rulesRm, setRulesRm] = useState<any | null>(null);
@@ -2390,6 +2237,14 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     }
     return out;
   }, [rulesRm]);
+  // TimeB2 one-shot (research/125): live JSON published by timeb2_publish.py on expiry Tuesdays
+  const [tb2, setTb2] = useState<any | null>(null);
+  useEffect(() => {
+    const pull = () => fetch('/app/timeb2_live.json?t=' + Date.now()).then(r => r.json()).then(setTb2).catch(() => {});
+    pull();
+    const h = setInterval(pull, 15000);
+    return () => clearInterval(h);
+  }, []);
   const { spot } = useLiveTicks();   // live NIFTY -- distance to the move-stop band
   // ST-trail value for naked-survivor legs (sl_price sentinel 999999) — from the ticker.
   const [stTrail, setStTrail] = useState<Record<string, number>>({});
@@ -2412,21 +2267,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     const id = setInterval(load, 5000);
     return () => { on = false; clearInterval(id); };
   }, []);
-  const rowVenue = (r: TBRow): 'nifty' | 'sensex' =>
-    (r.sysId.startsWith('sx-') || /SENSEX/i.test(r.sysLabel) ||
-     (r.tradingsymbol || '').startsWith('SENSEX') || (r.strike ?? 0) >= 40000) ? 'sensex' : 'nifty';
-  const rows = buildTradeBook(systems, states, liveLegs, basis)
-    .filter((r) => !liveOnly || r.mode === 'live')
-    .filter((r) => venue === 'all' || rowVenue(r) === venue)
-    .map((r) => {
-      // a LIVE leg the account no longer holds was closed outside the system: show it as
-      // closed and drop its risk, even though the book still tracks it until its exit
-      if (r.open && r.mode === 'live' && r.tradingsymbol && heldSyms && heldSyms.size >= 0
-          && !heldSyms.has(r.tradingsymbol)) {
-        return { ...r, open: false, reason: 'CLOSED OUTSIDE', arm: null, arm_text: undefined, maxLoss: undefined };
-      }
-      return r;
-    });
+  const rows = buildTradeBook(systems, states, liveLegs, basis).filter((r) => !liveOnly || r.mode === 'live');
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -2457,8 +2298,8 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   const col = (v: number) => (v > 0 ? '#3fb950' : v < 0 ? '#f85149' : 'var(--ink-muted)');
   const inr = (v: number) => (v >= 0 ? '+₹' : '−₹') + Math.abs(Math.round(v)).toLocaleString('en-IN');
   const gridCols = mode === 'system'
-    ? '34px 58px 46px 52px 104px 210px 96px 158px 46px 46px 88px'
-    : '116px 34px 58px 46px 52px 104px 210px 96px 158px 46px 46px 88px';
+    ? '34px 58px 46px 50px 104px 124px 116px 48px 48px 86px'
+    : '120px 34px 58px 46px 50px 104px 124px 116px 48px 48px 86px';
 
   return (
     <section className={styles.sectionBlock}>
@@ -2487,64 +2328,9 @@ function TradeBook({ systems, states, liveLegs, basis }: {
             <input type="checkbox" checked={liveOnly} onChange={(e) => setLiveOnly(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#ef4444' }} />
             LIVE only
           </label>
-          <div style={{ display: 'inline-flex', gap: 2, marginLeft: 8 }}>
-            {(['all', 'nifty', 'sensex'] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setVenue(v)}
-                title={v === 'all' ? 'Both venues' : v === 'nifty' ? 'NIFTY legs only' : 'SENSEX legs only'}
-                style={{
-                  fontSize: 'var(--text-xs)', padding: '3px 9px', borderRadius: 6,
-                  border: '1px solid var(--line)', cursor: 'pointer',
-                  background: venue === v ? (v === 'sensex' ? '#0F6E56' : v === 'nifty' ? '#2f81f7' : 'var(--ink-muted)') : 'transparent',
-                  color: venue === v ? '#fff' : 'var(--ink-muted)',
-                  fontWeight: venue === v ? 700 : 400,
-                }}
-              >
-                {v === 'all' ? 'Both' : v.toUpperCase()}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '2px 0 8px' }}>
-        {(['nifty', 'sensex'] as const).map((v) => {
-          const R = BOOK_RULES[v];
-          // the venue book stop covers the 9:16 suite only
-          const suite = rows.filter((r) => r.mode === 'live' && rowVenue(r) === v &&
-            (r.sysId.startsWith('sx-') || /^nas-916/.test(r.sysId) || /NIFTY (ATM|OTM)/.test(r.sysLabel)));
-          if (!suite.length) return null;
-          // Lots per system = its largest OPEN leg / lot size (a straddle's two legs are the
-          // same size, and a stopped-out leg must not inflate the count). Sum across systems -
-          // this is how services/nas_portfolio_stop.py counts deployed lots.
-          const perSys = new Map<string, number>();
-          for (const r of suite) {
-            if (!r.open) continue;
-            perSys.set(r.sysId, Math.max(perSys.get(r.sysId) || 0, r.qty || 0));
-          }
-          const lots = Math.round(([...perSys.values()].reduce((a, q) => a + q / R.lot, 0)) * 10) / 10;
-          if (!lots) return null;
-          const pnl = suite.reduce((a, r) => a + r.pnl, 0);   // realised + open, all suite legs
-          const stopRs = R.stop * lots, tpRs = R.tp != null ? R.tp * lots : null;
-          const armRs = R.arm != null ? R.arm * lots : null;
-          const hitTp = tpRs != null && pnl >= tpRs;
-          return (
-            <span key={v} style={{ fontSize: 'var(--text-xs)', padding: '3px 10px', borderRadius: 7,
-              border: '1px solid var(--line)', color: 'var(--ink-muted)', whiteSpace: 'nowrap' }}
-              title={`Book-level cap for the ${v.toUpperCase()} 9:16 suite (sleeves excluded — they run their own combined-SL). Stop −₹${Math.abs(R.stop)}/lot${R.tp ? `, take-profit ₹${R.tp}/lot` : ''}${R.arm ? `, trailing lock arms at +₹${R.arm}/lot and exits on a ₹${R.give}/lot giveback` : ''}.`}>
-              <b style={{ color: 'var(--ink)' }}>{v.toUpperCase()} 9:16 suite</b>
-              <span style={{ opacity: 0.7 }}> (sleeves excluded)</span> · {lots}L ·
-              {' '}stop <b style={{ color: '#f85149' }}>{inr(stopRs)}</b>
-              {tpRs != null && <> · TP <b style={{ color: '#3fb950' }}>{inr(tpRs)}</b></>}
-              {armRs != null && <> · trail arms {inr(armRs)}</>}
-              {' '}· now <b style={{ color: col(pnl) }}>{inr(pnl)}</b>
-              {hitTp && <b style={{ color: '#3fb950' }}> ✓ TP hit</b>}
-            </span>
-          );
-        })}
-      </div>
       <div style={{ display: 'flex', gap: 18, alignItems: 'baseline', margin: '4px 0 12px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 18, fontWeight: 700, color: col(dayPnl) }}>Day P&amp;L {inr(dayPnl)}</span>
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--ink-muted)' }}>
@@ -2562,7 +2348,7 @@ function TradeBook({ systems, states, liveLegs, basis }: {
         }}>
           {mode !== 'system' && <span>SYSTEM</span>}
           <span>C/P</span><span>STRIKE</span><span>QTY</span><span>MODE</span><span>ENTRY→EXIT</span>
-          <span>ARM</span><span>MAX&nbsp;LOSS</span><span>STATUS</span><span>IN</span><span>OUT</span>
+          <span>ARM</span><span>STATUS</span><span>IN</span><span>OUT</span>
           <span style={{ textAlign: 'right' }}>P&amp;L</span>
         </div>
         {groups.map((g) => {
@@ -2628,17 +2414,10 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                   </span>
                   {(() => {
                     if (r.open && r.arm_text) {
-                      const isBand = /move-stop/i.test(r.arm_text);
-                      // 'move-stop 77141–77761 (298 away)' -> '77141-77761 (298)'
-                      const shown = isBand
-                        ? r.arm_text.replace(/^move-stop\s*/i, '').replace(/\s*away\s*/i, '').replace(/–/g, '-')
-                        : r.arm_text;
                       return (
-                        <span style={{ color: isBand ? '#58a6ff' : '#d29922', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}
-                          title={isBand
-                            ? 'Move-stop band on the underlying. Both legs exit and re-center when spot leaves this range; the number in brackets is how many points spot is from the nearer edge right now, so it moves with the market.'
-                            : 'Combined premium now · combined-SL exit level — the whole straddle exits when CE+PE reaches it'}>
-                          {shown}
+                        <span style={{ color: '#d29922', whiteSpace: 'nowrap' }}
+                          title="Combined premium now · combined-SL exit level — the whole straddle exits when CE+PE reaches it">
+                          {r.arm_text}
                         </span>
                       );
                     }
@@ -2698,14 +2477,6 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                       </span>
                     );
                   })()}
-                  <span style={{ color: r.maxLoss ? '#f85149' : 'var(--ink-faint, #6e7681)', whiteSpace: 'nowrap', fontSize: 11 }}
-                    title={!r.maxLoss ? 'Closed — no open risk'
-                      : r.maxLoss.src === 'paired' ? 'Counted once on the CE leg — this cap applies to the straddle, not the single leg'
-                      : `Worst case from here: ${r.maxLoss.src}`}>
-                    {r.maxLoss && r.maxLoss.src !== 'paired'
-                      ? '−₹' + Math.abs(Math.round(r.maxLoss.rs)).toLocaleString('en-IN')
-                      : r.maxLoss ? '↑ pair' : '—'}
-                  </span>
                   {(() => {
                     if (r.open) {
                       return (
@@ -2715,14 +2486,6 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                       );
                     }
                     const up = (r.reason || '').toUpperCase();
-                    if (up.includes('CLOSED OUTSIDE')) {
-                      return (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#8b949e', fontWeight: 700, fontSize: 10, background: 'rgba(139,148,158,0.16)', padding: '1px 7px', borderRadius: 9, whiteSpace: 'nowrap' }}
-                          title="You closed this leg yourself — the account no longer holds it. The system will reconcile at its exit time and place no order.">
-                          ✋ MANUAL
-                        </span>
-                      );
-                    }
                     const c = up.includes('SL') ? '#f85149'
                       : up.includes('ST') ? '#58a6ff'
                       : (up.includes('ROLL') || up.includes('ADJ') || up.includes('SHIFT')) ? '#d29922'
@@ -2741,6 +2504,27 @@ function TradeBook({ systems, states, liveLegs, basis }: {
             </div>
           );
         })}
+        {tb2 && new Date().getDay() === 2 && ['ARMED', 'OPEN', 'EXITING', 'DONE'].includes(tb2.status) && (
+          <div style={{ margin: '8px 0 4px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>
+              NIFTY TimeB2 <span style={{ color: 'var(--ink-muted)', fontWeight: 400 }}>· one-shot LIVE · expiry-Tue 13:15→14:30 · CSL30 · 8L (520)</span>
+            </div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 11, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, color: tb2.status === 'OPEN' ? '#3fb950' : tb2.status === 'DONE' ? '#58a6ff' : '#d29922' }}>
+                {tb2.status === 'OPEN' ? '● OPEN' : tb2.status}{tb2.reason ? ` · ${tb2.reason}` : ''}
+              </span>
+              {tb2.ce && <span style={{ fontFamily: 'monospace' }}>{tb2.ce.replace('NIFTY', '')} / {tb2.pe.replace('NIFTY', '')}</span>}
+              {tb2.credit != null && <span>credit {tb2.credit}{tb2.sl_trigger ? ` · SL ${tb2.sl_trigger}` : ''}</span>}
+              {tb2.comb != null && <span>comb now {tb2.comb}</span>}
+              {(tb2.pnl ?? tb2.open_pnl) != null && (
+                <span style={{ fontWeight: 700, color: (tb2.pnl ?? tb2.open_pnl) >= 0 ? '#3fb950' : '#ef4444' }}>
+                  {(tb2.pnl ?? tb2.open_pnl) >= 0 ? '+' : ''}₹{(tb2.pnl ?? tb2.open_pnl).toLocaleString('en-IN')}{tb2.status !== 'DONE' ? ' open' : ''}
+                </span>
+              )}
+              <span style={{ color: 'var(--ink-muted)' }}>as of {tb2.ts}</span>
+            </div>
+          </div>
+        )}
         {armedToday.length > 0 && (
           <div style={{ margin: '6px 0 4px', border: '1px dashed #30363d', borderRadius: 8, padding: '6px 10px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: 'var(--ink-muted)', marginBottom: 4 }}>
