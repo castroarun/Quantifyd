@@ -163,14 +163,14 @@ RULES = [
      "Rank all 200 by momentum (6-month + 12-month relative strength vs NIFTYBEES); hold the top 8, equal-weight."),
     ("Capital", "—",
      "₹20,00,000 · 100% invested when risk-on · equal-weight across the 8 names (~₹2.5L each)."),
-    ("Rebalance + buffer", "MONTHLY — last trading day, ~14:45 IST (early, ~45-min runway)",
+    ("Rebalance + buffer", "MONTHLY — last TRADING day of the month, ~14:45 IST. Runs the Donchian exit check FIRST, then refills the book, so a name can no longer be bought at 14:45 and stopped out at 15:05",
      "Re-rank the 200 (the heavy step, run early to leave time to catch issues). Keep a holding while it stays in the top 22; if it drops out, sell it and buy the best-ranked name not already owned."),
-    ("Macro gate", "WEEKLY — last trading day of week, ~15:15 IST (pre-close)",
+    ("Macro gate", "WEEKLY — last trading day of week, ~15:05 IST (pre-close, inside the same EOD run)",
      "If NIFTYBEES is below its 100-day SMA → liquidate ALL 8 to cash. Redeploys at the next month-end once it reclaims the 100-DMA."),
-    ("Hedge gate", "DAILY — ~15:15 IST",
+    ("Hedge gate", "DAILY — ~15:05 IST (inside the same EOD run)",
      "The put decision is checked every EOD against the NIFTYBEES 100-day SMA: buy on a breach, sell "
      "when it is reclaimed (research/108b: net Calmar 1.32 -> 1.43 vs checking only weekly)."),
-    ("Donchian stop", "DAILY — ~15:05 IST (before the 15:15-15:20 closing-auction window, when NSE rejects new orders)",
+    ("Donchian stop", "DAILY — ~15:05 IST (before the 15:15-15:20 closing-auction window, when NSE rejects new orders). On month-end it also runs at ~14:45 ahead of the rebalance, so exits always precede buys",
      "If any holding is below its own prior-15-day low → exit just that one stock to cash."),
     ("Hedge cash reserve", "continuous",
      "Never deploy the last 3% of NAV — guarantees the bi-weekly put premium can always be funded, "
@@ -1218,6 +1218,10 @@ def daily_job(panel=None):
     # price rising inside _sweep_value() — accruing a modelled yield on top would invent rupees
     # that do not exist at the broker and drift NAV upward on fictional money.
     _yield = 0.0 if _is_live() else CFG["cash_yield"]
+    # On month-end this runs twice (14:45 before the rebalance, then the standing 15:05
+    # sweep). Re-checking stops twice is a bonus; accruing a second day of interest is not.
+    if _get("last_daily") == date.today().isoformat():
+        _yield = 0.0
     if _cash() > 0 and _yield > 0:
         new_cash = _cash() * (1 + _yield) ** (1 / 252)
         _set("interest_earned", round(_get("interest_earned", 0.0) + (new_cash - _cash()), 2))
@@ -1362,6 +1366,25 @@ def _rebalance_live_delta(target, per, live, close, asof, d):
                 continue
             _sell(s, px, d, "REBALANCE")
     new_names = [s for s in target if s not in _positions() and live.get(s)]
+    # Belt to the reordering above: skip anything already trading below its 15-day Donchian
+    # low. Buying it just hands it back to the stop, paying costs both ways to reach the
+    # same empty slot. Leaving the slot empty is the identical outcome without the trip.
+    if close is not None and asof is not None:
+        blocked = []
+        for s in list(new_names):
+            try:
+                low = _donchian_low(close, s, asof)
+            except Exception:
+                low = None
+            if low is not None and live[s] < low:
+                blocked.append("%s (%.1f below 15d-low %.1f)" % (s, live[s], low))
+                new_names.remove(s)
+        if blocked:
+            logger.warning("[MP] rebalance skipped %d buy(s) already below stop: %s",
+                           len(blocked), "; ".join(blocked))
+            _alert("REBALANCE SKIPPED A BUY",
+                   "Already below their 15-day Donchian low, so NOT bought (the stop would "
+                   "have sold them the same day): " + "; ".join(blocked), "normal")
     if not new_names:
         return
     budget_each = _deployable_cash() / len(new_names)   # keeps the hedge reserve intact
@@ -1785,7 +1808,14 @@ def rebalance_job():
     if not _get("seeded") or not _is_last_trading_day():
         return
     refresh_universe(full=True)
-    monthly_job(_panel())
+    panel = _panel()
+    # EXITS FIRST, THEN REFILL (Arun, 2026-08-26). The rebalance used to run at 14:45 and the
+    # Donchian stop at 15:05, so a name could be bought or kept at 14:45 and sold twenty
+    # minutes later. That is not just a wasted round trip: research/108 keeps stop-out cash
+    # idle until the NEXT month-end, so the slot then sits dead for a month. Running the stop
+    # first means the book is already clean when we choose what to buy.
+    daily_job(panel)
+    monthly_job(panel)
 
 
 def eod_job():
@@ -1810,8 +1840,26 @@ def _is_last_trading_day_of_week():
 
 
 def _is_last_trading_day():
+    """Last TRADING day of the month - holidays included, not just weekends.
+
+    The old version skipped only Sat/Sun. In any month whose final weekday is an NSE
+    holiday it would fire on that holiday - nothing fills, orders are refused - and the
+    month's rebalance would be missed outright. Verified 0 such months Aug-Dec 2026, but
+    it sits one holiday away from costing a whole rebalance."""
     today = date.today()
+    try:
+        from services.trading_calendar import get_default_calendar
+        cal = get_default_calendar()
+        if not cal.is_trading_day(today):
+            return False
+        nxt = today + timedelta(days=1)
+        for _ in range(20):
+            if cal.is_trading_day(nxt):
+                return nxt.month != today.month
+            nxt += timedelta(days=1)
+    except Exception as e:
+        logger.error("[MP] trading-calendar lookup failed, using weekday rule: %s", e)
     nxt = today + timedelta(days=1)
-    while nxt.weekday() >= 5:                      # skip weekend
+    while nxt.weekday() >= 5:
         nxt += timedelta(days=1)
     return nxt.month != today.month
