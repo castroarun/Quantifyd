@@ -780,7 +780,7 @@ export default function Overview() {
       {/* -------------------------------------------------- desk band */}
       {desk && (
         <section className={styles.desk}>
-          <div className={`${styles.deskCard} ${desk.exposure.naked_count ? styles.deskWarn : ''}`}>
+          <div className={`${styles.deskItem} ${desk.exposure.naked_count ? styles.deskWarn : ''}`}>
             <div className={styles.deskK}>Exposed now</div>
             <div className={styles.deskV}>
               {desk.exposure.short_option_legs}
@@ -797,7 +797,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className={`${styles.deskCard} ${desk.recon.alerts ? styles.deskBad : ''}`}>
+          <div className={`${styles.deskItem} ${desk.recon.alerts ? styles.deskBad : ''}`}>
             <div className={styles.deskK}>Broker vs app</div>
             <div className={styles.deskV}>
               {desk.recon.clean ? 'match' : `${desk.recon.alerts} off`}
@@ -808,7 +808,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className={styles.deskCard}>
+          <div className={styles.deskItem}>
             <div className={styles.deskK}>Trading today</div>
             <div className={styles.deskV}>
               {desk.gates.nas_matrix.live.length}
@@ -821,7 +821,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className={`${styles.deskCard} ${desk.ops.overdue.length ? styles.deskWarn : ''}`}>
+          <div className={`${styles.deskItem} ${desk.ops.overdue.length ? styles.deskWarn : ''}`}>
             <div className={styles.deskK}>Review queue</div>
             <div className={styles.deskV}>
               {desk.ops.overdue.length}
@@ -833,7 +833,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className={`${styles.deskCard} ${desk.health.summary?.fail ? styles.deskBad : ''}`}>
+          <div className={`${styles.deskItem} ${desk.health.summary?.fail ? styles.deskBad : ''}`}>
             <div className={styles.deskK}>Plumbing</div>
             <div className={styles.deskV}>
               {desk.health.summary
@@ -886,7 +886,7 @@ export default function Overview() {
             { k: 'Worst day', v: inr(m.worst), c: styles.neg, s: 'single session' },
           ];
           return cards.map((card) => (
-            <div key={card.k} className={`${styles.mCard} ${card.hero ? styles.mHero : ''}`}>
+            <div key={card.k} className={`${styles.mItem} ${card.hero ? styles.mLead : ''}`}>
               <div className={styles.mK}>{card.k}</div>
               <div className={`${styles.mV} ${card.c}`}>{loading ? '·' : card.v}</div>
               <div className={styles.mS}>{card.s}</div>

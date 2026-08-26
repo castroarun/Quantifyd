@@ -80,7 +80,7 @@ export default function Heatmaps() {
     // ONE size for both axes, so a cell is a square rather than whatever
     // rectangle the column width happened to produce.
     const cell = tab === 'books'
-      ? Math.max(4, Math.min(20, Math.floor(avail / cols)))
+      ? Math.max(6, Math.min(26, Math.floor(avail / cols)))
       : Math.max(3, Math.min(9, Math.floor(avail / cols)));
     return { rows, cols, cell, rh: cell, padL, h: rows * cell + 26 };
   }, [feed, tab, wide]);
