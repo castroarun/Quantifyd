@@ -756,7 +756,7 @@ export default function Overview() {
       {/* ------------------------------------------------------ header */}
       <header className={styles.head}>
         <div className={styles.headL}>
-          <h1 className={styles.title}>Overview</h1>
+          <h1 className={styles.title}>The Desk</h1>
           <span className={styles.kicker}>
             Systematic derivatives &amp; equities · net of costs
           </span>

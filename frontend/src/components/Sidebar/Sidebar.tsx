@@ -135,7 +135,7 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
           <NavItem
             to="/overview"
             icon={<IconGrid />}
-            label="Overview"
+            label="Desk"
             active={active === 'overview'}
             collapsed={collapsed}
           />

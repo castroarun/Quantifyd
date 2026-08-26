@@ -66,8 +66,8 @@ export default function Heatmaps() {
     if (!feed) return null;
     const rows = tab === 'books' ? feed.books.rows.length : feed.stocks.rows.length;
     const cols = tab === 'books' ? feed.books.dates.length : feed.stocks.dates.length;
-    const rh = tab === 'books' ? 15 : 3.2;
-    const padL = tab === 'books' ? 108 : 78;
+    const rh = tab === 'books' ? 18 : 4.2;
+    const padL = tab === 'books' ? 132 : 96;
     return { rows, cols, rh, padL, h: Math.ceil(rows * rh) + 20 };
   }, [feed, tab]);
 
@@ -89,28 +89,45 @@ export default function Heatmaps() {
       feed.books.rows.forEach((r, i) => {
         const y = 16 + i * geom.rh;
         ctx.fillStyle = '#1B1B1A';
-        ctx.font = `500 10px ${font}`;
-        ctx.fillText(r.label.slice(0, 16), 2, y + geom.rh - 4);
+        ctx.font = `500 10.5px ${font}`;
+        let lab = r.label;
+        while (lab.length > 4 && ctx.measureText(lab).width > geom.padL - 12) {
+          lab = lab.slice(0, -1);
+        }
+        if (lab !== r.label) lab = lab.slice(0, -1) + '…';
+        ctx.fillText(lab, 2, y + geom.rh / 2 + 3);
         r.v.forEach((v, j) => {
           ctx.fillStyle = colour(v, clamp);
           ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 0.6), geom.rh - 2);
         });
       });
     } else {
-      let last = '';
+      // block extents first, so a label can sit in the middle of its sector
+      const blocks: Array<{ sec: string; from: number; to: number }> = [];
+      feed.stocks.rows.forEach((r, i) => {
+        const b = blocks[blocks.length - 1];
+        if (b && b.sec === r.sec) b.to = i;
+        else blocks.push({ sec: r.sec, from: i, to: i });
+      });
+      ctx.font = `9.5px ${font}`;
+      for (const b of blocks) {
+        const yTop = 16 + b.from * geom.rh;
+        const yBot = 16 + (b.to + 1) * geom.rh;
+        ctx.strokeStyle = 'rgba(0,0,0,.10)';
+        ctx.beginPath();
+        ctx.moveTo(geom.padL, yTop - 1);
+        ctx.lineTo(w - 8, yTop - 1);
+        ctx.stroke();
+        if (yBot - yTop >= 13) {                    // only if it fits
+          ctx.fillStyle = '#5F5E5A';
+          let lab = b.sec;
+          while (lab.length > 3 && ctx.measureText(lab).width > geom.padL - 12) lab = lab.slice(0, -1);
+          if (lab !== b.sec) lab = lab.slice(0, -1) + '…';
+          ctx.fillText(lab, 2, (yTop + yBot) / 2 + 3);
+        }
+      }
       feed.stocks.rows.forEach((r, i) => {
         const y = 16 + i * geom.rh;
-        if (r.sec !== last) {
-          last = r.sec;
-          ctx.fillStyle = '#888780';
-          ctx.font = `9px ${font}`;
-          ctx.fillText(r.sec.slice(0, 13), 2, y + 4);
-          ctx.strokeStyle = 'rgba(0,0,0,.10)';
-          ctx.beginPath();
-          ctx.moveTo(geom.padL, y - 1);
-          ctx.lineTo(w - 8, y - 1);
-          ctx.stroke();
-        }
         r.v.forEach((v, j) => {
           ctx.fillStyle = colour(v, clamp);
           ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 0.4), Math.max(1.6, geom.rh - 0.8));
@@ -122,7 +139,7 @@ export default function Heatmaps() {
     const dates = tab === 'books' ? feed.books.dates : feed.stocks.dates;
     ctx.fillStyle = '#B4B2A9';
     ctx.font = `9px ${font}`;
-    const step = Math.max(1, Math.floor(dates.length / 8));
+    const step = Math.max(1, Math.ceil(dates.length / Math.max(4, Math.floor((w - geom.padL) / 74))));
     dates.forEach((d, j) => {
       if (j % step === 0) ctx.fillText(d.slice(5), geom.padL + j * cw, 10);
     });
