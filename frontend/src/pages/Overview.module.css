@@ -71,16 +71,25 @@
 /* ---------------------------------------------------------------- tape */
 
 .tape {
+  /* Capped, not stretched: on an ultrawide, 1fr columns made each metric a
+     420px-wide letterbox with the text pinned to its left edge. */
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  border-bottom: 1px solid var(--hairline);
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(164px, 208px));
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .tapeCell {
-  padding: 13px 14px 12px;
-  border-right: 1px solid var(--hairline-softest);
+  padding: 15px 17px 14px;
+  border: 1px solid var(--hairline-soft);
+  border-radius: 8px;
+  background: var(--surface);
   min-width: 0;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .tapeCell:first-child { padding-left: 0; }
 .tapeCell:last-child { border-right: none; }
@@ -98,7 +107,7 @@
 
 .tapeV {
   font-family: var(--mono);
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -106,7 +115,7 @@
   margin-bottom: 4px;
 }
 
-.tapeS { font-size: 9.5px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tapeS { font-size: 10px; margin-top: 2px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* --------------------------------------------------------------- panel */
 
@@ -639,7 +648,8 @@
    overdue. Reads before the equity curve, because at 11:00 it matters more. */
 .desk {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 268px));
+  justify-content: space-between;
   gap: 10px;
   margin: 14px 0 0;
 }
@@ -649,7 +659,11 @@
   border: 1px solid var(--hairline);
   border-left: 2px solid var(--brand-navy);
   border-radius: 8px;
-  padding: 11px 13px 12px;
+  padding: 14px 17px 15px;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .deskWarn { border-left-color: var(--status-warning); }
