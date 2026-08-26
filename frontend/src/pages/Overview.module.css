@@ -1,10 +1,53 @@
 /* Overview — desk view. Dense, monospace numerals, hairline rules. */
 
 .page {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 20px 24px 48px;
+  /* Full-bleed dark desk: cancel AppLayout's 36px/48px content padding so the
+     ground runs to the edges the way a terminal does. */
+  max-width: none;
+  margin: -36px -48px -56px;
+  padding: 22px 26px 44px;
+  min-height: calc(100vh - 56px);
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ---- reference palette (measured, not guessed) ---- */
+  --ov-ground: #0E1114;
+  --ov-panel: #171C22;
+  --ov-panel-2: #1E252E;
+
+  /* Redefining the app tokens here re-skins every rule below, plus any shared
+     component rendered inside this page. Nothing outside .page is affected. */
+  --canvas: #0E1114;
+  --surface: #171C22;
+  --ink: #E6EDF3;
+  --ink-secondary: #B7C2CD;
+  --ink-subtle: #9AA7B4;
+  --ink-muted: #8A97A4;
+  --ink-faint: #66727E;
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-soft: rgba(255, 255, 255, 0.06);
+  --hairline-softest: rgba(255, 255, 255, 0.045);
+  --accent-pos: #6FA88C;          /* sage-teal, from #638775 */
+  --accent-neg: #C97B6E;          /* muted brick, from #66504C */
+  --brand-navy: #5B87B3;          /* slate-blue, hue 207 */
+  --brand-navy-soft: #1B2735;
+  --brand-amber: #C9A227;
+  --chip-bg: #1C232B;
+  --chip-ink: #B7C2CD;
+  --status-connected: #6FA88C;
+  --status-warning: #C9A227;
+  --status-disconnected: #66727E;
+  --nav-hover-bg: rgba(255, 255, 255, 0.04);
+
+  background: var(--ov-ground);
+  color: var(--ink);
+}
+
+@media (max-width: 1100px) { .page { margin: -24px -20px -40px; } }
+@media (max-width: 720px) { .page { margin: -20px -14px -32px; } }
+
+/* Panels lift off the ground rather than being outlined on white. */
+.page :is(section, .panel) {
+  background: var(--ov-panel);
 }
 
 /* -------------------------------------------------------------- header */
@@ -361,3 +404,329 @@
   .tapeV { font-size: 16px; }
   .calVal { font-size: 8px; }
 }
+
+/* ============================================================ DIGITAL LAYER
+   Ticker, clock, heartbeat, distribution + graph-paper texture.
+   ========================================================================= */
+
+/* ------------------------------------------------------------- ticker */
+
+.ticker {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+.tickerTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-muted);
+  padding: 9px 14px 9px 0;
+  border-right: 1px solid var(--hairline-softest);
+  flex: none;
+}
+
+.blip {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--status-connected);
+  animation: blip 2.2s ease-in-out infinite;
+}
+
+@keyframes blip {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(29,158,117,0.5); }
+  50%      { opacity: 0.55; box-shadow: 0 0 0 4px rgba(29,158,117,0); }
+}
+
+.tickerRail {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+  min-width: 0;
+}
+.tickerRail::-webkit-scrollbar { display: none; }
+
+.tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-right: 1px solid var(--hairline-softest);
+  white-space: nowrap;
+  flex: none;
+}
+
+.tickName {
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+
+.tickLast {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tickSpark { opacity: 0.75; }
+
+.tickChg {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------- clock */
+
+.clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+}
+
+.mktDot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-faint);
+  flex: none;
+}
+.mktOpen { background: var(--status-connected); animation: blip 2.2s ease-in-out infinite; }
+.mktPre  { background: var(--status-warning); }
+
+.mktState {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+}
+
+.clockTime {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.clockSec { color: var(--ink-faint); font-weight: 500; }
+.clockTz { font-size: 9px; color: var(--ink-faint); letter-spacing: 0.08em; }
+
+/* -------------------------------------------- graph-paper chart texture */
+
+.chart {
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.028) 1px, transparent 1px);
+  background-size: 44px 32px;
+  background-position: 0 0;
+  border-radius: 5px;
+  padding-top: 2px;
+}
+
+/* ---------------------------------------------------------- heartbeat */
+
+.hbWrap {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--hairline-softest);
+}
+
+.hbHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.hbLabel {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-muted);
+}
+
+.hbMeta {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+}
+
+.hb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 58px;
+}
+
+.hbCol {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: background 0.12s ease;
+}
+.hbCol:hover { background: rgba(30,58,138,0.07); }
+
+.hbUp, .hbDown {
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.hbDown { align-items: flex-start; }
+
+.hbMid { height: 1px; background: var(--hairline); flex: none; }
+
+.hbBarPos, .hbBarNeg {
+  width: 100%;
+  max-width: 7px;
+  border-radius: 1.5px;
+  display: block;
+}
+.hbBarPos { background: var(--accent-pos); opacity: 0.82; }
+.hbBarNeg { background: var(--accent-neg); opacity: 0.82; }
+
+/* ------------------------------------------------------- distribution */
+
+.distHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 16px 0 8px;
+  padding-top: 13px;
+  border-top: 1px solid var(--hairline-softest);
+}
+
+.distTitle {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-muted);
+}
+
+.distMeta { font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint); }
+
+.dist { width: 100%; }
+
+.distBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 62px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.distBar {
+  flex: 1 1 0;
+  border-radius: 1.5px 1.5px 0 0;
+  min-width: 0;
+  display: block;
+  transition: opacity 0.12s ease;
+}
+.distBar:hover { opacity: 1; }
+.distPos { background: var(--accent-pos); opacity: 0.62; }
+.distNeg { background: var(--accent-neg); opacity: 0.62; }
+
+.distAxis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  margin-top: 5px;
+}
+.distZero { color: var(--ink-muted); }
+
+/* -------------------------------------------------- responsive tweaks */
+
+@media (max-width: 720px) {
+  .tickerTag { padding-right: 10px; }
+  .tick { padding: 8px 11px; gap: 5px; }
+  .hb { height: 46px; }
+}
+
+
+/* ---------------------------------------------------------- desk band */
+/* Risk first: what is exposed, whether the app matches the broker, what is
+   overdue. Reads before the equity curve, because at 11:00 it matters more. */
+.desk {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.deskCard {
+  background: var(--ov-panel);
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--brand-navy);
+  border-radius: 8px;
+  padding: 11px 13px 12px;
+}
+
+.deskWarn { border-left-color: var(--status-warning); }
+.deskBad { border-left-color: var(--accent-neg); }
+
+.deskK {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.deskV {
+  font-family: var(--mono);
+  font-size: 22px;
+  line-height: 1.25;
+  margin-top: 3px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.deskUnit {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-left: 4px;
+}
+
+.deskFaint { font-size: 12px; color: var(--ink-faint); margin-left: 2px; }
+
+.deskS {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.nakedStrip {
+  margin-top: 10px;
+  padding: 9px 13px;
+  border-radius: 8px;
+  background: rgba(201, 123, 110, 0.10);
+  border: 1px solid rgba(201, 123, 110, 0.32);
+  color: #E9C4BC;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.nakedStrip b { color: #F0D2CB; font-weight: 600; }

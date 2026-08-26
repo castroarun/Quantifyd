@@ -34,6 +34,33 @@ interface BookLiveness {
   series: Array<{ d: string; c: number }>;
 }
 
+interface IndexTick {
+  symbol: string;
+  label: string;
+  last: number;
+  chg_pct: number;
+  spark: number[];
+  group: string;
+}
+
+interface DeskFeed {
+  exposure: {
+    option_legs: number; cash_legs: number; short_option_legs: number;
+    naked: string[]; naked_count: number; open_pnl: number;
+    age_mins: number | null;
+    legs: Array<{ symbol: string; qty: number; avg: number; ltp: number; pnl: number }>;
+  };
+  recon: { alerts: number; warns: number; clean: boolean; age_mins: number | null;
+           items: Array<{ level: string; kind: string; symbol: string; detail: string }> };
+  gates: { nas_master_mode: string | null; freeze_flag: boolean;
+           nas_matrix: { live: string[]; paper: string[] } };
+  ops: { overdue: Array<{ title: string; due: string; in_days: number }>;
+         due_soon: Array<{ title: string; due: string; in_days: number }>; tracked: number };
+  health: { summary: { ok: number; warn: number; fail: number } | null;
+            token_file_age_mins: number | null;
+            token_chain: Record<string, { last: string | null; today: boolean }> };
+}
+
 interface JournalDay {
   trade_date: string;
   pnl_net: number;
@@ -94,6 +121,186 @@ const tone = (v: number | null | undefined) =>
 
 const shortDate = (iso: string) =>
   new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
+// ------------------------------------------------------------- ticker
+
+/** Market ticker — indices with last, change and a micro sparkline. */
+function Ticker() {
+
+  const [ticks, setTicks] = useState<IndexTick[]>([]);
+
+  useEffect(() => {
+    let dead = false;
+    const pull = () =>
+      apiGet<{ indices: IndexTick[] }>(`/api/index-pulse/strip?t=${Date.now()}`)
+        .then((d) => {
+          if (!dead) setTicks((d?.indices ?? []).filter((i) => i.group === 'broad').slice(0, 6));
+        })
+        .catch(() => undefined);
+    pull();
+    const id = setInterval(pull, 60000);
+    return () => {
+      dead = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  if (!ticks.length) return null;
+
+  return (
+    <div className={styles.ticker}>
+      <span className={styles.tickerTag}>
+        <span className={styles.blip} />
+        NSE
+      </span>
+      <div className={styles.tickerRail}>
+        {ticks.map((t) => {
+          const up = t.chg_pct >= 0;
+          const vals = t.spark || [];
+          const lo = Math.min(...vals);
+          const hi = Math.max(...vals);
+          const sp = hi - lo || 1;
+          const pts = vals
+            .map((v, i) => `${((i / Math.max(1, vals.length - 1)) * 40).toFixed(1)},${(14 - ((v - lo) / sp) * 14).toFixed(1)}`)
+            .join(' ');
+          return (
+            <div key={t.symbol} className={styles.tick}>
+              <span className={styles.tickName}>{t.label}</span>
+              <span className={styles.tickLast}>
+                {t.last.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              </span>
+              {vals.length > 1 && (
+                <svg width="40" height="14" viewBox="0 0 40 14" className={styles.tickSpark}>
+                  <polyline points={pts} className={up ? styles.linePos : styles.lineNeg} />
+                </svg>
+              )}
+              <span className={`${styles.tickChg} ${up ? styles.pos : styles.neg}`}>
+                {up ? '\u25B2' : '\u25BC'} {Math.abs(t.chg_pct).toFixed(2)}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------- clock
+
+/** IST clock + NSE session state. Ticks every second. */
+function Clock() {
+  const [t, setT] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setT(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const ist = new Date(t.getTime() + (t.getTimezoneOffset() + 330) * 60000);
+  const hh = ist.getHours();
+  const mm = ist.getMinutes();
+  const mins = hh * 60 + mm;
+  const weekday = ist.getDay() >= 1 && ist.getDay() <= 5;
+  const open = weekday && mins >= 555 && mins <= 930; // 09:15 - 15:30
+  const pre = weekday && mins >= 540 && mins < 555;
+
+  const state = open ? 'OPEN' : pre ? 'PRE-OPEN' : 'CLOSED';
+
+  return (
+    <span className={styles.clock}>
+      <span className={`${styles.mktDot} ${open ? styles.mktOpen : pre ? styles.mktPre : ''}`} />
+      <span className={styles.mktState}>{state}</span>
+      <span className={styles.clockTime}>
+        {String(hh).padStart(2, '0')}:{String(mm).padStart(2, '0')}
+        <span className={styles.clockSec}>:{String(ist.getSeconds()).padStart(2, '0')}</span>
+      </span>
+      <span className={styles.clockTz}>IST</span>
+    </span>
+  );
+}
+
+// ----------------------------------------------------------- heartbeat
+
+/** Session heartbeat — one bar per trading day, height and colour by net P&L. */
+function Heartbeat({ days }: { days: JournalDay[] }) {
+  const recent = days.slice(-70);
+  if (!recent.length) return null;
+  const peak = recent.reduce((p, d) => Math.max(p, Math.abs(d.pnl_net || 0)), 0) || 1;
+  return (
+    <div className={styles.hbWrap}>
+      <div className={styles.hbHead}>
+        <span className={styles.hbLabel}>Session heartbeat</span>
+        <span className={styles.hbMeta}>last {recent.length} sessions</span>
+      </div>
+      <div className={styles.hb}>
+        {recent.map((d) => {
+          const v = d.pnl_net || 0;
+          const h = Math.max(3, (Math.abs(v) / peak) * 26);
+          return (
+            <Link
+              key={d.trade_date}
+              to={`/journal/day/${d.trade_date}`}
+              className={styles.hbCol}
+              title={`${d.trade_date} · ${inr(v)} · ${d.trades} trades`}
+            >
+              <span className={styles.hbUp}>
+                {v > 0 && <span className={styles.hbBarPos} style={{ height: `${h}px` }} />}
+              </span>
+              <span className={styles.hbMid} />
+              <span className={styles.hbDown}>
+                {v < 0 && <span className={styles.hbBarNeg} style={{ height: `${h}px` }} />}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------- distribution
+
+/** Daily P&L distribution — the shape of the edge, not just its size. */
+function Distribution({ days }: { days: JournalDay[] }) {
+  const bins = useMemo(() => {
+    const vals = days.map((d) => d.pnl_net || 0);
+    if (vals.length < 3) return null;
+    const lo = Math.min(...vals);
+    const hi = Math.max(...vals);
+    const N = 17;
+    const w = (hi - lo) / N || 1;
+    const out = Array.from({ length: N }, (_, i) => ({ lo: lo + i * w, hi: lo + (i + 1) * w, n: 0 }));
+    vals.forEach((v) => {
+      const i = Math.min(N - 1, Math.max(0, Math.floor((v - lo) / w)));
+      out[i].n += 1;
+    });
+    return { out, max: Math.max(...out.map((b) => b.n)) || 1, lo, hi };
+  }, [days]);
+
+  if (!bins) return null;
+
+  return (
+    <div className={styles.dist}>
+      <div className={styles.distBars}>
+        {bins.out.map((b, i) => {
+          const mid = (b.lo + b.hi) / 2;
+          return (
+            <span
+              key={i}
+              className={`${styles.distBar} ${mid >= 0 ? styles.distPos : styles.distNeg}`}
+              style={{ height: `${Math.max(2, (b.n / bins.max) * 100)}%` }}
+              title={`${inr(b.lo)} to ${inr(b.hi)} — ${b.n} session${b.n === 1 ? '' : 's'}`}
+            />
+          );
+        })}
+      </div>
+      <div className={styles.distAxis}>
+        <span>{inr(bins.lo)}</span>
+        <span className={styles.distZero}>0</span>
+        <span>{inr(bins.hi)}</span>
+      </div>
+    </div>
+  );
+}
 
 // --------------------------------------------------------- equity chart
 
@@ -268,6 +475,17 @@ function Calendar({ year, monthIdx, days }: { year: number; monthIdx: number; da
 // ------------------------------------------------------------------ page
 
 export default function Overview() {
+  const [desk, setDesk] = useState<DeskFeed | null>(null);
+  useEffect(() => {
+    let off = false;
+    const load = () =>
+      apiGet<DeskFeed>(`/api/overview/desk?t=${Date.now()}`)
+        .then((d) => { if (!off) setDesk(d); })
+        .catch(() => undefined);          // absent until the next restart
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { off = true; clearInterval(id); };
+  }, []);
   const [books, setBooks] = useState<Record<string, BookLiveness>>({});
   const [allDays, setAllDays] = useState<JournalDay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -378,11 +596,101 @@ export default function Overview() {
             {liveCount} live
           </span>
           <span className={styles.sep} />
+          <Clock />
+          <span className={styles.sep} />
           <span className={styles.stamp}>
             {now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
           </span>
         </div>
       </header>
+
+      <Ticker />
+
+      {/* -------------------------------------------------- desk band */}
+      {desk && (
+        <section className={styles.desk}>
+          <div className={`${styles.deskCard} ${desk.exposure.naked_count ? styles.deskWarn : ''}`}>
+            <div className={styles.deskK}>Exposed now</div>
+            <div className={styles.deskV}>
+              {desk.exposure.short_option_legs}
+              <span className={styles.deskUnit}> short legs</span>
+            </div>
+            <div className={styles.deskS}>
+              {desk.exposure.naked_count > 0
+                ? `${desk.exposure.naked_count} with NO exchange stop`
+                : 'all protected at the exchange'}
+              {' · open '}
+              <span className={desk.exposure.open_pnl >= 0 ? styles.pos : styles.neg}>
+                {inr(desk.exposure.open_pnl)}
+              </span>
+            </div>
+          </div>
+
+          <div className={`${styles.deskCard} ${desk.recon.alerts ? styles.deskBad : ''}`}>
+            <div className={styles.deskK}>Broker vs app</div>
+            <div className={styles.deskV}>
+              {desk.recon.clean ? 'match' : `${desk.recon.alerts} off`}
+            </div>
+            <div className={styles.deskS}>
+              {desk.recon.warns} warning{desk.recon.warns === 1 ? '' : 's'}
+              {desk.recon.age_mins != null ? ` · checked ${desk.recon.age_mins}m ago` : ''}
+            </div>
+          </div>
+
+          <div className={styles.deskCard}>
+            <div className={styles.deskK}>Trading today</div>
+            <div className={styles.deskV}>
+              {desk.gates.nas_matrix.live.length}
+              <span className={styles.deskUnit}> live</span>
+              <span className={styles.deskFaint}> / {desk.gates.nas_matrix.paper.length} paper</span>
+            </div>
+            <div className={styles.deskS}>
+              master {desk.gates.nas_master_mode ?? '—'}
+              {desk.gates.freeze_flag ? ' · FREEZE ON' : ''}
+            </div>
+          </div>
+
+          <div className={`${styles.deskCard} ${desk.ops.overdue.length ? styles.deskWarn : ''}`}>
+            <div className={styles.deskK}>Review queue</div>
+            <div className={styles.deskV}>
+              {desk.ops.overdue.length}
+              <span className={styles.deskUnit}> overdue</span>
+            </div>
+            <div className={styles.deskS}>
+              {desk.ops.overdue[0]?.title.slice(0, 44)
+                ?? `${desk.ops.due_soon.length} due this week · ${desk.ops.tracked} tracked`}
+            </div>
+          </div>
+
+          <div className={`${styles.deskCard} ${desk.health.summary?.fail ? styles.deskBad : ''}`}>
+            <div className={styles.deskK}>Plumbing</div>
+            <div className={styles.deskV}>
+              {desk.health.summary
+                ? `${desk.health.summary.ok}/${desk.health.summary.ok + desk.health.summary.warn + desk.health.summary.fail}`
+                : '—'}
+              <span className={styles.deskUnit}> ok</span>
+            </div>
+            <div className={styles.deskS}>
+              token {desk.health.token_file_age_mins != null ? `${desk.health.token_file_age_mins}m old` : '—'}
+              {' · '}
+              {Object.values(desk.health.token_chain).every((c) => c.today)
+                ? 'morning chain ran'
+                : 'CHAIN MISSED'}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {desk && desk.exposure.naked_count > 0 && (
+        <div className={styles.nakedStrip}>
+          <b>{desk.exposure.naked_count} short option{desk.exposure.naked_count === 1 ? '' : 's'} with no stop resting at the exchange</b>
+          {' — '}
+          {desk.exposure.naked.slice(0, 6).join(', ')}
+          {desk.exposure.naked.length > 6 ? ` +${desk.exposure.naked.length - 6}` : ''}
+          {'. Software-side stops only: if the process stops, nothing protects these.'}
+        </div>
+      )}
+
 
       {/* -------------------------------------------------------- tape */}
       <section className={styles.tape}>
@@ -421,6 +729,7 @@ export default function Overview() {
           </div>
         </div>
         {loading ? <div className={styles.chartEmpty}>Loading…</div> : <EquityChart days={days} />}
+        {!loading && <Heartbeat days={days} />}
       </section>
 
       {/* --------------------------------------------- systems + journal */}
@@ -493,6 +802,12 @@ export default function Overview() {
             </Link>
           </div>
           <Calendar year={now.getFullYear()} monthIdx={now.getMonth()} days={monthDays} />
+          <div className={styles.distHead}>
+            <span className={styles.distTitle}>Daily P&amp;L distribution</span>
+            <span className={styles.distMeta}>{days.length} sessions</span>
+          </div>
+          <Distribution days={days} />
+
           <div className={styles.calFoot}>
             <span className={styles.legLoss} />
             loss

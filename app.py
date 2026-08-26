@@ -763,6 +763,15 @@ try:
 except Exception as _liveness_err:
     logger.warning('[liveness] blueprint failed to register: %s', _liveness_err)
 
+# Desk feed for /app/overview — read-only aggregation of what the jobs already
+# write (recon, watchdog, ops centre, day matrix). No engine imports, no writes.
+try:
+    from services.overview_desk import overview_bp
+    app.register_blueprint(overview_bp)
+    logger.info('[desk] blueprint registered at /api/overview/desk')
+except Exception as _desk_err:
+    logger.warning('[desk] blueprint failed to register: %s', _desk_err)
+
 # ---- Journal auto-sync: project live NAS trades into the journal daily ----
 def _journal_nas_sync_job():
     """NAS books only (user scope, 2026-08-16). Idempotent upserts keyed on
