@@ -44,7 +44,7 @@
 
 .canvas { display: block; width: 100%; cursor: crosshair; }
 
-.scroll { max-height: 268px; overflow-y: auto; }
+.scroll { max-height: 460px; overflow-y: auto; }
 
 .tip {
   position: fixed;

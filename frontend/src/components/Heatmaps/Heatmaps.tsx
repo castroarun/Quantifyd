@@ -45,6 +45,12 @@ export default function Heatmaps() {
   const cv = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    // Canvas takes a snapshot of whatever font is resolved at draw time.
+    const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+    fonts?.ready.then(() => setWide((w) => w + 0.01));
+  }, []);
+
+  useEffect(() => {
     const el = cv.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(([e]) => setWide(Math.round(e.contentRect.width)));
@@ -80,8 +86,8 @@ export default function Heatmaps() {
     // ONE size for both axes, so a cell is a square rather than whatever
     // rectangle the column width happened to produce.
     const cell = tab === 'books'
-      ? Math.max(6, Math.min(26, Math.floor(avail / cols)))
-      : Math.max(3, Math.min(9, Math.floor(avail / cols)));
+      ? Math.max(8, Math.min(38, Math.floor(avail / cols)))
+      : Math.max(4, Math.min(16, Math.floor(avail / cols)));
     return { rows, cols, cell, rh: cell, padL, h: rows * cell + 26 };
   }, [feed, tab, wide]);
 
@@ -97,7 +103,8 @@ export default function Heatmaps() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, geom.h);
     const cw = geom.cell;
-    const font = getComputedStyle(document.body).fontFamily;
+    const font = getComputedStyle(document.documentElement)
+      .getPropertyValue('--font-family').trim() || getComputedStyle(document.body).fontFamily;
 
     if (tab === 'books') {
       feed.books.rows.forEach((r, i) => {
