@@ -75,10 +75,15 @@ export default function Heatmaps() {
     if (!feed) return null;
     const rows = tab === 'books' ? feed.books.rows.length : feed.stocks.rows.length;
     const cols = tab === 'books' ? feed.books.dates.length : feed.stocks.dates.length;
-    const rh = tab === 'books' ? 18 : 4.2;
-    const padL = tab === 'books' ? 132 : 96;
-    return { rows, cols, rh, padL, h: Math.ceil(rows * rh) + 20 };
-  }, [feed, tab]);
+    const padL = tab === 'books' ? 116 : 84;
+    const avail = Math.max(120, (wide || 900) - padL - 10);
+    // ONE size for both axes, so a cell is a square rather than whatever
+    // rectangle the column width happened to produce.
+    const cell = tab === 'books'
+      ? Math.max(4, Math.min(20, Math.floor(avail / cols)))
+      : Math.max(3, Math.min(9, Math.floor(avail / cols)));
+    return { rows, cols, cell, rh: cell, padL, h: rows * cell + 26 };
+  }, [feed, tab, wide]);
 
   useEffect(() => {
     if (!feed || !geom || !cv.current) return;
@@ -91,14 +96,14 @@ export default function Heatmaps() {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, geom.h);
-    const cw = (w - geom.padL - 8) / geom.cols;
+    const cw = geom.cell;
     const font = getComputedStyle(document.body).fontFamily;
 
     if (tab === 'books') {
       feed.books.rows.forEach((r, i) => {
         const y = 16 + i * geom.rh;
         ctx.fillStyle = '#1B1B1A';
-        ctx.font = `500 10.5px ${font}`;
+        ctx.font = `500 10px ${font}`;
         let lab = r.label;
         while (lab.length > 4 && ctx.measureText(lab).width > geom.padL - 12) {
           lab = lab.slice(0, -1);
@@ -107,7 +112,7 @@ export default function Heatmaps() {
         ctx.fillText(lab, 2, y + geom.rh / 2 + 3);
         r.v.forEach((v, j) => {
           ctx.fillStyle = colour(v, clamp);
-          ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 0.6), geom.rh - 2);
+          ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 1.2), Math.max(1, geom.rh - 1.2));
         });
       });
     } else {
@@ -125,7 +130,7 @@ export default function Heatmaps() {
         ctx.strokeStyle = 'rgba(0,0,0,.10)';
         ctx.beginPath();
         ctx.moveTo(geom.padL, yTop - 1);
-        ctx.lineTo(w - 8, yTop - 1);
+        ctx.lineTo(geom.padL + geom.cols * geom.cell, yTop - 1);
         ctx.stroke();
         if (yBot - yTop >= 13) {                    // only if it fits
           ctx.fillStyle = '#5F5E5A';
@@ -139,7 +144,7 @@ export default function Heatmaps() {
         const y = 16 + i * geom.rh;
         r.v.forEach((v, j) => {
           ctx.fillStyle = colour(v, clamp);
-          ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 0.4), Math.max(1.6, geom.rh - 0.8));
+          ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 0.8), Math.max(1, geom.rh - 0.8));
         });
       });
     }
@@ -161,7 +166,7 @@ export default function Heatmaps() {
     const b = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - b.left;
     const y = e.clientY - b.top - 16;
-    const cw = (b.width - geom.padL - 8) / geom.cols;
+    const cw = geom.cell;
     const i = Math.floor(y / geom.rh);
     const j = Math.floor((x - geom.padL) / cw);
     if (i < 0 || j < 0 || j >= geom.cols) return setTip(null);

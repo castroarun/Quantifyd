@@ -51,7 +51,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   color: var(--ink-muted);
   white-space: nowrap;
@@ -106,7 +106,7 @@
 }
 
 .tapeV {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -149,7 +149,7 @@
 }
 
 .monthNet {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -164,7 +164,7 @@
 .ranges { display: inline-flex; gap: 2px; background: var(--chip-bg); border-radius: 5px; padding: 2px; }
 
 .rangeBtn {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 10px;
   letter-spacing: 0.04em;
   padding: 3px 9px;
@@ -196,7 +196,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 9.5px;
   color: var(--ink-faint);
   padding: 5px 0 0;
@@ -215,7 +215,7 @@
   color: var(--ink-muted);
   margin: 14px 0 3px;
 }
-.ddMax { font-family: var(--mono); color: var(--accent-neg); letter-spacing: 0; text-transform: none; font-size: 10.5px; }
+.ddMax { font-variant-numeric: tabular-nums; color: var(--accent-neg); letter-spacing: 0; text-transform: none; font-size: 10.5px; }
 
 .ddSvg { width: 100%; height: 62px; display: block; }
 .ddArea { fill: rgba(163,45,45,0.13); stroke: none; }
@@ -224,7 +224,7 @@
 .chartDates {
   display: flex;
   justify-content: space-between;
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 9.5px;
   color: var(--ink-faint);
   margin-top: 5px;
@@ -273,7 +273,7 @@
 }
 
 .tagLive, .tagPaper {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 8px;
   letter-spacing: 0.08em;
   font-weight: 600;
@@ -285,7 +285,7 @@
 .tagPaper { background: var(--chip-bg); color: var(--ink-faint); }
 
 .num {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-variant-numeric: tabular-nums;
   text-align: right;
   font-weight: 550;
@@ -304,7 +304,7 @@
 .calGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 
 .calDow {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 9px;
   color: var(--ink-faint);
   text-align: center;
@@ -326,10 +326,10 @@
 }
 .calCell:hover { border-color: var(--brand-navy); }
 
-.calNum { font-family: var(--mono); font-size: 9px; color: var(--ink-faint); line-height: 1; }
+.calNum { font-variant-numeric: tabular-nums; font-size: 9px; color: var(--ink-faint); line-height: 1; }
 
 .calVal {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 9.5px;
   font-weight: 600;
   color: var(--ink-subtle);
@@ -356,7 +356,7 @@
 .legLoss, .legWin { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 .legLoss { background: rgba(163,45,45,0.45); }
 .legWin { background: rgba(15,110,86,0.45); margin-left: 8px; }
-.calFootR { margin-left: auto; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.calFootR { margin-left: auto; font-variant-numeric: tabular-nums; font-variant-numeric: tabular-nums; }
 
 /* ---------------------------------------------------------------- tone */
 
@@ -402,7 +402,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -451,7 +451,7 @@
 }
 
 .tickLast {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--ink);
@@ -461,7 +461,7 @@
 .tickSpark { opacity: 0.75; }
 
 .tickChg {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 10px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -473,7 +473,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .mktDot {
@@ -537,7 +537,7 @@
 }
 
 .hbMeta {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 9.5px;
   color: var(--ink-faint);
 }
@@ -600,7 +600,7 @@
   color: var(--ink-muted);
 }
 
-.distMeta { font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint); }
+.distMeta { font-variant-numeric: tabular-nums; font-size: 9.5px; color: var(--ink-faint); }
 
 .dist { width: 100%; }
 
@@ -627,7 +627,7 @@
 .distAxis {
   display: flex;
   justify-content: space-between;
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 9px;
   color: var(--ink-faint);
   margin-top: 5px;
@@ -677,7 +677,7 @@
 }
 
 .deskV {
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 22px;
   line-height: 1.25;
   margin-top: 3px;
@@ -719,8 +719,8 @@
 .chartSvg { display: block; width: 100%; height: 250px; }
 .grid { stroke: var(--hairline-softest); stroke-width: 1; }
 .zero { stroke: var(--hairline); stroke-width: 1; stroke-dasharray: 3 3; }
-.axisL { fill: var(--ink-faint); font-size: 9px; text-anchor: end; font-family: var(--mono); }
-.axisR { fill: var(--ink-faint); font-size: 9px; font-family: var(--mono); }
+.axisL { fill: var(--ink-faint); font-size: 9px; text-anchor: end; font-variant-numeric: tabular-nums; }
+.axisR { fill: var(--ink-faint); font-size: 9px; font-variant-numeric: tabular-nums; }
 .candleUp { stroke: var(--accent-pos); fill: var(--accent-pos); }
 .candleDn { stroke: var(--accent-neg); fill: var(--accent-neg); }
 
@@ -748,7 +748,8 @@
    and pairing them halves the page height. */
 .duo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* the curve gives up a fifth of its width; the grid takes it */
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   gap: 12px;
   align-items: start;
   margin-top: 12px;
@@ -762,112 +763,57 @@
 
 
 /* ------------------------------------------------------------- metrics */
-/* Hierarchy, not eight equal boxes: one number leads, three support it,
-   the ratios sit quietly underneath without borders. */
+/* Cards sized to their content: a fixed, near-square tile that does not stretch
+   on a wide monitor, with the same space before the text as after it. The
+   numerals use the app's own face with tabular figures — the monospace stack
+   read as a different product. */
 .metrics {
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  grid-template-areas: 'hero cards' 'quiet quiet';
-  gap: 12px 14px;
-  align-items: stretch;
-  margin: 12px 0 14px;
-}
-
-.heroCard {
-  grid-area: hero;
-  background: var(--surface);
-  border: 1px solid var(--hairline-soft);
-  border-left: 3px solid var(--brand-navy);
-  border-radius: 10px;
-  padding: 18px 22px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 132px;
-}
-
-.heroK {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-.heroV {
-  font-family: var(--mono);
-  font-size: 40px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin: 6px 0 6px;
-  font-variant-numeric: tabular-nums;
-}
-
-.heroS { font-size: 11.5px; color: var(--ink-faint); }
-
-.mCards {
-  grid-area: cards;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
+  grid-template-columns: repeat(auto-fit, 196px);
   justify-content: start;
   gap: 12px;
+  margin: 12px 0 16px;
 }
 
 .mCard {
   background: var(--surface);
   border: 1px solid var(--hairline-soft);
   border-radius: 10px;
-  padding: 16px 20px 17px;
-  min-height: 132px;
+  padding: 18px 20px;
+  width: 196px;
+  height: 150px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-width: 0;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.mHero {
+  border-left: 3px solid var(--brand-navy);
+  background: linear-gradient(180deg, var(--brand-navy-soft) 0%, var(--surface) 46%);
 }
 
 .mK {
-  font-size: 10px;
-  letter-spacing: 0.09em;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-muted);
+  white-space: nowrap;
 }
 
 .mV {
-  font-family: var(--mono);
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  line-height: 1.15;
-  margin: 7px 0 5px;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
+  margin: 2px 0;
 }
 
-.mS { font-size: 11px; color: var(--ink-faint); }
+.mHero .mV { font-size: 31px; }
 
-.quiet {
-  grid-area: quiet;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 26px;
-  padding: 2px 4px 0;
-}
-
-.quietItem { display: inline-flex; align-items: baseline; gap: 8px; }
-
-.quietK {
-  font-size: 10px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+.mS {
+  font-size: 11px;
   color: var(--ink-faint);
-}
-
-.quietV {
-  font-family: var(--mono);
-  font-size: 14px;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
-@media (max-width: 980px) {
-  .metrics { grid-template-columns: 1fr; grid-template-areas: 'hero' 'cards' 'quiet'; }
+  line-height: 1.35;
 }
