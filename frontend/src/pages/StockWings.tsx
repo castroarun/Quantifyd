@@ -98,6 +98,78 @@ type Paper = {
   open_positions: Pos[]; closed_trades: Pos[]; note?: string;
 };
 
+/** Per-leg breakdown, shared by the open (marked "now") and closed (marked at
+ *  exit) expandable rows. */
+function LegBreakdown({ r }: { r: Pos }) {
+  const isClosed = r.status === 'CLOSED';
+  return (
+    <div className={s.legWrap}>
+      <div className={s.legTitle}>
+        {r.symbol} — the four legs actually held
+        {isClosed
+          ? <span className={s.tm}>entry {dmy(r.entry_date)} → exit {dmy(r.exit_date)} ({r.exit_reason})</span>
+          : (r.legs_asof ? <span className={s.tm}>marked {dmy(r.legs_asof)}</span> : null)}
+      </div>
+      <table className={s.legTable}>
+        <thead><tr>
+          <th>Leg</th><th>Strike</th><th>Entry</th><th>{isClosed ? 'Exit' : 'Now'}</th>
+          <th>Move</th><th>Qty</th><th>{isClosed ? 'Value at exit' : 'Value now'}</th><th>Entry vol</th>
+        </tr></thead>
+        <tbody>
+          {(r.legs_entry ?? []).map((le: Leg, i: number) => {
+            const nowLeg = (r.legs_now ?? []).find(
+              (x: Leg) => x.side === le.side && x.opt === le.opt);
+            const now = nowLeg?.price ?? null;
+            const sign = le.side === 'SHORT' ? -1 : 1;
+            const move = le.price && now != null ? (now / le.price - 1) * 100 : null;
+            return (
+              <tr key={i}>
+                <td>
+                  <span className={le.side === 'SHORT' ? s.legShort : s.legLong}>
+                    {le.side === 'SHORT' ? 'SHORT' : 'LONG'}
+                  </span>{' '}{le.opt}
+                </td>
+                <td>{le.strike.toLocaleString('en-IN')}</td>
+                <td>{le.price != null ? le.price.toFixed(2) : '—'}</td>
+                <td>{now != null ? now.toFixed(2) : '—'}</td>
+                <td className={move == null ? '' :
+                  (move * sign) >= 0 ? s.pos : s.neg}>
+                  {move == null ? '—' : (move >= 0 ? '+' : '') + move.toFixed(1) + '%'}
+                </td>
+                <td>{r.qty.toLocaleString('en-IN')}</td>
+                <td>{now != null ? inr(now * r.qty * (le.side === 'SHORT' ? -1 : 1)) : '—'}</td>
+                <td className={s.muted}>{le.volume ? le.volume.toLocaleString('en-IN') : '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className={s.legNote}>
+        Net of the four legs = <b>{r.credit.toFixed(2)}</b> credit per share at entry
+        ({inr(r.credit * r.qty)} on {r.qty.toLocaleString('en-IN')} qty),{' '}
+        {isClosed ? (
+          <>closed at <b>{r.exit_val != null ? r.exit_val.toFixed(2) : '—'}</b> ({r.exit_reason})
+          — gross {inr(r.gross_rs)}, costs {inr(r.cost_rs)}, net <b>{inr(r.net_rs)}</b>.
+          Underlying moved <SpotMove from={r.entry_spot} to={r.exit_spot} /> over the hold.</>
+        ) : (
+          <>marked at <b>{r.mark_val != null ? r.mark_val.toFixed(2) : '—'}</b> to close.
+          Shorts pay you; the two long wings cap the tail and are what pull the real
+          margin below a naked strangle&apos;s.
+          {r.margin_real != null && (
+            <> Kite blocks <b>{inr(r.margin_real)}</b> for this position
+            ({inr(r.margin_real / r.lots)}/lot on {r.lots} lots)
+            {r.margin_peak != null && (
+              <>, and wants {inr(r.margin_peak)} free at the moment of entry
+              — the gap is the hedge benefit, which only lands once all four
+              legs are on</>
+            )}.</>
+          )}</>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function StockWings() {
   /* Row expansion — per row, plus a one-click expand/collapse all. */
   const [bt, setBt] = useState<Bt | null>(null);
@@ -277,62 +349,7 @@ export default function StockWings() {
               openRows.has(r.id) ? (
                 <tr key={r.id + '-legs'} className={s.legRow}>
                   <td colSpan={14}>
-                    <div className={s.legWrap}>
-                      <div className={s.legTitle}>
-                        {r.symbol} — the four legs actually held
-                        {r.legs_asof ? <span className={s.tm}>marked {dmy(r.legs_asof)}</span> : null}
-                      </div>
-                      <table className={s.legTable}>
-                        <thead><tr>
-                          <th>Leg</th><th>Strike</th><th>Entry</th><th>Now</th>
-                          <th>Move</th><th>Qty</th><th>Value now</th><th>Entry vol</th>
-                        </tr></thead>
-                        <tbody>
-                          {(r.legs_entry ?? []).map((le: Leg, i: number) => {
-                            const nowLeg = (r.legs_now ?? []).find(
-                              (x: Leg) => x.side === le.side && x.opt === le.opt);
-                            const now = nowLeg?.price ?? null;
-                            const sign = le.side === 'SHORT' ? -1 : 1;
-                            const move = le.price && now != null ? (now / le.price - 1) * 100 : null;
-                            return (
-                              <tr key={i}>
-                                <td>
-                                  <span className={le.side === 'SHORT' ? s.legShort : s.legLong}>
-                                    {le.side === 'SHORT' ? 'SHORT' : 'LONG'}
-                                  </span>{' '}{le.opt}
-                                </td>
-                                <td>{le.strike.toLocaleString('en-IN')}</td>
-                                <td>{le.price != null ? le.price.toFixed(2) : '—'}</td>
-                                <td>{now != null ? now.toFixed(2) : '—'}</td>
-                                <td className={move == null ? '' :
-                                  (move * sign) >= 0 ? s.pos : s.neg}>
-                                  {move == null ? '—' : (move >= 0 ? '+' : '') + move.toFixed(1) + '%'}
-                                </td>
-                                <td>{r.qty.toLocaleString('en-IN')}</td>
-                                <td>{now != null ? inr(now * r.qty * (le.side === 'SHORT' ? -1 : 1)) : '—'}</td>
-                                <td className={s.muted}>{le.volume ? le.volume.toLocaleString('en-IN') : '—'}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                      <div className={s.legNote}>
-                        Net of the four legs = <b>{r.credit.toFixed(2)}</b> credit per share at entry
-                        ({inr(r.credit * r.qty)} on {r.qty.toLocaleString('en-IN')} qty), marked at{' '}
-                        <b>{r.mark_val != null ? r.mark_val.toFixed(2) : '—'}</b> to close.
-                        Shorts pay you; the two long wings cap the tail and are what pull the real
-                        margin below a naked strangle&apos;s.
-                        {r.margin_real != null && (
-                          <> Kite blocks <b>{inr(r.margin_real)}</b> for this position
-                          ({inr(r.margin_real / r.lots)}/lot on {r.lots} lots)
-                          {r.margin_peak != null && (
-                            <>, and wants {inr(r.margin_peak)} free at the moment of entry
-                            — the gap is the hedge benefit, which only lands once all four
-                            legs are on</>
-                          )}.</>
-                        )}
-                      </div>
-                    </div>
+                    <LegBreakdown r={r} />
                   </td>
                 </tr>
               ) : null,
@@ -349,13 +366,15 @@ export default function StockWings() {
         <table className={s.table}>
           <thead>
             <tr>
+              <th style={{ width: 22 }} />
               <th>Symbol</th><th>Entry → Exit</th><th>Expiry</th><th>Shorts PE/CE</th>
               <th>Spot Δ</th><th>Qty</th><th>Credit</th><th>Exit @</th><th>Reason</th><th>Net</th><th>Src</th>
             </tr>
           </thead>
           <tbody>
-            {(p?.closed_trades ?? []).slice().reverse().map((r) => (
-              <tr key={r.id}>
+            {(p?.closed_trades ?? []).slice().reverse().flatMap((r) => [
+              <tr key={r.id} className={s.clickRow} onClick={() => toggleRow(r.id)}>
+                <td className={s.caret}>{openRows.has(r.id) ? '▾' : '▸'}</td>
                 <td className={s.sym}>{r.symbol}</td>
                 <td>{dmy(r.entry_date)} → {dmy(r.exit_date)}</td>
                 <td>{dmy(r.expiry)}</td>
@@ -367,10 +386,17 @@ export default function StockWings() {
                 <td className={s.freq}>{r.exit_reason}</td>
                 <td className={(r.net_rs ?? 0) >= 0 ? s.pos : s.neg}>{inr(r.net_rs)}</td>
                 <td><span className={s.srcTag}>{r.src}</span></td>
-              </tr>
-            ))}
+              </tr>,
+              openRows.has(r.id) ? (
+                <tr key={r.id + '-legs'} className={s.legRow}>
+                  <td colSpan={12}>
+                    <LegBreakdown r={r} />
+                  </td>
+                </tr>
+              ) : null,
+            ])}
             {p && p.closed_trades.length === 0 && (
-              <tr><td colSpan={11} className={s.emptyCell}>No closed trades yet.</td></tr>
+              <tr><td colSpan={12} className={s.emptyCell}>No closed trades yet.</td></tr>
             )}
           </tbody>
         </table>
