@@ -1,0 +1,33 @@
+========================================================================================================
+research/130 G1 — EXTRA credit-spread unit on each C1 trade (628 trades)
+========================================================================================================
+--- always-on overlays ---
+ALWAYS bull put spread     n= 602  net=+0.153%S0  t=+2.68  win=66.4%  p05=-2.79%  p01=-4.16%
+ALWAYS bear call spread    n= 602  net=-0.019%S0  t=-0.29  win=59.8%  p05=-3.09%  p01=-4.46%
+
+--- direction from the indicator inputs (bull-state -> PS, bear-state -> CS) ---
+sma200-directed            n= 602  net=+0.175%S0  t=+2.95  win=66.9%  p05=-2.93%  p01=-4.16%
+  PS when sma200 bull      n= 364  net=+0.243%S0  t=+3.40  win=69.0%  p05=-2.68%  p01=-3.89%
+  CS when sma200 bear      n= 238  net=+0.072%S0  t=+0.70  win=63.9%  p05=-3.04%  p01=-4.43%
+ema2050-directed           n= 602  net=+0.068%S0  t=+1.08  win=64.1%  p05=-3.09%  p01=-4.42%
+  PS when ema2050 bull     n= 353  net=+0.146%S0  t=+1.88  win=66.6%  p05=-3.09%  p01=-4.24%
+  CS when ema2050 bear     n= 249  net=-0.042%S0  t=-0.41  win=60.6%  p05=-3.08%  p01=-4.44%
+rsi50-directed             n= 602  net=+0.193%S0  t=+3.16  win=66.9%  p05=-2.79%  p01=-4.32%
+  PS when rsi50 bull       n= 349  net=+0.202%S0  t=+2.67  win=68.2%  p05=-2.83%  p01=-4.31%
+  CS when rsi50 bear       n= 253  net=+0.181%S0  t=+1.79  win=65.2%  p05=-2.73%  p01=-4.52%
+stochkd-directed           n= 602  net=+0.230%S0  t=+3.83  win=68.3%  p05=-2.76%  p01=-4.41%
+  PS when stochkd bull     n= 305  net=+0.306%S0  t=+4.03  win=71.1%  p05=-2.50%  p01=-4.14%
+  CS when stochkd bear     n= 297  net=+0.153%S0  t=+1.63  win=65.3%  p05=-2.91%  p01=-4.46%
+
+--- per-year, ALWAYS_PS ---
+  2020: +0.553% (n=11, win 64%)
+  2021: +0.609% (n=55, win 78%)
+  2022: +0.130% (n=63, win 68%)
+  2023: +0.502% (n=69, win 80%)
+  2024: -0.069% (n=133, win 62%)
+  2025: +0.168% (n=165, win 68%)
+  2026: -0.162% (n=89, win 51%)
+
+--- combined book: C1 + ALWAYS_PS vs C1 alone (same trades) ---
+C1 alone                   n= 628  net=+0.264%S0  t=+5.06  win=64.8%  p05=-1.96%  p01=-3.09%
+C1 + ALWAYS_PS             n= 602  net=+0.300%S0  t=+3.62  win=68.3%  p05=-3.91%  p01=-6.73%
