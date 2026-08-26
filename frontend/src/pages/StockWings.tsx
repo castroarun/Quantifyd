@@ -107,7 +107,7 @@ export default function StockWings() {
         .then(setP)
         .catch(() => setP(null));
     load();
-    const t = setInterval(load, 60000);
+    const t = setInterval(load, 5000);
     return () => clearInterval(t);
   }, []);
 

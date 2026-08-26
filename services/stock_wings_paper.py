@@ -34,6 +34,7 @@ import os
 import re
 import sqlite3
 import sys
+import time
 from bisect import bisect_left
 from datetime import datetime, timedelta
 
@@ -250,15 +251,30 @@ def live_marks(rows):
     live price is refused and the caller keeps the bhav mark for that leg.
     Returns {id: {"val","legs","stale","ts"}}.
     """
-    out = {}
+    setup = _live_setup(rows)
+    if not setup:
+        return {}
+    k, spec, want = setup
+    try:
+        q = k.quote(list(want))
+    except Exception as e:
+        print("  live: quote failed (%s)" % str(e)[:60])
+        return {}
+    return _live_tick(q, rows, spec)
+
+
+def _live_setup(rows):
+    """One-time Kite client + leg->tradingsymbol map. The NFO instrument dump is
+    multi-MB, so this must NOT run per tick — the daemon calls it once and then
+    only quotes."""
     if not rows:
-        return out
+        return None
     try:
         from kiteconnect import KiteConnect
         api = os.environ.get("KITE_API_KEY")
         tokf = os.path.join(ROOT, "backtest_data", "access_token.json")
         if not api or not os.path.exists(tokf):
-            return out
+            return None
         k = KiteConnect(api_key=api)
         k.set_access_token(json.load(open(tokf))["access_token"])
         idx = {}
@@ -268,8 +284,7 @@ def live_marks(rows):
                      i["instrument_type"])] = i["tradingsymbol"]
     except Exception as e:
         print("  live: kite unavailable (%s)" % str(e)[:60])
-        return out
-
+        return None
     want, spec = {}, {}
     for r in rows:
         legs = []
@@ -281,12 +296,12 @@ def live_marks(rows):
                 want["NFO:" + ts] = 1
         spec[r["id"]] = legs
         want["NSE:" + r["symbol"]] = 1
-    try:
-        q = k.quote(list(want))
-    except Exception as e:
-        print("  live: quote failed (%s)" % str(e)[:60])
-        return out
+    return k, spec, want
 
+
+def _live_tick(q, rows, spec):
+    """Turn one batched quote() response into {id: live-mark}. Pure transform."""
+    out = {}
     today = dstr(datetime.now())
     for r in rows:
         vals, legs, stale = {}, [], 0
@@ -539,7 +554,7 @@ def upcoming(m, days, n=3):
     return out
 
 
-def publish(con, m, days, live=None):
+def publish(con, m, days, live=None, verbose=True, upc=None):
     allr = rows_of(con)
     for r in allr:
         r["exit_due"] = dstr(dparse(r["expiry"]) - timedelta(days=DTE_OUT))
@@ -608,7 +623,7 @@ def publish(con, m, days, live=None):
         margin_asof=datetime.now().strftime("%Y-%m-%d %H:%M"),
         running_pnl=realised + unreal,
         win_rate=(100.0 * len(wins) / len(closed)) if closed else None,
-        upcoming=upcoming(m, days),
+        upcoming=upc if upc is not None else upcoming(m, days),
         entry_time="15:30 (EOD close)", exit_time="15:30 (EOD close)",
         open_positions=openp, closed_trades=closed,
         note=("EOD cadence: entries, marks and exits are struck on real NSE bhavcopy closes; "
@@ -625,9 +640,10 @@ def publish(con, m, days, live=None):
             os.replace(p + ".tmp", p)
         except Exception as ex:
             print("  publish %s failed: %s" % (p, ex))
-    print("  published NAV Rs %s (realised %s, MTM %s, open %d, closed %d)"
-          % ("{:,.0f}".format(payload["nav"]), "{:,.0f}".format(realised),
-             "{:,.0f}".format(unreal), len(openp), len(closed)))
+    if verbose:
+        print("  published NAV Rs %s (realised %s, MTM %s, open %d, closed %d)"
+              % ("{:,.0f}".format(payload["nav"]), "{:,.0f}".format(realised),
+                 "{:,.0f}".format(unreal), len(openp), len(closed)))
 
 
 def live():
@@ -647,6 +663,64 @@ def live():
     m.close()
 
 
+def livedaemon(tick=5):
+    """Persistent intraday ticker: ONE batched quote() every `tick` seconds ->
+    republish the JSON. Display only, same guarantees as live(): never evaluates
+    an exit, never writes a position row. Exits outside 09:14-15:40 IST; the
+    */5-min cron relaunches it under flock if it dies mid-session.
+
+    Kite budget: 1 quote call (~50 instruments) per tick = 0.2 req/s, far under
+    the 3 req/s limit. The instrument map is built ONCE (multi-MB dump) and the
+    open-position set refreshed every 10 min (it only changes EOD anyway).
+    """
+    def in_hours(now):
+        hm = now.hour * 60 + now.minute
+        return now.weekday() < 5 and (9 * 60 + 14) <= hm <= (15 * 60 + 40)
+
+    if not in_hours(datetime.now()):
+        print("  daemon: outside market hours, not starting")
+        return
+    con = init_db()
+    m = ro(MKT)
+    days = sessions(m)
+    openp = rows_of(con, "status='OPEN'")
+    setup = _live_setup(openp)
+    if not setup:
+        print("  daemon: kite unavailable, exiting (cron will retry)")
+        return
+    k, spec, want = setup
+    upc = upcoming(m, days)               # heavy GROUP BY — cache across ticks
+    print("  daemon: up, %d positions, tick %ds" % (len(openp), tick), flush=True)
+    fails, last_reload, last_log = 0, time.time(), 0.0
+    while in_hours(datetime.now()):
+        try:
+            q = k.quote(list(want))
+            lv = _live_tick(q, openp, spec)
+            publish(con, m, days, live=lv, verbose=False, upc=upc)
+            fails = 0
+            if time.time() - last_log > 600:
+                print("  daemon: %s live marks %d/%d" %
+                      (datetime.now().strftime("%H:%M:%S"), len(lv), len(openp)),
+                      flush=True)
+                last_log = time.time()
+        except Exception as e:
+            fails += 1
+            if fails >= 24:               # ~2 min of continuous failure
+                print("  daemon: %d straight failures (%s), exiting for cron retry"
+                      % (fails, str(e)[:60]))
+                return
+        time.sleep(tick)
+        if time.time() - last_reload > 600:
+            openp = rows_of(con, "status='OPEN'")
+            s2 = _live_setup(openp)
+            if s2:
+                k, spec, want = s2
+            last_reload = time.time()
+    print("  daemon: market closed, exiting")
+    con.close()
+    m.close()
+
+
 def show():
     con = init_db()
     for r in rows_of(con):
@@ -656,4 +730,5 @@ def show():
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "mark"
-    {"seed": seed, "mark": mark, "live": live, "show": show}[cmd]()
+    {"seed": seed, "mark": mark, "live": live, "livedaemon": livedaemon,
+     "show": show}[cmd]()
