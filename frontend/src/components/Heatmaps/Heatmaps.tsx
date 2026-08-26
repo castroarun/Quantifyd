@@ -42,19 +42,21 @@ export default function Heatmaps() {
   const [tab, setTab] = useState<'books' | 'stocks'>('books');
   const [tip, setTip] = useState<{ x: number; y: number; html: string } | null>(null);
   const [wide, setWide] = useState(0);          // re-render when the column resizes
+  const [fontTick, setFontTick] = useState(0);  // and again once Inter has loaded
   const cv = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     // Canvas takes a snapshot of whatever font is resolved at draw time.
     const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
-    fonts?.ready.then(() => setWide((w) => w + 0.01));
+    fonts?.ready.then(() => setFontTick((n) => n + 1));
   }, []);
 
   useEffect(() => {
-    const el = cv.current;
+    const el = cv.current?.parentElement;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(([e]) => setWide(Math.round(e.contentRect.width)));
     ro.observe(el);
+    setWide(Math.round(el.getBoundingClientRect().width));
     return () => ro.disconnect();
   }, []);
 
@@ -82,14 +84,14 @@ export default function Heatmaps() {
     const rows = tab === 'books' ? feed.books.rows.length : feed.stocks.rows.length;
     const cols = tab === 'books' ? feed.books.dates.length : feed.stocks.dates.length;
     const padL = tab === 'books' ? 116 : 84;
-    const avail = Math.max(120, (wide || 900) - padL - 10);
+    const avail = Math.max(240, (wide > 200 ? wide : 1200) - padL - 10);
     // ONE size for both axes, so a cell is a square rather than whatever
     // rectangle the column width happened to produce.
     const cell = tab === 'books'
       ? Math.max(8, Math.min(38, Math.floor(avail / cols)))
       : Math.max(4, Math.min(16, Math.floor(avail / cols)));
     return { rows, cols, cell, rh: cell, padL, h: rows * cell + 26 };
-  }, [feed, tab, wide]);
+  }, [feed, tab, wide, fontTick]);
 
   useEffect(() => {
     if (!feed || !geom || !cv.current) return;
@@ -175,7 +177,7 @@ export default function Heatmaps() {
     dates.forEach((d, j) => {
       if (j % step === 0) ctx.fillText(d.slice(5), geom.padL + j * cw, 11);
     });
-  }, [feed, geom, tab, clamp, wide]);
+  }, [feed, geom, tab, clamp, wide, fontTick]);
 
   if (!feed) return null;
 
