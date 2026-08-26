@@ -264,3 +264,24 @@ Filled today by tag:
   TIMEB2_NIFTY               1040
   CSL_NAS_COMB20              260
 ```
+
+## 2026-08-26 10:59 IST — 0 alerts, 6 warnings
+
+```
+Live vs app reconciliation · 2026-08-26 10:59 IST
+8 broker legs · 0 alerts · 6 warnings
+
+[INFO] MANUAL MANORAMA: manual holding, 5 — no book tracks it
+[INFO] MANUAL THYROCARE: manual holding, 17 — no book tracks it
+[WARN] NAKED SENSEX26AUG77700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77700PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77900CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77900PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG78000CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG78000PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                    382
+  CSL_CSL_TIMEB_SENSEX        320
+  CSL_CSL30F_SENSEX_WE        120
+```

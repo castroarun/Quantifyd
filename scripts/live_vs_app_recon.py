@@ -181,10 +181,24 @@ def manual_symbols():
 
 
 # ───────────────────────────── checks ─────────────────────────────
+def _tagged_net(orders):
+    """{symbol: {tag: signed_qty}} from today's COMPLETE fills."""
+    out = {}
+    for o in orders:
+        if o['status'] != 'COMPLETE' or not o['qty']:
+            continue
+        sign = -1 if o['side'] == 'SELL' else 1
+        out.setdefault(o['symbol'], {})
+        tag = o['tag'] or 'untagged'
+        out[o['symbol']][tag] = out[o['symbol']].get(tag, 0) + sign * o['qty']
+    return out
+
+
 def reconcile():
     legs, orders = broker_state()
     claimed = app_legs()
     book_cash = manual_symbols()
+    tagged = _tagged_net(orders)
     findings = []
 
     for sym, b in legs.items():
@@ -194,6 +208,17 @@ def reconcile():
             is_cash = b['exchange'] == 'NSE'
             # A cash leg with no book and no order tag is a manual holding.
             manual = is_cash and not tags and sym not in book_cash
+            tg = tagged.get(sym, {})
+            explained = tg and sum(tg.values()) == b['qty'] and 'untagged' not in tg
+            if explained:
+                named = ', '.join(f'{k} {v:+d}' for k, v in sorted(tg.items(), key=lambda kv: kv[1]))
+                findings.append({
+                    'level': 'INFO', 'kind': 'MULTI-BOOK', 'symbol': sym,
+                    'broker_qty': b['qty'], 'app_qty': 0,
+                    'detail': f"broker {b['qty']} = {named} — placed by our books, "
+                              f"not visible in the page feed",
+                })
+                continue
             findings.append({
                 'level': 'INFO' if manual else 'ALERT',
                 'kind': 'MANUAL' if manual else 'ORPHAN', 'symbol': sym,
@@ -203,11 +228,19 @@ def reconcile():
                            + (f" (order tag: {', '.join(tags)})" if tags else ' (no order tag)')),
             })
         elif c['qty'] != b['qty']:
+            tags = tagged.get(sym, {})
+            tag_net = sum(tags.values())
+            named = ', '.join(f'{k} {v:+d}' for k, v in sorted(tags.items(), key=lambda kv: kv[1]))
+            explained = tag_net == b['qty'] and 'untagged' not in tags
             findings.append({
-                'level': 'ALERT', 'kind': 'SIZE', 'symbol': sym,
+                'level': 'INFO' if explained else 'ALERT',
+                'kind': 'MULTI-BOOK' if explained else 'SIZE', 'symbol': sym,
                 'broker_qty': b['qty'], 'app_qty': c['qty'],
-                'detail': f"broker {b['qty']} vs app {c['qty']} "
-                          f"({'/'.join(sorted(set(c['books'])))})",
+                'detail': (f"broker {b['qty']} = {named} — several books share this strike; "
+                           f"the page feed only shows {c['qty']}" if explained else
+                           f"broker {b['qty']} vs app {c['qty']} "
+                           f"({'/'.join(sorted(set(c['books'])))})"
+                           + (f" · order tags: {named}" if named else ' · no order tags')),
             })
 
     for sym, c in claimed.items():
