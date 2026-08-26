@@ -283,3 +283,16 @@ sweep; no bid/ask data stated. Regime: per-year tables, 2020 and 2024-26 separat
 Correlation: G4 measures overlap with existing NIFTY short-vol books and cross-stock
 clustering (all entries fire in the same calm regimes). Capacity: stock option depth is
 the binding constraint — report ATM volume percentiles per surviving name.
+
+### Phase B3 (2026-08-26) — tight stops RE-REFUTED on full history; window temptation resisted
+
+Trigger: the paper book seed window (Jun-Aug 2026, 18 trades, -Rs9k) counterfactually
+flipped to +Rs51k under SL125. Full-history test (628 liquid trades, C1 structure):
+**monotone AGAINST stops** — SL125 +0.095 (t1.84) < SL150 +0.142 < SL175 +0.230 <
+NO-STOP +0.264 (t5.06); SL125 loses to no-stop in ALL SIX dense-era years; tail
+essentially unchanged (p05 -1.87 vs -1.96 — wings already cap it); twin test: of 206
+stopped trades, stopping beat holding only 35% of the time (avg -1.34% stopped vs
+-0.83% held). The Jun-Aug window was two trending months; premium expansion
+mean-reverts ~2/3 of the time. **Ruleset stays NO-STOP.** Legit risk levers remain:
+wing width (7->5% cuts p05 ~40% for ~0.014%S0/trade), sizing, earnings-skip (pending
+data). Files: scripts/run_phase_b3.py, results/phase_b3_analysis.txt.
