@@ -30,12 +30,29 @@ const dmy = (v: string | null | undefined) => {
   return `${d}-${MON[parseInt(m, 10) - 1]}-${y.slice(2)}`;
 };
 
+/** Underlying move % between two spots; null-safe. */
+const spotMovePct = (from: number | null | undefined, to: number | null | undefined) =>
+  from && to ? ((to / from) - 1) * 100 : null;
+const SpotMove = ({ from, to }: { from?: number | null; to?: number | null }) => {
+  const mv = spotMovePct(from, to);
+  if (mv == null) return <>—</>;
+  // direction is irrelevant to a strangle — |move| beyond the ±2.5% shorts is
+  // the threat (red); still inside the shorts stays neutral
+  return (
+    <span className={Math.abs(mv) >= 2.5 ? s.neg : undefined}
+      title={from && to ? `${Math.round(from).toLocaleString('en-IN')} → ${Math.round(to).toLocaleString('en-IN')} (shorts at ±2.5%)` : undefined}>
+      {mv >= 0 ? '+' : ''}{mv.toFixed(1)}%
+    </span>
+  );
+};
+
 type Pos = {
   id: number; symbol: string; expiry: string; entry_date: string; entry_spot: number;
   kce: number; kpe: number; wce: number; wpe: number;
   credit: number; lots: number; lot: number; qty: number;
   atm_vol: number; wing_vol_min: number; src: 'SEED' | 'LIVE';
   exit_date: string | null; exit_val: number | null; exit_reason: string | null;
+  exit_spot?: number | null;
   gross_rs: number | null; cost_rs: number | null; net_rs: number | null;
   status: 'OPEN' | 'CLOSED';
   mark_val: number | null; mark_date: string | null; mtm_rs: number | null; mark_spot: number | null;
@@ -224,7 +241,7 @@ export default function StockWings() {
               <th style={{ width: 22 }} />
               <th>Symbol</th><th>Entry</th><th>Expiry (DTE)</th><th>Shorts PE/CE</th>
               <th>Wings PE/CE</th><th>Qty (lots)</th><th>Credit</th><th>Mark</th>
-              <th>MTM</th><th>Margin</th><th>Exit due</th><th>Src</th>
+              <th>Spot Δ</th><th>MTM</th><th>Margin</th><th>Exit due</th><th>Src</th>
             </tr>
           </thead>
           <tbody>
@@ -239,6 +256,7 @@ export default function StockWings() {
                 <td>{r.qty.toLocaleString('en-IN')} ({r.lots}×{r.lot})</td>
                 <td>{inr(r.credit * r.qty)}</td>
                 <td>{r.mark_val != null ? r.mark_val.toFixed(2) + ' · ' + dmy(r.mark_date) : '—'}</td>
+                <td><SpotMove from={r.entry_spot} to={r.mark_spot} /></td>
                 <td className={(r.mtm_rs ?? 0) >= 0 ? s.pos : s.neg}>
                   {inr(r.mtm_rs)}
                   {r.mtm_pct != null && (
@@ -258,7 +276,7 @@ export default function StockWings() {
               </tr>,
               openRows.has(r.id) ? (
                 <tr key={r.id + '-legs'} className={s.legRow}>
-                  <td colSpan={13}>
+                  <td colSpan={14}>
                     <div className={s.legWrap}>
                       <div className={s.legTitle}>
                         {r.symbol} — the four legs actually held
@@ -320,7 +338,7 @@ export default function StockWings() {
               ) : null,
             ])}
             {p && p.open_positions.length === 0 && (
-              <tr><td colSpan={13} className={s.emptyCell}>Book is flat — next cycle {next ? dmy(next.entry_date) : '—'}.</td></tr>
+              <tr><td colSpan={14} className={s.emptyCell}>Book is flat — next cycle {next ? dmy(next.entry_date) : '—'}.</td></tr>
             )}
           </tbody>
         </table>
@@ -332,7 +350,7 @@ export default function StockWings() {
           <thead>
             <tr>
               <th>Symbol</th><th>Entry → Exit</th><th>Expiry</th><th>Shorts PE/CE</th>
-              <th>Qty</th><th>Credit</th><th>Exit @</th><th>Reason</th><th>Net</th><th>Src</th>
+              <th>Spot Δ</th><th>Qty</th><th>Credit</th><th>Exit @</th><th>Reason</th><th>Net</th><th>Src</th>
             </tr>
           </thead>
           <tbody>
@@ -342,6 +360,7 @@ export default function StockWings() {
                 <td>{dmy(r.entry_date)} → {dmy(r.exit_date)}</td>
                 <td>{dmy(r.expiry)}</td>
                 <td>{r.kpe.toLocaleString('en-IN')} / {r.kce.toLocaleString('en-IN')}</td>
+                <td><SpotMove from={r.entry_spot} to={r.exit_spot} /></td>
                 <td>{r.qty.toLocaleString('en-IN')}</td>
                 <td>{inr(r.credit * r.qty)}</td>
                 <td>{r.exit_val != null ? r.exit_val.toFixed(2) : '—'}</td>
@@ -351,7 +370,7 @@ export default function StockWings() {
               </tr>
             ))}
             {p && p.closed_trades.length === 0 && (
-              <tr><td colSpan={10} className={s.emptyCell}>No closed trades yet.</td></tr>
+              <tr><td colSpan={11} className={s.emptyCell}>No closed trades yet.</td></tr>
             )}
           </tbody>
         </table>
