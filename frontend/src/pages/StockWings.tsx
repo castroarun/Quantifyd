@@ -88,6 +88,7 @@ type Paper = {
     stop: null; atm_vol_min: number; wing_vol_min: number; slip: number };
   links: { study: string; tearsheet: string; github: string };
   bhav_through: string; realised: number; unrealised: number; nav: number;
+  costs_paid?: number; gross_closed?: number; est_open_exit_costs?: number;
   n_open: number; n_closed: number; win_rate: number | null;
   capital_deployed?: number | null; capital_deployed_est?: number | null;
   margin_asof?: string; running_pnl?: number;
@@ -249,7 +250,10 @@ export default function StockWings() {
       <div className={s.kpis}>
         <div className={s.kpi}><div className={`${s.kpiVal} ${p && p.nav >= (p?.capital ?? 0) ? s.pos : s.neg}`}>{p ? lakh(p.nav) : '—'}</div><div className={s.kpiLabel}>NAV</div></div>
         <div className={s.kpi}><div className={`${s.kpiVal} ${totalRet >= 0 ? s.pos : s.neg}`}>{p ? (totalRet >= 0 ? '+' : '') + totalRet.toFixed(2) + '%' : '—'}</div><div className={s.kpiLabel}>Return on ₹20L</div></div>
-        <div className={s.kpi}>
+        <div className={s.kpi}
+          title={p?.est_open_exit_costs != null
+            ? `before ~${inr(p.est_open_exit_costs)} of costs to unwind all open legs`
+            : undefined}>
           <div className={`${s.kpiVal} ${p && p.unrealised >= 0 ? s.pos : s.neg}`}>
             {p ? inr(p.unrealised) : '—'}
             {p && p.capital_deployed ? (
@@ -261,7 +265,26 @@ export default function StockWings() {
           </div>
           <div className={s.kpiLabel}>Open MTM{p && p.capital_deployed ? ' · on deployed' : ''}</div>
         </div>
-        <div className={s.kpi}><div className={`${s.kpiVal} ${p && p.realised >= 0 ? s.pos : s.neg}`}>{p ? inr(p.realised) : '—'}</div><div className={s.kpiLabel}>Realised</div></div>
+        <div className={s.kpi}
+          title={p?.gross_closed != null
+            ? `net after charges: ${inr(p.realised)}`
+            : undefined}>
+          <div className={`${s.kpiVal} ${p && (p.gross_closed ?? 0) >= 0 ? s.pos : s.neg}`}>
+            {p?.gross_closed != null ? inr(p.gross_closed) : '—'}
+          </div>
+          <div className={s.kpiLabel}>Closed P&L · gross</div>
+        </div>
+        <div className={s.kpi}
+          title="slippage 0.5%/side + STT + txn charges + ₹20×8 brokerage + GST, across all closed trades — already deducted from net/NAV">
+          <div className={`${s.kpiVal} ${s.neg}`}>
+            {p?.costs_paid != null ? inr(-Math.abs(p.costs_paid)) : '—'}
+          </div>
+          <div className={s.kpiLabel}>Charges · all-in</div>
+        </div>
+        <div className={s.kpi}>
+          <div className={`${s.kpiVal} ${p && p.realised >= 0 ? s.pos : s.neg}`}>{p ? inr(p.realised) : '—'}</div>
+          <div className={s.kpiLabel}>Closed P&L · net</div>
+        </div>
         <div className={s.kpi}><div className={s.kpiVal}>{p ? `${p.n_open}/${p.max_slots}` : '—'}</div><div className={s.kpiLabel}>Slots in use</div></div>
         <div className={s.kpi}><div className={s.kpiVal}>{p ? p.n_closed : '—'}</div><div className={s.kpiLabel}>Closed trades</div></div>
         <div className={s.kpi}><div className={s.kpiVal}>{p?.win_rate != null ? p.win_rate.toFixed(0) + '%' : '—'}</div><div className={s.kpiLabel}>Win rate</div></div>
@@ -307,7 +330,10 @@ export default function StockWings() {
                       </span>
                     )}
                   </b>
-                  <i>running P&amp;L{p.running_pnl_pct != null ? ' · on margin' : ''}</i>
+                  <i title={`closed net of ${inr(p.costs_paid ?? 0)} costs; open MTM before ~${inr(p.est_open_exit_costs ?? 0)} exit costs`}>
+                    running P&amp;L{p.running_pnl_pct != null ? ' · on margin' : ''}
+                    {p.costs_paid != null ? ` · ${inr(p.costs_paid)} costs paid` : ''}
+                  </i>
                 </span>
               </>
             )}

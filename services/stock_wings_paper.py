@@ -672,6 +672,9 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
     deployed_est = sum(r["margin_est"] for r in openp)
     realised = sum(r["net_rs"] or 0 for r in closed)
     unreal = sum(r["mtm_rs"] or 0 for r in openp)
+    costs_paid = sum(r["cost_rs"] or 0 for r in closed)          # in realised already
+    gross_closed = sum(r["gross_rs"] or 0 for r in closed)
+    est_open_exit_costs = sum(costs_rs(r, r["mark_val"] or 0.0) for r in openp)
     wins = [r for r in closed if (r["net_rs"] or 0) > 0]
     payload = dict(
         asof=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -684,6 +687,8 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
                    github="https://github.com/castroarun/Quantifyd/tree/main/research/127_stock_neutral_wings"),
         bhav_through=days[-1],
         realised=realised, unrealised=unreal, nav=CAPITAL + realised + unreal,
+        costs_paid=costs_paid, gross_closed=gross_closed,
+        est_open_exit_costs=est_open_exit_costs,
         n_open=len(openp), n_closed=len(closed),
         capital_deployed=deployed, capital_deployed_est=deployed_est,
         capital_deployed_peak=deployed_peak,
