@@ -22,6 +22,9 @@ GROUPS = [
         ("stock_wings_paper seed+mark", "16:50 + 20:30 Mon-Fri cron (flock)",
          "45->21 DTE +/-2.5% strangle + 7% wings on F&O stocks, Rs20L/10 slots PAPER: opens new 45-DTE cycles, marks/exits from bhav closes, publishes /app/stock_wings_paper.json for /app/stock-wings",
          "cd /home/arun/quantifyd && ./venv/bin/python3 services/stock_wings_paper.py seed"),
+        ("stock_wings_paper live marks", "*/5 09:00-15:55 Mon-Fri cron (flock)",
+         "DISPLAY ONLY: re-prices the four legs of every open position from live Kite quotes and pulls the REAL basket margin (wings sent first), so /app/stock-wings ticks during the session. Evaluates NO exit and writes NO position row - the target and stop still resolve on the EOD bhav close, as backtested",
+         "cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 services/stock_wings_paper.py live"),
     ]),
     ("Expiry-Afternoon Lab (research/125)", [
         ("expiry_lab_assessment", "Tue+Thu 16:05 IST cron",

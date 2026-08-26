@@ -151,3 +151,62 @@
 .axLab { font-size: 10px; fill: var(--ink-muted); font-family: inherit; }
 .peak { fill: var(--accent-pos, #1f9d55); }
 .peakLab { font-size: 10.5px; font-weight: 600; fill: var(--accent-pos, #1f9d55); font-family: inherit; }
+
+/* expandable per-leg detail */
+.headRight { margin-left: auto; display: inline-flex; align-items: center; gap: 16px; }
+.expandBtn {
+  font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  color: var(--accent, #4f8bd6); background: var(--surface);
+  border: 0.5px solid var(--hairline); border-radius: var(--radius-control, 8px);
+  padding: 5px 10px;
+}
+.expandBtn:hover { border-color: var(--accent, #4f8bd6); }
+.expandBtn:focus-visible { outline: 2px solid var(--accent, #4f8bd6); outline-offset: 1px; }
+.headStat { display: inline-flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+.headStat b { font-size: 14px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.headStat i { font-style: normal; font-size: 10px; color: var(--ink-muted);
+              text-transform: uppercase; letter-spacing: 0.04em; }
+.clickRow { cursor: pointer; }
+.clickRow:hover { background: var(--surface-sunken, rgba(0,0,0,0.03)); }
+.caret { color: var(--ink-muted); font-size: 11px; width: 22px; }
+.legRow > td { background: var(--surface-sunken, rgba(0,0,0,0.025)); padding: 0 !important; }
+.legWrap { padding: 12px 16px 14px 38px; }
+.legTitle { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.legTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+.legTable th {
+  text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--ink-muted); font-weight: 500; padding: 5px 8px;
+  border-bottom: 0.5px solid var(--hairline);
+}
+.legTable td {
+  padding: 6px 8px; border-bottom: 0.5px solid var(--hairline);
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.legTable tbody tr:last-child td { border-bottom: none; }
+.legShort, .legLong {
+  font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+.legShort { background: rgba(210,63,63,0.13); color: var(--accent-neg, #d23f3f); }
+.legLong { background: rgba(31,157,85,0.13); color: var(--accent-pos, #1f9d55); }
+.legNote { margin-top: 9px; font-size: 11.5px; line-height: 1.55; color: var(--ink-muted); }
+.legNote b { color: var(--ink); }
+
+/* MTM as a share of the margin it blocks — the number that makes positions of
+   different sizes comparable at a glance. */
+.pctPar { margin-left: 5px; font-size: 11px; opacity: 0.75; font-weight: 500; }
+
+/* live-quote pulse: the marks move during the session, so say so */
+.liveDot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-pos, #1f9d55); margin-right: 5px; vertical-align: middle;
+  animation: wingsPulse 2s ease-in-out infinite;
+}
+@keyframes wingsPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .liveDot { animation: none; } }
+
+.heldTag {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+  background: rgba(31, 157, 85, 0.14); color: var(--accent-pos, #1f9d55);
+  text-transform: uppercase; letter-spacing: 0.03em;
+}

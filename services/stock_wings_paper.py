@@ -168,6 +168,151 @@ def structure_value(m, r, day):
     return (sce + spe) - (max(wce, 0.0) + max(wpe, 0.0))
 
 
+def live_margins(rows):
+    """REAL per-position margin from Zerodha for the 4-leg structure.
+
+    The page previously sized on a 10%-of-notional ESTIMATE and flagged the Kite
+    basket-margin check as owed — this is that check. A winged strangle is defined
+    risk, so the long wings cut the requirement well below a naked strangle, and
+    the estimate should be expected to differ.
+
+    LEG ORDER MATTERS. Kite walks the basket sequentially, so sending the two
+    shorts first prices a momentarily-NAKED strangle and overstates the
+    requirement badly (HDFCBANK 1 lot: 81,548 shorts-first vs 54,246 wings-first,
+    against a settled 43,219). We send the wings first and read BOTH numbers:
+
+      held = final   — margin the position blocks once all four legs are on
+      peak = initial — margin you must have free at the moment of entry
+
+    Read-only: basket_order_margins with consider_positions=False. No orders.
+    Throttled — this endpoint rate-limits. Returns {id: (held, peak)} and leaves
+    any position it cannot price as absent rather than guessing.
+    """
+    import time
+    out = {}
+    try:
+        from kiteconnect import KiteConnect
+        api = os.environ.get("KITE_API_KEY")
+        tokf = os.path.join(ROOT, "backtest_data", "access_token.json")
+        if not api or not os.path.exists(tokf):
+            return out
+        k = KiteConnect(api_key=api)
+        k.set_access_token(json.load(open(tokf))["access_token"])
+        idx = {}
+        for i in k.instruments("NFO"):
+            if i["instrument_type"] in ("CE", "PE"):
+                idx[(i["name"], str(i["expiry"]), float(i["strike"]), i["instrument_type"])] =                     i["tradingsymbol"]
+    except Exception as e:
+        print("  margin: kite unavailable (%s)" % str(e)[:50])
+        return out
+
+    for r in rows:
+        legs, ok = [], True
+        for side, ot, K in (("BUY", "CE", r["wce"]), ("BUY", "PE", r["wpe"]),
+                            ("SELL", "CE", r["kce"]), ("SELL", "PE", r["kpe"])):
+            ts = idx.get((r["symbol"], r["expiry"], float(K), ot))
+            if not ts:
+                ok = False
+                break
+            legs.append(dict(exchange="NFO", tradingsymbol=ts, transaction_type=side,
+                             variety="regular", product="NRML", order_type="MARKET",
+                             quantity=int(r["qty"])))
+        if not ok:
+            continue
+        for attempt in range(3):
+            try:
+                res = k.basket_order_margins(
+                    legs, consider_positions=False, mode="compact")
+                peak = res["initial"]["total"]
+                held = (res.get("final") or {}).get("total") or peak
+                out[r["id"]] = (held, peak)
+                break
+            except Exception as e:
+                if "Too many" in str(e) and attempt < 2:
+                    time.sleep(1.2)
+                    continue
+                print("  margin %s: %s" % (r["symbol"], str(e)[:40]))
+                break
+        time.sleep(0.45)
+    return out
+
+
+def live_marks(rows):
+    """Live cost-to-close per open position, from Kite quotes. READ ONLY.
+
+    The book is struck on bhavcopy closes and there is no intraday recorder for
+    stock options, so between EOD runs the page was frozen. This prices the four
+    legs live so the MTM moves during the session. It NEVER evaluates the target
+    or the stop and never writes to the positions table — exits stay exactly
+    where they are, on the EOD close, which is what the study tested.
+
+    A leg that has not traded TODAY is stale (the far wings are thin), so its
+    live price is refused and the caller keeps the bhav mark for that leg.
+    Returns {id: {"val","legs","stale","ts"}}.
+    """
+    out = {}
+    if not rows:
+        return out
+    try:
+        from kiteconnect import KiteConnect
+        api = os.environ.get("KITE_API_KEY")
+        tokf = os.path.join(ROOT, "backtest_data", "access_token.json")
+        if not api or not os.path.exists(tokf):
+            return out
+        k = KiteConnect(api_key=api)
+        k.set_access_token(json.load(open(tokf))["access_token"])
+        idx = {}
+        for i in k.instruments("NFO"):
+            if i["instrument_type"] in ("CE", "PE"):
+                idx[(i["name"], str(i["expiry"]), float(i["strike"]),
+                     i["instrument_type"])] = i["tradingsymbol"]
+    except Exception as e:
+        print("  live: kite unavailable (%s)" % str(e)[:60])
+        return out
+
+    want, spec = {}, {}
+    for r in rows:
+        legs = []
+        for side, ot, K in (("SHORT", "CE", r["kce"]), ("SHORT", "PE", r["kpe"]),
+                            ("LONG", "CE", r["wce"]), ("LONG", "PE", r["wpe"])):
+            ts = idx.get((r["symbol"], r["expiry"], float(K), ot))
+            legs.append((side, ot, float(K), ts))
+            if ts:
+                want["NFO:" + ts] = 1
+        spec[r["id"]] = legs
+        want["NSE:" + r["symbol"]] = 1
+    try:
+        q = k.quote(list(want))
+    except Exception as e:
+        print("  live: quote failed (%s)" % str(e)[:60])
+        return out
+
+    today = dstr(datetime.now())
+    for r in rows:
+        vals, legs, stale = {}, [], 0
+        for side, ot, K, ts in spec[r["id"]]:
+            d = q.get("NFO:" + str(ts), {}) if ts else {}
+            lp = d.get("last_price")
+            ltt = str(d.get("last_trade_time") or "")[:10]
+            fresh = bool(lp) and ltt == today
+            if not fresh:
+                stale += 1
+            vals[(side, ot)] = lp if fresh else None
+            legs.append(dict(side=side, opt=ot, strike=K,
+                             price=lp if fresh else None,
+                             volume=d.get("volume") or 0, stale=not fresh))
+        sce, spe = vals.get(("SHORT", "CE")), vals.get(("SHORT", "PE"))
+        if sce is None or spe is None:
+            continue                      # no live mark without both shorts
+        wce = vals.get(("LONG", "CE")) or 0.0
+        wpe = vals.get(("LONG", "PE")) or 0.0
+        sp = (q.get("NSE:" + r["symbol"], {}) or {}).get("last_price")
+        out[r["id"]] = dict(val=(sce + spe) - (wce + wpe), legs=legs,
+                            stale=stale, spot=sp,
+                            ts=datetime.now().strftime("%H:%M:%S"))
+    return out
+
+
 def leg_detail(m, r, day):
     """Per-leg prices on a session — a READ-ONLY projection for the UI.
 
@@ -394,7 +539,7 @@ def upcoming(m, days, n=3):
     return out
 
 
-def publish(con, m, days):
+def publish(con, m, days, live=None):
     allr = rows_of(con)
     for r in allr:
         r["exit_due"] = dstr(dparse(r["expiry"]) - timedelta(days=DTE_OUT))
@@ -414,6 +559,33 @@ def publish(con, m, days):
             r["legs_asof"] = md
         except Exception:
             r["legs_entry"] = r["legs_now"] = None
+    # LIVE overlay — display only. Exits are untouched and still fire on the
+    # EOD close in sweep(); this just stops the page being frozen mid-session.
+    live_ts = None
+    for r in openp:
+        lv = (live or {}).get(r["id"])
+        r["live"] = False
+        if lv and lv["val"] is not None:
+            r["mark_val"] = round(lv["val"], 2)
+            r["mtm_rs"] = (r["credit"] - lv["val"]) * r["qty"]
+            r["legs_now"] = lv["legs"]
+            r["legs_asof"] = "live " + lv["ts"]
+            r["mark_spot"] = lv.get("spot") or r["mark_spot"]
+            r["live"] = True
+            r["stale_legs"] = lv["stale"]
+            live_ts = lv["ts"]
+
+    mg = live_margins(openp)
+    for r in openp:
+        hp = mg.get(r["id"])
+        r["margin_real"] = hp[0] if hp else None
+        r["margin_peak"] = hp[1] if hp else None
+        r["margin_est"] = r["entry_spot"] * r["qty"] * MARGIN_PCT_EST
+        r["mtm_pct"] = (100.0 * (r["mtm_rs"] or 0) / r["margin_real"]
+                        if r["margin_real"] else None)
+    deployed = sum(v[0] for v in mg.values()) if mg else None
+    deployed_peak = sum(v[1] for v in mg.values()) if mg else None
+    deployed_est = sum(r["margin_est"] for r in openp)
     realised = sum(r["net_rs"] or 0 for r in closed)
     unreal = sum(r["mtm_rs"] or 0 for r in openp)
     wins = [r for r in closed if (r["net_rs"] or 0) > 0]
@@ -429,14 +601,22 @@ def publish(con, m, days):
         bhav_through=days[-1],
         realised=realised, unrealised=unreal, nav=CAPITAL + realised + unreal,
         n_open=len(openp), n_closed=len(closed),
+        capital_deployed=deployed, capital_deployed_est=deployed_est,
+        capital_deployed_peak=deployed_peak,
+        running_pnl_pct=(100.0 * (realised + unreal) / deployed) if deployed else None,
+        live_ts=live_ts, live_n=sum(1 for r in openp if r.get("live")),
+        margin_asof=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        running_pnl=realised + unreal,
         win_rate=(100.0 * len(wins) / len(closed)) if closed else None,
         upcoming=upcoming(m, days),
         entry_time="15:30 (EOD close)", exit_time="15:30 (EOD close)",
         open_positions=openp, closed_trades=closed,
         note=("EOD cadence: entries, marks and exits are struck on real NSE bhavcopy closes; "
-              "stock options have no intraday recorder. Sizing uses a 10%-of-notional margin "
-              "ESTIMATE (study stress mid) — real SPAN check owed. SEED trades are replayed "
-              "history; LIVE trades were opened by the daily job after go-live."))
+              "stock options have no intraday recorder. Marks shown DURING the session are "
+              "live Kite quotes (display only — target and stop still resolve on the EOD "
+              "close, as tested). Margin is the real Kite basket requirement, wings sent "
+              "first. SEED trades are replayed history; LIVE trades were opened by the "
+              "daily job after go-live."))
     for p in PUBS:
         try:
             os.makedirs(os.path.dirname(p), exist_ok=True)
@@ -450,6 +630,23 @@ def publish(con, m, days):
              "{:,.0f}".format(unreal), len(openp), len(closed)))
 
 
+def live():
+    """Re-price open positions from live quotes and republish. Display only.
+
+    Deliberately does NOT call sweep(): no exit is evaluated, no position row is
+    written. Safe to run on a tight intraday cron.
+    """
+    con = init_db()
+    m = ro(MKT)
+    days = sessions(m)
+    openp = [r for r in rows_of(con, "status='OPEN'")]
+    lv = live_marks(openp)
+    print("  live marks for %d/%d open positions" % (len(lv), len(openp)))
+    publish(con, m, days, live=lv)
+    con.close()
+    m.close()
+
+
 def show():
     con = init_db()
     for r in rows_of(con):
@@ -459,4 +656,4 @@ def show():
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "mark"
-    {"seed": seed, "mark": mark, "show": show}[cmd]()
+    {"seed": seed, "mark": mark, "live": live, "show": show}[cmd]()

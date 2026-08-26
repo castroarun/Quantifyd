@@ -7,7 +7,7 @@
  * Study: /app/backtest/stock-45dte-neutral-wings  (STRATEGY-candidate; the
  * real-margin check is still owed before this could ever be real money.)
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import s from './StockWings.module.css';
 
@@ -19,6 +19,11 @@ const inr = (v: number | null | undefined) =>
   v == null ? '—' : (v < 0 ? '-' : '') + '₹' + Math.abs(Math.round(v)).toLocaleString('en-IN');
 const lakh = (v: number) => (v < 0 ? '-' : '') + '₹' + (Math.abs(v) / 1e5).toFixed(2) + 'L';
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+type Leg = {
+  side: 'SHORT' | 'LONG'; opt: 'CE' | 'PE'; strike: number;
+  price: number | null; volume: number;
+};
+
 const dmy = (v: string | null | undefined) => {
   if (!v) return '—';
   const [y, m, d] = v.slice(0, 10).split('-');
@@ -36,6 +41,28 @@ type Pos = {
   mark_val: number | null; mark_date: string | null; mtm_rs: number | null; mark_spot: number | null;
   exit_due: string; dte: number;
   curve?: Array<{ d: string; val: number; mtm: number }>;
+  /* read-only projections added for the expandable row */
+  legs_entry?: Leg[] | null; legs_now?: Leg[] | null; legs_asof?: string | null;
+  margin_real?: number | null; margin_est?: number | null;
+  margin_peak?: number | null; mtm_pct?: number | null;
+  live?: boolean; stale_legs?: number;
+};
+
+type BtTrade = {
+  symbol: string; expiry: string; entry: string; exit: string; reason: string;
+  year: number; spot: number; kce: number; kpe: number; wce: number; wpe: number;
+  hold_days: number; credit_pct: number; gross_pct: number; net_pct: number;
+};
+type BtAgg = {
+  n: number; win: number; avg: number; med: number; best: number; worst: number;
+  avg_credit: number; avg_hold: number;
+};
+type Bt = {
+  config: string; source: string; overall: BtAgg;
+  by_symbol: (BtAgg & { symbol: string })[];
+  by_year: (BtAgg & { year: number })[];
+  by_reason: (BtAgg & { reason: string })[];
+  trades: BtTrade[];
 };
 type Paper = {
   asof: string; mode: string; capital: number; max_slots: number;
@@ -45,12 +72,33 @@ type Paper = {
   links: { study: string; tearsheet: string; github: string };
   bhav_through: string; realised: number; unrealised: number; nav: number;
   n_open: number; n_closed: number; win_rate: number | null;
+  capital_deployed?: number | null; capital_deployed_est?: number | null;
+  margin_asof?: string; running_pnl?: number;
+  capital_deployed_peak?: number | null; running_pnl_pct?: number | null;
+  live_ts?: string | null; live_n?: number;
   upcoming?: Array<{ expiry: string; entry_date: string; entry_weekday: string;
     exit_due: string; days_away: number }>;
   open_positions: Pos[]; closed_trades: Pos[]; note?: string;
 };
 
 export default function StockWings() {
+  /* Row expansion — per row, plus a one-click expand/collapse all. */
+  const [bt, setBt] = useState<Bt | null>(null);
+  const [btAll, setBtAll] = useState(false);
+  const [btSym, setBtSym] = useState<string | null>(null);
+  useEffect(() => {
+    fetch('/app/stock_wings_backtest.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setBt)
+      .catch(() => setBt(null));
+  }, []);
+  const [openRows, setOpenRows] = useState<Set<number>>(new Set());
+  const toggleRow = (id: number) =>
+    setOpenRows((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
   const [p, setP] = useState<Paper | null>(null);
   useEffect(() => {
     const load = () =>
@@ -64,6 +112,7 @@ export default function StockWings() {
   }, []);
 
   const next = p?.upcoming?.[0] ?? null;
+  const held = new Set((p?.open_positions ?? []).map((r) => r.symbol));
   const totalRet = p ? ((p.nav - p.capital) / p.capital) * 100 : 0;
 
   return (
@@ -83,16 +132,23 @@ export default function StockWings() {
         </div>
         <span className={`${s.gateBadge} ${s.paperOn}`}>
           <span className="dot" /> PAPER · ₹20L
-          {p && <span className={s.tm}>as of {p.asof.slice(0, 16)}</span>}
+          {p && (
+            <span className={s.tm}>
+              {p.live_ts
+                ? <><span className={s.liveDot} /> live {p.live_ts}</>
+                : <>as of {p.asof.slice(0, 16)}</>}
+            </span>
+          )}
         </span>
       </div>
 
       <div className={s.warn}>
         Backtest verdict: <b>STRATEGY-candidate</b> — net +0.264% of spot/trade (t 5.06,
         628 liquid trades 2016–26); portfolio 20–26% CAGR at <b>stressed</b> margin, corr
-        to NIFTY −0.09. Sizing here uses a 10%-of-notional margin <b>estimate</b>; the
-        real Kite basket-margin check is still owed, and marks are EOD bhavcopy (stock
-        options have no intraday recorder).
+        to NIFTY −0.09. Margin is now the <b>real Kite basket requirement</b>, not the old
+        10%-of-notional estimate — the check the study left owed. Entries, the target and
+        the stop still resolve on the EOD bhavcopy close, exactly as backtested; the live
+        quotes below only keep the marks moving during the session.
       </div>
 
       <div className={s.kpis}>
@@ -114,18 +170,56 @@ export default function StockWings() {
               &nbsp;· next entry cycle {dmy(next.entry_date)} ({next.entry_weekday}), expiry {dmy(next.expiry)}
             </span>
           )}
+          <span className={s.headRight}>
+            <button
+              className={s.expandBtn}
+              onClick={() => {
+                const all = p?.open_positions ?? [];
+                setOpenRows(openRows.size === all.length && all.length > 0
+                  ? new Set()
+                  : new Set(all.map((r) => r.id)));
+              }}
+            >
+              {p && openRows.size === p.open_positions.length && p.n_open > 0
+                ? '▾ Collapse all' : '▸ Expand all'}
+            </button>
+            {p && (
+              <>
+                <span className={s.headStat}
+                  title={p.capital_deployed_peak != null
+                    ? `peak requirement at entry ${inr(p.capital_deployed_peak)}` : ''}>
+                  <b>{p.capital_deployed != null ? inr(p.capital_deployed) : '—'}</b>
+                  <i>capital deployed{p.capital_deployed != null
+                    ? ` · ${(100 * p.capital_deployed / p.capital).toFixed(0)}% of ₹20L` : ''}</i>
+                </span>
+                <span className={s.headStat}>
+                  <b className={(p.running_pnl ?? 0) >= 0 ? s.pos : s.neg}>
+                    {inr(p.running_pnl ?? 0)}
+                    {p.running_pnl_pct != null && (
+                      <span className={s.pctPar}>
+                        ({p.running_pnl_pct >= 0 ? '+' : ''}{p.running_pnl_pct.toFixed(2)}%)
+                      </span>
+                    )}
+                  </b>
+                  <i>running P&amp;L{p.running_pnl_pct != null ? ' · on margin' : ''}</i>
+                </span>
+              </>
+            )}
+          </span>
         </div>
         <table className={s.table}>
           <thead>
             <tr>
+              <th style={{ width: 22 }} />
               <th>Symbol</th><th>Entry</th><th>Expiry (DTE)</th><th>Shorts PE/CE</th>
               <th>Wings PE/CE</th><th>Qty (lots)</th><th>Credit</th><th>Mark</th>
-              <th>MTM</th><th>Exit due</th><th>Src</th>
+              <th>MTM</th><th>Margin</th><th>Exit due</th><th>Src</th>
             </tr>
           </thead>
           <tbody>
-            {(p?.open_positions ?? []).map((r) => (
-              <tr key={r.id}>
+            {(p?.open_positions ?? []).flatMap((r) => [
+              <tr key={r.id} className={s.clickRow} onClick={() => toggleRow(r.id)}>
+                <td className={s.caret}>{openRows.has(r.id) ? '▾' : '▸'}</td>
                 <td className={s.sym}>{r.symbol}</td>
                 <td>{dmy(r.entry_date)}</td>
                 <td>{dmy(r.expiry)} ({r.dte})</td>
@@ -134,13 +228,88 @@ export default function StockWings() {
                 <td>{r.qty.toLocaleString('en-IN')} ({r.lots}×{r.lot})</td>
                 <td>{inr(r.credit * r.qty)}</td>
                 <td>{r.mark_val != null ? r.mark_val.toFixed(2) + ' · ' + dmy(r.mark_date) : '—'}</td>
-                <td className={(r.mtm_rs ?? 0) >= 0 ? s.pos : s.neg}>{inr(r.mtm_rs)}</td>
+                <td className={(r.mtm_rs ?? 0) >= 0 ? s.pos : s.neg}>
+                  {inr(r.mtm_rs)}
+                  {r.mtm_pct != null && (
+                    <span className={s.pctPar}>
+                      ({r.mtm_pct >= 0 ? '+' : ''}{r.mtm_pct.toFixed(1)}%)
+                    </span>
+                  )}
+                </td>
+                <td title={[
+                  r.margin_peak != null ? `needs ${inr(r.margin_peak)} free at entry` : '',
+                  r.margin_est != null ? `old 10%-of-notional estimate ${inr(r.margin_est)}` : '',
+                ].filter(Boolean).join(' · ')}>
+                  {r.margin_real != null ? inr(r.margin_real) : '—'}
+                </td>
                 <td>{dmy(r.exit_due)}</td>
                 <td><span className={s.srcTag}>{r.src}</span></td>
-              </tr>
-            ))}
+              </tr>,
+              openRows.has(r.id) ? (
+                <tr key={r.id + '-legs'} className={s.legRow}>
+                  <td colSpan={13}>
+                    <div className={s.legWrap}>
+                      <div className={s.legTitle}>
+                        {r.symbol} — the four legs actually held
+                        {r.legs_asof ? <span className={s.tm}>marked {dmy(r.legs_asof)}</span> : null}
+                      </div>
+                      <table className={s.legTable}>
+                        <thead><tr>
+                          <th>Leg</th><th>Strike</th><th>Entry</th><th>Now</th>
+                          <th>Move</th><th>Qty</th><th>Value now</th><th>Entry vol</th>
+                        </tr></thead>
+                        <tbody>
+                          {(r.legs_entry ?? []).map((le: Leg, i: number) => {
+                            const nowLeg = (r.legs_now ?? []).find(
+                              (x: Leg) => x.side === le.side && x.opt === le.opt);
+                            const now = nowLeg?.price ?? null;
+                            const sign = le.side === 'SHORT' ? -1 : 1;
+                            const move = le.price && now != null ? (now / le.price - 1) * 100 : null;
+                            return (
+                              <tr key={i}>
+                                <td>
+                                  <span className={le.side === 'SHORT' ? s.legShort : s.legLong}>
+                                    {le.side === 'SHORT' ? 'SHORT' : 'LONG'}
+                                  </span>{' '}{le.opt}
+                                </td>
+                                <td>{le.strike.toLocaleString('en-IN')}</td>
+                                <td>{le.price != null ? le.price.toFixed(2) : '—'}</td>
+                                <td>{now != null ? now.toFixed(2) : '—'}</td>
+                                <td className={move == null ? '' :
+                                  (move * sign) >= 0 ? s.pos : s.neg}>
+                                  {move == null ? '—' : (move >= 0 ? '+' : '') + move.toFixed(1) + '%'}
+                                </td>
+                                <td>{r.qty.toLocaleString('en-IN')}</td>
+                                <td>{now != null ? inr(now * r.qty * (le.side === 'SHORT' ? -1 : 1)) : '—'}</td>
+                                <td className={s.muted}>{le.volume ? le.volume.toLocaleString('en-IN') : '—'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                      <div className={s.legNote}>
+                        Net of the four legs = <b>{r.credit.toFixed(2)}</b> credit per share at entry
+                        ({inr(r.credit * r.qty)} on {r.qty.toLocaleString('en-IN')} qty), marked at{' '}
+                        <b>{r.mark_val != null ? r.mark_val.toFixed(2) : '—'}</b> to close.
+                        Shorts pay you; the two long wings cap the tail and are what pull the real
+                        margin below a naked strangle&apos;s.
+                        {r.margin_real != null && (
+                          <> Kite blocks <b>{inr(r.margin_real)}</b> for this position
+                          ({inr(r.margin_real / r.lots)}/lot on {r.lots} lots)
+                          {r.margin_peak != null && (
+                            <>, and wants {inr(r.margin_peak)} free at the moment of entry
+                            — the gap is the hedge benefit, which only lands once all four
+                            legs are on</>
+                          )}.</>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : null,
+            ])}
             {p && p.open_positions.length === 0 && (
-              <tr><td colSpan={11} className={s.emptyCell}>Book is flat — next cycle {next ? dmy(next.entry_date) : '—'}.</td></tr>
+              <tr><td colSpan={13} className={s.emptyCell}>Book is flat — next cycle {next ? dmy(next.entry_date) : '—'}.</td></tr>
             )}
           </tbody>
         </table>
@@ -175,6 +344,147 @@ export default function StockWings() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* ---- the same structure, historically ------------------------------ */}
+      <div className={s.card}>
+        <div className={s.cardTitle}>
+          The same structure, backtested
+          {bt && <span className={s.tm}>{bt.overall.n} trades &middot; {bt.by_symbol.length} stocks &middot; 2016&ndash;26</span>}
+          <span className={s.headRight}>
+            <button className={s.expandBtn} onClick={() => { setBtAll(!btAll); setBtSym(null); }}>
+              {btAll ? 'Held symbols only' : 'All symbols'}
+            </button>
+          </span>
+        </div>
+        {!bt ? (
+          <p className={s.note}>Loading the study&apos;s trade log&hellip;</p>
+        ) : (
+          <>
+            <p className={s.note}>
+              Every prior instance of the construction the book is running right now &mdash; same
+              45&rarr;21 DTE window, same &plusmn;2.5% shorts, same 7% wings, no stop, TP at half the
+              credit, and the same liquidity gate. Returns are <b>net</b> (gross less 0.5% of
+              premium turnover) and quoted as a <b>% of spot</b>, which is how the study compares
+              risk across stocks of very different prices.
+            </p>
+            <div className={s.gateRow} style={{ marginTop: 14 }}>
+              <div><b className={s.pos}>+{bt.overall.avg.toFixed(3)}%</b>
+                <span className={s.muted}>net per trade (of spot)</span></div>
+              <div><b>{bt.overall.win.toFixed(1)}%</b><span className={s.muted}>win rate</span></div>
+              <div><b>{bt.overall.avg_credit.toFixed(2)}%</b><span className={s.muted}>avg credit taken</span></div>
+              <div><b>{bt.overall.avg_hold.toFixed(0)} d</b><span className={s.muted}>avg hold</span></div>
+              <div><b className={s.neg}>{bt.overall.worst.toFixed(1)}%</b><span className={s.muted}>worst single trade</span></div>
+            </div>
+
+            <table className={s.table} style={{ marginTop: 16 }}>
+              <thead>
+                <tr>
+                  <th style={{ width: 22 }} />
+                  <th>Symbol</th><th>Trades</th><th>Win %</th><th>Avg net</th>
+                  <th>Median</th><th>Best</th><th>Worst</th><th>Avg credit</th>
+                  <th>Avg hold</th><th>Held now</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bt.by_symbol
+                  .filter((b) => btAll || held.has(b.symbol))
+                  .map((b) => [
+                    <tr key={b.symbol} className={s.clickRow}
+                      onClick={() => setBtSym(btSym === b.symbol ? null : b.symbol)}>
+                      <td className={s.caret}>{btSym === b.symbol ? '\u25be' : '\u25b8'}</td>
+                      <td className={s.sym}>{b.symbol}</td>
+                      <td>{b.n}</td>
+                      <td className={b.win >= 50 ? s.pos : s.neg}>{b.win.toFixed(0)}%</td>
+                      <td className={b.avg >= 0 ? s.pos : s.neg}>
+                        {(b.avg >= 0 ? '+' : '') + b.avg.toFixed(3)}%
+                      </td>
+                      <td className={b.med >= 0 ? s.pos : s.neg}>
+                        {(b.med >= 0 ? '+' : '') + b.med.toFixed(3)}%
+                      </td>
+                      <td className={s.pos}>+{b.best.toFixed(2)}%</td>
+                      <td className={s.neg}>{b.worst.toFixed(2)}%</td>
+                      <td>{b.avg_credit.toFixed(2)}%</td>
+                      <td>{b.avg_hold.toFixed(0)} d</td>
+                      <td>{held.has(b.symbol)
+                        ? <span className={s.heldTag}>open</span>
+                        : <span className={s.muted}>&mdash;</span>}</td>
+                    </tr>,
+                    btSym === b.symbol ? (
+                      <tr key={b.symbol + '-t'} className={s.legRow}>
+                        <td colSpan={11}>
+                          <div className={s.legWrap}>
+                            <div className={s.legTitle}>
+                              {b.symbol} &mdash; every backtested instance
+                            </div>
+                            <table className={s.legTable}>
+                              <thead>
+                                <tr>
+                                  <th>Entry</th><th>Exit</th><th>Held</th><th>Spot</th>
+                                  <th>Shorts PE/CE</th><th>Wings PE/CE</th>
+                                  <th>Credit</th><th>Net</th><th>Exit reason</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {bt.trades.filter((t) => t.symbol === b.symbol).map((t, i) => (
+                                  <tr key={i}>
+                                    <td>{dmy(t.entry)}</td>
+                                    <td>{dmy(t.exit)}</td>
+                                    <td>{t.hold_days} d</td>
+                                    <td>{t.spot.toLocaleString('en-IN')}</td>
+                                    <td>{t.kpe} / {t.kce}</td>
+                                    <td className={s.muted}>{t.wpe} / {t.wce}</td>
+                                    <td>{t.credit_pct.toFixed(2)}%</td>
+                                    <td className={t.net_pct >= 0 ? s.pos : s.neg}>
+                                      {(t.net_pct >= 0 ? '+' : '') + t.net_pct.toFixed(3)}%
+                                    </td>
+                                    <td><span className={s.srcTag}>{t.reason}</span></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null,
+                  ])}
+              </tbody>
+            </table>
+
+            <div className={s.legTitle} style={{ marginTop: 18 }}>By year &mdash; the same trades, grouped</div>
+            <table className={s.table}>
+              <thead>
+                <tr><th>Year</th><th>Trades</th><th>Win %</th><th>Avg net</th>
+                  <th>Best</th><th>Worst</th><th>Avg hold</th></tr>
+              </thead>
+              <tbody>
+                {bt.by_year.map((y) => (
+                  <tr key={y.year}>
+                    <td className={s.sym}>{y.year}</td>
+                    <td>{y.n}</td>
+                    <td className={y.win >= 50 ? s.pos : s.neg}>{y.win.toFixed(0)}%</td>
+                    <td className={y.avg >= 0 ? s.pos : s.neg}>
+                      {(y.avg >= 0 ? '+' : '') + y.avg.toFixed(3)}%
+                    </td>
+                    <td className={s.pos}>+{y.best.toFixed(2)}%</td>
+                    <td className={s.neg}>{y.worst.toFixed(2)}%</td>
+                    <td>{y.avg_hold.toFixed(0)} d</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className={s.note}>
+              The thin early years are the honest part: before 2021 stock options rarely cleared
+              the liquidity gate, so few trades qualified. The edge being traded lives in the
+              dense era, and the study says so rather than averaging it away. How trades ended:{' '}
+              {bt.by_reason.map((x, i) => (
+                <span key={x.reason}>
+                  {i > 0 ? ' \u00b7 ' : ''}<b>{x.reason}</b> {x.n} ({x.win.toFixed(0)}% win)
+                </span>
+              ))}.
+            </p>
+          </>
+        )}
       </div>
 
       <div className={s.grid2}>
