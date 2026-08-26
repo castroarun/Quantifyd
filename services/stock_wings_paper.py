@@ -554,7 +554,7 @@ def upcoming(m, days, n=3):
     return out
 
 
-def publish(con, m, days, live=None, verbose=True, upc=None):
+def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
     allr = rows_of(con)
     for r in allr:
         r["exit_due"] = dstr(dparse(r["expiry"]) - timedelta(days=DTE_OUT))
@@ -590,7 +590,10 @@ def publish(con, m, days, live=None, verbose=True, upc=None):
             r["stale_legs"] = lv["stale"]
             live_ts = lv["ts"]
 
-    mg = live_margins(openp)
+    # margins move slowly; the 5s daemon passes a cached dict so the throttled
+    # basket-margin endpoint is hit every ~10 min, not every tick
+    if mg is None:
+        mg = live_margins(openp)
     for r in openp:
         hp = mg.get(r["id"])
         r["margin_real"] = hp[0] if hp else None
@@ -690,13 +693,15 @@ def livedaemon(tick=5):
         return
     k, spec, want = setup
     upc = upcoming(m, days)               # heavy GROUP BY — cache across ticks
-    print("  daemon: up, %d positions, tick %ds" % (len(openp), tick), flush=True)
+    mgc = live_margins(openp)             # throttled endpoint — cache across ticks
+    print("  daemon: up, %d positions, %d margins, tick %ds"
+          % (len(openp), len(mgc), tick), flush=True)
     fails, last_reload, last_log = 0, time.time(), 0.0
     while in_hours(datetime.now()):
         try:
             q = k.quote(list(want))
             lv = _live_tick(q, openp, spec)
-            publish(con, m, days, live=lv, verbose=False, upc=upc)
+            publish(con, m, days, live=lv, verbose=False, upc=upc, mg=mgc)
             fails = 0
             if time.time() - last_log > 600:
                 print("  daemon: %s live marks %d/%d" %
@@ -715,6 +720,9 @@ def livedaemon(tick=5):
             s2 = _live_setup(openp)
             if s2:
                 k, spec, want = s2
+            m2 = live_margins(openp)
+            if m2:
+                mgc = m2                  # keep last good margins on a failed refresh
             last_reload = time.time()
     print("  daemon: market closed, exiting")
     con.close()
