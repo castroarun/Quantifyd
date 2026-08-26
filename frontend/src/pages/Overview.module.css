@@ -108,7 +108,7 @@
 .tapeV {
   font-variant-numeric: tabular-nums;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   line-height: 1.05;
@@ -151,7 +151,7 @@
 .monthNet {
   font-variant-numeric: tabular-nums;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
   text-transform: none;
 }
@@ -175,7 +175,7 @@
   cursor: pointer;
 }
 .rangeBtn:hover { color: var(--ink); }
-.rangeOn { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.rangeOn { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 
 /* --------------------------------------------------------------- chart */
 
@@ -245,7 +245,7 @@
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--ink-faint);
-  font-weight: 600;
+  font-weight: 500;
   text-align: right;
   padding: 0 8px 7px;
   border-bottom: 1px solid var(--hairline);
@@ -265,7 +265,7 @@
 .tdName { display: flex; align-items: center; gap: 7px; padding-left: 4px !important; min-width: 0; }
 
 .bookName {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -276,7 +276,7 @@
   font-variant-numeric: tabular-nums;
   font-size: 8px;
   letter-spacing: 0.08em;
-  font-weight: 600;
+  font-weight: 500;
   padding: 1.5px 4.5px;
   border-radius: 3px;
   flex: none;
@@ -331,7 +331,7 @@
 .calVal {
   font-variant-numeric: tabular-nums;
   font-size: 9.5px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink-subtle);
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -404,7 +404,7 @@
   gap: 6px;
   font-variant-numeric: tabular-nums;
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.14em;
   color: var(--ink-muted);
   padding: 9px 14px 9px 0;
@@ -453,7 +453,7 @@
 .tickLast {
   font-variant-numeric: tabular-nums;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -463,7 +463,7 @@
 .tickChg {
   font-variant-numeric: tabular-nums;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -486,14 +486,14 @@
 
 .mktState {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.12em;
   color: var(--ink-muted);
 }
 
 .clockTime {
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
@@ -712,7 +712,7 @@
   line-height: 1.5;
 }
 
-.nakedStrip b { color: var(--accent-neg); font-weight: 600; }
+.nakedStrip b { color: var(--accent-neg); font-weight: 500; }
 
 
 /* -------------------------------------------------- candles + overlays */
@@ -781,7 +781,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 3px;
-  padding: 4px 34px;
+  padding: 4px 26px;
   border-right: 1px solid var(--hairline-softest);
   min-width: 0;
 }
@@ -789,7 +789,7 @@
 .mItem:last-child { border-right: 0; }
 .mItem:first-child { padding-left: 2px; }
 
-.mLead .mV { font-size: 42px; letter-spacing: -0.035em; }
+.mLead .mV { font-size: 27px; letter-spacing: -0.02em; }
 
 .mK {
   font-size: 10px;
@@ -800,8 +800,8 @@
 }
 
 .mV {
-  font-size: 30px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 500;
   letter-spacing: -0.025em;
   line-height: 1.12;
   font-variant-numeric: tabular-nums;
@@ -809,7 +809,7 @@
 }
 
 .mS {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink-faint);
   white-space: nowrap;
 }
@@ -829,7 +829,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 3px;
-  padding: 4px 32px;
+  padding: 4px 24px;
   border-right: 1px solid var(--hairline-softest);
   min-width: 0;
 }
@@ -850,8 +850,8 @@
 }
 
 .deskV {
-  font-size: 26px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.15;
   color: var(--ink);
