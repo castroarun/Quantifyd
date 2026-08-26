@@ -106,6 +106,13 @@ def init_db():
     CREATE TABLE IF NOT EXISTS marks (
       pos_id INTEGER, d TEXT, val REAL, mtm_rs REAL, UNIQUE(pos_id, d));
     """)
+    for ddl in ("ALTER TABLE positions ADD COLUMN margin_real REAL",
+                "ALTER TABLE positions ADD COLUMN margin_peak REAL",
+                "ALTER TABLE positions ADD COLUMN margin_asof TEXT"):
+        try:
+            con.execute(ddl)
+        except sqlite3.OperationalError:
+            pass                          # column already exists
     con.commit()
     return con
 
@@ -576,6 +583,25 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
             r["legs_entry"] = r["legs_now"] = None
     # LIVE overlay — display only. Exits are untouched and still fire on the
     # EOD close in sweep(); this just stops the page being frozen mid-session.
+    # The day's final live marks are persisted to a sidecar and REUSED after
+    # close for as long as they are fresher than the newest bhav session —
+    # without this, the post-close EOD publish regresses the page to T-1
+    # closes right after the user watched today's live numbers.
+    sidecar = os.path.join(ROOT, "backtest_data", "stock_wings_last_live.json")
+    if live:
+        try:
+            with open(sidecar + ".tmp", "w") as f:
+                json.dump({"date": dstr(datetime.now()), "marks": live}, f, default=str)
+            os.replace(sidecar + ".tmp", sidecar)
+        except Exception:
+            pass
+    else:
+        try:
+            sd = json.load(open(sidecar))
+            if sd.get("date", "") > days[-1]:
+                live = {int(k): v for k, v in sd["marks"].items()}
+        except Exception:
+            pass
     live_ts = None
     for r in openp:
         lv = (live or {}).get(r["id"])
@@ -591,18 +617,30 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
             live_ts = lv["ts"]
 
     # margins move slowly; the 5s daemon passes a cached dict so the throttled
-    # basket-margin endpoint is hit every ~10 min, not every tick
+    # basket-margin endpoint is hit every ~10 min, not every tick. A successful
+    # fetch is PERSISTED per position, so after-hours publishes (when the Kite
+    # margin API is unavailable/throttled) fall back to the last good value
+    # instead of blanking the column.
     if mg is None:
         mg = live_margins(openp)
+    now_ts = datetime.now().strftime("%Y-%m-%d %H:%M")
     for r in openp:
         hp = mg.get(r["id"])
-        r["margin_real"] = hp[0] if hp else None
-        r["margin_peak"] = hp[1] if hp else None
+        if hp:
+            r["margin_real"], r["margin_peak"], r["margin_asof"] = hp[0], hp[1], now_ts
+            con.execute("UPDATE positions SET margin_real=?,margin_peak=?,margin_asof=? "
+                        "WHERE id=?", (hp[0], hp[1], now_ts, r["id"]))
+        # else: keep the stored margin_real/margin_peak/margin_asof from the DB
         r["margin_est"] = r["entry_spot"] * r["qty"] * MARGIN_PCT_EST
         r["mtm_pct"] = (100.0 * (r["mtm_rs"] or 0) / r["margin_real"]
-                        if r["margin_real"] else None)
-    deployed = sum(v[0] for v in mg.values()) if mg else None
-    deployed_peak = sum(v[1] for v in mg.values()) if mg else None
+                        if r.get("margin_real") else None)
+    if mg:
+        con.commit()
+    with_m = [r for r in openp if r.get("margin_real")]
+    deployed = sum(r["margin_real"] for r in with_m) if with_m else None
+    deployed_peak = (sum(r["margin_peak"] or r["margin_real"] for r in with_m)
+                     if with_m else None)
+    margin_asof = max((r.get("margin_asof") or "" for r in openp), default=None) or None
     deployed_est = sum(r["margin_est"] for r in openp)
     realised = sum(r["net_rs"] or 0 for r in closed)
     unreal = sum(r["mtm_rs"] or 0 for r in openp)
@@ -623,7 +661,7 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
         capital_deployed_peak=deployed_peak,
         running_pnl_pct=(100.0 * (realised + unreal) / deployed) if deployed else None,
         live_ts=live_ts, live_n=sum(1 for r in openp if r.get("live")),
-        margin_asof=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        margin_asof=margin_asof,
         running_pnl=realised + unreal,
         win_rate=(100.0 * len(wins) / len(closed)) if closed else None,
         upcoming=upc if upc is not None else upcoming(m, days),
