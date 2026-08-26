@@ -1,78 +1,77 @@
 {
- "generated_at": "2026-08-26T10:59:29",
+ "generated_at": "2026-08-26T11:00:01",
  "broker_legs": {
   "SENSEX26AUG77700CE": {
    "qty": -160,
    "avg": 288.05,
-   "ltp": 308.75,
-   "pnl": -3312.0,
+   "ltp": 294.3,
+   "pnl": -1000.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG77700PE": {
    "qty": -200,
    "avg": 132.765,
-   "ltp": 111.25,
-   "pnl": 4303.0,
+   "ltp": 120.25,
+   "pnl": 2503.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG77900CE": {
    "qty": -60,
    "avg": 261.0833333333333,
-   "ltp": 186.5,
-   "pnl": 4475.0,
+   "ltp": 176.6,
+   "pnl": 5069.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG77900PE": {
    "qty": -60,
    "avg": 150.68333333333334,
-   "ltp": 190.9,
-   "pnl": -2413.0,
+   "ltp": 201.45,
+   "pnl": -3046.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG78000CE": {
-   "qty": -120,
+   "qty": -80,
    "avg": 210.3166666666667,
-   "ltp": 140.8,
-   "pnl": 8342.0,
+   "ltp": 132.25,
+   "pnl": 9354.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG78000PE": {
    "qty": -40,
    "avg": 196.66666666666669,
-   "ltp": 242.9,
-   "pnl": -8232.0,
+   "ltp": 257.7,
+   "pnl": -8824.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "MANORAMA": {
    "qty": 5,
    "avg": 1885.7,
-   "ltp": 1909.9,
-   "pnl": 121.0,
+   "ltp": 1910.4,
+   "pnl": 123.5,
    "product": "CNC",
    "exchange": "NSE"
   },
   "THYROCARE": {
    "qty": 17,
    "avg": 600.3,
-   "ltp": 606.0,
-   "pnl": 96.9,
+   "ltp": 605.25,
+   "pnl": 84.2,
    "product": "CNC",
    "exchange": "NSE"
   }
  },
  "app_claimed": {
   "SENSEX26AUG78000CE": {
-   "qty": -120,
+   "qty": -80,
    "books": [
     "sensex_atm2",
-    "sensex_atm4",
-    "sensex_atm"
+    "sensex_atm4"
    ]
   },
   "SENSEX26AUG78000PE": {
@@ -160,8 +159,8 @@
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "SENSEX26AUG78000CE",
-   "broker_qty": -120,
-   "app_qty": -120,
+   "broker_qty": -80,
+   "app_qty": -80,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
@@ -174,7 +173,7 @@
   }
  ],
  "filled_by_tag": {
-  "untagged": 382,
+  "untagged": 422,
   "CSL_CSL_TIMEB_SENSEX": 320,
   "CSL_CSL30F_SENSEX_WE": 120
  },

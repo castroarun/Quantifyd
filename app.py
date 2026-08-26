@@ -8146,28 +8146,51 @@ def _sensex_sl_monitor():
                     continue
                 if not _naked or not _p.get('entry_price'):
                     continue
+                # research/128 (2026-08-26, Arun sign-off): the trail is a CEILING the premium must
+                # break upward through - it is NOT an sl_price. Writing it into sl_price made the
+                # generic `live >= sl_price` check self-trigger whenever the value landed below the
+                # market, which it did on 62% of episodes (live: 11:00:02 ceiling 90.4 written while
+                # the premium was 134.0, exited 3s later). sl_price now stays at BREAKEVEN as the
+                # hard floor, and the trail fires its own exit after a confirm window - the exact
+                # mechanism nas_ticker already uses for NIFTY.
                 _be = round(_p['entry_price'], 1)
-                _st = None
+                _live = ltp_map.get(_p.get('tradingsymbol'))
+                _ceil, _fire = None, False
                 try:
-                    from services.sensex_naked_trail import trail_stop as _sx_trail
-                    _st = _sx_trail(_p['id'], ltp_map.get(_p.get('tradingsymbol')), _p['entry_price'])
+                    from services import sensex_naked_trail as _sxt
+                    # Best-effort warm-up seed from the leg's own 09:16->now 5-min premium candles
+                    # (removes a median 39-minute unarmed window). Cold start is safe: BE_PROTECT.
+                    if _p.get('id') not in getattr(_sxt, '_state', {}):
+                        try:
+                            _tok = (_p.get('instrument_token')
+                                    or executor.scanner.resolve_token(_p['tradingsymbol']))
+                            if _tok:
+                                _bars = kite.historical_data(
+                                    _tok, now.replace(hour=9, minute=15, second=0, microsecond=0),
+                                    now, '5minute')
+                                _sxt.seed(_p['id'], _bars)
+                        except Exception:
+                            pass
+                    _ceil, _fire = _sxt.trail_ceiling(_p['id'], _live, _p['entry_price'])
                 except Exception as _te:
-                    logger.warning(f"[{name}] ST-trail calc failed: {_te}")
-                # clamp ST stop to <= breakeven: the survivor is in profit, so this can only ever
-                # TIGHTEN (lock more profit), never be worse than the BE_PROTECT fallback.
-                if _st is not None and _st < _be:
-                    _sl = round(_st, 1); _note = 'SENSEX_ST_TRAIL(7,3)'
-                else:
-                    _sl = _be; _note = 'SENSEX_BE_PROTECT (warmup/fallback)'
-                if abs((_p.get('sl_price') or 0) - _sl) > 0.05:
+                    logger.warning(f"[{name}] trail calc failed: {_te}")
+                _note = ('SENSEX_ST_CEIL(7,3) @%.1f' % _ceil) if _ceil else 'SENSEX_BE_PROTECT (warmup)'
+                if abs((_p.get('sl_price') or 0) - _be) > 0.05:
                     try:
-                        executor.db.update_position(_p['id'], sl_price=_sl, notes=_note)
-                        _p['sl_price'] = _sl
-                        logger.info(f"[{name}] naked survivor {_p.get('tradingsymbol')} -> {_note} SL {_sl}")
+                        executor.db.update_position(_p['id'], sl_price=_be, notes=_note)
+                        logger.info(f"[{name}] naked survivor {_p.get('tradingsymbol')} -> {_note}, sl=BE {_be}")
                     except Exception as _e:
                         logger.error(f"[{name}] survivor re-arm failed: {_e}")
-                else:
-                    _p['sl_price'] = _sl
+                _p['sl_price'] = _be
+                if _fire and _live:
+                    logger.warning(f"[{name}] TRAIL EXIT {_p.get('tradingsymbol')}: live {_live:.1f} "
+                                   f"> ceiling {_ceil:.1f} for {_sxt.CONFIRM_POLLS} polls")
+                    try:
+                        executor._close_leg(_p, _live, 'ST_TRAIL_EXIT')
+                        _sxt.reset(_p['id'])
+                    except Exception as _e:
+                        logger.error(f"[{name}] trail exit failed: {_e}", exc_info=True)
+                    continue
             actions = executor.check_and_handle_sl(positions=active, live_ltps=ltp_map)
             if actions:
                 logger.info(f"[{name}] SL monitor: {len(actions)} actions")
