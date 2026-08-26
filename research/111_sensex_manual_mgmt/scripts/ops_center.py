@@ -94,6 +94,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("NSE 2027 holiday calendar - add config/nse_holidays_2027.json", "2026-12-10", "PENDING",
+     "NSE has NOT published 2027 yet (their holiday-master API returned 2026 dates only, checked 2026-08-26), so the file cannot be written truthfully today. Until it exists, trading_calendar treats EVERY 2027 weekday as a trading day - it logs a warning but callers see a confident wrong answer. Consequences: the momentum month-end rebalance (now calendar-aware) could fire on a 2027 holiday and skip that month entirely, and any is_trading_day() gate elsewhere silently mis-fires. Fetch from https://www.nseindia.com/api/holiday-master?type=trading once NSE publishes (usually Nov/Dec) and mirror the 2026 file format."),
     ("Stock wings (r/127): REAL basket-margin check - the G4 gate", "2026-09-05", "PENDING",
      "The study sizes on a MODELED margin (1.25x max-loss + 2%, ~6.7% of notional; paper book uses a 10% estimate). Measure real SPAN+exposure via Kite basket_order_margins on a live C1 structure (e.g. the open HDFCBANK/INFY Sep-29 condors) and re-price the CAGR claim: 38.5% at modeled vs 20.2% at 2x. Until measured, quote the 2x row."),
     ("Stock wings (r/127): paper-vs-study tracking review after ~3 cycles", "2026-11-25", "PENDING",
