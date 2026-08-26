@@ -8,25 +8,26 @@ Checked every book that read as idle or never-traded on /app/strategies and /app
   COFORGE-HCLTECH (short, entry z 2.10, 08-20) and BAJFINANCE-KOTAKBANK (long, z −2.31, 08-21).
   NAV ₹9.81L, unrealised −₹18,552. Zero closed trades yet — hence the false 'never traded'.
 - **Breakout ₹10L — WORKING, gate-blocked.** One entry ever: NAVINFLUOR ₹1.25L on 08-06, still held,
-  unrealised −₹1,402, NAV ₹10.06L. Latest NAV rows show , i.e. NIFTY below the 200-DMA
+  unrealised −₹1,402, NAV ₹10.06L. Latest NAV rows show `gate: OFF`, i.e. NIFTY below the 200-DMA
   gate, so no new entries — correct behaviour, not a fault. Weekly cadence: mid-week runs only
   update cash/NAV.
-- **MST — enabled + paper, flat, no signal.** Boots ;
+- **MST — enabled + paper, flat, no signal.** Boots `enabled=True paper_mode=True state=NO_POSITION`;
   all 10 legacy legs closed by STALE_CLEARED_20260817. No flip since. ⚠️ Its 30-min seed buffer
-  ends **2026-07-16** () — worth confirming that a 5-week-old
-  seed plus live 5-min-derived bars gives a sane indicator window. Review already due 2026-09-01.
+  ends **2026-07-16** (`[MST] Seeded 250 historical 30-min bars (last=2026-07-16 15:15:00)`) — worth
+  confirming that a 5-week-old seed plus live 5-min-derived bars gives a sane indicator window.
+  Review already due 2026-09-01.
 - **NWV — idle 23 days**, weekly jobs registered (Sun 22:00 state, Mon 09:46 view). Not yet explained;
   next item to look at.
 - **ORB Cash — RECOVERED.** 85 closed trades, 39 in 30d, traded today, flat at close. Net −₹27,773.
 
-**FIXED (commit ):**  counted closed trades only, so any book
+**FIXED (commit `288a924`):** `services/book_liveness.py` counted closed trades only, so any book
 holding a position read as dead and was dropped from the Overview table. It now also counts open
-positions per book;  keeps its meaning (days since last exit), new 
-counts an entry too, and the pages show . Read-only projection — no engine touched.
+positions per book; `days_idle` keeps its meaning (days since last exit), new `days_since_activity`
+counts an entry too, and the pages show `holds N`. Read-only projection — no engine touched.
 Frontend built and live; **the API field arrives with the 09:00 pre-open restart** (no manual
-restart taken: book was flat on options, 4 manual CNC holdings only).
+restart taken: the book was flat on options, 4 manual CNC holdings only).
 
-**Still open from this pass:** (a) why NWV has not traded in 23 days; (b) MST stale-seed question above.
+**Still open from this pass:** (a) why NWV has not traded in 23 days; (b) the MST stale-seed question above.
 
 ## ⏳ 2026-08-25 — research/127 STRATEGY-candidate: stock 45→21 DTE winged strangle — next: margin check, then paper book
 One universal ruleset across ~80 F&O stocks (real NSE bhav EOD): sell ±2.5% strangle at
