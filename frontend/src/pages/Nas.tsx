@@ -152,7 +152,13 @@ const NAS_OPT_DEF: SystemDef = {
 const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
   { id: 'csl-timeb2', key: 'csl-timeb2', label: 'NIFTY TimeB2', subtitle: 'expiry-Tue afternoon window', rules: '', configNote: 'live 8L · 13:15→14:30 CSL30', group: '916' },
-  { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Mon/Tue/Fri windows', group: '916' },
+  { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Tue + Fri (Mon runs as its own AM book)', group: '916' },
+  { id: 'sx-atm', key: 'sx-atm', label: 'SENSEX ATM', subtitle: 'per-leg 30% · ST-trail', rules: '', configNote: 'live 2L · Wed/Thu · no per-leg stop on DTE0', group: '916' },
+  { id: 'sx-atm2', key: 'sx-atm2', label: 'SENSEX ATM2', subtitle: '0.4% move-stop + per-leg 30%', rules: '', configNote: 'live 2L · Wed/Thu', group: '916' },
+  { id: 'sx-atm4', key: 'sx-atm4', label: 'SENSEX ATM4', subtitle: 'per-leg 30% · roll-to-match', rules: '', configNote: 'live 2L · Wed/Thu · no per-leg stop on DTE0', group: '916' },
+  { id: 'csl-comb-sx-wed', key: 'csl-comb-sx-wed', label: 'SENSEX COMB30 · Wed', subtitle: 'full-day combined-SL 30%', rules: '', configNote: 'live 3L Wed · user override vs study', group: '916' },
+  { id: 'csl-timeb-mon-am', key: 'csl-timeb-mon-am', label: 'NIFTY TimeB Mon-AM', subtitle: '09:16-11:16 · Rs1,000/lot stop', rules: '', configNote: 'live 8L Monday · override vs r/124 null', group: '916' },
+  { id: 'csl-timeb-mon', key: 'csl-timeb-mon', label: 'NIFTY TimeB Mon · paper', subtitle: '13:00-14:00 control', rules: '', configNote: 'paper 8L · r/124 evidence', group: '916' },
   { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30 · control', subtitle: 'fixed-SL30 control arm (paper)', rules: '', configNote: 'paper A/B', group: '916' },
   { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TimeB SENSEX', subtitle: 'Wed + Thu windows', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
 ];
@@ -1258,6 +1264,17 @@ export default function Nas() {
   // COMB + TimeB sleeves (research/111 paper/live books) — static json, no backend.
   const [cslLive, setCslLive] = useState<any>(null);
   const [cslDay, setCslDay] = useState<any>(null);
+  // The SENSEX 9:16 suite is real money on Wed/Thu but lives in SensexLiveCard's OWN local
+  // state, so the Trade Book could not see it: on a SENSEX-only Wednesday the book showed one
+  // planned row and Day P&L +Rs0 while 6 live lots were open. Lift it to the parent too.
+  const [sxLive, setSxLive] = useState<any>(null);
+  useEffect(() => {
+    const load = () => fetch(`/app/sensex_live.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json()).then(setSxLive).catch(() => {});
+    load();
+    const id = setInterval(load, 8000);
+    return () => clearInterval(id);
+  }, []);
   useEffect(() => {
     const load = () => {
       fetch(`/app/csl_paper_live.json?t=${Date.now()}`, { cache: 'no-store' })
@@ -1580,6 +1597,33 @@ export default function Nas() {
     CSL_TIMEB_SENSEX: { 0: ['13:00', '15:20', 'none'], 1: ['10:30', '12:00', 20] },
     CSL_TIMEB2_LIVE: { 0: ['13:15', '14:30', 30] },
     CSL30F_SENSEX: { 0: ['09:16', '15:20', 30], 1: ['09:16', '15:20', 30], 2: ['09:16', '15:20', 30], 3: ['09:16', '15:20', 30], 4: ['09:16', '15:20', 30] },
+    CSL30F_SENSEX_WED: { 1: ['09:16', '15:20', 30] },
+    CSL_TIMEB_NIFTY_MON_AM: { 1: ['09:16', '11:16', 'rs1000'] },
+    CSL_TIMEB_NIFTY_MON: { 1: ['13:00', '14:00', 20] },
+  };
+  // SENSEX 9:16 suite -> Trade Book rows, from the standalone live writer.
+  // Legs carry cp/strike/qty/entry/ltp/arm/status/pnl; ACTIVE legs render open, CLOSED ones
+  // drop into closed_today so a stopped leg stays visible for the rest of the session.
+  const sxTbState = (label: string): SystemStateRecord => {
+    const sys: any = (sxLive?.systems ?? []).find((x: any) => x.label === label);
+    if (!sys) return { state: null, err: null };
+    const ce: any[] = [], pe: any[] = [], closed: any[] = [];
+    for (const l of (sys.legs ?? [])) {
+      const row: any = {
+        leg: l.cp, strike: l.strike, qty: l.qty,
+        entry_price: l.entry, ltp: l.ltp, pnl_inr: l.pnl,
+        mode: l.mode || sys.mode || 'live', status: l.status,
+        arm_text: l.arm, exit_planned: '15:15',
+      };
+      if (String(l.status).toUpperCase() === 'CLOSED') {
+        row.exit_price = l.ltp;
+        row.exit_reason = (String(l.arm || '').split('@')[0] || '').trim() || 'EXIT';
+        closed.push(row);
+      } else if (String(l.cp).toUpperCase() === 'CE') ce.push(row);
+      else pe.push(row);
+    }
+    if (!ce.length && !pe.length && !closed.length) return { state: null, err: null };
+    return { state: { positions: { ce, pe, closed_today: closed } } as any, err: null };
   };
   const sleeveTbState = (bk: string, qty: number): SystemStateRecord => {
     // NOTE: the daemon drops a book from csl_paper_live.json once it exits - a missing
@@ -1924,7 +1968,11 @@ export default function Nas() {
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
           systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-timeb2': sleeveTbState('CSL_TIMEB2_LIVE', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160) }}
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-timeb2': sleeveTbState('CSL_TIMEB2_LIVE', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160),
+            'csl-comb-sx-wed': sleeveTbState('CSL30F_SENSEX_WED', 60),
+            'csl-timeb-mon-am': sleeveTbState('CSL_TIMEB_NIFTY_MON_AM', 520),
+            'csl-timeb-mon': sleeveTbState('CSL_TIMEB_NIFTY_MON', 520),
+            'sx-atm': sxTbState('SENSEX ATM'), 'sx-atm2': sxTbState('SENSEX ATM2'), 'sx-atm4': sxTbState('SENSEX ATM4') }}
           liveLegs={liveTicks.legs}
           basis={histBasis}
         />

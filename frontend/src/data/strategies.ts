@@ -565,6 +565,37 @@ export const SYSTEMS: StrategySystem[] = [
     ],
   },
 
+  {
+    id: 'stock-wings',
+    name: 'Stock Winged Strangle',
+    subtitle: 'F&O stocks \u2014 45 \u2192 21 DTE \u00b12.5% strangle + 7% wings, one ruleset',
+    status: 'paper',
+    size: '\u20b920L / 10 slots (paper)',
+    since: '25 Aug 2026',
+    rule: 'At 45 DTE on the monthly stock expiry sell the \u00b12.5% strangle and buy wings ~7% away; no stop; close at 50% of credit or 21 DTE. Liquidity (all 4 legs traded, shorts \u2265100, wings \u226510) is the only stock filter; slots ranked by option volume.',
+    rules: [
+      ['Universe', 'Every F&O stock \u2014 one universal ruleset, zero per-stock tuning; the liquidity gate does the selecting'],
+      ['Entry', 'Monthly expiry \u2212 45 calendar days at EOD close: sell CE @ spot+2.5% / PE @ spot\u22122.5% (nearest traded strikes)'],
+      ['Wings', 'Buy CE/PE ~7% of spot beyond the shorts \u2014 crash cap for stock-specific overnight gaps; wing width chosen by sweep (wider-monotone)'],
+      ['Exits', '50% of net credit, or time exit at 21 DTE. NO premium stop \u2014 every stop tested hurts; the wings are the risk cap'],
+      ['Sizing', '10 slots \u00d7 \u20b92L; lots to ~\u20b920L notional/slot on a 10%-of-notional margin ESTIMATE \u2014 real SPAN check owed'],
+      ['Cadence', 'EOD only: entries, marks and exits struck on real NSE bhavcopy closes (no intraday stock-options data exists)'],
+      ['Why paper', 'Study is STRATEGY-candidate (G3 passed); gates to real money: real basket margin, live cost/slippage evidence, earnings-skip test'],
+    ],
+    rulesDoc: 'research/127_stock_neutral_wings/STOCK_NEUTRAL_WINGED_STRADDLE_DAILY_SWEEP_STATUS.md',
+    dashboard: '/stock-wings',
+    studies: [
+      {
+        slug: 'stock-45dte-neutral-wings',
+        title: 'Stock 45\u219221 DTE winged strangle \u2014 one ruleset across the F&O universe',
+        verdict: 'STRATEGY-CANDIDATE',
+      },
+    ],
+    changeLog: [
+      { date: '25 Aug 2026', text: 'PAPER book live: services/stock_wings_paper.py (cron 16:50 + 20:30) seeded from 01-Jun \u2014 18 replayed closes, 10 open Sep-29 positions; page at /app/stock-wings. Study published same day: net +0.264%/trade t 5.06, portfolio 20\u201326% CAGR at stressed margin, corr NIFTY \u22120.09.' },
+    ],
+  },
+
   // ---------------------------------------------------------------- PARKED
   {
     id: 'straddle45',

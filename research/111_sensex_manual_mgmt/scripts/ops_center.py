@@ -15,6 +15,14 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
+    ("Stock winged strangle PAPER book (research/127)", [
+        ("bhav stock daily download", "16:20 Mon-Fri cron (flock)",
+         "extends nse_options_bhav with the day's F&O STOCK bhavcopy (idempotent, resumes by date); feeds the paper book and any stock-options research",
+         "cd /home/arun/quantifyd && ./venv/bin/python3 research/89_short_monthly_straddle/scripts/download_nse_bhav_stocks.py"),
+        ("stock_wings_paper seed+mark", "16:50 + 20:30 Mon-Fri cron (flock)",
+         "45->21 DTE +/-2.5% strangle + 7% wings on F&O stocks, Rs20L/10 slots PAPER: opens new 45-DTE cycles, marks/exits from bhav closes, publishes /app/stock_wings_paper.json for /app/stock-wings",
+         "cd /home/arun/quantifyd && ./venv/bin/python3 services/stock_wings_paper.py seed"),
+    ]),
     ("Expiry-Afternoon Lab (research/125)", [
         ("expiry_lab_assessment", "Tue+Thu 16:05 IST cron",
          "re-runs the DTE0 afternoon sweep, re-scores frozen slots (TimeB2 live Tue 13:15-14:30 CSL30 8L), flags DRIFT/WEAK, appends permanent run history to /app/straddles#expiry-lab",
@@ -47,6 +55,8 @@ GROUPS = [
          "set -a; . .env; set +a; venv/bin/python3 services/straddle45_paper.py mark"),
         ("straddle45_paper seed", "16:20 Mon-Fri", "Opens a new campaign when an entry date (expiry-45d) is reached; closes any campaign that hit target/stop/21-DTE",
          "set -a; . .env; set +a; venv/bin/python3 services/straddle45_paper.py seed"),
+        ("margin_recorder", "16:05 Mon-Fri", "Records REAL margin daily: account SPAN/exposure, a reference 1-lot ATM straddle on the front monthly, and the book's own open position, against NIFTY spot + India VIX and its 252-session rank. Replaces the ABANDONED historical SPAN reconstruction - builds true margin-vs-vol history from 2026-08-25 forward",
+         "set -a; . .env; set +a; venv/bin/python3 services/margin_recorder.py"),
         ("download_nse_bhav (daily)", "16:10 Mon-Fri", "NSE F&O bhavcopy for the last 5 sessions. NEW - it had NO cron, which is why bhav sat stale from 2026-07-21 to 2026-08-24 and every EOD-priced book silently aged",
          "venv/bin/python3 download_nse_bhav.py --start $(date -d '5 days ago' +%Y-%m-%d) --end $(date +%Y-%m-%d)"),
     ]),
@@ -81,14 +91,18 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Stock wings (r/127): REAL basket-margin check - the G4 gate", "2026-09-05", "PENDING",
+     "The study sizes on a MODELED margin (1.25x max-loss + 2%, ~6.7% of notional; paper book uses a 10% estimate). Measure real SPAN+exposure via Kite basket_order_margins on a live C1 structure (e.g. the open HDFCBANK/INFY Sep-29 condors) and re-price the CAGR claim: 38.5% at modeled vs 20.2% at 2x. Until measured, quote the 2x row."),
+    ("Stock wings (r/127): paper-vs-study tracking review after ~3 cycles", "2026-11-25", "PENDING",
+     "Compare realised net per cycle vs the study's +0.264%-of-spot/trade, fill reproducibility at bhav closes, and whether the liquidity gate admits ~10 candidates/cycle as seeded (26 candidates on 2026-08-14). Also revisit earnings-skip once an earnings-date source exists. /app/stock-wings"),
     ("Monday AM live cell (CSL_TIMEB_NIFTY_MON_AM) - keep or kill after 4 live Mondays", "2026-09-22", "PENDING",
      "Went live 2026-08-25 at 8 lots, 09:16-11:16, Rs1,000/lot rupee stop, as an Arun OVERRIDE against r/124 (best Monday cell on measured costs, median +6,920@8L/88.9% win, but FAILS the label-shuffle null p=0.376 on n=18). Judge on 4 real Mondays: realised median vs +6,920, how often the rupee stop fires (modelled 5.6%), realised worst day vs the modelled -15,752, and whether entering 8 lots at 09:16 on the SAME strike as the 6-lot suite + 2-lot COMB shows the r/126 Arm C concentration effect. Paper control: CSL_TIMEB_NIFTY_MON (13:00-14:00)."),
     ("TimeB2 (expiry-Tue afternoon straddle) live-vs-model review after 4 Tuesdays", "2026-09-22", "SCHEDULED",
      "research/125 slot went live 2026-08-25 (8L one-shot); judge live fills vs model in /app/straddles#expiry-lab live_vs_model; also decide SENSEX Thu 13:30-15:00 CSL30 deployment then"),
 
-    ("45-DTE straddle: stress-margin test before any live sizing",
-     "2026-09-30", "PENDING",
-     "research/119 passed G3 and now runs as a 3-lot PAPER book. Blocking item for live: reconstruct per-lot SPAN across 2019-26 and re-run the equity curve with a margin-call rule. Margin inflates +26% once spot is 3% away and a >=3% move happens in 66% of campaigns, so the fixed-capital CAGR is an upper bound."),
+    ("45-DTE straddle: stress-margin test - RECONSTRUCTION ABANDONED, now forward-recording",
+     "2026-11-30", "BLOCKED",
+     "ATTEMPTED 2026-08-25 and FAILED its own gate: the SPAN reconstruction hit RMS 12.0% against a pre-declared 10% limit, with structured errors (far strikes under-predicted up to 24.6%, 64-DTE by 17.0%). Diagnosed as a missing vol smile, then found unfixable - the wing strikes carry ZERO open interest and zero volume, so their LTPs are stale by hundreds of points and several have no two-sided quote at all; there is no market vol there to calibrate against. NSE .spn parameter files are not reachable from any public endpoint. Tuning scan parameters until the gate passed would be fitting to the gate, so it was abandoned rather than massaged. REPLACED BY: services/margin_recorder.py, logging real SPAN/exposure daily from 2026-08-25. Re-assess 2026-11-30 once ~3 months of real margin-vs-vol history exists. INTERIM BOUND: Rs 11.96L at 3 lots survives ~1.95x margin inflation (measured requirement Rs 5.99L today); whether Mar-2020 exceeded that is NOT known and must not be asserted."),
     ("45-DTE straddle: paper-vs-study tracking review",
      "2026-11-30", "PENDING",
      "After ~3 completed live-paper campaigns, compare realised net/campaign against the study's +78.1 pts and check the entry/exit fills are reproducible. /app/straddle45"),

@@ -4,6 +4,7 @@ import { apiGet } from './api/client';
 import type { AuthStatus } from './api/types';
 import AppLayout from './components/Layout/AppLayout';
 import Login from './pages/Login';
+import Overview from './pages/Overview';
 import Strategies from './pages/Strategies';
 import Orb from './pages/Orb';
 import Nas from './pages/Nas';
@@ -32,6 +33,7 @@ import Backtest from './pages/Backtest';
 import BacktestStudy from './pages/BacktestStudy';
 import MomentumPaper from './pages/MomentumPaper';
 import Straddle45 from './pages/Straddle45';
+import StockWings from './pages/StockWings';
 import BreakoutPaper from './pages/BreakoutPaper';
 import HaPaper from './pages/HaPaper';
 import OrbPaper from './pages/OrbPaper';
@@ -89,7 +91,7 @@ function HomeRedirect() {
       </div>
     );
   }
-  return <Navigate to={auth === 'auth' ? '/strategies' : '/login'} replace />;
+  return <Navigate to={auth === 'auth' ? '/overview' : '/login'} replace />;
 }
 
 export default function App() {
@@ -97,6 +99,16 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomeRedirect />} />
       <Route path="/login" element={<Login />} />
+      <Route
+        path="/overview"
+        element={
+          <Protected>
+            <AppLayout active="overview">
+              <Overview />
+            </AppLayout>
+          </Protected>
+        }
+      />
       <Route
         path="/strategies"
         element={
@@ -285,6 +297,16 @@ export default function App() {
           <Protected>
             <AppLayout active="straddle45">
               <Straddle45 />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/stock-wings"
+        element={
+          <Protected>
+            <AppLayout active="stock-wings">
+              <StockWings />
             </AppLayout>
           </Protected>
         }

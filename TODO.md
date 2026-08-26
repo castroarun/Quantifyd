@@ -8,7 +8,10 @@ One universal ruleset across ~80 F&O stocks (real NSE bhav EOD): sell ±2.5% str
 +0.264%S0/trade (t=5.06, n=628); portfolio 39% CAGR dense-era at modeled margin, 21%/−10%DD
 at 2× margin; corr to NIFTY −0.09 (+EV in NIFTY crash months). G3 PASSED (super-winner, OOS,
 liquidity-monotone, DTE placebo 35/55≈0, lag). Full verdict research/127_stock_neutral_wings/
-results/RESULTS.md (commit 964753e). **Open items:** (1) real margin check via Kite basket
+results/RESULTS.md (commit 964753e). **PAPER BOOK LIVE 2026-08-25 evening** at /app/stock-wings (services/stock_wings_paper.py,
+cron 16:20 bhav-stocks + 16:50/20:30 seed-mark; seeded from 01-Jun: 18 replayed closes,
+10 open Sep-29 positions, NAV Rs20.41L). Strategies index + Ops Center + LABS ref updated.
+**Open items:** (1) real margin check via Kite basket
 margin API (G4 full pass gate); (2) paper book on top-liquidity tier (5-10 slots); (3) earnings
 -date source → test earnings-skip; (4) tearsheet + publish to /app/backtest registry.
 

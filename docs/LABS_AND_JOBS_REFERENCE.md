@@ -87,3 +87,13 @@ All in `research/111_sensex_manual_mgmt/scripts/`, run with `venv/bin/python3` f
 | Live runner | timeb2_oneshot.py (one-shot, arm pre-13:15 on expiry Tuesday) |
 | Review | 2026-09-22: TimeB2 live-vs-model after 4 Tuesdays + SENSEX Thu slot decision |
 
+
+## Stock winged strangle PAPER book (research/127) — added 2026-08-25
+
+| Job | Schedule | What | Manual command |
+|---|---|---|---|
+| bhav stock daily download | 16:20 Mon–Fri (flock) | extends `nse_options_bhav` with the day's F&O STOCK bhavcopy (idempotent) | `./venv/bin/python3 research/89_short_monthly_straddle/scripts/download_nse_bhav_stocks.py` |
+| stock_wings_paper seed+mark | 16:50 + 20:30 Mon–Fri (flock) | 45→21 DTE ±2.5% strangle + 7% wings on F&O stocks, ₹20L/10 slots PAPER; publishes `/app/stock_wings_paper.json` for `/app/stock-wings` | `./venv/bin/python3 services/stock_wings_paper.py seed` |
+
+Reviews (in Ops Center): real basket-margin check due 2026-09-05; paper-vs-study tracking review due 2026-11-25.
+Study: `/app/backtest/stock-45dte-neutral-wings` · Status doc: `research/127_stock_neutral_wings/STOCK_NEUTRAL_WINGED_STRADDLE_DAILY_SWEEP_STATUS.md`

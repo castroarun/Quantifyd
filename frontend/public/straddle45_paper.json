@@ -1,12 +1,12 @@
 {
- "asof": "2026-08-25 15:55:05",
+ "asof": "2026-08-26 10:35:06",
  "upcoming": [
   {
    "expiry": "2026-10-27",
    "entry_date": "2026-09-11",
    "entry_weekday": "Fri",
    "exit_due": "2026-10-06",
-   "days_away": 17,
+   "days_away": 16,
    "weekend_rolled": true
   },
   {
@@ -14,7 +14,7 @@
    "entry_date": "2026-11-13",
    "entry_weekday": "Fri",
    "exit_due": "2026-12-08",
-   "days_away": 80,
+   "days_away": 79,
    "weekend_rolled": true
   },
   {
@@ -22,7 +22,7 @@
    "entry_date": "2027-02-12",
    "entry_weekday": "Fri",
    "exit_due": "2027-03-09",
-   "days_away": 171,
+   "days_away": 170,
    "weekend_rolled": true
   }
  ],
@@ -32,16 +32,16 @@
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
- "bhav_through": "2026-08-21",
+ "bhav_through": "2026-08-24",
  "realised": 131703.64278000002,
- "unrealised": 33754.50000000001,
- "nav": 1365002.1644278744,
+ "unrealised": 35889.750000000015,
+ "nav": 1367137.4144278744,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 0,
  "unrealised_plan": 0,
- "unrealised_off": 33754.50000000001,
+ "unrealised_off": 35889.750000000015,
  "nav_plan": 1331247.6644278744,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
@@ -97,14 +97,14 @@
    "vix_level": 11.31,
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
-   "mark_prem": 576.6,
-   "mark_date": "2026-08-25 15:55:03",
+   "mark_prem": 565.65,
+   "mark_date": "2026-08-26 10:35:04",
    "mark_src": "kite-ltp",
-   "mtm_rs": 33754.50000000001,
-   "mark_spot": 24334.55,
+   "mtm_rs": 35889.750000000015,
+   "mark_spot": 24319.25,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
-   "dte": 34,
+   "dte": 33,
    "curve": [
     {
      "d": "2026-08-17",
@@ -130,6 +130,11 @@
      "d": "2026-08-21",
      "prem": 603.0999999999999,
      "mtm": 28587.000000000025
+    },
+    {
+     "d": "2026-08-24",
+     "prem": 590.45,
+     "mtm": 31053.75
     }
    ]
   }
@@ -163,7 +168,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-08-04",
-   "dte": -1
+   "dte": -2
   },
   {
    "id": 2,
@@ -193,7 +198,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-07-07",
-   "dte": -29
+   "dte": -30
   },
   {
    "id": 1,
@@ -223,7 +228,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-06-09",
-   "dte": -57
+   "dte": -58
   }
  ]
 }

@@ -68,6 +68,12 @@ const MARGIN_STRESS = [
   { label: 'After a 7% adverse move', perLot: 329045, freq: null },
 ];
 const SIZING_MARGIN = 268974;      // survive a 3% adverse move — the base case
+/* Capital is pledged in LIQUID1 except a fixed cash buffer. The book is idle 46%
+   of the time under the VIX filter (28 of 89 months skipped, plus the gaps between
+   campaigns), so the yield is a real part of the return, not a rounding item. */
+const CASH_BUFFER = 200000;
+const IDLE_ETF = 'LIQUID1';
+const LIQ_RATES = [0.04, 0.05, 0.06];
 
 const inr = (v: number) => (v < 0 ? '-' : '') + '₹' + Math.abs(Math.round(v)).toLocaleString('en-IN');
 const lakh = (v: number) => (v < 0 ? '-' : '') + '₹' + (Math.abs(v) / 1e5).toFixed(2) + 'L';
@@ -174,6 +180,12 @@ export default function Straddle45() {
       worst: rupee(Math.abs(WORST_TRADE_PTS)),
       credit: rupee(AVG_CREDIT),
       headroom: capital / marginAtEntry,
+      pledged: Math.max(0, capital - CASH_BUFFER),
+      liq: LIQ_RATES.map((y) => {
+        const gain = Math.max(0, capital - CASH_BUFFER) * (Math.pow(1 + y, YEARS_SPAN) - 1);
+        const c = (Math.pow((capital + total + gain) / capital, 1 / YEARS_SPAN) - 1) * 100;
+        return { y, gain, cagr: c };
+      }),
       maxLots: Math.floor(capital / (SIZING_MARGIN + 2 * Math.abs(MAXDD_PTS) * LOT)),
     };
   }, [lots]);
@@ -314,6 +326,65 @@ export default function Straddle45() {
         <Kpi label="Win rate" value={WIN_RATE + '%'} tone="" />
         <Kpi label="Avg credit" value={lakh(m.credit)} tone="" />
         <Kpi label="Avg hold" value={AVG_DAYS + ' d'} tone="" />
+      </div>
+
+      {/* ── return including the pledged LIQUID1 ────────────────────────────── */}
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>
+          Return including {IDLE_ETF} on the pledged capital — {lots} lot{lots > 1 ? 's' : ''}
+        </div>
+        <div className={styles.tw}>
+          <table className={styles.table}>
+            <thead><tr><th>Basis</th><th>CAGR</th><th>Max DD</th><th>Calmar</th><th>{IDLE_ETF} earns</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Options only — assumption-free floor</td>
+                <td className={styles.num}>{m.cagr.toFixed(2)}%</td>
+                <td className={styles.num}>−{m.ddPct.toFixed(1)}%</td>
+                <td className={styles.num}>{m.calmar.toFixed(2)}</td>
+                <td className={styles.muted}>—</td>
+              </tr>
+              {m.liq.map((r, i) => (
+                <tr key={r.y} className={i === 1 ? styles.hiRow : ''}>
+                  <td>+ {IDLE_ETF} @ {(r.y * 100).toFixed(0)}%{i === 1 ? ' — central case' : ''}</td>
+                  <td className={styles.num}>{r.cagr.toFixed(2)}%</td>
+                  <td className={styles.num}>−{m.ddPct.toFixed(1)}%</td>
+                  <td className={styles.num}>{(r.cagr / m.ddPct).toFixed(2)}</td>
+                  <td className={styles.num}>{inr(r.gain)}</td>
+                </tr>
+              ))}
+              <tr>
+                <td className={styles.muted}>NIFTY 50, same window</td>
+                <td className={styles.num}>11.60%</td>
+                <td className={`${styles.num} ${styles.neg}`}>−38.4%</td>
+                <td className={styles.num}>0.30</td>
+                <td className={styles.muted}>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className={styles.assump}>
+          <b>Assumptions behind the {IDLE_ETF} rows — read before relying on them.</b>
+          <ul>
+            <li><b>Pledge:</b> {lakh(m.pledged)} of the {lakh(m.capital)} sits in {IDLE_ETF} pledged
+              as F&amp;O collateral; {lakh(CASH_BUFFER)} is held in cash and earns nothing. At a ~10%
+              haircut that is roughly {lakh(m.pledged * 0.9 + CASH_BUFFER)} of usable margin against
+              a measured requirement of about {lakh(SIZING_MARGIN * lots * 0.79)} — it clears, but the
+              cash portion is only {((CASH_BUFFER / (SIZING_MARGIN * lots * 0.79)) * 100).toFixed(0)}%
+              of the requirement, so it relies on liquid ETFs counting as cash-equivalents under
+              SEBI&apos;s 50:50 rule. <b>Confirm with the broker before relying on it.</b></li>
+            <li><b>The rate is parametric, not measured historically.</b> {IDLE_ETF} returned 5.11%
+              over the past year, but its own price history is too gappy to drive 2019–26, and
+              LIQUIDBEES — the only liquid ETF spanning the period — is the ₹1,000-pinned dividend
+              model whose price shows no yield at all. 4–6% brackets the real Indian overnight range
+              across the period; 5% is the central case.</li>
+            <li><b>Drawdown is unchanged</b> in every row. Yield accrues steadily and does not offset
+              the loss episodes, so it lifts CAGR and Calmar but not the risk itself.</li>
+            <li><b>The cash buffer costs more at small size.</b> At {lots} lot{lots > 1 ? 's' : ''} the
+              fixed {lakh(CASH_BUFFER)} is {((CASH_BUFFER / m.capital) * 100).toFixed(0)}% of capital;
+              at 10 lots it would be 5%.</li>
+          </ul>
+        </div>
       </div>
 
       {/* ── positions ───────────────────────────────────────────────────────── */}

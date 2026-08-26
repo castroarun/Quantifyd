@@ -1,0 +1,363 @@
+/* Overview — desk view. Dense, monospace numerals, hairline rules. */
+
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 20px 24px 48px;
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* -------------------------------------------------------------- header */
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ink);
+  margin-bottom: 0;
+}
+
+.headL { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+
+.title {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.kicker {
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: 0.01em;
+}
+
+.headR {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.sep { width: 1px; height: 11px; background: var(--hairline); }
+.stamp { font-variant-numeric: tabular-nums; }
+.live { display: inline-flex; align-items: center; gap: 6px; }
+
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-faint); flex: none;
+}
+.dotOn { background: var(--status-connected); box-shadow: 0 0 0 2.5px rgba(29,158,117,0.16); }
+.dotOff { background: var(--ink-faint); }
+
+/* ---------------------------------------------------------------- tape */
+
+.tape {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 20px;
+}
+
+.tapeCell {
+  padding: 13px 14px 12px;
+  border-right: 1px solid var(--hairline-softest);
+  min-width: 0;
+}
+.tapeCell:first-child { padding-left: 0; }
+.tapeCell:last-child { border-right: none; }
+
+.tapeK {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-muted);
+  margin-bottom: 7px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tapeV {
+  font-family: var(--mono);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  margin-bottom: 4px;
+}
+
+.tapeS { font-size: 9.5px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --------------------------------------------------------------- panel */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 8px;
+  padding: 14px 16px 16px;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panelTitle {
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--ink-secondary);
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.monthNet {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.panelLink { font-size: 11px; color: var(--brand-navy); text-decoration: none; white-space: nowrap; }
+.panelLink:hover { text-decoration: underline; }
+
+/* range toggle */
+
+.ranges { display: inline-flex; gap: 2px; background: var(--chip-bg); border-radius: 5px; padding: 2px; }
+
+.rangeBtn {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.rangeBtn:hover { color: var(--ink); }
+.rangeOn { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+
+/* --------------------------------------------------------------- chart */
+
+.chart { width: 100%; }
+.chartSvg { width: 100%; height: 190px; display: block; }
+.chartEmpty { padding: 48px; text-align: center; color: var(--ink-faint); font-size: 12px; }
+
+.gridLine { stroke: var(--hairline-softest); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.zeroLine { stroke: var(--hairline); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+
+.linePos { fill: none; stroke: var(--accent-pos); stroke-width: 1.8; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.lineNeg { fill: none; stroke: var(--accent-neg); stroke-width: 1.8; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.areaPos { fill: rgba(15,110,86,0.10); stroke: none; }
+.areaNeg { fill: rgba(163,45,45,0.10); stroke: none; }
+.tip { fill: var(--accent-pos); stroke: var(--surface); stroke-width: 2; vector-effect: non-scaling-stroke; }
+
+.chartAxis {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  padding: 5px 0 0;
+  border-top: 1px solid var(--hairline-softest);
+  margin-top: 2px;
+}
+.axisMid { text-transform: uppercase; letter-spacing: 0.09em; }
+
+.ddLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-muted);
+  margin: 14px 0 3px;
+}
+.ddMax { font-family: var(--mono); color: var(--accent-neg); letter-spacing: 0; text-transform: none; font-size: 10.5px; }
+
+.ddSvg { width: 100%; height: 62px; display: block; }
+.ddArea { fill: rgba(163,45,45,0.13); stroke: none; }
+.ddLine { fill: none; stroke: var(--accent-neg); stroke-width: 1.2; opacity: 0.75; vector-effect: non-scaling-stroke; }
+
+.chartDates {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  margin-top: 5px;
+}
+
+/* --------------------------------------------------------------- split */
+
+.split { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* --------------------------------------------------------------- table */
+
+.tableWrap { overflow-x: auto; margin: 0 -4px; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+
+.table thead th {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-faint);
+  font-weight: 600;
+  text-align: right;
+  padding: 0 8px 7px;
+  border-bottom: 1px solid var(--hairline);
+  white-space: nowrap;
+}
+
+.thL { text-align: left !important; padding-left: 4px !important; }
+.thR { padding-right: 4px !important; }
+.thSpark { text-align: center !important; }
+
+.table tbody tr { border-bottom: 1px solid var(--hairline-softest); }
+.table tbody tr:hover { background: var(--nav-hover-bg); }
+.table tbody tr:last-child { border-bottom: none; }
+
+.table td { padding: 7px 8px; white-space: nowrap; }
+
+.tdName { display: flex; align-items: center; gap: 7px; padding-left: 4px !important; min-width: 0; }
+
+.bookName {
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 168px;
+}
+
+.tagLive, .tagPaper {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: 1.5px 4.5px;
+  border-radius: 3px;
+  flex: none;
+}
+.tagLive { background: var(--brand-navy-soft); color: var(--brand-navy); }
+.tagPaper { background: var(--chip-bg); color: var(--ink-faint); }
+
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 550;
+  color: var(--ink-subtle);
+}
+
+.tdMuted { color: var(--ink-faint); font-weight: 400; padding-right: 4px !important; }
+.tdSpark { text-align: center; padding: 3px 8px !important; }
+.spark { display: block; margin: 0 auto; }
+.sparkNil { color: var(--ink-faint); font-size: 10px; }
+.tdEmpty { text-align: center; color: var(--ink-faint); padding: 24px !important; }
+
+/* ------------------------------------------------------------ calendar */
+
+.cal { width: 100%; }
+.calGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
+.calDow {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  text-align: center;
+  padding-bottom: 3px;
+}
+
+.calCell {
+  aspect-ratio: 1 / 0.82;
+  border: 1px solid var(--hairline-softest);
+  border-radius: 4px;
+  background: var(--canvas);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 4px 3px;
+  text-decoration: none;
+  min-width: 0;
+  transition: border-color 0.12s ease;
+}
+.calCell:hover { border-color: var(--brand-navy); }
+
+.calNum { font-family: var(--mono); font-size: 9px; color: var(--ink-faint); line-height: 1; }
+
+.calVal {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--ink-subtle);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calStrong .calNum, .calStrong .calVal { color: var(--ink); }
+.calOn .calNum { color: var(--ink-muted); }
+
+.calFoot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px solid var(--hairline-softest);
+}
+
+.legLoss, .legWin { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.legLoss { background: rgba(163,45,45,0.45); }
+.legWin { background: rgba(15,110,86,0.45); margin-left: 8px; }
+.calFootR { margin-left: auto; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------- tone */
+
+.pos { color: var(--accent-pos); }
+.neg { color: var(--accent-neg); }
+.flat { color: var(--ink-subtle); }
+
+/* ---------------------------------------------------------- responsive */
+
+@media (max-width: 1180px) {
+  .tape { grid-template-columns: repeat(4, 1fr); }
+  .tapeCell:nth-child(4) { border-right: none; }
+  .tapeCell:nth-child(5) { padding-left: 0; }
+  .tapeCell:nth-child(-n+4) { border-bottom: 1px solid var(--hairline-softest); }
+  .split { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .page { padding: 16px 14px 40px; }
+  .tape { grid-template-columns: repeat(2, 1fr); }
+  .tapeCell:nth-child(odd) { padding-left: 0; }
+  .tapeCell:nth-child(even) { border-right: none; }
+  .tapeV { font-size: 16px; }
+  .calVal { font-size: 8px; }
+}

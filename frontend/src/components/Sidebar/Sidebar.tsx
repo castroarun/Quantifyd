@@ -14,7 +14,7 @@ import {
 import Avatar from '../Avatar/Avatar';
 
 interface Props {
-  active?: 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'straddle45' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'indices' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
+  active?: 'overview' | 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'straddle45' | 'stock-wings' | 'nwv' | 'options-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'indices' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
 }
 
@@ -133,6 +133,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
         {!collapsed && <div className={styles.sectionLabel}>Workspace</div>}
         <nav className={styles.nav}>
           <NavItem
+            to="/overview"
+            icon={<IconGrid />}
+            label="Overview"
+            active={active === 'overview'}
+            collapsed={collapsed}
+          />
+          <NavItem
             to="/indices"
             icon={<IconBarChart />}
             label="Index Pulse"
@@ -220,6 +227,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             icon={<IconLayers />}
             label="45-DTE Straddle"
             active={active === 'straddle45'}
+            collapsed={collapsed}
+          />
+          <NavItem
+            to="/stock-wings"
+            icon={<IconLayers />}
+            label="Stock Wings"
+            active={active === 'stock-wings'}
             collapsed={collapsed}
           />
         </nav>

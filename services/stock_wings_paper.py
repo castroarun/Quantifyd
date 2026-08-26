@@ -1,0 +1,462 @@
+#!/usr/bin/env python3
+"""
+Stock 45->21 DTE winged short strangle — PAPER book (research/127).
+
+Paper only. Places no orders and touches no live engine. Reads read-only market
+data and writes its own DB plus a static JSON the app page renders (no API
+route, no backend restart):
+
+  nse_options_bhav (market_data.db)   real EOD stock-option closes — entries,
+                                      daily marks, exits (EOD cadence; stock
+                                      options have no intraday recorder)
+  market_data_unified                 daily stock closes (ATM anchor)
+
+Rules — the C1 ruleset from research/127, one ruleset for every stock:
+  entry     expiry - 45 calendar days (roll back to a session), on the monthly
+            stock expiry: SELL CE @ nearest strike to spot+2.5% and
+            PE @ spot-2.5%; BUY wing CE/PE ~7% of spot beyond each short strike
+  liquidity all 4 legs traded that day; short legs' contracts >= 100 combined;
+            each wing >= 10. Otherwise NO entry — this gate IS the stock filter.
+  target    structure value <= 50% of net credit
+  time      expiry - 21 calendar days
+  stop      NONE (study: every premium stop hurts; the wings cap the risk)
+  slots     10; candidates ranked by short-leg volume; capital Rs 20L paper
+  sizing    notional per slot = slot margin / 10%-of-notional margin estimate
+            (conservative mid of the study's stress band; real SPAN check owed)
+
+CLI:
+  python3 services/stock_wings_paper.py seed   # replay entries+exits to date
+  python3 services/stock_wings_paper.py mark   # sweep exits, mark opens, publish
+  python3 services/stock_wings_paper.py show   # print state
+"""
+import json
+import os
+import re
+import sqlite3
+import sys
+from bisect import bisect_left
+from datetime import datetime, timedelta
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MKT = os.path.join(ROOT, "backtest_data", "market_data.db")
+DB = os.path.join(ROOT, "backtest_data", "stock_wings_paper.db")
+PUBS = [os.path.join(ROOT, "frontend", "public", "stock_wings_paper.json"),
+        os.path.join(ROOT, "static", "app", "stock_wings_paper.json")]
+
+CAPITAL = 2_000_000.0
+MAX_SLOTS = 10
+SLOT_MARGIN = CAPITAL / MAX_SLOTS
+MARGIN_PCT_EST = 0.10          # conservative mid of the study's x1.5-x2 stress band
+K_OFF = 0.025                  # short strikes at spot +/- 2.5%
+WING_PCT = 0.07                # wings ~7% of spot beyond the shorts
+WING_MIN = 0.02                # reject wings snapping closer than 2%
+ATM_BAND = 0.06
+TP = 0.50
+DTE_IN, DTE_OUT = 45, 21
+ATM_VOL_MIN, WING_VOL_MIN = 100, 10
+SLIP = 0.005                   # 0.5% of premium per side — stock spreads
+SEED_FROM = "2026-06-01"
+STUDY = "/app/backtest/stock-45dte-neutral-wings"
+INDEX_SYMS = ("NIFTY", "BANKNIFTY")
+
+
+def ro(p):
+    return sqlite3.connect("file:%s?mode=ro" % p, uri=True)
+
+
+def dstr(d):
+    return d.strftime("%Y-%m-%d")
+
+
+def dparse(s):
+    return datetime.strptime(s[:10], "%Y-%m-%d")
+
+
+def lot_sizes():
+    """FNO_LOT_SIZES without importing data_manager (heavy deps): parse the dict."""
+    try:
+        sys.path.insert(0, os.path.join(ROOT, "services"))
+        from data_manager import FNO_LOT_SIZES  # type: ignore
+        return dict(FNO_LOT_SIZES)
+    except Exception:
+        txt = open(os.path.join(ROOT, "services", "data_manager.py"), encoding="utf-8").read()
+        m = re.search(r"FNO_LOT_SIZES\s*=\s*\{(.*?)\}", txt, re.S)
+        out = {}
+        for sym, lot in re.findall(r"['\"]([A-Z0-9&\-]+)['\"]\s*:\s*(\d+)", m.group(1)):
+            out[sym] = int(lot)
+        return out
+
+
+def init_db():
+    con = sqlite3.connect(DB)
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS positions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      symbol TEXT, expiry TEXT, entry_date TEXT, entry_spot REAL,
+      kce REAL, kpe REAL, wce REAL, wpe REAL,
+      credit REAL, gross_legs REAL, lots INTEGER, lot INTEGER, qty INTEGER,
+      atm_vol REAL, wing_vol_min REAL, src TEXT,           -- SEED | LIVE
+      exit_date TEXT, exit_val REAL, exit_reason TEXT, exit_spot REAL,
+      gross_rs REAL, cost_rs REAL, net_rs REAL,
+      status TEXT,                                          -- OPEN | CLOSED
+      mark_val REAL, mark_date TEXT, mtm_rs REAL, mark_spot REAL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(symbol, expiry, entry_date));
+    CREATE TABLE IF NOT EXISTS marks (
+      pos_id INTEGER, d TEXT, val REAL, mtm_rs REAL, UNIQUE(pos_id, d));
+    """)
+    con.commit()
+    return con
+
+
+# ------------------------------------------------------- market data access --
+def sessions(m, start="2026-01-01"):
+    return [r[0] for r in m.execute(
+        "SELECT DISTINCT trade_date FROM nse_options_bhav WHERE symbol='NIFTY' "
+        "AND trade_date>=? ORDER BY trade_date", (start,))]
+
+
+def prev_session(days, target):
+    if not days or target > days[-1]:
+        return None
+    i = bisect_left(days, target)
+    if i < len(days) and days[i] == target:
+        return target
+    return days[i - 1] if i > 0 else None
+
+
+def stock_monthly_expiries(m, days, start, end):
+    """Per calendar month: the stock-option expiry date (stocks list monthlies
+    only, so 'the last expiry of the month with any stock rows, already listed
+    45 days out' is the monthly). Learned from data, never hardcoded."""
+    rows = m.execute(
+        "SELECT expiry_date, MIN(trade_date) FROM nse_options_bhav "
+        "WHERE symbol NOT IN (?,?) AND expiry_date>=? AND expiry_date<=? "
+        "GROUP BY expiry_date HAVING COUNT(*)>500 ORDER BY expiry_date",
+        (*INDEX_SYMS, start, end)).fetchall()
+    bym = {}
+    for exp, first in rows:
+        ed = prev_session(days, dstr(dparse(exp) - timedelta(days=DTE_IN)))
+        if ed and first <= ed:
+            bym.setdefault(exp[:7], []).append(exp)
+    return {ym: max(v) for ym, v in sorted(bym.items())}
+
+
+def spot_close(m, sym, day):
+    r = m.execute("SELECT close FROM market_data_unified WHERE symbol=? "
+                  "AND timeframe='day' AND date LIKE ?||'%'", (sym, day)).fetchone()
+    return float(r[0]) if r and r[0] else None
+
+
+def chain_day(m, sym, expiry, day):
+    """{(strike, ot): (close, contracts)} for one symbol/expiry/session."""
+    return {(float(k), ot): (c or 0.0, ct or 0) for k, ot, c, ct in m.execute(
+        "SELECT strike, option_type, close, contracts FROM nse_options_bhav "
+        "WHERE symbol=? AND expiry_date=? AND trade_date=?", (sym, expiry, day))}
+
+
+def structure_value(m, r, day):
+    """Cost-to-close per share on a session: (shorts) - (wings). Missing wing
+    marks count 0 (pessimistic for us); missing short marks -> no mark."""
+    ch = chain_day(m, r["symbol"], r["expiry"], day)
+    sce = ch.get((r["kce"], "CE"), (0, 0))[0]
+    spe = ch.get((r["kpe"], "PE"), (0, 0))[0]
+    if sce <= 0 or spe <= 0:
+        return None
+    wce = ch.get((r["wce"], "CE"), (0, 0))[0]
+    wpe = ch.get((r["wpe"], "PE"), (0, 0))[0]
+    return (sce + spe) - (max(wce, 0.0) + max(wpe, 0.0))
+
+
+def leg_detail(m, r, day):
+    """Per-leg prices on a session — a READ-ONLY projection for the UI.
+
+    The structure's four legs are already priced inside structure_value(); this
+    just returns them individually instead of netted, so a row can be expanded
+    to show what is actually held. Adds no state and changes no trading rule.
+    """
+    ch = chain_day(m, r["symbol"], r["expiry"], day)
+    spec = [("SHORT", "CE", r["kce"]), ("SHORT", "PE", r["kpe"]),
+            ("LONG", "CE", r["wce"]), ("LONG", "PE", r["wpe"])]
+    out = []
+    for side, ot, K in spec:
+        px, vol = ch.get((float(K), ot), (None, 0))
+        out.append(dict(side=side, opt=ot, strike=K,
+                        price=(px if px and px > 0 else None), volume=vol))
+    return out
+
+
+def intrinsic_value(r, spot):
+    sv = max(0.0, spot - r["kce"]) + max(0.0, r["kpe"] - spot)
+    wv = max(0.0, spot - r["wce"]) + max(0.0, r["wpe"] - spot)
+    return sv - wv
+
+
+def costs_rs(r, exit_val):
+    """Slippage + STT + txn + brokerage, in rupees for the whole position."""
+    entry_legs = r["gross_legs"]                 # sum of all 4 leg prices at entry
+    exit_legs = abs(exit_val) + 0.5              # proxy: structure value ~ legs net; add floor
+    short_prem = (entry_legs + r["credit"]) / 2.0   # shorts = (gross + credit) / 2
+    per_share = SLIP * (entry_legs + exit_legs) + 0.0010 * short_prem \
+        + 0.0005 * (entry_legs + exit_legs)
+    brok = 20.0 * 8
+    return per_share * r["qty"] + brok * 1.18
+
+
+def candidates(m, days, exp, ed, lots_map):
+    """All symbols passing the C1 gate on this entry session, best first."""
+    out = []
+    for sym, lot in lots_map.items():
+        sp = spot_close(m, sym, ed)
+        if not sp or lot * sp > SLOT_MARGIN / MARGIN_PCT_EST:
+            continue                              # no spot, or 1 lot outgrows a slot
+        ch = chain_day(m, sym, exp, ed)
+        if not ch:
+            continue
+        strikes = sorted({k for (k, ot) in ch})
+
+        def pick(side, target, lo=None, hi=None):
+            best, bd = None, 1e18
+            for k in strikes:
+                if lo is not None and k <= lo:
+                    continue
+                if hi is not None and k >= hi:
+                    continue
+                c, ct = ch.get((k, side), (0, 0))
+                if c <= 0 or ct <= 0:
+                    continue
+                if abs(k - target) < bd:
+                    best, bd = k, abs(k - target)
+            return best
+
+        kce = pick("CE", sp * (1 + K_OFF))
+        kpe = pick("PE", sp * (1 - K_OFF))
+        if kce is None or kpe is None or kce < kpe:
+            continue
+        if abs(kce / sp - (1 + K_OFF)) > ATM_BAND or abs(kpe / sp - (1 - K_OFF)) > ATM_BAND:
+            continue
+        wce = pick("CE", kce + WING_PCT * sp, lo=kce)
+        wpe = pick("PE", kpe - WING_PCT * sp, hi=kpe)
+        if wce is None or wpe is None:
+            continue
+        if (wce - kce) / sp < WING_MIN or (kpe - wpe) / sp < WING_MIN:
+            continue
+        sce, sct = ch[(kce, "CE")]
+        spe, pct_ = ch[(kpe, "PE")]
+        wcec, wcct = ch[(wce, "CE")]
+        wpec, wpct = ch[(wpe, "PE")]
+        atm_vol = sct + pct_
+        wing_min = min(wcct, wpct)
+        if atm_vol < ATM_VOL_MIN or wing_min < WING_VOL_MIN:
+            continue
+        credit = (sce + spe) - (wcec + wpec)
+        if credit <= 0:
+            continue
+        lots = max(1, int((SLOT_MARGIN / MARGIN_PCT_EST) // (lot * sp)))
+        out.append(dict(symbol=sym, expiry=exp, entry_date=ed, entry_spot=sp,
+                        kce=kce, kpe=kpe, wce=wce, wpe=wpe, credit=credit,
+                        gross_legs=sce + spe + wcec + wpec, lots=lots, lot=lot,
+                        qty=lots * lot, atm_vol=atm_vol, wing_vol_min=wing_min))
+    return sorted(out, key=lambda c: -c["atm_vol"])
+
+
+# ------------------------------------------------------------------- engine --
+def rows_of(con, where="1=1"):
+    cur = con.execute("SELECT * FROM positions WHERE " + where)
+    cols = [d[0] for d in cur.description]
+    return [dict(zip(cols, t)) for t in cur.fetchall()]
+
+
+def sweep(con, m, days, upto):
+    """Walk open positions session by session up to `upto`; apply TP / 21-DTE
+    time exit (no stop — the wings are the risk cap); record daily marks."""
+    for r in rows_of(con, "status='OPEN'"):
+        xd = prev_session(days, dstr(dparse(r["expiry"]) - timedelta(days=DTE_OUT)))
+        for d in [x for x in days if r["entry_date"] < x <= upto]:
+            val = structure_value(m, r, d)
+            if val is None:
+                continue                          # no short-leg marks; roll forward
+            con.execute("INSERT OR REPLACE INTO marks(pos_id,d,val,mtm_rs) VALUES(?,?,?,?)",
+                        (r["id"], d, val, (r["credit"] - val) * r["qty"]))
+            why = None
+            if val <= TP * r["credit"]:
+                why = "TARGET"
+            elif xd and d >= xd:
+                why = "TIME_21DTE"
+            elif d >= r["expiry"]:
+                sp = spot_close(m, r["symbol"], d) or r["entry_spot"]
+                val = intrinsic_value(r, sp)
+                why = "EXPIRY"
+            if why:
+                gross = (r["credit"] - val) * r["qty"]
+                cost = costs_rs(r, val)
+                con.execute(
+                    "UPDATE positions SET status='CLOSED',exit_date=?,exit_val=?,exit_reason=?,"
+                    "exit_spot=?,gross_rs=?,cost_rs=?,net_rs=?,mark_val=?,mark_date=?,mtm_rs=? WHERE id=?",
+                    (d, val, why, spot_close(m, r["symbol"], d), gross, cost, gross - cost,
+                     val, d, gross - cost, r["id"]))
+                print("  CLOSED %-12s %s @ %.2f (%s) net Rs %s"
+                      % (r["symbol"], d, val, why, "{:,.0f}".format(gross - cost)))
+                break
+        else:
+            # still open — mark at the latest available session
+            for d in reversed([x for x in days if r["entry_date"] < x <= upto]):
+                val = structure_value(m, r, d)
+                if val is not None:
+                    con.execute("UPDATE positions SET mark_val=?,mark_date=?,mtm_rs=?,mark_spot=? WHERE id=?",
+                                (val, d, (r["credit"] - val) * r["qty"],
+                                 spot_close(m, r["symbol"], d), r["id"]))
+                    break
+    con.commit()
+
+
+def seed():
+    con = init_db()
+    m = ro(MKT)
+    days = sessions(m)
+    lots_map = {s: l for s, l in lot_sizes().items() if s not in INDEX_SYMS}
+    today = dstr(datetime.now())
+    exps = stock_monthly_expiries(m, days, "2026-01-01", "2027-06-30")
+    print("bhav sessions to %s | stock monthlies %s" % (days[-1], list(exps.values())))
+    for ym, exp in exps.items():
+        ed = prev_session(days, dstr(dparse(exp) - timedelta(days=DTE_IN)))
+        if not ed or ed < SEED_FROM:
+            continue
+        if (dparse(exp) - dparse(ed)).days > DTE_IN + 5:
+            continue
+        sweep(con, m, days, ed)                   # free slots that exited before this cycle
+        n_open = len(rows_of(con, "status='OPEN'"))
+        free = MAX_SLOTS - n_open
+        if free <= 0:
+            print("  %s: book full, no entries" % ed)
+            continue
+        cands = candidates(m, days, exp, ed, lots_map)
+        taken = 0
+        for c in cands:
+            if taken >= free:
+                break
+            if con.execute("SELECT 1 FROM positions WHERE symbol=? AND expiry=? AND entry_date=?",
+                           (c["symbol"], exp, ed)).fetchone():
+                continue
+            src = "SEED" if ed < today else "LIVE"
+            con.execute(
+                "INSERT INTO positions(symbol,expiry,entry_date,entry_spot,kce,kpe,wce,wpe,"
+                "credit,gross_legs,lots,lot,qty,atm_vol,wing_vol_min,src,status) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'OPEN')",
+                (c["symbol"], exp, ed, c["entry_spot"], c["kce"], c["kpe"], c["wce"], c["wpe"],
+                 c["credit"], c["gross_legs"], c["lots"], c["lot"], c["qty"],
+                 c["atm_vol"], c["wing_vol_min"], src))
+            taken += 1
+            print("  OPENED %-12s %s exp %s  PE/CE %.0f/%.0f wings %.0f/%.0f  credit %.2f x %d qty "
+                  "(Rs %s)  vol %d" % (c["symbol"], ed, exp, c["kpe"], c["kce"], c["wpe"], c["wce"],
+                                       c["credit"], c["qty"],
+                                       "{:,.0f}".format(c["credit"] * c["qty"]), int(c["atm_vol"])))
+        print("  %s: %d/%d candidates taken (%d slots free)" % (ed, taken, len(cands), free))
+    con.commit()
+    sweep(con, m, days, days[-1])
+    publish(con, m, days)
+    con.close()
+    m.close()
+
+
+def mark():
+    con = init_db()
+    m = ro(MKT)
+    days = sessions(m)
+    sweep(con, m, days, days[-1])
+    publish(con, m, days)
+    con.close()
+    m.close()
+
+
+def upcoming(m, days, n=3):
+    today = dstr(datetime.now())
+    rows = m.execute(
+        "SELECT expiry_date, MIN(trade_date) FROM nse_options_bhav "
+        "WHERE symbol NOT IN (?,?) AND expiry_date>? GROUP BY expiry_date "
+        "HAVING COUNT(*)>500 ORDER BY expiry_date", (*INDEX_SYMS, today)).fetchall()
+    bym = {}
+    for exp, _ in rows:
+        bym.setdefault(exp[:7], []).append(exp)
+    out = []
+    for ym in sorted(bym):
+        exp = max(bym[ym])
+        ent = dparse(exp) - timedelta(days=DTE_IN)
+        while ent.weekday() >= 5:
+            ent -= timedelta(days=1)
+        if dstr(ent) <= today:
+            continue
+        out.append(dict(expiry=exp, entry_date=dstr(ent), entry_weekday=ent.strftime("%a"),
+                        exit_due=dstr(dparse(exp) - timedelta(days=DTE_OUT)),
+                        days_away=(ent - datetime.now()).days + 1))
+        if len(out) >= n:
+            break
+    return out
+
+
+def publish(con, m, days):
+    allr = rows_of(con)
+    for r in allr:
+        r["exit_due"] = dstr(dparse(r["expiry"]) - timedelta(days=DTE_OUT))
+        r["dte"] = (dparse(r["expiry"]) - datetime.now()).days
+    openp = [r for r in allr if r["status"] == "OPEN"]
+    closed = sorted([r for r in allr if r["status"] == "CLOSED"], key=lambda r: r["exit_date"])
+    for r in openp:
+        r["curve"] = [dict(d=d, val=v, mtm=mt) for d, v, mt in con.execute(
+            "SELECT d,val,mtm_rs FROM marks WHERE pos_id=? ORDER BY d", (r["id"],))]
+    # per-leg breakdown so the UI can expand a row. Entry legs are priced on the
+    # entry session, current legs on whatever session the row is marked to.
+    for r in allr:
+        try:
+            r["legs_entry"] = leg_detail(m, r, r["entry_date"])
+            md = r["mark_date"] if r["status"] == "OPEN" else r["exit_date"]
+            r["legs_now"] = leg_detail(m, r, md) if md else None
+            r["legs_asof"] = md
+        except Exception:
+            r["legs_entry"] = r["legs_now"] = None
+    realised = sum(r["net_rs"] or 0 for r in closed)
+    unreal = sum(r["mtm_rs"] or 0 for r in openp)
+    wins = [r for r in closed if (r["net_rs"] or 0) > 0]
+    payload = dict(
+        asof=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        mode="PAPER", capital=CAPITAL, max_slots=MAX_SLOTS,
+        slot_margin=SLOT_MARGIN, margin_pct_est=MARGIN_PCT_EST,
+        rules=dict(dte_in=DTE_IN, dte_out=DTE_OUT, k_off=K_OFF, wing_pct=WING_PCT,
+                   tp=TP, stop=None, atm_vol_min=ATM_VOL_MIN, wing_vol_min=WING_VOL_MIN,
+                   slip=SLIP),
+        links=dict(study=STUDY, tearsheet="/app/stock45_wings_tearsheet.png",
+                   github="https://github.com/castroarun/Quantifyd/tree/main/research/127_stock_neutral_wings"),
+        bhav_through=days[-1],
+        realised=realised, unrealised=unreal, nav=CAPITAL + realised + unreal,
+        n_open=len(openp), n_closed=len(closed),
+        win_rate=(100.0 * len(wins) / len(closed)) if closed else None,
+        upcoming=upcoming(m, days),
+        entry_time="15:30 (EOD close)", exit_time="15:30 (EOD close)",
+        open_positions=openp, closed_trades=closed,
+        note=("EOD cadence: entries, marks and exits are struck on real NSE bhavcopy closes; "
+              "stock options have no intraday recorder. Sizing uses a 10%-of-notional margin "
+              "ESTIMATE (study stress mid) — real SPAN check owed. SEED trades are replayed "
+              "history; LIVE trades were opened by the daily job after go-live."))
+    for p in PUBS:
+        try:
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p + ".tmp", "w") as f:
+                json.dump(payload, f, default=str)
+            os.replace(p + ".tmp", p)
+        except Exception as ex:
+            print("  publish %s failed: %s" % (p, ex))
+    print("  published NAV Rs %s (realised %s, MTM %s, open %d, closed %d)"
+          % ("{:,.0f}".format(payload["nav"]), "{:,.0f}".format(realised),
+             "{:,.0f}".format(unreal), len(openp), len(closed)))
+
+
+def show():
+    con = init_db()
+    for r in rows_of(con):
+        print(r["status"], r["src"], r["symbol"], r["entry_date"], "->", r["exit_date"],
+              r["exit_reason"], "net", r["net_rs"], "mtm", r["mtm_rs"])
+
+
+if __name__ == "__main__":
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "mark"
+    {"seed": seed, "mark": mark, "show": show}[cmd]()
