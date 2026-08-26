@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Overview.module.css';
 import { apiGet } from '../api/client';
+import Heatmaps from '../components/Heatmaps/Heatmaps';
 
 // ---------------------------------------------------------------- types
 
@@ -901,6 +902,8 @@ export default function Overview() {
         {loading ? <div className={styles.chartEmpty}>Loading…</div> : <EquityCandles days={days} />}
         {!loading && <Heartbeat days={days} />}
       </section>
+
+      <Heatmaps />
 
       {/* --------------------------------------------- systems + journal */}
       <div className={styles.split}>
