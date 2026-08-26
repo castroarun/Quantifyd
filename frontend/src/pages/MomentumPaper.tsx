@@ -120,6 +120,16 @@ export default function MomentumPaper() {
 
   return (
     <div className={styles.root}>
+      <div className={styles.studyBar}>
+        <span className={styles.studyBarLabel}>Evidence</span>
+        <a className={styles.studyLink} href="/app/backtest/momentum30-subselect">
+          The backtest this book runs
+        </a>
+        <a className={styles.studyLink} href="/app/backtest/momentum-universe-bakeoff">Universe bake-off</a>
+        <a className={styles.studyLink} href="/app/backtest/momentum-put-hedge-overlay">Put-hedge overlay</a>
+        <a className={styles.studyLink} href="/app/backtest/momentum-250-leverage-frontier">Leverage frontier</a>
+        <a className={styles.studyLink} href="/app/strategies#momentum-3l">Register entry</a>
+      </div>
       <div className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>Momentum-30 — Live Paper Book</h1>
@@ -127,17 +137,6 @@ export default function MomentumPaper() {
             <b>Universe = the Nifty 200</b> (200 largest NSE stocks by market cap) → <b>ranked by momentum</b> → <b>hold the top 8</b>.
             {lakh(s.capital)} {s.live_mode ? 'LIVE (real money, shared account)' : 'paper'} (research/62 winner)
             {s.inception ? ` · since ${s.inception}` : ''} · data as-of {s.data_asof || '—'}
-          </p>
-          {/* The dashboard had no way out to the evidence behind it. The Strategies index is the
-              register of record and already carries these; the book itself should too. */}
-          <p className={styles.sub} style={{ marginTop: 4 }}>
-            Study:{' '}
-            <a href="/app/backtest/momentum30-subselect">the backtest this book runs</a>{' · '}
-            <a href="/app/backtest/momentum-universe-bakeoff">universe bake-off</a>{' · '}
-            <a href="/app/backtest/momentum-put-hedge-overlay">put-hedge overlay</a>{' · '}
-            <a href="/app/backtest/momentum-250-leverage-frontier">leverage frontier</a>
-            {' — '}
-            <a href="/app/strategies#momentum-3l">register entry</a>
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
