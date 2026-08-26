@@ -305,43 +305,106 @@ function Distribution({ days }: { days: JournalDay[] }) {
 // --------------------------------------------------------- equity chart
 
 
-interface EquityFeed {
-  candles: Array<{ d: string; end: string; o: number; h: number; l: number; c: number; n: number }>;
-  overlays: Record<string, Array<{ d: string; p: number }>>;
-  labels: Record<string, string>;
-  weeks?: number;
-}
-
 const OVERLAY_COLOURS: Record<string, string> = {
   NIFTY50: '#1E3A8A',
   NIFTYMIDCAP150: '#B45309',
   NIFTYSMLCAP250: '#0F6E56',
   NIFTY500: '#8A6BBF',
 };
+const OVERLAY_LABELS: Record<string, string> = {
+  NIFTY50: 'Nifty 50',
+  NIFTYMIDCAP150: 'Midcap 150',
+  NIFTYSMLCAP250: 'Smallcap 250',
+  NIFTY500: 'Nifty 500',
+};
 
-/** Weekly candles of cumulative P&L, with the broad indices overlaid in %. */
-function EquityCandles({ data }: { data: EquityFeed }) {
+interface Candle { d: string; end: string; o: number; h: number; l: number; c: number; n: number }
+
+/** ISO week key, so the buckets line up with the index series. */
+function isoWeek(iso: string): string {
+  const dt = new Date(iso + 'T00:00:00Z');
+  const day = (dt.getUTCDay() + 6) % 7;                 // Mon = 0
+  dt.setUTCDate(dt.getUTCDate() - day + 3);             // nearest Thursday
+  const first = new Date(Date.UTC(dt.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((dt.getTime() - first.getTime()) / 86400000
+    - 3 + ((first.getUTCDay() + 6) % 7)) / 7);
+  return `${dt.getUTCFullYear()}-${String(week).padStart(2, '0')}`;
+}
+
+/** Weekly candles on the book's cumulative P&L, indices overlaid in %. */
+function EquityCandles({ days }: { days: JournalDay[] }) {
   const [on, setOn] = useState<Record<string, boolean>>({
     NIFTY50: true, NIFTYMIDCAP150: true, NIFTYSMLCAP250: true, NIFTY500: false,
   });
-  const cs = data.candles;
-  if (cs.length < 2) return <div className={styles.chartEmpty}>Not enough history to plot.</div>;
+  const [idx, setIdx] = useState<{ dates: string[]; series: Record<string, number[]> } | null>(null);
+
+  useEffect(() => {
+    apiGet<{ dates: string[]; series: Record<string, number[]> }>(
+      `/api/index-pulse/compare?window=1y&mode=rel&symbols=${Object.keys(OVERLAY_COLOURS).join(',')}`,
+    ).then(setIdx).catch(() => undefined);
+  }, []);
+
+  const candles = useMemo<Candle[]>(() => {
+    const sorted = [...days].sort((a, b) => a.trade_date.localeCompare(b.trade_date));
+    let cum = 0;
+    const byWeek = new Map<string, { d: string; end: string; vals: number[] }>();
+    for (const d of sorted) {
+      cum += d.pnl_net || 0;
+      const k = isoWeek(d.trade_date);
+      const b = byWeek.get(k);
+      if (b) { b.vals.push(cum); b.end = d.trade_date; }
+      else byWeek.set(k, { d: d.trade_date, end: d.trade_date, vals: [cum] });
+    }
+    const out: Candle[] = [];
+    let prev: number | null = null;
+    for (const [, b] of byWeek) {
+      const o = prev ?? b.vals[0];
+      out.push({
+        d: b.d, end: b.end, o,
+        h: Math.max(o, ...b.vals), l: Math.min(o, ...b.vals),
+        c: b.vals[b.vals.length - 1], n: b.vals.length,
+      });
+      prev = b.vals[b.vals.length - 1];
+    }
+    return out;
+  }, [days]);
+
+  const overlays = useMemo(() => {
+    if (!idx || !candles.length) return {} as Record<string, Array<{ d: string; p: number }>>;
+    const from = candles[0].d;
+    const i0 = idx.dates.findIndex((d) => d >= from);
+    if (i0 < 0) return {};
+    const out: Record<string, Array<{ d: string; p: number }>> = {};
+    for (const [sym, vals] of Object.entries(idx.series)) {
+      const base = vals[i0];
+      if (!base) continue;
+      const seen = new Set<string>();
+      const pts: Array<{ d: string; p: number }> = [];
+      for (let i = i0; i < idx.dates.length; i++) {
+        const k = isoWeek(idx.dates[i]);
+        if (seen.has(k)) { pts[pts.length - 1] = { d: idx.dates[i], p: (vals[i] / base - 1) * 100 }; }
+        else { seen.add(k); pts.push({ d: idx.dates[i], p: (vals[i] / base - 1) * 100 }); }
+      }
+      out[sym] = pts;
+    }
+    return out;
+  }, [idx, candles]);
+
+  if (candles.length < 2) return <div className={styles.chartEmpty}>Not enough history to plot.</div>;
 
   const W = 1000, H = 250, PAD_L = 62, PAD_R = 52, PAD_B = 18;
-  const lo = Math.min(...cs.map((c) => c.l), 0);
-  const hi = Math.max(...cs.map((c) => c.h), 0);
+  const lo = Math.min(...candles.map((c) => c.l), 0);
+  const hi = Math.max(...candles.map((c) => c.h), 0);
   const span = hi - lo || 1;
   const plotW = W - PAD_L - PAD_R;
-  const bw = plotW / cs.length;
+  const bw = plotW / candles.length;
   const x = (i: number) => PAD_L + i * bw + bw / 2;
   const y = (v: number) => H - PAD_B - ((v - lo) / span) * (H - PAD_B - 8);
 
-  // overlay scale: symmetric around 0 so "flat" reads as flat
-  const shown = Object.keys(data.overlays).filter((k) => on[k]);
-  const allPct = shown.flatMap((k) => data.overlays[k].map((p) => p.p));
+  const shown = Object.keys(overlays).filter((k) => on[k]);
+  const allPct = shown.flatMap((k) => overlays[k].map((q) => q.p));
   const pMax = Math.max(2, ...allPct.map(Math.abs));
   const py = (v: number) => H - PAD_B - ((v + pMax) / (2 * pMax)) * (H - PAD_B - 8);
-
   const inr0 = (v: number) =>
     Math.abs(v) >= 1e5 ? `${(v / 1e5).toFixed(1)}L` : `${(v / 1e3).toFixed(0)}k`;
 
@@ -359,30 +422,27 @@ function EquityCandles({ data }: { data: EquityFeed }) {
         })}
         <line x1={PAD_L} y1={y(0)} x2={W - PAD_R} y2={y(0)} className={styles.zero} />
 
-        {/* index overlays, % change from the window start */}
         {shown.map((k) => {
-          const pts = data.overlays[k];
+          const pts = overlays[k];
           const step = plotW / Math.max(1, pts.length - 1);
-          const d = pts.map((p, i) => `${(PAD_L + i * step).toFixed(1)},${py(p.p).toFixed(1)}`).join(' ');
+          const d = pts.map((q, i) => `${(PAD_L + i * step).toFixed(1)},${py(q.p).toFixed(1)}`).join(' ');
           return <polyline key={k} points={d} fill="none" stroke={OVERLAY_COLOURS[k]}
-                           strokeWidth={1.4} strokeOpacity={0.75} />;
+                           strokeWidth={1.4} strokeOpacity={0.8} />;
         })}
 
-        {/* the book itself */}
-        {cs.map((c, i) => {
+        {candles.map((c, i) => {
           const up = c.c >= c.o;
-          const cls = up ? styles.candleUp : styles.candleDn;
           const top = y(Math.max(c.o, c.c)), bot = y(Math.min(c.o, c.c));
           return (
-            <g key={c.d} className={cls}>
-              <title>{`${c.d} → ${c.end} (${c.n}d)\nopen ₹${c.o.toLocaleString('en-IN')}  close ₹${c.c.toLocaleString('en-IN')}\nhigh ₹${c.h.toLocaleString('en-IN')}  low ₹${c.l.toLocaleString('en-IN')}\nweek ${c.c - c.o >= 0 ? '+' : ''}₹${Math.round(c.c - c.o).toLocaleString('en-IN')}`}</title>
+            <g key={c.d} className={up ? styles.candleUp : styles.candleDn}>
+              <title>{`${c.d} → ${c.end} · ${c.n} session${c.n === 1 ? '' : 's'}\nopen ₹${Math.round(c.o).toLocaleString('en-IN')}   close ₹${Math.round(c.c).toLocaleString('en-IN')}\nhigh ₹${Math.round(c.h).toLocaleString('en-IN')}   low ₹${Math.round(c.l).toLocaleString('en-IN')}\nweek ${c.c - c.o >= 0 ? '+' : '−'}₹${Math.abs(Math.round(c.c - c.o)).toLocaleString('en-IN')}`}</title>
               <line x1={x(i)} y1={y(c.h)} x2={x(i)} y2={y(c.l)} strokeWidth={1} />
-              <rect x={x(i) - bw * 0.3} y={top} width={bw * 0.6} height={Math.max(1, bot - top)} />
+              <rect x={x(i) - bw * 0.3} y={top} width={Math.max(1.2, bw * 0.6)} height={Math.max(1, bot - top)} />
             </g>
           );
         })}
 
-        {[pMax, 0, -pMax].map((v) => (
+        {shown.length > 0 && [pMax, 0, -pMax].map((v) => (
           <text key={v} x={W - PAD_R + 6} y={py(v) + 3} className={styles.axisR}>
             {v > 0 ? '+' : ''}{v.toFixed(0)}%
           </text>
@@ -391,19 +451,21 @@ function EquityCandles({ data }: { data: EquityFeed }) {
 
       <div className={styles.legend}>
         <span className={styles.legendNote}>
-          candles = book, cumulative ₹ · lines = index % from {cs[0].d}
+          candles = this book, cumulative ₹ (weekly) · lines = index % since {candles[0].d}
         </span>
-        {Object.keys(data.overlays).map((k) => {
-          const last = data.overlays[k].slice(-1)[0]?.p ?? 0;
+        {Object.keys(OVERLAY_COLOURS).map((k) => {
+          const last = overlays[k]?.slice(-1)[0]?.p;
           return (
             <button key={k} type="button"
               className={`${styles.legendBtn} ${on[k] ? styles.legendOn : ''}`}
               onClick={() => setOn((s) => ({ ...s, [k]: !s[k] }))}>
               <span className={styles.legendSwatch} style={{ background: OVERLAY_COLOURS[k] }} />
-              {data.labels[k] ?? k}
-              <span className={last >= 0 ? styles.pos : styles.neg}>
-                {last >= 0 ? '+' : ''}{last.toFixed(1)}%
-              </span>
+              {OVERLAY_LABELS[k]}
+              {last != null && (
+                <span className={last >= 0 ? styles.pos : styles.neg}>
+                  {last >= 0 ? '+' : ''}{last.toFixed(1)}%
+                </span>
+              )}
             </button>
           );
         })}
@@ -583,13 +645,6 @@ function Calendar({ year, monthIdx, days }: { year: number; monthIdx: number; da
 // ------------------------------------------------------------------ page
 
 export default function Overview() {
-  const [eq, setEq] = useState<EquityFeed | null>(null);
-  useEffect(() => {
-    apiGet<EquityFeed>(`/api/overview/equity?weeks=52&t=${Date.now()}`)
-      .then(setEq)
-      .catch(() => undefined);        // falls back to the line chart
-  }, []);
-
   const [desk, setDesk] = useState<DeskFeed | null>(null);
   useEffect(() => {
     let off = false;
@@ -843,13 +898,7 @@ export default function Overview() {
             ))}
           </div>
         </div>
-        {loading ? (
-          <div className={styles.chartEmpty}>Loading…</div>
-        ) : eq && eq.candles.length > 1 ? (
-          <EquityCandles data={eq} />
-        ) : (
-          <EquityChart days={days} />
-        )}
+        {loading ? <div className={styles.chartEmpty}>Loading…</div> : <EquityCandles days={days} />}
         {!loading && <Heartbeat days={days} />}
       </section>
 
