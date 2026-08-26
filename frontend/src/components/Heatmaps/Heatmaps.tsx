@@ -103,13 +103,14 @@ export default function Heatmaps() {
       feed.books.rows.forEach((r, i) => {
         const y = 16 + i * geom.rh;
         ctx.fillStyle = '#1B1B1A';
-        ctx.font = `500 10.5px ${font}`;
+        ctx.textBaseline = 'middle';
+        ctx.font = `500 ${Math.max(9.5, Math.min(12.5, geom.rh * 0.52)).toFixed(1)}px ${font}`;
         let lab = r.label;
         while (lab.length > 4 && ctx.measureText(lab).width > geom.padL - 26) {
           lab = lab.slice(0, -1);
         }
         if (lab !== r.label) lab = lab.slice(0, -1) + '…';
-        ctx.fillText(lab, 14, y + geom.rh / 2 + 3);
+        ctx.fillText(lab, 14, y + geom.rh / 2);
         r.v.forEach((v, j) => {
           ctx.fillStyle = colour(v, clamp);
           ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 1.2), Math.max(1, geom.rh - 1.2));
@@ -132,16 +133,25 @@ export default function Heatmaps() {
         ctx.moveTo(geom.padL, yTop - 1);
         ctx.lineTo(geom.padL + geom.cols * geom.cell, yTop - 1);
         ctx.stroke();
-        if (yBot - yTop >= 13) {                    // only if it fits
+        if (geom.rh < 8 && yBot - yTop >= 13) {     // no room per row: label the block
           ctx.fillStyle = '#5F5E5A';
+          ctx.textBaseline = 'middle';
           let lab = b.sec;
           while (lab.length > 3 && ctx.measureText(lab).width > geom.padL - 26) lab = lab.slice(0, -1);
           if (lab !== b.sec) lab = lab.slice(0, -1) + '…';
-          ctx.fillText(lab, 14, (yTop + yBot) / 2 + 3);
+          ctx.fillText(lab, 14, (yTop + yBot) / 2);
         }
       }
       feed.stocks.rows.forEach((r, i) => {
         const y = 16 + i * geom.rh;
+        if (geom.rh >= 8) {                         // one symbol per row
+          ctx.fillStyle = '#5F5E5A';
+          ctx.textBaseline = 'middle';
+          ctx.font = `${Math.max(8, Math.min(11, geom.rh * 0.62)).toFixed(1)}px ${font}`;
+          let lab = r.s;
+          while (lab.length > 3 && ctx.measureText(lab).width > geom.padL - 26) lab = lab.slice(0, -1);
+          ctx.fillText(lab, 14, y + geom.rh / 2);
+        }
         r.v.forEach((v, j) => {
           ctx.fillStyle = colour(v, clamp);
           ctx.fillRect(geom.padL + j * cw, y, Math.max(1, cw - 0.8), Math.max(1, geom.rh - 0.8));
@@ -152,7 +162,8 @@ export default function Heatmaps() {
     // date ticks
     const dates = tab === 'books' ? feed.books.dates : feed.stocks.dates;
     ctx.fillStyle = '#B4B2A9';
-    ctx.font = `9px ${font}`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = `9.5px ${font}`;
     const step = Math.max(1, Math.ceil(dates.length / Math.max(4, Math.floor((w - geom.padL) / 74))));
     dates.forEach((d, j) => {
       if (j % step === 0) ctx.fillText(d.slice(5), geom.padL + j * cw, 11);
