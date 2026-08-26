@@ -154,8 +154,19 @@ export default function StockWings() {
       <div className={s.kpis}>
         <div className={s.kpi}><div className={`${s.kpiVal} ${p && p.nav >= (p?.capital ?? 0) ? s.pos : s.neg}`}>{p ? lakh(p.nav) : '—'}</div><div className={s.kpiLabel}>NAV</div></div>
         <div className={s.kpi}><div className={`${s.kpiVal} ${totalRet >= 0 ? s.pos : s.neg}`}>{p ? (totalRet >= 0 ? '+' : '') + totalRet.toFixed(2) + '%' : '—'}</div><div className={s.kpiLabel}>Return on ₹20L</div></div>
+        <div className={s.kpi}>
+          <div className={`${s.kpiVal} ${p && p.unrealised >= 0 ? s.pos : s.neg}`}>
+            {p ? inr(p.unrealised) : '—'}
+            {p && p.capital_deployed ? (
+              <span className={s.pctPar}>
+                ({p.unrealised >= 0 ? '+' : ''}
+                {(100 * p.unrealised / p.capital_deployed).toFixed(1)}%)
+              </span>
+            ) : null}
+          </div>
+          <div className={s.kpiLabel}>Open MTM{p && p.capital_deployed ? ' · on deployed' : ''}</div>
+        </div>
         <div className={s.kpi}><div className={`${s.kpiVal} ${p && p.realised >= 0 ? s.pos : s.neg}`}>{p ? inr(p.realised) : '—'}</div><div className={s.kpiLabel}>Realised</div></div>
-        <div className={s.kpi}><div className={`${s.kpiVal} ${p && p.unrealised >= 0 ? s.pos : s.neg}`}>{p ? inr(p.unrealised) : '—'}</div><div className={s.kpiLabel}>Open MTM</div></div>
         <div className={s.kpi}><div className={s.kpiVal}>{p ? `${p.n_open}/${p.max_slots}` : '—'}</div><div className={s.kpiLabel}>Slots in use</div></div>
         <div className={s.kpi}><div className={s.kpiVal}>{p ? p.n_closed : '—'}</div><div className={s.kpiLabel}>Closed trades</div></div>
         <div className={s.kpi}><div className={s.kpiVal}>{p?.win_rate != null ? p.win_rate.toFixed(0) + '%' : '—'}</div><div className={s.kpiLabel}>Win rate</div></div>
