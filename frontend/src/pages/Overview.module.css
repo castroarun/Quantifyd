@@ -1,44 +1,15 @@
 /* Overview — desk view. Dense, monospace numerals, hairline rules. */
 
 .page {
-  /* Full-bleed dark desk: cancel AppLayout's 36px/48px content padding so the
-     ground runs to the edges the way a terminal does. */
+  /* Full-bleed: cancel AppLayout's 36px/48px content padding so the desk uses
+     the whole width and fits one screen. */
   max-width: none;
   margin: -36px -48px -56px;
-  padding: 22px 26px 44px;
+  padding: 14px 22px 22px;
   min-height: calc(100vh - 56px);
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
-  /* ---- reference palette (measured, not guessed) ---- */
-  --ov-ground: #0E1114;
-  --ov-panel: #171C22;
-  --ov-panel-2: #1E252E;
-
-  /* Redefining the app tokens here re-skins every rule below, plus any shared
-     component rendered inside this page. Nothing outside .page is affected. */
-  --canvas: #0E1114;
-  --surface: #171C22;
-  --ink: #E6EDF3;
-  --ink-secondary: #B7C2CD;
-  --ink-subtle: #9AA7B4;
-  --ink-muted: #8A97A4;
-  --ink-faint: #66727E;
-  --hairline: rgba(255, 255, 255, 0.09);
-  --hairline-soft: rgba(255, 255, 255, 0.06);
-  --hairline-softest: rgba(255, 255, 255, 0.045);
-  --accent-pos: #6FA88C;          /* sage-teal, from #638775 */
-  --accent-neg: #C97B6E;          /* muted brick, from #66504C */
-  --brand-navy: #5B87B3;          /* slate-blue, hue 207 */
-  --brand-navy-soft: #1B2735;
-  --brand-amber: #C9A227;
-  --chip-bg: #1C232B;
-  --chip-ink: #B7C2CD;
-  --status-connected: #6FA88C;
-  --status-warning: #C9A227;
-  --status-disconnected: #66727E;
-  --nav-hover-bg: rgba(255, 255, 255, 0.04);
-
-  background: var(--ov-ground);
+  background: var(--canvas);
   color: var(--ink);
 }
 
@@ -46,9 +17,7 @@
 @media (max-width: 720px) { .page { margin: -20px -14px -32px; } }
 
 /* Panels lift off the ground rather than being outlined on white. */
-.page :is(section, .panel) {
-  background: var(--ov-panel);
-}
+
 
 /* -------------------------------------------------------------- header */
 
@@ -676,7 +645,7 @@
 }
 
 .deskCard {
-  background: var(--ov-panel);
+  background: var(--surface);
   border: 1px solid var(--hairline);
   border-left: 2px solid var(--brand-navy);
   border-radius: 8px;
@@ -722,11 +691,40 @@
   margin-top: 10px;
   padding: 9px 13px;
   border-radius: 8px;
-  background: rgba(201, 123, 110, 0.10);
-  border: 1px solid rgba(201, 123, 110, 0.32);
-  color: #E9C4BC;
+  background: #FBECEC;
+  border: 1px solid rgba(163, 45, 45, 0.28);
+  color: #7A2E2E;
   font-size: 12px;
   line-height: 1.5;
 }
 
-.nakedStrip b { color: #F0D2CB; font-weight: 600; }
+.nakedStrip b { color: var(--accent-neg); font-weight: 600; }
+
+
+/* -------------------------------------------------- candles + overlays */
+.chartSvg { display: block; width: 100%; height: 250px; }
+.grid { stroke: var(--hairline-softest); stroke-width: 1; }
+.zero { stroke: var(--hairline); stroke-width: 1; stroke-dasharray: 3 3; }
+.axisL { fill: var(--ink-faint); font-size: 9px; text-anchor: end; font-family: var(--mono); }
+.axisR { fill: var(--ink-faint); font-size: 9px; font-family: var(--mono); }
+.candleUp { stroke: var(--accent-pos); fill: var(--accent-pos); }
+.candleDn { stroke: var(--accent-neg); fill: var(--accent-neg); }
+
+.legend {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 2px 0; font-size: 11px;
+}
+.legendNote { color: var(--ink-faint); margin-right: auto; }
+.legendBtn {
+  appearance: none; display: inline-flex; align-items: center; gap: 5px;
+  font-family: inherit; font-size: 11px; color: var(--ink-muted);
+  background: transparent; border: 1px solid var(--hairline);
+  border-radius: 20px; padding: 2px 9px 2px 5px; cursor: pointer;
+}
+.legendOn { color: var(--ink); background: var(--chip-bg); }
+.legendBtn:focus-visible { outline: 2px solid var(--brand-navy); outline-offset: 1px; }
+.legendSwatch { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+/* single-screen density */
+.tape { margin-top: 10px !important; }
+.panel { margin-top: 12px !important; }

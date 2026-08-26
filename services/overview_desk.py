@@ -167,3 +167,119 @@ def api_overview_desk():
     except Exception as e:
         logger.error('[desk] failed: %s', e, exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+# ---------------------------------------------------------------------------
+# Equity: weekly candles of cumulative P&L + index overlays
+# ---------------------------------------------------------------------------
+OVERLAYS = [
+    ('NIFTY50', 'Nifty 50'),
+    ('NIFTYMIDCAP150', 'Midcap 150'),
+    ('NIFTYSMLCAP250', 'Smallcap 250'),
+    ('NIFTY500', 'Nifty 500'),
+]
+
+
+def _journal_daily():
+    """[(date, net)] per trading day, oldest first."""
+    import sqlite3
+    db = BD / 'journal.db'
+    if not db.exists():
+        return []
+    con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+    try:
+        rows = con.execute(
+            "SELECT date(entry_time) d, COALESCE(SUM(pnl_net), 0) n "
+            "FROM journal_trades WHERE entry_time IS NOT NULL "
+            "GROUP BY 1 ORDER BY 1"
+        ).fetchall()
+    finally:
+        con.close()
+    return [(r[0], float(r[1] or 0)) for r in rows if r[0]]
+
+
+def _index_series(sym, start):
+    import sqlite3
+    db = BD / 'market_data.db'
+    if not db.exists():
+        return []
+    con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+    try:
+        rows = con.execute(
+            "SELECT date, close FROM market_data_unified "
+            "WHERE symbol=? AND timeframe='day' AND date >= ? ORDER BY date",
+            (sym, start)).fetchall()
+    finally:
+        con.close()
+    return [(r[0][:10], float(r[1])) for r in rows if r[1]]
+
+
+def equity(weeks: int = 52):
+    """Weekly candles on the cumulative curve + index overlays, same weeks."""
+    from datetime import date as _date
+    daily = _journal_daily()
+    if not daily:
+        return {'candles': [], 'overlays': {}, 'labels': dict(OVERLAYS)}
+
+    # cumulative, then bucket by ISO week
+    cum, curve = 0.0, []
+    for d, n in daily:
+        cum += n
+        curve.append((d, cum))
+
+    buckets = {}
+    for d, c in curve:
+        y, w, _ = _date.fromisoformat(d).isocalendar()
+        buckets.setdefault((y, w), []).append((d, c))
+
+    keys = sorted(buckets)[-weeks:]
+    candles, prev_close = [], None
+    for k in keys:
+        pts = buckets[k]
+        vals = [c for _, c in pts]
+        o = prev_close if prev_close is not None else vals[0]
+        candles.append({
+            'd': pts[0][0], 'end': pts[-1][0],
+            'o': round(o, 1), 'h': round(max(vals + [o]), 1),
+            'l': round(min(vals + [o]), 1), 'c': round(vals[-1], 1),
+            'n': len(pts),
+        })
+        prev_close = vals[-1]
+
+    if not candles:
+        return {'candles': [], 'overlays': {}, 'labels': dict(OVERLAYS)}
+
+    start = candles[0]['d']
+    overlays = {}
+    for sym, _label in OVERLAYS:
+        s = _index_series(sym, start)
+        if len(s) < 2:
+            continue
+        base = s[0][1]
+        weekly = {}
+        for d, v in s:
+            y, w, _ = _date.fromisoformat(d).isocalendar()
+            weekly[(y, w)] = (d, v)
+        pts = []
+        for k in keys:
+            if k in weekly:
+                d, v = weekly[k]
+                pts.append({'d': d, 'p': round((v / base - 1) * 100, 2)})
+        if len(pts) > 1:
+            overlays[sym] = pts
+
+    return {'candles': candles, 'overlays': overlays, 'labels': dict(OVERLAYS),
+            'weeks': len(candles)}
+
+
+@overview_bp.route('/equity', methods=['GET'])
+def api_overview_equity():
+    from flask import request
+    try:
+        weeks = max(8, min(260, int(request.args.get('weeks', 52))))
+    except Exception:
+        weeks = 52
+    try:
+        return jsonify(equity(weeks))
+    except Exception as e:
+        logger.error('[desk] equity failed: %s', e, exc_info=True)
+        return jsonify({'error': str(e), 'candles': [], 'overlays': {}}), 500
