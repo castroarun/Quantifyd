@@ -1,96 +1,74 @@
 {
- "generated_at": "2026-08-26T11:00:01",
+ "generated_at": "2026-08-26T14:00:02",
  "broker_legs": {
   "SENSEX26AUG77700CE": {
-   "qty": -160,
-   "avg": 288.05,
-   "ltp": 294.3,
-   "pnl": -1000.0,
+   "qty": -40,
+   "avg": 268.51,
+   "ltp": 192.7,
+   "pnl": 4849.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG77700PE": {
-   "qty": -200,
-   "avg": 132.765,
-   "ltp": 120.25,
-   "pnl": 2503.0,
+   "qty": -40,
+   "avg": 142.25416666666666,
+   "ltp": 176.8,
+   "pnl": -3535.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG77900CE": {
    "qty": -60,
    "avg": 261.0833333333333,
-   "ltp": 176.6,
-   "pnl": 5069.0,
+   "ltp": 109.35,
+   "pnl": 9104.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX26AUG77900PE": {
    "qty": -60,
    "avg": 150.68333333333334,
-   "ltp": 201.45,
-   "pnl": -3046.0,
+   "ltp": 295.1,
+   "pnl": -8665.0,
    "product": "MIS",
    "exchange": "BFO"
   },
-  "SENSEX26AUG78000CE": {
-   "qty": -80,
-   "avg": 210.3166666666667,
-   "ltp": 132.25,
-   "pnl": 9354.0,
-   "product": "MIS",
-   "exchange": "BFO"
-  },
-  "SENSEX26AUG78000PE": {
-   "qty": -40,
-   "avg": 196.66666666666669,
-   "ltp": 257.7,
-   "pnl": -8824.0,
-   "product": "MIS",
-   "exchange": "BFO"
+  "INOXINDIA": {
+   "qty": 7,
+   "avg": 1929.2,
+   "ltp": 1928.2,
+   "pnl": -7.0,
+   "product": "CNC",
+   "exchange": "NSE"
   },
   "MANORAMA": {
    "qty": 5,
    "avg": 1885.7,
-   "ltp": 1910.4,
-   "pnl": 123.5,
+   "ltp": 1910.5,
+   "pnl": 124.0,
    "product": "CNC",
    "exchange": "NSE"
   },
   "THYROCARE": {
    "qty": 17,
    "avg": 600.3,
-   "ltp": 605.25,
-   "pnl": 84.2,
+   "ltp": 605.6,
+   "pnl": 90.1,
    "product": "CNC",
    "exchange": "NSE"
   }
  },
  "app_claimed": {
-  "SENSEX26AUG78000CE": {
-   "qty": -80,
-   "books": [
-    "sensex_atm2",
-    "sensex_atm4"
-   ]
-  },
-  "SENSEX26AUG78000PE": {
+  "SENSEX26AUG77700CE": {
    "qty": -40,
    "books": [
     "sensex_atm2"
    ]
   },
   "SENSEX26AUG77700PE": {
-   "qty": -200,
+   "qty": -40,
    "books": [
-    "sensex_atm4",
-    "CSL_TIMEB_SENSEX"
-   ]
-  },
-  "SENSEX26AUG77700CE": {
-   "qty": -160,
-   "books": [
-    "CSL_TIMEB_SENSEX"
+    "sensex_atm2"
    ]
   },
   "SENSEX26AUG77900CE": {
@@ -107,6 +85,14 @@
   }
  },
  "findings": [
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "INOXINDIA",
+   "broker_qty": 7,
+   "app_qty": 0,
+   "detail": "manual holding, 7 \u2014 no book tracks it"
+  },
   {
    "level": "INFO",
    "kind": "MANUAL",
@@ -127,16 +113,16 @@
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "SENSEX26AUG77700CE",
-   "broker_qty": -160,
-   "app_qty": -160,
+   "broker_qty": -40,
+   "app_qty": -40,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "SENSEX26AUG77700PE",
-   "broker_qty": -200,
-   "app_qty": -200,
+   "broker_qty": -40,
+   "app_qty": -40,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
@@ -154,30 +140,14 @@
    "broker_qty": -60,
    "app_qty": -60,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
-  },
-  {
-   "level": "WARN",
-   "kind": "NAKED",
-   "symbol": "SENSEX26AUG78000CE",
-   "broker_qty": -80,
-   "app_qty": -80,
-   "detail": "short option with no SL resting at the exchange (software-side stop only)"
-  },
-  {
-   "level": "WARN",
-   "kind": "NAKED",
-   "symbol": "SENSEX26AUG78000PE",
-   "broker_qty": -40,
-   "app_qty": -40,
-   "detail": "short option with no SL resting at the exchange (software-side stop only)"
   }
  ],
  "filled_by_tag": {
-  "untagged": 422,
-  "CSL_CSL_TIMEB_SENSEX": 320,
+  "untagged": 669,
+  "CSL_CSL_TIMEB_SENSEX": 640,
   "CSL_CSL30F_SENSEX_WE": 120
  },
  "alerts": 0,
- "warns": 6,
- "infos": 2
+ "warns": 4,
+ "infos": 3
 }

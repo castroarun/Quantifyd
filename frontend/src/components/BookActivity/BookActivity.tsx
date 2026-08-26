@@ -24,6 +24,11 @@ export interface BookLivenessRecord {
   net_30d: number | null;
   win_rate: number | null;
   series: Array<{ d: string; c: number }>;
+  /** Positions held right now — a book with no exits yet is still working. */
+  open_positions?: number;
+  last_entry?: string | null;
+  /** Days since the last entry OR exit, whichever is later. */
+  days_since_activity?: number | null;
 }
 
 type Books = Record<string, BookLivenessRecord>;
@@ -93,12 +98,16 @@ export default function BookActivity({ bookId }: { bookId: string }) {
     return (
       <div className={styles.strip}>
         <span className={styles.label}>Book record</span>
-        <span className={styles.quiet}>no trades recorded yet</span>
+        <span className={styles.quiet}>
+          {(rec?.open_positions ?? 0) > 0
+            ? `holding ${rec?.open_positions} — nothing closed yet`
+            : 'no trades recorded yet'}
+        </span>
       </div>
     );
   }
 
-  const d = rec.days_idle;
+  const d = rec.days_since_activity ?? rec.days_idle;
   const idleLabel = d === 0 ? 'today' : d === 1 ? 'yesterday' : `${d}d ago`;
   const idleCls = d != null && d >= 30 ? styles.stale : d != null && d >= 7 ? styles.warn : '';
 
@@ -115,6 +124,11 @@ export default function BookActivity({ bookId }: { bookId: string }) {
       <span className={styles.item}>
         <b>{rec.trades_30d}</b> in 30d
       </span>
+      {(rec.open_positions ?? 0) > 0 && (
+        <span className={styles.item}>
+          holding <b>{rec.open_positions}</b>
+        </span>
+      )}
       {rec.net_total != null && (
         <span className={styles.item}>
           net <b className={pnlClass(rec.net_total)}>{formatPnl(rec.net_total)}</b>

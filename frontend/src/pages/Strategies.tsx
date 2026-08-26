@@ -34,6 +34,11 @@ export interface BookLiveness {
   net_30d: number | null;
   win_rate: number | null;
   series: Array<{ d: string; c: number }>;
+  /** Positions held right now — a book with no exits yet is still working. */
+  open_positions?: number;
+  last_entry?: string | null;
+  /** Days since the last entry OR exit, whichever is later. */
+  days_since_activity?: number | null;
 }
 
 /** Tiny cumulative-P&L sparkline. No axes — it answers "shape?", not "how much?". */
@@ -60,15 +65,25 @@ function Spark({ series }: { series: Array<{ d: string; c: number }> }) {
   );
 }
 
-/** "3d ago" / "today" / "—", with a warning tone once a book goes quiet. */
+/** "3d ago" / "today" / "—", with a warning tone once a book goes quiet.
+ *  A book that has entered but never exited reports its entry, not a dash —
+ *  holding a position is activity, and calling it "—" reads as broken. */
 function IdleCell({ lv }: { lv?: BookLiveness }) {
-  if (!lv || !lv.last_trade) return <span className={styles.dash}>—</span>;
-  const d = lv.days_idle;
+  const held = lv?.open_positions ?? 0;
+  if (!lv || (!lv.last_trade && !held)) return <span className={styles.dash}>—</span>;
+  const d = lv.days_since_activity ?? lv.days_idle;
   const label = d === 0 ? 'today' : d === 1 ? 'yesterday' : `${d}d ago`;
   const cls = d != null && d >= 30 ? styles.idleStale : d != null && d >= 7 ? styles.idleWarn : '';
+  const title = [
+    lv.last_trade ? `last exit ${lv.last_trade}` : 'no exit yet',
+    lv.last_entry ? `last entry ${lv.last_entry}` : null,
+    held ? `holding ${held}` : null,
+    `${lv.trades} closed all-time`,
+  ].filter(Boolean).join(' · ');
   return (
-    <span className={cls} title={`${lv.last_trade} · ${lv.trades} trades all-time`}>
+    <span className={cls} title={title}>
       {label}
+      {held ? <span className={styles.dash}> · holds {held}</span> : null}
     </span>
   );
 }

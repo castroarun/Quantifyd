@@ -33,6 +33,11 @@ interface BookLiveness {
   net_30d: number | null;
   win_rate: number | null;
   series: Array<{ d: string; c: number }>;
+  /** Positions held right now — a book with no exits yet is still working. */
+  open_positions?: number;
+  last_entry?: string | null;
+  /** Days since the last entry OR exit, whichever is later. */
+  days_since_activity?: number | null;
 }
 
 interface IndexTick {
@@ -735,12 +740,16 @@ export default function Overview() {
     () =>
       Object.entries(books)
         .map(([key, b]) => ({ key, ...b }))
-        .filter((r) => r.trades > 0)
+        // a book holding positions belongs in the table even with no exit yet
+        .filter((r) => r.trades > 0 || (r.open_positions ?? 0) > 0)
         .sort((a, b) => (b.net_30d ?? 0) - (a.net_30d ?? 0)),
     [books],
   );
 
-  const liveCount = rows.filter((r) => r.days_idle !== null && r.days_idle <= 1).length;
+  // 'Live' means it did something in the last session — an entry counts, not
+  // just an exit, or a book holding a multi-day position reads as dormant.
+  const act = (r: BookLiveness) => r.days_since_activity ?? r.days_idle;
+  const liveCount = rows.filter((r) => act(r) !== null && (act(r) as number) <= 1).length;
   const monthDays = useMemo(
     () =>
       allDays.filter((d) => {
@@ -951,7 +960,7 @@ export default function Overview() {
                   </tr>
                 )}
                 {rows.map((r) => {
-                  const on = r.days_idle !== null && r.days_idle <= 1;
+                  const on = act(r) !== null && (act(r) as number) <= 1;
                   return (
                     <tr key={r.key}>
                       <td className={styles.tdName}>
