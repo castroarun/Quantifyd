@@ -586,7 +586,7 @@ export const SYSTEMS: StrategySystem[] = [
       ['Wings', 'Buy CE/PE ~7% of spot beyond the shorts \u2014 crash cap for stock-specific overnight gaps; wing width chosen by sweep (wider-monotone)'],
       ['Exits', '50% of net credit, or time exit at 21 DTE. NO premium stop \u2014 every stop tested hurts; the wings are the risk cap'],
       ['Sizing', '10 slots \u00d7 \u20b92L; lots to ~\u20b920L notional/slot on a 10%-of-notional margin ESTIMATE \u2014 real SPAN check owed'],
-      ['Cadence', 'EOD only: entries, marks and exits struck on real NSE bhavcopy closes (no intraday stock-options data exists)'],
+      ['Cadence', 'REAL quotes: 5s live marks; day mark-of-record = the real 15:29:30 close snapshot; exits evaluate on it once daily at the close (the tested cadence). New cycles enter LIVE at ~15:26 on real quotes. Bhavcopy = backfill only'],
       ['Why paper', 'Study is STRATEGY-candidate (G3 passed); gates to real money: real basket margin, live cost/slippage evidence, earnings-skip test'],
     ],
     rulesDoc: 'research/127_stock_neutral_wings/STOCK_NEUTRAL_WINGED_STRADDLE_DAILY_SWEEP_STATUS.md',
@@ -599,6 +599,7 @@ export const SYSTEMS: StrategySystem[] = [
       },
     ],
     changeLog: [
+      { date: '26 Aug 2026', text: 'Switched to REAL options data end-to-end (Arun): 5s live ticks, day mark-of-record = real 15:29:30 snapshot, daily exits evaluated on it, LIVE entries at ~15:26 on real quotes + today-volume gate; real Kite basket margins persisted. Bhavcopy demoted to backfill.' },
       { date: '25 Aug 2026', text: 'PAPER book live: services/stock_wings_paper.py (cron 16:50 + 20:30) seeded from 01-Jun \u2014 18 replayed closes, 10 open Sep-29 positions; page at /app/stock-wings. Study published same day: net +0.264%/trade t 5.06, portfolio 20\u201326% CAGR at stressed margin, corr NIFTY \u22120.09.' },
     ],
   },

@@ -108,7 +108,8 @@ def init_db():
     """)
     for ddl in ("ALTER TABLE positions ADD COLUMN margin_real REAL",
                 "ALTER TABLE positions ADD COLUMN margin_peak REAL",
-                "ALTER TABLE positions ADD COLUMN margin_asof TEXT"):
+                "ALTER TABLE positions ADD COLUMN margin_asof TEXT",
+                "ALTER TABLE marks ADD COLUMN src TEXT"):
         try:
             con.execute(ddl)
         except sqlite3.OperationalError:
@@ -435,20 +436,37 @@ def rows_of(con, where="1=1"):
 
 
 def sweep(con, m, days, upto):
-    """Walk open positions session by session up to `upto`; apply TP / 21-DTE
-    time exit (no stop — the wings are the risk cap); record daily marks."""
+    """Walk open positions day by day up to `upto`; apply TP / 21-DTE time exit
+    (no stop — the wings are the risk cap); record daily marks.
+
+    The day's value of RECORD is the real 15:29:30 quote snapshot captured by
+    the daemon (marks.src='kite') when one exists; bhavcopy closes only
+    back-fill days the daemon missed and the seeded history. Bhav never
+    overwrites a kite mark, and both exit rules evaluate on whichever value is
+    the day's record."""
+    bhav_last = days[-1]
     for r in rows_of(con, "status='OPEN'"):
-        xd = prev_session(days, dstr(dparse(r["expiry"]) - timedelta(days=DTE_OUT)))
-        for d in [x for x in days if r["entry_date"] < x <= upto]:
-            val = structure_value(m, r, d)
+        xcal = dstr(dparse(r["expiry"]) - timedelta(days=DTE_OUT))
+        kmarks = {d: v for d, v in con.execute(
+            "SELECT d, val FROM marks WHERE pos_id=? AND src='kite'", (r["id"],))}
+        walk = sorted(set(days) | set(kmarks))
+        closed = False
+        for d in [x for x in walk if r["entry_date"] < x <= upto]:
+            if d in kmarks:
+                val, src = kmarks[d], "kite"
+            elif d <= bhav_last:
+                val, src = structure_value(m, r, d), "bhav"
+            else:
+                continue
             if val is None:
                 continue                          # no short-leg marks; roll forward
-            con.execute("INSERT OR REPLACE INTO marks(pos_id,d,val,mtm_rs) VALUES(?,?,?,?)",
-                        (r["id"], d, val, (r["credit"] - val) * r["qty"]))
+            con.execute("INSERT INTO marks(pos_id,d,val,mtm_rs,src) VALUES(?,?,?,?,?) "
+                        "ON CONFLICT(pos_id,d) DO NOTHING",
+                        (r["id"], d, val, (r["credit"] - val) * r["qty"], src))
             why = None
             if val <= TP * r["credit"]:
                 why = "TARGET"
-            elif xd and d >= xd:
+            elif d >= xcal:
                 why = "TIME_21DTE"
             elif d >= r["expiry"]:
                 sp = spot_close(m, r["symbol"], d) or r["entry_spot"]
@@ -457,22 +475,29 @@ def sweep(con, m, days, upto):
             if why:
                 gross = (r["credit"] - val) * r["qty"]
                 cost = costs_rs(r, val)
+                xsp = (spot_close(m, r["symbol"], d) if d <= bhav_last
+                       else r.get("mark_spot"))
                 con.execute(
                     "UPDATE positions SET status='CLOSED',exit_date=?,exit_val=?,exit_reason=?,"
                     "exit_spot=?,gross_rs=?,cost_rs=?,net_rs=?,mark_val=?,mark_date=?,mtm_rs=? WHERE id=?",
-                    (d, val, why, spot_close(m, r["symbol"], d), gross, cost, gross - cost,
+                    (d, val, why, xsp, gross, cost, gross - cost,
                      val, d, gross - cost, r["id"]))
-                print("  CLOSED %-12s %s @ %.2f (%s) net Rs %s"
-                      % (r["symbol"], d, val, why, "{:,.0f}".format(gross - cost)))
+                print("  CLOSED %-12s %s @ %.2f (%s, %s) net Rs %s"
+                      % (r["symbol"], d, val, why, src, "{:,.0f}".format(gross - cost)))
+                closed = True
                 break
-        else:
-            # still open — mark at the latest available session
-            for d in reversed([x for x in days if r["entry_date"] < x <= upto]):
-                val = structure_value(m, r, d)
+        if not closed:
+            # still open — mark to the latest day of record (kite preferred)
+            for d in reversed([x for x in walk if r["entry_date"] < x <= upto]):
+                val = kmarks.get(d)
+                if val is None and d <= bhav_last:
+                    val = structure_value(m, r, d)
                 if val is not None:
-                    con.execute("UPDATE positions SET mark_val=?,mark_date=?,mtm_rs=?,mark_spot=? WHERE id=?",
+                    con.execute("UPDATE positions SET mark_val=?,mark_date=?,mtm_rs=?,"
+                                "mark_spot=COALESCE(?,mark_spot) WHERE id=?",
                                 (val, d, (r["credit"] - val) * r["qty"],
-                                 spot_close(m, r["symbol"], d), r["id"]))
+                                 spot_close(m, r["symbol"], d) if d <= bhav_last else None,
+                                 r["id"]))
                     break
     con.commit()
 
@@ -492,6 +517,9 @@ def seed():
         if (dparse(exp) - dparse(ed)).days > DTE_IN + 5:
             continue
         sweep(con, m, days, ed)                   # free slots that exited before this cycle
+        if con.execute("SELECT 1 FROM positions WHERE expiry=? AND src='LIVE'",
+                       (exp,)).fetchone():
+            continue                              # cycle already entered LIVE by the daemon
         n_open = len(rows_of(con, "status='OPEN'"))
         free = MAX_SLOTS - n_open
         if free <= 0:
@@ -520,7 +548,7 @@ def seed():
                                        "{:,.0f}".format(c["credit"] * c["qty"]), int(c["atm_vol"])))
         print("  %s: %d/%d candidates taken (%d slots free)" % (ed, taken, len(cands), free))
     con.commit()
-    sweep(con, m, days, days[-1])
+    sweep(con, m, days, max(days[-1], dstr(datetime.now())))
     publish(con, m, days)
     con.close()
     m.close()
@@ -530,7 +558,7 @@ def mark():
     con = init_db()
     m = ro(MKT)
     days = sessions(m)
-    sweep(con, m, days, days[-1])
+    sweep(con, m, days, max(days[-1], dstr(datetime.now())))
     publish(con, m, days)
     con.close()
     m.close()
@@ -667,12 +695,14 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
         upcoming=upc if upc is not None else upcoming(m, days),
         entry_time="15:30 (EOD close)", exit_time="15:30 (EOD close)",
         open_positions=openp, closed_trades=closed,
-        note=("EOD cadence: entries, marks and exits are struck on real NSE bhavcopy closes; "
-              "stock options have no intraday recorder. Marks shown DURING the session are "
-              "live Kite quotes (display only — target and stop still resolve on the EOD "
-              "close, as tested). Margin is the real Kite basket requirement, wings sent "
-              "first. SEED trades are replayed history; LIVE trades were opened by the "
-              "daily job after go-live."))
+        note=("REAL-DATA book: intraday marks tick on live Kite quotes; the day's mark of "
+              "record is the real 15:29:30 close snapshot, and the daily exits (50% "
+              "target / 21-DTE time) evaluate on it — once per day at the close, exactly "
+              "the cadence the study validated. New cycles enter LIVE at ~15:26 on real "
+              "quotes with today's real traded volume as the liquidity gate. Bhavcopy is "
+              "backfill only (seeded history and any day the daemon was down). Margin is "
+              "the real Kite basket requirement, wings sent first. SEED = replayed "
+              "history; LIVE = opened by the live engine."))
     for p in PUBS:
         try:
             os.makedirs(os.path.dirname(p), exist_ok=True)
@@ -704,6 +734,153 @@ def live():
     m.close()
 
 
+def _chunks(xs, n):
+    for i in range(0, len(xs), n):
+        yield xs[i:i + n]
+
+
+def todays_cycle(m):
+    """The expiry whose 45-DTE entry day (weekend-rolled) is TODAY, else None."""
+    today = dstr(datetime.now())
+    rows = m.execute(
+        "SELECT expiry_date FROM nse_options_bhav WHERE symbol NOT IN (?,?) "
+        "AND expiry_date>? GROUP BY expiry_date HAVING COUNT(*)>500 "
+        "ORDER BY expiry_date", (*INDEX_SYMS, today)).fetchall()
+    bym = {}
+    for (exp,) in rows:
+        bym.setdefault(exp[:7], []).append(exp)
+    for ym in sorted(bym):
+        exp = max(bym[ym])
+        ent = dparse(exp) - timedelta(days=DTE_IN)
+        while ent.weekday() >= 5:
+            ent -= timedelta(days=1)
+        if dstr(ent) == today:
+            return exp
+    return None
+
+
+def entry_scan_live(con, m, k, exp, lots_map):
+    """REAL-quote entry engine for a cycle day, run by the daemon at ~15:26.
+
+    Live spot, live strike grid, TODAY's real traded volume for the liquidity
+    gate, fills at last-traded price. This replaces the bhav-based entry for
+    days the daemon is up; seed() backfills from bhav only if this never ran
+    for the cycle (daemon down / holiday shift)."""
+    today = dstr(datetime.now())
+    if con.execute("SELECT 1 FROM positions WHERE expiry=? AND src='LIVE'", (exp,)).fetchone():
+        return 0
+    free = MAX_SLOTS - len(rows_of(con, "status='OPEN'"))
+    if free <= 0:
+        print("  entry: book full", flush=True)
+        return 0
+    try:
+        instr = k.instruments("NFO")
+    except Exception as e:
+        print("  entry: instruments failed (%s)" % str(e)[:60], flush=True)
+        return 0
+    grid = {}
+    for i in instr:
+        if str(i["expiry"]) == exp and i["instrument_type"] in ("CE", "PE") \
+                and i["name"] in lots_map:
+            grid.setdefault(i["name"], {}).setdefault(
+                i["instrument_type"], {})[float(i["strike"])] = i["tradingsymbol"]
+    spots = {}
+    for batch in _chunks(["NSE:" + s for s in grid], 400):
+        try:
+            spots.update({kk.split(":")[1]: v["last_price"]
+                          for kk, v in k.ltp(batch).items()})
+        except Exception:
+            pass
+    plan, want = {}, []
+    for sym, g in grid.items():
+        sp, lot = spots.get(sym), lots_map[sym]
+        if not sp or lot * sp > SLOT_MARGIN / MARGIN_PCT_EST:
+            continue
+        ces, pes = sorted(g.get("CE", {})), sorted(g.get("PE", {}))
+        if not ces or not pes:
+            continue
+        kce = min(ces, key=lambda x: abs(x - sp * (1 + K_OFF)))
+        kpe = min(pes, key=lambda x: abs(x - sp * (1 - K_OFF)))
+        if kce < kpe or abs(kce / sp - (1 + K_OFF)) > ATM_BAND \
+                or abs(kpe / sp - (1 - K_OFF)) > ATM_BAND:
+            continue
+        wce_c = [x for x in ces if x > kce]
+        wpe_c = [x for x in pes if x < kpe]
+        if not wce_c or not wpe_c:
+            continue
+        wce = min(wce_c, key=lambda x: abs(x - (kce + WING_PCT * sp)))
+        wpe = min(wpe_c, key=lambda x: abs(x - (kpe - WING_PCT * sp)))
+        if (wce - kce) / sp < WING_MIN or (kpe - wpe) / sp < WING_MIN:
+            continue
+        legs = dict(sce=g["CE"][kce], spe=g["PE"][kpe], wce=g["CE"][wce], wpe=g["PE"][wpe])
+        plan[sym] = dict(sp=sp, lot=lot, kce=kce, kpe=kpe, wce=wce, wpe=wpe, legs=legs)
+        want += ["NFO:" + t for t in legs.values()]
+    q = {}
+    for batch in _chunks(sorted(set(want)), 400):
+        try:
+            q.update(k.quote(batch))
+        except Exception as e:
+            print("  entry: quote failed (%s)" % str(e)[:60], flush=True)
+    cands = []
+    for sym, p in plan.items():
+        d_ = {t: q.get("NFO:" + p["legs"][t], {}) for t in p["legs"]}
+        prc = {t: (d_[t].get("last_price") or 0) for t in p["legs"]}
+        vol = {t: (d_[t].get("volume") or 0) for t in p["legs"]}
+        ltt = {t: str(d_[t].get("last_trade_time") or "")[:10] for t in p["legs"]}
+        if any(prc[t] <= 0 or ltt[t] != today for t in p["legs"]):
+            continue                      # all 4 legs must have traded TODAY
+        atm_vol = vol["sce"] + vol["spe"]
+        wing_min = min(vol["wce"], vol["wpe"])
+        if atm_vol < ATM_VOL_MIN or wing_min < WING_VOL_MIN:
+            continue
+        credit = (prc["sce"] + prc["spe"]) - (prc["wce"] + prc["wpe"])
+        if credit <= 0:
+            continue
+        lots = max(1, int((SLOT_MARGIN / MARGIN_PCT_EST) // (p["lot"] * p["sp"])))
+        cands.append(dict(symbol=sym, sp=p["sp"], kce=p["kce"], kpe=p["kpe"],
+                          wce=p["wce"], wpe=p["wpe"], credit=credit,
+                          gross=sum(prc.values()), lots=lots, lot=p["lot"],
+                          qty=lots * p["lot"], atm_vol=atm_vol, wing_min=wing_min))
+    cands.sort(key=lambda c: -c["atm_vol"])
+    taken = 0
+    for c in cands[:free]:
+        con.execute(
+            "INSERT INTO positions(symbol,expiry,entry_date,entry_spot,kce,kpe,wce,wpe,"
+            "credit,gross_legs,lots,lot,qty,atm_vol,wing_vol_min,src,status) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'LIVE','OPEN')",
+            (c["symbol"], exp, today, c["sp"], c["kce"], c["kpe"], c["wce"], c["wpe"],
+             c["credit"], c["gross"], c["lots"], c["lot"], c["qty"],
+             c["atm_vol"], c["wing_min"]))
+        taken += 1
+        print("  LIVE ENTRY %-12s exp %s PE/CE %.0f/%.0f wings %.0f/%.0f credit %.2f x %d"
+              % (c["symbol"], exp, c["kpe"], c["kce"], c["wpe"], c["wce"],
+                 c["credit"], c["qty"]), flush=True)
+    con.commit()
+    print("  entry: %d/%d candidates taken (%d slots were free)"
+          % (taken, len(cands), free), flush=True)
+    return taken
+
+
+def eod_capture(con, m, days, openp, lv):
+    """Record TODAY's real 15:29:30 snapshot as the day's mark of record
+    (marks.src='kite'), then evaluate the daily exits on it."""
+    today = dstr(datetime.now())
+    n = 0
+    for r in openp:
+        v = (lv or {}).get(r["id"])
+        if v and v.get("val") is not None:
+            con.execute("INSERT OR REPLACE INTO marks(pos_id,d,val,mtm_rs,src) "
+                        "VALUES(?,?,?,?,'kite')",
+                        (r["id"], today, v["val"], (r["credit"] - v["val"]) * r["qty"]))
+            if v.get("spot"):
+                con.execute("UPDATE positions SET mark_spot=? WHERE id=?",
+                            (v["spot"], r["id"]))
+            n += 1
+    con.commit()
+    sweep(con, m, days, max(days[-1], today))
+    print("  eod: %d real closes recorded, exits evaluated" % n, flush=True)
+
+
 def livedaemon(tick=5):
     """Persistent intraday ticker: ONE batched quote() every `tick` seconds ->
     republish the JSON. Display only, same guarantees as live(): never evaluates
@@ -732,14 +909,40 @@ def livedaemon(tick=5):
     k, spec, want = setup
     upc = upcoming(m, days)               # heavy GROUP BY — cache across ticks
     mgc = live_margins(openp)             # throttled endpoint — cache across ticks
+    lots_map = {s: l for s, l in lot_sizes().items() if s not in INDEX_SYMS}
+    entry_exp = todays_cycle(m)           # is TODAY a 45-DTE entry day?
+    if entry_exp:
+        print("  daemon: TODAY is the entry day for expiry %s — live scan at 15:26"
+              % entry_exp, flush=True)
     print("  daemon: up, %d positions, %d margins, tick %ds"
           % (len(openp), len(mgc), tick), flush=True)
     fails, last_reload, last_log = 0, time.time(), 0.0
+    did_entry = did_eod = False
+    lv = None
     while in_hours(datetime.now()):
         try:
             q = k.quote(list(want))
             lv = _live_tick(q, openp, spec)
             publish(con, m, days, live=lv, verbose=False, upc=upc, mg=mgc)
+            hms = datetime.now().strftime("%H:%M:%S")
+            if entry_exp and not did_entry and hms >= "15:26:00":
+                did_entry = True
+                entry_scan_live(con, m, k, entry_exp, lots_map)
+                openp = rows_of(con, "status='OPEN'")
+                s2 = _live_setup(openp)
+                if s2:
+                    k, spec, want = s2
+                m2 = live_margins(openp)
+                if m2:
+                    mgc = m2
+            if not did_eod and hms >= "15:29:30":
+                did_eod = True
+                eod_capture(con, m, days, openp, lv)
+                openp = rows_of(con, "status='OPEN'")   # exits may have closed rows
+                s2 = _live_setup(openp)
+                if s2:
+                    k, spec, want = s2
+                publish(con, m, days, verbose=False, upc=upc, mg=mgc)
             fails = 0
             if time.time() - last_log > 600:
                 print("  daemon: %s live marks %d/%d" %
