@@ -759,3 +759,115 @@
 @media (max-width: 1180px) {
   .duo { grid-template-columns: 1fr; }
 }
+
+
+/* ------------------------------------------------------------- metrics */
+/* Hierarchy, not eight equal boxes: one number leads, three support it,
+   the ratios sit quietly underneath without borders. */
+.metrics {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  grid-template-areas: 'hero cards' 'quiet quiet';
+  gap: 12px 14px;
+  align-items: stretch;
+  margin: 12px 0 14px;
+}
+
+.heroCard {
+  grid-area: hero;
+  background: var(--surface);
+  border: 1px solid var(--hairline-soft);
+  border-left: 3px solid var(--brand-navy);
+  border-radius: 10px;
+  padding: 18px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 132px;
+}
+
+.heroK {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.heroV {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 6px 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroS { font-size: 11.5px; color: var(--ink-faint); }
+
+.mCards {
+  grid-area: cards;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
+  justify-content: start;
+  gap: 12px;
+}
+
+.mCard {
+  background: var(--surface);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 10px;
+  padding: 16px 20px 17px;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.mK {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.mV {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 7px 0 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mS { font-size: 11px; color: var(--ink-faint); }
+
+.quiet {
+  grid-area: quiet;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  padding: 2px 4px 0;
+}
+
+.quietItem { display: inline-flex; align-items: baseline; gap: 8px; }
+
+.quietK {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.quietV {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 980px) {
+  .metrics { grid-template-columns: 1fr; grid-template-areas: 'hero' 'cards' 'quiet'; }
+}

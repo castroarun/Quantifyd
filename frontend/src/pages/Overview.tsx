@@ -864,23 +864,41 @@ export default function Overview() {
 
 
       {/* -------------------------------------------------------- tape */}
-      <section className={styles.tape}>
-        {[
-          { k: 'Net P&L', v: inr(m.net), c: tone(m.net), s: `${days.length} sessions` },
-          { k: 'Max DD', v: inr(m.mdd, false), c: styles.neg, s: 'peak to trough' },
-          { k: 'Sharpe', v: m.sharpe === null ? '—' : m.sharpe.toFixed(2), c: tone(m.sharpe), s: 'daily P&L · ann.' },
-          { k: 'Profit factor', v: m.pf === null ? '—' : m.pf.toFixed(2), c: tone(m.pf ? m.pf - 1 : 0), s: 'gross win / loss' },
-          { k: 'Win days', v: pct(m.winDays), c: styles.flat, s: `of ${days.length}` },
-          { k: 'Trades', v: m.trades.toLocaleString('en-IN'), c: styles.flat, s: 'closed' },
-          { k: 'Best day', v: inr(m.best), c: styles.pos, s: 'single session' },
-          { k: 'Worst day', v: inr(m.worst), c: styles.neg, s: 'single session' },
-        ].map((t) => (
-          <div key={t.k} className={styles.tapeCell}>
-            <div className={styles.tapeK}>{t.k}</div>
-            <div className={`${styles.tapeV} ${t.c}`}>{loading ? '·' : t.v}</div>
-            <div className={styles.tapeS}>{t.s}</div>
+      <section className={styles.metrics}>
+        <div className={styles.heroCard}>
+          <div className={styles.heroK}>Net P&amp;L</div>
+          <div className={`${styles.heroV} ${tone(m.net)}`}>{loading ? '·' : inr(m.net)}</div>
+          <div className={styles.heroS}>
+            {days.length} sessions journalled · {m.trades.toLocaleString('en-IN')} trades
           </div>
-        ))}
+        </div>
+
+        <div className={styles.mCards}>
+          {[
+            { k: 'Max drawdown', v: inr(m.mdd, false), c: styles.neg, s: 'peak to trough' },
+            { k: 'Winning days', v: pct(m.winDays), c: styles.flat, s: `of ${days.length}` },
+            { k: 'Best / worst', v: inr(m.best), c: styles.pos, s: `worst ${inr(m.worst)}` },
+          ].map((c) => (
+            <div key={c.k} className={styles.mCard}>
+              <div className={styles.mK}>{c.k}</div>
+              <div className={`${styles.mV} ${c.c}`}>{loading ? '·' : c.v}</div>
+              <div className={styles.mS}>{c.s}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.quiet}>
+          {[
+            ['Sharpe', m.sharpe === null ? '—' : m.sharpe.toFixed(2), 'on daily rupee P&L, annualised'],
+            ['Profit factor', m.pf === null ? '—' : m.pf.toFixed(2), 'gross win ÷ gross loss'],
+            ['Avg day', inr(days.length ? m.net / days.length : 0), 'across every session'],
+          ].map(([k, v, s]) => (
+            <span key={k} className={styles.quietItem} title={s}>
+              <span className={styles.quietK}>{k}</span>
+              <span className={styles.quietV}>{loading ? '·' : v}</span>
+            </span>
+          ))}
+        </div>
       </section>
 
       {/* equity at half width, the books grid beside it — half the page
