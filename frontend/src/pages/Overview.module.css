@@ -728,3 +728,20 @@
 /* single-screen density */
 .tape { margin-top: 10px !important; }
 .panel { margin-top: 12px !important; }
+
+
+/* Equity and the books grid share a row: the curve does not need full width,
+   and pairing them halves the page height. */
+.duo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+.duo > * { margin-top: 0 !important; min-width: 0; }
+
+@media (max-width: 1180px) {
+  .duo { grid-template-columns: 1fr; }
+}

@@ -41,7 +41,16 @@ export default function Heatmaps() {
   const [feed, setFeed] = useState<Feed | null>(null);
   const [tab, setTab] = useState<'books' | 'stocks'>('books');
   const [tip, setTip] = useState<{ x: number; y: number; html: string } | null>(null);
+  const [wide, setWide] = useState(0);          // re-render when the column resizes
   const cv = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const el = cv.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([e]) => setWide(Math.round(e.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     fetch(`/app/overview_heatmaps.json?t=${Date.now()}`, { cache: 'no-store' })
@@ -143,7 +152,7 @@ export default function Heatmaps() {
     dates.forEach((d, j) => {
       if (j % step === 0) ctx.fillText(d.slice(5), geom.padL + j * cw, 10);
     });
-  }, [feed, geom, tab, clamp]);
+  }, [feed, geom, tab, clamp, wide]);
 
   if (!feed) return null;
 

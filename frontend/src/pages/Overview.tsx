@@ -883,6 +883,9 @@ export default function Overview() {
         ))}
       </section>
 
+      {/* equity at half width, the books grid beside it — half the page
+          height, and the two questions sit side by side */}
+      <div className={styles.duo}>
       {/* ------------------------------------------------------ equity */}
       <section className={styles.panel}>
         <div className={styles.panelHead}>
@@ -902,8 +905,8 @@ export default function Overview() {
         {loading ? <div className={styles.chartEmpty}>Loading…</div> : <EquityCandles days={days} />}
         {!loading && <Heartbeat days={days} />}
       </section>
-
-      <Heatmaps />
+        <Heatmaps />
+      </div>
 
       {/* --------------------------------------------- systems + journal */}
       <div className={styles.split}>
