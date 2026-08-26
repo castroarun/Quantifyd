@@ -1,0 +1,31 @@
+========================================================================================
+(a) INCUMBENT self-trigger diagnostic - TV SuperTrend(7,3) vs the live premium
+========================================================================================
+episodes where the ST value is first produced : 84 / 86
+  ... and it lands BELOW the live premium      : 52  (62%)  -> instant self-trigger
+  minutes from naked to first ST value        : median 38  (min 36, max 40)
+
+========================================================================================
+(b) CEILING design - is the stop correctly ABOVE the premium when it arms?
+========================================================================================
+  SEED  : armed on 86/86 episodes | stop ABOVE premium at arming 86 (100%) | minutes trail-less: median 0 max 37
+  COLD  : armed on 83/86 episodes | stop ABOVE premium at arming 83 (100%) | minutes trail-less: median 39 max 41
+
+========================================================================================
+(c) ROUND-TRIP timing
+========================================================================================
+  episode length (naked -> 15:15)      : median 268 min (min 30, max 356)
+  time from naked to the LOW           : median 152 min
+  full round-trips back to entry       : 20 / 86 = 23.3%
+  ... time from the LOW back to entry  : median 72 min (min 14, max 214)
+
+  giveback distribution (recovery_frac = (max after low - low) / (entry - low))
+    p10  0.02
+    p25  0.08
+    p50  0.23
+    p75  0.93
+    p90  2.41
+    p95  2.76
+    share >= 1.00 (full round trip)   : 23.3%
+    share >= 0.50 (half given back)   : 38.4%
+    share <= 0.10 (clean one-way decay): 32.6%

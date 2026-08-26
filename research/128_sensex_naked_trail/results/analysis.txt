@@ -1,0 +1,65 @@
+============================================================================================
+RESEARCH 128 - SENSEX naked-survivor trail | analysis
+============================================================================================
+episodes 86 | days 50 (2026-04-28 .. 2026-08-25) | IS<2026-07-07 n=54 | OOS>=2026-07-07 n=32
+
+PLATEAU MAP - mean net Rs/lot by ST period x multiplier (averaged over N and seed)
+  period |  m2.0   m2.5   m3.0   m3.5   m4.0    row-avg
+      5  |   2647   2659   2663   2730   2697     2679
+      7  |   2760   2672   2698   2709   2734     2715
+     10  |   2754   2699   2698   2697   2762     2722
+     14  |   2732   2752   2726   2798   2757     2753
+  col-avg |   2723   2695   2696   2734   2737
+  (BE_ONLY = 2536   INCUMBENT = 2480   HOLD_EOD = 2136)
+
+CONFIRM-POLL sensitivity (N minute-polls, averaged over period/mult/seed)
+   N=1  mean   2725  vsBE   +189  beat-BE  35/ 40  worst     -866
+   N=2  mean   2786  vsBE   +250  beat-BE  40/ 40  worst    -2414
+   N=3  mean   2798  vsBE   +262  beat-BE  40/ 40  worst    -4046
+   N=5  mean   2560  vsBE    +24  beat-BE  19/ 40  worst    -4046
+
+SEEDED vs COLD warm-up (averaged over the whole ST grid)
+   SEED mean   2713  vsBE   +178  beat-BE  66/ 80  worst    -4046  median-worst    -1992
+   COLD mean   2721  vsBE   +185  beat-BE  68/ 80  worst    -4046  median-worst    -2205
+
+FAMILY-WISE HONESTY
+   ST-ceiling cells tried: 160 | beating BE_ONLY: 134 (84%) | beating INCUMBENT: 152
+   sign test on cells vs BE_ONLY: p = 4.96e-19  (null: a cell is better than BE with p=0.5)
+   FAMILY-AVERAGE arm (equal-weight over all 160 cells) vs BE_ONLY: +181 Rs/lot  t=1.55
+   FAMILY-AVERAGE arm vs INCUMBENT: +237 Rs/lot  t=1.39
+   best single cell CEIL_p10_m2.0_N3_COLD: vsBE +473 t=2.80
+   Bonferroni over 188 arms needs |t| >= ~3.55 (alpha 5%, df 85) -> best cell does NOT survive
+
+OUT-OF-SAMPLE (params chosen on IS days only, scored on OOS days)
+   IS-best cell            : CEIL_p14_m2.0_N3_SEED    IS   3479 -> OOS   2168
+   IS top-quartile centroid: period 9.1  mult 2.74  N 2.8
+   plateau-centroid cell   : CEIL_p10_m2.5_N3_SEED    IS   3170 -> OOS   1968
+   BE_ONLY                 : IS   2804 -> OOS   2082
+   INCUMBENT               : IS   2727 -> OOS   2063
+   HOLD_EOD                : IS   2478 -> OOS   1558
+   median OOS of ALL 160 ST cells: 2079  (share beating BE_ONLY OOS: 50%)
+
+RECOMMENDED ARM: CEIL_p7_m3.0_N1_SEED
+   mean +2795  median +2628  worst -613  win% 93  t 13.55
+   vs BE_ONLY +259 (t 1.35)   vs INCUMBENT +315 (t 2.31)   vs HOLD +659
+   per DTE:
+      DTE1 n=31  rec   3011  BE   2323  INC   2527  HOLD    1435
+      DTE2 n=28  rec   2310  BE   2059  INC   1980  HOLD    1928
+      DTE3 n=18  rec   2977  BE   3184  INC   2904  HOLD    3221
+      DTE4 n= 9  rec   3197  BE   3456  INC   3030  HOLD    3022
+   per weekday:
+      Mon n=16  rec   2993  BE   3324  INC   2952  HOLD    3365
+      Tue n=30  rec   2461  BE   2227  INC   2090  HOLD    2105
+      Wed n=29  rec   2903  BE   2167  INC   2450  HOLD    1219
+      Fri n=11  rec   3133  BE   3204  INC   2938  HOLD    2848
+   per system:
+      ATM  n=50  rec   2458  BE   2367  INC   2104  HOLD    2210
+      ATM4 n=36  rec   3262  BE   2770  INC   3002  HOLD    2033
+
+COST SENSITIVITY (measured stop-slip 6.548 pt/leg-side scaled; Rs/lot mean)
+   slip x1.0 :  CEIL_p7_m3   2795 |  BE_ONLY      2536 |  INCUMBENT    2480 |  HOLD_EOD     2136 |
+   slip x1.5 :  CEIL_p7_m3   2748 |  BE_ONLY      2516 |  INCUMBENT    2421 |  HOLD_EOD     2136 |
+   slip x2.0 :  CEIL_p7_m3   2700 |  BE_ONLY      2496 |  INCUMBENT    2361 |  HOLD_EOD     2136 |
+   slip x3.0 :  CEIL_p7_m3   2606 |  BE_ONLY      2457 |  INCUMBENT    2243 |  HOLD_EOD     2136 |
+
+BREAK-EVEN: the recommended arm still beats BE_ONLY until the stop-slip reaches ~37.5 pt/side

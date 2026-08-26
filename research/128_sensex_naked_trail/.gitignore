@@ -1,0 +1,10 @@
+# heavy, regenerate with scripts/build_episodes.py + scripts/sweep_arms.py
+results/arm_episode.csv
+results/paths.jsonl
+# un-ignore the small committable artefacts blocked by the repo-root research/**/results rules
+!results/episodes.csv
+!results/roundtrip.csv
+!results/arm_summary.csv
+!results/plateau.csv
+!results/live_reconciliation.csv
+!results/build_episodes.log
