@@ -1,0 +1,28 @@
+================================================================================================================
+research/128 G1 — same entries: NAKED vs NIFTY/BNF wings (3/5/7%) vs C1 stock wings
+================================================================================================================
+NAKED        n=1083  net=+0.562%S0  t=+4.97  win=70.0%  p05=-5.01%  p01=-11.64%  wing_cost=0.00%
+NW7          n=1083  net=+0.401%S0  t=+3.65  win=68.3%  p05=-4.87%  p01=-11.88%  wing_cost=0.63%
+NW5          n=1083  net=+0.357%S0  t=+3.29  win=68.1%  p05=-5.00%  p01=-11.91%  wing_cost=1.08%
+NW3          n=1080  net=+0.252%S0  t=+2.36  win=68.9%  p05=-4.92%  p01=-12.34%  wing_cost=1.87%
+C1_STOCKW    n= 628  net=+0.264%S0  t=+5.06  win=64.8%  p05=-1.96%  p01=-3.09%  wing_cost=2.43%
+
+--- matched-trade comparison (same symbol+expiry present in all configs) ---
+common trades: 604
+NAKED        n= 604  net=+0.839%S0  t=+6.82  win=73.3%  p05=-4.19%  p01=-11.21%  wing_cost=0.00%
+NW7          n= 604  net=+0.645%S0  t=+5.39  win=71.5%  p05=-4.13%  p01=-11.82%  wing_cost=0.66%
+NW5          n= 604  net=+0.576%S0  t=+4.90  win=70.2%  p05=-4.14%  p01=-11.73%  wing_cost=1.12%
+NW3          n= 603  net=+0.446%S0  t=+3.87  win=71.5%  p05=-4.09%  p01=-12.12%  wing_cost=1.92%
+C1_STOCKW    n= 604  net=+0.276%S0  t=+5.22  win=65.2%  p05=-1.92%  p01=-3.13%  wing_cost=2.45%
+
+--- worst 1% months test: per-trade net in the 5 worst SYSTEMIC months vs idiosyncratic hits ---
+NW5 worst-10: [('ADANIENT', '-56.8%'), ('TATAMOTORS', '-23.7%'), ('HAL', '-19.1%'), ('HAL', '-16.6%'), ('ICICIBANK', '-16.4%'), ('TATAPOWER', '-14.4%'), ('TATAMOTORS', '-14.4%'), ('BEL', '-14.4%'), ('TATAMOTORS', '-14.0%'), ('ADANIENT', '-13.3%')]
+C1_STOCKW worst-10: [('ICICIBANK', '-4.6%'), ('AXISBANK', '-4.1%'), ('M&M', '-4.0%'), ('MARUTI', '-3.7%'), ('HINDUNILVR', '-3.6%'), ('TRENT', '-3.5%'), ('ADANIENT', '-3.1%'), ('SBIN', '-3.0%'), ('HDFCBANK', '-2.9%'), ('VEDL', '-2.8%')]
+
+--- per-year (dense era), NW5 vs C1 ---
+  2021: NW5 +0.875% (n=85)   C1 +0.401% (n=55)
+  2022: NW5 +0.660% (n=115)   C1 +0.099% (n=63)
+  2023: NW5 +0.156% (n=159)   C1 +0.372% (n=69)
+  2024: NW5 +0.352% (n=186)   C1 -0.001% (n=133)
+  2025: NW5 +0.103% (n=298)   C1 +0.286% (n=165)
+  2026: NW5 +0.790% (n=189)   C1 +0.632% (n=115)
