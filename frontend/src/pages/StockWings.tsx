@@ -113,7 +113,7 @@ function LegBreakdown({ r }: { r: Pos }) {
       <table className={s.legTable}>
         <thead><tr>
           <th>Leg</th><th>Strike</th><th>Entry</th><th>{isClosed ? 'Exit' : 'Now'}</th>
-          <th>Move</th><th>Qty</th><th>{isClosed ? 'Value at exit' : 'Value now'}</th><th>Entry vol</th>
+          <th>Move</th><th>Qty</th><th>{isClosed ? 'Leg P&L' : 'Leg P&L now'}</th><th>Entry vol</th>
         </tr></thead>
         <tbody>
           {(r.legs_entry ?? []).map((le: Leg, i: number) => {
@@ -122,6 +122,9 @@ function LegBreakdown({ r }: { r: Pos }) {
             const now = nowLeg?.price ?? null;
             const sign = le.side === 'SHORT' ? -1 : 1;
             const move = le.price && now != null ? (now / le.price - 1) * 100 : null;
+            const legPnl = le.price != null && now != null
+              ? (le.side === 'SHORT' ? le.price - now : now - le.price) * r.qty
+              : null;
             return (
               <tr key={i}>
                 <td>
@@ -137,7 +140,10 @@ function LegBreakdown({ r }: { r: Pos }) {
                   {move == null ? '—' : (move >= 0 ? '+' : '') + move.toFixed(1) + '%'}
                 </td>
                 <td>{r.qty.toLocaleString('en-IN')}</td>
-                <td>{now != null ? inr(now * r.qty * (le.side === 'SHORT' ? -1 : 1)) : '—'}</td>
+                <td className={legPnl == null ? '' : legPnl >= 0 ? s.pos : s.neg}
+                  title={now != null ? `${le.side} ${le.price?.toFixed(2)} → ${now.toFixed(2)}` : undefined}>
+                  {legPnl != null ? inr(legPnl) : '—'}
+                </td>
                 <td className={s.muted}>{le.volume ? le.volume.toLocaleString('en-IN') : '—'}</td>
               </tr>
             );
