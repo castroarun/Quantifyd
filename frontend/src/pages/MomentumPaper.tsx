@@ -3,6 +3,7 @@ import { apiGet, apiPost } from '../api/client';
 import BacktestCharts from '../components/BacktestCurve/BacktestCharts';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
 import LiveCurve from '../components/LiveCurve/LiveCurve';
+import { getStudy } from '../data/backtests';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
 import BookActivity from '../components/BookActivity/BookActivity';
@@ -130,6 +131,7 @@ export default function MomentumPaper() {
         <a className={styles.studyLink} href="/app/backtest/momentum-250-leverage-frontier">Leverage frontier</a>
         <a className={styles.studyLink} href="/app/strategies#momentum-3l">Register entry</a>
       </div>
+      <BacktestEvidence />
       <div className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>Momentum-30 — Live Paper Book</h1>
@@ -411,6 +413,52 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
       <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}
            style={tone === 'warn' ? { color: 'var(--status-warning,#C97B20)' } : undefined}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
+    </div>
+  );
+}
+
+/** The backtest this book implements, shown ON the book so live results have something to be read
+ *  against. Numbers are pulled from the study record itself rather than retyped here — a hardcoded
+ *  copy would drift the moment the study is revised, and a stale backtest figure next to live P&L
+ *  is worse than none. */
+function BacktestEvidence() {
+  const study = getStudy('momentum30-subselect');
+  const [open, setOpen] = useState(false);
+  if (!study || !study.results || !study.results.metrics) return null;
+  const m = study.results.metrics;
+  return (
+    <div className={styles.evidence}>
+      <div className={styles.evidenceHead}>
+        <span className={styles.evidenceTag}>Backtest evidence</span>
+        <span className={styles.evidenceSub}>
+          {study.title} · {study.status}
+          {study.date ? ` · ${study.date}` : ''} — this is the study the live book implements, not
+          live performance
+        </span>
+        <button className={styles.evidenceBtn} onClick={() => setOpen(!open)}>
+          {open ? 'Hide caveats' : 'Caveats'}
+        </button>
+      </div>
+      <div className={styles.evidenceGrid}>
+        {m.map((x) => (
+          <div key={x.label} className={styles.evidenceCell} title={x.hint || ''}>
+            <div className={styles.evidenceVal}
+                 style={{ color: x.tone === 'pos' ? 'var(--accent-pos,#0F6E56)'
+                                : x.tone === 'neg' ? 'var(--accent-neg,#A32D2D)'
+                                : 'var(--ink,#1B1B1A)' }}>{x.value}</div>
+            <div className={styles.evidenceLab}>{x.label}</div>
+            {x.hint && <div className={styles.evidenceHint}>{x.hint}</div>}
+          </div>
+        ))}
+      </div>
+      {open && (
+        <div className={styles.evidenceCaveat}>
+          <b>What this number is not.</b>
+          <ul>
+            {(study.caveats || []).map((c, i) => <li key={i}>{c}</li>)}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
