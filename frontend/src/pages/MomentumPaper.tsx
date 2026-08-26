@@ -128,6 +128,17 @@ export default function MomentumPaper() {
             {lakh(s.capital)} {s.live_mode ? 'LIVE (real money, shared account)' : 'paper'} (research/62 winner)
             {s.inception ? ` · since ${s.inception}` : ''} · data as-of {s.data_asof || '—'}
           </p>
+          {/* The dashboard had no way out to the evidence behind it. The Strategies index is the
+              register of record and already carries these; the book itself should too. */}
+          <p className={styles.sub} style={{ marginTop: 4 }}>
+            Study:{' '}
+            <a href="/app/backtest/momentum30-subselect">the backtest this book runs</a>{' · '}
+            <a href="/app/backtest/momentum-universe-bakeoff">universe bake-off</a>{' · '}
+            <a href="/app/backtest/momentum-put-hedge-overlay">put-hedge overlay</a>{' · '}
+            <a href="/app/backtest/momentum-250-leverage-frontier">leverage frontier</a>
+            {' — '}
+            <a href="/app/strategies#momentum-3l">register entry</a>
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ padding: '5px 11px', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', background: s.live_mode ? '#c0392b' : '#39424e' }}>
