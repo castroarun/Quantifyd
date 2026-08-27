@@ -155,41 +155,8 @@ export default function MomentumPaper() {
       </div>
       <BookActivity bookId="momentum-3l" />
 
-      {/* KPI strip */}
-      <div className={styles.kpis}>
-        {/* Order matters here: what you put in, what it is worth now, then where that value sits.
-            "Invested" used to mean PERCENT DEPLOYED, which read as "money I put in" — the number
-            beside it was 79% while the actual contributed capital was Rs7.69L. Renamed to
-            "Deployed" and given its own tile below. */}
-        <Kpi label="Invested (capital in)" value={lakh(s.capital)} tone="" />
-        <Kpi label="Current value (stocks + cash)" value={lakh(s.nav)} tone="" />
-        <div className={styles.kpi} style={{ gridColumn: 'span 2' }}>
-          <div className={styles.kpiVal} style={{ fontSize: 14, lineHeight: 1.5 }}>
-            {lakh(s.equity)} <span className={styles.splitSep}>|</span>{' '}
-            {lakh(s.swept_value || 0)} <span className={styles.splitSep}>|</span>{' '}
-            {lakh(s.ledger_cash != null ? s.ledger_cash : 0)}
-          </div>
-          <div className={styles.kpiLabel}>
-            Stocks | {s.sweep?.symbol || 'Liquid ETF'} | Un-swept cash
-          </div>
-        </div>
-        <Kpi label={pct(s.total_return_pct) === '—' ? 'Total return' : 'Total return'}
-             value={pct(s.total_return_pct)} tone={retPos ? 'pos' : 'neg'} />
-        <Kpi label="Deployed in stocks" value={s.invested_pct.toFixed(0) + '%'} tone="" />
-        <Kpi label={`Gate gap · ${s.gate_sma ? 'NIFTYBEES vs 100-DMA' : 'to 100-DMA'}`}
-             value={s.gate_gap_pct == null ? '—'
-               : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
-             tone={s.gate_gap_pct == null ? ''
-               : s.gate_gap_pct < 0 ? 'neg' : s.gate_gap_pct < 2 ? 'warn' : 'pos'} />
+      <BookSummary s={s} />
 
-        <Kpi label="Holdings" value={String(s.n_holdings)} tone="" />
-        <Kpi label="Unrealized" value={inr(s.unrealized)} tone={s.unrealized >= 0 ? 'pos' : 'neg'} />
-        <Kpi label="Realized (net)" value={inr(s.realized_net)} tone={s.realized_net >= 0 ? 'pos' : 'neg'} />
-        <Kpi label={`${s.sweep?.symbol || 'Liquid'} yield @${s.cash_yield_pct}%`}
-             value={inr(s.interest_earned)} tone={s.interest_earned >= 0 ? 'pos' : 'neg'} />
-      </div>
-
-      {/* Holdings — includes the LIQUIDCASE parked-cash row, treated like any holding */}
       {s.holdings.length > 0 && (
         <div className={styles.card}>
           <div className={styles.cardTitle}>Holdings</div>
@@ -426,20 +393,101 @@ export default function MomentumPaper() {
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: string; tone: string }) {
-  return (
-    <div className={styles.kpi}>
-      <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}
-           style={tone === 'warn' ? { color: 'var(--status-warning,#C97B20)' } : undefined}>{value}</div>
-      <div className={styles.kpiLabel}>{label}</div>
-    </div>
-  );
-}
 
 /** The backtest this book implements, shown ON the book so live results have something to be read
  *  against. Numbers are pulled from the study record itself rather than retyped here — a hardcoded
  *  copy would drift the moment the study is revised, and a stale backtest figure next to live P&L
  *  is worse than none. */
+/** Headline block. Hierarchy, not a row of equal tiles: what the book is worth, where that value
+ *  sits, then the P&L parts before the total they add up to. */
+function BookSummary({ s }: { s: State }) {
+  const gain = s.nav - s.capital;
+  const stocks = s.equity || 0;
+  const etf = s.swept_value || 0;
+  const idle = s.ledger_cash != null ? s.ledger_cash : Math.max(0, s.nav - stocks - etf);
+  const total = stocks + etf + idle || 1;
+  const segs = [
+    { k: 'Stocks', v: stocks, c: '#2563EB' },
+    { k: s.sweep?.symbol || 'Liquid ETF', v: etf, c: '#0891B2' },
+    { k: 'Un-swept cash', v: idle, c: 'var(--ink-faint,#B4B2A9)' },
+  ].filter((x) => x.v > 0);
+  const yieldRs = s.interest_earned || 0;
+  // Shown as a residual on purpose. Unrealised is measured before buy-side costs while realised is
+  // already net of its sell-side ones, so the three parts land ~Rs900 above the real gain. Printing
+  // a total under a divider that does not equal the rows above it is how a P&L block loses trust,
+  // so the gap is named and shown rather than hidden.
+  const costs = gain - (s.unrealized + s.realized_net + yieldRs);
+  const rows = [
+    { k: 'Unrealised', v: s.unrealized, hint: 'open positions, before entry costs' },
+    { k: 'Realised (net)', v: s.realized_net, hint: 'closed trades, after costs' },
+    { k: `${s.sweep?.symbol || 'Liquid'} yield`, v: yieldRs, hint: 'gain on parked cash' },
+    { k: 'Costs & fees', v: costs, hint: 'brokerage, STT and stamp duty not already netted above' },
+  ];
+  const tone = (v: number) => (v > 0 ? 'var(--accent-pos,#0F6E56)' : v < 0 ? 'var(--accent-neg,#A32D2D)' : 'var(--ink,#1B1B1A)');
+  const gapTone = s.gate_gap_pct == null ? 'var(--ink,#1B1B1A)'
+    : s.gate_gap_pct < 0 ? 'var(--accent-neg,#A32D2D)'
+    : s.gate_gap_pct < 2 ? 'var(--status-warning,#C97B20)' : 'var(--accent-pos,#0F6E56)';
+
+  return (
+    <div className={styles.summary}>
+      <div className={styles.sumMain}>
+        <div className={styles.sumLabel}>Current value</div>
+        <div className={styles.sumHero}>{inr(s.nav)}</div>
+        <div className={styles.sumSub}>
+          on <b>{inr(s.capital)}</b> invested{' '}
+          <span style={{ color: tone(gain), fontWeight: 700 }}>
+            {gain >= 0 ? '+' : '−'}{inr(Math.abs(gain))} · {pct(s.total_return_pct)}
+          </span>
+          {s.inception ? ` · since ${s.inception}` : ''}
+        </div>
+
+        <div className={styles.barWrap} role="img"
+             aria-label={segs.map((x) => `${x.k} ${Math.round((x.v / total) * 100)}%`).join(', ')}>
+          {segs.map((x) => (
+            <div key={x.k} className={styles.barSeg}
+                 style={{ width: `${(x.v / total) * 100}%`, background: x.c }} />
+          ))}
+        </div>
+        <div className={styles.legend}>
+          {segs.map((x) => (
+            <span key={x.k} className={styles.legendItem}>
+              <i className={styles.swatch} style={{ background: x.c }} />
+              {x.k} <b>{lakh(x.v)}</b>
+              <span className={styles.legendPct}>{((x.v / total) * 100).toFixed(0)}%</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.sumPnl}>
+        <div className={styles.sumLabel}>Profit &amp; loss</div>
+        {rows.map((r) => (
+          <div key={r.k} className={styles.pnlRow} title={r.hint}>
+            <span>{r.k}</span>
+            <b style={{ color: tone(r.v) }}>{r.v >= 0 ? '+' : '−'}{inr(Math.abs(r.v))}</b>
+          </div>
+        ))}
+        <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
+          <span>Total return</span>
+          <b style={{ color: tone(gain) }}>
+            {gain >= 0 ? '+' : '−'}{inr(Math.abs(gain))} · {pct(s.total_return_pct)}
+          </b>
+        </div>
+        <div className={styles.sumStatus}>
+          <span><b>{s.n_holdings}</b> holdings</span>
+          <span><b>{s.invested_pct.toFixed(0)}%</b> deployed</span>
+          <span>gate{' '}
+            <b style={{ color: gapTone }}>
+              {s.gate_gap_pct == null ? '—' : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
+            </b>{' '}vs 100-DMA
+          </span>
+          <span><b>{s.days_to_rebalance}d</b> to rebalance</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BacktestEvidence() {
   const study = getStudy('momentum30-subselect');
   const [open, setOpen] = useState(false);
