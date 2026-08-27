@@ -335,7 +335,7 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
           <NavItem
             to="/momentum-paper"
             icon={<IconBarChart />}
-            label="Momentum ₹3L LIVE"
+            label="Momentum-30 LIVE"
             active={active === 'momentum-paper'}
             collapsed={collapsed}
           />

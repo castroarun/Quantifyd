@@ -114,7 +114,7 @@ export default function MomentumPaper() {
   }, []);
 
   if (err) return <div className={styles.root}><div className={styles.loading}>Error: {err}</div></div>;
-  if (!s) return <div className={styles.root}><div className={styles.loading}>Loading paper book…</div></div>;
+  if (!s) return <div className={styles.root}><div className={styles.loading}>Loading book…</div></div>;
 
   const riskOn = s.gate === 'ON';
   const retPos = s.total_return_pct >= 0;
@@ -134,7 +134,9 @@ export default function MomentumPaper() {
       <BacktestEvidence />
       <div className={styles.headerRow}>
         <div>
-          <h1 className={styles.title}>Momentum-30 — Live Paper Book</h1>
+          <h1 className={styles.title}>
+            Momentum-30 — {s.live_mode ? 'Live Book' : 'Paper Book'}
+          </h1>
           <p className={styles.sub}>
             <b>Universe = the Nifty 200</b> (200 largest NSE stocks by market cap) → <b>ranked by momentum</b> → <b>hold the top 8</b>.
             {lakh(s.capital)} {s.live_mode ? 'LIVE (real money, shared account)' : 'paper'} (research/62 winner)
@@ -155,16 +157,31 @@ export default function MomentumPaper() {
 
       {/* KPI strip */}
       <div className={styles.kpis}>
-        <Kpi label="NAV" value={lakh(s.nav)} tone="" />
-        <Kpi label="Total return" value={pct(s.total_return_pct)} tone={retPos ? 'pos' : 'neg'} />
-        <Kpi label="Invested" value={s.invested_pct.toFixed(0) + '%'} tone="" />
+        {/* Order matters here: what you put in, what it is worth now, then where that value sits.
+            "Invested" used to mean PERCENT DEPLOYED, which read as "money I put in" — the number
+            beside it was 79% while the actual contributed capital was Rs7.69L. Renamed to
+            "Deployed" and given its own tile below. */}
+        <Kpi label="Invested (capital in)" value={lakh(s.capital)} tone="" />
+        <Kpi label="Current value (stocks + cash)" value={lakh(s.nav)} tone="" />
+        <div className={styles.kpi} style={{ gridColumn: 'span 2' }}>
+          <div className={styles.kpiVal} style={{ fontSize: 14, lineHeight: 1.5 }}>
+            {lakh(s.equity)} <span className={styles.splitSep}>|</span>{' '}
+            {lakh(s.swept_value || 0)} <span className={styles.splitSep}>|</span>{' '}
+            {lakh(s.ledger_cash != null ? s.ledger_cash : 0)}
+          </div>
+          <div className={styles.kpiLabel}>
+            Stocks | {s.sweep?.symbol || 'Liquid ETF'} | Un-swept cash
+          </div>
+        </div>
+        <Kpi label={pct(s.total_return_pct) === '—' ? 'Total return' : 'Total return'}
+             value={pct(s.total_return_pct)} tone={retPos ? 'pos' : 'neg'} />
+        <Kpi label="Deployed in stocks" value={s.invested_pct.toFixed(0) + '%'} tone="" />
         <Kpi label={`Gate gap · ${s.gate_sma ? 'NIFTYBEES vs 100-DMA' : 'to 100-DMA'}`}
              value={s.gate_gap_pct == null ? '—'
                : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
              tone={s.gate_gap_pct == null ? ''
                : s.gate_gap_pct < 0 ? 'neg' : s.gate_gap_pct < 2 ? 'warn' : 'pos'} />
-        <Kpi label={s.swept_value ? `Cash (${lakh(s.swept_value)} in ${s.sweep?.symbol || 'ETF'})` : 'Cash'}
-             value={lakh(s.cash)} tone="" />
+
         <Kpi label="Holdings" value={String(s.n_holdings)} tone="" />
         <Kpi label="Unrealized" value={inr(s.unrealized)} tone={s.unrealized >= 0 ? 'pos' : 'neg'} />
         <Kpi label="Realized (net)" value={inr(s.realized_net)} tone={s.realized_net >= 0 ? 'pos' : 'neg'} />
@@ -298,7 +315,7 @@ export default function MomentumPaper() {
       <div className={styles.card}>
         <div className={styles.cardTitle}>Backtest — Portfolio vs NIFTYBEES (choose any period; both re-based to ₹20L at the start)</div>
         <BacktestCharts />
-        <p className={styles.note}>Pick a year (or drag on the chart) to zoom — both lines restart at ₹20L on the selected date, so you can read the *relative* race over any window (e.g. select <b>2018</b> to see the gate sit in cash while the index runs). Equity on top (log scale), drawdown below. This is the validated history; the live paper book below tracks it forward.</p>
+        <p className={styles.note}>Pick a year (or drag on the chart) to zoom — both lines restart at ₹20L on the selected date, so you can read the *relative* race over any window (e.g. select <b>2018</b> to see the gate sit in cash while the index runs). Equity on top (log scale), drawdown below. This is the validated history; the live book below tracks it forward.</p>
       </div>
 
       {/* Live P&L vs Nifty 50 */}
@@ -399,7 +416,9 @@ export default function MomentumPaper() {
           </tbody>
         </table>
         <p className={styles.note}>
-          Paper only — never places a real order. Last automated runs: daily {s.last_daily || '—'} ·
+          {s.live_mode
+            ? 'LIVE — these jobs place real orders in the shared Zerodha account.'
+            : 'Paper only — never places a real order.'}{' '}Last automated runs: daily {s.last_daily || '—'} ·
           weekly {s.last_weekly || '—'} · monthly {s.last_monthly || '—'}.
         </p>
       </div>
@@ -694,7 +713,9 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
         )}
       </div>
       <div style={{ fontSize: 12, color: 'var(--ink-muted,#888)', marginBottom: 14 }}>
-        Live-arming is intentionally disabled until the Kite Connect account is set up + the two-key safety is wired (Phase 0) — otherwise a live order would trade the currently-logged-in account. The cash tools below run in paper now and carry straight to live.
+        {s.live_mode
+          ? 'ARMED AND LIVE — deposits, withdrawals and every scheduled job place real orders in the shared Zerodha account. The sell guard never sells more than the quantity this book itself recorded, so personal holdings in the same account cannot be touched.'
+          : 'Live-arming is disabled: the cash tools below run in paper and carry straight to live once armed.'}
       </div>
       <div className={styles.grid2}>
         <div>
