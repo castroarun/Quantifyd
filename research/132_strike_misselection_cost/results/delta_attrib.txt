@@ -1,0 +1,33 @@
+========================================================================================
+STAGE E — rupees actually attributable to the UNINTENDED delta (CSL books)
+========================================================================================
+delta_pnl = net_delta x realised index move x qty. First-order; gamma makes the
+true figure WORSE than this on large moves, so it is a lower bound on the damage.
+
+venue        n        sum       mean        med        p10        p90
+NIFTY       35     +25200       +720       +313       -780      +2939   (all)
+NIFTY       25     +27735      +1109       +726       -780      +3103   (mis-struck)
+SENSEX      15     +12134       +809       +673      -1014      +2962   (all)
+SENSEX      12     +13660      +1138      +1004       -996      +2962   (mis-struck)
+
+ALL mis-struck CSL entries: n=37  TOTAL +41395  |per trade| med 996 p90 2962 max 6299
+  positive (the accident helped) 29 / negative (it hurt) 8
+  |delta P&L| as a share of |booked P&L| on the same trade: median 49%
+
+Realised index move over the holding period (the coin that was flipped):
+  NIFTY   n=35  med   -23.3 pts  |move| med   27.4  max  126.9
+  SENSEX  n=15  med   -44.4 pts  |move| med  141.7  max  414.1
+
+Worst single accidental bets:
+book                     venue   day          steps    delta      move  delta P&L     booked
+NAS_C20_SHIFT            NIFTY   2026-08-25      -1    0.430    +112.6      +6299      -1535
+CSL30F_SENSEX            SENSEX  2026-08-24       2   -0.168    -414.1      +4171      -1678
+CSL_TIMEB2_NIFTY         NIFTY   2026-08-24       1   -0.302     -87.1      +3416       -654
+NAS_C20_TRAIL            NIFTY   2026-08-24       1   -0.188    -126.9      +3103      -3442
+CSL30F_SENSEX_WED        SENSEX  2026-08-26       1   -0.171    -288.7      +2962       2115
+NAS_COMB20               NIFTY   2026-08-24       1   -0.187    -120.6      +2939      -4899
+CSL30F_SENSEX            SENSEX  2026-08-26       1   -0.169    -288.7      +2931       2345
+CSL30F_NIFTY             NIFTY   2026-08-24       1   -0.186    -120.6      +2925      -4996
+CSL_TIMEB_SENSEX         SENSEX  2026-08-26       2   -0.268     -44.4      +1905       2282
+CSL30F_NIFTY             NIFTY   2026-08-26       2   -0.227     -60.4      +1780       1498
+STAGE E done: 50 rows -> /home/arun/quantifyd/research/132_strike_misselection_cost/scripts/../results/delta_attrib.csv

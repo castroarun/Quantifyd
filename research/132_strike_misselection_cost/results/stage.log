@@ -1,0 +1,206 @@
+=== STAGE A: offset atlas ===
+NIFTY: 90 candidate days 2026-04-20..2026-08-27 (step 50)
+  NIFTY 2026-04-20 SKIP thin (84 mins)
+  NIFTY 2026-04-27 DTE1 Mon: 360 min, offset med 11.4 [-3.5..37.2], misstrike 87/360 = 24.2%
+  NIFTY 2026-04-28 DTE0 Tue: 361 min, offset med -3.6 [-13.2..18.3], misstrike 47/361 = 13.0%
+  NIFTY 2026-04-29 DTE4 Wed: 361 min, offset med 36.4 [1.1..57.9], misstrike 246/361 = 68.1%
+  NIFTY 2026-04-30 DTE3 Thu: 359 min, offset med 6.0 [-18.8..55.9], misstrike 85/359 = 23.7%
+  NIFTY 2026-05-01 SKIP (holiday/partial/no data)
+  NIFTY 2026-05-04 DTE1 Mon: 361 min, offset med 34.0 [11.1..69.2], misstrike 226/361 = 62.6%
+  NIFTY 2026-05-05 DTE0 Tue: 360 min, offset med 3.5 [-19.3..15.4], misstrike 31/360 = 8.6%
+  NIFTY 2026-05-06 DTE4 Wed: 361 min, offset med 47.2 [19.0..112.8], misstrike 322/361 = 89.2%
+  NIFTY 2026-05-07 DTE3 Thu: 360 min, offset med 15.7 [4.2..64.8], misstrike 124/360 = 34.4%
+  NIFTY 2026-05-08 DTE2 Fri: 361 min, offset med 17.5 [-2.4..51.5], misstrike 129/361 = 35.7%
+  NIFTY 2026-05-11 DTE1 Mon: 361 min, offset med 19.1 [-3.5..55.1], misstrike 112/361 = 31.0%
+  NIFTY 2026-05-12 DTE0 Tue: 361 min, offset med 9.3 [-18.1..22.2], misstrike 57/361 = 15.8%
+  NIFTY 2026-05-13 DTE4 Wed: 361 min, offset med 35.4 [11.7..57.2], misstrike 248/361 = 68.7%
+  NIFTY 2026-05-14 DTE3 Thu: 361 min, offset med 15.4 [-8.1..31.6], misstrike 97/361 = 26.9%
+  NIFTY 2026-05-15 DTE2 Fri: 361 min, offset med -5.2 [-35.2..20.0], misstrike 69/361 = 19.1%
+  NIFTY 2026-05-18 DTE1 Mon: 361 min, offset med -13.2 [-35.1..15.2], misstrike 104/361 = 28.8%
+  NIFTY 2026-05-19 DTE0 Tue: 360 min, offset med -2.8 [-17.3..18.1], misstrike 32/360 = 8.9%
+  NIFTY 2026-05-20 DTE4 Wed: 361 min, offset med -6.9 [-28.6..9.1], misstrike 53/361 = 14.7%
+  NIFTY 2026-05-21 DTE3 Thu: 361 min, offset med -19.6 [-55.4..1.2], misstrike 166/361 = 46.0%
+  NIFTY 2026-05-22 DTE2 Fri: 361 min, offset med 7.5 [-14.0..25.9], misstrike 54/361 = 15.0%
+  NIFTY 2026-05-25 DTE1 Mon: 360 min, offset med 8.4 [-4.8..25.4], misstrike 61/360 = 16.9%
+  NIFTY 2026-05-26 DTE0 Tue: 361 min, offset med -3.0 [-14.9..12.1], misstrike 40/361 = 11.1%
+  NIFTY 2026-05-27 DTE4 Wed: 361 min, offset med 24.2 [10.3..56.2], misstrike 184/361 = 51.0%
+  NIFTY 2026-05-28 SKIP (holiday/partial/no data)
+  NIFTY 2026-05-29 DTE2 Fri: 361 min, offset med 53.8 [32.8..229.4], misstrike 349/361 = 96.7%
+  NIFTY 2026-06-01 DTE1 Mon: 360 min, offset med 32.5 [18.8..55.1], misstrike 257/360 = 71.4%
+  NIFTY 2026-06-02 DTE0 Tue: 361 min, offset med 6.5 [-25.1..23.4], misstrike 44/361 = 12.2%
+  NIFTY 2026-06-03 DTE4 Wed: 366 min, offset med 42.1 [13.2..121.2], misstrike 298/366 = 81.4%
+  NIFTY 2026-06-04 DTE3 Thu: 366 min, offset med 37.1 [11.4..72.4], misstrike 266/366 = 72.7%
+  NIFTY 2026-06-05 DTE2 Fri: 365 min, offset med 40.5 [25.2..71.3], misstrike 295/365 = 80.8%
+  NIFTY 2026-06-08 DTE1 Mon: 366 min, offset med 13.4 [-5.2..36.8], misstrike 113/366 = 30.9%
+  NIFTY 2026-06-09 DTE0 Tue: 336 min, offset med 5.0 [-15.8..13.6], misstrike 30/336 = 8.9%
+  NIFTY 2026-06-10 DTE4 Wed: 365 min, offset med 12.7 [-23.9..29.4], misstrike 77/365 = 21.1%
+  NIFTY 2026-06-11 DTE3 Thu: 366 min, offset med 6.1 [-8.2..26.6], misstrike 58/366 = 15.8%
+  NIFTY 2026-06-12 DTE2 Fri: 365 min, offset med 11.8 [-9.0..56.5], misstrike 73/365 = 20.0%
+  NIFTY 2026-06-15 DTE1 Mon: 363 min, offset med 3.5 [-23.9..31.4], misstrike 62/363 = 17.1%
+  NIFTY 2026-06-16 DTE0 Tue: 366 min, offset med -3.9 [-28.2..5.3], misstrike 46/366 = 12.6%
+  NIFTY 2026-06-17 DTE4 Wed: 366 min, offset med -9.2 [-54.5..3.8], misstrike 97/366 = 26.5%
+  NIFTY 2026-06-18 DTE3 Thu: 365 min, offset med -11.7 [-29.6..26.1], misstrike 102/365 = 27.9%
+  NIFTY 2026-06-19 DTE2 Fri: 365 min, offset med 18.9 [1.9..41.5], misstrike 167/365 = 45.8%
+  NIFTY 2026-06-22 DTE1 Mon: 366 min, offset med 4.8 [-18.2..20.2], misstrike 114/366 = 31.1%
+  NIFTY 2026-06-23 DTE0 Tue: 365 min, offset med 2.1 [-10.3..20.6], misstrike 39/365 = 10.7%
+  NIFTY 2026-06-24 DTE4 Wed: 278 min, offset med 11.4 [-5.0..58.0], misstrike 60/278 = 21.6%
+  NIFTY 2026-06-25 DTE3 Thu: 288 min, offset med 10.6 [-14.8..50.1], misstrike 48/288 = 16.7%
+  NIFTY 2026-06-26 SKIP (holiday/partial/no data)
+  NIFTY 2026-06-29 DTE1 Mon: 331 min, offset med 9.2 [-13.4..52.0], misstrike 50/331 = 15.1%
+  NIFTY 2026-06-30 DTE0 Tue: 363 min, offset med 6.8 [-18.2..29.5], misstrike 34/363 = 9.4%
+  NIFTY 2026-07-01 DTE4 Wed: 366 min, offset med 23.6 [11.6..47.0], misstrike 212/366 = 57.9%
+  NIFTY 2026-07-02 DTE3 Thu: 365 min, offset med 14.2 [1.1..52.5], misstrike 67/365 = 18.4%
+  NIFTY 2026-07-03 DTE2 Fri: 364 min, offset med 8.0 [-69.8..19.9], misstrike 47/364 = 12.9%
+  NIFTY 2026-07-06 DTE1 Mon: 363 min, offset med -9.0 [-42.2..4.3], misstrike 44/363 = 12.1%
+  NIFTY 2026-07-07 DTE0 Tue: 364 min, offset med -7.5 [-36.3..15.1], misstrike 29/364 = 8.0%
+  NIFTY 2026-07-08 DTE4 Wed: 364 min, offset med -18.6 [-30.7..46.6], misstrike 139/364 = 38.2%
+  NIFTY 2026-07-09 DTE3 Thu: 365 min, offset med 4.0 [-18.4..30.6], misstrike 49/365 = 13.4%
+  NIFTY 2026-07-10 DTE2 Fri: 364 min, offset med -0.4 [-14.0..30.5], misstrike 32/364 = 8.8%
+  NIFTY 2026-07-13 DTE1 Mon: 363 min, offset med -16.6 [-34.6..7.0], misstrike 132/363 = 36.4%
+  NIFTY 2026-07-14 DTE0 Tue: 364 min, offset med -10.9 [-19.2..9.8], misstrike 94/364 = 25.8%
+  NIFTY 2026-07-15 DTE4 Wed: 363 min, offset med -12.2 [-38.1..-0.5], misstrike 114/363 = 31.4%
+  NIFTY 2026-07-16 DTE3 Thu: 366 min, offset med 4.3 [-22.4..22.9], misstrike 58/366 = 15.8%
+  NIFTY 2026-07-17 DTE2 Fri: 362 min, offset med -36.8 [-58.4..-9.9], misstrike 250/362 = 69.1%
+  NIFTY 2026-07-20 DTE1 Mon: 352 min, offset med -17.7 [-29.2..47.5], misstrike 106/352 = 30.1%
+  NIFTY 2026-07-21 DTE0 Tue: 366 min, offset med -1.1 [-16.1..6.3], misstrike 27/366 = 7.4%
+  NIFTY 2026-07-22 DTE4 Wed: 361 min, offset med -14.7 [-36.8..2.6], misstrike 168/361 = 46.5%
+  NIFTY 2026-07-23 DTE3 Thu: 362 min, offset med -0.2 [-21.3..16.9], misstrike 42/362 = 11.6%
+  NIFTY 2026-07-24 DTE2 Fri: 366 min, offset med 27.5 [2.0..48.5], misstrike 198/366 = 54.1%
+  NIFTY 2026-07-27 DTE1 Mon: 366 min, offset med 14.4 [3.5..36.0], misstrike 109/366 = 29.8%
+  NIFTY 2026-07-28 DTE0 Tue: 366 min, offset med -1.1 [-12.9..19.8], misstrike 22/366 = 6.0%
+  NIFTY 2026-07-29 DTE4 Wed: 365 min, offset med -5.6 [-22.8..30.1], misstrike 56/365 = 15.3%
+  NIFTY 2026-07-30 DTE3 Thu: 364 min, offset med -16.4 [-57.5..9.2], misstrike 67/364 = 18.4%
+  NIFTY 2026-07-31 DTE2 Fri: 366 min, offset med -0.5 [-12.2..25.2], misstrike 31/366 = 8.5%
+  NIFTY 2026-08-03 DTE1 Mon: 365 min, offset med -3.4 [-45.2..21.4], misstrike 42/365 = 11.5%
+  NIFTY 2026-08-04 DTE0 Tue: 364 min, offset med 0.0 [-95.2..35.4], misstrike 31/364 = 8.5%
+  NIFTY 2026-08-05 DTE4 Wed: 363 min, offset med 35.0 [-28.5..66.9], misstrike 257/363 = 70.8%
+  NIFTY 2026-08-06 DTE3 Thu: 364 min, offset med 33.6 [2.2..67.8], misstrike 191/364 = 52.5%
+  NIFTY 2026-08-07 DTE2 Fri: 363 min, offset med 21.4 [13.2..57.1], misstrike 206/363 = 56.7%
+  NIFTY 2026-08-10 DTE1 Mon: 365 min, offset med 23.5 [4.5..53.1], misstrike 126/365 = 34.5%
+  NIFTY 2026-08-11 DTE0 Tue: 366 min, offset med 12.0 [-24.5..31.8], misstrike 66/366 = 18.0%
+  NIFTY 2026-08-12 DTE4 Wed: 365 min, offset med 61.5 [37.6..82.2], misstrike 348/365 = 95.3%
+  NIFTY 2026-08-13 DTE3 Thu: 366 min, offset med 55.2 [-24.9..95.8], misstrike 346/366 = 94.5%
+  NIFTY 2026-08-14 DTE2 Fri: 364 min, offset med 33.9 [23.9..75.8], misstrike 223/364 = 61.3%
+  NIFTY 2026-08-17 DTE1 Mon: 366 min, offset med 29.4 [5.2..47.1], misstrike 173/366 = 47.3%
+  NIFTY 2026-08-18 DTE0 Tue: 365 min, offset med 7.3 [-8.0..37.2], misstrike 36/365 = 9.9%
+  NIFTY 2026-08-19 DTE4 Wed: 365 min, offset med 54.5 [1.6..75.5], misstrike 359/365 = 98.4%
+  NIFTY 2026-08-20 DTE3 Thu: 366 min, offset med 69.0 [8.8..91.9], misstrike 365/366 = 99.7%
+  NIFTY 2026-08-21 DTE2 Fri: 365 min, offset med 48.9 [36.9..56.6], misstrike 362/365 = 99.2%
+  NIFTY 2026-08-24 DTE1 Mon: 365 min, offset med 26.4 [12.6..43.1], misstrike 182/365 = 49.9%
+  NIFTY 2026-08-25 DTE0 Tue: 366 min, offset med 14.3 [-14.4..25.6], misstrike 69/366 = 18.9%
+  NIFTY 2026-08-26 DTE4 Wed: 366 min, offset med 75.0 [63.9..100.3], misstrike 366/366 = 100.0%
+  NIFTY 2026-08-27 SKIP (holiday/partial/no data)
+NIFTY: kept 85 days, skipped 5
+SENSEX: 90 candidate days 2026-04-20..2026-08-27 (step 100)
+  SENSEX 2026-04-20 SKIP thin (83 mins)
+  SENSEX 2026-04-27 DTE3 Mon: 360 min, offset med 66.8 [29.2..164.8], misstrike 229/360 = 63.6%
+  SENSEX 2026-04-28 DTE2 Tue: 361 min, offset med 28.3 [-11.3..81.8], misstrike 124/361 = 34.3%
+  SENSEX 2026-04-29 DTE1 Wed: 361 min, offset med 42.6 [-8.7..102.4], misstrike 160/361 = 44.3%
+  SENSEX 2026-04-30 DTE0 Thu: 359 min, offset med -2.8 [-77.3..58.9], misstrike 63/359 = 17.5%
+  SENSEX 2026-05-01 SKIP (holiday/partial/no data)
+  SENSEX 2026-05-04 DTE3 Mon: 361 min, offset med 138.3 [66.3..266.4], misstrike 358/361 = 99.2%
+  SENSEX 2026-05-05 DTE2 Tue: 361 min, offset med 53.4 [14.9..138.2], misstrike 197/361 = 54.6%
+  SENSEX 2026-05-06 DTE1 Wed: 361 min, offset med 127.5 [48.2..299.2], misstrike 351/361 = 97.2%
+  SENSEX 2026-05-07 DTE0 Thu: 359 min, offset med 10.8 [-40.8..118.0], misstrike 60/359 = 16.7%
+  SENSEX 2026-05-08 DTE4 Fri: 361 min, offset med 84.8 [40.5..200.2], misstrike 315/361 = 87.3%
+  SENSEX 2026-05-11 DTE3 Mon: 358 min, offset med 85.1 [24.8..211.1], misstrike 305/358 = 85.2%
+  SENSEX 2026-05-12 DTE2 Tue: 361 min, offset med 61.9 [0.1..174.3], misstrike 222/361 = 61.5%
+  SENSEX 2026-05-13 DTE1 Wed: 361 min, offset med 59.0 [3.7..116.9], misstrike 217/361 = 60.1%
+  SENSEX 2026-05-14 DTE0 Thu: 361 min, offset med 2.9 [-42.2..50.4], misstrike 54/361 = 15.0%
+  SENSEX 2026-05-15 DTE4 Fri: 358 min, offset med 40.8 [-58.0..108.3], misstrike 133/358 = 37.2%
+  SENSEX 2026-05-18 DTE3 Mon: 361 min, offset med 6.9 [-54.2..75.1], misstrike 69/361 = 19.1%
+  SENSEX 2026-05-19 DTE2 Tue: 361 min, offset med 11.1 [-62.9..41.6], misstrike 56/361 = 15.5%
+  SENSEX 2026-05-20 DTE1 Wed: 361 min, offset med -17.0 [-73.8..32.5], misstrike 70/361 = 19.4%
+  SENSEX 2026-05-21 DTE0 Thu: 361 min, offset med -0.9 [-64.5..71.1], misstrike 48/361 = 13.3%
+  SENSEX 2026-05-22 DTE3 Fri: 361 min, offset med 47.1 [-36.8..84.7], misstrike 170/361 = 47.1%
+  SENSEX 2026-05-25 DTE2 Mon: 359 min, offset med 33.5 [-7.0..99.9], misstrike 120/359 = 33.4%
+  SENSEX 2026-05-26 DTE1 Tue: 361 min, offset med 16.1 [-28.6..59.9], misstrike 51/361 = 14.1%
+  SENSEX 2026-05-27 DTE0 Wed: 361 min, offset med -1.0 [-73.0..62.9], misstrike 58/361 = 16.1%
+  SENSEX 2026-05-28 SKIP (holiday/partial/no data)
+  SENSEX 2026-05-29 DTE4 Fri: 361 min, offset med 168.7 [113.7..752.2], misstrike 361/361 = 100.0%
+  SENSEX 2026-06-01 DTE3 Mon: 360 min, offset med 128.5 [85.2..225.1], misstrike 360/360 = 100.0%
+  SENSEX 2026-06-02 DTE2 Tue: 361 min, offset med 137.7 [80.8..319.1], misstrike 357/361 = 98.9%
+  SENSEX 2026-06-03 DTE1 Wed: 366 min, offset med 96.5 [29.1..260.5], misstrike 306/366 = 83.6%
+  SENSEX 2026-06-04 DTE0 Thu: 365 min, offset med 7.7 [-50.0..56.6], misstrike 52/365 = 14.2%
+  SENSEX 2026-06-05 DTE4 Fri: 364 min, offset med 158.7 [108.9..249.1], misstrike 364/364 = 100.0%
+  SENSEX 2026-06-08 DTE3 Mon: 363 min, offset med 74.3 [27.5..133.8], misstrike 294/363 = 81.0%
+  SENSEX 2026-06-09 DTE2 Tue: 336 min, offset med 62.0 [20.5..189.4], misstrike 216/336 = 64.3%
+  SENSEX 2026-06-10 DTE1 Wed: 365 min, offset med -13.9 [-132.2..51.1], misstrike 64/365 = 17.5%
+  SENSEX 2026-06-11 DTE0 Thu: 366 min, offset med -20.2 [-75.0..77.1], misstrike 79/366 = 21.6%
+  SENSEX 2026-06-12 DTE4 Fri: 365 min, offset med 75.1 [6.4..169.7], misstrike 249/365 = 68.2%
+  SENSEX 2026-06-15 DTE3 Mon: 363 min, offset med 50.1 [-22.2..129.8], misstrike 164/363 = 45.2%
+  SENSEX 2026-06-16 DTE2 Tue: 366 min, offset med 4.6 [-27.7..51.3], misstrike 25/366 = 6.8%
+  SENSEX 2026-06-17 DTE1 Wed: 366 min, offset med 4.7 [-37.8..56.6], misstrike 63/366 = 17.2%
+  SENSEX 2026-06-18 DTE0 Thu: 365 min, offset med 2.2 [-43.3..76.0], misstrike 35/365 = 9.6%
+  SENSEX 2026-06-19 DTE4 Fri: 366 min, offset med 99.2 [54.6..184.6], misstrike 335/366 = 91.5%
+  SENSEX 2026-06-22 DTE3 Mon: 359 min, offset med 52.5 [-6.4..109.6], misstrike 135/359 = 37.6%
+  SENSEX 2026-06-23 DTE2 Tue: 365 min, offset med 30.9 [-17.9..108.2], misstrike 129/365 = 35.3%
+  SENSEX 2026-06-24 DTE1 Wed: 279 min, offset med 21.6 [-49.4..81.2], misstrike 70/279 = 25.1%
+  SENSEX 2026-06-25 DTE0 Thu: 288 min, offset med 0.1 [-86.0..54.6], misstrike 40/288 = 13.9%
+  SENSEX 2026-06-26 SKIP (holiday/partial/no data)
+  SENSEX 2026-06-29 DTE3 Mon: 332 min, offset med 55.7 [21.1..102.9], misstrike 200/332 = 60.2%
+  SENSEX 2026-06-30 DTE2 Tue: 364 min, offset med 59.6 [14.9..281.5], misstrike 195/364 = 53.6%
+  SENSEX 2026-07-01 DTE1 Wed: 363 min, offset med 26.1 [-62.1..83.8], misstrike 108/363 = 29.8%
+  SENSEX 2026-07-02 DTE0 Thu: 365 min, offset med 0.4 [-40.3..101.8], misstrike 31/365 = 8.5%
+  SENSEX 2026-07-03 DTE4 Fri: 362 min, offset med 66.0 [14.2..115.2], misstrike 227/362 = 62.7%
+  SENSEX 2026-07-06 DTE3 Mon: 361 min, offset med 29.6 [-37.6..59.3], misstrike 168/361 = 46.5%
+  SENSEX 2026-07-07 DTE2 Tue: 365 min, offset med -8.7 [-76.3..25.1], misstrike 68/365 = 18.6%
+  SENSEX 2026-07-08 DTE1 Wed: 361 min, offset med -34.6 [-83.0..46.2], misstrike 122/361 = 33.8%
+  SENSEX 2026-07-09 DTE0 Thu: 363 min, offset med -5.9 [-58.0..38.8], misstrike 66/363 = 18.2%
+  SENSEX 2026-07-10 DTE4 Fri: 365 min, offset med 36.6 [-60.0..126.7], misstrike 167/365 = 45.8%
+  SENSEX 2026-07-13 DTE3 Mon: 365 min, offset med -9.5 [-71.2..41.4], misstrike 102/365 = 27.9%
+  SENSEX 2026-07-14 DTE2 Tue: 352 min, offset med -44.9 [-167.1..2.2], misstrike 168/352 = 47.7%
+  SENSEX 2026-07-15 DTE1 Wed: 363 min, offset med -28.8 [-117.9..19.1], misstrike 175/363 = 48.2%
+  SENSEX 2026-07-16 DTE0 Thu: 361 min, offset med -11.1 [-55.1..38.3], misstrike 38/361 = 10.5%
+  SENSEX 2026-07-17 DTE4 Fri: 363 min, offset med -95.1 [-197.2..19.6], misstrike 286/363 = 78.8%
+  SENSEX 2026-07-20 DTE3 Mon: 352 min, offset med -61.9 [-95.9..69.8], misstrike 210/352 = 59.7%
+  SENSEX 2026-07-21 DTE2 Tue: 359 min, offset med -0.5 [-41.6..50.2], misstrike 22/359 = 6.1%
+  SENSEX 2026-07-22 DTE1 Wed: 363 min, offset med -10.4 [-96.9..62.2], misstrike 35/363 = 9.6%
+  SENSEX 2026-07-23 DTE0 Thu: 363 min, offset med -13.6 [-51.2..33.2], misstrike 65/363 = 17.9%
+  SENSEX 2026-07-24 DTE4 Fri: 364 min, offset med 98.6 [50.6..233.9], misstrike 325/364 = 89.3%
+  SENSEX 2026-07-27 DTE3 Mon: 366 min, offset med 83.2 [50.0..177.8], misstrike 315/366 = 86.1%
+  SENSEX 2026-07-28 DTE2 Tue: 361 min, offset med 49.5 [14.0..156.9], misstrike 186/361 = 51.5%
+  SENSEX 2026-07-29 DTE1 Wed: 351 min, offset med -29.9 [-71.3..51.1], misstrike 75/351 = 21.4%
+  SENSEX 2026-07-30 DTE0 Thu: 356 min, offset med -21.7 [-64.5..12.1], misstrike 102/356 = 28.7%
+  SENSEX 2026-07-31 DTE4 Fri: 361 min, offset med 40.3 [14.3..110.1], misstrike 162/361 = 44.9%
+  SENSEX 2026-08-03 DTE3 Mon: 361 min, offset med 53.6 [-3.5..112.2], misstrike 203/361 = 56.2%
+  SENSEX 2026-08-04 DTE2 Tue: 365 min, offset med 10.4 [-34.5..109.6], misstrike 59/365 = 16.2%
+  SENSEX 2026-08-05 DTE1 Wed: 362 min, offset med 55.1 [5.3..184.3], misstrike 192/362 = 53.0%
+  SENSEX 2026-08-06 DTE0 Thu: 363 min, offset med 16.3 [-39.2..241.9], misstrike 80/363 = 22.0%
+  SENSEX 2026-08-07 DTE4 Fri: 355 min, offset med 97.9 [73.6..243.8], misstrike 344/355 = 96.9%
+  SENSEX 2026-08-10 DTE3 Mon: 356 min, offset med 116.4 [58.7..218.9], misstrike 347/356 = 97.5%
+  SENSEX 2026-08-11 DTE2 Tue: 342 min, offset med 65.0 [29.1..164.4], misstrike 199/342 = 58.2%
+  SENSEX 2026-08-12 DTE1 Wed: 333 min, offset med 80.3 [24.1..169.9], misstrike 253/333 = 76.0%
+  SENSEX 2026-08-13 DTE0 Thu: 352 min, offset med 30.0 [-27.0..98.5], misstrike 112/352 = 31.8%
+  SENSEX 2026-08-14 DTE4 Fri: 359 min, offset med 138.9 [106.5..268.1], misstrike 359/359 = 100.0%
+  SENSEX 2026-08-17 DTE3 Mon: 355 min, offset med 133.8 [68.8..200.2], misstrike 345/355 = 97.2%
+  SENSEX 2026-08-18 DTE2 Tue: 366 min, offset med 63.7 [39.1..156.9], misstrike 209/366 = 57.1%
+  SENSEX 2026-08-19 DTE1 Wed: 365 min, offset med 84.6 [23.2..133.8], misstrike 316/365 = 86.6%
+  SENSEX 2026-08-20 DTE0 Thu: 366 min, offset med 22.3 [-46.4..65.5], misstrike 142/366 = 38.8%
+  SENSEX 2026-08-21 DTE4 Fri: 363 min, offset med 173.4 [140.9..236.5], misstrike 363/363 = 100.0%
+  SENSEX 2026-08-24 DTE3 Mon: 365 min, offset med 114.7 [76.4..193.2], misstrike 352/365 = 96.4%
+  SENSEX 2026-08-25 DTE2 Tue: 366 min, offset med 124.7 [17.5..280.1], misstrike 362/366 = 98.9%
+  SENSEX 2026-08-26 DTE1 Wed: 365 min, offset med 116.6 [85.7..209.3], misstrike 362/365 = 99.2%
+  SENSEX 2026-08-27 SKIP (holiday/partial/no data)
+SENSEX: kept 85 days, skipped 5
+STAGE A done -> /home/arun/quantifyd/research/132_strike_misselection_cost/scripts/../results/offset_atlas.csv
+=== STAGE B: entry audit ===
+  CSL 2026-08-27 CSL30F_SENSEX 09:16:04: chain unusable
+CSL: 51 audited, 1 unusable (of 52 records)
+NAS nas_atm       : 105 audited, 24 unusable (129 pairs)
+NAS nas_atm2      : 105 audited, 23 unusable (128 pairs)
+NAS nas_atm4      : 39 audited, 5 unusable (94 pairs)
+=== STAGE C: reconciliation + forward counterfactual ===
+NAS nas_916_atm   : 77 audited, 6 unusable (84 pairs)
+  SKIP chain unusable 2026-08-27 CSL30F_SENSEX
+  TOUCH: 51 rows
+  SKIP chain unusable 2026-08-27 CSL30F_SENSEX
+  DWELL2: 51 rows
+STAGE C done: 102 rows -> /home/arun/quantifyd/research/132_strike_misselection_cost/scripts/../results/replay.csv
+NAS nas_916_atm2  : 150 audited, 5 unusable (155 pairs)
+NAS nas_916_atm4  : 17 audited, 4 unusable (76 pairs)
+NAS sensex_atm    : 26 audited, 1 unusable (27 pairs)
+NAS sensex_atm2   : 34 audited, 2 unusable (36 pairs)
+NAS sensex_atm4   : 13 audited, 1 unusable (26 pairs)
+STAGE B done: 617 rows -> /home/arun/quantifyd/research/132_strike_misselection_cost/scripts/../results/entry_audit.csv
+STAGE E done: 50 rows -> /home/arun/quantifyd/research/132_strike_misselection_cost/scripts/../results/delta_attrib.csv

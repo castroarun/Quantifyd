@@ -1,0 +1,172 @@
+
+========================================================================================
+0. RECONCILIATION GATE — chain replay at the ACTUAL strike vs what the daemon booked
+========================================================================================
+The daemon books gross = (credit - exit_comb) x qty and subtracts a flat Rs160.
+We compare the chain replay's credit / exit reason / gross against the booked ones.
+A 1-minute chain cannot reproduce a 5-second poll exactly; this bounds the error.
+
+  TOUCH   n=51
+    credit  |err| med   1.15 pt   p90   6.08 pt   (chain 1-min LTP vs live entry tick)
+    exit-reason match  49/51 = 96%
+    gross Rs err  med      +97  p10     -357  p90     +574  |rel| med 13.9%
+    sign agreement (replay and booked same side of zero): 94%
+  DWELL2  n=51
+    credit  |err| med   1.15 pt   p90   6.08 pt   (chain 1-min LTP vs live entry tick)
+    exit-reason match  49/51 = 96%
+    gross Rs err  med      +78  p10     -675  p90     +539  |rel| med 18.7%
+    sign agreement (replay and booked same side of zero): 94%
+
+========================================================================================
+1. MIS-STRIKE FREQUENCY on the trades ACTUALLY TAKEN
+========================================================================================
+population             venue       n     mis    rate   steps-off histogram
+CSL (all)              NIFTY      36      26   72.2%   -1:1 +0:10 +1:21 +2:3 +3:1
+CSL (all)              SENSEX     15      12   80.0%   +0:3 +1:8 +2:4
+NAS (all)              NIFTY     493      88   17.8%   -2:1 -1:19 +0:405 +1:68
+NAS (all)              SENSEX     73      13   17.8%   -1:9 +0:60 +1:4
+NAS pre-snap           NIFTY     119      51   42.9%   -2:1 -1:10 +0:68 +1:40
+NAS post-snap          NIFTY     374      37    9.9%   -1:9 +0:337 +1:28
+NAS post-snap          SENSEX     73      13   17.8%   -1:9 +0:60 +1:4
+
+CSL per-book:
+book                     venue       n    mis    rate  steps-off
+CSL30F_NIFTY             NIFTY       7      6   85.7%  +0:1 +1:5 +2:1
+CSL30F_SENSEX            SENSEX      8      6   75.0%  +0:2 +1:4 +2:2
+CSL30F_SENSEX_WED        SENSEX      1      1  100.0%  +1:1
+CSL_TIMEB2_NIFTY         NIFTY       2      1   50.0%  +0:1 +1:1
+CSL_TIMEB_NIFTY          NIFTY       5      2   40.0%  +0:3 +1:2
+CSL_TIMEB_NIFTY_MON      NIFTY       1      0    0.0%  +0:1
+CSL_TIMEB_SENSEX         SENSEX      6      5   83.3%  +0:1 +1:3 +2:2
+NAS_C20_SHIFT            NIFTY       7      7  100.0%  -1:1 +1:4 +2:1 +3:1
+NAS_C20_TRAIL            NIFTY       7      6   85.7%  +0:1 +1:5 +2:1
+NAS_COMB20               NIFTY       7      4   57.1%  +0:3 +1:4
+
+========================================================================================
+2. THE NAS CONTROL — did the forward snap actually work?
+========================================================================================
+nas_atm_executor.py carried the snap from 57eb8c2 (2026-06-01). If the snap works, NAS entries
+after that date should sit ON the forward strike even when spot rounds elsewhere.
+
+venue    era                n    mis% snapfired% med|offset|
+NIFTY    pre  <2026-06-01   119   42.9%      22.7%      11.1
+NIFTY    post >=2026-06-01   374    9.9%      30.7%      14.5
+SENSEX   post >=2026-06-01    73   17.8%      56.2%      57.0
+
+========================================================================================
+3. THE UNINTENDED DELTA — directional risk carried without anyone choosing it
+========================================================================================
+Short straddle at K with forward F: net delta = 1 - 2*N(d1), sigma inverted from the
+observed combined premium (Black-76). Positive = the book was LONG the index.
+
+CSL NIFTY                    n=35    |delta| med 0.185 p90 0.232 | Rs/100pt |med|   2750 p90    5298 max    8854
+                               net signed sum   -67768 Rs/100pt (a book-level tilt, if any)
+                               MIS-STRUCK ONLY n=25   |Rs/100pt| med   2750 p90    5594 max    8854
+                               a 100-pt move moves the book by median 10% of the credit collected
+CSL SENSEX                   n=15    |delta| med 0.116 p90 0.194 | Rs/100pt |med|   1007 p90    2720 max    4287
+                               net signed sum   -15491 Rs/100pt (a book-level tilt, if any)
+                               MIS-STRUCK ONLY n=12   |Rs/100pt| med   1011 p90    2720 max    4287
+                               a 100-pt move moves the book by median 2% of the credit collected
+NAS NIFTY (post-snap)        n=374   |delta| med 0.041 p90 0.096 | Rs/100pt |med|    508 p90    2432 max   15941
+                               net signed sum   -93318 Rs/100pt (a book-level tilt, if any)
+                               MIS-STRUCK ONLY n=37   |Rs/100pt| med   1099 p90    5139 max   15941
+                               a 100-pt move moves the book by median 2% of the credit collected
+NAS NIFTY (pre-snap)         n=119   |delta| med 0.061 p90 0.159 | Rs/100pt |med|    570 p90    1523 max    7476
+                               net signed sum   -51822 Rs/100pt (a book-level tilt, if any)
+                               MIS-STRUCK ONLY n=51   |Rs/100pt| med    916 p90    3556 max    7476
+                               a 100-pt move moves the book by median 2% of the credit collected
+NAS SENSEX (post-snap)       n=73    |delta| med 0.033 p90 0.066 | Rs/100pt |med|    142 p90     346 max     568
+                               net signed sum      +12 Rs/100pt (a book-level tilt, if any)
+                               MIS-STRUCK ONLY n=13   |Rs/100pt| med    210 p90     460 max     568
+                               a 100-pt move moves the book by median 0% of the credit collected
+
+CSL per-book, Rs per 100 index points (signed; + = unintentionally long):
+book                     venue      n   mis        med     p90|.|     max|.|
+CSL30F_NIFTY             NIFTY      7     6      -2425       2947       3019
+CSL30F_SENSEX            SENSEX     8     6       -593       1007       1015
+CSL30F_SENSEX_WED        SENSEX     1     1      -1026       1026       1026
+CSL_TIMEB2_NIFTY         NIFTY      2     1      -3473       3922       3922
+CSL_TIMEB_NIFTY          NIFTY      5     2      -1145       8854       8854
+CSL_TIMEB_NIFTY_MON      NIFTY      1     0       -280        280        280
+CSL_TIMEB_SENSEX         SENSEX     6     5      -1856       2720       4287
+NAS_C20_SHIFT            NIFTY      6     6      -2577       3019       5594
+NAS_C20_TRAIL            NIFTY      7     6      -2444       2945       3019
+NAS_COMB20               NIFTY      7     4      -2436       3019       6011
+
+Worst individual entries by |Rs per 100 pts|:
+src    book                   venue   day          DTE        K      fwd     off  steps   Rs/100pt
+NAS    nas_916_atm            NIFTY   2026-06-30     0    23950  23995.1    21.9      1     -15941
+CSL    CSL_TIMEB_NIFTY        NIFTY   2026-08-21     2    24250  24295.4    48.5      1      -8854
+NAS    nas_atm                NIFTY   2026-06-25     3    24100  24136.9   -2.45      1      -7478
+NAS    nas_916_atm2           NIFTY   2026-04-28     0    24050  24084.1   -9.75      1      -7476
+NAS    nas_916_atm2           NIFTY   2026-06-25     3    24100  24136.9   23.85      1      -7426
+NAS    nas_916_atm            NIFTY   2026-04-28     0    24050  24084.1   -9.75      1      -7386
+NAS    nas_916_atm2           NIFTY   2026-04-28     0    24050  24084.1   -9.75      1      -7353
+NAS    nas_916_atm2           NIFTY   2026-07-06     1    24350 24325.45  -22.35      0      +6475
+NAS    nas_916_atm            NIFTY   2026-07-06     1    24350 24325.45   -16.4      0      +6469
+CSL    NAS_COMB20             NIFTY   2026-08-20     3    24200  24258.7   45.25      1      -6011
+NAS    nas_atm                NIFTY   2026-06-30     0    23900 23885.25     3.1      0      +5708
+CSL    NAS_C20_SHIFT          NIFTY   2026-08-25     0    24200  24145.5   -1.95     -1      +5594
+
+========================================================================================
+4. THE COUNTERFACTUAL COST — booked path vs forward-snapped path, MEASURED costs
+========================================================================================
+Both arms replayed on the same 1-minute chain under the same rule, so the comparison
+is like-for-like. The forward arm is a DIFFERENT instrument with its own path.
+
+  --- TOUCH (mgmt arms excluded: their post-stop path cannot be honestly re-struck) ---
+    all entries        n=37   TOTAL    -22506  mean     -608  med       +0  sd     2116
+    mis-struck only    n=25   TOTAL    -22506  mean     -900  med     -505  sd     2523
+    forward arm better on 10 of 25 mis-struck entries (40%)
+    range -8133 .. +3985 | p10 -4560 p90 +1530
+    t on the mean difference = -1.78  (n=25) -> indistinguishable from zero
+    exit-reason flips (the forward straddle stopped when the real one did not, or vice versa): 2 of 37
+  --- DWELL2 (mgmt arms excluded: their post-stop path cannot be honestly re-struck) ---
+    all entries        n=37   TOTAL    -24992  mean     -675  med       +0  sd     2247
+    mis-struck only    n=25   TOTAL    -24992  mean    -1000  med     -505  sd     2673
+    forward arm better on 8 of 25 mis-struck entries (32%)
+    range -8667 .. +3985 | p10 -4560 p90 +1530
+    t on the mean difference = -1.87  (n=25) -> indistinguishable from zero
+    exit-reason flips (the forward straddle stopped when the real one did not, or vice versa): 2 of 37
+
+  Per-book, DWELL2 (headline), mgmt arms excluded:
+book                     venue      n  mis  actual net     fwd net  difference  per-trade
+CSL30F_NIFTY             NIFTY      7    6       -5533       -6087        -554        -79
+CSL30F_SENSEX            SENSEX     8    6      +12620       -1579      -14199      -1775
+CSL30F_SENSEX_WED        SENSEX     1    1       +2425        -587       -3012      -3012
+CSL_TIMEB2_NIFTY         NIFTY      2    1        +468       -6140       -6608      -3304
+CSL_TIMEB_NIFTY          NIFTY      5    2       +9404       +9950        +546       +109
+CSL_TIMEB_NIFTY_MON      NIFTY      1    0       +1752       +1752          +0         +0
+CSL_TIMEB_SENSEX         SENSEX     6    5      +13113       +7163       -5950       -992
+NAS_C20_SHIFT            NIFTY      7    7      +16025       -5716      -21741      -3106  [mgmt arm - excluded from total]
+NAS_C20_TRAIL            NIFTY      7    6       -4583       -5716       -1133       -162  [mgmt arm - excluded from total]
+NAS_COMB20               NIFTY      7    4       -6818       -2027       +4791       +684
+TOTAL (non-mgmt)                                +27431       +2445      -24986
+
+========================================================================================
+5. OFFSET STABILITY — is the basis a fixed level or does it swing?
+========================================================================================
+
+  NIFTY
+    between-day: per-day median offset spans -37 .. +75 (p05..p95 -17..+54)
+    within-day : median IQR 9.1 pts -> the level is steady through a session
+    ratio between-day spread / within-day IQR = 7.9x  => the swing is DAY-TO-DAY, not intraday
+    days whose MEDIAN offset alone exceeds half a step (25 pts): 22 of 85 = 26%
+    sign: 57 days positive, 28 negative -> the basis CHANGES SIGN (July dividend season)
+      2026-04  n= 4 days  median-of-medians    +8.7
+      2026-05  n=19 days  median-of-medians    +9.3
+      2026-06  n=21 days  median-of-medians    +9.2
+      2026-07  n=23 days  median-of-medians    -1.1
+      2026-08  n=18 days  median-of-medians   +31.4
+
+  SENSEX
+    between-day: per-day median offset spans -95 .. +173 (p05..p95 -30..+138)
+    within-day : median IQR 25.1 pts -> the level is steady through a session
+    ratio between-day spread / within-day IQR = 6.7x  => the swing is DAY-TO-DAY, not intraday
+    days whose MEDIAN offset alone exceeds half a step (50 pts): 40 of 85 = 47%
+    sign: 65 days positive, 20 negative -> the basis CHANGES SIGN (July dividend season)
+      2026-04  n= 4 days  median-of-medians   +35.5
+      2026-05  n=19 days  median-of-medians   +40.6
+      2026-06  n=21 days  median-of-medians   +52.5
+      2026-07  n=23 days  median-of-medians    -8.7
+      2026-08  n=18 days  median-of-medians   +82.4
