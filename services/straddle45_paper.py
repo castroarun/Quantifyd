@@ -324,6 +324,147 @@ def combined_chain_live(expiry, strike):
     return (ce + pe, ts) if ce and pe else None
 
 
+def legs_bhav(con, expiry, strike, day):
+    """The two legs priced on a settlement session."""
+    legs = (bhav_day(con, expiry, day) or {}).get(strike)
+    if not legs or "CE" not in legs or "PE" not in legs:
+        return None
+    ce, pe = legs["CE"][0], legs["PE"][0]
+    if ce <= 0 or pe <= 0:
+        return None
+    return dict(ce=ce, pe=pe, src="bhav", ts=day)
+
+
+def legs_chain_live(expiry, strike):
+    """The two legs from the 1-minute recorder, if it covers this contract."""
+    if not os.path.exists(OPT):
+        return None
+    con = ro(OPT)
+    try:
+        rows = con.execute(
+            "SELECT instrument_type, ltp, snapshot_time FROM option_chain "
+            "WHERE expiry_date=? AND strike=? AND ltp IS NOT NULL AND ltp>0 "
+            "ORDER BY snapshot_time DESC LIMIT 40", (expiry, strike)).fetchall()
+    finally:
+        con.close()
+    ce = pe = ts = None
+    for it, ltp, t in rows:
+        if it == "CE" and ce is None:
+            ce, ts = float(ltp), t
+        if it == "PE" and pe is None:
+            pe = float(ltp)
+            ts = t if ts is None else max(ts, t)
+        if ce and pe:
+            break
+    return dict(ce=ce, pe=pe, src="chain 1-min", ts=ts) if ce and pe else None
+
+
+def legs_kite_live(expiry, strike):
+    """The two legs straight from the broker. Read-only: quote(), no orders."""
+    try:
+        from kiteconnect import KiteConnect
+        tokf = os.path.join(ROOT, "backtest_data", "access_token.json")
+        api = os.environ.get("KITE_API_KEY")
+        if not api or not os.path.exists(tokf):
+            return None
+        k = KiteConnect(api_key=api)
+        k.set_access_token(json.load(open(tokf))["access_token"])
+        mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+               "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+        e = dparse(expiry)
+        root = "NIFTY%s%s%d" % (e.strftime("%y"), mon[e.month - 1], int(strike))
+        keys = ["NFO:%sCE" % root, "NFO:%sPE" % root]
+        q = k.quote(keys)
+        if len(q) != 2:
+            return None
+        c, p = q[keys[0]], q[keys[1]]
+        if c["last_price"] > 0 and p["last_price"] > 0:
+            return dict(ce=c["last_price"], pe=p["last_price"], src="kite ltp",
+                        ts=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        ce_vol=c.get("volume") or 0, pe_vol=p.get("volume") or 0,
+                        ce_oi=c.get("oi") or 0, pe_oi=p.get("oi") or 0,
+                        ce_bid=((c.get("depth") or {}).get("buy") or [{}])[0].get("price"),
+                        ce_ask=((c.get("depth") or {}).get("sell") or [{}])[0].get("price"),
+                        pe_bid=((p.get("depth") or {}).get("buy") or [{}])[0].get("price"),
+                        pe_ask=((p.get("depth") or {}).get("sell") or [{}])[0].get("price"))
+    except Exception:
+        return None
+    return None
+
+
+def leg_rows(pair, r, spot=None):
+    """Shape a CE/PE pair into the two rows the UI draws. Both legs are SHORT."""
+    if not pair:
+        return None
+    out = []
+    for ot in ("CE", "PE"):
+        px = pair.get(ot.lower())
+        moneyness = None
+        if spot:
+            moneyness = (spot - r["strike"]) if ot == "CE" else (r["strike"] - spot)
+        out.append(dict(
+            side="SHORT", opt=ot, strike=r["strike"], price=px,
+            volume=pair.get(ot.lower() + "_vol") or 0,
+            oi=pair.get(ot.lower() + "_oi") or 0,
+            bid=pair.get(ot.lower() + "_bid"), ask=pair.get(ot.lower() + "_ask"),
+            itm_by=round(moneyness, 1) if moneyness is not None else None))
+    return out
+
+
+def legs_now(m, r):
+    """Current two-leg prices, same source hierarchy the mark itself uses:
+    the 1-minute recorder, then the broker, then the last settlement close."""
+    if r["status"] != "OPEN":
+        return legs_bhav(m, r["expiry"], r["strike"], r["exit_date"]) if r["exit_date"] else None
+    for fn in (lambda: legs_chain_live(r["expiry"], r["strike"]),
+               lambda: legs_kite_live(r["expiry"], r["strike"])):
+        try:
+            p = fn()
+        except Exception:
+            p = None
+        if p:
+            return p
+    return None
+
+
+def live_margins(rows):
+    """REAL Kite margin for the two-leg short straddle. Read-only, no orders.
+
+    A naked straddle has no hedge to net against, so unlike the winged stock book
+    the leg order does not matter here. Both numbers are still kept: `final` is
+    what the position blocks once on, `initial` what must be free to put it on.
+    """
+    out = {}
+    if not rows:
+        return out
+    try:
+        from kiteconnect import KiteConnect
+        tokf = os.path.join(ROOT, "backtest_data", "access_token.json")
+        api = os.environ.get("KITE_API_KEY")
+        if not api or not os.path.exists(tokf):
+            return out
+        k = KiteConnect(api_key=api)
+        k.set_access_token(json.load(open(tokf))["access_token"])
+        mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+               "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    except Exception as e:
+        print("  margin: kite unavailable (%s)" % str(e)[:50])
+        return out
+    for r in rows:
+        try:
+            e = dparse(r["expiry"])
+            root = "NIFTY%s%s%d" % (e.strftime("%y"), mon[e.month - 1], int(r["strike"]))
+            legs = [dict(exchange="NFO", tradingsymbol=root + ot, transaction_type="SELL",
+                         variety="regular", product="NRML", order_type="MARKET",
+                         quantity=int(r["qty"])) for ot in ("CE", "PE")]
+            res = k.basket_order_margins(legs, consider_positions=False, mode="compact")
+            peak = res["initial"]["total"]
+            out[r["id"]] = ((res.get("final") or {}).get("total") or peak, peak)
+        except Exception as ex:
+            print("  margin %s: %s" % (r["expiry"], str(ex)[:40]))
+    return out
+
+
 # ------------------------------------------------------------------- engine --
 def campaign_dates(days, expiry):
     """(entry session, exit session, exit calendar date).
@@ -523,6 +664,29 @@ def publish(con, m, days):
     realised_off = sum(x["net_rs"] or 0 for x in offp)
     unreal_plan = sum(x["mtm_rs"] or 0 for x in openp if x.get("on_plan"))
     unreal_off = sum(x["mtm_rs"] or 0 for x in openp if not x.get("on_plan"))
+    # Per-leg breakdown + the real broker margin. Both are READ-ONLY projections
+    # over state that already exists: no rule, no exit and no stored row changes.
+    for r in rows:
+        try:
+            r["legs_entry"] = leg_rows(
+                legs_bhav(m, r["expiry"], r["strike"], r["entry_date"]), r,
+                r.get("entry_spot"))
+            pair = legs_now(m, r)
+            r["legs_now"] = leg_rows(pair, r, r.get("mark_spot") or r.get("exit_spot"))
+            r["legs_asof"] = pair.get("ts") if pair else None
+            r["legs_src"] = pair.get("src") if pair else None
+        except Exception:
+            r["legs_entry"] = r["legs_now"] = r["legs_asof"] = r["legs_src"] = None
+    mg = live_margins(openp)
+    for r in openp:
+        hp = mg.get(r["id"])
+        r["margin_real"] = hp[0] if hp else None
+        r["margin_peak"] = hp[1] if hp else None
+        r["mtm_pct"] = (100.0 * (r["mtm_rs"] or 0) / r["margin_real"]
+                        if r["margin_real"] else None)
+    deployed = sum(v[0] for v in mg.values()) if mg else None
+    deployed_peak = sum(v[1] for v in mg.values()) if mg else None
+
     idle_total, idle_detail, idle_sym = idle_cash(con, days, rows)
     upcoming = upcoming_entries(m, days)
     state = dict(
@@ -539,6 +703,10 @@ def publish(con, m, days):
         nav_plan=CAPITAL + realised_plan + unreal_plan + idle_total,
         n_off_plan=len([x for x in rows if not x.get("on_plan")]),
         idle_etf=idle_sym, idle_earned=round(idle_total, 2), idle_spans=idle_detail,
+        capital_deployed=deployed, capital_deployed_peak=deployed_peak,
+        margin_asof=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        running_pnl=realised + unreal,
+        running_pnl_pct=(100.0 * (realised + unreal) / deployed) if deployed else None,
         n_closed=len(closed), n_open=len(openp),
         win_rate=(100.0 * len(wins) / len(closed)) if closed else None,
         open_positions=openp, closed_trades=list(reversed(closed)),

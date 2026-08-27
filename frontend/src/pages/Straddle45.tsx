@@ -9,7 +9,7 @@
  * POINTS (lot-size agnostic); rupees are derived as points x 65 x lots, so
  * changing lots re-prices the whole page — returns, drawdown, margin and payoff.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Straddle45.module.css';
 
@@ -108,6 +108,15 @@ type PaperTrade = {
   mark_spot: number | null;
   exit_due: string; dte: number;
   curve?: Array<{ d: string; prem: number; mtm: number }>;
+  /* read-only projections: the two legs actually held, and the real broker margin */
+  legs_entry?: Leg[] | null; legs_now?: Leg[] | null;
+  legs_asof?: string | null; legs_src?: string | null;
+  margin_real?: number | null; margin_peak?: number | null; mtm_pct?: number | null;
+};
+type Leg = {
+  side: 'SHORT'; opt: 'CE' | 'PE'; strike: number; price: number;
+  volume: number; oi: number;
+  bid: number | null; ask: number | null; itm_by: number | null;
 };
 type Upcoming = {
   expiry: string; entry_date: string; entry_weekday: string; exit_due: string;
@@ -115,6 +124,8 @@ type Upcoming = {
 };
 type Paper = {
   asof: string; mode: string; lots: number; qty: number; capital: number;
+  capital_deployed?: number | null; capital_deployed_peak?: number | null;
+  running_pnl?: number; running_pnl_pct?: number | null; margin_asof?: string;
   upcoming?: Upcoming[]; entry_time?: string; exit_time?: string;
   filter_name?: string; vix_rank_min?: number;
   realised_plan: number; realised_off: number;
@@ -133,7 +144,109 @@ const SRC_LABEL: Record<string, string> = {
   bhav: 'EOD close',
 };
 
+/* One expander drives both tables; a trade id is unique across open and closed. */
+function useLegRows() {
+  const [open, setOpen] = useState<Set<number>>(new Set());
+  const toggle = (id: number) =>
+    setOpen((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  return { open, setOpen, toggle };
+}
+
+/* The two legs of one straddle, priced at entry and now. Both are SHORT, so a
+   leg falling in price is money for us — the colour follows P&L, not the tick. */
+function LegPanel({ t, styles: c }: { t: PaperTrade; styles: Record<string, string> }) {
+  const legs = (t.legs_entry ?? []).map((e) => ({
+    e, n: (t.legs_now ?? []).find((x) => x.opt === e.opt) ?? null,
+  }));
+  if (!legs.length) {
+    return (
+      <div className={c.legWrap}>
+        <div className={c.legNote}>
+          No settlement print for {dmy(t.entry_date)} — the legs cannot be split for
+          this trade, though the combined credit of {t.credit.toFixed(2)} stands.
+        </div>
+      </div>
+    );
+  }
+  const entrySum = legs.reduce((a, x) => a + x.e.price, 0);
+  const nowSum = legs.reduce((a, x) => a + (x.n?.price ?? 0), 0);
+  const closed = t.status === 'CLOSED';
+  return (
+    <div className={c.legWrap}>
+      <div className={c.legTitle}>
+        The two legs actually held — NIFTY {t.strike.toFixed(0)} {dmy(t.expiry)}
+        {t.legs_asof && (
+          <span className={c.tm}>
+            {closed ? 'settled ' : ''}{t.legs_asof.slice(0, 16)}
+            {t.legs_src ? ` · ${t.legs_src}` : ''}
+          </span>
+        )}
+      </div>
+      <table className={c.legTable}>
+        <thead><tr>
+          <th>Leg</th><th>Strike</th><th>Entry</th><th>{closed ? 'Exit' : 'Now'}</th>
+          <th>Move</th><th>P&amp;L pts</th><th>P&amp;L ₹</th>
+          <th>Moneyness</th><th>Bid/Ask</th><th>OI</th>
+        </tr></thead>
+        <tbody>
+          {legs.map(({ e, n }) => {
+            const now = n?.price ?? null;
+            const move = now != null ? (now / e.price - 1) * 100 : null;
+            const pts = now != null ? e.price - now : null;   /* short: credit − buyback */
+            return (
+              <tr key={e.opt}>
+                <td><span className={c.legShort}>SHORT</span> {e.opt}</td>
+                <td>{e.strike.toFixed(0)}</td>
+                <td>{e.price.toFixed(2)}</td>
+                <td>{now == null ? '—' : now.toFixed(2)}</td>
+                <td className={move == null ? '' : move <= 0 ? c.pos : c.neg}>
+                  {move == null ? '—' : (move >= 0 ? '+' : '') + move.toFixed(1) + '%'}
+                </td>
+                <td className={pts == null ? '' : pts >= 0 ? c.pos : c.neg}>
+                  {pts == null ? '—' : (pts >= 0 ? '+' : '') + pts.toFixed(2)}
+                </td>
+                <td className={pts == null ? '' : pts >= 0 ? c.pos : c.neg}>
+                  {pts == null ? '—' : inr(pts * t.qty)}
+                </td>
+                <td className={c.muted}>
+                  {n?.itm_by == null ? '—'
+                    : n.itm_by > 0
+                      ? `ITM ${n.itm_by.toFixed(0)}`
+                      : `OTM ${Math.abs(n.itm_by).toFixed(0)}`}
+                </td>
+                <td className={c.muted}>
+                  {n?.bid != null && n?.ask != null ? `${n.bid.toFixed(1)} / ${n.ask.toFixed(1)}` : '—'}
+                </td>
+                <td className={c.muted}>{n?.oi ? n.oi.toLocaleString('en-IN') : '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className={c.legNote}>
+        Sold for <b>{entrySum.toFixed(2)}</b> points combined
+        ({inr(entrySum * t.qty)} on {t.qty} qty ={' '}{t.lots} lots), {closed ? 'bought back' : 'now worth'}{' '}
+        <b>{nowSum.toFixed(2)}</b> — the difference is the {closed ? 'gross result' : 'open MTM'}.
+        One leg is always losing: that is the structure working, not a problem. What matters
+        is whether the pair together decays faster than NIFTY moves.
+        {t.margin_real != null && (
+          <> Kite blocks <b>{inr(t.margin_real)}</b> for this position
+          ({inr(t.margin_real / t.lots)}/lot)
+          {t.margin_peak != null && t.margin_peak > t.margin_real && (
+            <>, and wants {inr(t.margin_peak)} free to put it on</>
+          )}.</>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Straddle45() {
+  const legOpen = useLegRows();
   const [lots, setLots] = useState<number>(() => {
     try {
       const v = localStorage.getItem('straddle45.lots');
@@ -389,17 +502,50 @@ export default function Straddle45() {
 
       {/* ── positions ───────────────────────────────────────────────────────── */}
       <div className={styles.card}>
-        <div className={styles.cardTitle}>Open position</div>
+        <div className={styles.cardTitle}>
+          Open position
+          <span className={styles.headRight}>
+            {live && (
+              <button className={styles.expandBtn}
+                onClick={() => legOpen.setOpen(
+                  legOpen.open.has(live.id) ? new Set() : new Set([live.id]))}>
+                {legOpen.open.has(live.id) ? '▾ Hide legs' : '▸ Show legs'}
+              </button>
+            )}
+            {paper && paper.capital_deployed != null && (
+              <span className={styles.headStat}
+                title={paper.capital_deployed_peak != null
+                  ? `needs ${inr(paper.capital_deployed_peak)} free at entry` : ''}>
+                <b>{inr(paper.capital_deployed)}</b>
+                <i>margin blocked · {(100 * paper.capital_deployed / paper.capital).toFixed(0)}% of book</i>
+              </span>
+            )}
+            {paper && (
+              <span className={styles.headStat}>
+                <b className={(paper.running_pnl ?? 0) >= 0 ? styles.pos : styles.neg}>
+                  {inr(paper.running_pnl ?? 0)}
+                  {paper.running_pnl_pct != null && (
+                    <span className={styles.pctPar}>
+                      ({paper.running_pnl_pct >= 0 ? '+' : ''}{paper.running_pnl_pct.toFixed(1)}%)
+                    </span>
+                  )}
+                </b>
+                <i>running P&amp;L</i>
+              </span>
+            )}
+          </span>
+        </div>
         <table className={styles.table}>
           <thead><tr>
+            <th style={{ width: 22 }} />
             <th>Straddle</th><th>Strike</th><th>Expiry</th><th>DTE</th><th>Qty</th>
             <th>Entered</th><th>NIFTY in</th><th>Credit</th>
             <th>Marked</th><th>NIFTY now</th><th>Now</th><th>% of credit</th>
-            <th>MTM ₹</th><th>Exit due</th><th>VIX rank</th><th>Plan</th><th>Source</th>
+            <th>MTM ₹</th><th>Margin</th><th>Exit due</th><th>VIX rank</th><th>Plan</th><th>Source</th>
           </tr></thead>
           <tbody>
             {!live ? (
-              <tr><td colSpan={17} className={styles.emptyCell}>
+              <tr><td colSpan={19} className={styles.emptyCell}>
                 {paper
                   ? 'Flat — the next entry is 45 days before the following monthly expiry.'
                   : 'Paper state not published yet.'}
@@ -408,7 +554,9 @@ export default function Straddle45() {
               const ratio = live.mark_prem != null ? live.mark_prem / live.credit : null;
               const up = (live.mtm_rs ?? 0) >= 0;
               return (
-                <tr>
+                <>
+                <tr className={styles.clickRow} onClick={() => legOpen.toggle(live.id)}>
+                  <td className={styles.caret}>{legOpen.open.has(live.id) ? '▾' : '▸'}</td>
                   <td className={styles.sym}>NIFTY ATM CE + PE</td>
                   <td>{live.strike.toFixed(0)}</td>
                   <td className={styles.muted}>{dmy(live.expiry)}</td>
@@ -428,7 +576,18 @@ export default function Straddle45() {
                   <td className={ratio == null ? '' : ratio <= 0.6 ? styles.pos : ratio >= 1.6 ? styles.neg : ''}>
                     {ratio == null ? '—' : (ratio * 100).toFixed(0) + '%'}
                   </td>
-                  <td className={up ? styles.pos : styles.neg}>{inr(live.mtm_rs ?? 0)}</td>
+                  <td className={up ? styles.pos : styles.neg}>
+                    {inr(live.mtm_rs ?? 0)}
+                    {live.mtm_pct != null && (
+                      <span className={styles.pctPar}>
+                        ({live.mtm_pct >= 0 ? '+' : ''}{live.mtm_pct.toFixed(1)}%)
+                      </span>
+                    )}
+                  </td>
+                  <td title={live.margin_peak != null
+                    ? `needs ${inr(live.margin_peak)} free at entry` : ''}>
+                    {live.margin_real != null ? inr(live.margin_real) : '—'}
+                  </td>
                   <td className={styles.muted}>{dmy(live.exit_due)}<span className={styles.tm}>{CLOSE_TIME}</span></td>
                   <td className={live.on_plan ? '' : styles.warnVal}>
                     {live.vix_rank == null ? '—' : live.vix_rank.toFixed(1)}
@@ -443,6 +602,12 @@ export default function Straddle45() {
                     <span className={styles.srcTag}>{SRC_LABEL[live.mark_src ?? ''] ?? live.mark_src}</span>
                   </td>
                 </tr>
+                {legOpen.open.has(live.id) && (
+                  <tr className={styles.legRow}>
+                    <td colSpan={19}><LegPanel t={live} styles={styles} /></td>
+                  </tr>
+                )}
+                </>
               );
             })()}
           </tbody>
@@ -515,9 +680,22 @@ export default function Straddle45() {
       {/* ── trade history ───────────────────────────────────────────────────── */}
       {paper && paper.closed_trades.length > 0 && (
         <div className={styles.card}>
-          <div className={styles.cardTitle}>Trade history — {paper.n_closed} closed</div>
+          <div className={styles.cardTitle}>
+            Trade history — {paper.n_closed} closed
+            <span className={styles.headRight}>
+              <button className={styles.expandBtn}
+                onClick={() => legOpen.setOpen(
+                  paper.closed_trades.every((t) => legOpen.open.has(t.id))
+                    ? new Set()
+                    : new Set(paper.closed_trades.map((t) => t.id)))}>
+                {paper.closed_trades.every((t) => legOpen.open.has(t.id))
+                  ? '▾ Collapse all' : '▸ Expand all'}
+              </button>
+            </span>
+          </div>
           <table className={styles.table}>
             <thead><tr>
+              <th style={{ width: 22 }} />
               <th>Expiry</th><th>Strike</th><th>Entered</th><th>NIFTY in</th>
               <th>Exited</th><th>NIFTY out</th><th>Move</th><th>Held</th>
               <th>Credit</th><th>Exit</th><th>Gross pts</th><th>Cost</th><th>Net pts</th>
@@ -531,7 +709,9 @@ export default function Straddle45() {
                 const mv = t.exit_spot != null && t.entry_spot
                   ? ((t.exit_spot / t.entry_spot) - 1) * 100 : null;
                 return (
-                  <tr key={t.id}>
+                  <Fragment key={t.id}>
+                  <tr className={styles.clickRow} onClick={() => legOpen.toggle(t.id)}>
+                    <td className={styles.caret}>{legOpen.open.has(t.id) ? '▾' : '▸'}</td>
                     <td className={styles.sym}>{dmy(t.expiry)}</td>
                     <td>{t.strike.toFixed(0)}</td>
                     <td className={styles.muted}>
@@ -563,12 +743,18 @@ export default function Straddle45() {
                     </td>
                     <td><span className={styles.srcTag}>{t.exit_reason}</span></td>
                   </tr>
+                  {legOpen.open.has(t.id) && (
+                    <tr className={styles.legRow}>
+                      <td colSpan={18}><LegPanel t={t} styles={styles} /></td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>
             <tfoot>
               <tr className={styles.totalRow}>
-                <td colSpan={12}>REALISED — {paper.n_closed} trades</td>
+                <td colSpan={13}>REALISED — {paper.n_closed} trades</td>
                 <td className={paper.realised >= 0 ? styles.pos : styles.neg}>
                   {(paper.closed_trades.reduce((a, t) => a + (t.net_pts ?? 0), 0)).toFixed(1)}
                 </td>
