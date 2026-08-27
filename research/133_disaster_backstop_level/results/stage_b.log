@@ -1,0 +1,10 @@
+master trading calendar: 3862 weekdays
+loading SENSEX_1min (SENSEX / minute) from 2021-01-01
+  SENSEX_1min trading days: 1360 (2021-01-01 .. 2026-08-26)
+  expiry-calendar labelled days: 638
+  SENSEX_1min windows built: 1356
+loading NIFTY50_5min (NIFTY50 / 5minute) from 2015-01-01
+  NIFTY50_5min trading days: 2755 (2015-02-02 .. 2026-07-17)
+  expiry-calendar labelled days: 1763
+  NIFTY50_5min windows built: 2754
+DONE stage B

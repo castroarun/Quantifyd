@@ -1,0 +1,26 @@
+r/114 reconciliation - SENSEX DTE0, 09:16 entry -> 15:15, MEASURED costs
+n = 17 sessions (2026-04-30 .. 2026-08-20)
+HOLD   mean +3029/lot  median +2447  win 94%  worst -549  best +8362
+LEG30  mean +674/lot  median +1676  win 71%  worst -3558
+
+[r/114 published: HOLD +2,630/lot, 92%% win, n=12; LEG30 -227/lot, 25%% win]
+[r/131 B0916 + measured costs: HOLD +2,831/lot]
+
+per-day:
+  2026-04-30 credit= 372.35 HOLD=   +5595 LEG30=   -2645
+  2026-05-07 credit= 471.30 HOLD=   +7546 LEG30=   +1137
+  2026-05-14 credit= 462.95 HOLD=   +1633 LEG30=   -3543
+  2026-05-21 credit= 457.60 HOLD=    +297 LEG30=   +3324
+  2026-05-27 credit= 374.05 HOLD=   +2447 LEG30=   +1676
+  2026-06-04 credit= 462.40 HOLD=    +173 LEG30=   +1893
+  2026-06-11 credit= 402.65 HOLD=   +3732 LEG30=   +2594
+  2026-06-18 credit= 367.45 HOLD=    +668 LEG30=   +2140
+  2026-06-25 credit= 317.75 HOLD=   +1906 LEG30=   -3124
+  2026-07-02 credit= 361.55 HOLD=   +1485 LEG30=   +2429
+  2026-07-09 credit= 448.20 HOLD=   +8362 LEG30=   +2337
+  2026-07-16 credit= 371.15 HOLD=   +3838 LEG30=    -772
+  2026-07-23 credit= 340.60 HOLD=   +5548 LEG30=   +1030
+  2026-07-30 credit= 308.85 HOLD=   +1315 LEG30=   +2430
+  2026-08-06 credit= 506.25 HOLD=    -549 LEG30=   -3558
+  2026-08-13 credit= 362.75 HOLD=   +4728 LEG30=   +1352
+  2026-08-20 credit= 271.15 HOLD=   +2766 LEG30=   +2766

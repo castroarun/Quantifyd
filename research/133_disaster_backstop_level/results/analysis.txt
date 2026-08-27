@@ -1,0 +1,355 @@
+========================================================================================================
+research/133 - SENSEX DTE0 disaster backstop, 13:00->15:20, CSL_TIMEB_SENSEX @ 6 lots (qty 120)
+========================================================================================================
+
+## 0. Stage A - the recorded options sample (fidelity, small n)
+n = 17 clean DTE0 sessions 2026-04-30 .. 2026-08-20   (SENSEX lot 20; 1 pt = Rs20/lot = Rs120 at 6L)
+credit pts   p25 200.7  median 236.8  p75 295.1   (today 2026-08-27: 231.63)
+credit in bp p25 25.9  median 30.5  p75 39.7
+HOLD 13:00->15:20  mean +1731/lot  median +1684  win 82%  worst -5240  best +5952
+HOLD at 6 lots     mean +10388      median +10104      worst -31440
+MAE / credit, sorted: 0.00 0.00 0.00 0.00 0.00 0.01 0.02 0.08 0.19 0.33 0.38 0.39 0.43 0.48 0.88 1.06 1.15
+  p50 0.19  p75 0.43  p90 0.88  max 1.15   -> the deployed 0.50 sits at the ~p84 of
+     this small sample: 3 of 17 sessions reached it.
+
+## 1. Credit model - the credit must move with the regime, or the tail is mis-scored
+credit_bp(d) = alpha x rv20_bp(d), rv20 = causal trailing-20-day close-to-close vol
+  fitted on 17 recorded DTE0 sessions:  alpha = 0.360   Pearson r = -0.03
+  2026 sample rv20 median 81.7 bp -> credit 29.4 bp (observed median 30.5 bp)
+  long-sample rv20: p10 48.2  p50 71.8  p90 130.7  max 189.5 bp  -> the 2021-22 regime
+     carried roughly 1.6x the 2026 credit, which is exactly why a frozen 2026 credit
+     would over-fire the backstop in the very regimes that matter.
+
+## 2. The bridge - and the point at which the LINEAR bridge becomes unsafe
+B1 linear (r/122 method): b_median = 0.01084 frac/bp on n=13 days with exc>=20bp
+   dimensionless: F_lin(R) = 0.331 x R   (R = index distance / credit)
+   tail variant (median over the 4 largest excursions): F_lin_t(R) = 0.413 x R
+B2 intrinsic floor (model-free): F_intr(R) = max(0, R - 1)
+   -> the two CROSS at R = 1/(1-0.331) = 1.49. Below that the fitted slope is the
+      better description; ABOVE it the linear bridge understates the loss and the
+      intrinsic floor is the only safe one. THIS is r/122's 'bridged tails are
+      FLOORS' warning, made quantitative: at R=3 the linear bridge says the straddle
+      is 0.99 credits under water; arithmetic says it is at least 2.00.
+B3 = the observed worst on the recorded sample.
+F(R) = max(F_lin, F_intr) is what is used from here on.
+
+### Bridge validation - predicted vs OBSERVED adverse premium, the 17 recorded days
+day           credit   distK      R |   F_lin    F(R) OBSERVED | verdict
+2026-04-30     237.5   505.8   2.13 |    0.67    1.13    1.06 | conservative
+2026-05-07     330.1   356.1   1.08 |    0.47    0.36    0.08 | conservative
+2026-05-14     321.2   264.7   0.82 |    0.36    0.27    0.19 | conservative
+2026-05-21     309.4   274.4   0.89 |    0.37    0.29    0.02 | conservative
+2026-05-27     202.4   222.9   1.10 |    0.26    0.36    0.00 | conservative
+2026-06-04     289.0   341.5   1.18 |    0.43    0.39    0.48 | UNDER-states
+2026-06-11     295.1   639.7   2.17 |    0.88    1.17    1.15 | conservative
+2026-06-18     194.8   190.8   0.98 |    0.25    0.32    0.00 | conservative
+2026-06-25     236.8   582.4   2.46 |    0.74    1.46    0.88 | conservative
+2026-07-02     206.3   275.1   1.33 |    0.38    0.44    0.38 | conservative
+2026-07-09     255.1   384.7   1.51 |    0.49    0.51    0.43 | conservative
+2026-07-16     200.7   224.7   1.12 |    0.27    0.37    0.39 | UNDER-states
+2026-07-23     206.4   137.1   0.66 |    0.19    0.22    0.01 | conservative
+2026-07-30     191.1   228.2   1.19 |    0.30    0.40    0.33 | conservative
+2026-08-06     672.2   187.6   0.28 |    0.20    0.09    0.00 | conservative
+2026-08-13     199.8   127.6   0.64 |    0.17    0.21    0.00 | conservative
+2026-08-20     183.7    97.0   0.53 |    0.11    0.17    0.00 | conservative
+bridge is conservative on 15 of 17 days; under-states on 2 (median error +0.09 credits)
+NOTE the under-statements are NOT a bridge failure in the direction that matters:
+the recorded LTP at a spike LAGS intrinsic (a deep-ITM leg's last trade is stale),
+so the chain shows a premium you could not actually buy back at. The intrinsic floor
+is what a real cover costs. Where they differ, the floor is the honest number.
+
+## 3. Stage B - the multi-year tail inside 13:00->15:20
+
+scope                                  n | exc bp p50    p90    p95    p99     max | R p50   p90   p95   p99   Rmax
+SENSEX 1-min ALL days 2021->        1356 |       37.4   81.8  105.1  161.5   316.0 |  1.38  2.93  3.73  5.17  11.74
+SENSEX 1-min DTE0 (calendar)         131 |       34.2   73.2   87.4  132.6   196.3 |  1.22  2.96  3.83  5.27   6.58
+NIFTY50 5-min ALL days 2015->       2754 |       41.5   97.7  121.4  191.6   406.2 |  1.42  3.28  4.07  6.31  13.51
+NIFTY50 5-min DTE0 (calendar)        375 |       42.4   92.5  131.5  181.4   323.4 |  1.39  3.15  4.43  6.01  10.83
+
+R = index distance from the strike, in CREDITS. R=1 means the move ate the whole
+credit; R=2 means twice the credit. The deployed 50%% backstop is R=1.5 on the
+intrinsic route.
+
+The ten most violent 13:00->15:20 windows in each series:
+  SENSEX 1-min 2021->
+    2023-02-01 Wed exc  316.0 bp ( 1919.6 pts)  credit~ 160.2  R=11.74  term  -153.1 bp  DTE -
+    2022-03-08 Tue exc  206.9 bp ( 1084.0 pts)  credit~ 333.2  R= 3.25  term  +201.7 bp  DTE -
+    2024-06-04 Tue exc  198.6 bp ( 1426.7 pts)  credit~ 249.4  R= 5.86  term   +36.3 bp  DTE 3
+    2026-04-02 Thu exc  196.3 bp ( 1416.4 pts)  credit~ 419.6  R= 3.26  term  +151.9 bp  DTE 0
+    2021-03-18 Thu exc  189.8 bp (  947.5 pts)  credit~ 254.9  R= 3.68  term  -129.3 bp  DTE -
+    2022-05-13 Fri exc  181.8 bp (  975.1 pts)  credit~ 214.7  R= 4.39  term  -156.7 bp  DTE -
+    2022-04-29 Fri exc  175.9 bp ( 1019.1 pts)  credit~ 247.4  R= 4.03  term  -175.8 bp  DTE -
+    2024-09-12 Thu exc  174.6 bp ( 1426.1 pts)  credit~ 158.0  R= 8.97  term  +147.5 bp  DTE 1
+    2026-07-08 Wed exc  172.0 bp ( 1334.3 pts)  credit~ 201.5  R= 6.66  term  -129.1 bp  DTE -
+    2021-03-12 Fri exc  167.3 bp (  860.2 pts)  credit~ 261.8  R= 3.28  term  -132.8 bp  DTE -
+  NIFTY50 5-min 2015->
+    2020-03-17 Tue exc  406.2 bp (  377.5 pts)  credit~  28.4  R=13.51  term  -381.8 bp  DTE 2
+    2020-12-21 Mon exc  383.5 bp (  523.9 pts)  credit~  41.7  R=12.35  term  -261.4 bp  DTE 3
+    2023-02-01 Wed exc  335.0 bp (  601.5 pts)  credit~  54.8  R=10.88  term  -183.9 bp  DTE 1
+    2020-03-19 Thu exc  323.4 bp (  268.6 pts)  credit~  25.4  R=10.83  term   -56.3 bp  DTE 0
+    2020-04-15 Wed exc  317.2 bp (  290.7 pts)  credit~  28.0  R= 9.85  term  -261.8 bp  DTE 1
+    2020-03-16 Mon exc  302.9 bp (  286.2 pts)  credit~  28.9  R= 9.86  term  -259.1 bp  DTE 3
+    2020-03-02 Mon exc  289.2 bp (  328.7 pts)  credit~  34.7  R= 9.03  term  -202.1 bp  DTE 3
+    2020-03-26 Thu exc  276.7 bp (  240.5 pts)  credit~  26.5  R= 9.26  term   -59.9 bp  DTE 0
+    2020-03-13 Fri exc  270.7 bp (  270.9 pts)  credit~  30.5  R= 8.73  term   -37.5 bp  DTE 4
+    2020-03-27 Fri exc  269.2 bp (  231.7 pts)  credit~  26.3  R= 9.13  term   +87.6 bp  DTE 3
+
+## 4. Fire rate - how often each level actually trips, on BOTH samples
+
+Stage A = the live mechanic replayed on the real 1-minute chain (dwell=2).
+Stage B = bridged, F(R) >= L, with the VOL-SCALED credit. 'lin' = the r/122 linear
+route alone (shown to expose how much it under-fires deep in the tail).
+
+arm        cap/lot     cap@6L |  Stage A n=17 |  SX DTE0    (lin)    SX all |  NF DTE0    NF all
+------------------------------------------------------------------------------------------------
+FRAC25        1465       8787 |     8    47.1% |    75.6%    75.6%     83.2% |    83.2%     84.9%
+FRAC30        1701      10208 |     8    47.1% |    65.6%    65.6%     74.2% |    75.7%     76.4%
+FRAC35        1938      11629 |     7    41.2% |    61.1%    61.1%     66.4% |    66.4%     68.7%
+FRAC40        2175      13050 |     5    29.4% |    54.2%    53.4%     58.6% |    61.6%     61.8%
+FRAC50        2649      15893 |     3    17.6% |    40.5%    38.2%     46.8% |    49.6%     50.9%
+FRAC60        3122      18735 |     3    17.6% |    38.2%    29.8%     40.9% |    40.8%     43.8%
+FRAC75        3833      22998 |     3    17.6% |    35.1%    22.1%     35.2% |    34.1%     37.4%
+FRAC100       5017      30104 |     2    11.8% |    27.5%     9.9%     27.3% |    28.3%     29.8%
+
+rupee-per-lot arms (credit-invariant; level = credit + Rs/lot / 20):
+RS1000        1281       7684 |     9    52.9% |    80.2%        -     80.5% |    28.0%     23.1%
+RS1500        1781      10685 |     7    41.2% |    58.0%        -     57.9% |    18.1%     13.8%
+RS2000        2281      13687 |     5    29.4% |    48.1%        -     45.6% |    11.7%      8.0%
+RS2500        2781      16688 |     4    23.5% |    41.2%        -     36.9% |     7.5%      4.7%
+RS3000        3282      19689 |     3    17.6% |    34.4%        -     30.8% |     4.5%      3.1%
+RS4000        4282      25692 |     3    17.6% |    25.2%        -     22.9% |     2.7%      1.5%
+RS5000        5282      31695 |     2    11.8% |    18.3%        -     16.3% |     1.1%      0.7%
+
+## 5. Save vs cost - what the level does on the days it fires (Stage A, live mechanic)
+
+arm      | fires  saves  costs |  saved/lot   cost/lot |    net/lot     net@6L |   book/lot  worst/lot      t
+-------------------------------------------------------------------------------------------------------------
+FRAC25   |     8      2      6 |      +6160     -20302 |       -832      -4991 |       +899      -3064  -1.34
+FRAC30   |     8      2      6 |      +3435     -20451 |      -1001      -6006 |       +730      -3416  -1.72
+FRAC35   |     7      2      5 |      +3478     -19111 |       -920      -5518 |       +812      -3652  -1.49
+FRAC40   |     5      2      3 |      +3478     -15021 |       -679      -4074 |      +1052      -3416  -1.13
+FRAC50   |     3      2      1 |      +2361      -5785 |       -201      -1208 |      +1530      -3416  -0.54
+FRAC60   |     3      2      1 |       +638      -5785 |       -303      -1817 |      +1429      -4804  -0.88
+FRAC75   |     3      1      2 |      +1029      -6775 |       -338      -2028 |      +1393      -4211  -0.85
+FRAC100  |     2      0      2 |         +0      -8712 |       -512      -3075 |      +1219      -6122  -1.11
+RS1000   |     9      2      7 |      +5854     -27019 |      -1245      -7470 |       +486      -3064  -1.75
+RS1500   |     7      2      5 |      +3801     -19111 |       -901      -5404 |       +831      -3652  -1.44
+RS2000   |     5      2      3 |      +3478     -15021 |       -679      -4074 |      +1052      -3416  -1.13
+RS2500   |     4      2      2 |      +2361     -13489 |       -655      -3928 |      +1077      -3416  -1.14
+RS3000   |     3      2      1 |      +3493      -5785 |       -135       -809 |      +1597      -3260  -0.35
+RS4000   |     3      1      2 |      +1029      -7956 |       -407      -2445 |      +1324      -5305  -0.87
+RS5000   |     2      0      2 |         +0      -8180 |       -481      -2887 |      +1250      -6248  -1.14
+
+baseline, NO backstop: book mean +1731/lot (+10388 at 6L), worst -5240/lot (-31440 at 6L)
+Family-wise: 15 arms screened -> Sidak two-sided 5% needs p < 0.0034, i.e. |t| >= ~3.30
+
+## 5b. Credit-model sensitivity - the fire rate depends on the credit you SELL
+
+The bridge needs a credit for each historical day. Four models are carried:
+  C25/CMED/C75 = the 2026 credit ladder frozen at 25.9 / 30.5 / 39.7 bp of spot
+  VOL          = alpha x trailing-20d realised vol (Pearson r = -0.03 in-sample - the
+                 fit has NO explanatory power inside the 4-month window, so it is a
+                 SENSITIVITY, not the primary. Across regimes it is still the only
+                 scaling available, and it moves in the right direction.
+
+arm      |      Stage A | SXd0 C25  SXd0 CMED  SXd0 C75  SXd0 VOL
+FRAC25   |     8  47.1% |    77.9%     69.5%     54.2%     75.6%
+FRAC30   |     8  47.1% |    66.4%     56.5%     47.3%     65.6%
+FRAC35   |     7  41.2% |    57.3%     51.1%     35.9%     61.1%
+FRAC40   |     5  29.4% |    51.9%     45.0%     26.7%     54.2%
+FRAC50   |     3  17.6% |    43.5%     35.1%     17.6%     40.5%
+FRAC60   |     3  17.6% |    38.2%     28.2%     13.0%     38.2%
+FRAC75   |     3  17.6% |    35.9%     22.1%     12.2%     35.1%
+FRAC100  |     2  11.8% |    23.7%     14.5%      6.9%     27.5%
+
+## 5c. Is the 85-day options window representative? (the question Arun asked)
+  recorded window 2026-04-20 -> 08-26    n= 17  exc bp: p50  26.6  p75  40.7  p90  63.0  p95  76.3  max   87.4
+  full SENSEX DTE0 sample 2024 -> 2026   n=131  exc bp: p50  34.2  p75  50.2  p90  73.2  p95  87.4  max  196.3
+
+  the recorded window's median DTE0 afternoon excursion is 78% of the long
+  sample's, its p90 is 86% and its p95 87%; and its WORST day (87 bp) is only
+  45% of the long sample's worst (196 bp). The options sample is NOT a fair draw
+  from the tail - it is a calm slice, and it contains NO disaster at all.
+  THAT is exactly why the backstop level cannot be set on it.
+
+## 5d. LONG-SAMPLE save vs cost - the table the recommendation rests on
+
+For each historical day: HOLD books the terminal intrinsic at 15:20; the backstop
+books -(L + overshoot) x credit and stays flat. Overshoot is taken from the
+MEASURED Stage-A distribution (median 0.058 credits, p90 0.210) and the forced-exit
+slippage of 13.1 pts is charged on every fire.
+
+  SENSEX DTE0 2024->2026  (n=131)
+    HOLD (no backstop)   mean    +537/lot  win 61.8%  p01    -11858  worst    -12612  (    -75674 at 6L)
+    (rupee columns are PER LOT of that venue: SENSEX lot 20, NIFTY lot 65;
+     the @6L column is meaningful for the SENSEX scopes only)
+    arm           fires    saves    costs |  effect/lot   effect@6L      t |  book worst     worst@6L
+    FRAC25          99       36       63 |        -672       -4034  -2.31 |       -3422       -20530
+    FRAC30          86       35       51 |        -383       -2295  -1.40 |       -3930       -23580
+    FRAC35          80       32       48 |        -226       -1358  -0.94 |       -3712       -22274
+    FRAC40          71       32       39 |          -6         -37  -0.03 |       -4132       -24792
+    FRAC50          53       27       26 |        +289       +1732   1.71 |       -4972       -29829
+    FRAC60          50       25       25 |        +201       +1203   1.24 |       -5811       -34867
+    FRAC75          46       21       25 |         +95        +568   0.63 |       -7070       -42422
+    FRAC100         36       16       20 |         +18        +105   0.14 |       -9169       -55015
+    HYB50_3000      56       27       29 |         +66        +398   0.30 |       -3881       -23288
+    HYB50_2500      61       28       33 |         -77        -465  -0.33 |       -3381       -20287
+    HYB60_3500      50       25       25 |        +212       +1273   1.28 |       -4276       -25653
+
+  SENSEX ALL days 2021->2026  (n=1356)
+    HOLD (no backstop)   mean     -58/lot  win 58.3%  p01    -13286  worst    -20781  (   -124684 at 6L)
+    (rupee columns are PER LOT of that venue: SENSEX lot 20, NIFTY lot 65;
+     the @6L column is meaningful for the SENSEX scopes only)
+    arm           fires    saves    costs |  effect/lot   effect@6L      t |  book worst     worst@6L
+    FRAC25        1128      398      730 |        -479       -2876  -5.27 |       -3425       -20549
+    FRAC30        1006      385      621 |        -281       -1687  -3.27 |       -3930       -23580
+    FRAC35         900      369      531 |        -113        -676  -1.40 |       -3832       -22990
+    FRAC40         794      348      445 |         +16         +97   0.21 |       -4266       -25596
+    FRAC50         634      314      320 |        +211       +1267   3.09 |       -5135       -30808
+    FRAC60         555      288      267 |        +223       +1337   3.48 |       -6003       -36019
+    FRAC75         477      243      233 |        +158        +948   2.60 |       -7306       -43837
+    FRAC100        370      190      179 |        +127        +761   2.44 |       -9478       -56867
+    HYB50_3000     642      315      327 |        +188       +1125   2.69 |       -3881       -23288
+    HYB50_2500     661      317      344 |        +142        +854   1.98 |       -3382       -20291
+    HYB60_3500     557      290      267 |        +227       +1364   3.54 |       -4293       -25758
+
+  NIFTY50 DTE0 2019->2026 (incl COVID)  (n=375)
+    HOLD (no backstop)   mean    -322/lot  win 59.5%  p01    -14356  worst    -17720  (   -106321 at 6L)
+    (rupee columns are PER LOT of that venue: SENSEX lot 20, NIFTY lot 65;
+     the @6L column is meaningful for the SENSEX scopes only)
+    arm           fires    saves    costs |  effect/lot   effect@6L      t |  book worst     worst@6L
+    FRAC25         312       88      224 |        -806       -4835  -4.62 |       -2466       -14794
+    FRAC30         284       84      200 |        -630       -3781  -3.76 |       -2725       -16348
+    FRAC35         249       83      165 |        -400       -2399  -2.51 |       -2984       -17902
+    FRAC40         231       80      151 |        -346       -2079  -2.23 |       -3243       -19456
+    FRAC50         186       72      114 |        -121        -726  -0.85 |       -3761       -22564
+    FRAC60         153       68       85 |         +16         +97   0.12 |       -4279       -25671
+    FRAC75         128       62       66 |         +83        +499   0.71 |       -5055       -30333
+    FRAC100        106       46       60 |         +38        +226   0.36 |       -6286       -37718
+    HYB50_3000     186       72      114 |        -121        -726  -0.85 |       -3761       -22564
+    HYB50_2500     186       72      114 |        -120        -722  -0.85 |       -3672       -22031
+    HYB60_3500     153       68       85 |         +16         +97   0.12 |       -4279       -25671
+
+  NIFTY50 ALL days 2015->2026 (incl COVID)  (n=2754)
+    HOLD (no backstop)   mean    -362/lot  win 54.9%  p01    -11754  worst    -21644  (   -129862 at 6L)
+    (rupee columns are PER LOT of that venue: SENSEX lot 20, NIFTY lot 65;
+     the @6L column is meaningful for the SENSEX scopes only)
+    arm           fires    saves    costs |  effect/lot   effect@6L      t |  book worst     worst@6L
+    FRAC25        2339      668     1671 |        -774       -4646 -13.79 |       -2480       -14882
+    FRAC30        2103      646     1457 |        -567       -3405 -10.67 |       -2742       -16451
+    FRAC35        1892      610     1279 |        -404       -2424  -7.97 |       -3003       -18019
+    FRAC40        1701      584     1115 |        -278       -1667  -5.73 |       -3264       -19587
+    FRAC50        1401      541      860 |         -89        -536  -2.02 |       -3787       -22723
+    FRAC60        1206      490      716 |         -20        -120  -0.48 |       -4310       -25859
+    FRAC75        1029      422      606 |          +9         +52   0.23 |       -5055       -30333
+    FRAC100        822      330      491 |         -10         -61  -0.29 |       -6342       -38050
+    HYB50_3000    1401      541      860 |         -89        -536  -2.02 |       -3787       -22723
+    HYB50_2500    1401      541      860 |         -89        -534  -2.01 |       -3675       -22049
+    HYB60_3500    1206      490      716 |         -20        -120  -0.48 |       -4310       -25859
+
+## 6. Gap-through - does the premium pass THROUGH the level, or jump past it?
+
+overshoot = combined at the first minute at/above the level, minus the level.
+Realised also pays the MEASURED forced-exit slippage 2 x 6.548 = 13.10 pts = Rs262/lot
+(Rs1572 at 6 lots) plus whatever the 2-poll dwell costs between touch and fill.
+arm      day             level    touch  over pts   over %  dwell pts realised/lot intended/lot excess/lot
+FRAC25   2026-04-30      296.9    305.2       8.4     2.8%        6.8        -1772        -1188       -584
+FRAC25   2026-06-04      361.2    421.8      60.6    16.8%        6.2        -3064        -1445      -1619
+FRAC25   2026-06-11      368.9    378.3       9.4     2.6%      -15.3        -1641        -1476       -166
+FRAC25   2026-06-25      295.9    296.1       0.1     0.0%      -20.5        -1057        -1184        127
+FRAC25   2026-07-02      257.9    285.0      27.1    10.5%      -38.8        -1076        -1032        -44
+FRAC25   2026-07-09      318.9    364.5      45.6    14.3%      -33.0        -1810        -1276       -534
+FRAC25   2026-07-16      250.8    254.8       4.0     1.6%       -2.5        -1312        -1003       -309
+FRAC25   2026-07-30      238.8    239.5       0.7     0.3%      -24.2         -763         -955        192
+FRAC30   2026-04-30      308.8    312.1       3.3     1.1%       10.0        -1972        -1425       -547
+FRAC30   2026-06-04      375.7    421.8      46.1    12.3%        6.2        -3064        -1734      -1330
+FRAC30   2026-06-11      383.6    387.4       3.8     1.0%       -6.1        -2007        -1771       -236
+FRAC30   2026-06-25      307.8    382.4      74.6    24.2%       11.1        -3416        -1420      -1996
+FRAC30   2026-07-02      268.2    285.0      16.8     6.3%      -38.8        -1076        -1238        162
+FRAC30   2026-07-09      331.6    364.5      32.9     9.9%      -33.0        -1810        -1531       -279
+FRAC30   2026-07-16      260.9    279.4      18.5     7.1%       -4.9        -1757        -1204       -553
+FRAC30   2026-07-30      248.4    254.5       6.1     2.5%      -64.1         -267        -1146        879
+FRAC35   2026-04-30      320.6    322.1       1.4     0.4%       83.9        -3652        -1662      -1990
+FRAC35   2026-06-04      390.1    421.8      31.7     8.1%        6.2        -3064        -2023      -1041
+FRAC35   2026-06-11      398.4    418.7      20.3     5.1%      -39.6        -1964        -2066        102
+FRAC35   2026-06-25      319.6    382.4      62.8    19.6%       11.1        -3416        -1657      -1759
+FRAC35   2026-07-02      278.5    285.0       6.5     2.3%      -38.8        -1076        -1444        368
+FRAC35   2026-07-09      344.4    364.5      20.1     5.8%      -33.0        -1810        -1786        -24
+FRAC35   2026-07-16      270.9    279.4       8.5     3.1%       -4.9        -1757        -1405       -352
+FRAC40   2026-04-30      332.5    406.0      73.5    22.1%      -19.6        -3260        -1900      -1360
+FRAC40   2026-06-04      404.6    421.8      17.2     4.3%        6.2        -3064        -2312       -752
+FRAC40   2026-06-11      413.1    418.7       5.6     1.3%      -39.6        -1964        -2361        397
+FRAC40   2026-06-25      331.4    382.4      50.9    15.4%       11.1        -3416        -1894      -1522
+FRAC40   2026-07-09      357.1    364.5       7.4     2.1%      -33.0        -1810        -2041        231
+FRAC50   2026-04-30      356.2    406.0      49.8    14.0%      -19.6        -3260        -2375       -885
+FRAC50   2026-06-11      442.6    446.8       4.2     0.9%      -11.9        -3081        -2951       -130
+FRAC50   2026-06-25      355.1    382.4      27.3     7.7%       11.1        -3416        -2368      -1048
+FRAC60   2026-04-30      380.0    406.0      26.0     6.8%      -19.6        -3260        -2850       -410
+FRAC60   2026-06-11      472.2    481.1       8.9     1.9%       40.1        -4804        -3541      -1263
+FRAC60   2026-06-25      378.8    382.4       3.6     1.0%       11.1        -3416        -2841       -575
+FRAC75   2026-04-30      415.6    429.4      13.8     3.3%        0.2        -4123        -3562       -560
+FRAC75   2026-06-11      516.4    521.1       4.7     0.9%      -29.7        -4211        -4426        216
+FRAC75   2026-06-25      414.3    446.2      31.9     7.7%      -36.4        -3744        -3551       -193
+FRAC100  2026-04-30      475.0    476.8       1.8     0.4%       11.9        -5305        -4750       -555
+FRAC100  2026-06-11      590.2    593.2       3.0     0.5%       -6.3        -6122        -5902       -220
+
+overshoot / credit: median 0.058  p90 0.210  max 0.315  (n=39 fires across all arms)
+realised MINUS intended cap: median -410/lot  worst -1996/lot  (-11973 at 6L)
+  -> the level is NOT the loss. Overshoot + dwell + 13 pts of forced-exit
+     slippage sit on top of it, every time.
+
+### Long-sample gap check - SENSEX 1-min DTE0, does the INDEX walk to the level?
+L       breaches    gapped    gap % | overshoot in CREDITS at the crossing minute
+0.25          65        31    47.7% | med 0.09  p90 0.31  max 2.07
+0.30          64        31    48.4% | med 0.09  p90 0.27  max 2.02
+0.35          63        26    41.3% | med 0.09  p90 0.28  max 1.97
+0.40          60        23    38.3% | med 0.08  p90 0.23  max 1.92
+0.50          53        20    37.7% | med 0.08  p90 0.19  max 1.82
+0.60          50        16    32.0% | med 0.07  p90 0.19  max 1.72
+0.75          46        17    37.0% | med 0.05  p90 0.26  max 1.57
+1.00          36         9    25.0% | med 0.05  p90 0.31  max 1.32
+
+## 7. The unstopped tail at 6 lots, and the r/118 reconciliation
+
+r/118: DTE0 over 127 sessions ~34% losers, worst ~ -Rs21,500/lot (= -Rs129000 at 6L).
+That is a FULL-DAY 09:16->15:15 construction. This book holds only the last 2h20m,
+so the two are NOT the same risk and must be compared window-for-window.
+
+  SENSEX DTE0 13:00->15:20  (n=131)
+    worst intraday MTM/lot : p90 -7149  p95 -9933  p99 -18656  worst -18979
+    HOLD net at 15:20 /lot : mean +537  win 62%  p05 -6819  p01 -11858  worst -12612
+    at 6 lots             : HOLD p01 -71148   HOLD worst -75674   MTM worst -113871
+  SENSEX ALL days 13:00->15:20  (n=1356)
+    worst intraday MTM/lot : p90 -6671  p95 -8862  p99 -16497  worst -34406
+    HOLD net at 15:20 /lot : mean -58  win 58%  p05 -6591  p01 -13286  worst -20781
+    at 6 lots             : HOLD p01 -79718   HOLD worst -124684   MTM worst -206436
+
+## 8. OOS split on Stage A (2026-06-30 midpoint) - effect of the level, Rs/lot
+  FRAC25   H1 n= 9      -649/lot | H2 n= 8     -1038/lot | both halves negative: YES
+  FRAC30   H1 n= 9      -974/lot | H2 n= 8     -1031/lot | both halves negative: YES
+  FRAC35   H1 n= 9     -1156/lot | H2 n= 8      -654/lot | both halves negative: YES
+  FRAC40   H1 n= 9     -1112/lot | H2 n= 8      -192/lot | both halves negative: YES
+  FRAC50   H1 n= 9      -380/lot | H2 n= 8        +0/lot | both halves negative: no
+  FRAC60   H1 n= 9      -572/lot | H2 n= 8        +0/lot | both halves negative: no
+  FRAC75   H1 n= 9      -638/lot | H2 n= 8        +0/lot | both halves negative: no
+  FRAC100  H1 n= 9      -968/lot | H2 n= 8        +0/lot | both halves negative: no
+
+## 9. What the level actually costs, at today's credit and 6 lots
+
+credit today (2026-08-27, DTE0) = 231.63 pts. Naive arithmetic says a 50% backstop
+caps the loss at 0.50 x 231.63 x 20 = Rs2316/lot = Rs13898 at 6 lots.
+It does not. The measured realised cap is:
+
+L      |     level |    naive/lot   median/lot      p90/lot |    median@6L       p90@6L
+0.25   |    289.54 |         1158         1708         2410 |        10246        14458
+0.30   |    301.12 |         1390         1939         2641 |        11636        15849
+0.35   |    312.70 |         1621         2171         2873 |        13026        17239
+0.40   |    324.28 |         1853         2403         3105 |        14417        18630
+0.50   |    347.44 |         2316         2866         3568 |        17198        21410
+0.60   |    370.61 |         2780         3330         4032 |        19978        24191
+0.75   |    405.35 |         3474         4025         4727 |        24150        28362
+1.00   |    463.26 |         4633         5184         5886 |        31102        35315
+
+The gap between 'naive' and 'median' is overshoot + the 2-poll dwell + the measured
+13.1 pts of forced-exit slippage. Budget the MEDIAN column, not the naive one; and
+know that 38% of DTE0 breaches at L=0.50 jump the level inside one minute.
