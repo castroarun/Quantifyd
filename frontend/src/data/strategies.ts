@@ -178,6 +178,7 @@ export const SYSTEMS: StrategySystem[] = [
       ['Stop', 'Combined premium +20% (both legs together)'],
       ['Exit', 'Time exit per config, or the combined stop'],
       ['Why live', 'Combined-SL won on DTE1 in the DTE study where per-leg 30% did not'],
+      ['Days', 'Mon/Tue/Fri live (DTE1/DTE0/DTE2). NIFTY is OFF on Thursdays from 27-Aug - the DTE3 cell runs on PAPER as NAS_COMB20_THU (5 lots). Wednesday has no cell.'],
     ],
     rulesDoc: 'research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py (BOOKS)',
     dashboard: '/straddles',
@@ -185,6 +186,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'sensex-nifty-stop-by-dte', title: 'Stop calibration by DTE — where combined-SL beats per-leg' },
     ],
     changeLog: [
+      { date: '27 Aug 2026', text: 'NIFTY OFF on Thursdays live - paper only. Reverses the 19-20 Aug Option-B merge (commit e9aa381) that folded NIFTY-Thu into this book as a 5-lot DTE3 cell after the separate 3-lot Thursday book was retired. Arun call: Thursday is SENSEX expiry and its best day of the week, and NIFTY at DTE3 was competing for the same margin. NIFTY live lots on Thursday go 5 to 0. The cell continues as NAS_COMB20_THU (paper, 5L, 09:16-15:20 SL20) so the DTE3 evidence that motivated Option B (grid mean ~Rs16,956 at 91%) keeps accumulating and this is revisited on data rather than on one bad session. Ops review 2026-10-30.' },
       { date: '17 Aug 2026', text: 'Account-level book stop bought back COMB\'s CE without COMB knowing — unified per-system ledger pending (TODO 2026-08-24).' },
       { date: '14 Aug 2026', text: 'Armed with real money at 2 lots.' },
     ],

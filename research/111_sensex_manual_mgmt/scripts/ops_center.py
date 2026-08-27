@@ -94,6 +94,8 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("NIFTY Thursday off-live - review the paper twin vs the Option-B case", "2026-10-30", "PENDING",
+     "2026-08-27: NIFTY went dark on Thursdays live (5 lots -> 0), reversing the 19-20 Aug Option-B merge. NAS_COMB20_THU (paper, 5L, 09:16-15:20 SL20) now carries the cell. Judge on ~8 paper Thursdays: does DTE3 still show the grid mean (~Rs16,956 at 91%) that motivated Option B, and does the SENSEX book measurably benefit from the freed Thursday margin (peak concurrent was 73% of available WITH NIFTY on)? If the paper cell holds up and margin is not binding, Option B has a case for reinstatement at reduced size."),
     ("SENSEX naked-survivor trail fix - verify live behaviour over the next ~20 survivor episodes", "2026-10-01", "PENDING",
      "research/128 shipped 2026-08-26 after 15:40: the trail is now a CEILING (ratcheting upper band, p7/m3.0, ~60s confirm) held in memory, and sl_price stays at BREAKEVEN. The old code wrote the ST into sl_price where it self-triggered on 62% of episodes. Verify: (a) the log shows SENSEX_ST_CEIL with a ceiling ABOVE the live premium, never below; (b) exits are tagged ST_TRAIL_EXIT, not SL_HIT; (c) realised vs the predicted +Rs315/lot over the incumbent. NOTE the honest limit: vs breakeven-only this is a WASH out-of-sample (+Rs63/lot) and nothing survived a family-wise haircut at n=86 - this shipped as a CORRECTNESS fix. Re-run the grid at ~150 episodes (~Feb 2027)."),
     ("Wednesday/DTE1 SENSEX sizing - the bigger lever than the trail (research/128 byproduct)", "2026-09-25", "PENDING",
