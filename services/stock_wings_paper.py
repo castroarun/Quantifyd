@@ -354,6 +354,29 @@ def leg_detail(m, r, day):
     return out
 
 
+def statutory_charges(m, r):
+    """EXACT-model broker+statutory charges for one closed round trip, per the
+    Zerodha F&O options rate card: brokerage Rs20/executed order x8, STT 0.1%
+    of SELL premium (entry shorts + wings sold back at exit), NSE txn 0.03503%
+    of premium both sides, SEBI Rs10/crore, stamp 0.003% buy side, GST 18% on
+    brokerage+txn+SEBI. Separate from modeled slippage, which is an execution-
+    quality ASSUMPTION the paper soak exists to measure."""
+    q = r["qty"]
+    le = {(l["side"], l["opt"]): (l["price"] or 0.0) for l in (leg_detail(m, r, r["entry_date"]) or [])}
+    lx = {(l["side"], l["opt"]): (l["price"] or 0.0) for l in (leg_detail(m, r, r["exit_date"]) or [])}
+    sell_prem = (le.get(("SHORT", "CE"), 0) + le.get(("SHORT", "PE"), 0)
+                 + lx.get(("LONG", "CE"), 0) + lx.get(("LONG", "PE"), 0)) * q
+    buy_prem = (le.get(("LONG", "CE"), 0) + le.get(("LONG", "PE"), 0)
+                + lx.get(("SHORT", "CE"), 0) + lx.get(("SHORT", "PE"), 0)) * q
+    total = sell_prem + buy_prem
+    brokerage = 20.0 * 8
+    stt = 0.001 * sell_prem
+    txn = 0.0003503 * total
+    sebi = total / 1e7 * 10
+    stamp = 0.00003 * buy_prem
+    return brokerage + stt + txn + sebi + stamp + 0.18 * (brokerage + txn + sebi)
+
+
 def intrinsic_value(r, spot):
     sv = max(0.0, spot - r["kce"]) + max(0.0, r["kpe"] - spot)
     wv = max(0.0, spot - r["wce"]) + max(0.0, r["wpe"] - spot)
@@ -675,6 +698,15 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
     costs_paid = sum(r["cost_rs"] or 0 for r in closed)          # in realised already
     gross_closed = sum(r["gross_rs"] or 0 for r in closed)
     est_open_exit_costs = sum(costs_rs(r, r["mark_val"] or 0.0) for r in openp)
+    # split the model cost: exact statutory (Zerodha rate card, real leg values)
+    # vs modeled slippage (the 0.5%/side fill-quality assumption)
+    charges_stat = 0.0
+    for r in closed:
+        try:
+            charges_stat += statutory_charges(m, r)
+        except Exception:
+            charges_stat += 20.0 * 8 * 1.18
+    charges_slip = max(0.0, costs_paid - charges_stat)
     wins = [r for r in closed if (r["net_rs"] or 0) > 0]
     payload = dict(
         asof=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -688,6 +720,7 @@ def publish(con, m, days, live=None, verbose=True, upc=None, mg=None):
         bhav_through=days[-1],
         realised=realised, unrealised=unreal, nav=CAPITAL + realised + unreal,
         costs_paid=costs_paid, gross_closed=gross_closed,
+        charges_stat=charges_stat, charges_slip=charges_slip,
         est_open_exit_costs=est_open_exit_costs,
         n_open=len(openp), n_closed=len(closed),
         capital_deployed=deployed, capital_deployed_est=deployed_est,

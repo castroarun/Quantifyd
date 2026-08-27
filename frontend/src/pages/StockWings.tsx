@@ -89,6 +89,7 @@ type Paper = {
   links: { study: string; tearsheet: string; github: string };
   bhav_through: string; realised: number; unrealised: number; nav: number;
   costs_paid?: number; gross_closed?: number; est_open_exit_costs?: number;
+  charges_stat?: number; charges_slip?: number;
   n_open: number; n_closed: number; win_rate: number | null;
   capital_deployed?: number | null; capital_deployed_est?: number | null;
   margin_asof?: string; running_pnl?: number;
@@ -275,11 +276,18 @@ export default function StockWings() {
           <div className={s.kpiLabel}>Closed P&L · gross</div>
         </div>
         <div className={s.kpi}
-          title="slippage 0.5%/side + STT + txn charges + ₹20×8 brokerage + GST, across all closed trades — already deducted from net/NAV">
+          title="EXACT Zerodha rate card on the real leg values: ₹20×8 brokerage + STT 0.1% sell premium + NSE txn 0.03503% + SEBI + stamp + GST. These are the only fees a broker would actually bill.">
           <div className={`${s.kpiVal} ${s.neg}`}>
-            {p?.costs_paid != null ? inr(-Math.abs(p.costs_paid)) : '—'}
+            {p?.charges_stat != null ? inr(-Math.abs(p.charges_stat)) : '—'}
           </div>
-          <div className={s.kpiLabel}>Charges · all-in</div>
+          <div className={s.kpiLabel}>Broker charges · est.</div>
+        </div>
+        <div className={s.kpi}
+          title="The 0.5%-per-side fill-quality ASSUMPTION on premium turnover — not a broker fee. Real slippage vs this model is exactly what the paper soak measures once LIVE fills accumulate.">
+          <div className={`${s.kpiVal} ${s.neg}`}>
+            {p?.charges_slip != null ? inr(-Math.abs(p.charges_slip)) : '—'}
+          </div>
+          <div className={s.kpiLabel}>Modeled slippage</div>
         </div>
         <div className={s.kpi}>
           <div className={`${s.kpiVal} ${p && p.realised >= 0 ? s.pos : s.neg}`}>{p ? inr(p.realised) : '—'}</div>
