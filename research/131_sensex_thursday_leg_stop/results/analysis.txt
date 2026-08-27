@@ -1,0 +1,513 @@
+====================================================================================================
+R/114 RECONCILIATION - LEG30 (SBOTH, standalone), published: mean -227/lot, 25% win, n=12
+====================================================================================================
+entryset  cost      arm          n    total     mean   win%     worst      best
+B0916     R114COST  HOLD        12    31926     2660     92      -713      8192
+B0916     R114COST  LEG30       12    -2488     -207     25     -2480      2591
+B0916     MEASURED  HOLD        12    33974     2831     92      -549      8362
+B0916     MEASURED  LEG30       12    -3259     -272     25     -2571      2766
+A0920     R114COST  HOLD        17    41788     2458     82      -384      7377
+A0920     R114COST  LEG30       17    -6340     -373     24     -2423       685
+A0920     MEASURED  HOLD        17    44683     2628     82      -212      7546
+A0920     MEASURED  LEG30       17    -7799     -459     24     -2515       601
+
+======================================================================================================================
+ENTRY SET A0920 | OUTER LAYER STANDALONE | n=17 sessions (2026-04-30 .. 2026-08-20) | net Rs per LOT (lot=20)
+======================================================================================================================
+level     surv       n    total     mean   median   win%     worst      best  fire% medfire   dMEAN       t
+HOLD      -         17    44683     2628     2447     82      -212      7546      0       -       -       -
+LEG30     SBOTH     17    -7799     -459     -419     24     -2515       601    100   09:39   -3087   -6.23
+LEG30     SHOLD     17     8155      480     1264     71     -4808      3452    100   09:39   -2149   -3.09
+LEG30     STRAIL    17    -6654     -391     -355     47     -3524      3452    100   09:39   -3020   -4.43
+LEG40     SBOTH     17   -10877     -640     -644     18     -2965      1590    100   09:48   -3268   -6.19
+LEG40     SHOLD     17     -435      -26      693     59     -5076      2893    100   09:48   -2654   -3.69
+LEG40     STRAIL    17   -12750     -750     -607     24     -4011      2893    100   09:48   -3378   -4.75
+LEG50     SBOTH     17   -12293     -723     -658     18     -3912      1590    100   09:51   -3351   -6.20
+LEG50     SHOLD     17    -4010     -236      333     59     -5267      2893    100   09:51   -2864   -3.96
+LEG50     STRAIL    17   -15722     -925     -814     24     -4056      2893    100   09:51   -3553   -4.99
+LEG60     SBOTH     17    -2005     -118     -382     35     -1736      4626     82   10:20   -2746   -4.19
+LEG60     SHOLD     17    -3310     -195      595     59     -5650      4626     82   10:20   -2823   -3.46
+LEG60     STRAIL    17    -5570     -328     -758     35     -2716      4626     82   10:20   -2956   -4.06
+LEG75     SBOTH     17    -5170     -304     -996     18     -2196      4626     82   11:57   -2933   -4.44
+LEG75     SHOLD     17   -11222     -660       12     53     -6809      4626     82   11:57   -3288   -3.84
+LEG75     STRAIL    17    -9245     -544     -174     47     -5118      4626     82   11:57   -3172   -3.98
+LEG100    SBOTH     17    11107      653     -101     47     -2196      4788     41   11:17   -1975   -2.72
+LEG100    SHOLD     17    -2399     -141      342     53     -7270      4788     41   11:17   -2770   -2.84
+LEG100    STRAIL    17     7713      454      342     53     -5118      4788     41   11:17   -2175   -2.60
+RUP1500   SBOTH     17    -8413     -495     -489     18     -2197      1194    100   09:45   -3123   -6.25
+RUP1500   SHOLD     17     3553      209      944     59     -5076      3452    100   09:45   -2419   -3.40
+RUP1500   STRAIL    17    -8761     -515     -308     35     -3212      3452    100   09:45   -3144   -4.61
+RUP2500   SBOTH     17    -5065     -298     -825     24     -3122      4626     82   10:20   -2926   -4.45
+RUP2500   SHOLD     17    -4582     -270      260     71     -6809      4626     82   10:20   -2898   -3.59
+RUP2500   STRAIL    17   -10205     -600     -568     47     -5118      4626     82   10:20   -3229   -3.76
+RUP4000   SBOTH     17     3868      228     -174     41     -2828      4626     47   11:17   -2401   -3.19
+RUP4000   SHOLD     17    -8159     -480     -101     47     -8438      4626     47   11:17   -3108   -3.15
+RUP4000   STRAIL    17      -96       -6     -101     47     -5118      4626     47   11:17   -2634   -3.03
+RUP6000   SBOTH     17    11470      675      969     53     -3616      4788     29   11:43   -1954   -2.33
+RUP6000   SHOLD     17     4215      248      969     53     -9099      4788     29   11:43   -2380   -2.31
+RUP6000   STRAIL    17     9577      563      969     53     -4438      4788     29   11:43   -2065   -2.29
+RUP8000   SBOTH     17    29938     1761     1761     71     -5150      7546     12   13:37    -867   -1.44
+RUP8000   SHOLD     17    31060     1827     1761     71     -4490      7546     12   13:37    -801   -1.44
+RUP8000   STRAIL    17    31060     1827     1761     71     -4490      7546     12   13:37    -801   -1.44
+
+FAMILY-WISE (sign-flip permutation, 10000 draws, max|t| over the 33 stop arms):
+   RUP8000   SBOTH    dMEAN    -867  t  -1.44  family-wise p = 0.769
+   RUP8000   STRAIL   dMEAN    -801  t  -1.44  family-wise p = 0.769
+   RUP8000   SHOLD    dMEAN    -801  t  -1.44  family-wise p = 0.769
+   RUP6000   STRAIL   dMEAN   -2065  t  -2.29  family-wise p = 0.167
+   RUP6000   SHOLD    dMEAN   -2380  t  -2.31  family-wise p = 0.164
+   max|t| null: p95 = 2.84, p99 = 3.62
+
+OOS SPLIT (first 8 sessions vs last 9): dMEAN vs HOLD, both halves
+   level     surv      IS_dMEAN  OOS_dMEAN    sign_ok
+   RUP8000   SHOLD        -1703          0         no
+   RUP8000   STRAIL       -1703          0         no
+   RUP8000   SBOTH        -1843          0         no
+   RUP6000   SBOTH        -4152          0         no
+   LEG100    SBOTH        -3267       -826         no
+   RUP6000   STRAIL       -4388          0         no
+   LEG30     SHOLD        -2206      -2098         no
+   LEG100    STRAIL       -3192      -1270         no
+   RUP6000   SHOLD        -5058          0         no
+   RUP4000   SBOTH        -4037       -947         no
+   RUP1500   SHOLD        -2346      -2485         no
+   RUP4000   STRAIL       -4022      -1400         no
+   LEG40     SHOLD        -2913      -2424         no
+   LEG60     SBOTH        -4046      -1591         no
+   LEG100    SHOLD        -3862      -1798         no
+   LEG60     SHOLD        -3686      -2056         no
+   LEG50     SHOLD        -2974      -2767         no
+   RUP2500   SHOLD        -3428      -2427         no
+   RUP2500   SBOTH        -4008      -1965         no
+   LEG75     SBOTH        -4173      -1830         no
+   LEG60     STRAIL       -3762      -2240         no
+   LEG30     STRAIL       -3186      -2872         no
+   LEG30     SBOTH        -3716      -2528         no
+   RUP4000   SHOLD        -4436      -1928         no
+   RUP1500   SBOTH        -3822      -2502         no
+   RUP1500   STRAIL       -3325      -2983         no
+   LEG75     STRAIL       -4216      -2245         no
+   RUP2500   STRAIL       -4008      -2536         no
+   LEG40     SBOTH        -4095      -2533         no
+   LEG75     SHOLD        -4140      -2532         no
+   LEG50     SBOTH        -4122      -2667         no
+   LEG40     STRAIL       -3892      -2922         no
+   LEG50     STRAIL       -3953      -3198         no
+   (all 33 arms listed, best dMEAN first)
+
+WORST-DAY 2026-06-11 (HOLD net +3502/lot):
+   LEG30/SBOTH -419       | LEG30/SHOLD +1956      | LEG30/STRAIL +1956    
+   LEG40/SBOTH -644       | LEG40/SHOLD +1525      | LEG40/STRAIL +1525    
+   LEG50/SBOTH -790       | LEG50/SHOLD +1330      | LEG50/STRAIL +1330    
+   LEG60/SBOTH -825       | LEG60/SHOLD +886       | LEG60/STRAIL +886     
+   LEG75/SBOTH -1074      | LEG75/SHOLD +499       | LEG75/STRAIL +499     
+   LEG100/SBOTH -1729     | LEG100/SHOLD -703      | LEG100/STRAIL -703    
+   RUP1500/SBOTH -419     | RUP1500/SHOLD +1956    | RUP1500/STRAIL +1956  
+   RUP2500/SBOTH -825     | RUP2500/SHOLD +886     | RUP2500/STRAIL +886   
+   RUP4000/SBOTH -1865    | RUP4000/SHOLD -468     | RUP4000/STRAIL -468   
+   RUP6000/SBOTH -3277    | RUP6000/SHOLD -2552    | RUP6000/STRAIL -2552  
+   RUP8000/SBOTH -5150    | RUP8000/SHOLD -4490    | RUP8000/STRAIL -4490  
+
+WORST-DAY 2026-06-25 (HOLD net -212/lot)  <- study's worst HOLD day:
+   LEG30/SBOTH -660       | LEG30/SHOLD -4808      | LEG30/STRAIL -355     
+   LEG40/SBOTH -899       | LEG40/SHOLD -5076      | LEG40/STRAIL -623     
+   LEG50/SBOTH -265       | LEG50/SHOLD -5267      | LEG50/STRAIL -814     
+   LEG60/SBOTH -382       | LEG60/SHOLD -5650      | LEG60/STRAIL -1197    
+   LEG75/SBOTH -1351      | LEG75/SHOLD -6809      | LEG75/STRAIL -2356    
+   LEG100/SBOTH -1745     | LEG100/SHOLD -7270     | LEG100/STRAIL -2817   
+   RUP1500/SBOTH -899     | RUP1500/SHOLD -5076    | RUP1500/STRAIL -623   
+   RUP2500/SBOTH -1351    | RUP2500/SHOLD -6809    | RUP2500/STRAIL -2356  
+   RUP4000/SBOTH -2828    | RUP4000/SHOLD -8438    | RUP4000/STRAIL -3986  
+   RUP6000/SBOTH -212     | RUP6000/SHOLD -212     | RUP6000/STRAIL -212   
+   RUP8000/SBOTH -212     | RUP8000/SHOLD -212     | RUP8000/STRAIL -212   
+
+======================================================================================================================
+ENTRY SET A0920 | OUTER LAYER VENUE | n=17 sessions (2026-04-30 .. 2026-08-20) | net Rs per LOT (lot=20)
+======================================================================================================================
+level     surv       n    total     mean   median   win%     worst      best  fire% medfire   dMEAN       t
+HOLD      -         17    19276     1134     3719     65     -3770      4000      0       -       -       -
+LEG30     SBOTH     17    -7799     -459     -419     24     -2515       601    100   09:39   -1593   -2.23
+LEG30     SHOLD     17      962       57     1264     65     -4210      3452    100   09:39   -1077   -1.31
+LEG30     STRAIL    17    -6625     -390     -355     47     -3495      3452    100   09:39   -1524   -1.48
+LEG40     SBOTH     17   -10877     -640     -644     18     -2965      1590    100   09:48   -1774   -2.56
+LEG40     SHOLD     17   -13642     -802     -150     47     -4478      2893    100   09:48   -1936   -2.06
+LEG40     STRAIL    17   -12153     -715     -607     24     -3861      2893    100   09:48   -1849   -1.84
+LEG50     SBOTH     17   -11675     -687     -658     18     -3294      1590     94   09:51   -1821   -2.59
+LEG50     SHOLD     17   -15965     -939     -150     47     -4669      2893     94   09:51   -2073   -2.18
+LEG50     STRAIL    17   -14961     -880     -814     24     -3861      2893     94   09:51   -2014   -1.97
+LEG60     SBOTH     17    -2092     -123     -825     41     -3294      3793     76   10:02   -1257   -1.74
+LEG60     SHOLD     17   -10305     -606      693     53     -4141      3793     76   10:02   -1740   -1.95
+LEG60     STRAIL    17    -7117     -419     -965     35     -3426      3793     76   10:02   -1553   -1.61
+LEG75     SBOTH     17    -5258     -309    -1074     24     -3294      3793     76   11:42   -1443   -1.97
+LEG75     SHOLD     17   -15202     -894     -751     47     -3973      3793     76   11:42   -2028   -2.22
+LEG75     STRAIL    17    -9352     -550     -751     47     -3679      3793     76   11:42   -1684   -1.79
+LEG100    SBOTH     17    14530      855      969     53     -3294      4000     41   11:17    -279   -0.53
+LEG100    SHOLD     17     7690      452      969     59     -4284      4000     41   11:17    -682   -0.98
+LEG100    STRAIL    17    11246      662      969     59     -3679      4000     41   11:17    -472   -0.67
+RUP1500   SBOTH     17    -8413     -495     -489     18     -2197      1194    100   09:45   -1629   -2.33
+RUP1500   SHOLD     17    -6902     -406      741     53     -4478      3452    100   09:45   -1540   -1.70
+RUP1500   STRAIL    17    -8761     -515     -308     35     -3212      3452    100   09:45   -1649   -1.62
+RUP2500   SBOTH     17    -1884     -111     -825     29     -3122      3793     76   09:57   -1245   -1.66
+RUP2500   SHOLD     17   -11508     -677      258     53     -3924      3793     76   09:57   -1811   -1.96
+RUP2500   STRAIL    17    -4955     -291     -568     47     -3861      3793     76   09:57   -1425   -1.43
+RUP4000   SBOTH     17     8237      485    -1113     47     -3294      4000     47   11:17    -649   -1.08
+RUP4000   SHOLD     17      223       13      342     53     -4284      4000     47   11:17   -1121   -1.39
+RUP4000   STRAIL    17     4884      287      342     53     -3679      4000     47   11:17    -847   -1.08
+RUP6000   SBOTH     17    15210      895     1761     59     -3332      4000     24   12:39    -239   -0.65
+RUP6000   SHOLD     17    14967      880     1761     59     -3361      4000     24   12:39    -253   -0.58
+RUP6000   STRAIL    17    14967      880     1761     59     -3361      4000     24   12:39    -253   -0.58
+RUP8000   SBOTH     17    19276     1134     3719     65     -3770      4000      0       -       0    0.00
+RUP8000   SHOLD     17    19276     1134     3719     65     -3770      4000      0       -       0    0.00
+RUP8000   STRAIL    17    19276     1134     3719     65     -3770      4000      0       -       0    0.00
+
+FAMILY-WISE (sign-flip permutation, 10000 draws, max|t| over the 33 stop arms):
+   RUP8000   STRAIL   dMEAN      +0  t  +0.00  family-wise p = 1.000
+   RUP8000   SHOLD    dMEAN      +0  t  +0.00  family-wise p = 1.000
+   RUP8000   SBOTH    dMEAN      +0  t  +0.00  family-wise p = 1.000
+   LEG100    SBOTH    dMEAN    -279  t  -0.53  family-wise p = 1.000
+   RUP6000   STRAIL   dMEAN    -253  t  -0.58  family-wise p = 1.000
+   max|t| null: p95 = 2.90, p99 = 3.73
+
+OOS SPLIT (first 8 sessions vs last 9): dMEAN vs HOLD, both halves
+   level     surv      IS_dMEAN  OOS_dMEAN    sign_ok
+   RUP8000   SBOTH            0          0         no
+   RUP8000   SHOLD            0          0         no
+   RUP8000   STRAIL           0          0         no
+   RUP6000   SBOTH         -508          0         no
+   RUP6000   SHOLD         -539          0         no
+   RUP6000   STRAIL        -539          0         no
+   LEG100    SBOTH          340       -830         no
+   LEG100    STRAIL         249      -1114         no
+   RUP4000   SBOTH         -311       -950         no
+   LEG100    SHOLD         -134      -1168         no
+   RUP4000   STRAIL        -462      -1188         no
+   LEG30     SHOLD          531      -2506         no
+   RUP4000   SHOLD        -1045      -1188         no
+   RUP2500   SBOTH         -440      -1960         no
+   LEG60     SBOTH         -478      -1949         no
+   RUP2500   STRAIL        -457      -2286         no
+   LEG75     SBOTH         -606      -2188         no
+   LEG30     STRAIL        -101      -2788         no
+   RUP1500   SHOLD            4      -2912         no
+   LEG60     STRAIL        -377      -2598         no
+   LEG30     SBOTH         -632      -2447         no
+   RUP1500   SBOTH         -737      -2421         no
+   RUP1500   STRAIL        -241      -2901         no
+   LEG75     STRAIL        -831      -2442         no
+   LEG60     SHOLD         -401      -2931         no
+   LEG40     SBOTH        -1011      -2452         no
+   RUP2500   SHOLD         -971      -2557         no
+   LEG50     SBOTH        -1037      -2517         no
+   LEG40     STRAIL        -808      -2774         no
+   LEG40     SHOLD        -1004      -2765         no
+   LEG50     STRAIL        -869      -3032         no
+   LEG75     SHOLD        -1637      -2376         no
+   LEG50     SHOLD        -1065      -2969         no
+   (all 33 arms listed, best dMEAN first)
+
+WORST-DAY 2026-06-11 (HOLD net -3770/lot)  <- study's worst HOLD day:
+   LEG30/SBOTH -419       | LEG30/SHOLD +1956      | LEG30/STRAIL +1956    
+   LEG40/SBOTH -644       | LEG40/SHOLD +1525      | LEG40/STRAIL +1525    
+   LEG50/SBOTH -790       | LEG50/SHOLD +1330      | LEG50/STRAIL +1330    
+   LEG60/SBOTH -825       | LEG60/SHOLD +886       | LEG60/STRAIL +886     
+   LEG75/SBOTH -1074      | LEG75/SHOLD +499       | LEG75/STRAIL +499     
+   LEG100/SBOTH -1729     | LEG100/SHOLD -703      | LEG100/STRAIL -703    
+   RUP1500/SBOTH -419     | RUP1500/SHOLD +1956    | RUP1500/STRAIL +1956  
+   RUP2500/SBOTH -825     | RUP2500/SHOLD +886     | RUP2500/STRAIL +886   
+   RUP4000/SBOTH -1865    | RUP4000/SHOLD -468     | RUP4000/STRAIL -468   
+   RUP6000/SBOTH -3277    | RUP6000/SHOLD -2552    | RUP6000/STRAIL -2552  
+   RUP8000/SBOTH -3770    | RUP8000/SHOLD -3770    | RUP8000/STRAIL -3770  
+
+======================================================================================================================
+ENTRY SET B0916 | OUTER LAYER STANDALONE | n=12 sessions (2026-06-04 .. 2026-08-20) | net Rs per LOT (lot=20)
+======================================================================================================================
+level     surv       n    total     mean   median   win%     worst      best  fire% medfire   dMEAN       t
+HOLD      -         12    33974     2831     2336     92      -549      8362      0       -       -       -
+LEG30     SBOTH     12    -3259     -272     -266     25     -2571      2766     92   09:22   -3103   -4.29
+LEG30     SHOLD     12    15035     1253     2144     75     -3456      2766     92   09:22   -1578   -1.88
+LEG30     STRAIL    12     4657      388      330     67     -2828      2766     92   09:22   -2443   -3.76
+LEG40     SBOTH     12     1032       86     -266     42     -3134      4728     83   09:25   -2745   -3.74
+LEG40     SHOLD     12    15451     1288     2103     75     -3456      4728     83   09:25   -1544   -1.78
+LEG40     STRAIL    12     6339      528      520     58     -3515      4728     83   09:25   -2303   -3.27
+LEG50     SBOTH     12     -775      -65     -353     33     -3735      4728     83   09:25   -2896   -3.89
+LEG50     SHOLD     12     9612      801     1550     75     -4080      4728     83   09:25   -2030   -2.29
+LEG50     STRAIL    12     2485      207      -64     50     -4069      4728     83   09:25   -2624   -3.63
+LEG60     SBOTH     12    -1798     -150     -389     33     -4575      4728     83   09:52   -2981   -3.91
+LEG60     SHOLD     12     8243      687     1309     75     -4080      4728     83   09:52   -2144   -2.52
+LEG60     STRAIL    12     2241      187      318     58     -4714      4728     83   09:52   -2644   -3.43
+LEG75     SBOTH     12     5694      475     -528     42     -1641      4728     67   10:09   -2357   -2.79
+LEG75     SHOLD     12    11632      969      913     75     -4376      4728     67   10:09   -1862   -2.17
+LEG75     STRAIL    12     6938      578     -338     42     -2211      4728     67   10:09   -2253   -2.73
+LEG100    SBOTH     12     3974      331     -167     50     -2570      4728     58   11:04   -2500   -2.74
+LEG100    SHOLD     12     5180      432      270     50     -5252      4728     58   11:04   -2399   -2.49
+LEG100    STRAIL    12     3931      328     -304     42     -2192      4728     58   11:04   -2504   -2.66
+RUP1500   SBOTH     12     1890      158     -302     33     -2043      4728     83   09:26   -2674   -3.56
+RUP1500   SHOLD     12    15174     1264     2037     75     -3456      4728     83   09:26   -1567   -1.83
+RUP1500   STRAIL    12     6062      505       47     50     -2577      4728     83   09:26   -2326   -3.41
+RUP2500   SBOTH     12     3037      253     -477     42     -3340      4728     75   09:53   -2578   -3.24
+RUP2500   SHOLD     12    11734      978     1175     75     -4376      4728     75   09:53   -1853   -2.22
+RUP2500   STRAIL    12     5066      422      318     58     -3627      4728     75   09:53   -2409   -3.07
+RUP4000   SBOTH     12     9555      796       94     50     -2824      5548     42   10:28   -2035   -2.27
+RUP4000   SHOLD     12    10427      869      304     50     -6517      5548     42   10:28   -1962   -2.09
+RUP4000   STRAIL    12    11507      959      304     50     -3457      5548     42   10:28   -1872   -2.16
+RUP6000   SBOTH     12     3832      319      992     58     -4474      5548     33   11:43   -2512   -2.08
+RUP6000   SHOLD     12     2340      195      992     58     -8192      5548     33   11:43   -2636   -2.03
+RUP6000   STRAIL    12     3420      285      992     58     -5149      5548     33   11:43   -2546   -2.04
+RUP8000   SBOTH     12     7419      618     1400     67     -5131      5548     25   11:42   -2213   -1.78
+RUP8000   SHOLD     12     9045      754     1400     67     -4418      5548     25   11:42   -2077   -1.74
+RUP8000   STRAIL    12     7065      589     1400     67     -5476      5548     25   11:42   -2242   -1.76
+
+FAMILY-WISE (sign-flip permutation, 10000 draws, max|t| over the 33 stop arms):
+   RUP8000   SHOLD    dMEAN   -2077  t  -1.74  family-wise p = 0.494
+   RUP8000   STRAIL   dMEAN   -2242  t  -1.76  family-wise p = 0.490
+   RUP8000   SBOTH    dMEAN   -2213  t  -1.78  family-wise p = 0.488
+   LEG40     SHOLD    dMEAN   -1544  t  -1.78  family-wise p = 0.398
+   RUP1500   SHOLD    dMEAN   -1567  t  -1.83  family-wise p = 0.382
+   max|t| null: p95 = 3.07, p99 = 3.81
+
+OOS SPLIT (first 6 sessions vs last 6): dMEAN vs HOLD, both halves
+   level     surv      IS_dMEAN  OOS_dMEAN    sign_ok
+   LEG40     SHOLD        -1518      -1569         no
+   RUP1500   SHOLD        -1506      -1627         no
+   LEG30     SHOLD        -1292      -1864         no
+   RUP2500   SHOLD        -2492      -1214         no
+   LEG75     SHOLD        -2711      -1012         no
+   RUP4000   STRAIL       -3744          0         no
+   RUP4000   SHOLD        -3924          0         no
+   LEG50     SHOLD        -1889      -2171         no
+   RUP4000   SBOTH        -4070          0         no
+   RUP8000   SHOLD        -4155          0         no
+   LEG60     SHOLD        -2299      -1989         no
+   RUP8000   SBOTH        -4426          0         no
+   RUP8000   STRAIL       -4485          0         no
+   LEG75     STRAIL       -3105      -1401         no
+   LEG40     STRAIL       -2444      -2162         no
+   RUP1500   STRAIL       -2432      -2220         no
+   LEG75     SBOTH        -3520      -1193         no
+   LEG100    SHOLD        -3612      -1186         no
+   RUP2500   STRAIL       -2887      -1931         no
+   LEG30     STRAIL       -2218      -2668         no
+   LEG100    SBOTH        -3729      -1271         no
+   LEG100    STRAIL       -3432      -1575         no
+   RUP6000   SBOTH        -5024          0         no
+   RUP6000   STRAIL       -5092          0         no
+   RUP2500   SBOTH        -3484      -1672         no
+   LEG50     STRAIL       -2815      -2433         no
+   RUP6000   SHOLD        -5272          0         no
+   LEG60     STRAIL       -2693      -2595         no
+   RUP1500   SBOTH        -3199      -2148         no
+   LEG40     SBOTH        -3106      -2384         no
+   LEG50     SBOTH        -3368      -2423         no
+   LEG60     SBOTH        -3386      -2576         no
+   LEG30     SBOTH        -3164      -3042         no
+   (all 33 arms listed, best dMEAN first)
+
+WORST-DAY 2026-06-11 (HOLD net +3732/lot):
+   LEG30/SBOTH -462       | LEG30/SHOLD +2721      | LEG30/STRAIL +2721    
+   LEG40/SBOTH -189       | LEG40/SHOLD +2186      | LEG40/STRAIL +2186    
+   LEG50/SBOTH -414       | LEG50/SHOLD +1755      | LEG50/STRAIL +1755    
+   LEG60/SBOTH -414       | LEG60/SHOLD +1755      | LEG60/STRAIL +1755    
+   LEG75/SBOTH -596       | LEG75/SHOLD +1116      | LEG75/STRAIL +1116    
+   LEG100/SBOTH -1519     | LEG100/SHOLD -60       | LEG100/STRAIL -60     
+   RUP1500/SBOTH -189     | RUP1500/SHOLD +2186    | RUP1500/STRAIL +2186  
+   RUP2500/SBOTH -596     | RUP2500/SHOLD +1116    | RUP2500/STRAIL +1116  
+   RUP4000/SBOTH -1519    | RUP4000/SHOLD -60      | RUP4000/STRAIL -60    
+   RUP6000/SBOTH -3048    | RUP6000/SHOLD -2322    | RUP6000/STRAIL -2322  
+   RUP8000/SBOTH -4682    | RUP8000/SHOLD -4016    | RUP8000/STRAIL -4016  
+
+WORST-DAY 2026-08-06 (HOLD net -549/lot)  <- study's worst HOLD day:
+   LEG30/SBOTH -2571      | LEG30/SHOLD -854       | LEG30/STRAIL -2828    
+   LEG40/SBOTH -3134      | LEG40/SHOLD -1540      | LEG40/STRAIL -3515    
+   LEG50/SBOTH -3735      | LEG50/SHOLD -4080      | LEG50/STRAIL -4069    
+   LEG60/SBOTH -4575      | LEG60/SHOLD -2661      | LEG60/STRAIL -4714    
+   LEG75/SBOTH -549       | LEG75/SHOLD -549       | LEG75/STRAIL -549     
+   LEG100/SBOTH -549      | LEG100/SHOLD -549      | LEG100/STRAIL -549    
+   RUP1500/SBOTH -2043    | RUP1500/SHOLD -603     | RUP1500/STRAIL -2577  
+   RUP2500/SBOTH -3340    | RUP2500/SHOLD -1653    | RUP2500/STRAIL -3627  
+   RUP4000/SBOTH -549     | RUP4000/SHOLD -549     | RUP4000/STRAIL -549   
+   RUP6000/SBOTH -549     | RUP6000/SHOLD -549     | RUP6000/STRAIL -549   
+   RUP8000/SBOTH -549     | RUP8000/SHOLD -549     | RUP8000/STRAIL -549   
+
+======================================================================================================================
+ENTRY SET B0916 | OUTER LAYER VENUE | n=12 sessions (2026-06-04 .. 2026-08-20) | net Rs per LOT (lot=20)
+======================================================================================================================
+level     surv       n    total     mean   median   win%     worst      best  fire% medfire   dMEAN       t
+HOLD      -         12     4343      362     2125     58     -4474      3847      0       -       -       -
+LEG30     SBOTH     12    -3259     -272     -266     25     -2571      2766     92   09:22    -633   -0.68
+LEG30     SHOLD     12    12440     1037     2144     75     -3558      2766     92   09:22     675    0.62
+LEG30     STRAIL    12     4657      388      330     67     -2828      2766     92   09:22      26    0.02
+LEG40     SBOTH     12       27        2     -266     42     -3134      3723     83   09:25    -360   -0.39
+LEG40     SHOLD     12    12798     1067     2103     75     -3349      3723     83   09:25     705    0.68
+LEG40     STRAIL    12     5553      463      520     58     -3296      3723     83   09:25     101    0.09
+LEG50     SBOTH     12    -1385     -115     -353     33     -3340      3723     75   09:25    -477   -0.55
+LEG50     SHOLD     12     9455      788     1550     75     -3349      3723     75   09:25     426    0.42
+LEG50     STRAIL    12     2209      184      -64     50     -3340      3723     75   09:25    -178   -0.16
+LEG60     SBOTH     12     1628      136     -389     33     -3340      3847     67   09:37    -226   -0.28
+LEG60     SHOLD     12     9958      830     1402     75     -3747      3847     67   09:37     468    0.47
+LEG60     STRAIL    12     5677      473      318     58     -3340      3847     67   09:37     111    0.11
+LEG75     SBOTH     12     4984      415     -551     42     -3340      3847     58   09:53      53    0.07
+LEG75     SHOLD     12     8049      671     1080     75     -4043      3847     58   09:53     309    0.31
+LEG75     STRAIL    12     6098      508     -338     42     -3340      3847     58   09:53     146    0.16
+LEG100    SBOTH     12     3247      271     -382     50     -3340      3847     58   11:04     -91   -0.14
+LEG100    SHOLD     12     3960      330      270     50     -3584      3847     58   11:04     -32   -0.04
+LEG100    STRAIL    12     3204      267     -316     42     -3340      3847     58   11:04     -95   -0.12
+RUP1500   SBOTH     12      885       74     -302     33     -2043      3723     83   09:26    -288   -0.32
+RUP1500   SHOLD     12    11573      964     2037     75     -3349      3723     83   09:26     603    0.55
+RUP1500   STRAIL    12     5056      421       47     50     -2577      3723     83   09:26      59    0.05
+RUP2500   SBOTH     12     5117      426     -477     42     -3340      3847     58   09:53      65    0.09
+RUP2500   SHOLD     12     9256      771     1253     75     -4043      3847     58   09:53     409    0.40
+RUP2500   STRAIL    12     7304      609      318     58     -3340      3847     58   09:53     247    0.26
+RUP4000   SBOTH     12     9529      794     1142     50     -3340      3847     42   10:28     432    1.18
+RUP4000   SHOLD     12    13461     1122     1353     50     -3457      3847     42   10:28     760    1.45
+RUP4000   STRAIL    12    11481      957     1353     50     -3457      3847     42   10:28     595    1.33
+RUP6000   SBOTH     12     4835      403     2125     58     -4474      3847      8   11:43      41    1.00
+RUP6000   SHOLD     12     5560      463     2125     58     -4474      3847      8   11:43     101    1.00
+RUP6000   STRAIL    12     5560      463     2125     58     -4474      3847      8   11:43     101    1.00
+RUP8000   SBOTH     12     4343      362     2125     58     -4474      3847      0       -       0    0.00
+RUP8000   SHOLD     12     4343      362     2125     58     -4474      3847      0       -       0    0.00
+RUP8000   STRAIL    12     4343      362     2125     58     -4474      3847      0       -       0    0.00
+
+FAMILY-WISE (sign-flip permutation, 10000 draws, max|t| over the 33 stop arms):
+   RUP4000   SHOLD    dMEAN    +760  t  +1.45  family-wise p = 0.488
+   RUP4000   STRAIL   dMEAN    +595  t  +1.33  family-wise p = 0.574
+   RUP4000   SBOTH    dMEAN    +432  t  +1.18  family-wise p = 0.675
+   RUP6000   STRAIL   dMEAN    +101  t  +1.00  family-wise p = 1.000
+   RUP6000   SHOLD    dMEAN    +101  t  +1.00  family-wise p = 1.000
+   max|t| null: p95 = 3.04, p99 = 3.99
+
+OOS SPLIT (first 6 sessions vs last 6): dMEAN vs HOLD, both halves
+   level     surv      IS_dMEAN  OOS_dMEAN    sign_ok
+   RUP4000   SHOLD         1520          0         no
+   LEG40     SHOLD         2904      -1495         no
+   LEG30     SHOLD         3130      -1781         no
+   RUP1500   SHOLD         2916      -1711         no
+   RUP4000   STRAIL        1190          0         no
+   LEG60     SHOLD         2672      -1736         no
+   RUP4000   SBOTH          864          0         no
+   LEG50     SHOLD         2533      -1681         no
+   RUP2500   SHOLD         2478      -1660         no
+   LEG75     SHOLD         2260      -1642         no
+   RUP2500   STRAIL        2029      -1535         no
+   LEG75     STRAIL        1810      -1517         no
+   LEG60     STRAIL        2222      -2000         no
+   RUP6000   SHOLD          203          0         no
+   RUP6000   STRAIL         203          0         no
+   LEG40     STRAIL        1960      -1758         no
+   RUP2500   SBOTH         1453      -1324         no
+   RUP1500   STRAIL        1972      -1853         no
+   LEG75     SBOTH         1417      -1310         no
+   RUP6000   SBOTH           82          0         no
+   LEG30     STRAIL        2186      -2134         no
+   RUP8000   SBOTH            0          0         no
+   RUP8000   SHOLD            0          0         no
+   RUP8000   STRAIL           0          0         no
+   LEG100    SHOLD         1620      -1684         no
+   LEG100    SBOTH         1206      -1388         no
+   LEG100    STRAIL        1502      -1691         no
+   LEG50     STRAIL        1589      -1945         no
+   LEG60     SBOTH         1551      -2003         no
+   RUP1500   SBOTH         1205      -1781         no
+   LEG40     SBOTH         1298      -2017         no
+   LEG50     SBOTH         1036      -1991         no
+   LEG30     SBOTH         1241      -2508         no
+   (all 33 arms listed, best dMEAN first)
+
+WORST-DAY 2026-06-11 (HOLD net -3540/lot):
+   LEG30/SBOTH -462       | LEG30/SHOLD +2721      | LEG30/STRAIL +2721    
+   LEG40/SBOTH -189       | LEG40/SHOLD +2186      | LEG40/STRAIL +2186    
+   LEG50/SBOTH -414       | LEG50/SHOLD +1755      | LEG50/STRAIL +1755    
+   LEG60/SBOTH -414       | LEG60/SHOLD +1755      | LEG60/STRAIL +1755    
+   LEG75/SBOTH -596       | LEG75/SHOLD +1116      | LEG75/STRAIL +1116    
+   LEG100/SBOTH -1519     | LEG100/SHOLD -60       | LEG100/STRAIL -60     
+   RUP1500/SBOTH -189     | RUP1500/SHOLD +2186    | RUP1500/STRAIL +2186  
+   RUP2500/SBOTH -596     | RUP2500/SHOLD +1116    | RUP2500/STRAIL +1116  
+   RUP4000/SBOTH -1519    | RUP4000/SHOLD -60      | RUP4000/STRAIL -60    
+   RUP6000/SBOTH -3048    | RUP6000/SHOLD -2322    | RUP6000/STRAIL -2322  
+   RUP8000/SBOTH -3540    | RUP8000/SHOLD -3540    | RUP8000/STRAIL -3540  
+
+WORST-DAY 2026-07-09 (HOLD net -4474/lot)  <- study's worst HOLD day:
+   LEG30/SBOTH -261       | LEG30/SHOLD +2464      | LEG30/STRAIL +1542    
+   LEG40/SBOTH +30        | LEG40/SHOLD +1982      | LEG40/STRAIL +1060    
+   LEG50/SBOTH -363       | LEG50/SHOLD +1345      | LEG50/STRAIL +422     
+   LEG60/SBOTH -363       | LEG60/SHOLD +1345      | LEG60/STRAIL +422     
+   LEG75/SBOTH -749       | LEG75/SHOLD +729       | LEG75/STRAIL -194     
+   LEG100/SBOTH -1204     | LEG100/SHOLD -449      | LEG100/STRAIL -1372   
+   RUP1500/SBOTH -261     | RUP1500/SHOLD +2464    | RUP1500/STRAIL +1542  
+   RUP2500/SBOTH -363     | RUP2500/SHOLD +1345    | RUP2500/STRAIL +422   
+   RUP4000/SBOTH -1366    | RUP4000/SHOLD -221     | RUP4000/STRAIL -1144  
+   RUP6000/SBOTH -4474    | RUP6000/SHOLD -4474    | RUP6000/STRAIL -4474  
+   RUP8000/SBOTH -4474    | RUP8000/SHOLD -4474    | RUP8000/STRAIL -4474  
+
+====================================================================================================
+VENUE INTERACTION - does the leg stop ever fire BEFORE the book stop/TP already has?
+====================================================================================================
+entryset  level     surv    fire% STANDALONE    fire% VENUE
+A0920     LEG30     SBOTH              100            100
+A0920     LEG30     SHOLD              100            100
+A0920     LEG30     STRAIL             100            100
+A0920     LEG40     SBOTH              100            100
+A0920     LEG40     SHOLD              100            100
+A0920     LEG40     STRAIL             100            100
+A0920     LEG50     SBOTH              100             94
+A0920     LEG50     SHOLD              100             94
+A0920     LEG50     STRAIL             100             94
+A0920     LEG60     SBOTH               82             76
+A0920     LEG60     SHOLD               82             76
+A0920     LEG60     STRAIL              82             76
+A0920     LEG75     SBOTH               82             76
+A0920     LEG75     SHOLD               82             76
+A0920     LEG75     STRAIL              82             76
+A0920     LEG100    SBOTH               41             41
+A0920     LEG100    SHOLD               41             41
+A0920     LEG100    STRAIL              41             41
+A0920     RUP1500   SBOTH              100            100
+A0920     RUP1500   SHOLD              100            100
+A0920     RUP1500   STRAIL             100            100
+A0920     RUP2500   SBOTH               82             76
+A0920     RUP2500   SHOLD               82             76
+A0920     RUP2500   STRAIL              82             76
+A0920     RUP4000   SBOTH               47             47
+A0920     RUP4000   SHOLD               47             47
+A0920     RUP4000   STRAIL              47             47
+A0920     RUP6000   SBOTH               29             24
+A0920     RUP6000   SHOLD               29             24
+A0920     RUP6000   STRAIL              29             24
+A0920     RUP8000   SBOTH               12              0
+A0920     RUP8000   SHOLD               12              0
+A0920     RUP8000   STRAIL              12              0
+B0916     LEG30     SBOTH               92             92
+B0916     LEG30     SHOLD               92             92
+B0916     LEG30     STRAIL              92             92
+B0916     LEG40     SBOTH               83             83
+B0916     LEG40     SHOLD               83             83
+B0916     LEG40     STRAIL              83             83
+B0916     LEG50     SBOTH               83             75
+B0916     LEG50     SHOLD               83             75
+B0916     LEG50     STRAIL              83             75
+B0916     LEG60     SBOTH               83             67
+B0916     LEG60     SHOLD               83             67
+B0916     LEG60     STRAIL              83             67
+B0916     LEG75     SBOTH               67             58
+B0916     LEG75     SHOLD               67             58
+B0916     LEG75     STRAIL              67             58
+B0916     LEG100    SBOTH               58             58
+B0916     LEG100    SHOLD               58             58
+B0916     LEG100    STRAIL              58             58
+B0916     RUP1500   SBOTH               83             83
+B0916     RUP1500   SHOLD               83             83
+B0916     RUP1500   STRAIL              83             83
+B0916     RUP2500   SBOTH               75             58
+B0916     RUP2500   SHOLD               75             58
+B0916     RUP2500   STRAIL              75             58
+B0916     RUP4000   SBOTH               42             42
+B0916     RUP4000   SHOLD               42             42
+B0916     RUP4000   STRAIL              42             42
+B0916     RUP6000   SBOTH               33              8
+B0916     RUP6000   SHOLD               33              8
+B0916     RUP6000   STRAIL              33              8
+B0916     RUP8000   SBOTH               25              0
+B0916     RUP8000   SHOLD               25              0
+B0916     RUP8000   STRAIL              25              0
+
+HOLD/A0920 VENUE exit reasons: {'BOOK_TP': 18, 'EOD': 6, 'BOOK_STOP': 10}
+HOLD/B0916 VENUE exit reasons: {'BOOK_TP': 10, 'EOD': 4, 'BOOK_STOP': 10}
