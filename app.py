@@ -8135,6 +8135,23 @@ def _sensex_sl_monitor():
             # 999999 sentinel therefore sat NAKED-UNARMED. Arm it here with a breakeven protective
             # stop (SL = entry) so the existing SL check manages it and it can never become a loss.
             # NIFTY survivors are untouched (their NFO ST trail works).
+            # research/114 + the 2026-08-27 race: on a DTE where per-leg stops are disabled,
+            # NOTHING in this guard may arm a leg - not even breakeven. Derive that from config
+            # + today's trading-DTE so it holds from the instant the position row exists; the
+            # NO_LEG_SL note alone is written a beat later by the entry routine and a guard pass
+            # landing in that window armed BE_PROTECT and stopped SENSEX ATM out 11s after entry.
+            _leg_sl_off_today = False
+            try:
+                _dis = (getattr(executor, 'cfg', None) or {}).get('leg_sl_disabled_dtes') or ()
+                if _dis:
+                    from services.nas_day_matrix import trading_dte as _td, EXPIRY_WEEKDAY as _ew
+                    _leg_sl_off_today = _td(None, _ew['sensex']) in _dis
+            except Exception as _e:
+                logger.warning(f"[{name}] leg-SL DTE check failed ({_e}) - guard stays active")
+            if _leg_sl_off_today:
+                logger.debug(f"[{name}] per-leg stops disabled for today's DTE - guard skipped")
+                continue
+
             for _p in active:
                 _notes = _p.get('notes') or ''
                 _naked = ((_p.get('sl_price') or 0) >= 900000
@@ -9868,6 +9885,9 @@ def api_orb_backtest_run():
 def api_holdings_digest():
     """Live digest — summary + movers + extremes + weekly + events + next event."""
     try:
+        if request.args.get('account') == 'dad':
+            from services.dad_holdings import get_dad_digest
+            return jsonify(get_dad_digest())
         from services.holdings_dashboard import get_digest
         return jsonify(get_digest())
     except Exception as e:
