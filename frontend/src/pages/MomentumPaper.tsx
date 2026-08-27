@@ -457,6 +457,16 @@ function BookSummary({ s }: { s: State }) {
             </span>
           ))}
         </div>
+        <div className={styles.sumStatus}>
+          <span><b>{s.n_holdings}</b> holdings</span>
+          <span><b>{s.invested_pct.toFixed(0)}%</b> deployed</span>
+          <span>gate{' '}
+            <b style={{ color: gapTone }}>
+              {s.gate_gap_pct == null ? '—' : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
+            </b>{' '}vs 100-DMA
+          </span>
+          <span><b>{s.days_to_rebalance}d</b> to rebalance</span>
+        </div>
       </div>
 
       <div className={styles.sumPnl}>
@@ -472,16 +482,6 @@ function BookSummary({ s }: { s: State }) {
           <b style={{ color: tone(gain) }}>
             {gain >= 0 ? '+' : '−'}{inr(Math.abs(gain))} · {pct(s.total_return_pct)}
           </b>
-        </div>
-        <div className={styles.sumStatus}>
-          <span><b>{s.n_holdings}</b> holdings</span>
-          <span><b>{s.invested_pct.toFixed(0)}%</b> deployed</span>
-          <span>gate{' '}
-            <b style={{ color: gapTone }}>
-              {s.gate_gap_pct == null ? '—' : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
-            </b>{' '}vs 100-DMA
-          </span>
-          <span><b>{s.days_to_rebalance}d</b> to rebalance</span>
         </div>
       </div>
     </div>
