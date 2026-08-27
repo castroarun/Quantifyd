@@ -22,15 +22,15 @@ NIFTY_MKT = {"sym": "NIFTY", "step": 50, "lot": 65, "spot_key": "NSE:NIFTY 50", 
 SENSEX_MKT = {"sym": "SENSEX", "step": 100, "lot": 20, "spot_key": "BSE:SENSEX", "seg": "BFO",
               "wd2dte": {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}}
 BOOKS = {
-    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "lab", "mode": "live"},  # 2026-08-17: 6->8 (sec-18b step-2, user)
-    "CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 8, "qty": 160, "cfg_from": "lab", "mode": "live"},  # 2026-08-18: 6L->8L REAL (notional parity w/ NIFTY TB@8L); suite Wed->paper same night
+    "CSL_TIMEB_NIFTY": {**NIFTY_MKT, "lots": 6, "qty": 390, "cfg_from": "lab", "mode": "live"},  # 2026-08-17: 6->8 (sec-18b step-2, user)
+    "CSL_TIMEB_SENSEX": {**SENSEX_MKT, "lots": 6, "qty": 120, "cfg_from": "lab", "mode": "live"},  # 2026-08-18: 6L->8L REAL (notional parity w/ NIFTY TB@8L); suite Wed->paper same night
     # 2026-08-18: SECOND time-slots evidence book (sweep sec: Mon+Tue have a 2nd earnings pocket)
     "CSL_TIMEB2_NIFTY": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                          "fixed_cfg": {"entry": "13:00", "exit": "14:00", "sl": 25}},
     # research/125 expiry-Tuesday afternoon window - REAL (user 2026-08-25). One-shot
     # precedent traded 25-Aug (-2,990); standing book from 26-Aug. Tuesday (DTE0) only -
     # config json carries the single cell, so fixed_cfg is bootstrap-only.
-    "CSL_TIMEB2_LIVE": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "fixed", "mode": "live",
+    "CSL_TIMEB2_LIVE": {**NIFTY_MKT, "lots": 6, "qty": 390, "cfg_from": "fixed", "mode": "live",
                         "fixed_cfg": {"entry": "13:15", "exit": "14:30", "sl": 30}},
     # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
     "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed", "mode": "live",
@@ -38,9 +38,9 @@ BOOKS = {
     # FIXED-CSL30 books (the flat rule, un-windowed) — the variable-vs-fixed live A/B
     "CSL_TIMEB_NIFTY_THU": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed", "mode": "live",
                             "fixed_cfg": {"entry": "09:25", "exit": "15:20", "sl": 20}},  # 2026-08-19: Thursday-only TB-N at reduced size (Option B) - DTE3 is the 2nd-best NIFTY cell; 3L is the max that clears every margin gate at current capital. Config json trimmed to DTE3 only.
-    "CSL30F_SENSEX_WED": {**SENSEX_MKT, "lots": 3, "qty": 60, "cfg_from": "fixed", "mode": "live",
+    "CSL30F_SENSEX_WED": {**SENSEX_MKT, "lots": 2, "qty": 40, "cfg_from": "fixed", "mode": "live",
                           "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 30}},  # 2026-08-20 USER OVERRIDE vs study: Wed full-day cell is -571/day 64% (n=11) and verdict Q4 said windows-only - Arun chose live anyway after seeing the table. Config json trimmed to DTE1 only. Review after 4 live Wednesdays (Ops). Paper control book unchanged.
-"CSL_TIMEB_NIFTY_MON_AM": {**NIFTY_MKT, "lots": 8, "qty": 520, "cfg_from": "fixed", "mode": "live",
+"CSL_TIMEB_NIFTY_MON_AM": {**NIFTY_MKT, "lots": 6, "qty": 390, "cfg_from": "fixed", "mode": "live",
                                "fixed_cfg": {"entry": "09:16", "exit": "11:16", "sl": "rs1000"}},  # 2026-08-25 USER OVERRIDE vs study: r/124 re-run makes this the best Monday cell (median +6,920@8L, win 88.9%, R:R@p95 1:1.0, stop-invariant) BUT it FAILS the label-shuffle null (p=0.376, n=18) - indistinguishable from mined noise. Arun chose live anyway at 8L with the Rs1,000/lot rupee stop, which caps the worst day best (-15,752 vs -20,464 nostop / -28,496 SLP20). Enters 09:16 alongside the 6-lot suite + 2-lot COMB on the SAME strike - the r/126 Arm C concentration caveat applies. Review after 4 live Mondays (Ops).
     "NAS_COMB20_THU": {**NIFTY_MKT, "lots": 5, "qty": 325, "cfg_from": "fixed",
                        "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},  # 2026-08-27: NIFTY is OFF on Thursdays live (Arun). Reverses the 19-20 Aug Option-B merge that put NIFTY-Thu into NAS_COMB20 as a 5L DTE3 cell - Thursday is SENSEX expiry and NIFTY was competing for the same margin on SENSEX best day. PAPER twin keeps the DTE3 evidence accumulating (grid mean ~16,956 at 91% is what motivated Option B) so this is revisited on data. Config seeded DTE3 only.
