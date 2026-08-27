@@ -193,16 +193,23 @@ export default function MomentumPaper() {
             </tbody>
             <tfoot>
               {(() => {
+                // VALUE totals every row — that IS the book's worth. P&L totals only the STOCK
+                // rows: the cash row's "pnl" is the liquid ETF's accrued interest, not an
+                // unrealised gain, and the header reports it on its own line. Including it here
+                // made this table read Rs182 above the header's Unrealised for the same book.
+                const stockRows = s.holdings.filter((h) => !h.is_cash);
                 const tv = s.holdings.reduce((a, h) => a + (h.value || 0), 0);
-                const tp = s.holdings.reduce((a, h) => a + (h.pnl || 0), 0);
-                const cost = tv - tp;
+                const tp = stockRows.reduce((a, h) => a + (h.pnl || 0), 0);
+                const cost = stockRows.reduce((a, h) => a + ((h.value || 0) - (h.pnl || 0)), 0);
                 const tpc = cost > 0 ? (tp / cost) * 100 : 0;
                 return (
-                  <tr style={{ borderTop: '2px solid var(--border,#3a434e)', fontWeight: 700 }}>
-                    <td>TOTAL ({s.holdings.filter((h) => !h.is_cash).length} stocks + cash)</td>
+                  <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
+                    <td>TOTAL ({stockRows.length} stocks + cash)</td>
                     <td>100%</td><td /><td /><td />
                     <td>{lakh(tv)}</td>
-                    <td className={tp >= 0 ? styles.pos : styles.neg}>{tp >= 0 ? '+' : ''}{inr(tp)}</td>
+                    <td className={tp >= 0 ? styles.pos : styles.neg}
+                        title="Unrealised P&L on the stocks only — the liquid ETF's interest is reported separately in the header">
+                      {tp >= 0 ? '+' : ''}{inr(tp)}</td>
                     <td className={tpc >= 0 ? styles.pos : styles.neg}>{pct(tpc)}</td>
                     <td /><td /><td />
                   </tr>
@@ -347,7 +354,7 @@ export default function MomentumPaper() {
                 const tax = s.closed.reduce((a, c) => a + (c.stcg_tax || 0), 0);
                 const wins = s.closed.filter((c) => c.net_pnl > 0).length;
                 return (
-                  <tr style={{ borderTop: '2px solid var(--border,#3a434e)', fontWeight: 700 }}>
+                  <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
                     <td>TOTAL ({s.closed.length} closed · {wins} winners)</td>
                     <td /><td /><td /><td />
                     <td className={tp >= 0 ? styles.pos : styles.neg}>{tp >= 0 ? '+' : ''}{inr(tp)}</td>
