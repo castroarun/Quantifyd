@@ -1,153 +1,228 @@
 {
- "generated_at": "2026-08-26T14:00:02",
+ "generated_at": "2026-08-27T11:00:02",
  "broker_legs": {
+  "SENSEX26AUG77400CE": {
+   "qty": -40,
+   "avg": 143.5,
+   "ltp": 90.8,
+   "pnl": 2108.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
+  "SENSEX26AUG77400PE": {
+   "qty": -40,
+   "avg": 130.15,
+   "ltp": 171.8,
+   "pnl": -1666.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
+  "SENSEX26AUG77600CE": {
+   "qty": -40,
+   "avg": 149.4,
+   "ltp": 42.1,
+   "pnl": 7277.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
+  "SENSEX26AUG77600PE": {
+   "qty": -40,
+   "avg": 112.75,
+   "ltp": 322.0,
+   "pnl": -14340.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
   "SENSEX26AUG77700CE": {
-   "qty": -40,
-   "avg": 268.51,
-   "ltp": 192.7,
-   "pnl": 4849.0,
-   "product": "MIS",
+   "qty": -80,
+   "avg": 35.9,
+   "ltp": 29.7,
+   "pnl": 496.0,
+   "product": "NRML",
    "exchange": "BFO"
   },
-  "SENSEX26AUG77700PE": {
-   "qty": -40,
-   "avg": 142.25416666666666,
-   "ltp": 176.8,
-   "pnl": -3535.0,
+  "NIFTY2690124300CE": {
+   "qty": -325,
+   "avg": 115.28,
+   "ltp": 68.75,
+   "pnl": 15122.2,
    "product": "MIS",
-   "exchange": "BFO"
+   "exchange": "NFO"
   },
-  "SENSEX26AUG77900CE": {
-   "qty": -60,
-   "avg": 261.0833333333333,
-   "ltp": 109.35,
-   "pnl": 9104.0,
+  "NIFTY2690124300PE": {
+   "qty": -325,
+   "avg": 90.41,
+   "ltp": 154.25,
+   "pnl": -20748.0,
    "product": "MIS",
-   "exchange": "BFO"
+   "exchange": "NFO"
   },
-  "SENSEX26AUG77900PE": {
-   "qty": -60,
-   "avg": 150.68333333333334,
-   "ltp": 295.1,
-   "pnl": -8665.0,
-   "product": "MIS",
-   "exchange": "BFO"
+  "NIFTY2690124500CE": {
+   "qty": -325,
+   "avg": 24.75,
+   "ltp": 22.2,
+   "pnl": 828.8,
+   "product": "NRML",
+   "exchange": "NFO"
+  },
+  "GVT&D": {
+   "qty": 2,
+   "avg": 4512.85,
+   "ltp": 4450.3,
+   "pnl": -125.1,
+   "product": "CNC",
+   "exchange": "NSE"
   },
   "INOXINDIA": {
-   "qty": 7,
-   "avg": 1929.2,
-   "ltp": 1928.2,
-   "pnl": -7.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "MANORAMA": {
    "qty": 5,
-   "avg": 1885.7,
-   "ltp": 1910.5,
-   "pnl": 124.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "THYROCARE": {
-   "qty": 17,
-   "avg": 600.3,
-   "ltp": 605.6,
-   "pnl": 90.1,
+   "avg": 1999.2,
+   "ltp": 2049.0,
+   "pnl": 249.0,
    "product": "CNC",
    "exchange": "NSE"
   }
  },
  "app_claimed": {
-  "SENSEX26AUG77700CE": {
+  "SENSEX26AUG77400CE": {
    "qty": -40,
    "books": [
     "sensex_atm2"
    ]
   },
-  "SENSEX26AUG77700PE": {
+  "SENSEX26AUG77400PE": {
    "qty": -40,
    "books": [
     "sensex_atm2"
    ]
   },
-  "SENSEX26AUG77900CE": {
-   "qty": -60,
+  "SENSEX26AUG77600CE": {
+   "qty": -40,
    "books": [
-    "CSL30F_SENSEX_WED"
+    "sensex_atm4"
    ]
   },
-  "SENSEX26AUG77900PE": {
-   "qty": -60,
+  "SENSEX26AUG77600PE": {
+   "qty": -40,
    "books": [
-    "CSL30F_SENSEX_WED"
+    "sensex_atm4"
+   ]
+  },
+  "NIFTY2690124300CE": {
+   "qty": -325,
+   "books": [
+    "NAS_COMB20"
+   ]
+  },
+  "NIFTY2690124300PE": {
+   "qty": -325,
+   "books": [
+    "NAS_COMB20"
    ]
   }
  },
  "findings": [
   {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "INOXINDIA",
-   "broker_qty": 7,
+   "level": "ALERT",
+   "kind": "ORPHAN",
+   "symbol": "SENSEX26AUG77700CE",
+   "broker_qty": -80,
    "app_qty": 0,
-   "detail": "manual holding, 7 \u2014 no book tracks it"
+   "detail": "broker holds -80 that no book claims (no order tag)"
+  },
+  {
+   "level": "ALERT",
+   "kind": "ORPHAN",
+   "symbol": "NIFTY2690124500CE",
+   "broker_qty": -325,
+   "app_qty": 0,
+   "detail": "broker holds -325 that no book claims (no order tag)"
   },
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "MANORAMA",
+   "symbol": "GVT&D",
+   "broker_qty": 2,
+   "app_qty": 0,
+   "detail": "manual holding, 2 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "INOXINDIA",
    "broker_qty": 5,
    "app_qty": 0,
    "detail": "manual holding, 5 \u2014 no book tracks it"
   },
   {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "THYROCARE",
-   "broker_qty": 17,
-   "app_qty": 0,
-   "detail": "manual holding, 17 \u2014 no book tracks it"
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX26AUG77400CE",
+   "broker_qty": -40,
+   "app_qty": -40,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX26AUG77400PE",
+   "broker_qty": -40,
+   "app_qty": -40,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX26AUG77600CE",
+   "broker_qty": -40,
+   "app_qty": -40,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX26AUG77600PE",
+   "broker_qty": -40,
+   "app_qty": -40,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "SENSEX26AUG77700CE",
-   "broker_qty": -40,
-   "app_qty": -40,
+   "broker_qty": -80,
+   "app_qty": 0,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
-   "symbol": "SENSEX26AUG77700PE",
-   "broker_qty": -40,
-   "app_qty": -40,
+   "symbol": "NIFTY2690124300CE",
+   "broker_qty": -325,
+   "app_qty": -325,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
-   "symbol": "SENSEX26AUG77900CE",
-   "broker_qty": -60,
-   "app_qty": -60,
+   "symbol": "NIFTY2690124300PE",
+   "broker_qty": -325,
+   "app_qty": -325,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
-   "symbol": "SENSEX26AUG77900PE",
-   "broker_qty": -60,
-   "app_qty": -60,
+   "symbol": "NIFTY2690124500CE",
+   "broker_qty": -325,
+   "app_qty": 0,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   }
  ],
  "filled_by_tag": {
-  "untagged": 669,
-  "CSL_CSL_TIMEB_SENSEX": 640,
-  "CSL_CSL30F_SENSEX_WE": 120
+  "untagged": 892,
+  "CSL_NAS_COMB20": 650
  },
- "alerts": 0,
- "warns": 4,
- "infos": 3
+ "alerts": 2,
+ "warns": 8,
+ "infos": 2
 }

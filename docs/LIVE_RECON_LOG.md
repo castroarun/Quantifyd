@@ -306,3 +306,47 @@ Filled today by tag:
   CSL_CSL_TIMEB_SENSEX        320
   CSL_CSL30F_SENSEX_WE        120
 ```
+
+## 2026-08-26 14:00 IST — 0 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-08-26 14:00 IST
+7 broker legs · 0 alerts · 4 warnings
+
+[INFO] MANUAL INOXINDIA: manual holding, 7 — no book tracks it
+[INFO] MANUAL MANORAMA: manual holding, 5 — no book tracks it
+[INFO] MANUAL THYROCARE: manual holding, 17 — no book tracks it
+[WARN] NAKED SENSEX26AUG77700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77700PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77900CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77900PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                    669
+  CSL_CSL_TIMEB_SENSEX        640
+  CSL_CSL30F_SENSEX_WE        120
+```
+
+## 2026-08-27 11:00 IST — 2 alerts, 8 warnings
+
+```
+Live vs app reconciliation · 2026-08-27 11:00 IST
+10 broker legs · 2 alerts · 8 warnings
+
+[ALERT] ORPHAN SENSEX26AUG77700CE: broker holds -80 that no book claims (no order tag)
+[ALERT] ORPHAN NIFTY2690124500CE: broker holds -325 that no book claims (no order tag)
+[INFO] MANUAL GVT&D: manual holding, 2 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 5 — no book tracks it
+[WARN] NAKED SENSEX26AUG77400CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77400PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77600CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77600PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX26AUG77700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124300CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124300PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124500CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                    892
+  CSL_NAS_COMB20              650
+```

@@ -59,11 +59,13 @@ export default function Holdings() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'digest' | 'charts'>('digest');
+  const [account, setAccount] = useState<'me' | 'dad'>('me');
 
   useEffect(() => {
     let cancelled = false;
+    setData(null); setLoading(true);
     const load = () => {
-      apiGet<HoldingsDigest>('/api/holdings/digest')
+      apiGet<HoldingsDigest>(`/api/holdings/digest${account === 'dad' ? '?account=dad' : ''}`)
         .then((d) => {
           if (cancelled) return;
           setData(d);
@@ -83,7 +85,7 @@ export default function Holdings() {
       cancelled = true;
       clearInterval(id);
     };
-  }, []);
+  }, [account]);
 
   if (loading && !data) {
     return <div className={styles.root}>Loading holdings…</div>;
@@ -99,8 +101,27 @@ export default function Holdings() {
     <div className={`${styles.root} ${tab === 'charts' ? chartStyles.wide : ''}`}>
       <div className="page-title">Holdings</div>
       <div className="page-subtitle">
-        {summary.count} stocks · signals Kite doesn't flag — movers, extremes, events
+        {account === 'dad'
+          ? `${summary.count} stocks · Dad's account · read-only`
+          : `${summary.count} stocks · signals Kite doesn't flag — movers, extremes, events`}
       </div>
+
+      <div className={chartStyles.tabBar}>
+        <button
+          className={`${chartStyles.tab} ${account === 'me' ? chartStyles.tabOn : ''}`}
+          onClick={() => setAccount('me')}
+        >My account</button>
+        <button
+          className={`${chartStyles.tab} ${account === 'dad' ? chartStyles.tabOn : ''}`}
+          onClick={() => setAccount('dad')}
+        >Dad</button>
+      </div>
+
+      {account === 'dad' && (data as { error?: string }).error ? (
+        <div style={{ margin: '4px 0 10px', padding: '10px 14px', background: 'var(--brand-amber-soft)', color: 'var(--brand-amber)', borderRadius: 8, fontSize: 13 }}>
+          {(data as { error?: string }).error}
+        </div>
+      ) : null}
 
       <div className={chartStyles.tabBar}>
         <button
@@ -114,7 +135,7 @@ export default function Holdings() {
       </div>
 
       {tab === 'charts' ? (
-        <HoldingsCharts holdings={holdings} />
+        <HoldingsCharts holdings={holdings} ohlcUrl={account === 'dad' ? '/static/dad_holdings_ohlc.json' : undefined} />
       ) : (
         <>
       {/* Hero (B) */}

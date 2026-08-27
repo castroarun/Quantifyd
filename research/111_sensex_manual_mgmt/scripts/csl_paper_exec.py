@@ -325,6 +325,35 @@ def main():
                         q = k.ltp(["%s:%s" % (B["seg"], ce["tradingsymbol"]), "%s:%s" % (B["seg"], pe["tradingsymbol"])])
                         P["ce0"] = q["%s:%s" % (B["seg"], ce["tradingsymbol"])]["last_price"]
                         P["pe0"] = q["%s:%s" % (B["seg"], pe["tradingsymbol"])]["last_price"]
+                        # FORWARD SNAP (2026-08-27, ported from nas_atm_executor ~641 / research/119b).
+                        # The index LTP is not what the options price off - on SENSEX the gap ran ~66
+                        # points today - so round(spot/step) lands a strike or two below the true ATM and
+                        # the "straddle" becomes a directional bet. The synthetic forward K + (CE - PE)
+                        # is self-calibrating: put-call parity gives the level the chain itself is using.
+                        # Fail-safe: no usable quote at the forward strike -> keep the spot strike.
+                        try:
+                            _fwd = K + (P["ce0"] - P["pe0"])
+                            _fk = int(round(_fwd / B["step"]) * B["step"])
+                            if _fk != K:
+                                _c2, _p2, _E2 = resolve_legs(k, B, _fk)
+                                if _c2 and _p2:
+                                    _q2 = k.ltp(["%s:%s" % (B["seg"], _c2["tradingsymbol"]),
+                                                 "%s:%s" % (B["seg"], _p2["tradingsymbol"])])
+                                    _ce2 = _q2["%s:%s" % (B["seg"], _c2["tradingsymbol"])]["last_price"]
+                                    _pe2 = _q2["%s:%s" % (B["seg"], _p2["tradingsymbol"])]["last_price"]
+                                    if _ce2 and _pe2 and _ce2 > 0 and _pe2 > 0:
+                                        log("%s FWD-SNAP: spot %.1f spot-K %d (CE %.2f/PE %.2f gap %.1f)"
+                                            " -> fwd %.1f fwd-K %d (CE %.2f/PE %.2f gap %.1f)"
+                                            % (sym, sp, K, P["ce0"], P["pe0"], P["ce0"] - P["pe0"],
+                                               _fwd, _fk, _ce2, _pe2, _ce2 - _pe2))
+                                        K, ce, pe, E = _fk, _c2, _p2, _E2
+                                        P["ce0"], P["pe0"] = _ce2, _pe2
+                                    else:
+                                        log("%s FWD-SNAP skipped - no quote at %d, keeping spot-K %d" % (sym, _fk, K))
+                                else:
+                                    log("%s FWD-SNAP skipped - %d unresolved, keeping spot-K %d" % (sym, _fk, K))
+                        except Exception as _fe:
+                            log("%s FWD-SNAP error (%s) - keeping spot-K %d" % (sym, str(_fe)[:60], K))
                         P["live"] = False
                         if is_live_book(B):
                             ok, why = live_allowed()
