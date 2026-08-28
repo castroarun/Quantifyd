@@ -195,7 +195,23 @@
   box-shadow: 0 8px 28px rgba(15, 20, 30, 0.22);
   backdrop-filter: blur(7px); padding: 9px 11px 11px;
 }
-.tradeDockMin { width: auto; padding: 7px 11px; }
+.tradeDockMin {
+  width: auto; padding: 7px 12px; cursor: pointer;
+  background: color-mix(in srgb, var(--brand-navy-soft) 85%, var(--surface));
+  border-color: color-mix(in srgb, var(--brand-navy) 55%, var(--hairline));
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.tradeDockMin:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--brand-navy-soft) 100%, transparent);
+  box-shadow: 0 10px 30px rgba(15, 20, 30, 0.28);
+}
+.tradeDockMin .dockTitle { color: var(--brand-navy); }
+.dockKbd {
+  font-size: 10px; font-weight: 700; color: var(--brand-navy);
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 45%, var(--hairline));
+  border-radius: 5px; padding: 1px 6px; background: var(--surface);
+}
 .dockHead { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
 .dockChevron { font-size: 10px; color: var(--ink-muted); }
 .dockTitle { font-size: 12px; font-weight: 700; color: var(--ink); }

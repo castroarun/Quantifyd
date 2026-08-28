@@ -311,9 +311,9 @@ function HeroSummary({ summary, next, funds }: { summary: HoldingsDigest['summar
       </div>
       <div className={styles.heroBlock}>
         <div className={styles.heroLabel}>Cash available</div>
-        <div className={styles.heroValue}>{funds ? formatRs(funds.available) : '…'}</div>
+        <div className={styles.heroValue}>{funds ? formatRs(funds.live_balance) : '…'}</div>
         <div className={styles.heroSub}>
-          {funds ? <>deployable {formatRs(funds.live_balance)}</> : 'fetching funds'}
+          {funds ? <>of {formatRs(funds.available)} total margin</> : 'fetching funds'}
         </div>
       </div>
       <div className={styles.heroBlock}>

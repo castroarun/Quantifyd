@@ -706,6 +706,8 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      const kk = e.key.toLowerCase();
+      if (kk === 't' || (e.altKey && kk === 'b')) { e.preventDefault(); setDockOpen((o) => !o); return; }  // toggle trade dock
       if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
       else if (e.key === 'Escape') setView('wall');
@@ -729,7 +731,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
   const [sellCustomQty, setSellCustomQty] = useState('');
   const [sellPct, setSellPct] = useState<number | null>(null);
   const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
-  const [dockOpen, setDockOpen] = useState(true);
+  const [dockOpen, setDockOpen] = useState(false);
   const [paper, setPaper] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [exec, setExec] = useState<ExecState | null>(null);
@@ -961,7 +963,8 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
                   <span className={styles.dockChevron}>{dockOpen ? '▾' : '▸'}</span>
                   <span className={styles.dockTitle}>Trade {current.sym}</span>
                   <span className={styles.dockAcct}>{account === 'dad' ? 'Stanly' : 'Me'}</span>
-                  <span className={styles.dockFunds}>{funds ? (funds.error ? '—' : fmtRs(funds.available)) : '…'}</span>
+                  <span className={styles.dockFunds} title="Cash available to deploy">{funds ? (funds.error ? '—' : fmtRs(funds.live_balance)) : '…'}</span>
+                  {!dockOpen && <span className={styles.dockKbd} title="Shortcut: T (or Alt+B)">T</span>}
                 </div>
                 {dockOpen && (
                 <div className={styles.dockBody}>
@@ -1043,6 +1046,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
             </div>
             <div className={styles.kHint}>
               <span className={styles.kbd}><b>←</b><b>→</b></span> browse holdings
+              <span className={styles.kbd}><b>T</b></span> trade
               <span className={styles.kbd}><b>Esc</b></span> back to wall
               <span style={{ color: 'var(--ink-faint)' }}>· the dock trades the on-screen stock; the green band shows where a buy fills</span>
             </div>
