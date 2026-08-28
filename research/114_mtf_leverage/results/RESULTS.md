@@ -35,37 +35,51 @@ research/104 financed at 10.5%; the runbook puts real Zerodha MTF at ~14.6% (0.0
 The rate matters less than it looks because leverage is only carried while the gate is risk-on
 (~75% of months) and only on the borrowed slice. It is NOT free: 3pp/yr at 2.5x.
 
-## Why zero margin calls is REAL, not a modelling artifact
+## Why zero margin calls is real — and where it stops being real
 
-The engine calls margin when equity/gross < 25%. Solving for a one-day fall in the holdings:
+**CORRECTION (Arun caught this).** The first version of this study justified the 3.0x risk by
+asserting "a momentum basket moves 1.1-1.4x the index". That was an assumption, and it was wrong —
+the same report shows the book drawing down -22% against the index's -59.7%, which should have
+prompted measuring it rather than guessing. Measured over the 3,051 days the book was actually
+HOLDING (2006-2026):
 
-| Leverage | Equity as % of gross | One-day fall that calls it |
+| Measure | Value |
+|---|---|
+| Beta while holding, all days | **0.91** |
+| Beta while holding, index days <= -2% | **0.56** |
+| Worst single day of the held basket | **-14.52%** (2008-01-21) |
+
+So the basket is *defensive* against the index, not amplifying — on bad index days it falls barely
+half as much. The conclusion below survives anyway, but for a completely different reason.
+
+**The risk is not market beta. It is idiosyncratic concentration.**
+
+| Date | Basket | Index | Ratio | Names held |
+|---|---|---|---|---|
+| 2008-01-21 | -14.52% | -9.44% | 1.5x | 1 |
+| **2024-06-04** | **-12.74%** | -2.97% | **4.3x** | **8** |
+| 2023-09-12 | -7.81% | -0.09% | 90x | 8 |
+
+Eight momentum names gap together on news — the 2024 election result being the clearest case, where
+the book fell 4.3x the index. An index-beta argument would never have found this.
+
+**What that does to each leverage, fully deployed, on the worst day with all 8 held (2024-06-04):**
+
+| Leverage | equity/gross after the day | Verdict |
 |---|---|---|
-| 2.0x | 50.0% | 33.3% |
-| 2.5x | 40.0% | **20.0%** |
-| 3.0x | 33.3% | **11.1%** |
+| 2.0x | 42.7% | survives easily |
+| **2.5x** | **31.2%** | **survives, 6.2pp above the 25% line** |
+| 3.0x | **23.6%** | **MARGIN CALL** |
 
-An 11.1% trigger is INSIDE the historical range — NIFTYBEES fell 10.2% on 2020-03-23 and 10.1% on
-2008-10-24, and a momentum basket typically moves 1.1-1.4x the index. So the 3.0x result had to be
-checked rather than trusted. It holds for a specific, verifiable reason:
+**This is why the engine's "0 margin calls at 3.0x" must not be taken at face value.** It is true
+of the path the book actually took, because on those specific days it was not fully deployed —
+2008-01-21 had just ONE name held. That is timing luck, not a designed buffer. Run 3.0x fully
+deployed into 2024-06-04 and it is called.
 
-| Worst day | Index | Gate state |
-|---|---|---|
-| 2020-03-23 | -10.2% | RISK-OFF — in cash, **28 days** before |
-| 2008-10-24 | -10.1% | RISK-OFF — in cash, **73 days** before |
-| 2008-01-21 | -9.4% | RISK-OFF |
-| 2006-05-19 | -9.1% | **RISK-ON — holding, exposed** |
-| 2020-03-12 | -7.5% | RISK-OFF |
-| 2008-01-22 | -7.4% | RISK-OFF |
-
-**On 5 of the 6 worst days in 20 years the book was already in cash.** The 100-SMA gate exits weeks
-before crashes bottom, so the leverage simply is not on when the tape gaps. That is the mechanism,
-and it is the same one research/104 identified.
-
-But note the exception: **2006-05-19, -9.1%, holding.** A 1.2-beta basket falls ~10.9% that day —
-against an 11.1% trigger at 3.0x. That is the entire safety margin at 3x: 0.2pp. At 2.5x the
-trigger is 20.0% and the same day is nowhere near it. **This is why 2.5x and 3.0x are not the same
-decision, despite identical Calmar.**
+The gate still does the heavy lifting for the big crashes — on 5 of the 6 worst INDEX days the book
+was already in cash (28 days before the 2020 low, 73 before 2008). But the gate is a weekly,
+index-level signal: it cannot protect against a single-day idiosyncratic hit to eight concentrated
+momentum names, which is precisely what kills a 3.0x book.
 
 ## The honest read
 
