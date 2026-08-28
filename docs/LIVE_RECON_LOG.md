@@ -350,3 +350,88 @@ Filled today by tag:
   untagged                    892
   CSL_NAS_COMB20              650
 ```
+
+## 2026-08-27 14:00 IST — 9 alerts, 0 warnings
+
+```
+Live vs app reconciliation · 2026-08-27 14:00 IST
+4 broker legs · 9 alerts · 0 warnings
+
+[ALERT] SIZE SENSEX26AUG77400CE: broker -160 vs app -40 (sensex_atm2) · order tags: untagged -160
+[ALERT] ORPHAN NIFTY2690124250CE: broker holds -325 that no book claims (no order tag)
+[INFO] MANUAL GVT&D: manual holding, 2 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 10 — no book tracks it
+[ALERT] GHOST SENSEX26AUG77400PE: sensex_atm2 records -40, broker holds none
+[ALERT] GHOST SENSEX26AUG77600CE: sensex_atm4 records -40, broker holds none
+[ALERT] GHOST SENSEX26AUG77600PE: sensex_atm4 records -40, broker holds none
+[ALERT] GHOST SENSEX26AUG77300CE: CSL_TIMEB_SENSEX records -160, broker holds none
+[ALERT] GHOST SENSEX26AUG77300PE: CSL_TIMEB_SENSEX records -160, broker holds none
+[ALERT] GHOST NIFTY2690124300CE: NAS_COMB20 records -325, broker holds none
+[ALERT] GHOST NIFTY2690124300PE: NAS_COMB20 records -325, broker holds none
+
+Filled today by tag:
+  untagged                   3397
+  CSL_NAS_COMB20              650
+  CSL_CSL_TIMEB_SENSEX        320
+```
+
+## 2026-08-27 — RULES-TRUE reconstruction (manual control taken mid-session)
+
+```
+What the deployed rules would have booked, priced from the recorded 1-min chain.
+Arun adjusted the book manually from ~12:08; SX-ATM was closed at 09:16 by the
+NO_LEG_SL race (fix deploys 15:40), which is a DEFECT exit, not a rule exit.
+
+SENSEX ATM                rule: DTE0: NO per-leg stop, hold to 15:15 (research/114)
+                          why diverged: closed 09:16 by the NO_LEG_SL race - NOT a rule exit
+      SENSEX26AUG77600CE     entry   149.60  ->     16.90     +5308
+      SENSEX26AUG77600PE     entry   112.10  ->    314.60     -8100
+      RULES-TRUE @15:15: -2792   (actual -649, delta -2143)
+
+SENSEX ATM4               rule: DTE0: NO per-leg stop, roll-to-match cannot fire, hold to 15:15
+                          why diverged: PE closed manually 12:08
+      SENSEX26AUG77600CE     entry   149.60  ->     16.90     +5308
+      SENSEX26AUG77600PE     entry   113.60  ->    314.60     -8040
+      RULES-TRUE @15:15: -2732
+
+SENSEX ATM2 (re-entry)    rule: 0.4% move-stop + per-leg 30%, exit 15:15
+                          why diverged: closed manually 12:21
+      SENSEX26AUG77400CE     entry   143.50  ->     48.50     +3800
+      SENSEX26AUG77400PE     entry   130.20  ->    152.50      -892
+      RULES-TRUE @15:15: +2908
+
+TimeB SENSEX              rule: DTE0: no % stop, 50% disaster backstop, exit 15:20
+                          why diverged: closed manually; CSL self-reconciles at the rule exit
+      SENSEX26AUG77300CE     entry   171.80  ->     33.10    +22192
+      SENSEX26AUG77300PE     entry    59.83  ->    134.15    -11891
+      RULES-TRUE @15:20: +10301
+
+NIFTY COMB                rule: DTE3: combined-premium SL 20%, exit 15:20
+                          why diverged: CE closed manually; CSL self-reconciles at the rule exit
+      NIFTY2690124300CE      entry   115.28  ->     65.50    +16178
+      NIFTY2690124300PE      entry    90.41  ->    147.95    -18700
+      RULES-TRUE @15:20: -2522
+
+RULES-TRUE TOTAL across reconstructed books: +5163
+```
+
+## 2026-08-28 11:00 IST — 0 alerts, 5 warnings
+
+```
+Live vs app reconciliation · 2026-08-28 11:00 IST
+8 broker legs · 0 alerts · 5 warnings
+
+[INFO] MANUAL EBGNG: manual holding, 42 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 5 — no book tracks it
+[INFO] MANUAL MANORAMA: manual holding, 6 — no book tracks it
+[WARN] NAKED NIFTY2690124150CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124150PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124250CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124250PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124300CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1223
+  CSL_CSL_TIMEB_NIFTY         780
+  CSL_NAS_COMB20              260
+```

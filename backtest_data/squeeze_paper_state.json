@@ -1,11 +1,11 @@
 {
-  "date": "2026-08-27",
-  "entry_time": "11:10",
-  "entry_spot": 24165.8,
+  "date": "2026-08-28",
+  "entry_time": "10:35",
+  "entry_spot": 24160.2,
   "strike": 24150,
   "ce_sym": "NIFTY2690124150CE",
   "pe_sym": "NIFTY2690124150PE",
-  "ce_entry": 146.4,
-  "pe_entry": 71.1,
+  "ce_entry": 150.95,
+  "pe_entry": 55.5,
   "recenters": 0
 }
