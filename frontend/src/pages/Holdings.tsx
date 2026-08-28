@@ -135,7 +135,7 @@ export default function Holdings() {
       </div>
 
       {tab === 'charts' ? (
-        <HoldingsCharts holdings={holdings} ohlcUrl={account === 'dad' ? '/static/dad_holdings_ohlc.json' : undefined} />
+        <HoldingsCharts holdings={holdings} account={account} ohlcUrl={account === 'dad' ? '/static/dad_holdings_ohlc.json' : undefined} />
       ) : (
         <>
       {/* Hero (B) */}

@@ -118,9 +118,8 @@ const EXEC_LABEL: Record<string, string> = {
   working: 'Working…', filled: 'Filled ✓', partial: 'Partially filled',
   cancelled: 'Not filled', error: 'Rejected',
 };
-// Buy/top-up ships after the market-close backend deploy; keep it hidden until
-// /api/holdings/order is live (flip to true in the after-close build).
-const BUY_ENABLED = false;
+// Buy + exit are live once the account-aware order/exit/funds routes are deployed.
+const BUY_ENABLED = true;
 
 function fmtRs(n: number): string {
   const a = Math.abs(n);
@@ -590,7 +589,7 @@ function saveFlags(f: Record<string, FlagColor>) {
   try { localStorage.setItem('holdingsFlags', JSON.stringify(f)); } catch { /* ignore */ }
 }
 
-export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: HoldingsRecord[]; ohlcUrl?: string }) {
+export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { holdings: HoldingsRecord[]; ohlcUrl?: string; account?: 'me' | 'dad' }) {
   const [view, setView] = useState<'wall' | 'focus'>('wall');
   const [sort, setSort] = useState('day');
   const [filter, setFilter] = useState('all');
@@ -613,12 +612,13 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
   // regenerated out-of-band, same pattern as nifty_5m.json. No backend route.
   useEffect(() => {
     let on = true;
+    setOhlc({});
     fetch(`${ohlcUrl || "/static/holdings_ohlc.json"}?t=${Math.floor(Date.now() / 300000)}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (on && d && d.symbols) setOhlc(d.symbols as OhlcMap); })
       .catch(() => {});
     return () => { on = false; };
-  }, []);
+  }, [ohlcUrl]);
 
   const allSeries = useMemo(
     () => holdings.map((r) => toSeries(r, ohlc[r.tradingsymbol])).filter((s): s is Series => s !== null),
@@ -683,21 +683,35 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
 
   const openFocus = (sym: string) => { setCurrentSym(sym); setView('focus'); };
 
-  // ---- top-up (buy) state ----
+  // ---- buy / sell state ----
   const [amt, setAmt] = useState<number | null>(null);
   const [customAmt, setCustomAmt] = useState('');
+  const [sellCustomQty, setSellCustomQty] = useState('');
+  const [sellPct, setSellPct] = useState<number | null>(null);
+  const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
   const [paper, setPaper] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [exec, setExec] = useState<ExecState | null>(null);
   const [placing, setPlacing] = useState(false);
   const pollRef = useRef<number | undefined>(undefined);
 
+  // ---- funds (per account) ----
+  const [funds, setFunds] = useState<{ available: number; cash: number; live_balance: number; error?: string } | null>(null);
+  const loadFunds = () => {
+    fetch(`/api/holdings/funds?account=${account}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setFunds(d); })
+      .catch(() => {});
+  };
+  useEffect(() => { setFunds(null); loadFunds(); /* eslint-disable-next-line */ }, [account]);
+
   const curSym = current?.sym;
   useEffect(() => {
-    // reset the buy form whenever the focused symbol changes
-    setAmt(null); setCustomAmt(''); setConfirmOpen(false); setExec(null); setPlacing(false);
+    // reset both order forms whenever the focused symbol (or account) changes
+    setAmt(null); setCustomAmt(''); setSellCustomQty(''); setSellPct(null);
+    setConfirmOpen(false); setExec(null); setPlacing(false);
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
-  }, [curSym]);
+  }, [curSym, account]);
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
   const buyAmount = customAmt ? Number(customAmt) : (amt ?? 0);
@@ -711,13 +725,30 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
   const capP = current ? roundTick(current.ltp * (1 + 0.003)) : 0;
   const inr0 = (n: number) => Math.round(n).toLocaleString('en-IN');
 
-  const placeOrder = async () => {
-    if (!current || buyQty < 1) return;
+  // sell qty: a % chip of the holding, or a custom share count, clamped to holding
+  const sellQty = (() => {
+    if (!current) return 0;
+    const raw = sellCustomQty ? Number(sellCustomQty) : (sellPct != null ? Math.floor(current.qty * sellPct / 100) : 0);
+    return Math.max(0, Math.min(current.qty, Math.floor(raw || 0)));
+  })();
+  const sellValue = current ? sellQty * current.ltp : 0;
+  const sellRealized = current ? sellQty * (current.ltp - current.avg) : 0;
+
+  const openConfirm = (side: 'buy' | 'sell') => { setOrderSide(side); setExec(null); setConfirmOpen(true); };
+
+  const submitOrder = async () => {
+    if (!current) return;
+    const isSell = orderSide === 'sell';
+    if (isSell ? sellQty < 1 : buyQty < 1) return;
     setPlacing(true);
     try {
-      const r = await fetch('/api/holdings/order', {
+      const url = isSell ? '/api/holdings/exit' : '/api/holdings/order';
+      const body = isSell
+        ? { symbol: current.sym, qty: sellQty, paper, account }
+        : { symbol: current.sym, amount: buyAmount, paper, account };
+      const r = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol: current.sym, amount: buyAmount, paper }),
+        body: JSON.stringify(body),
       });
       const j = await r.json();
       if (j.error) { setExec({ status: 'error', message: j.error, steps: [] }); return; }
@@ -730,6 +761,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
           setExec(s);
           if (['filled', 'partial', 'cancelled', 'error'].includes(s.status)) {
             if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
+            loadFunds();  // refresh available funds after a fill
           }
         } catch { /* keep polling */ }
       }, 1500);
@@ -888,12 +920,18 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
             {BUY_ENABLED && (
             <div className={styles.buyPanel}>
               <div className={styles.buyHead}>
-                <span className={styles.buyTitle}>Top up {current.sym}</span>
+                <span className={styles.buyTitle}>Trade {current.sym} · {account === 'dad' ? "Dad's a/c" : 'My a/c'}</span>
+                <span className={styles.fundsTag}>
+                  {funds ? (funds.error ? 'funds n/a' : <>Funds <b>{fmtRs(funds.available)}</b></>) : 'funds…'}
+                </span>
                 <label className={styles.paperTog}>
                   <input type="checkbox" checked={paper} onChange={(e) => setPaper(e.target.checked)} />
                   Paper
                 </label>
               </div>
+
+              {/* --- BUY (smart limit) --- */}
+              <div className={styles.tradeSub}>Buy · smart limit</div>
               <div className={styles.amtRow}>
                 {[5000, 10000, 15000].map((a) => (
                   <button
@@ -920,8 +958,39 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
                   <span className={styles.buyLeft}>pick an amount to buy at market-smart limit</span>
                 )}
               </div>
-              <button className={styles.reviewBtn} disabled={buyQty < 1} onClick={() => setConfirmOpen(true)}>
+              <button className={styles.reviewBtn} disabled={buyQty < 1} onClick={() => openConfirm('buy')}>
                 Review buy →
+              </button>
+
+              {/* --- SELL / exit (market) --- */}
+              <div className={styles.tradeSub} style={{ marginTop: 14 }}>Sell · market · you hold {current.qty}</div>
+              <div className={styles.amtRow}>
+                {[25, 50, 100].map((p) => (
+                  <button
+                    key={p}
+                    className={`${styles.amtChip} ${!sellCustomQty && sellPct === p ? styles.amtChipOn : ''}`}
+                    onClick={() => { setSellPct(p); setSellCustomQty(''); }}
+                  >{p === 100 ? 'All' : `${p}%`}</button>
+                ))}
+                <input
+                  className={styles.amtInput}
+                  type="number"
+                  min={0}
+                  max={current.qty}
+                  placeholder="Qty"
+                  value={sellCustomQty}
+                  onChange={(e) => { setSellCustomQty(e.target.value); setSellPct(null); }}
+                />
+              </div>
+              <div className={styles.buyCalc}>
+                {sellQty >= 1 ? (
+                  <>sell <b>{sellQty} sh</b> ≈ ₹{inr0(sellValue)} <span className={sellRealized >= 0 ? styles.up : styles.dn}>({sellRealized >= 0 ? '+' : '−'}₹{inr0(Math.abs(sellRealized))} realized)</span></>
+                ) : (
+                  <span className={styles.buyLeft}>pick a quantity to sell at market</span>
+                )}
+              </div>
+              <button className={`${styles.reviewBtn} ${styles.sellBtn}`} disabled={sellQty < 1} onClick={() => openConfirm('sell')}>
+                Review sell →
               </button>
             </div>
             )}
@@ -960,26 +1029,41 @@ export default function HoldingsCharts({ holdings, ohlcUrl }: { holdings: Holdin
         <div className={styles.modalWrap} onClick={() => { if (!exec) setConfirmOpen(false); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHead}>
-              <span>Confirm top-up</span>
+              <span>Confirm {orderSide === 'sell' ? 'sell' : 'buy'} · {account === 'dad' ? "Dad's account" : 'My account'}</span>
               <span className={paper ? styles.paperBadge : styles.liveBadge}>{paper ? 'PAPER' : 'LIVE'}</span>
             </div>
             {!exec ? (
               <>
-                <div className={styles.modalBig}>BUY {buyQty} × {current.sym}</div>
-                <div className={styles.modalRows}>
-                  <div><span>Product</span><b>CNC · delivery</b></div>
-                  <div><span>Smart limit</span><b>start ₹{startP.toFixed(2)} → cap ₹{capP.toFixed(2)}</b></div>
-                  <div><span>Execution</span><b>shave, then chase to fill (~20s)</b></div>
-                  <div><span>Est. cost</span><b>₹{inr0(buyUsed)}</b></div>
-                  <div><span>Holding after</span><b>{current.qty + buyQty} sh · avg ₹{inr0(newAvg)}</b></div>
-                </div>
+                {orderSide === 'sell' ? (
+                  <>
+                    <div className={styles.modalBig} style={{ color: 'var(--accent-neg)' }}>SELL {sellQty} × {current.sym}</div>
+                    <div className={styles.modalRows}>
+                      <div><span>Product</span><b>CNC · delivery</b></div>
+                      <div><span>Order</span><b>MARKET — fills immediately</b></div>
+                      <div><span>Est. proceeds</span><b>≈ ₹{inr0(sellValue)} @ ₹{current.ltp.toFixed(1)}</b></div>
+                      <div><span>Realized P&amp;L</span><b className={sellRealized >= 0 ? styles.up : styles.dn}>{sellRealized >= 0 ? '+' : '−'}₹{inr0(Math.abs(sellRealized))}</b></div>
+                      <div><span>Holding after</span><b>{current.qty - sellQty} sh{current.qty - sellQty === 0 ? ' · fully exited' : ''}</b></div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.modalBig}>BUY {buyQty} × {current.sym}</div>
+                    <div className={styles.modalRows}>
+                      <div><span>Product</span><b>CNC · delivery</b></div>
+                      <div><span>Smart limit</span><b>start ₹{startP.toFixed(2)} → cap ₹{capP.toFixed(2)}</b></div>
+                      <div><span>Execution</span><b>shave, then chase to fill (~20s)</b></div>
+                      <div><span>Est. cost</span><b>₹{inr0(buyUsed)}</b></div>
+                      <div><span>Holding after</span><b>{current.qty + buyQty} sh · avg ₹{inr0(newAvg)}</b></div>
+                    </div>
+                  </>
+                )}
                 <div className={styles.modalBtns}>
                   <button className={styles.btnGhost} onClick={() => setConfirmOpen(false)}>Cancel</button>
                   <button
-                    className={`${styles.btnGo} ${paper ? '' : styles.btnGoLive}`}
+                    className={`${styles.btnGo} ${paper ? '' : (orderSide === 'sell' ? styles.btnGoSell : styles.btnGoLive)}`}
                     disabled={placing}
-                    onClick={placeOrder}
-                  >{placing ? 'Placing…' : paper ? 'Place paper order' : 'Place order'}</button>
+                    onClick={submitOrder}
+                  >{placing ? 'Placing…' : paper ? 'Place paper order' : orderSide === 'sell' ? 'Sell at market' : 'Place order'}</button>
                 </div>
               </>
             ) : (

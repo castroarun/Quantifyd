@@ -30,6 +30,15 @@ _execs = {}               # exec_id -> state dict (single gunicorn worker → sh
 _lock = threading.Lock()
 
 
+def _kite_for(account):
+    """Order-capable Kite client for the given account ('me' | 'dad')."""
+    if account == 'dad':
+        from services.dad_kite import get_dad_kite_trading
+        return get_dad_kite_trading()
+    from services.kite_service import get_kite
+    return get_kite()
+
+
 def _now():
     return datetime.now().strftime('%H:%M:%S')
 
@@ -71,11 +80,11 @@ def _update(exec_id, **kw):
             s['steps'].append(steps_append)
 
 
-def start_topup(symbol, amount, holdings_syms, paper=False):
+def start_topup(symbol, amount, holdings_syms, paper=False, account='me'):
     """Validate + kick off a smart-limit top-up. Returns dict (error or exec info)."""
-    from services.kite_service import get_kite
     from services.market_data_refresh import _within_market_hours
 
+    account = 'dad' if account == 'dad' else 'me'
     symbol = (symbol or '').strip().upper()
     if not symbol or symbol not in holdings_syms:
         return {'error': 'symbol is not one of your holdings'}
@@ -86,16 +95,16 @@ def start_topup(symbol, amount, holdings_syms, paper=False):
     if amount <= 0 or amount > MAX_AMOUNT:
         return {'error': f'amount must be between ₹1 and ₹{MAX_AMOUNT:,}'}
 
-    # one in-flight order per symbol
+    # one in-flight order per symbol per account
     with _lock:
         for s in _execs.values():
-            if s['symbol'] == symbol and s['status'] == 'working':
-                return {'error': f'a {symbol} top-up is already in progress'}
+            if s['symbol'] == symbol and s.get('account') == account and s['status'] == 'working':
+                return {'error': f'a {symbol} order is already in progress'}
 
     if not paper and not _within_market_hours():
         return {'error': 'market is closed — orders run 09:15–15:30 IST'}
 
-    kite = get_kite()
+    kite = _kite_for(account)
     ltp = _get_ltp(kite, symbol)
     if ltp <= 0:
         return {'error': 'could not fetch live price'}
@@ -106,17 +115,64 @@ def start_topup(symbol, amount, holdings_syms, paper=False):
     exec_id = uuid.uuid4().hex[:12]
     cap = _round_tick(ltp * (1 + PRICE_CAP))
     state = {
-        'exec_id': exec_id, 'symbol': symbol, 'qty': qty, 'ref_ltp': ltp,
-        'amount': amount, 'used': round(qty * ltp, 2), 'cap': cap, 'paper': paper,
+        'exec_id': exec_id, 'symbol': symbol, 'qty': qty, 'ref_ltp': ltp, 'side': 'BUY',
+        'account': account, 'amount': amount, 'used': round(qty * ltp, 2), 'cap': cap, 'paper': paper,
         'status': 'working', 'order_id': None, 'filled_qty': 0, 'avg_price': None,
         'message': 'placing order…', 'steps': [], 'started': datetime.now().isoformat(),
     }
     with _lock:
         _execs[exec_id] = state
     threading.Thread(target=_run, args=(exec_id,), daemon=True).start()
-    logger.info(f"[topup] start {symbol} qty={qty} ltp={ltp} cap={cap} paper={paper} exec={exec_id}")
+    logger.info(f"[topup] start {account} {symbol} qty={qty} ltp={ltp} cap={cap} paper={paper} exec={exec_id}")
     return {'exec_id': exec_id, 'symbol': symbol, 'qty': qty, 'ref_ltp': ltp,
-            'cap': cap, 'used': state['used'], 'paper': paper}
+            'cap': cap, 'used': state['used'], 'paper': paper, 'account': account}
+
+
+def start_exit(symbol, qty, holdings_qty, account='me', paper=False):
+    """Market-SELL an existing holding (full or partial exit). Returns dict (error or exec info).
+
+    Exits use MARKET orders for certainty of fill (the user's stated choice); a smart-limit
+    is fine for adding on your own schedule, but an exit you want done should just clear."""
+    from services.market_data_refresh import _within_market_hours
+
+    account = 'dad' if account == 'dad' else 'me'
+    symbol = (symbol or '').strip().upper()
+    try:
+        qty = int(qty)
+        holdings_qty = int(holdings_qty)
+    except (TypeError, ValueError):
+        return {'error': 'invalid quantity'}
+    if qty < 1:
+        return {'error': 'quantity must be at least 1'}
+    if holdings_qty < 1:
+        return {'error': f'{symbol} is not in this account'}
+    if qty > holdings_qty:
+        return {'error': f'you hold {holdings_qty} {symbol} — cannot sell {qty}'}
+
+    with _lock:
+        for s in _execs.values():
+            if s['symbol'] == symbol and s.get('account') == account and s['status'] == 'working':
+                return {'error': f'a {symbol} order is already in progress'}
+
+    if not paper and not _within_market_hours():
+        return {'error': 'market is closed — orders run 09:15–15:30 IST'}
+
+    kite = _kite_for(account)
+    ltp = _get_ltp(kite, symbol)  # for the value estimate only; the order is MARKET
+
+    exec_id = uuid.uuid4().hex[:12]
+    state = {
+        'exec_id': exec_id, 'symbol': symbol, 'qty': qty, 'ref_ltp': ltp, 'side': 'SELL',
+        'account': account, 'held': holdings_qty, 'est_value': round(qty * ltp, 2), 'paper': paper,
+        'status': 'working', 'order_id': None, 'filled_qty': 0, 'avg_price': None,
+        'message': 'placing sell…', 'steps': [], 'started': datetime.now().isoformat(),
+    }
+    with _lock:
+        _execs[exec_id] = state
+    threading.Thread(target=_run_exit, args=(exec_id,), daemon=True).start()
+    logger.info(f"[exit] start {account} SELL {symbol} qty={qty}/{holdings_qty} ltp={ltp} paper={paper} exec={exec_id}")
+    return {'exec_id': exec_id, 'symbol': symbol, 'qty': qty, 'held': holdings_qty,
+            'ref_ltp': ltp, 'est_value': state['est_value'], 'paper': paper, 'account': account}
 
 
 def get_status(exec_id):
@@ -135,13 +191,13 @@ def _run(exec_id):
     with _lock:
         s = dict(_execs[exec_id])
     sym, qty, ltp, cap, paper = s['symbol'], s['qty'], s['ref_ltp'], s['cap'], s['paper']
+    account = s.get('account', 'me')
     ladder = _ladder(ltp, cap)
 
     if paper:
         return _run_paper(exec_id, ladder, qty)
 
-    from services.kite_service import get_kite
-    kite = get_kite()
+    kite = _kite_for(account)
     try:
         oid = kite.place_order(
             variety=kite.VARIETY_REGULAR, exchange=kite.EXCHANGE_NSE,
@@ -198,6 +254,60 @@ def _run(exec_id):
                     message='unfilled — price ran past the cap. Retry?')
     except Exception as e:  # noqa: BLE001
         logger.exception(f"[topup] {sym} exec failed")
+        _update(exec_id, status='error', message=str(e))
+
+
+def _run_exit(exec_id):
+    """Place a MARKET SELL and poll to a terminal state. Exits favour certainty over price."""
+    with _lock:
+        s = dict(_execs[exec_id])
+    sym, qty, ltp, paper = s['symbol'], s['qty'], s['ref_ltp'], s['paper']
+    account = s.get('account', 'me')
+
+    if paper:
+        time.sleep(2)
+        _update(exec_id, status='filled', filled_qty=qty, avg_price=ltp,
+                message=f'[paper] sold {qty} @ ~₹{ltp}',
+                steps_append={'t': _now(), 'price': ltp, 'action': 'filled'})
+        return
+
+    kite = _kite_for(account)
+    try:
+        oid = kite.place_order(
+            variety=kite.VARIETY_REGULAR, exchange=kite.EXCHANGE_NSE,
+            tradingsymbol=sym, transaction_type=kite.TRANSACTION_TYPE_SELL,
+            quantity=qty, product=kite.PRODUCT_CNC,
+            order_type=kite.ORDER_TYPE_MARKET,
+        )
+        _update(exec_id, order_id=str(oid), message='market sell placed…',
+                steps_append={'t': _now(), 'action': 'place'})
+        logger.info(f"[exit] {account} {sym} SELL {qty} placed {oid}")
+
+        deadline = time.time() + BUDGET_S
+        while time.time() < deadline:
+            time.sleep(1.5)
+            st = _order_state(kite, oid)
+            if st['status'] == 'COMPLETE':
+                _update(exec_id, status='filled', filled_qty=st['filled'], avg_price=st['avg'],
+                        message=f"sold {st['filled']} @ ₹{st['avg']}",
+                        steps_append={'t': _now(), 'price': st['avg'], 'action': 'filled'})
+                logger.info(f"[exit] {account} {sym} SOLD {st['filled']} @ {st['avg']}")
+                return
+            if st['status'] in ('REJECTED', 'CANCELLED'):
+                _update(exec_id, status='error', message=f"{st['status']}: {st['reason']}")
+                logger.warning(f"[exit] {account} {sym} {st['status']}: {st['reason']}")
+                return
+        # market order still not terminal after budget — report last known state
+        st = _order_state(kite, oid)
+        if st['filled'] > 0:
+            _update(exec_id, status=('filled' if st['filled'] >= qty else 'partial'),
+                    filled_qty=st['filled'], avg_price=st['avg'],
+                    message=f"sold {st['filled']}/{qty} @ ₹{st['avg']}")
+        else:
+            _update(exec_id, status='working',
+                    message='sell placed — still pending at exchange, check orderbook')
+    except Exception as e:  # noqa: BLE001
+        logger.exception(f"[exit] {account} {sym} SELL failed")
         _update(exec_id, status='error', message=str(e))
 
 

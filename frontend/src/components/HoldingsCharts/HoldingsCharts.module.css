@@ -179,6 +179,12 @@
 }
 .reviewBtn:hover:not(:disabled) { background: var(--brand-navy-hover, #1E40AF); }
 .reviewBtn:disabled { opacity: .45; cursor: not-allowed; }
+.fundsTag { font-size: 11.5px; color: var(--ink-muted); margin-left: auto; margin-right: 12px; white-space: nowrap; }
+.fundsTag b { color: var(--ink); font-weight: 700; }
+.tradeSub { font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+.sellBtn { background: var(--accent-neg); }
+.sellBtn:hover:not(:disabled) { background: var(--accent-neg); filter: brightness(.92); }
+.btnGoSell { background: var(--accent-neg); }
 
 /* Confirm modal */
 .modalWrap {
