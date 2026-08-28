@@ -39,6 +39,56 @@ function formatRs(n: number | null | undefined): string {
   return `${sign}Rs ${formatInt(abs)}`;
 }
 
+// --- union of two accounts (client-side; each digest already computed server-side) ---
+function topMovers(rows: HoldingsRecord[], key: 'day_pct' | 'change_5d_pct') {
+  const ranked = rows.filter((r) => r[key] != null);
+  const gainers = ranked.filter((r) => (r[key] as number) > 0).sort((a, b) => (b[key] as number) - (a[key] as number)).slice(0, 5);
+  const losers = ranked.filter((r) => (r[key] as number) < 0).sort((a, b) => (a[key] as number) - (b[key] as number)).slice(0, 5);
+  return { gainers, losers };
+}
+
+function mergeDigests(a: HoldingsDigest, b: HoldingsDigest): HoldingsDigest {
+  // combine same-symbol rows (a stock can be held in both accounts) so the charts
+  // rail has unique keys and totals are not double-counted
+  const bySym = new Map<string, HoldingsRecord>();
+  for (const r of [...a.holdings, ...b.holdings]) {
+    const ex = bySym.get(r.tradingsymbol);
+    if (!ex) { bySym.set(r.tradingsymbol, { ...r }); continue; }
+    const qty = ex.qty + r.qty;
+    const invested = ex.invested + r.invested;
+    const current = ex.current + r.current;
+    const total_pnl_inr = ex.total_pnl_inr + r.total_pnl_inr;
+    bySym.set(r.tradingsymbol, {
+      ...ex, qty, invested, current, total_pnl_inr,
+      day_pnl_inr: ex.day_pnl_inr + r.day_pnl_inr,
+      avg_price: qty ? invested / qty : ex.avg_price,
+      ltp: r.ltp || ex.ltp,
+      total_pnl_pct: invested ? (total_pnl_inr / invested) * 100 : 0,
+    });
+  }
+  const holdings = [...bySym.values()];
+  const invested = a.summary.invested + b.summary.invested;
+  const current = a.summary.current + b.summary.current;
+  const day_pnl = a.summary.day_pnl + b.summary.day_pnl;
+  const total_pnl = a.summary.total_pnl + b.summary.total_pnl;
+  const prevVal = current - day_pnl;
+  const events = [...a.events, ...b.events].sort((x, y) => x.event_date.localeCompare(y.event_date));
+  return {
+    summary: {
+      count: a.summary.count + b.summary.count,
+      invested, current, day_pnl, total_pnl,
+      day_pct: prevVal ? (day_pnl / prevVal) * 100 : 0,
+      total_pct: invested ? (total_pnl / invested) * 100 : 0,
+    },
+    holdings,
+    movers_today: topMovers(holdings, 'day_pct'),
+    movers_weekly: topMovers(holdings, 'change_5d_pct'),
+    extremes: { high: [...a.extremes.high, ...b.extremes.high], low: [...a.extremes.low, ...b.extremes.low] },
+    events,
+    next_event: events[0] ?? null,
+  };
+}
+
 function formatShortDate(iso: string): { day: string; month: string } {
   const dt = new Date(iso + 'T00:00:00');
   return {
@@ -59,32 +109,46 @@ export default function Holdings() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'digest' | 'charts'>('digest');
-  const [account, setAccount] = useState<'me' | 'dad'>('me');
+  const [account, setAccount] = useState<'me' | 'dad' | 'both'>('me');
+  const [funds, setFunds] = useState<{ available: number; cash: number; live_balance: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setData(null); setLoading(true);
+    const digestFor = (a: 'me' | 'dad') => apiGet<HoldingsDigest>(`/api/holdings/digest${a === 'dad' ? '?account=dad' : ''}`);
     const load = () => {
-      apiGet<HoldingsDigest>(`/api/holdings/digest${account === 'dad' ? '?account=dad' : ''}`)
-        .then((d) => {
-          if (cancelled) return;
-          setData(d);
-          setErr(null);
-        })
-        .catch((e) => {
-          if (cancelled) return;
-          setErr(e instanceof Error ? e.message : 'Failed to load');
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
+      const p = account === 'both'
+        ? Promise.all([digestFor('me'), digestFor('dad')]).then(([m, d]) => mergeDigests(m, d))
+        : digestFor(account);
+      p.then((d) => { if (cancelled) return; setData(d); setErr(null); })
+        .catch((e) => { if (cancelled) return; setErr(e instanceof Error ? e.message : 'Failed to load'); })
+        .finally(() => { if (!cancelled) setLoading(false); });
     };
     load();
     const id = setInterval(load, 15_000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [account]);
+
+  // Available cash for the hero strip (sum across both accounts when combined)
+  useEffect(() => {
+    let cancelled = false;
+    const accs = account === 'both' ? ['me', 'dad'] : [account];
+    const loadFunds = () => {
+      Promise.all(accs.map((a) => fetch(`/api/holdings/funds?account=${a}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)))
+        .then((list) => {
+          if (cancelled) return;
+          const ok = list.filter((x) => x && !x.error) as Array<{ available: number; cash: number; live_balance: number }>;
+          if (!ok.length) return;
+          setFunds({
+            available: ok.reduce((s, x) => s + (x.available || 0), 0),
+            cash: ok.reduce((s, x) => s + (x.cash || 0), 0),
+            live_balance: ok.reduce((s, x) => s + (x.live_balance || 0), 0),
+          });
+        });
     };
+    setFunds(null); loadFunds();
+    const id = setInterval(loadFunds, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
   }, [account]);
 
   if (loading && !data) {
@@ -102,7 +166,9 @@ export default function Holdings() {
       <div className="page-title">Holdings</div>
       <div className="page-subtitle">
         {account === 'dad'
-          ? `${summary.count} stocks · Dad's account · read-only`
+          ? `${summary.count} stocks · Stanly's account`
+          : account === 'both'
+          ? `${summary.count} stocks · combined — my account + Stanly's`
           : `${summary.count} stocks · signals Kite doesn't flag — movers, extremes, events`}
       </div>
 
@@ -114,7 +180,11 @@ export default function Holdings() {
         <button
           className={`${chartStyles.tab} ${account === 'dad' ? chartStyles.tabOn : ''}`}
           onClick={() => setAccount('dad')}
-        >Dad</button>
+        >Stanly</button>
+        <button
+          className={`${chartStyles.tab} ${account === 'both' ? chartStyles.tabOn : ''}`}
+          onClick={() => setAccount('both')}
+        >Both</button>
       </div>
 
       {account === 'dad' && (data as { error?: string }).error ? (
@@ -135,11 +205,16 @@ export default function Holdings() {
       </div>
 
       {tab === 'charts' ? (
-        <HoldingsCharts holdings={holdings} account={account} ohlcUrl={account === 'dad' ? '/static/dad_holdings_ohlc.json' : undefined} />
+        <HoldingsCharts
+          holdings={holdings}
+          account={account}
+          ohlcUrl={account === 'dad' ? '/static/dad_holdings_ohlc.json' : undefined}
+          ohlcUrls={account === 'both' ? ['/static/holdings_ohlc.json', '/static/dad_holdings_ohlc.json'] : undefined}
+        />
       ) : (
         <>
       {/* Hero (B) */}
-      <HeroSummary summary={summary} next={next_event} />
+      <HeroSummary summary={summary} next={next_event} funds={funds} />
 
       {/* Today's movers (B) */}
       <section className={styles.section}>
@@ -214,7 +289,7 @@ export default function Holdings() {
   );
 }
 
-function HeroSummary({ summary, next }: { summary: HoldingsDigest['summary']; next: HoldingsEvent | null }) {
+function HeroSummary({ summary, next, funds }: { summary: HoldingsDigest['summary']; next: HoldingsEvent | null; funds: { available: number; cash: number; live_balance: number } | null }) {
   return (
     <div className={styles.hero}>
       <div className={styles.heroBlock}>
@@ -233,6 +308,13 @@ function HeroSummary({ summary, next }: { summary: HoldingsDigest['summary']; ne
           {formatPnl(summary.day_pnl)}
         </div>
         <div className={styles.heroSub}>{formatPct(summary.day_pct, 2)}</div>
+      </div>
+      <div className={styles.heroBlock}>
+        <div className={styles.heroLabel}>Cash available</div>
+        <div className={styles.heroValue}>{funds ? formatRs(funds.available) : '…'}</div>
+        <div className={styles.heroSub}>
+          {funds ? <>deployable {formatRs(funds.live_balance)}</> : 'fetching funds'}
+        </div>
       </div>
       <div className={styles.heroBlock}>
         <div className={styles.heroLabel}>Next event</div>

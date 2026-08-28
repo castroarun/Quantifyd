@@ -103,7 +103,10 @@ function augmentToday(bars: Bar[] | undefined, s: Series): Bar[] | undefined {
   if (last.t >= today) return bars;                 // already has today (or newer)
   const dow = new Date().getDay();
   if (dow === 0 || dow === 6) return bars;          // weekend — no synthetic bar
-  const o = s.prevClose > 0 ? s.prevClose : last.c;
+  // Guard: if the series is stale (its last close is wildly off from the live LTP),
+  // splicing a live bar onto it draws a fake cliff. Skip rather than fabricate a spike.
+  if (last.c > 0 && Math.abs(s.ltp / last.c - 1) > 0.20) return bars;
+  const o = s.prevClose > 0 && Math.abs(s.ltp / s.prevClose - 1) <= 0.20 ? s.prevClose : last.c;
   return [...bars, { t: today, o, h: Math.max(o, s.ltp), l: Math.min(o, s.ltp), c: s.ltp, v: 0 }];
 }
 
@@ -589,7 +592,7 @@ function saveFlags(f: Record<string, FlagColor>) {
   try { localStorage.setItem('holdingsFlags', JSON.stringify(f)); } catch { /* ignore */ }
 }
 
-export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { holdings: HoldingsRecord[]; ohlcUrl?: string; account?: 'me' | 'dad' }) {
+export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 'me' }: { holdings: HoldingsRecord[]; ohlcUrl?: string; ohlcUrls?: string[]; account?: 'me' | 'dad' | 'both' }) {
   const [view, setView] = useState<'wall' | 'focus'>('wall');
   const [sort, setSort] = useState('day');
   const [filter, setFilter] = useState('all');
@@ -613,12 +616,18 @@ export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { 
   useEffect(() => {
     let on = true;
     setOhlc({});
-    fetch(`${ohlcUrl || "/static/holdings_ohlc.json"}?t=${Math.floor(Date.now() / 300000)}`, { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (on && d && d.symbols) setOhlc(d.symbols as OhlcMap); })
-      .catch(() => {});
+    const urls = ohlcUrls && ohlcUrls.length ? ohlcUrls : [ohlcUrl || "/static/holdings_ohlc.json"];
+    const bust = Math.floor(Date.now() / 300000);
+    Promise.all(urls.map((u) => fetch(`${u}?t=${bust}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null)).catch(() => null)))
+      .then((list) => {
+        if (!on) return;
+        const merged: OhlcMap = {};
+        list.forEach((d) => { if (d && d.symbols) Object.assign(merged, d.symbols as OhlcMap); });
+        setOhlc(merged);
+      });
     return () => { on = false; };
-  }, [ohlcUrl]);
+  }, [ohlcUrl, (ohlcUrls || []).join(',')]);
 
   const allSeries = useMemo(
     () => holdings.map((r) => toSeries(r, ohlc[r.tradingsymbol])).filter((s): s is Series => s !== null),
@@ -698,6 +707,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { 
   // ---- funds (per account) ----
   const [funds, setFunds] = useState<{ available: number; cash: number; live_balance: number; error?: string } | null>(null);
   const loadFunds = () => {
+    if (account === 'both') return;  // trading is single-account; no funds panel here
     fetch(`/api/holdings/funds?account=${account}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d) setFunds(d); })
@@ -718,9 +728,6 @@ export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { 
   const buyQty = current && current.ltp > 0 && buyAmount > 0 ? Math.floor(buyAmount / current.ltp) : 0;
   const buyUsed = current ? buyQty * current.ltp : 0;
   const buyLeft = buyAmount - buyUsed;
-  const newAvg = current && buyQty > 0
-    ? (current.invested + buyQty * current.ltp) / (current.qty + buyQty)
-    : (current?.avg ?? 0);
   const startP = current ? roundTick(current.ltp * (1 - 0.002)) : 0;
   const capP = current ? roundTick(current.ltp * (1 + 0.003)) : 0;
   const inr0 = (n: number) => Math.round(n).toLocaleString('en-IN');
@@ -917,10 +924,10 @@ export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { 
               <span style={{ color: 'var(--ink-faint)' }}>· click any tile on the wall to jump here</span>
             </div>
 
-            {BUY_ENABLED && (
+            {BUY_ENABLED && account !== 'both' && (
             <div className={styles.buyPanel}>
               <div className={styles.buyHead}>
-                <span className={styles.buyTitle}>Trade {current.sym} · {account === 'dad' ? "Dad's a/c" : 'My a/c'}</span>
+                <span className={styles.buyTitle}>Trade {current.sym} · {account === 'dad' ? "Stanly's a/c" : 'My a/c'}</span>
                 <span className={styles.fundsTag}>
                   {funds ? (funds.error ? 'funds n/a' : <>Funds <b>{fmtRs(funds.available)}</b></>) : 'funds…'}
                 </span>
@@ -1029,7 +1036,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { 
         <div className={styles.modalWrap} onClick={() => { if (!exec) setConfirmOpen(false); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHead}>
-              <span>Confirm {orderSide === 'sell' ? 'sell' : 'buy'} · {account === 'dad' ? "Dad's account" : 'My account'}</span>
+              <span>Confirm {orderSide === 'sell' ? 'sell' : 'buy'} · {account === 'dad' ? "Stanly's account" : 'My account'}</span>
               <span className={paper ? styles.paperBadge : styles.liveBadge}>{paper ? 'PAPER' : 'LIVE'}</span>
             </div>
             {!exec ? (
@@ -1053,7 +1060,6 @@ export default function HoldingsCharts({ holdings, ohlcUrl, account = 'me' }: { 
                       <div><span>Smart limit</span><b>start ₹{startP.toFixed(2)} → cap ₹{capP.toFixed(2)}</b></div>
                       <div><span>Execution</span><b>shave, then chase to fill (~20s)</b></div>
                       <div><span>Est. cost</span><b>₹{inr0(buyUsed)}</b></div>
-                      <div><span>Holding after</span><b>{current.qty + buyQty} sh · avg ₹{inr0(newAvg)}</b></div>
                     </div>
                   </>
                 )}

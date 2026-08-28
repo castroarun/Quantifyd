@@ -10002,7 +10002,7 @@ def api_holdings_refresh():
 
 
 def _holdings_refresh_meta_job():
-    """06:30 Mon-Fri — Refresh per-symbol 52w hi/lo + 5d/20d moves."""
+    """16:12 Mon-Fri post-close — Refresh 52w hi/lo + 5d/20d moves (was 06:30, which ran before the ~08:5x auto-login and silently skipped, freezing meta since 2026-04-20)."""
     try:
         from services.holdings_dashboard import refresh_holdings_meta
         refresh_holdings_meta()
@@ -10030,7 +10030,7 @@ def _holdings_capture_snapshot_job():
 
 try:
     scheduler.add_job(_holdings_refresh_meta_job,
-                      'cron', day_of_week='mon-fri', hour=6, minute=30,
+                      'cron', day_of_week='mon-fri', hour=16, minute=12,
                       id='holdings_meta', replace_existing=True)
     scheduler.add_job(_holdings_refresh_events_job,
                       'cron', day_of_week='mon-fri', hour=7, minute=0,
@@ -10038,7 +10038,7 @@ try:
     scheduler.add_job(_holdings_capture_snapshot_job,
                       'cron', day_of_week='mon-fri', hour=16, minute=0,
                       id='holdings_snapshot', replace_existing=True)
-    logger.info("Holdings cron jobs registered: meta(06:30), events(07:00), snapshot(16:00)")
+    logger.info("Holdings cron jobs registered: meta(16:12 post-close), events(07:00), snapshot(16:00)")
 except Exception as e:
     logger.warning(f"Could not register Holdings cron jobs: {e}")
 
