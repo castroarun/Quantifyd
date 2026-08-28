@@ -23,6 +23,7 @@ import {
 } from '../utils/format';
 import { formatTime } from '../utils/time';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 // action buttons removed — header is title/subtitle only, consistent across pages
 
 /* ---------- helpers ---------- */
@@ -629,6 +630,8 @@ export default function Orb() {
       </section>
 
       {/* Today's trades merged into the unified Positions table above. */}
+      <DailyPerformance book="orb" title="Daily performance · trade history" />
+
 
       {/* system rules */}
       <section className={styles.section}>
@@ -1323,6 +1326,7 @@ function CandidatesSection({ candidates }: { candidates: ORBCandidates }) {
           </div>
         </details>
       </div>
+
     </section>
   );
 }

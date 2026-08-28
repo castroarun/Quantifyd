@@ -1,12 +1,12 @@
 {
- "asof": "2026-08-27 13:05:05",
+ "asof": "2026-08-28 12:20:17",
  "upcoming": [
   {
    "expiry": "2026-10-27",
    "entry_date": "2026-09-11",
    "entry_weekday": "Fri",
    "exit_due": "2026-10-06",
-   "days_away": 15,
+   "days_away": 14,
    "weekend_rolled": true
   },
   {
@@ -14,7 +14,7 @@
    "entry_date": "2026-11-13",
    "entry_weekday": "Fri",
    "exit_due": "2026-12-08",
-   "days_away": 78,
+   "days_away": 77,
    "weekend_rolled": true
   },
   {
@@ -22,7 +22,7 @@
    "entry_date": "2027-02-12",
    "entry_weekday": "Fri",
    "exit_due": "2027-03-09",
-   "days_away": 169,
+   "days_away": 168,
    "weekend_rolled": true
   }
  ],
@@ -32,16 +32,16 @@
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
- "bhav_through": "2026-08-26",
+ "bhav_through": "2026-08-27",
  "realised": 131703.64278000002,
- "unrealised": 40296.750000000015,
- "nav": 1371544.4144278744,
+ "unrealised": 38424.750000000015,
+ "nav": 1369672.4144278744,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 0,
  "unrealised_plan": 0,
- "unrealised_off": 40296.750000000015,
+ "unrealised_off": 38424.750000000015,
  "nav_plan": 1331247.6644278744,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
@@ -72,6 +72,11 @@
    "gain": 1917.3
   }
  ],
+ "capital_deployed": 501177.75,
+ "capital_deployed_peak": 608944.5,
+ "margin_asof": "2026-08-28 12:20",
+ "running_pnl": 170128.39278000005,
+ "running_pnl_pct": 33.94571941392052,
  "n_closed": 3,
  "n_open": 1,
  "win_rate": 100.0,
@@ -97,14 +102,14 @@
    "vix_level": 11.31,
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
-   "mark_prem": 543.05,
-   "mark_date": "2026-08-27 13:05:03",
+   "mark_prem": 552.65,
+   "mark_date": "2026-08-28 12:20:08",
    "mark_src": "kite-ltp",
-   "mtm_rs": 40296.750000000015,
-   "mark_spot": 24181.4,
+   "mtm_rs": 38424.750000000015,
+   "mark_spot": 24090.0,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
-   "dte": 32,
+   "dte": 31,
    "curve": [
     {
      "d": "2026-08-17",
@@ -145,8 +150,66 @@
      "d": "2026-08-26",
      "prem": 546.15,
      "mtm": 39692.250000000015
+    },
+    {
+     "d": "2026-08-27",
+     "prem": 547.5,
+     "mtm": 39429.00000000001
     }
-   ]
+   ],
+   "legs_entry": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 24350.0,
+     "price": 495.65,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": 16.0
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 24350.0,
+     "price": 254.05,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": -16.0
+    }
+   ],
+   "legs_now": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 24350.0,
+     "price": 234.5,
+     "volume": 316485,
+     "oi": 410995,
+     "bid": 233.7,
+     "ask": 234.5,
+     "itm_by": -260.0
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 24350.0,
+     "price": 318.15,
+     "volume": 174005,
+     "oi": 421460,
+     "bid": 315.25,
+     "ask": 316.5,
+     "itm_by": 260.0
+    }
+   ],
+   "legs_asof": "2026-08-28 12:20:09",
+   "legs_src": "kite ltp",
+   "margin_real": 501177.75,
+   "margin_peak": 608944.5,
+   "mtm_pct": 7.666890639099604
   }
  ],
  "closed_trades": [
@@ -178,7 +241,57 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-08-04",
-   "dte": -3
+   "dte": -4,
+   "legs_entry": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 24200.0,
+     "price": 470.85,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": 6.9
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 24200.0,
+     "price": 332.4,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": -6.9
+    }
+   ],
+   "legs_now": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 24200.0,
+     "price": 481.05,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": 414.9
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 24200.0,
+     "price": 125.95,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": -414.9
+    }
+   ],
+   "legs_asof": "2026-08-04",
+   "legs_src": "bhav"
   },
   {
    "id": 2,
@@ -208,7 +321,57 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-07-07",
-   "dte": -31
+   "dte": -32,
+   "legs_entry": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 23600.0,
+     "price": 568.0,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": 22.9
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 23600.0,
+     "price": 383.35,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": -22.9
+    }
+   ],
+   "legs_now": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 23600.0,
+     "price": 872.85,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": 798.7
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 23600.0,
+     "price": 40.3,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": -798.7
+    }
+   ],
+   "legs_asof": "2026-07-07",
+   "legs_src": "bhav"
   },
   {
    "id": 1,
@@ -238,7 +401,57 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-06-09",
-   "dte": -59
+   "dte": -60,
+   "legs_entry": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 23650.0,
+     "price": 626.25,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": -6.5
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 23650.0,
+     "price": 529.15,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": 6.5
+    }
+   ],
+   "legs_now": [
+    {
+     "side": "SHORT",
+     "opt": "CE",
+     "strike": 23650.0,
+     "price": 193.05,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": -407.9
+    },
+    {
+     "side": "SHORT",
+     "opt": "PE",
+     "strike": 23650.0,
+     "price": 501.2,
+     "volume": 0,
+     "oi": 0,
+     "bid": null,
+     "ask": null,
+     "itm_by": 407.9
+    }
+   ],
+   "legs_asof": "2026-06-09",
+   "legs_src": "bhav"
   }
  ]
 }

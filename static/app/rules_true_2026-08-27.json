@@ -1,0 +1,126 @@
+{
+ "day": "2026-08-27",
+ "rows": [
+  {
+   "book": "SENSEX ATM",
+   "rule": "DTE0: NO per-leg stop, hold to 15:15 (research/114)",
+   "why": "closed 09:16 by the NO_LEG_SL race - NOT a rule exit",
+   "credit": 261.7,
+   "exit_at": "15:15",
+   "legs": [
+    [
+     "SENSEX26AUG77600CE",
+     149.6,
+     16.9,
+     5308
+    ],
+    [
+     "SENSEX26AUG77600PE",
+     112.1,
+     314.6,
+     -8100
+    ]
+   ],
+   "rules_true": -2792,
+   "actual": -649,
+   "delta": -2143
+  },
+  {
+   "book": "SENSEX ATM4",
+   "rule": "DTE0: NO per-leg stop, roll-to-match cannot fire, hold to 15:15",
+   "why": "PE closed manually 12:08",
+   "credit": 263.2,
+   "exit_at": "15:15",
+   "legs": [
+    [
+     "SENSEX26AUG77600CE",
+     149.6,
+     16.9,
+     5308
+    ],
+    [
+     "SENSEX26AUG77600PE",
+     113.6,
+     314.6,
+     -8040
+    ]
+   ],
+   "rules_true": -2732,
+   "actual": null,
+   "delta": null
+  },
+  {
+   "book": "SENSEX ATM2 (re-entry)",
+   "rule": "0.4% move-stop + per-leg 30%, exit 15:15",
+   "why": "closed manually 12:21",
+   "credit": 273.7,
+   "exit_at": "15:15",
+   "legs": [
+    [
+     "SENSEX26AUG77400CE",
+     143.5,
+     48.5,
+     3800
+    ],
+    [
+     "SENSEX26AUG77400PE",
+     130.2,
+     152.5,
+     -892
+    ]
+   ],
+   "rules_true": 2908,
+   "actual": null,
+   "delta": null
+  },
+  {
+   "book": "TimeB SENSEX",
+   "rule": "DTE0: no % stop, 50% disaster backstop, exit 15:20",
+   "why": "closed manually; CSL self-reconciles at the rule exit",
+   "credit": 231.63,
+   "exit_at": "15:20",
+   "legs": [
+    [
+     "SENSEX26AUG77300CE",
+     171.8,
+     33.1,
+     22192
+    ],
+    [
+     "SENSEX26AUG77300PE",
+     59.83,
+     134.15,
+     -11891
+    ]
+   ],
+   "rules_true": 10301,
+   "actual": null,
+   "delta": null
+  },
+  {
+   "book": "NIFTY COMB",
+   "rule": "DTE3: combined-premium SL 20%, exit 15:20",
+   "why": "CE closed manually; CSL self-reconciles at the rule exit",
+   "credit": 205.69,
+   "exit_at": "15:20",
+   "legs": [
+    [
+     "NIFTY2690124300CE",
+     115.28,
+     65.5,
+     16178
+    ],
+    [
+     "NIFTY2690124300PE",
+     90.41,
+     147.95,
+     -18700
+    ]
+   ],
+   "rules_true": -2522,
+   "actual": null,
+   "delta": null
+  }
+ ],
+ "rules_true_total": 5163
+}

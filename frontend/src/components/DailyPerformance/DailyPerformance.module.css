@@ -1,0 +1,197 @@
+/* Matches the table idiom the per-book pages already use: hairline rules,
+   uppercase micro-headers, tabular numerals, no boxes around numbers. */
+
+.wrap {
+  margin-top: 28px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.range {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dim { color: var(--ink-faint); }
+.pos { color: var(--accent-pos); }
+.neg { color: var(--accent-neg); }
+
+.loading,
+.empty {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  padding: 14px 0;
+}
+
+/* summary rail — no tiles, just figures separated by hairlines */
+.rail {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  padding: 10px 0;
+  margin-bottom: 14px;
+}
+
+.railItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 22px;
+  border-right: 1px solid var(--hairline-softest);
+}
+
+.railItem:first-child { padding-left: 0; }
+.railItem:last-child { border-right: 0; }
+
+.railK {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.railV {
+  font-size: var(--text-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.tbl thead th {
+  text-align: left;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 600;
+  color: var(--ink-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tbl tbody td {
+  padding: 8px 10px;
+  border-bottom: 0.5px solid var(--hairline);
+  color: var(--ink);
+}
+
+.dayRow { cursor: pointer; }
+.dayRow:hover td { background: rgba(0, 0, 0, 0.02); }
+
+.caret {
+  display: inline-block;
+  width: 14px;
+  color: var(--ink-faint);
+}
+
+.numr {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* the P&L bar shares one scale across every day, so the eye can compare them */
+.bar {
+  width: 130px;
+  padding: 0 10px !important;
+}
+
+.barFill {
+  display: block;
+  height: 6px;
+  border-radius: 2px;
+  min-width: 1px;
+}
+
+.barPos { background: var(--accent-pos); opacity: 0.55; }
+.barNeg { background: var(--accent-neg); opacity: 0.55; }
+
+.mode {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  padding: 1px 6px;
+}
+
+/* live money is the one that needs to be unmistakable */
+.modeLive {
+  color: var(--brand-amber);
+  border-color: var(--brand-amber);
+}
+
+.detailRow > td {
+  padding: 0 10px 12px 24px !important;
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.inner {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.inner thead th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 0.5px solid var(--hairline);
+  font-weight: 500;
+  color: var(--ink-faint);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: transparent;
+}
+
+.inner tbody td {
+  padding: 5px 8px;
+  border-bottom: 0.5px solid var(--hairline-softest);
+  color: var(--ink-secondary);
+}
+
+.more {
+  margin-top: 12px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.more:hover { border-color: rgba(0, 0, 0, 0.18); }
+
+.foot {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 900px) {
+  .bar { display: none; }
+  .railItem { padding: 2px 14px; }
+}

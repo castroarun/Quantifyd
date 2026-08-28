@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import styles from './N500m.module.css';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Mode = 'OFF' | 'PAPER' | 'LIVE';
 
@@ -250,6 +251,8 @@ export default function N500m() {
 
       <section className={styles.section}>
         <div className={styles.sectionHead}>
+      <DailyPerformance book="n500m" title="Daily performance · trade history" />
+
           <div className={styles.sectionTitle}>Open positions ({open.length})</div>
         </div>
         {open.length === 0 ? (

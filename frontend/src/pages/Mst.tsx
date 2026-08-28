@@ -12,6 +12,7 @@ import StatusDot from '../components/StatusDot/StatusDot';
 import { formatNumber, formatPnl, formatRs, pnlClass } from '../utils/format';
 import { formatTime } from '../utils/time';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 function modeLabel(state: MSTState | null): { label: string; tone: 'pos' | 'neg' | 'neutral' } {
   if (!state || !state.enabled) return { label: 'Disabled', tone: 'neutral' };
@@ -418,6 +419,8 @@ export default function Mst() {
 
       {/* events */}
       <section className={styles.section}>
+      <DailyPerformance book="mst" title="Daily performance · trade history" />
+
         <div className={styles.sectionHead}>
           <div className="section-title">Recent events</div>
           <Chip>{events.length} events</Chip>
@@ -511,6 +514,7 @@ export default function Mst() {
           </div>
         </details>
       </section>
+
     </div>
   );
 }
