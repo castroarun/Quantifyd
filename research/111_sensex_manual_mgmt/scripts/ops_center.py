@@ -94,6 +94,13 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("r/134 short-vol vs long-equity weighting - re-run on the real books' series + per-leg attribution",
+     "2026-11-30", "PENDING",
+     "r/134 CONCLUDED the offset for the all-short-vol book is plain long equity at ~25-35% of combined risk "
+     "(NOT puts/jade lizards - the book loses in MELT-UPS, never in down-trends: +7.85% Apr-2020). Tested with a "
+     "NIFTY proxy. Owed before any sizing change: re-run with Momentum-30/Breakout/HA monthly series (higher beta "
+     "than the index) and attribute protection per neutral leg - r/128 says stock tails are idiosyncratic. "
+     "Standing caveat: 7 down-trend months, no grinding bear in sample."),
     ("Forward-snap: confirm the CSL mis-strike rate collapses, and chase the NAS residual", "2026-09-26", "PENDING",
      "research/132: strike mis-selection cost NO net P&L (-Rs24,992 to snap, t -1.87, n=25) but carried a SYSTEMATIC unintended short-index tilt - CSL NIFTY median delta 0.185 = Rs2,750 per 100 index points, and the delta bet was a median 49% of booked P&L. Not a coin flip: the forward basis was positive on 57/85 NIFTY and 65/85 SENSEX days so spot-rounding landed BELOW the forward every time. Snap shipped 019ae8f (2026-08-27). CHECK after ~15 CSL entries: does the CSL mis-strike rate fall from 72-80% toward the NAS post-fix 9.9%? Also unconfirmed: the residual 10-18% mis-strike on the NAS books (fail-safe + chain-vs-live timing) - exposure only Rs508/100pt NIFTY, Rs142 SENSEX, so low priority. NOTE the basis CHANGES SIGN (Jul dividend season negative, Aug strongly positive) so the historical rate is not a forecast."),
     ("NIFTY Thursday off-live - review the paper twin vs the Option-B case", "2026-10-30", "PENDING",

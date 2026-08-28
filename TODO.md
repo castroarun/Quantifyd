@@ -651,6 +651,21 @@ Best never-died config: 90-min OR, gap>=0.4%, 4-day hold, long, NIFTY>50DMA gate
 Offer on the table: Rs-capped sleeve PAPER book, 90-day soak. Do NOT re-arm live.
 Details: research/89_orb_reassessment/results/RESULTS.md
 
+## PENDING 2026-08-27 -- research/134 follow-ups: weight the long-equity books against the short-vol book
+r/134 CONCLUDED: the short-vol book's enemy is the **low-vol melt-up, not the crash** -- it has never
+lost in a NIFTY down-trend in 75 months (+7.85% in Apr-2020). So no put hedge / jade lizard / skewed
+condor is wanted. The offset is **plain long equity at ~25-35% of combined risk**, which we already
+run (Momentum-30 Rs20L, Breakout Rs10L, HA-2green Rs20L). Verdict is **weighting guidance, not a new
+edge claim** -- nothing is deployed off it yet. Two things owed before acting:
+1. **Re-run Stage B/C with the real books' monthly series** in place of the NIFTY proxy -- those books
+   are higher-beta than the index, so the realised shape will be noisier than tested.
+2. **Per-leg attribution** -- does an index-level sleeve protect the C1 *stock* book, or only the NIFTY
+   straddle? research/128 found stock-strangle tails are idiosyncratic, so this cannot be assumed.
+Standing caveat for any sizing decision: only **7 down-trend months** in the sample, one fast V-shaped
+crash, **no slow grinding bear**. The down-tail is unmeasured, not proven safe -- a multi-quarter bear
+would hurt the equity sleeve *and* test the claim that the neutral book is safe there.
+Study: `research/134_directional_diversifier/results/RESULTS.md`.
+
 ## ⏳ 2026-08-07 — Breakout paper book: cash-model v2 (settlement realism) DEPLOYED, activates TODAY 15:32 IST
 `services/breakout_paper.py` rewritten (commit `f45f619`): 4 cash buckets — one slot's ₹
 held as a SETTLED buy buffer (earns 0), liquid fund earns 6.5% from T+1, redemptions +
