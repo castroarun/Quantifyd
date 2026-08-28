@@ -377,7 +377,7 @@ export default function MomentumPaper() {
           {' '}(6-month + 12-month relative strength vs NIFTYBEES) → <b>hold the top 8</b>, equal-weight. A top-22
           retention buffer, a per-stock Donchian stop, and a market-regime cash gate then manage the book.
         </p>
-        <table className={styles.table}>
+        <table className={`${styles.table} ${styles.rulesTable}`}>
           <thead><tr><th>Rule</th><th>Frequency — check &amp; action</th><th>What happens</th></tr></thead>
           <tbody>
             {s.rules.map(([k, freq, v]) => (
