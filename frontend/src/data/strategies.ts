@@ -219,6 +219,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'momentum-put-hedge-overlay', title: 'Put-hedge overlay vs the cash-exit gate', verdict: 'SIGNAL' },
     ],
     changeLog: [
+      { date: '28 Aug 2026', text: 'DECIDED: no MTF for now. research/114 found 2.5x survivable (67.3% CAGR vs 32.9%, 0 margin calls in 20y) but at a -52% drawdown and a WORSE Calmar (1.30 vs 1.50) — leverage, not new edge. Arun declined. The book stays on CNC, unlevered. Do not read the study as a mandate.' },
       { date: '26 Aug 2026', text: 'Month-end order fixed: the Donchian exit check now runs BEFORE the rebalance refills, and the rebalance refuses to buy any name already below its stop. Month-end is now read off the trading calendar, not just weekends.' },
       { date: '26 Aug 2026', text: 'Live P&L chart now compares against Nifty 50 / 500 / Midcap 150 / Smallcap 250, with deposits removed (time-weighted) — the old card counted deposits as performance and read +155.85%.' },
       { date: '20 Aug 2026', text: 'Daily EOD run made self-healing: it re-runs on boot or at 15:25 if its 15:05 firing was lost, and alerts if it was missed after the close.' },

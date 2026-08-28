@@ -1,3 +1,8 @@
+> **DECISION 2026-08-28: NOT ADOPTED. Arun declined MTF for now; the book stays unlevered on
+> CNC.** This study stands as analysis, not a recommendation acted on. Anyone reading the 2.5x
+> row later should note the live book has NO leverage sizing and NO margin monitor — running
+> it would be a build, not a config change.
+
 # RESULTS — MTF leverage on the live momentum book (research/114)
 
 **VERDICT: 2.5x is SURVIVABLE and materially raises return — 67.3% CAGR vs 32.9% — but it is the
