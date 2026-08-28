@@ -2,6 +2,37 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 🔴 2026-08-28 — Stored 5-min FIRST BAR of the day is wrong on ~half of sessions (NOT FIXED)
+Found while validating the N500M CCRB fix. The first 5-minute bar of each session, as stored in
+`market_data.db`, disagrees with Kite's final value on roughly half of sessions:
+
+| check | DLF | HDFCBANK | ITC |
+|---|---|---|---|
+| API daily open == API first-5min open | 30/30 | 30/30 | 30/30 |
+| DB daily open == API daily open | 29/30 | 29/30 | 29/30 |
+| **DB first-5min == API first-5min** | **14/30** | **17/30** | **19/30** |
+
+So the daily bars are fine and the underlying relationship is exact — it is the stored 5-minute
+series that is off, by 0.1–0.6%, systematically on the first bar.
+
+**Likely mechanism:** `refresh_5min` runs every 5 minutes and captures the 09:15 candle while it
+is still forming; `data_manager._store_data` then inserts only timestamps it does not already
+hold (`df_new = df_insert[~df_insert['date'].isin(existing_dates)]`) and never replaces one, so
+the partial values are frozen permanently. The module docstring claimed "Idempotent — uses
+INSERT OR REPLACE", which is not what the code does (docstring corrected 08-28, no behaviour
+change).
+
+**Who reads this:** vol-BO (the half of N500M that actually trades), ORB, and every intraday
+backtest run off `market_data.db`. Any signal keyed on the opening candle is affected.
+
+**Fix (own change, own testing, after-15:40 deploy):** make the writer correct a row when the
+newly fetched candle differs, or refuse to store the current (incomplete) candle at all and only
+persist bars whose window has closed. Prefer the latter — simpler, and never writes a value it
+will have to take back. Then backfill/repair the historical first bars from the API.
+
+Evidence: `research/N500M_CCRB_DEAD_RULES_FORENSIC_STATUS.md` §6.
+
+
 ## 🔴 2026-08-28 — N500M: half the book (15 CCRB rules) has NEVER fired, since May
 Investigated "why has N500M not traded since 20 Aug". Infrastructure is healthy — all four
 jobs run on time, data refresh 27/27 — but **every one of the 15 CCRB rules is skipped every

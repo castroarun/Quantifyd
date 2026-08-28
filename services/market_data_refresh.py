@@ -7,8 +7,12 @@ appends to `market_data_unified`.
 
 Defensive design:
 - VPS-only (relies on services.data_manager._enforce_vps_only_writes guard)
-- Idempotent — uses INSERT OR REPLACE via data_manager._store_data, which
-  already handles dedup via the (symbol, timeframe, date) unique index
+- Append-only — data_manager._store_data inserts ONLY timestamps it does not
+  already hold (it filters on existing_dates); it does NOT replace them. A
+  candle captured while still forming therefore keeps its partial values
+  permanently. This is why the stored first 5-min bar of the day disagrees
+  with Kite's final value on roughly half of sessions. Tracked separately;
+  see research/N500M_CCRB_DEAD_RULES_FORENSIC_STATUS.md.
 - Bounded — max 30 symbols per call, ~10s per symbol = under 5 min budget
 - Resilient — per-symbol exception handling so one Kite hiccup doesn't
   poison the whole tick

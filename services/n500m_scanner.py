@@ -170,6 +170,58 @@ def atr_for_date(atr: pd.Series, dt: _date) -> Optional[float]:
 # Phase 1 — precompute_setup: daily-bar gates per (symbol, signal config)
 # ---------------------------------------------------------------------------
 
+def append_today_daily(daily: pd.DataFrame, symbol: str,
+                       today: Optional[_date] = None) -> pd.DataFrame:
+    """Append today's forming daily candle to `daily`, in memory only.
+
+    market_data.db holds daily bars only after the close, so during the session
+    the frame stops at yesterday and every CCRB setup is skipped as
+    'no_setup_row'. daily_setup_table needs exactly one field from today —
+    today['open'] — and Kite serves the forming daily candle intraday with the
+    open already fixed by the first trade.
+
+    Deliberately NOT persisted: data_manager only inserts timestamps it does
+    not already hold, so a partial bar written now would keep its intraday
+    high/low/close forever and corrupt the series that ATR and every backtest
+    read. Returns the frame unchanged if anything is unavailable — a missing
+    open must degrade to today's setup being skipped, never to a wrong one.
+    """
+    if daily is None or daily.empty:
+        return daily
+    today = today or _date.today()
+    today_ts = pd.Timestamp(today).normalize()
+    if today_ts in daily.index.normalize():
+        return daily
+
+    try:
+        from services.kite_service import get_kite
+        from services.nifty500_universe import get_instrument_token
+
+        kite = get_kite()
+        token = get_instrument_token(symbol)
+        if kite is None or not token:
+            return daily
+        candles = kite.historical_data(token, today, today, 'day')
+    except Exception as e:
+        logger.warning(f"[N500M] {symbol}: could not fetch today's daily bar: {e}")
+        return daily
+
+    bar = next((c for c in candles if c['date'].date() == today), None)
+    if bar is None or not bar.get('open'):
+        return daily
+
+    row = pd.DataFrame(
+        [{'open': float(bar['open']), 'high': float(bar['high']),
+          'low': float(bar['low']), 'close': float(bar['close']),
+          'volume': float(bar.get('volume') or 0)}],
+        index=[today_ts],
+    )
+    for col in daily.columns:
+        if col not in row.columns:
+            row[col] = None
+    return pd.concat([daily, row[daily.columns]]).sort_index()
+
+
 def precompute_setup(today: Optional[_date] = None) -> dict:
     """Run early (09:10 IST) to compute today's setup table for every stock
     in STOCK_CONFIGS. Persists daily-state rows; returns {symbol: state}."""
@@ -188,6 +240,12 @@ def precompute_setup(today: Optional[_date] = None) -> dict:
             if daily.empty or len(daily) < 30:
                 logger.warning(f"[N500M] {sym}: insufficient daily history")
                 continue
+
+            # The stored daily series stops at yesterday during the session.
+            # CCRB's gate is keyed on today, so today's bar has to be present
+            # or every config is skipped as 'no_setup_row' — which is exactly
+            # what happened, every day, from May until this was found.
+            daily = append_today_daily(daily, sym, today)
 
             # Liquidity gate (mirrors backtest)
             if not liquidity_ok(daily, today):
@@ -249,7 +307,10 @@ def precompute_setup(today: Optional[_date] = None) -> dict:
             logger.exception(f"[N500M] precompute_setup({sym}) failed: {e}")
 
     n_qual = sum(1 for v in out.values() if v.get("setup_qualifies"))
-    logger.info(f"[N500M] precompute_setup: {len(out)} configs, {n_qual} qualify today")
+    n_ccrb = sum(1 for k, v in out.items()
+                 if k[1] == "ccrb" and v.get("setup_reason") != "skip:no_setup_row")
+    logger.info(f"[N500M] precompute_setup: {len(out)} configs, {n_qual} qualify today "
+                f"({n_ccrb} CCRB configs had today's bar)")
     return out
 
 

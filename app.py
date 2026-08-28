@@ -11932,7 +11932,10 @@ def api_n500m_scan():
 # Scheduled jobs ----------------------------------------------------------
 
 def _n500m_precompute():
-    """09:10 IST Mon-Fri: compute today's setup table for every stock."""
+    """09:20 IST Mon-Fri: compute today's setup table for every stock.
+
+    After the open, because the CCRB gate is keyed on today's opening price.
+    """
     try:
         from services.n500m_scanner import precompute_setup
         precompute_setup()
@@ -11995,7 +11998,9 @@ def _market_data_refresh_n500m():
 try:
     scheduler.add_job(
         _n500m_precompute,
-        'cron', day_of_week='mon-fri', hour=9, minute=10,
+        # 09:20, not 09:10: the setup gate needs today's opening price, which
+        # does not exist until the market opens at 09:15.
+        'cron', day_of_week='mon-fri', hour=9, minute=20,
         id='n500m_precompute', replace_existing=True,
     )
     scheduler.add_job(
