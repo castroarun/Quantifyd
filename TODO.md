@@ -2,6 +2,46 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 🔴 2026-08-28 — N500M: half the book (15 CCRB rules) has NEVER fired, since May
+Investigated "why has N500M not traded since 20 Aug". Infrastructure is healthy — all four
+jobs run on time, data refresh 27/27 — but **every one of the 15 CCRB rules is skipped every
+day, and always has been**: 1,230 daily-state rows, 100% `setup_reason='skip:no_setup_row'`,
+and all 32 trades the book has ever taken are `volbo`.
+
+**Root cause:** CCRB's setup gate needs a row keyed on *today* in `daily_setup_table`, which
+needs today's **daily** bar. `services/market_data_refresh.py` refreshes `timeframe="5minute"`
+only, so `market_data.db` has no `day` bar for today at any point in the session (verified
+mid-session: DLF/HDFCBANK/ITC latest `day` = 2026-08-27, latest `5minute` = today 12:40).
+`today_setup` is therefore always `None` → `skip:no_setup_row` → CCRB can never fire.
+vol-BO is unaffected: its gate runs intraday off 5-minute bars.
+(First hypothesis — "precompute at 09:10 is before the 09:15 open" — was REFUTED: the bar is
+missing mid-session too.)
+
+**Fix (NOT applied; needs after-15:40 deploy):** `daily_setup_table` needs exactly one field
+from today's bar — `today["open"]` — and that is already available as the open of today's
+first 5-minute bar. Preferred: synthesise today's daily row from the first 5-min bar and move
+the CCRB precompute to ~09:20. Alternatives: add `day` to the intraday refresher; or recompute
+lazily inside the scan.
+
+**Treat as a strategy change, not just a bug fix** — it switches on 15 rules with no live or
+paper record. Before deploying: (a) verify the synthesised open matches the true daily open
+over ~30 sessions, (b) replay the CCRB gate over 3 months to see the would-have-qualified rate
+against the bake-off's expectation, (c) deploy after 15:40 and watch the first signals.
+
+Full evidence: `research/N500M_CCRB_DEAD_RULES_FORENSIC_STATUS.md`.
+
+## ⚠️ 2026-08-28 12:22:45 IST — quantifyd restarted DURING market hours (not this session)
+`systemd: Stopping quantifyd.service … Started` at 12:22:45, `NRestarts=0` (deliberate, not a
+crash). Not from this session — it was doing frontend builds, a static-feed write and a git
+push; there is **no auto-deploy/pull cron** on the box, so a push cannot cause a restart. The
+reflog shows other sessions committing at 12:06, 12:25 and 12:45 (holdings/Dad-account work),
+so the restart came from one of those or by hand.
+**Consequence checked:** the live NAS-ATM2 leg (NIFTY2690124250PE) was under active SL
+monitoring at 12:15; after the restart the monitor picked it back up and was still ticking at
+12:46, so nothing was left unwatched. Flagging it because it breaks the no-restart-before-15:40
+rule, and concurrent sessions each need to honour it.
+
+
 ## ✅ 2026-08-26 — 'silent' paper books audited: three were fine, the projection was wrong
 Checked every book that read as idle or never-traded on /app/strategies and /app/overview.
 - **Pairs — WORKING.** Daily 16:00 scan runs in paper mode, 6 pairs evaluated. Two OPEN cohorts:
