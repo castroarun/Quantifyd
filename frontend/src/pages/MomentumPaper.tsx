@@ -436,7 +436,7 @@ function BookSummary({ s }: { s: State }) {
     : s.gate_gap_pct < 2 ? 'var(--status-warning,#C97B20)' : 'var(--accent-pos,#0F6E56)';
 
   return (
-    <div className={styles.summary}>
+    <div className={styles.bookSummary}>
       <div className={styles.sumMain}>
         <div className={styles.sumLabel}>Current value</div>
         <div className={styles.sumHero}>{inr(s.nav)}</div>
