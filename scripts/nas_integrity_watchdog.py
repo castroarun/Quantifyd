@@ -56,6 +56,25 @@ except Exception as e:
 
 db_live_qty, naked_legs, bad_qty, rej_active, imbalanced, accum = {}, [], [], [], [], []
 day_real = day_open = 0.0
+
+# CSL books (COMB / TimeB / CSL30F) trade the same strikes as the NAS variants, so their live
+# quantity must be counted before comparing to the broker - otherwise every shared strike reads
+# as a desync. Best-effort: a missing/stale file just leaves the check as it was.
+csl_live_syms = {}
+try:
+    with open(os.path.join(ROOT, "static", "app", "csl_paper_live.json")) as _f:
+        _cl = json.load(_f)
+    for _bk, _b in (_cl.get("books") or {}).items():
+        if _b.get("state") != "OPEN" or not _b.get("live"):
+            continue
+        _q = int(_b.get("qty") or 0)
+        for _k in ("ce_sym", "pe_sym"):
+            _sym = _b.get(_k)
+            if _sym and _q:
+                db_live_qty[_sym] = db_live_qty.get(_sym, 0) + _q
+                csl_live_syms.setdefault(_sym, []).append("%s %d" % (_bk, _q))
+except Exception as _e:
+    pass
 for key, name in VARIANTS:
     pos = (states.get(key) or {}).get("positions", {}) or {}
     # LIVE ONLY. Paper legs (squeeze books, and any variant toggled to paper) carry no risk;
@@ -102,7 +121,8 @@ desync, ghost = [], []
 for ts, q in db_live_qty.items():
     bq = abs(broker.get(ts, 0))
     if q != bq:
-        (ghost if bq == 0 else desync).append("%s: DB %d vs broker %d" % (ts, q, bq))
+        _csl = ("; incl CSL " + ", ".join(csl_live_syms[ts])) if ts in csl_live_syms else ""
+        (ghost if bq == 0 else desync).append("%s: DB %d vs broker %d%s" % (ts, q, bq, _csl))
 
 day_pnl = round(day_real + day_open)
 n_open = sum(1 for k, _ in VARIANTS
