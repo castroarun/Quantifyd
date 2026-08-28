@@ -14,10 +14,12 @@ def _row(h: dict) -> dict:
     qty = h.get("quantity", 0) or 0
     avg = h.get("average_price", 0) or 0
     ltp = h.get("last_price", 0) or 0
-    prev = h.get("close", 0) or 0
+    prev = h.get("close_price", 0) or 0    # Kite field is close_price, not close
     invested = qty * avg
     current = qty * ltp
-    day_move = (ltp - prev)
+    day_move = h.get("day_change")          # Kite gives per-unit day change directly
+    if day_move is None:
+        day_move = (ltp - prev)
     day_pct = h.get("day_change_percentage")
     if day_pct is None:
         day_pct = ((ltp / prev - 1) * 100) if prev else 0
