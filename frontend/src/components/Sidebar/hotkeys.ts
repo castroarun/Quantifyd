@@ -15,7 +15,7 @@ export const PAGE_HOTKEYS: Record<string, string> = {
   '/orb': 'R',
   '/nas': 'N',
   '/nas-config': 'G',
-  '/straddles': 'T',
+  '/straddles': 'L',
   '/nwv': 'W',
   '/n500m': '5',
   '/mst': '3',
