@@ -32,8 +32,8 @@
   border-radius: var(--radius-card);
   padding: 24px 28px;
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr;
-  gap: 24px;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 20px;
 }
 
 .heroBlock {

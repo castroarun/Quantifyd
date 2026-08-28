@@ -295,8 +295,9 @@ function HeroSummary({ summary, next, funds }: { summary: HoldingsDigest['summar
       <div className={styles.heroBlock}>
         <div className={styles.heroLabel}>Current value</div>
         <div className={styles.heroCurrent}>{formatRs(summary.current)}</div>
-        <div className={styles.heroSub}>
-          Invested {formatRs(summary.invested)} · unrealized{' '}
+        <div className={styles.heroSub}>Invested {formatRs(summary.invested)}</div>
+        <div className={styles.heroSub} style={{ marginTop: 2 }}>
+          unrealized{' '}
           <span className={pnlClass(summary.total_pnl)}>
             {formatPnl(summary.total_pnl)} ({formatPct(summary.total_pct, 2)})
           </span>
