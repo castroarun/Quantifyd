@@ -312,7 +312,8 @@ function clampView(span: number, end: number, n: number): View {
 }
 
 // ---------- big candlestick chart (focus, when OHLC available) ----------
-function drawFocusCandles(cv: HTMLCanvasElement, bars: Bar[], s: Series, view: View, hover: number | null) {
+interface Overlay { avg?: number; band?: [number, number]; sellZone?: [number, number]; }
+function drawFocusCandles(cv: HTMLCanvasElement, bars: Bar[], s: Series, view: View, hover: number | null, overlay?: Overlay) {
   const x = setupCanvas(cv);
   if (!x) return;
   const W = cv.clientWidth, H = cv.clientHeight;
@@ -426,6 +427,36 @@ function drawFocusCandles(cv: HTMLCanvasElement, bars: Bar[], s: Series, view: V
     const yo = py(b.o), yc = py(b.c);
     x.fillRect(cx - bw / 2, Math.min(yo, yc), bw, Math.max(1, Math.abs(yc - yo)));
   }
+  // ---- trade overlay: buy fill-band, sell realized-zone, avg-cost line ----
+  if (overlay) {
+    const clip = (v: number) => Math.max(top, Math.min(bot, py(v)));
+    // buy smart-limit fill band (start..cap) — where a buy will land
+    if (overlay.band) {
+      const [b0, b1] = overlay.band;
+      const y0 = clip(Math.min(b0, b1)), y1 = clip(Math.max(b0, b1));
+      x.fillStyle = pos; x.globalAlpha = 0.12; x.fillRect(padL, y0, plotW, Math.max(2, y1 - y0)); x.globalAlpha = 1;
+      x.strokeStyle = pos; x.globalAlpha = 0.5; x.setLineDash([4, 3]); x.lineWidth = 1;
+      x.beginPath(); x.moveTo(padL, y0); x.lineTo(W - padR, y0); x.moveTo(padL, y1); x.lineTo(W - padR, y1); x.stroke();
+      x.setLineDash([]); x.globalAlpha = 1;
+      x.fillStyle = pos; x.font = `700 9px ${font}`; x.textAlign = 'left';
+      x.fillText('buy fills here', padL + 4, y0 - 3);
+    }
+    // sell realized-P&L zone (avg..ltp)
+    if (overlay.sellZone) {
+      const [z0, z1] = overlay.sellZone;
+      const profit = z1 >= z0;   // ltp >= avg
+      const y0 = clip(Math.min(z0, z1)), y1 = clip(Math.max(z0, z1));
+      x.fillStyle = profit ? pos : neg; x.globalAlpha = 0.1; x.fillRect(padL, y0, plotW, Math.max(2, y1 - y0)); x.globalAlpha = 1;
+    }
+    // average-cost line
+    if (overlay.avg && overlay.avg > 0) {
+      const ya = clip(overlay.avg);
+      x.strokeStyle = readVar('--ink-muted'); x.setLineDash([2, 3]); x.lineWidth = 1;
+      x.beginPath(); x.moveTo(padL, ya); x.lineTo(W - padR, ya); x.stroke(); x.setLineDash([]);
+      x.fillStyle = readVar('--ink-muted'); x.font = `700 9px ${font}`; x.textAlign = 'left';
+      x.fillText(`avg ${overlay.avg.toFixed(overlay.avg > 1000 ? 0 : 1)}`, padL + 4, ya + 10);
+    }
+  }
   // last price tag (real last bar, if in view vertically)
   const lb = all[n - 1], yl = py(lb.c);
   if (yl >= top && yl <= bot) {
@@ -463,7 +494,7 @@ function MiniChart({ s, win }: { s: Series; win: number }) {
   return <canvas ref={ref} className={styles.tileCanvas} />;
 }
 
-function FocusChart({ s, win, bars }: { s: Series; win: number; bars?: Bar[] }) {
+function FocusChart({ s, win, bars, overlay }: { s: Series; win: number; bars?: Bar[]; overlay?: Overlay }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -486,13 +517,13 @@ function FocusChart({ s, win, bars }: { s: Series; win: number; bars?: Bar[] }) 
     const cv = ref.current;
     if (!cv) return;
     const draw = () => (hasCandles && view)
-      ? drawFocusCandles(cv, bars as Bar[], s, view, hover)
+      ? drawFocusCandles(cv, bars as Bar[], s, view, hover, overlay)
       : drawFocus(cv, s, win, hover);
     const raf = requestAnimationFrame(draw);
     const ro = new ResizeObserver(draw);
     ro.observe(cv);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, [s, win, hover, bars, view, hasCandles]);
+  }, [s, win, hover, bars, view, hasCandles, overlay]);
 
   // native, non-passive wheel zoom (anchored under the cursor)
   useEffect(() => {
@@ -698,6 +729,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
   const [sellCustomQty, setSellCustomQty] = useState('');
   const [sellPct, setSellPct] = useState<number | null>(null);
   const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
+  const [dockOpen, setDockOpen] = useState(true);
   const [paper, setPaper] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [exec, setExec] = useState<ExecState | null>(null);
@@ -740,6 +772,14 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
   })();
   const sellValue = current ? sellQty * current.ltp : 0;
   const sellRealized = current ? sellQty * (current.ltp - current.avg) : 0;
+
+  // what the chart draws for the order in progress: avg line always, buy fill-band
+  // when an amount is picked, realized-P&L zone when a sell qty is picked
+  const overlay: Overlay | undefined = current ? {
+    avg: current.avg,
+    band: buyQty >= 1 ? [startP, capP] : undefined,
+    sellZone: sellQty >= 1 ? [current.avg, current.ltp] : undefined,
+  } : undefined;
 
   const openConfirm = (side: 'buy' | 'sell') => { setOrderSide(side); setExec(null); setConfirmOpen(true); };
 
@@ -912,95 +952,100 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
               <div className={styles.metric}><span className={styles.mLabel}>Unrealized P&amp;L</span><span className={`${styles.mVal} ${upDn(current.pnl)}`}>{fmtRs(current.pnl)} · {pct(current.ret, 1)}</span></div>
               <div className={styles.metric}><span className={styles.mLabel}>Qty · Avg</span><span className={styles.mVal}>{current.qty} · ₹{current.avg.toFixed(0)}</span></div>
             </div>
-            <FocusChart s={current} win={tf} bars={augmentToday(ohlc[current.sym], current)} />
+            <div className={styles.chartArea}>
+              <FocusChart s={current} win={tf} bars={augmentToday(ohlc[current.sym], current)} overlay={overlay} />
+
+              {BUY_ENABLED && account !== 'both' && (
+              <div className={`${styles.tradeDock} ${dockOpen ? '' : styles.tradeDockMin}`}>
+                <div className={styles.dockHead} onClick={() => setDockOpen((o) => !o)}>
+                  <span className={styles.dockChevron}>{dockOpen ? '▾' : '▸'}</span>
+                  <span className={styles.dockTitle}>Trade {current.sym}</span>
+                  <span className={styles.dockAcct}>{account === 'dad' ? 'Stanly' : 'Me'}</span>
+                  <span className={styles.dockFunds}>{funds ? (funds.error ? '—' : fmtRs(funds.available)) : '…'}</span>
+                </div>
+                {dockOpen && (
+                <div className={styles.dockBody}>
+                  <label className={styles.paperTog}>
+                    <input type="checkbox" checked={paper} onChange={(e) => setPaper(e.target.checked)} />
+                    Paper mode
+                  </label>
+
+                  <div className={styles.tradeSub}>Buy · smart limit</div>
+                  <div className={styles.amtRow}>
+                    {[5000, 10000, 15000].map((a) => (
+                      <button
+                        key={a}
+                        className={`${styles.amtChip} ${!customAmt && amt === a ? styles.amtChipOn : ''}`}
+                        onClick={() => { setAmt(a); setCustomAmt(''); }}
+                      >₹{(a / 1000)}k</button>
+                    ))}
+                    <input
+                      className={styles.amtInput}
+                      type="number"
+                      min={0}
+                      placeholder="Custom ₹"
+                      value={customAmt}
+                      onChange={(e) => { setCustomAmt(e.target.value); setAmt(null); }}
+                    />
+                  </div>
+                  <div className={styles.buyCalc}>
+                    {buyQty >= 1 ? (
+                      <>≈ <b>{buyQty} sh</b> · ₹{inr0(buyUsed)} <span className={styles.buyLeft}>· fills in the green band</span></>
+                    ) : buyAmount > 0 ? (
+                      <span className={styles.buyLeft}>below one share (₹{current.ltp.toFixed(1)})</span>
+                    ) : (
+                      <span className={styles.buyLeft}>pick an amount →</span>
+                    )}
+                  </div>
+                  <button className={styles.reviewBtn} disabled={buyQty < 1} onClick={() => openConfirm('buy')}>
+                    Review buy →
+                  </button>
+
+                  <div className={styles.tradeSub} style={{ marginTop: 12 }}>Sell · market · hold {current.qty}</div>
+                  <div className={styles.amtRow}>
+                    {[25, 50, 100].map((p) => (
+                      <button
+                        key={p}
+                        className={`${styles.amtChip} ${!sellCustomQty && sellPct === p ? styles.amtChipOn : ''}`}
+                        onClick={() => { setSellPct(p); setSellCustomQty(''); }}
+                      >{p === 100 ? 'All' : `${p}%`}</button>
+                    ))}
+                    <input
+                      className={styles.amtInput}
+                      type="number"
+                      min={0}
+                      max={current.qty}
+                      placeholder="Qty"
+                      value={sellCustomQty}
+                      onChange={(e) => { setSellCustomQty(e.target.value); setSellPct(null); }}
+                    />
+                  </div>
+                  <div className={styles.buyCalc}>
+                    {sellQty >= 1 ? (
+                      <>sell <b>{sellQty} sh</b> ≈ ₹{inr0(sellValue)} <span className={sellRealized >= 0 ? styles.up : styles.dn}>({sellRealized >= 0 ? '+' : '−'}₹{inr0(Math.abs(sellRealized))})</span></>
+                    ) : (
+                      <span className={styles.buyLeft}>pick a quantity →</span>
+                    )}
+                  </div>
+                  <button className={`${styles.reviewBtn} ${styles.sellBtn}`} disabled={sellQty < 1} onClick={() => openConfirm('sell')}>
+                    Review sell →
+                  </button>
+                </div>
+                )}
+              </div>
+              )}
+            </div>
             <div className={styles.leg}>
               <span><i style={{ borderColor: 'var(--brand-amber)' }} />50-DMA</span>
               <span><i style={{ borderColor: 'var(--brand-navy)' }} />200-DMA</span>
               <span><i style={{ borderColor: 'var(--ink-faint)', borderTopStyle: 'dashed' }} />52-wk hi / lo</span>
+              <span><i style={{ borderColor: 'var(--ink-muted)', borderTopStyle: 'dotted' }} />avg cost</span>
             </div>
             <div className={styles.kHint}>
               <span className={styles.kbd}><b>←</b><b>→</b></span> browse holdings
               <span className={styles.kbd}><b>Esc</b></span> back to wall
-              <span style={{ color: 'var(--ink-faint)' }}>· click any tile on the wall to jump here</span>
+              <span style={{ color: 'var(--ink-faint)' }}>· the dock trades the on-screen stock; the green band shows where a buy fills</span>
             </div>
-
-            {BUY_ENABLED && account !== 'both' && (
-            <div className={styles.buyPanel}>
-              <div className={styles.buyHead}>
-                <span className={styles.buyTitle}>Trade {current.sym} · {account === 'dad' ? "Stanly's a/c" : 'My a/c'}</span>
-                <span className={styles.fundsTag}>
-                  {funds ? (funds.error ? 'funds n/a' : <>Funds <b>{fmtRs(funds.available)}</b></>) : 'funds…'}
-                </span>
-                <label className={styles.paperTog}>
-                  <input type="checkbox" checked={paper} onChange={(e) => setPaper(e.target.checked)} />
-                  Paper
-                </label>
-              </div>
-
-              {/* --- BUY (smart limit) --- */}
-              <div className={styles.tradeSub}>Buy · smart limit</div>
-              <div className={styles.amtRow}>
-                {[5000, 10000, 15000].map((a) => (
-                  <button
-                    key={a}
-                    className={`${styles.amtChip} ${!customAmt && amt === a ? styles.amtChipOn : ''}`}
-                    onClick={() => { setAmt(a); setCustomAmt(''); }}
-                  >₹{a.toLocaleString('en-IN')}</button>
-                ))}
-                <input
-                  className={styles.amtInput}
-                  type="number"
-                  min={0}
-                  placeholder="Custom ₹"
-                  value={customAmt}
-                  onChange={(e) => { setCustomAmt(e.target.value); setAmt(null); }}
-                />
-              </div>
-              <div className={styles.buyCalc}>
-                {buyQty >= 1 ? (
-                  <>≈ <b>{buyQty} sh</b> · uses ₹{inr0(buyUsed)} <span className={styles.buyLeft}>(₹{inr0(buyLeft)} left over)</span></>
-                ) : buyAmount > 0 ? (
-                  <span className={styles.buyLeft}>below one share (LTP ₹{current.ltp.toFixed(1)})</span>
-                ) : (
-                  <span className={styles.buyLeft}>pick an amount to buy at market-smart limit</span>
-                )}
-              </div>
-              <button className={styles.reviewBtn} disabled={buyQty < 1} onClick={() => openConfirm('buy')}>
-                Review buy →
-              </button>
-
-              {/* --- SELL / exit (market) --- */}
-              <div className={styles.tradeSub} style={{ marginTop: 14 }}>Sell · market · you hold {current.qty}</div>
-              <div className={styles.amtRow}>
-                {[25, 50, 100].map((p) => (
-                  <button
-                    key={p}
-                    className={`${styles.amtChip} ${!sellCustomQty && sellPct === p ? styles.amtChipOn : ''}`}
-                    onClick={() => { setSellPct(p); setSellCustomQty(''); }}
-                  >{p === 100 ? 'All' : `${p}%`}</button>
-                ))}
-                <input
-                  className={styles.amtInput}
-                  type="number"
-                  min={0}
-                  max={current.qty}
-                  placeholder="Qty"
-                  value={sellCustomQty}
-                  onChange={(e) => { setSellCustomQty(e.target.value); setSellPct(null); }}
-                />
-              </div>
-              <div className={styles.buyCalc}>
-                {sellQty >= 1 ? (
-                  <>sell <b>{sellQty} sh</b> ≈ ₹{inr0(sellValue)} <span className={sellRealized >= 0 ? styles.up : styles.dn}>({sellRealized >= 0 ? '+' : '−'}₹{inr0(Math.abs(sellRealized))} realized)</span></>
-                ) : (
-                  <span className={styles.buyLeft}>pick a quantity to sell at market</span>
-                )}
-              </div>
-              <button className={`${styles.reviewBtn} ${styles.sellBtn}`} disabled={sellQty < 1} onClick={() => openConfirm('sell')}>
-                Review sell →
-              </button>
-            </div>
-            )}
           </div>
 
           <div className={`${styles.panel} ${styles.stats}`}>
