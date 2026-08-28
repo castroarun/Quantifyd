@@ -109,8 +109,14 @@ CFG = dict(
     refresh_candidates=380,   # how many top-liquidity names to refresh from Kite at rebalance
     # ── LIVE-execution guardrails (only consulted when live_mode is ON) ──
     shared_account=True,      # the account also runs NAS + 30-odd personal holdings + manual trades
-    order_product="CNC",      # start unlevered. At Rs3L, 1.0x sizes all 8 slots cleanly and pays
-                              # no MTF interest. Switch to "MTF" when stepping up to 1.3x.      # Arun's choice: fund the book via the MTF facility, not full cash
+    order_product="CNC",      # Unlevered, by decision (Arun, 2026-08-28). DO NOT simply switch this
+                              # to "MTF" to add leverage — it changes the PRODUCT, not the SIZE.
+                              # Buys are sized off NAV (per = nav*(1-reserve)/n), so under MTF you
+                              # would buy the SAME rupees, the broker would fund part of it, and
+                              # the freed cash would sit idle: ~Rs6.4k/slot/yr paid at 14.6% to
+                              # earn 5.2% — about Rs51,600/yr across 8 slots for ZERO extra
+                              # exposure. Real leverage needs notional = lev*NAV AND a margin
+                              # monitor (neither exists here). See research/114.
     clash_alert=True,         # email when the book buys a name already held personally (merged line)
     live_max_order_value=1_500_000,  # per-order sanity cap (₹) — refuse any single live order above this
     live_fill_timeout=90,     # seconds to poll a MARKET order for a COMPLETE fill before giving up
