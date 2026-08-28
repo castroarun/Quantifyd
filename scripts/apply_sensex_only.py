@@ -5,8 +5,8 @@
 Deferred to after Friday 2026-08-28's close, because Arun asked that Friday still run on the
 plan frozen before 27-Aug. From Monday 31-Aug the restriction stands:
 
-  LIVE   sensex_atm / atm2 / atm4  (2L each, Wed=DTE1, Thu=DTE0)
-         CSL_TIMEB_SENSEX          (6L, Wed 10:30-12:00 SL20, Thu 13:00-15:20 SL-none)
+  LIVE   sensex_atm / atm2 / atm4  (2L each, Wed=DTE1, Thu=DTE0) - the ONLY live book.
+         TimeB was removed from live on 2026-08-28 (risk/reward), paper continues.
   PAPER  everything else - the NIFTY 9:16 suite keeps entering daily via paper_shadow, and
          each CSL book keeps trading its own cells on paper for the record.
 """
@@ -27,9 +27,10 @@ for k in ("sensex_atm", "sensex_atm2", "sensex_atm4"):
 json.dump(mx, open(p, "w"), indent=1)
 
 p = Q + "research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py"
-KEEP = "CSL_TIMEB_SENSEX"
+KEEP = "__none__"   # 2026-08-28: TimeB is no longer live on any venue
 TO_PAPER = ("CSL_TIMEB_NIFTY", "CSL_TIMEB_NIFTY_MON_AM", "CSL_TIMEB2_LIVE",
-            "NAS_COMB20", "CSL_TIMEB_NIFTY_THU", "CSL30F_SENSEX_WED")
+            "NAS_COMB20", "CSL_TIMEB_NIFTY_THU", "CSL30F_SENSEX_WED",
+            "CSL_TIMEB_SENSEX")
 out = []
 for ln in open(p, encoding="utf-8").readlines():
     hit = next((b for b in TO_PAPER if ('"%s": {' % b) in ln), None)

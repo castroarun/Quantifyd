@@ -94,6 +94,10 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("TimeB risk/reward rebuild - can the window be made worth live money again?", "2026-10-10", "PENDING",
+     "Arun pulled TimeB from LIVE on 2026-08-28 after -Rs8,152 in one 10:00-12:00 NIFTY window at 6 lots (TIME_EXIT; the 20% stop never fired). All TimeB books continue on PAPER. The brief: (a) the AlgoTest 3-year NIFTY run of the same structure with real costs is NEGATIVE - overall -Rs75,468 over 739 trades, avg win 11,282 vs avg loss -19,933, max single loss -146,996, max DD -629,820, expectancy -0.01 - which is far more evidence than our 85 days and should be reconciled against r/122s window atlas; (b) re-run it at 0.15-0.2% slippage (our MEASURED time-exit cost is 0.178 pt/leg-side, AlgoTest was charged 0.5%) since the sign may flip; (c) sweep SL none/20/30/50 on the same 3-year sample - the question our chain cannot answer; (d) decide whether any window/stop pair earns live money, and at what size. Do not re-arm live without clearing the r/122 atlas AND the long-sample test."),
+    ("TimeB paper-vs-live tracking while it is out of the live book", "2026-11-28", "PENDING",
+     "TimeB books run paper from 2026-08-28. Check the paper record against the live period: does the paper book reproduce the +Rs23,659 cumulative TimeB SENSEX earned over 7 live sessions, or was that a benign-sample artefact? Also confirm the forward snap keeps firing correctly - it worked on its first live day (2026-08-28 10:00, spot-K 24150 CE 142.75/PE 61.85 gap 80.9 -> fwd-K 24250 CE 85.45/PE 104.55 gap -19.1)."),
     ("r/134 short-vol vs long-equity weighting - re-run on the real books' series + per-leg attribution",
      "2026-11-30", "PENDING",
      "r/134 CONCLUDED the offset for the all-short-vol book is plain long equity at ~25-35% of combined risk "
