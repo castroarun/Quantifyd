@@ -1,66 +1,140 @@
 {
- "generated_at": "2026-08-31T11:00:02",
+ "generated_at": "2026-08-31T14:00:02",
  "broker_legs": {
   "NIFTY2690124050CE": {
-   "qty": -520,
+   "qty": -130,
    "avg": 83.86875,
-   "ltp": 73.15,
-   "pnl": 5573.8,
+   "ltp": 109.05,
+   "pnl": -16955.2,
    "product": "MIS",
    "exchange": "NFO"
   },
   "NIFTY2690124050PE": {
-   "qty": -520,
+   "qty": -130,
    "avg": 63.19375,
-   "ltp": 73.55,
-   "pnl": -5385.2,
+   "ltp": 50.0,
+   "pnl": 8245.2,
    "product": "MIS",
    "exchange": "NFO"
+  },
+  "AYMSYNTEX": {
+   "qty": 75,
+   "avg": 272.55133333333333,
+   "ltp": 284.5,
+   "pnl": 896.2,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "INOXINDIA": {
+   "qty": 4,
+   "avg": 2137.7,
+   "ltp": 2129.5,
+   "pnl": -32.8,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "LUMAXIND": {
+   "qty": 2,
+   "avg": 6264.5,
+   "ltp": 6250.5,
+   "pnl": -28.0,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "MANORAMA": {
+   "qty": 6,
+   "avg": 1925.0,
+   "ltp": 1937.2,
+   "pnl": 73.2,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "SMSPHARMA": {
+   "qty": 26,
+   "avg": 374.0,
+   "ltp": 376.0,
+   "pnl": 52.0,
+   "product": "CNC",
+   "exchange": "NSE"
   }
  },
  "app_claimed": {
   "NIFTY2690124050CE": {
-   "qty": -520,
+   "qty": -130,
    "books": [
-    "nas_916_atm2",
-    "nas_916_atm4",
-    "nas_916_atm",
     "NAS_COMB20"
    ]
   },
   "NIFTY2690124050PE": {
-   "qty": -520,
+   "qty": -130,
    "books": [
-    "nas_916_atm2",
-    "nas_916_atm4",
-    "nas_916_atm",
     "NAS_COMB20"
    ]
   }
  },
  "findings": [
   {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "AYMSYNTEX",
+   "broker_qty": 75,
+   "app_qty": 0,
+   "detail": "manual holding, 75 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "INOXINDIA",
+   "broker_qty": 4,
+   "app_qty": 0,
+   "detail": "manual holding, 4 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "LUMAXIND",
+   "broker_qty": 2,
+   "app_qty": 0,
+   "detail": "manual holding, 2 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "MANORAMA",
+   "broker_qty": 6,
+   "app_qty": 0,
+   "detail": "manual holding, 6 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "SMSPHARMA",
+   "broker_qty": 26,
+   "app_qty": 0,
+   "detail": "manual holding, 26 \u2014 no book tracks it"
+  },
+  {
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "NIFTY2690124050CE",
-   "broker_qty": -520,
-   "app_qty": -520,
+   "broker_qty": -130,
+   "app_qty": -130,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "NIFTY2690124050PE",
-   "broker_qty": -520,
-   "app_qty": -520,
+   "broker_qty": -130,
+   "app_qty": -130,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   }
  ],
  "filled_by_tag": {
-  "untagged": 780,
+  "untagged": 1933,
   "CSL_NAS_COMB20": 260
  },
  "alerts": 0,
  "warns": 2,
- "infos": 0
+ "infos": 5
 }

@@ -34,6 +34,9 @@ interface BookFeed {
     capital: number | null; buying_power: number | null; basis: string | null;
     max_position: number | null; busiest_day: number | null; avg_trade: number | null;
     broker_trades: number; sim_trades: number;
+    costs_modelled: boolean | null;
+    t_stat: number | null;
+    top3_share: number | null;
   } | null;
   error?: string;
 }
@@ -159,6 +162,31 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
             <span className={`${styles.railV} ${c as string}`}>{v}</span>
           </div>
         ))}
+      </div>
+
+      <div className={styles.evidence}>
+        {s.t_stat != null && (
+          <span className={styles.evItem}>
+            <b className={Math.abs(s.t_stat) >= 2 ? styles.pos : styles.warn}>
+              t {s.t_stat.toFixed(2)}
+            </b>{' '}
+            {Math.abs(s.t_stat) >= 2
+              ? 'on ' + s.trades + ' trades'
+              : `on ${s.trades} trades — not yet distinguishable from luck (needs ~2.0)`}
+          </span>
+        )}
+        {s.top3_share != null && s.top3_share >= 50 && (
+          <span className={styles.evItem}>
+            <b className={styles.warn}>{s.top3_share.toFixed(0)}%</b> of the net comes from
+            its 3 best trades
+          </span>
+        )}
+        {s.costs_modelled === false && (
+          <span className={styles.evItem}>
+            <b className={styles.warn}>Gross</b> — this book books fills at the signal price:
+            no brokerage, STT or slippage
+          </span>
+        )}
       </div>
 
       <table className={styles.tbl}>

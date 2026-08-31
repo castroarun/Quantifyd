@@ -34,7 +34,7 @@ OUT = ROOT / 'static' / 'app' / 'book_daily.json'
 #   and the columns worth showing in the expanded day
 BOOKS = {
     'orb': {
-        'capital': 300000, 'buying_power': 1500000,
+        'capital': 300000, 'buying_power': 1500000, 'costs_modelled': False,
         'basis': '\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent',
         'db': 'orb_trading.db', 'table': 'orb_positions',
         'date': 'trade_date', 'pnl': 'pnl_inr', 'symbol': 'instrument',
@@ -46,7 +46,7 @@ BOOKS = {
     },
     'n500m': {
         # risk-sized, not capital-sized: qty = 3000 / (entry - stop)
-        'capital': None, 'buying_power': None,
+        'capital': None, 'buying_power': None, 'costs_modelled': False,
         'basis': 'risk-sized \u00b7 \u20b93,000 risk/trade \u00b7 5 concurrent',
         'db': 'n500m_trading.db', 'table': 'n500m_positions',
         'date': 'trade_date', 'pnl': 'pnl_inr', 'symbol': 'symbol',
@@ -56,7 +56,7 @@ BOOKS = {
                  'exit_price', 'entry_time', 'exit_time', 'exit_reason', 'exit_policy'],
     },
     'mst': {
-        'capital': None, 'buying_power': None,
+        'capital': None, 'buying_power': None, 'costs_modelled': False,
         'basis': 'NIFTY options \u00b7 margin-based',
         'db': 'mst_trading.db', 'table': 'mst_positions',
         'date': 'entry_time', 'pnl': 'pnl_inr', 'symbol': 'tradingsymbol',
@@ -162,6 +162,19 @@ def build_book(key: str, spec: dict) -> dict:
     total = sum(d['trades'] for d in priced)
     # per-day totals are turnover (positions are opened and closed intraday),
     # so the meaningful size figure is the largest SINGLE position, not the sum
+    # Is the record distinguishable from luck? t = mean / (sd / sqrt n) on
+    # per-trade P&L. And does it rest on a handful of trades?
+    trade_pnls = [r['pnl'] for d in out for r in d['rows'] if r.get('pnl') is not None]
+    t_stat = top3 = None
+    if len(trade_pnls) >= 5:
+        m = sum(trade_pnls) / len(trade_pnls)
+        var = sum((x - m) ** 2 for x in trade_pnls) / (len(trade_pnls) - 1)
+        if var > 0:
+            t_stat = round(m / ((var ** 0.5) / (len(trade_pnls) ** 0.5)), 2)
+        net_all = sum(trade_pnls)
+        if net_all > 0:
+            top3 = round(100.0 * sum(sorted(trade_pnls, reverse=True)[:3]) / net_all, 1)
+
     day_totals = [d['deployed'] for d in out if d['deployed']]
     positions = [r['deployed'] for d in out for r in d['rows'] if r.get('deployed')]
     return {
@@ -181,6 +194,9 @@ def build_book(key: str, spec: dict) -> dict:
             'best_day': max((d['pnl'] for d in out), default=None),
             'worst_day': min((d['pnl'] for d in out), default=None),
             'green_days': sum(1 for d in out if d['pnl'] > 0),
+            'costs_modelled': spec.get('costs_modelled'),
+            't_stat': t_stat,
+            'top3_share': top3,
             'broker_trades': sum(1 for d in out for r in d['rows'] if r.get('origin') == 'broker'),
             'sim_trades': sum(1 for d in out for r in d['rows'] if r.get('origin') == 'sim'),
             'first': out[-1]['date'] if out else None,

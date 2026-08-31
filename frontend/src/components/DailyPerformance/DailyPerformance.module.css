@@ -195,3 +195,20 @@
   .bar { display: none; }
   .railItem { padding: 2px 14px; }
 }
+
+/* What the record does and does not prove — sits with the numbers it qualifies,
+   because a gross figure presented as 'net' is the easiest thing on the page to
+   misread. */
+.evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin: -4px 0 14px;
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+  line-height: 1.5;
+}
+
+.evItem { display: inline-flex; gap: 5px; align-items: baseline; }
+
+.warn { color: var(--status-warning); font-weight: 600; }
