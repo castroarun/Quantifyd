@@ -92,6 +92,30 @@ const DETAIL: Record<string, Array<[string, string]>> = {
   i75wr: [['deployed', 'Deployed'], ['system_id', 'Config'], ['direction', 'Dir'],
           ['qty', 'Qty'], ['entry_price', 'Entry'], ['exit_price', 'Exit'],
           ['entry_time', 'In'], ['exit_time', 'Out'], ['exit_reason', 'Why']],
+  'momentum-3l': [['deployed', 'Deployed'], ['entry_date', 'In'], ['qty', 'Qty'],
+                  ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['holding_days', 'Days'],
+                  ['gross_pnl', 'Gross'], ['cost', 'Cost'], ['stcg_tax', 'STCG'], ['reason', 'Why']],
+  'breakout-paper': [['deployed', 'Deployed'], ['entry_date', 'In'], ['qty', 'Qty'],
+                     ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['holding_days', 'Days'],
+                     ['gross_pnl', 'Gross'], ['cost', 'Cost'], ['reason', 'Why']],
+  pairs: [['direction', 'Dir'], ['entry_date', 'In'], ['days_held', 'Days'],
+          ['entry_z', 'Entry z'], ['exit_z', 'Exit z'], ['gross_pnl_inr', 'Gross'],
+          ['cost_inr', 'Cost'], ['exit_reason', 'Why']],
+  'orb-index': [['direction', 'Dir'], ['spot_at_entry', 'Spot in'], ['spot_at_exit', 'Spot out'],
+                ['ce_strike', 'CE'], ['pe_strike', 'PE'], ['gross_pnl', 'Gross'],
+                ['costs', 'Cost'], ['hold_minutes', 'Mins'], ['exit_reason', 'Why']],
+  kc6: [['deployed', 'Deployed'], ['entry_date', 'In'], ['qty', 'Qty'],
+        ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['hold_days', 'Days'],
+        ['pnl_pct', 'P&L %'], ['exit_reason', 'Why']],
+  // fill logs: one row is a single event, so there is no In/Out pair to show
+  'ha-paper': [['deployed', 'Deployed'], ['side', 'Side'], ['price', 'Price'],
+               ['qty', 'Qty'], ['reason', 'Why']],
+  'orb-paper': [['deployed', 'Deployed'], ['side', 'Side'], ['price', 'Price'],
+                ['qty', 'Qty'], ['reason', 'Why']],
+  'ohol-paper': [['deployed', 'Deployed'], ['side', 'Side'], ['price', 'Price'],
+                 ['lots', 'Lots'], ['lot_size', 'Lot'], ['reason', 'Why']],
+  'fnoms-paper': [['deployed', 'Deployed'], ['system', 'System'], ['side', 'Side'],
+                  ['price', 'Price'], ['qty', 'Qty'], ['reason', 'Why']],
   mst: [['deployed', 'Deployed'], ['side', 'Side'], ['leg_role', 'Leg'], ['strike', 'Strike'], ['option_type', 'CE/PE'],
         ['qty', 'Qty'], ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['exit_reason', 'Why']],
 };
@@ -264,7 +288,9 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
                               <td key={label} className={styles.numr}>
                                 {key === 'deployed'
                                   ? size(r[key] as number)
-                                  : key.endsWith('_time') ? time(r[key]) : num(r[key])}
+                                  : key.endsWith('_time') ? time(r[key])
+                                  : key.endsWith('_date') ? String(r[key] ?? '—').slice(0, 10)
+                                  : num(r[key])}
                               </td>
                             ))}
                             <td className={`${styles.numr} ${(r.pnl as number) >= 0 ? styles.pos : styles.neg}`}>
