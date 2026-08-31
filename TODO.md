@@ -2,6 +2,64 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ 2026-08-31 — research/138 phase 2: the live book, and COMB20's day allocation
+
+**Two decisions are owed from Arun. Nothing was deployed.**
+
+**Correction first:** every portfolio number I gave earlier in that session pooled the
+live systems with 13 paper shadows. The real-money book is **7 sleeves over 43 days:
++₹2,38,557, maxDD −₹36,082, return/DD 6.61, t 2.32** — healthier than the pooled
+−₹5.99L / 2.05 I reported. Live roster comes from `nas_day_matrix.json` (`live:true`
++ enabled DTEs) and `csl_paper_exec.py` `BOOKS` (`"mode":"live"`): the three NIFTY 9:16
+systems (Mon+Tue), the three SENSEX systems (Wed+Thu), and `NAS_COMB20` (2 lots, Mon+Tue).
+
+**Also retracted:** an intermediate claim that Friday was the best untraded day
+(+₹2.86L, t 2.18) was a **lot-sizing artefact** — raw sums over a shadow running 1 to
+10 lots. At a constant 10 lots those Fridays are +₹83,407 at **t 0.41**, with three days
+carrying more than the whole total. Noise, not an opportunity. (Consistent with the
+already-overdue ops review "Suite FRIDAY (DTE2) — keep live or revert".)
+
+**The finding.** `NAS_COMB20` is the only live sleeve losing money (−₹10,089, t −1.00),
+and the cause is **which days it trades**, not its parameters. The 9:16 suite and the
+held-straddle/combined-stop mechanic have near-opposite weekday edges:
+
+| | Mon | Tue | Wed | Thu | Fri |
+|---|---:|---:|---:|---:|---:|
+| 9:16 suite (t) | **2.89** | −0.24 | 0.50 | −0.37 | 0.41 |
+| held straddle + CSL (t) | 1.23 | 1.85 | 0.35 | **3.85** | 0.94 |
+
+The live config runs **both on Mon+Tue**. COMB20 therefore stacks correlated size onto
+Monday — the suite's strongest day, which needs no help — and sits out Thursday, its own
+strongest cell *and* a day the suite loses on. Live Monday record: 3 sessions, all
+losing, −₹56,630 at 10-lot equivalent.
+
+**Thursday is settled as a day, not a stop.** Re-priced from the full recorded premium
+path, DTE3 is *identical* from SL20 through no stop at all (₹1,55,265, t 3.85, DD
+−₹15,790, **0/18 stops fired**). The paper twin `NAS_COMB20_THU` already runs SL20 =
+the same thing. Only **size** and **margin** separate it from the headline.
+
+**DECISION 1 — COMB20's Monday cell: keep, shrink or stop?** It has lost all three live
+Mondays and duplicates the suite's best day. The replay says Monday is mildly positive at
+every stop (t 1.0–1.6) but with ~4× Thursday's drawdown, and its edge is almost entirely
+in the first half of the sample (₹1,31,845 → ₹12,960 across halves). No parameter fixes it.
+
+**DECISION 2 — Thursday: wait, or move now?** Recommendation is **wait**. NIFTY was pulled
+off Thursdays on 2026-08-27 for SENSEX-expiry margin and that constraint stands; the live
+Thursday record is 2 sessions and negative. Let `NAS_COMB20_THU` reach ~8 paper Thursdays
+(already registered: ops review due 2026-10-30, now carrying this evidence).
+
+Either change is a **strategy change** — its own STATUS-MD, its own evidence, an
+after-15:40 deploy. Study: `research/138_comb20_dte_allocation/results/RESULTS.md`.
+
+## ⏳ 2026-08-31 — Confirm which CSL/COMB books are really live (flag vs comments)
+
+`is_live_book()` requires `"mode": "live"`; **only `NAS_COMB20` has it**. Comments assert
+`CSL_TIMEB_SENSEX` and `CSL_TIMEB2_LIVE` are REAL money. By that function both evaluate as
+paper and `/app/straddles` renders them as paper. Either they execute via another path, or
+two books believed live are not trading real money. **Not edited** — live-trading code.
+Check the broker tradebook for a fill tagged to either. Ops review due **2026-09-05**.
+
+
 ## ✅ 2026-08-30 — research/135 Turtle system: tested + optimized → CONCLUDED, NO DEPLOY
 
 Arun sent the classic Dennis/Covel Turtle rules (5-rule breakout system) and asked to test them on
