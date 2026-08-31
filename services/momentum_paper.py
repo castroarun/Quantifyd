@@ -666,6 +666,54 @@ def unsweep(amount=None):
     return dict(qty=qty, price=px, value=proceeds)
 
 
+def _capital_plan(nav, cash_total, n_held):
+    """What the book needs, when, and whether anything is actually due.
+
+    Deliberately reports `needed_by` and `act_now=False` together: empty slots are only refilled at
+    the month-end rebalance (research/108 - refilling early buys names that are falling), so a
+    shortfall today is information, NOT a call to fund something this week."""
+    n = CFG["n_hold"]
+    empty = max(0, n - n_held)
+    slot = (nav * (1 - CFG["cash_reserve_pct"])) / n if n else 0.0
+    deployable = max(0.0, cash_total - nav * CFG["cash_reserve_pct"])
+    fundable = int(deployable // slot) if slot > 0 else 0
+    # adding cash lifts NAV which lifts the slot size, so solve rather than multiply
+    shortfall = 0.0
+    if empty > fundable and slot > 0:
+        k = empty * (1 - CFG["cash_reserve_pct"]) / n
+        denom = 1 - CFG["cash_reserve_pct"] - k
+        if denom > 0:
+            shortfall = max(0.0, (k * nav - deployable) / denom)
+    return dict(
+        slots_total=n, slots_held=n_held, slots_empty=empty,
+        slot_size=round(slot), deployable=round(deployable),
+        slots_fundable=min(fundable, empty),
+        shortfall=round(shortfall),
+        needed_by=_next_rebalance_date(),
+        days_to_needed=_days_to_rebalance(),
+        act_now=False,   # empty slots never fill before the month-end rebalance
+    )
+
+
+def _next_rebalance_date():
+    """Date of the next month-end rebalance, so a funding need can be stated with a deadline."""
+    from datetime import date as _d, timedelta as _td
+    try:
+        from services.trading_calendar import get_default_calendar
+        cal = get_default_calendar()
+        d = _d.today()
+        for _ in range(400):
+            nxt = d + _td(days=1)
+            while not cal.is_trading_day(nxt):
+                nxt += _td(days=1)
+            if cal.is_trading_day(d) and nxt.month != d.month:
+                return d.isoformat()
+            d += _td(days=1)
+    except Exception:
+        pass
+    return ""
+
+
 def _days_to_rebalance():
     """Calendar days until the month-end rebalance (when idle cash gets redeployed)."""
     from datetime import date as _d, timedelta as _td
@@ -1327,7 +1375,13 @@ def monthly_job(panel=None):
         return
     _set("gate", "ON")
     if CFG["live_cash_sweep"] and _sweep_units() > 0:
-        unsweep()                      # release parked cash BEFORE buying stocks (same-day settled)
+        nav_estimate = _equity_value() + _cash() + _sweep_value()
+        # Release only what the buys will actually need, not the whole ETF holding. Selling all of
+        # it means the residual gets bought straight back by the 15:05 sweep — on 2026-08-31 that
+        # released Rs4.1L to spend Rs3.3L, and ~Rs77k made a pointless round trip. A 10% cushion
+        # covers price drift between this estimate and the fills.
+        _need = max(0.0, (nav_estimate * (1 - CFG["cash_reserve_pct"])) - _cash())
+        unsweep(_need * 1.10 if _need > 0 else None)
         # NOTE: this ordering is load-bearing — the `nav` computed below is equity + cash and
         # does NOT add _sweep_value(). It is only correct because sweep_units is 0 by now.
     etf = _rs_basket(close, tv, asof)
@@ -1335,14 +1389,31 @@ def monthly_job(panel=None):
         return
     top8 = etf[:CFG["n_hold"]]; buf = set(etf[:CFG["buffer"]])
     held = _positions()
-    live = _live_prices(sorted(set(list(held) + top8)))
+    live = _live_prices(sorted(set(list(held) + etf)))
     # 1) sell holds that fell out of the top-22 buffer
     for s in list(held):
         if s not in buf:
             _sell(s, live.get(s, close[s].loc[:asof].dropna().iloc[-1]), d, "BUFFER_ROTATE")
     # 2) target = kept (still in buffer) + new top-8; equal-weight whole book
     kept = [s for s in _positions() if s in buf]
-    target = (kept + [s for s in top8 if s not in kept])[:CFG["n_hold"]]
+    # Walk the ranked pool rather than only the top-8: if a candidate is already below its 15-day
+    # Donchian low the exit rule would sell it, so take the next qualifier instead of leaving the
+    # slot empty (research/115 — performance is a wash, this wins on mechanics).
+    adds, skipped = [], []
+    for cand in etf:
+        if len(kept) + len(adds) >= CFG["n_hold"]:
+            break
+        if cand in kept or not live.get(cand):
+            continue
+        low = _donchian_low(close, cand, asof)
+        if low is not None and live[cand] < low:
+            skipped.append(f"{cand} ({live[cand]:.1f} below 15d-low {low:.1f})")
+            continue
+        adds.append(cand)
+    if skipped:
+        logger.warning("[MP] rebalance skipped %d name(s) below their stop, backfilled deeper: %s",
+                       len(skipped), "; ".join(skipped))
+    target = (kept + adds)[:CFG["n_hold"]]
     nav = sum(_positions()[s]["qty"] * live.get(s, _positions()[s]["entry_price"])
               for s in _positions()) + _cash()
     per = (nav * (1 - CFG["cash_reserve_pct"])) / len(target)
@@ -1518,6 +1589,7 @@ def get_state():
         data_asof=(close.index[-1].date().isoformat() if close is not None else None),
         idle_cash=round(cash), idle_pct=round(cash / nav * 100, 1) if nav else 0,
         days_to_rebalance=_days_to_rebalance(),
+        capital_plan=_capital_plan(nav, cash, n_stocks),
         # ledger cash vs money parked in the ETF — the KPI strip showed one blended "CASH"
         # figure, so it looked like 26% was sitting idle when almost all of it was in CASHIETF
         hedge_viability=_hedge_viability(equity, nav),
