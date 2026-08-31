@@ -131,7 +131,10 @@ export default function BookActivity({ bookId }: { bookId: string }) {
       )}
       {rec.net_total != null && (
         <span className={styles.item}>
-          net <b className={pnlClass(rec.net_total)}>{formatPnl(rec.net_total)}</b>
+          <span title="Realised P&L on closed trades. Paper books book fills at the "
+                       + "signal price, so this is gross of brokerage, STT and slippage.">
+            P&amp;L</span>{' '}
+          <b className={pnlClass(rec.net_total)}>{formatPnl(rec.net_total)}</b>
         </span>
       )}
       {rec.win_rate != null && (
