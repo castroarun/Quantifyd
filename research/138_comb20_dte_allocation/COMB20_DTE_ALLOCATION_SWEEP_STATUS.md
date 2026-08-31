@@ -99,3 +99,33 @@ the recorded chain, to separate "Thursday is good" from "30% is good on
 Thursday". If Thursday survives that, the change to propose is a reallocation —
 drop DTE1, add DTE3 — as a **strategy change with its own evidence and an
 after-15:40 deploy**, not a parameter tweak.
+
+---
+
+## PHASE 2 — 2026-08-31 20:1x IST · CONCLUDED
+
+| time | event | notes |
+|---|---|---|
+| 20:05 | Built the real-money-only book | Roster taken from `nas_day_matrix.json` (`live:true` + DTEs) and `csl_paper_exec.py` `BOOKS` (`"mode":"live"`). **7 live sleeves, not 20.** |
+| 20:08 | Pooled-vs-real correction | Real book: 43d, +Rs 2,38,557, maxDD -Rs 36,082, **ret/DD 6.61, t 2.32**. The -Rs 5.99L DD I reported earlier is paper, not Arun's money. |
+| 20:12 | Confound test run (`confound.py`) | 5 DTE x 6 stops = 30 cells, re-priced from the untruncated `options_study.json` path. |
+| 20:13 | **Thursday resolved: it is the DAY, not the stop** | DTE3 identical from SL20 to no-stop (Rs 1,55,265, t 3.85, DD -Rs 15,790, **0/18 stops**). Live paper twin already runs SL20 = same thing. No stop change to make. |
+| 20:14 | Monday: no parameter fix exists | Positive at every stop but t 1.0-1.6 throughout, ~4x Thursday's DD. Stability split shows Rs 1,31,845 -> Rs 12,960 across halves. |
+| 20:16 | **CLAIM RETRACTED** | An intermediate "Friday = +Rs 2,86,628, t 2.18, nobody live" was a **lot-sizing artefact** (raw sum over a shadow running 1-10 lots). Normalised: +Rs 83,407, **t 0.41**, top-3 = 272% of total. Not an opportunity. |
+| 20:18 | The real finding | The 9:16 suite and the held-straddle/CSL mechanic have near-**opposite** weekday edges (suite t: Mon 2.89, Tue -0.24, Thu -0.37; CSL t: Mon 1.23, Tue 1.85, Thu 3.85) — and the live config runs both on Mon+Tue. |
+| 20:20 | Verdict written | `results/RESULTS.md`. **SIGNAL. Nothing deployed.** |
+
+**Outcome:** `NAS_COMB20` is the only live sleeve losing money (-Rs 10,089, t -1.00),
+and the cause is day allocation, not parameters: it stacks correlated size on Monday
+(the suite's best day, t 2.89) and sits out Thursday (its own best cell, t 3.85, and
+a day the suite loses on).
+
+**Recommended action: the cheap one.** Do NOT move real money to Thursday yet —
+NIFTY was pulled off Thursdays on 2026-08-27 for SENSEX-expiry margin, and the live
+Thursday record is 2 days and negative. Let `NAS_COMB20_THU` accumulate ~8 paper
+Thursdays, then re-read. The open live question is whether COMB20's Monday cell
+should keep running at all (3 live Mondays, all losing, -Rs 56,630 at 10-lot equiv).
+
+**Flagged, not touched:** `is_live_book()` requires `"mode":"live"`; only `NAS_COMB20`
+has it, yet comments assert `CSL_TIMEB_SENSEX` and `CSL_TIMEB2_LIVE` are REAL. Confirm
+against the broker — live-trading code, not edited here.
