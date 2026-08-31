@@ -1212,7 +1212,7 @@ def seed(force=False):
             "basket": etf, "risk_off": risk_off}
 
 
-def daily_job(panel=None):
+def daily_job(panel=None, sweep=True):
     """Accrue liquid-fund yield on cash + mark P&L + 15-day Donchian stops.
     `panel` = pre-loaded (close, tv) so the single EOD run refreshes only once."""
     if not _get("seeded"):
@@ -1244,7 +1244,11 @@ def daily_job(panel=None):
         if low is not None and pr is not None and pr < low:
             _sell(s, pr, d, "DONCHIAN")
             logger.info(f"[MP] Donchian exit {s} @ {pr:.1f} (<15d low {low:.1f})")
-    if CFG["live_cash_sweep"]:
+    # `sweep` is False when this runs as the first half of the month-end rebalance. Otherwise the
+    # Donchian sells free cash, this parks it in the ETF, and monthly_job's unsweep() sells it right
+    # back seconds later to fund the stock buys — on 2026-08-31 that bought 253 units at 14:46:59
+    # and sold 382 at 14:47:03, ~Rs2.7L of turnover and its charges for nothing.
+    if CFG["live_cash_sweep"] and sweep:
         try:
             sweep_idle_cash()
         except Exception as _e:
@@ -1820,7 +1824,7 @@ def rebalance_job():
     # minutes later. That is not just a wasted round trip: research/108 keeps stop-out cash
     # idle until the NEXT month-end, so the slot then sits dead for a month. Running the stop
     # first means the book is already clean when we choose what to buy.
-    daily_job(panel)
+    daily_job(panel, sweep=False)   # monthly_job unsweeps immediately after — do not round-trip
     monthly_job(panel)
 
 
