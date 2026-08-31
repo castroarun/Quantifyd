@@ -1,12 +1,12 @@
 {
- "asof": "2026-08-28 12:45:06",
+ "asof": "2026-08-31 13:25:06",
  "upcoming": [
   {
    "expiry": "2026-10-27",
    "entry_date": "2026-09-11",
    "entry_weekday": "Fri",
    "exit_due": "2026-10-06",
-   "days_away": 14,
+   "days_away": 11,
    "weekend_rolled": true
   },
   {
@@ -14,7 +14,7 @@
    "entry_date": "2026-11-13",
    "entry_weekday": "Fri",
    "exit_due": "2026-12-08",
-   "days_away": 77,
+   "days_away": 74,
    "weekend_rolled": true
   },
   {
@@ -22,7 +22,7 @@
    "entry_date": "2027-02-12",
    "entry_weekday": "Fri",
    "exit_due": "2027-03-09",
-   "days_away": 168,
+   "days_away": 165,
    "weekend_rolled": true
   }
  ],
@@ -32,16 +32,16 @@
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
- "bhav_through": "2026-08-27",
+ "bhav_through": "2026-08-28",
  "realised": 131703.64278000002,
- "unrealised": 39224.250000000015,
- "nav": 1370471.9144278744,
+ "unrealised": 42061.50000000001,
+ "nav": 1373309.1644278744,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 0,
  "unrealised_plan": 0,
- "unrealised_off": 39224.250000000015,
+ "unrealised_off": 42061.50000000001,
  "nav_plan": 1331247.6644278744,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
@@ -72,11 +72,11 @@
    "gain": 1917.3
   }
  ],
- "capital_deployed": 502085.67000000004,
- "capital_deployed_peak": 609052.92,
- "margin_asof": "2026-08-28 12:45",
- "running_pnl": 170927.89278000005,
- "running_pnl_pct": 34.04357124552072,
+ "capital_deployed": 496101.82999999996,
+ "capital_deployed_peak": 600231.83,
+ "margin_asof": "2026-08-31 13:25",
+ "running_pnl": 173765.14278000002,
+ "running_pnl_pct": 35.026103971436676,
  "n_closed": 3,
  "n_open": 1,
  "win_rate": 100.0,
@@ -102,14 +102,14 @@
    "vix_level": 11.31,
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
-   "mark_prem": 548.55,
-   "mark_date": "2026-08-28 12:45:04",
+   "mark_prem": 534.0,
+   "mark_date": "2026-08-31 13:25:04",
    "mark_src": "kite-ltp",
-   "mtm_rs": 39224.250000000015,
-   "mark_spot": 24104.45,
+   "mtm_rs": 42061.50000000001,
+   "mark_spot": 24066.55,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
-   "dte": 31,
+   "dte": 28,
    "curve": [
     {
      "d": "2026-08-17",
@@ -155,6 +155,11 @@
      "d": "2026-08-27",
      "prem": 547.5,
      "mtm": 39429.00000000001
+    },
+    {
+     "d": "2026-08-28",
+     "prem": 529.95,
+     "mtm": 42851.25
     }
    ],
    "legs_entry": [
@@ -186,30 +191,30 @@
      "side": "SHORT",
      "opt": "CE",
      "strike": 24350.0,
-     "price": 235.6,
-     "volume": 325195,
-     "oi": 410540,
-     "bid": 234.1,
-     "ask": 234.95,
-     "itm_by": -245.5
+     "price": 225.85,
+     "volume": 137670,
+     "oi": 407940,
+     "bid": 225.85,
+     "ask": 226.85,
+     "itm_by": -283.5
     },
     {
      "side": "SHORT",
      "opt": "PE",
      "strike": 24350.0,
-     "price": 312.95,
-     "volume": 176215,
-     "oi": 420290,
-     "bid": 313,
-     "ask": 314.2,
-     "itm_by": 245.5
+     "price": 308.15,
+     "volume": 148395,
+     "oi": 421200,
+     "bid": 308.3,
+     "ask": 309.75,
+     "itm_by": 283.5
     }
    ],
-   "legs_asof": "2026-08-28 12:45:04",
+   "legs_asof": "2026-08-31 13:25:04",
    "legs_src": "kite ltp",
-   "margin_real": 502085.67000000004,
-   "margin_peak": 609052.92,
-   "mtm_pct": 7.812262397371351
+   "margin_real": 496101.82999999996,
+   "margin_peak": 600231.83,
+   "mtm_pct": 8.478400492898809
   }
  ],
  "closed_trades": [
@@ -241,7 +246,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-08-04",
-   "dte": -4,
+   "dte": -7,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -321,7 +326,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-07-07",
-   "dte": -32,
+   "dte": -35,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -401,7 +406,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-06-09",
-   "dte": -60,
+   "dte": -63,
    "legs_entry": [
     {
      "side": "SHORT",

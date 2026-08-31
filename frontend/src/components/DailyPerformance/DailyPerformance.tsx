@@ -18,8 +18,10 @@ export interface DayRow {
   wins: number;
   losses: number;
   pnl: number;
+  deployed: number;
   cum: number;
   mode: string;
+  origin: string;
   rows: Array<Record<string, unknown>>;
 }
 
@@ -29,6 +31,9 @@ interface BookFeed {
     days: number; trades: number; wins: number; win_rate: number | null;
     net: number; best_day: number | null; worst_day: number | null;
     green_days: number; first: string | null; last: string | null;
+    capital: number | null; buying_power: number | null; basis: string | null;
+    max_position: number | null; busiest_day: number | null; avg_trade: number | null;
+    broker_trades: number; sim_trades: number;
   } | null;
   error?: string;
 }
@@ -44,6 +49,14 @@ const inr = (v: number | null | undefined) => {
     ? Math.round(Math.abs(v)).toLocaleString('en-IN')
     : Math.abs(v).toFixed(0);
   return `${v < 0 ? '−' : '+'}₹${s}`;
+};
+
+/** Rupees without a +/- sign: a position size is not a gain or a loss. */
+const size = (v: number | null | undefined) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (Math.abs(v) >= 1e7) return `₹${(v / 1e7).toFixed(2)}Cr`;
+  if (Math.abs(v) >= 1e5) return `₹${(v / 1e5).toFixed(2)}L`;
+  return `₹${Math.round(v).toLocaleString('en-IN')}`;
 };
 
 const day = (d: string) => {
@@ -68,12 +81,12 @@ const time = (v: unknown) => {
 
 /** Columns to show inside an expanded day, per book. */
 const DETAIL: Record<string, Array<[string, string]>> = {
-  orb: [['direction', 'Dir'], ['qty', 'Qty'], ['entry_price', 'Entry'], ['exit_price', 'Exit'],
+  orb: [['deployed', 'Deployed'], ['direction', 'Dir'], ['qty', 'Qty'], ['entry_price', 'Entry'], ['exit_price', 'Exit'],
         ['entry_time', 'In'], ['exit_time', 'Out'], ['exit_reason', 'Why'], ['conviction_grade', 'Grade']],
-  n500m: [['direction', 'Dir'], ['signal_type', 'Signal'], ['timeframe', 'TF'], ['qty', 'Qty'],
+  n500m: [['deployed', 'Deployed'], ['direction', 'Dir'], ['signal_type', 'Signal'], ['timeframe', 'TF'], ['qty', 'Qty'],
           ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['entry_time', 'In'], ['exit_time', 'Out'],
           ['exit_reason', 'Why']],
-  mst: [['side', 'Side'], ['leg_role', 'Leg'], ['strike', 'Strike'], ['option_type', 'CE/PE'],
+  mst: [['deployed', 'Deployed'], ['side', 'Side'], ['leg_role', 'Leg'], ['strike', 'Strike'], ['option_type', 'CE/PE'],
         ['qty', 'Qty'], ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['exit_reason', 'Why']],
 };
 
@@ -124,11 +137,16 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
         <span className={styles.range}>
           {s.first === s.last ? day(s.first!) : `${day(s.first!)} → ${day(s.last!)}`}
           <span className={styles.dim}> · {s.days} trading days</span>
+          {s.basis ? <span className={styles.dim}> · {s.basis}</span> : null}
         </span>
       </div>
 
       <div className={styles.rail}>
         {[
+          ['Capital', s.capital != null ? size(s.capital) : '—', ''],
+          ...(s.buying_power ? [['Buying power', size(s.buying_power), '']] : []),
+          ['Largest position', size(s.max_position), ''],
+          ['Avg position', size(s.avg_trade), ''],
           ['Net', inr(s.net), s.net >= 0 ? styles.pos : styles.neg],
           ['Trades', String(s.trades), ''],
           ['Win rate', s.win_rate == null ? '—' : `${s.win_rate}%`, ''],
@@ -149,6 +167,7 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
             <th>Date</th>
             <th>Book</th>
             <th className={styles.numr}>Trades</th>
+            <th className={styles.numr} title="money put to work that day, summed over entries">Entered</th>
             <th className={styles.numr}>W / L</th>
             <th className={styles.numr}>Day P&amp;L</th>
             <th className={styles.bar}>&nbsp;</th>
@@ -168,11 +187,17 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
                   <span className={styles.dim}> {weekday(d.date)}</span>
                 </td>
                 <td>
-                  <span className={`${styles.mode} ${d.mode === 'live' ? styles.modeLive : ''}`}>
-                    {d.mode}
+                  <span className={`${styles.mode} ${d.origin === 'broker' ? styles.modeLive : ''}`}
+                        title={d.origin === 'broker'
+                          ? 'orders were placed at the broker'
+                          : d.origin === 'mixed'
+                            ? 'this day contains both real broker orders and simulated ones'
+                            : 'simulated fills — no order reached the broker'}>
+                    {d.origin === 'broker' ? 'real' : d.origin === 'mixed' ? 'mixed' : 'paper'}
                   </span>
                 </td>
                 <td className={styles.numr}>{d.trades}</td>
+                <td className={`${styles.numr} ${styles.dim}`}>{size(d.deployed)}</td>
                 <td className={styles.numr}>
                   <span className={styles.pos}>{d.wins}</span>
                   <span className={styles.dim}> / </span>
@@ -189,7 +214,7 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
               </tr>,
               isOpen ? (
                 <tr key={`${d.date}-x`} className={styles.detailRow}>
-                  <td colSpan={7}>
+                  <td colSpan={8}>
                     <table className={styles.inner}>
                       <thead>
                         <tr>
@@ -206,7 +231,9 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
                             <td>{String(r.symbol ?? '—')}</td>
                             {cols.map(([key, label]) => (
                               <td key={label} className={styles.numr}>
-                                {key.endsWith('_time') ? time(r[key]) : num(r[key])}
+                                {key === 'deployed'
+                                  ? size(r[key] as number)
+                                  : key.endsWith('_time') ? time(r[key]) : num(r[key])}
                               </td>
                             ))}
                             <td className={`${styles.numr} ${(r.pnl as number) >= 0 ? styles.pos : styles.neg}`}>
@@ -230,6 +257,17 @@ export default function DailyPerformance({ book, title = 'Daily performance' }:
         </button>
       )}
       <div className={styles.foot}>
+        <b>Entered</b> is the money put to work that day, summed across entries — not
+        exposure at any one moment, since positions open and close through the session.
+        <b> Deployed</b> on a trade is quantity × entry price.
+        <br />
+        Every row here was recorded live as it happened — nothing is backfilled or
+        re-simulated from history.{' '}
+        {s.broker_trades > 0
+          ? <><b>{s.broker_trades}</b> of these trades were placed at the broker with
+              real money; the other <b>{s.sim_trades}</b> were simulated fills.</>
+          : <>All <b>{s.sim_trades}</b> are simulated fills — no order reached the broker.</>}
+        <br />
         Realised P&amp;L on closed trades, from the book's own record ·
         rebuilt {new Date(feed.generated_at).toLocaleString('en-IN',
           { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
