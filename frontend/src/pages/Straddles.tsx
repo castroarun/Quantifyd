@@ -1819,6 +1819,7 @@ export default function Straddles() {
                   <th style={ecth} title="Prior-day CPR width % (research/67) — narrow = calm next day">dCPR</th>
                   <th style={{ ...ecth, textAlign: 'left' }}>Exit (date · time)</th>
                   <th style={{ ...ecth, textAlign: 'left' }}>Reason</th><th style={ecth}>P&amp;L</th>
+                  <th style={ecth} title="Furthest the underlying travelled from the entry spot while the position was open. A stop level can only fire if the move reached it.">Moved</th>
                   {(stopMx?.stops || []).map((s: number) => (
                     <th key={s} style={ecth}
                         title={`What a ${(s * 100).toFixed(1)}% move-stop would have realised on this same position, `
@@ -1838,11 +1839,26 @@ export default function Straddles() {
                     <td style={{ ...ectd, textAlign: 'left' }}>{(t.exit_day || '—')} · {(t.exit_time || '—')}</td>
                     <td style={{ ...ectd, textAlign: 'left', color: C.muted }}>{t.exit_reason}</td>
                     <td style={{ ...ectd, fontWeight: 700, color: col(t.pnl) }}>{inr(t.pnl)}</td>
+                    {(() => {
+                      const row = (stopMx?.trades || []).find((x: any) => x.pos === t.id);
+                      const mv = row?.max_move_held;
+                      return (
+                        <td style={{ ...ectd, color: C.sec }}
+                            title={row?.max_move_after != null
+                              ? `${mv?.toFixed(2)}% while held · ${row.max_move_after.toFixed(2)}% after the exit`
+                              : undefined}>
+                          {mv != null ? `${mv.toFixed(2)}%` : '—'}
+                        </td>);
+                    })()}
                     {(stopMx?.stops || []).map((s: number) => {
                       const row = (stopMx.trades || []).find((x: any) => x.pos === t.id);
                       const cell = row?.stops?.[String(s)];
                       if (!cell) return <td key={s} style={{ ...ectd, color: C.faint }}>—</td>;
-                      if (cell.identical) return <td key={s} style={{ ...ectd, color: C.faint }}>same</td>;
+                      if (cell.identical) return (
+                        <td key={s} style={{ ...ectd, color: C.faint }}
+                            title="This level never triggered — the move did not reach it — so the trade is unchanged.">
+                          {inr(cell.pnl)}
+                        </td>);
                       if (cell.no_data) return (
                         <td key={s} style={{ ...ectd, color: C.faint }} title={cell.note}>no data</td>);
                       // colour against the live outcome, not against zero — the question is
@@ -1859,7 +1875,7 @@ export default function Straddles() {
                     <td style={{ ...ectd, borderTop: `1px solid ${C.ink}` }} />
                     <td style={{ ...ectd, borderTop: `1px solid ${C.ink}`, textAlign: 'left',
                                  fontWeight: 700, color: C.ink }}>Book net</td>
-                    <td style={{ ...ectd, borderTop: `1px solid ${C.ink}` }} colSpan={6} />
+                    <td style={{ ...ectd, borderTop: `1px solid ${C.ink}` }} colSpan={7} />
                     <td style={{ ...ectd, borderTop: `1px solid ${C.ink}`, fontWeight: 700,
                                  color: col(v2eng.closed_total_pnl) }}>
                       {inr(v2eng.closed_total_pnl)}
@@ -1897,7 +1913,7 @@ export default function Straddles() {
                 </div>
                 {stopMx && (
                   <div style={{ color: C.faint, marginTop: 6, lineHeight: 1.7 }}>
-                    <b style={{ color: C.sec }}>Stop variants</b> — what each level would have realised on these same positions, rebuilt from the option chain recorded since 2026-04-20. “same” = that level would not have changed the trade; “no data” = a gap exit stamped before the recorder’s first bar, so the decisive minutes are missing.
+                    <b style={{ color: C.sec }}>Stop variants</b> — what each level would have realised on these same positions, rebuilt from the option chain recorded since 2026-04-20. A greyed figure equals the live result because that level never triggered — check it against the Moved column. “no data” = a gap exit stamped before the recorder’s first bar, so the decisive minutes are missing.
                     <div style={{ marginTop: 3 }}>
                       {(stopMx.stops || []).map((s: number) => {
                         const eff = (stopMx.trades || [])

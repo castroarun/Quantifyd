@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-31T19:09:33",
+ "generated_at": "2026-08-31T19:34:05",
  "live_stop": 0.02,
  "stops": [
   0.01,
@@ -16,6 +16,8 @@
    "exit_day": "2026-07-31",
    "reason": "move2%",
    "actual_pnl": -35813.0,
+   "max_move_held": 1.79,
+   "max_move_after": 3.6,
    "stops": {
     "0.01": {
      "at": "2026-07-29T09:15:00",
@@ -46,6 +48,8 @@
    "exit_day": "2026-07-20",
    "reason": "pt40",
    "actual_pnl": 83803.0,
+   "max_move_held": 1.53,
+   "max_move_after": 1.12,
    "stops": {
     "0.01": {
      "at": "2026-07-13T12:53:00",
@@ -62,7 +66,9 @@
      "thin_legs": 0
     },
     "0.025": {
-     "identical": true
+     "identical": true,
+     "pnl": 83803.0,
+     "vs_actual": 0
     }
    }
   },
@@ -72,6 +78,8 @@
    "exit_day": "2026-07-06",
    "reason": "roll",
    "actual_pnl": -15988.0,
+   "max_move_held": 1.54,
+   "max_move_after": 1.82,
    "stops": {
     "0.01": {
      "at": "2026-06-30T15:02:00",
@@ -88,7 +96,9 @@
      "thin_legs": 0
     },
     "0.025": {
-     "identical": true
+     "identical": true,
+     "pnl": -15988.0,
+     "vs_actual": 0
     }
    }
   },
@@ -98,6 +108,8 @@
    "exit_day": "2026-06-29",
    "reason": "pt40",
    "actual_pnl": 74744.0,
+   "max_move_held": 1.14,
+   "max_move_after": 0.61,
    "stops": {
     "0.01": {
      "at": "2026-06-25T11:58:00",
@@ -107,10 +119,14 @@
      "thin_legs": 0
     },
     "0.015": {
-     "identical": true
+     "identical": true,
+     "pnl": 74744.0,
+     "vs_actual": 0
     },
     "0.025": {
-     "identical": true
+     "identical": true,
+     "pnl": 74744.0,
+     "vs_actual": 0
     }
    }
   },
@@ -120,6 +136,8 @@
    "exit_day": "2026-06-15",
    "reason": "move2%",
    "actual_pnl": -2393.0,
+   "max_move_held": 0.35,
+   "max_move_after": 2.65,
    "stops": {
     "0.01": {
      "no_data": true,
@@ -144,6 +162,8 @@
    "exit_day": "2026-06-12",
    "reason": "kill_switch",
    "actual_pnl": 24.0,
+   "max_move_held": 1.25,
+   "max_move_after": 3.48,
    "stops": {
     "0.01": {
      "at": "2026-06-11T09:15:00",
@@ -153,10 +173,14 @@
      "thin_legs": 3
     },
     "0.015": {
-     "identical": true
+     "identical": true,
+     "pnl": 24.0,
+     "vs_actual": 0
     },
     "0.025": {
-     "identical": true
+     "identical": true,
+     "pnl": 24.0,
+     "vs_actual": 0
     }
    }
   }

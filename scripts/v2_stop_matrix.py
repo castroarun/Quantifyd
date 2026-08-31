@@ -112,8 +112,20 @@ def main():
             "AND snapshot_time >= ? AND snapshot_time <= ? ORDER BY snapshot_time",
             (f"{r['day']}T00:00:00", f"{r['expiry']}T23:59:59")).fetchall()
 
+        held = [q for q in path if entry_dt <= q[0] <= live_exit and q[1]]
+        after = [q for q in path if q[0] >= live_exit and q[1]]
+        mae_held = max((abs(q[1] - es) / es for q in held), default=None)
+        mae_after = max((abs(q[1] - es) / es for q in after), default=None)
+
         rec = dict(pos=r['id'], entry_day=r['day'], exit_day=r['exit_day'],
-                   reason=r['exit_reason'], actual_pnl=r['pnl'], stops={})
+                   reason=r['exit_reason'], actual_pnl=r['pnl'],
+                   # the furthest the underlying got while the trade was open, and the
+                   # furthest it got afterwards. A level can only fire if the move reached
+                   # it — this is what makes an "unchanged" cell checkable rather than a
+                   # claim the reader has to take on trust.
+                   max_move_held=round(100 * mae_held, 2) if mae_held is not None else None,
+                   max_move_after=round(100 * mae_after, 2) if mae_after is not None else None,
+                   stops={})
         cells = []
         for s in stops:
             if s < LIVE_STOP:
@@ -121,8 +133,8 @@ def main():
             elif stopped_live:
                 window = [q for q in path if q[0] >= live_exit]      # would have stayed open
             else:
-                rec['stops'][f'{s}'] = dict(identical=True)
-                cells.append(f'{"same":>13}')
+                rec['stops'][f'{s}'] = dict(identical=True, pnl=r['pnl'], vs_actual=0)
+                cells.append(f'{r["pnl"] or 0:>+13,.0f}')
                 continue
 
             hit = next((q for q in window if q[1] and abs(q[1] - es) / es >= s), None)
@@ -140,8 +152,9 @@ def main():
                                                      'window (gap exit before the first bar)')
                     cells.append(f'{"no data":>13}')
                 else:
-                    rec['stops'][f'{s}'] = dict(identical=True)
-                    cells.append(f'{"same":>13}')
+                    rec['stops'][f'{s}'] = dict(identical=True, pnl=r['pnl'],
+                                                vs_actual=0)
+                    cells.append(f'{r["pnl"] or 0:>+13,.0f}')
                 continue
 
             pnl, thin = price_at(chain, legs, hit[0])
@@ -163,8 +176,11 @@ def main():
                     print(f"    !! pos {r['id']}: {s:.1%} shows no trigger on a trade that "
                           f"stopped at {LIVE_STOP:.1%} — window or timestamp format is wrong")
         out.append(rec)
+        moved = f"moved {rec['max_move_held'] or 0:.2f}% while held"
+        if rec['max_move_after']:
+            moved += f", {rec['max_move_after']:.2f}% after exit"
         print(f"{r['id']:>4} {r['day']:11} {str(r['exit_reason'])[:12]:<12} "
-              f"{r['pnl'] or 0:>+10,.0f}  {' '.join(cells)}")
+              f"{r['pnl'] or 0:>+10,.0f}  {' '.join(cells)}   [{moved}]")
 
     print()
     print(f"{'live 2.0%':<26} {'baseline':>14}   net {sum(r['actual_pnl'] or 0 for r in out):>+12,.0f}")
