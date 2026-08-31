@@ -727,6 +727,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
 
   // ---- buy / sell state ----
   const [amt, setAmt] = useState<number | null>(null);
+  const [buyQtyOverride, setBuyQtyOverride] = useState<number | null>(null);
   const [customAmt, setCustomAmt] = useState('');
   const [sellCustomQty, setSellCustomQty] = useState('');
   const [sellPct, setSellPct] = useState<number | null>(null);
@@ -752,16 +753,20 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
   const curSym = current?.sym;
   useEffect(() => {
     // reset both order forms whenever the focused symbol (or account) changes
-    setAmt(null); setCustomAmt(''); setSellCustomQty(''); setSellPct(null);
+    setAmt(null); setCustomAmt(''); setBuyQtyOverride(null); setSellCustomQty(''); setSellPct(null);
     setConfirmOpen(false); setExec(null); setPlacing(false);
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
   }, [curSym, account]);
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
   const buyAmount = customAmt ? Number(customAmt) : (amt ?? 0);
-  const buyQty = current && current.ltp > 0 && buyAmount > 0 ? Math.floor(buyAmount / current.ltp) : 0;
+  // qty from the chosen amount, unless the user hand-scaled it (stepper override)
+  const buyQtyAuto = current && current.ltp > 0 && buyAmount > 0 ? Math.floor(buyAmount / current.ltp) : 0;
+  const buyQty = buyQtyOverride != null ? buyQtyOverride : buyQtyAuto;
   const buyUsed = current ? buyQty * current.ltp : 0;
   const buyLeft = buyAmount - buyUsed;
+  const setBuyAmt = (a: number) => { setAmt(a); setCustomAmt(''); setBuyQtyOverride(null); };
+  const bumpQty = (d: number) => setBuyQtyOverride(Math.max(1, (buyQty || 0) + d));
   const startP = current ? roundTick(current.ltp * (1 - 0.002)) : 0;
   const capP = current ? roundTick(current.ltp * (1 + 0.003)) : 0;
   const inr0 = (n: number) => Math.round(n).toLocaleString('en-IN');
@@ -794,7 +799,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
       const url = isSell ? '/api/holdings/exit' : '/api/holdings/order';
       const body = isSell
         ? { symbol: current.sym, qty: sellQty, paper, account }
-        : { symbol: current.sym, amount: buyAmount, paper, account };
+        : { symbol: current.sym, amount: buyAmount, qty: buyQty, paper, account };
       const r = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -979,7 +984,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
                       <button
                         key={a}
                         className={`${styles.amtChip} ${!customAmt && amt === a ? styles.amtChipOn : ''}`}
-                        onClick={() => { setAmt(a); setCustomAmt(''); }}
+                        onClick={() => setBuyAmt(a)}
                       >₹{(a / 1000)}k</button>
                     ))}
                     <input
@@ -988,17 +993,26 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
                       min={0}
                       placeholder="Custom ₹"
                       value={customAmt}
-                      onChange={(e) => { setCustomAmt(e.target.value); setAmt(null); }}
+                      onChange={(e) => { setCustomAmt(e.target.value); setAmt(null); setBuyQtyOverride(null); }}
                     />
                   </div>
-                  <div className={styles.buyCalc}>
-                    {buyQty >= 1 ? (
-                      <>≈ <b>{buyQty} sh</b> · ₹{inr0(buyUsed)} <span className={styles.buyLeft}>· fills in the green band</span></>
-                    ) : buyAmount > 0 ? (
-                      <span className={styles.buyLeft}>below one share (₹{current.ltp.toFixed(1)})</span>
-                    ) : (
-                      <span className={styles.buyLeft}>pick an amount →</span>
-                    )}
+                  {/* manual qty scaler — nudge share count up/down past the amount chip */}
+                  <div className={styles.qtyStep}>
+                    <button className={styles.stepBtn} onClick={() => bumpQty(-1)} disabled={buyQty < 2}>−</button>
+                    <input
+                      className={styles.qtyNum}
+                      type="number" min={1}
+                      value={buyQty || ''}
+                      placeholder="0"
+                      onChange={(e) => setBuyQtyOverride(Math.max(1, Math.floor(Number(e.target.value) || 0)))}
+                    />
+                    <span className={styles.qtyUnit}>sh</span>
+                    <button className={styles.stepBtn} onClick={() => bumpQty(1)} disabled={buyQty < 1}>+</button>
+                    <span className={styles.qtyCost}>
+                      {buyQty >= 1
+                        ? <>₹{inr0(buyUsed)}{buyQtyOverride != null ? <span className={styles.buyLeft}> · scaled</span> : null}</>
+                        : <span className={styles.buyLeft}>{buyAmount > 0 ? `below 1 sh (₹${current.ltp.toFixed(1)})` : 'pick an amount →'}</span>}
+                    </span>
                   </div>
                   <button className={styles.reviewBtn} disabled={buyQty < 1} onClick={() => openConfirm('buy')}>
                     Review buy →

@@ -1326,7 +1326,7 @@ def api_holdings_topup():
         amount = data.get('amount')
         paper = bool(data.get('paper', False))
         syms = set(_account_holdings(account).keys())
-        res = start_topup(symbol, amount, syms, paper=paper, account=account)
+        res = start_topup(symbol, amount, syms, paper=paper, account=account, qty=data.get("qty"))
         return jsonify(res), (400 if res.get('error') else 200)
     except Exception as e:
         logger.exception("[topup] route error")

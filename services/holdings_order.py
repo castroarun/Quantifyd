@@ -24,10 +24,45 @@ SHAVE_START = 0.0020      # first limit 0.20% BELOW ltp (try to buy cheaper)
 PRICE_CAP = 0.0030        # never pay more than 0.30% ABOVE ltp
 BUDGET_S = 20             # total chase budget
 STEP_S = 4               # seconds between reprice steps
-TICK = 0.05               # NSE price tick
+TICK = 0.05               # default NSE price tick (per-instrument tick resolved at order time)
 
 _execs = {}               # exec_id -> state dict (single gunicorn worker → shared)
 _lock = threading.Lock()
+
+# per-instrument tick size, refreshed once a day from kite.instruments('NSE').
+# Many scripts tick at 0.05, but some (e.g. MANORAMA) tick at 0.10 and reject a
+# limit price that isn't a multiple — so round every limit to the real tick.
+_tick_cache = {}
+_tick_day = None
+_tick_lock = threading.Lock()
+
+
+def _tick_for(kite, symbol):
+    """Real NSE tick size for a symbol (default 0.05). Cached per day."""
+    global _tick_cache, _tick_day
+    from datetime import date
+    today = date.today()
+    with _tick_lock:
+        if _tick_day != today or not _tick_cache:
+            try:
+                rows = kite.instruments('NSE') or []
+                _tick_cache = {r['tradingsymbol']: float(r.get('tick_size') or 0.05)
+                               for r in rows if r.get('tick_size')}
+                _tick_day = today
+                logger.info(f"[topup] tick cache built: {len(_tick_cache)} NSE instruments")
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"[topup] tick cache build failed ({e}); using {TICK}")
+        return _tick_cache.get(symbol, TICK) or TICK
+
+
+def _parse_tick(reason):
+    """Pull a tick size out of a broker rejection like 'Tick size for this script is 0.10'."""
+    import re
+    m = re.search(r'tick size[^0-9]*([0-9]*\.?[0-9]+)', reason or '', re.I)
+    try:
+        return float(m.group(1)) if m else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _kite_for(account):
@@ -43,8 +78,9 @@ def _now():
     return datetime.now().strftime('%H:%M:%S')
 
 
-def _round_tick(p):
-    return round(round(p / TICK) * TICK, 2)
+def _round_tick(p, tick=TICK):
+    tick = tick or TICK
+    return round(round(p / tick) * tick, 2)
 
 
 def _get_ltp(kite, symbol):
@@ -80,20 +116,34 @@ def _update(exec_id, **kw):
             s['steps'].append(steps_append)
 
 
-def start_topup(symbol, amount, holdings_syms, paper=False, account='me'):
-    """Validate + kick off a smart-limit top-up. Returns dict (error or exec info)."""
+def start_topup(symbol, amount, holdings_syms, paper=False, account='me', qty=None):
+    """Validate + kick off a smart-limit top-up. Returns dict (error or exec info).
+
+    Sizing: pass `qty` for an exact share count (the user scaled it by hand), else
+    the qty is derived from `amount` (floor(amount/ltp)). Either way the rupee value
+    is capped at MAX_AMOUNT."""
     from services.market_data_refresh import _within_market_hours
 
     account = 'dad' if account == 'dad' else 'me'
     symbol = (symbol or '').strip().upper()
     if not symbol or symbol not in holdings_syms:
         return {'error': 'symbol is not one of your holdings'}
-    try:
-        amount = float(amount)
-    except (TypeError, ValueError):
-        return {'error': 'invalid amount'}
-    if amount <= 0 or amount > MAX_AMOUNT:
-        return {'error': f'amount must be between ₹1 and ₹{MAX_AMOUNT:,}'}
+
+    explicit_qty = None
+    if qty is not None:
+        try:
+            explicit_qty = int(qty)
+        except (TypeError, ValueError):
+            return {'error': 'invalid quantity'}
+        if explicit_qty < 1:
+            return {'error': 'quantity must be at least 1'}
+    else:
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            return {'error': 'invalid amount'}
+        if amount <= 0:
+            return {'error': 'invalid amount'}
 
     # one in-flight order per symbol per account
     with _lock:
@@ -108,24 +158,28 @@ def start_topup(symbol, amount, holdings_syms, paper=False, account='me'):
     ltp = _get_ltp(kite, symbol)
     if ltp <= 0:
         return {'error': 'could not fetch live price'}
-    qty = int(amount // ltp)
-    if qty < 1:
+    qty_final = explicit_qty if explicit_qty is not None else int(amount // ltp)
+    if qty_final < 1:
         return {'error': f'₹{amount:,.0f} is below one share (LTP ₹{ltp:,.2f})'}
+    used = round(qty_final * ltp, 2)
+    if used > MAX_AMOUNT:
+        return {'error': f'₹{used:,.0f} exceeds the ₹{MAX_AMOUNT:,} per-order cap'}
 
+    tick = _tick_for(kite, symbol)
     exec_id = uuid.uuid4().hex[:12]
-    cap = _round_tick(ltp * (1 + PRICE_CAP))
+    cap = _round_tick(ltp * (1 + PRICE_CAP), tick)
     state = {
-        'exec_id': exec_id, 'symbol': symbol, 'qty': qty, 'ref_ltp': ltp, 'side': 'BUY',
-        'account': account, 'amount': amount, 'used': round(qty * ltp, 2), 'cap': cap, 'paper': paper,
+        'exec_id': exec_id, 'symbol': symbol, 'qty': qty_final, 'ref_ltp': ltp, 'side': 'BUY',
+        'account': account, 'amount': used, 'used': used, 'cap': cap, 'tick': tick, 'paper': paper,
         'status': 'working', 'order_id': None, 'filled_qty': 0, 'avg_price': None,
         'message': 'placing order…', 'steps': [], 'started': datetime.now().isoformat(),
     }
     with _lock:
         _execs[exec_id] = state
     threading.Thread(target=_run, args=(exec_id,), daemon=True).start()
-    logger.info(f"[topup] start {account} {symbol} qty={qty} ltp={ltp} cap={cap} paper={paper} exec={exec_id}")
-    return {'exec_id': exec_id, 'symbol': symbol, 'qty': qty, 'ref_ltp': ltp,
-            'cap': cap, 'used': state['used'], 'paper': paper, 'account': account}
+    logger.info(f"[topup] start {account} {symbol} qty={qty_final} ltp={ltp} tick={tick} cap={cap} paper={paper} exec={exec_id}")
+    return {'exec_id': exec_id, 'symbol': symbol, 'qty': qty_final, 'ref_ltp': ltp,
+            'cap': cap, 'used': used, 'paper': paper, 'account': account}
 
 
 def start_exit(symbol, qty, holdings_qty, account='me', paper=False):
@@ -181,10 +235,10 @@ def get_status(exec_id):
         return dict(s) if s else None
 
 
-def _ladder(ltp, cap):
+def _ladder(ltp, cap, tick=TICK):
     raw = [ltp * (1 - SHAVE_START), ltp * (1 - SHAVE_START / 2), ltp,
            ltp * (1 + PRICE_CAP / 2), cap]
-    return [min(_round_tick(p), cap) for p in raw]
+    return [min(_round_tick(p, tick), cap) for p in raw]
 
 
 def _run(exec_id):
@@ -192,25 +246,40 @@ def _run(exec_id):
         s = dict(_execs[exec_id])
     sym, qty, ltp, cap, paper = s['symbol'], s['qty'], s['ref_ltp'], s['cap'], s['paper']
     account = s.get('account', 'me')
-    ladder = _ladder(ltp, cap)
+    tick = s.get('tick', TICK)
 
     if paper:
-        return _run_paper(exec_id, ladder, qty)
+        return _run_paper(exec_id, _ladder(ltp, cap, tick), qty)
 
     kite = _kite_for(account)
-    try:
-        oid = kite.place_order(
-            variety=kite.VARIETY_REGULAR, exchange=kite.EXCHANGE_NSE,
-            tradingsymbol=sym, transaction_type=kite.TRANSACTION_TYPE_BUY,
-            quantity=qty, product=kite.PRODUCT_CNC,
-            order_type=kite.ORDER_TYPE_LIMIT, price=ladder[0],
-        )
+    # up to two attempts: attempt 2 fires only if the broker rejected the price for a
+    # tick-size mismatch (e.g. a 0.10-tick script) — we re-round to the real tick and retry.
+    for attempt in (1, 2):
+        ladder = _ladder(ltp, cap, tick)
+        try:
+            oid = kite.place_order(
+                variety=kite.VARIETY_REGULAR, exchange=kite.EXCHANGE_NSE,
+                tradingsymbol=sym, transaction_type=kite.TRANSACTION_TYPE_BUY,
+                quantity=qty, product=kite.PRODUCT_CNC,
+                order_type=kite.ORDER_TYPE_LIMIT, price=ladder[0],
+            )
+        except Exception as pe:  # noqa: BLE001  (tick rejection can arrive synchronously)
+            nt = _parse_tick(str(pe))
+            if attempt == 1 and nt and nt != tick:
+                tick = nt; cap = _round_tick(ltp * (1 + PRICE_CAP), tick)
+                _update(exec_id, tick=tick, message=f'adjusting to tick ₹{tick}')
+                logger.info(f"[topup] {sym} tick fix {nt} (place); retrying")
+                continue
+            logger.exception(f"[topup] {sym} place failed")
+            _update(exec_id, status='error', message=str(pe))
+            return
         _update(exec_id, order_id=str(oid), message=f'limit @ ₹{ladder[0]}',
                 steps_append={'t': _now(), 'price': ladder[0], 'action': 'place'})
-        logger.info(f"[topup] {sym} placed {oid} @ {ladder[0]}")
+        logger.info(f"[topup] {sym} placed {oid} @ {ladder[0]} tick={tick}")
 
         deadline = time.time() + BUDGET_S
         step_i = 0
+        retry_tick = None
         while time.time() < deadline:
             time.sleep(STEP_S)
             st = _order_state(kite, oid)
@@ -221,6 +290,11 @@ def _run(exec_id):
                 logger.info(f"[topup] {sym} FILLED {st['filled']} @ {st['avg']}")
                 return
             if st['status'] in ('REJECTED', 'CANCELLED'):
+                nt = _parse_tick(st['reason'])
+                if attempt == 1 and st['status'] == 'REJECTED' and nt and nt != tick:
+                    retry_tick = nt  # re-round + re-place on the next attempt
+                    logger.info(f"[topup] {sym} tick fix {nt} (rejected); retrying")
+                    break
                 _update(exec_id, status='error', message=f"{st['status']}: {st['reason']}")
                 logger.warning(f"[topup] {sym} {st['status']}: {st['reason']}")
                 return
@@ -235,6 +309,11 @@ def _run(exec_id):
                     logger.info(f"[topup] {sym} chase → {newp}")
                 except Exception as me:  # noqa: BLE001
                     logger.error(f"[topup] {sym} modify failed: {me}")
+
+        if retry_tick:
+            tick = retry_tick; cap = _round_tick(ltp * (1 + PRICE_CAP), tick)
+            _update(exec_id, tick=tick, message=f'adjusting to tick ₹{tick}')
+            continue  # attempt 2
 
         # budget exhausted — final status, then cancel any remainder
         st = _order_state(kite, oid)
@@ -252,9 +331,7 @@ def _run(exec_id):
         else:
             _update(exec_id, status='cancelled',
                     message='unfilled — price ran past the cap. Retry?')
-    except Exception as e:  # noqa: BLE001
-        logger.exception(f"[topup] {sym} exec failed")
-        _update(exec_id, status='error', message=str(e))
+        return
 
 
 def _run_exit(exec_id):

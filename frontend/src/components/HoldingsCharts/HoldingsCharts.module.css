@@ -228,6 +228,21 @@
 @media (max-width: 720px) {
   .tradeDock { right: 8px; left: 8px; width: auto; }
 }
+.qtyStep { display: flex; align-items: center; gap: 5px; margin: 8px 0; }
+.stepBtn {
+  width: 24px; height: 24px; flex: 0 0 auto; border: 1px solid var(--hairline);
+  background: var(--surface); color: var(--ink); border-radius: 6px; font-size: 15px;
+  line-height: 1; cursor: pointer; padding: 0;
+}
+.stepBtn:hover:not(:disabled) { border-color: var(--brand-navy); }
+.stepBtn:disabled { opacity: .4; cursor: not-allowed; }
+.qtyNum {
+  width: 46px; text-align: center; font: inherit; font-size: 13px; font-weight: 700;
+  border: 1px solid var(--hairline); border-radius: 6px; padding: 4px 2px;
+  background: var(--surface); color: var(--ink);
+}
+.qtyUnit { font-size: 11px; color: var(--ink-muted); }
+.qtyCost { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--ink); white-space: nowrap; }
 
 /* Confirm modal */
 .modalWrap {
