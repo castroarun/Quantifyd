@@ -2,6 +2,48 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-08-30 — research/135 Turtle system: tested + optimized → CONCLUDED, NO DEPLOY
+
+Arun sent the classic Dennis/Covel Turtle rules (5-rule breakout system) and asked to test them on
+our stocks data, then optimize for CAGR/Calmar, then fold in the momentum book's gate + put buying
+and compare everything. Done end-to-end on the VPS. **No action owed — logged for the record.**
+
+**What we found**
+
+- The attached spec **taken literally is the worst book in this engagement**: 1.67% CAGR,
+  −67.9% MaxDD, Calmar 0.02 (2005–2026 net). Loses to NIFTYBEES by ~11 points of CAGR at
+  more drawdown, and spends 4,226 days (11+ yrs) below its prior peak.
+- **The optimization is entirely subtractive.** Drop Rule 3 (2N stop — the single most damaging
+  rule; mean Calmar none 0.65 > 3N 0.51 > 2N 0.46 > 1.5N 0.45, monotone, and removing it improves
+  drawdown too), drop Rule 4 (pyramiding: with the ratcheting stop, Calmar 0.47→0.08 as units
+  1→4), drop Rule 2 (N-sizing loses to equal-notional — **4th** independent time). Keep
+  Rule 1/5 at the original 20/10. Result: Calmar 0.02 → 0.53, CAGR 1.7% → 15.9%.
+- **OOS 2024–2026 (held out, consumed once) is NEGATIVE for every Turtle arm** — optimized
+  −8.3% CAGR vs benchmark +5.3%. Era means decay monotonically: +27.4% → +14.8% → −5.4%.
+- **CORRECTED after Arun challenged the chart:** the momentum book beats every Turtle variant
+  in **every** era — 31.78% CAGR vs 15.97% at identical drawdown, 299x vs 21x, and **+21.0%/yr
+  in the held-out window** where every Turtle arm loses. The first momentum arm (12.58%) was a
+  broken hand-rolled reconstruction (wrong universe, live-book stop bolted on, idle-cash bug);
+  Stage G drives research/75's own runner and reproduces its published 31.9% to 0.1pt.
+- **The two systems want OPPOSITE universes:** momentum gains +11.6 pts of CAGR moving from the
+  78 F&O large caps to the PIT top-250; the Turtle gets *worse* there (Calmar 0.50 -> 0.24).
+- Momentum **gate is era-unstable** (200DMA best IS, 100SMA best VAL — no stable winner).
+  **Put overlay does not rescue the book**; matches the live momentum book's own
+  `hedge_enabled=False` note. One stable sub-finding: **5%-OTM beats ATM in every pairing.**
+
+**Reusable lessons banked** — hard stops on multi-week equity trend books cost return AND add
+drawdown; pyramiding tied to a ratcheting stop is actively destructive; equal-notional is settled
+(stop re-testing vol-sizing); 5%-OTM index puts dominate ATM for hedging.
+
+**Process note:** a put-overlay bug (premium expensed AND its decay marked from the same level —
+double-counting ~1.8% of NAV per roll, producing absurd −99.9% results) was caught by a hand-check
+and fixed mid-study; invalid output retained as `_INVALID_stage_E_premium_doublecount.csv`.
+
+Docs: `research/135_turtle_optimization/results/RESULTS.md` · STATUS doc in same folder ·
+`research/INDEX.md` row 135 · report artifact published.
+
+---
+
 ## 🔴 2026-08-28 — Stored 5-min FIRST BAR of the day is wrong on ~half of sessions (NOT FIXED)
 Found while validating the N500M CCRB fix. The first 5-minute bar of each session, as stored in
 `market_data.db`, disagrees with Kite's final value on roughly half of sessions:
@@ -721,6 +763,21 @@ multi-day gap-ORB long alive (+16-22bps/trade 2024-26, IN-SAMPLE — OOS consume
 Best never-died config: 90-min OR, gap>=0.4%, 4-day hold, long, NIFTY>50DMA gate.
 Offer on the table: Rs-capped sleeve PAPER book, 90-day soak. Do NOT re-arm live.
 Details: research/89_orb_reassessment/results/RESULTS.md
+
+## PENDING 2026-08-31 -- 45-DTE straddle: stress margin ANSWERED, sizing decision owed BEFORE go-live
+`research/119.../scripts/margin_stress_live.py` measured the moneyness x DTE margin surface
+against the real broker (a straddle m% offside == a strike m% away today, so the adverse-move
+axis is bought from Kite, not modelled). Two corrections mattered: compare **margin + MTM loss**
+to capital (margin alone never breaches), and use the **pre-premium-credit** margin, since
+`final` credits an inflated ITM premium that was never received.
+**Result: 3 lots BREACH the Rs 11.96L reserve at an 8% adverse move (110-115% of capital), and
+sit at 95% by 5%.** Running 3 lots through +/-8% needs Rs 13.10L. Safe size at this reserve is
+**2 lots**; 3 lots wants ~Rs 17-18L once a vol spike is allowed for (extrapolated, not measured).
+**And this is a BEST case** -- India VIX was 10.6, near the floor, so the true breach is BELOW 8%.
+DECISION OWED (Arun's -- it is a strategy parameter, nothing was changed): cut to 2 lots, or raise
+the reserve, before this book goes live alongside NAS. The VOL axis remains unmeasured (5 recorder
+days spanning 0.65 VIX pts) -- that half stays dated 2026-11-30.
+Detail: `research/119_45dte_short_straddle/results/RESULTS.md` section 7b.
 
 ## PENDING 2026-08-27 -- research/134 follow-ups: weight the long-equity books against the short-vol book
 r/134 CONCLUDED: the short-vol book's enemy is the **low-vol melt-up, not the crash** -- it has never

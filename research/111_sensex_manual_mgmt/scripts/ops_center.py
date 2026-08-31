@@ -94,6 +94,13 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("r/119 stress margin - VOL axis (moneyness x DTE axis DONE 2026-08-31)",
+     "2026-11-30", "PENDING",
+     "Moneyness x DTE measured against the broker: 3 lots BREACH the Rs11.96L reserve at an 8% "
+     "adverse move (110-115% of capital), 95% by 5% -> safe size is 2 lots. Measured at India VIX "
+     "10.6 (near floor), so the true breach is BELOW 8%. The VOL axis is still not estimable: 5 "
+     "recorder days spanning 0.65 VIX pts. Revisit once margin_recorder.py has ~3 months incl. a "
+     "vol expansion, then re-price the surface at elevated VIX and re-check the lot count."),
     ("TimeB risk/reward rebuild - can the window be made worth live money again?", "2026-10-10", "PENDING",
      "Arun pulled TimeB from LIVE on 2026-08-28 after -Rs8,152 in one 10:00-12:00 NIFTY window at 6 lots (TIME_EXIT; the 20% stop never fired). All TimeB books continue on PAPER. The brief: (a) the AlgoTest 3-year NIFTY run of the same structure with real costs is NEGATIVE - overall -Rs75,468 over 739 trades, avg win 11,282 vs avg loss -19,933, max single loss -146,996, max DD -629,820, expectancy -0.01 - which is far more evidence than our 85 days and should be reconciled against r/122s window atlas; (b) re-run it at 0.15-0.2% slippage (our MEASURED time-exit cost is 0.178 pt/leg-side, AlgoTest was charged 0.5%) since the sign may flip; (c) sweep SL none/20/30/50 on the same 3-year sample - the question our chain cannot answer; (d) decide whether any window/stop pair earns live money, and at what size. Do not re-arm live without clearing the r/122 atlas AND the long-sample test."),
     ("TimeB paper-vs-live tracking while it is out of the live book", "2026-11-28", "PENDING",

@@ -1,5 +1,7 @@
 # NIFTY 45-DTE Short Straddle — Replicating "The Long & The Short Ep. 48" + Monitoring-Timeframe Bake-off
 
+> **2026-08-31 — STRESS MARGIN ANSWERED (moneyness x DTE axis).** Measured against the broker instead of reconstructed: a straddle m%% offside == a strike m%% away today. **3 lots BREACH the Rs 11.96L reserve at an 8%% adverse move (110-115%% of capital) and sit at 95%% by 5%%** — and that is at India VIX 10.6, near the floor, so the true breach is below 8%%. Safe size at this reserve is **2 lots**. Go-live blocker as currently sized; nothing changed. See RESULTS.md section 7b. The VOL axis is still unmeasured (5 recorder days, 0.65 VIX pts) — review stays dated 2026-11-30.
+
 **STATUS: DONE — verdict STRATEGY-CANDIDATE (G3 passed, G4 conditional pass). Full write-up in `results/RESULTS.md`.**
 Owner: Claude · Host: Contabo VPS 94.136.185.54 · Started 2026-08-20
 

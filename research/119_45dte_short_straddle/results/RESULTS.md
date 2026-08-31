@@ -522,6 +522,73 @@ with a margin-call rule. Until that is done, the 11.47% CAGR is an upper bound.
 
 ---
 
+## 7b. The stress margin test — ANSWERED (2026-08-31), and it says 3 lots is too many
+
+### How it was finally measured
+
+The reconstruction road stayed closed. `margin_reconstruct.py` failed its calibration
+gate at 12.0% RMS against a 10% limit and was abandoned rather than tuned; the fallback,
+`margin_recorder.py`, has **5 days** of history with India VIX pinned in a 10.48–11.13
+band — nothing to regress. Neither can answer the question.
+
+`margin_stress_live.py` takes a road that needs no history:
+
+> A straddle struck at K, held while spot moves m%, has the same shape — and the same
+> SPAN scenario losses — as a straddle struck m% away from **today's** spot. So the
+> adverse-move axis can be **bought from the broker** instead of modelled.
+
+Crossed with the listed expiries, that gives the real surface. Two corrections were
+needed before the numbers meant anything, and both changed the conclusion:
+
+1. **Margin alone is the wrong number.** By the time you are 8% offside you have also
+   taken an MTM loss, out of the same reserve. The comparison to capital must be
+   **margin + MTM loss**. Margin alone never breaches — headroom 1.93–2.34× — which is
+   why the first cut looked comfortable and was wrong.
+2. **Use the pre-premium-credit margin (`initial`), not `final`.** `final` credits the
+   *current* inflated ITM premium, which was never received — the credit actually taken
+   was the ATM one at entry. Netting that against a separately-subtracted MTM loss
+   counts the premium twice. This alone moved peak capital use from 82% to 115%.
+
+### The result — total call on capital, 3 lots vs the ₹11.96L reserve
+
+| Tenor | flat | ±5% | ±8% |
+|---|---|---|---|
+| 57 DTE (entry) | 56% | 95% | **110%** |
+| 29 DTE | 54% | 91% | **109%** |
+| 22 DTE (exit) | 53% | 91% | strikes not listed |
+| 1 DTE | 54% | 95% | **115%** |
+
+**The book breaches its reserve at an 8% adverse move, and is already at 95% by 5%.**
+Running 3 lots through ±8% needs **₹13.10L**; the reserve is ₹11.96L — **short by
+₹1.14L (9.5%)**. Direction barely matters: +8% costs ₹13.10L, −8% ₹11.77L.
+
+### Why this is a BEST case, not a worst case
+
+- **India VIX was 10.6** on the measurement date, near its historic floor. A real 8%
+  move arrives with VIX at 20–30+, and SPAN's vol scan adds margin on top of the price
+  scan measured here. **The true breach point is below 8%, not at it.**
+- **Strikes beyond ±8% are not listed** on these expiries. At the −18.4% of April 2020
+  the position would sit at a strike that does not exist in today's chain — and
+  liquidity there is a separate problem from margin.
+- The vol axis remains genuinely unmeasured. A 0.65-point VIX span cannot be
+  extrapolated to a VIX 30–80 event, and fitting a slope to it would repeat the mistake
+  the reconstruction gate caught.
+
+### What it implies for sizing
+
+At ₹11.96L, the size that survives a ±8% move **at today's low vol** is **2 lots**
+(₹4.37L per lot at the +8% cell). Three lots requires roughly **₹13.5L at today's vol**,
+and materially more once a vol spike is allowed for — a ₹17–18L reserve is the
+defensible number for 3 lots, though that figure is an extrapolation, not a measurement.
+
+**This is a go-live blocker as sized.** The paper book runs `LOTS = 3` on `CAPITAL =
+1_196_000`. Nothing has been changed — lot sizing is a strategy parameter, not a display
+one — but either the size comes down to 2 or the reserve goes up before real money.
+
+Note this cuts *against* the direction of research/134's finding, which said the book's
+danger is an up-trend melt-up: +8% is the more expensive side here (₹13.10L vs ₹11.77L),
+so the two studies agree on which tail to fear.
+
 ## 8. Recommendation
 
 1. **Believe the table.** It replicates on independent real data.
