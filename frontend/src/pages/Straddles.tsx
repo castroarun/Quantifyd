@@ -490,7 +490,9 @@ export default function Straddles() {
   const [live, setLive] = useState<any>(null);
   const [liveTs, setLiveTs] = useState<number | null>(null);
   const [daily, setDaily] = useState<V1Daily | null>(null);
-  const [sl30, setSl30] = useState<any>(null);   // V1 + 30% premium SL backtest
+  const [sl30, setSl30] = useState<any>(null);   // HYPOTHETICAL V1 variant: a 30%
+  // combined-premium stop replayed over the recorded chain. Not a running system —
+  // live V1 stops on an underlying move of 0.4% (0-DTE) / 0.5% (1-DTE).
   const [sl30Modal, setSl30Modal] = useState(false);   // deep-dive popup
   const [sl30Day, setSl30Day] = useState<string>('');  // selected day in popup
   const [dayD, setDayD] = useState<string | null>(null);
@@ -1563,7 +1565,8 @@ export default function Straddles() {
             return (
               <div id="sl30-card" style={{ marginTop: 14, border: `1px solid ${C.hair}`, borderRadius: 8, padding: 12, scrollMarginTop: 70 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 700, color: C.ink }}>V1 + 30% combined-premium SL</span>
+                  <span style={{ fontWeight: 700, color: C.ink }}>V1 variant · 30% combined-premium SL</span>
+                  <span style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.04, textTransform: 'uppercase', color: C.amber, border: `1px solid ${C.amber}`, borderRadius: 3, padding: '1px 6px' }}>not deployed</span>
                   {chip(C.amberSoft, C.amber, 'BACKTEST · recorded chain')}
                   <button onClick={() => setSl30Modal(true)} style={{ cursor: 'pointer', border: `1px solid ${C.hair}`, background: C.surface, color: C.navy, borderRadius: 6, padding: '2px 10px', fontSize: 11.5, fontWeight: 700 }}>⤢ deep-dive</button>
                   <a href="/app/options-study" style={{ textDecoration: 'none' }} title="Peak+% / decay analysis behind this stop">{chip(C.navySoft, C.navy, 'Opt-Study report ↗')}</a>

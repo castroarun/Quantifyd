@@ -1,0 +1,140 @@
+[
+ {
+  "pos": 1,
+  "entry_day": "2026-06-10",
+  "actual_exit": "2026-06-12",
+  "actual_reason": "kill_switch",
+  "actual_pnl": 24.0,
+  "stop_0.025": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was kill_switch \u2014 the live stop never fired, so a wider one changes nothing"
+  },
+  "stop_0.030": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was kill_switch \u2014 the live stop never fired, so a wider one changes nothing"
+  }
+ },
+ {
+  "pos": 2,
+  "entry_day": "2026-06-12",
+  "actual_exit": "2026-06-15",
+  "actual_reason": "move2%",
+  "actual_pnl": -2393.0,
+  "stop_0.025": {
+   "fired": true,
+   "at": "2026-06-18T15:05:00",
+   "spot": 24150.85,
+   "move_pct": 2.51,
+   "pnl": -66680.0,
+   "vs_actual": -64287.0,
+   "thin_legs": []
+  },
+  "stop_0.030": {
+   "fired": false,
+   "note": "never travelled this far while recorded"
+  }
+ },
+ {
+  "pos": 3,
+  "entry_day": "2026-06-17",
+  "actual_exit": "2026-06-29",
+  "actual_reason": "pt40",
+  "actual_pnl": 74744.0,
+  "stop_0.025": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was pt40 \u2014 the live stop never fired, so a wider one changes nothing"
+  },
+  "stop_0.030": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was pt40 \u2014 the live stop never fired, so a wider one changes nothing"
+  }
+ },
+ {
+  "pos": 4,
+  "entry_day": "2026-06-29",
+  "actual_exit": "2026-07-06",
+  "actual_reason": "roll",
+  "actual_pnl": -15988.0,
+  "stop_0.025": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was roll \u2014 the live stop never fired, so a wider one changes nothing"
+  },
+  "stop_0.030": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was roll \u2014 the live stop never fired, so a wider one changes nothing"
+  }
+ },
+ {
+  "pos": 5,
+  "entry_day": "2026-07-09",
+  "actual_exit": "2026-07-20",
+  "actual_reason": "pt40",
+  "actual_pnl": 83803.0,
+  "stop_0.025": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was pt40 \u2014 the live stop never fired, so a wider one changes nothing"
+  },
+  "stop_0.030": {
+   "fired": false,
+   "identical": true,
+   "note": "actual exit was pt40 \u2014 the live stop never fired, so a wider one changes nothing"
+  }
+ },
+ {
+  "pos": 6,
+  "entry_day": "2026-07-23",
+  "actual_exit": "2026-07-30",
+  "actual_reason": "move2%",
+  "actual_pnl": -65803.0,
+  "stop_0.025": {
+   "fired": true,
+   "at": "2026-08-03T09:15:00",
+   "spot": 24568.0,
+   "move_pct": 2.94,
+   "pnl": -193668.0,
+   "vs_actual": -127864.0,
+   "thin_legs": []
+  },
+  "stop_0.030": {
+   "fired": true,
+   "at": "2026-08-03T10:18:00",
+   "spot": 24587.05,
+   "move_pct": 3.02,
+   "pnl": -223828.0,
+   "vs_actual": -158025.0,
+   "thin_legs": []
+  }
+ },
+ {
+  "pos": 7,
+  "entry_day": "2026-07-27",
+  "actual_exit": "2026-07-31",
+  "actual_reason": "move2%",
+  "actual_pnl": -35813.0,
+  "stop_0.025": {
+   "fired": true,
+   "at": "2026-08-03T09:15:00",
+   "spot": 24568.0,
+   "move_pct": 2.74,
+   "pnl": -106665.0,
+   "vs_actual": -70852.0,
+   "thin_legs": []
+  },
+  "stop_0.030": {
+   "fired": true,
+   "at": "2026-08-03T15:30:00",
+   "spot": 24774.3,
+   "move_pct": 3.6,
+   "pnl": -120380.0,
+   "vs_actual": -84567.0,
+   "thin_legs": []
+  }
+ }
+]

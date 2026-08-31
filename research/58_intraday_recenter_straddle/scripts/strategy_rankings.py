@@ -117,12 +117,12 @@ if d and isinstance(d, dict):
     reg("Wed→Fri iron condor (research/80)", zip(tdates(tr, "day", "date", "entry_date", "entry"), [t.get("pnl") for t in tr]))
 
 
-# V1 + 30% combined-premium SL (from the sl30 backtest)
+# V1 variant · 30% combined-premium SL (NOT DEPLOYED) (from the sl30 backtest)
 d = load_json(PUB / "v1_sl30.json")
 if d and d.get("trades"):
-    add("V1 + 30% combined-premium SL", "backtest",
-        stats([t["final"] for t in d["trades"]]), "combined-premium 30% stop · recorded chain", dates=tdates(d["trades"], "day", "date"))
-    reg("V1 + 30% combined-premium SL", zip(tdates(d["trades"], "day", "date"), [t["final"] for t in d["trades"]]))
+    add("V1 variant · 30% combined-premium SL (NOT DEPLOYED)", "backtest",
+        stats([t["final"] for t in d["trades"]]), "HYPOTHETICAL — replay only. The live V1 stop is an underlying move of 0.4% (0-DTE) / 0.5% (1-DTE); no 30% premium stop exists in the running system.", dates=tdates(d["trades"], "day", "date"))
+    reg("V1 variant · 30% combined-premium SL (NOT DEPLOYED)", zip(tdates(d["trades"], "day", "date"), [t["final"] for t in d["trades"]]))
 
 # NAS live books (as-traded lots) — per-book rows so the whole short-vol book ranks in ONE table
 import sqlite3
@@ -209,7 +209,7 @@ LINKS = {
     "V2 · positional bi-weekly (naked · legacy)": {"anchor": "live-box"},
     "LIVE · iron-fly executor (VIX-gated)": {"anchor": "v2-engine"},
     "LIVE · inside-week breakout sleeve": {"anchor": "v2-engine"},
-    "V1 + 30% combined-premium SL": {"anchor": "sl30-card", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/csl30_vs_nas916.png"},
+    "V1 variant · 30% combined-premium SL (NOT DEPLOYED)": {"anchor": "sl30-card", "report": "/app/backtest/csl-best-config-straddles", "chart": "/app/csl30_vs_nas916.png"},
     "Wed→Fri iron condor (research/80)": {"anchor": "condor", "report": "/app/backtest/fardte-rescue"},
     "NAS 916 ATM (NIFTY · live)": {"page": "/app/nas", "report": "/app/backtest/sensex-nifty-stop-by-dte", "chart": "/app/nifty_csl_vs_nas.png"},
     "NAS 916 ATM2 (NIFTY · live)": {"page": "/app/nas", "report": "/app/backtest/sensex-nifty-stop-by-dte"},
@@ -231,7 +231,7 @@ ANCHOR = {
     "V2 · positional bi-weekly (naked · legacy)": "live-box",
     "LIVE · iron-fly executor (VIX-gated)": "v2-engine",
     "LIVE · inside-week breakout sleeve": "v2-engine",
-    "V1 + 30% combined-premium SL": "sl30-card",
+    "V1 variant · 30% combined-premium SL (NOT DEPLOYED)": "sl30-card",
     "Wed→Fri iron condor (research/80)": "condor",
 }
 

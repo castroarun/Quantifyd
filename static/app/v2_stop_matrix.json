@@ -1,0 +1,164 @@
+{
+ "generated_at": "2026-08-31T19:09:33",
+ "live_stop": 0.02,
+ "stops": [
+  0.01,
+  0.015,
+  0.025
+ ],
+ "source": "recorded option chain since 2026-04-20",
+ "entry_filters": "VIX>=13 and the CPR/inside-week combo skip are ENTRY gates. This replays the positions the book actually opened, so those gates are already applied \u2014 changing a stop cannot change which trades existed.",
+ "note": "Backfilled from the recorded chain, not from the live shadow. Tighter stops are searched between entry and the actual exit; wider stops only where the live stop ended the trade, then forward to expiry. \"same\" means that level would not have changed the outcome.",
+ "trades": [
+  {
+   "pos": 7,
+   "entry_day": "2026-07-27",
+   "exit_day": "2026-07-31",
+   "reason": "move2%",
+   "actual_pnl": -35813.0,
+   "stops": {
+    "0.01": {
+     "at": "2026-07-29T09:15:00",
+     "spot": 24176.65,
+     "pnl": -3900,
+     "vs_actual": 31913,
+     "thin_legs": 0
+    },
+    "0.015": {
+     "at": "2026-07-29T14:18:00",
+     "spot": 24272.15,
+     "pnl": -29185,
+     "vs_actual": 6628,
+     "thin_legs": 0
+    },
+    "0.025": {
+     "at": "2026-08-03T09:15:00",
+     "spot": 24568.0,
+     "pnl": -106665,
+     "vs_actual": -70852,
+     "thin_legs": 0
+    }
+   }
+  },
+  {
+   "pos": 5,
+   "entry_day": "2026-07-09",
+   "exit_day": "2026-07-20",
+   "reason": "pt40",
+   "actual_pnl": 83803.0,
+   "stops": {
+    "0.01": {
+     "at": "2026-07-13T12:53:00",
+     "spot": 24253.7,
+     "pnl": -13682,
+     "vs_actual": -97485,
+     "thin_legs": 0
+    },
+    "0.015": {
+     "at": "2026-07-17T14:17:00",
+     "spot": 24363.05,
+     "pnl": -13325,
+     "vs_actual": -97128,
+     "thin_legs": 0
+    },
+    "0.025": {
+     "identical": true
+    }
+   }
+  },
+  {
+   "pos": 4,
+   "entry_day": "2026-06-29",
+   "exit_day": "2026-07-06",
+   "reason": "roll",
+   "actual_pnl": -15988.0,
+   "stops": {
+    "0.01": {
+     "at": "2026-06-30T15:02:00",
+     "spot": 23836.15,
+     "pnl": -4712,
+     "vs_actual": 11276,
+     "thin_legs": 0
+    },
+    "0.015": {
+     "at": "2026-07-06T12:33:00",
+     "spot": 24448.95,
+     "pnl": -24895,
+     "vs_actual": -8907,
+     "thin_legs": 0
+    },
+    "0.025": {
+     "identical": true
+    }
+   }
+  },
+  {
+   "pos": 3,
+   "entry_day": "2026-06-17",
+   "exit_day": "2026-06-29",
+   "reason": "pt40",
+   "actual_pnl": 74744.0,
+   "stops": {
+    "0.01": {
+     "at": "2026-06-25T11:58:00",
+     "spot": 24230.45,
+     "pnl": 23757,
+     "vs_actual": -50987,
+     "thin_legs": 0
+    },
+    "0.015": {
+     "identical": true
+    },
+    "0.025": {
+     "identical": true
+    }
+   }
+  },
+  {
+   "pos": 2,
+   "entry_day": "2026-06-12",
+   "exit_day": "2026-06-15",
+   "reason": "move2%",
+   "actual_pnl": -2393.0,
+   "stops": {
+    "0.01": {
+     "no_data": true,
+     "note": "the move happened outside the recorded window (gap exit before the first bar)"
+    },
+    "0.015": {
+     "no_data": true,
+     "note": "the move happened outside the recorded window (gap exit before the first bar)"
+    },
+    "0.025": {
+     "at": "2026-06-18T15:05:00",
+     "spot": 24150.85,
+     "pnl": -66680,
+     "vs_actual": -64287,
+     "thin_legs": 0
+    }
+   }
+  },
+  {
+   "pos": 1,
+   "entry_day": "2026-06-10",
+   "exit_day": "2026-06-12",
+   "reason": "kill_switch",
+   "actual_pnl": 24.0,
+   "stops": {
+    "0.01": {
+     "at": "2026-06-11T09:15:00",
+     "spot": 23104.4,
+     "pnl": 36758,
+     "vs_actual": 36734,
+     "thin_legs": 3
+    },
+    "0.015": {
+     "identical": true
+    },
+    "0.025": {
+     "identical": true
+    }
+   }
+  }
+ ]
+}

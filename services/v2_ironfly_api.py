@@ -628,7 +628,11 @@ def monitor_job():
 # a single trade, so switching would be fitting to one outcome. Instead: record the
 # first moment each live position travels SHADOW_STOP from entry, and the mark at
 # that instant. That is what the tighter stop would have realised. Nothing exits.
-SHADOW_STOP = 0.015
+# Stops TIGHTER than the live 2.0% trigger while the position is still open, so
+# they can be observed here at zero cost. WIDER stops cannot be seen from this
+# loop - the book has already exited - and are measured instead by
+# scripts/v2_wider_stop_replay.py against the recorded option chain.
+SHADOW_STOPS = (0.010, 0.015)
 
 
 def _shadow_stop_check(pos, spot, pnl, ctime):
@@ -636,25 +640,31 @@ def _shadow_stop_check(pos, spot, pnl, ctime):
     es = pos.get("entry_spot")
     if not es or spot is None:
         return
-    if abs(spot - es) / es < SHADOW_STOP:
+    move = abs(spot - es) / es
+    due = [s for s in SHADOW_STOPS if move >= s]
+    if not due:
         return
     c = _conn()
     try:
         c.execute("""CREATE TABLE IF NOT EXISTS v2_shadow_stop (
-            pos_id INTEGER PRIMARY KEY, system TEXT, day TEXT, stop_pct REAL,
+            pos_id INTEGER, system TEXT, day TEXT, stop_pct REAL,
             entry_spot REAL, trigger_time TEXT, trigger_spot REAL,
-            move_pct REAL, pnl_at_trigger REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+            move_pct REAL, pnl_at_trigger REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (pos_id, stop_pct))""")
         # PRIMARY KEY + OR IGNORE keeps only the FIRST breach, which is the one a
         # stop would have acted on
-        c.execute("INSERT OR IGNORE INTO v2_shadow_stop "
-                  "(pos_id,system,day,stop_pct,entry_spot,trigger_time,trigger_spot,move_pct,pnl_at_trigger) "
-                  "VALUES (?,?,?,?,?,?,?,?,?)",
-                  (pos["id"], pos.get("system"), date.today().isoformat(), SHADOW_STOP,
-                   es, ctime, spot, round(100.0 * (spot - es) / es, 3), round(float(pnl), 2)))
-        if c.total_changes:
-            logger.info(f"[V2-shadow] pos {pos['id']} would have stopped at {SHADOW_STOP:.1%} "
-                        f"({ctime} spot={spot:.1f} move={100*(spot-es)/es:+.2f}%) mark={pnl:,.0f} "
-                        f"— live stop is {CFG['stop_pct']:.1%}, position left open")
+        for s in due:
+            # composite key + OR IGNORE keeps the FIRST breach of each level, which is
+            # the one a stop at that level would have acted on
+            c.execute("INSERT OR IGNORE INTO v2_shadow_stop "
+                      "(pos_id,system,day,stop_pct,entry_spot,trigger_time,trigger_spot,move_pct,pnl_at_trigger) "
+                      "VALUES (?,?,?,?,?,?,?,?,?)",
+                      (pos["id"], pos.get("system"), date.today().isoformat(), s,
+                       es, ctime, spot, round(100.0 * (spot - es) / es, 3), round(float(pnl), 2)))
+            if c.total_changes:
+                logger.info(f"[V2-shadow] pos {pos['id']} would have stopped at {s:.1%} "
+                            f"({ctime} spot={spot:.1f} move={100*(spot-es)/es:+.2f}%) mark={pnl:,.0f} "
+                            f"— live stop is {CFG['stop_pct']:.1%}, position left open")
         c.commit()
     finally:
         c.close()
@@ -669,14 +679,15 @@ def shadow_stops():
         c = _conn()
         try:
             c.execute("""CREATE TABLE IF NOT EXISTS v2_shadow_stop (
-                pos_id INTEGER PRIMARY KEY, system TEXT, day TEXT, stop_pct REAL,
+                pos_id INTEGER, system TEXT, day TEXT, stop_pct REAL,
                 entry_spot REAL, trigger_time TEXT, trigger_spot REAL,
-                move_pct REAL, pnl_at_trigger REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+                move_pct REAL, pnl_at_trigger REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (pos_id, stop_pct))""")
             rows = [dict(r) for r in c.execute(
                 "SELECT p.id, p.system, p.entry_day, p.exit_day, p.exit_reason, p.pnl AS actual_pnl, "
-                "       s.trigger_time, s.trigger_spot, s.move_pct, s.pnl_at_trigger AS shadow_pnl "
+                "       s.stop_pct, s.trigger_time, s.trigger_spot, s.move_pct, s.pnl_at_trigger AS shadow_pnl "
                 "FROM v2_positions p LEFT JOIN v2_shadow_stop s ON s.pos_id = p.id "
-                "WHERE p.status='CLOSED' ORDER BY p.id DESC")]
+                "WHERE p.status='CLOSED' ORDER BY p.id DESC, s.stop_pct")]
         finally:
             c.close()
 
@@ -690,11 +701,14 @@ def shadow_stops():
             diffs.append(r["shadow_effect"])
         n = len(diffs)
         return jsonify(dict(
-            live_stop_pct=CFG["stop_pct"], shadow_stop_pct=SHADOW_STOP,
+            live_stop_pct=CFG["stop_pct"], shadow_stop_pcts=list(SHADOW_STOPS),
+            wider_stops_note=("Stops wider than the live one are not visible here — the book "
+                              "exits first. They are replayed against the recorded option "
+                              "chain by scripts/v2_wider_stop_replay.py."),
             n_closed=n, n_would_differ=sum(1 for r in rows if r["shadow_would_differ"]),
             total_effect=round(sum(diffs), 2),
             mean_effect=round(sum(diffs) / n, 2) if n else None,
-            note=("Positive means the 1.5% stop would have done better. "
+            note=("Positive means the shadow stop would have done better. "
                   "Rows where it never triggered are identical by construction."),
             trades=rows))
     except Exception as e:
