@@ -1854,6 +1854,36 @@ export default function Straddles() {
                         </td>);
                     })}
                   </tr>))}</tbody>
+                {stopMx && (
+                  <tfoot><tr>
+                    <td style={{ ...ectd, borderTop: `1px solid ${C.ink}` }} />
+                    <td style={{ ...ectd, borderTop: `1px solid ${C.ink}`, textAlign: 'left',
+                                 fontWeight: 700, color: C.ink }}>Book net</td>
+                    <td style={{ ...ectd, borderTop: `1px solid ${C.ink}` }} colSpan={6} />
+                    <td style={{ ...ectd, borderTop: `1px solid ${C.ink}`, fontWeight: 700,
+                                 color: col(v2eng.closed_total_pnl) }}>
+                      {inr(v2eng.closed_total_pnl)}
+                    </td>
+                    {(stopMx.stops || []).map((s: number) => {
+                      // the variant's OWN net: its P&L where it would have changed the
+                      // trade, the live P&L where it would not. Not a delta.
+                      let net = 0;
+                      (v2eng.closed || []).forEach((tr: any) => {
+                        const cell = (stopMx.trades || [])
+                          .find((x: any) => x.pos === tr.id)?.stops?.[String(s)];
+                        net += (cell && cell.pnl != null) ? cell.pnl : (tr.pnl || 0);
+                      });
+                      const diff = net - (v2eng.closed_total_pnl || 0);
+                      return (
+                        <td key={s} style={{ ...ectd, borderTop: `1px solid ${C.ink}`,
+                                             fontWeight: 700, color: col(net) }}>
+                          {inr(Math.round(net))}
+                          <div style={{ fontWeight: 400, fontSize: 10, color: col(diff) }}>
+                            {inr(Math.round(diff))} vs live
+                          </div>
+                        </td>);
+                    })}
+                  </tr></tfoot>)}
               </table>
               <div style={{ fontSize: 11.5, color: C.sec, marginTop: 8, lineHeight: 1.7 }}>
                 <b>Overall (realized):</b>{' '}
@@ -1876,11 +1906,13 @@ export default function Straddles() {
                         const tot = eff.reduce((a: number, b: number) => a + b, 0);
                         return (
                           <span key={s} style={{ marginRight: 16 }}>
-                            {(s * 100).toFixed(1)}%: changed {eff.length} ·{' '}
-                            <b style={{ color: col(tot) }}>{inr(tot)}</b>
+                            {(s * 100).toFixed(1)}%: changed {eff.length} trade{eff.length === 1 ? '' : 's'},{' '}
+                            <b style={{ color: col(tot) }}>{inr(tot)}</b> vs live
                           </span>);
                       })}
-                      <span>— the live <b>2.0%</b> is the best of the four on this book.</span>
+                      <span>— the live <b>2.0%</b> is the best of the four on this book. Six
+                      trades though, of which only two or three are touched by any one level, so
+                      this is a direction and not a verdict.</span>
                     </div>
                   </div>)}
               </div>
