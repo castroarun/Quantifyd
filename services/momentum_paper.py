@@ -248,8 +248,69 @@ def _dm():
     return get_data_manager(_kite())
 
 
+def _official_closes(symbols):
+    """Today's OFFICIAL daily close per symbol, cached for the day.
+
+    Only used once the market is shut. Kite's quote() keeps serving a stale intraday tick after
+    15:30 — on 2026-08-31 every holding was 1-3% wrong, and ADANIPOWER read 198.00 against a real
+    close of 204.00, manufacturing a stop breach that never happened. historical_data returns the
+    settled bar, so use that instead. Cached because get_state() runs on every page poll and a
+    per-symbol historical call there would be both slow and rate-limited."""
+    import json as _json
+    from datetime import date as _d
+    today = _d.today().isoformat()
+    try:
+        cached = _json.loads(_get("close_cache") or "{}")
+    except Exception:
+        cached = {}
+    if cached.get("d") != today:
+        cached = {"d": today, "px": {}}
+    want = [s for s in symbols if s not in cached["px"]]
+    if want:
+        try:
+            k = _kite()
+            toks = _instrument_tokens()
+            for s in want:
+                t = toks.get(s)
+                if not t:
+                    continue
+                try:
+                    bars = k.historical_data(t, _d.today(), _d.today(), "day")
+                    if bars and bars[-1].get("close"):
+                        cached["px"][s] = float(bars[-1]["close"])
+                except Exception:
+                    pass
+            _set("close_cache", _json.dumps(cached))
+        except Exception as e:
+            logger.warning(f"[MP] official-close fetch failed: {e}")
+    return cached.get("px", {})
+
+
+def _instrument_tokens():
+    """NSE equity tokens, cached for the day (the instrument dump is a large, slow call)."""
+    import json as _json
+    from datetime import date as _d
+    today = _d.today().isoformat()
+    try:
+        c = _json.loads(_get("token_cache") or "{}")
+        if c.get("d") == today and c.get("t"):
+            return c["t"]
+    except Exception:
+        pass
+    try:
+        toks = {i["tradingsymbol"]: i["instrument_token"] for i in _kite().instruments("NSE")
+                if i.get("instrument_type") == "EQ"}
+        _set("token_cache", _json.dumps({"d": today, "t": toks}))
+        return toks
+    except Exception as e:
+        logger.warning(f"[MP] instrument token fetch failed: {e}")
+        return {}
+
+
 def _live_prices(symbols):
-    """Latest traded price per symbol via Kite (after close = the day's close)."""
+    """Latest price per symbol. Live quote while the market is open; the OFFICIAL daily close once
+    it shuts — Kite's quote() does NOT roll to the close, it holds a stale tick (see
+    _official_closes)."""
     if not symbols:
         return {}
     out = {}
@@ -263,6 +324,10 @@ def _live_prices(symbols):
                                                    (v.get("ohlc") or {}).get("close") or 0)
     except Exception as e:
         logger.warning(f"[MP] live price fetch failed: {e}")
+    if not _market_open_now():
+        for s, px in _official_closes(list(symbols)).items():
+            if px > 0:
+                out[s] = px
     return {s: p for s, p in out.items() if p > 0}
 
 
