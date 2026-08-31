@@ -378,3 +378,82 @@ Neither is urgent, and neither is a width:
    control that touches it.**
 
 **Nothing deployed. No live rule changed by phases 1–3.**
+
+---
+
+# PHASE 4 — the "hidden live books" alarm was WRONG. Rs18,000 stands.
+
+**2026-08-31. Raised by me, and retracted by me in the same session.**
+
+## What happened
+
+Arun asked whether the Rs18,000 SENSEX expiry-day figure included the COMB/TimeB
+sleeves. Checking, I found the executor's event log carrying explicit
+`[REAL MONEY]` entries with `source: "REAL"` for three books that carry NO
+`"mode": "live"` flag:
+
+- `CSL_TIMEB_SENSEX` — *"closed 77300 straddle -> P&L +11868 (8 lots, cum +23659) [REAL MONEY]"*
+- `CSL_TIMEB_NIFTY` — *"SOLD 24250 straddle @ 189.85 credit (6 lots) [REAL MONEY]"*
+- `CSL30F_SENSEX_WED`
+
+I concluded the flag was not the operative gate and that SENSEX expiry-day risk
+was **Rs39,380, not Rs18,000 — 2.2x higher.**
+
+**That was wrong.** I did not date the events before drawing the conclusion.
+
+## The dates settle it
+
+| book | first REAL event | **last REAL event** | live now |
+|---|---|---|---|
+| `CSL30F_SENSEX_WED` | 2026-08-26 | 2026-08-26 | no |
+| `CSL_TIMEB_SENSEX` | 2026-08-19 | **2026-08-27** | no |
+| `CSL_TIMEB_NIFTY` | 2026-08-17 | **2026-08-28** | no |
+| `NAS_COMB20` | 2026-08-17 | **2026-08-31 (today)** | **YES** |
+
+**TimeB was pulled from LIVE on 2026-08-28**, which is already recorded in the ops
+registry: *"Arun pulled TimeB from LIVE on 2026-08-28 after -Rs8,152 in one
+10:00-12:00 NIFTY window at 6 lots (TIME_EXIT; the 20% stop never fired). All TimeB
+books continue on PAPER."*
+
+So the `[REAL MONEY]` events are a truthful record of a period that has ENDED. The
+flag is correct **today**. `is_live_book()` returns `['NAS_COMB20']` and that is right.
+
+## What therefore stands, and what changes
+
+**STANDS — the live risk answer.** SENSEX expiry-day designed risk is
+**Rs18,000** (6 suite lots x the -Rs3,000/lot expiry book stop). No COMB or TimeB
+sleeve is live on SENSEX. Arun's "I'm ok with this risk" was answered against the
+right number after all.
+
+**CHANGES — the historical live P&L.** Those TimeB trades WERE real money between
+17-Aug and 28-Aug, so the live book's history should include them. My earlier
+"live book = 7 sleeves, Rs2,38,557" excluded them:
+
+| | |
+|---|---:|
+| previously reported live net | Rs 2,38,557 |
+| + `CSL_TIMEB_SENSEX` (real 19–27 Aug) | Rs 23,659 |
+| + `CSL_TIMEB_NIFTY` (real 17–28 Aug) | Rs 3,089 |
+| + `CSL30F_SENSEX_WED` (real 26 Aug) | Rs 2,115 |
+| **corrected historical live net** | **Rs 2,67,420** |
+
+## The lesson worth keeping
+
+**A live roster has two different questions and they need different evidence:**
+
+- *"What is live NOW?"* -> the flag / config, read at this moment. `is_live_book()`
+  answers this correctly.
+- *"What was ever real money?"* -> the event log, which is append-only history.
+
+Reading history as present state is what produced the false alarm. Any future audit
+of this book must **date-filter REAL events** before concluding anything about
+current exposure. The `research/139` script `real_roster.py` now prints the last
+event date per book for exactly this reason.
+
+## Ops registry
+
+The 2026-09-05 review *"Confirm which CSL/COMB books are REALLY live"* is
+**RESOLVED**: `NAS_COMB20` only. The comments asserting REAL on TimeB books are
+historically accurate, not stale errors — but they read as present-tense, which is
+what misled this audit. Worth one clarifying word in the source when someone next
+touches it; not worth an edit to live-trading code on its own.
