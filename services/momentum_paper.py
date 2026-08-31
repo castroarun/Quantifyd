@@ -766,7 +766,10 @@ def _next_rebalance_date():
     try:
         from services.trading_calendar import get_default_calendar
         cal = get_default_calendar()
-        d = _d.today()
+        # start from TOMORROW. Starting from today returns today whenever today happens to be a
+        # month-end trading day — on 2026-08-31 the panel read "needed by 2026-08-31", i.e. a
+        # deadline that had already passed, on the very panel built to give funding notice.
+        d = _d.today() + _td(days=1)
         for _ in range(400):
             nxt = d + _td(days=1)
             while not cal.is_trading_day(nxt):
@@ -780,11 +783,20 @@ def _next_rebalance_date():
 
 
 def _days_to_rebalance():
-    """Calendar days until the month-end rebalance (when idle cash gets redeployed)."""
-    from datetime import date as _d, timedelta as _td
-    t = _d.today()
-    nxt = (t.replace(day=28) + _td(days=4)).replace(day=1) - _td(days=1)
-    return max(0, (nxt - t).days)
+    """Days until the next month-end rebalance (when empty slots get refilled).
+
+    Derived from _next_rebalance_date() so both agree. The old version took the last CALENDAR day
+    of the CURRENT month, so it ignored holidays and — worse — returned 0 for the whole of the last
+    day and never rolled to the next month. On 2026-08-31 the page read "0d to rebalance" when the
+    next one was 30 days away."""
+    from datetime import date as _d
+    nxt = _next_rebalance_date()
+    if not nxt:
+        return 0
+    try:
+        return max(0, (_d.fromisoformat(nxt) - _d.today()).days)
+    except Exception:
+        return 0
 
 
 # ───────────────────── benchmark series (for the live P&L chart) ─────────────────────
@@ -1714,17 +1726,53 @@ def cash_deposit(amount, mode="immediate", dry_run=True):
     d = _date.today().isoformat()
     pos = _positions()
     close, tvp = _panel()
-    gate_on = not _gate_risk_off(close, close.index[-1])
+    asof = close.index[-1]
+    gate_on = not _gate_risk_off(close, asof)
     plan = []; live = {}
-    use_immediate = (mode == "immediate" and pos and gate_on)
+    use_immediate = (mode == "immediate" and gate_on)
     if use_immediate:
-        live = _live_prices(list(pos)); per = amount / len(pos)
-        for s in pos:
-            pr = live.get(s) or pos[s]["entry_price"]
-            qty = int(per / pr) if pr else 0
+        # Move the book towards 8 EQUAL slots on the post-deposit NAV, instead of spreading the
+        # money over whatever is already held. Empty slots have the biggest shortfall, so they get
+        # funded first; that is what "deploy equally" has to mean when slots are vacant.
+        n = CFG["n_hold"]
+        etf = _rs_basket(close, tvp, asof) or []
+        buf = set(etf[:CFG["buffer"]])
+        kept = [x for x in pos if x in buf] or list(pos)
+        live = _live_prices(sorted(set(list(pos) + etf)))
+        # fill any vacancy from the ranked pool, skipping names already below their stop (r/115)
+        adds = []
+        for cand in etf:
+            if len(kept) + len(adds) >= n:
+                break
+            if cand in kept or not live.get(cand):
+                continue
+            low = _donchian_low(close, cand, asof)
+            if low is not None and live[cand] < low:
+                continue
+            adds.append(cand)
+        slots = (kept + adds)[:n]
+        nav_after = _equity_value() + _cash() + _sweep_value() + amount
+        target = (nav_after * (1 - CFG["cash_reserve_pct"])) / n if n else 0.0
+        cur = {x: (pos[x]["qty"] * (live.get(x) or pos[x]["entry_price"])) if x in pos else 0.0
+               for x in slots}
+        # largest shortfall first — a vacant slot outranks a holding that is merely light
+        gaps = sorted(((max(0.0, target - cur[x]), x) for x in slots), reverse=True)
+        left = amount
+        for gap, sym in gaps:
+            if left <= 0 or gap <= 0:
+                break
+            pr = live.get(sym) or (pos[sym]["entry_price"] if sym in pos else 0)
+            if not pr:
+                continue
+            spend = min(gap, left)
+            qty = int(spend / pr)
             if qty > 0:
-                plan.append({"symbol": s, "action": "BUY", "qty": qty, "value": round(qty * pr)})
-        note = f"Immediate equal-rupee top-up across {len(plan)} holdings (gate risk-ON)."
+                plan.append({"symbol": sym, "action": "BUY", "qty": qty,
+                             "value": round(qty * pr), "new": sym not in pos})
+                left -= qty * pr
+        newn = sum(1 for p in plan if p.get("new"))
+        note = (f"Immediate deploy towards {n} equal slots of ~Rs{target:,.0f} "
+                f"({len(plan)} buys, {newn} opening a vacant slot; gate risk-ON).")
     else:
         mode = "park"
         note = ("Park in liquid (6.5%); deploys into the top-8 at the next month-end rebalance."
@@ -1738,7 +1786,10 @@ def cash_deposit(amount, mode="immediate", dry_run=True):
         _set("cash", _cash() + amount)
         if use_immediate:
             for p in plan:
-                _buy(p["symbol"], live.get(p["symbol"]) or pos[p["symbol"]]["entry_price"], p["value"], d, "DEPOSIT_TOPUP")
+                px = live.get(p["symbol"]) or (pos[p["symbol"]]["entry_price"] if p["symbol"] in pos else 0)
+                if px:
+                    _buy(p["symbol"], px, p["value"], d,
+                         "DEPOSIT_NEWSLOT" if p.get("new") else "DEPOSIT_TOPUP")
         _set("capital", float(_get("capital", CFG["capital"])) + amount)
         logger.warning(f"[MP] DEPOSIT Rs{amount:,.0f} ({mode})")
         # Park the leftover in the liquid ETF right away rather than letting it idle until the next
