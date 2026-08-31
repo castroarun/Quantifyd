@@ -82,6 +82,16 @@
   }
 }
 
+.chartsSummary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 26px;
+  margin: 14px 0 10px; padding: 11px 16px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--brand-navy-soft, #EFF3FA) 100%);
+  border: 0.5px solid var(--hairline); border-radius: var(--radius-card);
+}
+.csItem { display: inline-flex; align-items: baseline; gap: 7px; font-size: 13px; }
+.csLabel { font-size: var(--text-xxs); color: var(--ink-muted); text-transform: uppercase; letter-spacing: .03em; }
+.csItem b { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+
 /* ---------- Extremes (A + rail bars) ---------- */
 
 .extremesCard {

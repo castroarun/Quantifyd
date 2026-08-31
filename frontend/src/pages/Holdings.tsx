@@ -214,12 +214,15 @@ export default function Holdings() {
       </div>
 
       {tab === 'charts' ? (
+        <>
+        <ChartsSummary summary={summary} funds={funds} />
         <HoldingsCharts
           holdings={holdings}
           account={account}
           ohlcUrl={account === 'dad' ? '/static/dad_holdings_ohlc.json' : undefined}
           ohlcUrls={account === 'both' ? ['/static/holdings_ohlc.json', '/static/dad_holdings_ohlc.json'] : undefined}
         />
+        </>
       ) : (
         <>
       {/* Hero (B) */}
@@ -294,6 +297,20 @@ export default function Holdings() {
       </div>
         </>
       )}
+    </div>
+  );
+}
+
+// compact portfolio-level summary shown at the top of the Charts tab
+function ChartsSummary({ summary, funds }: { summary: HoldingsDigest['summary']; funds: { available: number; cash: number; live_balance: number } | null }) {
+  return (
+    <div className={styles.chartsSummary}>
+      <span className={styles.csItem}><span className={styles.csLabel}>Holdings</span><b>{summary.count}</b></span>
+      <span className={styles.csItem}><span className={styles.csLabel}>Value</span><b>{formatRs(summary.current)}</b></span>
+      <span className={styles.csItem}><span className={styles.csLabel}>Invested</span><b>{formatRs(summary.invested)}</b></span>
+      <span className={styles.csItem}><span className={styles.csLabel}>Day P&amp;L</span><b className={pnlClass(summary.day_pnl)}>{formatPnl(summary.day_pnl)} ({formatPct(summary.day_pct, 2)})</b></span>
+      <span className={styles.csItem}><span className={styles.csLabel}>Total P&amp;L</span><b className={pnlClass(summary.total_pnl)}>{formatPnl(summary.total_pnl)} ({formatPct(summary.total_pct, 2)})</b></span>
+      <span className={styles.csItem}><span className={styles.csLabel}>Cash</span><b>{funds ? formatRs(funds.live_balance) : '…'}</b></span>
     </div>
   );
 }
