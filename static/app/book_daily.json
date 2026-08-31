@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-31T17:31:27",
+ "generated_at": "2026-08-31T17:46:11",
  "books": {
   "orb": {
    "days": [
@@ -2724,6 +2724,229 @@
     "sim_trades": 32,
     "first": "2026-05-08",
     "last": "2026-08-20"
+   }
+  },
+  "i75wr": {
+   "days": [
+    {
+     "date": "2026-08-31",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 5908.0,
+     "deployed": 299404.0,
+     "cum": -1620.6,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": 5908.0,
+       "deployed": 299404.0,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 560,
+       "entry_price": 534.65,
+       "exit_price": 524.1,
+       "entry_time": "2026-08-31T13:10:16.669806",
+       "exit_time": "2026-08-31T15:15:00.213163",
+       "exit_reason": "TARGET_HIT"
+      }
+     ]
+    },
+    {
+     "date": "2026-08-28",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -2208.05,
+     "deployed": 299707.85,
+     "cum": -7528.6,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": -2208.05,
+       "deployed": 299707.85,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 559,
+       "entry_price": 536.15,
+       "exit_price": 540.1,
+       "entry_time": "2026-08-28T10:00:20.688698",
+       "exit_time": "2026-08-28T15:25:00.201594",
+       "exit_reason": "EOD_SQUAREOFF"
+      }
+     ]
+    },
+    {
+     "date": "2026-08-25",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 888.0,
+     "deployed": 299700.0,
+     "cum": -5320.55,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": 888.0,
+       "deployed": 299700.0,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 555,
+       "entry_price": 540.0,
+       "exit_price": 538.4,
+       "entry_time": "2026-08-25T14:50:16.443425",
+       "exit_time": "2026-08-25T15:25:00.231557",
+       "exit_reason": "EOD_SQUAREOFF"
+      }
+     ]
+    },
+    {
+     "date": "2026-08-21",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -4999.7,
+     "deployed": 299577.4,
+     "cum": -6208.55,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": -4999.7,
+       "deployed": 299577.4,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 578,
+       "entry_price": 518.3,
+       "exit_price": 526.95,
+       "entry_time": "2026-08-21T10:25:15.375575",
+       "exit_time": "2026-08-21T15:15:00.151641",
+       "exit_reason": "SL_HIT"
+      }
+     ]
+    },
+    {
+     "date": "2026-08-20",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 5037.4,
+     "deployed": 299951.7,
+     "cum": -1208.85,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": 5037.4,
+       "deployed": 299951.7,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 566,
+       "entry_price": 529.95,
+       "exit_price": 521.05,
+       "entry_time": "2026-08-20T10:05:19.790317",
+       "exit_time": "2026-08-20T15:15:00.264770",
+       "exit_reason": "TARGET_HIT"
+      }
+     ]
+    },
+    {
+     "date": "2026-08-19",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -3823.75,
+     "deployed": 299345.0,
+     "cum": -6246.25,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": -3823.75,
+       "deployed": 299345.0,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 575,
+       "entry_price": 520.6,
+       "exit_price": 527.25,
+       "entry_time": "2026-08-19T13:25:18.986613",
+       "exit_time": "2026-08-19T15:15:00.341951",
+       "exit_reason": "SL_HIT"
+      }
+     ]
+    },
+    {
+     "date": "2026-08-18",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -2422.5,
+     "deployed": 299734.5,
+     "cum": -2422.5,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": -2422.5,
+       "deployed": 299734.5,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 570,
+       "entry_price": 525.85,
+       "exit_price": 530.1,
+       "entry_time": "2026-08-18T12:00:21.088405",
+       "exit_time": "2026-08-18T15:25:00.333678",
+       "exit_reason": "EOD_SQUAREOFF"
+      }
+     ]
+    }
+   ],
+   "summary": {
+    "capital": 300000,
+    "buying_power": null,
+    "basis": "3 configs \u00b7 \u20b93L each \u00b7 \u20b93,000 risk/trade \u00b7 5 concurrent combined",
+    "max_position": 299951.7,
+    "busiest_day": 299951.7,
+    "avg_trade": 299631.49,
+    "days": 7,
+    "trades": 7,
+    "wins": 3,
+    "win_rate": 42.9,
+    "net": -1620.6,
+    "best_day": 5908.0,
+    "worst_day": -4999.7,
+    "green_days": 3,
+    "costs_modelled": false,
+    "t_stat": -0.14,
+    "top3_share": null,
+    "broker_trades": 0,
+    "sim_trades": 7,
+    "first": "2026-08-18",
+    "last": "2026-08-31"
    }
   },
   "mst": {

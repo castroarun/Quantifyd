@@ -3,6 +3,7 @@ import styles from './Intraday75wr.module.css';
 import { apiGet, apiPost } from '../api/client';
 import { formatPnl, formatRs, pnlClass } from '../utils/format';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Mode = 'off' | 'paper' | 'live';
 type ConfigId = 'A' | 'B' | 'C';
@@ -376,6 +377,8 @@ export default function Intraday75wr() {
           />
         ))}
       </div>
+      <DailyPerformance book="i75wr" title="Daily performance · trade history" />
+
     </div>
   );
 }

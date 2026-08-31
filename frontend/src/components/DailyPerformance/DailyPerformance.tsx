@@ -89,6 +89,9 @@ const DETAIL: Record<string, Array<[string, string]>> = {
   n500m: [['deployed', 'Deployed'], ['direction', 'Dir'], ['signal_type', 'Signal'], ['timeframe', 'TF'], ['qty', 'Qty'],
           ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['entry_time', 'In'], ['exit_time', 'Out'],
           ['exit_reason', 'Why']],
+  i75wr: [['deployed', 'Deployed'], ['system_id', 'Config'], ['direction', 'Dir'],
+          ['qty', 'Qty'], ['entry_price', 'Entry'], ['exit_price', 'Exit'],
+          ['entry_time', 'In'], ['exit_time', 'Out'], ['exit_reason', 'Why']],
   mst: [['deployed', 'Deployed'], ['side', 'Side'], ['leg_role', 'Leg'], ['strike', 'Strike'], ['option_type', 'CE/PE'],
         ['qty', 'Qty'], ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['exit_reason', 'Why']],
 };

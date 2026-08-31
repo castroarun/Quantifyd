@@ -55,6 +55,16 @@ BOOKS = {
         'cols': ['direction', 'signal_type', 'timeframe', 'qty', 'entry_price',
                  'exit_price', 'entry_time', 'exit_time', 'exit_reason', 'exit_policy'],
     },
+    'i75wr': {
+        'capital': 300000, 'buying_power': None, 'costs_modelled': False,
+        'basis': '3 configs · ₹3L each · ₹3,000 risk/trade · 5 concurrent combined',
+        'db': 'intraday_75wr.db', 'table': 'i75_positions',
+        'date': 'trade_date', 'pnl': 'pnl_inr', 'symbol': 'instrument',
+        'where': "status='CLOSED'",
+        'mode_col': 'paper_mode', 'order_col': 'kite_entry_order_id',
+        'cols': ['system_id', 'direction', 'qty', 'entry_price', 'exit_price',
+                 'entry_time', 'exit_time', 'exit_reason'],
+    },
     'mst': {
         'capital': None, 'buying_power': None, 'costs_modelled': False,
         'basis': 'NIFTY options \u00b7 margin-based',
