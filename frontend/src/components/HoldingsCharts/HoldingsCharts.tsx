@@ -759,6 +759,19 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
   }, [curSym, account]);
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
+  // once the order is done or cancelled, briefly show the result then auto-close the
+  // confirm window and fold the trade dock away
+  useEffect(() => {
+    if (!exec) return;
+    if (['filled', 'partial', 'cancelled', 'error'].includes(exec.status)) {
+      const t = setTimeout(() => {
+        setConfirmOpen(false); setExec(null); setDockOpen(false);
+        setAmt(null); setCustomAmt(''); setBuyQtyOverride(null); setSellCustomQty(''); setSellPct(null);
+      }, exec.status === 'filled' ? 2000 : 3500);
+      return () => clearTimeout(t);
+    }
+  }, [exec?.status]);
+
   const buyAmount = customAmt ? Number(customAmt) : (amt ?? 0);
   // qty from the chosen amount, unless the user hand-scaled it (stepper override)
   const buyQtyAuto = current && current.ltp > 0 && buyAmount > 0 ? Math.floor(buyAmount / current.ltp) : 0;
@@ -954,6 +967,19 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
               </div>
             </div>
             <div className={styles.metricStrip} style={{ justifyContent: 'flex-end' }}>
+              {BUY_ENABLED && account !== 'both' && (
+                <button
+                  className={`${styles.dockPill} ${dockOpen ? styles.dockPillOn : ''}`}
+                  onClick={() => setDockOpen((o) => !o)}
+                  title="Trade this stock — shortcut T (or Alt+B)"
+                >
+                  <span className={styles.dockChevron}>{dockOpen ? '▾' : '▸'}</span>
+                  <span className={styles.dockTitle}>Trade {current.sym}</span>
+                  <span className={styles.dockAcct}>{account === 'dad' ? 'Stanly' : 'Me'}</span>
+                  <span className={styles.dockFunds} title="Cash available to deploy">{funds ? (funds.error ? '—' : fmtRs(funds.live_balance)) : '…'}</span>
+                  <span className={styles.dockKbd}>T</span>
+                </button>
+              )}
               <div className={styles.metric}><span className={styles.mLabel}>Invested</span><span className={styles.mVal}>{fmtRs(current.invested)}</span></div>
               <div className={styles.metric}><span className={styles.mLabel}>Current</span><span className={styles.mVal}>{fmtRs(current.current)}</span></div>
               <div className={styles.metric}><span className={styles.mLabel}>Unrealized P&amp;L</span><span className={`${styles.mVal} ${upDn(current.pnl)}`}>{fmtRs(current.pnl)} · {pct(current.ret, 1)}</span></div>
@@ -962,16 +988,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
             <div className={styles.chartArea}>
               <FocusChart s={current} win={tf} bars={augmentToday(ohlc[current.sym], current)} overlay={overlay} />
 
-              {BUY_ENABLED && account !== 'both' && (
-              <div className={`${styles.tradeDock} ${dockOpen ? '' : styles.tradeDockMin}`}>
-                <div className={styles.dockHead} onClick={() => setDockOpen((o) => !o)}>
-                  <span className={styles.dockChevron}>{dockOpen ? '▾' : '▸'}</span>
-                  <span className={styles.dockTitle}>Trade {current.sym}</span>
-                  <span className={styles.dockAcct}>{account === 'dad' ? 'Stanly' : 'Me'}</span>
-                  <span className={styles.dockFunds} title="Cash available to deploy">{funds ? (funds.error ? '—' : fmtRs(funds.live_balance)) : '…'}</span>
-                  {!dockOpen && <span className={styles.dockKbd} title="Shortcut: T (or Alt+B)">T</span>}
-                </div>
-                {dockOpen && (
+              {BUY_ENABLED && account !== 'both' && dockOpen && (
                 <div className={styles.dockBody}>
                   <label className={styles.paperTog}>
                     <input type="checkbox" checked={paper} onChange={(e) => setPaper(e.target.checked)} />
@@ -1048,8 +1065,6 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
                     Review sell →
                   </button>
                 </div>
-                )}
-              </div>
               )}
             </div>
             <div className={styles.leg}>

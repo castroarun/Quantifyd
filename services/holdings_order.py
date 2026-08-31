@@ -241,44 +241,80 @@ def _ladder(ltp, cap, tick=TICK):
     return [min(_round_tick(p, tick), cap) for p in raw]
 
 
+def _bidask(kite, symbol):
+    """Live best bid / best ask from market depth (0.0 each if unavailable)."""
+    try:
+        q = kite.quote([f"NSE:{symbol}"]) or {}
+        d = (q.get(f"NSE:{symbol}") or {}).get('depth') or {}
+        buy = d.get('buy') or []
+        sell = d.get('sell') or []
+        bid = float((buy[0] or {}).get('price') or 0) if buy else 0.0
+        ask = float((sell[0] or {}).get('price') or 0) if sell else 0.0
+        return bid, ask
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[topup] bidask({symbol}) failed: {e}")
+        return 0.0, 0.0
+
+
 def _run(exec_id):
+    """Passive-to-ask buy chase: start inside the spread (near the bid), then walk the
+    limit up tick-by-tick toward the live ask — never posting above the ask (the higher
+    side for a buy), and never above the hard safety cap. A wide spread means we sit and
+    give a seller the chance to come to us before paying up."""
     with _lock:
         s = dict(_execs[exec_id])
-    sym, qty, ltp, cap, paper = s['symbol'], s['qty'], s['ref_ltp'], s['cap'], s['paper']
+    sym, qty, ltp, hard_cap, paper = s['symbol'], s['qty'], s['ref_ltp'], s['cap'], s['paper']
     account = s.get('account', 'me')
     tick = s.get('tick', TICK)
 
     if paper:
-        return _run_paper(exec_id, _ladder(ltp, cap, tick), qty)
+        return _run_paper(exec_id, _ladder(ltp, hard_cap, tick), qty)
 
     kite = _kite_for(account)
-    # up to two attempts: attempt 2 fires only if the broker rejected the price for a
-    # tick-size mismatch (e.g. a 0.10-tick script) — we re-round to the real tick and retry.
+    n_steps = max(1, int(BUDGET_S / STEP_S))
+
+    def ceiling():
+        """Highest price we'll post right now: the live ask (never above it), capped
+        by the hard safety ceiling. Falls back to the hard cap if depth is missing."""
+        _, a = _bidask(kite, sym)
+        top = a if a > 0 else hard_cap
+        return min(_round_tick(top, tick), hard_cap)
+
+    # up to two attempts: attempt 2 only if the broker rejects for a tick-size mismatch.
     for attempt in (1, 2):
-        ladder = _ladder(ltp, cap, tick)
+        hard_cap = _round_tick(ltp * (1 + PRICE_CAP), tick)
+        bid, ask = _bidask(kite, sym)
+        if bid > 0 and ask > 0:
+            top = min(_round_tick(ask, tick), hard_cap)
+            start = min(_round_tick(bid + tick, tick), top)        # passive: one tick above best bid
+            step_up = max(tick, _round_tick((ask - bid) / n_steps, tick))
+        else:  # no depth — sit at LTP and creep toward the hard cap
+            start = min(_round_tick(ltp, tick), hard_cap)
+            step_up = max(tick, _round_tick(ltp * (PRICE_CAP / 2) / n_steps, tick))
+        cur = start
+
         try:
             oid = kite.place_order(
                 variety=kite.VARIETY_REGULAR, exchange=kite.EXCHANGE_NSE,
                 tradingsymbol=sym, transaction_type=kite.TRANSACTION_TYPE_BUY,
                 quantity=qty, product=kite.PRODUCT_CNC,
-                order_type=kite.ORDER_TYPE_LIMIT, price=ladder[0],
+                order_type=kite.ORDER_TYPE_LIMIT, price=cur,
             )
         except Exception as pe:  # noqa: BLE001  (tick rejection can arrive synchronously)
             nt = _parse_tick(str(pe))
             if attempt == 1 and nt and nt != tick:
-                tick = nt; cap = _round_tick(ltp * (1 + PRICE_CAP), tick)
+                tick = nt
                 _update(exec_id, tick=tick, message=f'adjusting to tick ₹{tick}')
                 logger.info(f"[topup] {sym} tick fix {nt} (place); retrying")
                 continue
             logger.exception(f"[topup] {sym} place failed")
             _update(exec_id, status='error', message=str(pe))
             return
-        _update(exec_id, order_id=str(oid), message=f'limit @ ₹{ladder[0]}',
-                steps_append={'t': _now(), 'price': ladder[0], 'action': 'place'})
-        logger.info(f"[topup] {sym} placed {oid} @ {ladder[0]} tick={tick}")
+        _update(exec_id, order_id=str(oid), message=f'limit @ ₹{cur} (bid {bid}/ask {ask})',
+                steps_append={'t': _now(), 'price': cur, 'action': 'place'})
+        logger.info(f"[topup] {sym} placed {oid} @ {cur} bid={bid} ask={ask} tick={tick}")
 
         deadline = time.time() + BUDGET_S
-        step_i = 0
         retry_tick = None
         while time.time() < deadline:
             time.sleep(STEP_S)
@@ -292,26 +328,29 @@ def _run(exec_id):
             if st['status'] in ('REJECTED', 'CANCELLED'):
                 nt = _parse_tick(st['reason'])
                 if attempt == 1 and st['status'] == 'REJECTED' and nt and nt != tick:
-                    retry_tick = nt  # re-round + re-place on the next attempt
+                    retry_tick = nt
                     logger.info(f"[topup] {sym} tick fix {nt} (rejected); retrying")
                     break
                 _update(exec_id, status='error', message=f"{st['status']}: {st['reason']}")
                 logger.warning(f"[topup] {sym} {st['status']}: {st['reason']}")
                 return
-            step_i += 1
-            if step_i < len(ladder):
-                newp = ladder[step_i]
+            # walk up toward the live ask, one step, never above it (or the hard cap)
+            top = ceiling()
+            newp = min(_round_tick(cur + step_up, tick), top)
+            if newp > cur:
+                cur = newp
                 try:
                     kite.modify_order(variety=kite.VARIETY_REGULAR, order_id=oid,
                                       quantity=qty, price=newp, order_type=kite.ORDER_TYPE_LIMIT)
                     _update(exec_id, message=f'chasing @ ₹{newp}',
                             steps_append={'t': _now(), 'price': newp, 'action': 'chase'})
-                    logger.info(f"[topup] {sym} chase → {newp}")
+                    logger.info(f"[topup] {sym} chase → {newp} (ceil {top})")
                 except Exception as me:  # noqa: BLE001
                     logger.error(f"[topup] {sym} modify failed: {me}")
+            # else: already sitting at the ask/cap — hold and wait for a fill
 
         if retry_tick:
-            tick = retry_tick; cap = _round_tick(ltp * (1 + PRICE_CAP), tick)
+            tick = retry_tick
             _update(exec_id, tick=tick, message=f'adjusting to tick ₹{tick}')
             continue  # attempt 2
 
@@ -327,10 +366,10 @@ def _run(exec_id):
             logger.error(f"[topup] {sym} cancel failed: {ce}")
         if st['filled'] > 0:
             _update(exec_id, status='partial', filled_qty=st['filled'], avg_price=st['avg'],
-                    message=f"partial {st['filled']}/{qty} @ ₹{st['avg']}, rest cancelled (price ran away)")
+                    message=f"partial {st['filled']}/{qty} @ ₹{st['avg']}, rest cancelled (ask ran away)")
         else:
             _update(exec_id, status='cancelled',
-                    message='unfilled — price ran past the cap. Retry?')
+                    message='unfilled — ask stayed above the cap. Retry?')
         return
 
 

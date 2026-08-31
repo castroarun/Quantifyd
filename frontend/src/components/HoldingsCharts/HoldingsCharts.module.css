@@ -118,7 +118,7 @@
 }
 .navBtns button:hover { background: var(--brand-navy-soft); color: var(--brand-navy); border-color: var(--brand-navy); }
 .metricStrip {
-  display: flex; flex-wrap: wrap; gap: 8px 30px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 30px;
   padding: 11px 0 3px; margin: 6px 0 2px; border-top: 1px solid var(--hairline-soft);
 }
 .metric { display: flex; flex-direction: column; gap: 1px; }
@@ -186,47 +186,50 @@
 .sellBtn:hover:not(:disabled) { background: var(--accent-neg); filter: brightness(.92); }
 .btnGoSell { background: var(--accent-neg); }
 
-/* --- on-chart trade dock --- */
+/* --- trade dock: a pill on the left of the metric strip that drops a panel over the chart --- */
 .chartArea { position: relative; }
-.tradeDock {
-  position: absolute; top: 8px; right: 64px; width: 224px; z-index: 6;
-  background: color-mix(in srgb, var(--surface) 93%, transparent);
-  border: 1px solid var(--hairline); border-radius: 12px;
-  box-shadow: 0 8px 28px rgba(15, 20, 30, 0.22);
-  backdrop-filter: blur(7px); padding: 9px 11px 11px;
-}
-.tradeDockMin {
-  width: auto; padding: 7px 12px; cursor: pointer;
-  background: color-mix(in srgb, var(--brand-navy-soft) 85%, var(--surface));
-  border-color: color-mix(in srgb, var(--brand-navy) 55%, var(--hairline));
+/* collapsed pill — sits at the left of the metric row (left of Invested) */
+.dockPill {
+  display: inline-flex; align-items: center; gap: 6px; margin-right: auto;
+  padding: 6px 11px; font: inherit; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 55%, var(--hairline));
+  border-radius: 10px; background: color-mix(in srgb, var(--brand-navy-soft) 85%, var(--surface));
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
-.tradeDockMin:hover {
+.dockPill:hover {
   transform: translateY(-1px);
   background: color-mix(in srgb, var(--brand-navy-soft) 100%, transparent);
-  box-shadow: 0 10px 30px rgba(15, 20, 30, 0.28);
+  box-shadow: 0 8px 22px rgba(15, 20, 30, 0.22);
 }
-.tradeDockMin .dockTitle { color: var(--brand-navy); }
+.dockPill .dockTitle { color: var(--brand-navy); }
+.dockPillOn { background: var(--surface); border-color: var(--hairline); }
+.dockPillOn .dockTitle { color: var(--ink); }
 .dockKbd {
   font-size: 10px; font-weight: 700; color: var(--brand-navy);
   border: 1px solid color-mix(in srgb, var(--brand-navy) 45%, var(--hairline));
   border-radius: 5px; padding: 1px 6px; background: var(--surface);
 }
-.dockHead { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
 .dockChevron { font-size: 10px; color: var(--ink-muted); }
 .dockTitle { font-size: 12px; font-weight: 700; color: var(--ink); }
 .dockAcct { font-size: 10px; font-weight: 600; color: var(--ink-muted); padding: 1px 6px; border: 1px solid var(--hairline); border-radius: 6px; }
-.dockFunds { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--ink); }
-.dockBody { margin-top: 9px; }
-.tradeDock .tradeSub { font-size: 9.5px; margin-bottom: 6px; }
-.tradeDock .amtRow { gap: 5px; }
-.tradeDock .amtChip { padding: 5px 8px; font-size: 11px; }
-.tradeDock .amtInput { width: 62px; padding: 5px 7px; font-size: 11px; }
-.tradeDock .buyCalc { font-size: 11px; margin: 7px 0; min-height: 14px; }
-.tradeDock .reviewBtn { padding: 7px; font-size: 12px; }
-.tradeDock .paperTog { margin-bottom: 9px; }
+.dockFunds { font-size: 11px; font-weight: 700; color: var(--ink); }
+/* expanded panel — drops over the top-left of the chart */
+.dockBody {
+  position: absolute; top: 10px; left: 10px; width: 224px; z-index: 20;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  border: 1px solid var(--hairline); border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 20, 30, 0.26);
+  backdrop-filter: blur(7px); padding: 11px 12px 12px;
+}
+.dockBody .tradeSub { font-size: 9.5px; margin-bottom: 6px; }
+.dockBody .amtRow { gap: 5px; }
+.dockBody .amtChip { padding: 5px 8px; font-size: 11px; }
+.dockBody .amtInput { width: 62px; padding: 5px 7px; font-size: 11px; }
+.dockBody .buyCalc { font-size: 11px; margin: 7px 0; min-height: 14px; }
+.dockBody .reviewBtn { padding: 7px; font-size: 12px; }
+.dockBody .paperTog { margin-bottom: 9px; }
 @media (max-width: 720px) {
-  .tradeDock { right: 8px; left: 8px; width: auto; }
+  .dockBody { right: 8px; left: 8px; width: auto; }
 }
 .qtyStep { display: flex; align-items: center; gap: 5px; margin: 8px 0; }
 .stepBtn {
