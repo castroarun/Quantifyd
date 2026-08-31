@@ -12,6 +12,10 @@ import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
 import chartStyles from '../components/HoldingsCharts/HoldingsCharts.module.css';
 import { formatInt, formatNumber, formatPct, formatPnl, pnlClass } from '../utils/format';
 
+// Secondary "Stanly" account — disabled 2026-08-31 (his Zerodha login is locked;
+// automated login suspected). Set back to true once unlocked + re-authorized.
+const STANLY_ENABLED = false;
+
 const EXTREME_LABELS: Record<string, string> = {
   at_ath: 'at all-time high',
   near_ath: 'near all-time high',
@@ -172,6 +176,10 @@ export default function Holdings() {
           : `${summary.count} stocks · signals Kite doesn't flag — movers, extremes, events`}
       </div>
 
+      {/* Stanly (secondary) account is disabled 2026-08-31 while his Zerodha login is
+          locked. Flip STANLY_ENABLED back to true (and re-enable the crons + backend
+          guard) once it's unlocked and re-authorized. */}
+      {STANLY_ENABLED && (
       <div className={chartStyles.tabBar}>
         <button
           className={`${chartStyles.tab} ${account === 'me' ? chartStyles.tabOn : ''}`}
@@ -186,6 +194,7 @@ export default function Holdings() {
           onClick={() => setAccount('both')}
         >Both</button>
       </div>
+      )}
 
       {account === 'dad' && (data as { error?: string }).error ? (
         <div style={{ margin: '4px 0 10px', padding: '10px 14px', background: 'var(--brand-amber-soft)', color: 'var(--brand-amber)', borderRadius: 8, fontSize: 13 }}>

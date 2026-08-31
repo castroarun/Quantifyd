@@ -1287,9 +1287,16 @@ def api_get_historical(symbol: str):
         return jsonify({'error': str(e)}), 500
 
 
+# Stanly (secondary) account disabled 2026-08-31 while his Zerodha login is locked
+# (automated login suspected). Set True once unlocked + re-authorized.
+STANLY_ENABLED = False
+
+
 def _holdings_read_kite(account):
     """Read-only Kite client for the requested account ('me' | 'dad')."""
     if account == 'dad':
+        if not STANLY_ENABLED:
+            raise RuntimeError('Stanly account is disabled')
         from services.dad_kite import get_dad_kite
         return get_dad_kite()
     from services.kite_service import get_kite
@@ -9942,6 +9949,13 @@ def api_holdings_digest():
     """Live digest — summary + movers + extremes + weekly + events + next event."""
     try:
         if request.args.get('account') == 'dad':
+            if not STANLY_ENABLED:
+                return jsonify({'configured': False, 'error': 'Stanly account is disabled',
+                                'summary': {'count': 0, 'invested': 0, 'current': 0, 'day_pnl': 0,
+                                            'day_pct': 0, 'total_pnl': 0, 'total_pct': 0},
+                                'holdings': [], 'movers_today': {'gainers': [], 'losers': []},
+                                'movers_weekly': {'gainers': [], 'losers': []},
+                                'extremes': {'high': [], 'low': []}, 'events': [], 'next_event': None})
             from services.dad_holdings import get_dad_digest
             return jsonify(get_dad_digest())
         from services.holdings_dashboard import get_digest
