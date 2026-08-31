@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './BreakoutPaper.module.css';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Holding = {
   symbol: string; qty: number | null; entry_date: string | null; entry_price: number | null;
@@ -253,6 +254,8 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
     <div className={styles.kpi}>
       <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
+      <DailyPerformance book="breakout-paper" title="Daily performance · trade history" />
+
     </div>
   );
 }

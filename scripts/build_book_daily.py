@@ -65,6 +65,91 @@ BOOKS = {
         'cols': ['system_id', 'direction', 'qty', 'entry_price', 'exit_price',
                  'entry_time', 'exit_time', 'exit_reason'],
     },
+    'momentum-3l': {
+        'capital': 300000, 'buying_power': None, 'costs_modelled': True,
+        'basis': '\u20b93L live \u00b7 costs and STCG modelled',
+        'db': 'momentum_paper.db', 'table': 'mp_closed',
+        'date': 'exit_date', 'pnl': 'net_pnl', 'symbol': 'symbol',
+        'where': '1=1', 'mode_col': None, 'mode_fixed': 'live',
+        'order_col': None,
+        'cols': ['entry_date', 'entry_price', 'exit_price', 'qty', 'holding_days',
+                 'gross_pnl', 'cost', 'stcg_tax', 'reason'],
+    },
+    'breakout-paper': {
+        'capital': 1000000, 'buying_power': None, 'costs_modelled': True,
+        'basis': '\u20b910L paper \u00b7 costs and settlement modelled',
+        'db': 'breakout_paper.db', 'table': 'bp_closed',
+        'date': 'exit_date', 'pnl': 'net_pnl', 'symbol': 'symbol',
+        'where': '1=1', 'mode_col': None, 'mode_fixed': 'paper',
+        'order_col': None,
+        'cols': ['entry_date', 'entry_price', 'exit_price', 'qty', 'holding_days',
+                 'gross_pnl', 'cost', 'reason'],
+    },
+    'pairs': {
+        'capital': 1000000, 'buying_power': None, 'costs_modelled': True,
+        'basis': 'market-neutral pairs \u00b7 costs modelled',
+        'db': 'pair_trading.db', 'table': 'pair_trades',
+        'date': 'exit_date', 'pnl': 'net_pnl_inr', 'symbol': 'pair_name',
+        'where': '1=1', 'mode_col': 'paper_mode', 'order_col': None,
+        'cols': ['direction', 'entry_date', 'days_held', 'entry_z', 'exit_z',
+                 'gross_pnl_inr', 'cost_inr', 'exit_reason'],
+    },
+    'orb-index': {
+        'capital': None, 'buying_power': None, 'costs_modelled': True,
+        'basis': 'NIFTY strangle \u00b7 costs modelled',
+        'db': 'strangle_trading.db', 'table': 'strangle_trades',
+        'date': 'exit_date', 'pnl': 'net_pnl', 'symbol': 'variant_id',
+        'where': '1=1', 'mode_col': None, 'mode_fixed': 'paper',
+        'order_col': None,
+        'cols': ['direction', 'spot_at_entry', 'spot_at_exit', 'ce_strike', 'pe_strike',
+                 'gross_pnl', 'costs', 'hold_minutes', 'exit_reason'],
+    },
+    'kc6': {
+        'capital': None, 'buying_power': None, 'costs_modelled': None,
+        'basis': 'KC6 mean reversion \u00b7 paper throughout',
+        'db': 'kc6_trading.db', 'table': 'kc6_trades',
+        'date': 'exit_date', 'pnl': 'pnl_abs', 'symbol': 'symbol',
+        'where': '1=1', 'mode_col': None, 'mode_fixed': 'paper',
+        'order_col': None,
+        'cols': ['entry_date', 'entry_price', 'exit_price', 'qty', 'hold_days',
+                 'pnl_pct', 'exit_reason'],
+    },
+    'ha-paper': {
+        'capital': 2000000, 'buying_power': None, 'costs_modelled': None,
+        'basis': '\u20b920L paper \u00b7 Heikin-Ashi 2-green',
+        'db': 'ha_paper.db', 'table': 'hap_fills',
+        'date': 'ts', 'pnl': 'pnl', 'symbol': 'symbol',
+        'where': 'pnl IS NOT NULL', 'mode_col': None, 'mode_fixed': 'paper',
+        'order_col': None,
+        'cols': ['side', 'price', 'qty', 'reason'],
+    },
+    'ohol-paper': {
+        'capital': None, 'buying_power': None, 'costs_modelled': None,
+        'basis': 'open-high / open-low \u00b7 1 lot',
+        'db': 'ohol_paper.db', 'table': 'ohp_fills',
+        'date': 'ts', 'pnl': 'pnl', 'symbol': 'symbol',
+        'where': 'pnl IS NOT NULL', 'mode_col': None, 'mode_fixed': 'paper',
+        'order_col': None,
+        'cols': ['side', 'price', 'lots', 'lot_size', 'reason'],
+    },
+    'orb-paper': {
+        'capital': 1000000, 'buying_power': None, 'costs_modelled': None,
+        'basis': '\u20b910L paper \u00b7 research/89 ORB revival',
+        'db': 'orb_paper.db', 'table': 'obp_fills',
+        'date': 'ts', 'pnl': 'pnl', 'symbol': 'symbol',
+        'where': 'pnl IS NOT NULL', 'mode_col': None, 'mode_fixed': 'paper',
+        'order_col': None,
+        'cols': ['side', 'price', 'qty', 'reason'],
+    },
+    'fnoms-paper': {
+        'capital': None, 'buying_power': None, 'costs_modelled': None,
+        'basis': 'F&O multi-signal \u00b7 paper',
+        'db': 'fnoms_paper.db', 'table': 'fms_fills',
+        'date': 'ts', 'pnl': 'pnl', 'symbol': 'symbol',
+        'where': 'pnl IS NOT NULL', 'mode_col': None, 'mode_fixed': 'paper',
+        'order_col': None,
+        'cols': ['system', 'side', 'price', 'qty', 'reason'],
+    },
     'mst': {
         'capital': None, 'buying_power': None, 'costs_modelled': False,
         'basis': 'NIFTY options \u00b7 margin-based',
@@ -96,8 +181,9 @@ def build_book(key: str, spec: dict) -> dict:
     conn.row_factory = sqlite3.Row
     try:
         have = {r[1] for r in conn.execute(f"PRAGMA table_info({spec['table']})")}
-        wanted = [c for c in ([spec['date'], spec['pnl'], spec['symbol'], spec['mode_col'],
-                               spec.get('order_col'), 'qty', 'entry_price']
+        wanted = [c for c in ([spec['date'], spec['pnl'], spec['symbol'],
+                               spec.get('mode_col'), spec.get('order_col'),
+                               'qty', 'entry_price', 'price', 'lots', 'lot_size']
                               + spec['cols']) if c and c in have]
         sel = ', '.join(f'"{c}"' for c in dict.fromkeys(wanted))
         rows = [dict(r) for r in conn.execute(
@@ -114,7 +200,8 @@ def build_book(key: str, spec: dict) -> dict:
             continue
         pnl = r.get(spec['pnl'])
         pnl = float(pnl) if pnl is not None else 0.0
-        mode = _mode_label(r.get(spec['mode_col']), spec['mode_col'])
+        mode = (_mode_label(r.get(spec['mode_col']), spec['mode_col'])
+                if spec.get('mode_col') else spec.get('mode_fixed', 'unknown'))
 
         # Did this order actually reach the broker? A 'PAPER-' id is simulated;
         # a real Kite id means the order was placed for real. Stronger evidence
@@ -124,7 +211,13 @@ def build_book(key: str, spec: dict) -> dict:
 
         # what the trade actually put to work at entry
         try:
-            deployed = abs(float(r.get('qty') or 0) * float(r.get('entry_price') or 0))
+            px = r.get('entry_price')
+            if px in (None, ''):
+                px = r.get('price')          # fill logs name it plainly
+            units = r.get('qty')
+            if units in (None, ''):
+                units = float(r.get('lots') or 0) * float(r.get('lot_size') or 0) or None
+            deployed = abs(float(units or 0) * float(px or 0))
         except (TypeError, ValueError):
             deployed = 0.0
 

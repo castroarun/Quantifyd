@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './OrbPaper.module.css';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Position = { symbol: string; qty: number; entry: number; since: string; stop: number; sessions: number; last: number | null; mtm: number | null };
 type NavPt = { d: string; nav: number; gate: number; bench: number | null };
@@ -191,6 +192,8 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
     <div className={styles.kpi}>
       <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
+      <DailyPerformance book="orb-paper" title="Daily performance · trade history" />
+
     </div>
   );
 }

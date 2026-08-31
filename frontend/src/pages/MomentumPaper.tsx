@@ -7,6 +7,7 @@ import { getStudy } from '../data/backtests';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Holding = {
   symbol: string; qty: number | null; entry_date: string; entry_price: number | null;
@@ -826,6 +827,8 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
           )}
         </div>
       </div>
+      <DailyPerformance book="momentum-3l" title="Daily performance · trade history" />
+
     </div>
   );
 }

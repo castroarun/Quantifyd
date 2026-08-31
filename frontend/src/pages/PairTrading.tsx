@@ -3,6 +3,7 @@ import styles from './PairTrading.module.css';
 import { apiGet, apiPost } from '../api/client';
 import { formatPnl, formatRs, pnlClass } from '../utils/format';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Mode = 'off' | 'paper' | 'live';
 
@@ -419,6 +420,8 @@ export default function PairTrading() {
           </table>
         )}
       </div>
+      <DailyPerformance book="pairs" title="Daily performance · trade history" />
+
     </div>
   );
 }

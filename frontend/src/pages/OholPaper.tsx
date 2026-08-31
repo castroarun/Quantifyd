@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './OholPaper.module.css';
 import BookActivity from '../components/BookActivity/BookActivity';
+import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Position = { symbol: string; side: string; lot_size: number; entry: number; since: string; last: number | null; mtm: number | null };
 type Setup = { symbol: string; side: string; trigger: number; status: string };
@@ -209,6 +210,8 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: strin
     <div className={styles.kpi}>
       <div className={`${styles.kpiVal} ${tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : ''}`}>{value}</div>
       <div className={styles.kpiLabel}>{label}</div>
+      <DailyPerformance book="ohol-paper" title="Daily performance · trade history" />
+
     </div>
   );
 }
