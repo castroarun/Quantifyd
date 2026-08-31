@@ -177,3 +177,107 @@ on SENSEX.
 | `scripts/sensex_study.py` | builds `static/app/sensex_options_study.json` from the recorded chain |
 | `scripts/sensex_grid.py` | the DTE × stop grid, stability split, live comparison |
 | `results/RESULTS.md` | this file |
+
+---
+
+# PHASE 2 — the stop-width walk, and a correction to phase 1's explanation
+
+**2026-08-31. One recommendation, and one conclusion of mine that the cross-check
+overturns.**
+
+## 1. What I got wrong in phase 1
+
+Phase 1 said the SENSEX expiry-day result "independently reproduces research/114"
+and explained it as **expiry gamma tripping the stop**. Stated that way it implies
+a general law about expiry days. It is not one. Running the same stop-width walk on
+**NIFTY's** expiry day gives the **opposite** answer on every dimension.
+
+**SENSEX expiry day (DTE0 / Thursday) — 18 days, 10 lots (qty 200)**
+
+| stop | net | t | maxDD | worst day | fires |
+|---:|---:|---:|---:|---:|---:|
+| 20% | ₹1,45,118 | 1.04 | −₹72,221 | −₹25,469 | 9/18 |
+| 25% | ₹84,748 | 0.55 | −₹1,14,411 | −₹41,309 | 9/18 |
+| 30% | ₹1,56,058 | 0.88 | −₹1,34,503 | −₹41,309 | 8/18 |
+| 40% | ₹1,59,058 | 0.88 | −₹1,11,333 | −₹42,879 | 7/18 |
+| **50% (live)** | **₹2,82,278** | **1.74** | −₹74,987 | −₹42,519 | 4/18 |
+| **75%** | **₹4,13,978** | **2.71** | **−₹64,399** | −₹64,399 | **1/18** |
+| 100% | ₹5,10,488 | 4.19 | −₹31,019 | −₹31,019 | 0/18 |
+| *nostop\** | *₹5,10,488* | *4.19* | *−₹31,019* | *−₹31,019* | *0/18* |
+
+**NIFTY expiry day (DTE0 / Tuesday) — 18 days, 10 lots (qty 650)**
+
+| stop | net | t | maxDD | worst day | fires |
+|---:|---:|---:|---:|---:|---:|
+| **20%** | **₹2,69,860** | **1.88** | **−₹46,405** | −₹31,750 | 6/18 |
+| 25% (live) | ₹2,60,175 | 1.78 | −₹46,405 | −₹31,750 | 6/18 |
+| 30% | ₹2,17,340 | 1.37 | −₹67,855 | −₹43,385 | 6/18 |
+| 40% | ₹1,98,815 | 1.22 | −₹67,855 | −₹43,385 | 6/18 |
+| 50% | ₹1,34,595 | 0.73 | −₹1,07,100 | −₹63,470 | 6/18 |
+| 75% | ₹1,16,915 | 0.60 | −₹1,28,290 | −₹70,035 | 3/18 |
+| *nostop\** | *₹30,725* | *0.13* | *−₹2,14,480* | *−₹1,55,900* | *0/18* |
+
+\* control column, never a candidate.
+
+**On SENSEX, wider is better on every dimension. On NIFTY, tighter is better on
+every dimension.** Same structure, same construction, same 18-day count, opposite
+sign. So "expiry gamma defeats stops" cannot be the explanation — it would have to
+apply to both.
+
+## 2. What the numbers actually say
+
+The `fires` column carries the mechanism, and it is the interesting part.
+
+- **NIFTY: 6/18 fires at 20%, and still 6/18 at 60%.** The *same six days* blow
+  through every level from 20% to 60%. On NIFTY expiry, a 20% adverse move is the
+  start of a trend that keeps going — so the stop is doing exactly its job, and
+  cutting at 20% is better than riding to 60%.
+- **SENSEX: 9/18 at 20%, 4/18 at 50%, 1/18 at 75%, 0/18 at 100%.** Breaches
+  *revert*. On SENSEX expiry, a 20% adverse move is usually noise that comes back —
+  so a tight stop books a loss and then the premium decays without us.
+
+**A 20% adverse move on NIFTY expiry is signal; on SENSEX expiry it is noise.**
+That is a mechanical, checkable statement, and it fits what we already knew about
+the venue — research/97 concluded SENSEX bid/ask is too noisy to price against and
+forced the move to `ltp + slippage`. A percentage stop on a noisy combined premium
+gets tripped by the quote, not by the market.
+
+## 3. Recommendation — widen SENSEX DTE0 from 50% to 75%
+
+| | 50% (live today) | **75% (proposed)** | change |
+|---|---:|---:|---|
+| net | ₹2,82,278 | ₹4,13,978 | **+₹1,31,700** |
+| t | 1.74 | 2.71 | better |
+| maxDD | −₹74,987 | **−₹64,399** | **also better** |
+| fires | 4/18 | 1/18 | still active |
+
+It is the rare change that improves return *and* drawdown together.
+
+**Why 75% and not 100%.** At 100% the stop fires **0 of 18** times — it is
+protection in name only, and would be indistinguishable from having none on every
+day in the sample. At 75% it still fires once, so it is a live constraint that
+bounds the tail on the day this 92-day sample does not contain. **The deliverable
+here is a width, never a removal.**
+
+**Why this is a proposal and not a deployment.** It is a rule change to a live
+book: it needs Arun's decision, its own STATUS-MD, and an after-15:40 deploy. It
+also rests on 18 expiry days in one regime, and 9 widths were tested on them.
+The monotonicity is what makes it credible — SENSEX improves steadily from 20%
+through 100% with no peak to overfit to — but monotonic-to-the-edge also means
+the sweep never found a turning point, which is the same caveat research/80
+flagged about its own strike sweep.
+
+## 4. A bonus finding: the NIFTY cell we kept is correctly set
+
+`NAS_COMB20`'s surviving live cell is DTE0/Tuesday at **SL25**. The NIFTY walk puts
+20% first (₹2,69,860, t 1.88) and **25% immediately behind** (₹2,60,175, t 1.78),
+with identical drawdown. So the one cell still carrying real money on that book is
+already at, or one notch from, its best tested setting. Nothing to change there.
+
+## 5. Files
+
+| file | purpose |
+|---|---|
+| `scripts/dte0_width.py` | the stop-width walk, both venues |
+| `scripts/sensex_study.py` | builds the SENSEX recorded-chain study |
+| `scripts/sensex_grid.py` | phase 1 DTE × stop grid |
