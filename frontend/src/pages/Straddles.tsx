@@ -1504,14 +1504,23 @@ export default function Straddles() {
                 idle from Wednesday to Friday. research/80 tested five ways to use those days;
                 four died and this one worked — a condor, entered Wednesday, out Friday.</div>
               <div><b>Structure:</b> iron condor — sell a call and a put roughly <b>0.8% out of the
-                money</b>, buy the wings at <b>1.0%</b>. Four legs, defined risk, no naked side.</div>
+                money</b>, then buy each wing a further <b>1.0% beyond its own short</b> (not 1.0%
+                from spot). That makes each vertical about <b>250 points</b> wide. Four legs,
+                defined risk, no naked side. Example, 26-Aug cycle at spot 24,277: short CE 24450
+                (+0.71%) / long CE 24700 (+1.74%), short PE 24100 (−0.73%) / long PE 23850 (−1.76%).</div>
               <div><b>Entry:</b> Wednesday close. <b>Exit:</b> Friday close. Flat over the weekend,
                 and flat before Monday, so it never competes with NAS-OPT for margin.</div>
               <div><b>Size:</b> the book runs <b>{condor.lots} lots</b> (qty {condor.qty}); figures
                 on this card are scaled to <b>10 lots</b> so it compares with the other books.
                 Premium points are per-unit and unchanged — only rupee P&amp;L scales.</div>
-              <div><b>No stop.</b> The wings are the stop: maximum loss is the strike width less the
-                credit, known at entry.</div>
+              <div><b>The wings are the stop</b> — there is no separate stop-loss rule because
+                there does not need to be one: maximum loss is the spread width less the credit,
+                and it is <b>known at entry</b> rather than depending on a stop firing in time.
+                On the credits seen so far (68–107 pts) that is <b>≈145–180 points</b>, i.e.
+                <b>≈₹19,000–24,000 at the book's 2 lots</b> and ₹93,000–₹1.18L at 10 lots.
+                Worth holding against the whole live book's max drawdown to date of ₹36,082 —
+                the tail is bounded, but it is not small, and no cycle has yet come near it
+                (worst so far −₹2,856, about 12% of the cap).</div>
               <div style={{ color: C.faint }}>Study: <a href="/app/backtest/fardte-rescue"
                 style={{ color: C.navy }}>research/80 — rescuing the far-from-expiry days</a>{' '}
                 (~11 years, Calmar 1.63, the best of the five ideas tested).</div>
