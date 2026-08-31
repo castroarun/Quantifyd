@@ -1,6 +1,6 @@
 # Universal Swing Rule — One Rule, Every Name, 2–10 Day Holds
 
-STATUS: **G1 PROBE — RUNNING**
+STATUS: **CONCLUDED — NO INVESTABLE EDGE**
 Opened 2026-08-31 13:45 IST · research/136
 
 ---

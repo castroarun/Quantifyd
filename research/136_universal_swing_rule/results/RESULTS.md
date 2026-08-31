@@ -1,89 +1,102 @@
-# research/136 — Universal Swing Rule: G1 RESULTS
+# research/136 — Universal Swing Rule · RESULTS
 
-**VERDICT: breakout REFUTED. Short-horizon reversion is a SIGNAL — real, highly
-significant, and currently too thin to trade on its own.**
+## VERDICT: **NO INVESTABLE EDGE.** Concluded 2026-08-31.
 
-Run 2026-08-31 · daily bars 2015-01-01 → 2026-08-28 · 1,101 eligible symbols ·
-1,050,447 eligible rows · entry at next open · date-matched random control.
+Breakout **REFUTED**. Reversion is a real **SIGNAL** that does not survive being
+assembled into a book. The market-regime brake that rescues the momentum book
+**makes this one worse**. Nothing to deploy; one narrow idea worth keeping.
+
+Daily bars 2015-01-01 → 2026-08-28 · 1,101 eligible symbols · 1,050,447 eligible
+rows · entry at next open · date-matched random control throughout.
 
 ---
 
-## 1. Buying strength LOSES — on every cell
+## G1 — buying strength loses, on every cell
 
-| lookback | horizon | signal | random (same day) | drift | **excess** | t |
-|---:|---:|---:|---:|---:|---:|---:|
-| 20d high | 2d | +0.088% | +0.197% | +0.153% | **−0.109%** | −7.20 |
-| 20d high | 5d | +0.282% | +0.431% | +0.377% | **−0.149%** | −6.62 |
-| 20d high | 10d | +0.708% | +0.813% | +0.748% | **−0.105%** | −3.34 |
-| 55d high | 2d | +0.062% | +0.167% | +0.153% | **−0.105%** | −5.70 |
-| 55d high | 5d | +0.242% | +0.344% | +0.377% | **−0.102%** | −3.64 |
-| 55d high | 10d | +0.681% | +0.794% | +0.748% | **−0.112%** | −2.86 |
+| lookback | horizon | signal | random | **excess** | t |
+|---:|---:|---:|---:|---:|---:|
+| 20d high | 2d | +0.088% | +0.197% | **−0.109%** | −7.20 |
+| 20d high | 5d | +0.282% | +0.431% | **−0.149%** | −6.62 |
+| 20d high | 10d | +0.708% | +0.813% | **−0.105%** | −3.34 |
+| 55d high | 5d | +0.242% | +0.344% | **−0.102%** | −3.64 |
 
-231,510 signals. 8 of 11 years negative. **Note the raw signal returns are all
-positive** — a backtest without the control would have reported a working breakout
-system. Against a random liquid stock on the same day it loses, consistently, at
-t up to −7.2.
+231,510 signals, 8 of 11 years negative. **Every raw signal return is positive** —
+without the date-matched control this reads as a working breakout system. It is not.
+Short-horizon breakout momentum does not exist in this universe, which also explains
+N500M's vol-BO half without needing any further story.
 
-**This is the control earning its keep**, exactly as it did in research/87 and /88.
+## G1b/c — buying weakness works, and the trend filter is the carrier
 
-## 2. Buying weakness WINS — and RSI(2) is the carrier
+Excess over date-matched random, in bps:
 
-| signal | horizon | signal | random | **excess** | t | n |
-|---|---:|---:|---:|---:|---:|---:|
-| 20d low | 2d | +0.143% | +0.091% | +0.052% | 2.91 | 112,701 |
-| 20d low | 5d | +0.373% | +0.342% | +0.031% | 1.14 | 112,466 |
-| 20d low | 10d | +0.578% | +0.585% | −0.006% | −0.17 | 112,173 |
-| 55d low | 2d | +0.096% | +0.041% | +0.055% | 2.05 | 57,851 |
-| **RSI(2)<10** | **2d** | +0.172% | +0.080% | **+0.091%** | **9.12** | 311,628 |
-| **RSI(2)<10** | **5d** | +0.398% | +0.294% | **+0.104%** | **6.74** | 310,801 |
-| **RSI(2)<10** | **10d** | +0.760% | +0.644% | **+0.117%** | **5.35** | 309,738 |
+| arm | 2d | 5d | 10d | 15d | 20d | 30d | shape |
+|---|---:|---:|---:|---:|---:|---:|---|
+| A · RSI(2)<10 | +10 | +8 | +10 | +8 | +9 | +3 | irregular |
+| **B · RSI(2)<10 & close>200DMA** | **+16** | **+16** | **+24** | **+24** | **+26** | **+32** | **MONOTONIC** |
+| C · RSI(2)<5 | +10 | +10 | +9 | +6 | +12 | +4 | irregular |
 
-The Donchian-low construction is weak and dies by 10 days. **RSI(2)<10 is strong,
-and its excess rises monotonically with horizon** — monotonic, not peaked, which is
-the signature of an effect rather than a fit.
+Arm B: 174,562 signals, t 6.3–12.6. Two negative results worth keeping: the
+unfiltered signal never clears costs, and **deeper oversold does not pay more** —
+arm C is no better than A, so "more extreme = better" is refuted.
 
-## 3. Why this is a SIGNAL and not yet a STRATEGY
+## G2 — the book loses to the index
 
-The excess is **~9–12 bps per trade**. A realistic delivery round trip — brokerage,
-0.1% STT on the sell, exchange and GST, plus slippage on a stock that just fell hard
-— is 20–30 bps. **The edge is smaller than the toll.**
+10 slots, equal notional, ₹10L, both legs charged:
 
-That does not make it useless; it makes it not-yet-tradeable *in this form*. Three
-routes out, in order of promise:
+| hold | cost | CAGR | MaxDD | Calmar | Sharpe |
+|---:|---:|---:|---:|---:|---:|
+| 15d | 20 bps | 16.06% | −41.9% | 0.38 | 0.76 |
+| 20d | 30 bps | 9.32% | −46.7% | 0.20 | 0.50 |
+| 30d | 30 bps | 13.53% | −46.3% | 0.29 | 0.67 |
+| **NIFTYBEES** | — | **12.47%** | **−36.3%** | **0.34** | **0.89** |
 
-1. **Hold longer.** The excess grows with horizon (0.091 → 0.104 → 0.117) while cost
-   is paid once. Test 15 / 20 / 30 day holds — if the excess keeps climbing, cost
-   amortises to irrelevance. Cheapest next test and the most likely to work.
-2. **Condition harder.** Deeper oversold, only above a rising 200-DMA, only in
-   uptrending sectors, only on liquid large caps. Fewer, better trades — but each
-   condition is a fitting opportunity, so hold out data.
-3. **Use it as an overlay, not a book.** An entry-timing filter on the momentum book
-   already running, rather than a standalone system.
+**Every variant has a worse Sharpe than owning the index**, with drawdowns of −42%
+to −55%. Walk-forward: 2015–2020 the book made **5.76%** against the index's
+**13.57%**. The apparent edge lives entirely in 2021–2026.
 
-## 4. What is now settled
+**Why a real per-trade edge fails as a book:** the trades cluster. Everything becomes
+oversold at the same moment, so ten "diversified" slots are one leveraged bet on the
+market, entered while it falls. The stock-level 200-DMA does not protect: in a crash
+a stock sits above its own average right until you buy it.
 
-- **Short-horizon breakout momentum does not exist in this universe.** 2–10 day
-  breakout entries are a *negative* edge, before costs. This retires the family and
-  explains N500M's vol-BO half without needing any other story.
-- **Short-horizon reversion does exist**, is highly significant on a third of a
-  million signals, and strengthens with holding period.
-- The intraday line stays closed (research/109 + /110).
+## G2b — the market brake is refuted as the fix
 
-## 5. Guarding the seven sins
+| variant | CAGR | MaxDD | Calmar | Sharpe |
+|---|---:|---:|---:|---:|
+| no gate (15d/20bps) | 16.06% | −41.9% | 0.38 | 0.76 |
+| **NIFTYBEES>200DMA gate** (20d/20bps) | 8.97% | −41.1% | 0.22 | 0.52 |
+
+Halves the return and barely moves the drawdown. **2020: ungated +37.09%, gated
+−3.29%** — the gate removed the crash recovery, the book's best year.
+
+**The mechanism: reversion needs the crash; momentum needs to avoid it.** Opposite
+regime dependencies. This is why the same 200-DMA brake that is "the whole risk
+story" for Momentum 30 is destructive here. Do not port that gate across families
+without testing the sign.
+
+## What survives
+
+The per-trade reversion excess is real (t 6–12 on 174k signals) and monotonic in
+horizon. It is not a book, but it may be an **entry-timing overlay**: when the
+momentum book wants a name, wait for RSI(2)<10 rather than buying at signal. That
+reuses an existing book's risk management instead of needing its own, and it is a
+narrow, cheap test. **Not yet run.**
+
+## What is now closed
+
+- Short-horizon (2–30 day) breakout entries — negative edge, retired.
+- Deeper-oversold as an improvement — refuted.
+- Market-regime gating of a reversion book — refuted.
+- Intraday remains closed from research/109 + /110.
+
+## Sins guarded
 
 | sin | control |
 |---|---|
-| look-ahead | entry at next open; every window trailing; no same-bar fills |
-| survivorship | acknowledged — the symbol list is today's Nifty-500, so absolute levels are upper bounds. The date-matched control draws from the same tainted pool, so the *excess* is far more trustworthy than the level |
-| overfitting | two constructions, three horizons, no parameter search, all cells reported |
-| cost neglect | cost sensitivity 0/20/30/50 bps on every cell |
-| regime | per-year table |
-| single-factor | random-entry AND drift controls |
-| capacity | ₹5 crore trailing-20d turnover floor; capacity untested at G1 |
-
-## 6. Next
-
-**G1c — horizon extension on RSI(2)<10: 15 / 20 / 30 day holds.** One script change.
-If the excess keeps rising, this becomes a G2 candidate with real headroom over
-costs. If it flattens near 12 bps, the standalone book is dead and route 3 (overlay)
-is the survivor.
+| look-ahead | entry at next open; all windows trailing; market gate shifted one day |
+| survivorship | acknowledged — symbol list is today's Nifty-500, so absolute levels are upper bounds; the control draws from the same pool, so *excess* is the trustworthy quantity |
+| overfitting | 3 arms × 6 horizons, all reported; no parameter search; no cell selected on |
+| cost neglect | swept 0/20/30/50 bps at G1, 20/30 bps at G2 |
+| regime | per-year and 2015-20 vs 2021-26 walk-forward |
+| single-factor | date-matched random control at G1 *and* a random-entry book at G2 |
+| capacity | ₹5 crore trailing turnover floor; untested beyond that |
