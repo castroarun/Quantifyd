@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 /* ---------- types ---------- */
 interface V1 {
@@ -1393,13 +1393,13 @@ export default function Straddles() {
         <section id="condor" style={{ ...card, marginTop: 14, borderColor: C.amber, scrollMarginTop: 70 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>Wed&#8594;Fri Iron Condor</span>
-            {chip(C.amberSoft, C.amber, 'PAPER · 2 lots')}
+            {chip(C.amberSoft, C.amber, `PAPER · book ${condor.lots} lots · shown at 10`)}
             <a href="/app/backtest/fardte-rescue" style={{ textDecoration: 'none' }}>
               {chip(C.navySoft, C.navy, 'research/80 ↗')}
             </a>
             {condor.closed_trades > 0 && (
               <span style={{ marginLeft: 'auto', fontSize: 12, color: C.muted }}>
-                closed {condor.closed_trades} · <b style={{ color: col(condor.closed_total_pnl) }}>{inr(condor.closed_total_pnl)}</b>
+                closed {condor.closed_trades} · <b style={{ color: col(condor.closed_total_pnl * (650 / (condor.qty || 130))) }}>{inr(Math.round(condor.closed_total_pnl * (650 / (condor.qty || 130))))}</b>
                 {condor.win_rate != null ? ` · ${condor.win_rate}% win` : ''}
               </span>
             )}
@@ -1428,10 +1428,10 @@ export default function Straddles() {
                   <tr key={i}>
                     <td style={{ ...ctd2, textAlign: 'left', fontWeight: 700, color: l.side === 'SELL' ? C.neg : C.pos }}>{l.side} {l.type}</td>
                     <td style={ctd2}>{l.strike}</td>
-                    <td style={ctd2}>{l.qty}</td>
+                    <td style={ctd2}>{Math.round((l.qty || 0) * (650 / (condor.qty || 130)))}</td>
                     <td style={ctd2}>{l.entry}</td>
                     <td style={ctd2}>{l.ltp}</td>
-                    <td style={{ ...ctd2, fontWeight: 700, color: col(l.pnl) }}>{inr(l.pnl)}</td>
+                    <td style={{ ...ctd2, fontWeight: 700, color: col(l.pnl) }}>{inr(Math.round((l.pnl || 0) * (650 / (condor.qty || 130))))}</td>
                   </tr>))}</tbody>
               </table>
             </div>
@@ -1451,17 +1451,73 @@ export default function Straddles() {
                   <th style={{ ...cth2, textAlign: 'left' }}>ENTERED</th><th style={{ ...cth2, textAlign: 'left' }}>EXITED</th>
                   <th style={cth2}>CREDIT</th><th style={cth2}>EXIT VAL</th><th style={cth2}>P&amp;L</th>
                 </tr></thead>
-                <tbody>{condor.history.map((h: any, i: number) => (
-                  <tr key={i}>
-                    <td style={{ ...ctd2, textAlign: 'left' }}>{h.entry_day}</td>
-                    <td style={{ ...ctd2, textAlign: 'left' }}>{h.exit_day}</td>
-                    <td style={ctd2}>{h.credit}</td>
-                    <td style={ctd2}>{h.exit_value}</td>
-                    <td style={{ ...ctd2, fontWeight: 700, color: col(h.pnl) }}>{inr(h.pnl)}</td>
-                  </tr>))}</tbody>
+                <tbody>{condor.history.map((h: any, i: number) => {
+                  // premium points are per-unit; only rupee P&L scales with size
+                  const k = 650 / (condor.qty || 130);
+                  return (
+                  <React.Fragment key={i}>
+                    <tr>
+                      <td style={{ ...ctd2, textAlign: 'left' }}>{h.entry_day}</td>
+                      <td style={{ ...ctd2, textAlign: 'left' }}>{h.exit_day}</td>
+                      <td style={ctd2}>{h.credit}</td>
+                      <td style={ctd2}>{h.exit_value}</td>
+                      <td style={{ ...ctd2, fontWeight: 700, color: col(h.pnl) }}>{inr(Math.round(h.pnl * k))}</td>
+                    </tr>
+                    {Array.isArray(h.legs) && h.legs.length > 0 && (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '0 0 10px 14px' }}>
+                          <details>
+                            <summary style={{ cursor: 'pointer', fontSize: 10.5, color: C.muted, listStyle: 'none' }}>
+                              &#9656; {h.legs.length} legs · spot {h.spot_at_entry} &rarr; {h.spot_at_exit} · expiry {h.expiry}
+                            </summary>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 4 }}>
+                              <thead><tr>
+                                <th style={{ ...cth2, textAlign: 'left' }}>LEG</th><th style={cth2}>STRIKE</th>
+                                <th style={cth2}>QTY</th><th style={cth2}>ENTRY</th><th style={cth2}>EXIT</th>
+                                <th style={cth2}>P&amp;L</th>
+                              </tr></thead>
+                              <tbody>{h.legs.map((l: any, j: number) => (
+                                <tr key={j}>
+                                  <td style={{ ...ctd2, textAlign: 'left', fontWeight: 700,
+                                               color: l.side === 'SELL' ? C.neg : C.pos }}>{l.side} {l.type}</td>
+                                  <td style={ctd2}>{l.strike}</td>
+                                  <td style={ctd2}>{Math.round((l.qty || 0) * k)}</td>
+                                  <td style={ctd2}>{l.entry}</td>
+                                  <td style={ctd2}>{l.ltp}</td>
+                                  <td style={{ ...ctd2, fontWeight: 700, color: col(l.pnl) }}>{inr(Math.round((l.pnl || 0) * k))}</td>
+                                </tr>))}</tbody>
+                            </table>
+                          </details>
+                        </td>
+                      </tr>)}
+                  </React.Fragment>);
+                })}</tbody>
               </table>
             </details>
           )}
+          <details style={{ marginTop: 10 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C.navy, listStyle: 'none' }}>
+              &#9656; The ruleset — Wed&rarr;Fri iron condor
+            </summary>
+            <div style={{ fontSize: 11.5, color: C.sec, lineHeight: 1.85, marginTop: 6 }}>
+              <div><b>Why it exists:</b> NAS-OPT trades the days near expiry and leaves capital
+                idle from Wednesday to Friday. research/80 tested five ways to use those days;
+                four died and this one worked — a condor, entered Wednesday, out Friday.</div>
+              <div><b>Structure:</b> iron condor — sell a call and a put roughly <b>0.8% out of the
+                money</b>, buy the wings at <b>1.0%</b>. Four legs, defined risk, no naked side.</div>
+              <div><b>Entry:</b> Wednesday close. <b>Exit:</b> Friday close. Flat over the weekend,
+                and flat before Monday, so it never competes with NAS-OPT for margin.</div>
+              <div><b>Size:</b> the book runs <b>{condor.lots} lots</b> (qty {condor.qty}); figures
+                on this card are scaled to <b>10 lots</b> so it compares with the other books.
+                Premium points are per-unit and unchanged — only rupee P&amp;L scales.</div>
+              <div><b>No stop.</b> The wings are the stop: maximum loss is the strike width less the
+                credit, known at entry.</div>
+              <div style={{ color: C.faint }}>Study: <a href="/app/backtest/fardte-rescue"
+                style={{ color: C.navy }}>research/80 — rescuing the far-from-expiry days</a>{' '}
+                (~11 years, Calmar 1.63, the best of the five ideas tested).</div>
+            </div>
+          </details>
+
           <div style={{ fontSize: 10.5, color: C.faint, marginTop: 8 }}>
             SIGNAL, not yet a proven strategy — paper-forward only while the portfolio-correlation and real-chain
             checks are open. Uses the capital NAS-OPT leaves idle Wed&#8211;Fri; flat before Monday.
