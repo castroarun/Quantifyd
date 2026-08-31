@@ -490,6 +490,8 @@ export default function Straddles() {
   const [live, setLive] = useState<any>(null);
   const [liveTs, setLiveTs] = useState<number | null>(null);
   const [daily, setDaily] = useState<V1Daily | null>(null);
+  const [stopMx, setStopMx] = useState<any>(null);  // what each stop level would
+  // have done on the trades the book actually took, from the recorded chain
   const [sl30, setSl30] = useState<any>(null);   // HYPOTHETICAL V1 variant: a 30%
   // combined-premium stop replayed over the recorded chain. Not a running system —
   // live V1 stops on an underlying move of 0.4% (0-DTE) / 0.5% (1-DTE).
@@ -534,6 +536,8 @@ export default function Straddles() {
     fetch('/app/straddles/v2_2.0.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '2.0': d }))).catch(() => {});
     fetch('/app/straddles/v2_1.5.json').then((r) => r.json()).then((d) => setV2all((m) => ({ ...m, '1.5': d }))).catch(() => {});
     fetch('/app/straddles/v1_daily.json').then((r) => r.json()).then(setDaily).catch(() => {});
+    fetch('/app/v2_stop_matrix.json?t=' + Date.now()).then((r) => r.json())
+      .then(setStopMx).catch(() => {});
     fetch('/app/straddles/v1_sl30.json?t=' + Date.now()).then((r) => r.json()).then(setSl30).catch(() => {});
     fetch('/app/straddles/rankings.json?t=' + Date.now()).then((r) => r.json()).then(setRanks).catch(() => {});
     fetch('/app/straddles/variants.json?t=' + Date.now()).then((r) => r.json()).then(setVariants).catch(() => {});
@@ -1815,6 +1819,12 @@ export default function Straddles() {
                   <th style={ecth} title="Prior-day CPR width % (research/67) — narrow = calm next day">dCPR</th>
                   <th style={{ ...ecth, textAlign: 'left' }}>Exit (date · time)</th>
                   <th style={{ ...ecth, textAlign: 'left' }}>Reason</th><th style={ecth}>P&amp;L</th>
+                  {(stopMx?.stops || []).map((s: number) => (
+                    <th key={s} style={ecth}
+                        title={`What a ${(s * 100).toFixed(1)}% move-stop would have realised on this same position, `
+                               + `rebuilt from the recorded option chain. Live stop is 2.0%.`}>
+                      {(s * 100).toFixed(1)}%
+                    </th>))}
                 </tr></thead>
                 <tbody>{v2eng.closed.map((t: any, i: number) => (
                   <tr key={i}>
@@ -1828,6 +1838,21 @@ export default function Straddles() {
                     <td style={{ ...ectd, textAlign: 'left' }}>{(t.exit_day || '—')} · {(t.exit_time || '—')}</td>
                     <td style={{ ...ectd, textAlign: 'left', color: C.muted }}>{t.exit_reason}</td>
                     <td style={{ ...ectd, fontWeight: 700, color: col(t.pnl) }}>{inr(t.pnl)}</td>
+                    {(stopMx?.stops || []).map((s: number) => {
+                      const row = (stopMx.trades || []).find((x: any) => x.pos === t.id);
+                      const cell = row?.stops?.[String(s)];
+                      if (!cell) return <td key={s} style={{ ...ectd, color: C.faint }}>—</td>;
+                      if (cell.identical) return <td key={s} style={{ ...ectd, color: C.faint }}>same</td>;
+                      if (cell.no_data) return (
+                        <td key={s} style={{ ...ectd, color: C.faint }} title={cell.note}>no data</td>);
+                      // colour against the live outcome, not against zero — the question is
+                      // whether this level would have been better, not whether it made money
+                      return (
+                        <td key={s} style={{ ...ectd, fontWeight: 600, color: col(cell.vs_actual) }}
+                            title={`${cell.at} · spot ${cell.spot} · vs live ${inr(cell.vs_actual)}`}>
+                          {inr(cell.pnl)}
+                        </td>);
+                    })}
                   </tr>))}</tbody>
               </table>
               <div style={{ fontSize: 11.5, color: C.sec, marginTop: 8, lineHeight: 1.7 }}>
@@ -1840,6 +1865,24 @@ export default function Straddles() {
                 <div style={{ color: C.faint, marginTop: 3 }}>
                   wCPR/dCPR = CPR width (research/67): weekly fixed Mon–Fri; daily re-draws. Blank where the trade predates the 160-day daily-bar window.
                 </div>
+                {stopMx && (
+                  <div style={{ color: C.faint, marginTop: 6, lineHeight: 1.7 }}>
+                    <b style={{ color: C.sec }}>Stop variants</b> — what each level would have realised on these same positions, rebuilt from the option chain recorded since 2026-04-20. “same” = that level would not have changed the trade; “no data” = a gap exit stamped before the recorder’s first bar, so the decisive minutes are missing.
+                    <div style={{ marginTop: 3 }}>
+                      {(stopMx.stops || []).map((s: number) => {
+                        const eff = (stopMx.trades || [])
+                          .map((r: any) => r.stops?.[String(s)]?.vs_actual)
+                          .filter((v: any) => v != null);
+                        const tot = eff.reduce((a: number, b: number) => a + b, 0);
+                        return (
+                          <span key={s} style={{ marginRight: 16 }}>
+                            {(s * 100).toFixed(1)}%: changed {eff.length} ·{' '}
+                            <b style={{ color: col(tot) }}>{inr(tot)}</b>
+                          </span>);
+                      })}
+                      <span>— the live <b>2.0%</b> is the best of the four on this book.</span>
+                    </div>
+                  </div>)}
               </div>
             </details>
           )}
