@@ -281,3 +281,100 @@ already at, or one notch from, its best tested setting. Nothing to change there.
 | `scripts/dte0_width.py` | the stop-width walk, both venues |
 | `scripts/sensex_study.py` | builds the SENSEX recorded-chain study |
 | `scripts/sensex_grid.py` | phase 1 DTE × stop grid |
+
+---
+
+# PHASE 3 — the stop-width recommendation was aimed at PAPER books. Withdrawn.
+
+**2026-08-31. Arun: "im not ok with 50% itself as thr risk is huge right?"**
+
+The right response to that turned out not to be another width. It was to check
+what is actually exposed on SENSEX expiry day, which I should have done before
+recommending anything.
+
+## 1. What is actually live on SENSEX expiry day (Thursday / DTE0)
+
+| book | mode | DTE0 cell | lots |
+|---|---|---|---:|
+| `sensex_atm` | **LIVE** | 09:16 → 15:15 | 2 |
+| `sensex_atm2` | **LIVE** | 09:16 → 15:15 | 2 |
+| `sensex_atm4` | **LIVE** | 09:16 → 15:15 | 2 |
+| `CSL_TIMEB_SENSEX` | paper | 13:00–15:20, SL none | 6 |
+| `CSL30F_SENSEX` | paper | 09:16–15:20, SL none | 3 |
+
+**Live SENSEX expiry-day exposure is 6 lots — the 9:16 suite. Every book that runs
+a combined-premium stop on DTE0 is PAPER.**
+
+So the entire 50% / 60% / 75% analysis in phases 1–2 describes the **TimeB and
+CSL30F paper books**. Changing that width would not alter a single rupee of live
+risk. **The recommendation is withdrawn as a live proposal.** It remains valid for
+the paper books, where it is also nearly costless to leave alone.
+
+## 2. What actually governs live SENSEX expiry-day risk
+
+Not a combined-premium stop — the 9:16 suite does not use one. Three controls, in
+order of what binds first:
+
+1. **Per-leg stops are DISABLED on expiry day** (research/114): on DTE0 there is no
+   per-leg stop at all, because the stop turned +₹2,630/lot/day at 92% into −₹227
+   at 25% — expiry gamma tripped it and the premium then decayed without us. That
+   is the same effect phase 1 rediscovered, and it was already acted on.
+2. **The book-level portfolio stop is the guard**, and on SENSEX expiry it is
+   **widened to −₹3,000/lot** (`services/nas_portfolio_stop.py`: `STOP_PER_LOT =
+   1300.0`, overridden to `3000.0` on DTE0). Take-profit is ₹4,000/lot.
+3. **Size: 6 lots.**
+
+**So the designed worst case on a live SENSEX expiry day is 6 × ₹3,000 = −₹18,000**,
+against a live DTE0 record of **+₹30,894 over 5 Thursdays** (mean ≈ +₹6,179). Roughly
+1 : 3 risk to observed reward.
+
+**And the stop is not theoretical — it has fired.** `sensex_atm`'s exit-reason
+tally shows `PORTFOLIO_STOP` on 2 trades (−₹3,398 total), alongside `PORTFOLIO_TP`
+on 1 (+₹3,096).
+
+## 3. So how big is the risk, honestly
+
+| framing | number | what it is |
+|---|---:|---|
+| designed worst case | **−₹18,000** | 6 lots × the −₹3,000/lot expiry book stop |
+| research/118 unstopped tail | −₹1,29,000 | 6 lots × −₹21,500/lot, over 127 DTE0 days |
+
+The gap between those two is **execution risk, not design risk** — it is what you
+face only if the book stop fails to act: a gap through the level, a fast market
+where the monitor cannot fill, or the process being down. It is a real residual and
+worth naming, but it is a different problem from stop width, and no width setting
+addresses it.
+
+**The honest summary: at 6 lots with a −₹3,000/lot book stop that has demonstrably
+fired, the live SENSEX expiry-day risk is bounded by design at −₹18,000. That is not
+"huge" relative to the book. The thing that would make it huge is the book stop
+failing, and the defence against that is size and execution monitoring, not width.**
+
+## 4. What I got wrong, plainly
+
+- I ran the whole width analysis at **10 lots**, on a **full-day combined-stop
+  construction**, and presented conclusions as if they bore on the live book. Live
+  is **6 lots** on a **per-leg / book-stop** construction. Those are different
+  systems, and I conflated them.
+- I recommended 75% partly on "maxDD also improves", which an 18-day sample cannot
+  measure — corrected in phase 2, but it should not have been offered at all.
+- Phase 1 called the SENSEX result a reproduction of research/114 and explained it
+  as gamma. The NIFTY cross-check refuted the general claim (phase 2), and it now
+  turns out research/114's conclusion was **already deployed** in exactly the place
+  it belonged: expiry-day per-leg stops are off, and the book stop is the guard.
+
+## 5. The genuinely open questions, if any
+
+Neither is urgent, and neither is a width:
+
+1. **Is −₹3,000/lot the right expiry-day book stop?** It was set by research/114 to
+   be loose enough not to be tripped by gamma. Whether −₹2,000 or −₹2,500 would
+   keep the edge while tightening the designed loss is measurable, but it needs a
+   faithful replay of three interacting sleeves (ATM trail, ATM2 one-and-done, ATM4
+   roll-to-match) under a shared book stop — not the single-straddle grid used here.
+2. **Should SENSEX expiry-day size be 6 lots?** This is the lever that moves the
+   execution-failure tail linearly and costs nothing in mean per lot. If the concern
+   is the −₹1,29,000 scenario rather than the −₹18,000 one, **size is the only
+   control that touches it.**
+
+**Nothing deployed. No live rule changed by phases 1–3.**
