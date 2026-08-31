@@ -586,6 +586,14 @@ def monitor_job():
         if spot is None:
             continue
         es = pos["entry_spot"]; net = pos["net_entry"]
+
+        # SHADOW ONLY — records what a 1.5% stop would have done. Wrapped so that a
+        # failure in the observation path can never touch the trading path below.
+        try:
+            _shadow_stop_check(pos, spot, pnl, ctime)
+        except Exception as e:
+            logger.warning(f"[V2-shadow] skipped for pos {pos.get('id')}: {e}")
+
         # --- stop selection: normal day = 2% move-stop; gap-open day = opening-range breakout ---
         orng = _opening_range()
         gap_day = bool(orng and es and abs(orng["open"] - es) / es >= CFG["stop_pct"])
@@ -612,6 +620,86 @@ def monitor_job():
         if (exp - date.today()).days <= CFG["roll_dte"] and dtime(15, 15) <= datetime.now().time() <= dtime(15, 30):
             _close(pos, "roll", spot); continue
 
+
+
+# ---------- 1.5% move-stop SHADOW logger (no trading effect) ----------
+# The live stop is 2.0% (CFG['stop_pct']). The recorded-chain replay favours 1.5%,
+# but the paired test over 17 closed trades gives t = 1.22 with 61% of the gap from
+# a single trade, so switching would be fitting to one outcome. Instead: record the
+# first moment each live position travels SHADOW_STOP from entry, and the mark at
+# that instant. That is what the tighter stop would have realised. Nothing exits.
+SHADOW_STOP = 0.015
+
+
+def _shadow_stop_check(pos, spot, pnl, ctime):
+    """Record the first 1.5% breach for this position. Never closes anything."""
+    es = pos.get("entry_spot")
+    if not es or spot is None:
+        return
+    if abs(spot - es) / es < SHADOW_STOP:
+        return
+    c = _conn()
+    try:
+        c.execute("""CREATE TABLE IF NOT EXISTS v2_shadow_stop (
+            pos_id INTEGER PRIMARY KEY, system TEXT, day TEXT, stop_pct REAL,
+            entry_spot REAL, trigger_time TEXT, trigger_spot REAL,
+            move_pct REAL, pnl_at_trigger REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+        # PRIMARY KEY + OR IGNORE keeps only the FIRST breach, which is the one a
+        # stop would have acted on
+        c.execute("INSERT OR IGNORE INTO v2_shadow_stop "
+                  "(pos_id,system,day,stop_pct,entry_spot,trigger_time,trigger_spot,move_pct,pnl_at_trigger) "
+                  "VALUES (?,?,?,?,?,?,?,?,?)",
+                  (pos["id"], pos.get("system"), date.today().isoformat(), SHADOW_STOP,
+                   es, ctime, spot, round(100.0 * (spot - es) / es, 3), round(float(pnl), 2)))
+        if c.total_changes:
+            logger.info(f"[V2-shadow] pos {pos['id']} would have stopped at {SHADOW_STOP:.1%} "
+                        f"({ctime} spot={spot:.1f} move={100*(spot-es)/es:+.2f}%) mark={pnl:,.0f} "
+                        f"— live stop is {CFG['stop_pct']:.1%}, position left open")
+        c.commit()
+    finally:
+        c.close()
+
+
+
+@v2_ironfly_bp.route("/shadow-stops", methods=["GET"])
+def shadow_stops():
+    """What a 1.5% stop would have done on each live position, against what actually
+    happened. Read-only; accumulates the comparison the replay cannot settle."""
+    try:
+        c = _conn()
+        try:
+            c.execute("""CREATE TABLE IF NOT EXISTS v2_shadow_stop (
+                pos_id INTEGER PRIMARY KEY, system TEXT, day TEXT, stop_pct REAL,
+                entry_spot REAL, trigger_time TEXT, trigger_spot REAL,
+                move_pct REAL, pnl_at_trigger REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+            rows = [dict(r) for r in c.execute(
+                "SELECT p.id, p.system, p.entry_day, p.exit_day, p.exit_reason, p.pnl AS actual_pnl, "
+                "       s.trigger_time, s.trigger_spot, s.move_pct, s.pnl_at_trigger AS shadow_pnl "
+                "FROM v2_positions p LEFT JOIN v2_shadow_stop s ON s.pos_id = p.id "
+                "WHERE p.status='CLOSED' ORDER BY p.id DESC")]
+        finally:
+            c.close()
+
+        # where the shadow never triggered, the tighter stop would have done exactly
+        # what actually happened, so the two agree by construction
+        diffs = []
+        for r in rows:
+            r["shadow_would_differ"] = r["shadow_pnl"] is not None
+            r["shadow_effect"] = (round(r["shadow_pnl"] - (r["actual_pnl"] or 0), 2)
+                                  if r["shadow_pnl"] is not None else 0.0)
+            diffs.append(r["shadow_effect"])
+        n = len(diffs)
+        return jsonify(dict(
+            live_stop_pct=CFG["stop_pct"], shadow_stop_pct=SHADOW_STOP,
+            n_closed=n, n_would_differ=sum(1 for r in rows if r["shadow_would_differ"]),
+            total_effect=round(sum(diffs), 2),
+            mean_effect=round(sum(diffs) / n, 2) if n else None,
+            note=("Positive means the 1.5% stop would have done better. "
+                  "Rows where it never triggered are identical by construction."),
+            trades=rows))
+    except Exception as e:
+        logger.error(f"[V2] /shadow-stops err: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 def compression_shadow_job():
     """09:25 daily — SHADOW ONLY: log today's compression reading (research/64 gate) for forward
