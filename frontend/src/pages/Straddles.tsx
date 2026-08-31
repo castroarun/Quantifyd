@@ -1672,6 +1672,10 @@ export default function Straddles() {
             {v2eng.mode === 'live'
               ? chip('#FBEEEE', C.neg, v2eng.armed ? 'LIVE · armed' : 'LIVE · disarmed')
               : chip('#E7F2EE', C.pos, 'PAPER · combo filter')}
+            <a href="/app/backtest/v2-nifty-ironfly-sl-vix" style={{ textDecoration: 'none' }}
+               title="The stop-loss x VIX optimization these parameters come from — the AlgoTest runs, rebuilt and published">
+              {chip(C.navySoft, C.navy, 'research/60 · study ↗')}
+            </a>
             {v2engTs && (Date.now() / 1000 - v2engTs) < 12 && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: C.pos }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.pos, display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
