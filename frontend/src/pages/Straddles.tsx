@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import StraddleSystems from '../components/StraddleSystems/StraddleSystems';
 
 /* ---------- types ---------- */
 interface V1 {
@@ -702,6 +703,10 @@ export default function Straddles() {
   return (
     <div style={{ maxWidth: 1000 }}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
+
+      {/* the systems table - one row per book, from the registry */}
+      <StraddleSystems />
+
       <div className="page-title">Straddle Systems</div>
       <div className="page-subtitle">Two short-straddle systems on NIFTY · backtested on the recorded chain · paper-forward 10 lots</div>
 
