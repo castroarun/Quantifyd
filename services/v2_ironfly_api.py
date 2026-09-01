@@ -671,10 +671,13 @@ def _shadow_stop_check(pos, spot, pnl, ctime):
 
 
 
-@v2_ironfly_bp.route("/shadow-stops", methods=["GET"])
 def shadow_stops():
     """What a 1.5% stop would have done on each live position, against what actually
-    happened. Read-only; accumulates the comparison the replay cannot settle."""
+    happened. Read-only; accumulates the comparison the replay cannot settle.
+
+    Registered in register() via app.add_url_rule - this module has no blueprint.
+    flask is imported locally, matching register()'s own pattern."""
+    from flask import jsonify
     try:
         c = _conn()
         try:
@@ -684,7 +687,7 @@ def shadow_stops():
                 move_pct REAL, pnl_at_trigger REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (pos_id, stop_pct))""")
             rows = [dict(r) for r in c.execute(
-                "SELECT p.id, p.system, p.entry_day, p.exit_day, p.exit_reason, p.pnl AS actual_pnl, "
+                "SELECT p.id, p.system, p.day AS entry_day, p.exit_day, p.exit_reason, p.pnl AS actual_pnl, "
                 "       s.stop_pct, s.trigger_time, s.trigger_spot, s.move_pct, s.pnl_at_trigger AS shadow_pnl "
                 "FROM v2_positions p LEFT JOIN v2_shadow_stop s ON s.pos_id = p.id "
                 "WHERE p.status='CLOSED' ORDER BY p.id DESC, s.stop_pct")]
@@ -1024,6 +1027,7 @@ def register(app, scheduler):
     app.add_url_rule("/api/v2-ironfly/deploy", "v2_ironfly_deploy",
                      lambda: jsonify(deploy(bool((request.get_json(silent=True) or {}).get("force")))), methods=["POST"])
     app.add_url_rule("/api/v2-ironfly/preview", "v2_ironfly_preview", lambda: jsonify(get_preview()))
+    app.add_url_rule("/api/v2-ironfly/shadow-stops", "v2_ironfly_shadow_stops", shadow_stops)
     app.add_url_rule("/api/v2-ironfly/compression", "v2_ironfly_compression",
                      lambda: jsonify({"today": _compression(),
                                       "thresholds": COMPRESSION,
