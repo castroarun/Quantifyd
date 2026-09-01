@@ -61,7 +61,10 @@ def _yearly(nav):
     return out
 
 
-def generate_tearsheet(strat_nav, bench_nav, name, meta=None, out_dir=".", rf=0.065):
+def generate_tearsheet(strat_nav, bench_nav, name, meta=None, out_dir=".", rf=0.065,
+                       extra_nav=None, extra_label="Alt strategy"):
+    """extra_nav (optional): a second comparison NAV overlaid (teal) on the growth,
+    drawdown, annual-bars and rolling-12m panels. Backwards-compatible."""
     meta = meta or {}
     out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
     s = strat_nav.dropna().copy()
@@ -69,6 +72,13 @@ def generate_tearsheet(strat_nav, bench_nav, name, meta=None, out_dir=".", rf=0.
     b = bench_nav.reindex(s.index).ffill().bfill()
     b = b / b.iloc[0]
     sm, bm = _metrics(s, rf), _metrics(b, rf)
+    e = em = ey = None
+    TEAL = "#4fd1c5"
+    if extra_nav is not None:
+        e = extra_nav.reindex(s.index).ffill().bfill()
+        e = e / e.iloc[0]
+        em = _metrics(e, rf)
+        ey = _yearly(e)
     sy, by = _yearly(s), _yearly(b)
     yrs = sorted(set(sy.index) & set(by.index))
     excess = sm["cagr"] - bm["cagr"]
@@ -115,6 +125,9 @@ def generate_tearsheet(strat_nav, bench_nav, name, meta=None, out_dir=".", rf=0.
     ax1.plot(s.index, s.values, color=GOLD, lw=2.0, label=f"{name} ({sm['cagr']*100:.0f}% CAGR)")
     ax1.plot(b.index, b.values, color=MUT, lw=1.4, ls="--",
              label=f"{meta.get('bench','Index')} ({bm['cagr']*100:.0f}% CAGR)")
+    if e is not None:
+        ax1.plot(e.index, e.values, color=TEAL, lw=1.4,
+                 label=f"{extra_label} ({em['cagr']*100:.0f}% CAGR)")
     ax1.set_yscale("log"); ax1.set_title("Growth of ₹1 (log scale)", color=INK, loc="left", fontsize=11)
     ax1.legend(loc="upper left", facecolor=PANEL, edgecolor="#30363d", labelcolor=INK)
     ax1.grid(True, which="both", alpha=0.15)
@@ -126,18 +139,31 @@ def generate_tearsheet(strat_nav, bench_nav, name, meta=None, out_dir=".", rf=0.
     ax2.plot(sm["dd"].index, sm["dd"].values * 100, color=GOLD, lw=1.0)
     ax2.plot(bm["dd"].index, bm["dd"].values * 100, color=MUT, lw=1.1, ls="--",
              label=f"{meta.get('bench','Index')} (max {bm['maxdd']*100:.1f}%)")
+    if e is not None:
+        ax2.plot(em["dd"].index, em["dd"].values * 100, color=TEAL, lw=1.0,
+                 label=f"{extra_label} (max {em['maxdd']*100:.1f}%)")
     ax2.set_title("Drawdown vs index (%)", color=INK, loc="left", fontsize=11)
     ax2.legend(loc="lower left", facecolor=PANEL, edgecolor="#30363d", labelcolor=INK, fontsize=8)
     ax2.grid(True, alpha=0.15)
 
     # ---- yearly bars vs index (value-labelled; partial final year flagged) ----
     ax3 = fig.add_subplot(gs[3, 2:])
-    x = np.arange(len(yrs)); w = 0.4
+    x = np.arange(len(yrs))
     sv = [sy[y] * 100 for y in yrs]; bv = [by[y] * 100 for y in yrs]
-    ax3.bar(x - w/2, sv, w, color=GOLD, label=name)
-    ax3.bar(x + w/2, bv, w, color=MUT, label=meta.get("bench", "Index"))
+    if e is not None:
+        w = 0.28
+        ev = [ey.get(y, np.nan) * 100 for y in yrs]
+        ax3.bar(x - w, sv, w, color=GOLD, label=name)
+        ax3.bar(x, ev, w, color="#4fd1c5", label=extra_label)
+        ax3.bar(x + w, bv, w, color=MUT, label=meta.get("bench", "Index"))
+        xlab = x - w
+    else:
+        w = 0.4
+        ax3.bar(x - w/2, sv, w, color=GOLD, label=name)
+        ax3.bar(x + w/2, bv, w, color=MUT, label=meta.get("bench", "Index"))
+        xlab = x - w/2
     for i, v in enumerate(sv):                       # label strategy bars so tiny ones (e.g. partial yr) read
-        ax3.annotate(f"{v:.0f}", (x[i] - w/2, v), ha="center",
+        ax3.annotate(f"{v:.0f}", (xlab[i], v), ha="center",
                      va="bottom" if v >= 0 else "top", fontsize=5.5, color=GOLD)
     labels = [f"{y}*" if y == max(yrs) else str(y) for y in yrs]
     ax3.set_xticks(x); ax3.set_xticklabels(labels, rotation=90, fontsize=7)
@@ -165,6 +191,9 @@ def generate_tearsheet(strat_nav, bench_nav, name, meta=None, out_dir=".", rf=0.
     rb = b.pct_change().rolling(win).apply(lambda x: np.prod(1 + x) - 1) * 100
     ax5.plot(rs.index, rs.values, color=GOLD, lw=1.3, label=name)
     ax5.plot(rb.index, rb.values, color=MUT, lw=1.0, ls="--", label=meta.get("bench", "Index"))
+    if e is not None:
+        re_ = e.pct_change().rolling(win).apply(lambda v: np.prod(1 + v) - 1) * 100
+        ax5.plot(re_.index, re_.values, color=TEAL, lw=1.0, label=extra_label)
     ax5.axhline(0, color="#30363d", lw=0.8)
     ax5.set_title("Rolling 12-month return (%)", color=INK, loc="left", fontsize=11)
     ax5.legend(facecolor=PANEL, edgecolor="#30363d", labelcolor=INK, fontsize=8)

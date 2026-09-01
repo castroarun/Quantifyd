@@ -22,7 +22,7 @@ RES = STUDY / 'results'
 sys.path.insert(0, str(ROOT / 'research' / '_utilities'))
 from tearsheet import generate_tearsheet  # noqa: E402
 
-TAG = 'p3D_mcap500'
+TAG = 'p3D_ext2026'
 
 eq = pd.read_csv(RES / f'replica_{TAG}_equity.csv', index_col=0, parse_dates=True)
 term = eq.iloc[-1]
@@ -49,12 +49,18 @@ meta = dict(
            'NIFTYBEES<SMA200 gate, realistic fills, 25bps/side',
     note=f'Median seed of 10-seed selection ensemble (CAGR range 27.9-34.4%). '
          f'Survivorship-biased pre-2015 (Kite lists current instruments only).')
+mom_nav = pd.read_csv(ROOT / 'research' / '75_nifty250_momentum_top15' / 'results' / 'nav_armed_spec.csv',
+                      index_col=0, parse_dates=True)['nav']
 generate_tearsheet(nav, nb, 'BlueSky ATH Breakout (research/142)', meta=meta,
-                   out_dir=str(RES))
+                   out_dir=str(RES),
+                   extra_nav=mom_nav, extra_label='Momentum r/75 (net, gated)')
 print('tearsheet written to results/')
 
 # ---- multi-benchmark comparison from 2011 ----
-bm = {'NIFTYBEES (Nifty 50)': nb,
+mom = pd.read_csv(ROOT / 'research' / '75_nifty250_momentum_top15' / 'results' / 'nav_armed_spec.csv',
+                  index_col=0, parse_dates=True)['nav']
+bm = {'Momentum r/75 (armed spec, net, index gate ON)': mom,
+      'NIFTYBEES (Nifty 50)': nb,
       'NIFTYMIDCAP150': series('NIFTYMIDCAP150'),
       'NIFTYSMLCAP250': series('NIFTYSMLCAP250')}
 start = max([s.index[0] for s in bm.values()] + [nav.index[0], pd.Timestamp('2011-01-03')])

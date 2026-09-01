@@ -241,3 +241,17 @@ name pattern (BEES/ETF).
 | 2026-09-02 02:30 IST | mcap snapshot (yfinance, 925/2,321) + config D (mcap≥500cr PIT) | **D: 203× / 30.4% / −31.5% — HEADLINE**; mcap = risk filter |
 | 2026-09-02 02:45 IST | Tearsheet + vs-indices chart generated (make_report.py); NIFTYMIDCAP150/NIFTYSMLCAP250 series sane | median seed1 as representative NAV |
 | 2026-09-02 03:00 IST | **PUBLISHED: /app/backtest/bluesky-ath-breakout-research142** (backtests.ts + PNGs + HTML embed; npm build on VPS; page + assets return 200) | Phase 3 CLOSED — verdict STRATEGY (candidate) |
+| 2026-09-02 (day) | Page fixes: cell-wrap CSS (scoped), NIFTYBEES 2006-11 filled, config-D-on-2020-25 row (6.69× [4.41..14.21] / 37.3% / −24.6%), gate/25bps caption, per-year table rebuilt with Momentum r/75 column + 2026 YTD | commits cb9514d…e65b30a pushed from VPS |
+| 2026-09-02 | Config D extended 2006→2026-08-31: median 146× [81..247] / 27.3% [23.7..30.6] / DD −34.9%; 2026 YTD −3.2 (momentum +1.1, NIFTYBEES −7.3) | 2026 correction costs ~3pp CAGR |
+
+---
+
+# PHASE 4 — Optimization sweep (Arun's axes, opened 2026-09-02)
+
+OFAT around the validated baseline (stop 8% / trail 50-SMA / 8 slots / gate 200-DMA),
+all on config-D stack (2006→2026-08, gate ON, real fills, 25bps, mcap≥500cr),
+10-seed ensembles per cell. Cells: stop {6,10,12} · trail-SMA {30,100} ·
+slots {10,12,15} · gate-DMA {100,150}. Decision rule: adopt only monotonic,
+material improvements (playbook: monotonic > peak); publish betterments to the
+study page. Log: /tmp/p4_sweep.log (VPS). Baseline = p3D_ext2026
+(146× / 27.3% / −34.9%).
