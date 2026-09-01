@@ -574,7 +574,16 @@ SENSEX_ATM2_DEFAULTS = {
     # pre-2026-07-28 behaviour (0.4% move-stop + per-leg 30% SL backstop semantics).
     'rupee_stop_per_lot': 0,
     'move_stop_pct': 0.004,
-    'move_stop_reenter': True,
+    'move_stop_reenter': False,  # 2026-09-01 (research/141): ONE-AND-DONE. The re-center made
+                                # this the worst of 14 arms tested: 99 extra cycles produced
+                                # +Rs3,919 gross against Rs20,096 of cost -> -Rs334/lot/day vs
+                                # -Rs30 for one-and-done. The identical arm on NIFTY is
+                                # -Rs751/lot/day, the only one Holm-significantly worse
+                                # (p 0.001), and it caused the research/60 churn incident.
+                                # The 0.4%% move-stop STAYS - replacing it needs a SENSEX-
+                                # calibrated level (lot 20 -> Rs131/leg-side slippage vs
+                                # Rs426 NIFTY, so Rs2,500/lot does not carry over).
+                                # Ops review 2026-09-15.
     'strike_interval': 100,
     'lots_per_leg': 2,  # 2026-08-04: 2->3; 2026-08-18: user 3->2 (notional parity with NIFTY suite)
     'paper_lots_per_leg': 2,
