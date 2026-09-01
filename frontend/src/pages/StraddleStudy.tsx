@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './StraddleStudy.module.css';
 import { apiGet } from '../api/client';
 
@@ -87,6 +87,37 @@ const GROUPS: [string, string][] = [
   ['weekday', 'Entry weekday'],
 ];
 
+/* Column definitions for the results table; key=null means not sortable.
+   asc=true marks columns where "smaller first" is the natural first click
+   (losing streak). Everything else starts descending. */
+interface Col {
+  key: keyof MetricRow | null;
+  label: string;
+  left?: boolean;
+  asc?: boolean;
+}
+
+const COLS: Col[] = [
+  { key: null, label: '#' },
+  { key: 'label', label: 'System', left: true, asc: true },
+  { key: 'n', label: 'n' },
+  { key: 'net', label: 'Net Rs.' },
+  { key: 'mean', label: 'Mean' },
+  { key: 'median', label: 'Median' },
+  { key: 'win_pct', label: 'Win%' },
+  { key: 'avg_win', label: 'Avg win' },
+  { key: 'avg_loss', label: 'Avg loss' },
+  { key: 'maxdd', label: 'MaxDD' },
+  { key: 'worst', label: 'Worst' },
+  { key: 'lose_streak', label: 'Streak', asc: true },
+  { key: 'net_dd', label: 'Net/DD' },
+  { key: 'calmar', label: 'Calmar' },
+  { key: 'pf', label: 'PF' },
+  { key: 't', label: 't' },
+  { key: 'years_positive', label: 'Yrs+' },
+  { key: 'verdict', label: 'Verdict', asc: true },
+];
+
 /* ------------------------------------------------------------------ page */
 
 export default function StraddleStudy() {
@@ -107,6 +138,8 @@ export default function StraddleStudy() {
   const [costRate, setCostRate] = useState('0.59');
   const [lotsScale, setLotsScale] = useState('1');
   const [expanded, setExpanded] = useState<string | null>(null);
+  // client-side column sort; null = keep the server "Rank by" order
+  const [colSort, setColSort] = useState<{ key: keyof MetricRow; dir: 1 | -1 } | null>(null);
 
   useEffect(() => {
     apiGet<RunsResp>('/api/straddle-study/runs')
@@ -129,7 +162,10 @@ export default function StraddleStudy() {
     if (costRate) p.set('cost_rate', costRate);
     if (lotsScale && lotsScale !== '1') p.set('lots_scale', lotsScale);
     apiGet<QueryResp>(`/api/straddle-study/query?${p.toString()}`)
-      .then((r) => setRows(r.rows))
+      .then((r) => {
+        setRows(r.rows);
+        setColSort(null); // fresh data comes back in server rank order
+      })
       .catch((e) => setErr(String(e)))
       .finally(() => setLoading(false));
   }, [indices, sls, dtes, yearFrom, yearTo, groupBy, sortBy, exclEvents, costRate, lotsScale]);
@@ -141,6 +177,31 @@ export default function StraddleStudy() {
 
   const toggle = <T,>(arr: T[], v: T, set: (x: T[]) => void) =>
     set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+
+  const clickCol = (c: Col) => {
+    if (!c.key) return;
+    const first: 1 | -1 = c.asc ? 1 : -1;
+    setColSort((cur) =>
+      cur && cur.key === c.key
+        ? { key: c.key as keyof MetricRow, dir: (cur.dir * -1) as 1 | -1 }
+        : { key: c.key as keyof MetricRow, dir: first },
+    );
+  };
+
+  const view = useMemo(() => {
+    if (!colSort) return rows;
+    const { key, dir } = colSort;
+    return [...rows].sort((a, b) => {
+      const av = a[key] as number | string | null;
+      const bv = b[key] as number | string | null;
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1; // nulls always last
+      if (bv == null) return -1;
+      if (typeof av === 'string' || typeof bv === 'string')
+        return dir * String(av).localeCompare(String(bv));
+      return dir * ((bv as number) - (av as number)) * -1;
+    });
+  }, [rows, colSort]);
 
   const slOptions = meta
     ? Array.from(
@@ -287,28 +348,25 @@ export default function StraddleStudy() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>#</th>
-              <th className={styles.left}>System</th>
-              <th>n</th>
-              <th>Net Rs.</th>
-              <th>Mean</th>
-              <th>Median</th>
-              <th>Win%</th>
-              <th>Avg win</th>
-              <th>Avg loss</th>
-              <th>MaxDD</th>
-              <th>Worst</th>
-              <th>Streak</th>
-              <th>Net/DD</th>
-              <th>Calmar</th>
-              <th>PF</th>
-              <th>t</th>
-              <th>Yrs+</th>
-              <th>Verdict</th>
+              {COLS.map((c) => (
+                <th
+                  key={c.label}
+                  className={`${c.left ? styles.left : ''} ${
+                    colSort && colSort.key === c.key ? styles.thActive : ''
+                  }`}
+                  onClick={() => clickCol(c)}
+                  title={c.key ? 'click to sort' : undefined}
+                >
+                  {c.label}
+                  {colSort && colSort.key === c.key && (
+                    <span className={styles.sortInd}>{colSort.dir === 1 ? '▲' : '▼'}</span>
+                  )}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((m, i) => (
+            {view.map((m, i) => (
               <>
                 <tr
                   key={m.label}
