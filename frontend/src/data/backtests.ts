@@ -14623,7 +14623,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
       {
         title: '20-year robustness (2006-25) — 10-seed ensemble medians [min..max]',
-        caption: 'The "gate" = the site''s own Skip-weak-markets idea, switched ON: no NEW positions are opened while NIFTYBEES (Nifty 50 ETF) closes below its 200-day moving average; open positions keep their normal -8% stop and 50-SMA trail. "Real fills" = entry at max(open, pivot) instead of always at the pivot. "Net 25bps" = 0.25% cost per side. "Point-in-time mcap" = market cap on the signal date via the constant-adjusted-shares proxy. All configs share the decoded core rules (ATH-close trigger, IBD-RS>=70, Rs 5cr/day liquidity floor, 8 slots).',
+        caption: 'The gate is the Skip-weak-markets idea switched ON: no new positions are opened while NIFTYBEES (the Nifty 50 ETF) closes below its 200-day moving average; open positions keep the normal -8% stop and 50-SMA trail. Real fills = entry at max(open, pivot) rather than always at the pivot. Net 25bps = a modelled trading cost of 25 basis points (0.25% of trade value) charged on EACH side, buy and sell - covering brokerage, STT and slippage. Point-in-time mcap = market cap on the signal date via the constant-adjusted-shares proxy. All configs share the decoded core rules: ATH-close trigger, IBD-RS>=70, Rs 5cr/day liquidity floor, 8 slots.',
         columns: ['Config', 'Terminal x', 'CAGR', 'MaxDD', 'Signals'],
         rows: [
           ['A: gate ON, their fills, gross', '398 [228..813]', '34.9% [31.2..39.8]', '-44.0%', '16,612'],
