@@ -482,7 +482,12 @@ NAS_ATM_DEFAULTS = {
 
 NAS_ATM2_DEFAULTS = {
     **NAS_ATM_DEFAULTS,
-    # On SL hit: close BOTH legs, then immediately re-enter new ATM straddle
+    # On stop: close BOTH legs and STOP FOR THE DAY (one-and-done). The re-center this
+    # comment used to describe was removed 2026-07-28 (research/96) and CONFIRMED by
+    # research/141: re-centering is gross-flat but costs 300-590% of what it produces,
+    # and doubles the worst day. NOTE r/96's stated reason was wrong - re-center is
+    # BETTER on expiry (DTE0 +182, DTE1 +273) and worse far-dated; it fails on round-trip
+    # cost, not on trending-day churn. SENSEX ATM2 still re-centers - see SENSEX_ATM2_DEFAULTS.
     'trail_to_cost_on_sl': False,
     're_enter_on_sl': False,   # user 2026-06-22 v3: per-leg 30% SL = one-and-done backstop
     'exit_both_on_sl': True,
