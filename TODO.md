@@ -2,6 +2,43 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ OPEN — AlgoTest re-run for the V2 iron fly (spec written, awaiting Arun's run)
+
+**Spec:** `research/141_v2_bhav_pertrade/ALGOTEST_RERUN_SPEC.md` — field-by-field inputs.
+
+Two runs, differing only in expiry: **RUN 1 front weekly / 4 TD** (priority) and **RUN 2 2nd
+weekly** (what runs live). Everything else identical: NIFTY, Underlying-from **Cash**, Positional
+on Weekly Expiry, entry **09:20** exit **15:15**, exit 1 TD before expiry, SELL ATM CE+PE + BUY
+±2.0%-of-ATM wings, per-leg SL/target OFF, re-entry ON, **Overall SL = underlying move 2.0%**,
+Overall Target **40% of premium**, ₹20/order, 0.25% slippage, 2019-02 → today.
+
+**Do NOT set a VIX filter in AlgoTest** — it has no such gate; research/60 applied VIX≥13
+post-hoc from the export's entry-VIX column. Export unfiltered **with the entry-VIX column**.
+
+**Why it matters:**
+- research/60 documented its AlgoTest results but **did not retain the trade CSV**, so streaks
+  and per-year detail cannot be recomputed for that side.
+- research/141 found the live engine trades the **2nd-nearest weekly** while everything AlgoTest
+  tested was the **front weekly** — a lever the original sweep listed (#5) and never ran, because
+  AlgoTest caps entry at 4 TD before expiry. Our engine says that choice is worth ₹14.8L on the
+  study's own arm.
+- Our live-arm figure leans on **225 approximated stop exits out of 286 trades (79%)** — our EOD
+  engine exits at the breach day's close, not the trigger. AlgoTest prices those at 1-minute
+  resolution, which is the only way to know how wrong the approximation is.
+
+**Blocked on:** Arun running it and returning the trade CSV + PDF.
+
+## ⏳ OPEN — Straddles page redesign (mock under review)
+
+Arun's brief: classify every system as **intraday** or **positional**, and on each show four
+things — (1) how it is doing **today**, (2) **running positions** with live P&L and a P&L curve,
+(3) **closed trades / history** collapsed into an expandable section, (4) **lifetime paper
+numbers**, plus (5) a link to its **backtest** with the headline numbers, the method used
+(bhavcopy / our recorded options chain / AlgoTest) and the period covered.
+
+Mock first, agree look and feel, then build. Nothing implemented yet.
+
+
 ## ⏳ 2026-08-31 — research/138 phase 2: the live book, and COMB20's day allocation
 
 **Two decisions are owed from Arun. Nothing was deployed.**
