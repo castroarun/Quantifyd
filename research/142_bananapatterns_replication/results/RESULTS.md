@@ -1,3 +1,35 @@
+# Phase-4 Results — Optimization Sweep (2026-09-02)
+
+**VERDICT: the decoded baseline is near-optimal for its family; the sweep's chief
+fruit is a CORRECTION, not a betterment.** 38+10 cells (six axes OFAT + plateau
+neighbors + combos + sizing×slots), 2006→2026-08, config-D stack, 10-seed
+ensembles per cell (`results/p4_sweep.csv`).
+
+**THE CORRECTION (publish loudly):** the Phase-3 claim "mcap floor = risk filter
+(−0.7pp CAGR for −14pp DD)" was an ARTIFACT. The mcap snapshot had only 925/2,321
+symbols when config D first ran, so the floor silently excluded ~1,400
+unknown-mcap names. With the completed snapshot (2,042 known): floor = 297× /
+31.7% / −36.7%; **no floor = 517× / 35.3% / −36.9% — same DD, floor is pure
+return drag. New headline = the no-floor book (≈ config B).** Study page updated.
+
+Findings (medians): trail 15/20-SMA spikes (562×/387×) FAIL the plateau test
+(SMA 25-40 collapse to 163-189×) → rejected; long trails 75-200 (LTCG hope)
+destroy the book (14-21% CAGR, −47/−56% DD) → rejected; removing the −8% stop is
+mildly positive alone (326×, −34.8%) but unstable in combos → optional; slots
+INERT (cash binds at ~5 concurrent — sizing is the true constraint); smaller-
+size×more-slots slightly worse (concentration is the engine); RS threshold /
+basing depth / gate-DMA show no clean dose-response; Arun's adaptive-mcap
+switching is MOOT (≡ no-floor: the gate already blocks weak-day entries; and the
+"bull-mode gap" that motivated it dissolved — config B on 2020-25 as an ensemble
+is 37.6% median vs D's 37.3%, the 58.3% figure was one lucky seed).
+
+**Churn (STCG question):** BlueSky ≈ 24 trades/yr × 18.75% ≈ 4.5× book turnover,
+all STCG; Momentum r/75 ≈ 0.38× turnover with LTCG-eligible winners. For a
+taxable account momentum keeps a structural 2-4pp/yr after-tax advantage at
+equal gross CAGR. Longer BlueSky trails cannot close this (see above).
+
+---
+
 # Phase-3 Results — 20-Year Robustness (2026-09-02)
 
 **VERDICT: STRATEGY (candidate).** The decoded blue-sky construction survives

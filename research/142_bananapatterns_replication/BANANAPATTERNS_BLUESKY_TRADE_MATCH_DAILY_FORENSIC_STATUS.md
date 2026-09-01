@@ -250,8 +250,16 @@ name pattern (BEES/ETF).
 
 OFAT around the validated baseline (stop 8% / trail 50-SMA / 8 slots / gate 200-DMA),
 all on config-D stack (2006→2026-08, gate ON, real fills, 25bps, mcap≥500cr),
-10-seed ensembles per cell. Cells: stop {6,10,12} · trail-SMA {30,100} ·
-slots {10,12,15} · gate-DMA {100,150}. Decision rule: adopt only monotonic,
-material improvements (playbook: monotonic > peak); publish betterments to the
-study page. Log: /tmp/p4_sweep.log (VPS). Baseline = p3D_ext2026
-(146× / 27.3% / −34.9%).
+10-seed ensembles per cell. EXPANDED per Arun ("try all possible variations"):
+six axes wide OFAT (stop 4-15+off · trail SMA 15-200 · slots 5-20 · gate DMA
+0-250 · RS 60-90 · depth 10-30%+off) + combos + sizing×slots + adaptive-mcap
+cells = 48 cells total, `results/p4_sweep.csv`, runner `scripts/sweep_p4.py`
+(loads once, ~2-5s/cell). Decision rule: monotonic > peak.
+
+**PHASE 4 CLOSED (2026-09-02): no adoptable betterment except THE CORRECTION —
+the mcap-floor "risk filter" claim was an artifact of the then-incomplete mcap
+snapshot (925→2,042 symbols known). Full data: floor 297×/31.7%/−36.7 vs
+no-floor 517×/35.3%/−36.9 — floor = pure return drag; no-floor book is the new
+headline. Trail-15/20 spike REJECTED on plateau; stop-off optional; slots inert
+(cash binds ~5 positions); adaptive switching MOOT. Published to study page with
+the correction stated. Full detail: results/RESULTS.md Phase-4 section.**
