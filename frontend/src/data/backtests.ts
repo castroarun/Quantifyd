@@ -14616,8 +14616,9 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
           ['Faithful replica (RS-desc picks)', '11.01x', '49.2%', '-31.5%', '175', '42%'],
           ['Random-selection seeds (range of 5)', '6.5-15.1x', '37-57%', '-22 to -32%', '~180', '44-46%'],
           ['Best variant: weak-market gate ON', '15.73x', '58.3%', '-22.0%', '141', '48%'],
+          ['Config D on this window (gate + real fills + 25bps + mcap>=500cr), 10-seed median [range]', '6.69x [4.41..14.21]', '37.3% [28.1..55.6]', '-24.6% (worst -36.4%)', '~148', '42-50%'],
         ],
-        highlightRows: [3],
+        highlightRows: [4],
         heatmap: false,
       },
       {
