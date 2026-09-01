@@ -1,0 +1,5 @@
+comparing 68 days
+day           dte      K_r96   cred_r96  MOVE_r96 |     K_ours  cred_ours MOVE_ours |   d_MOVE
+
+days differing: 0
+total delta MOVE0.4 = +0   RUPEE2500 = +0

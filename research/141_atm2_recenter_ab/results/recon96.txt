@@ -1,0 +1,29 @@
+research/141 reconciliation gate vs research/96
+NIFTY chain days <= 2026-07-28 : 68
+days simulated: 68
+
+=== ALL DAYS (n=68) ===
+rule             total    avg/tr     worst   win%
+MOVE0.4         +37450      +550     -6887     46
+RUPEE2000       +41587      +611     -7291     57
+RUPEE2500       +62111      +913     -7291     62
+RUPEE3000       +67571      +993     -8681     66
+
+=== NEAR-EXPIRY calendar DTE<=1 (r/96 headline bucket) (n=29) ===
+rule             total    avg/tr     worst   win%
+MOVE0.4         +43719     +1507     -6887     62
+RUPEE2000       +49746     +1715     -5490     66
+RUPEE2500       +65955     +2274     -6972     69
+RUPEE3000       +55503     +1913     -8681     69
+
+=== FAR calendar DTE>=2 (n=39) ===
+rule             total    avg/tr     worst   win%
+MOVE0.4          -6269      -160     -5639     33
+RUPEE2000        -8159      -209     -7291     51
+RUPEE2500        -3844       -98     -7291     56
+RUPEE3000       +12068      +309     -7291     64
+
+--- GATE ---
+RUPEE2500  r/96 avg  +2153 worst  -6972 win 69%  |  ours avg   +2274 worst   -6972 win   69% | avg delta 5.6%
+MOVE0.4    r/96 avg  +1386 worst  -6887 win 62%  |  ours avg   +1508 worst   -6887 win   62% | avg delta 8.8%
+GATE: MISMATCH
