@@ -967,7 +967,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
               </div>
             </div>
             <div className={styles.metricStrip} style={{ justifyContent: 'flex-end' }}>
-              {BUY_ENABLED && account !== 'both' && (
+              {BUY_ENABLED && account === 'me' && (
                 <button
                   className={`${styles.dockPill} ${dockOpen ? styles.dockPillOn : ''}`}
                   onClick={() => setDockOpen((o) => !o)}
@@ -975,7 +975,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
                 >
                   <span className={styles.dockChevron}>{dockOpen ? '▾' : '▸'}</span>
                   <span className={styles.dockTitle}>Trade {current.sym}</span>
-                  <span className={styles.dockAcct}>{account === 'dad' ? 'Stanly' : 'Me'}</span>
+                  <span className={styles.dockAcct}>Me</span>
                   <span className={styles.dockFunds} title="Cash available to deploy">{funds ? (funds.error ? '—' : fmtRs(funds.live_balance)) : '…'}</span>
                   <span className={styles.dockKbd}>T</span>
                 </button>
@@ -988,7 +988,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
             <div className={styles.chartArea}>
               <FocusChart s={current} win={tf} bars={augmentToday(ohlc[current.sym], current)} overlay={overlay} />
 
-              {BUY_ENABLED && account !== 'both' && dockOpen && (
+              {BUY_ENABLED && account === 'me' && dockOpen && (
                 <div className={styles.dockBody}>
                   <label className={styles.paperTog}>
                     <input type="checkbox" checked={paper} onChange={(e) => setPaper(e.target.checked)} />

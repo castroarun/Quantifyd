@@ -1287,9 +1287,10 @@ def api_get_historical(symbol: str):
         return jsonify({'error': str(e)}), 500
 
 
-# Stanly (secondary) account disabled 2026-08-31 while his Zerodha login is locked
-# (automated login suspected). Set True once unlocked + re-authorized.
-STANLY_ENABLED = False
+# Stanly (secondary) account — DISPLAY-ONLY. Reads (holdings/funds/positions) re-enabled
+# 2026-09-01 after unlock; trade placement is held OFF (view-only) until further notice.
+STANLY_ENABLED = True
+STANLY_TRADING_ENABLED = False
 
 
 def _holdings_read_kite(account):
@@ -1314,6 +1315,35 @@ def _account_holdings(account):
         return {}
 
 
+@app.route('/dad/login')
+def dad_login():
+    """Kick off Stanly's Kite OAuth login (browser redirects to Kite, then to /dad/callback)."""
+    from services.dad_kite import get_dad_login_url, is_configured
+    if not is_configured():
+        return "Stanly account not configured", 400
+    try:
+        return redirect(get_dad_login_url())
+    except Exception as e:
+        logger.error(f"[DAD] login redirect failed: {e}")
+        return redirect('/app/holdings?stanly=failed')
+
+
+@app.route('/dad/callback')
+def dad_callback():
+    """OAuth redirect target — exchange request_token for an access token, save, return to app."""
+    from services.dad_kite import exchange_dad_request_token
+    request_token = request.args.get('request_token')
+    if not request_token:
+        return redirect('/app/holdings?stanly=nologin')
+    try:
+        tok = exchange_dad_request_token(request_token)
+        logger.info("[DAD] OAuth login " + ("OK" if tok else "FAILED (no token)"))
+        return redirect('/app/holdings?stanly=' + ('connected' if tok else 'failed'))
+    except Exception as e:
+        logger.error(f"[DAD] callback failed: {e}")
+        return redirect('/app/holdings?stanly=failed')
+
+
 @app.route('/api/holdings/order', methods=['POST'])
 @login_required
 def api_holdings_topup():
@@ -1322,6 +1352,8 @@ def api_holdings_topup():
         from services.holdings_order import start_topup
         data = request.get_json(silent=True) or {}
         account = 'dad' if data.get('account') == 'dad' else 'me'
+        if account == 'dad' and not STANLY_TRADING_ENABLED:
+            return jsonify({'error': "Stanly's account is view-only — trading is disabled"}), 403
         symbol = (data.get('symbol') or '').strip().upper()
         amount = data.get('amount')
         paper = bool(data.get('paper', False))
@@ -1341,6 +1373,8 @@ def api_holdings_exit():
         from services.holdings_order import start_exit
         data = request.get_json(silent=True) or {}
         account = 'dad' if data.get('account') == 'dad' else 'me'
+        if account == 'dad' and not STANLY_TRADING_ENABLED:
+            return jsonify({'error': "Stanly's account is view-only — trading is disabled"}), 403
         symbol = (data.get('symbol') or '').strip().upper()
         qty = data.get('qty')
         paper = bool(data.get('paper', False))

@@ -85,3 +85,22 @@ def get_dad_kite_trading() -> KiteConnect:
     drives from the Holdings page. Never import this into any automated/background path.
     """
     return _raw_dad_kite()
+
+
+def get_dad_login_url() -> str:
+    """Kite Connect OAuth login URL for Stanly's app (browser flow)."""
+    if not DAD_KITE_API_KEY:
+        raise RuntimeError("DAD_KITE_API_KEY not set — Stanly's account is not configured.")
+    return KiteConnect(api_key=DAD_KITE_API_KEY).login_url()
+
+
+def exchange_dad_request_token(request_token: str) -> str:
+    """Exchange the request_token from the OAuth redirect for an access token and save it."""
+    if not (DAD_KITE_API_KEY and DAD_KITE_API_SECRET):
+        raise RuntimeError("Stanly Kite api_key/secret not set.")
+    kite = KiteConnect(api_key=DAD_KITE_API_KEY)
+    data = kite.generate_session(request_token, api_secret=DAD_KITE_API_SECRET)
+    token = (data or {}).get("access_token") or ""
+    if token:
+        save_dad_access_token(token, request_token)
+    return token

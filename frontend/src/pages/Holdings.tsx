@@ -12,9 +12,9 @@ import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
 import chartStyles from '../components/HoldingsCharts/HoldingsCharts.module.css';
 import { formatInt, formatNumber, formatPct, formatPnl, pnlClass } from '../utils/format';
 
-// Secondary "Stanly" account — disabled 2026-08-31 (his Zerodha login is locked;
-// automated login suspected). Set back to true once unlocked + re-authorized.
-const STANLY_ENABLED = false;
+// Secondary "Stanly" account — DISPLAY-ONLY (re-enabled 2026-09-01 after unlock).
+// Reads via OAuth login; trade placement is held off (dock shows for 'me' only).
+const STANLY_ENABLED = true;
 
 const EXTREME_LABELS: Record<string, string> = {
   at_ath: 'at all-time high',
@@ -197,8 +197,12 @@ export default function Holdings() {
       )}
 
       {account === 'dad' && (data as { error?: string }).error ? (
-        <div style={{ margin: '4px 0 10px', padding: '10px 14px', background: 'var(--brand-amber-soft)', color: 'var(--brand-amber)', borderRadius: 8, fontSize: 13 }}>
-          {(data as { error?: string }).error}
+        <div style={{ margin: '4px 0 10px', padding: '10px 14px', background: 'var(--brand-amber-soft)', color: 'var(--brand-amber)', borderRadius: 8, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <span>{(data as { error?: string }).error} — Stanly's session isn't connected.</span>
+          <a
+            href="/dad/login"
+            style={{ background: 'var(--brand-navy)', color: '#fff', padding: '7px 14px', borderRadius: 8, fontWeight: 650, textDecoration: 'none', whiteSpace: 'nowrap' }}
+          >Connect Stanly's account →</a>
         </div>
       ) : null}
 
