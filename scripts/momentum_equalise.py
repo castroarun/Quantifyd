@@ -84,8 +84,27 @@ def main():
             buys.append((s, int(gap / px), px, int(gap / px) * px, s not in pos))
 
     freed = sum(t[3] for t in trims)
-    need = sum(b[3] for b in buys)
     cash_now = mp._cash() + mp._sweep_value() - nav * mp.CFG["cash_reserve_pct"]
+
+    # Cap the plan to money that will actually exist. Prices drift between the trim and the fills,
+    # so the freed amount rarely matches the need to the rupee — on 2026-09-01 it came up Rs238
+    # short. _buy() does NOT check cash before sending an order, so an uncapped plan would try to
+    # overdraw and rely on the broker rejecting it. Fund the biggest gaps first and trim the last
+    # buy to fit.
+    budget = cash_now + freed
+    capped = []
+    for s_, q_, px_, v_, isnew_ in buys:
+        if budget <= 0:
+            break
+        if v_ > budget:
+            q_ = int(budget / px_)
+            v_ = q_ * px_
+            if q_ <= 0:
+                continue
+        capped.append((s_, q_, px_, v_, isnew_))
+        budget -= v_
+    buys = capped
+    need = sum(b[3] for b in buys)
 
     print("  TRIM (sell part of the oversized holdings):")
     for s, q, px, v in trims:
