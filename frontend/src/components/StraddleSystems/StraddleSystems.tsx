@@ -223,12 +223,12 @@ export default function StraddleSystems() {
           <table className={s.table}>
             <thead><tr>
               <th>System</th><th>Size</th><th>Window</th><th>State</th>
-              <th>Today</th><th>Running</th><th>Lifetime</th><th>Record</th><th>Evidence</th>
+              <th>Today</th><th>Running</th><th>Lifetime</th><th>Evidence</th>
             </tr></thead>
             <tbody>
               {groups.map(([gk, glabel, list]) => list.length === 0 ? null : (
                 <>
-                  <tr className={s.groupRow} key={gk}><td colSpan={9}>{glabel}</td></tr>
+                  <tr className={s.groupRow} key={gk}><td colSpan={8}>{glabel}</td></tr>
                   {list.map((x) => {
                     const isOpen = open === x.key;
                     return (
@@ -255,10 +255,11 @@ export default function StraddleSystems() {
                           <td className={`${cls(x.today_pnl)} ${x.today_pnl === null ? ''
                             : x.today_pnl > 0 ? s.washPos : s.washNeg}`}>{inr(x.today_pnl)}</td>
                           <td className={cls(x.running_pnl)}>{inr(x.running_pnl)}</td>
-                          <td className={cls(x.lifetime.net)}>{inr(x.lifetime.net)}</td>
-                          <td>{x.lifetime.n}{x.lifetime.win !== null ? ` · ${x.lifetime.win}%` : ''}
+                          <td className={cls(x.lifetime.net)}>{inr(x.lifetime.net)}
                             <div className={s.sub2}>
-                              DD {inr(x.lifetime.maxdd)}{x.lifetime.t !== null ? ` · t ${x.lifetime.t}` : ''}
+                              {x.lifetime.n} trades{x.lifetime.win !== null ? ` · ${x.lifetime.win}% win` : ''}
+                              {' · DD '}{inr(x.lifetime.maxdd)}
+                              {x.lifetime.t !== null ? ` · t ${x.lifetime.t}` : ''}
                             </div></td>
                           <td>{x.evidence.method.map((m) => (
                             <span key={m} className={`${s.chip} ${m === 'AlgoTest' ? s.chipAmber
@@ -267,7 +268,7 @@ export default function StraddleSystems() {
                         </tr>
 
                         {isOpen && (
-                          <tr key={x.key + '-exp'}><td className={s.expTd} colSpan={9}>
+                          <tr key={x.key + '-exp'}><td className={s.expTd} colSpan={8}>
                             <div className={s.expIn}>
                               <div className={s.blk}>
                                 <div className={s.blab}>Position<span className={s.blabRule} /></div>
@@ -354,7 +355,7 @@ export default function StraddleSystems() {
               <tr className={s.totalRow}>
                 <td>Total · {feed.n} systems</td><td /><td /><td />
                 <td className={cls(kpi?.today ?? 0)}>{inr(kpi?.today ?? 0)}</td>
-                <td /><td className={cls(tot)}>{inr(tot)}</td><td /><td />
+                <td /><td className={cls(tot)}>{inr(tot)}</td><td />
               </tr>
             </tbody>
           </table>

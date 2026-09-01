@@ -701,11 +701,14 @@ export default function Straddles() {
     return <span style={{ background: bg, color: fg, fontWeight: 800, fontSize: 11, padding: '1px 8px', borderRadius: 5 }}>{g}</span>;
   };
   return (
-    <div style={{ maxWidth: 1000 }}>
+    <>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
 
-      {/* the systems table - one row per book, from the registry */}
+      {/* the systems table sits OUTSIDE the 1000px measure - it is a wide data
+          table, while everything below is prose-width and stays capped */}
       <StraddleSystems />
+
+      <div style={{ maxWidth: 1000 }}>
 
       <div className="page-title">Straddle Systems</div>
       <div className="page-subtitle">Two short-straddle systems on NIFTY · backtested on the recorded chain · paper-forward 10 lots</div>
@@ -2340,6 +2343,7 @@ export default function Straddles() {
         </div>
       </section>
       </details>
-    </div>
+      </div>
+    </>
   );
 }
