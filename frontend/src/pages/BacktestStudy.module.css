@@ -434,3 +434,13 @@
   .winnerMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .linkGrid { grid-template-columns: 1fr; }
 }
+
+/* Study tables carry long labels (config names, run descriptions); the shared
+   DataTable clips cells to one line with an ellipsis. Scoped to this page,
+   let cells wrap instead. ([class*=\x27cell\x27] matches only DataTable\x27s
+   hashed `_cell_*` class - headCell/heatCell have a capital C.) */
+.tableBlock [class*='cell'] {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
