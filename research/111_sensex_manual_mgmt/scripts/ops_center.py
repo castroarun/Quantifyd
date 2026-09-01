@@ -15,12 +15,17 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
+    ("Options data capture (feeds every options study)", [
+        ("option 1-min OHLC recorder", "15:35 Mon-Fri cron (flock)",
+         "Captures 1-MINUTE OHLC (high/low, not just an LTP poll) for NIFTY/BANKNIFTY/SENSEX nearest-2-expiry contracts, ~540/day. MUST run daily: Kite refuses historical data for EXPIRED tokens ('invalid token'), so a missed day is lost forever. Unlocks stop-trigger verification and per-leg MAE/MFE, which the LTP-poll option_chain cannot provide. Read-only vs broker; no engine touched. Deploy doc: OPTIONS_OHLC_RECORDER_1MIN_DEPLOY_STATUS.md",
+         "cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 scripts/record_option_1min_ohlc.py"),
+    ]),
     ("Stock winged strangle PAPER book (research/127)", [
         ("bhav stock daily download", "16:20 Mon-Fri cron (flock)",
          "extends nse_options_bhav with the day's F&O STOCK bhavcopy (idempotent, resumes by date); feeds the paper book and any stock-options research",
          "cd /home/arun/quantifyd && ./venv/bin/python3 research/89_short_monthly_straddle/scripts/download_nse_bhav_stocks.py"),
         ("stock_wings_paper seed+mark", "16:50 + 20:30 Mon-Fri cron (flock)",
-         "45->21 DTE +/-2.5% strangle + 7% wings on F&O stocks, Rs20L/10 slots PAPER — REAL-data engine: 5s live marks (livedaemon, */5 cron relaunch), LIVE entries ~15:26, day mark-of-record = real 15:29:30 snapshot with exits on it daily; bhav = backfill; publishes /app/stock_wings_paper.json for /app/stock-wings",
+         "45->21 DTE +/-2.5% strangle + 7% wings on F&O stocks, Rs20L/10 slots PAPER: opens new 45-DTE cycles, marks/exits from bhav closes, publishes /app/stock_wings_paper.json for /app/stock-wings",
          "cd /home/arun/quantifyd && ./venv/bin/python3 services/stock_wings_paper.py seed"),
         ("stock_wings_paper live marks", "*/5 09:00-15:55 Mon-Fri cron (flock)",
          "DISPLAY ONLY: re-prices the four legs of every open position from live Kite quotes and pulls the REAL basket margin (wings sent first), so /app/stock-wings ticks during the session. Evaluates NO exit and writes NO position row - the target and stop still resolve on the EOD bhav close, as backtested",
@@ -94,49 +99,6 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
-    ("SENSEX ATM2 is LIVE on the worst arm research/141 tested - re-calibrate its stop", "2026-09-15", "PENDING",
-     "research/141 (2026-09-01): SENSEX ATM2 runs move-stop + re-center + cooldown, measured -Rs334/lot/day vs -Rs30 for one-and-done, with -Rs17,884/lot of churn over 99 extra cycles. Its six LIVE re-centers look fine (+Rs3,244, 0 re-stopped) but that is 0-for-6 against a modelled 61% re-stop rate - a small kind draw. The two NIFTY books ran the IDENTICAL arm longer and lost Rs11,571/lot, including the 07-08/07-09 cascades that became the research/60 incident. r/96 rightly refused to push an unvalidated NIFTY rupee stop onto SENSEX, but left the book on this combination. ACTION: own STATUS-MD, a SENSEX-calibrated stop (its lot of 20 makes the same 6.548pt slippage Rs131/leg-side vs Rs426 on NIFTY, so the arithmetic differs), Arun sign-off, after-15:40 deploy. SENSEX ATM2 is 1 of only 3 live books (Wed/Thu)."),
-    ("What is the RIGHT stop level on the ATM2 books? (Arun: no-SL is not an option)", "2026-10-15", "PENDING",
-     "research/141: NOSTOP_HOLD posts the BEST mean on both venues (+Rs387 NIFTY / +Rs499 SENSEX) against +Rs214 / -Rs30 for the stopped incumbent - with the fattest tail, and it fails the family-wise haircut. Arun 2026-09-01: running without a stop is NOT an option, so the open question is the LEVEL, not whether. Reframed accordingly. But it is the same shape as r/114 and r/131 on SENSEX expiry: the stop may be costing more than it saves. Worth a dedicated test against the multi-year sample before the next sizing decision."),
-    ("r/119 stress margin - VOL axis (moneyness x DTE axis DONE 2026-08-31)",
-     "2026-11-30", "PENDING",
-     "Moneyness x DTE measured against the broker: 3 lots BREACH the Rs11.96L reserve at an 8% "
-     "adverse move (110-115% of capital), 95% by 5% -> safe size is 2 lots. Measured at India VIX "
-     "10.6 (near floor), so the true breach is BELOW 8%. The VOL axis is still not estimable: 5 "
-     "recorder days spanning 0.65 VIX pts. Revisit once margin_recorder.py has ~3 months incl. a "
-     "vol expansion, then re-price the surface at elevated VIX and re-check the lot count."),
-    ("TimeB risk/reward rebuild - can the window be made worth live money again?", "2026-10-10", "PENDING",
-     "Arun pulled TimeB from LIVE on 2026-08-28 after -Rs8,152 in one 10:00-12:00 NIFTY window at 6 lots (TIME_EXIT; the 20% stop never fired). All TimeB books continue on PAPER. The brief: (a) the AlgoTest 3-year NIFTY run of the same structure with real costs is NEGATIVE - overall -Rs75,468 over 739 trades, avg win 11,282 vs avg loss -19,933, max single loss -146,996, max DD -629,820, expectancy -0.01 - which is far more evidence than our 85 days and should be reconciled against r/122s window atlas; (b) re-run it at 0.15-0.2% slippage (our MEASURED time-exit cost is 0.178 pt/leg-side, AlgoTest was charged 0.5%) since the sign may flip; (c) sweep SL none/20/30/50 on the same 3-year sample - the question our chain cannot answer; (d) decide whether any window/stop pair earns live money, and at what size. Do not re-arm live without clearing the r/122 atlas AND the long-sample test."),
-    ("TimeB paper-vs-live tracking while it is out of the live book", "2026-11-28", "PENDING",
-     "TimeB books run paper from 2026-08-28. Check the paper record against the live period: does the paper book reproduce the +Rs23,659 cumulative TimeB SENSEX earned over 7 live sessions, or was that a benign-sample artefact? Also confirm the forward snap keeps firing correctly - it worked on its first live day (2026-08-28 10:00, spot-K 24150 CE 142.75/PE 61.85 gap 80.9 -> fwd-K 24250 CE 85.45/PE 104.55 gap -19.1)."),
-    ("r/134 short-vol vs long-equity weighting - re-run on the real books' series + per-leg attribution",
-     "2026-11-30", "PENDING",
-     "r/134 CONCLUDED the offset for the all-short-vol book is plain long equity at ~25-35% of combined risk "
-     "(NOT puts/jade lizards - the book loses in MELT-UPS, never in down-trends: +7.85% Apr-2020). Tested with a "
-     "NIFTY proxy. Owed before any sizing change: re-run with Momentum-30/Breakout/HA monthly series (higher beta "
-     "than the index) and attribute protection per neutral leg - r/128 says stock tails are idiosyncratic. "
-     "Standing caveat: 7 down-trend months, no grinding bear in sample."),
-    ("Forward-snap: confirm the CSL mis-strike rate collapses, and chase the NAS residual", "2026-09-26", "PENDING",
-     "research/132: strike mis-selection cost NO net P&L (-Rs24,992 to snap, t -1.87, n=25) but carried a SYSTEMATIC unintended short-index tilt - CSL NIFTY median delta 0.185 = Rs2,750 per 100 index points, and the delta bet was a median 49% of booked P&L. Not a coin flip: the forward basis was positive on 57/85 NIFTY and 65/85 SENSEX days so spot-rounding landed BELOW the forward every time. Snap shipped 019ae8f (2026-08-27). CHECK after ~15 CSL entries: does the CSL mis-strike rate fall from 72-80% toward the NAS post-fix 9.9%? Also unconfirmed: the residual 10-18% mis-strike on the NAS books (fail-safe + chain-vs-live timing) - exposure only Rs508/100pt NIFTY, Rs142 SENSEX, so low priority. NOTE the basis CHANGES SIGN (Jul dividend season negative, Aug strongly positive) so the historical rate is not a forecast."),
-    ("Confirm which CSL/COMB books are REALLY live - the mode flag disagrees with the comments",
-     "2026-09-05", "PENDING",
-     "research/138 (2026-08-31), found while establishing the live roster. is_live_book() in "
-     "csl_paper_exec.py returns B.get('mode') == 'live' and not B.get('mgmt'). Only NAS_COMB20 "
-     "carries \"mode\": \"live\". But the inline comments assert two others are real money: "
-     "CSL_TIMEB_SENSEX ('2026-08-18: 6L->8L REAL, notional parity w/ NIFTY TB@8L') and "
-     "CSL_TIMEB2_LIVE ('research/125 expiry-Tuesday window - REAL (user 2026-08-25)'). By that "
-     "function both evaluate as PAPER, and /app/straddles renders them as paper. Either they "
-     "execute by a different path, or the flag is missing and two books believed live are not "
-     "trading real money. CHECK against the broker orderbook/tradebook for a CSL_TIMEB_SENSEX "
-     "or CSL_TIMEB2_LIVE tagged fill. NOT edited - live-trading code, needs its own change."),
-    ("NIFTY Thursday off-live - review the paper twin vs the Option-B case", "2026-10-30", "PENDING",
-     "2026-08-27: NIFTY went dark on Thursdays live (5 lots -> 0), reversing the 19-20 Aug Option-B merge. NAS_COMB20_THU (paper, 5L, 09:16-15:20 SL20) now carries the cell. Judge on ~8 paper Thursdays: does DTE3 still show the grid mean (~Rs16,956 at 91%) that motivated Option B, and does the SENSEX book measurably benefit from the freed Thursday margin (peak concurrent was 73% of available WITH NIFTY on)? If the paper cell holds up and margin is not binding, Option B has a case for reinstatement at reduced size. | research/138 (2026-08-31) SHARPENS THE BRIEF: the DTE3 result is STOP-INVARIANT - re-priced from the full recorded premium path, Thursday is identical from SL20 through no stop at all (Rs1,55,265, t 3.85, DD -Rs15,790, 0/18 stops fired) because in 18 Thursdays the combined premium never rose 20% above entry. So there is NO stop question here, only a SIZE and margin question, and the paper twin at SL20 is already running the equivalent setting. DTE3 is also the steadiest cell in the grid (halves Rs72,595 / Rs82,670). Counter-evidence to weigh: the live/paper Thursday record so far is 2 sessions and NEGATIVE (-Rs13,430 at 10-lot equiv), and the 9:16 suite LOSES on Thursdays (-Rs44,522, t -0.37, 10-lot normalised) - so Thursday rewards the held-straddle mechanic and punishes the per-leg-stop one. Judge the two constructions separately."),
-    ("SENSEX naked-survivor trail fix - verify live behaviour over the next ~20 survivor episodes", "2026-10-01", "PENDING",
-     "research/128 shipped 2026-08-26 after 15:40: the trail is now a CEILING (ratcheting upper band, p7/m3.0, ~60s confirm) held in memory, and sl_price stays at BREAKEVEN. The old code wrote the ST into sl_price where it self-triggered on 62% of episodes. Verify: (a) the log shows SENSEX_ST_CEIL with a ceiling ABOVE the live premium, never below; (b) exits are tagged ST_TRAIL_EXIT, not SL_HIT; (c) realised vs the predicted +Rs315/lot over the incumbent. NOTE the honest limit: vs breakeven-only this is a WASH out-of-sample (+Rs63/lot) and nothing survived a family-wise haircut at n=86 - this shipped as a CORRECTNESS fix. Re-run the grid at ~150 episodes (~Feb 2027)."),
-    ("Wednesday/DTE1 SENSEX sizing - the bigger lever than the trail (research/128 byproduct)", "2026-09-25", "PENDING",
-     "research/128: ALL of the trail-arm spread comes from the 29 Wednesday episodes, and Wednesday carries the worst round-trip risk of the week (31.0% full round-trip to entry, 55.2% giving back half, vs Mon 12.5/18.8). DTE1 is 29.0/51.6. The trail is worth ~Rs315/lot; re-sizing Wednesday is worth more. Study before adding any further Wednesday size."),
-    ("NSE 2027 holiday calendar - add config/nse_holidays_2027.json", "2026-12-10", "PENDING",
-     "NSE has NOT published 2027 yet (their holiday-master API returned 2026 dates only, checked 2026-08-26), so the file cannot be written truthfully today. Until it exists, trading_calendar treats EVERY 2027 weekday as a trading day - it logs a warning but callers see a confident wrong answer. Consequences: the momentum month-end rebalance (now calendar-aware) could fire on a 2027 holiday and skip that month entirely, and any is_trading_day() gate elsewhere silently mis-fires. Fetch from https://www.nseindia.com/api/holiday-master?type=trading once NSE publishes (usually Nov/Dec) and mirror the 2026 file format."),
     ("Stock wings (r/127): REAL basket-margin check - the G4 gate", "2026-09-05", "PENDING",
      "The study sizes on a MODELED margin (1.25x max-loss + 2%, ~6.7% of notional; paper book uses a 10% estimate). Measure real SPAN+exposure via Kite basket_order_margins on a live C1 structure (e.g. the open HDFCBANK/INFY Sep-29 condors) and re-price the CAGR claim: 38.5% at modeled vs 20.2% at 2x. Until measured, quote the 2x row."),
     ("Stock wings (r/127): paper-vs-study tracking review after ~3 cycles", "2026-11-25", "PENDING",
