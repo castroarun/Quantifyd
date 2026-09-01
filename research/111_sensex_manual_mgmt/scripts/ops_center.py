@@ -15,6 +15,11 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
+    ("Straddle Intraday Study lab (research/136)", [
+        ("AlgoTest archive DB + /app/straddle-study", "on-demand (no cron)",
+         "Queryable archive of the AlgoTest CSL exports (16 runs / 21,172 trades: NIFTY stops 10-300%, SENSEX 30/60%) in backtest_data/algotest_studies.db - gross+turnover stored, cost model applied at query time. Page ranks any slice (index/SL/DTE/year-range, events excludable) by net/WR/Calmar/Net-DD/PF/t/median/streak with both gates as verdict chips. Re-load after new exports land.",
+         "cd /home/arun/quantifyd && python3 scripts/load_algotest_studies.py backtest_data/algotest_csv"),
+    ]),
     ("Options data capture (feeds every options study)", [
         ("option 1-min OHLC recorder", "15:35 Mon-Fri cron (flock)",
          "Captures 1-MINUTE OHLC (high/low, not just an LTP poll) for NIFTY/BANKNIFTY/SENSEX nearest-2-expiry contracts, ~540/day. MUST run daily: Kite refuses historical data for EXPIRED tokens ('invalid token'), so a missed day is lost forever. Unlocks stop-trigger verification and per-leg MAE/MFE, which the LTP-poll option_chain cannot provide. Read-only vs broker; no engine touched. Deploy doc: OPTIONS_OHLC_RECORDER_1MIN_DEPLOY_STATUS.md",

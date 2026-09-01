@@ -97,3 +97,13 @@ All in `research/111_sensex_manual_mgmt/scripts/`, run with `venv/bin/python3` f
 
 Reviews (in Ops Center): real basket-margin check due 2026-09-05; paper-vs-study tracking review due 2026-11-25.
 Study: `/app/backtest/stock-45dte-neutral-wings` · Status doc: `research/127_stock_neutral_wings/STOCK_NEUTRAL_WINGED_STRADDLE_DAILY_SWEEP_STATUS.md`
+
+
+## Straddle Intraday Study lab (research/136) — added 2026-09-01
+
+| Job | Schedule | What | Manual command |
+|---|---|---|---|
+| AlgoTest archive DB + `/app/straddle-study` | on-demand (no cron) | 16 AlgoTest CSL runs / 21,172 trades (NIFTY SL 10–300%, SENSEX 30/60%) in `backtest_data/algotest_studies.db`; page filters index/SL/DTE/year-range/events and ranks by net/WR/Calmar/Net-DD/PF/t/median/streak | `python3 scripts/load_algotest_studies.py backtest_data/algotest_csv` |
+
+New exports: scp CSVs to `backtest_data/algotest_csv/` and re-run the loader (idempotent, replaces per run).
+Study doctrine + verdicts: `research/136_nifty_csl_portfolio/NIFTY_CSL_ATM_STRADDLE_INTRADAY_SWEEP_STATUS.md` §0c–§0e.
