@@ -35,7 +35,7 @@ TV_FLOOR = 5e7
 ETF_RE = re.compile(r'(BEES|ETF|LIQUID|GILT|SENSEX|NIF[A-Z]*50)')
 
 
-def load_frames(base_start):
+def load_frames(base_start, trail_sma=50):
     conn = sqlite3.connect(str(DB))
     syms = [r[0] for r in conn.execute(
         "select symbol from (select symbol, count(*) n from market_data_unified "
@@ -50,7 +50,7 @@ def load_frames(base_start):
         df['date'] = pd.to_datetime(df['date'].str[:10])
         df = df.drop_duplicates('date').set_index('date').sort_index()
         ath_prev = df['close'].shift(1).cummax()
-        s50 = df['close'].rolling(50).mean()
+        s50 = df['close'].rolling(trail_sma).mean()
         tv = (df['close'] * df['volume']).rolling(20).median()
         m = df.index >= base_start
         if not m.any():
@@ -68,7 +68,7 @@ def load_frames(base_start):
 
 
 def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_arr,
-             fill_realistic, cost):
+             fill_realistic, cost, stop=STOP, slots=SLOTS, size_pct=SIZE_PCT):
     rng = np.random.default_rng(seed)
     cash = float(CAPITAL)
     positions = []      # (col, entry_i, buy, qty)
@@ -91,12 +91,12 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                 elif sel == 'random':
                     cand = rng.permutation(cand)
                 for c in cand:
-                    if len(positions) >= SLOTS:
+                    if len(positions) >= slots:
                         passed_up += 1
                         continue
                     piv = float(ATH[i, c])
                     fill = max(piv, float(O[i, c])) if fill_realistic else piv
-                    size = SIZE_PCT * eq
+                    size = size_pct * eq
                     qty = int(size / fill)
                     if qty < 1 or cash < qty * fill * (1 + cost):
                         passed_up += 1
@@ -111,7 +111,7 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                 still.append((c, ei, b, q))
                 continue
             reason = None
-            if cl <= b * (1 - STOP):
+            if cl <= b * (1 - stop):
                 reason = 'stop_8pct'
             elif i > ei and not np.isnan(S50[i, c]) and cl < S50[i, c]:
                 reason = 'trail_50d'
@@ -158,6 +158,10 @@ def main():
     ap.add_argument('--fill-realistic', action='store_true')
     ap.add_argument('--cost', type=float, default=0.0, help='bps per side')
     ap.add_argument('--rs-min', type=float, default=70.0)
+    ap.add_argument('--stop', type=float, default=8.0, help='stop %')
+    ap.add_argument('--trail-sma', type=int, default=50)
+    ap.add_argument('--slots', type=int, default=8)
+    ap.add_argument('--gate-sma', type=int, default=200)
     ap.add_argument('--mcap-floor', type=float, default=0,
                     help='point-in-time mcap floor in CRORES (shares-const proxy from snapshot)')
     ap.add_argument('--skip-weak', action='store_true')
@@ -167,7 +171,7 @@ def main():
     cost = a.cost / 10000.0
 
     base_start = (pd.Timestamp(a.start) - pd.Timedelta(days=550)).strftime('%Y-%m-%d')
-    w = load_frames(base_start)
+    w = load_frames(base_start, trail_sma=a.trail_sma)
     close, high, open_, athcp, sma50, tv20 = (w[k] for k in
                                               ('close', 'high', 'open', 'athcp', 'sma50', 'tv20'))
     # coverage by year (survivorship visibility)
@@ -205,7 +209,7 @@ def main():
     if a.skip_weak:
         if nb is None:
             sys.exit('NIFTYBEES missing for --skip-weak')
-        weak = (nb < nb.rolling(200).mean()).shift(1).fillna(False)
+        weak = (nb < nb.rolling(a.gate_sma).mean()).shift(1).fillna(False)
         weak_arr = weak.values
     else:
         weak_arr = np.zeros(len(close.index), dtype=bool)
@@ -230,7 +234,8 @@ def main():
         t0 = time.time()
         equity, trades, passed = simulate(seed, sel, days_idx, dates, C, H, O, ATH,
                                           S50, RSv, TVv, TRIGv, weak_arr,
-                                          a.fill_realistic, cost)
+                                          a.fill_realistic, cost,
+                                          stop=a.stop / 100.0, slots=a.slots)
         st, e = stats_from(equity, dates_used, trades, CAPITAL)
         st['seed'] = seed
         all_stats.append(st)

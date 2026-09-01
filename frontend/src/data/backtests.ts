@@ -14638,6 +14638,24 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         heatmap: false,
       },
       {
+        title: 'Phase-4 optimization sweep (2006 - Aug 2026, every cell a 10-seed ensemble): what moved and what did not',
+        caption: 'One-at-a-time around the decoded baseline, then combinations and plateau checks. Adoption rule: only monotonic, material improvements count - lone peaks are treated as luck. Numbers are ensemble medians.',
+        columns: ['Change vs baseline', 'Terminal x', 'CAGR', 'MaxDD', 'Verdict'],
+        rows: [
+          ['Baseline: decoded rules + Rs500cr floor (full mcap data)', '297', '31.7%', '-36.7%', 'reference'],
+          ['Drop the mcap floor (widest universe)', '517', '35.3%', '-36.9%', 'ADOPTED - floor is pure return drag with complete data'],
+          ['Remove the -8% stop (trail-only)', '326', '32.3%', '-34.8%', 'mildly positive alone, unstable in combos - optional'],
+          ['Trail 15 / 20-SMA instead of 50', '562 / 387', '35.8 / 33.4%', '-32 / -30%', 'REJECTED - fails the plateau test (SMA 25-40 collapse to 163-189x)'],
+          ['Trail 75-200 SMA (longer holds, LTCG-friendly)', '15-50', '14-21%', '-47 to -56%', 'REJECTED - long trails destroy this construction'],
+          ['More slots (10/12/15/20)', 'identical', '31.7%', '-36.7%', 'INERT - 18.75% sizing caps the book at ~5 concurrent positions'],
+          ['Smaller size x more slots (12.5%x8, 10%x10, 6.25%x16)', '264-284', '~31%', '~-34%', 'slightly worse - concentration is the engine'],
+          ['RS threshold 60/80/90, basing depth, gate DMA 0-250', '-', '-', '-', 'no clean dose-response - not adopted'],
+          ['Adaptive mcap floor by regime (floor only in weak markets)', '517', '35.3%', '-36.9%', 'MOOT - identical to no-floor: the gate already blocks weak-day entries'],
+        ],
+        highlightRows: [1],
+        heatmap: false,
+      },
+      {
         title: 'Per-year: BlueSky config D (ensemble median, extended to Aug 2026) vs our Momentum book (research/75) vs Nifty 50',
         caption: 'BlueSky = median across the 10 selection seeds of the 2006 to Aug-2026 run. Momentum = research/75 armed spec NAV (net, 20y validated). NIFTYBEES = Nifty 50 ETF incl dividends. * 2026 is year-to-date (Aug 31 / Jul 21 for momentum). The two systems track each other closely - same momentum family - but BlueSky was FLAT-to-down where momentum stayed positive in 2011 and 2016 tells you they are not identical bets.',
         columns: ['Year', 'BlueSky D %', 'Momentum r/75 %', 'NIFTYBEES %'],
@@ -14688,7 +14706,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     winners: [
       {
         config: 'Config D — gate ON + real fills + 25bps + mcap>=500cr (PIT proxy)',
-        summary: 'The mcap floor is a RISK filter, not a return filter: -0.7pp CAGR for 14pp less drawdown vs config B. Calmar ~0.96, the same tier as research/75 momentum.',
+        summary: 'CORRECTION (Phase 4): with the COMPLETED mcap snapshot (2,042/2,321 symbols vs 925 when config D first ran), the celebrated floor drawdown benefit turns out to have been the accidental exclusion of unknown-mcap names. With complete data the Rs 500cr floor costs ~3.6pp CAGR at the SAME drawdown - the no-floor book (517x / 35.3% / -36.9% medians, 2006 - Aug 2026) is the better headline. We publish corrections as loudly as results.',
         metrics: [
           { k: 'CAGR (median, net)', v: '30.4% [27.9..34.4]' },
           { k: 'MaxDD (median)', v: '-31.5% (worst -33.6%)' },
@@ -14703,6 +14721,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
     ],
     caveats: [
+      'Phase-4 note: the original "mcap floor = risk filter" claim was published, then CORRECTED when the completed mcap snapshot showed the drawdown benefit came from accidentally excluding unknown-mcap symbols, not from the Rs 500cr floor itself.',
       'SURVIVORSHIP: Kite lists only current instruments — 2006 coverage is 528 symbols, all of which survived to 2026. Pre-~2015 years (esp. 2006-07 at +43/+117%) are inflated by this. The DD and post-2015 years are the more trustworthy part.',
       'Mcap floor is a proxy: constant adjusted-shares from a 2026 yfinance snapshot (split-safe; wrong for heavy diluters), known for only 925/2,321 symbols — unknowns excluded.',
       'Selection among simultaneous signals is undisclosed by the site; all our numbers are 10-seed ensembles — trust the medians and ranges, not any single path.',

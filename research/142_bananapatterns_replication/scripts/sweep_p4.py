@@ -37,7 +37,7 @@ OUT = STUDY / 'results' / 'p4_sweep.csv'
 FIELDS = ['cell', 'axis', 'value', 'x_med', 'x_min', 'x_max', 'cagr_med', 'cagr_min',
           'cagr_max', 'dd_med', 'dd_worst', 'trades_med', 'win_med', 'signals']
 
-BASE = dict(stop=8.0, trail=50, slots=8, gate=200, rs=70.0, depth=0.20)
+BASE = dict(stop=8.0, trail=50, slots=8, gate=200, rs=70.0, depth=0.20, size=0.1875)
 CELLS = [('baseline', 'baseline', 0, dict(BASE))]
 for v in [4, 5, 6, 7, 10, 12, 15, 99]:
     CELLS.append((f'stop{v}', 'stop', v, dict(BASE, stop=float(v))))
@@ -55,6 +55,17 @@ for v in [0.10, 0.15, 0.25, 0.30, 9.9]:
 CELLS.append(('adapt_floor_when_weak', 'adaptive', 1, dict(BASE, adaptive='floor_when_weak')))
 CELLS.append(('adapt_floor_when_strong', 'adaptive', 2, dict(BASE, adaptive='floor_when_strong')))
 CELLS.append(('no_mcap_floor', 'adaptive', 0, dict(BASE, adaptive='never')))
+# ---- Stage B: trail plateau, combos, sizing x slots ----
+CELLS.append(('trail15', 'trail', 15, dict(BASE, trail=15)))
+CELLS.append(('trail25', 'trail', 25, dict(BASE, trail=25)))
+CELLS.append(('c_t20_s99', 'combo', 1, dict(BASE, trail=20, stop=99.0)))
+CELLS.append(('c_t20_s99_nofloor', 'combo', 2, dict(BASE, trail=20, stop=99.0, adaptive='never')))
+CELLS.append(('c_t20_s99_nofloor_g0', 'combo', 3, dict(BASE, trail=20, stop=99.0, adaptive='never', gate=0)))
+CELLS.append(('c_t20_nofloor', 'combo', 4, dict(BASE, trail=20, adaptive='never')))
+CELLS.append(('c_s99_nofloor', 'combo', 5, dict(BASE, stop=99.0, adaptive='never')))
+CELLS.append(('sz125_slots8', 'sizing', 1, dict(BASE, size=0.125)))
+CELLS.append(('sz10_slots10', 'sizing', 2, dict(BASE, size=0.10, slots=10)))
+CELLS.append(('sz0625_slots16', 'sizing', 3, dict(BASE, size=0.0625, slots=16)))
 
 
 def main():
@@ -140,7 +151,7 @@ def main():
             eq, trades, _ = br.simulate(seed, 'random', days_idx, dates, C, H, O, ATH,
                                         S50, rs.values, TVv, trig, weak_arr,
                                         True, COST, stop=p['stop'] / 100.0,
-                                        slots=p['slots'])
+                                        slots=p['slots'], size_pct=p.get('size', 0.1875))
             st, _e = br.stats_from(eq, dates_used, trades, br.CAPITAL)
             stats.append(st)
         sdf = pd.DataFrame(stats)
