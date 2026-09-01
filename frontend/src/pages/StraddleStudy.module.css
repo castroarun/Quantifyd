@@ -261,3 +261,14 @@
   line-height: 1.5;
   max-width: 1100px;
 }
+
+.slice {
+  margin-bottom: 10px;
+  font-size: var(--text-xs, 12px);
+  color: var(--ink-muted, #888780);
+}
+
+.slice b {
+  color: #b45309;
+  font-weight: 600;
+}

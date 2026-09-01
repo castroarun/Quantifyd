@@ -341,6 +341,25 @@ export default function StraddleStudy() {
         </div>
       )}
 
+      {meta && (
+        <div className={styles.slice}>
+          Slice:{' '}
+          {indices.length ? (
+            indices.join(' + ')
+          ) : (
+            <b>ALL indices pooled ({meta.indices.join(' + ')} on one equity curve)</b>
+          )}
+          {' · SL '}
+          {sls.length ? sls.map((s) => `${s}%`).join('/') : 'all'}
+          {' · DTE '}
+          {dtes.length ? dtes.join(',') : 'all'}
+          {' · '}
+          {yearFrom || 'start'}&ndash;{yearTo || 'end'}
+          {exclEvents ? ' · ex budget/election days' : ' · events INCLUDED'}
+          {lotsScale !== '1' && lotsScale !== '' ? ` · P&L scaled x${lotsScale}` : ''}
+        </div>
+      )}
+
       {err && <div className={styles.error}>{err}</div>}
       {loading && <div className={styles.loading}>computing...</div>}
 
