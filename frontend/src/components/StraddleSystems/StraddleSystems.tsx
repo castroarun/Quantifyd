@@ -24,7 +24,8 @@ type Evidence = { method: string[]; period: string; nums: Record<string, string>
 type Rules = { does: [string, string][]; doesnt: string[]; doc: string };
 type Sys = {
   key: string; name: string; subtitle: string; kind: 'intraday' | 'positional';
-  venue: string; money: 'real' | 'paper' | 'refuted';
+  group?: '916' | 'intraday' | 'positional' | 'study';
+  venue: string; money: 'real' | 'paper' | 'refuted' | 'study';
   size_lots: number | null; size_qty: number | null; window: string;
   state: { label: string; tone: string };
   today_pnl: number | null; running_pnl: number | null;
@@ -158,6 +159,9 @@ export default function StraddleSystems() {
   const [feed, setFeed] = useState<Feed | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [rules, setRules] = useState<Sys | null>(null);
+  // groups start open; the 9:16 family is 12 rows of one mechanic and is the
+  // one most likely to be folded away once it has been glanced at
+  const [shut, setShut] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch('/app/straddles_systems.json?t=' + Date.now())
@@ -177,11 +181,16 @@ export default function StraddleSystems() {
   }, [feed]);
 
   if (!feed) return null;
+  const gof = (x: Sys) => x.group || (x.kind === 'positional' ? 'positional' : 'intraday');
   const groups: [string, string, Sys[]][] = [
-    ['intraday', 'Intraday · entered and squared off the same day',
-     feed.systems.filter((x) => x.kind === 'intraday')],
+    ['916', '9:16 portfolio · the combined-stop family, all intraday',
+     feed.systems.filter((x) => gof(x) === '916')],
+    ['intraday', 'Intraday · other',
+     feed.systems.filter((x) => gof(x) === 'intraday')],
     ['positional', 'Positional · carried overnight across sessions',
-     feed.systems.filter((x) => x.kind === 'positional')],
+     feed.systems.filter((x) => gof(x) === 'positional')],
+    ['study', 'Backtested · not trading — the constructions the live rules came from',
+     feed.systems.filter((x) => gof(x) === 'study')],
   ];
   const tot = feed.systems.reduce((a, x) => a + (x.lifetime.net || 0), 0);
 
@@ -228,8 +237,21 @@ export default function StraddleSystems() {
             <tbody>
               {groups.map(([gk, glabel, list]) => list.length === 0 ? null : (
                 <>
-                  <tr className={s.groupRow} key={gk}><td colSpan={8}>{glabel}</td></tr>
-                  {list.map((x) => {
+                  <tr className={s.groupRow} key={gk}
+                      onClick={() => setShut((m) => ({ ...m, [gk]: !m[gk] }))}>
+                    <td colSpan={5}>
+                      <span className={`${s.caret} ${shut[gk] ? '' : s.caretOpen}`}>▶</span>
+                      {glabel}
+                    </td>
+                    <td colSpan={3} style={{ textAlign: 'right', textTransform: 'none',
+                                             letterSpacing: 0 }}>
+                      {list.length} books ·{' '}
+                      <b className={cls(list.reduce((a, y) => a + (y.lifetime.net || 0), 0))}>
+                        {inr(list.reduce((a, y) => a + (y.lifetime.net || 0), 0))}
+                      </b>
+                    </td>
+                  </tr>
+                  {shut[gk] ? null : list.map((x) => {
                     const isOpen = open === x.key;
                     return (
                       <>
@@ -239,9 +261,11 @@ export default function StraddleSystems() {
                             <span className={`${s.caret} ${isOpen ? s.caretOpen : ''}`}>▶</span>
                             <span className={s.name}>{x.name}</span>
                             <span className={`${s.chip} ${x.money === 'real' ? s.chipReal
-                              : x.money === 'refuted' ? s.chipDead : s.chipPaper}`}>
+                              : x.money === 'refuted' ? s.chipDead
+                              : x.money === 'study' ? s.chipAmber : s.chipPaper}`}>
                               {x.money === 'real' ? '● Real money'
-                                : x.money === 'refuted' ? 'Refuted' : 'Paper'}
+                                : x.money === 'refuted' ? 'Refuted'
+                                : x.money === 'study' ? 'Study' : 'Paper'}
                             </span>
                             <button className={s.rbtn} title="Rules" aria-label="Rules"
                                     onClick={(e) => { e.stopPropagation(); setRules(x); }}>R</button>
@@ -325,7 +349,8 @@ export default function StraddleSystems() {
 
                               <div className={s.blk}>
                                 <div className={s.blab}>
-                                  Track record · {x.money === 'real' ? 'real money' : 'paper'}
+                                  {x.money === 'study' ? 'Backtest result'
+                                    : `Track record · ${x.money === 'real' ? 'real money' : 'paper'}`}
                                   <span className={s.blabRule} /></div>
                                 <div className={s.mini}>
                                   <div className={s.m}><div className={s.mK}>Net</div>

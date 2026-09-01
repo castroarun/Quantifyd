@@ -34,6 +34,8 @@ OUT = ROOT / 'static' / 'app' / 'straddles_systems.json'
 NIFTY_WD2DTE = {0: 1, 1: 0, 2: 4, 3: 3, 4: 2}
 SENSEX_WD2DTE = {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}
 TODAY = date.today().isoformat()
+# the CSL / COMB / TimeB books are one family on one mechanic — grouped apart
+NINE16 = ('NAS_COMB20', 'CSL30F', 'CSL_TIMEB', 'NAS_C20')
 DAYNAME = {0: 'Mon', 1: 'Tue', 2: 'Wed', 3: 'Thu', 4: 'Fri'}
 DAYORD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 
@@ -76,7 +78,7 @@ SPEC = {
                       how='Same replay as COMB20, sliced to DTE 1.',
                       caveat='Moved off real money because it duplicated the 9:16 suite’s '
                              'strongest day while carrying ~4× the drawdown of the best cell.',
-                      links=[('research/138', '#')])),
+                      links=[('research/138', '/app/backtest/sensex-nifty-stop-by-dte')])),
     'NAS_COMB20_THU': dict(
         name='NAS_COMB20_THU', kind='intraday', venue='NIFTY', money='paper',
         subtitle='Thursday DTE3 cell · paper twin',
@@ -90,7 +92,7 @@ SPEC = {
                       how='Replayed per DTE on the recorded chain.',
                       caveat='Steadiest cell in the grid and <b>stop-invariant from 20% upward</b> '
                              '— the combined premium never rose 20% on any recorded Thursday.',
-                      links=[('research/138', '#')])),
+                      links=[('research/138', '/app/backtest/sensex-nifty-stop-by-dte')])),
     'NAS_COMB20_FRI': dict(
         name='NAS_COMB20_FRI', kind='intraday', venue='NIFTY', money='paper',
         subtitle='Friday DTE2 cell · paper twin',
@@ -101,7 +103,7 @@ SPEC = {
         evidence=dict(method=['Our recorded chain'], period='18 Fridays',
                       nums={'Net @10 lots': '+₹1.06L', 't': '0.94'},
                       how='Replayed per DTE on the recorded chain.', caveat='',
-                      links=[('research/138', '#')])),
+                      links=[('research/138', '/app/backtest/sensex-nifty-stop-by-dte')])),
     'CSL30F_NIFTY': dict(
         name='CSL30F · NIFTY', kind='intraday', venue='NIFTY', money='paper',
         subtitle='Flat 30% combined stop, every DTE — the control',
@@ -116,7 +118,7 @@ SPEC = {
         evidence=dict(method=['Our recorded chain'], period='92 days',
                       nums={}, how='Replayed on the recorded chain.',
                       caveat='Exists to be beaten, not to be deployed.',
-                      links=[('research/111', '#')])),
+                      links=[('research/111', '/app/backtest/csl-best-config-straddles')])),
     'CSL30F_SENSEX': dict(
         name='CSL30F · SENSEX', kind='intraday', venue='SENSEX', money='paper',
         subtitle='Flat combined stop, every DTE',
@@ -128,7 +130,7 @@ SPEC = {
                       how='Replayed on the recorded SENSEX chain (research/139).',
                       caveat='<b>SENSEX has no day-allocation edge</b> — the best cell reaches '
                              't 1.21 against a ~1.5 noise bar for the cells tested.',
-                      links=[('research/139', '#')])),
+                      links=[('research/139', 'https://github.com/castroarun/Quantifyd/tree/main/research/139_sensex_dte_allocation')])),
     'CSL_TIMEB_NIFTY': dict(
         name='TimeB · NIFTY', kind='intraday', venue='NIFTY', money='paper',
         subtitle='Windowed entry — pulled from live 28 Aug',
@@ -143,7 +145,7 @@ SPEC = {
                       how='AlgoTest 3-year NIFTY run of the same structure with real costs.',
                       caveat='<b class="neg">The long-sample evidence is NEGATIVE.</b> Our 85-day '
                              'record disagreed; the larger sample won and the book came off live.',
-                      links=[('Ops review', '#')])),
+                      links=[('Ops centre', '/app/straddles#ops-center')])),
     'CSL_TIMEB_SENSEX': dict(
         name='TimeB · SENSEX', kind='intraday', venue='SENSEX', money='paper',
         subtitle='Windowed entry on SENSEX',
@@ -158,7 +160,7 @@ SPEC = {
                       nums={}, how='Replayed on the recorded SENSEX chain.',
                       caveat='On SENSEX expiry every stop from 15% to 40% costs ~70% of the cell '
                              'and still fires 7/18 times (research/139).',
-                      links=[('research/139', '#')])),
+                      links=[('research/139', 'https://github.com/castroarun/Quantifyd/tree/main/research/139_sensex_dte_allocation')])),
     'CSL_TIMEB2_LIVE': dict(
         name='TimeB2 · expiry-Tue', kind='intraday', venue='NIFTY', money='paper',
         subtitle='Second afternoon slot on expiry Tuesday',
@@ -174,7 +176,7 @@ SPEC = {
                       nums={}, how='Window sweep over the recorded chain.',
                       caveat='A single-cell book on a handful of sessions — treat the record as '
                              'indicative only.',
-                      links=[('research/125', '#')])),
+                      links=[('research/125', 'https://github.com/castroarun/Quantifyd/tree/main/research/125_expiry_afternoon_straddle')])),
     'CSL_TIMEB2_NIFTY': dict(
         name='2nd Slots · NIFTY', kind='intraday', venue='NIFTY', money='paper',
         subtitle='Second-slot evidence book, Mon + Tue',
@@ -187,7 +189,7 @@ SPEC = {
                 'Cells unchanged pending the 05-Sep review.'],
         evidence=dict(method=['Our recorded chain'], period='sweep sec-18',
                       nums={}, how='Second-slot sweep on the recorded chain.',
-                      caveat='', links=[('research/111', '#')])),
+                      caveat='', links=[('research/111', '/app/backtest/csl-best-config-straddles')])),
     'CSL_TIMEB_NIFTY_MON': dict(
         name='TimeB · Monday', kind='intraday', venue='NIFTY', money='paper',
         subtitle='TimeB’s dropped Monday cell, kept for the Nov re-run',
@@ -202,7 +204,7 @@ SPEC = {
                       how='Window atlas across the recorded chain.',
                       caveat='Condemned by three independent routes. It exists to be re-checked '
                              'in November, not to be revived.',
-                      links=[('research/122', '#')])),
+                      links=[('research/122', 'https://github.com/castroarun/Quantifyd/tree/main/research/122_window_atlas')])),
     'CSL_TIMEB_NIFTY_MON_AM': dict(
         name='TimeB · Monday AM', kind='intraday', venue='NIFTY', money='paper',
         subtitle='Morning Monday cell · user override vs the study',
@@ -219,7 +221,7 @@ SPEC = {
                       how='Re-run of the Monday window grid on the recorded chain.',
                       caveat='<b class="neg">Chosen against the evidence.</b> The shuffle test '
                              'cannot separate it from noise; it is live on judgement, not proof.',
-                      links=[('research/124', '#')])),
+                      links=[('research/124', 'https://github.com/castroarun/Quantifyd/tree/main/research/124_monday_cells')])),
     'CSL30F_SENSEX_WED': dict(
         name='CSL30F · SENSEX Wed', kind='intraday', venue='SENSEX', money='paper',
         subtitle='Wednesday full-day cell · user override vs the study',
@@ -234,7 +236,7 @@ SPEC = {
                       how='Per-DTE cell sweep on the recorded SENSEX chain.',
                       caveat='<b class="neg">Negative in the study that motivated it.</b> On '
                              'paper by design until the review.',
-                      links=[('research/139', '#')])),
+                      links=[('research/139', 'https://github.com/castroarun/Quantifyd/tree/main/research/139_sensex_dte_allocation')])),
     'NAS_C20_TRAIL': dict(
         name='COMB + Trail', kind='intraday', venue='NIFTY', money='paper',
         subtitle='On stop, trail instead of quit',
@@ -245,7 +247,7 @@ SPEC = {
         doesnt=['A management A/B, never a deployment candidate on its own.'],
         evidence=dict(method=['Our recorded chain'], period='92 days', nums={},
                       how='Forward A/B against the plain COMB rule.',
-                      caveat='', links=[('research/111 §14', '#')])),
+                      caveat='', links=[('research/111', '/app/backtest/csl-best-config-straddles')])),
     'NAS_C20_SHIFT': dict(
         name='COMB + Shift', kind='intraday', venue='NIFTY', money='paper',
         subtitle='On stop, re-centre instead of quit',
@@ -256,7 +258,7 @@ SPEC = {
         doesnt=['A management A/B, never a deployment candidate on its own.'],
         evidence=dict(method=['Our recorded chain'], period='92 days', nums={},
                       how='Forward A/B against the plain COMB rule.',
-                      caveat='', links=[('research/111 §14', '#')])),
+                      caveat='', links=[('research/111', '/app/backtest/csl-best-config-straddles')])),
 }
 
 # books present in the state file but without an editorial entry get a stub
@@ -330,6 +332,7 @@ for book, rows in sorted(by_book.items()):
 
     systems.append(dict(
         key=book, name=spec['name'], subtitle=spec['subtitle'], kind=spec['kind'],
+        group='916',
         venue=spec['venue'], money=spec['money'],
         size_lots=lots, size_qty=rows[-1].get('qty'),
         window=window,
@@ -375,7 +378,7 @@ V2SPEC = dict(
                          'the 2nd.</b> The expiry lever was never tested — AlgoTest caps entry at '
                          '4 trading days before expiry (research/141).',
                   links=[('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix'),
-                         ('research/141', '#')]))
+                         ('research/141', 'https://github.com/castroarun/Quantifyd/tree/main/research/141_v2_bhav_pertrade'), ('full dossier', 'https://claude.ai/code/artifact/a3487b7e-e6c4-4a88-8f7f-e006999915fe')]))
 
 db = ROOT / 'backtest_data' / 'v2_ironfly_trading.db'
 if db.exists():
@@ -413,7 +416,8 @@ if db.exists():
         except Exception:
             curve = []
     systems.append(dict(
-        key='V2_IRONFLY', **{k: V2SPEC[k] for k in ('name', 'subtitle', 'kind', 'venue', 'money')},
+        key='V2_IRONFLY', group='positional',
+        **{k: V2SPEC[k] for k in ('name', 'subtitle', 'kind', 'venue', 'money')},
         size_lots=10, size_qty=650, window='09:20 · roll DTE≤1',
         state=dict(label=('Holding' if open_ else ('Armed' if armed else 'Flat · unarmed')),
                    tone=('pos' if open_ else 'muted')),
@@ -437,7 +441,8 @@ if cp.exists():
     hist = d.get('history') or []
     v = [float(h['pnl']) for h in hist if h.get('pnl') is not None]
     systems.append(dict(
-        key='CONDOR_WEDFRI', name='Wed→Fri iron condor', kind='positional', venue='NIFTY',
+        key='CONDOR_WEDFRI', group='positional',
+        name='Wed→Fri iron condor', kind='positional', venue='NIFTY',
         money='refuted', subtitle='±0.8% shorts, wings 1% beyond each short',
         size_lots=d.get('lots'), size_qty=d.get('qty'), window='Wed close → Fri close',
         state=dict(label='Stopped', tone='muted'),
@@ -456,7 +461,7 @@ if cp.exists():
                       caveat='The original +₹880/campaign came from a <b>no-skew simulation</b>; '
                              'on real prices it is −₹193. The book’s 7 winning cycles sit 1.45 '
                              'standard errors from that — luck, not counter-evidence.',
-                      links=[('research/140', '#')]),
+                      links=[('research/140', 'https://github.com/castroarun/Quantifyd/tree/main/research/140_condor_real_chain')]),
         rules=dict(
             does=[('Purpose', 'Built to use the days the 9:16 books leave idle — in Wednesday, out '
                               'Friday, flat before Monday so it never competes for margin.'),
@@ -471,19 +476,226 @@ if cp.exists():
                     '<b>Refuted 31 Aug 2026</b> on 434 real campaigns: −₹193/campaign at t −1.30.'],
             doc='research/80_farDTE_rescue/scripts/condor_paper.py · verdict: research/140')))
 
+# ---------------------------------------------------------------- V1 books + V2 lab
+SA = ROOT / 'static' / 'app' / 'straddles'
+
+
+def _load(fn):
+    f = SA / fn
+    return json.loads(f.read_text()) if f.exists() else None
+
+
+def _add(key, name, subtitle, group, kind, money, lots, qty, window, vals, closed,
+         rules, evid, state=('Flat', 'muted'), today=None):
+    systems.append(dict(
+        key=key, name=name, subtitle=subtitle, group=group, kind=kind, venue='NIFTY',
+        money=money, size_lots=lots, size_qty=qty, window=window,
+        state=dict(label=state[0], tone=state[1]),
+        today_pnl=today, running_pnl=None, risk_open=None, to_stop=None,
+        lifetime=dict(net=round(sum(vals)) if vals else 0, n=len(vals),
+                      win=round(100 * sum(1 for x in vals if x > 0) / len(vals)) if vals else None,
+                      maxdd=dd(vals), t=tstat(vals)),
+        legs=[], curve=[], closed=closed, evidence=evid, rules=rules))
+
+
+# --- V1 · one-and-done (naked, 0.4% move-stop) --------------------------------
+v1 = _load('v1.json')
+if v1 and v1.get('per_day'):
+    pd_ = v1['per_day']
+    days = sorted(pd_)
+    vals, closed = [], []
+    for d in days:
+        r = pd_[d]
+        fin = r.get('final')
+        if fin is None and r.get('series'):
+            fin = r['series'][-1][1]
+        if fin is None:
+            continue
+        vals.append(float(fin))
+        closed.append(dict(day=d, strike=r.get('strike'), credit=r.get('credit'),
+                           exit=(r.get('exit') or {}).get('time') if isinstance(r.get('exit'), dict) else None,
+                           reason=('MOVE-STOP' if r.get('stopped') else 'TIME'),
+                           dte=r.get('dte'), pnl=round(float(fin))))
+    t_today = next((round(float(c['pnl'])) for c in closed if c['day'] == TODAY), None)
+    _add('V1_OAD', 'V1 · One-and-done', 'Naked straddle · 0.4% move-stop · one and done',
+         'intraday', 'intraday', 'paper', v1.get('lots'), (v1.get('lots') or 0) * (v1.get('lot') or 65),
+         '09:20 → 14:45', vals, closed[::-1][:40],
+         dict(does=[('Universe', 'NIFTY weekly ATM straddle, <b>naked</b> — no wings.'),
+                    ('Entry', '~<b>09:20</b>, sell ATM CE + ATM PE.'),
+                    ('Stop', f"<b>{v1.get('trigger_pct', 0.4)}% underlying move</b> from the entry "
+                             "spot — measured on the index, not on premium."),
+                    ('Exit', '<b>14:45</b>, or the move-stop.')],
+              doesnt=['<b>One and done</b> — after the stop fires it does not re-enter, whatever '
+                      'the rest of the day does.',
+                      'No wings: the tail is open until the stop acts, which is why it is paper.',
+                      'No per-leg stop and no adjustment.'],
+              doc='research/58_intraday_recenter_straddle/scripts/v1_oad.py'),
+         dict(method=['Our recorded chain'], period=f"{len(vals)} days",
+              nums={}, how='Replayed on the 1-minute chain recorded since 20 Apr 2026.',
+              caveat='<b>The backtest and the record above are the same days</b> — a replay, not '
+                     'an out-of-sample test.',
+              links=[('research/58', 'https://github.com/castroarun/Quantifyd/tree/main/research/58_intraday_recenter_straddle')]),
+         state=('Closed' if t_today is not None else 'Flat',
+                'neutral' if t_today is not None else 'muted'), today=t_today)
+
+# --- V1 + 30% combined-premium SL (the lab variant) ---------------------------
+v1s = _load('v1_sl30.json')
+if v1s and v1s.get('trades'):
+    tr = sorted(v1s['trades'], key=lambda x: x['day'])
+    vals = [float(t['final']) for t in tr if t.get('final') is not None]
+    closed = [dict(day=t['day'][:10], dte=t.get('dte'), strike=None, credit=None,
+                   exit=t.get('exit_time'),
+                   reason=('SL 30%' if t.get('stopped') else 'TIME'),
+                   pnl=round(float(t['final']))) for t in tr[::-1][:40]]
+    stt = v1s.get('stats') or {}
+    t_today = next((round(float(t['final'])) for t in tr if t['day'][:10] == TODAY), None)
+    _add('V1_SL30', 'V1 variant · 30% combined-premium SL',
+         'Same entry as V1, stopped on the pair rather than the move',
+         'intraday', 'intraday', 'paper', v1s.get('lots'),
+         (v1s.get('lots') or 0) * (v1s.get('lot') or 65), '09:20 → close', vals,
+         closed,
+         dict(does=[('Entry', 'Identical to V1 — ATM straddle at ~09:20.'),
+                    ('Stop', f"<b>Combined premium +{v1s.get('sl_pct', 30):.0f}%</b> — the two legs "
+                             "added and watched as one number, instead of V1's underlying move-stop."),
+                    ('Exit', 'Held to the last bar unless the combined stop fires.')],
+              doesnt=['<b>NOT DEPLOYED.</b> This is a lab variant on the recorded chain — there is '
+                      'no live service running a 30% combined stop on the V1 book.',
+                      'Exists to answer whether the stop should read the pair or the index.'],
+              doc='research/58_intraday_recenter_straddle/scripts/sl30_journeys.py'),
+         dict(method=['Our recorded chain'], period=f"{stt.get('n', len(vals))} days",
+              nums={'Net @10 lots': f"+₹{stt.get('total', 0):,}" if stt.get('total', 0) > 0
+                    else f"−₹{abs(stt.get('total', 0)):,}",
+                    'Win': f"{stt.get('win', '—')}%", 'Max DD': f"−₹{abs(stt.get('maxdd', 0)):,}",
+                    'SL hit': f"{stt.get('sl_hit_pct', '—')}%"},
+              how='Re-priced from the untruncated 5-minute premium path of every recorded day.',
+              caveat='Its DTE-3 cell is <b>stop-invariant from 20% upward</b> (0 of 18 stops fired) '
+                     '— that cell is about the day, not the stop (research/138).',
+              links=[('research/138', '/app/backtest/sensex-nifty-stop-by-dte')]),
+         state=('Closed' if t_today is not None else 'Flat',
+                'neutral' if t_today is not None else 'muted'), today=t_today)
+
+# --- V2 positional bi-weekly (the recorded-chain lab, NOT the live engine) -----
+v2l = _load('v2_2.0.json') or _load('v2.json')
+if v2l and v2l.get('trades'):
+    tr = sorted(v2l['trades'], key=lambda x: x['entry_day'])
+    vals = [float(t['pnl']) for t in tr if t.get('pnl') is not None]
+    closed = [dict(day=t['entry_day'], exit=t.get('exit_day'), expiry=t.get('expiry'),
+                   strike=t.get('strike'), credit=None, reason=t.get('exit_reason'),
+                   pnl=round(float(t['pnl']))) for t in tr[::-1][:40]]
+    _add('V2_LAB', 'V2 · Positional bi-weekly',
+         f"Recorded-chain replay · {v2l.get('move_stop')}% move-stop · ±{v2l.get('wings')} wings",
+         'positional', 'positional', 'paper', v2l.get('lots'),
+         (v2l.get('lots') or 0) * (v2l.get('lot') or 65), 'Multi-day carry', vals, closed,
+         dict(does=[('What it is', 'A <b>replay of the V2 structure over our recorded chain</b> — '
+                                   'the lab the stop and wing sweeps were run in.'),
+                    ('Structure', f"Short ATM straddle + ±{v2l.get('wings')} wings."),
+                    ('Stop', f"{v2l.get('move_stop')}% underlying move."),
+                    ('Target', f"{v2l.get('pt')}% of credit.")],
+              doesnt=['<b>This is not the live engine.</b> V2 · Iron fly is the executor; this is '
+                      'the replay used to choose its parameters.',
+                      'Wings here are priced from the recorder, which goes stale far from the '
+                      'money — read it as a straddle-behaviour probe, not a fly validation.'],
+              doc='research/58_intraday_recenter_straddle/scripts/v2_curves.py'),
+         dict(method=['Our recorded chain'], period=f"{len(vals)} cycles",
+              nums={}, how='Replayed over the recorded chain, Apr 2026 onward.',
+              caveat='Short window and stale far-OTM wing quotes (research/89). The long-sample '
+                     'evidence for this structure is the AlgoTest / bhavcopy pair on the engine row.',
+              links=[('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix')]))
+
+
+# ------------------------------------------------- tested, not trading (studies)
+# Study RESULTS, not live feeds. They change when the study is re-run, never
+# automatically. All three trade the FRONT weekly; the live engine trades the 2nd.
+V2_CORE_DOES = [
+    ('Structure', 'Short iron fly — SELL ATM CE + PE, BUY wings at <b>±2.0% of ATM</b>.'),
+    ('Expiry', '<b>FRONT weekly</b> — the nearest. <b>Not</b> the 2nd-nearest the live '
+               'engine trades.'),
+    ('Entry', '<b>09:20</b>, 4 trading days before expiry (AlgoTest\'s maximum).'),
+    ('Exit', '1 trading day before expiry, 15:15.'),
+    ('Gate', 'India VIX ≥ 13 at entry, applied from the export\'s own VIX column.'),
+]
+
+
+def _study(key, name, sub, net, n, win, maxdd, calmar, method, period, how, caveat,
+           extra_does, extra_doesnt, links):
+    systems.append(dict(
+        key=key, name=name, subtitle=sub, group='study', kind='positional', venue='NIFTY',
+        money='study', size_lots=10, size_qty=650,
+        window='09:20 · 4 TD → 1 TD', state=dict(label='Backtest only', tone='muted'),
+        today_pnl=None, running_pnl=None, risk_open=None, to_stop=None,
+        lifetime=dict(net=net, n=n, win=win, maxdd=maxdd, t=None),
+        legs=[], curve=[], closed=[],
+        evidence=dict(method=method, period=period,
+                      nums={'Net @10 lots': ('+₹%s' % f'{net:,}') if net > 0 else ('−₹%s' % f'{abs(net):,}'),
+                            'Calmar': calmar, 'Max DD': '−₹%s' % f'{abs(maxdd):,}',
+                            'Trades': str(n)},
+                      how=how, caveat=caveat, links=links),
+        rules=dict(does=V2_CORE_DOES + extra_does,
+                   doesnt=extra_doesnt,
+                   doc='research/60_v2_straddle_optimization/'
+                       'V2_BIWEEKLY_STRADDLE_ALGOTEST_OPTIMIZATION_SWEEP_STATUS.md')))
+
+
+_study('STUDY_ALGOTEST', 'V2 · AlgoTest, full rules',
+       'The tested spec — front weekly, stop + target',
+       880110, 204, 56, -116834, '1.03', ['AlgoTest'], '7.3 yrs · 2019–2026',
+       'AlgoTest\'s 1-minute positional engine, net of ₹20/order, taxes and 0.25% '
+       'slippage (measured: 0.169% median half-spread over 3.47M recorded quotes).',
+       '<b class="neg">⚠ Front weekly.</b> The live engine trades the 2nd-nearest — a lever '
+       'the sweep listed and never ran, because AlgoTest caps entry at 4 TD (research/141). '
+       '<b>The trade CSV was not retained</b>, so streaks and per-year cannot be recomputed.',
+       [('Manage', '<b>2% underlying move-stop</b> · <b>+40% of credit</b> target · re-enter '
+                    'after either.')],
+       ['Not trading. This is the backtest the live book\'s parameters came from.',
+        'Its per-trade export is missing — an AlgoTest re-run is the open item.'],
+       [('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix'),
+        ('re-run spec', 'https://github.com/castroarun/Quantifyd/tree/main/research/141_v2_bhav_pertrade')])
+
+_study('STUDY_ALGOTEST_CPR', 'V2 · AlgoTest + CPR filter',
+       'Best Calmar on the page — but an overlay, on a trade list we no longer hold',
+       1100000, 147, None, -95000, '1.59', ['AlgoTest'], '7.3 yrs · 2019–2026',
+       'The same AlgoTest run with our CPR skip applied <b>post-hoc to the exported '
+       'trades</b> — not a native AlgoTest feature.',
+       'Validated by a train/test split: the ≈0.12% threshold is chosen on one half and '
+       'improves return AND drawdown on the other. <b>But it is an overlay on a CSV that was '
+       'not kept</b>, so it cannot be re-checked, and it is still the front weekly.',
+       [('Extra gate', 'Skip when the <b>prior-day CPR width &lt; 0.10%</b> of spot — '
+                       'compression precedes expansion.')],
+       ['Not trading.',
+        'The filter is ours, applied after the fact; AlgoTest never ran it.'],
+       [('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix')])
+
+_study('STUDY_ARM_C', 'Our variant C · front weekly + CPR',
+       'Our bhavcopy rebuild — the CONTROL arm, no stop',
+       1516346, 213, 54, -344672, '0.59', ['Our bhavcopy'], '7.5 yrs · 2019–2026',
+       'Rebuilt on real NSE bhavcopy closes with untraded contracts excluded and the ATM '
+       'chosen from the entry-day OPEN (causal). Per-trade output retained, so streaks and '
+       'the month grid are computable.',
+       '<b>Arm C carries NO STOP.</b> It is a measurement control — it exists to isolate what '
+       'the 2% stop does, and is <b>not a proposal to trade without one</b>. Its stopped twin '
+       '(arm D) nets +₹9,52,919 at Calmar 0.32.',
+       [('Extra gate', 'Skip when the prior-day CPR width &lt; 0.10% of spot.'),
+        ('Stop', '<b>None</b> — this is the control.')],
+       ['<b>Not a deployable configuration.</b> No stopless book is proposed.',
+        'Held to DTE-1 regardless of what the index does in between.'],
+       [('research/141', 'https://github.com/castroarun/Quantifyd/tree/main/research/141_v2_bhav_pertrade'), ('full dossier', 'https://claude.ai/code/artifact/a3487b7e-e6c4-4a88-8f7f-e006999915fe')])
+
+
 # ---------------------------------------------------------------- write + report
-order = {'real': 0, 'paper': 1, 'refuted': 2}
-systems.sort(key=lambda s: (order.get(s['money'], 3), s['kind'] != 'intraday', -abs(s['lifetime']['net'] or 0)))
+GORDER = {'916': 0, 'intraday': 1, 'positional': 2, 'study': 3}
+MORDER = {'real': 0, 'paper': 1, 'refuted': 2, 'study': 4}
+systems.sort(key=lambda s: (GORDER.get(s.get('group'), 9), MORDER.get(s['money'], 3),
+                            -abs(s['lifetime']['net'] or 0)))
 
 payload = dict(generated_at=datetime.now().isoformat()[:19], date=TODAY,
                n=len(systems), systems=systems)
 OUT.write_text(json.dumps(payload), encoding='utf-8')
 
 print(f'wrote {OUT}  ({OUT.stat().st_size/1024:.0f} KB)  ·  {len(systems)} systems\n')
-print(f"{'key':24} {'kind':11} {'money':8} {'lots':>5} {'window':>16} {'net':>11} {'n':>4} {'state'}")
+print(f"{'key':24} {'group':11} {'money':8} {'lots':>5} {'window':>16} {'net':>11} {'n':>4} {'state'}")
 print('-' * 108)
 for s in systems:
-    print(f"{s['key']:24} {s['kind']:11} {s['money']:8} {str(s['size_lots'] or '—'):>5} "
+    print(f"{s['key']:24} {s.get('group',''):11} {s['money']:8} {str(s['size_lots'] or '—'):>5} "
           f"{s['window']:>16} {s['lifetime']['net']:>11,} {s['lifetime']['n']:>4} "
           f"{s['state']['label']}")
 miss = [s['key'] for s in systems if not s['rules']['does']]
