@@ -20,6 +20,13 @@ interface V1Daily { version: string; trigger_pct: number; lots: number; lot: num
 interface Leg { type: 'CE' | 'PE'; strike: number; qty: number; side: string; entry: number | null; ltp: number | null; pnl: number; entry_time?: string | null; exit_time?: string | null; max_ltp?: number | null; }
 
 /* ---------- light theme tokens ---------- */
+const evTh: React.CSSProperties = { textAlign: 'left', padding: '5px 8px', fontSize: 10.5,
+  fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase', color: '#6B7280',
+  borderBottom: '1px solid #E5E7EB' };
+const evK: React.CSSProperties = { padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'nowrap',
+  color: '#6B7280', borderBottom: '1px solid #F3F4F6', width: 150 };
+const evV: React.CSSProperties = { padding: '5px 8px', verticalAlign: 'top', color: '#374151',
+  borderBottom: '1px solid #F3F4F6' };
 const C = { ink: '#1B1B1A', muted: '#888780', faint: '#B4B2A9', sec: '#5F5E5A', hair: 'rgba(0,0,0,0.10)',
   hairSoft: 'rgba(0,0,0,0.06)', pos: '#0F6E56', neg: '#A32D2D', navy: '#1E3A8A', navySoft: '#EFF3FA',
   amber: '#B45309', amberSoft: '#FEF3C7', surface: '#FFFFFF', canvas: '#FAFAF9' };
@@ -1751,6 +1758,94 @@ export default function Straddles() {
               {v2engTs ? `live-quote ${new Date(v2engTs * 1000).toLocaleTimeString('en-IN', { hour12: false })} · ` : ''}closed {v2eng.closed_trades} · <b style={{ color: col(v2eng.closed_total_pnl) }}>{inr(v2eng.closed_total_pnl)}</b>
             </span>
           </div>
+
+          {/* ---- the evidence this book rests on: two engines, one table ---- */}
+          <details style={{ marginBottom: 10 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, color: C.navy, listStyle: 'none' }}>
+              &#9656; The evidence &mdash; 7.3 years, two independent engines
+            </summary>
+
+            <div style={{ overflowX: 'auto', marginTop: 8 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
+                <thead>
+                  <tr>
+                    <th style={evTh}>&nbsp;</th>
+                    <th style={evTh}>AlgoTest &mdash; the live spec</th>
+                    <th style={evTh}>Our bhavcopy engine</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td style={evK}>what it models</td>
+                      <td style={evV}>full rules, incl. the 2% move-stop + 40% profit target</td>
+                      <td style={evV}>structure only &mdash; EOD closes, <b>no stop, no PT</b></td></tr>
+                  <tr><td style={evK}>data path</td>
+                      <td style={evV}>AlgoTest historical chain</td>
+                      <td style={evV}>NSE bhavcopy (nse_options_bhav), look-ahead-free</td></tr>
+                  <tr><td style={evK}>window</td>
+                      <td style={evV}>2019-02 &rarr; 2026-05 (7.3y)</td>
+                      <td style={evV}>7 years</td></tr>
+                  <tr><td style={evK}>trades</td><td style={evV}>204 (VIX &ge; 13)</td><td style={evV}>&mdash;</td></tr>
+                  <tr><td style={evK}>net P&amp;L</td>
+                      <td style={{ ...evV, fontWeight: 700, color: C.pos }}>+&#8377;8,80,110</td>
+                      <td style={{ ...evV, fontWeight: 700, color: C.pos }}>+&#8377;6,93,000</td></tr>
+                  <tr><td style={evK}>max drawdown</td>
+                      <td style={{ ...evV, fontWeight: 700 }}>&minus;&#8377;1,16,834</td>
+                      <td style={{ ...evV, fontWeight: 700, color: C.neg }}>&minus;&#8377;4,87,000</td></tr>
+                  <tr><td style={evK}>Calmar</td>
+                      <td style={{ ...evV, fontWeight: 700 }}>1.03</td>
+                      <td style={evV}>0.19</td></tr>
+                  <tr><td style={evK}>green years</td><td style={evV}>7 / 8</td><td style={evV}>&mdash;</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 8,
+                          background: C.amberSoft, border: '1px solid #E7D8A8',
+                          fontSize: 11.5, color: C.sec, lineHeight: 1.7 }}>
+              <b style={{ color: C.amber }}>Read the disagreement, do not average it.</b> The two engines
+              agree on the <b>edge</b> (+&#8377;8.80L vs +&#8377;6.93L) and disagree on <b>drawdown</b>
+              (&minus;&#8377;1.17L vs &minus;&#8377;4.87L). That is expected: our engine prices daily closes,
+              so it cannot see the intraday 2% move-stop or the 40% profit target and holds through
+              falls the live rules would have cut. So the <b>edge is cross-validated on two data
+              paths; the drawdown control is single-source</b>. Sizing on Calmar 1.03 trusts one engine.
+            </div>
+
+            <div style={{ overflowX: 'auto', marginTop: 10 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
+                <thead><tr><th style={evTh} colSpan={2}>What it takes, and what it pays &mdash; 10 lots (qty 650)</th></tr></thead>
+                <tbody>
+                  <tr><td style={evK}>capital required</td>
+                      <td style={evV}><b>&#8377;8,24,580</b> &mdash; &#8377;82,458/lot, verified Zerodha
+                          SPAN+exposure via the Kite margin API (2026-06-08). A naked straddle is
+                          &#8377;2,10,088/lot, i.e. 2.5&times; more.</td></tr>
+                  <tr><td style={evK}>CAGR</td>
+                      <td style={evV}><b>~10.5%</b> on &#8377;8.25L compounding &middot; simple return on
+                          margin <b>14.6%/yr</b> &middot; on 1.5&times; buffered working capital ~9.7%/yr</td></tr>
+                  <tr><td style={evK}>mean P&amp;L / trade</td>
+                      <td style={evV}><b>+&#8377;4,314</b> (&#8377;8,80,110 &divide; 204 trades)</td></tr>
+                  <tr><td style={evK}>win rate</td>
+                      <td style={evV}>56% on the raw 273-trade platform run, before the VIX floor</td></tr>
+                  <tr><td style={evK}>avg risk / trade</td>
+                      <td style={evV}>Loss is <b>bounded by construction</b> &mdash; the &plusmn;2%-of-ATM wings
+                          cap it at (wing width &minus; credit), known at entry. <b>Worst observed trade
+                          &minus;&#8377;71,000</b>; worst week &minus;&#8377;1.84L. The wings, not the stop,
+                          are the real risk control.</td></tr>
+                  <tr><td style={evK}>drawdown vs capital</td>
+                      <td style={evV}>&minus;&#8377;1.17L on &#8377;8.25L margin = <b>14%</b> (AlgoTest).
+                          On our unmanaged EOD reproduction it is &minus;&#8377;4.87L = 59%.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ fontSize: 11, color: C.faint, marginTop: 8, lineHeight: 1.7 }}>
+              The <b>CPR compression gate this engine runs</b> (skip when prior-day CPR &lt; 0.10%) is
+              correct <i>for this structure</i>, and both engines agree: AlgoTest +&#8377;8.1L &rarr; +&#8377;11.0L
+              (Calmar 0.95 &rarr; 1.59), ours +&#8377;6.93L &rarr; +&#8377;13.79L. The same filter <i>hurts</i> the
+              separate DTE-3 fly in the look-ahead audit &mdash; it is structure-specific, not universal.
+              {' '}<a href="/app/backtest/v2-nifty-ironfly-sl-vix" style={{ color: C.navy }}>V2 study &#8599;</a>
+              {' · '}<a href="/app/backtest/nifty-straddle-lookahead-audit" style={{ color: C.navy }}>look-ahead audit &amp; independent reproduction &#8599;</a>
+            </div>
+          </details>
 
           {/* ---- PAPER / LIVE control bar ---- */}
           {v2eng.mode != null && (
