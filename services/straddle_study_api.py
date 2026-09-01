@@ -83,6 +83,9 @@ def _metrics(rows, label, meta=None):
     span = max(len(years), 1)
     aw = sum(wins) / len(wins) if wins else 0.0
     al = sum(loss) / len(loss) if loss else 0.0
+    per_month = defaultdict(float)
+    for r in rows:
+        per_month[r[0][:7]] += r[2]          # entry_date "YYYY-MM"
     out = dict(
         label=label,
         n=n,
@@ -105,6 +108,7 @@ def _metrics(rows, label, meta=None):
         years_positive=sum(1 for y in years if per_year[y] > 0),
         years_total=len(years),
         per_year={str(y): round(per_year[y]) for y in years},
+        per_month={m: round(per_month[m]) for m in sorted(per_month)},
     )
     if meta:
         out.update(meta)
@@ -146,39 +150,41 @@ def runs():
                                  wr_min=DEF_WR_MIN, streak_max=DEF_STREAK_MAX))
 
 
-@straddle_study_bp.route('/api/straddle-study/query')
-def query():
-    idxs = _csv_param('index')
-    sls = _csv_param('sl', float)
-    dtes = _csv_param('dte', int)
-    y_from = request.args.get('year_from', type=int)
-    y_to = request.args.get('year_to', type=int)
-    excl = request.args.get('exclude_events', '1') != '0'
-    rate = request.args.get('cost_rate', DEF_COST_RATE, type=float) / 100.0
-    flat = request.args.get('cost_flat', DEF_COST_FLAT, type=float)
-    scale = request.args.get('lots_scale', 1.0, type=float)
-    group = request.args.get('group_by', 'run')
-    sort = request.args.get('sort', 'net')
-    wr_min = request.args.get('wr_min', DEF_WR_MIN, type=float)
-    stk_max = request.args.get('streak_max', DEF_STREAK_MAX, type=int)
+def _parse_filters():
+    return dict(
+        idxs=_csv_param('index'),
+        sls=_csv_param('sl', float),
+        dtes=_csv_param('dte', int),
+        y_from=request.args.get('year_from', type=int),
+        y_to=request.args.get('year_to', type=int),
+        excl=request.args.get('exclude_events', '1') != '0',
+        rate=request.args.get('cost_rate', DEF_COST_RATE, type=float) / 100.0,
+        flat=request.args.get('cost_flat', DEF_COST_FLAT, type=float),
+        scale=request.args.get('lots_scale', 1.0, type=float),
+        group=request.args.get('group_by', 'run'),
+    )
 
+
+def _collect(f):
+    """Apply filters, bucket trades per group. Returns (buckets, meta) where
+    each bucket is a date-ordered list of (entry_date, year, net)."""
     where, args = ["1=1"], []
-    if idxs:
-        where.append("r.index_name IN (%s)" % ",".join(["?"] * len(idxs)))
-        args += idxs
-    if sls:
-        where.append("r.sl_pct IN (%s)" % ",".join(["?"] * len(sls)))
-        args += sls
-    if dtes:
-        where.append("t.dte IN (%s)" % ",".join(["?"] * len(dtes)))
-        args += dtes
-    if y_from:
+    if f['idxs']:
+        where.append("r.index_name IN (%s)" % ",".join(["?"] * len(f['idxs'])))
+        args += f['idxs']
+    if f['sls']:
+        where.append("r.sl_pct IN (%s)" % ",".join(["?"] * len(f['sls'])))
+        args += f['sls']
+    if f['dtes']:
+        where.append("t.dte IN (%s)" % ",".join(["?"] * len(f['dtes'])))
+        args += f['dtes']
+    if f['y_from']:
         where.append("t.year >= ?")
-        args.append(y_from)
-    if y_to:
+        args.append(f['y_from'])
+    if f['y_to']:
         where.append("t.year <= ?")
-        args.append(y_to)
-    if excl:
+        args.append(f['y_to'])
+    if f['excl']:
         where.append("t.is_event = 0")
 
     sql = ("SELECT r.run_id, r.index_name, r.sl_pct, r.lots, t.entry_date, t.year, "
@@ -186,10 +192,11 @@ def query():
            "FROM at_trades t JOIN at_runs r ON r.run_id = t.run_id "
            "WHERE " + " AND ".join(where) + " ORDER BY t.entry_date")
 
+    group = f['group']
     buckets, meta = defaultdict(list), {}
     with _con() as c:
         for r in c.execute(sql, args):
-            net = (r['gross'] - rate * r['turnover'] - flat) * scale
+            net = (r['gross'] - f['rate'] * r['turnover'] - f['flat']) * f['scale']
             if group == 'dte':
                 key = "DTE %d" % r['dte']
                 mk = dict(dte=r['dte'])
@@ -207,7 +214,17 @@ def query():
                 mk = dict(index_name=r['index_name'], sl_pct=r['sl_pct'], lots=r['lots'])
             buckets[key].append((r['entry_date'], r['year'], net))
             meta.setdefault(key, mk)
+    return buckets, meta
 
+
+@straddle_study_bp.route('/api/straddle-study/query')
+def query():
+    f = _parse_filters()
+    sort = request.args.get('sort', 'net')
+    wr_min = request.args.get('wr_min', DEF_WR_MIN, type=float)
+    stk_max = request.args.get('streak_max', DEF_STREAK_MAX, type=int)
+
+    buckets, meta = _collect(f)
     rows = []
     for k, vals in buckets.items():
         m = _gate(_metrics(vals, k, meta[k]), wr_min, stk_max)
@@ -230,8 +247,27 @@ def query():
     rows.sort(key=keyf, reverse=True)
 
     return jsonify(ok=True, rows=rows, n_groups=len(rows),
-                   filters=dict(index=idxs, sl=sls, dte=dtes, year_from=y_from,
-                                year_to=y_to, exclude_events=excl,
-                                cost_rate=rate * 100, cost_flat=flat,
-                                lots_scale=scale, group_by=group, sort=sort,
+                   filters=dict(index=f['idxs'], sl=f['sls'], dte=f['dtes'],
+                                year_from=f['y_from'], year_to=f['y_to'],
+                                exclude_events=f['excl'], cost_rate=f['rate'] * 100,
+                                cost_flat=f['flat'], lots_scale=f['scale'],
+                                group_by=f['group'], sort=sort,
                                 wr_min=wr_min, streak_max=stk_max))
+
+
+@straddle_study_bp.route('/api/straddle-study/series')
+def series():
+    """Equity + drawdown series for ONE bucket (same filters as /query,
+    plus label=<bucket label>). Returns date-ordered points."""
+    f = _parse_filters()
+    label = request.args.get('label', '')
+    buckets, _meta = _collect(f)
+    vals = buckets.get(label)
+    if not vals:
+        return jsonify(ok=False, error='no such bucket', labels=sorted(buckets)), 404
+    pts, cum, peak = [], 0.0, 0.0
+    for d, _y, net in vals:
+        cum += net
+        peak = max(peak, cum)
+        pts.append(dict(date=d, pnl=round(net), cum=round(cum), dd=round(cum - peak)))
+    return jsonify(ok=True, label=label, n=len(pts), points=pts)

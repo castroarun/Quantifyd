@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import styles from './StraddleStudy.module.css';
 import { apiGet } from '../api/client';
 
@@ -49,9 +50,24 @@ interface MetricRow {
   years_positive: number;
   years_total: number;
   per_year: Record<string, number>;
+  per_month: Record<string, number>;
   verdict: string;
   gate_stats: boolean;
   gate_tradeable: boolean;
+}
+
+interface SeriesPoint {
+  date: string;
+  pnl: number;
+  cum: number;
+  dd: number;
+}
+
+interface SeriesResp {
+  ok: boolean;
+  label: string;
+  n: number;
+  points: SeriesPoint[];
 }
 
 interface QueryResp {
@@ -118,6 +134,120 @@ const COLS: Col[] = [
   { key: 'verdict', label: 'Verdict', asc: true },
 ];
 
+/* Human-readable explanation for the verdict chip tooltip. */
+function verdictReasons(m: MetricRow): string {
+  const bad: string[] = [];
+  if (m.t < 2.0) bad.push(`t ${m.t.toFixed(2)} < 2.0`);
+  if ((m.pf ?? 0) < 1.3) bad.push(`PF ${m.pf ?? '-'} < 1.3`);
+  if (m.years_total > 0 && m.years_positive / m.years_total < 0.8)
+    bad.push(`only ${m.years_positive}/${m.years_total} years positive (< 80%)`);
+  if (m.win_pct < 45) bad.push(`WR ${m.win_pct.toFixed(1)}% < 45%`);
+  if (m.lose_streak > 7) bad.push(`losing streak ${m.lose_streak} > 7`);
+  return bad.length ? `Fails: ${bad.join('; ')}` : 'Passes both gates (stats + tradeability)';
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/* Month x year P&L heatmap. */
+function Heatmap({ perMonth, perYear }: {
+  perMonth: Record<string, number>;
+  perYear: Record<string, number>;
+}) {
+  const years = Array.from(new Set(Object.keys(perMonth).map((k) => k.slice(0, 4)))).sort();
+  const vals = Object.values(perMonth);
+  const maxAbs = Math.max(1, ...vals.map((v) => Math.abs(v)));
+  const cellStyle = (v: number | undefined): CSSProperties => {
+    if (v === undefined) return {};
+    const a = 0.08 + 0.62 * (Math.abs(v) / maxAbs);
+    return {
+      background: v >= 0 ? `rgba(15, 110, 86, ${a})` : `rgba(163, 45, 45, ${a})`,
+      color: Math.abs(v) / maxAbs > 0.55 ? '#fff' : undefined,
+    };
+  };
+  const fmtK = (v: number) =>
+    Math.abs(v) >= 100000 ? `${(v / 100000).toFixed(1)}L` : `${Math.round(v / 1000)}k`;
+  return (
+    <table className={styles.heat}>
+      <thead>
+        <tr>
+          <th></th>
+          {MONTHS.map((mo) => <th key={mo}>{mo}</th>)}
+          <th>Year</th>
+        </tr>
+      </thead>
+      <tbody>
+        {years.map((y) => (
+          <tr key={y}>
+            <td className={styles.heatYear}>{y}</td>
+            {MONTHS.map((_, i) => {
+              const k = `${y}-${String(i + 1).padStart(2, '0')}`;
+              const v = perMonth[k];
+              return (
+                <td key={k} style={cellStyle(v)} title={v !== undefined ? `${k}: ${inr(v)}` : ''}>
+                  {v !== undefined ? fmtK(v) : ''}
+                </td>
+              );
+            })}
+            <td className={(perYear[y] ?? 0) >= 0 ? styles.pos : styles.neg}>
+              <b>{perYear[y] !== undefined ? fmtK(perYear[y]) : ''}</b>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/* Cumulative P&L + drawdown, inline SVG (no chart lib). */
+function EquityChart({ points }: { points: SeriesPoint[] }) {
+  const W = 1000, EQ_TOP = 8, EQ_BOT = 185, DD_TOP = 200, DD_BOT = 288;
+  const n = points.length;
+  if (n < 2) return null;
+  const cums = points.map((p) => p.cum);
+  const cMin = Math.min(0, ...cums);
+  const cMax = Math.max(0, ...cums);
+  const dMin = Math.min(...points.map((p) => p.dd), -1);
+  const x = (i: number) => 12 + (i / (n - 1)) * (W - 24);
+  const yEq = (v: number) => EQ_BOT - ((v - cMin) / (cMax - cMin || 1)) * (EQ_BOT - EQ_TOP);
+  const yDd = (v: number) => DD_TOP + (v / dMin) * (DD_BOT - DD_TOP);
+  const eqPath = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${yEq(p.cum).toFixed(1)}`).join('');
+  const ddArea =
+    `M${x(0).toFixed(1)},${DD_TOP}` +
+    points.map((p, i) => `L${x(i).toFixed(1)},${yDd(p.dd).toFixed(1)}`).join('') +
+    `L${x(n - 1).toFixed(1)},${DD_TOP}Z`;
+  // year boundaries
+  const marks: { i: number; y: string }[] = [];
+  for (let i = 1; i < n; i++) {
+    if (points[i].date.slice(0, 4) !== points[i - 1].date.slice(0, 4))
+      marks.push({ i, y: points[i].date.slice(0, 4) });
+  }
+  const last = points[n - 1];
+  const worstDd = Math.min(...points.map((p) => p.dd));
+  return (
+    <svg viewBox={`0 0 ${W} 300`} className={styles.chart} preserveAspectRatio="none">
+      {marks.map((mk) => (
+        <g key={mk.y}>
+          <line x1={x(mk.i)} x2={x(mk.i)} y1={EQ_TOP} y2={DD_BOT} className={styles.chartGrid} />
+          <text x={x(mk.i) + 4} y={EQ_TOP + 12} className={styles.chartYear}>{mk.y}</text>
+        </g>
+      ))}
+      {cMin < 0 && (
+        <line x1={12} x2={W - 12} y1={yEq(0)} y2={yEq(0)} className={styles.chartZero} />
+      )}
+      <path d={eqPath} className={styles.chartEq} />
+      <text x={W - 14} y={yEq(last.cum) - 6} className={styles.chartLblPos} textAnchor="end">
+        {inr(last.cum)}
+      </text>
+      <line x1={12} x2={W - 12} y1={DD_TOP} y2={DD_TOP} className={styles.chartZero} />
+      <path d={ddArea} className={styles.chartDd} />
+      <text x={14} y={DD_BOT - 4} className={styles.chartLblNeg}>
+        MaxDD {inr(worstDd)}
+      </text>
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------------ page */
 
 export default function StraddleStudy() {
@@ -127,7 +257,7 @@ export default function StraddleStudy() {
   const [err, setErr] = useState('');
 
   // filters
-  const [indices, setIndices] = useState<string[]>([]);
+  const [indices, setIndices] = useState<string[]>(['NIFTY']);
   const [sls, setSls] = useState<number[]>([]);
   const [dtes, setDtes] = useState<number[]>([]);
   const [yearFrom, setYearFrom] = useState<number | ''>('');
@@ -147,9 +277,8 @@ export default function StraddleStudy() {
       .catch((e) => setErr(String(e)));
   }, []);
 
-  const runQuery = useCallback(() => {
-    setLoading(true);
-    setErr('');
+  // one place to build the filter querystring so /query and /series always agree
+  const buildParams = useCallback(() => {
     const p = new URLSearchParams();
     if (indices.length) p.set('index', indices.join(','));
     if (sls.length) p.set('sl', sls.join(','));
@@ -157,18 +286,43 @@ export default function StraddleStudy() {
     if (yearFrom !== '') p.set('year_from', String(yearFrom));
     if (yearTo !== '') p.set('year_to', String(yearTo));
     p.set('group_by', groupBy);
-    p.set('sort', sortBy);
     p.set('exclude_events', exclEvents ? '1' : '0');
     if (costRate) p.set('cost_rate', costRate);
     if (lotsScale && lotsScale !== '1') p.set('lots_scale', lotsScale);
+    return p;
+  }, [indices, sls, dtes, yearFrom, yearTo, groupBy, exclEvents, costRate, lotsScale]);
+
+  const runQuery = useCallback(() => {
+    setLoading(true);
+    setErr('');
+    const p = buildParams();
+    p.set('sort', sortBy);
     apiGet<QueryResp>(`/api/straddle-study/query?${p.toString()}`)
       .then((r) => {
         setRows(r.rows);
         setColSort(null); // fresh data comes back in server rank order
+        setExpanded(null);
+        setSeries({});
       })
       .catch((e) => setErr(String(e)))
       .finally(() => setLoading(false));
-  }, [indices, sls, dtes, yearFrom, yearTo, groupBy, sortBy, exclEvents, costRate, lotsScale]);
+  }, [buildParams, sortBy]);
+
+  // equity/dd series per expanded bucket, fetched lazily
+  const [series, setSeries] = useState<Record<string, SeriesPoint[] | 'loading'>>({});
+
+  const expandRow = (label: string) => {
+    const next = expanded === label ? null : label;
+    setExpanded(next);
+    if (next && !series[next]) {
+      setSeries((s) => ({ ...s, [next]: 'loading' }));
+      const p = buildParams();
+      p.set('label', next);
+      apiGet<SeriesResp>(`/api/straddle-study/series?${p.toString()}`)
+        .then((r) => setSeries((s) => ({ ...s, [next]: r.points })))
+        .catch(() => setSeries((s) => ({ ...s, [next]: [] })));
+    }
+  };
 
   useEffect(() => {
     if (meta) runQuery();
@@ -241,12 +395,21 @@ export default function StraddleStudy() {
             {meta.indices.map((ix) => (
               <button
                 key={ix}
-                className={`${styles.chip} ${indices.includes(ix) ? styles.chipOn : ''}`}
-                onClick={() => toggle(indices, ix, setIndices)}
+                className={`${styles.chip} ${
+                  indices.length === 1 && indices[0] === ix ? styles.chipOn : ''
+                }`}
+                onClick={() => setIndices([ix])}
               >
                 {ix}
               </button>
             ))}
+            <button
+              className={`${styles.chip} ${indices.length !== 1 ? styles.chipOn : ''}`}
+              onClick={() => setIndices([])}
+              title="Both indices - separate rows when grouping by run, POOLED onto one equity curve when grouping by DTE/year/weekday"
+            >
+              BOTH
+            </button>
           </div>
 
           <div className={styles.ctlGroup}>
@@ -390,7 +553,7 @@ export default function StraddleStudy() {
                 <tr
                   key={m.label}
                   className={styles.row}
-                  onClick={() => setExpanded(expanded === m.label ? null : m.label)}
+                  onClick={() => expandRow(m.label)}
                 >
                   <td className={styles.dim}>{i + 1}</td>
                   <td className={`${styles.left} ${styles.sys}`}>{m.label}</td>
@@ -411,6 +574,7 @@ export default function StraddleStudy() {
                   <td>{m.years_positive}/{m.years_total}</td>
                   <td>
                     <span
+                      title={verdictReasons(m)}
                       className={
                         m.verdict === 'PASS'
                           ? styles.vPass
@@ -426,25 +590,26 @@ export default function StraddleStudy() {
                 {expanded === m.label && (
                   <tr key={`${m.label}-x`} className={styles.expandRow}>
                     <td colSpan={18}>
-                      <div className={styles.perYear}>
-                        {Object.entries(m.per_year).map(([y, v]) => (
-                          <span key={y} className={styles.yearCell}>
-                            <span className={styles.yearLbl}>{y}</span>
-                            <span className={v >= 0 ? styles.pos : styles.neg}>{inr(v)}</span>
+                      <div className={styles.expandBody}>
+                        <div className={styles.expandTitle}>
+                          {m.label} - monthly P&amp;L heatmap
+                          <span className={styles.expandExtras}>
+                            best trade <b className={styles.pos}>{inr(m.best)}</b> · win streak{' '}
+                            <b>{m.win_streak}</b> · R:R <b>{m.rr ?? '-'}</b>
                           </span>
-                        ))}
-                        <span className={styles.yearCell}>
-                          <span className={styles.yearLbl}>best trade</span>
-                          <span className={styles.pos}>{inr(m.best)}</span>
-                        </span>
-                        <span className={styles.yearCell}>
-                          <span className={styles.yearLbl}>win streak</span>
-                          <span>{m.win_streak}</span>
-                        </span>
-                        <span className={styles.yearCell}>
-                          <span className={styles.yearLbl}>R:R</span>
-                          <span>{m.rr ?? '-'}</span>
-                        </span>
+                        </div>
+                        <div className={styles.heatWrap}>
+                          <Heatmap perMonth={m.per_month} perYear={m.per_year} />
+                        </div>
+                        <div className={styles.expandTitle}>
+                          Cumulative P&amp;L and drawdown
+                        </div>
+                        {series[m.label] === 'loading' && (
+                          <div className={styles.loading}>loading curve...</div>
+                        )}
+                        {Array.isArray(series[m.label]) && (
+                          <EquityChart points={series[m.label] as SeriesPoint[]} />
+                        )}
                       </div>
                     </td>
                   </tr>
