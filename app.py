@@ -845,6 +845,16 @@ except Exception as _dst_err:
     logger.warning('[DST] blueprint failed to register: %s', _dst_err)
 
 
+# Straddle Intraday Study (research/136) - dynamic query API over the AlgoTest
+# trade archive in backtest_data/algotest_studies.db (loader: scripts/load_algotest_studies.py).
+try:
+    from services.straddle_study_api import straddle_study_bp
+    app.register_blueprint(straddle_study_bp)
+    logger.info('[StraddleStudy] blueprint registered at /api/straddle-study/*')
+except Exception as _ss_err:
+    logger.warning('[StraddleStudy] blueprint failed to register: %s', _ss_err)
+
+
 @app.route('/')
 def index():
     """Landing page with login status"""
