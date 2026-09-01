@@ -1,0 +1,608 @@
+<title>Straddles Systems Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+  /* Tokens lifted verbatim from frontend/src/tokens/design-tokens.css.
+     The app is light-only, so this mock commits to that and paints every
+     surface explicitly rather than inheriting the host ground. */
+  :root{
+    --canvas:#FAFAF9; --surface:#FFFFFF;
+    --ink:#1B1B1A; --ink-muted:#888780; --ink-faint:#B4B2A9;
+    --ink-secondary:#5F5E5A; --ink-subtle:#444441;
+    --hairline:rgba(0,0,0,.10); --hairline-soft:rgba(0,0,0,.06);
+    --hairline-softest:rgba(0,0,0,.05);
+    --accent-pos:#0F6E56; --accent-neg:#A32D2D;
+    --brand-navy:#1E3A8A; --brand-navy-soft:#EFF3FA;
+    --brand-amber:#B45309; --brand-amber-soft:#FEF3C7;
+    --chip-bg:#F1EFE8; --chip-ink:#888780;
+    --radius-card:10px; --radius-control:6px;
+    /* tints for cell washes, matched to the Holdings table */
+    --pos-wash:#E8F2ED; --pos-wash-strong:#D6EAE1;
+    --neg-wash:#FBEAE8; --neg-wash-strong:#F6D8D4;
+    --amber-wash:#FBEFD8; --amber-wash-strong:#F6DFB4;
+    --group-wash:#F3F6F3;
+  }
+  body{background:var(--canvas);color:var(--ink-subtle);
+       font-family:'Inter',system-ui,-apple-system,sans-serif;
+       font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1400px;margin:0 auto;padding:24px 20px 80px;}
+  .num{font-variant-numeric:tabular-nums;}
+
+  h1{font-size:22px;font-weight:700;color:var(--ink);margin:0;letter-spacing:-.02em;}
+  .top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .sub{color:var(--ink-muted);font-size:12px;margin:2px 0 18px;}
+  .live{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+        color:var(--accent-pos);}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent-pos);
+       animation:p 1.6s ease-in-out infinite}
+  @keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* ---------- KPI strip ---------- */
+  .strip{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+         margin-bottom:18px;}
+  .kpi{background:var(--surface);border:1px solid var(--hairline-soft);
+       border-radius:var(--radius-card);padding:11px 14px;}
+  .kpi .k{font-size:11px;color:var(--ink-muted);font-weight:500;margin-bottom:3px;}
+  .kpi .v{font-size:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;
+          letter-spacing:-.01em;}
+  .kpi .n{font-size:11px;color:var(--ink-faint);margin-top:2px;}
+
+  /* ---------- panel + table ---------- */
+  .panel{background:var(--surface);border:1px solid var(--hairline-soft);
+         border-radius:var(--radius-card);overflow:hidden;}
+  .ptitle{font-size:15px;font-weight:600;color:var(--ink);padding:16px 18px 12px;}
+  .scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:11px;font-weight:500;color:var(--ink-muted);text-transform:uppercase;
+     letter-spacing:.04em;text-align:right;padding:8px 14px;white-space:nowrap;
+     border-bottom:1px solid var(--hairline-soft);}
+  th:first-child{text-align:left;padding-left:18px;}
+  td{padding:11px 14px;text-align:right;border-bottom:1px solid var(--hairline-softest);
+     white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink-subtle);}
+  td:first-child{text-align:left;padding-left:18px;}
+  tr.sys{cursor:pointer;}
+  tr.sys:hover td{background:rgba(0,0,0,.014);}
+  .name{font-weight:600;color:var(--ink);font-size:14px;}
+  .sub2{font-size:11px;color:var(--ink-faint);font-weight:400;margin-top:1px;}
+
+  .chip{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.03em;
+        padding:2px 7px;border-radius:4px;background:var(--chip-bg);color:var(--chip-ink);
+        vertical-align:1px;margin-left:6px;text-transform:uppercase;white-space:nowrap;}
+  .chip.real{background:var(--neg-wash);color:var(--accent-neg);}
+  .chip.paper{background:var(--brand-navy-soft);color:var(--brand-navy);}
+  .chip.dead{background:var(--chip-bg);color:var(--ink-faint);}
+
+  .wash-pos{background:var(--pos-wash);} .wash-pos-s{background:var(--pos-wash-strong);}
+  .wash-neg{background:var(--neg-wash);} .wash-neg-s{background:var(--neg-wash-strong);}
+  .wash-amb{background:var(--amber-wash);} .wash-amb-s{background:var(--amber-wash-strong);}
+  .pos{color:var(--accent-pos);font-weight:600;} .neg{color:var(--accent-neg);font-weight:600;}
+  .flat{color:var(--ink-faint);}
+
+  tr.group td{background:var(--group-wash);font-size:11px;font-weight:600;
+              color:var(--ink-secondary);text-transform:uppercase;letter-spacing:.06em;
+              padding:7px 18px;border-bottom:1px solid var(--hairline-soft);}
+  tr.total td{font-weight:600;color:var(--ink);border-bottom:0;border-top:1px solid var(--hairline);
+              padding-top:13px;padding-bottom:14px;}
+  .caret{display:inline-block;width:13px;color:var(--ink-faint);font-size:10px;
+         transition:transform .15s;}
+  tr.sys[aria-expanded="true"] .caret{transform:rotate(90deg);color:var(--brand-navy);}
+
+  /* ---------- expansion ---------- */
+  tr.exp>td{padding:0;background:#FCFCFB;border-bottom:1px solid var(--hairline-soft);}
+  .expin{padding:16px 18px 18px;display:grid;gap:16px;
+         grid-template-columns:1.25fr 1fr;}
+  @media(max-width:1040px){.expin{grid-template-columns:1fr;}}
+  .blk{min-width:0;}
+  .blab{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+        color:var(--ink-muted);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .blab .r{flex:1;height:1px;background:var(--hairline-softest);}
+  .box{background:var(--surface);border:1px solid var(--hairline-soft);
+       border-radius:8px;padding:12px 14px;}
+  .inner{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .inner th{font-size:10px;padding:5px 9px;border-bottom:1px solid var(--hairline-soft);}
+  .inner th:first-child,.inner td:first-child{padding-left:9px;}
+  .inner td{padding:6px 9px;border-bottom:1px solid var(--hairline-softest);}
+  .hist{max-height:184px;overflow-y:auto;}
+  .mini{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));margin-bottom:10px;}
+  .m{background:#FBFBFA;border:1px solid var(--hairline-softest);border-radius:6px;padding:7px 9px;}
+  .m .k{font-size:10px;color:var(--ink-muted);}
+  .m .v{font-size:14px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:1px;}
+  .note{font-size:11px;color:var(--ink-muted);line-height:1.55;margin-top:8px;}
+  a.lnk{color:var(--brand-navy);font-weight:600;text-decoration:none;}
+  a.lnk:hover{text-decoration:underline;}
+  .empty{font-size:12.5px;color:var(--ink-faint);padding:10px 0;}
+  .foot{font-size:11.5px;color:var(--ink-faint);margin-top:18px;line-height:1.7;}
+
+  /* ---------- rules badge + modal ---------- */
+  .rbtn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+        border-radius:4px;background:var(--chip-bg);color:var(--ink-muted);
+        font-size:10.5px;font-weight:700;margin-left:7px;cursor:pointer;border:0;
+        font-family:inherit;vertical-align:1px;transition:background .12s,color .12s;}
+  .rbtn:hover,.rbtn:focus-visible{background:var(--brand-navy-soft);color:var(--brand-navy);
+        outline:2px solid var(--brand-navy);outline-offset:1px;}
+  .rbtn:focus{outline:none}
+  .backdrop{position:fixed;inset:0;background:rgba(27,27,26,.34);display:none;
+            align-items:flex-start;justify-content:center;padding:56px 20px;z-index:50;}
+  .backdrop[open]{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--hairline);
+         border-radius:var(--radius-card);max-width:620px;width:100%;
+         max-height:calc(100vh - 112px);overflow-y:auto;
+         box-shadow:0 12px 40px rgba(0,0,0,.14);}
+  .mhead{display:flex;align-items:flex-start;gap:10px;padding:16px 18px 12px;
+         border-bottom:1px solid var(--hairline-soft);position:sticky;top:0;
+         background:var(--surface);}
+  .mtitle{font-size:15px;font-weight:600;color:var(--ink);}
+  .mtag{font-size:11px;color:var(--ink-muted);margin-top:2px;}
+  .mclose{margin-left:auto;border:0;background:transparent;cursor:pointer;
+          color:var(--ink-faint);font-size:19px;line-height:1;padding:2px 4px;
+          font-family:inherit;}
+  .mclose:hover{color:var(--ink);}
+  .mbody{padding:6px 18px 18px;}
+  .rgrp{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+        color:var(--ink-muted);margin:16px 0 7px;}
+  .rrow{display:grid;grid-template-columns:112px 1fr;gap:12px;padding:6px 0;
+        border-bottom:1px solid var(--hairline-softest);font-size:13px;}
+  .rrow:last-child{border-bottom:0;}
+  .rk{color:var(--ink-muted);font-size:12px;}
+  .rv{color:var(--ink-subtle);}
+  .rv b{color:var(--ink);}
+  .rnot{background:#FCFBF9;border:1px solid var(--hairline-softest);border-radius:7px;
+        padding:10px 12px;margin-top:6px;font-size:12.5px;color:var(--ink-secondary);}
+  .rnot li{margin:3px 0 3px 16px;}
+  .mfoot{border-top:1px solid var(--hairline-soft);padding:12px 18px;font-size:11.5px;
+         color:var(--ink-muted);background:#FCFCFB;}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Straddles</h1>
+    <span class="live"><span class="dot"></span>MARKET OPEN · 11:42:07</span>
+    <span class="num" style="font-size:12px;color:var(--ink-muted)">NIFTY 24,118.40
+      <span class="neg">−0.31%</span> · VIX 11.23</span>
+  </div>
+  <p class="sub">Tue 1 Sep 2026 · nine short-premium systems · click a row for its position,
+    history and evidence</p>
+
+  <div class="strip">
+    <div class="kpi"><div class="k">Today · all books</div><div class="v neg">−₹8,420</div>
+      <div class="n">3 of 9 traded</div></div>
+    <div class="kpi"><div class="k">Real money today</div><div class="v neg">−₹6,306</div>
+      <div class="n">NAS_COMB20 only</div></div>
+    <div class="kpi"><div class="k">Open now</div><div class="v">2</div>
+      <div class="n">1 intraday · 1 positional</div></div>
+    <div class="kpi"><div class="k">Open risk</div><div class="v">₹1.19L</div>
+      <div class="n">worst case if all stops fail</div></div>
+    <div class="kpi"><div class="k">Sat out</div><div class="v">6</div>
+      <div class="n">VIX 11.23 &lt; floor 13</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="ptitle">Systems</div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>System</th><th>Size</th><th>Window</th><th>State</th>
+          <th>Today</th><th>Running</th><th>Risk open</th><th>To stop</th>
+          <th>Lifetime</th><th>Evidence</th>
+        </tr></thead>
+        <tbody>
+
+          <!-- ===== INTRADAY ===== -->
+          <tr class="group"><td colspan="10">Intraday · entered and squared off the same day</td></tr>
+
+          <tr class="sys" aria-expanded="false" data-t="c1">
+            <td><span class="caret">▶</span><span class="name">NAS_COMB20</span><button class="rbtn" data-rules="comb20" title="Rules" aria-label="Rules">R</button><span class="chip real">Real money</span>
+              <div class="sub2" style="padding-left:13px">Combined-premium 30% stop · Tue only</div></td>
+            <td class="num">2 lots<div class="sub2">qty 130</div></td>
+            <td class="num">09:16 → 15:20</td>
+            <td><span class="chip">Closed 14:46</span></td>
+            <td class="num wash-neg-s neg">−₹6,306</td>
+            <td class="num flat">—</td>
+            <td class="num flat">—</td>
+            <td class="num flat">—</td>
+            <td class="num neg">−₹10,089<div class="sub2">10 sessions</div></td>
+            <td><span class="chip">Recorded chain</span><div class="sub2">92d · t 1.23</div></td>
+          </tr>
+          <tr class="exp" data-for="c1" hidden><td colspan="10"><div class="expin">
+            <div class="blk">
+              <div class="blab">Position <span class="r"></span></div>
+              <div class="box"><div class="empty">Flat — squared off 14:46:49 on <b>SL_DWELL</b>
+                at 195.05 against a 147.78 credit. Next entry Tue 8 Sep 09:16.</div></div>
+              <div class="blab" style="margin-top:14px">Closed trades <span class="r"></span></div>
+              <div class="box" style="padding:0"><div class="hist"><table class="inner">
+                <thead><tr><th>Date</th><th>DTE</th><th>Strike</th><th>Credit</th><th>Exit</th><th>Reason</th><th>P&amp;L</th></tr></thead>
+                <tbody>
+                  <tr><td>01 Sep</td><td class="num">1</td><td class="num">24050</td><td class="num">147.78</td><td class="num">195.05</td><td>SL_DWELL</td><td class="num neg">−₹6,306</td></tr>
+                  <tr><td>28 Aug</td><td class="num">2</td><td class="num">24150</td><td class="num">196.10</td><td class="num">188.95</td><td>TIME_EXIT</td><td class="num pos">+₹770</td></tr>
+                  <tr><td>27 Aug</td><td class="num">3</td><td class="num">24300</td><td class="num">218.40</td><td class="num">211.15</td><td>TIME_EXIT</td><td class="num neg">−₹1,935</td></tr>
+                  <tr><td>26 Aug</td><td class="num">4</td><td class="num">24250</td><td class="num">201.05</td><td class="num">184.20</td><td>TIME_EXIT</td><td class="num pos">+₹2,190</td></tr>
+                  <tr><td>25 Aug</td><td class="num">0</td><td class="num">24200</td><td class="num">158.90</td><td class="num">171.35</td><td>SL_DWELL</td><td class="num neg">−₹1,619</td></tr>
+                  <tr><td>24 Aug</td><td class="num">1</td><td class="num">24300</td><td class="num">173.25</td><td class="num">201.60</td><td>SL_DWELL</td><td class="num neg">−₹3,686</td></tr>
+                </tbody></table></div></div>
+              <div class="note">Scrolls to all 10 · <a class="lnk" href="#">open full ledger ↗</a></div>
+            </div>
+            <div class="blk">
+              <div class="blab">Track record · real money <span class="r"></span></div>
+              <div class="mini">
+                <div class="m"><div class="k">Net</div><div class="v neg">−₹10,089</div></div>
+                <div class="m"><div class="k">Sessions</div><div class="v">10</div></div>
+                <div class="m"><div class="k">Win</div><div class="v">40%</div></div>
+                <div class="m"><div class="k">Max DD</div><div class="v">−₹16,095</div></div>
+                <div class="m"><div class="k">t</div><div class="v neg">−1.00</div></div>
+              </div>
+              <div class="blab">Evidence <span class="r"></span></div>
+              <div class="box">
+                <div style="margin-bottom:9px"><span class="chip">Our recorded chain</span>
+                  <span class="chip">92 days · Apr–Aug 2026</span></div>
+                <div class="mini" style="margin-bottom:0">
+                  <div class="m"><div class="k">Net @10 lots</div><div class="v pos">+₹1.45L</div></div>
+                  <div class="m"><div class="k">t</div><div class="v">1.23</div></div>
+                  <div class="m"><div class="k">Max DD</div><div class="v">−₹59,630</div></div>
+                  <div class="m"><div class="k">Stops</div><div class="v">2 / 20</div></div>
+                </div>
+                <div class="note"><b>How:</b> replayed on the 1-minute option chain we have
+                  recorded since 20 Apr 2026. <b>Short sample</b> — 92 days cannot settle a mean
+                  this size, and the Monday cell was moved to paper on 31 Aug on this evidence.<br>
+                  <a class="lnk" href="#">research/138 ↗</a> ·
+                  <a class="lnk" href="#">trades CSV ↗</a></div>
+              </div>
+            </div>
+          </div></td></tr>
+
+          <tr class="sys" aria-expanded="false" data-t="c2">
+            <td><span class="caret">▶</span><span class="name">V1 · One-and-done</span><button class="rbtn" data-rules="v1" title="Rules" aria-label="Rules">R</button><span class="chip paper">Paper</span>
+              <div class="sub2" style="padding-left:13px">Naked straddle · 0.4% move-stop</div></td>
+            <td class="num">10 lots<div class="sub2">qty 650</div></td>
+            <td class="num">09:20 → 14:45</td>
+            <td><span class="chip">Sat out</span></td>
+            <td class="num flat">—</td><td class="num flat">—</td>
+            <td class="num flat">—</td><td class="num flat">—</td>
+            <td class="num pos">+₹3.85L<div class="sub2">92 sessions</div></td>
+            <td><span class="chip">Recorded chain</span><div class="sub2">92d · t 1.68</div></td>
+          </tr>
+          <tr class="exp" data-for="c2" hidden><td colspan="10"><div class="expin">
+            <div class="blk">
+              <div class="blab">Position <span class="r"></span></div>
+              <div class="box"><div class="empty"><b style="color:var(--brand-amber)">Sat out today</b>
+                — India VIX 11.23, below the 13.0 floor. Shadow-logged for forward validation.</div></div>
+              <div class="blab" style="margin-top:14px">Closed trades <span class="r"></span></div>
+              <div class="box" style="padding:0"><div class="hist"><table class="inner">
+                <thead><tr><th>Date</th><th>DTE</th><th>Strike</th><th>Credit</th><th>Exit</th><th>Reason</th><th>P&amp;L</th></tr></thead>
+                <tbody>
+                  <tr><td>29 Aug</td><td class="num">2</td><td class="num">24150</td><td class="num">201.40</td><td class="num">186.55</td><td>TIME</td><td class="num pos">+₹9,653</td></tr>
+                  <tr><td>28 Aug</td><td class="num">3</td><td class="num">24200</td><td class="num">214.85</td><td class="num">238.10</td><td>MOVE 0.4%</td><td class="num neg">−₹15,113</td></tr>
+                  <tr><td colspan="7" style="text-align:center;color:var(--ink-faint)">… 90 more</td></tr>
+                </tbody></table></div></div>
+            </div>
+            <div class="blk">
+              <div class="blab">Track record · paper <span class="r"></span></div>
+              <div class="mini">
+                <div class="m"><div class="k">Net</div><div class="v pos">+₹3.85L</div></div>
+                <div class="m"><div class="k">Sessions</div><div class="v">92</div></div>
+                <div class="m"><div class="k">Win</div><div class="v">61%</div></div>
+                <div class="m"><div class="k">Max DD</div><div class="v">−₹1.02L</div></div>
+                <div class="m"><div class="k">t</div><div class="v">1.68</div></div>
+              </div>
+              <div class="blab">Evidence <span class="r"></span></div>
+              <div class="box">
+                <div style="margin-bottom:9px"><span class="chip">Our recorded chain</span>
+                  <span class="chip">92 days</span></div>
+                <div class="note"><b>How:</b> the same 92 recorded days as the live record above —
+                  so this is a <b>replay, not an out-of-sample test</b>. Nothing here has been
+                  tested on data the rules were not chosen on.<br>
+                  <a class="lnk" href="#">research/58 ↗</a></div>
+              </div>
+            </div>
+          </div></td></tr>
+
+          <tr class="sys" aria-expanded="false" data-t="c3">
+            <td><span class="caret">▶</span><span class="name">CSL30F · NIFTY</span><button class="rbtn" data-rules="csl30f" title="Rules" aria-label="Rules">R</button><span class="chip paper">Paper</span>
+              <div class="sub2" style="padding-left:13px">Flat 30% combined stop, all DTEs</div></td>
+            <td class="num">2 lots</td><td class="num">09:16 → 15:20</td>
+            <td><span class="chip">Sat out</span></td>
+            <td class="num flat">—</td><td class="num flat">—</td>
+            <td class="num flat">—</td><td class="num flat">—</td>
+            <td class="num neg">−₹36,177<div class="sub2">10 sessions</div></td>
+            <td><span class="chip">Recorded chain</span><div class="sub2">92d</div></td>
+          </tr>
+          <tr class="exp" data-for="c3" hidden><td colspan="10"><div class="expin">
+            <div class="blk"><div class="blab">Position <span class="r"></span></div>
+              <div class="box"><div class="empty">Flat — VIX below floor.</div></div></div>
+            <div class="blk"><div class="blab">Evidence <span class="r"></span></div>
+              <div class="box"><div class="note">Control book for the combined-stop family.
+                <a class="lnk" href="#">research/111 ↗</a></div></div></div>
+          </div></td></tr>
+
+          <!-- ===== POSITIONAL ===== -->
+          <tr class="group"><td colspan="10">Positional · carried overnight across sessions</td></tr>
+
+          <tr class="sys" aria-expanded="false" data-t="c4">
+            <td><span class="caret">▶</span><span class="name">V2 · Iron fly</span><button class="rbtn" data-rules="v2" title="Rules" aria-label="Rules">R</button><span class="chip paper">Paper · unarmed</span>
+              <div class="sub2" style="padding-left:13px">2nd weekly · ±2% wings · 2% move-stop · 40% target</div></td>
+            <td class="num">10 lots<div class="sub2">qty 650</div></td>
+            <td class="num">09:20 · roll DTE≤1</td>
+            <td><span class="chip" style="background:var(--pos-wash);color:var(--accent-pos)">Holding · day 3</span></td>
+            <td class="num wash-pos pos">+₹4,192</td>
+            <td class="num wash-pos-s pos">+₹4,452</td>
+            <td class="num">₹1.19L<div class="sub2">wings cap</div></td>
+            <td class="num wash-amb-s">1.29%<div class="sub2">of 2.0%</div></td>
+            <td class="num pos">+₹32,194<div class="sub2">6 cycles</div></td>
+            <td><span class="chip" style="background:var(--brand-amber-soft);color:var(--brand-amber)">AlgoTest + bhavcopy</span>
+              <div class="sub2">7.3y · Calmar 1.03</div></td>
+          </tr>
+          <tr class="exp" data-for="c4" hidden><td colspan="10"><div class="expin">
+            <div class="blk">
+              <div class="blab">Running position · entered 27 Aug 09:20 <span class="r"></span></div>
+              <div class="box" style="padding:0"><table class="inner">
+                <thead><tr><th>Leg</th><th>Strike</th><th>Qty</th><th>Entry</th><th>LTP</th><th>P&amp;L</th></tr></thead>
+                <tbody>
+                  <tr><td><b class="neg">SELL CE</b></td><td class="num">24200</td><td class="num">650</td><td class="num">188.30</td><td class="num">151.05</td><td class="num pos">+₹24,213</td></tr>
+                  <tr><td><b class="neg">SELL PE</b></td><td class="num">24200</td><td class="num">650</td><td class="num">174.55</td><td class="num">196.40</td><td class="num neg">−₹14,203</td></tr>
+                  <tr><td><b class="pos">BUY CE</b></td><td class="num">24700</td><td class="num">650</td><td class="num">42.15</td><td class="num">28.90</td><td class="num neg">−₹8,613</td></tr>
+                  <tr><td><b class="pos">BUY PE</b></td><td class="num">23700</td><td class="num">650</td><td class="num">38.70</td><td class="num">43.40</td><td class="num pos">+₹3,055</td></tr>
+                </tbody></table></div>
+              <div class="blab" style="margin-top:14px">P&amp;L since entry <span class="r"></span></div>
+              <div class="box">
+                <svg viewBox="0 0 320 76" width="100%" height="76" preserveAspectRatio="none" style="display:block">
+                  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#0F6E56" stop-opacity=".20"/>
+                    <stop offset="100%" stop-color="#0F6E56" stop-opacity="0"/></linearGradient></defs>
+                  <line x1="0" y1="56" x2="320" y2="56" stroke="rgba(0,0,0,.10)" stroke-width="1" stroke-dasharray="3 3"/>
+                  <path d="M0,56 L22,60 L46,52 L70,63 L96,47 L122,50 L150,40 L176,46 L204,33 L232,39 L262,27 L292,33 L320,22 L320,76 L0,76 Z" fill="url(#g)"/>
+                  <path d="M0,56 L22,60 L46,52 L70,63 L96,47 L122,50 L150,40 L176,46 L204,33 L232,39 L262,27 L292,33 L320,22"
+                        fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+                  <circle cx="320" cy="22" r="3" fill="#0F6E56"/>
+                </svg>
+                <div class="num" style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-faint);margin-top:4px">
+                  <span>27 Aug</span><span>peak +₹6,880</span><span>now +₹4,452</span></div>
+              </div>
+              <div class="blab" style="margin-top:14px">Closed cycles <span class="r"></span></div>
+              <div class="box" style="padding:0"><div class="hist"><table class="inner">
+                <thead><tr><th>Entry</th><th>Exit</th><th>Expiry</th><th>Credit</th><th>Reason</th><th>P&amp;L</th></tr></thead>
+                <tbody>
+                  <tr><td>27 Jul</td><td>09 Aug</td><td>11 Aug</td><td class="num">356.20</td><td>move 2%</td><td class="num neg">−₹35,813</td></tr>
+                  <tr><td>09 Jul</td><td>18 Jul</td><td>21 Jul</td><td class="num">402.55</td><td>target 40%</td><td class="num pos">+₹83,803</td></tr>
+                  <tr><td>29 Jun</td><td>07 Jul</td><td>07 Jul</td><td class="num">318.90</td><td>roll</td><td class="num neg">−₹15,988</td></tr>
+                  <tr><td>16 Jun</td><td>23 Jun</td><td>23 Jun</td><td class="num">341.10</td><td>roll</td><td class="num pos">+₹12,440</td></tr>
+                </tbody></table></div></div>
+            </div>
+            <div class="blk">
+              <div class="blab">Track record · paper <span class="r"></span></div>
+              <div class="mini">
+                <div class="m"><div class="k">Net</div><div class="v pos">+₹32,194</div></div>
+                <div class="m"><div class="k">Cycles</div><div class="v">6</div></div>
+                <div class="m"><div class="k">Win</div><div class="v">50%</div></div>
+                <div class="m"><div class="k">Max DD</div><div class="v">−₹51,801</div></div>
+                <div class="m"><div class="k">Last entry</div><div class="v">27 Aug</div></div>
+              </div>
+              <div class="note" style="margin-bottom:14px">Dormant 27 Jul → 27 Aug: VIX stayed under
+                the 13 floor for six weeks. <b>Six cycles is not a validation.</b></div>
+
+              <div class="blab">Evidence <span class="r"></span></div>
+              <div class="box">
+                <div style="margin-bottom:9px">
+                  <span class="chip" style="background:var(--brand-amber-soft);color:var(--brand-amber)">AlgoTest</span>
+                  <span class="chip" style="background:var(--pos-wash);color:var(--accent-pos)">Our bhavcopy</span>
+                  <span class="chip">7.3 yrs · 2019–2026</span></div>
+                <div class="mini" style="margin-bottom:0">
+                  <div class="m"><div class="k">Net @10 lots</div><div class="v pos">+₹8.80L</div></div>
+                  <div class="m"><div class="k">Calmar</div><div class="v">1.03</div></div>
+                  <div class="m"><div class="k">Max DD</div><div class="v">−₹1.17L</div></div>
+                  <div class="m"><div class="k">Trades</div><div class="v">204</div></div>
+                </div>
+                <div class="note"><b>How:</b> AlgoTest's 1-minute engine, cross-checked on our own
+                  15-year NSE bhavcopy (+₹6.93L vs +₹8.80L, losing years matched).<br>
+                  <b class="neg">⚠ The backtest traded the FRONT weekly; this book trades the 2nd</b>
+                  — the expiry lever was never tested (AlgoTest caps entry at 4 TD).<br>
+                  <a class="lnk" href="#">V2 study ↗</a> ·
+                  <a class="lnk" href="#">full dossier ↗</a> ·
+                  <a class="lnk" href="#">research/141 ↗</a></div>
+              </div>
+            </div>
+          </div></td></tr>
+
+          <tr class="sys" aria-expanded="false" data-t="c5">
+            <td><span class="caret">▶</span><span class="name">Wed→Fri iron condor</span><button class="rbtn" data-rules="condor" title="Rules" aria-label="Rules">R</button><span class="chip dead">Refuted</span>
+              <div class="sub2" style="padding-left:13px">±0.8% shorts, wings 1% beyond</div></td>
+            <td class="num">2 lots</td><td class="num">Wed → Fri close</td>
+            <td><span class="chip dead">Stopped</span></td>
+            <td class="num flat">—</td><td class="num flat">—</td>
+            <td class="num flat">—</td><td class="num flat">—</td>
+            <td class="num pos">+₹9,456<div class="sub2">7 cycles</div></td>
+            <td><span class="chip" style="background:var(--neg-wash);color:var(--accent-neg)">Bhavcopy · refuted</span>
+              <div class="sub2">15y · t −1.30</div></td>
+          </tr>
+          <tr class="exp" data-for="c5" hidden><td colspan="10"><div class="expin">
+            <div class="blk"><div class="blab">Position <span class="r"></span></div>
+              <div class="box"><div class="empty">Not trading. Kept listed so the conclusion is not
+                forgotten and re-proposed.</div></div></div>
+            <div class="blk">
+              <div class="blab">Evidence <span class="r"></span></div>
+              <div class="box">
+                <div style="margin-bottom:9px">
+                  <span class="chip" style="background:var(--pos-wash);color:var(--accent-pos)">Our bhavcopy</span>
+                  <span class="chip">15 yrs · 434 campaigns</span></div>
+                <div class="mini" style="margin-bottom:0">
+                  <div class="m"><div class="k">Net @2 lots</div><div class="v neg">−₹83,569</div></div>
+                  <div class="m"><div class="k">t</div><div class="v neg">−1.30</div></div>
+                  <div class="m"><div class="k">Max DD</div><div class="v">−₹1.36L</div></div>
+                </div>
+                <div class="note"><b>How:</b> 434 real campaigns on NSE bhavcopy closes. The original
+                  +₹880/campaign came from a <b>no-skew simulation</b>; on real prices it is −₹193.
+                  The book's 7 winning cycles sit 1.45 standard errors from that — luck, not
+                  counter-evidence.<br><a class="lnk" href="#">research/140 ↗</a></div>
+              </div>
+            </div>
+          </div></td></tr>
+
+          <tr class="total">
+            <td>Total · 9 systems</td><td></td><td></td><td></td>
+            <td class="num neg">−₹8,420</td>
+            <td class="num pos">+₹4,452</td>
+            <td class="num">₹1.19L</td><td></td>
+            <td class="num pos">+₹3.81L</td><td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="foot"><b>Mock — not wired to data.</b> Four of nine systems shown; the rest follow the
+  same row. Tokens, type and washes are taken from <code>design-tokens.css</code> so this drops
+  into the app as-is. The <b>R</b> badge on each row opens that system's rules without expanding it. One note: the app currently loads Inter at weights 400–500 only — the 600
+  used for row names and figures needs adding to the font link.</p>
+</div>
+
+
+<div class="backdrop" id="bd" role="dialog" aria-modal="true" aria-labelledby="mt">
+  <div class="modal">
+    <div class="mhead">
+      <div><div class="mtitle" id="mt"></div><div class="mtag" id="mg"></div></div>
+      <button class="mclose" id="mx" aria-label="Close">&times;</button>
+    </div>
+    <div class="mbody" id="mb"></div>
+    <div class="mfoot" id="mf"></div>
+  </div>
+</div>
+
+<script>
+const RULES = {
+  comb20: {
+    title: 'NAS_COMB20 — rules',
+    tag: 'Real money · 2 lots (qty 130) · intraday · NIFTY',
+    does: [
+      ['Universe', 'NIFTY weekly ATM straddle. Strike = nearest 50 to spot at entry.'],
+      ['Entry', '<b>09:16</b>, one straddle, sell ATM CE + ATM PE together.'],
+      ['Days', '<b>Tuesday only (DTE 0)</b> since 31 Aug 2026. The Monday cell moved to paper as NAS_COMB20_MON.'],
+      ['Stop', '<b>Combined premium +25%</b> — the two legs are added together and watched as one number. Needs <b>2 consecutive polls</b> above the level before it acts (dwell), then exits at the next poll.'],
+      ['Exit', '<b>15:20</b> time exit, or the combined stop, whichever comes first.'],
+      ['Sizing', '2 lots per leg. 1 premium point = ₹130.'],
+    ],
+    doesnt: [
+      'No per-leg stop — a single leg can run to any price as long as the pair stays inside 25%.',
+      'No re-entry. Once stopped, the day is over.',
+      'No adjustment, no rolling, no re-centring.',
+      'Not covered by the NAS book-level portfolio stop — this sleeve carries its own.',
+    ],
+    foot: 'Rules doc: research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py (BOOKS) · frozen config: backtest_data/csl_paper_config.json',
+  },
+  v1: {
+    title: 'V1 · One-and-done — rules',
+    tag: 'Paper · 10 lots (qty 650) · intraday · NIFTY',
+    does: [
+      ['Universe', 'NIFTY weekly ATM straddle, naked (no wings).'],
+      ['Entry', '<b>~09:20</b>, sell ATM CE + ATM PE.'],
+      ['Gate', 'India VIX ≥ 13.0 at entry. Below it the day is skipped and shadow-logged.'],
+      ['Stop', '<b>0.4% underlying move</b> from the entry spot — measured on the index, not on premium.'],
+      ['Exit', '<b>14:45</b>, or the move-stop.'],
+      ['Sizing', '10 lots per leg. 1 premium point = ₹650.'],
+    ],
+    doesnt: [
+      '<b>One and done</b> — after the stop fires it does not re-enter, whatever the rest of the day does.',
+      'No wings. The tail is open until the stop acts, which is why it is paper.',
+      'No per-leg stop and no adjustment.',
+    ],
+    foot: 'Rules doc: research/58_intraday_recenter_straddle/scripts/v1_oad.py',
+  },
+  csl30f: {
+    title: 'CSL30F · NIFTY — rules',
+    tag: 'Paper · 2 lots · intraday · control book',
+    does: [
+      ['Purpose', 'The <b>flat control</b> for the combined-stop family: one rule on every DTE, so the windowed books can be measured against something un-tuned.'],
+      ['Entry', '09:16, ATM straddle.'],
+      ['Days', 'All five DTEs.'],
+      ['Stop', 'Combined premium <b>+30% on every day</b> — deliberately not tuned per DTE.'],
+      ['Exit', '15:20 time exit, or the stop.'],
+    ],
+    doesnt: [
+      'Not optimised, by design. If a tuned book cannot beat this, the tuning is noise.',
+      'Never traded with real money.',
+    ],
+    foot: 'Rules doc: research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py',
+  },
+  v2: {
+    title: 'V2 · Iron fly — rules',
+    tag: 'Paper, unarmed · 10 lots (qty 650) · positional · NIFTY',
+    does: [
+      ['Structure', 'Short iron fly: <b>SELL ATM CE + ATM PE</b>, <b>BUY wings at ±2.0% of ATM</b> (≈ ±500 pts at NIFTY 24k). Defined risk on both sides.'],
+      ['Expiry', '<b>2nd-nearest weekly</b>, requiring at least 4 calendar days to expiry.'],
+      ['Entry', '<b>09:20</b>, when flat and both gates pass.'],
+      ['Gates', 'India VIX ≥ 13.0 <b>and</b> the combo skip-filter passes — it sits out when the <b>prior-day CPR width &lt; 0.10%</b> of spot, or when last week was an <b>inside week</b>. Every skip is shadow-logged.'],
+      ['Manage', '<b>2% underlying move-stop</b> · <b>+40% of credit</b> profit target · <b>roll at DTE ≤ 1</b>.'],
+      ['Re-entry', 'Re-enters on the next qualifying day after an exit.'],
+      ['Sizing', '10 lots per leg. 1 premium point = ₹650. SPAN ≈ ₹8.25L.'],
+    ],
+    doesnt: [
+      'No per-leg stop — the wings are the structural protection.',
+      'Does not roll a threatened side or re-centre; it exits and waits.',
+      '<b>Not armed.</b> Real trading needs both mode = live and armed = 1; both are currently off.',
+    ],
+    foot: 'Rules doc: services/v2_ironfly_api.py (CFG) · gates: services/v2_breakout_signals.py',
+  },
+  condor: {
+    title: 'Wed→Fri iron condor — rules',
+    tag: 'Refuted · 2 lots (qty 130) · positional · NIFTY',
+    does: [
+      ['Purpose', 'Built to use the days the 9:16 books leave idle — enter Wednesday, out Friday, flat before Monday so it never competes for margin.'],
+      ['Structure', 'SELL a strangle <b>~0.8% out of the money</b> either side; BUY each wing <b>1.0% beyond its own short</b> (≈250-pt verticals, not 50).'],
+      ['Entry', 'Wednesday close (~15:10), front-of-next weekly.'],
+      ['Exit', 'Friday close. Never carried over a weekend.'],
+      ['Stop', 'The backtested spec closes if the <b>combined premium doubles</b>.'],
+    ],
+    doesnt: [
+      '<b>The running book has no stop code at all</b> — only the wings cap it. That is a known divergence from the tested spec.',
+      'Never held into Monday or Tuesday.',
+      '<b>Refuted 31 Aug 2026</b> on 434 real campaigns: −₹193/campaign at t −1.30. The original +₹880 came from a simulation with no volatility skew, priced exactly where the wings sit.',
+    ],
+    foot: 'Rules doc: research/80_farDTE_rescue/scripts/condor_paper.py · verdict: research/140',
+  },
+};
+
+(function(){
+  const bd = document.getElementById('bd'), mt = document.getElementById('mt'),
+        mg = document.getElementById('mg'), mb = document.getElementById('mb'),
+        mf = document.getElementById('mf'), mx = document.getElementById('mx');
+  let last = null;
+
+  function open(key, btn){
+    const r = RULES[key]; if(!r) return;
+    last = btn;
+    mt.textContent = r.title; mg.textContent = r.tag;
+    let h = '<div class="rgrp">What it does</div>';
+    r.does.forEach(function(d){
+      h += '<div class="rrow"><div class="rk">'+d[0]+'</div><div class="rv">'+d[1]+'</div></div>';
+    });
+    h += '<div class="rgrp">What it deliberately does not do</div><div class="rnot"><ul>';
+    r.doesnt.forEach(function(x){ h += '<li>'+x+'</li>'; });
+    h += '</ul></div>';
+    mb.innerHTML = h;
+    mf.textContent = r.foot;
+    bd.setAttribute('open',''); mx.focus();
+  }
+  function close(){ bd.removeAttribute('open'); if(last) last.focus(); }
+
+  document.querySelectorAll('.rbtn').forEach(function(b){
+    b.addEventListener('click', function(e){
+      e.stopPropagation();          // never also toggle the row
+      open(b.dataset.rules, b);
+    });
+  });
+  mx.addEventListener('click', close);
+  bd.addEventListener('click', function(e){ if(e.target === bd) close(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && bd.hasAttribute('open')) close();
+  });
+})();
+</script>
+<script>
+  document.querySelectorAll('tr.sys').forEach(function(r){
+    r.addEventListener('click', function(){
+      var open = r.getAttribute('aria-expanded') === 'true';
+      r.setAttribute('aria-expanded', open ? 'false' : 'true');
+      var e = document.querySelector('tr.exp[data-for="' + r.dataset.t + '"]');
+      if (e) e.hidden = open;
+    });
+  });
+</script>

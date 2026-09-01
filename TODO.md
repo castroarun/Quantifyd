@@ -36,7 +36,20 @@ things — (1) how it is doing **today**, (2) **running positions** with live P&
 numbers**, plus (5) a link to its **backtest** with the headline numbers, the method used
 (bhavcopy / our recorded options chain / AlgoTest) and the period covered.
 
-Mock first, agree look and feel, then build. Nothing implemented yet.
+**Mock APPROVED 2026-09-01** — `docs/mockups/straddles-systems-table.html`.
+One Holdings-style table on the app's own design tokens, grouped Intraday / Positional.
+Columns: System · Size · Window · State · Today · Running · Risk open · To stop · Lifetime ·
+Evidence. Row expands to two panels — left: live legs, P&L-since-entry curve, closed trades in a
+fixed-height scroll; right: track record above the backtest box (provenance chip, period, headline
+numbers, plain-words "How:", caveats, report links). An **R** badge on each master row opens a
+rules modal (what it does / what it deliberately does not do + rules-doc path).
+
+**Still to build.** The blocker is not the UI: there is no per-system registry carrying
+`kind` (intraday/positional), window, size, money-at-risk state, risk-open, and the backtest
+provenance block (method / period / numbers / links). Each system's live data exists in a
+different feed today. First step is that registry; the table then renders from it.
+
+Note: the app loads Inter at 400–500 only; the mock's 600 weight needs adding to index.html.
 
 
 ## ⏳ 2026-08-31 — research/138 phase 2: the live book, and COMB20's day allocation
