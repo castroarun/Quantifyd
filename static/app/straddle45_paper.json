@@ -1,12 +1,12 @@
 {
- "asof": "2026-08-31 16:20:21",
+ "asof": "2026-09-01 15:55:06",
  "upcoming": [
   {
    "expiry": "2026-10-27",
    "entry_date": "2026-09-11",
    "entry_weekday": "Fri",
    "exit_due": "2026-10-06",
-   "days_away": 11,
+   "days_away": 10,
    "weekend_rolled": true
   },
   {
@@ -14,7 +14,7 @@
    "entry_date": "2026-11-13",
    "entry_weekday": "Fri",
    "exit_due": "2026-12-08",
-   "days_away": 74,
+   "days_away": 73,
    "weekend_rolled": true
   },
   {
@@ -22,7 +22,7 @@
    "entry_date": "2027-02-12",
    "entry_weekday": "Fri",
    "exit_due": "2027-03-09",
-   "days_away": 165,
+   "days_away": 164,
    "weekend_rolled": true
   }
  ],
@@ -32,16 +32,16 @@
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
- "bhav_through": "2026-08-28",
+ "bhav_through": "2026-08-31",
  "realised": 131703.64278000002,
- "unrealised": 43368.000000000015,
- "nav": 1374615.6644278744,
+ "unrealised": 35148.75,
+ "nav": 1366396.4144278744,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 0,
  "unrealised_plan": 0,
- "unrealised_off": 43368.000000000015,
+ "unrealised_off": 35148.75,
  "nav_plan": 1331247.6644278744,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
@@ -72,11 +72,11 @@
    "gain": 1917.3
   }
  ],
- "capital_deployed": 497519.87,
- "capital_deployed_peak": 600343.37,
- "margin_asof": "2026-08-31 16:20",
- "running_pnl": 175071.64278000005,
- "running_pnl_pct": 35.18887452274018,
+ "capital_deployed": 505335.24,
+ "capital_deployed_peak": 616377.99,
+ "margin_asof": "2026-09-01 15:55",
+ "running_pnl": 166852.39278000002,
+ "running_pnl_pct": 33.01815895127362,
  "n_closed": 3,
  "n_open": 1,
  "win_rate": 100.0,
@@ -102,14 +102,14 @@
    "vix_level": 11.31,
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
-   "mark_prem": 527.3,
-   "mark_date": "2026-08-31 16:20:19",
+   "mark_prem": 569.45,
+   "mark_date": "2026-09-01 15:55:03",
    "mark_src": "kite-ltp",
-   "mtm_rs": 43368.000000000015,
-   "mark_spot": 24080.4,
+   "mtm_rs": 35148.75,
+   "mark_spot": 24055.8,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
-   "dte": 28,
+   "dte": 27,
    "curve": [
     {
      "d": "2026-08-17",
@@ -160,6 +160,11 @@
      "d": "2026-08-28",
      "prem": 529.95,
      "mtm": 42851.25
+    },
+    {
+     "d": "2026-08-31",
+     "prem": 528.05,
+     "mtm": 43221.750000000015
     }
    ],
    "legs_entry": [
@@ -191,30 +196,30 @@
      "side": "SHORT",
      "opt": "CE",
      "strike": 24350.0,
-     "price": 217.25,
-     "volume": 199225,
-     "oi": 413205,
-     "bid": 215.7,
-     "ask": 217.65,
-     "itm_by": -269.6
+     "price": 150,
+     "volume": 339495,
+     "oi": 439790,
+     "bid": 150.7,
+     "ask": 152.15,
+     "itm_by": -294.2
     },
     {
      "side": "SHORT",
      "opt": "PE",
      "strike": 24350.0,
-     "price": 310.05,
-     "volume": 200785,
-     "oi": 416260,
-     "bid": 306.6,
-     "ask": 313.35,
-     "itm_by": 269.6
+     "price": 419.45,
+     "volume": 115570,
+     "oi": 431925,
+     "bid": 409.35,
+     "ask": 420.1,
+     "itm_by": 294.2
     }
    ],
-   "legs_asof": "2026-08-31 16:20:19",
+   "legs_asof": "2026-09-01 15:55:03",
    "legs_src": "kite ltp",
-   "margin_real": 497519.87,
-   "margin_peak": 600343.37,
-   "mtm_pct": 8.716837781775434
+   "margin_real": 505335.24,
+   "margin_peak": 616377.99,
+   "mtm_pct": 6.955531144038164
   }
  ],
  "closed_trades": [
@@ -246,7 +251,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-08-04",
-   "dte": -7,
+   "dte": -8,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -326,7 +331,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-07-07",
-   "dte": -35,
+   "dte": -36,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -406,7 +411,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-06-09",
-   "dte": -63,
+   "dte": -64,
    "legs_entry": [
     {
      "side": "SHORT",

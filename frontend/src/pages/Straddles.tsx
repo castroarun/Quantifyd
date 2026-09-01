@@ -1847,6 +1847,32 @@ export default function Straddles() {
             </div>
           </details>
 
+          {/* ---- full evidence dossier, embedded ---- */}
+          <details style={{ marginBottom: 10 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, color: C.navy, listStyle: 'none' }}>
+              &#9656; Full dossier &mdash; 213 rebuilt trades, payoff anatomy, year &amp; month heatmaps
+            </summary>
+            <div style={{ fontSize: 11.5, color: C.muted, margin: '6px 0 8px', lineHeight: 1.7 }}>
+              Both backtests side by side, the win/loss anatomy, per-year and per-month heatmaps with
+              NIFTY travel and return on capital, the idle-cash sweep, and every trade expandable to
+              its four legs. Opens full-screen in a new tab if the frame below is blank
+              (the report is private to your Claude account).
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <a href="https://claude.ai/code/artifact/a3487b7e-e6c4-4a88-8f7f-e006999915fe" target="_blank" rel="noopener noreferrer"
+                 style={{ textDecoration: 'none' }}>
+                {chip(C.navySoft, C.navy, 'Open the dossier full-screen \u2197')}
+              </a>
+            </div>
+            <iframe
+              src="https://claude.ai/code/artifact/a3487b7e-e6c4-4a88-8f7f-e006999915fe"
+              title="V2 Iron Fly Evidence"
+              loading="lazy"
+              style={{ width: '100%', height: 720, border: `1px solid ${C.hair}`,
+                       borderRadius: 8, background: C.surface }}
+            />
+          </details>
+
           {/* ---- PAPER / LIVE control bar ---- */}
           {v2eng.mode != null && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10,
