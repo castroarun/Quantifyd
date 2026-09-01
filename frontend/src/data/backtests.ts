@@ -14623,12 +14623,13 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
       {
         title: '20-year robustness (2006-25) — 10-seed ensemble medians [min..max]',
+        caption: 'The "gate" = the site''s own Skip-weak-markets idea, switched ON: no NEW positions are opened while NIFTYBEES (Nifty 50 ETF) closes below its 200-day moving average; open positions keep their normal -8% stop and 50-SMA trail. "Real fills" = entry at max(open, pivot) instead of always at the pivot. "Net 25bps" = 0.25% cost per side. "Point-in-time mcap" = market cap on the signal date via the constant-adjusted-shares proxy. All configs share the decoded core rules (ATH-close trigger, IBD-RS>=70, Rs 5cr/day liquidity floor, 8 slots).',
         columns: ['Config', 'Terminal x', 'CAGR', 'MaxDD', 'Signals'],
         rows: [
           ['A: gate ON, their fills, gross', '398 [228..813]', '34.9% [31.2..39.8]', '-44.0%', '16,612'],
           ['B: gate ON, real fills, net 25bps', '287 [138..758]', '32.7% [28.0..39.3]', '-45.7%', '16,612'],
           ['C: gate OFF, real fills, net 25bps', '225 [108..413]', '31.1% [26.4..35.2]', '-45.0%', '16,612'],
-          ['D (HEADLINE): B + mcap >= 500cr PIT', '203 [136..367]', '30.4% [27.9..34.4]', '-31.5%', '8,069'],
+          ['D (HEADLINE): gate ON + real fills + net 25bps + mcap >= Rs 500cr point-in-time', '203 [136..367]', '30.4% [27.9..34.4]', '-31.5%', '8,069'],
           ['Benchmark: NIFTYBEES B&H', '10.25', '12.3%', '-59.7%', '—'],
           ['Reference: research/75 momentum (net)', '—', '31.9%', '-31.6%', '—'],
         ],
