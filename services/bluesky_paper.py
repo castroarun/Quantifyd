@@ -371,8 +371,9 @@ def main():
             sw['cost'] = round(amt, 2)
             st['cash'] = RESERVE
             log.append(f"SWEEP Rs {amt:,.0f} -> {sw['units']} CASHIETF @ {sw_px:.2f}")
-        nav = st['cash'] + sw['units'] * (sw_px or 0.0) \n            + sum(p['qty'] * float(close.ffill().loc[today].get(p['symbol'], p['buy']))
-                  for p in st['positions'])
+        nav = (st['cash'] + sw['units'] * (sw_px or 0.0)
+               + sum(p['qty'] * float(close.ffill().loc[today].get(p['symbol'], p['buy']))
+                     for p in st['positions']))
         st['nav'].append(dict(date=str(today.date()), nav=round(nav, 0)))
         st['last_run'] = str(now)
         st['gate_weak'] = weak

@@ -210,9 +210,9 @@ export default function BlueskyPaper() {
       <BacktestEvidence />
       <div className={styles.headerRow}>
         <div>
-          <h1 className={styles.title}>BlueSky ATH Breakout — Paper Book</h1>
+          <h1 className={styles.title}>Open Alpha — Paper Book</h1>
           <p className={styles.sub}>
-            <b>All-time-high close breakouts</b> in RS≥70, ₹5cr/day-liquid NSE names ·
+            <b>Formerly BlueSky</b> · all-time-high close breakouts in RS≥70, ₹5cr/day-liquid NSE names ·
             buy-stop at the pivot next day · −8% stop · 20-SMA trail ·
             sized level with the Momentum sleeve · live trades so far: {f.n_live_trades}
           </p>

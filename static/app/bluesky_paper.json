@@ -1,11 +1,13 @@
 {
- "updated": "2026-09-02 15:21:46.433940",
+ "updated": "2026-09-02 15:48:54.275852",
  "nav": 908575.0,
  "capital": 54259.0,
- "cash": 31516.0,
+ "cash": 5000.0,
+ "swept_value": 26516.0,
+ "sweep_units": 24.6,
  "invested_pct": 96.5,
  "unrealized": 20182.0,
- "ret_pct": 1574.51,
+ "ret_pct": 1574.52,
  "cagr_pct": 52.6,
  "max_dd_pct": -27.1,
  "gate_weak": true,
@@ -102,6 +104,25 @@
    "trail": 128.08,
    "to_trail_pct": 12.3,
    "weight": 19.0
+  },
+  {
+   "symbol": "CASHIETF",
+   "is_cash": true,
+   "qty": 24.6,
+   "buy": null,
+   "entry_date": null,
+   "pivot": null,
+   "src": "sweep",
+   "ltp": 1077.86,
+   "value": 26516.0,
+   "pnl": 0.0,
+   "pnl_pct": null,
+   "days": null,
+   "stop": null,
+   "to_stop_pct": null,
+   "trail": null,
+   "to_trail_pct": null,
+   "weight": 2.9
   }
  ],
  "pending": [
@@ -150,6 +171,8 @@
  ],
  "provenance": "History BACKFILLED from the adopted-spec backtest (trail-20, median seed 4, 2020-01-01 -> 2026-09-02, 397 trades); LIVE paper from 2026-09-02. Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased 02-Sep-2026: the CURRENT book is sized to the momentum book NAV (~Rs 9.1L) so the two sleeves are equal-sized; all percentages and the curve shape are unchanged.",
  "n_live_trades": 0,
+ "interest_earned": 0.0,
+ "cash_yield_pct": 5.2,
  "trades": [
   {
    "symbol": "CARTRADE",
@@ -4947,7 +4970,7 @@
   }
  ],
  "missed_tail": [],
- "spec": "Open Alpha (formerly BlueSky): trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; sized level with True North",
+ "spec": "trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper",
  "study": "/app/backtest/bluesky-ath-breakout-research142",
  "log": [
   "ui refresh only"
