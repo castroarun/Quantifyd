@@ -8,7 +8,7 @@ import styles from './MomentumPaper.module.css';
    closed trades. */
 
 type Pos = {
-  symbol: string; qty: number; buy: number; entry_date: string; pivot: number | null;
+  symbol: string; is_cash?: boolean; qty: number; buy: number | null; entry_date: string | null; pivot: number | null;
   src?: string; ltp: number | null; value: number; pnl: number; pnl_pct: number | null;
   days: number; stop: number; to_stop_pct: number | null; trail: number | null;
   to_trail_pct: number | null; weight: number | null;
@@ -25,6 +25,7 @@ type Feed = {
   gate_weak: boolean; gate_nb: number | null; gate_sma: number | null; gate_gap_pct: number | null;
   positions: Pos[]; pending: Pending[]; trades: Trade[]; n_trades: number;
   n_live_trades: number; interest_earned?: number; cash_yield_pct?: number;
+  swept_value?: number; sweep_units?: number;
   win_pct: number | null; nav_curve: NavPt[]; spec: string;
   provenance: string | null; study: string; log: string[];
 };
@@ -73,6 +74,9 @@ function BacktestEvidence() {
           {study.date ? ` · ${study.date}` : ''} · this is the study the paper book implements, not
           live performance
         </span>
+        <a className={styles.studyLink} href="/app/backtest/bluesky-ath-breakout-research142">Study</a>
+        <a className={styles.studyLink} href="/app/sleeves">Sleeves 50-50</a>
+        <a className={styles.studyLink} href="/app/strategies#bluesky-paper">Register</a>
         <button className={styles.evidenceBtn} onClick={() => setExpanded(!expanded)}>
           {expanded ? 'Hide' : 'Show numbers'}
         </button>
@@ -132,6 +136,7 @@ function EquityCurve({ data }: { data: NavPt[] }) {
 
 function BookSummary({ f }: { f: Feed }) {
   const realized = f.trades.reduce((a, t) => a + (t.net_pnl ?? 0), 0);
+  const stocks = f.positions.filter((p) => !p.is_cash);
   const cashW = Math.max(0, 100 - f.invested_pct);
   return (
     <div className={styles.bookSummary}>
@@ -153,15 +158,15 @@ function BookSummary({ f }: { f: Feed }) {
         <div className={styles.legend}>
           <span className={styles.legendItem}>
             <span className={styles.swatch} style={{ background: 'var(--accent-pos, #1f9d55)' }} />
-            stocks ({f.positions.length}) <span className={styles.legendPct}>{f.invested_pct}%</span>
+            stocks ({stocks.length}) <span className={styles.legendPct}>{f.invested_pct}%</span>
           </span>
           <span className={styles.legendItem}>
             <span className={styles.swatch} style={{ background: 'var(--ink-faint, #b7b7b0)' }} />
-            cash (liquid sweep @{f.cash_yield_pct ?? 5.2}%) <span className={styles.legendPct}>{cashW.toFixed(0)}%</span>
+            CASHIETF sweep + cash <span className={styles.legendPct}>{cashW.toFixed(0)}%</span>
           </span>
         </div>
         <div className={styles.sumStatus}>
-          <span>{f.positions.length}/8 slots held</span>
+          <span>{stocks.length}/8 slots held</span>
           <span>{f.pending.length} pending buy-stops</span>
           <span>{f.n_trades} closed · {f.win_pct == null ? '—' : f.win_pct + '% win'}</span>
           <span>live trades: {f.n_live_trades}</span>
@@ -202,12 +207,6 @@ export default function BlueskyPaper() {
   const gateOn = !f.gate_weak;
   return (
     <div className={styles.root}>
-      <div className={styles.studyBar}>
-        <span className={styles.studyBarLabel}>Evidence</span>
-        <a className={styles.studyLink} href={f.study}>The study this book runs</a>
-        <a className={styles.studyLink} href="/app/sleeves">Sleeves 50-50 view</a>
-        <a className={styles.studyLink} href="/app/strategies#bluesky-paper">Register entry</a>
-      </div>
       <BacktestEvidence />
       <div className={styles.headerRow}>
         <div>
@@ -236,12 +235,20 @@ export default function BlueskyPaper() {
             <th>20-SMA trail</th><th>To trail</th>
           </tr></thead>
           <tbody>
-            {f.positions.map((p) => (
+            {f.positions.map((p) => p.is_cash ? (
+              <tr key="cashietf" className={styles.cashRow}>
+                <td className={styles.sym}>{p.symbol}<span className={styles.cashTag}>liquid fund</span></td>
+                <td>{p.weight == null ? '—' : p.weight + '%'}</td>
+                <td className={styles.muted}>—</td><td>—</td><td>{p.ltp ?? '—'}</td><td>{lakh(p.value)}</td>
+                <td className={styles.pos} title="sweep interest earned to date">+{inr(p.pnl ?? 0)}</td>
+                <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+              </tr>
+            ) : (
               <tr key={p.symbol + p.entry_date}>
                 <td className={styles.sym}>{p.symbol}</td>
                 <td>{p.weight == null ? '—' : p.weight + '%'}</td>
                 <td className={styles.muted}>{fmtD(p.entry_date)}</td>
-                <td>{p.buy}</td><td>{p.ltp ?? '—'}</td><td>{lakh(p.value)}</td>
+                <td>{p.buy ?? '—'}</td><td>{p.ltp ?? '—'}</td><td>{lakh(p.value)}</td>
                 <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
                   {(p.pnl ?? 0) >= 0 ? '+' : ''}{inr(p.pnl ?? 0)}</td>
                 <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
@@ -259,7 +266,7 @@ export default function BlueskyPaper() {
           </tbody>
           <tfoot>
             <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
-              <td>TOTAL ({f.positions.length} stocks)</td>
+              <td>TOTAL ({f.positions.filter((p) => !p.is_cash).length} stocks + sweep)</td>
               <td>{f.invested_pct}%</td><td /><td /><td />
               <td>{lakh(totVal)}</td>
               <td className={totPnl >= 0 ? styles.pos : styles.neg}>{totPnl >= 0 ? '+' : ''}{inr(totPnl)}</td>

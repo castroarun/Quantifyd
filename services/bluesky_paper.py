@@ -177,9 +177,20 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
             to_stop_pct=round((lp / stop_lv - 1) * 100, 1) if ok else None,
             trail=round(smav, 2) if not np.isnan(smav) else None,
             to_trail_pct=round((lp / smav - 1) * 100, 1) if ok and not np.isnan(smav) and smav > 0 else None))
-    nav = st['cash'] + tot_val
+    sw = st.get('sweep') or {'symbol': 'CASHIETF', 'units': 0.0, 'cost': 0.0}
+    sw_px_row = cl_row.get('CASHIETF', np.nan)
+    sw_val = float(sw.get('units', 0.0)) * float(sw_px_row) if sw_px_row == sw_px_row else 0.0
+    nav = st['cash'] + sw_val + tot_val
     for p in positions:
         p['weight'] = round(100 * p['value'] / nav, 1) if nav else None
+    if sw_val > 0:
+        positions.append(dict(symbol='CASHIETF', is_cash=True, qty=round(sw.get('units', 0.0), 1),
+                              buy=None, entry_date=None, pivot=None, src='sweep',
+                              ltp=round(float(sw_px_row), 2), value=round(sw_val, 0),
+                              pnl=round(st.get('interest_earned', 0.0), 0), pnl_pct=None,
+                              days=None, stop=None, to_stop_pct=None, trail=None,
+                              to_trail_pct=None,
+                              weight=round(100 * sw_val / nav, 1) if nav else None))
 
     navs = pd.Series({r['date']: r['nav'] for r in st['nav']}).astype(float)
     dd = float((navs / navs.cummax() - 1).min() * 100) if len(navs) > 1 else 0.0
@@ -192,7 +203,8 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
     n_live = sum(1 for t in trades if t.get('src') == 'live')
 
     ui = dict(updated=str(ist_now()), nav=round(nav, 0), capital=st['capital'],
-              cash=round(st['cash'], 0),
+              cash=round(st['cash'], 0), swept_value=round(sw_val, 0),
+              sweep_units=round(sw.get('units', 0.0), 1),
               invested_pct=round(100 * tot_val / nav, 1) if nav else 0,
               unrealized=round(tot_pnl, 0),
               ret_pct=round((nav / st['capital'] - 1) * 100, 2),
@@ -270,14 +282,18 @@ def main():
             + (c1 / c1.shift(189) - 1) + (c1 / c1.shift(252) - 1)
         rs_row = (score.loc[today].where(eligible).rank(pct=True) * 100)
 
-        # ---- liquid-fund sweep on idle cash (momentum parity; 5.2%/yr, accrued
-        #      per calendar day since the last booked nav point; live-only) ----
-        if st['nav']:
-            gap_days = max(0, (today - pd.Timestamp(st['nav'][-1]['date'])).days)
-            if gap_days and st['cash'] > 0:
-                accr = st['cash'] * 0.052 * gap_days / 365.0
-                st['cash'] += accr
-                st['interest_earned'] = round(st.get('interest_earned', 0.0) + accr, 2)
+        # ---- CASHIETF sweep, momentum parity: redeem units to cash for the cycle ----
+        sw = st.get('sweep') or {'symbol': 'CASHIETF', 'units': 0.0, 'cost': 0.0}
+        sw_px = None
+        if 'CASHIETF' in close.columns:
+            _v = close.ffill().loc[:today].iloc[-1].get('CASHIETF')
+            sw_px = float(_v) if _v == _v else None
+        if sw_px and sw.get('units'):
+            proceeds = sw['units'] * sw_px
+            st['interest_earned'] = round(st.get('interest_earned', 0.0) + proceeds - sw['cost'], 2)
+            st['cash'] += proceeds
+            sw = {'symbol': 'CASHIETF', 'units': 0.0, 'cost': 0.0}
+        st['sweep'] = sw
         log = []
         # ---- exits at today's close ----
         kept = []
@@ -347,8 +363,16 @@ def main():
         else:
             log.append('SCAN skipped — gate weak (NIFTYBEES < SMA200)')
 
-        nav = st['cash'] + sum(p['qty'] * float(close.ffill().loc[today].get(p['symbol'], p['buy']))
-                               for p in st['positions'])
+        # ---- sweep surplus cash into CASHIETF (small float reserve kept) ----
+        RESERVE = 5000.0
+        if sw_px and st['cash'] > RESERVE:
+            amt = st['cash'] - RESERVE
+            sw['units'] = round(amt / sw_px, 3)
+            sw['cost'] = round(amt, 2)
+            st['cash'] = RESERVE
+            log.append(f"SWEEP Rs {amt:,.0f} -> {sw['units']} CASHIETF @ {sw_px:.2f}")
+        nav = st['cash'] + sw['units'] * (sw_px or 0.0) \n            + sum(p['qty'] * float(close.ffill().loc[today].get(p['symbol'], p['buy']))
+                  for p in st['positions'])
         st['nav'].append(dict(date=str(today.date()), nav=round(nav, 0)))
         st['last_run'] = str(now)
         st['gate_weak'] = weak

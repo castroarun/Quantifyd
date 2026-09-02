@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-02T15:20:02",
+ "generated_at": "2026-09-02T15:45:01",
  "books": {
   "orb": {
    "days": [
@@ -2935,6 +2935,34 @@
   "i75wr": {
    "days": [
     {
+     "date": "2026-09-02",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 3610.05,
+     "deployed": 299722.2,
+     "cum": 1989.45,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AARTIIND",
+       "pnl": 3610.05,
+       "deployed": 299722.2,
+       "mode": "paper",
+       "origin": "sim",
+       "system_id": "C",
+       "direction": "SHORT",
+       "qty": 587,
+       "entry_price": 510.6,
+       "exit_price": 504.45,
+       "entry_time": "2026-09-02T11:30:17.622095",
+       "exit_time": "2026-09-02T15:25:00.259114",
+       "exit_reason": "EOD_SQUAREOFF"
+      }
+     ]
+    },
+    {
      "date": "2026-08-31",
      "trades": 1,
      "wins": 1,
@@ -3137,22 +3165,22 @@
     "basis": "3 configs \u00b7 \u20b93L each \u00b7 \u20b93,000 risk/trade \u00b7 5 concurrent combined",
     "max_position": 299951.7,
     "busiest_day": 299951.7,
-    "avg_trade": 299631.49,
-    "days": 7,
-    "trades": 7,
-    "wins": 3,
-    "win_rate": 42.9,
-    "net": -1620.6,
+    "avg_trade": 299642.83,
+    "days": 8,
+    "trades": 8,
+    "wins": 4,
+    "win_rate": 50.0,
+    "net": 1989.45,
     "best_day": 5908.0,
     "worst_day": -4999.7,
-    "green_days": 3,
+    "green_days": 4,
     "costs_modelled": false,
-    "t_stat": -0.14,
-    "top3_share": null,
+    "t_stat": 0.17,
+    "top3_share": 731.6,
     "broker_trades": 0,
-    "sim_trades": 7,
+    "sim_trades": 8,
     "first": "2026-08-18",
-    "last": "2026-08-31"
+    "last": "2026-09-02"
    }
   },
   "momentum-3l": {

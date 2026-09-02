@@ -122,16 +122,7 @@ export default function MomentumPaper() {
 
   return (
     <div className={styles.root}>
-      <div className={styles.studyBar}>
-        <span className={styles.studyBarLabel}>Evidence</span>
-        <a className={styles.studyLink} href="/app/backtest/momentum30-subselect">
-          The backtest this book runs
-        </a>
-        <a className={styles.studyLink} href="/app/backtest/momentum-universe-bakeoff">Universe bake-off</a>
-        <a className={styles.studyLink} href="/app/backtest/momentum-put-hedge-overlay">Put-hedge overlay</a>
-        <a className={styles.studyLink} href="/app/backtest/momentum-250-leverage-frontier">Leverage frontier</a>
-        <a className={styles.studyLink} href="/app/strategies#momentum-3l">Register entry</a>
-      </div>
+      
       <BacktestEvidence />
       <div className={styles.headerRow}>
         <div>
@@ -527,6 +518,13 @@ function BacktestEvidence() {
           {study.date ? ` · ${study.date}` : ''} — this is the study the live book implements, not
           live performance
         </span>
+        <a className={styles.studyLink} href="/app/backtest/momentum30-subselect">
+          The backtest this book runs
+        </a>
+        <a className={styles.studyLink} href="/app/backtest/momentum-universe-bakeoff">Universe bake-off</a>
+        <a className={styles.studyLink} href="/app/backtest/momentum-put-hedge-overlay">Put-hedge overlay</a>
+        <a className={styles.studyLink} href="/app/backtest/momentum-250-leverage-frontier">Leverage frontier</a>
+        <a className={styles.studyLink} href="/app/strategies#momentum-3l">Register entry</a>
         <button className={styles.evidenceBtn} onClick={() => setExpanded(!expanded)}>
           {expanded ? 'Hide' : 'Show numbers'}
         </button>
@@ -856,3 +854,5 @@ function CashPanel({ s, reload }: { s: State; reload: () => void }) {
     </div>
   );
 }
+
+// Fold-marker-done

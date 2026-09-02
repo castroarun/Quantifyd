@@ -1,6 +1,6 @@
 {
  "capital": 54259.0,
- "cash": 31516.0,
+ "cash": 5000.0,
  "positions": [
   {
    "symbol": "AETHER",
@@ -11896,5 +11896,11 @@
  "missed": [],
  "started": "2020-01-01",
  "seeded_from": "History BACKFILLED from the adopted-spec backtest (trail-20, median seed 4, 2020-01-01 -> 2026-09-02, 397 trades); LIVE paper from 2026-09-02. Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased 02-Sep-2026: the CURRENT book is sized to the momentum book NAV (~Rs 9.1L) so the two sleeves are equal-sized; all percentages and the curve shape are unchanged.",
- "last_run": null
+ "last_run": null,
+ "sweep": {
+  "symbol": "CASHIETF",
+  "units": 24.601,
+  "cost": 26516.0
+ },
+ "interest_earned": 0.0
 }
