@@ -69,7 +69,7 @@ def load_frames(base_start, trail_sma=50):
 
 def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_arr,
              fill_realistic, cost, stop=STOP, slots=SLOTS, size_pct=SIZE_PCT,
-             stcg=0.0, ltcg=0.125):
+             stcg=0.0, ltcg=0.125, fill_close=False):
     rng = np.random.default_rng(seed)
     cash = float(CAPITAL)
     positions = []      # (col, entry_i, buy, qty)
@@ -104,7 +104,10 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                         passed_up += 1
                         continue
                     piv = float(ATH[i, c])
-                    fill = max(piv, float(O[i, c])) if fill_realistic else piv
+                    if fill_close:
+                        fill = float(C[i, c])   # buy at the signal day's CLOSE (EOD-buy mechanic)
+                    else:
+                        fill = max(piv, float(O[i, c])) if fill_realistic else piv
                     size = size_pct * eq
                     qty = int(size / fill)
                     if qty < 1 or cash < qty * fill * (1 + cost):
@@ -172,6 +175,7 @@ def main():
     ap.add_argument('--fill-realistic', action='store_true')
     ap.add_argument('--cost', type=float, default=0.0, help='bps per side')
     ap.add_argument('--rs-min', type=float, default=70.0)
+    ap.add_argument('--fill-close', action='store_true', help='entry at the signal-day close instead of the pivot')
     ap.add_argument('--stcg', action='store_true', help='model 20% STCG / 12.5% LTCG on net realized gains')
     ap.add_argument('--stop', type=float, default=8.0, help='stop %')
     ap.add_argument('--trail-sma', type=int, default=50)
@@ -251,7 +255,8 @@ def main():
                                           S50, RSv, TVv, TRIGv, weak_arr,
                                           a.fill_realistic, cost,
                                           stop=a.stop / 100.0, slots=a.slots,
-                                          stcg=0.20 if a.stcg else 0.0)
+                                          stcg=0.20 if a.stcg else 0.0,
+                                          fill_close=a.fill_close)
         st, e = stats_from(equity, dates_used, trades, CAPITAL)
         st['seed'] = seed
         all_stats.append(st)

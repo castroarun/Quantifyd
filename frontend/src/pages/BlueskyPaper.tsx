@@ -195,7 +195,7 @@ export default function BlueskyPaper() {
         {f.trades.length === 0 ? <div className={styles.empty}>none yet</div> : (
         <table className={styles.tbl}><thead><tr>
           <th>Symbol</th><th>Entry</th><th>Exit</th><th>Buy ₹</th><th>Sell ₹</th>
-          <th>Return</th><th>Why exited</th><th>Source</th>
+          <th>Return</th><th className={styles.txt}>Why exited</th><th className={styles.txt}>Source</th>
         </tr></thead><tbody>
           {[...f.trades].reverse().map((t, i) => (
             <tr key={i}>
@@ -205,8 +205,8 @@ export default function BlueskyPaper() {
               <td>{t.buy}</td><td>{t.sell}</td>
               <td className={t.ret_pct >= 0 ? styles.pos : styles.neg} style={pnlTint(t.ret_pct)}>
                 {pct(t.ret_pct)}</td>
-              <td className={styles.muted}>{reasonLabel[t.reason] ?? t.reason}</td>
-              <td className={styles.muted}>{t.src === 'live' ? 'LIVE' : 'backfill'}</td>
+              <td className={`${styles.muted} ${styles.txt}`}>{reasonLabel[t.reason] ?? t.reason}</td>
+              <td className={`${styles.muted} ${styles.txt}`}>{t.src === 'live' ? 'LIVE' : 'backfill'}</td>
             </tr>
           ))}
         </tbody></table>)}

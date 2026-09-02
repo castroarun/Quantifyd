@@ -61,10 +61,16 @@
 }
 .tbl th,
 .tbl td {
-  text-align: left;
+  text-align: right;
   padding: 6px 8px;
   border-bottom: 0.5px solid var(--hairline-softest, rgba(128, 128, 128, 0.15));
+  font-variant-numeric: tabular-nums;
 }
+.tbl th:first-child,
+.tbl td:first-child {
+  text-align: left;
+}
+.tbl .txt { text-align: left; }
 .tbl th { color: var(--ink-muted); font-weight: 500; font-size: 11px; }
 .pos { color: var(--accent-pos, #2f9e6e); }
 .neg { color: var(--accent-neg, #e5484d); }
