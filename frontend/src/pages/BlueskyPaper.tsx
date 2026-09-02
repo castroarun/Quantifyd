@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import styles from './BlueskyPaper.module.css';
+import styles from './MomentumPaper.module.css';
+
+/* BlueSky paper book — deliberately shares the Momentum page's stylesheet and layout
+   (headline book-summary, KPI language, cards, tables) so the two sleeves read as one
+   family. Structure mirrors MomentumPaper: summary → holdings → gate/pending → curve →
+   closed trades. */
 
 type Pos = {
   symbol: string; qty: number; buy: number; entry_date: string; pivot: number | null;
@@ -34,9 +39,8 @@ const fmtD = (s: string | null | undefined) => {
 };
 const reasonLabel: Record<string, string> = {
   stop_8pct: '−8% stop', trail_sma20: '20-SMA trail', trail_50d: '50-SMA trail',
-  open_marked: 'still open',
 };
-/* Heat tints — same visual language as the Momentum page. */
+const SEG_COLORS = ['#1f9d55', '#2f7fd1', '#d98a00', '#9057c9', '#c94f7c', '#3fa9a5', '#8a8f3d', '#b3593a'];
 const pnlTint = (p: number | null | undefined): React.CSSProperties => {
   if (p == null || !isFinite(p)) return {};
   const t = Math.min(1, Math.abs(p) / 10);
@@ -52,14 +56,14 @@ const exitTint = (d: number | null | undefined): React.CSSProperties => {
   return { background: 'rgba(47,145,82,0.15)' };
 };
 
-function Curve({ data }: { data: NavPt[] }) {
+function EquityCurve({ data }: { data: NavPt[] }) {
   if (data.length < 2)
-    return <div className={styles.empty}>Equity curve builds as the soak runs.</div>;
+    return <div className={styles.chartEmpty}>Equity curve builds as the soak runs.</div>;
   const W = 760, H = 220, P = 8;
   const n0 = data[0].nav;
   const b0 = data.find((d) => d.bench != null)?.bench ?? 1;
   const navN = data.map((d) => d.nav / n0);
-  const benN = data.map((d) => (d.bench == null ? null : d.bench / b0));
+  const benN = data.map((d) => (d.bench == null ? null : d.bench / (b0 as number)));
   const all = [...navN, ...(benN.filter((x) => x != null) as number[])];
   const lo = Math.min(...all), hi = Math.max(...all);
   const x = (i: number) => P + (i / (data.length - 1)) * (W - 2 * P);
@@ -74,6 +78,62 @@ function Curve({ data }: { data: NavPt[] }) {
   );
 }
 
+function BookSummary({ f }: { f: Feed }) {
+  const realized = f.trades.reduce((a, t) => a + (t.net_pnl ?? 0), 0);
+  const segs = f.positions.map((p, i) => ({
+    name: p.symbol, w: p.weight ?? 0, color: SEG_COLORS[i % SEG_COLORS.length],
+  }));
+  const cashW = Math.max(0, 100 - f.invested_pct);
+  return (
+    <div className={styles.bookSummary}>
+      <div className={styles.sumMain}>
+        <div className={styles.sumLabel}>Book value</div>
+        <div className={styles.sumHero}>{inr(f.nav)}</div>
+        <div className={styles.sumSub}>
+          CAGR {pct(f.cagr_pct)} (incl. backfill) · max drawdown {pct(f.max_dd_pct)} ·
+          updated {fmtD(f.updated)}
+        </div>
+        <div className={styles.barWrap}>
+          {segs.map((s) => (
+            <div key={s.name} className={styles.barSeg}
+                 style={{ width: `${s.w}%`, background: s.color }} title={`${s.name} ${s.w}%`} />
+          ))}
+          <div className={styles.barSeg} style={{ width: `${cashW}%`, background: 'var(--ink-faint, #b7b7b0)' }} title={`cash ${cashW.toFixed(0)}%`} />
+        </div>
+        <div className={styles.legend}>
+          {segs.map((s) => (
+            <span key={s.name} className={styles.legendItem}>
+              <span className={styles.swatch} style={{ background: s.color }} />
+              {s.name} <span className={styles.legendPct}>{s.w}%</span>
+            </span>
+          ))}
+          <span className={styles.legendItem}>
+            <span className={styles.swatch} style={{ background: 'var(--ink-faint, #b7b7b0)' }} />
+            cash <span className={styles.legendPct}>{cashW.toFixed(0)}%</span>
+          </span>
+        </div>
+        <div className={styles.sumStatus}>
+          <span>{f.positions.length}/8 slots held</span>
+          <span>{f.pending.length} pending buy-stops</span>
+          <span>{f.n_trades} closed · {f.win_pct == null ? '—' : f.win_pct + '% win'}</span>
+          <span>live trades: {f.n_live_trades}</span>
+        </div>
+      </div>
+      <div className={styles.sumPnl}>
+        <div className={styles.sumLabel}>P&L</div>
+        <div className={styles.pnlRow}><span>Unrealised (open)</span>
+          <b className={f.unrealized >= 0 ? styles.pos : styles.neg}>
+            {f.unrealized >= 0 ? '+' : ''}{inr(f.unrealized)}</b></div>
+        <div className={styles.pnlRow}><span>Realised (closed, net)</span>
+          <b className={realized >= 0 ? styles.pos : styles.neg}>
+            {realized >= 0 ? '+' : ''}{inr(realized)}</b></div>
+        <div className={styles.pnlRow}><span>Cash</span><b>{lakh(f.cash)}</b></div>
+        <div className={`${styles.pnlRow} ${styles.pnlTotal}`}><span>NAV</span><b>{inr(f.nav)}</b></div>
+      </div>
+    </div>
+  );
+}
+
 export default function BlueskyPaper() {
   const [f, setF] = useState<Feed | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -84,82 +144,77 @@ export default function BlueskyPaper() {
       .catch((e) => setErr(String(e)));
   }, []);
   if (err)
-    return <div className={styles.page}><div className={styles.empty}>
+    return <div className={styles.root}><div className={styles.loading}>
       No feed yet ({err}) — first snapshot lands after the 18:40 IST run.</div></div>;
-  if (!f) return <div className={styles.page}><div className={styles.empty}>Loading…</div></div>;
+  if (!f) return <div className={styles.root}><div className={styles.loading}>Loading book…</div></div>;
   const totPnl = f.positions.reduce((a, p) => a + (p.pnl || 0), 0);
   const totVal = f.positions.reduce((a, p) => a + (p.value || 0), 0);
+  const gateOn = !f.gate_weak;
   return (
-    <div className={styles.page}>
+    <div className={styles.root}>
       <div className={styles.studyBar}>
         <span className={styles.studyBarLabel}>Evidence</span>
         <a className={styles.studyLink} href={f.study}>The study this book runs</a>
+        <a className={styles.studyLink} href="/app/sleeves">Sleeves 50-50 view</a>
         <a className={styles.studyLink} href="/app/strategies#bluesky-paper">Register entry</a>
       </div>
-      <div className={styles.head}>
+      <div className={styles.headerRow}>
         <div>
-          <h1>BlueSky ATH Breakout — Paper Book</h1>
-          <div className={styles.sub}>
-            {f.spec} · updated {fmtD(f.updated)} · live trades so far: {f.n_live_trades}
-          </div>
+          <h1 className={styles.title}>BlueSky ATH Breakout — Paper Book</h1>
+          <p className={styles.sub}>
+            <b>All-time-high close breakouts</b> in RS≥70, ₹5cr/day-liquid NSE names ·
+            buy-stop at the pivot next day · −8% stop · 20-SMA trail ·
+            sized level with the Momentum sleeve · live trades so far: {f.n_live_trades}
+          </p>
         </div>
-        <span className={f.gate_weak ? styles.chipWeak : styles.chipOk}>
-          {f.gate_weak ? 'GATE WEAK — no new entries' : 'RISK-ON — gate open'}
-        </span>
-      </div>
-      <div className={styles.tiles}>
-        <div className={styles.tile}><div>NAV</div><b>{inr(f.nav)}</b></div>
-        <div className={styles.tile}><div>CAGR (incl. backfill)</div>
-          <b className={(f.cagr_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(f.cagr_pct)}</b></div>
-        <div className={styles.tile}><div>Unrealised</div>
-          <b className={f.unrealized >= 0 ? styles.pos : styles.neg}>{inr(f.unrealized)}</b></div>
-        <div className={styles.tile}><div>Cash / Invested</div>
-          <b>{lakh(f.cash)} / {f.invested_pct}%</b></div>
-        <div className={styles.tile}><div>Max DD</div><b className={styles.neg}>{pct(f.max_dd_pct)}</b></div>
-        <div className={styles.tile}><div>Trades · Win%</div>
-          <b>{f.n_trades} · {f.win_pct == null ? '—' : f.win_pct + '%'}</b></div>
+        <div className={`${styles.gateBadge} ${gateOn ? styles.on : styles.off}`}>
+          <span className={styles.dot} />
+          {gateOn ? 'RISK-ON — gate open' : 'GATE WEAK — no new entries'}
+        </div>
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>Equity vs NIFTYBEES (both rebased at book start; dashed = index)</div>
-        <Curve data={f.nav_curve} />
-      </div>
+      <BookSummary f={f} />
 
       <div className={styles.card}>
         <div className={styles.cardTitle}>Holdings</div>
-        {f.positions.length === 0 ? <div className={styles.empty}>none — in cash</div> : (
-        <table className={styles.tbl}><thead><tr>
-          <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th><th>Value</th>
-          <th>P&L ₹</th><th>P&L %</th><th>Days</th><th>Stop −8%</th><th>To stop</th>
-          <th>20-SMA trail</th><th>To trail</th>
-        </tr></thead><tbody>
-          {f.positions.map((p) => (
-            <tr key={p.symbol + p.entry_date}>
-              <td className={styles.sym}>{p.symbol}</td>
-              <td>{p.weight == null ? '—' : p.weight + '%'}</td>
-              <td className={styles.muted}>{fmtD(p.entry_date)}</td>
-              <td>{p.buy}</td><td>{p.ltp ?? '—'}</td><td>{lakh(p.value)}</td>
-              <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
-                {(p.pnl ?? 0) >= 0 ? '+' : ''}{inr(p.pnl ?? 0)}</td>
-              <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
-                {pct(p.pnl_pct)}</td>
-              <td>{p.days}</td>
-              <td className={styles.muted}>{p.stop}</td>
-              <td style={exitTint(p.to_stop_pct)} title="distance above the −8% hard stop">
-                {p.to_stop_pct == null ? '—' : '+' + p.to_stop_pct + '%'}</td>
-              <td className={styles.muted}>{p.trail ?? '—'}</td>
-              <td style={exitTint(p.to_trail_pct)}
-                  title="distance above the 20-SMA trail — the usual exit; red means an exit is imminent">
-                {p.to_trail_pct == null ? '—' : (p.to_trail_pct >= 0 ? '+' : '') + p.to_trail_pct + '%'}</td>
+        {f.positions.length === 0 ? <div className={styles.loading}>none — in cash</div> : (
+        <table className={styles.table}>
+          <thead><tr>
+            <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th><th>Value</th>
+            <th>P&L ₹</th><th>P&L %</th><th>Days</th><th>Stop −8%</th><th>To stop</th>
+            <th>20-SMA trail</th><th>To trail</th>
+          </tr></thead>
+          <tbody>
+            {f.positions.map((p) => (
+              <tr key={p.symbol + p.entry_date}>
+                <td className={styles.sym}>{p.symbol}</td>
+                <td>{p.weight == null ? '—' : p.weight + '%'}</td>
+                <td className={styles.muted}>{fmtD(p.entry_date)}</td>
+                <td>{p.buy}</td><td>{p.ltp ?? '—'}</td><td>{lakh(p.value)}</td>
+                <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
+                  {(p.pnl ?? 0) >= 0 ? '+' : ''}{inr(p.pnl ?? 0)}</td>
+                <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
+                  {pct(p.pnl_pct)}</td>
+                <td>{p.days}</td>
+                <td className={styles.muted}>{p.stop}</td>
+                <td style={exitTint(p.to_stop_pct)} title="distance above the −8% hard stop">
+                  {p.to_stop_pct == null ? '—' : '+' + p.to_stop_pct + '%'}</td>
+                <td className={styles.muted}>{p.trail ?? '—'}</td>
+                <td style={exitTint(p.to_trail_pct)}
+                    title="distance above the 20-SMA trail — the usual exit; red means an exit is imminent">
+                  {p.to_trail_pct == null ? '—' : (p.to_trail_pct >= 0 ? '+' : '') + p.to_trail_pct + '%'}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
+              <td>TOTAL ({f.positions.length} stocks)</td>
+              <td>{f.invested_pct}%</td><td /><td /><td />
+              <td>{lakh(totVal)}</td>
+              <td className={totPnl >= 0 ? styles.pos : styles.neg}>{totPnl >= 0 ? '+' : ''}{inr(totPnl)}</td>
+              <td colSpan={6} />
             </tr>
-          ))}
-        </tbody>
-        <tfoot><tr className={styles.totals}>
-          <td>TOTAL ({f.positions.length} stocks)</td><td /><td /><td /><td />
-          <td>{lakh(totVal)}</td>
-          <td className={totPnl >= 0 ? styles.pos : styles.neg}>{totPnl >= 0 ? '+' : ''}{inr(totPnl)}</td>
-          <td colSpan={6} />
-        </tr></tfoot>
+          </tfoot>
         </table>)}
       </div>
 
@@ -172,50 +227,59 @@ export default function BlueskyPaper() {
             <div><span className={styles.muted}>Gap</span>
               <b className={(f.gate_gap_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(f.gate_gap_pct)}</b></div>
             <div><span className={styles.muted}>State</span>
-              <b className={f.gate_weak ? styles.neg : styles.pos}>{f.gate_weak ? 'WEAK' : 'RISK-ON'}</b></div>
+              <b className={gateOn ? styles.pos : styles.neg}>{gateOn ? 'RISK-ON' : 'WEAK'}</b></div>
           </div>
-          <p className={styles.note}>Below the 200-DMA no NEW breakouts are taken; open positions still run their stop and trail.</p>
+          <p className={styles.note}>Below the 200-DMA no NEW breakouts are taken; open positions keep their −8% stop and 20-SMA trail.</p>
         </div>
         <div className={styles.card}>
           <div className={styles.cardTitle}>Pending buy-stops (tomorrow)</div>
-          {f.pending.length === 0 ? <div className={styles.empty}>none</div> : (
-          <table className={styles.tbl}><thead><tr>
-            <th>Symbol</th><th>Pivot (buy-stop)</th><th>RS</th><th>Signalled</th>
-          </tr></thead><tbody>
-            {f.pending.map((p) => (
-              <tr key={p.symbol}><td className={styles.sym}>{p.symbol}</td>
-                <td>{p.pivot}</td><td>{p.rs}</td><td className={styles.muted}>{fmtD(p.signal_date)}</td></tr>
-            ))}
-          </tbody></table>)}
+          {f.pending.length === 0 ? <div className={styles.loading}>none</div> : (
+          <table className={styles.table}>
+            <thead><tr><th>Symbol</th><th>Pivot (buy-stop)</th><th>RS</th><th>Signalled</th></tr></thead>
+            <tbody>
+              {f.pending.map((p) => (
+                <tr key={p.symbol}><td className={styles.sym}>{p.symbol}</td>
+                  <td>{p.pivot}</td><td>{p.rs}</td><td className={styles.muted}>{fmtD(p.signal_date)}</td></tr>
+              ))}
+            </tbody>
+          </table>)}
         </div>
       </div>
 
       <div className={styles.card}>
+        <div className={styles.cardTitle}>Equity vs NIFTYBEES (both rebased at book start · dashed = index)</div>
+        <EquityCurve data={f.nav_curve} />
+      </div>
+
+      <div className={styles.card}>
         <div className={styles.cardTitle}>Closed trades (latest first)</div>
-        {f.trades.length === 0 ? <div className={styles.empty}>none yet</div> : (
-        <table className={styles.tbl}><thead><tr>
-          <th>Symbol</th><th>Entry</th><th>Exit</th><th>Buy ₹</th><th>Sell ₹</th><th>Qty</th><th>Net ₹</th>
-          <th>Return</th><th className={styles.txt}>Why exited</th><th className={styles.txt}>Source</th>
-        </tr></thead><tbody>
-          {[...f.trades].reverse().map((t, i) => (
-            <tr key={i}>
-              <td className={styles.sym}>{t.symbol}</td>
-              <td className={styles.muted}>{fmtD(t.entry_date)}</td>
-              <td className={styles.muted}>{fmtD(t.exit_date)}</td>
-              <td>{t.buy}</td><td>{t.sell}</td><td>{t.qty ?? '—'}</td>
-              <td className={(t.net_pnl ?? 0) >= 0 ? styles.pos : styles.neg}>
-                {t.net_pnl == null ? '—' : (t.net_pnl >= 0 ? '+' : '') + inr(t.net_pnl)}</td>
-              <td className={t.ret_pct >= 0 ? styles.pos : styles.neg} style={pnlTint(t.ret_pct)}>
-                {pct(t.ret_pct)}</td>
-              <td className={`${styles.muted} ${styles.txt}`}>{reasonLabel[t.reason] ?? t.reason}</td>
-              <td className={`${styles.muted} ${styles.txt}`}>{t.src === 'live' ? 'LIVE' : 'backfill'}</td>
-            </tr>
-          ))}
-        </tbody></table>)}
+        {f.trades.length === 0 ? <div className={styles.loading}>none yet</div> : (
+        <table className={styles.table}>
+          <thead><tr>
+            <th>Symbol</th><th>Entry</th><th>Exit</th><th>Buy ₹</th><th>Sell ₹</th><th>Qty</th>
+            <th>Net ₹</th><th>Return</th><th>Why exited</th><th>Source</th>
+          </tr></thead>
+          <tbody>
+            {[...f.trades].reverse().map((t, i) => (
+              <tr key={i}>
+                <td className={styles.sym}>{t.symbol}</td>
+                <td className={styles.muted}>{fmtD(t.entry_date)}</td>
+                <td className={styles.muted}>{fmtD(t.exit_date)}</td>
+                <td>{t.buy}</td><td>{t.sell}</td><td>{t.qty ?? '—'}</td>
+                <td className={(t.net_pnl ?? 0) >= 0 ? styles.pos : styles.neg}>
+                  {t.net_pnl == null ? '—' : (t.net_pnl >= 0 ? '+' : '') + inr(t.net_pnl)}</td>
+                <td className={t.ret_pct >= 0 ? styles.pos : styles.neg} style={pnlTint(t.ret_pct)}>
+                  {pct(t.ret_pct)}</td>
+                <td><span className={styles.reason}>{reasonLabel[t.reason] ?? t.reason}</span></td>
+                <td className={styles.muted}>{t.src === 'live' ? 'LIVE' : 'backfill'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>)}
       </div>
 
       {f.provenance && <p className={styles.note}>{f.provenance}</p>}
-      <div className={styles.foot}>Last run: {f.log.join(' · ')}</div>
+      <p className={styles.note}>Last run: {f.log.join(' · ')}</p>
     </div>
   );
 }

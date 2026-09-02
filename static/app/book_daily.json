@@ -1,8 +1,66 @@
 {
- "generated_at": "2026-09-02T14:20:03",
+ "generated_at": "2026-09-02T15:00:02",
  "books": {
   "orb": {
    "days": [
+    {
+     "date": "2026-09-02",
+     "trades": 3,
+     "wins": 0,
+     "losses": 3,
+     "pnl": -3103.6,
+     "deployed": 633967.2,
+     "cum": -32380.72,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "GRASIM",
+       "pnl": -1769.6,
+       "deployed": 181389.6,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 56,
+       "entry_price": 3239.1,
+       "exit_price": 3270.7,
+       "entry_time": "2026-09-02T09:35:05.025274",
+       "exit_time": "2026-09-02T14:30:01.000240",
+       "exit_reason": "V9T_LOCK50_BE",
+       "conviction_grade": "B"
+      },
+      {
+       "symbol": "APOLLOHOSP",
+       "pnl": -208.0,
+       "deployed": 225576.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 26,
+       "entry_price": 8676.0,
+       "exit_price": 8684.0,
+       "entry_time": "2026-09-02T10:30:05.171500",
+       "exit_time": "2026-09-02T14:30:00.560352",
+       "exit_reason": "V9T_LOCK50_BE",
+       "conviction_grade": "A"
+      },
+      {
+       "symbol": "BEL",
+       "pnl": -1126.0,
+       "deployed": 227001.6,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 563,
+       "entry_price": 403.2,
+       "exit_price": 405.2,
+       "entry_time": "2026-09-02T11:25:05.080997",
+       "exit_time": "2026-09-02T14:30:00.318294",
+       "exit_reason": "V9T_LOCK50_BE",
+       "conviction_grade": "B"
+      }
+     ]
+    },
     {
      "date": "2026-09-01",
      "trades": 5,
@@ -1887,22 +1945,22 @@
     "basis": "\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent",
     "max_position": 299963.0,
     "busiest_day": 3426791.15,
-    "avg_trade": 216474.17,
-    "days": 14,
-    "trades": 113,
+    "avg_trade": 216340.93,
+    "days": 15,
+    "trades": 116,
     "wins": 39,
-    "win_rate": 34.5,
-    "net": -29277.12,
+    "win_rate": 33.6,
+    "net": -32380.72,
     "best_day": 3123.4,
     "worst_day": -13754.43,
     "green_days": 6,
     "costs_modelled": false,
-    "t_stat": -1.48,
+    "t_stat": -1.63,
     "top3_share": null,
     "broker_trades": 46,
-    "sim_trades": 67,
+    "sim_trades": 70,
     "first": "2026-04-27",
-    "last": "2026-09-01"
+    "last": "2026-09-02"
    }
   },
   "n500m": {
