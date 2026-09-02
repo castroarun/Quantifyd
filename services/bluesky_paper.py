@@ -13,7 +13,8 @@ Adopted taxable spec (decoded + optimized, see /app/backtest/bluesky-ath-breakou
              25bps/side cost; NIFTYBEES < SMA200 gate blocks NEW signals
 Paper only — no orders are placed anywhere.
 
-Run nightly by cron after 15:35 IST. `--dry` computes and prints without writing.
+Modes: nightly cron run (after 15:35 IST) | --dry preview | --ui-only (regenerate the
+UI feed from the frozen state + current prices, no trading, allowed any time).
 State: backtest_data/bluesky_paper_state.json (lockfile + atomic replace).
 UI feed: static/app/bluesky_paper.json (served at /app/bluesky_paper.json, no restart).
 """
@@ -47,6 +48,7 @@ GATE_SMA = 200
 COST = 0.0025
 ETF_RE = re.compile(r'(BEES|ETF|LIQUID|GILT|SENSEX|NIF[A-Z]*50)')
 DRY = '--dry' in sys.argv
+UI_ONLY = '--ui-only' in sys.argv
 
 
 def ist_now():
@@ -94,7 +96,6 @@ def load_wide():
         if len(df) < 260:
             continue
         closes[s], opens[s], highs[s], vols[s] = df['close'], df['open'], df['high'], df['volume']
-    # full-history ATH-close needs ALL history, not 450d — fetch separately (cheap: max(close) before window)
     ath_base = {}
     for s in closes:
         r = conn.execute("select max(close) from market_data_unified where symbol=? "
@@ -132,19 +133,89 @@ def fetch_today(wide, today):
                 rows[s] = (o.get('open'), o.get('high'), o.get('low'), v.get('last_price'))
         time.sleep(0.4)
     for name, idx in (('open', 0), ('high', 1)):
-        newrow = {s: rows.get(s, (np.nan,) * 4)[idx] for s in syms}
-        wide[name].loc[today] = pd.Series(newrow)
-    # after close, last_price == today's close
+        wide[name].loc[today] = pd.Series({s: rows.get(s, (np.nan,) * 4)[idx] for s in syms})
     wide['close'].loc[today] = pd.Series({s: rows.get(s, (np.nan,) * 4)[3] for s in syms})
-    wide['vol'].loc[today] = np.nan   # volume unknown from ohlc; TV uses trailing median, ok
+    wide['vol'].loc[today] = np.nan
     for k in wide:
         wide[k] = wide[k].sort_index()
     return wide, f'kite_ohlc({len(rows)})'
 
 
+def bench_series(dates_list):
+    """NIFTYBEES closes for the nav-curve dates (full history query, cheap)."""
+    conn = sqlite3.connect(str(DB))
+    df = pd.read_sql_query(
+        "select date, close from market_data_unified where symbol='NIFTYBEES' "
+        "and timeframe='day' order by date", conn)
+    conn.close()
+    df['date'] = df['date'].str[:10]
+    m = dict(zip(df['date'], df['close']))
+    return [m.get(d) for d in dates_list]
+
+
+def write_ui(st, close, sma_t, today, gate, log, dry):
+    cl_row = close.ffill().loc[close.index[close.index <= today][-1]]
+    sma_row = sma_t.ffill().loc[sma_t.index[sma_t.index <= today][-1]]
+    positions, tot_val, tot_pnl = [], 0.0, 0.0
+    for p in st['positions']:
+        lp = float(cl_row.get(p['symbol'], np.nan))
+        smav = float(sma_row.get(p['symbol'], np.nan))
+        ok = not np.isnan(lp)
+        val = p['qty'] * lp if ok else p['qty'] * p['buy']
+        pnl = p['qty'] * (lp - p['buy']) if ok else 0.0
+        tot_val += val
+        tot_pnl += pnl
+        stop_lv = round(p['buy'] * (1 - STOP), 2)
+        positions.append(dict(
+            symbol=p['symbol'], qty=p['qty'], buy=p['buy'], entry_date=p['entry_date'],
+            pivot=p.get('pivot'), src=p.get('src', 'live'),
+            ltp=round(lp, 2) if ok else None,
+            value=round(val, 0), pnl=round(pnl, 0),
+            pnl_pct=round((lp / p['buy'] - 1) * 100, 1) if ok else None,
+            days=(pd.Timestamp(str(today.date())) - pd.Timestamp(p['entry_date'])).days,
+            stop=stop_lv,
+            to_stop_pct=round((lp / stop_lv - 1) * 100, 1) if ok else None,
+            trail=round(smav, 2) if not np.isnan(smav) else None,
+            to_trail_pct=round((lp / smav - 1) * 100, 1) if ok and not np.isnan(smav) and smav > 0 else None))
+    nav = st['cash'] + tot_val
+    for p in positions:
+        p['weight'] = round(100 * p['value'] / nav, 1) if nav else None
+
+    navs = pd.Series({r['date']: r['nav'] for r in st['nav']}).astype(float)
+    dd = float((navs / navs.cummax() - 1).min() * 100) if len(navs) > 1 else 0.0
+    trades = st['trades']
+    wins = [t for t in trades if t['ret_pct'] > 0]
+    curve = st['nav'][-750:]
+    bench = bench_series([r['date'] for r in curve])
+    curve_ui = [dict(date=r['date'], nav=r['nav'], bench=bench[i])
+                for i, r in enumerate(curve)]
+    n_live = sum(1 for t in trades if t.get('src') == 'live')
+
+    ui = dict(updated=str(ist_now()), nav=round(nav, 0), capital=st['capital'],
+              cash=round(st['cash'], 0),
+              invested_pct=round(100 * tot_val / nav, 1) if nav else 0,
+              unrealized=round(tot_pnl, 0),
+              ret_pct=round((nav / st['capital'] - 1) * 100, 2), max_dd_pct=round(dd, 2),
+              gate_weak=gate['weak'], gate_nb=gate.get('nb'), gate_sma=gate.get('sma'),
+              gate_gap_pct=(round((gate['nb'] / gate['sma'] - 1) * 100, 2)
+                            if gate.get('nb') and gate.get('sma') else None),
+              positions=positions, pending=st['pending'],
+              provenance=st.get('seeded_from'),
+              n_live_trades=n_live,
+              trades=trades[-80:], n_trades=len(trades),
+              win_pct=round(100 * len(wins) / len(trades), 1) if trades else None,
+              nav_curve=curve_ui, missed_tail=st['missed'][-20:],
+              spec='trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper',
+              study='/app/backtest/bluesky-ath-breakout-research142', log=log)
+    if not dry:
+        UI_JSON.parent.mkdir(parents=True, exist_ok=True)
+        json.dump(ui, open(UI_JSON, 'w'), indent=1, default=str)
+    return nav
+
+
 def main():
     now = ist_now()
-    if not DRY and not (now.hour, now.minute) >= (15, 35):
+    if not (DRY or UI_ONLY) and not (now.hour, now.minute) >= (15, 35):
         print(f'{now} — before 15:35 IST, aborting (use --dry to preview)')
         return
     if not DRY and not acquire_lock():
@@ -157,20 +228,25 @@ def main():
         wide, src = fetch_today(wide, today)
         close, open_, high, vol = wide['close'], wide['open'], wide['high'], wide['vol']
         if today not in close.index:
-            print('no bar for today — holiday? nothing to do')
-            return
-        etf = [c for c in close.columns if ETF_RE.search(c)]
+            today = close.index[-1]
+        sma_t = close.rolling(TRAIL_SMA).mean()
+        nb = close['NIFTYBEES'] if 'NIFTYBEES' in close.columns else None
+        nb_last = float(nb.ffill().loc[:today].iloc[-1]) if nb is not None else None
+        nb_sma = float(nb.rolling(GATE_SMA).mean().ffill().loc[:today].iloc[-1]) if nb is not None else None
+        weak = bool(nb_last < nb_sma) if nb_last and nb_sma else False
+        gate = dict(weak=weak, nb=round(nb_last, 2) if nb_last else None,
+                    sma=round(nb_sma, 2) if nb_sma else None)
 
+        if UI_ONLY:
+            nav = write_ui(st, close, sma_t, today, gate, ['ui refresh only'], dry=False)
+            print(f'{now} UI refreshed: NAV Rs {nav:,.0f}, positions {len(st["positions"])}')
+            return
+
+        etf = [c for c in close.columns if ETF_RE.search(c)]
         tv = (close * vol).rolling(20).median()
         eligible = (tv.shift(1).loc[today] >= TV_FLOOR)
         eligible[etf] = False
-        # ATH-close as of yesterday = window cummax folded with the pre-window ATH base
         athc_prev = close.shift(1).cummax().clip(lower=ath_base, axis=1)
-        sma_t = close.rolling(TRAIL_SMA).mean()
-        nb = close['NIFTYBEES'] if 'NIFTYBEES' in close.columns else None
-        weak = bool(nb.loc[:today].iloc[-1] < nb.rolling(GATE_SMA).mean().loc[:today].iloc[-1]) if nb is not None else False
-
-        # RS as of t-1
         c1 = close.shift(1)
         score = 2 * (c1 / c1.shift(63) - 1) + (c1 / c1.shift(126) - 1) \
             + (c1 / c1.shift(189) - 1) + (c1 / c1.shift(252) - 1)
@@ -193,6 +269,7 @@ def main():
                 st['cash'] += p['qty'] * cl * (1 - COST)
                 tr = dict(symbol=s, entry_date=p['entry_date'], exit_date=str(today.date()),
                           buy=p['buy'], sell=round(cl, 2), qty=p['qty'],
+                          net_pnl=round(p['qty'] * (cl * (1 - COST) - p['buy'] * (1 + COST)), 0),
                           ret_pct=round((cl / p['buy'] - 1) * 100, 2), reason=reason,
                           src='live')
                 st['trades'].append(tr)
@@ -224,7 +301,7 @@ def main():
             st['cash'] -= qty * fill * (1 + COST)
             st['positions'].append(dict(symbol=s, qty=qty, buy=round(fill, 2),
                                         entry_date=str(today.date()), pivot=piv,
-                                        signal_date=pen['signal_date']))
+                                        signal_date=pen['signal_date'], src='live'))
             log.append(f"ENTRY {s} x{qty} @{fill:.2f} (pivot {piv})")
         st['pending'] = []
 
@@ -244,41 +321,21 @@ def main():
         else:
             log.append('SCAN skipped — gate weak (NIFTYBEES < SMA200)')
 
-        nav = st['cash'] + sum(p['qty'] * float(close.loc[today].get(p['symbol'], p['buy']))
+        nav = st['cash'] + sum(p['qty'] * float(close.ffill().loc[today].get(p['symbol'], p['buy']))
                                for p in st['positions'])
         st['nav'].append(dict(date=str(today.date()), nav=round(nav, 0)))
         st['last_run'] = str(now)
         st['gate_weak'] = weak
         st['data_source'] = src
 
-        navs = pd.Series({r['date']: r['nav'] for r in st['nav']}).astype(float)
-        dd = float((navs / navs.cummax() - 1).min() * 100) if len(navs) > 1 else 0.0
-        wins = [t for t in st['trades'] if t['ret_pct'] > 0]
-        cl_today = close.loc[today]
-        ui_pos = []
-        for p_ in st['positions']:
-            lp = float(cl_today.get(p_['symbol'], np.nan))
-            ui_pos.append(dict(**p_, ltp=(round(lp, 2) if not np.isnan(lp) else None),
-                               pnl_pct=(round((lp / p_['buy'] - 1) * 100, 1)
-                                        if not np.isnan(lp) else None)))
-        ui = dict(updated=str(now), nav=round(nav, 0), capital=st['capital'],
-                  ret_pct=round((nav / st['capital'] - 1) * 100, 2), max_dd_pct=round(dd, 2),
-                  gate_weak=weak, positions=ui_pos, pending=st['pending'],
-                  provenance=st.get('seeded_from'),
-                  trades=st['trades'][-60:], n_trades=len(st['trades']),
-                  win_pct=round(100 * len(wins) / len(st['trades']), 1) if st['trades'] else None,
-                  nav_curve=st['nav'][-500:], missed_tail=st['missed'][-20:],
-                  spec='trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper',
-                  study='/app/backtest/bluesky-ath-breakout-research142', log=log)
+        if not DRY:
+            save_state(st)
+        nav = write_ui(st, close, sma_t, today, gate, log, dry=DRY)
         print(f"{now} NAV Rs {nav:,.0f} ({(nav/st['capital']-1)*100:+.2f}%) "
               f"pos {len(st['positions'])}/{SLOTS} pending {len(st['pending'])} "
               f"gate {'WEAK' if weak else 'ok'} src {src}")
         for line in log:
             print(' ', line)
-        if not DRY:
-            save_state(st)
-            UI_JSON.parent.mkdir(parents=True, exist_ok=True)
-            json.dump(ui, open(UI_JSON, 'w'), indent=1, default=str)
     finally:
         if not DRY and LOCK.exists():
             LOCK.unlink()

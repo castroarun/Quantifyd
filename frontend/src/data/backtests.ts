@@ -14747,6 +14747,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
     ],
     caveats: [
+      'DATA AUDIT (2026-09-02): ~1,064 symbols were found with frozen daily bars (unrefreshed since ~May 2026); after a full-universe backfill, all seven decision ensembles were re-run - EVERY verdict held (adopted spec reproduced to the decimal; trail-20 after-tax edge +1.3pp with the 14pp DD advantage intact; floor and stop-off rejections confirmed). Only 2026 YTD was revised (-3.2% -> +5.2%: staleness had understated the year). A nightly full-universe refresh cron now prevents recurrence.',
       'HARNESS BUG disclosed: the first Phase-4 sweep used a calendar-aligned trail-SMA that silently disabled trail exits near non-traded days, inflating its numbers (e.g. no-floor 517x -> corrected 301x). All adoption decisions were re-made on the corrected engine; the IS/OOS split (2006-15 vs 2016-26) is now the adoption gate.',
       'Phase-4 note: the original "mcap floor = risk filter" claim was published, then CORRECTED when the completed mcap snapshot showed the drawdown benefit came from accidentally excluding unknown-mcap symbols, not from the Rs 500cr floor itself.',
       'SURVIVORSHIP: Kite lists only current instruments — 2006 coverage is 528 symbols, all of which survived to 2026. Pre-~2015 years (esp. 2006-07 at +43/+117%) are inflated by this. The DD and post-2015 years are the more trustworthy part.',
