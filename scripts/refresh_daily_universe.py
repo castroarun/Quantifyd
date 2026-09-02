@@ -19,6 +19,13 @@ sys.path.insert(0, str(ROOT))
 
 
 def main():
+    # Guard: never store intraday snapshots as daily bars. The downloader skips
+    # existing dates, so a partial candle written during market hours would be
+    # frozen forever (this bit us on 2026-09-02: 14:15 prices became "closes").
+    ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    if '--intraday-ok' not in sys.argv and ist.weekday() < 5 and not (ist.hour, ist.minute) >= (15, 35):
+        print(f'{ist} — market hours; aborting (use --intraday-ok to override)')
+        return
     from kiteconnect import KiteConnect
     from config import KITE_API_KEY
     from services.data_manager import get_data_manager
@@ -33,7 +40,7 @@ def main():
     rows = conn.execute(
         "select symbol, mx from (select symbol, max(date) mx, count(*) n from "
         "market_data_unified where timeframe='day' group by symbol) "
-        "where n >= 260 and mx < ?", (today,)).fetchall()
+        "where n >= 260 and mx >= date(?, '-30 day')", (today,)).fetchall()
     conn.close()
     print(f'{datetime.now()} refresh: {len(rows)} symbols behind {today}', flush=True)
     if not rows:
@@ -42,9 +49,16 @@ def main():
     dm = get_data_manager(kite=kite)
     t0 = time.time()
     ok = fail = 0
+    wconn = sqlite3.connect(str(ROOT / 'backtest_data' / 'market_data.db'))
     for i, (s, mx) in enumerate(rows, 1):
         frm = datetime.strptime(mx[:10], '%Y-%m-%d') - timedelta(days=5)
         try:
+            # delete the overlap window so refreshed (final) candles can replace
+            # any partial ones — the store layer inserts only missing dates
+            wconn.execute("delete from market_data_unified where symbol=? and "
+                          "timeframe='day' and date >= ?",
+                          (s, frm.strftime('%Y-%m-%d')))
+            wconn.commit()
             n_ok, n_fail, errs = dm.download_data([s], timeframe='day',
                                                   from_date=frm, to_date=datetime.now())
             ok += n_ok
