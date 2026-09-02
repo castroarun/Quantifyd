@@ -144,6 +144,11 @@ export default function MomentumPaper() {
             {s.inception ? ` · since ${s.inception}` : ''} · data as-of {s.data_asof || '—'}
           </p>
         </div>
+        {cagr != null && (
+          <div className={styles.sumSub}>
+            CAGR {pct(cagr)}{yrsSpan < 1 ? ' (annualized — early days)' : ''} · max drawdown {pct(mdd)} · updated {s.data_asof || '—'}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ padding: '5px 11px', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', background: s.live_mode ? '#c0392b' : '#39424e' }}>
             {s.mode}
@@ -410,6 +415,17 @@ export default function MomentumPaper() {
  *  sits, then the P&L parts before the total they add up to. */
 function BookSummary({ s }: { s: State }) {
   const gain = s.nav - s.capital;
+  // CAGR / max-drawdown subline (display-only) from the book's own nav curve —
+  // same headline language as the Open Alpha page (Arun, 02-Sep-2026).
+  const nc = s.navcurve || [];
+  let cagr: number | null = null, mdd: number | null = null, yrsSpan = 0;
+  if (nc.length > 5) {
+    yrsSpan = (Date.parse(nc[nc.length - 1].d) - Date.parse(nc[0].d)) / 3.15576e10;
+    if (yrsSpan > 0.02) cagr = (Math.pow(nc[nc.length - 1].nav / nc[0].nav, 1 / yrsSpan) - 1) * 100;
+    let peak = nc[0].nav, ddv = 0;
+    for (const q of nc) { peak = Math.max(peak, q.nav); ddv = Math.min(ddv, q.nav / peak - 1); }
+    mdd = ddv * 100;
+  }
   const stocks = s.equity || 0;
   const etf = s.swept_value || 0;
   const idle = s.ledger_cash != null ? s.ledger_cash : Math.max(0, s.nav - stocks - etf);
@@ -499,6 +515,7 @@ function BookSummary({ s }: { s: State }) {
 function BacktestEvidence() {
   const study = getStudy('momentum30-subselect');
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   if (!study || !study.results || !study.results.metrics) return null;
   const m = study.results.metrics;
   return (
@@ -510,10 +527,16 @@ function BacktestEvidence() {
           {study.date ? ` · ${study.date}` : ''} — this is the study the live book implements, not
           live performance
         </span>
+        <button className={styles.evidenceBtn} onClick={() => setExpanded(!expanded)}>
+          {expanded ? 'Hide' : 'Show numbers'}
+        </button>
+        {expanded && (
         <button className={styles.evidenceBtn} onClick={() => setOpen(!open)}>
           {open ? 'Hide caveats' : 'Caveats'}
         </button>
+        )}
       </div>
+      {expanded && (<>
       <div className={styles.evidenceGrid}>
         {m.map((x) => (
           <div key={x.label} className={styles.evidenceCell} title={x.hint || ''}>
@@ -534,6 +557,7 @@ function BacktestEvidence() {
           </ul>
         </div>
       )}
+      </>)}
     </div>
   );
 }

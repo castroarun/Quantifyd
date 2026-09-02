@@ -204,10 +204,12 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
               positions=positions, pending=st['pending'],
               provenance=st.get('seeded_from'),
               n_live_trades=n_live,
+              interest_earned=round(st.get('interest_earned', 0.0), 0),
+              cash_yield_pct=5.2,
               trades=trades[-80:], n_trades=len(trades),
               win_pct=round(100 * len(wins) / len(trades), 1) if trades else None,
               nav_curve=curve_ui, missed_tail=st['missed'][-20:],
-              spec='Open Alpha (formerly BlueSky): trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; sized level with True North',
+              spec='trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper',
               study='/app/backtest/bluesky-ath-breakout-research142', log=log)
     def _clean(o):
         if isinstance(o, dict):
@@ -268,6 +270,14 @@ def main():
             + (c1 / c1.shift(189) - 1) + (c1 / c1.shift(252) - 1)
         rs_row = (score.loc[today].where(eligible).rank(pct=True) * 100)
 
+        # ---- liquid-fund sweep on idle cash (momentum parity; 5.2%/yr, accrued
+        #      per calendar day since the last booked nav point; live-only) ----
+        if st['nav']:
+            gap_days = max(0, (today - pd.Timestamp(st['nav'][-1]['date'])).days)
+            if gap_days and st['cash'] > 0:
+                accr = st['cash'] * 0.052 * gap_days / 365.0
+                st['cash'] += accr
+                st['interest_earned'] = round(st.get('interest_earned', 0.0) + accr, 2)
         log = []
         # ---- exits at today's close ----
         kept = []

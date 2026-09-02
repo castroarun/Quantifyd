@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getStudy } from '../data/backtests';
 import styles from './MomentumPaper.module.css';
 
 /* BlueSky paper book — deliberately shares the Momentum page's stylesheet and layout
@@ -23,7 +24,8 @@ type Feed = {
   unrealized: number; ret_pct: number; cagr_pct: number | null; max_dd_pct: number;
   gate_weak: boolean; gate_nb: number | null; gate_sma: number | null; gate_gap_pct: number | null;
   positions: Pos[]; pending: Pending[]; trades: Trade[]; n_trades: number;
-  n_live_trades: number; win_pct: number | null; nav_curve: NavPt[]; spec: string;
+  n_live_trades: number; interest_earned?: number; cash_yield_pct?: number;
+  win_pct: number | null; nav_curve: NavPt[]; spec: string;
   provenance: string | null; study: string; log: string[];
 };
 
@@ -56,6 +58,56 @@ const exitTint = (d: number | null | undefined): React.CSSProperties => {
   return { background: 'rgba(47,145,82,0.15)' };
 };
 
+function BacktestEvidence() {
+  const study = getStudy('bluesky-ath-breakout-research142');
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  if (!study || !study.results || !study.results.metrics) return null;
+  const m = study.results.metrics;
+  return (
+    <div className={styles.evidence}>
+      <div className={styles.evidenceHead}>
+        <span className={styles.evidenceTag}>Backtest evidence</span>
+        <span className={styles.evidenceSub}>
+          {study.title} · {study.status}
+          {study.date ? ` · ${study.date}` : ''} · this is the study the paper book implements, not
+          live performance
+        </span>
+        <button className={styles.evidenceBtn} onClick={() => setExpanded(!expanded)}>
+          {expanded ? 'Hide' : 'Show numbers'}
+        </button>
+        {expanded && (
+        <button className={styles.evidenceBtn} onClick={() => setOpen(!open)}>
+          {open ? 'Hide caveats' : 'Caveats'}
+        </button>
+        )}
+      </div>
+      {expanded && (<>
+      <div className={styles.evidenceGrid}>
+        {m.map((y) => (
+          <div key={y.label} className={styles.evidenceCell} title={y.hint || ''}>
+            <div className={styles.evidenceVal}
+                 style={{ color: y.tone === 'pos' ? 'var(--accent-pos,#0F6E56)'
+                                : y.tone === 'neg' ? 'var(--accent-neg,#A32D2D)'
+                                : 'var(--ink,#1B1B1A)' }}>{y.value}</div>
+            <div className={styles.evidenceLab}>{y.label}</div>
+            {y.hint && <div className={styles.evidenceHint}>{y.hint}</div>}
+          </div>
+        ))}
+      </div>
+      {open && (
+        <div className={styles.evidenceCaveat}>
+          <b>What this number is not.</b>
+          <ul>
+            {(study.caveats || []).map((c, i) => <li key={i}>{c}</li>)}
+          </ul>
+        </div>
+      )}
+      </>)}
+    </div>
+  );
+}
+
 function EquityCurve({ data }: { data: NavPt[] }) {
   if (data.length < 2)
     return <div className={styles.chartEmpty}>Equity curve builds as the soak runs.</div>;
@@ -80,9 +132,6 @@ function EquityCurve({ data }: { data: NavPt[] }) {
 
 function BookSummary({ f }: { f: Feed }) {
   const realized = f.trades.reduce((a, t) => a + (t.net_pnl ?? 0), 0);
-  const segs = f.positions.map((p, i) => ({
-    name: p.symbol, w: p.weight ?? 0, color: SEG_COLORS[i % SEG_COLORS.length],
-  }));
   const cashW = Math.max(0, 100 - f.invested_pct);
   return (
     <div className={styles.bookSummary}>
@@ -94,22 +143,21 @@ function BookSummary({ f }: { f: Feed }) {
           updated {fmtD(f.updated)}
         </div>
         <div className={styles.barWrap}>
-          {segs.map((s) => (
-            <div key={s.name} className={styles.barSeg}
-                 style={{ width: `${s.w}%`, background: s.color }} title={`${s.name} ${s.w}%`} />
-          ))}
-          <div className={styles.barSeg} style={{ width: `${cashW}%`, background: 'var(--ink-faint, #b7b7b0)' }} title={`cash ${cashW.toFixed(0)}%`} />
+          <div className={styles.barSeg}
+               style={{ width: `${f.invested_pct}%`, background: 'var(--accent-pos, #1f9d55)' }}
+               title={`stocks ${f.invested_pct}%`} />
+          <div className={styles.barSeg}
+               style={{ width: `${cashW}%`, background: 'var(--ink-faint, #b7b7b0)' }}
+               title={`cash ${cashW.toFixed(0)}%`} />
         </div>
         <div className={styles.legend}>
-          {segs.map((s) => (
-            <span key={s.name} className={styles.legendItem}>
-              <span className={styles.swatch} style={{ background: s.color }} />
-              {s.name} <span className={styles.legendPct}>{s.w}%</span>
-            </span>
-          ))}
+          <span className={styles.legendItem}>
+            <span className={styles.swatch} style={{ background: 'var(--accent-pos, #1f9d55)' }} />
+            stocks ({f.positions.length}) <span className={styles.legendPct}>{f.invested_pct}%</span>
+          </span>
           <span className={styles.legendItem}>
             <span className={styles.swatch} style={{ background: 'var(--ink-faint, #b7b7b0)' }} />
-            cash <span className={styles.legendPct}>{cashW.toFixed(0)}%</span>
+            cash (liquid sweep @{f.cash_yield_pct ?? 5.2}%) <span className={styles.legendPct}>{cashW.toFixed(0)}%</span>
           </span>
         </div>
         <div className={styles.sumStatus}>
@@ -127,7 +175,9 @@ function BookSummary({ f }: { f: Feed }) {
         <div className={styles.pnlRow}><span>Realised (closed, net)</span>
           <b className={realized >= 0 ? styles.pos : styles.neg}>
             {realized >= 0 ? '+' : ''}{inr(realized)}</b></div>
-        <div className={styles.pnlRow}><span>Cash</span><b>{lakh(f.cash)}</b></div>
+        <div className={styles.pnlRow}><span>Sweep interest earned</span>
+          <b className={styles.pos}>+{inr(f.interest_earned ?? 0)}</b></div>
+        <div className={styles.pnlRow}><span>Cash (in liquid sweep)</span><b>{lakh(f.cash)}</b></div>
         <div className={`${styles.pnlRow} ${styles.pnlTotal}`}><span>NAV</span><b>{inr(f.nav)}</b></div>
       </div>
     </div>
@@ -158,9 +208,10 @@ export default function BlueskyPaper() {
         <a className={styles.studyLink} href="/app/sleeves">Sleeves 50-50 view</a>
         <a className={styles.studyLink} href="/app/strategies#bluesky-paper">Register entry</a>
       </div>
+      <BacktestEvidence />
       <div className={styles.headerRow}>
         <div>
-          <h1 className={styles.title}>Open Alpha — Paper Book (BlueSky ATH Breakout)</h1>
+          <h1 className={styles.title}>BlueSky ATH Breakout — Paper Book</h1>
           <p className={styles.sub}>
             <b>All-time-high close breakouts</b> in RS≥70, ₹5cr/day-liquid NSE names ·
             buy-stop at the pivot next day · −8% stop · 20-SMA trail ·
