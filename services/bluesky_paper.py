@@ -207,7 +207,7 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
               trades=trades[-80:], n_trades=len(trades),
               win_pct=round(100 * len(wins) / len(trades), 1) if trades else None,
               nav_curve=curve_ui, missed_tail=st['missed'][-20:],
-              spec='trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper',
+              spec='Open Alpha (formerly BlueSky): trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; sized level with True North',
               study='/app/backtest/bluesky-ath-breakout-research142', log=log)
     def _clean(o):
         if isinstance(o, dict):

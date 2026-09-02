@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-02T15:00:02",
+ "generated_at": "2026-09-02T15:20:02",
  "books": {
   "orb": {
    "days": [
@@ -1966,6 +1966,36 @@
   "n500m": {
    "days": [
     {
+     "date": "2026-09-02",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -984.0,
+     "deployed": 204576.0,
+     "cum": 14947.0,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "IDFCFIRSTB",
+       "pnl": -984.0,
+       "deployed": 204576.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "long",
+       "signal_type": "ccrb",
+       "timeframe": "5min",
+       "qty": 2400,
+       "entry_price": 85.24,
+       "exit_price": 84.83,
+       "entry_time": "2026-09-02T12:10:00",
+       "exit_time": "2026-09-02T15:15:00.071796",
+       "exit_reason": "EOD",
+       "exit_policy": "T_R_TARGET_1.0R"
+      }
+     ]
+    },
+    {
      "date": "2026-09-01",
      "trades": 1,
      "wins": 0,
@@ -2882,24 +2912,24 @@
     "capital": null,
     "buying_power": null,
     "basis": "risk-sized \u00b7 \u20b93,000 risk/trade \u00b7 5 concurrent",
-    "max_position": 200787.0,
+    "max_position": 204576.0,
     "busiest_day": 305348.4,
-    "avg_trade": 130715.12,
-    "days": 27,
-    "trades": 33,
+    "avg_trade": 132887.5,
+    "days": 28,
+    "trades": 34,
     "wins": 19,
-    "win_rate": 57.6,
-    "net": 15931.0,
+    "win_rate": 55.9,
+    "net": 14947.0,
     "best_day": 8551.8,
     "worst_day": -4004.0,
     "green_days": 14,
     "costs_modelled": false,
-    "t_stat": 1.29,
-    "top3_share": 84.0,
+    "t_stat": 1.21,
+    "top3_share": 89.6,
     "broker_trades": 0,
-    "sim_trades": 33,
+    "sim_trades": 34,
     "first": "2026-05-08",
-    "last": "2026-09-01"
+    "last": "2026-09-02"
    }
   },
   "i75wr": {
@@ -9979,12 +10009,12 @@
    "days": [
     {
      "date": "2026-09-02",
-     "trades": 10,
+     "trades": 11,
      "wins": 2,
-     "losses": 8,
-     "pnl": -4669.4,
-     "deployed": 242818.02,
-     "cum": -12257.34,
+     "losses": 9,
+     "pnl": -5646.61,
+     "deployed": 263813.44,
+     "cum": -13234.55,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -10096,6 +10126,17 @@
        "side": "SELL",
        "price": 1626.11202,
        "qty": 14.725685015522597,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "VOLTAS",
+       "pnl": -977.21,
+       "deployed": 20995.42,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1151.7543699999999,
+       "qty": 18.229078919022825,
        "reason": "PATTERN"
       }
      ]
@@ -12904,20 +12945,20 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24694.19,
+    "avg_trade": 24678.17,
     "days": 30,
-    "trades": 230,
+    "trades": 231,
     "wins": 82,
-    "win_rate": 35.7,
-    "net": -12257.31,
+    "win_rate": 35.5,
+    "net": -13234.52,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -1.06,
+    "t_stat": -1.14,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 230,
+    "sim_trades": 231,
     "first": "2026-07-23",
     "last": "2026-09-02"
    }

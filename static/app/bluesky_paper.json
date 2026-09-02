@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-02 14:31:17.174747",
+ "updated": "2026-09-02 15:21:46.433940",
  "nav": 908575.0,
  "capital": 54259.0,
  "cash": 31516.0,
@@ -4947,7 +4947,7 @@
   }
  ],
  "missed_tail": [],
- "spec": "trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper",
+ "spec": "Open Alpha (formerly BlueSky): trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; sized level with True North",
  "study": "/app/backtest/bluesky-ath-breakout-research142",
  "log": [
   "ui refresh only"

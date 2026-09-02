@@ -113,7 +113,7 @@ export default function Sleeves() {
     <div className={styles.page}>
       <div className={styles.head}>
         <div>
-          <h1>Sleeves — Momentum × BlueSky (50-50, monthly rebalanced)</h1>
+          <h1>Sleeves — True North × Open Alpha (50-50, monthly rebalanced)</h1>
           <div className={styles.sub}>
             Read-only combined view over both books · common window {dates[0]} → {dates[dates.length - 1]} ·
             monthly correlation {corr == null ? '—' : corr.toFixed(2)}
@@ -121,9 +121,9 @@ export default function Sleeves() {
         </div>
       </div>
       <div className={styles.tiles}>
-        <div className={styles.tile}><div>Momentum</div>
+        <div className={styles.tile}><div>True North</div>
           <b className={sM.total >= 0 ? styles.pos : styles.neg}>{pct(sM.total)}</b></div>
-        <div className={styles.tile}><div>BlueSky</div>
+        <div className={styles.tile}><div>Open Alpha</div>
           <b className={sB.total >= 0 ? styles.pos : styles.neg}>{pct(sB.total)}</b></div>
         <div className={styles.tile}><div>50-50 blend</div>
           <b className={sX.total >= 0 ? styles.pos : styles.neg}>{pct(sX.total)}</b></div>
@@ -134,7 +134,7 @@ export default function Sleeves() {
       </div>
       <div className={styles.card}>
         <div className={styles.cardTitle}>
-          Growth of 100 (log) — gold = 50-50 blend · green = Momentum · blue = BlueSky · dashed = NIFTYBEES
+          Growth of 100 (log) — gold = 50-50 blend · green = True North · blue = Open Alpha · dashed = NIFTYBEES
         </div>
         <MultiCurve dates={dates} lines={[
           { name: 'NIFTYBEES', v: nV.map((v) => (isNaN(v) ? 100 : v)), color: 'var(--ink-muted)', dash: '4 3' },

@@ -136,7 +136,7 @@ export default function MomentumPaper() {
       <div className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>
-            Momentum-30 — {s.live_mode ? 'Live Book' : 'Paper Book'}
+            True North (Momentum-30) — {s.live_mode ? 'Live Book' : 'Paper Book'}
           </h1>
           <p className={styles.sub}>
             <b>Universe = the Nifty 200</b> (200 largest NSE stocks by market cap) → <b>ranked by momentum</b> → <b>hold the top 8</b>.

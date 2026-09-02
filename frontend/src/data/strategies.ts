@@ -195,8 +195,9 @@ export const SYSTEMS: StrategySystem[] = [
   },
   {
     id: 'momentum-3l',
-    name: 'Momentum-30',
-    subtitle: 'NSE cash · Nifty 200 momentum, hold top 8',
+    name: 'True North',
+    // formerly listed as Momentum-30 - old name kept as the pointer below
+    subtitle: 'Momentum-30 · NSE cash · Nifty 200 momentum, hold top 8',
     status: 'live',
     size: '₹7,69,000',
     since: '24 Jul 2026',
@@ -343,8 +344,8 @@ export const SYSTEMS: StrategySystem[] = [
   },
   {
     id: 'bluesky-paper',
-    name: 'BlueSky ATH Breakout ₹10L',
-    subtitle: 'NSE cash — all-time-high close breakout (research/142)',
+    name: 'Open Alpha',
+    subtitle: 'formerly BlueSky - NSE cash all-time-high close breakout (research/142)',
     status: 'paper',
     size: '₹10,00,000',
     since: '2 Sep 2026',

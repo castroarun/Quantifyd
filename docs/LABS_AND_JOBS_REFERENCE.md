@@ -108,7 +108,7 @@ Study: `/app/backtest/stock-45dte-neutral-wings` · Status doc: `research/127_st
 New exports: scp CSVs to `backtest_data/algotest_csv/` and re-run the loader (idempotent, replaces per run).
 Study doctrine + verdicts: `research/136_nifty_csl_portfolio/NIFTY_CSL_ATM_STRADDLE_INTRADAY_SWEEP_STATUS.md` §0c–§0e.
 
-## BlueSky ATH-Breakout Paper Book (research/142, G5 soak — since 2026-09-02)
+## Open Alpha (formerly BlueSky) ATH-Breakout Paper Book (research/142, G5 soak — since 2026-09-02)
 
 - **What:** Rs 10L EOD paper book on the adopted taxable spec from the BananaPatterns
   replication study: close > prior ATH-close, IBD-RS>=70, Rs 5cr/day TV floor (no mcap

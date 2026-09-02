@@ -335,14 +335,14 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
           <NavItem
             to="/momentum-paper"
             icon={<IconBarChart />}
-            label="Momentum-30 LIVE"
+            label="True North LIVE"
             active={active === 'momentum-paper'}
             collapsed={collapsed}
           />
           <NavItem
             to="/bluesky-paper"
             icon={<IconBarChart />}
-            label="BlueSky Paper"
+            label="Open Alpha"
             active={active === 'bluesky-paper'}
             collapsed={collapsed}
           />

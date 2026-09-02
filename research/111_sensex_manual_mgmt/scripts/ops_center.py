@@ -15,8 +15,8 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
-    ("BlueSky ATH-breakout paper book (research/142)", [
-        ("bluesky_paper nightly EOD run + /app/bluesky-paper", "18:40 IST Mon-Fri (cron)",
+    ("Open Alpha (BlueSky ATH-breakout) paper book (research/142)", [
+        ("Open Alpha nightly EOD run + /app/bluesky-paper", "18:40 IST Mon-Fri (cron)",
          "G5 paper soak of the adopted taxable spec (close>ATH-close, IBD-RS>=70, Rs5cr TV floor, no mcap floor, -8% stop, SMA20 trail, 200-DMA gate, Rs10L, 8 slots). Publishes static/app/bluesky_paper.json; state backtest_data/bluesky_paper_state.json. Intended live use: 50-50 monthly blend with the momentum book.",
          "cd /home/arun/quantifyd && venv/bin/python services/bluesky_paper.py --dry"),
     ]),
@@ -109,7 +109,7 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
-    ("BlueSky paper (r/142): soak review - paper vs backtest tracking after ~a quarter", "2026-12-05", "SCHEDULED",
+    ("Open Alpha paper (r/142, formerly BlueSky): soak review - paper vs backtest tracking after ~a quarter", "2026-12-05", "SCHEDULED",
      "Pass criterion (pre-registered 2026-09-02): per-trade return distribution consistent with the trail-20 backtest ensemble, fills within ~0.5% of modeled (max(open,pivot)), miss-rate at pivot documented, gate behaviour correct. Decide G6 sizing or park. /app/bluesky-paper + research/142 STATUS."),
     ("Stock wings (r/127): REAL basket-margin check - the G4 gate", "2026-09-05", "PENDING",
      "The study sizes on a MODELED margin (1.25x max-loss + 2%, ~6.7% of notional; paper book uses a 10% estimate). Measure real SPAN+exposure via Kite basket_order_margins on a live C1 structure (e.g. the open HDFCBANK/INFY Sep-29 condors) and re-price the CAGR claim: 38.5% at modeled vs 20.2% at 2x. Until measured, quote the 2x row."),
