@@ -13,7 +13,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[3]
 STUDY = Path(__file__).resolve().parents[1]
 
-blue = pd.read_csv(STUDY / 'results' / 'replica_p5_final_equity.csv',
+TAG = sys.argv[1] if len(sys.argv) > 1 else 'p5_final'
+blue = pd.read_csv(STUDY / 'results' / f'replica_{TAG}_equity.csv',
                    index_col=0, parse_dates=True)
 mom = pd.read_csv(ROOT / 'research' / '75_nifty250_momentum_top15' / 'results' / 'nav_armed_spec.csv',
                   index_col=0, parse_dates=True)['nav']
@@ -21,7 +22,7 @@ mom = pd.read_csv(ROOT / 'research' / '75_nifty250_momentum_top15' / 'results' /
 idx = blue.index.intersection(mom.index)
 blue = blue.loc[idx]
 mom = mom.loc[idx]
-print(f'common window: {idx[0].date()} -> {idx[-1].date()}  ({len(idx)} days)')
+print(f'tag={TAG} common window: {idx[0].date()} -> {idx[-1].date()}  ({len(idx)} days)')
 
 med_seed = (blue.iloc[-1] - blue.iloc[-1].median()).abs().idxmin()
 bs = blue[med_seed]
