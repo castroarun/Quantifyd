@@ -107,3 +107,15 @@ Study: `/app/backtest/stock-45dte-neutral-wings` · Status doc: `research/127_st
 
 New exports: scp CSVs to `backtest_data/algotest_csv/` and re-run the loader (idempotent, replaces per run).
 Study doctrine + verdicts: `research/136_nifty_csl_portfolio/NIFTY_CSL_ATM_STRADDLE_INTRADAY_SWEEP_STATUS.md` §0c–§0e.
+
+## BlueSky ATH-Breakout Paper Book (research/142, G5 soak — since 2026-09-02)
+
+- **What:** Rs 10L EOD paper book on the adopted taxable spec from the BananaPatterns
+  replication study: close > prior ATH-close, IBD-RS>=70, Rs 5cr/day TV floor (no mcap
+  floor), buy-stop at pivot next day, -8% stop + SMA20 trail, 8 slots, NIFTYBEES 200-DMA
+  gate, 25bps modelled. Intended live use: 50-50 monthly blend with the momentum book.
+- **Job:** cron 18:40 IST Mon-Fri -> `services/bluesky_paper.py` (log /tmp/bluesky_paper.log)
+- **State:** `backtest_data/bluesky_paper_state.json` (lock + atomic writes)
+- **UI:** `/app/bluesky-paper` (reads static/app/bluesky_paper.json — no backend restart)
+- **Review:** ops-center dated review 2026-12-05 (soak pass criterion pre-registered)
+- **Study:** /app/backtest/bluesky-ath-breakout-research142
