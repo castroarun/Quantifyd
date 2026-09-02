@@ -498,6 +498,16 @@ def _add(key, name, subtitle, group, kind, money, lots, qty, window, vals, close
         legs=[], curve=[], closed=closed, evidence=evid, rules=rules))
 
 
+
+
+def _replay_state(today_pnl, dte_set):
+    """Not-scheduled and not-yet-replayed are different facts; do not flatten them."""
+    if today_pnl is not None:
+        return ('Closed', 'neutral')
+    if NIFTY_WD2DTE.get(date.today().weekday()) not in dte_set:
+        return ('Not scheduled today', 'muted')
+    return ('Replay · post-close', 'muted')
+
 # --- V1 · one-and-done (naked, 0.4% move-stop) --------------------------------
 v1 = _load('v1.json')
 if v1 and v1.get('per_day'):
@@ -519,7 +529,7 @@ if v1 and v1.get('per_day'):
     t_today = next((round(float(c['pnl'])) for c in closed if c['day'] == TODAY), None)
     _add('V1_OAD', 'V1 · One-and-done', 'Naked straddle · 0.4% move-stop · one and done',
          'intraday', 'intraday', 'paper', v1.get('lots'), (v1.get('lots') or 0) * (v1.get('lot') or 65),
-         '09:20 → 14:45', vals, closed[::-1][:40],
+         '09:20 → 14:45 · Mon/Tue', vals, closed[::-1][:40],
          dict(does=[('Universe', 'NIFTY weekly ATM straddle, <b>naked</b> — no wings.'),
                     ('Entry', '~<b>09:20</b>, sell ATM CE + ATM PE.'),
                     ('Stop', f"<b>{v1.get('trigger_pct', 0.4)}% underlying move</b> from the entry "
@@ -535,8 +545,8 @@ if v1 and v1.get('per_day'):
               caveat='<b>The backtest and the record above are the same days</b> — a replay, not '
                      'an out-of-sample test.',
               links=[('research/58', 'https://github.com/castroarun/Quantifyd/tree/main/research/58_intraday_recenter_straddle')]),
-         state=('Closed' if t_today is not None else 'Flat',
-                'neutral' if t_today is not None else 'muted'), today=t_today)
+         state=_replay_state(t_today, {r.get('dte') for r in pd_.values()}),
+         today=t_today)
 
 # --- V1 + 30% combined-premium SL (the lab variant) ---------------------------
 v1s = _load('v1_sl30.json')
@@ -552,7 +562,7 @@ if v1s and v1s.get('trades'):
     _add('V1_SL30', 'V1 variant · 30% combined-premium SL',
          'Same entry as V1, stopped on the pair rather than the move',
          'intraday', 'intraday', 'paper', v1s.get('lots'),
-         (v1s.get('lots') or 0) * (v1s.get('lot') or 65), '09:20 → close', vals,
+         (v1s.get('lots') or 0) * (v1s.get('lot') or 65), '09:20 → close · all DTEs', vals,
          closed,
          dict(does=[('Entry', 'Identical to V1 — ATM straddle at ~09:20.'),
                     ('Stop', f"<b>Combined premium +{v1s.get('sl_pct', 30):.0f}%</b> — the two legs "
@@ -571,8 +581,7 @@ if v1s and v1s.get('trades'):
               caveat='Its DTE-3 cell is <b>stop-invariant from 20% upward</b> (0 of 18 stops fired) '
                      '— that cell is about the day, not the stop (research/138).',
               links=[('research/138', '/app/backtest/sensex-nifty-stop-by-dte')]),
-         state=('Closed' if t_today is not None else 'Flat',
-                'neutral' if t_today is not None else 'muted'), today=t_today)
+         state=_replay_state(t_today, {t.get('dte') for t in tr}), today=t_today)
 
 # --- V2 positional bi-weekly (the recorded-chain lab, NOT the live engine) -----
 v2l = _load('v2_2.0.json') or _load('v2.json')
@@ -600,7 +609,8 @@ if v2l and v2l.get('trades'):
               nums={}, how='Replayed over the recorded chain, Apr 2026 onward.',
               caveat='Short window and stale far-OTM wing quotes (research/89). The long-sample '
                      'evidence for this structure is the AlgoTest / bhavcopy pair on the engine row.',
-              links=[('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix')]))
+              links=[('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix')]),
+         state=('Replay · post-close', 'muted'))
 
 
 # ------------------------------------------------- tested, not trading (studies)
@@ -687,7 +697,16 @@ MORDER = {'real': 0, 'paper': 1, 'refuted': 2, 'study': 4}
 systems.sort(key=lambda s: (GORDER.get(s.get('group'), 9), MORDER.get(s['money'], 3),
                             -abs(s['lifetime']['net'] or 0)))
 
+# the replay feeds only rebuild after the close; say so rather than let the page
+# imply these books sat out a session they simply have not been replayed for yet
+_v1f = SA / 'v1.json'
+_replay_through = None
+if _v1f.exists():
+    _d = json.loads(_v1f.read_text()).get('per_day') or {}
+    _replay_through = max(_d) if _d else None
+
 payload = dict(generated_at=datetime.now().isoformat()[:19], date=TODAY,
+               replay_through=_replay_through,
                n=len(systems), systems=systems)
 OUT.write_text(json.dumps(payload), encoding='utf-8')
 

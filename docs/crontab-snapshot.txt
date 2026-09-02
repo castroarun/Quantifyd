@@ -1,0 +1,72 @@
+* 9-15 * * 1-5 /home/arun/quantifyd/venv/bin/python3 /home/arun/quantifyd/scripts/dump_nas_mtm.py >> /home/arun/quantifyd/logs/dump_nas_mtm.log 2>&1
+*/2 9-15 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 scripts/nas_fail_rejected.py >> /tmp/nas_fail_rejected.log 2>&1
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 research/57_positional_straddle_biweekly/scripts/biweekly_paper.py >> /tmp/biweekly_paper.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 research/58_intraday_recenter_straddle/scripts/straddle_paper_live.py >> /tmp/straddle_live.log 2>&1
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 scripts/nas_integrity_watchdog.py >> /tmp/nas_watchdog.log 2>&1
+0 16 * * 1-5 . /home/arun/.github_token && /home/arun/quantifyd/scripts/backup_to_github_release.sh >> /home/arun/quantifyd/logs/backup.log 2>&1
+0 9 * * 1-5 /home/arun/quantifyd/scripts/preopen_restart.sh >> /home/arun/quantifyd/logs/preopen_restart.log 2>&1
+1,16,31,46 9-15 * * 1-5 cd /home/arun/quantifyd/research/56_nifty_dual_supertrend && /usr/bin/python3 scripts/nifty_dst_paper.py >> results/paper_run.log 2>&1
+15 9 * * 1-5 cd /home/arun/quantifyd/research/56_nifty_dual_supertrend && /home/arun/quantifyd/venv/bin/python3 scripts/nifty_dst_ws.py >> results/ws.log 2>&1
+42 15 * * 1-5 /home/arun/quantifyd/venv/bin/python3 /home/arun/quantifyd/scripts/snapshot_nas_eod.py >> /home/arun/quantifyd/logs/snapshot_nas_eod.log 2>&1
+50 8 * * 1-5 /home/arun/quantifyd/auto_login.sh >> /home/arun/quantifyd/auto_login.log 2>&1
+6 9 * * 1-5 /home/arun/quantifyd/token_heal.sh >> /home/arun/quantifyd/logs/token_heal.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/publish_nifty_5m.py >> /tmp/nifty_5m.log 2>&1
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 scripts/nas_live_guardian.py >> /tmp/nas_guardian.log 2>&1
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 scripts/squeeze_paper_tracker.py >> /tmp/squeeze_paper.log 2>&1
+10 16 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/gen_holdings_ohlc.py >> /home/arun/quantifyd/logs/holdings_ohlc.log 2>&1
+45 15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/sl_reanchor_shadow.py >> logs/sl_reanchor_shadow.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 research/80_farDTE_rescue/scripts/condor_paper.py >> /tmp/condor_paper.log 2>&1
+*/2 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 research/82_sensex_expiryday/scripts/sensex_paper.py >> /tmp/sensex_paper.log 2>&1
+45 15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/dl_sensex_1min.py >> /home/arun/quantifyd/logs/dl_sensex_1min.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/sensex_live_writer.py >> /tmp/sensex_live_writer.log 2>&1
+45 15 * * 1-5 /home/arun/quantifyd/venv/bin/python /home/arun/mentor/capture_daily.py >> /home/arun/mentor/capture.log 2>&1
+55 15 * * 1-5 /home/arun/quantifyd/research/90_nifty_strangle_rules/scripts/regen_travel.sh
+45 15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/options_study_agg.py >> /tmp/opt_agg.log 2>&1
+20 16 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/gen_momentum_scan.py >> /home/arun/quantifyd/logs/momentum_scan.log 2>&1
+@reboot setsid bash /home/arun/aurum/run_aurum.sh >> /home/arun/aurum/aurum.log 2>&1 < /dev/null
+5 9 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/killflag_premarket_check.py >> /tmp/killflag_check.log 2>&1
+35,50 15 3 8 * cd /home/arun/quantifyd && ./venv/bin/python3 scripts/record_counterfactual_today.py >> /tmp/counterfactual.log 2>&1
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/update_holdings_today_candle.py >> /tmp/holdings_today.log 2>&1
+35 15 4 8 * cd /home/arun/quantifyd && ./venv/bin/python3 -c "from services.nas_kill_switch import clear_frozen; print(\"freeze cleared:\", clear_frozen())" >> /tmp/freeze_clear.log 2>&1
+48 15 * * 1-5 /home/arun/quantifyd/research/58_intraday_recenter_straddle/scripts/regen_straddles.sh >> /tmp/straddle_regen.log 2>&1
+45 15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/nas_analyzer.py >> /tmp/nas_analyzer.log 2>&1
+47 15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/options_outlier_scan.py >> /tmp/opt_outlier.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/leg_day_highs.py >> /tmp/leg_highs.log 2>&1
+42 15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/gen_momentum_ohlc.py >> /tmp/momentum_ohlc.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/sensex_mtm.py >> /tmp/sensex_mtm.log 2>&1
+45 15 * * 5 cd /home/arun/quantifyd && venv/bin/python3 -u research/111_sensex_manual_mgmt/scripts/entry_exit_sweep.py > /tmp/eesweep.log 2>&1
+12 9 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 -u research/111_sensex_manual_mgmt/scripts/csl_paper_exec.py >> /tmp/csl_paper.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/nas_alert_feed.py >> /tmp/nas_alert_feed.log 2>&1
+* 9-15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/publish_sensex_5m.py >> /tmp/sensex_5m.log 2>&1
+35 16 * * 5 cd /home/arun/quantifyd && venv/bin/python3 research/111_sensex_manual_mgmt/scripts/stack_reassessment.py >> /tmp/stack_reassess.log 2>&1
+0 11 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 scripts/live_vs_app_recon.py >> /home/arun/quantifyd/logs/live_recon.log 2>&1
+0 14 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && ./venv/bin/python3 scripts/live_vs_app_recon.py >> /home/arun/quantifyd/logs/live_recon.log 2>&1
+# --- 45-DTE straddle PAPER book (research/119) -------------------------------
+*/5 9-15 * * 1-5 /bin/bash -c 'set -a; . /home/arun/quantifyd/.env; set +a; cd /home/arun/quantifyd && ./venv/bin/python3 services/straddle45_paper.py mark' >> /tmp/straddle45_paper.log 2>&1
+10 16 * * 1-5 cd /home/arun/quantifyd && flock -n /tmp/bhav_dl.lock ./venv/bin/python3 download_nse_bhav.py --start $(date -d '5 days ago' +\%Y-\%m-\%d) --end $(date +\%Y-\%m-\%d) >> /tmp/bhav_daily.log 2>&1
+20 16 * * 1-5 /bin/bash -c 'set -a; . /home/arun/quantifyd/.env; set +a; cd /home/arun/quantifyd && ./venv/bin/python3 services/straddle45_paper.py seed && ./venv/bin/python3 services/straddle45_paper.py mark' >> /tmp/straddle45_paper.log 2>&1
+5 16 * * 2,4 cd /home/arun/quantifyd && venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/expiry_lab_assessment.py >> /tmp/expiry_lab.log 2>&1
+5 16 * * 1-5 /bin/bash -c 'set -a; . /home/arun/quantifyd/.env; set +a; cd /home/arun/quantifyd && ./venv/bin/python3 services/margin_recorder.py' >> /tmp/margin_recorder.log 2>&1
+# stock bhavcopy daily refresh (stocks; idempotent, resumes) — research/127 paper book
+20 16 * * 1-5 cd /home/arun/quantifyd && flock -n /tmp/bhav_stock_dl.lock ./venv/bin/python3 research/89_short_monthly_straddle/scripts/download_nse_bhav_stocks.py >> /tmp/bhav_stock_daily.log 2>&1
+# stock 45-21 DTE winged strangle PAPER book (research/127) — seed new cycles + mark/exit + publish JSON
+50 16 * * 1-5 cd /home/arun/quantifyd && flock -n /tmp/stock_wings_paper.lock ./venv/bin/python3 services/stock_wings_paper.py seed >> /tmp/stock_wings_paper.log 2>&1
+30 20 * * 1-5 cd /home/arun/quantifyd && flock -n /tmp/stock_wings_paper.lock ./venv/bin/python3 services/stock_wings_paper.py seed >> /tmp/stock_wings_paper.log 2>&1
+# stock wings PAPER book â€” LIVE marks + real Kite basket margin (display only; no exit logic)
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && flock -n /tmp/stock_wings_live.lock ./venv/bin/python3 services/stock_wings_paper.py livedaemon >> /tmp/stock_wings_live.log 2>&1
+43 15 * * 1-5 cd /home/arun/quantifyd && ./venv/bin/python3 scripts/build_overview_heatmaps.py >> /home/arun/quantifyd/logs/overview_heatmaps.log 2>&1
+# same-evening stock bhav (NSE publishes ~19-20h IST) + re-mark to TODAY closes
+30 21 * * 1-5 cd /home/arun/quantifyd && flock -n /tmp/bhav_stock_dl.lock ./venv/bin/python3 research/89_short_monthly_straddle/scripts/download_nse_bhav_stocks.py --start $(date -d "7 days ago" +\%Y-\%m-\%d) --end $(date +\%Y-\%m-\%d) >> /tmp/bhav_stock_daily.log 2>&1
+45 21 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && flock -n /tmp/stock_wings_paper.lock ./venv/bin/python3 services/stock_wings_paper.py seed >> /tmp/stock_wings_paper.log 2>&1
+52 8 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && venv/bin/python3 scripts/dad_auto_login.py >> /home/arun/quantifyd/logs/dad_auto_login.log 2>&1
+15 16 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && venv/bin/python3 scripts/gen_dad_holdings_ohlc.py >> /home/arun/quantifyd/logs/dad_ohlc.log 2>&1
+# book day-by-day trade history feed (read-only projection) -> static/app/book_daily.json
+*/20 9-15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/build_book_daily.py >> logs/book_daily.log 2>&1
+45 15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/build_book_daily.py >> logs/book_daily.log 2>&1
+35 15 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && flock -n /tmp/opt_1min_ohlc.lock ./venv/bin/python3 scripts/record_option_1min_ohlc.py >> /home/arun/quantifyd/logs/option_1min_ohlc.log 2>&1
+52 15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/straddles_registry.py >> /tmp/straddles_registry.log 2>&1
+# --- BlueSky ATH-breakout PAPER book (research/142, G5 soak) ---
+40 18 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 -u services/bluesky_paper.py >> /tmp/bluesky_paper.log 2>&1
+# --- Nightly full-universe daily-bars refresh (keeps broad NSE universe current) ---
+45 17 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 -u scripts/refresh_daily_universe.py >> /tmp/universe_refresh.log 2>&1
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/straddles_registry.py >> /tmp/straddles_registry.log 2>&1
