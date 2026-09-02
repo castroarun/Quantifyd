@@ -15,7 +15,7 @@ type Trade = {
 type NavPt = { date: string; nav: number; bench: number | null };
 type Feed = {
   updated: string; nav: number; capital: number; cash: number; invested_pct: number;
-  unrealized: number; ret_pct: number; max_dd_pct: number;
+  unrealized: number; ret_pct: number; cagr_pct: number | null; max_dd_pct: number;
   gate_weak: boolean; gate_nb: number | null; gate_sma: number | null; gate_gap_pct: number | null;
   positions: Pos[]; pending: Pending[]; trades: Trade[]; n_trades: number;
   n_live_trades: number; win_pct: number | null; nav_curve: NavPt[]; spec: string;
