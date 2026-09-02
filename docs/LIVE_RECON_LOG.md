@@ -435,3 +435,143 @@ Filled today by tag:
   CSL_CSL_TIMEB_NIFTY         780
   CSL_NAS_COMB20              260
 ```
+
+## 2026-08-28 14:00 IST — 0 alerts, 3 warnings
+
+```
+Live vs app reconciliation · 2026-08-28 14:00 IST
+6 broker legs · 0 alerts · 3 warnings
+
+[INFO] MANUAL EBGNG: manual holding, 84 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 5 — no book tracks it
+[INFO] MANUAL MANORAMA: manual holding, 6 — no book tracks it
+[WARN] NAKED NIFTY2690124150CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124150PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124300CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  CSL_CSL_TIMEB_NIFTY        1560
+  untagged                   1525
+  CSL_NAS_COMB20              260
+```
+
+## 2026-08-31 11:00 IST — 0 alerts, 2 warnings
+
+```
+Live vs app reconciliation · 2026-08-31 11:00 IST
+2 broker legs · 0 alerts · 2 warnings
+
+[WARN] NAKED NIFTY2690124050CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124050PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                    780
+  CSL_NAS_COMB20              260
+```
+
+## 2026-08-31 14:00 IST — 0 alerts, 2 warnings
+
+```
+Live vs app reconciliation · 2026-08-31 14:00 IST
+7 broker legs · 0 alerts · 2 warnings
+
+[INFO] MANUAL AYMSYNTEX: manual holding, 75 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 4 — no book tracks it
+[INFO] MANUAL LUMAXIND: manual holding, 2 — no book tracks it
+[INFO] MANUAL MANORAMA: manual holding, 6 — no book tracks it
+[INFO] MANUAL SMSPHARMA: manual holding, 26 — no book tracks it
+[WARN] NAKED NIFTY2690124050CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124050PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1933
+  CSL_NAS_COMB20              260
+```
+
+## 2026-09-01 11:00 IST — 1 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-09-01 11:00 IST
+9 broker legs · 1 alerts · 4 warnings
+
+[ALERT] ORPHAN BSE26SEP3500CE: broker holds -200 that no book claims (no order tag)
+[INFO] MANUAL ANTHEM: manual holding, 11 — no book tracks it
+[INFO] MANUAL BSE: manual holding, -18 — no book tracks it
+[INFO] MANUAL DIVGIITTS: manual holding, 9 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 5 — no book tracks it
+[INFO] MANUAL LUMAXIND: manual holding, 2 — no book tracks it
+[WARN] NAKED BSE26SEP3500CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124050CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124050PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED NIFTY2690124150CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1545
+  CSL_NAS_COMB20              260
+```
+
+## 2026-09-01 14:00 IST — 1 alerts, 1 warnings
+
+```
+Live vs app reconciliation · 2026-09-01 14:00 IST
+16 broker legs · 1 alerts · 1 warnings
+
+[ALERT] ORPHAN BSE26SEP3500CE: broker holds -200 that no book claims (no order tag)
+[INFO] MULTI-BOOK ADANIPOWER: broker 5 = MOMENTUM +5 — placed by our books, not visible in the page feed
+[INFO] MANUAL ANTHEM: manual holding, 22 — no book tracks it
+[INFO] MULTI-BOOK AUROPHARMA: broker 64 = MOMENTUM +64 — placed by our books, not visible in the page feed
+[INFO] MANUAL AYMSYNTEX: manual holding, 84 — no book tracks it
+[INFO] MULTI-BOOK BHEL: broker -124 = MOMENTUM -124 — placed by our books, not visible in the page feed
+[INFO] MANUAL BSE: manual holding, -48 — no book tracks it
+[INFO] MULTI-BOOK CASHIETF: broker -71 = MOMENTUM -71 — placed by our books, not visible in the page feed
+[INFO] MANUAL DIVGIITTS: manual holding, 9 — no book tracks it
+[INFO] MANUAL EBGNG: manual holding, 38 — no book tracks it
+[INFO] MULTI-BOOK IDEA: broker 151 = MOMENTUM +151 — placed by our books, not visible in the page feed
+[INFO] MANUAL INOXINDIA: manual holding, 5 — no book tracks it
+[INFO] MULTI-BOOK LAURUSLABS: broker -25 = MOMENTUM -25 — placed by our books, not visible in the page feed
+[INFO] MANUAL LUMAXIND: manual holding, 4 — no book tracks it
+[INFO] MULTI-BOOK MOTHERSON: broker 664 = MOMENTUM +664 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK NATIONALUM: broker -126 = MOMENTUM -126 — placed by our books, not visible in the page feed
+[WARN] NAKED BSE26SEP3500CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   2230
+  MOMENTUM                   1230
+  CSL_NAS_COMB20              520
+```
+
+## 2026-09-02 11:00 IST — 1 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-09-02 11:00 IST
+6 broker legs · 1 alerts · 4 warnings
+
+[ALERT] ORPHAN BSE26SEP3500CE: broker holds -200 that no book claims (no order tag)
+[INFO] MANUAL ANTHEM: manual holding, 11 — no book tracks it
+[INFO] MANUAL AYMSYNTEX: manual holding, 79 — no book tracks it
+[WARN] NAKED SENSEX2690376300CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX2690376300PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX2690376700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED BSE26SEP3500CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                    450
+```
+
+## 2026-09-02 14:00 IST — 1 alerts, 3 warnings
+
+```
+Live vs app reconciliation · 2026-09-02 14:00 IST
+6 broker legs · 1 alerts · 3 warnings
+
+[ALERT] ORPHAN BSE26SEP3500CE: broker holds -200 that no book claims (no order tag)
+[INFO] MANUAL ANTHEM: manual holding, 11 — no book tracks it
+[INFO] MANUAL AYMSYNTEX: manual holding, 115 — no book tracks it
+[INFO] MANUAL BSE: manual holding, -96 — no book tracks it
+[WARN] NAKED SENSEX2690376300CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX2690376300PE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED BSE26SEP3500CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                    662
+```

@@ -1,5 +1,5 @@
 {
- "asof": "2026-09-02 15:45:25",
+ "asof": "2026-09-02 16:20:39",
  "upcoming": [
   {
    "expiry": "2026-10-27",
@@ -74,7 +74,7 @@
  ],
  "capital_deployed": 522966.70999999996,
  "capital_deployed_peak": 637772.96,
- "margin_asof": "2026-09-02 15:45",
+ "margin_asof": "2026-09-02 16:20",
  "running_pnl": 162435.64278000002,
  "running_pnl_pct": 31.060417360026616,
  "n_closed": 3,

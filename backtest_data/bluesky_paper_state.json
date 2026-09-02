@@ -48,50 +48,7 @@
    "src": "backtest"
   }
  ],
- "pending": [
-  {
-   "symbol": "ADOR",
-   "pivot": 1705.2,
-   "rs": 92.0,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "ASIANENE",
-   "pivot": 492.7,
-   "rs": 87.3,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "AUROPHARMA",
-   "pivot": 1680.1,
-   "rs": 80.1,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "INDSWFTLAB",
-   "pivot": 367.48,
-   "rs": 99.9,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "MOREPENLAB",
-   "pivot": 107.16,
-   "rs": 99.2,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "RISHABH",
-   "pivot": 705.45,
-   "rs": 90.0,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "TFCILTD",
-   "pivot": 141.84,
-   "rs": 97.2,
-   "signal_date": "2026-09-02"
-  }
- ],
+ "pending": [],
  "nav": [
   {
    "date": "2020-01-01",
@@ -6728,6 +6685,10 @@
   {
    "date": "2026-09-02",
    "nav": 909341.0
+  },
+  {
+   "date": "2026-09-02",
+   "nav": 917628.0
   }
  ],
  "trades": [
@@ -11893,14 +11854,66 @@
    "qty_est": true
   }
  ],
- "missed": [],
+ "missed": [
+  {
+   "symbol": "INDSWFTLAB",
+   "pivot": 367.48,
+   "rs": 99.9,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "MOREPENLAB",
+   "pivot": 107.16,
+   "rs": 99.2,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "TFCILTD",
+   "pivot": 141.84,
+   "rs": 97.2,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "ADOR",
+   "pivot": 1705.2,
+   "rs": 92.0,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "RISHABH",
+   "pivot": 705.45,
+   "rs": 90.0,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "ASIANENE",
+   "pivot": 492.7,
+   "rs": 87.3,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "AUROPHARMA",
+   "pivot": 1680.1,
+   "rs": 80.1,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  }
+ ],
  "started": "2020-01-01",
  "seeded_from": "History BACKFILLED from the adopted-spec backtest (trail-20, median seed 4, 2020-01-01 -> 2026-09-02, 397 trades); LIVE paper from 2026-09-02. Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased 02-Sep-2026: the CURRENT book is sized to the momentum book NAV (~Rs 9.1L) so the two sleeves are equal-sized; all percentages and the curve shape are unchanged.",
- "last_run": null,
+ "last_run": "2026-09-02 18:40:03.803287",
  "sweep": {
   "symbol": "CASHIETF",
   "units": 24.601,
-  "cost": 26516.0
+  "cost": 26516.19
  },
- "interest_earned": 0.0
+ "interest_earned": 0.19,
+ "gate_weak": true,
+ "data_source": "db"
 }

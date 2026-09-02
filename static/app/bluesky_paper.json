@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-02 16:08:50.920176",
+ "updated": "2026-09-02 18:40:40.786903",
  "nav": 917628.0,
  "capital": 54259.0,
  "cash": 5000.0,
@@ -125,50 +125,7 @@
    "weight": 2.9
   }
  ],
- "pending": [
-  {
-   "symbol": "ADOR",
-   "pivot": 1705.2,
-   "rs": 92.0,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "ASIANENE",
-   "pivot": 492.7,
-   "rs": 87.3,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "AUROPHARMA",
-   "pivot": 1680.1,
-   "rs": 80.1,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "INDSWFTLAB",
-   "pivot": 367.48,
-   "rs": 99.9,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "MOREPENLAB",
-   "pivot": 107.16,
-   "rs": 99.2,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "RISHABH",
-   "pivot": 705.45,
-   "rs": 90.0,
-   "signal_date": "2026-09-02"
-  },
-  {
-   "symbol": "TFCILTD",
-   "pivot": 141.84,
-   "rs": 97.2,
-   "signal_date": "2026-09-02"
-  }
- ],
+ "pending": [],
  "provenance": "History BACKFILLED from the adopted-spec backtest (trail-20, median seed 4, 2020-01-01 -> 2026-09-02, 397 trades); LIVE paper from 2026-09-02. Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased 02-Sep-2026: the CURRENT book is sized to the momentum book NAV (~Rs 9.1L) so the two sleeves are equal-sized; all percentages and the curve shape are unchanged.",
  "n_live_trades": 0,
  "interest_earned": 0.0,
@@ -1218,11 +1175,6 @@
  "n_trades": 397,
  "win_pct": 47.4,
  "nav_curve": [
-  {
-   "date": "2023-08-28",
-   "nav": 306664.0,
-   "bench": 212.87
-  },
   {
    "date": "2023-08-29",
    "nav": 309861.0,
@@ -4967,12 +4919,68 @@
    "date": "2026-09-02",
    "nav": 909341.0,
    "bench": 272.5
+  },
+  {
+   "date": "2026-09-02",
+   "nav": 917628.0,
+   "bench": 272.5
   }
  ],
- "missed_tail": [],
+ "missed_tail": [
+  {
+   "symbol": "INDSWFTLAB",
+   "pivot": 367.48,
+   "rs": 99.9,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "MOREPENLAB",
+   "pivot": 107.16,
+   "rs": 99.2,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "TFCILTD",
+   "pivot": 141.84,
+   "rs": 97.2,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "ADOR",
+   "pivot": 1705.2,
+   "rs": 92.0,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "RISHABH",
+   "pivot": 705.45,
+   "rs": 90.0,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "ASIANENE",
+   "pivot": 492.7,
+   "rs": 87.3,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  },
+  {
+   "symbol": "AUROPHARMA",
+   "pivot": 1680.1,
+   "rs": 80.1,
+   "signal_date": "2026-09-02",
+   "why": "cash_short"
+  }
+ ],
  "spec": "trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper",
  "study": "/app/backtest/bluesky-ath-breakout-research142",
  "log": [
-  "ui refresh only"
+  "SCAN skipped \u2014 gate weak (NIFTYBEES < SMA200)",
+  "SWEEP Rs 26,516 -> 24.601 CASHIETF @ 1077.85"
  ]
 }

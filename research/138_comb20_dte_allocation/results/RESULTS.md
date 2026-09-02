@@ -241,3 +241,26 @@ confirming against the broker.
 | `scripts/live_book.py` (repo `scripts/`) | pooled 20-sleeve view, all lot-normalised | yes |
 | `scripts/real_book.py` (repo `scripts/`) | real-money-only book, live DTEs, real lots | yes |
 | `scripts/verify_friday_thursday.py` (repo `scripts/`) | the two checks that killed claim 1 | yes |
+
+---
+
+## APPENDIX — the "no stop" column is a CONTROL, not a candidate (2026-08-31, Arun)
+
+> *"having no stop loss cannot be a recommendation"*
+
+Correct, and none was made. The `no stop` column exists in these grids for one
+diagnostic purpose: **to detect when a stop is inert.** If SL20 and no-stop
+produce the *identical* number, that proves the stop never fired in the sample —
+which is a fact about the DAY (its combined premium never moved far enough), not
+a suggestion to trade without protection.
+
+That is exactly what it showed on Thursday: SL20 through no-stop are all
+Rs1,55,265 because **0 of 18** Thursdays ever saw the combined premium rise 20%
+above entry. The conclusion drawn was "the stop is not what makes Thursday good",
+so **there is no stop change to make** — the paper cell keeps its SL20.
+
+Standing rule, already recorded in the config's own refreeze note (*"all SL none
+cells set to 30 (never run stopless), per user"*): **no book runs without a stop**,
+and books whose studied config said `none` carry a 50% disaster backstop in the
+executor regardless. Any stopless row in any future grid here is a measurement
+control and must be labelled as one.

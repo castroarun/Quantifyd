@@ -198,3 +198,9 @@ research/68_nas_6sys_chain_replay/scripts/_ref_*
 # research/132 - 5.4 MB per-minute atlas (offset_by_day.csv is the committed summary)
 research/132_strike_misselection_cost/results/offset_atlas.csv
 backtest_data/dad_access_token.json
+.env.bak*
+_stage/
+
+# never commit env backups (push-protection incident 2026-09-02)
+.env.bak*
+.env.*.bak
