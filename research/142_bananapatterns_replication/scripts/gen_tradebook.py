@@ -54,13 +54,15 @@ rows = []
 for c, ei, xi, buy, sell, reason in trades:
     still = reason == 'open_marked'
     held = (dates[xi] - dates[ei]).days
-    rows.append(dict(symbol=syms[c], entry=str(dates[ei].date()),
-                     exit='' if still else str(dates[xi].date()), held=held,
+    rows.append(dict(symbol=syms[c], entry=dates[ei].strftime('%d-%b-%Y'),
+                     exit='' if still else dates[xi].strftime('%d-%b-%Y'), held=held,
                      buy=round(buy, 2), sell='' if still else round(sell, 2),
                      ret=round((sell/buy - 1)*100, 2),
                      why=('still open · marked to Aug 2026 close' if still else
                           ('−8% stop' if reason == 'stop_8pct' else 'closed below the 20-SMA'))))
-df = pd.DataFrame(rows).sort_values('entry', ascending=False)
+df = pd.DataFrame(rows)
+df['_k'] = pd.to_datetime(df['entry'], format='%d-%b-%Y')
+df = df.sort_values('_k', ascending=False).drop(columns=['_k'])
 df.to_csv(STUDY / 'results' / 'bluesky_tradebook.csv', index=False)
 
 body = []

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-02T12:20:02",
+ "generated_at": "2026-09-02T13:00:02",
  "books": {
   "orb": {
    "days": [
@@ -9690,6 +9690,33 @@
   "kc6": {
    "days": [
     {
+     "date": "2026-09-02",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -476.0,
+     "deployed": 98931.0,
+     "cum": -2436.38,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "CREDITACC",
+       "pnl": -476.0,
+       "deployed": 98931.0,
+       "mode": "paper",
+       "origin": "sim",
+       "entry_date": "2026-08-26",
+       "entry_price": 1413.3,
+       "exit_price": 1406.5,
+       "qty": 70,
+       "hold_days": 7,
+       "pnl_pct": -0.48,
+       "exit_reason": "SIGNAL_KC6_MID"
+      }
+     ]
+    },
+    {
      "date": "2026-08-25",
      "trades": 1,
      "wins": 1,
@@ -9872,22 +9899,22 @@
     "basis": "KC6 mean reversion \u00b7 paper throughout",
     "max_position": 99990.8,
     "busiest_day": 199179.6,
-    "avg_trade": 99163.36,
-    "days": 6,
-    "trades": 7,
+    "avg_trade": 99134.31,
+    "days": 7,
+    "trades": 8,
     "wins": 5,
-    "win_rate": 71.4,
-    "net": -1960.38,
+    "win_rate": 62.5,
+    "net": -2436.38,
     "best_day": 4338.76,
     "worst_day": -4999.54,
     "green_days": 4,
     "costs_modelled": null,
-    "t_stat": -0.22,
+    "t_stat": -0.28,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 7,
+    "sim_trades": 8,
     "first": "2026-02-13",
-    "last": "2026-08-25"
+    "last": "2026-09-02"
    }
   },
   "ha-paper": {

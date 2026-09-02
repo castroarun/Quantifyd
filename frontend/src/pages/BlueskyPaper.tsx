@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import styles from './BlueskyPaper.module.css';
 
-type Pos = { symbol: string; qty: number; buy: number; entry_date: string; pivot: number };
+type Pos = {
+  symbol: string; qty: number; buy: number; entry_date: string; pivot: number;
+  ltp?: number | null; pnl_pct?: number | null;
+};
 type Pending = { symbol: string; pivot: number; rs: number; signal_date: string };
 type Trade = {
   symbol: string; entry_date: string; exit_date: string; buy: number; sell: number;
@@ -18,6 +21,13 @@ type Feed = {
 const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
 const pct = (n: number | null | undefined) =>
   n == null ? '—' : (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmtD = (s: string | null | undefined) => {
+  if (!s) return '—';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (!m) return s;
+  return `${m[3]}-${MON[parseInt(m[2], 10) - 1]}-${m[1]}${s.length > 10 ? s.slice(10) : ''}`;
+};
 
 function Curve({ data }: { data: NavPt[] }) {
   if (data.length < 2)
@@ -58,7 +68,7 @@ export default function BlueskyPaper() {
         </span>
       </div>
       <div className={styles.sub}>
-        {f.spec} · G5 soak of <a href={f.study}>the research/142 study</a> · updated {f.updated}
+        {f.spec} · G5 soak of <a href={f.study}>the research/142 study</a> · updated {fmtD(f.updated)}
       </div>
       <div className={styles.tiles}>
         <div className={styles.tile}><div>NAV</div><b>{inr(f.nav)}</b></div>
@@ -73,11 +83,14 @@ export default function BlueskyPaper() {
       <h2>Open positions</h2>
       {f.positions.length === 0 ? <div className={styles.empty}>none</div> : (
         <table className={styles.tbl}><thead><tr>
-          <th>Symbol</th><th>Qty</th><th>Buy</th><th>Pivot</th><th>Entered</th>
+          <th>Symbol</th><th>Qty</th><th>Buy</th><th>Pivot</th><th>LTP</th><th>P&L</th><th>Entered</th>
         </tr></thead><tbody>
           {f.positions.map((p) => (
             <tr key={p.symbol + p.entry_date}>
-              <td>{p.symbol}</td><td>{p.qty}</td><td>{p.buy}</td><td>{p.pivot}</td><td>{p.entry_date}</td>
+              <td>{p.symbol}</td><td>{p.qty}</td><td>{p.buy}</td><td>{p.pivot}</td>
+              <td>{p.ltp ?? '—'}</td>
+              <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(p.pnl_pct)}</td>
+              <td>{fmtD(p.entry_date)}</td>
             </tr>
           ))}
         </tbody></table>
@@ -89,7 +102,7 @@ export default function BlueskyPaper() {
           <th>Symbol</th><th>Pivot</th><th>RS</th><th>Signal date</th>
         </tr></thead><tbody>
           {f.pending.map((p) => (
-            <tr key={p.symbol}><td>{p.symbol}</td><td>{p.pivot}</td><td>{p.rs}</td><td>{p.signal_date}</td></tr>
+            <tr key={p.symbol}><td>{p.symbol}</td><td>{p.pivot}</td><td>{p.rs}</td><td>{fmtD(p.signal_date)}</td></tr>
           ))}
         </tbody></table>
       )}
@@ -101,7 +114,7 @@ export default function BlueskyPaper() {
         </tr></thead><tbody>
           {[...f.trades].reverse().map((t, i) => (
             <tr key={i}>
-              <td>{t.symbol}</td><td>{t.entry_date}</td><td>{t.exit_date}</td>
+              <td>{t.symbol}</td><td>{fmtD(t.entry_date)}</td><td>{fmtD(t.exit_date)}</td>
               <td>{t.buy}</td><td>{t.sell}</td>
               <td className={t.ret_pct >= 0 ? styles.pos : styles.neg}>{pct(t.ret_pct)}</td>
               <td>{t.reason}</td>
