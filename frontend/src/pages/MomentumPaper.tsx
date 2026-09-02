@@ -144,9 +144,7 @@ export default function MomentumPaper() {
             {s.inception ? ` · since ${s.inception}` : ''} · data as-of {s.data_asof || '—'}
           </p>
         </div>
-        {cagr != null && (
-          <div className={styles.sumSub}>
-            CAGR {pct(cagr)}{yrsSpan < 1 ? ' (annualized — early days)' : ''} · max drawdown {pct(mdd)} · updated {s.data_asof || '—'}
+{yrsSpan < 1 ? ' (annualized — early days)' : ''} · max drawdown {pct(mdd)} · updated {s.data_asof || '—'}
           </div>
         )}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -464,6 +462,9 @@ function BookSummary({ s }: { s: State }) {
           </span>
           {s.inception ? ` · since ${s.inception}` : ''}
         </div>
+        {cagr != null && (
+          <div className={styles.sumSub}>
+            CAGR {pct(cagr)}
 
         <div className={styles.barWrap} role="img"
              aria-label={segs.map((x) => `${x.k} ${Math.round((x.v / total) * 100)}%`).join(', ')}>
