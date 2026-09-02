@@ -193,7 +193,8 @@ def main():
                 st['cash'] += p['qty'] * cl * (1 - COST)
                 tr = dict(symbol=s, entry_date=p['entry_date'], exit_date=str(today.date()),
                           buy=p['buy'], sell=round(cl, 2), qty=p['qty'],
-                          ret_pct=round((cl / p['buy'] - 1) * 100, 2), reason=reason)
+                          ret_pct=round((cl / p['buy'] - 1) * 100, 2), reason=reason,
+                          src='live')
                 st['trades'].append(tr)
                 log.append(f"EXIT {s} {reason} @{cl:.2f} ({tr['ret_pct']:+.1f}%)")
             else:
@@ -253,9 +254,17 @@ def main():
         navs = pd.Series({r['date']: r['nav'] for r in st['nav']}).astype(float)
         dd = float((navs / navs.cummax() - 1).min() * 100) if len(navs) > 1 else 0.0
         wins = [t for t in st['trades'] if t['ret_pct'] > 0]
+        cl_today = close.loc[today]
+        ui_pos = []
+        for p_ in st['positions']:
+            lp = float(cl_today.get(p_['symbol'], np.nan))
+            ui_pos.append(dict(**p_, ltp=(round(lp, 2) if not np.isnan(lp) else None),
+                               pnl_pct=(round((lp / p_['buy'] - 1) * 100, 1)
+                                        if not np.isnan(lp) else None)))
         ui = dict(updated=str(now), nav=round(nav, 0), capital=st['capital'],
                   ret_pct=round((nav / st['capital'] - 1) * 100, 2), max_dd_pct=round(dd, 2),
-                  gate_weak=weak, positions=st['positions'], pending=st['pending'],
+                  gate_weak=weak, positions=ui_pos, pending=st['pending'],
+                  provenance=st.get('seeded_from'),
                   trades=st['trades'][-60:], n_trades=len(st['trades']),
                   win_pct=round(100 * len(wins) / len(st['trades']), 1) if st['trades'] else None,
                   nav_curve=st['nav'][-500:], missed_tail=st['missed'][-20:],
