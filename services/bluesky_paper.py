@@ -207,9 +207,17 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
               nav_curve=curve_ui, missed_tail=st['missed'][-20:],
               spec='trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper',
               study='/app/backtest/bluesky-ath-breakout-research142', log=log)
+    def _clean(o):
+        if isinstance(o, dict):
+            return {k: _clean(v) for k, v in o.items()}
+        if isinstance(o, list):
+            return [_clean(v) for v in o]
+        if isinstance(o, float) and not np.isfinite(o):
+            return None
+        return o
     if not dry:
         UI_JSON.parent.mkdir(parents=True, exist_ok=True)
-        json.dump(ui, open(UI_JSON, 'w'), indent=1, default=str)
+        json.dump(_clean(ui), open(UI_JSON, 'w'), indent=1, default=str, allow_nan=False)
     return nav
 
 
@@ -231,11 +239,17 @@ def main():
             today = close.index[-1]
         sma_t = close.rolling(TRAIL_SMA).mean()
         nb = close['NIFTYBEES'] if 'NIFTYBEES' in close.columns else None
-        nb_last = float(nb.ffill().loc[:today].iloc[-1]) if nb is not None else None
-        nb_sma = float(nb.rolling(GATE_SMA).mean().ffill().loc[:today].iloc[-1]) if nb is not None else None
-        weak = bool(nb_last < nb_sma) if nb_last and nb_sma else False
-        gate = dict(weak=weak, nb=round(nb_last, 2) if nb_last else None,
-                    sma=round(nb_sma, 2) if nb_sma else None)
+        def fin(x):
+            try:
+                x = float(x)
+                return x if np.isfinite(x) else None
+            except Exception:
+                return None
+        nb_last = fin(nb.ffill().loc[:today].iloc[-1]) if nb is not None else None
+        nb_sma = fin(nb.dropna().rolling(GATE_SMA).mean().iloc[-1]) if nb is not None else None
+        weak = bool(nb_last < nb_sma) if (nb_last is not None and nb_sma is not None) else False
+        gate = dict(weak=weak, nb=round(nb_last, 2) if nb_last is not None else None,
+                    sma=round(nb_sma, 2) if nb_sma is not None else None)
 
         if UI_ONLY:
             nav = write_ui(st, close, sma_t, today, gate, ['ui refresh only'], dry=False)
