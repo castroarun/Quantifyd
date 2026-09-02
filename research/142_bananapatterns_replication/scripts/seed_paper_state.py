@@ -116,10 +116,12 @@ json.dump(st, open(STATE, 'w'), indent=1, default=str)
 navs = pd.Series({r['date']: r['nav'] for r in nav_hist}).astype(float)
 dd = float((navs/navs.cummax()-1).min()*100)
 wins = [t for t in closed if t['ret_pct'] > 0]
-ltp_map = close.iloc[-1]
-ui_pos = [dict(**p, ltp=round(float(ltp_map[p['symbol']]), 2),
-               pnl_pct=round((float(ltp_map[p['symbol']])/p['buy']-1)*100, 1))
-          for p in positions]
+ltp_map = close.ffill().iloc[-1]   # last VALID close per symbol (no NaN in JSON)
+ui_pos = []
+for p in positions:
+    lp = float(ltp_map.get(p['symbol'], np.nan))
+    ui_pos.append(dict(**p, ltp=(round(lp, 2) if not np.isnan(lp) else None),
+                       pnl_pct=(round((lp/p['buy']-1)*100, 1) if not np.isnan(lp) else None)))
 ui = dict(updated=str(datetime.now()), nav=round(final_nav, 0), capital=CAPITAL,
           ret_pct=round((final_nav/CAPITAL-1)*100, 2), max_dd_pct=round(dd, 2),
           gate_weak=bool(weak[-1]), positions=ui_pos, pending=pending,
