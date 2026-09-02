@@ -14610,7 +14610,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     comparisons: [
       {
         title: 'Their window (2020-25): published vs honest replication of the SAME rules',
-        columns: ['Run', 'Terminal', 'CAGR', 'MaxDD', 'Trades', 'Win%'],
+        columns: ['Run', 'Terminal × (growth multiple of capital)', 'CAGR', 'MaxDD', 'Trades', 'Win%'],
         rows: [
           ['Site published (PROVISIONAL)', '33.74x', '79.8%', '-11.4% "worst fall"', '272', '52%'],
           ['Faithful replica (RS-desc picks)', '11.01x', '49.2%', '-31.5%', '175', '42%'],
@@ -14625,7 +14625,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       {
         title: '20-year robustness (2006-25) — 10-seed ensemble medians [min..max]',
         caption: 'The gate is the Skip-weak-markets idea switched ON: no new positions are opened while NIFTYBEES (the Nifty 50 ETF) closes below its 200-day moving average; open positions keep the normal -8% stop and 50-SMA trail. Real fills = entry at max(open, pivot) rather than always at the pivot. Net 25bps = a modelled trading cost of 25 basis points (0.25% of trade value) charged on EACH side, buy and sell - covering brokerage, STT and slippage. Point-in-time mcap = market cap on the signal date via the constant-adjusted-shares proxy. All configs share the decoded core rules: ATH-close trigger, IBD-RS>=70, Rs 5cr/day liquidity floor, 8 slots.',
-        columns: ['Config', 'Terminal x', 'CAGR', 'MaxDD', 'Signals'],
+        columns: ['Config', 'Terminal × (growth multiple of capital: 300 = ₹10L → ₹30Cr; NOT trade count)', 'CAGR', 'MaxDD', 'Signals'],
         rows: [
           ['A: gate ON, their fills, gross', '398 [228..813]', '34.9% [31.2..39.8]', '-44.0%', '16,612'],
           ['B: gate ON, real fills, net 25bps', '287 [138..758]', '32.7% [28.0..39.3]', '-45.7%', '16,612'],
@@ -14641,7 +14641,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       {
         title: 'Phase-4 optimization (CORRECTED harness; 2006 - Aug 2026; 10-seed ensemble medians [range])',
         caption: 'Full disclosure: the first-published sweep numbers were inflated by a harness bug (the trail-SMA was recomputed on a calendar-aligned matrix, silently disabling trail exits around non-traded days). Every decision cell below was re-verified on the corrected engine. Adoption rule: only improvements that are consistent across BOTH decades (2006-15 and 2016-26) count.',
-        columns: ['Cell', 'Terminal x', 'CAGR', 'MaxDD', 'Verdict'],
+        columns: ['Cell', 'Terminal × (growth multiple of capital: 300 = ₹10L → ₹30Cr; NOT trade count)', 'CAGR', 'MaxDD', 'Verdict'],
         rows: [
           ['ADOPTED SPEC: decoded rules, NO mcap floor (Rs 5cr/day liquidity floor does the work), gate ON, real fills, net 25bps', '301 [107..727]', '31.8% [25.4..37.6]', '-45.7% (worst -50.0)', 'the headline'],
           ['+ mcap >= Rs 500cr floor (FULL snapshot, 2,042/2,321 known)', '138 [105..263]', '26.9%', '-43.5%', 'REJECTED - pure return drag, no risk benefit'],
@@ -14657,12 +14657,12 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       {
         title: 'FINAL RECOMMENDED SYSTEM - BlueSky (trail-20, taxable pick) blended 50-50 with the Momentum book (research/75), monthly rebalanced, 2006 - Jul 2026',
         caption: 'Daily correlation 0.41, monthly 0.50 - same momentum family, different bets. The blend beats or matches each leg on CAGR while cutting drawdown below both: their worst stretches are staggered (MaxDD is a worst-moment statistic), monthly rebalancing adds a buy-low/sell-high premium, and lower volatility means less compounding drag. The after-tax row taxes the BlueSky leg in-simulation (20% STCG / 12.5% LTCG on net realized gains); the momentum leg is shown pre-tax but is low-churn (0.38x/yr) and largely LTCG-eligible, so its tax drag is structurally small. Caveat: correlations converge in crashes - both legs are long smallcap momentum.',
-        columns: ['Book', 'Terminal x', 'CAGR', 'MaxDD'],
+        columns: ['Book', 'Terminal × (growth multiple of capital: 300 = ₹10L → ₹30Cr; NOT trade count)', 'CAGR', 'MaxDD'],
         rows: [
-          ['BlueSky trail-20 alone (median seed, pre-tax)', '527', '35.7%', '-30.3%'],
-          ['Momentum r/75 alone (armed spec, net)', '341', '32.8%', '-32.8%'],
-          ['50-50 BLEND, pre-tax (median of 10 blend seeds)', '461', '34.9% [32.8..36.9]', '-22.4% (worst -27.4%)'],
-          ['50-50 BLEND with the BlueSky leg AFTER-TAX', '258', '31.1% [29.3..33.5]', '-26.2% (worst -32.7%)'],
+          ['BlueSky trail-20 alone (median seed, PRE-TAX)', '527', '35.7%', '-30.3%'],
+          ['Momentum r/75 alone (armed spec, net of costs, PRE-TAX)', '341', '32.8%', '-32.8%'],
+          ['50-50 BLEND, PRE-TAX (median of 10 blend seeds)', '461', '34.9% [32.8..36.9]', '-22.4% (worst -27.4%)'],
+          ['50-50 BLEND, BlueSky leg AFTER-TAX (momentum leg still pre-tax — fully-taxed estimate ~29.5-30.5%)', '258', '31.1% [29.3..33.5]', '-26.2% (worst -32.7%)'],
         ],
         highlightRows: [2, 3],
         heatmap: false,

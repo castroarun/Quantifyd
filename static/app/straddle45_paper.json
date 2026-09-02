@@ -1,5 +1,5 @@
 {
- "asof": "2026-09-02 12:05:05",
+ "asof": "2026-09-02 12:20:17",
  "upcoming": [
   {
    "expiry": "2026-10-27",
@@ -34,14 +34,14 @@
  "capital": 1196000.0,
  "bhav_through": "2026-09-01",
  "realised": 131703.64278000002,
- "unrealised": 24433.500000000015,
- "nav": 1355681.1644278744,
+ "unrealised": 27173.250000000004,
+ "nav": 1358420.9144278744,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 0,
  "unrealised_plan": 0,
- "unrealised_off": 24433.500000000015,
+ "unrealised_off": 27173.250000000004,
  "nav_plan": 1331247.6644278744,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
@@ -72,11 +72,11 @@
    "gain": 1917.3
   }
  ],
- "capital_deployed": 514928.81000000006,
- "capital_deployed_peak": 636920.81,
- "margin_asof": "2026-09-02 12:05",
- "running_pnl": 156137.14278000005,
- "running_pnl_pct": 30.322083314778993,
+ "capital_deployed": 518191.93999999994,
+ "capital_deployed_peak": 637093.19,
+ "margin_asof": "2026-09-02 12:20",
+ "running_pnl": 158876.89278000002,
+ "running_pnl_pct": 30.659854103481432,
  "n_closed": 3,
  "n_open": 1,
  "win_rate": 100.0,
@@ -102,11 +102,11 @@
    "vix_level": 11.31,
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
-   "mark_prem": 624.4,
-   "mark_date": "2026-09-02T12:04:00",
+   "mark_prem": 610.35,
+   "mark_date": "2026-09-02T12:19:00",
    "mark_src": "chain-1min",
-   "mtm_rs": 24433.500000000015,
-   "mark_spot": 23805.2,
+   "mtm_rs": 27173.250000000004,
+   "mark_spot": 23827.4,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
    "dte": 26,
@@ -201,30 +201,30 @@
      "side": "SHORT",
      "opt": "CE",
      "strike": 24350.0,
-     "price": 117.4,
+     "price": 121.5,
      "volume": 0,
      "oi": 0,
      "bid": null,
      "ask": null,
-     "itm_by": -544.8
+     "itm_by": -522.6
     },
     {
      "side": "SHORT",
      "opt": "PE",
      "strike": 24350.0,
-     "price": 507.0,
+     "price": 488.85,
      "volume": 0,
      "oi": 0,
      "bid": null,
      "ask": null,
-     "itm_by": 544.8
+     "itm_by": 522.6
     }
    ],
-   "legs_asof": "2026-09-02T12:04:00",
+   "legs_asof": "2026-09-02T12:19:00",
    "legs_src": "chain 1-min",
-   "margin_real": 514928.81000000006,
-   "margin_peak": 636920.81,
-   "mtm_pct": 4.745024851105148
+   "margin_real": 518191.93999999994,
+   "margin_peak": 637093.19,
+   "mtm_pct": 5.243858096287643
   }
  ],
  "closed_trades": [
