@@ -14712,6 +14712,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         { src: '/app/bluesky-vs-indices.png', caption: 'Growth of Rs 100 (log), 2011-2025: BlueSky replica (median seed, net) vs NIFTYBEES, NIFTYMIDCAP150, NIFTYSMLCAP250.' },
       ],
       embeds: [
+        { src: '/app/bluesky-tradebook.html', height: 760, caption: 'The trades taken - adopted spec (trail-20 taxable pick), median selection seed, newest first, still-open rows marked. One representative path of the 10-seed ensemble; the ensemble medians above are the honest headline.' },
         { src: '/app/bluesky-breakout-tearsheet.html', height: 900, caption: 'Interactive tearsheet (self-contained).' },
       ],
     },
