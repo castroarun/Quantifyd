@@ -1,4 +1,39 @@
-# Phase-4 Results — Optimization Sweep (2026-09-02)
+# Phase-5 Results — Corrected Harness, After-Tax Adoption, Blend Capstone (2026-09-02)
+
+**HARNESS BUG DISCLOSED:** the Phase-4 sweep runner recomputed trail-SMAs on a
+calendar-aligned matrix, NaN-poisoning ~1.18M cell-days and silently disabling
+trail exits (found via A/B probe `scripts/probe_diff.py`; e.g. no-floor 517×
+inflated → corrected 301×). Every adoption decision re-made on the corrected
+CLI engine, with a new gate per Arun: **decisions are made NET OF TAX** (20%
+STCG / 12.5% LTCG on net realized gains, modelled in-sim, `--stcg`).
+
+**FINAL ADOPTED SPEC (pre-tax reference):** decoded rules + ₹5cr/day liquidity
+floor (NO mcap floor), 200-DMA gate ON, −8% stop KEPT (stop-off reversed on the
+corrected engine: 29.3% < 31.8%), 50-SMA trail, realistic fills, 25bps —
+**301× / 31.8% [25.4..37.6] / −45.7%** (2006→Aug 2026, 10-seed medians).
+
+**TAXABLE-ACCOUNT PICK — trail-20 variant (Arun's balance principle):**
+after-tax trail 50/20/15 = 25.7%/28.0%/29.8% CAGR at −47.8/−33.4/−36.3% DD.
+Tax scales with gains, so trail-20's edge survives: +2.3pp net-of-tax and 14pp
+less drawdown than trail-50; the IS-decade return deficit (pre-tax 28.3 vs
+30.8) roughly equalizes after tax while its DD advantage held in BOTH decades.
+Trail-15 declined (further churn; edge more recent-era; 15↔20 ranges overlap).
+
+**CAPSTONE — 50-50 blend with research/75 momentum (monthly rebalanced):**
+corr 0.29 daily / 0.52 monthly; blend median **33.0% [30.1..36.1] at −27.5% DD
+(worst seed −32.3%)** — beats BOTH legs on CAGR and DD (staggered drawdowns +
+rebalancing premium + volatility-drag reduction). Same physics as research/63
+GTAA. Best construction found in the whole study. Caveat: crash-time
+correlation convergence; blend is pre-tax on the BlueSky leg (momentum leg
+low-churn/LTCG-friendly).
+
+Published (single consolidated update): corrected Phase-4 table + after-tax
+verdict + blend table + config-B-on-2020-25 row + harness-bug caveat + charts
+regenerated from the adopted-spec equity — commit `3f717e2`.
+
+---
+
+# Phase-4 Results — Optimization Sweep (2026-09-02) — SUPERSEDED (harness bug; see Phase-5)
 
 **VERDICT: the decoded baseline is near-optimal for its family; the sweep's chief
 fruit is a CORRECTION, not a betterment.** 38+10 cells (six axes OFAT + plateau

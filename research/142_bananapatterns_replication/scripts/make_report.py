@@ -22,7 +22,7 @@ RES = STUDY / 'results'
 sys.path.insert(0, str(ROOT / 'research' / '_utilities'))
 from tearsheet import generate_tearsheet  # noqa: E402
 
-TAG = 'p5_final'
+TAG = 'p3D_ext2026'
 
 eq = pd.read_csv(RES / f'replica_{TAG}_equity.csv', index_col=0, parse_dates=True)
 term = eq.iloc[-1]
