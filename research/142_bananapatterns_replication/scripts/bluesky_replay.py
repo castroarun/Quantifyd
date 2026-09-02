@@ -68,15 +68,24 @@ def load_frames(base_start, trail_sma=50):
 
 
 def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_arr,
-             fill_realistic, cost, stop=STOP, slots=SLOTS, size_pct=SIZE_PCT):
+             fill_realistic, cost, stop=STOP, slots=SLOTS, size_pct=SIZE_PCT,
+             stcg=0.0, ltcg=0.125):
     rng = np.random.default_rng(seed)
     cash = float(CAPITAL)
     positions = []      # (col, entry_i, buy, qty)
     trades = []
     equity = np.empty(len(days_idx), dtype=float)
     passed_up = 0
+    tax_yr_gain = 0.0        # net realized gains this calendar year (Rs)
+    cur_year = dates[days_idx[0]].year
 
     for k, i in enumerate(days_idx):
+        yr = dates[i].year
+        if stcg and yr != cur_year:
+            if tax_yr_gain > 0:
+                cash -= tax_yr_gain            # tax accrued at trade level below
+            tax_yr_gain = 0.0
+            cur_year = yr
         # entries
         if not weak_arr[i]:
             cand = np.nonzero(TRIG[i])[0]
@@ -117,6 +126,11 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                 reason = 'trail_50d'
             if reason:
                 cash += q * float(cl) * (1 - cost)
+                if stcg:
+                    pnl = q * (float(cl) - b)
+                    held = (dates[i] - dates[ei]).days
+                    rate = ltcg if held > 365 else stcg
+                    tax_yr_gain += rate * pnl   # negative pnl offsets within the year
                 trades.append((c, ei, i, b, float(cl), reason))
             else:
                 still.append((c, ei, b, q))
@@ -158,6 +172,7 @@ def main():
     ap.add_argument('--fill-realistic', action='store_true')
     ap.add_argument('--cost', type=float, default=0.0, help='bps per side')
     ap.add_argument('--rs-min', type=float, default=70.0)
+    ap.add_argument('--stcg', action='store_true', help='model 20% STCG / 12.5% LTCG on net realized gains')
     ap.add_argument('--stop', type=float, default=8.0, help='stop %')
     ap.add_argument('--trail-sma', type=int, default=50)
     ap.add_argument('--slots', type=int, default=8)
@@ -235,7 +250,8 @@ def main():
         equity, trades, passed = simulate(seed, sel, days_idx, dates, C, H, O, ATH,
                                           S50, RSv, TVv, TRIGv, weak_arr,
                                           a.fill_realistic, cost,
-                                          stop=a.stop / 100.0, slots=a.slots)
+                                          stop=a.stop / 100.0, slots=a.slots,
+                                          stcg=0.20 if a.stcg else 0.0)
         st, e = stats_from(equity, dates_used, trades, CAPITAL)
         st['seed'] = seed
         all_stats.append(st)

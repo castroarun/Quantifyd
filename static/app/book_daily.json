@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-01T15:45:02",
+ "generated_at": "2026-09-02T11:40:02",
  "books": {
   "orb": {
    "days": [
@@ -9893,6 +9893,118 @@
   "ha-paper": {
    "days": [
     {
+     "date": "2026-09-02",
+     "trades": 9,
+     "wins": 2,
+     "losses": 7,
+     "pnl": -4357.48,
+     "deployed": 218872.41,
+     "cum": -11945.42,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "BPCL",
+       "pnl": 325.37,
+       "deployed": 25243.44,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 315.15542500000004,
+       "qty": 80.09838150672783,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "CIPLA",
+       "pnl": -486.89,
+       "deployed": 24036.95,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1404.5785,
+       "qty": 17.11328658584221,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "EICHERMOT",
+       "pnl": -1491.13,
+       "deployed": 23035.51,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 7627.21115,
+       "qty": 3.020174047138613,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "GAIL",
+       "pnl": -104.16,
+       "deployed": 24417.24,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 171.918409,
+       "qty": 142.0280918275109,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "GRASIM",
+       "pnl": -401.23,
+       "deployed": 24574.28,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 3243.8265600000004,
+       "qty": 7.575706630640971,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "HDFCBANK",
+       "pnl": -938.84,
+       "deployed": 23828.94,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 703.838785,
+       "qty": 33.855680450286435,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "MARICO",
+       "pnl": -862.8,
+       "deployed": 23917.9,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 830.4507900000001,
+       "qty": 28.801103815478182,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "PERSISTENT",
+       "pnl": 42.97,
+       "deployed": 25459.41,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 5683.2945,
+       "qty": 4.479692610726143,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "BHARTIARTL",
+       "pnl": -440.77,
+       "deployed": 24358.73,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1858.24236,
+       "qty": 13.108481056433464,
+       "reason": "PATTERN"
+      }
+     ]
+    },
+    {
      "date": "2026-09-01",
      "trades": 4,
      "wins": 2,
@@ -12696,26 +12808,51 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24712.93,
-    "days": 29,
-    "trades": 220,
-    "wins": 80,
-    "win_rate": 36.4,
-    "net": -7587.91,
+    "avg_trade": 24697.45,
+    "days": 30,
+    "trades": 229,
+    "wins": 82,
+    "win_rate": 35.8,
+    "net": -11945.39,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -0.67,
+    "t_stat": -1.03,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 220,
+    "sim_trades": 229,
     "first": "2026-07-23",
-    "last": "2026-09-01"
+    "last": "2026-09-02"
    }
   },
   "ohol-paper": {
    "days": [
+    {
+     "date": "2026-09-02",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -6724.26,
+     "deployed": 918790.55,
+     "cum": -1380.1,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "CIPLA",
+       "pnl": -6724.26,
+       "deployed": 918790.55,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "BUY",
+       "price": 1413.5239299999998,
+       "lots": 1,
+       "lot_size": 650,
+       "reason": "ST_FLIP"
+      }
+     ]
+    },
     {
      "date": "2026-08-31",
      "trades": 1,
@@ -13373,22 +13510,22 @@
     "basis": "open-high / open-low \u00b7 1 lot",
     "max_position": 1466809.82,
     "busiest_day": 4383202.38,
-    "avg_trade": 756853.44,
-    "days": 14,
-    "trades": 39,
+    "avg_trade": 760901.87,
+    "days": 15,
+    "trades": 40,
     "wins": 13,
-    "win_rate": 33.3,
-    "net": 5344.14,
+    "win_rate": 32.5,
+    "net": -1380.12,
     "best_day": 21357.88,
-    "worst_day": -5843.8,
+    "worst_day": -6724.26,
     "green_days": 3,
     "costs_modelled": null,
-    "t_stat": 0.18,
-    "top3_share": 770.0,
+    "t_stat": -0.05,
+    "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 39,
+    "sim_trades": 40,
     "first": "2026-08-07",
-    "last": "2026-08-31"
+    "last": "2026-09-02"
    }
   },
   "orb-paper": {

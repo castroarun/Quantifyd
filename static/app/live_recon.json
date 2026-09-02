@@ -1,136 +1,77 @@
 {
- "generated_at": "2026-09-01T14:00:02",
+ "generated_at": "2026-09-02T11:00:01",
  "broker_legs": {
+  "SENSEX2690376300CE": {
+   "qty": -40,
+   "avg": 280.23333333333335,
+   "ltp": 328.5,
+   "pnl": -9582.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
+  "SENSEX2690376300PE": {
+   "qty": -120,
+   "avg": 266.1583333333333,
+   "ltp": 201.9,
+   "pnl": 7711.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
+  "SENSEX2690376700CE": {
+   "qty": -40,
+   "avg": 176.625,
+   "ltp": 148.75,
+   "pnl": 1115.0,
+   "product": "MIS",
+   "exchange": "BFO"
+  },
   "BSE26SEP3500CE": {
    "qty": -200,
    "avg": 41.95,
-   "ltp": 38.95,
-   "pnl": 600.0,
+   "ltp": 30.2,
+   "pnl": 2350.0,
    "product": "NRML",
    "exchange": "NFO"
   },
-  "ADANIPOWER": {
-   "qty": 5,
-   "avg": 203.35,
-   "ltp": 204.0,
-   "pnl": 3.2,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
   "ANTHEM": {
-   "qty": 22,
-   "avg": 920.7,
-   "ltp": 916.8,
-   "pnl": -85.8,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "AUROPHARMA": {
-   "qty": 64,
-   "avg": 1692.7,
-   "ltp": 1676.6,
-   "pnl": -1030.4,
+   "qty": 11,
+   "avg": 938.65,
+   "ltp": 942.3,
+   "pnl": 40.1,
    "product": "CNC",
    "exchange": "NSE"
   },
   "AYMSYNTEX": {
-   "qty": 84,
-   "avg": 296.19345238095235,
-   "ltp": 297.1,
-   "pnl": 76.2,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "BHEL": {
-   "qty": -124,
-   "avg": 430.35,
-   "ltp": 425.65,
-   "pnl": 582.8,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "BSE": {
-   "qty": -48,
-   "avg": 3238.370833333333,
-   "ltp": 3230.9,
-   "pnl": 358.6,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "CASHIETF": {
-   "qty": -71,
-   "avg": 1077.71,
-   "ltp": 1077.73,
-   "pnl": -1.4,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "DIVGIITTS": {
-   "qty": 9,
-   "avg": 1267.5,
-   "ltp": 1277.0,
-   "pnl": 85.5,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "EBGNG": {
-   "qty": 38,
-   "avg": 654.5,
-   "ltp": 651.9,
-   "pnl": -98.8,
-   "product": "MTF",
-   "exchange": "NSE"
-  },
-  "IDEA": {
-   "qty": 151,
-   "avg": 14.35,
-   "ltp": 14.09,
-   "pnl": -39.3,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "INOXINDIA": {
-   "qty": 5,
-   "avg": 2184.7,
-   "ltp": 2134.5,
-   "pnl": -251.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "LAURUSLABS": {
-   "qty": -25,
-   "avg": 1845.06,
-   "ltp": 1850.0,
-   "pnl": -123.5,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "LUMAXIND": {
-   "qty": 4,
-   "avg": 6457.0,
-   "ltp": 6404.0,
-   "pnl": -212.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "MOTHERSON": {
-   "qty": 664,
-   "avg": 166.87447289156626,
-   "ltp": 164.27,
-   "pnl": -1729.4,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "NATIONALUM": {
-   "qty": -126,
-   "avg": 376.2003968253968,
-   "ltp": 370.7,
-   "pnl": 693.1,
+   "qty": 79,
+   "avg": 302.4620253164557,
+   "ltp": 312.75,
+   "pnl": 812.8,
    "product": "CNC",
    "exchange": "NSE"
   }
  },
- "app_claimed": {},
+ "app_claimed": {
+  "SENSEX2690376300CE": {
+   "qty": -40,
+   "books": [
+    "sensex_atm2"
+   ]
+  },
+  "SENSEX2690376300PE": {
+   "qty": -120,
+   "books": [
+    "sensex_atm2",
+    "sensex_atm4",
+    "sensex_atm"
+   ]
+  },
+  "SENSEX2690376700CE": {
+   "qty": -40,
+   "books": [
+    "sensex_atm4"
+   ]
+  }
+ },
  "findings": [
   {
    "level": "ALERT",
@@ -142,123 +83,43 @@
   },
   {
    "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "ADANIPOWER",
-   "broker_qty": 5,
-   "app_qty": 0,
-   "detail": "broker 5 = MOMENTUM +5 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
    "kind": "MANUAL",
    "symbol": "ANTHEM",
-   "broker_qty": 22,
+   "broker_qty": 11,
    "app_qty": 0,
-   "detail": "manual holding, 22 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "AUROPHARMA",
-   "broker_qty": 64,
-   "app_qty": 0,
-   "detail": "broker 64 = MOMENTUM +64 \u2014 placed by our books, not visible in the page feed"
+   "detail": "manual holding, 11 \u2014 no book tracks it"
   },
   {
    "level": "INFO",
    "kind": "MANUAL",
    "symbol": "AYMSYNTEX",
-   "broker_qty": 84,
+   "broker_qty": 79,
    "app_qty": 0,
-   "detail": "manual holding, 84 \u2014 no book tracks it"
+   "detail": "manual holding, 79 \u2014 no book tracks it"
   },
   {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "BHEL",
-   "broker_qty": -124,
-   "app_qty": 0,
-   "detail": "broker -124 = MOMENTUM -124 \u2014 placed by our books, not visible in the page feed"
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX2690376300CE",
+   "broker_qty": -40,
+   "app_qty": -40,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "BSE",
-   "broker_qty": -48,
-   "app_qty": 0,
-   "detail": "manual holding, -48 \u2014 no book tracks it"
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX2690376300PE",
+   "broker_qty": -120,
+   "app_qty": -120,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "CASHIETF",
-   "broker_qty": -71,
-   "app_qty": 0,
-   "detail": "broker -71 = MOMENTUM -71 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "DIVGIITTS",
-   "broker_qty": 9,
-   "app_qty": 0,
-   "detail": "manual holding, 9 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "EBGNG",
-   "broker_qty": 38,
-   "app_qty": 0,
-   "detail": "manual holding, 38 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "IDEA",
-   "broker_qty": 151,
-   "app_qty": 0,
-   "detail": "broker 151 = MOMENTUM +151 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "INOXINDIA",
-   "broker_qty": 5,
-   "app_qty": 0,
-   "detail": "manual holding, 5 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "LAURUSLABS",
-   "broker_qty": -25,
-   "app_qty": 0,
-   "detail": "broker -25 = MOMENTUM -25 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "LUMAXIND",
-   "broker_qty": 4,
-   "app_qty": 0,
-   "detail": "manual holding, 4 \u2014 no book tracks it"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "MOTHERSON",
-   "broker_qty": 664,
-   "app_qty": 0,
-   "detail": "broker 664 = MOMENTUM +664 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "NATIONALUM",
-   "broker_qty": -126,
-   "app_qty": 0,
-   "detail": "broker -126 = MOMENTUM -126 \u2014 placed by our books, not visible in the page feed"
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "SENSEX2690376700CE",
+   "broker_qty": -40,
+   "app_qty": -40,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
@@ -270,11 +131,9 @@
   }
  ],
  "filled_by_tag": {
-  "untagged": 2230,
-  "MOMENTUM": 1230,
-  "CSL_NAS_COMB20": 520
+  "untagged": 450
  },
  "alerts": 1,
- "warns": 1,
- "infos": 15
+ "warns": 4,
+ "infos": 2
 }
