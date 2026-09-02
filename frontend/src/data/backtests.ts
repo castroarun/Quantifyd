@@ -14668,6 +14668,18 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         heatmap: false,
       },
       {
+        title: 'Correlation matrix (daily / monthly returns, 2006 - Jul 2026 common window)',
+        caption: 'Why the blend works: the two legs move together only about half the time (0.45/0.51), and each carries meaningful independence from the index itself. Low correlation is the raw material of the diversification and rebalancing gains above - but expect these numbers to RISE in crashes, when everything momentum-flavoured sells together.',
+        columns: ['Pair', 'Daily corr', 'Monthly corr'],
+        rows: [
+          ['BlueSky (trail-20) vs Momentum r/75', '0.45', '0.51'],
+          ['BlueSky (trail-20) vs Nifty 50 (NIFTYBEES)', '0.30', '0.33'],
+          ['Momentum r/75 vs Nifty 50', '0.44', '0.44'],
+          ['50-50 blend vs Nifty 50', '-', '0.44'],
+        ],
+        heatmap: false,
+      },
+      {
         title: 'Per-year: BlueSky ADOPTED SPEC (ensemble median, no mcap floor, to Aug 2026) vs our Momentum book (research/75) vs Nifty 50',
         caption: 'BlueSky = median across the 10 selection seeds of the 2006 to Aug-2026 run. Momentum = research/75 armed spec NAV (net, 20y validated). NIFTYBEES = Nifty 50 ETF incl dividends. * 2026 is year-to-date (Aug 31 / Jul 21 for momentum). The two systems track each other closely - same momentum family - but BlueSky was FLAT-to-down where momentum stayed positive in 2011 and 2016 tells you they are not identical bets.',
         columns: ['Year', 'BlueSky D %', 'Momentum r/75 %', 'NIFTYBEES %'],

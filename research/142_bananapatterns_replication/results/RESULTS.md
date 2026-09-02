@@ -19,6 +19,12 @@ less drawdown than trail-50; the IS-decade return deficit (pre-tax 28.3 vs
 30.8) roughly equalizes after tax while its DD advantage held in BOTH decades.
 Trail-15 declined (further churn; edge more recent-era; 15↔20 ranges overlap).
 
+**Correlation matrix (daily / monthly, 2006→Jul 2026 common window):**
+BlueSky(trail-20)↔Momentum 0.45 / 0.51 · BlueSky↔Nifty50 0.30 / 0.33 ·
+Momentum↔Nifty50 0.44 / 0.44 · 50-50 blend↔Nifty50 — / 0.44. The half-correlation
+between the legs is the raw material of the blend's gains; expect convergence in
+crashes (both are long smallcap momentum).
+
 **CAPSTONE — 50-50 blend with research/75 momentum (monthly rebalanced):**
 corr 0.29 daily / 0.52 monthly; blend median **33.0% [30.1..36.1] at −27.5% DD
 (worst seed −32.3%)** — beats BOTH legs on CAGR and DD (staggered drawdowns +
