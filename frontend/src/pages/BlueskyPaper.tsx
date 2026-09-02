@@ -194,7 +194,7 @@ export default function BlueskyPaper() {
         <div className={styles.cardTitle}>Closed trades (latest first)</div>
         {f.trades.length === 0 ? <div className={styles.empty}>none yet</div> : (
         <table className={styles.tbl}><thead><tr>
-          <th>Symbol</th><th>Entry</th><th>Exit</th><th>Buy ₹</th><th>Sell ₹</th>
+          <th>Symbol</th><th>Entry</th><th>Exit</th><th>Buy ₹</th><th>Sell ₹</th><th>Qty</th><th>Net ₹</th>
           <th>Return</th><th className={styles.txt}>Why exited</th><th className={styles.txt}>Source</th>
         </tr></thead><tbody>
           {[...f.trades].reverse().map((t, i) => (
@@ -202,7 +202,9 @@ export default function BlueskyPaper() {
               <td className={styles.sym}>{t.symbol}</td>
               <td className={styles.muted}>{fmtD(t.entry_date)}</td>
               <td className={styles.muted}>{fmtD(t.exit_date)}</td>
-              <td>{t.buy}</td><td>{t.sell}</td>
+              <td>{t.buy}</td><td>{t.sell}</td><td>{t.qty ?? '—'}</td>
+              <td className={(t.net_pnl ?? 0) >= 0 ? styles.pos : styles.neg}>
+                {t.net_pnl == null ? '—' : (t.net_pnl >= 0 ? '+' : '') + inr(t.net_pnl)}</td>
               <td className={t.ret_pct >= 0 ? styles.pos : styles.neg} style={pnlTint(t.ret_pct)}>
                 {pct(t.ret_pct)}</td>
               <td className={`${styles.muted} ${styles.txt}`}>{reasonLabel[t.reason] ?? t.reason}</td>

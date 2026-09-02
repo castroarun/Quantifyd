@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-02 13:49:59.054033",
+ "updated": "2026-09-02 13:53:23.975562",
  "nav": 2002916.0,
  "capital": 119337.0,
  "cash": 69316.0,
@@ -156,10 +156,12 @@
    "exit_date": "2025-08-28",
    "buy": 2350.0,
    "sell": 2271.5,
-   "qty": null,
+   "qty": 125,
    "ret_pct": -3.34,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -11257.0,
+   "qty_est": true
   },
   {
    "symbol": "SARDAEN",
@@ -167,10 +169,12 @@
    "exit_date": "2025-09-04",
    "buy": 556.4,
    "sell": 559.75,
-   "qty": null,
+   "qty": 547,
    "ret_pct": 0.6,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 306.0,
+   "qty_est": true
   },
   {
    "symbol": "JMFINANCIL",
@@ -178,10 +182,12 @@
    "exit_date": "2025-09-10",
    "buy": 186.3,
    "sell": 175.66,
-   "qty": null,
+   "qty": 1561,
    "ret_pct": -5.71,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -18022.0,
+   "qty_est": true
   },
   {
    "symbol": "CARTRADE",
@@ -189,10 +195,12 @@
    "exit_date": "2025-09-10",
    "buy": 2583.1,
    "sell": 2453.7,
-   "qty": null,
+   "qty": 113,
    "ret_pct": -5.01,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -16045.0,
+   "qty_est": true
   },
   {
    "symbol": "VSTTILLERS",
@@ -200,10 +208,12 @@
    "exit_date": "2025-09-12",
    "buy": 5345.37,
    "sell": 5212.5,
-   "qty": null,
+   "qty": 54,
    "ret_pct": -2.49,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -8600.0,
+   "qty_est": true
   },
   {
    "symbol": "SHAILY",
@@ -211,10 +221,12 @@
    "exit_date": "2025-09-23",
    "buy": 2252.61,
    "sell": 2252.0,
-   "qty": null,
+   "qty": 127,
    "ret_pct": -0.03,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -1508.0,
+   "qty_est": true
   },
   {
    "symbol": "NAVA",
@@ -222,10 +234,12 @@
    "exit_date": "2025-09-25",
    "buy": 675.25,
    "sell": 693.75,
-   "qty": null,
+   "qty": 423,
    "ret_pct": 2.74,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 6378.0,
+   "qty_est": true
   },
   {
    "symbol": "SIRCA",
@@ -233,10 +247,12 @@
    "exit_date": "2025-09-30",
    "buy": 481.0,
    "sell": 476.55,
-   "qty": null,
+   "qty": 615,
    "ret_pct": -0.93,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -4209.0,
+   "qty_est": true
   },
   {
    "symbol": "BAJFINANCE",
@@ -244,10 +260,12 @@
    "exit_date": "2025-10-03",
    "buy": 968.3,
    "sell": 989.75,
-   "qty": null,
+   "qty": 297,
    "ret_pct": 2.22,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 4917.0,
+   "qty_est": true
   },
   {
    "symbol": "EICHERMOT",
@@ -255,10 +273,12 @@
    "exit_date": "2025-10-06",
    "buy": 7011.5,
    "sell": 6880.0,
-   "qty": null,
+   "qty": 41,
    "ret_pct": -1.88,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -6815.0,
+   "qty_est": true
   },
   {
    "symbol": "APOLLO",
@@ -266,10 +286,12 @@
    "exit_date": "2025-10-09",
    "buy": 250.53,
    "sell": 332.0,
-   "qty": null,
+   "qty": 1142,
    "ret_pct": 32.52,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 91376.0,
+   "qty_est": true
   },
   {
    "symbol": "AMBER",
@@ -277,10 +299,12 @@
    "exit_date": "2025-10-14",
    "buy": 8310.5,
    "sell": 8204.5,
-   "qty": null,
+   "qty": 36,
    "ret_pct": -1.28,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -5302.0,
+   "qty_est": true
   },
   {
    "symbol": "NETWEB",
@@ -288,10 +312,12 @@
    "exit_date": "2025-10-16",
    "buy": 3695.4,
    "sell": 3760.2,
-   "qty": null,
+   "qty": 80,
    "ret_pct": 1.75,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 3693.0,
+   "qty_est": true
   },
   {
    "symbol": "EGOLD",
@@ -299,10 +325,12 @@
    "exit_date": "2025-10-24",
    "buy": 119.35,
    "sell": 121.55,
-   "qty": null,
+   "qty": 2505,
    "ret_pct": 1.84,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 4002.0,
+   "qty_est": true
   },
   {
    "symbol": "GOLDBETA",
@@ -310,10 +338,12 @@
    "exit_date": "2025-10-24",
    "buy": 108.95,
    "sell": 102.2,
-   "qty": null,
+   "qty": 2793,
    "ret_pct": -6.2,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -20327.0,
+   "qty_est": true
   },
   {
    "symbol": "BAJFINANCE",
@@ -321,10 +351,12 @@
    "exit_date": "2025-10-31",
    "buy": 1036.75,
    "sell": 1042.8,
-   "qty": null,
+   "qty": 294,
    "ret_pct": 0.58,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 250.0,
+   "qty_est": true
   },
   {
    "symbol": "MRF",
@@ -332,10 +364,12 @@
    "exit_date": "2025-11-06",
    "buy": 156100.0,
    "sell": 157255.0,
-   "qty": null,
+   "qty": 1,
    "ret_pct": 0.74,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 372.0,
+   "qty_est": true
   },
   {
    "symbol": "PENIND",
@@ -343,10 +377,12 @@
    "exit_date": "2025-11-10",
    "buy": 263.02,
    "sell": 231.85,
-   "qty": null,
+   "qty": 1143,
    "ret_pct": -11.85,
    "reason": "stop_8pct",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -37041.0,
+   "qty_est": true
   },
   {
    "symbol": "INOXGREEN",
@@ -354,10 +390,12 @@
    "exit_date": "2025-11-11",
    "buy": 228.77,
    "sell": 257.2,
-   "qty": null,
+   "qty": 1300,
    "ret_pct": 12.43,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 35380.0,
+   "qty_est": true
   },
   {
    "symbol": "ANANDRATHI",
@@ -365,10 +403,12 @@
    "exit_date": "2025-11-11",
    "buy": 1601.2,
    "sell": 1542.4,
-   "qty": null,
+   "qty": 186,
    "ret_pct": -3.67,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -12399.0,
+   "qty_est": true
   },
   {
    "symbol": "GPIL",
@@ -376,10 +416,12 @@
    "exit_date": "2025-11-13",
    "buy": 270.13,
    "sell": 263.25,
-   "qty": null,
+   "qty": 1103,
    "ret_pct": -2.55,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -9059.0,
+   "qty_est": true
   },
   {
    "symbol": "RADICO",
@@ -387,10 +429,12 @@
    "exit_date": "2025-11-13",
    "buy": 3302.1,
    "sell": 3187.1,
-   "qty": null,
+   "qty": 90,
    "ret_pct": -3.48,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -11810.0,
+   "qty_est": true
   },
   {
    "symbol": "TDPOWERSYS",
@@ -398,10 +442,12 @@
    "exit_date": "2025-11-21",
    "buy": 410.0,
    "sell": 362.4,
-   "qty": null,
+   "qty": 695,
    "ret_pct": -11.61,
    "reason": "stop_8pct",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -34424.0,
+   "qty_est": true
   },
   {
    "symbol": "SYRMA",
@@ -409,10 +455,12 @@
    "exit_date": "2025-11-24",
    "buy": 892.9,
    "sell": 819.15,
-   "qty": null,
+   "qty": 312,
    "ret_pct": -8.26,
    "reason": "stop_8pct",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -24345.0,
+   "qty_est": true
   },
   {
    "symbol": "GRMOVER",
@@ -420,10 +468,12 @@
    "exit_date": "2025-12-08",
    "buy": 158.17,
    "sell": 154.93,
-   "qty": null,
+   "qty": 1766,
    "ret_pct": -2.05,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -7104.0,
+   "qty_est": true
   },
   {
    "symbol": "ASAHIINDIA",
@@ -431,10 +481,12 @@
    "exit_date": "2025-12-09",
    "buy": 956.75,
    "sell": 1005.4,
-   "qty": null,
+   "qty": 299,
    "ret_pct": 5.08,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 13080.0,
+   "qty_est": true
   },
   {
    "symbol": "HEROMOTOCO",
@@ -442,10 +494,12 @@
    "exit_date": "2025-12-09",
    "buy": 6039.0,
    "sell": 6001.0,
-   "qty": null,
+   "qty": 45,
    "ret_pct": -0.63,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -3064.0,
+   "qty_est": true
   },
   {
    "symbol": "MCX",
@@ -453,10 +507,12 @@
    "exit_date": "2025-12-10",
    "buy": 1972.0,
    "sell": 1973.0,
-   "qty": null,
+   "qty": 140,
    "ret_pct": 0.05,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -1241.0,
+   "qty_est": true
   },
   {
    "symbol": "FEDERALBNK",
@@ -464,10 +520,12 @@
    "exit_date": "2026-01-05",
    "buy": 238.46,
    "sell": 263.75,
-   "qty": null,
+   "qty": 1195,
    "ret_pct": 10.61,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 28721.0,
+   "qty_est": true
   },
   {
    "symbol": "FEDERALBNK",
@@ -475,10 +533,12 @@
    "exit_date": "2026-01-05",
    "buy": 259.2,
    "sell": 263.75,
-   "qty": null,
+   "qty": 1074,
    "ret_pct": 1.76,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 3483.0,
+   "qty_est": true
   },
   {
    "symbol": "LAURUSLABS",
@@ -486,10 +546,12 @@
    "exit_date": "2026-01-12",
    "buy": 1134.0,
    "sell": 1043.2,
-   "qty": null,
+   "qty": 286,
    "ret_pct": -8.01,
    "reason": "stop_8pct",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -27525.0,
+   "qty_est": true
   },
   {
    "symbol": "EMCURE",
@@ -497,10 +559,12 @@
    "exit_date": "2026-01-27",
    "buy": 1540.6,
    "sell": 1484.6,
-   "qty": null,
+   "qty": 219,
    "ret_pct": -3.63,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -13920.0,
+   "qty_est": true
   },
   {
    "symbol": "TATSILV",
@@ -508,10 +572,12 @@
    "exit_date": "2026-02-01",
    "buy": 17.47,
    "sell": 27.52,
-   "qty": null,
+   "qty": 15780,
    "ret_pct": 57.53,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 156814.0,
+   "qty_est": true
   },
   {
    "symbol": "SILVER1",
@@ -519,10 +585,12 @@
    "exit_date": "2026-02-01",
    "buy": 17.86,
    "sell": 25.61,
-   "qty": null,
+   "qty": 15435,
    "ret_pct": 43.39,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 117944.0,
+   "qty_est": true
   },
   {
    "symbol": "HDFCSILVER",
@@ -530,10 +598,12 @@
    "exit_date": "2026-02-01",
    "buy": 177.92,
    "sell": 252.74,
-   "qty": null,
+   "qty": 1566,
    "ret_pct": 42.05,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 115482.0,
+   "qty_est": true
   },
   {
    "symbol": "ECLERX",
@@ -541,10 +611,12 @@
    "exit_date": "2026-02-04",
    "buy": 2494.0,
    "sell": 2265.6,
-   "qty": null,
+   "qty": 137,
    "ret_pct": -9.16,
    "reason": "stop_8pct",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -32921.0,
+   "qty_est": true
   },
   {
    "symbol": "HINDCOPPER",
@@ -552,10 +624,12 @@
    "exit_date": "2026-02-06",
    "buy": 612.05,
    "sell": 579.85,
-   "qty": null,
+   "qty": 667,
    "ret_pct": -5.26,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -23465.0,
+   "qty_est": true
   },
   {
    "symbol": "PFOCUS",
@@ -563,10 +637,12 @@
    "exit_date": "2026-02-27",
    "buy": 245.0,
    "sell": 254.83,
-   "qty": null,
+   "qty": 1397,
    "ret_pct": 4.01,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 11987.0,
+   "qty_est": true
   },
   {
    "symbol": "PFOCUS",
@@ -574,10 +650,12 @@
    "exit_date": "2026-02-27",
    "buy": 257.46,
    "sell": 254.83,
-   "qty": null,
+   "qty": 1362,
    "ret_pct": -1.02,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -5326.0,
+   "qty_est": true
   },
   {
    "symbol": "PFOCUS",
@@ -585,10 +663,12 @@
    "exit_date": "2026-02-27",
    "buy": 267.38,
    "sell": 254.83,
-   "qty": null,
+   "qty": 1341,
    "ret_pct": -4.69,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -18580.0,
+   "qty_est": true
   },
   {
    "symbol": "KARURVYSYA",
@@ -596,10 +676,12 @@
    "exit_date": "2026-03-02",
    "buy": 314.0,
    "sell": 315.3,
-   "qty": null,
+   "qty": 1090,
    "ret_pct": 0.41,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -298.0,
+   "qty_est": true
   },
   {
    "symbol": "AVANTIFEED",
@@ -607,10 +689,12 @@
    "exit_date": "2026-03-04",
    "buy": 960.0,
    "sell": 1204.8,
-   "qty": null,
+   "qty": 356,
    "ret_pct": 25.5,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 85222.0,
+   "qty_est": true
   },
   {
    "symbol": "DYNAMATECH",
@@ -618,10 +702,12 @@
    "exit_date": "2026-03-11",
    "buy": 10238.5,
    "sell": 9919.0,
-   "qty": null,
+   "qty": 34,
    "ret_pct": -3.12,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -12576.0,
+   "qty_est": true
   },
   {
    "symbol": "BEL",
@@ -629,10 +715,12 @@
    "exit_date": "2026-03-13",
    "buy": 453.0,
    "sell": 439.4,
-   "qty": null,
+   "qty": 775,
    "ret_pct": -3.0,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -12269.0,
+   "qty_est": true
   },
   {
    "symbol": "SAILIFE",
@@ -640,10 +728,12 @@
    "exit_date": "2026-03-13",
    "buy": 998.25,
    "sell": 953.05,
-   "qty": null,
+   "qty": 347,
    "ret_pct": -4.53,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -17377.0,
+   "qty_est": true
   },
   {
    "symbol": "KIRLOSENG",
@@ -651,10 +741,12 @@
    "exit_date": "2026-03-19",
    "buy": 1427.9,
    "sell": 1421.3,
-   "qty": null,
+   "qty": 248,
    "ret_pct": -0.46,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -3403.0,
+   "qty_est": true
   },
   {
    "symbol": "SAKAR",
@@ -662,10 +754,12 @@
    "exit_date": "2026-03-23",
    "buy": 524.05,
    "sell": 505.55,
-   "qty": null,
+   "qty": 677,
    "ret_pct": -3.53,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -14267.0,
+   "qty_est": true
   },
   {
    "symbol": "GESHIP",
@@ -673,10 +767,12 @@
    "exit_date": "2026-03-23",
    "buy": 1454.05,
    "sell": 1360.0,
-   "qty": null,
+   "qty": 240,
    "ret_pct": -6.47,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -24260.0,
+   "qty_est": true
   },
   {
    "symbol": "CENTUM",
@@ -684,10 +780,12 @@
    "exit_date": "2026-03-23",
    "buy": 2965.7,
    "sell": 2744.4,
-   "qty": null,
+   "qty": 113,
    "ret_pct": -7.46,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -26620.0,
+   "qty_est": true
   },
   {
    "symbol": "JBCHEPHARM",
@@ -695,10 +793,12 @@
    "exit_date": "2026-03-23",
    "buy": 2131.4,
    "sell": 2080.3,
-   "qty": null,
+   "qty": 158,
    "ret_pct": -2.4,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -9737.0,
+   "qty_est": true
   },
   {
    "symbol": "CCL",
@@ -706,10 +806,12 @@
    "exit_date": "2026-03-30",
    "buy": 1068.45,
    "sell": 1041.2,
-   "qty": null,
+   "qty": 315,
    "ret_pct": -2.55,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -10245.0,
+   "qty_est": true
   },
   {
    "symbol": "CCL",
@@ -717,10 +819,12 @@
    "exit_date": "2026-04-16",
    "buy": 1087.6,
    "sell": 1070.6,
-   "qty": null,
+   "qty": 305,
    "ret_pct": -1.56,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -6831.0,
+   "qty_est": true
   },
   {
    "symbol": "PFOCUS",
@@ -728,10 +832,12 @@
    "exit_date": "2026-04-23",
    "buy": 285.0,
    "sell": 324.0,
-   "qty": null,
+   "qty": 1161,
    "ret_pct": 13.68,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 43511.0,
+   "qty_est": true
   },
   {
    "symbol": "AETHER",
@@ -739,10 +845,12 @@
    "exit_date": "2026-04-24",
    "buy": 1165.95,
    "sell": 1113.8,
-   "qty": null,
+   "qty": 283,
    "ret_pct": -4.47,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -16371.0,
+   "qty_est": true
   },
   {
    "symbol": "MBAPL",
@@ -750,10 +858,12 @@
    "exit_date": "2026-04-24",
    "buy": 96.1,
    "sell": 101.35,
-   "qty": null,
+   "qty": 3459,
    "ret_pct": 5.46,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 16452.0,
+   "qty_est": true
   },
   {
    "symbol": "NATIONALUM",
@@ -761,10 +871,12 @@
    "exit_date": "2026-04-30",
    "buy": 442.95,
    "sell": 399.3,
-   "qty": null,
+   "qty": 744,
    "ret_pct": -9.85,
    "reason": "stop_8pct",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -34042.0,
+   "qty_est": true
   },
   {
    "symbol": "EMCURE",
@@ -772,10 +884,12 @@
    "exit_date": "2026-05-07",
    "buy": 1570.6,
    "sell": 1635.4,
-   "qty": null,
+   "qty": 210,
    "ret_pct": 4.13,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 11925.0,
+   "qty_est": true
   },
   {
    "symbol": "CUMMINSIND",
@@ -783,10 +897,12 @@
    "exit_date": "2026-05-12",
    "buy": 5211.8,
    "sell": 5160.0,
-   "qty": null,
+   "qty": 63,
    "ret_pct": -0.99,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -4897.0,
+   "qty_est": true
   },
   {
    "symbol": "APARINDS",
@@ -794,10 +910,12 @@
    "exit_date": "2026-05-18",
    "buy": 11977.0,
    "sell": 12154.0,
-   "qty": null,
+   "qty": 27,
    "ret_pct": 1.48,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 3150.0,
+   "qty_est": true
   },
   {
    "symbol": "MCX",
@@ -805,10 +923,12 @@
    "exit_date": "2026-05-27",
    "buy": 3249.0,
    "sell": 3158.5,
-   "qty": null,
+   "qty": 102,
    "ret_pct": -2.79,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -10865.0,
+   "qty_est": true
   },
   {
    "symbol": "RADICO",
@@ -816,10 +936,12 @@
    "exit_date": "2026-05-27",
    "buy": 3499.2,
    "sell": 3439.3,
-   "qty": null,
+   "qty": 97,
    "ret_pct": -1.71,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -7493.0,
+   "qty_est": true
   },
   {
    "symbol": "ANURAS",
@@ -827,10 +949,12 @@
    "exit_date": "2026-05-29",
    "buy": 1370.0,
    "sell": 1293.9,
-   "qty": null,
+   "qty": 245,
    "ret_pct": -5.55,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -20276.0,
+   "qty_est": true
   },
   {
    "symbol": "ADANIPORTS",
@@ -838,10 +962,12 @@
    "exit_date": "2026-06-11",
    "buy": 1702.0,
    "sell": 1787.1,
-   "qty": null,
+   "qty": 197,
    "ret_pct": 5.0,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 15046.0,
+   "qty_est": true
   },
   {
    "symbol": "LAURUSLABS",
@@ -849,10 +975,12 @@
    "exit_date": "2026-06-16",
    "buy": 1130.0,
    "sell": 1376.4,
-   "qty": null,
+   "qty": 300,
    "ret_pct": 21.81,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 72040.0,
+   "qty_est": true
   },
   {
    "symbol": "SASKEN",
@@ -860,10 +988,12 @@
    "exit_date": "2026-06-24",
    "buy": 2242.05,
    "sell": 2253.7,
-   "qty": null,
+   "qty": 148,
    "ret_pct": 0.52,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 61.0,
+   "qty_est": true
   },
   {
    "symbol": "CRAFTSMAN",
@@ -871,10 +1001,12 @@
    "exit_date": "2026-07-02",
    "buy": 8981.5,
    "sell": 9275.5,
-   "qty": null,
+   "qty": 37,
    "ret_pct": 3.27,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 9189.0,
+   "qty_est": true
   },
   {
    "symbol": "DATAPATTNS",
@@ -882,10 +1014,12 @@
    "exit_date": "2026-07-03",
    "buy": 4558.5,
    "sell": 4494.0,
-   "qty": null,
+   "qty": 79,
    "ret_pct": -1.41,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -6883.0,
+   "qty_est": true
   },
   {
    "symbol": "SAILIFE",
@@ -893,10 +1027,12 @@
    "exit_date": "2026-07-07",
    "buy": 1247.9,
    "sell": 1200.0,
-   "qty": null,
+   "qty": 295,
    "ret_pct": -3.84,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -15936.0,
+   "qty_est": true
   },
   {
    "symbol": "TALBROAUTO",
@@ -904,10 +1040,12 @@
    "exit_date": "2026-07-14",
    "buy": 392.0,
    "sell": 389.3,
-   "qty": null,
+   "qty": 926,
    "ret_pct": -0.69,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -4309.0,
+   "qty_est": true
   },
   {
    "symbol": "SYRMA",
@@ -915,10 +1053,12 @@
    "exit_date": "2026-07-17",
    "buy": 1264.0,
    "sell": 1355.0,
-   "qty": null,
+   "qty": 274,
    "ret_pct": 7.2,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 23140.0,
+   "qty_est": true
   },
   {
    "symbol": "SENORES",
@@ -926,10 +1066,12 @@
    "exit_date": "2026-07-24",
    "buy": 1381.9,
    "sell": 1387.5,
-   "qty": null,
+   "qty": 271,
    "ret_pct": 0.41,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -359.0,
+   "qty_est": true
   },
   {
    "symbol": "SOLARINDS",
@@ -937,10 +1079,12 @@
    "exit_date": "2026-07-28",
    "buy": 18759.0,
    "sell": 18244.0,
-   "qty": null,
+   "qty": 19,
    "ret_pct": -2.75,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -11543.0,
+   "qty_est": true
   },
   {
    "symbol": "THANGAMAYL",
@@ -948,10 +1092,12 @@
    "exit_date": "2026-07-29",
    "buy": 4278.4,
    "sell": 6452.0,
-   "qty": null,
+   "qty": 77,
    "ret_pct": 50.8,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 165302.0,
+   "qty_est": true
   },
   {
    "symbol": "APOLLOHOSP",
@@ -959,10 +1105,12 @@
    "exit_date": "2026-08-03",
    "buy": 8940.0,
    "sell": 8820.0,
-   "qty": null,
+   "qty": 40,
    "ret_pct": -1.34,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -6576.0,
+   "qty_est": true
   },
   {
    "symbol": "LLOYDSME",
@@ -970,10 +1118,12 @@
    "exit_date": "2026-08-12",
    "buy": 2013.9,
    "sell": 1905.0,
-   "qty": null,
+   "qty": 181,
    "ret_pct": -5.41,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -21484.0,
+   "qty_est": true
   },
   {
    "symbol": "EMCURE",
@@ -981,10 +1131,12 @@
    "exit_date": "2026-08-14",
    "buy": 1924.5,
    "sell": 1932.3,
-   "qty": null,
+   "qty": 198,
    "ret_pct": 0.41,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -365.0,
+   "qty_est": true
   },
   {
    "symbol": "RPTECH",
@@ -992,10 +1144,12 @@
    "exit_date": "2026-08-19",
    "buy": 801.45,
    "sell": 838.25,
-   "qty": null,
+   "qty": 453,
    "ret_pct": 4.59,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 14813.0,
+   "qty_est": true
   },
   {
    "symbol": "ADOR",
@@ -1003,10 +1157,12 @@
    "exit_date": "2026-08-26",
    "buy": 1661.0,
    "sell": 1531.2,
-   "qty": null,
+   "qty": 228,
    "ret_pct": -7.81,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -31414.0,
+   "qty_est": true
   },
   {
    "symbol": "SKYGOLD",
@@ -1014,10 +1170,12 @@
    "exit_date": "2026-09-01",
    "buy": 623.85,
    "sell": 781.0,
-   "qty": null,
+   "qty": 601,
    "ret_pct": 25.19,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": 92336.0,
+   "qty_est": true
   },
   {
    "symbol": "NRBBEARING",
@@ -1025,10 +1183,12 @@
    "exit_date": "2026-09-01",
    "buy": 478.25,
    "sell": 459.45,
-   "qty": null,
+   "qty": 796,
    "ret_pct": -3.93,
    "reason": "trail_sma20",
-   "src": "backtest"
+   "src": "backtest",
+   "net_pnl": -16831.0,
+   "qty_est": true
   }
  ],
  "n_trades": 397,
