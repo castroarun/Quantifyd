@@ -1,51 +1,51 @@
 {
- "generated_at": "2026-09-02T11:00:01",
+ "generated_at": "2026-09-02T14:00:02",
  "broker_legs": {
   "SENSEX2690376300CE": {
    "qty": -40,
    "avg": 280.23333333333335,
-   "ltp": 328.5,
-   "pnl": -9582.0,
+   "ltp": 352.65,
+   "pnl": -10548.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "SENSEX2690376300PE": {
-   "qty": -120,
+   "qty": -80,
    "avg": 266.1583333333333,
-   "ltp": 201.9,
-   "pnl": 7711.0,
-   "product": "MIS",
-   "exchange": "BFO"
-  },
-  "SENSEX2690376700CE": {
-   "qty": -40,
-   "avg": 176.625,
-   "ltp": 148.75,
-   "pnl": 1115.0,
+   "ltp": 150.35,
+   "pnl": 10533.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "BSE26SEP3500CE": {
    "qty": -200,
    "avg": 41.95,
-   "ltp": 30.2,
-   "pnl": 2350.0,
+   "ltp": 27.05,
+   "pnl": 2980.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "ANTHEM": {
    "qty": 11,
    "avg": 938.65,
-   "ltp": 942.3,
-   "pnl": 40.1,
+   "ltp": 939.55,
+   "pnl": 9.9,
    "product": "CNC",
    "exchange": "NSE"
   },
   "AYMSYNTEX": {
-   "qty": 79,
-   "avg": 302.4620253164557,
-   "ltp": 312.75,
-   "pnl": 812.8,
+   "qty": 115,
+   "avg": 305.1191304347826,
+   "ltp": 310.75,
+   "pnl": 647.5,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "BSE": {
+   "qty": -96,
+   "avg": 3141.633333333333,
+   "ltp": 3151.1,
+   "pnl": -908.8,
    "product": "CNC",
    "exchange": "NSE"
   }
@@ -58,17 +58,10 @@
    ]
   },
   "SENSEX2690376300PE": {
-   "qty": -120,
+   "qty": -80,
    "books": [
     "sensex_atm2",
-    "sensex_atm4",
     "sensex_atm"
-   ]
-  },
-  "SENSEX2690376700CE": {
-   "qty": -40,
-   "books": [
-    "sensex_atm4"
    ]
   }
  },
@@ -93,9 +86,17 @@
    "level": "INFO",
    "kind": "MANUAL",
    "symbol": "AYMSYNTEX",
-   "broker_qty": 79,
+   "broker_qty": 115,
    "app_qty": 0,
-   "detail": "manual holding, 79 \u2014 no book tracks it"
+   "detail": "manual holding, 115 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "BSE",
+   "broker_qty": -96,
+   "app_qty": 0,
+   "detail": "manual holding, -96 \u2014 no book tracks it"
   },
   {
    "level": "WARN",
@@ -109,16 +110,8 @@
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "SENSEX2690376300PE",
-   "broker_qty": -120,
-   "app_qty": -120,
-   "detail": "short option with no SL resting at the exchange (software-side stop only)"
-  },
-  {
-   "level": "WARN",
-   "kind": "NAKED",
-   "symbol": "SENSEX2690376700CE",
-   "broker_qty": -40,
-   "app_qty": -40,
+   "broker_qty": -80,
+   "app_qty": -80,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
@@ -131,9 +124,9 @@
   }
  ],
  "filled_by_tag": {
-  "untagged": 450
+  "untagged": 662
  },
  "alerts": 1,
- "warns": 4,
- "infos": 2
+ "warns": 3,
+ "infos": 3
 }

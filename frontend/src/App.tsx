@@ -37,6 +37,7 @@ import Straddle45 from './pages/Straddle45';
 import StockWings from './pages/StockWings';
 import BreakoutPaper from './pages/BreakoutPaper';
 import BlueskyPaper from './pages/BlueskyPaper';
+import Sleeves from './pages/Sleeves';
 import HaPaper from './pages/HaPaper';
 import OrbPaper from './pages/OrbPaper';
 import OholPaper from './pages/OholPaper';
@@ -339,6 +340,16 @@ export default function App() {
           <Protected>
             <AppLayout active="bluesky-paper">
               <BlueskyPaper />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/sleeves"
+        element={
+          <Protected>
+            <AppLayout active="bluesky-paper">
+              <Sleeves />
             </AppLayout>
           </Protected>
         }

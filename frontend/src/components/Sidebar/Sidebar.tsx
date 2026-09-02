@@ -346,6 +346,13 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
             active={active === 'bluesky-paper'}
             collapsed={collapsed}
           />
+          <NavItem
+            to="/sleeves"
+            icon={<IconBarChart />}
+            label="Sleeves 50-50"
+            active={false}
+            collapsed={collapsed}
+          />
         </nav>
       </div>
 
