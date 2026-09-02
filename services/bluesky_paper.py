@@ -195,7 +195,9 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
               cash=round(st['cash'], 0),
               invested_pct=round(100 * tot_val / nav, 1) if nav else 0,
               unrealized=round(tot_pnl, 0),
-              ret_pct=round((nav / st['capital'] - 1) * 100, 2), max_dd_pct=round(dd, 2),
+              ret_pct=round((nav / st['capital'] - 1) * 100, 2),
+              cagr_pct=(round(((nav / st['capital']) ** (1 / max(0.2, (pd.Timestamp(st['nav'][-1]['date']) - pd.Timestamp(st['nav'][0]['date'])).days / 365.25)) - 1) * 100, 1) if st['nav'] else None),
+              max_dd_pct=round(dd, 2),
               gate_weak=gate['weak'], gate_nb=gate.get('nb'), gate_sma=gate.get('sma'),
               gate_gap_pct=(round((gate['nb'] / gate['sma'] - 1) * 100, 2)
                             if gate.get('nb') and gate.get('sma') else None),

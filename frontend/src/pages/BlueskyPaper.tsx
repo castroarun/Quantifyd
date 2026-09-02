@@ -109,8 +109,8 @@ export default function BlueskyPaper() {
       </div>
       <div className={styles.tiles}>
         <div className={styles.tile}><div>NAV</div><b>{inr(f.nav)}</b></div>
-        <div className={styles.tile}><div>Return</div>
-          <b className={f.ret_pct >= 0 ? styles.pos : styles.neg}>{pct(f.ret_pct)}</b></div>
+        <div className={styles.tile}><div>CAGR (incl. backfill)</div>
+          <b className={(f.cagr_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(f.cagr_pct)}</b></div>
         <div className={styles.tile}><div>Unrealised</div>
           <b className={f.unrealized >= 0 ? styles.pos : styles.neg}>{inr(f.unrealized)}</b></div>
         <div className={styles.tile}><div>Cash / Invested</div>

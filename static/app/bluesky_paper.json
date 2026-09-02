@@ -1,11 +1,12 @@
 {
- "updated": "2026-09-02 13:53:23.975562",
- "nav": 2002916.0,
- "capital": 119337.0,
- "cash": 69316.0,
+ "updated": "2026-09-02 14:31:17.174747",
+ "nav": 908575.0,
+ "capital": 54259.0,
+ "cash": 31516.0,
  "invested_pct": 96.5,
- "unrealized": 44487.0,
- "ret_pct": 1578.37,
+ "unrealized": 20182.0,
+ "ret_pct": 1574.51,
+ "cagr_pct": 52.6,
  "max_dd_pct": -27.1,
  "gate_weak": true,
  "gate_nb": 272.37,
@@ -14,14 +15,14 @@
  "positions": [
   {
    "symbol": "AETHER",
-   "qty": 245,
+   "qty": 111,
    "buy": 1539.6,
    "entry_date": "2026-08-04",
    "pivot": 1539.6,
    "src": "backtest",
    "ltp": 1660.2,
-   "value": 406749.0,
-   "pnl": 29547.0,
+   "value": 184282.0,
+   "pnl": 13387.0,
    "pnl_pct": 7.8,
    "days": 29,
    "stop": 1416.43,
@@ -32,68 +33,68 @@
   },
   {
    "symbol": "VADILALIND",
-   "qty": 51,
+   "qty": 23,
    "buy": 7588.0,
    "entry_date": "2026-08-13",
    "pivot": 7380.0,
    "src": "backtest",
    "ltp": 7575.0,
-   "value": 386325.0,
-   "pnl": -663.0,
+   "value": 174225.0,
+   "pnl": -299.0,
    "pnl_pct": -0.2,
    "days": 20,
    "stop": 6980.96,
    "to_stop_pct": 8.5,
    "trail": 7487.43,
    "to_trail_pct": 1.2,
-   "weight": 19.3
+   "weight": 19.2
   },
   {
    "symbol": "ASIANENE",
-   "qty": 761,
+   "qty": 346,
    "buy": 492.7,
    "entry_date": "2026-09-02",
    "pivot": 492.7,
    "src": "backtest",
    "ltp": 497.9,
-   "value": 378902.0,
-   "pnl": 3957.0,
+   "value": 172273.0,
+   "pnl": 1799.0,
    "pnl_pct": 1.1,
    "days": 0,
    "stop": 453.28,
    "to_stop_pct": 9.8,
    "trail": 447.27,
    "to_trail_pct": 11.3,
-   "weight": 18.9
+   "weight": 19.0
   },
   {
    "symbol": "MOREPENLAB",
-   "qty": 3499,
+   "qty": 1591,
    "buy": 107.16,
    "entry_date": "2026-09-02",
    "pivot": 107.16,
    "src": "backtest",
    "ltp": 109.03,
-   "value": 381496.0,
-   "pnl": 6543.0,
+   "value": 173467.0,
+   "pnl": 2975.0,
    "pnl_pct": 1.7,
    "days": 0,
    "stop": 98.59,
    "to_stop_pct": 10.6,
    "trail": 91.15,
    "to_trail_pct": 19.6,
-   "weight": 19.0
+   "weight": 19.1
   },
   {
    "symbol": "TFCILTD",
-   "qty": 2644,
+   "qty": 1202,
    "buy": 141.84,
    "entry_date": "2026-09-02",
    "pivot": 141.84,
    "src": "backtest",
    "ltp": 143.77,
-   "value": 380128.0,
-   "pnl": 5103.0,
+   "value": 172812.0,
+   "pnl": 2320.0,
    "pnl_pct": 1.4,
    "days": 0,
    "stop": 130.49,
@@ -147,7 +148,7 @@
    "signal_date": "2026-09-02"
   }
  ],
- "provenance": "History BACKFILLED from the adopted-spec backtest (trail-20, median seed 4, 2020-01-01 -> 2026-09-02, 397 trades); LIVE paper from 2026-09-02. Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased 02-Sep-2026: the CURRENT book is sized ~Rs 20L (matching the momentum book allocation); all percentages and the curve shape are unchanged.",
+ "provenance": "History BACKFILLED from the adopted-spec backtest (trail-20, median seed 4, 2020-01-01 -> 2026-09-02, 397 trades); LIVE paper from 2026-09-02. Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased 02-Sep-2026: the CURRENT book is sized to the momentum book NAV (~Rs 9.1L) so the two sleeves are equal-sized; all percentages and the curve shape are unchanged.",
  "n_live_trades": 0,
  "trades": [
   {
@@ -156,11 +157,11 @@
    "exit_date": "2025-08-28",
    "buy": 2350.0,
    "sell": 2271.5,
-   "qty": 125,
+   "qty": 57,
    "ret_pct": -3.34,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -11257.0,
+   "net_pnl": -5118.0,
    "qty_est": true
   },
   {
@@ -169,11 +170,11 @@
    "exit_date": "2025-09-04",
    "buy": 556.4,
    "sell": 559.75,
-   "qty": 547,
+   "qty": 249,
    "ret_pct": 0.6,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 306.0,
+   "net_pnl": 139.0,
    "qty_est": true
   },
   {
@@ -182,11 +183,11 @@
    "exit_date": "2025-09-10",
    "buy": 186.3,
    "sell": 175.66,
-   "qty": 1561,
+   "qty": 710,
    "ret_pct": -5.71,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -18022.0,
+   "net_pnl": -8194.0,
    "qty_est": true
   },
   {
@@ -195,11 +196,11 @@
    "exit_date": "2025-09-10",
    "buy": 2583.1,
    "sell": 2453.7,
-   "qty": 113,
+   "qty": 51,
    "ret_pct": -5.01,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -16045.0,
+   "net_pnl": -7295.0,
    "qty_est": true
   },
   {
@@ -208,11 +209,11 @@
    "exit_date": "2025-09-12",
    "buy": 5345.37,
    "sell": 5212.5,
-   "qty": 54,
+   "qty": 25,
    "ret_pct": -2.49,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -8600.0,
+   "net_pnl": -3910.0,
    "qty_est": true
   },
   {
@@ -221,11 +222,11 @@
    "exit_date": "2025-09-23",
    "buy": 2252.61,
    "sell": 2252.0,
-   "qty": 127,
+   "qty": 58,
    "ret_pct": -0.03,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -1508.0,
+   "net_pnl": -686.0,
    "qty_est": true
   },
   {
@@ -234,11 +235,11 @@
    "exit_date": "2025-09-25",
    "buy": 675.25,
    "sell": 693.75,
-   "qty": 423,
+   "qty": 192,
    "ret_pct": 2.74,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 6378.0,
+   "net_pnl": 2900.0,
    "qty_est": true
   },
   {
@@ -247,11 +248,11 @@
    "exit_date": "2025-09-30",
    "buy": 481.0,
    "sell": 476.55,
-   "qty": 615,
+   "qty": 280,
    "ret_pct": -0.93,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -4209.0,
+   "net_pnl": -1914.0,
    "qty_est": true
   },
   {
@@ -260,11 +261,11 @@
    "exit_date": "2025-10-03",
    "buy": 968.3,
    "sell": 989.75,
-   "qty": 297,
+   "qty": 135,
    "ret_pct": 2.22,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 4917.0,
+   "net_pnl": 2236.0,
    "qty_est": true
   },
   {
@@ -273,11 +274,11 @@
    "exit_date": "2025-10-06",
    "buy": 7011.5,
    "sell": 6880.0,
-   "qty": 41,
+   "qty": 19,
    "ret_pct": -1.88,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -6815.0,
+   "net_pnl": -3099.0,
    "qty_est": true
   },
   {
@@ -286,11 +287,11 @@
    "exit_date": "2025-10-09",
    "buy": 250.53,
    "sell": 332.0,
-   "qty": 1142,
+   "qty": 519,
    "ret_pct": 32.52,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 91376.0,
+   "net_pnl": 41546.0,
    "qty_est": true
   },
   {
@@ -299,11 +300,11 @@
    "exit_date": "2025-10-14",
    "buy": 8310.5,
    "sell": 8204.5,
-   "qty": 36,
+   "qty": 16,
    "ret_pct": -1.28,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -5302.0,
+   "net_pnl": -2411.0,
    "qty_est": true
   },
   {
@@ -312,11 +313,11 @@
    "exit_date": "2025-10-16",
    "buy": 3695.4,
    "sell": 3760.2,
-   "qty": 80,
+   "qty": 36,
    "ret_pct": 1.75,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 3693.0,
+   "net_pnl": 1679.0,
    "qty_est": true
   },
   {
@@ -325,11 +326,11 @@
    "exit_date": "2025-10-24",
    "buy": 119.35,
    "sell": 121.55,
-   "qty": 2505,
+   "qty": 1139,
    "ret_pct": 1.84,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 4002.0,
+   "net_pnl": 1820.0,
    "qty_est": true
   },
   {
@@ -338,11 +339,11 @@
    "exit_date": "2025-10-24",
    "buy": 108.95,
    "sell": 102.2,
-   "qty": 2793,
+   "qty": 1270,
    "ret_pct": -6.2,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -20327.0,
+   "net_pnl": -9242.0,
    "qty_est": true
   },
   {
@@ -351,11 +352,11 @@
    "exit_date": "2025-10-31",
    "buy": 1036.75,
    "sell": 1042.8,
-   "qty": 294,
+   "qty": 134,
    "ret_pct": 0.58,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 250.0,
+   "net_pnl": 114.0,
    "qty_est": true
   },
   {
@@ -368,7 +369,7 @@
    "ret_pct": 0.74,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 372.0,
+   "net_pnl": 169.0,
    "qty_est": true
   },
   {
@@ -377,11 +378,11 @@
    "exit_date": "2025-11-10",
    "buy": 263.02,
    "sell": 231.85,
-   "qty": 1143,
+   "qty": 520,
    "ret_pct": -11.85,
    "reason": "stop_8pct",
    "src": "backtest",
-   "net_pnl": -37041.0,
+   "net_pnl": -16841.0,
    "qty_est": true
   },
   {
@@ -390,11 +391,11 @@
    "exit_date": "2025-11-11",
    "buy": 228.77,
    "sell": 257.2,
-   "qty": 1300,
+   "qty": 591,
    "ret_pct": 12.43,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 35380.0,
+   "net_pnl": 16086.0,
    "qty_est": true
   },
   {
@@ -403,11 +404,11 @@
    "exit_date": "2025-11-11",
    "buy": 1601.2,
    "sell": 1542.4,
-   "qty": 186,
+   "qty": 85,
    "ret_pct": -3.67,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -12399.0,
+   "net_pnl": -5637.0,
    "qty_est": true
   },
   {
@@ -416,11 +417,11 @@
    "exit_date": "2025-11-13",
    "buy": 270.13,
    "sell": 263.25,
-   "qty": 1103,
+   "qty": 502,
    "ret_pct": -2.55,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -9059.0,
+   "net_pnl": -4119.0,
    "qty_est": true
   },
   {
@@ -429,11 +430,11 @@
    "exit_date": "2025-11-13",
    "buy": 3302.1,
    "sell": 3187.1,
-   "qty": 90,
+   "qty": 41,
    "ret_pct": -3.48,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -11810.0,
+   "net_pnl": -5370.0,
    "qty_est": true
   },
   {
@@ -442,11 +443,11 @@
    "exit_date": "2025-11-21",
    "buy": 410.0,
    "sell": 362.4,
-   "qty": 695,
+   "qty": 316,
    "ret_pct": -11.61,
    "reason": "stop_8pct",
    "src": "backtest",
-   "net_pnl": -34424.0,
+   "net_pnl": -15652.0,
    "qty_est": true
   },
   {
@@ -455,11 +456,11 @@
    "exit_date": "2025-11-24",
    "buy": 892.9,
    "sell": 819.15,
-   "qty": 312,
+   "qty": 142,
    "ret_pct": -8.26,
    "reason": "stop_8pct",
    "src": "backtest",
-   "net_pnl": -24345.0,
+   "net_pnl": -11069.0,
    "qty_est": true
   },
   {
@@ -468,11 +469,11 @@
    "exit_date": "2025-12-08",
    "buy": 158.17,
    "sell": 154.93,
-   "qty": 1766,
+   "qty": 803,
    "ret_pct": -2.05,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -7104.0,
+   "net_pnl": -3230.0,
    "qty_est": true
   },
   {
@@ -481,11 +482,11 @@
    "exit_date": "2025-12-09",
    "buy": 956.75,
    "sell": 1005.4,
-   "qty": 299,
+   "qty": 136,
    "ret_pct": 5.08,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 13080.0,
+   "net_pnl": 5947.0,
    "qty_est": true
   },
   {
@@ -494,11 +495,11 @@
    "exit_date": "2025-12-09",
    "buy": 6039.0,
    "sell": 6001.0,
-   "qty": 45,
+   "qty": 20,
    "ret_pct": -0.63,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -3064.0,
+   "net_pnl": -1393.0,
    "qty_est": true
   },
   {
@@ -507,11 +508,11 @@
    "exit_date": "2025-12-10",
    "buy": 1972.0,
    "sell": 1973.0,
-   "qty": 140,
+   "qty": 64,
    "ret_pct": 0.05,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -1241.0,
+   "net_pnl": -564.0,
    "qty_est": true
   },
   {
@@ -520,11 +521,11 @@
    "exit_date": "2026-01-05",
    "buy": 238.46,
    "sell": 263.75,
-   "qty": 1195,
+   "qty": 543,
    "ret_pct": 10.61,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 28721.0,
+   "net_pnl": 13059.0,
    "qty_est": true
   },
   {
@@ -533,11 +534,11 @@
    "exit_date": "2026-01-05",
    "buy": 259.2,
    "sell": 263.75,
-   "qty": 1074,
+   "qty": 488,
    "ret_pct": 1.76,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 3483.0,
+   "net_pnl": 1584.0,
    "qty_est": true
   },
   {
@@ -546,11 +547,11 @@
    "exit_date": "2026-01-12",
    "buy": 1134.0,
    "sell": 1043.2,
-   "qty": 286,
+   "qty": 130,
    "ret_pct": -8.01,
    "reason": "stop_8pct",
    "src": "backtest",
-   "net_pnl": -27525.0,
+   "net_pnl": -12515.0,
    "qty_est": true
   },
   {
@@ -559,11 +560,11 @@
    "exit_date": "2026-01-27",
    "buy": 1540.6,
    "sell": 1484.6,
-   "qty": 219,
+   "qty": 100,
    "ret_pct": -3.63,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -13920.0,
+   "net_pnl": -6329.0,
    "qty_est": true
   },
   {
@@ -572,11 +573,11 @@
    "exit_date": "2026-02-01",
    "buy": 17.47,
    "sell": 27.52,
-   "qty": 15780,
+   "qty": 7175,
    "ret_pct": 57.53,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 156814.0,
+   "net_pnl": 71299.0,
    "qty_est": true
   },
   {
@@ -585,11 +586,11 @@
    "exit_date": "2026-02-01",
    "buy": 17.86,
    "sell": 25.61,
-   "qty": 15435,
+   "qty": 7018,
    "ret_pct": 43.39,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 117944.0,
+   "net_pnl": 53626.0,
    "qty_est": true
   },
   {
@@ -598,11 +599,11 @@
    "exit_date": "2026-02-01",
    "buy": 177.92,
    "sell": 252.74,
-   "qty": 1566,
+   "qty": 712,
    "ret_pct": 42.05,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 115482.0,
+   "net_pnl": 52506.0,
    "qty_est": true
   },
   {
@@ -611,11 +612,11 @@
    "exit_date": "2026-02-04",
    "buy": 2494.0,
    "sell": 2265.6,
-   "qty": 137,
+   "qty": 62,
    "ret_pct": -9.16,
    "reason": "stop_8pct",
    "src": "backtest",
-   "net_pnl": -32921.0,
+   "net_pnl": -14968.0,
    "qty_est": true
   },
   {
@@ -624,11 +625,11 @@
    "exit_date": "2026-02-06",
    "buy": 612.05,
    "sell": 579.85,
-   "qty": 667,
+   "qty": 303,
    "ret_pct": -5.26,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -23465.0,
+   "net_pnl": -10669.0,
    "qty_est": true
   },
   {
@@ -637,11 +638,11 @@
    "exit_date": "2026-02-27",
    "buy": 245.0,
    "sell": 254.83,
-   "qty": 1397,
+   "qty": 635,
    "ret_pct": 4.01,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 11987.0,
+   "net_pnl": 5450.0,
    "qty_est": true
   },
   {
@@ -650,11 +651,11 @@
    "exit_date": "2026-02-27",
    "buy": 257.46,
    "sell": 254.83,
-   "qty": 1362,
+   "qty": 619,
    "ret_pct": -1.02,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -5326.0,
+   "net_pnl": -2422.0,
    "qty_est": true
   },
   {
@@ -663,11 +664,11 @@
    "exit_date": "2026-02-27",
    "buy": 267.38,
    "sell": 254.83,
-   "qty": 1341,
+   "qty": 610,
    "ret_pct": -4.69,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -18580.0,
+   "net_pnl": -8448.0,
    "qty_est": true
   },
   {
@@ -676,11 +677,11 @@
    "exit_date": "2026-03-02",
    "buy": 314.0,
    "sell": 315.3,
-   "qty": 1090,
+   "qty": 496,
    "ret_pct": 0.41,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -298.0,
+   "net_pnl": -135.0,
    "qty_est": true
   },
   {
@@ -689,11 +690,11 @@
    "exit_date": "2026-03-04",
    "buy": 960.0,
    "sell": 1204.8,
-   "qty": 356,
+   "qty": 162,
    "ret_pct": 25.5,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 85222.0,
+   "net_pnl": 38748.0,
    "qty_est": true
   },
   {
@@ -702,11 +703,11 @@
    "exit_date": "2026-03-11",
    "buy": 10238.5,
    "sell": 9919.0,
-   "qty": 34,
+   "qty": 15,
    "ret_pct": -3.12,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -12576.0,
+   "net_pnl": -5718.0,
    "qty_est": true
   },
   {
@@ -715,11 +716,11 @@
    "exit_date": "2026-03-13",
    "buy": 453.0,
    "sell": 439.4,
-   "qty": 775,
+   "qty": 352,
    "ret_pct": -3.0,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -12269.0,
+   "net_pnl": -5578.0,
    "qty_est": true
   },
   {
@@ -728,11 +729,11 @@
    "exit_date": "2026-03-13",
    "buy": 998.25,
    "sell": 953.05,
-   "qty": 347,
+   "qty": 158,
    "ret_pct": -4.53,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -17377.0,
+   "net_pnl": -7901.0,
    "qty_est": true
   },
   {
@@ -741,11 +742,11 @@
    "exit_date": "2026-03-19",
    "buy": 1427.9,
    "sell": 1421.3,
-   "qty": 248,
+   "qty": 113,
    "ret_pct": -0.46,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -3403.0,
+   "net_pnl": -1547.0,
    "qty_est": true
   },
   {
@@ -754,11 +755,11 @@
    "exit_date": "2026-03-23",
    "buy": 524.05,
    "sell": 505.55,
-   "qty": 677,
+   "qty": 308,
    "ret_pct": -3.53,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -14267.0,
+   "net_pnl": -6487.0,
    "qty_est": true
   },
   {
@@ -767,11 +768,11 @@
    "exit_date": "2026-03-23",
    "buy": 1454.05,
    "sell": 1360.0,
-   "qty": 240,
+   "qty": 109,
    "ret_pct": -6.47,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -24260.0,
+   "net_pnl": -11030.0,
    "qty_est": true
   },
   {
@@ -780,11 +781,11 @@
    "exit_date": "2026-03-23",
    "buy": 2965.7,
    "sell": 2744.4,
-   "qty": 113,
+   "qty": 51,
    "ret_pct": -7.46,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -26620.0,
+   "net_pnl": -12103.0,
    "qty_est": true
   },
   {
@@ -793,11 +794,11 @@
    "exit_date": "2026-03-23",
    "buy": 2131.4,
    "sell": 2080.3,
-   "qty": 158,
+   "qty": 72,
    "ret_pct": -2.4,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -9737.0,
+   "net_pnl": -4427.0,
    "qty_est": true
   },
   {
@@ -806,11 +807,11 @@
    "exit_date": "2026-03-30",
    "buy": 1068.45,
    "sell": 1041.2,
-   "qty": 315,
+   "qty": 143,
    "ret_pct": -2.55,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -10245.0,
+   "net_pnl": -4658.0,
    "qty_est": true
   },
   {
@@ -819,11 +820,11 @@
    "exit_date": "2026-04-16",
    "buy": 1087.6,
    "sell": 1070.6,
-   "qty": 305,
+   "qty": 139,
    "ret_pct": -1.56,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -6831.0,
+   "net_pnl": -3106.0,
    "qty_est": true
   },
   {
@@ -832,11 +833,11 @@
    "exit_date": "2026-04-23",
    "buy": 285.0,
    "sell": 324.0,
-   "qty": 1161,
+   "qty": 528,
    "ret_pct": 13.68,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 43511.0,
+   "net_pnl": 19783.0,
    "qty_est": true
   },
   {
@@ -845,11 +846,11 @@
    "exit_date": "2026-04-24",
    "buy": 1165.95,
    "sell": 1113.8,
-   "qty": 283,
+   "qty": 129,
    "ret_pct": -4.47,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -16371.0,
+   "net_pnl": -7443.0,
    "qty_est": true
   },
   {
@@ -858,11 +859,11 @@
    "exit_date": "2026-04-24",
    "buy": 96.1,
    "sell": 101.35,
-   "qty": 3459,
+   "qty": 1573,
    "ret_pct": 5.46,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 16452.0,
+   "net_pnl": 7480.0,
    "qty_est": true
   },
   {
@@ -871,11 +872,11 @@
    "exit_date": "2026-04-30",
    "buy": 442.95,
    "sell": 399.3,
-   "qty": 744,
+   "qty": 338,
    "ret_pct": -9.85,
    "reason": "stop_8pct",
    "src": "backtest",
-   "net_pnl": -34042.0,
+   "net_pnl": -15478.0,
    "qty_est": true
   },
   {
@@ -884,11 +885,11 @@
    "exit_date": "2026-05-07",
    "buy": 1570.6,
    "sell": 1635.4,
-   "qty": 210,
+   "qty": 95,
    "ret_pct": 4.13,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 11925.0,
+   "net_pnl": 5422.0,
    "qty_est": true
   },
   {
@@ -897,11 +898,11 @@
    "exit_date": "2026-05-12",
    "buy": 5211.8,
    "sell": 5160.0,
-   "qty": 63,
+   "qty": 29,
    "ret_pct": -0.99,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -4897.0,
+   "net_pnl": -2227.0,
    "qty_est": true
   },
   {
@@ -910,11 +911,11 @@
    "exit_date": "2026-05-18",
    "buy": 11977.0,
    "sell": 12154.0,
-   "qty": 27,
+   "qty": 12,
    "ret_pct": 1.48,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 3150.0,
+   "net_pnl": 1432.0,
    "qty_est": true
   },
   {
@@ -923,11 +924,11 @@
    "exit_date": "2026-05-27",
    "buy": 3249.0,
    "sell": 3158.5,
-   "qty": 102,
+   "qty": 46,
    "ret_pct": -2.79,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -10865.0,
+   "net_pnl": -4940.0,
    "qty_est": true
   },
   {
@@ -936,11 +937,11 @@
    "exit_date": "2026-05-27",
    "buy": 3499.2,
    "sell": 3439.3,
-   "qty": 97,
+   "qty": 44,
    "ret_pct": -1.71,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -7493.0,
+   "net_pnl": -3407.0,
    "qty_est": true
   },
   {
@@ -949,11 +950,11 @@
    "exit_date": "2026-05-29",
    "buy": 1370.0,
    "sell": 1293.9,
-   "qty": 245,
+   "qty": 111,
    "ret_pct": -5.55,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -20276.0,
+   "net_pnl": -9219.0,
    "qty_est": true
   },
   {
@@ -962,11 +963,11 @@
    "exit_date": "2026-06-11",
    "buy": 1702.0,
    "sell": 1787.1,
-   "qty": 197,
+   "qty": 90,
    "ret_pct": 5.0,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 15046.0,
+   "net_pnl": 6841.0,
    "qty_est": true
   },
   {
@@ -975,11 +976,11 @@
    "exit_date": "2026-06-16",
    "buy": 1130.0,
    "sell": 1376.4,
-   "qty": 300,
+   "qty": 136,
    "ret_pct": 21.81,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 72040.0,
+   "net_pnl": 32754.0,
    "qty_est": true
   },
   {
@@ -988,11 +989,11 @@
    "exit_date": "2026-06-24",
    "buy": 2242.05,
    "sell": 2253.7,
-   "qty": 148,
+   "qty": 67,
    "ret_pct": 0.52,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 61.0,
+   "net_pnl": 28.0,
    "qty_est": true
   },
   {
@@ -1001,11 +1002,11 @@
    "exit_date": "2026-07-02",
    "buy": 8981.5,
    "sell": 9275.5,
-   "qty": 37,
+   "qty": 17,
    "ret_pct": 3.27,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 9189.0,
+   "net_pnl": 4178.0,
    "qty_est": true
   },
   {
@@ -1014,11 +1015,11 @@
    "exit_date": "2026-07-03",
    "buy": 4558.5,
    "sell": 4494.0,
-   "qty": 79,
+   "qty": 36,
    "ret_pct": -1.41,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -6883.0,
+   "net_pnl": -3129.0,
    "qty_est": true
   },
   {
@@ -1027,11 +1028,11 @@
    "exit_date": "2026-07-07",
    "buy": 1247.9,
    "sell": 1200.0,
-   "qty": 295,
+   "qty": 134,
    "ret_pct": -3.84,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -15936.0,
+   "net_pnl": -7246.0,
    "qty_est": true
   },
   {
@@ -1040,11 +1041,11 @@
    "exit_date": "2026-07-14",
    "buy": 392.0,
    "sell": 389.3,
-   "qty": 926,
+   "qty": 421,
    "ret_pct": -0.69,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -4309.0,
+   "net_pnl": -1959.0,
    "qty_est": true
   },
   {
@@ -1053,11 +1054,11 @@
    "exit_date": "2026-07-17",
    "buy": 1264.0,
    "sell": 1355.0,
-   "qty": 274,
+   "qty": 125,
    "ret_pct": 7.2,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 23140.0,
+   "net_pnl": 10521.0,
    "qty_est": true
   },
   {
@@ -1066,11 +1067,11 @@
    "exit_date": "2026-07-24",
    "buy": 1381.9,
    "sell": 1387.5,
-   "qty": 271,
+   "qty": 123,
    "ret_pct": 0.41,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -359.0,
+   "net_pnl": -163.0,
    "qty_est": true
   },
   {
@@ -1079,11 +1080,11 @@
    "exit_date": "2026-07-28",
    "buy": 18759.0,
    "sell": 18244.0,
-   "qty": 19,
+   "qty": 9,
    "ret_pct": -2.75,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -11543.0,
+   "net_pnl": -5248.0,
    "qty_est": true
   },
   {
@@ -1092,11 +1093,11 @@
    "exit_date": "2026-07-29",
    "buy": 4278.4,
    "sell": 6452.0,
-   "qty": 77,
+   "qty": 35,
    "ret_pct": 50.8,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 165302.0,
+   "net_pnl": 75158.0,
    "qty_est": true
   },
   {
@@ -1105,11 +1106,11 @@
    "exit_date": "2026-08-03",
    "buy": 8940.0,
    "sell": 8820.0,
-   "qty": 40,
+   "qty": 18,
    "ret_pct": -1.34,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -6576.0,
+   "net_pnl": -2990.0,
    "qty_est": true
   },
   {
@@ -1118,11 +1119,11 @@
    "exit_date": "2026-08-12",
    "buy": 2013.9,
    "sell": 1905.0,
-   "qty": 181,
+   "qty": 82,
    "ret_pct": -5.41,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -21484.0,
+   "net_pnl": -9768.0,
    "qty_est": true
   },
   {
@@ -1131,11 +1132,11 @@
    "exit_date": "2026-08-14",
    "buy": 1924.5,
    "sell": 1932.3,
-   "qty": 198,
+   "qty": 90,
    "ret_pct": 0.41,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -365.0,
+   "net_pnl": -166.0,
    "qty_est": true
   },
   {
@@ -1144,11 +1145,11 @@
    "exit_date": "2026-08-19",
    "buy": 801.45,
    "sell": 838.25,
-   "qty": 453,
+   "qty": 206,
    "ret_pct": 4.59,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 14813.0,
+   "net_pnl": 6735.0,
    "qty_est": true
   },
   {
@@ -1157,11 +1158,11 @@
    "exit_date": "2026-08-26",
    "buy": 1661.0,
    "sell": 1531.2,
-   "qty": 228,
+   "qty": 104,
    "ret_pct": -7.81,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -31414.0,
+   "net_pnl": -14283.0,
    "qty_est": true
   },
   {
@@ -1170,11 +1171,11 @@
    "exit_date": "2026-09-01",
    "buy": 623.85,
    "sell": 781.0,
-   "qty": 601,
+   "qty": 273,
    "ret_pct": 25.19,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": 92336.0,
+   "net_pnl": 41982.0,
    "qty_est": true
   },
   {
@@ -1183,11 +1184,11 @@
    "exit_date": "2026-09-01",
    "buy": 478.25,
    "sell": 459.45,
-   "qty": 796,
+   "qty": 362,
    "ret_pct": -3.93,
    "reason": "trail_sma20",
    "src": "backtest",
-   "net_pnl": -16831.0,
+   "net_pnl": -7653.0,
    "qty_est": true
   }
  ],
@@ -1196,3752 +1197,3752 @@
  "nav_curve": [
   {
    "date": "2023-08-28",
-   "nav": 674476.0,
+   "nav": 306664.0,
    "bench": 212.87
   },
   {
    "date": "2023-08-29",
-   "nav": 681507.0,
+   "nav": 309861.0,
    "bench": 213.16
   },
   {
    "date": "2023-08-30",
-   "nav": 678989.0,
+   "nav": 308716.0,
    "bench": 213.54
   },
   {
    "date": "2023-08-31",
-   "nav": 694291.0,
+   "nav": 315674.0,
    "bench": 212.77
   },
   {
    "date": "2023-09-01",
-   "nav": 709483.0,
+   "nav": 322581.0,
    "bench": 214.27
   },
   {
    "date": "2023-09-04",
-   "nav": 745676.0,
+   "nav": 339037.0,
    "bench": 215.59
   },
   {
    "date": "2023-09-05",
-   "nav": 764074.0,
+   "nav": 347402.0,
    "bench": 215.84
   },
   {
    "date": "2023-09-06",
-   "nav": 743938.0,
+   "nav": 338247.0,
    "bench": 216.22
   },
   {
    "date": "2023-09-07",
-   "nav": 755508.0,
+   "nav": 343507.0,
    "bench": 217.29
   },
   {
    "date": "2023-09-08",
-   "nav": 757218.0,
+   "nav": 344285.0,
    "bench": 218.41
   },
   {
    "date": "2023-09-11",
-   "nav": 787331.0,
+   "nav": 357976.0,
    "bench": 220.38
   },
   {
    "date": "2023-09-12",
-   "nav": 759385.0,
+   "nav": 345270.0,
    "bench": 220.19
   },
   {
    "date": "2023-09-13",
-   "nav": 740036.0,
+   "nav": 336473.0,
    "bench": 221.43
   },
   {
    "date": "2023-09-14",
-   "nav": 744004.0,
+   "nav": 338277.0,
    "bench": 221.53
   },
   {
    "date": "2023-09-15",
-   "nav": 729081.0,
+   "nav": 331492.0,
    "bench": 222.57
   },
   {
    "date": "2023-09-18",
-   "nav": 723743.0,
+   "nav": 329065.0,
    "bench": 221.92
   },
   {
    "date": "2023-09-20",
-   "nav": 741797.0,
+   "nav": 337273.0,
    "bench": 219.6
   },
   {
    "date": "2023-09-21",
-   "nav": 718128.0,
+   "nav": 326512.0,
    "bench": 217.63
   },
   {
    "date": "2023-09-22",
-   "nav": 717098.0,
+   "nav": 326043.0,
    "bench": 216.81
   },
   {
    "date": "2023-09-25",
-   "nav": 729253.0,
+   "nav": 331570.0,
    "bench": 216.8
   },
   {
    "date": "2023-09-26",
-   "nav": 733765.0,
+   "nav": 333621.0,
    "bench": 216.57
   },
   {
    "date": "2023-09-27",
-   "nav": 731330.0,
+   "nav": 332514.0,
    "bench": 217.56
   },
   {
    "date": "2023-09-28",
-   "nav": 730278.0,
+   "nav": 332036.0,
    "bench": 215.77
   },
   {
    "date": "2023-09-29",
-   "nav": 733821.0,
+   "nav": 333647.0,
    "bench": 216.75
   },
   {
    "date": "2023-10-03",
-   "nav": 741601.0,
+   "nav": 337184.0,
    "bench": 215.57
   },
   {
    "date": "2023-10-04",
-   "nav": 737329.0,
+   "nav": 335242.0,
    "bench": 214.4
   },
   {
    "date": "2023-10-05",
-   "nav": 737075.0,
+   "nav": 335126.0,
    "bench": 215.53
   },
   {
    "date": "2023-10-06",
-   "nav": 750500.0,
+   "nav": 341230.0,
    "bench": 216.62
   },
   {
    "date": "2023-10-09",
-   "nav": 750172.0,
+   "nav": 341081.0,
    "bench": 215.48
   },
   {
    "date": "2023-10-10",
-   "nav": 749509.0,
+   "nav": 340780.0,
    "bench": 217.13
   },
   {
    "date": "2023-10-11",
-   "nav": 752671.0,
+   "nav": 342217.0,
    "bench": 218.76
   },
   {
    "date": "2023-10-12",
-   "nav": 764051.0,
+   "nav": 347392.0,
    "bench": 218.6
   },
   {
    "date": "2023-10-13",
-   "nav": 763873.0,
+   "nav": 347311.0,
    "bench": 218.07
   },
   {
    "date": "2023-10-16",
-   "nav": 756933.0,
+   "nav": 344155.0,
    "bench": 217.9
   },
   {
    "date": "2023-10-17",
-   "nav": 758843.0,
+   "nav": 345024.0,
    "bench": 218.55
   },
   {
    "date": "2023-10-18",
-   "nav": 759558.0,
+   "nav": 345349.0,
    "bench": 217.2
   },
   {
    "date": "2023-10-19",
-   "nav": 790021.0,
+   "nav": 359199.0,
    "bench": 216.67
   },
   {
    "date": "2023-10-20",
-   "nav": 787587.0,
+   "nav": 358093.0,
    "bench": 215.3
   },
   {
    "date": "2023-10-23",
-   "nav": 762643.0,
+   "nav": 346751.0,
    "bench": 213.17
   },
   {
    "date": "2023-10-25",
-   "nav": 760772.0,
+   "nav": 345901.0,
    "bench": 211.48
   },
   {
    "date": "2023-10-26",
-   "nav": 745961.0,
+   "nav": 339167.0,
    "bench": 208.74
   },
   {
    "date": "2023-10-27",
-   "nav": 758123.0,
+   "nav": 344696.0,
    "bench": 210.57
   },
   {
    "date": "2023-10-30",
-   "nav": 769202.0,
+   "nav": 349734.0,
    "bench": 211.52
   },
   {
    "date": "2023-10-31",
-   "nav": 756022.0,
+   "nav": 343741.0,
    "bench": 210.98
   },
   {
    "date": "2023-11-01",
-   "nav": 764237.0,
+   "nav": 347476.0,
    "bench": 209.99
   },
   {
    "date": "2023-11-02",
-   "nav": 762847.0,
+   "nav": 346844.0,
    "bench": 211.64
   },
   {
    "date": "2023-11-03",
-   "nav": 781877.0,
+   "nav": 355496.0,
    "bench": 212.69
   },
   {
    "date": "2023-11-06",
-   "nav": 787565.0,
+   "nav": 358083.0,
    "bench": 214.56
   },
   {
    "date": "2023-11-07",
-   "nav": 779066.0,
+   "nav": 354218.0,
    "bench": 214.49
   },
   {
    "date": "2023-11-08",
-   "nav": 786774.0,
+   "nav": 357723.0,
    "bench": 214.83
   },
   {
    "date": "2023-11-09",
-   "nav": 768579.0,
+   "nav": 349450.0,
    "bench": 214.3
   },
   {
    "date": "2023-11-10",
-   "nav": 770592.0,
+   "nav": 350366.0,
    "bench": 214.24
   },
   {
    "date": "2023-11-12",
-   "nav": 712404.0,
+   "nav": 323909.0,
    "bench": 215.16
   },
   {
    "date": "2023-11-13",
-   "nav": 768400.0,
+   "nav": 349369.0,
    "bench": 214.55
   },
   {
    "date": "2023-11-15",
-   "nav": 774685.0,
+   "nav": 352226.0,
    "bench": 216.97
   },
   {
    "date": "2023-11-16",
-   "nav": 767383.0,
+   "nav": 348906.0,
    "bench": 218.16
   },
   {
    "date": "2023-11-17",
-   "nav": 775501.0,
+   "nav": 352597.0,
    "bench": 218.02
   },
   {
    "date": "2023-11-20",
-   "nav": 778955.0,
+   "nav": 354168.0,
    "bench": 217.35
   },
   {
    "date": "2023-11-21",
-   "nav": 780874.0,
+   "nav": 355040.0,
    "bench": 218.39
   },
   {
    "date": "2023-11-22",
-   "nav": 773234.0,
+   "nav": 351567.0,
    "bench": 218.53
   },
   {
    "date": "2023-11-23",
-   "nav": 773456.0,
+   "nav": 351668.0,
    "bench": 218.56
   },
   {
    "date": "2023-11-24",
-   "nav": 776796.0,
+   "nav": 353186.0,
    "bench": 218.48
   },
   {
    "date": "2023-11-28",
-   "nav": 785632.0,
+   "nav": 357204.0,
    "bench": 219.56
   },
   {
    "date": "2023-11-29",
-   "nav": 788432.0,
+   "nav": 358477.0,
    "bench": 221.66
   },
   {
    "date": "2023-11-30",
-   "nav": 797848.0,
+   "nav": 362758.0,
    "bench": 222.13
   },
   {
    "date": "2023-12-01",
-   "nav": 809077.0,
+   "nav": 367864.0,
    "bench": 223.75
   },
   {
    "date": "2023-12-04",
-   "nav": 820691.0,
+   "nav": 373144.0,
    "bench": 228.18
   },
   {
    "date": "2023-12-05",
-   "nav": 804843.0,
+   "nav": 365938.0,
    "bench": 230.06
   },
   {
    "date": "2023-12-06",
-   "nav": 806067.0,
+   "nav": 366495.0,
    "bench": 230.94
   },
   {
    "date": "2023-12-07",
-   "nav": 824233.0,
+   "nav": 374755.0,
    "bench": 230.83
   },
   {
    "date": "2023-12-08",
-   "nav": 817101.0,
+   "nav": 371512.0,
    "bench": 231.36
   },
   {
    "date": "2023-12-11",
-   "nav": 819615.0,
+   "nav": 372655.0,
    "bench": 231.79
   },
   {
    "date": "2023-12-12",
-   "nav": 839711.0,
+   "nav": 381792.0,
    "bench": 230.96
   },
   {
    "date": "2023-12-13",
-   "nav": 856848.0,
+   "nav": 389584.0,
    "bench": 231.15
   },
   {
    "date": "2023-12-14",
-   "nav": 862523.0,
+   "nav": 392164.0,
    "bench": 233.99
   },
   {
    "date": "2023-12-15",
-   "nav": 861917.0,
+   "nav": 391888.0,
    "bench": 236.62
   },
   {
    "date": "2023-12-18",
-   "nav": 846143.0,
+   "nav": 384716.0,
    "bench": 236.57
   },
   {
    "date": "2023-12-19",
-   "nav": 838598.0,
+   "nav": 381286.0,
    "bench": 236.7
   },
   {
    "date": "2023-12-20",
-   "nav": 777980.0,
+   "nav": 353725.0,
    "bench": 233.25
   },
   {
    "date": "2023-12-21",
-   "nav": 808511.0,
+   "nav": 367606.0,
    "bench": 234.6
   },
   {
    "date": "2023-12-22",
-   "nav": 820812.0,
+   "nav": 373199.0,
    "bench": 235.5
   },
   {
    "date": "2023-12-26",
-   "nav": 823357.0,
+   "nav": 374356.0,
    "bench": 236.93
   },
   {
    "date": "2023-12-27",
-   "nav": 828675.0,
+   "nav": 376774.0,
    "bench": 238.91
   },
   {
    "date": "2023-12-28",
-   "nav": 821076.0,
+   "nav": 373319.0,
    "bench": 240.16
   },
   {
    "date": "2023-12-29",
-   "nav": 819928.0,
+   "nav": 372797.0,
    "bench": 239.65
   },
   {
    "date": "2024-01-01",
-   "nav": 827170.0,
+   "nav": 376090.0,
    "bench": 240.35
   },
   {
    "date": "2024-01-02",
-   "nav": 830385.0,
+   "nav": 377552.0,
    "bench": 239.21
   },
   {
    "date": "2024-01-03",
-   "nav": 834695.0,
+   "nav": 379511.0,
    "bench": 237.74
   },
   {
    "date": "2024-01-04",
-   "nav": 832620.0,
+   "nav": 378568.0,
    "bench": 239.3
   },
   {
    "date": "2024-01-05",
-   "nav": 841774.0,
+   "nav": 382730.0,
    "bench": 239.74
   },
   {
    "date": "2024-01-08",
-   "nav": 823200.0,
+   "nav": 374285.0,
    "bench": 237.68
   },
   {
    "date": "2024-01-09",
-   "nav": 820590.0,
+   "nav": 373098.0,
    "bench": 237.78
   },
   {
    "date": "2024-01-10",
-   "nav": 831115.0,
+   "nav": 377884.0,
    "bench": 238.76
   },
   {
    "date": "2024-01-11",
-   "nav": 844614.0,
+   "nav": 384021.0,
    "bench": 238.87
   },
   {
    "date": "2024-01-12",
-   "nav": 846326.0,
+   "nav": 384800.0,
    "bench": 241.73
   },
   {
    "date": "2024-01-15",
-   "nav": 854660.0,
+   "nav": 388589.0,
    "bench": 244.07
   },
   {
    "date": "2024-01-16",
-   "nav": 847778.0,
+   "nav": 385460.0,
    "bench": 243.24
   },
   {
    "date": "2024-01-17",
-   "nav": 844052.0,
+   "nav": 383766.0,
    "bench": 238.38
   },
   {
    "date": "2024-01-18",
-   "nav": 852515.0,
+   "nav": 387613.0,
    "bench": 237.51
   },
   {
    "date": "2024-01-19",
-   "nav": 888507.0,
+   "nav": 403978.0,
    "bench": 239.15
   },
   {
    "date": "2024-01-20",
-   "nav": 933625.0,
+   "nav": 424492.0,
    "bench": 238.73
   },
   {
    "date": "2024-01-23",
-   "nav": 868812.0,
+   "nav": 395023.0,
    "bench": 234.87
   },
   {
    "date": "2024-01-24",
-   "nav": 878512.0,
+   "nav": 399434.0,
    "bench": 237.29
   },
   {
    "date": "2024-01-25",
-   "nav": 897146.0,
+   "nav": 407906.0,
    "bench": 236.15
   },
   {
    "date": "2024-01-29",
-   "nav": 922652.0,
+   "nav": 419503.0,
    "bench": 240.05
   },
   {
    "date": "2024-01-30",
-   "nav": 924612.0,
+   "nav": 420394.0,
    "bench": 238.13
   },
   {
    "date": "2024-01-31",
-   "nav": 923482.0,
+   "nav": 419880.0,
    "bench": 240.26
   },
   {
    "date": "2024-02-01",
-   "nav": 907394.0,
+   "nav": 412565.0,
    "bench": 240.03
   },
   {
    "date": "2024-02-02",
-   "nav": 911727.0,
+   "nav": 414535.0,
    "bench": 241.3
   },
   {
    "date": "2024-02-05",
-   "nav": 897659.0,
+   "nav": 408139.0,
    "bench": 240.24
   },
   {
    "date": "2024-02-06",
-   "nav": 914350.0,
+   "nav": 415728.0,
    "bench": 242.01
   },
   {
    "date": "2024-02-07",
-   "nav": 916387.0,
+   "nav": 416654.0,
    "bench": 242.35
   },
   {
    "date": "2024-02-08",
-   "nav": 911589.0,
+   "nav": 414473.0,
    "bench": 240.28
   },
   {
    "date": "2024-02-09",
-   "nav": 899615.0,
+   "nav": 409028.0,
    "bench": 240.78
   },
   {
    "date": "2024-02-12",
-   "nav": 892965.0,
+   "nav": 406005.0,
    "bench": 239.32
   },
   {
    "date": "2024-02-13",
-   "nav": 895888.0,
+   "nav": 407334.0,
    "bench": 240.59
   },
   {
    "date": "2024-02-14",
-   "nav": 903910.0,
+   "nav": 410981.0,
    "bench": 241.55
   },
   {
    "date": "2024-02-15",
-   "nav": 905332.0,
+   "nav": 411628.0,
    "bench": 242.72
   },
   {
    "date": "2024-02-16",
-   "nav": 908135.0,
+   "nav": 412902.0,
    "bench": 243.99
   },
   {
    "date": "2024-02-19",
-   "nav": 928913.0,
+   "nav": 422349.0,
    "bench": 245.04
   },
   {
    "date": "2024-02-20",
-   "nav": 925020.0,
+   "nav": 420579.0,
    "bench": 245.37
   },
   {
    "date": "2024-02-21",
-   "nav": 937055.0,
+   "nav": 426051.0,
    "bench": 243.87
   },
   {
    "date": "2024-02-22",
-   "nav": 925920.0,
+   "nav": 420989.0,
    "bench": 245.79
   },
   {
    "date": "2024-02-23",
-   "nav": 924048.0,
+   "nav": 420137.0,
    "bench": 245.69
   },
   {
    "date": "2024-02-26",
-   "nav": 927026.0,
+   "nav": 421491.0,
    "bench": 244.87
   },
   {
    "date": "2024-02-27",
-   "nav": 930771.0,
+   "nav": 423194.0,
    "bench": 245.5
   },
   {
    "date": "2024-02-28",
-   "nav": 895943.0,
+   "nav": 407359.0,
    "bench": 243.07
   },
   {
    "date": "2024-02-29",
-   "nav": 927495.0,
+   "nav": 421705.0,
    "bench": 243.25
   },
   {
    "date": "2024-03-01",
-   "nav": 919369.0,
+   "nav": 418010.0,
    "bench": 246.85
   },
   {
    "date": "2024-03-02",
-   "nav": 926637.0,
+   "nav": 421315.0,
    "bench": 247.31
   },
   {
    "date": "2024-03-04",
-   "nav": 908998.0,
+   "nav": 413295.0,
    "bench": 247.83
   },
   {
    "date": "2024-03-05",
-   "nav": 913430.0,
+   "nav": 415310.0,
    "bench": 247.34
   },
   {
    "date": "2024-03-06",
-   "nav": 894257.0,
+   "nav": 406592.0,
    "bench": 248.62
   },
   {
    "date": "2024-03-07",
-   "nav": 904093.0,
+   "nav": 411064.0,
    "bench": 248.67
   },
   {
    "date": "2024-03-11",
-   "nav": 880143.0,
+   "nav": 400175.0,
    "bench": 247.45
   },
   {
    "date": "2024-03-12",
-   "nav": 829987.0,
+   "nav": 377371.0,
    "bench": 247.42
   },
   {
    "date": "2024-03-13",
-   "nav": 790449.0,
+   "nav": 359394.0,
    "bench": 243.71
   },
   {
    "date": "2024-03-14",
-   "nav": 812924.0,
+   "nav": 369613.0,
    "bench": 245.39
   },
   {
    "date": "2024-03-15",
-   "nav": 817645.0,
+   "nav": 371759.0,
    "bench": 243.8
   },
   {
    "date": "2024-03-18",
-   "nav": 806148.0,
+   "nav": 366532.0,
    "bench": 243.98
   },
   {
    "date": "2024-03-19",
-   "nav": 792206.0,
+   "nav": 360193.0,
    "bench": 241.6
   },
   {
    "date": "2024-03-20",
-   "nav": 807889.0,
+   "nav": 367323.0,
    "bench": 241.58
   },
   {
    "date": "2024-03-21",
-   "nav": 849881.0,
+   "nav": 386416.0,
    "bench": 243.99
   },
   {
    "date": "2024-03-22",
-   "nav": 881147.0,
+   "nav": 400632.0,
    "bench": 244.74
   },
   {
    "date": "2024-03-26",
-   "nav": 857235.0,
+   "nav": 389760.0,
    "bench": 243.79
   },
   {
    "date": "2024-03-27",
-   "nav": 848689.0,
+   "nav": 385874.0,
    "bench": 244.96
   },
   {
    "date": "2024-03-28",
-   "nav": 852115.0,
+   "nav": 387432.0,
    "bench": 246.96
   },
   {
    "date": "2024-04-01",
-   "nav": 855367.0,
+   "nav": 388910.0,
    "bench": 248.19
   },
   {
    "date": "2024-04-02",
-   "nav": 844113.0,
+   "nav": 383793.0,
    "bench": 248.65
   },
   {
    "date": "2024-04-03",
-   "nav": 843495.0,
+   "nav": 383512.0,
    "bench": 248.59
   },
   {
    "date": "2024-04-04",
-   "nav": 839511.0,
+   "nav": 381701.0,
    "bench": 249.23
   },
   {
    "date": "2024-04-05",
-   "nav": 867646.0,
+   "nav": 394493.0,
    "bench": 249.05
   },
   {
    "date": "2024-04-08",
-   "nav": 879074.0,
+   "nav": 399689.0,
    "bench": 250.75
   },
   {
    "date": "2024-04-09",
-   "nav": 877247.0,
+   "nav": 398858.0,
    "bench": 250.74
   },
   {
    "date": "2024-04-10",
-   "nav": 880833.0,
+   "nav": 400489.0,
    "bench": 251.57
   },
   {
    "date": "2024-04-12",
-   "nav": 862715.0,
+   "nav": 392251.0,
    "bench": 249.56
   },
   {
    "date": "2024-04-15",
-   "nav": 855636.0,
+   "nav": 389033.0,
    "bench": 246.87
   },
   {
    "date": "2024-04-16",
-   "nav": 866041.0,
+   "nav": 393763.0,
    "bench": 245.52
   },
   {
    "date": "2024-04-18",
-   "nav": 891838.0,
+   "nav": 405493.0,
    "bench": 243.94
   },
   {
    "date": "2024-04-19",
-   "nav": 902400.0,
+   "nav": 410295.0,
    "bench": 245.53
   },
   {
    "date": "2024-04-22",
-   "nav": 900467.0,
+   "nav": 409416.0,
    "bench": 247.31
   },
   {
    "date": "2024-04-23",
-   "nav": 892960.0,
+   "nav": 406003.0,
    "bench": 247.82
   },
   {
    "date": "2024-04-24",
-   "nav": 893187.0,
+   "nav": 406106.0,
    "bench": 247.94
   },
   {
    "date": "2024-04-25",
-   "nav": 925449.0,
+   "nav": 420774.0,
    "bench": 249.27
   },
   {
    "date": "2024-04-26",
-   "nav": 907558.0,
+   "nav": 412640.0,
    "bench": 248.44
   },
   {
    "date": "2024-04-29",
-   "nav": 906040.0,
+   "nav": 411950.0,
    "bench": 250.59
   },
   {
    "date": "2024-04-30",
-   "nav": 937936.0,
+   "nav": 426452.0,
    "bench": 250.06
   },
   {
    "date": "2024-05-02",
-   "nav": 945111.0,
+   "nav": 429714.0,
    "bench": 250.84
   },
   {
    "date": "2024-05-03",
-   "nav": 931347.0,
+   "nav": 423456.0,
    "bench": 248.75
   },
   {
    "date": "2024-05-06",
-   "nav": 924294.0,
+   "nav": 420249.0,
    "bench": 248.37
   },
   {
    "date": "2024-05-07",
-   "nav": 899483.0,
+   "nav": 408968.0,
    "bench": 247.11
   },
   {
    "date": "2024-05-08",
-   "nav": 907668.0,
+   "nav": 412690.0,
    "bench": 247.24
   },
   {
    "date": "2024-05-09",
-   "nav": 891212.0,
+   "nav": 405208.0,
    "bench": 243.49
   },
   {
    "date": "2024-05-10",
-   "nav": 890377.0,
+   "nav": 404828.0,
    "bench": 244.97
   },
   {
    "date": "2024-05-13",
-   "nav": 903466.0,
+   "nav": 410779.0,
    "bench": 245.16
   },
   {
    "date": "2024-05-14",
-   "nav": 934166.0,
+   "nav": 424738.0,
    "bench": 246.61
   },
   {
    "date": "2024-05-15",
-   "nav": 948891.0,
+   "nav": 431433.0,
    "bench": 246.42
   },
   {
    "date": "2024-05-16",
-   "nav": 967458.0,
+   "nav": 439875.0,
    "bench": 248.18
   },
   {
    "date": "2024-05-17",
-   "nav": 972878.0,
+   "nav": 442339.0,
    "bench": 248.73
   },
   {
    "date": "2024-05-18",
-   "nav": 964645.0,
+   "nav": 438596.0,
    "bench": 249.05
   },
   {
    "date": "2024-05-21",
-   "nav": 959659.0,
+   "nav": 436329.0,
    "bench": 249.74
   },
   {
    "date": "2024-05-22",
-   "nav": 951778.0,
+   "nav": 432745.0,
    "bench": 250.36
   },
   {
    "date": "2024-05-23",
-   "nav": 977979.0,
+   "nav": 444658.0,
    "bench": 254.29
   },
   {
    "date": "2024-05-24",
-   "nav": 963887.0,
+   "nav": 438251.0,
    "bench": 254.98
   },
   {
    "date": "2024-05-27",
-   "nav": 949364.0,
+   "nav": 431648.0,
    "bench": 254.72
   },
   {
    "date": "2024-05-28",
-   "nav": 945552.0,
+   "nav": 429915.0,
    "bench": 254.2
   },
   {
    "date": "2024-05-29",
-   "nav": 943138.0,
+   "nav": 428817.0,
    "bench": 252.37
   },
   {
    "date": "2024-05-30",
-   "nav": 934254.0,
+   "nav": 424778.0,
    "bench": 250.35
   },
   {
    "date": "2024-05-31",
-   "nav": 925128.0,
+   "nav": 420628.0,
    "bench": 251.15
   },
   {
    "date": "2024-06-03",
-   "nav": 941354.0,
+   "nav": 428006.0,
    "bench": 258.14
   },
   {
    "date": "2024-06-04",
-   "nav": 884970.0,
+   "nav": 402370.0,
    "bench": 250.48
   },
   {
    "date": "2024-06-05",
-   "nav": 907929.0,
+   "nav": 412809.0,
    "bench": 251.3
   },
   {
    "date": "2024-06-06",
-   "nav": 906411.0,
+   "nav": 412118.0,
    "bench": 252.98
   },
   {
    "date": "2024-06-07",
-   "nav": 912655.0,
+   "nav": 414957.0,
    "bench": 258.42
   },
   {
    "date": "2024-06-10",
-   "nav": 923642.0,
+   "nav": 419953.0,
    "bench": 257.94
   },
   {
    "date": "2024-06-11",
-   "nav": 929055.0,
+   "nav": 422414.0,
    "bench": 258.8
   },
   {
    "date": "2024-06-12",
-   "nav": 935532.0,
+   "nav": 425359.0,
    "bench": 259.39
   },
   {
    "date": "2024-06-13",
-   "nav": 936149.0,
+   "nav": 425639.0,
    "bench": 260.3
   },
   {
    "date": "2024-06-14",
-   "nav": 952898.0,
+   "nav": 433255.0,
    "bench": 260.65
   },
   {
    "date": "2024-06-18",
-   "nav": 967528.0,
+   "nav": 439907.0,
    "bench": 261.56
   },
   {
    "date": "2024-06-19",
-   "nav": 951813.0,
+   "nav": 432761.0,
    "bench": 261.38
   },
   {
    "date": "2024-06-20",
-   "nav": 944954.0,
+   "nav": 429643.0,
    "bench": 261.72
   },
   {
    "date": "2024-06-21",
-   "nav": 934015.0,
+   "nav": 424669.0,
    "bench": 260.87
   },
   {
    "date": "2024-06-24",
-   "nav": 947408.0,
+   "nav": 430759.0,
    "bench": 261.66
   },
   {
    "date": "2024-06-25",
-   "nav": 948080.0,
+   "nav": 431064.0,
    "bench": 263.59
   },
   {
    "date": "2024-06-26",
-   "nav": 943898.0,
+   "nav": 429163.0,
    "bench": 265.01
   },
   {
    "date": "2024-06-27",
-   "nav": 939790.0,
+   "nav": 427295.0,
    "bench": 266.95
   },
   {
    "date": "2024-06-28",
-   "nav": 959923.0,
+   "nav": 436449.0,
    "bench": 267.48
   },
   {
    "date": "2024-07-01",
-   "nav": 966996.0,
+   "nav": 439665.0,
    "bench": 268.3
   },
   {
    "date": "2024-07-02",
-   "nav": 965450.0,
+   "nav": 438962.0,
    "bench": 269.03
   },
   {
    "date": "2024-07-03",
-   "nav": 969286.0,
+   "nav": 440706.0,
    "bench": 270.23
   },
   {
    "date": "2024-07-04",
-   "nav": 983641.0,
+   "nav": 447233.0,
    "bench": 270.53
   },
   {
    "date": "2024-07-05",
-   "nav": 992547.0,
+   "nav": 451282.0,
    "bench": 270.53
   },
   {
    "date": "2024-07-08",
-   "nav": 991616.0,
+   "nav": 450859.0,
    "bench": 270.04
   },
   {
    "date": "2024-07-09",
-   "nav": 1007194.0,
+   "nav": 457941.0,
    "bench": 271.38
   },
   {
    "date": "2024-07-10",
-   "nav": 991911.0,
+   "nav": 450993.0,
    "bench": 270.92
   },
   {
    "date": "2024-07-11",
-   "nav": 1019588.0,
+   "nav": 463577.0,
    "bench": 270.75
   },
   {
    "date": "2024-07-12",
-   "nav": 1033486.0,
+   "nav": 469896.0,
    "bench": 271.94
   },
   {
    "date": "2024-07-15",
-   "nav": 1016492.0,
+   "nav": 462169.0,
    "bench": 273.09
   },
   {
    "date": "2024-07-16",
-   "nav": 1019127.0,
+   "nav": 463367.0,
    "bench": 273.55
   },
   {
    "date": "2024-07-18",
-   "nav": 998473.0,
+   "nav": 453976.0,
    "bench": 275.51
   },
   {
    "date": "2024-07-19",
-   "nav": 982185.0,
+   "nav": 446571.0,
    "bench": 273.29
   },
   {
    "date": "2024-07-22",
-   "nav": 969850.0,
+   "nav": 440962.0,
    "bench": 272.45
   },
   {
    "date": "2024-07-23",
-   "nav": 994634.0,
+   "nav": 452231.0,
    "bench": 272.64
   },
   {
    "date": "2024-07-24",
-   "nav": 1019833.0,
+   "nav": 463688.0,
    "bench": 271.89
   },
   {
    "date": "2024-07-25",
-   "nav": 991266.0,
+   "nav": 450699.0,
    "bench": 271.92
   },
   {
    "date": "2024-07-26",
-   "nav": 997755.0,
+   "nav": 453650.0,
    "bench": 276.06
   },
   {
    "date": "2024-07-29",
-   "nav": 999548.0,
+   "nav": 454465.0,
    "bench": 276.68
   },
   {
    "date": "2024-07-30",
-   "nav": 992309.0,
+   "nav": 451174.0,
    "bench": 277.1
   },
   {
    "date": "2024-07-31",
-   "nav": 1004362.0,
+   "nav": 456654.0,
    "bench": 277.75
   },
   {
    "date": "2024-08-01",
-   "nav": 992859.0,
+   "nav": 451424.0,
    "bench": 278.33
   },
   {
    "date": "2024-08-02",
-   "nav": 986471.0,
+   "nav": 448519.0,
    "bench": 275.69
   },
   {
    "date": "2024-08-05",
-   "nav": 943953.0,
+   "nav": 429188.0,
    "bench": 269.48
   },
   {
    "date": "2024-08-06",
-   "nav": 945965.0,
+   "nav": 430102.0,
    "bench": 267.61
   },
   {
    "date": "2024-08-07",
-   "nav": 965479.0,
+   "nav": 438975.0,
    "bench": 271.1
   },
   {
    "date": "2024-08-08",
-   "nav": 955169.0,
+   "nav": 434287.0,
    "bench": 269.33
   },
   {
    "date": "2024-08-09",
-   "nav": 962953.0,
+   "nav": 437826.0,
    "bench": 271.59
   },
   {
    "date": "2024-08-12",
-   "nav": 1009386.0,
+   "nav": 458938.0,
    "bench": 271.44
   },
   {
    "date": "2024-08-13",
-   "nav": 995229.0,
+   "nav": 452501.0,
    "bench": 269.52
   },
   {
    "date": "2024-08-14",
-   "nav": 991530.0,
+   "nav": 450820.0,
    "bench": 269.34
   },
   {
    "date": "2024-08-16",
-   "nav": 1004136.0,
+   "nav": 456551.0,
    "bench": 273.81
   },
   {
    "date": "2024-08-19",
-   "nav": 1013370.0,
+   "nav": 460750.0,
    "bench": 274.43
   },
   {
    "date": "2024-08-20",
-   "nav": 1014458.0,
+   "nav": 461244.0,
    "bench": 275.83
   },
   {
    "date": "2024-08-21",
-   "nav": 1032957.0,
+   "nav": 469655.0,
    "bench": 276.12
   },
   {
    "date": "2024-08-22",
-   "nav": 1047297.0,
+   "nav": 476175.0,
    "bench": 276.48
   },
   {
    "date": "2024-08-23",
-   "nav": 1069023.0,
+   "nav": 486053.0,
    "bench": 276.6
   },
   {
    "date": "2024-08-26",
-   "nav": 1085225.0,
+   "nav": 493420.0,
    "bench": 278.84
   },
   {
    "date": "2024-08-27",
-   "nav": 1106722.0,
+   "nav": 503194.0,
    "bench": 278.7
   },
   {
    "date": "2024-08-28",
-   "nav": 1101444.0,
+   "nav": 500794.0,
    "bench": 278.94
   },
   {
    "date": "2024-08-29",
-   "nav": 1076854.0,
+   "nav": 489614.0,
    "bench": 280.1
   },
   {
    "date": "2024-08-30",
-   "nav": 1094758.0,
+   "nav": 497754.0,
    "bench": 281.08
   },
   {
    "date": "2024-09-02",
-   "nav": 1091899.0,
+   "nav": 496454.0,
    "bench": 281.45
   },
   {
    "date": "2024-09-03",
-   "nav": 1103626.0,
+   "nav": 501786.0,
    "bench": 281.72
   },
   {
    "date": "2024-09-04",
-   "nav": 1146616.0,
+   "nav": 521333.0,
    "bench": 281.28
   },
   {
    "date": "2024-09-05",
-   "nav": 1157648.0,
+   "nav": 526348.0,
    "bench": 280.43
   },
   {
    "date": "2024-09-06",
-   "nav": 1166758.0,
+   "nav": 530491.0,
    "bench": 277.82
   },
   {
    "date": "2024-09-09",
-   "nav": 1148709.0,
+   "nav": 522284.0,
    "bench": 277.68
   },
   {
    "date": "2024-09-10",
-   "nav": 1169639.0,
+   "nav": 531800.0,
    "bench": 279.2
   },
   {
    "date": "2024-09-11",
-   "nav": 1181192.0,
+   "nav": 537053.0,
    "bench": 277.54
   },
   {
    "date": "2024-09-12",
-   "nav": 1199526.0,
+   "nav": 545389.0,
    "bench": 282.71
   },
   {
    "date": "2024-09-13",
-   "nav": 1240139.0,
+   "nav": 563855.0,
    "bench": 283.19
   },
   {
    "date": "2024-09-16",
-   "nav": 1252316.0,
+   "nav": 569391.0,
    "bench": 283.27
   },
   {
    "date": "2024-09-17",
-   "nav": 1278096.0,
+   "nav": 581113.0,
    "bench": 283.89
   },
   {
    "date": "2024-09-18",
-   "nav": 1288241.0,
+   "nav": 585725.0,
    "bench": 283.36
   },
   {
    "date": "2024-09-19",
-   "nav": 1260123.0,
+   "nav": 572941.0,
    "bench": 283.92
   },
   {
    "date": "2024-09-20",
-   "nav": 1256586.0,
+   "nav": 571333.0,
    "bench": 287.1
   },
   {
    "date": "2024-09-23",
-   "nav": 1304022.0,
+   "nav": 592900.0,
    "bench": 289.34
   },
   {
    "date": "2024-09-24",
-   "nav": 1306062.0,
+   "nav": 593828.0,
    "bench": 289.3
   },
   {
    "date": "2024-09-25",
-   "nav": 1324776.0,
+   "nav": 602337.0,
    "bench": 290.09
   },
   {
    "date": "2024-09-26",
-   "nav": 1340560.0,
+   "nav": 609513.0,
    "bench": 291.55
   },
   {
    "date": "2024-09-27",
-   "nav": 1360772.0,
+   "nav": 618703.0,
    "bench": 291.97
   },
   {
    "date": "2024-09-30",
-   "nav": 1358912.0,
+   "nav": 617857.0,
    "bench": 288.38
   },
   {
    "date": "2024-10-01",
-   "nav": 1353709.0,
+   "nav": 615492.0,
    "bench": 288.27
   },
   {
    "date": "2024-10-03",
-   "nav": 1359283.0,
+   "nav": 618026.0,
    "bench": 282.69
   },
   {
    "date": "2024-10-04",
-   "nav": 1343975.0,
+   "nav": 611066.0,
    "bench": 280.15
   },
   {
    "date": "2024-10-07",
-   "nav": 1298561.0,
+   "nav": 590417.0,
    "bench": 278.01
   },
   {
    "date": "2024-10-08",
-   "nav": 1321381.0,
+   "nav": 600793.0,
    "bench": 279.4
   },
   {
    "date": "2024-10-09",
-   "nav": 1316456.0,
+   "nav": 598554.0,
    "bench": 278.72
   },
   {
    "date": "2024-10-10",
-   "nav": 1306685.0,
+   "nav": 594111.0,
    "bench": 279.3
   },
   {
    "date": "2024-10-11",
-   "nav": 1328473.0,
+   "nav": 604018.0,
    "bench": 278.72
   },
   {
    "date": "2024-10-14",
-   "nav": 1363610.0,
+   "nav": 619993.0,
    "bench": 280.76
   },
   {
    "date": "2024-10-15",
-   "nav": 1385925.0,
+   "nav": 630139.0,
    "bench": 279.83
   },
   {
    "date": "2024-10-16",
-   "nav": 1381935.0,
+   "nav": 628325.0,
    "bench": 278.5
   },
   {
    "date": "2024-10-17",
-   "nav": 1348547.0,
+   "nav": 613145.0,
    "bench": 276.69
   },
   {
    "date": "2024-10-18",
-   "nav": 1383671.0,
+   "nav": 629115.0,
    "bench": 277.53
   },
   {
    "date": "2024-10-21",
-   "nav": 1352934.0,
+   "nav": 615139.0,
    "bench": 276.47
   },
   {
    "date": "2024-10-22",
-   "nav": 1304287.0,
+   "nav": 593021.0,
    "bench": 273.56
   },
   {
    "date": "2024-10-23",
-   "nav": 1312522.0,
+   "nav": 596765.0,
    "bench": 273.09
   },
   {
    "date": "2024-10-24",
-   "nav": 1299726.0,
+   "nav": 590947.0,
    "bench": 272.12
   },
   {
    "date": "2024-10-25",
-   "nav": 1264165.0,
+   "nav": 574779.0,
    "bench": 270.48
   },
   {
    "date": "2024-10-28",
-   "nav": 1323722.0,
+   "nav": 601857.0,
    "bench": 271.97
   },
   {
    "date": "2024-10-29",
-   "nav": 1309662.0,
+   "nav": 595465.0,
    "bench": 273.59
   },
   {
    "date": "2024-10-30",
-   "nav": 1322533.0,
+   "nav": 601317.0,
    "bench": 272.16
   },
   {
    "date": "2024-10-31",
-   "nav": 1337095.0,
+   "nav": 607938.0,
    "bench": 270.64
   },
   {
    "date": "2024-11-01",
-   "nav": 1374698.0,
+   "nav": 625035.0,
    "bench": 272.37
   },
   {
    "date": "2024-11-04",
-   "nav": 1351892.0,
+   "nav": 614666.0,
    "bench": 268.47
   },
   {
    "date": "2024-11-05",
-   "nav": 1351047.0,
+   "nav": 614281.0,
    "bench": 270.79
   },
   {
    "date": "2024-11-06",
-   "nav": 1374053.0,
+   "nav": 624741.0,
    "bench": 273.91
   },
   {
    "date": "2024-11-07",
-   "nav": 1390078.0,
+   "nav": 632028.0,
    "bench": 270.7
   },
   {
    "date": "2024-11-08",
-   "nav": 1373340.0,
+   "nav": 624417.0,
    "bench": 270.03
   },
   {
    "date": "2024-11-11",
-   "nav": 1346084.0,
+   "nav": 612025.0,
    "bench": 269.96
   },
   {
    "date": "2024-11-12",
-   "nav": 1343594.0,
+   "nav": 610893.0,
    "bench": 267.18
   },
   {
    "date": "2024-11-13",
-   "nav": 1289397.0,
+   "nav": 586251.0,
    "bench": 263.64
   },
   {
    "date": "2024-11-14",
-   "nav": 1311470.0,
+   "nav": 596287.0,
    "bench": 263.57
   },
   {
    "date": "2024-11-18",
-   "nav": 1322921.0,
+   "nav": 601493.0,
    "bench": 262.47
   },
   {
    "date": "2024-11-19",
-   "nav": 1340755.0,
+   "nav": 609602.0,
    "bench": 263.07
   },
   {
    "date": "2024-11-21",
-   "nav": 1350637.0,
+   "nav": 614095.0,
    "bench": 261.29
   },
   {
    "date": "2024-11-22",
-   "nav": 1383448.0,
+   "nav": 629013.0,
    "bench": 266.86
   },
   {
    "date": "2024-11-25",
-   "nav": 1424948.0,
+   "nav": 647882.0,
    "bench": 270.73
   },
   {
    "date": "2024-11-26",
-   "nav": 1406518.0,
+   "nav": 639502.0,
    "bench": 270.54
   },
   {
    "date": "2024-11-27",
-   "nav": 1388421.0,
+   "nav": 631274.0,
    "bench": 271.54
   },
   {
    "date": "2024-11-28",
-   "nav": 1403925.0,
+   "nav": 638323.0,
    "bench": 267.68
   },
   {
    "date": "2024-11-29",
-   "nav": 1418535.0,
+   "nav": 644966.0,
    "bench": 269.88
   },
   {
    "date": "2024-12-02",
-   "nav": 1452178.0,
+   "nav": 660263.0,
    "bench": 271.38
   },
   {
    "date": "2024-12-03",
-   "nav": 1464060.0,
+   "nav": 665665.0,
    "bench": 272.98
   },
   {
    "date": "2024-12-04",
-   "nav": 1469172.0,
+   "nav": 667989.0,
    "bench": 273.43
   },
   {
    "date": "2024-12-05",
-   "nav": 1454938.0,
+   "nav": 661518.0,
    "bench": 275.92
   },
   {
    "date": "2024-12-06",
-   "nav": 1466312.0,
+   "nav": 666689.0,
    "bench": 275.88
   },
   {
    "date": "2024-12-09",
-   "nav": 1496026.0,
+   "nav": 680199.0,
    "bench": 275.14
   },
   {
    "date": "2024-12-10",
-   "nav": 1501188.0,
+   "nav": 682546.0,
    "bench": 274.68
   },
   {
    "date": "2024-12-11",
-   "nav": 1504861.0,
+   "nav": 684216.0,
    "bench": 274.97
   },
   {
    "date": "2024-12-12",
-   "nav": 1489229.0,
+   "nav": 677109.0,
    "bench": 274.1
   },
   {
    "date": "2024-12-13",
-   "nav": 1475585.0,
+   "nav": 670905.0,
    "bench": 276.08
   },
   {
    "date": "2024-12-16",
-   "nav": 1472644.0,
+   "nav": 669568.0,
    "bench": 275.48
   },
   {
    "date": "2024-12-17",
-   "nav": 1455378.0,
+   "nav": 661718.0,
    "bench": 272.22
   },
   {
    "date": "2024-12-18",
-   "nav": 1475106.0,
+   "nav": 670687.0,
    "bench": 270.7
   },
   {
    "date": "2024-12-19",
-   "nav": 1491018.0,
+   "nav": 677922.0,
    "bench": 268.39
   },
   {
    "date": "2024-12-20",
-   "nav": 1427018.0,
+   "nav": 648823.0,
    "bench": 264.15
   },
   {
    "date": "2024-12-23",
-   "nav": 1403941.0,
+   "nav": 638331.0,
    "bench": 265.66
   },
   {
    "date": "2024-12-24",
-   "nav": 1415284.0,
+   "nav": 643488.0,
    "bench": 265.49
   },
   {
    "date": "2024-12-26",
-   "nav": 1426924.0,
+   "nav": 648780.0,
    "bench": 265.67
   },
   {
    "date": "2024-12-27",
-   "nav": 1425698.0,
+   "nav": 648223.0,
    "bench": 266.39
   },
   {
    "date": "2024-12-30",
-   "nav": 1454850.0,
+   "nav": 661478.0,
    "bench": 264.37
   },
   {
    "date": "2024-12-31",
-   "nav": 1452774.0,
+   "nav": 660534.0,
    "bench": 264.47
   },
   {
    "date": "2025-01-01",
-   "nav": 1463270.0,
+   "nav": 665306.0,
    "bench": 265.59
   },
   {
    "date": "2025-01-02",
-   "nav": 1477510.0,
+   "nav": 671780.0,
    "bench": 269.89
   },
   {
    "date": "2025-01-03",
-   "nav": 1510731.0,
+   "nav": 686885.0,
    "bench": 268.41
   },
   {
    "date": "2025-01-06",
-   "nav": 1452827.0,
+   "nav": 660558.0,
    "bench": 264.48
   },
   {
    "date": "2025-01-07",
-   "nav": 1491338.0,
+   "nav": 678068.0,
    "bench": 265.16
   },
   {
    "date": "2025-01-08",
-   "nav": 1478771.0,
+   "nav": 672354.0,
    "bench": 264.92
   },
   {
    "date": "2025-01-09",
-   "nav": 1458804.0,
+   "nav": 663275.0,
    "bench": 263.15
   },
   {
    "date": "2025-01-10",
-   "nav": 1426713.0,
+   "nav": 648684.0,
    "bench": 262.22
   },
   {
    "date": "2025-01-13",
-   "nav": 1408535.0,
+   "nav": 640419.0,
    "bench": 258.4
   },
   {
    "date": "2025-01-14",
-   "nav": 1424694.0,
+   "nav": 647766.0,
    "bench": 259.26
   },
   {
    "date": "2025-01-15",
-   "nav": 1430682.0,
+   "nav": 650489.0,
    "bench": 259.58
   },
   {
    "date": "2025-01-16",
-   "nav": 1433317.0,
+   "nav": 651687.0,
    "bench": 260.72
   },
   {
    "date": "2025-01-17",
-   "nav": 1433108.0,
+   "nav": 651592.0,
    "bench": 259.77
   },
   {
    "date": "2025-01-20",
-   "nav": 1427834.0,
+   "nav": 649194.0,
    "bench": 261.29
   },
   {
    "date": "2025-01-21",
-   "nav": 1423722.0,
+   "nav": 647325.0,
    "bench": 257.91
   },
   {
    "date": "2025-01-22",
-   "nav": 1403696.0,
+   "nav": 638219.0,
    "bench": 258.85
   },
   {
    "date": "2025-01-23",
-   "nav": 1406563.0,
+   "nav": 639523.0,
    "bench": 259.51
   },
   {
    "date": "2025-01-24",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 258.19
   },
   {
    "date": "2025-01-27",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 255.69
   },
   {
    "date": "2025-01-28",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 257.33
   },
   {
    "date": "2025-01-29",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 259.38
   },
   {
    "date": "2025-01-30",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 260.22
   },
   {
    "date": "2025-01-31",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 263.0
   },
   {
    "date": "2025-02-01",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 262.13
   },
   {
    "date": "2025-02-03",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 261.47
   },
   {
    "date": "2025-02-04",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 265.05
   },
   {
    "date": "2025-02-05",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 265.25
   },
   {
    "date": "2025-02-06",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 264.37
   },
   {
    "date": "2025-02-07",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 263.75
   },
   {
    "date": "2025-02-10",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 261.9
   },
   {
    "date": "2025-02-11",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 258.55
   },
   {
    "date": "2025-02-12",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 258.27
   },
   {
    "date": "2025-02-13",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 258.17
   },
   {
    "date": "2025-02-14",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 256.95
   },
   {
    "date": "2025-02-17",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 257.11
   },
   {
    "date": "2025-02-18",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 256.84
   },
   {
    "date": "2025-02-19",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 256.89
   },
   {
    "date": "2025-02-20",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 256.85
   },
   {
    "date": "2025-02-21",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 255.53
   },
   {
    "date": "2025-02-24",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.87
   },
   {
    "date": "2025-02-25",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.75
   },
   {
    "date": "2025-02-27",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.56
   },
   {
    "date": "2025-02-28",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 248.45
   },
   {
    "date": "2025-03-03",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 248.05
   },
   {
    "date": "2025-03-04",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 247.49
   },
   {
    "date": "2025-03-05",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 250.48
   },
   {
    "date": "2025-03-06",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.75
   },
   {
    "date": "2025-03-07",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.84
   },
   {
    "date": "2025-03-10",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 251.75
   },
   {
    "date": "2025-03-11",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.08
   },
   {
    "date": "2025-03-12",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 251.74
   },
   {
    "date": "2025-03-13",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 251.06
   },
   {
    "date": "2025-03-17",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.18
   },
   {
    "date": "2025-03-18",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 255.82
   },
   {
    "date": "2025-03-19",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 256.7
   },
   {
    "date": "2025-03-20",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 259.32
   },
   {
    "date": "2025-03-21",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 261.09
   },
   {
    "date": "2025-03-24",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 264.9
   },
   {
    "date": "2025-03-25",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 264.73
   },
   {
    "date": "2025-03-26",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 262.9
   },
   {
    "date": "2025-03-27",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 263.73
   },
   {
    "date": "2025-03-28",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 263.21
   },
   {
    "date": "2025-04-01",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 259.6
   },
   {
    "date": "2025-04-02",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 261.64
   },
   {
    "date": "2025-04-03",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 260.46
   },
   {
    "date": "2025-04-04",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 257.16
   },
   {
    "date": "2025-04-07",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 249.1
   },
   {
    "date": "2025-04-08",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 252.72
   },
   {
    "date": "2025-04-09",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 251.03
   },
   {
    "date": "2025-04-11",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 255.97
   },
   {
    "date": "2025-04-15",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 260.87
   },
   {
    "date": "2025-04-16",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 261.91
   },
   {
    "date": "2025-04-17",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 266.54
   },
   {
    "date": "2025-04-21",
-   "nav": 1402209.0,
+   "nav": 637543.0,
    "bench": 269.7
   },
   {
    "date": "2025-04-22",
-   "nav": 1416918.0,
+   "nav": 644231.0,
    "bench": 270.05
   },
   {
    "date": "2025-04-23",
-   "nav": 1417979.0,
+   "nav": 644713.0,
    "bench": 271.82
   },
   {
    "date": "2025-04-24",
-   "nav": 1430551.0,
+   "nav": 650429.0,
    "bench": 270.95
   },
   {
    "date": "2025-04-25",
-   "nav": 1408639.0,
+   "nav": 640467.0,
    "bench": 268.63
   },
   {
    "date": "2025-04-28",
-   "nav": 1423757.0,
+   "nav": 647340.0,
    "bench": 271.9
   },
   {
    "date": "2025-04-29",
-   "nav": 1442462.0,
+   "nav": 655845.0,
    "bench": 271.91
   },
   {
    "date": "2025-04-30",
-   "nav": 1411505.0,
+   "nav": 641770.0,
    "bench": 271.99
   },
   {
    "date": "2025-05-02",
-   "nav": 1399103.0,
+   "nav": 636131.0,
    "bench": 272.05
   },
   {
    "date": "2025-05-05",
-   "nav": 1394082.0,
+   "nav": 633848.0,
    "bench": 274.39
   },
   {
    "date": "2025-05-06",
-   "nav": 1360823.0,
+   "nav": 618726.0,
    "bench": 272.6
   },
   {
    "date": "2025-05-07",
-   "nav": 1359728.0,
+   "nav": 618228.0,
    "bench": 272.79
   },
   {
    "date": "2025-05-08",
-   "nav": 1354606.0,
+   "nav": 615900.0,
    "bench": 271.04
   },
   {
    "date": "2025-05-09",
-   "nav": 1384714.0,
+   "nav": 629589.0,
    "bench": 268.49
   },
   {
    "date": "2025-05-12",
-   "nav": 1380427.0,
+   "nav": 627640.0,
    "bench": 278.94
   },
   {
    "date": "2025-05-13",
-   "nav": 1406569.0,
+   "nav": 639526.0,
    "bench": 275.65
   },
   {
    "date": "2025-05-14",
-   "nav": 1414569.0,
+   "nav": 643163.0,
    "bench": 276.57
   },
   {
    "date": "2025-05-15",
-   "nav": 1415025.0,
+   "nav": 643370.0,
    "bench": 280.17
   },
   {
    "date": "2025-05-16",
-   "nav": 1429412.0,
+   "nav": 649912.0,
    "bench": 280.21
   },
   {
    "date": "2025-05-19",
-   "nav": 1443720.0,
+   "nav": 656417.0,
    "bench": 279.21
   },
   {
    "date": "2025-05-20",
-   "nav": 1432007.0,
+   "nav": 651091.0,
    "bench": 276.89
   },
   {
    "date": "2025-05-21",
-   "nav": 1443711.0,
+   "nav": 656413.0,
    "bench": 277.55
   },
   {
    "date": "2025-05-22",
-   "nav": 1428083.0,
+   "nav": 649307.0,
    "bench": 275.91
   },
   {
    "date": "2025-05-23",
-   "nav": 1434441.0,
+   "nav": 652198.0,
    "bench": 278.37
   },
   {
    "date": "2025-05-26",
-   "nav": 1443225.0,
+   "nav": 656192.0,
    "bench": 279.89
   },
   {
    "date": "2025-05-27",
-   "nav": 1433727.0,
+   "nav": 651874.0,
    "bench": 278.25
   },
   {
    "date": "2025-05-28",
-   "nav": 1438606.0,
+   "nav": 654092.0,
    "bench": 277.69
   },
   {
    "date": "2025-05-29",
-   "nav": 1450919.0,
+   "nav": 659690.0,
    "bench": 278.54
   },
   {
    "date": "2025-05-30",
-   "nav": 1469368.0,
+   "nav": 668078.0,
    "bench": 277.97
   },
   {
    "date": "2025-06-02",
-   "nav": 1473787.0,
+   "nav": 670088.0,
    "bench": 277.6
   },
   {
    "date": "2025-06-03",
-   "nav": 1501095.0,
+   "nav": 682504.0,
    "bench": 275.77
   },
   {
    "date": "2025-06-04",
-   "nav": 1520124.0,
+   "nav": 691156.0,
    "bench": 276.46
   },
   {
    "date": "2025-06-05",
-   "nav": 1538059.0,
+   "nav": 699310.0,
    "bench": 278.05
   },
   {
    "date": "2025-06-06",
-   "nav": 1540655.0,
+   "nav": 700491.0,
    "bench": 280.5
   },
   {
    "date": "2025-06-09",
-   "nav": 1546461.0,
+   "nav": 703130.0,
    "bench": 281.35
   },
   {
    "date": "2025-06-10",
-   "nav": 1553173.0,
+   "nav": 706182.0,
    "bench": 281.39
   },
   {
    "date": "2025-06-11",
-   "nav": 1546166.0,
+   "nav": 702996.0,
    "bench": 281.87
   },
   {
    "date": "2025-06-12",
-   "nav": 1530260.0,
+   "nav": 695764.0,
    "bench": 278.95
   },
   {
    "date": "2025-06-13",
-   "nav": 1531102.0,
+   "nav": 696147.0,
    "bench": 277.1
   },
   {
    "date": "2025-06-16",
-   "nav": 1530598.0,
+   "nav": 695918.0,
    "bench": 279.7
   },
   {
    "date": "2025-06-17",
-   "nav": 1522421.0,
+   "nav": 692200.0,
    "bench": 278.59
   },
   {
    "date": "2025-06-18",
-   "nav": 1517171.0,
+   "nav": 689813.0,
    "bench": 278.24
   },
   {
    "date": "2025-06-19",
-   "nav": 1500126.0,
+   "nav": 682063.0,
    "bench": 277.91
   },
   {
    "date": "2025-06-20",
-   "nav": 1500939.0,
+   "nav": 682433.0,
    "bench": 281.5
   },
   {
    "date": "2025-06-23",
-   "nav": 1508960.0,
+   "nav": 686080.0,
    "bench": 280.86
   },
   {
    "date": "2025-06-24",
-   "nav": 1525321.0,
+   "nav": 693519.0,
    "bench": 281.43
   },
   {
    "date": "2025-06-25",
-   "nav": 1542760.0,
+   "nav": 701448.0,
    "bench": 283.41
   },
   {
    "date": "2025-06-26",
-   "nav": 1535144.0,
+   "nav": 697985.0,
    "bench": 286.39
   },
   {
    "date": "2025-06-27",
-   "nav": 1552114.0,
+   "nav": 705701.0,
    "bench": 287.96
   },
   {
    "date": "2025-06-30",
-   "nav": 1610995.0,
+   "nav": 732472.0,
    "bench": 286.51
   },
   {
    "date": "2025-07-01",
-   "nav": 1601493.0,
+   "nav": 728152.0,
    "bench": 286.84
   },
   {
    "date": "2025-07-02",
-   "nav": 1588305.0,
+   "nav": 722156.0,
    "bench": 285.78
   },
   {
    "date": "2025-07-03",
-   "nav": 1608132.0,
+   "nav": 731170.0,
    "bench": 285.39
   },
   {
    "date": "2025-07-04",
-   "nav": 1586769.0,
+   "nav": 721457.0,
    "bench": 286.11
   },
   {
    "date": "2025-07-07",
-   "nav": 1553215.0,
+   "nav": 706201.0,
    "bench": 286.07
   },
   {
    "date": "2025-07-08",
-   "nav": 1538829.0,
+   "nav": 699660.0,
    "bench": 286.91
   },
   {
    "date": "2025-07-09",
-   "nav": 1557288.0,
+   "nav": 708053.0,
    "bench": 286.5
   },
   {
    "date": "2025-07-10",
-   "nav": 1554480.0,
+   "nav": 706776.0,
    "bench": 285.16
   },
   {
    "date": "2025-07-11",
-   "nav": 1553568.0,
+   "nav": 706362.0,
    "bench": 283.11
   },
   {
    "date": "2025-07-14",
-   "nav": 1555051.0,
+   "nav": 707036.0,
    "bench": 282.71
   },
   {
    "date": "2025-07-15",
-   "nav": 1587194.0,
+   "nav": 721650.0,
    "bench": 283.69
   },
   {
    "date": "2025-07-16",
-   "nav": 1606215.0,
+   "nav": 730299.0,
    "bench": 283.64
   },
   {
    "date": "2025-07-17",
-   "nav": 1624147.0,
+   "nav": 738452.0,
    "bench": 282.83
   },
   {
    "date": "2025-07-18",
-   "nav": 1622415.0,
+   "nav": 737664.0,
    "bench": 281.43
   },
   {
    "date": "2025-07-21",
-   "nav": 1652070.0,
+   "nav": 751148.0,
    "bench": 282.26
   },
   {
    "date": "2025-07-22",
-   "nav": 1650739.0,
+   "nav": 750542.0,
    "bench": 282.07
   },
   {
    "date": "2025-07-23",
-   "nav": 1639122.0,
+   "nav": 745261.0,
    "bench": 283.53
   },
   {
    "date": "2025-07-24",
-   "nav": 1641153.0,
+   "nav": 746184.0,
    "bench": 282.1
   },
   {
    "date": "2025-07-25",
-   "nav": 1613880.0,
+   "nav": 733784.0,
    "bench": 280.03
   },
   {
    "date": "2025-07-28",
-   "nav": 1606511.0,
+   "nav": 730433.0,
    "bench": 278.49
   },
   {
    "date": "2025-07-29",
-   "nav": 1628079.0,
+   "nav": 740240.0,
    "bench": 280.09
   },
   {
    "date": "2025-07-30",
-   "nav": 1690740.0,
+   "nav": 768730.0,
    "bench": 280.13
   },
   {
    "date": "2025-07-31",
-   "nav": 1693262.0,
+   "nav": 769876.0,
    "bench": 279.26
   },
   {
    "date": "2025-08-01",
-   "nav": 1641832.0,
+   "nav": 746493.0,
    "bench": 277.35
   },
   {
    "date": "2025-08-04",
-   "nav": 1658790.0,
+   "nav": 754203.0,
    "bench": 278.85
   },
   {
    "date": "2025-08-05",
-   "nav": 1640291.0,
+   "nav": 745792.0,
    "bench": 278.14
   },
   {
    "date": "2025-08-06",
-   "nav": 1625348.0,
+   "nav": 738998.0,
    "bench": 277.31
   },
   {
    "date": "2025-08-07",
-   "nav": 1605363.0,
+   "nav": 729911.0,
    "bench": 277.29
   },
   {
    "date": "2025-08-08",
-   "nav": 1576826.0,
+   "nav": 716936.0,
    "bench": 275.14
   },
   {
    "date": "2025-08-11",
-   "nav": 1594167.0,
+   "nav": 724821.0,
    "bench": 277.29
   },
   {
    "date": "2025-08-12",
-   "nav": 1558425.0,
+   "nav": 708570.0,
    "bench": 276.54
   },
   {
    "date": "2025-08-13",
-   "nav": 1551350.0,
+   "nav": 705353.0,
    "bench": 278.02
   },
   {
    "date": "2025-08-14",
-   "nav": 1524088.0,
+   "nav": 692958.0,
    "bench": 278.23
   },
   {
    "date": "2025-08-18",
-   "nav": 1567423.0,
+   "nav": 712661.0,
    "bench": 281.07
   },
   {
    "date": "2025-08-19",
-   "nav": 1574322.0,
+   "nav": 715798.0,
    "bench": 281.96
   },
   {
    "date": "2025-08-20",
-   "nav": 1576830.0,
+   "nav": 716938.0,
    "bench": 282.52
   },
   {
    "date": "2025-08-21",
-   "nav": 1573056.0,
+   "nav": 715222.0,
    "bench": 283.06
   },
   {
    "date": "2025-08-22",
-   "nav": 1553060.0,
+   "nav": 706131.0,
    "bench": 280.75
   },
   {
    "date": "2025-08-25",
-   "nav": 1556919.0,
+   "nav": 707885.0,
    "bench": 281.68
   },
   {
    "date": "2025-08-26",
-   "nav": 1547329.0,
+   "nav": 703525.0,
    "bench": 279.05
   },
   {
    "date": "2025-08-28",
-   "nav": 1510420.0,
+   "nav": 686744.0,
    "bench": 276.93
   },
   {
    "date": "2025-08-29",
-   "nav": 1526234.0,
+   "nav": 693934.0,
    "bench": 276.06
   },
   {
    "date": "2025-09-01",
-   "nav": 1562295.0,
+   "nav": 710330.0,
    "bench": 278.18
   },
   {
    "date": "2025-09-02",
-   "nav": 1559447.0,
+   "nav": 709035.0,
    "bench": 277.68
   },
   {
    "date": "2025-09-03",
-   "nav": 1583238.0,
+   "nav": 719852.0,
    "bench": 278.94
   },
   {
    "date": "2025-09-04",
-   "nav": 1569122.0,
+   "nav": 713434.0,
    "bench": 279.32
   },
   {
    "date": "2025-09-05",
-   "nav": 1560357.0,
+   "nav": 709448.0,
    "bench": 279.6
   },
   {
    "date": "2025-09-08",
-   "nav": 1552754.0,
+   "nav": 705992.0,
    "bench": 279.99
   },
   {
    "date": "2025-09-09",
-   "nav": 1565055.0,
+   "nav": 711584.0,
    "bench": 280.54
   },
   {
    "date": "2025-09-10",
-   "nav": 1514481.0,
+   "nav": 688590.0,
    "bench": 281.84
   },
   {
    "date": "2025-09-11",
-   "nav": 1535889.0,
+   "nav": 698324.0,
    "bench": 282.53
   },
   {
    "date": "2025-09-12",
-   "nav": 1563727.0,
+   "nav": 710981.0,
    "bench": 283.51
   },
   {
    "date": "2025-09-15",
-   "nav": 1579477.0,
+   "nav": 718142.0,
    "bench": 283.12
   },
   {
    "date": "2025-09-16",
-   "nav": 1611296.0,
+   "nav": 732609.0,
    "bench": 284.89
   },
   {
    "date": "2025-09-17",
-   "nav": 1617484.0,
+   "nav": 735422.0,
    "bench": 285.98
   },
   {
    "date": "2025-09-18",
-   "nav": 1611016.0,
+   "nav": 732482.0,
    "bench": 286.7
   },
   {
    "date": "2025-09-19",
-   "nav": 1608205.0,
+   "nav": 731204.0,
    "bench": 285.9
   },
   {
    "date": "2025-09-22",
-   "nav": 1590615.0,
+   "nav": 723206.0,
    "bench": 284.49
   },
   {
    "date": "2025-09-23",
-   "nav": 1602750.0,
+   "nav": 728723.0,
    "bench": 284.35
   },
   {
    "date": "2025-09-24",
-   "nav": 1611312.0,
+   "nav": 732616.0,
    "bench": 282.88
   },
   {
    "date": "2025-09-25",
-   "nav": 1597717.0,
+   "nav": 726435.0,
    "bench": 281.24
   },
   {
    "date": "2025-09-26",
-   "nav": 1551447.0,
+   "nav": 705397.0,
    "bench": 278.74
   },
   {
    "date": "2025-09-29",
-   "nav": 1556757.0,
+   "nav": 707812.0,
    "bench": 278.54
   },
   {
    "date": "2025-09-30",
-   "nav": 1547629.0,
+   "nav": 703661.0,
    "bench": 277.52
   },
   {
    "date": "2025-10-01",
-   "nav": 1582494.0,
+   "nav": 719513.0,
    "bench": 280.51
   },
   {
    "date": "2025-10-03",
-   "nav": 1612691.0,
+   "nav": 733243.0,
    "bench": 281.16
   },
   {
    "date": "2025-10-06",
-   "nav": 1594689.0,
+   "nav": 725058.0,
    "bench": 283.07
   },
   {
    "date": "2025-10-07",
-   "nav": 1607590.0,
+   "nav": 730924.0,
    "bench": 283.41
   },
   {
    "date": "2025-10-08",
-   "nav": 1609102.0,
+   "nav": 731611.0,
    "bench": 282.38
   },
   {
    "date": "2025-10-09",
-   "nav": 1578119.0,
+   "nav": 717524.0,
    "bench": 284.05
   },
   {
    "date": "2025-10-10",
-   "nav": 1586636.0,
+   "nav": 721397.0,
    "bench": 285.52
   },
   {
    "date": "2025-10-13",
-   "nav": 1595296.0,
+   "nav": 725334.0,
    "bench": 284.64
   },
   {
    "date": "2025-10-14",
-   "nav": 1610350.0,
+   "nav": 732179.0,
    "bench": 283.69
   },
   {
    "date": "2025-10-15",
-   "nav": 1627429.0,
+   "nav": 739944.0,
    "bench": 286.07
   },
   {
    "date": "2025-10-16",
-   "nav": 1616870.0,
+   "nav": 735143.0,
    "bench": 288.7
   },
   {
    "date": "2025-10-17",
-   "nav": 1623206.0,
+   "nav": 738024.0,
    "bench": 290.17
   },
   {
    "date": "2025-10-20",
-   "nav": 1627056.0,
+   "nav": 739775.0,
    "bench": 291.86
   },
   {
    "date": "2025-10-21",
-   "nav": 1632120.0,
+   "nav": 742077.0,
    "bench": 291.87
   },
   {
    "date": "2025-10-23",
-   "nav": 1588505.0,
+   "nav": 722247.0,
    "bench": 292.39
   },
   {
    "date": "2025-10-24",
-   "nav": 1574592.0,
+   "nav": 715921.0,
    "bench": 291.04
   },
   {
    "date": "2025-10-27",
-   "nav": 1589233.0,
+   "nav": 722578.0,
    "bench": 293.35
   },
   {
    "date": "2025-10-28",
-   "nav": 1593801.0,
+   "nav": 724654.0,
    "bench": 293.1
   },
   {
    "date": "2025-10-29",
-   "nav": 1587694.0,
+   "nav": 721878.0,
    "bench": 294.5
   },
   {
    "date": "2025-10-30",
-   "nav": 1597446.0,
+   "nav": 726312.0,
    "bench": 292.58
   },
   {
    "date": "2025-10-31",
-   "nav": 1587921.0,
+   "nav": 721981.0,
    "bench": 291.08
   },
   {
    "date": "2025-11-03",
-   "nav": 1603912.0,
+   "nav": 729252.0,
    "bench": 291.35
   },
   {
    "date": "2025-11-04",
-   "nav": 1603293.0,
+   "nav": 728970.0,
    "bench": 289.59
   },
   {
    "date": "2025-11-06",
-   "nav": 1555738.0,
+   "nav": 707348.0,
    "bench": 288.24
   },
   {
    "date": "2025-11-07",
-   "nav": 1591393.0,
+   "nav": 723560.0,
    "bench": 288.44
   },
   {
    "date": "2025-11-10",
-   "nav": 1529293.0,
+   "nav": 695325.0,
    "bench": 289.49
   },
   {
    "date": "2025-11-11",
-   "nav": 1525971.0,
+   "nav": 693814.0,
    "bench": 290.82
   },
   {
    "date": "2025-11-12",
-   "nav": 1520718.0,
+   "nav": 691426.0,
    "bench": 292.72
   },
   {
    "date": "2025-11-13",
-   "nav": 1484905.0,
+   "nav": 675143.0,
    "bench": 292.39
   },
   {
    "date": "2025-11-14",
-   "nav": 1490508.0,
+   "nav": 677690.0,
    "bench": 292.83
   },
   {
    "date": "2025-11-17",
-   "nav": 1499309.0,
+   "nav": 681692.0,
    "bench": 293.97
   },
   {
    "date": "2025-11-18",
-   "nav": 1493103.0,
+   "nav": 678870.0,
    "bench": 292.97
   },
   {
    "date": "2025-11-19",
-   "nav": 1501773.0,
+   "nav": 682812.0,
    "bench": 294.37
   },
   {
    "date": "2025-11-20",
-   "nav": 1496600.0,
+   "nav": 680460.0,
    "bench": 295.64
   },
   {
    "date": "2025-11-21",
-   "nav": 1468975.0,
+   "nav": 667900.0,
    "bench": 294.32
   },
   {
    "date": "2025-11-24",
-   "nav": 1474513.0,
+   "nav": 670418.0,
    "bench": 293.3
   },
   {
    "date": "2025-11-25",
-   "nav": 1477105.0,
+   "nav": 671596.0,
    "bench": 292.68
   },
   {
    "date": "2025-11-26",
-   "nav": 1495483.0,
+   "nav": 679952.0,
    "bench": 296.01
   },
   {
    "date": "2025-11-27",
-   "nav": 1497213.0,
+   "nav": 680739.0,
    "bench": 296.42
   },
   {
    "date": "2025-11-28",
-   "nav": 1490050.0,
+   "nav": 677482.0,
    "bench": 296.49
   },
   {
    "date": "2025-12-01",
-   "nav": 1511760.0,
+   "nav": 687353.0,
    "bench": 296.1
   },
   {
    "date": "2025-12-02",
-   "nav": 1516762.0,
+   "nav": 689627.0,
    "bench": 294.66
   },
   {
    "date": "2025-12-03",
-   "nav": 1501453.0,
+   "nav": 682667.0,
    "bench": 293.8
   },
   {
    "date": "2025-12-04",
-   "nav": 1508843.0,
+   "nav": 686027.0,
    "bench": 294.37
   },
   {
    "date": "2025-12-05",
-   "nav": 1509586.0,
+   "nav": 686364.0,
    "bench": 296.01
   },
   {
    "date": "2025-12-08",
-   "nav": 1491084.0,
+   "nav": 677952.0,
    "bench": 293.45
   },
   {
    "date": "2025-12-09",
-   "nav": 1485269.0,
+   "nav": 675308.0,
    "bench": 292.35
   },
   {
    "date": "2025-12-10",
-   "nav": 1470304.0,
+   "nav": 668504.0,
    "bench": 291.56
   },
   {
    "date": "2025-12-11",
-   "nav": 1486624.0,
+   "nav": 675924.0,
    "bench": 292.93
   },
   {
    "date": "2025-12-12",
-   "nav": 1514038.0,
+   "nav": 688389.0,
    "bench": 294.69
   },
   {
    "date": "2025-12-15",
-   "nav": 1525529.0,
+   "nav": 693613.0,
    "bench": 294.54
   },
   {
    "date": "2025-12-16",
-   "nav": 1517655.0,
+   "nav": 690033.0,
    "bench": 292.66
   },
   {
    "date": "2025-12-17",
-   "nav": 1555690.0,
+   "nav": 707326.0,
    "bench": 291.71
   },
   {
    "date": "2025-12-18",
-   "nav": 1567196.0,
+   "nav": 712558.0,
    "bench": 291.84
   },
   {
    "date": "2025-12-19",
-   "nav": 1566835.0,
+   "nav": 712394.0,
    "bench": 293.44
   },
   {
    "date": "2025-12-22",
-   "nav": 1607193.0,
+   "nav": 730743.0,
    "bench": 295.69
   },
   {
    "date": "2025-12-23",
-   "nav": 1605795.0,
+   "nav": 730108.0,
    "bench": 295.68
   },
   {
    "date": "2025-12-24",
-   "nav": 1632878.0,
+   "nav": 742422.0,
    "bench": 295.5
   },
   {
    "date": "2025-12-26",
-   "nav": 1680058.0,
+   "nav": 763873.0,
    "bench": 294.46
   },
   {
    "date": "2025-12-29",
-   "nav": 1687692.0,
+   "nav": 767344.0,
    "bench": 293.15
   },
   {
    "date": "2025-12-30",
-   "nav": 1692059.0,
+   "nav": 769329.0,
    "bench": 293.32
   },
   {
    "date": "2025-12-31",
-   "nav": 1675784.0,
+   "nav": 761930.0,
    "bench": 295.31
   },
   {
    "date": "2026-01-01",
-   "nav": 1673893.0,
+   "nav": 761070.0,
    "bench": 295.33
   },
   {
    "date": "2026-01-02",
-   "nav": 1705652.0,
+   "nav": 775510.0,
    "bench": 297.55
   },
   {
    "date": "2026-01-05",
-   "nav": 1711442.0,
+   "nav": 778142.0,
    "bench": 296.41
   },
   {
    "date": "2026-01-06",
-   "nav": 1734918.0,
+   "nav": 788816.0,
    "bench": 296.02
   },
   {
    "date": "2026-01-07",
-   "nav": 1751136.0,
+   "nav": 796190.0,
    "bench": 295.72
   },
   {
    "date": "2026-01-08",
-   "nav": 1690069.0,
+   "nav": 768425.0,
    "bench": 292.93
   },
   {
    "date": "2026-01-09",
-   "nav": 1719765.0,
+   "nav": 781927.0,
    "bench": 290.59
   },
   {
    "date": "2026-01-12",
-   "nav": 1771790.0,
+   "nav": 805581.0,
    "bench": 291.87
   },
   {
    "date": "2026-01-13",
-   "nav": 1801293.0,
+   "nav": 818995.0,
    "bench": 291.13
   },
   {
    "date": "2026-01-14",
-   "nav": 1871479.0,
+   "nav": 850906.0,
    "bench": 290.66
   },
   {
    "date": "2026-01-15",
-   "nav": 1445165.0,
+   "nav": 657074.0,
    "bench": null
   },
   {
    "date": "2026-01-16",
-   "nav": 1895012.0,
+   "nav": 861606.0,
    "bench": 291.04
   },
   {
    "date": "2026-01-19",
-   "nav": 1957612.0,
+   "nav": 890069.0,
    "bench": 289.63
   },
   {
    "date": "2026-01-20",
-   "nav": 2040968.0,
+   "nav": 927968.0,
    "bench": 286.28
   },
   {
    "date": "2026-01-21",
-   "nav": 2106882.0,
+   "nav": 957937.0,
    "bench": 284.95
   },
   {
    "date": "2026-01-22",
-   "nav": 1931326.0,
+   "nav": 878117.0,
    "bench": 286.61
   },
   {
    "date": "2026-01-23",
-   "nav": 2006964.0,
+   "nav": 912508.0,
    "bench": 283.91
   },
   {
    "date": "2026-01-27",
-   "nav": 2119761.0,
+   "nav": 963793.0,
    "bench": 285.22
   },
   {
    "date": "2026-01-28",
-   "nav": 2179479.0,
+   "nav": 990945.0,
    "bench": 286.61
   },
   {
    "date": "2026-01-29",
-   "nav": 2358489.0,
+   "nav": 1072336.0,
    "bench": 287.37
   },
   {
    "date": "2026-01-30",
-   "nav": 2040219.0,
+   "nav": 927628.0,
    "bench": 286.73
   },
   {
    "date": "2026-02-01",
-   "nav": 1814471.0,
+   "nav": 824987.0,
    "bench": 282.41
   },
   {
    "date": "2026-02-02",
-   "nav": 1821970.0,
+   "nav": 828396.0,
    "bench": 283.94
   },
   {
    "date": "2026-02-03",
-   "nav": 1825667.0,
+   "nav": 830077.0,
    "bench": 291.24
   },
   {
    "date": "2026-02-04",
-   "nav": 1847623.0,
+   "nav": 840060.0,
    "bench": 291.65
   },
   {
    "date": "2026-02-05",
-   "nav": 1871461.0,
+   "nav": 850898.0,
    "bench": 290.35
   },
   {
    "date": "2026-02-06",
-   "nav": 1823784.0,
+   "nav": 829221.0,
    "bench": 290.65
   },
   {
    "date": "2026-02-09",
-   "nav": 1913544.0,
+   "nav": 870032.0,
    "bench": 292.56
   },
   {
    "date": "2026-02-10",
-   "nav": 1876215.0,
+   "nav": 853060.0,
    "bench": 293.56
   },
   {
    "date": "2026-02-11",
-   "nav": 1901593.0,
+   "nav": 864598.0,
    "bench": 293.85
   },
   {
    "date": "2026-02-12",
-   "nav": 1953034.0,
+   "nav": 887987.0,
    "bench": 292.27
   },
   {
    "date": "2026-02-13",
-   "nav": 1952900.0,
+   "nav": 887926.0,
    "bench": 288.87
   },
   {
    "date": "2026-02-16",
-   "nav": 1984463.0,
+   "nav": 902277.0,
    "bench": 290.76
   },
   {
    "date": "2026-02-17",
-   "nav": 1986573.0,
+   "nav": 903236.0,
    "bench": 291.52
   },
   {
    "date": "2026-02-18",
-   "nav": 2035089.0,
+   "nav": 925295.0,
    "bench": 292.2
   },
   {
    "date": "2026-02-19",
-   "nav": 1976878.0,
+   "nav": 898828.0,
    "bench": 288.38
   },
   {
    "date": "2026-02-20",
-   "nav": 1923312.0,
+   "nav": 874473.0,
    "bench": 289.23
   },
   {
    "date": "2026-02-23",
-   "nav": 1940355.0,
+   "nav": 882222.0,
    "bench": 290.45
   },
   {
    "date": "2026-02-24",
-   "nav": 1968168.0,
+   "nav": 894868.0,
    "bench": 287.85
   },
   {
    "date": "2026-02-25",
-   "nav": 1987869.0,
+   "nav": 903826.0,
    "bench": 288.63
   },
   {
    "date": "2026-02-26",
-   "nav": 1962553.0,
+   "nav": 892315.0,
    "bench": 288.58
   },
   {
    "date": "2026-02-27",
-   "nav": 1882511.0,
+   "nav": 855922.0,
    "bench": 285.29
   },
   {
    "date": "2026-03-02",
-   "nav": 1873777.0,
+   "nav": 851951.0,
    "bench": 281.93
   },
   {
    "date": "2026-03-04",
-   "nav": 1850399.0,
+   "nav": 841322.0,
    "bench": 277.29
   },
   {
    "date": "2026-03-05",
-   "nav": 1894679.0,
+   "nav": 861455.0,
    "bench": 280.35
   },
   {
    "date": "2026-03-06",
-   "nav": 1902571.0,
+   "nav": 865043.0,
    "bench": 277.25
   },
   {
    "date": "2026-03-09",
-   "nav": 1854162.0,
+   "nav": 843033.0,
    "bench": 272.42
   },
   {
    "date": "2026-03-10",
-   "nav": 1872075.0,
+   "nav": 851177.0,
    "bench": 274.95
   },
   {
    "date": "2026-03-11",
-   "nav": 1857816.0,
+   "nav": 844694.0,
    "bench": 270.56
   },
   {
    "date": "2026-03-12",
-   "nav": 1867962.0,
+   "nav": 849307.0,
    "bench": 267.94
   },
   {
    "date": "2026-03-13",
-   "nav": 1799542.0,
+   "nav": 818199.0,
    "bench": 262.69
   },
   {
    "date": "2026-03-16",
-   "nav": 1781209.0,
+   "nav": 809863.0,
    "bench": 265.18
   },
   {
    "date": "2026-03-17",
-   "nav": 1807171.0,
+   "nav": 821668.0,
    "bench": 267.16
   },
   {
    "date": "2026-03-18",
-   "nav": 1805011.0,
+   "nav": 820685.0,
    "bench": 269.43
   },
   {
    "date": "2026-03-19",
-   "nav": 1790491.0,
+   "nav": 814084.0,
    "bench": 262.12
   },
   {
    "date": "2026-03-20",
-   "nav": 1799398.0,
+   "nav": 818133.0,
    "bench": 262.07
   },
   {
    "date": "2026-03-23",
-   "nav": 1719310.0,
+   "nav": 781720.0,
    "bench": 255.15
   },
   {
    "date": "2026-03-24",
-   "nav": 1764999.0,
+   "nav": 802493.0,
    "bench": 259.83
   },
   {
    "date": "2026-03-25",
-   "nav": 1762620.0,
+   "nav": 801411.0,
    "bench": 264.06
   },
   {
    "date": "2026-03-27",
-   "nav": 1780103.0,
+   "nav": 809360.0,
    "bench": 258.89
   },
   {
    "date": "2026-03-30",
-   "nav": 1743364.0,
+   "nav": 792656.0,
    "bench": 253.44
   },
   {
    "date": "2026-04-01",
-   "nav": 1773005.0,
+   "nav": 806133.0,
    "bench": 257.45
   },
   {
    "date": "2026-04-02",
-   "nav": 1773009.0,
+   "nav": 806135.0,
    "bench": 257.61
   },
   {
    "date": "2026-04-06",
-   "nav": 1800302.0,
+   "nav": 818544.0,
    "bench": 260.25
   },
   {
    "date": "2026-04-07",
-   "nav": 1799980.0,
+   "nav": 818398.0,
    "bench": 261.47
   },
   {
    "date": "2026-04-08",
-   "nav": 1810276.0,
+   "nav": 823079.0,
    "bench": 271.68
   },
   {
    "date": "2026-04-09",
-   "nav": 1780177.0,
+   "nav": 809394.0,
    "bench": 269.49
   },
   {
    "date": "2026-04-10",
-   "nav": 1801931.0,
+   "nav": 819285.0,
    "bench": 271.95
   },
   {
    "date": "2026-04-13",
-   "nav": 1818758.0,
+   "nav": 826936.0,
    "bench": 269.52
   },
   {
    "date": "2026-04-15",
-   "nav": 1834087.0,
+   "nav": 833905.0,
    "bench": 273.77
   },
   {
    "date": "2026-04-16",
-   "nav": 1837831.0,
+   "nav": 835608.0,
    "bench": 273.95
   },
   {
    "date": "2026-04-17",
-   "nav": 1813978.0,
+   "nav": 824762.0,
    "bench": 275.87
   },
   {
    "date": "2026-04-20",
-   "nav": 1792890.0,
+   "nav": 815174.0,
    "bench": 275.21
   },
   {
    "date": "2026-04-21",
-   "nav": 1771426.0,
+   "nav": 805415.0,
    "bench": 277.63
   },
   {
    "date": "2026-04-22",
-   "nav": 1771849.0,
+   "nav": 805608.0,
    "bench": 275.64
   },
   {
    "date": "2026-04-23",
-   "nav": 1776970.0,
+   "nav": 807936.0,
    "bench": 273.76
   },
   {
    "date": "2026-04-24",
-   "nav": 1753801.0,
+   "nav": 797402.0,
    "bench": 271.09
   },
   {
    "date": "2026-04-27",
-   "nav": 1758323.0,
+   "nav": 799458.0,
    "bench": 272.52
   },
   {
    "date": "2026-04-28",
-   "nav": 1736558.0,
+   "nav": 789562.0,
    "bench": 271.48
   },
   {
    "date": "2026-04-29",
-   "nav": 1777030.0,
+   "nav": 807963.0,
    "bench": 273.13
   },
   {
    "date": "2026-04-30",
-   "nav": 1736085.0,
+   "nav": 789347.0,
    "bench": 272.01
   },
   {
    "date": "2026-05-04",
-   "nav": 1791122.0,
+   "nav": 814370.0,
    "bench": 273.12
   },
   {
    "date": "2026-05-05",
-   "nav": 1773203.0,
+   "nav": 806223.0,
    "bench": 272.3
   },
   {
    "date": "2026-05-06",
-   "nav": 1768193.0,
+   "nav": 803945.0,
    "bench": 275.73
   },
   {
    "date": "2026-05-07",
-   "nav": 1783184.0,
+   "nav": 810761.0,
    "bench": 275.47
   },
   {
    "date": "2026-05-08",
-   "nav": 1796096.0,
+   "nav": 816632.0,
    "bench": 273.94
   },
   {
    "date": "2026-05-11",
-   "nav": 1796972.0,
+   "nav": 817030.0,
    "bench": 270.1
   },
   {
    "date": "2026-05-12",
-   "nav": 1765093.0,
+   "nav": 802536.0,
    "bench": 265.05
   },
   {
    "date": "2026-05-13",
-   "nav": 1776007.0,
+   "nav": 807498.0,
    "bench": 265.44
   },
   {
    "date": "2026-05-14",
-   "nav": 1815996.0,
+   "nav": 825680.0,
    "bench": 268.09
   },
   {
    "date": "2026-05-15",
-   "nav": 1825866.0,
+   "nav": 830168.0,
    "bench": 267.3
   },
   {
    "date": "2026-05-18",
-   "nav": 1803037.0,
+   "nav": 819788.0,
    "bench": 267.58
   },
   {
    "date": "2026-05-19",
-   "nav": 1819235.0,
+   "nav": 827153.0,
    "bench": 267.61
   },
   {
    "date": "2026-05-20",
-   "nav": 1827995.0,
+   "nav": 831136.0,
    "bench": 268.05
   },
   {
    "date": "2026-05-21",
-   "nav": 1818052.0,
+   "nav": 826615.0,
    "bench": 268.21
   },
   {
    "date": "2026-05-22",
-   "nav": 1806066.0,
+   "nav": 821165.0,
    "bench": 269.1
   },
   {
    "date": "2026-05-25",
-   "nav": 1816705.0,
+   "nav": 826002.0,
    "bench": 271.99
   },
   {
    "date": "2026-05-26",
-   "nav": 1826533.0,
+   "nav": 830471.0,
    "bench": 270.83
   },
   {
    "date": "2026-05-27",
-   "nav": 1800513.0,
+   "nav": 818640.0,
    "bench": 270.94
   },
   {
    "date": "2026-05-29",
-   "nav": 1775822.0,
+   "nav": 807414.0,
    "bench": 267.78
   },
   {
    "date": "2026-06-01",
-   "nav": 1769802.0,
+   "nav": 804677.0,
    "bench": 265.52
   },
   {
    "date": "2026-06-02",
-   "nav": 1815744.0,
+   "nav": 825565.0,
    "bench": 266.02
   },
   {
    "date": "2026-06-03",
-   "nav": 1810540.0,
+   "nav": 823199.0,
    "bench": 265.55
   },
   {
    "date": "2026-06-04",
-   "nav": 1877558.0,
+   "nav": 853670.0,
    "bench": 265.6
   },
   {
    "date": "2026-06-05",
-   "nav": 1875869.0,
+   "nav": 852902.0,
    "bench": 265.36
   },
   {
    "date": "2026-06-08",
-   "nav": 1859622.0,
+   "nav": 845515.0,
    "bench": 262.56
   },
   {
    "date": "2026-06-09",
-   "nav": 1900705.0,
+   "nav": 864195.0,
    "bench": 263.88
   },
   {
    "date": "2026-06-10",
-   "nav": 1873070.0,
+   "nav": 851630.0,
    "bench": 263.08
   },
   {
    "date": "2026-06-11",
-   "nav": 1829656.0,
+   "nav": 831891.0,
    "bench": 262.63
   },
   {
    "date": "2026-06-12",
-   "nav": 1847187.0,
+   "nav": 839862.0,
    "bench": 267.86
   },
   {
    "date": "2026-06-15",
-   "nav": 1872870.0,
+   "nav": 851539.0,
    "bench": 270.63
   },
   {
    "date": "2026-06-16",
-   "nav": 1872218.0,
+   "nav": 851242.0,
    "bench": 271.67
   },
   {
    "date": "2026-06-17",
-   "nav": 1941147.0,
+   "nav": 882582.0,
    "bench": 273.11
   },
   {
    "date": "2026-06-18",
-   "nav": 1977457.0,
+   "nav": 899092.0,
    "bench": 273.97
   },
   {
    "date": "2026-06-19",
-   "nav": 1979177.0,
+   "nav": 899874.0,
    "bench": 272.95
   },
   {
    "date": "2026-06-22",
-   "nav": 1961523.0,
+   "nav": 891847.0,
    "bench": 273.67
   },
   {
    "date": "2026-06-23",
-   "nav": 1936217.0,
+   "nav": 880341.0,
    "bench": 270.81
   },
   {
    "date": "2026-06-24",
-   "nav": 1921797.0,
+   "nav": 873785.0,
    "bench": 272.68
   },
   {
    "date": "2026-06-25",
-   "nav": 1936048.0,
+   "nav": 880264.0,
    "bench": 273.43
   },
   {
    "date": "2026-06-29",
-   "nav": 1949143.0,
+   "nav": 886218.0,
    "bench": 272.16
   },
   {
    "date": "2026-06-30",
-   "nav": 2006149.0,
+   "nav": 912137.0,
    "bench": 272.26
   },
   {
    "date": "2026-07-01",
-   "nav": 1980610.0,
+   "nav": 900525.0,
    "bench": 272.85
   },
   {
    "date": "2026-07-02",
-   "nav": 2012650.0,
+   "nav": 915093.0,
    "bench": 274.4
   },
   {
    "date": "2026-07-03",
-   "nav": 1968979.0,
+   "nav": 895237.0,
    "bench": 275.88
   },
   {
    "date": "2026-07-06",
-   "nav": 1974926.0,
+   "nav": 897941.0,
    "bench": 277.4
   },
   {
    "date": "2026-07-07",
-   "nav": 1949722.0,
+   "nav": 886481.0,
    "bench": 277.07
   },
   {
    "date": "2026-07-08",
-   "nav": 2000641.0,
+   "nav": 909633.0,
    "bench": 272.0
   },
   {
    "date": "2026-07-09",
-   "nav": 2009304.0,
+   "nav": 913571.0,
    "bench": 272.46
   },
   {
    "date": "2026-07-10",
-   "nav": 2001729.0,
+   "nav": 910127.0,
    "bench": 275.12
   },
   {
    "date": "2026-07-13",
-   "nav": 1975558.0,
+   "nav": 898228.0,
    "bench": 275.28
   },
   {
    "date": "2026-07-14",
-   "nav": 1981754.0,
+   "nav": 901045.0,
    "bench": 273.32
   },
   {
    "date": "2026-07-15",
-   "nav": 2000957.0,
+   "nav": 909776.0,
    "bench": 273.7
   },
   {
    "date": "2026-07-16",
-   "nav": 1975256.0,
+   "nav": 898091.0,
    "bench": 273.96
   },
   {
    "date": "2026-07-17",
-   "nav": 1945308.0,
+   "nav": 884474.0,
    "bench": 276.33
   },
   {
    "date": "2026-07-20",
-   "nav": 1958321.0,
+   "nav": 890391.0,
    "bench": 275.66
   },
   {
    "date": "2026-07-21",
-   "nav": 1972117.0,
+   "nav": 896664.0,
    "bench": 275.06
   },
   {
    "date": "2026-07-22",
-   "nav": 1976671.0,
+   "nav": 898734.0,
    "bench": 273.5
   },
   {
    "date": "2026-07-23",
-   "nav": 1989244.0,
+   "nav": 904451.0,
    "bench": 272.0
   },
   {
    "date": "2026-07-24",
-   "nav": 1989946.0,
+   "nav": 904770.0,
    "bench": 271.49
   },
   {
    "date": "2026-07-27",
-   "nav": 2033557.0,
+   "nav": 924599.0,
    "bench": 273.54
   },
   {
    "date": "2026-07-28",
-   "nav": 2005530.0,
+   "nav": 911856.0,
    "bench": 273.56
   },
   {
    "date": "2026-07-29",
-   "nav": 1947826.0,
+   "nav": 885619.0,
    "bench": 275.75
   },
   {
    "date": "2026-07-30",
-   "nav": 1938682.0,
+   "nav": 881462.0,
    "bench": 276.42
   },
   {
    "date": "2026-07-31",
-   "nav": 1962973.0,
+   "nav": 892506.0,
    "bench": 277.3
   },
   {
    "date": "2026-08-03",
-   "nav": 2013298.0,
+   "nav": 915387.0,
    "bench": 279.97
   },
   {
    "date": "2026-08-04",
-   "nav": 2008643.0,
+   "nav": 913271.0,
    "bench": 278.98
   },
   {
    "date": "2026-08-05",
-   "nav": 2028778.0,
+   "nav": 922426.0,
    "bench": 280.1
   },
   {
    "date": "2026-08-06",
-   "nav": 2008363.0,
+   "nav": 913144.0,
    "bench": 280.75
   },
   {
    "date": "2026-08-07",
-   "nav": 2059123.0,
+   "nav": 936223.0,
    "bench": 280.0
   },
   {
    "date": "2026-08-10",
-   "nav": 2091776.0,
+   "nav": 951069.0,
    "bench": 280.59
   },
   {
    "date": "2026-08-11",
-   "nav": 2090614.0,
+   "nav": 950541.0,
    "bench": 279.15
   },
   {
    "date": "2026-08-12",
-   "nav": 2082811.0,
+   "nav": 946993.0,
    "bench": 278.21
   },
   {
    "date": "2026-08-13",
-   "nav": 2055757.0,
+   "nav": 934692.0,
    "bench": 278.08
   },
   {
    "date": "2026-08-14",
-   "nav": 2031451.0,
+   "nav": 923641.0,
    "bench": 278.43
   },
   {
    "date": "2026-08-17",
-   "nav": 2032223.0,
+   "nav": 923992.0,
    "bench": 277.93
   },
   {
    "date": "2026-08-18",
-   "nav": 2047522.0,
+   "nav": 930948.0,
    "bench": 276.21
   },
   {
    "date": "2026-08-19",
-   "nav": 2024072.0,
+   "nav": 920286.0,
    "bench": 274.68
   },
   {
    "date": "2026-08-20",
-   "nav": 2027532.0,
+   "nav": 921859.0,
    "bench": 276.61
   },
   {
    "date": "2026-08-21",
-   "nav": 2028545.0,
+   "nav": 922320.0,
    "bench": 276.7
   },
   {
    "date": "2026-08-24",
-   "nav": 2033366.0,
+   "nav": 924512.0,
    "bench": 275.86
   },
   {
    "date": "2026-08-25",
-   "nav": 2033415.0,
+   "nav": 924534.0,
    "bench": 276.77
   },
   {
    "date": "2026-08-26",
-   "nav": 2032023.0,
+   "nav": 923901.0,
    "bench": 277.46
   },
   {
    "date": "2026-08-27",
-   "nav": 2029901.0,
+   "nav": 922936.0,
    "bench": 275.78
   },
   {
    "date": "2026-08-28",
-   "nav": 2041063.0,
+   "nav": 928011.0,
    "bench": 275.3
   },
   {
    "date": "2026-08-31",
-   "nav": 2028972.0,
+   "nav": 922514.0,
    "bench": 274.89
   },
   {
    "date": "2026-09-01",
-   "nav": 2002201.0,
+   "nav": 910342.0,
    "bench": 273.63
   },
   {
    "date": "2026-09-02",
-   "nav": 2000000.0,
+   "nav": 909341.0,
    "bench": 272.37
   }
  ],
