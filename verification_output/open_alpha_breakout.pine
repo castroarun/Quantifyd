@@ -1,0 +1,60 @@
+//@version=5
+// Open Alpha (BlueSky ATH breakout) — entry/exit visualizer. Daily chart only.
+// Spec (03-Sep-2026): entry when CLOSE crosses above the prior all-time-high CLOSE
+// (pivot); exits: first CLOSE below the 15-SMA (trail) OR close <= 92% of entry
+// (-8% stop, early-days guard). NOTE: the RS>=70 percentile rank and Rs 5cr/day
+// traded-value floor are cross-sectional (whole-market) filters that TradingView
+// cannot compute — this shows the price-side signal only, so it may mark entries
+// on names the book's RS/liquidity filters would have skipped.
+indicator('Open Alpha ATH Breakout', overlay = true, max_labels_count = 500)
+
+trailLen = input.int(15, 'Trail SMA length')
+stopPct  = input.float(8.0, 'Hard stop %', step = 0.5)
+showZone = input.bool(true, 'Shade the setup zone (within 20% of ATH-close)')
+
+// prior all-time-high CLOSE (as of yesterday) = the pivot
+var float athPrev = na
+athPrev := math.max(nz(athPrev, close[1]), close[1])
+
+smaT = ta.sma(close, trailLen)
+
+// setup: yesterday's close below the pivot but within 20% of it
+setup = close[1] < athPrev and close[1] >= 0.8 * athPrev
+
+// position state machine
+var bool  inPos  = false
+var float entryP = na
+
+entrySig = not inPos and setup and close > athPrev
+if entrySig
+    inPos := true
+    entryP := athPrev // book fills at the pivot (buy-stop)
+
+stopLvl  = entryP * (1 - stopPct / 100)
+exitStop = inPos and not entrySig and close <= stopLvl
+exitTrail = inPos and not entrySig and not exitStop and close < smaT
+if exitStop or exitTrail
+    inPos := false
+
+// drawing
+plot(athPrev, 'ATH-close pivot', color = color.new(color.orange, 30), style = plot.style_line)
+plot(smaT, 'Trail SMA', color = color.new(color.aqua, 0), linewidth = 2)
+plot(inPos ? stopLvl : na, '-8% stop', color = color.new(color.red, 40), style = plot.style_linebr)
+bgcolor(showZone and setup and not inPos ? color.new(color.orange, 92) : na)
+
+plotshape(entrySig, 'Entry', shape.triangleup, location.belowbar, color.lime, size = size.small)
+plotshape(exitTrail, 'Exit trail', shape.triangledown, location.abovebar, color.aqua, size = size.small)
+plotshape(exitStop, 'Exit stop', shape.triangledown, location.abovebar, color.red, size = size.small)
+
+if entrySig
+    label.new(bar_index, low, 'BUY ' + str.tostring(entryP, format.mintick),
+              style = label.style_label_up, color = color.new(color.lime, 20),
+              textcolor = color.black, size = size.small)
+if exitTrail
+    label.new(bar_index, high, 'TRAIL ' + str.tostring(close, format.mintick),
+              style = label.style_label_down, color = color.new(color.aqua, 20),
+              textcolor = color.black, size = size.small)
+if exitStop
+    label.new(bar_index, high, 'STOP ' + str.tostring(close, format.mintick),
+              style = label.style_label_down, color = color.new(color.red, 20),
+              textcolor = color.white, size = size.small)
