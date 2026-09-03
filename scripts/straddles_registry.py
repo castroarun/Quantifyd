@@ -657,6 +657,33 @@ if _ff.exists():
         'ungated': ('Gate', 'CPR skip only — <b>no VIX floor</b>. The twin that keeps trading, so '
                             'the gate\'s value can be measured rather than assumed.'),
     }
+    # Each construction's own backtest, attached to the book that now runs it forward.
+    # The ungated twins have no backtest of their own and must not borrow one.
+    _BT = {
+        'FLY_PLAIN_GATED': dict(
+            method=['AlgoTest'], period='7.3 yrs · 2019–2026',
+            nums={'Net @10 lots': '+₹8,80,110', 'Calmar': '1.03', 'Max DD': '−₹1,16,834',
+                  'Trades': '204'},
+            how='AlgoTest\'s 1-minute positional engine, net of ₹20/order, taxes and 0.25% '
+                'slippage.',
+            caveat='<b class="neg">⚠ Front weekly</b> — the live V2 engine trades the 2nd-nearest. '
+                   'The trade CSV was not retained, so streaks cannot be recomputed.'),
+        'FLY_D_GATED': dict(
+            method=['AlgoTest'], period='7.3 yrs · 2019–2026',
+            nums={'Net @10 lots': '+₹11,00,000', 'Calmar': '1.59', 'Max DD': '−₹95,000',
+                  'Trades': '147'},
+            how='The same AlgoTest run with our CPR skip applied post-hoc to the exported trades.',
+            caveat='Best Calmar of the family, and train/test validated — but it is an overlay on '
+                   'a CSV that was not kept, so it cannot be re-checked.'),
+        'FLY_C_GATED': dict(
+            method=['Our bhavcopy'], period='7.5 yrs · 2019–2026',
+            nums={'Net @10 lots': '+₹15,16,346', 'Calmar': '0.59', 'Max DD': '−₹3,44,672',
+                  'Trades': '213'},
+            how='Rebuilt on real NSE bhavcopy closes, untraded contracts excluded, ATM chosen '
+                'from the entry-day OPEN. Per-trade output retained.',
+            caveat='<b>No stop — this is the CONTROL arm</b>, carried forward to measure what the '
+                   'stop does. Its stopped twin nets +₹9,52,919 at Calmar 0.32.'),
+    }
     for _k, _b in (FP.get('books') or {}).items():
         _open = str(_b.get('state', '')).startswith('OPEN')
         _legs = [dict(side=l['side'], type=l['type'], strike=l['strike'], qty=l['qty'],
@@ -677,17 +704,24 @@ if _ff.exists():
             lifetime=dict(net=(_b.get('pnl') or 0) if _open else 0, n=(1 if _open else 0),
                           win=None, maxdd=0, t=None),
             legs=_legs, curve=[], closed=[],
-            evidence=dict(
-                method=['Our recorded chain'], period='forward from 2026-09-03',
-                nums=({'Credit': str(_b.get('credit')), 'Mark': str(_b.get('mark')),
-                       'Move': f"{_b.get('move_pct')}%"} if _open else {}),
-                how='Only the cycle open right now is reconstructed, from its real 09:20 entry '
-                    'on the recorded chain and marked to the latest quote. No synthetic history.',
-                caveat=(_b.get('reason') or '') + (
-                    '  <b>The backtest behind this construction claims 7.3 years; this forward '
-                    'record starts today.</b> They are not the same evidence.'),
+            evidence=(lambda _e: dict(
+                method=_e['method'] if _e else ['Our recorded chain'],
+                period=_e['period'] if _e else 'no backtest of its own',
+                nums=_e['nums'] if _e else {},
+                how=((_e['how'] + ' ') if _e else '') +
+                    '<b>Forward record:</b> only the cycle open right now is reconstructed, from '
+                    'its real 09:20 entry on the recorded chain, marked to the latest quote — no '
+                    'synthetic history.',
+                caveat=((_e['caveat'] + '<br>') if _e else
+                        '<b>This variant drops the VIX floor the tested spec used, so it has no '
+                        'backtest of its own.</b> It is the twin of the gated book, run so the '
+                        'floor\'s value can be measured rather than assumed.<br>') +
+                       f"<b>Now:</b> {_b.get('reason') or ''} "
+                       '<b>The backtest above spans years; this forward record starts 3 Sep 2026.</b> '
+                       'They are not the same evidence.',
                 links=[('research/141', 'https://github.com/castroarun/Quantifyd/tree/main/'
-                                       'research/141_v2_bhav_pertrade')]),
+                                       'research/141_v2_bhav_pertrade'),
+                       ('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix')]))(_BT.get(_k)),
             rules=dict(
                 does=[('Structure', 'Short iron fly — SELL ATM CE + PE, BUY wings at '
                                     '<b>±2.0% of ATM</b>, snapped to strikes that traded.'),
@@ -706,84 +740,8 @@ if _ff.exists():
                 doc='scripts/fly_paper.py')))
 
 
-# ------------------------------------------------- tested, not trading (studies)
-# Study RESULTS, not live feeds. They change when the study is re-run, never
-# automatically. All three trade the FRONT weekly; the live engine trades the 2nd.
-V2_CORE_DOES = [
-    ('Structure', 'Short iron fly — SELL ATM CE + PE, BUY wings at <b>±2.0% of ATM</b>.'),
-    ('Expiry', '<b>FRONT weekly</b> — the nearest. <b>Not</b> the 2nd-nearest the live '
-               'engine trades.'),
-    ('Entry', '<b>09:20</b>, 4 trading days before expiry (AlgoTest\'s maximum).'),
-    ('Exit', '1 trading day before expiry, 15:15.'),
-    ('Gate', 'India VIX ≥ 13 at entry, applied from the export\'s own VIX column.'),
-]
-
-
-def _study(key, name, sub, net, n, win, maxdd, calmar, method, period, how, caveat,
-           extra_does, extra_doesnt, links):
-    systems.append(dict(
-        key=key, name=name, subtitle=sub, group='study', kind='positional', venue='NIFTY',
-        money='study', size_lots=10, size_qty=650,
-        window='09:20 · 4 TD → 1 TD', state=dict(label='Backtest only', tone='muted'),
-        today_pnl=None, running_pnl=None, last_pnl=None, last_day=None,
-        risk_open=None, to_stop=None,
-        lifetime=dict(net=net, n=n, win=win, maxdd=maxdd, t=None),
-        legs=[], curve=[], closed=[],
-        evidence=dict(method=method, period=period,
-                      nums={'Net @10 lots': ('+₹%s' % f'{net:,}') if net > 0 else ('−₹%s' % f'{abs(net):,}'),
-                            'Calmar': calmar, 'Max DD': '−₹%s' % f'{abs(maxdd):,}',
-                            'Trades': str(n)},
-                      how=how, caveat=caveat, links=links),
-        rules=dict(does=V2_CORE_DOES + extra_does,
-                   doesnt=extra_doesnt,
-                   doc='research/60_v2_straddle_optimization/'
-                       'V2_BIWEEKLY_STRADDLE_ALGOTEST_OPTIMIZATION_SWEEP_STATUS.md')))
-
-
-_study('STUDY_ALGOTEST', 'V2 · AlgoTest, full rules',
-       'The tested spec — front weekly, stop + target',
-       880110, 204, 56, -116834, '1.03', ['AlgoTest'], '7.3 yrs · 2019–2026',
-       'AlgoTest\'s 1-minute positional engine, net of ₹20/order, taxes and 0.25% '
-       'slippage (measured: 0.169% median half-spread over 3.47M recorded quotes).',
-       '<b class="neg">⚠ Front weekly.</b> The live engine trades the 2nd-nearest — a lever '
-       'the sweep listed and never ran, because AlgoTest caps entry at 4 TD (research/141). '
-       '<b>The trade CSV was not retained</b>, so streaks and per-year cannot be recomputed.',
-       [('Manage', '<b>2% underlying move-stop</b> · <b>+40% of credit</b> target · re-enter '
-                    'after either.')],
-       ['Not trading. This is the backtest the live book\'s parameters came from.',
-        'Its per-trade export is missing — an AlgoTest re-run is the open item.'],
-       [('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix'),
-        ('re-run spec', 'https://github.com/castroarun/Quantifyd/tree/main/research/141_v2_bhav_pertrade')])
-
-_study('STUDY_ALGOTEST_CPR', 'V2 · AlgoTest + CPR filter',
-       'Best Calmar on the page — but an overlay, on a trade list we no longer hold',
-       1100000, 147, None, -95000, '1.59', ['AlgoTest'], '7.3 yrs · 2019–2026',
-       'The same AlgoTest run with our CPR skip applied <b>post-hoc to the exported '
-       'trades</b> — not a native AlgoTest feature.',
-       'Validated by a train/test split: the ≈0.12% threshold is chosen on one half and '
-       'improves return AND drawdown on the other. <b>But it is an overlay on a CSV that was '
-       'not kept</b>, so it cannot be re-checked, and it is still the front weekly.',
-       [('Extra gate', 'Skip when the <b>prior-day CPR width &lt; 0.10%</b> of spot — '
-                       'compression precedes expansion.')],
-       ['Not trading.',
-        'The filter is ours, applied after the fact; AlgoTest never ran it.'],
-       [('V2 study', '/app/backtest/v2-nifty-ironfly-sl-vix')])
-
-_study('STUDY_ARM_C', 'Our variant C · front weekly + CPR',
-       'Our bhavcopy rebuild — the CONTROL arm, no stop',
-       1516346, 213, 54, -344672, '0.59', ['Our bhavcopy'], '7.5 yrs · 2019–2026',
-       'Rebuilt on real NSE bhavcopy closes with untraded contracts excluded and the ATM '
-       'chosen from the entry-day OPEN (causal). Per-trade output retained, so streaks and '
-       'the month grid are computable.',
-       '<b>Arm C carries NO STOP.</b> It is a measurement control — it exists to isolate what '
-       'the 2% stop does, and is <b>not a proposal to trade without one</b>. Its stopped twin '
-       '(arm D) nets +₹9,52,919 at Calmar 0.32.',
-       [('Extra gate', 'Skip when the prior-day CPR width &lt; 0.10% of spot.'),
-        ('Stop', '<b>None</b> — this is the control.')],
-       ['<b>Not a deployable configuration.</b> No stopless book is proposed.',
-        'Held to DTE-1 regardless of what the index does in between.'],
-       [('research/141', 'https://github.com/castroarun/Quantifyd/tree/main/research/141_v2_bhav_pertrade'), ('full dossier', 'https://claude.ai/code/artifact/a3487b7e-e6c4-4a88-8f7f-e006999915fe')])
-
+# The three study rows that used to sit here are gone: each construction now runs
+# forward as a paper book above, carrying its own backtest on its evidence panel.
 
 # ---------------------------------------------------------------- write + report
 GORDER = {'916': 0, 'intraday': 1, 'positional': 2, 'study': 3}

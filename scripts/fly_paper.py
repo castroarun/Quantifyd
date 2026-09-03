@@ -55,9 +55,13 @@ ENTRY_AT, EXIT_AT = '09:20', '15:15'
 BROK, SLIP = 20.0, 0.0025
 VIX_FLOOR, CPR_MIN = 13.0, 0.10
 
+# Three constructions x (with the tested VIX floor, without it). The ungated twin
+# exists because volatility is under the floor: without it there is nothing to watch.
 BOOKS = {
+    'FLY_PLAIN_GATED': dict(name='Fly · full rules (VIX-gated)', cpr=False, stop=0.02, vix=True),
     'FLY_D_GATED': dict(name='Fly D · CPR + stop (VIX-gated)', cpr=True, stop=0.02, vix=True),
     'FLY_C_GATED': dict(name='Fly C · CPR, no stop (VIX-gated)', cpr=True, stop=None, vix=True),
+    'FLY_PLAIN_OPEN': dict(name='Fly · full rules (ungated)', cpr=False, stop=0.02, vix=False),
     'FLY_D_OPEN': dict(name='Fly D · CPR + stop (ungated)', cpr=True, stop=0.02, vix=False),
     'FLY_C_OPEN': dict(name='Fly C · CPR, no stop (ungated)', cpr=True, stop=None, vix=False),
 }

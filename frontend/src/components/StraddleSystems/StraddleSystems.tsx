@@ -183,16 +183,16 @@ export default function StraddleSystems() {
 
   if (!feed) return null;
   const gof = (x: Sys) => x.group || (x.kind === 'positional' ? 'positional' : 'intraday');
-  const groups: [string, string, Sys[]][] = [
+  const allGroups: [string, string, Sys[]][] = [
     ['916', '9:16 portfolio · the combined-stop family, all intraday',
      feed.systems.filter((x) => gof(x) === '916')],
     ['intraday', 'Intraday · other',
      feed.systems.filter((x) => gof(x) === 'intraday')],
     ['positional', 'Positional · carried overnight across sessions',
      feed.systems.filter((x) => gof(x) === 'positional')],
-    ['study', 'Backtested · not trading — the constructions the live rules came from',
-     feed.systems.filter((x) => gof(x) === 'study')],
   ];
+  // a group with no rows must not render a header
+  const groups = allGroups.filter(([, , r]) => r.length > 0);
   const tot = feed.systems.reduce((a, x) => a + (x.lifetime.net || 0), 0);
 
   return (
