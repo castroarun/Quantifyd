@@ -1,6 +1,6 @@
 # True North (Momentum-30 Sub-Selection) Re-Assessment — Gate Bake-off + Slots + Exit Sweep, After-Tax
 
-STATUS: RUNNING
+STATUS: DONE — **VERDICT: CONCLUDED, INCUMBENT STANDS (no change adopted).** See `results/RESULTS.md`.
 
 ## 1. The Ask
 
@@ -102,6 +102,11 @@ gate booleans and exit matrices vectorized).
 | 2026-09-03 20:50 | Engine `scripts/tn_sweep.py` on VPS; smoke run | Incumbent (2012+): gross-of-tax 25.3% CAGR / −17.1% DD (DD matches r62's −17.0); no-gate-no-stop: 26.7% / −52.8% (gate value confirmed). avg_inv 0.43 investigated — NOT a bug: gate risk-off ≈32% of days + month-end-only redeploy + Donchian idle slots. |
 | 2026-09-03 20:58 | TAX MODEL FIX before any ranking run | v1 taxed every winner, never offset losses → biased against stop-heavy configs (723 stop-outs are mostly losses). Replaced with Indian FY netting: STCL offsets STCG then LTCG, LTCL offsets LTCG only, settled each Apr 1, no carry-forward (mildly conservative). Incumbent net-tax WA CAGR 20.9% (drag −4.4pp, consistent with r62). |
 | 2026-09-03 21:02 | Phase A LAUNCHED (71 gate cells × gross/tax) | /tmp/tn_phaseA.log |
+| 2026-09-03 21:10 | Phase A DONE — **incumbent gate WINS the bake-off** | NIFTYBEES-SMA100 weekly/cash is the top net-tax Calmar (0.88) of all 71 cells; only NIFTY50-SMA100 (near-identical twin) and NIFTYBEES-XO20/100 (lower CAGR) also pass the DD constraint. DD8-15 / momentum-negative / crossover gates and NO-gate all fail DD (−33..−52%). Only NIFTYBEES-series gates protect 2008 (index series start 2011). |
+| 2026-09-03 21:20 | Phase B DONE (54 runs) | Net-tax WA: block-new-only 21.12/−22.05/Cal 0.96 and cash+monthly-check 21.24/−21.61/Cal 0.98 both edge the incumbent (20.90/−23.67/0.88) on every metric incl. W1+W2 — but by +0.2-0.3pp CAGR, below the 1pp adoption margin. Halve-exposure: more CAGR, DD −33 → fails. Check-frequency: daily liquidation is WORSE (whipsaw); block is frequency-invariant as expected. |
+| 2026-09-03 21:30 | Phase C DONE (240 runs) | Donch15 = best-DD exit at every n (r62 confirmed); ATR×3 and SMA-trails clearly worse. **n5+donch15 challenger: net-tax 25.44/−25.52/Cal 1.00, beats incumbent on W1 AND W2.** Wider books n≥10 lose CAGR and W1 collapses (2016-19 dead zone). |
+| 2026-09-03 21:35 | ARUN PRIORITY (via coordinator): (1) deep-dive block-new-only vs liquidate-all incl. tax churn + offset bands; (2) 50-50 blend with OA adopted spec (30 seeds) for both gate actions, corr + blend stats | folded into Phase D + new `tn_blend.py` |
+| 2026-09-03 21:40 | Phase D (6 finalists × 12 offsets × gross/tax + sensitivities) + blend LAUNCHED | /tmp/tn_phaseD.log, /tmp/tn_blend.log |
 
 ## 6. Crash recovery (resume without Claude)
 
@@ -129,4 +134,22 @@ gate booleans and exit matrices vectorized).
 
 ## 8. Findings
 
-(populated as phases complete — see RESULTS.md for the final write-up)
+Full write-up in `results/RESULTS.md`. Headlines:
+
+1. **Incumbent gate WON its own bake-off** (71 cells) — best net-tax Calmar of all; OA-style
+   drawdown gates are wrong for this book (−34..−47% DD).
+2. **Offset-robustness reversed offset-0 rankings** — block-new-only and cash-monthly looked
+   better at offset 0 but are a wash across the 12 rebalance-day offsets; the incumbent has
+   the BEST worst-offset DD (−28.3) of all finalists.
+3. **Two challengers beat the +1pp after-tax margin** (n5/D15 +2.0pp, n8/D20 +1.9pp) but both
+   fail the W2-Calmar condition and carry −32..−34% worst-offset DDs → NOT adopted.
+4. **Block-new-only tax saving quantified: only ~0.22pp/yr** (FY loss netting absorbs the
+   mass-realization hit).
+5. **OA 50-50 blend: 27.4% after-tax CAGR at −16.4% DD (Calmar 1.68)**; the incumbent
+   liquidate-all TN leg is the (slightly) better blend partner — corr 0.40 vs 0.43 daily.
+6. Data hygiene: 2026-01-15 purge confirmed; residual benign phantom rows 2025-03-18 /
+   2024-01-15 (small-caps only); live gate on the SMA100 knife-edge this week (expected
+   behavior, weekly check).
+
+Closing log: 2026-09-03 22:0x Phase D DONE (156 runs) + blend DONE (30 seeds × 2 TN legs);
+22:1x RESULTS.md written, verdict CONCLUDED — incumbent stands; committed + pushed.

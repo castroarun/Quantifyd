@@ -458,16 +458,18 @@ def phase_D(ctx, finalists):
     py = {}
     for tag, kw in finalists:
         for off in range(12):
-            lbl = f"D_{tag}_off{off}_tax1"
-            if lbl not in done:
-                r = run(ctx, tax=True, offset=off, **kw)
-                if off == 0:
-                    nav = r["_nav"]
-                    last = nav.groupby(nav.index.year).last()
-                    yr = last.pct_change() * 100
-                    yr.iloc[0] = (last.iloc[0] / nav.iloc[0] - 1) * 100
-                    py[tag] = yr.round(1)
-                _emit(path, lbl, r)
+            for txm in (False, True):
+                lbl = f"D_{tag}_off{off}_tax{int(txm)}"
+                if lbl not in done:
+                    r = run(ctx, tax=txm, offset=off, **kw)
+                    if off == 0 and txm:
+                        nav = r["_nav"]
+                        nav.to_csv(RES / f"nav_{tag}_tax1.csv")
+                        last = nav.groupby(nav.index.year).last()
+                        yr = last.pct_change() * 100
+                        yr.iloc[0] = (last.iloc[0] / nav.iloc[0] - 1) * 100
+                        py[tag] = yr.round(1)
+                    _emit(path, lbl, r)
         for lbl2, kw2 in ((f"D_{tag}_cash5_tax1", dict(cash_y=0.05)),
                           (f"D_{tag}_rt50_tax1", dict(rt=0.005))):
             if lbl2 not in done:
@@ -478,30 +480,18 @@ def phase_D(ctx, finalists):
 
 
 def default_finalists():
-    """Incumbent + top configs from C (pre-registered metric), de-duplicated."""
-    fin = [("INC_bees_sma100_n8_d15", dict(series="NIFTYBEES", cons="sma100",
-                                           n=8, exit=("donch", 15)))]
-    try:
-        rows = [r for r in csv.DictReader(open(RES / "phaseC_slots_exits.csv"))
-                if r["tax"] == "1" and r["wa_cagr"]]
-        inc = next(r for r in rows if r["series"] == "NIFTYBEES" and r["cons"] == "sma100"
-                   and r["n"] == "8" and r["exit"] == "donch15")
-        cand = [r for r in rows if float(r["wa_dd"]) >= float(inc["wa_dd"]) - 3.0]
-        cand.sort(key=lambda r: -float(r["wa_cagr"]))
-        for r in cand[:6]:
-            ex = r["exit"]
-            if ex == "none":
-                exx = None
-            else:
-                kind = "".join(c for c in ex if c.isalpha())
-                exx = (kind, int("".join(c for c in ex if c.isdigit())))
-            tag = f"{r['series']}_{r['cons']}_n{r['n']}_{ex}"
-            if not any(t == tag for t, _ in fin):
-                fin.append((tag, dict(series=r["series"], cons=r["cons"],
-                                      n=int(r["n"]), exit=exx)))
-    except Exception as e:
-        print("finalist auto-pick failed:", e, flush=True)
-    return fin[:8]
+    """Hand-picked after phases A-C (2026-09-03): incumbent, the two sub-threshold
+    action/frequency improvers, the n5 concentration challenger (+ its block twin),
+    and the donch20 neighbour."""
+    g = dict(series="NIFTYBEES", cons="sma100")
+    return [
+        ("INC_cash_n8_d15", dict(**g, n=8, exit=("donch", 15))),
+        ("BLOCK_n8_d15", dict(**g, action="block", n=8, exit=("donch", 15))),
+        ("CASHMONTHLY_n8_d15", dict(**g, freq="monthly", n=8, exit=("donch", 15))),
+        ("CASH_n5_d15", dict(**g, n=5, exit=("donch", 15))),
+        ("BLOCK_n5_d15", dict(**g, action="block", n=5, exit=("donch", 15))),
+        ("CASH_n8_d20", dict(**g, n=8, exit=("donch", 20))),
+    ]
 
 
 def main():
