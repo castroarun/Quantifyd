@@ -70,6 +70,10 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 app = Flask(__name__)
+
+# Sleeves money-management API (paper-mode; see services/sleeves_api.py)
+from services.sleeves_api import sleeves_bp
+app.register_blueprint(sleeves_bp)
 app.secret_key = FLASK_SECRET_KEY
 
 # Session configuration

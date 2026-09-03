@@ -77,6 +77,64 @@ function MultiCurve({ dates, lines }: { dates: string[]; lines: { name: string; 
   );
 }
 
+type FlowsStatus = {
+  open_alpha: { nav: number | null; cash: number | null; liquid: number;
+    capital: number | null; sweep: { units: number; cost: number } | null;
+    flows: { ts: string; kind: string; amount: number }[] };
+  note: string;
+};
+
+function FundsPanel() {
+  const [st, setSt] = useState<FlowsStatus | null>(null);
+  const [amt, setAmt] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  const load = () => apiGet<FlowsStatus>('/api/sleeves/status').then(setSt).catch((e) => setMsg(String(e)));
+  useEffect(() => { load(); }, []);
+  const act = (kind: 'deposit' | 'withdraw') => {
+    const n = Number(amt);
+    if (!n || n <= 0) { setMsg('enter a positive amount'); return; }
+    fetch(`/api/sleeves/openalpha/${kind}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: n }), credentials: 'include',
+    }).then(async (r) => {
+      const d = await r.json();
+      setMsg(r.ok ? `${kind} of ₹${n.toLocaleString('en-IN')} done — ${d.note}` : d.error);
+      setAmt(''); load();
+    }).catch((e) => setMsg(String(e)));
+  };
+  const oa = st?.open_alpha;
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>Funds — Open Alpha sleeve (paper) · True North funds move via its own page</div>
+      {oa && (
+        <div className={styles.sub} style={{ marginBottom: 10 }}>
+          Liquid (cash + CASHIETF sweep): <b>₹{Math.round(oa.liquid).toLocaleString('en-IN')}</b> ·
+          capital contributed: ₹{Math.round(oa.capital ?? 0).toLocaleString('en-IN')} ·
+          withdrawals never force-sell positions
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="amount ₹"
+               style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid var(--hairline, #ccc)',
+                        background: 'var(--surface)', color: 'var(--ink)', width: 140 }} />
+        <button className={styles.tile} style={{ cursor: 'pointer' }} onClick={() => act('deposit')}>Deposit</button>
+        <button className={styles.tile} style={{ cursor: 'pointer' }} onClick={() => act('withdraw')}>Withdraw</button>
+      </div>
+      {msg && <p className={styles.note}>{msg}</p>}
+      {oa && oa.flows.length > 0 && (
+        <p className={styles.note}>
+          Recent flows: {oa.flows.slice(-5).map((f) => `${f.kind} ₹${Math.round(f.amount).toLocaleString('en-IN')} (${f.ts.slice(0, 10)})`).join(' · ')}
+        </p>
+      )}
+      <p className={styles.note}>
+        Deposits land in cash, sweep to CASHIETF, and fund new signals from the next nightly run.
+        Book-page figures refresh with the nightly cycle. Real-money flows arrive with the go-live
+        allocator after the Dec-5 soak review.
+      </p>
+    </div>
+  );
+}
+
 export default function Sleeves() {
   const [mom, setMom] = useState<MomState | null>(null);
   const [bs, setBs] = useState<BsFeed | null>(null);
@@ -92,10 +150,11 @@ export default function Sleeves() {
   const rows = bs.nav_curve.filter((r) => mMap.has(r.date));
   if (rows.length < 25)
     return <div className={styles.page}>
-      <h1>Sleeves — Momentum × BlueSky</h1>
+      <h1>Sleeves — True North × Open Alpha</h1>
+      <FundsPanel />
       <div className={styles.empty}>
         Only {rows.length} overlapping trading days so far — the combined view becomes meaningful as the
-        BlueSky soak accumulates history alongside the momentum book. Both books are shown on their own
+        Open Alpha soak accumulates history alongside True North. Both books are shown on their own
         pages meanwhile.
       </div></div>;
 
@@ -113,17 +172,18 @@ export default function Sleeves() {
     <div className={styles.page}>
       <div className={styles.head}>
         <div>
-          <h1>Sleeves — True North × Open Alpha (50-50, monthly rebalanced)</h1>
+          <h1>Sleeves — Momentum × BlueSky (50-50, monthly rebalanced)</h1>
           <div className={styles.sub}>
             Read-only combined view over both books · common window {dates[0]} → {dates[dates.length - 1]} ·
             monthly correlation {corr == null ? '—' : corr.toFixed(2)}
           </div>
         </div>
       </div>
+      <FundsPanel />
       <div className={styles.tiles}>
-        <div className={styles.tile}><div>True North</div>
+        <div className={styles.tile}><div>Momentum</div>
           <b className={sM.total >= 0 ? styles.pos : styles.neg}>{pct(sM.total)}</b></div>
-        <div className={styles.tile}><div>Open Alpha</div>
+        <div className={styles.tile}><div>BlueSky</div>
           <b className={sB.total >= 0 ? styles.pos : styles.neg}>{pct(sB.total)}</b></div>
         <div className={styles.tile}><div>50-50 blend</div>
           <b className={sX.total >= 0 ? styles.pos : styles.neg}>{pct(sX.total)}</b></div>
@@ -134,7 +194,7 @@ export default function Sleeves() {
       </div>
       <div className={styles.card}>
         <div className={styles.cardTitle}>
-          Growth of 100 (log) — gold = 50-50 blend · green = True North · blue = Open Alpha · dashed = NIFTYBEES
+          Growth of 100 (log) — gold = 50-50 blend · green = Momentum · blue = BlueSky · dashed = NIFTYBEES
         </div>
         <MultiCurve dates={dates} lines={[
           { name: 'NIFTYBEES', v: nV.map((v) => (isNaN(v) ? 100 : v)), color: 'var(--ink-muted)', dash: '4 3' },
