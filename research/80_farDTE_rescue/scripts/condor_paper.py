@@ -4,7 +4,7 @@
 
 The strategy research/80 landed on for the days NAS-OPT leaves idle:
   ENTER  Wednesday ~close: SELL a ~0.8%-OTM NIFTY strangle, BUY wings 1.0% beyond each short,
-         front-of-next weekly (Tuesday) expiry -> DTE 6. 2 lots/leg = 130 qty.
+         front-of-next weekly (Tuesday) expiry -> DTE 6. 10 lots/leg = 650 qty (was 2 lots to 2026-09-03).
   MARK   live off the options recorder every run.
   EXIT   Friday ~close. Never held over the weekend, never into Mon/Tue -> never competes with
          NAS-OPT for margin. The wings ARE the stop (max loss known at entry).
@@ -28,8 +28,8 @@ OPT = os.path.join(ROOT, "backtest_data", "options_data.db")
 STATE = os.path.join(ROOT, "backtest_data", "condor_paper_state.json")
 OUT = os.path.join(ROOT, "static", "app", "condor_paper.json")
 
-LOT, LOTS = 65, 2
-QTY = LOT * LOTS            # 130
+LOT, LOTS = 65, 10
+QTY = LOT * LOTS            # 650
 SHORT_PCT = 0.008          # shorts ~0.8% OTM
 WING_PCT = 0.010           # wings 1.0% beyond each short
 BROK = 20                  # per leg, round trip

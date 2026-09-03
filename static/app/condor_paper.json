@@ -3,63 +3,63 @@
   "subtitle": "~0.8% shorts / 1.0% wings \u00b7 enter Wed close, exit Fri close \u00b7 uses NAS-OPT's idle days",
   "study": "/app/backtest/fardte-rescue",
   "mode": "paper",
-  "lots": 2,
-  "qty": 130,
+  "lots": 10,
+  "qty": 650,
   "open": {
     "entry_day": "2026-09-02",
     "expiry": "2026-09-08",
     "dte_at_entry": 6,
     "spot_at_entry": 23855.7,
     "credit": 80.25,
-    "credit_inr": 10432,
-    "max_loss_inr": 22068,
+    "credit_inr": 52160,
+    "max_loss_inr": 110340,
     "legs": [
       {
         "strike": 24050,
         "type": "CE",
         "side": "SELL",
-        "qty": 130,
+        "qty": 650,
         "entry": 70.3,
-        "ltp": 74.25,
-        "pnl": -514,
+        "ltp": 71.2,
+        "pnl": -585,
         "entry_time": "15:10"
       },
       {
         "strike": 23650,
         "type": "PE",
         "side": "SELL",
-        "qty": 130,
+        "qty": 650,
         "entry": 42.5,
-        "ltp": 23.2,
-        "pnl": 2509,
+        "ltp": 25.55,
+        "pnl": 11018,
         "entry_time": "15:10"
       },
       {
         "strike": 24300,
         "type": "CE",
         "side": "BUY",
-        "qty": 130,
+        "qty": 650,
         "entry": 17.9,
-        "ltp": 16.15,
-        "pnl": -228,
+        "ltp": 15.85,
+        "pnl": -1332,
         "entry_time": "15:10"
       },
       {
         "strike": 23400,
         "type": "PE",
         "side": "BUY",
-        "qty": 130,
+        "qty": 650,
         "entry": 14.65,
-        "ltp": 7.3,
-        "pnl": -956,
+        "ltp": 7.7,
+        "pnl": -4518,
         "entry_time": "15:10"
       }
     ],
     "entry_time": "15:10",
-    "cur_value": 74.0,
-    "day_pnl": 732
+    "cur_value": 73.2,
+    "day_pnl": 4502
   },
-  "closed_total_pnl": 9456,
+  "closed_total_pnl": 47280,
   "closed_trades": 7,
   "win_rate": 71,
   "history": [
@@ -71,7 +71,7 @@
       "spot_at_exit": 24119.6,
       "credit": 74.7,
       "exit_value": 55.25,
-      "pnl": 2449,
+      "pnl": 12245,
       "legs": [
         {
           "strike": 24450,
@@ -113,7 +113,8 @@
           "pnl": 507,
           "entry_time": "15:10"
         }
-      ]
+      ],
+      "recorded_lots": 2
     },
     {
       "entry_day": "2026-08-19",
@@ -123,7 +124,7 @@
       "spot_at_exit": 24236.75,
       "credit": 68.35,
       "exit_value": 89.7,
-      "pnl": -2856,
+      "pnl": -14280,
       "legs": [
         {
           "strike": 24250,
@@ -165,7 +166,8 @@
           "pnl": -916,
           "entry_time": "15:10"
         }
-      ]
+      ],
+      "recorded_lots": 2
     },
     {
       "entry_day": "2026-08-12",
@@ -175,7 +177,7 @@
       "spot_at_exit": 24375.1,
       "credit": 78.15,
       "exit_value": 38.7,
-      "pnl": 5049,
+      "pnl": 25245,
       "legs": [
         {
           "strike": 24550,
@@ -217,7 +219,8 @@
           "pnl": -871,
           "entry_time": "15:10"
         }
-      ]
+      ],
+      "recorded_lots": 2
     },
     {
       "entry_day": "2026-08-05",
@@ -227,7 +230,7 @@
       "spot_at_exit": 24552.65,
       "credit": 90.5,
       "exit_value": 63.45,
-      "pnl": 3436,
+      "pnl": 17180,
       "legs": [
         {
           "strike": 24750,
@@ -269,7 +272,8 @@
           "pnl": -1632,
           "entry_time": "15:10"
         }
-      ]
+      ],
+      "recorded_lots": 2
     },
     {
       "entry_day": "2026-07-29",
@@ -279,7 +283,7 @@
       "spot_at_exit": 24395.5,
       "credit": 76.55,
       "exit_value": 57.85,
-      "pnl": 2351,
+      "pnl": 11755,
       "legs": [
         {
           "strike": 24450,
@@ -321,7 +325,8 @@
           "pnl": -2041,
           "entry_time": "15:10"
         }
-      ]
+      ],
+      "recorded_lots": 2
     },
     {
       "entry_day": "2026-07-22",
@@ -331,7 +336,7 @@
       "spot_at_exit": 23752.0,
       "credit": 97.8,
       "exit_value": 91.85,
-      "pnl": 693,
+      "pnl": 3465,
       "legs": [
         {
           "strike": 24200,
@@ -373,7 +378,8 @@
           "pnl": 956,
           "entry_time": "15:10"
         }
-      ]
+      ],
+      "recorded_lots": 2
     },
     {
       "entry_day": "2026-07-15",
@@ -383,7 +389,7 @@
       "spot_at_exit": 24332.5,
       "credit": 106.9,
       "exit_value": 119.1,
-      "pnl": -1666,
+      "pnl": -8330,
       "legs": [
         {
           "strike": 24250,
@@ -425,8 +431,9 @@
           "pnl": -3250,
           "entry_time": "15:19"
         }
-      ]
+      ],
+      "recorded_lots": 2
     }
   ],
-  "updated": "2026-09-03 12:17:01"
+  "updated": "2026-09-03 12:50:02"
 }

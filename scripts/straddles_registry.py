@@ -467,25 +467,38 @@ if cp.exists():
         name='Wed→Fri iron condor', kind='positional', venue='NIFTY',
         money='refuted', subtitle='±0.8% shorts, wings 1% beyond each short',
         size_lots=d.get('lots'), size_qty=d.get('qty'), window='Wed close → Fri close',
-        state=dict(label='Stopped', tone='muted'),
-        today_pnl=None, running_pnl=None,
+        # read the feed; a hardcoded label is how this row came to say "Stopped"
+        # while the book was holding a position
+        state=(dict(label=f"Holding since {(d.get('open') or {}).get('entry_day')}",
+                    tone=('pos' if ((d.get('open') or {}).get('day_pnl') or 0) >= 0 else 'neg'))
+               if d.get('open') else dict(label='Flat · between cycles', tone='muted')),
+        today_pnl=None,
+        running_pnl=((d.get('open') or {}).get('day_pnl') if d.get('open') else None),
         last_pnl=(round(float(hist[0]['pnl'])) if hist and hist[0].get('pnl') is not None else None),
         last_day=(hist[0].get('exit_day') if hist else None),
         risk_open=None, to_stop=None,
         lifetime=dict(net=round(sum(v)) if v else 0, n=len(v),
                       win=round(100 * sum(1 for x in v if x > 0) / len(v)) if v else None,
                       maxdd=dd(v), t=tstat(v)),
-        legs=[], curve=[],
+        legs=[dict(side=l['side'], type=l['type'], strike=l['strike'], qty=l['qty'],
+                   entry=l['entry'], ltp=l.get('ltp'), pnl=l.get('pnl'))
+              for l in ((d.get('open') or {}).get('legs') or [])],
+        curve=[],
         closed=[dict(day=h['entry_day'], exit=h.get('exit_day'), expiry=h.get('expiry'),
                      credit=h.get('credit'), reason='Fri close',
                      pnl=round(float(h['pnl']))) for h in hist[::-1][:40]],
         evidence=dict(method=['Our bhavcopy'], period='15 yrs · 434 campaigns',
-                      nums={'Net @2 lots': '−₹83,569', 't': '−1.30', 'Max DD': '−₹1.36L'},
+                      nums={'Net @10 lots': '−₹4,17,845', 't': '−1.30',
+                            'Max DD': '−₹6,77,730', 'Mean/campaign': '−₹965'},
                       how='434 real campaigns priced on NSE bhavcopy closes, untraded contracts '
-                          'excluded.',
+                          'excluded. <b>Restated to 10 lots</b> — the study ran 2 lots; size is a '
+                          'multiplier, not evidence, so both sides scale together.',
                       caveat='The original +₹880/campaign came from a <b>no-skew simulation</b>; '
                              'on real prices it is −₹193. The book’s 7 winning cycles sit 1.45 '
-                             'standard errors from that — luck, not counter-evidence.',
+                             'standard errors from that — luck, not counter-evidence.<br>'
+                             '<b>Sized to 10 lots on 3 Sep 2026 at Arun’s instruction.</b> The '
+                             'seven closed cycles above were recorded at 2 lots and are restated '
+                             '×5 at the same fills — scaled, not re-simulated. Paper only.',
                       links=[('research/140', 'https://github.com/castroarun/Quantifyd/tree/main/research/140_condor_real_chain')]),
         rules=dict(
             does=[('Purpose', 'Built to use the days the 9:16 books leave idle — in Wednesday, out '
@@ -494,11 +507,16 @@ if cp.exists():
                                 '<b>1.0% beyond its own short</b> (≈250-pt verticals).'),
                   ('Entry', 'Wednesday close (~15:10), front-of-next weekly.'),
                   ('Exit', 'Friday close. Never carried over a weekend.'),
-                  ('Stop', 'The backtested spec closes if the combined premium doubles.')],
+                  ('Stop', 'The backtested spec closes if the combined premium doubles.'),
+                  ('Size', '<b>10 lots = qty 650</b> since 3 Sep 2026 (2 lots before).')],
             doesnt=['<b>The running book has no stop code at all</b> — only the wings cap it. A '
                     'known divergence from the tested spec.',
                     'Never held into Monday or Tuesday.',
-                    '<b>Refuted 31 Aug 2026</b> on 434 real campaigns: −₹193/campaign at t −1.30.'],
+                    '<b>Refuted 31 Aug 2026</b> on 434 real campaigns: −₹193/campaign at t −1.30 '
+                    '(−₹965 at the new size).',
+                    '<b>It never stopped running.</b> The row said “Stopped” because that label '
+                    'was hand-written after the refutation while the job kept trading — corrected '
+                    '3 Sep 2026.'],
             doc='research/80_farDTE_rescue/scripts/condor_paper.py · verdict: research/140')))
 
 # ---------------------------------------------------------------- V1 books + V2 lab

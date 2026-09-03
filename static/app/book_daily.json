@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-03T12:00:01",
+ "generated_at": "2026-09-03T12:40:02",
  "books": {
   "orb": {
    "days": [
@@ -14813,6 +14813,55 @@
   "mst": {
    "days": [
     {
+     "date": "2026-09-03",
+     "trades": 2,
+     "wins": 0,
+     "losses": 2,
+     "pnl": 0.0,
+     "deployed": 0.0,
+     "cum": 0.0,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "NIFTY26SEP23900PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "BUY",
+       "leg_role": "put_long",
+       "strike": 23900,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-03T11:50:17.470766",
+       "exit_time": "2026-09-03T12:20:19.029619",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      },
+      {
+       "symbol": "NIFTY26SEP23700PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "leg_role": "put_short",
+       "strike": 23700,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-03T11:50:17.526106",
+       "exit_time": "2026-09-03T12:20:19.116202",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      }
+     ]
+    },
+    {
      "date": "2026-05-07",
      "trades": 10,
      "wins": 0,
@@ -15013,8 +15062,8 @@
     "max_position": 17342.0,
     "busiest_day": 28629.25,
     "avg_trade": 14314.62,
-    "days": 1,
-    "trades": 10,
+    "days": 2,
+    "trades": 12,
     "wins": 0,
     "win_rate": 0.0,
     "net": 0.0,
@@ -15025,9 +15074,9 @@
     "t_stat": null,
     "top3_share": null,
     "broker_trades": 2,
-    "sim_trades": 8,
+    "sim_trades": 10,
     "first": "2026-05-07",
-    "last": "2026-05-07"
+    "last": "2026-09-03"
    }
   }
  }
