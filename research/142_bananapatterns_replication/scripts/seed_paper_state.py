@@ -22,7 +22,7 @@ import bluesky_replay as br
 
 START = '2020-01-01'
 CAPITAL = 1_000_000
-TRAIL = 20
+TRAIL = 15   # 2026-09-03: 20 -> 15 (after-tax paired winner under no-gate/16-slot spec)
 COST = 0.0025
 STATE = ROOT / 'backtest_data' / 'bluesky_paper_state.json'
 UI_JSON = ROOT / 'static' / 'app' / 'bluesky_paper.json'
@@ -106,7 +106,7 @@ for s in trig_df.columns[row.values]:
 
 nav_hist = [dict(date=str(d.date()), nav=round(float(v), 0))
             for d, v in nav_curve.items()]
-prov = (f'History BACKFILLED from the adopted-spec backtest (2026-09-03 spec: trail-20, '
+prov = (f'History BACKFILLED from the adopted-spec backtest (2026-09-03 spec: trail-15 SMA, '
         f'-8% stop, 16 slots @6.25%, NO gate; median seed {med}, '
         f'{START} -> {last_day.date()}, {len(closed)} trades); LIVE paper from 2026-09-02, '
         f're-seeded 03-Sep-2026 after the gate audit (research/142 gate bake-off: SMA200 '

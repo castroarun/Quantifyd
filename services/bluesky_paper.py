@@ -46,7 +46,10 @@ CAPITAL = 1_000_000
 SLOTS = 16
 SIZE_PCT = 0.0625
 STOP = 0.08
-TRAIL_SMA = 20
+# 2026-09-03 (Arun): trail 20 -> 15. Under the no-gate/16-slot spec the paired
+# no-cliff check showed trail-15 wins +1.6-2.0pp AFTER-TAX on 24-26/30 seeds with
+# better worst-seed AND shallower DD (research/142 exit_nocliff_check*.csv).
+TRAIL_SMA = 15
 RS_MIN = 70.0
 TV_FLOOR = 5e7
 GATE_SMA = 200
@@ -226,7 +229,7 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
               trades=trades[-80:], n_trades=len(trades),
               win_pct=round(100 * len(wins) / len(trades), 1) if trades else None,
               nav_curve=curve_ui, missed_tail=st['missed'][-20:],
-              spec='trail-20; -8% stop; 16 slots @6.25%; NO gate (retired 03-Sep-2026); '
+              spec='trail-15 SMA; -8% stop; 16 slots @6.25%; NO gate (retired 03-Sep-2026); '
                    'no mcap floor; 25bps',
               study='/app/backtest/bluesky-ath-breakout-research142', log=log)
     def _clean(o):
@@ -312,7 +315,7 @@ def main():
             if cl <= p['buy'] * (1 - STOP):
                 reason = 'stop_8pct'
             elif str(p['entry_date']) != str(today.date()) and cl < float(sma_t.loc[today, s]):
-                reason = 'trail_sma20'
+                reason = f'trail_sma{TRAIL_SMA}'
             if reason:
                 st['cash'] += p['qty'] * cl * (1 - COST)
                 tr = dict(symbol=s, entry_date=p['entry_date'], exit_date=str(today.date()),

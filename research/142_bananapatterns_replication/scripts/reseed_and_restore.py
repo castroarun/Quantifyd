@@ -62,7 +62,13 @@ st['interest_earned'] = 0.0
 json.dump(st, open(STATE, 'w'), indent=1, default=str)
 print(f'flows restored: cash {st["cash"]:,.0f}, capital {st["capital"]:,.0f}')
 
-# 5. re-anchor dividend HWM (deposits included in NAV => not distributable)
+# 5. refresh the UI feed FIRST — dividend init reads NAV from it (the 03-Sep first
+# run re-anchored on the pre-rescale backtest NAV because this ordering was wrong)
+r = subprocess.run([sys.executable, str(ROOT / 'services' / 'bluesky_paper.py'),
+                    '--ui-only'], capture_output=True, text=True)
+print((r.stdout or r.stderr)[-200:])
+
+# 6. re-anchor dividend HWM (deposits included in NAV => not distributable)
 sys.path.insert(0, str(ROOT))
 from services.dividend_engine import init, status
 st = json.load(open(STATE))
