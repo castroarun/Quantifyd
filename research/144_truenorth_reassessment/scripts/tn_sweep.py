@@ -188,7 +188,9 @@ def wstats(nav, a, b):
 
 
 def run(ctx, series="NIFTYBEES", cons="sma100", action="cash", freq="weekly",
-        n=8, exit=("donch", 15), offset=0, tax=False, cash_y=CASH_ANNUAL, rt=RT):
+        n=8, exit=("donch", 15), offset=0, tax=False, cash_y=CASH_ANNUAL, rt=RT,
+        record=None):
+    """`record`: optional list — appends (date_pos, tuple_of_held_symbols) daily."""
     t0 = time.time()
     dates = ctx.dates; C = ctx.C; sidx = ctx.sidx
     gate_on = series != "NONE"
@@ -335,6 +337,8 @@ def run(ctx, series="NIFTYBEES", cons="sma100", action="cash", freq="weekly",
         E = sum(v[0] for v in held.values())
         nav_v[i - ctx.i0] = E + cash
         inv_sum += E / (E + cash)
+        if record is not None:
+            record.append((i, tuple(held)))
     if tax:
         settle_tax()                          # settle the final partial fiscal year
         nav_v[-1] = sum(v[0] for v in held.values()) + cash

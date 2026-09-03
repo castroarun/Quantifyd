@@ -1,0 +1,6 @@
+mode,held_tv_p50_cr,held_tv_p10_typ_cr,held_tv_p10_worst5pct_cr,held_tv_min_ever_cr,max_book_10pct_participation_cr,max_book_worstcase_cr
+top200,49.2,21.4,2.3,0.82,17.1,1.9
+top500,12.5,4.5,0.2,0.0,3.6,0.2
+tvfloor,21.7,9.4,4.9,0.49,7.5,3.9
+top500_unisize,"{2006: 500, 2009: 500, 2012: 500, 2016: 500, 2020: 500, 2023: 500, 2026: 500}",,,,,
+tvfloor_unisize,"{2006: 112, 2009: 141, 2012: 139, 2016: 203, 2020: 273, 2023: 623, 2026: 954}",,,,,
