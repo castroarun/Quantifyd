@@ -14739,7 +14739,21 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         { label: 'Site claim reproduced?', value: 'NO', tone: 'neg', hint: '79.8%/-11.4% unreachable under any honest variant' },
         { label: 'Trade-rule match', value: '37/39 exits exact', tone: 'pos', hint: 'to the day and paisa' },
       ],
-      tables: [],
+      tables: [{
+        title: 'Spec revision 03-Sep-2026 - BEFORE vs AFTER (2006->2026, 30 paired seeds, idle cash earning 5% p.a. in BOTH)',
+        caption: 'BEFORE = as first went live 02-Sep (trail-20 SMA, 8 slots @18.75%, NIFTYBEES 200-SMA gate, correctly computed). AFTER = adopted 03-Sep (trail-15 SMA, 16 slots @6.25%, no gate). Medians across 30 selection seeds; worst = unluckiest seed. The AFTER spec wins every headline metric on BOTH tax treatments, trades ~4x more (churn is priced into the after-tax row), and nearly eliminates fully-in-cash time.',
+        columns: ['Metric', 'BEFORE pre-tax', 'AFTER pre-tax', 'BEFORE after-tax', 'AFTER after-tax'],
+        rows: [
+          ['CAGR (median)', '35.1%', '41.5%', '28.4%', '33.8%'],
+          ['CAGR (worst seed)', '29.7%', '39.7%', '24.5%', '32.4%'],
+          ['Max drawdown (median)', '-27.2%', '-25.2%', '-33.0%', '-27.3%'],
+          ['Calmar', '1.29', '1.64', '0.86', '1.24'],
+          ['Win ratio', '46.8%', '47.6%', '47.0%', '47.6%'],
+          ['Trades (20.8 yrs)', '1,049 (~50/yr)', '4,200 (~202/yr)', '1,045', '4,189'],
+          ['Days with no trade activity', '72%', '36%', '72%', '36%'],
+          ['Days fully in cash', '21.7%', '7.1%', '21.7%', '7.1%'],
+        ],
+      },],
       charts: [
         { src: '/app/bluesky-breakout-tearsheet.png', caption: 'Client factsheet — headline config D (median seed of the 10-seed ensemble) vs NIFTYBEES, 2006-2025, net of 25bps/side.' },
         { src: '/app/bluesky-vs-indices.png', caption: 'Growth of Rs 100 (log), 2011-2025: BlueSky replica (median seed, net) vs NIFTYBEES, NIFTYMIDCAP150, NIFTYSMLCAP250.' },

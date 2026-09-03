@@ -69,7 +69,9 @@ def load_frames(base_start, trail_sma=50):
 
 def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_arr,
              fill_realistic, cost, stop=STOP, slots=SLOTS, size_pct=SIZE_PCT,
-             stcg=0.0, ltcg=0.125, fill_close=False):
+             stcg=0.0, ltcg=0.125, fill_close=False, cash_yield=0.0):
+    """cash_yield: annualized liquid-ETF yield accrued daily on idle cash
+    (default 0 = legacy behavior; the live book sweeps to CASHIETF ~5-6%)."""
     rng = np.random.default_rng(seed)
     cash = float(CAPITAL)
     positions = []      # (col, entry_i, buy, qty)
@@ -78,8 +80,11 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
     passed_up = 0
     tax_yr_gain = 0.0        # net realized gains this calendar year (Rs)
     cur_year = dates[days_idx[0]].year
+    y_day = 1.0 + cash_yield / 252.0
 
     for k, i in enumerate(days_idx):
+        if cash_yield and cash > 0:
+            cash *= y_day
         yr = dates[i].year
         if stcg and yr != cur_year:
             if tax_yr_gain > 0:
