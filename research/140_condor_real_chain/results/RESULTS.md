@@ -49,6 +49,16 @@ live book's own strikes exactly (short CE 24450 / long CE 24700 at spot 24,277).
 | max drawdown | −₹23,820 | **−₹1,35,546** |
 | worst campaign | — | −₹17,116 |
 
+> **CORRECTION 2026-09-03 (research/143).** The sentence below compared two
+> DIFFERENT constructions and attributed the whole gap to the engine. research/80's
+> condor is anchored to DTE (entering when expiry is 6 calendar days out, which was
+> a FRIDAY entry over a weekend for 92% of its sample), runs a ×2 stop, and prices a
+> synthetic weekly expiry that did not exist before Feb-2019. This study is anchored
+> to Wednesday→Friday with no stop. The verdict below is unchanged and the number is
+> close, but it was not earned by the comparison as made. Run properly — one
+> difference at a time, 334 campaigns matched day-for-day — the engine is worth
+> **₹1,357/campaign** and every rule difference is worth under ₹100.
+
 **The engine was wrong by ₹1,073 per campaign, and it was wrong in the direction its
 own documentation warned about.** research/80's RESULTS.md says the engine has *no
 volatility skew* and is weakest far-OTM — which is exactly where the long wings sit.

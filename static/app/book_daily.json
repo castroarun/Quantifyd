@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-03T12:40:02",
+ "generated_at": "2026-09-03T13:00:02",
  "books": {
   "orb": {
    "days": [
@@ -10067,12 +10067,12 @@
    "days": [
     {
      "date": "2026-09-03",
-     "trades": 4,
-     "wins": 1,
-     "losses": 3,
-     "pnl": -1078.93,
-     "deployed": 96880.89,
-     "cum": -14313.47,
+     "trades": 6,
+     "wins": 2,
+     "losses": 4,
+     "pnl": -1085.73,
+     "deployed": 144972.46,
+     "cum": -14320.28,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -10118,6 +10118,28 @@
        "side": "SELL",
        "price": 2326.1019600000004,
        "qty": 10.13535946783969,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "DLF",
+       "pnl": 177.94,
+       "deployed": 23696.82,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 678.446405,
+       "qty": 34.92805888038566,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "GRASIM",
+       "pnl": -184.74,
+       "deployed": 24394.76,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 3285.11417,
+       "qty": 7.425847213410686,
        "reason": "PATTERN"
       }
      ]
@@ -13060,12 +13082,12 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24670.38,
+    "avg_trade": 24665.11,
     "days": 31,
-    "trades": 235,
-    "wins": 83,
-    "win_rate": 35.3,
-    "net": -14313.45,
+    "trades": 237,
+    "wins": 84,
+    "win_rate": 35.4,
+    "net": -14320.25,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
@@ -13073,7 +13095,7 @@
     "t_stat": -1.23,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 235,
+    "sim_trades": 237,
     "first": "2026-07-23",
     "last": "2026-09-03"
    }
@@ -13082,12 +13104,12 @@
    "days": [
     {
      "date": "2026-09-03",
-     "trades": 2,
-     "wins": 0,
+     "trades": 3,
+     "wins": 1,
      "losses": 2,
-     "pnl": -3923.44,
-     "deployed": 591270.07,
-     "cum": -5303.54,
+     "pnl": -3404.12,
+     "deployed": 1959334.52,
+     "cum": -4784.22,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -13113,6 +13135,18 @@
        "price": 185.37437100000002,
        "lots": 1,
        "lot_size": 500,
+       "reason": "ST_FLIP"
+      },
+      {
+       "symbol": "BEL",
+       "pnl": 519.32,
+       "deployed": 1368064.46,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 408.37745,
+       "lots": 1,
+       "lot_size": 3350,
        "reason": "ST_FLIP"
       }
      ]
@@ -13799,20 +13833,20 @@
     "basis": "open-high / open-low \u00b7 1 lot",
     "max_position": 1466809.82,
     "busiest_day": 4383202.38,
-    "avg_trade": 738746.31,
+    "avg_trade": 753381.61,
     "days": 16,
-    "trades": 42,
-    "wins": 13,
-    "win_rate": 31.0,
-    "net": -5303.56,
+    "trades": 43,
+    "wins": 14,
+    "win_rate": 32.6,
+    "net": -4784.24,
     "best_day": 21357.88,
     "worst_day": -6724.26,
     "green_days": 3,
     "costs_modelled": null,
-    "t_stat": -0.18,
+    "t_stat": -0.16,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 42,
+    "sim_trades": 43,
     "first": "2026-08-07",
     "last": "2026-09-03"
    }

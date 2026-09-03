@@ -1762,7 +1762,23 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     slug: 'fardte-rescue',
     title: 'Rescuing the far-from-expiry days — five ideas, four dead, one that works',
     verdict:
-      'SIGNAL (not yet STRATEGY). research/79 showed NAS-OPT loses Rs441/day on DTE>=4. The cause is NOT the ' +
+      'REFUTED (2026-08-31, re-confirmed on matched rules 2026-09-03). THE HEADLINE BELOW IS WRONG AND IS '  +
+      'KEPT ONLY SO THE CORRECTION IS LEGIBLE. The Wed-Fri condor was valued on a Black-Scholes engine with '  +
+      'NO VOLATILITY SKEW, which prices the long wings too cheaply and hands the structure a credit the '  +
+      'market never offered. On 334 campaigns matched day-for-day -- same anchor, same period, same strikes, '  +
+      'same rule, only the prices differ -- the engine says +Rs1,029/campaign and REAL NSE bhavcopy prices '  +
+      'say -Rs328. The gap is Rs1,357 and it is POSITIVE IN ALL EIGHT YEARS. Every rule difference that '  +
+      'might have explained it was priced separately and is worth under Rs100/campaign: the x2 stop is worth '  +
+      'Rs6 and NEVER FIRED in 545 campaigns; the Wed-Fri vs Fri-Mon anchor Rs64; the period Rs8. Two further '  +
+      'defects: this test priced a SYNTHETIC WEEKLY EXPIRY every Thursday from 2015, but NIFTY weeklies did '  +
+      'not exist until Feb-2019 (bhavcopy: 14 expiries/yr through 2018, then 56) -- so four of the 11/12 '  +
+      'positive years traded an unlisted contract; and the entry described here as Wednesday was, for 92% of '  +
+      'the sample, a FRIDAY entry exiting MONDAY over a weekend, because NIFTY expiry was Thursday until '  +
+      'Sep-2025. On real prices across 2011-2026 the structure is -Rs193/campaign at t -1.30, and its three '  +
+      'worst years are its three most recent. DO NOT DEPLOY. The four KILLS in this study stand -- a bias '  +
+      'that inflates credit makes a kill conservative -- but the one idea that SURVIVED is precisely the one '  +
+      'that bias would manufacture, and it did. Full working: research/143. '  +
+      'ORIGINAL (WRONG) VERDICT FOLLOWS: SIGNAL (not yet STRATEGY). research/79 showed NAS-OPT loses Rs441/day on DTE>=4. The cause is NOT the ' +
       'stop and NOT that those days are wilder — it is that there is almost nothing to collect: intraday you ' +
       'keep only 6-10% of the far-DTE premium you sell (vs 83% on expiry day), because theta lives in an ' +
       "option's final DAYS, not its final hours. Every intraday fix therefore failed: 22 exit rules (best " +
@@ -1786,8 +1802,8 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'The one that works requires abandoning the intraday frame entirely.',
     cardStats: [
       { label: 'The cause', value: 'keep only 6-10% of premium' },
-      { label: 'Best answer', value: 'Condor, Wed→Fri' },
-      { label: 'Calmar', value: '1.63' },
+      { label: 'Best answer', value: 'REFUTED on real prices' },
+      { label: 'Real bhavcopy', value: '−₹193/campaign · t −1.30' },
     ],
     systemRules: {
       intro:
@@ -1796,10 +1812,10 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         'days and is flat again before Monday, so the two never compete for capital.',
       sharedCoreTitle: 'The Wed→Fri iron condor',
       sharedCore: [
-        { k: 'Entry', v: 'Wednesday close (DTE6 against the Tuesday weekly expiry)' },
+        { k: 'Entry', v: 'CORRECTION: described as Wednesday, but the rule is DTE6 against the next weekly expiry. NIFTY expiry was THURSDAY until Sep-2025, so for 92% of the sample this entered FRIDAY and exited MONDAY, carrying a weekend.' },
         { k: 'Structure', v: 'SELL strangle ~0.8% OTM either side, BUY wings 1.0% beyond each short. PERCENTAGE strikes, NOT fixed points -- see the correction.' },
         { k: 'Exit', v: 'FRIDAY close — never held over a weekend, never held into Mon/Tue' },
-        { k: 'Stop', v: 'close the position if the combined premium doubles' },
+        { k: 'Stop', v: 'close if the combined premium doubles \u2014 measured in research/143 and worth Rs6/campaign: it NEVER FIRED in 545 simulated campaigns.' },
         { k: 'Size', v: '2 lots/leg (130 qty) — margin ~Rs52,500 (capped by the wings)' },
         { k: 'Why the wings', v: 'not a compromise — the naked version has 2.5x the drawdown, 4x the margin and a WORSE Calmar' },
         { k: 'Why exit Friday', v: 'the weekend hold is worth -Rs96/trade: the Monday gap costs more than 3 days of decay earn' },
@@ -1807,17 +1823,20 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       riskLayer: {
         title: 'What each exit day costs and buys',
         caption:
-          'The biggest P&L is the worst trade. Exiting Friday earns half as much at a fifth of the risk — and ' +
-          'uses the margin for 1.1 days instead of 3.7, which is the metric that actually matters when the ' +
-          'capital is needed elsewhere on Monday.',
+          'EVERY ROW BELOW IS SIMULATED AND WRONG — kept so the correction is legible. The last row is the same ' +
+          'structure priced on real NSE bhavcopy closes, and it is the only one that reflects a tradeable market. ' +
+          'The simulated rows come from an engine with no volatility skew, which underprices the long wings. ' +
+          'ORIGINAL CAPTION: the biggest P&L is the worst trade. Exiting Friday earns half as much at a fifth of ' +
+          'the risk — and uses the margin for 1.1 days instead of 3.7.',
         columns: ['Shorts / Wings', 'Mean/trade', 'Annual', 'Max DD', 'Calmar', '+years', 'Return on margin'],
         rows: [
           ['0.8% / 1.0% (stop x2)', '+880', '+38,944', '-23,820', '1.63', '11/12', '100% p.a.'],
           ['0.8% / 0.6% (stop x1.5)', '+466', '+20,626', '-13,179', '1.57', '11/12', '66% p.a.'],
           ['0.6% / 1.0% (stop x1.5)', '+757', '+33,507', '-22,627', '1.48', '10/12', '86% p.a.'],
           ['0.4% / 0.6% (wings only)', '+196', '+8,637', '-17,392', '0.50', '9/12', '27% p.a.'],
+          ['REAL PRICES 0.8%/1.0%, 434 campaigns 2011-26', '-193', '-5,223', '-135,549', 'negative', '7/16', 'negative'],
         ],
-        highlightRows: [0],
+        highlightRows: [4],
       },
     },
     system: {
@@ -1984,6 +2003,8 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       },
     ],
     projectPaths: [
+      'research/143_condor_rule_diff/results/RESULTS.md  <- THE CORRECTION: engine vs rules, decomposed',
+      'research/140_condor_real_chain/results/RESULTS.md  <- refuted on 434 real campaigns',
       'research/80_farDTE_rescue/results/RESULTS.md',
       'research/80_farDTE_rescue/scripts/r80_phase1.py',
       'research/80_farDTE_rescue/scripts/r80_overnight.py',

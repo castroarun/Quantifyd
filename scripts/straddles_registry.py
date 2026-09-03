@@ -492,14 +492,23 @@ if cp.exists():
                             'Max DD': '−₹6,77,730', 'Mean/campaign': '−₹965'},
                       how='434 real campaigns priced on NSE bhavcopy closes, untraded contracts '
                           'excluded. <b>Restated to 10 lots</b> — the study ran 2 lots; size is a '
-                          'multiplier, not evidence, so both sides scale together.',
+                          'multiplier, not evidence, so both sides scale together.<br>'
+                          '<b>research/143 settled why this disagrees with the original Calmar 1.63.</b> '
+                          'On 334 campaigns matched day-for-day — same anchor, same period, same strikes, '
+                          'same rule — the old engine says +₹1,029/campaign and real prices say −₹328. '
+                          'The whole gap is <b>pricing</b>: that engine had no volatility skew, so it '
+                          'underpriced the long wings. Every rule difference was measured separately and '
+                          'is worth under ₹100: the ×2 stop ₹6 (it never fired in 545 campaigns), the '
+                          'Wed→Fri vs Fri→Mon anchor ₹64, the period ₹8.',
                       caveat='The original +₹880/campaign came from a <b>no-skew simulation</b>; '
                              'on real prices it is −₹193. The book’s 7 winning cycles sit 1.45 '
                              'standard errors from that — luck, not counter-evidence.<br>'
                              '<b>Sized to 10 lots on 3 Sep 2026 at Arun’s instruction.</b> The '
                              'seven closed cycles above were recorded at 2 lots and are restated '
                              '×5 at the same fills — scaled, not re-simulated. Paper only.',
-                      links=[('research/140', 'https://github.com/castroarun/Quantifyd/tree/main/research/140_condor_real_chain')]),
+                      links=[('research/143 · engine vs rules', 'https://github.com/castroarun/Quantifyd/tree/main/research/143_condor_rule_diff'),
+                             ('research/140 · refutation', 'https://github.com/castroarun/Quantifyd/tree/main/research/140_condor_real_chain'),
+                             ('Study page', '/app/backtest/fardte-rescue')]),
         rules=dict(
             does=[('Purpose', 'Built to use the days the 9:16 books leave idle — in Wednesday, out '
                               'Friday, flat before Monday so it never competes for margin.'),
