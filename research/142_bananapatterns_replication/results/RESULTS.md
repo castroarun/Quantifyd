@@ -263,3 +263,30 @@ Arun's sequencing rule.
 *Reproducibility: script `scripts/validate_trades.py` + `scripts/entry_diag.py` on VPS
 `backtest_data/market_data.db` (snapshot as of 2026-09-01); output
 `results/trade_match.csv`.*
+
+---
+
+## ADDENDUM 2026-09-03 — Gate audit, bake-off, and spec revision (Arun-approved)
+
+**Bug found:** phantom 15-Jan-2026 holiday rows (526 symbols, O=H=L=C=prev close, vol 0,
+one Feb-17 Kite batch) NaN-poisoned `rolling(200).mean()` on the union-aligned NIFTYBEES
+series → `close < NaN` = False → **the weak-market gate was silently OPEN in every
+backtest/seeding run from late-Apr-2026**. The live engine (dropna) was never affected.
+Rows purged (full 2015+ scan: no other date matches); gate code made NaN-robust in
+`bluesky_replay.py` / `seed_paper_state.py`.
+
+**Gate bake-off (72 cells × 2 windows + 20y finals + Donchians + plateau + after-tax +
+30-seed paired test):** SMA200 gate REFUTED on any series/length/type. DD10 (block >10%
+below 252d high) is real 2008 insurance (30/30 paired seeds, +9.6pp) at a real premium
+(−1.6pp CAGR/yr, loses on 20/30 seeds) — NOT adopted per Arun's balance principle.
+Smallcap/midcap gate series strangle the book (blocked 27-41% of days). Breadth gates
+catastrophic. Full grids: `results/gate_bakeoff.csv`, `gate_finals.csv`,
+`gate_yoy_full.csv`, `gate_paired_test.csv`.
+
+**Adopted spec (2026-09-03): trail-20, −8% stop, 16 slots @6.25%, NO market gate.**
+30-seed evidence: median 37.8% CAGR (pre-tax, 2006→26), worst-seed 33.6% (vs 31.9% at
+8 slots), spread halved, losing years near-deterministic (2008 band −14.5..−12.3),
+2026 zero losing paths. Book re-seeded (seed 5, 1,310 trades, 15 open), deposits
+carried, dividend HWM re-anchored ₹11,35,026. Known model gap for the Dec-12 restudy:
+sim holds idle cash at 0% (no CASHIETF yield) — understates all configs, most for
+gated ones.

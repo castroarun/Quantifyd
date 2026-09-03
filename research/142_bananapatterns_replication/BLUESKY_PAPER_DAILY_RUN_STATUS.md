@@ -48,3 +48,16 @@ gap costs documented; gate behaviour correct. Then decide G6 sizing or park.
 | Date | Event |
 |---|---|
 | 2026-09-02 | Built, dry-run OK (1,219 live quotes, gate OK), cron installed (67→69 lines verified), page live, pushed `62655e1`/`c7a1b3f` |
+
+## SOAK CLOCK RESTARTED 2026-09-03 — spec revision (Arun: "Proceed")
+
+The book was re-seeded on the revised spec: **16 slots @6.25%, NO market gate**
+(SMA200 retired after the gate audit + bake-off; DD10 evaluated, not adopted —
+see GATE_BAKEOFF_DAILY_SWEEP_STATUS.md §7). The 2026-09-02 seed's 5 open positions
+were spec-invalid (entered by the NaN-dead gate) and were replaced by the correct
+15-position portfolio (median seed 5, 1,310 backfilled trades, momentum-NAV parity
+rescale). Arun's ₹2.5L deposits carried with original timestamps; dividend HWM
+re-anchored at ₹11,35,026. **The Dec-05 soak review judges fills/tracking from
+03-Sep-2026 forward on the new spec** — pass criterion unchanged (fills within
+~0.5% of modeled, miss-rate, distribution consistency). Note: with the gate retired
+the book now emits buy-stops every night there are signals (21 pending on day one).

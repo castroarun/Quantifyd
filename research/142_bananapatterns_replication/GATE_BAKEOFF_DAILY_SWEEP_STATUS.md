@@ -1,6 +1,6 @@
 # Open Alpha Weak-Market Gate Bake-Off — Index × MA-Type × Length on the ATH-Breakout Book
 
-STATUS: RUNNING
+STATUS: DONE — spec adopted 2026-09-03 (16 slots @6.25%, NO gate); see §7 Findings
 
 ## 1. The Ask
 
@@ -94,6 +94,34 @@ r/64 found some Kite INDEX series corrupt — sanity ranges printed per series a
 | `results/gate_bakeoff.csv` | per-cell results | yes |
 | this file | status | yes |
 
-## 7. Findings
+## 7. Findings (FINAL — all decisions Arun-approved 2026-09-03 "Proceed")
 
-(pending)
+1. **SMA200 gate REFUTED** (any series/length/type): repeatedly misses rebounds
+   (2010/2019/2020) without unique protection; after-tax 26.1% CAGR vs 29.4% no-gate;
+   would have blocked essentially all of 2026 (+0.5% vs +14.7% no-gate).
+2. **DD10** (block >10% below 252d high) looked like the balance winner on 10-seed
+   medians (x687 vs x651, 2008 DD −17 vs −28, COVID untouched) — but the **30-seed
+   PAIRED test** (same seed, gate on/off) showed the median edge was sampling luck:
+   CAGR uplift −1.6pp median, gate wins only 10/30 seeds; its 2008 improvement
+   (+9.6pp, 30/30 seeds) is real but is *priced insurance*, not free edge. NOT adopted.
+   Donchian latches, breadth, vol, momentum gates: all worse (breadth catastrophic —
+   blocks 71-81% of days).
+3. **Slots is the true lever** (paired, 30 seeds, no gate, sizing 1/n): 8→16 slots
+   costs ~nothing in median (37.8%), lifts worst-seed 31.9→33.6%, halves 20-yr spread
+   (13.8→8.3pp), and makes single years near-deterministic where it matters — losing
+   years (2008/2011/2018) have 2-3pp seed bands; 2026 had ZERO losing paths in 30.
+   20/24/32 slots keep tightening yearly bands but push the 20-yr worst-seed DOWN and
+   converge on the momentum book (32 slots ≈ 33.2% ≈ TN alone). **16 adopted.**
+   Side-finding: old 8@18.75% sizing was dominated by 8@12.5% (cash-bound at ~5).
+4. **Blends** (50-50 with True North, monthly rebal): DD10 35.7%/−22.2, no-gate
+   35.5%/−24.4, SMA200 33.4%/−22.1 — the blend is itself the crash softener, which
+   further weakens the case for paying DD10's premium.
+5. **Data**: 526 phantom 15-Jan-2026 rows purged (Arun-approved); full 2015+ scan
+   found NO other date with the signature. Engine gate computation made NaN-robust.
+6. **Deployed**: engine → 16 slots/6.25%/no gate; book re-seeded (median seed 5,
+   15 open positions, 1,310 backfilled trades, rescaled to momentum-NAV parity);
+   ₹2.5L deposits carried with original timestamps; dividend HWM re-anchored at
+   ₹11,35,026; Strategies index + study page updated with dated change-log; soak
+   clock restarted 03-Sep-2026. Deferred to the 2026-12-12 restudy: joint gate ×
+   entry × exit/SL, cash-yield modeling (sim holds idle cash at 0%), selection-alpha
+   mining. Backtest engine caveat: sim CAGRs exclude CASHIETF yield on idle cash.

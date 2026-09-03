@@ -1,7 +1,8 @@
 """Seed bluesky_paper_state.json from a backtest replay of the adopted spec
-(trail-20, no mcap floor, gate ON, real fills, 25bps), 2020-01-01 -> last DB day,
-Rs 10L, median-terminal seed of 10 — so /app/bluesky-paper opens as a living model
-portfolio. Every backfilled trade carries src='backtest'; live runs append on top.
+(2026-09-03 revision: trail-20, -8% stop, 16 slots @6.25%, NO gate, no mcap floor,
+real fills, 25bps), 2020-01-01 -> last DB day, median-terminal seed of 10 — so
+/app/bluesky-paper opens as a living model portfolio. Every backfilled trade
+carries src='backtest'; live runs append on top.
 
 Provenance is stated in the state and the UI feed (live-first/backfill convention:
 sources and date ranges are never blended silently).
@@ -40,9 +41,8 @@ rs = (score.where(elig).rank(axis=1, pct=True)*100).shift(1)
 setup = (prev_close < athcp) & (prev_close >= 0.8*athcp) & elig & (rs >= 70.0)
 trig_df = (setup & (close > athcp) & athcp.notna()).fillna(False)
 trig = trig_df.values
-nb = close['NIFTYBEES'].dropna()   # NaN-robust: phantom holiday rows in the union
-weak_s = (nb < nb.rolling(200).mean()).shift(1)   # index must not poison the SMA
-weak = weak_s.reindex(close.index).ffill().fillna(False).astype(bool).values
+# Gate RETIRED 2026-09-03 (research/142 gate bake-off + paired test): no entry gate.
+weak = np.zeros(len(close.index), dtype=bool)
 dates = close.index
 last_day = dates[-1]
 days = np.array([i for i, d in enumerate(dates) if str(d.date()) >= START])
@@ -51,7 +51,8 @@ C, H, O, ATH, S = close.values, high.values, open_.values, athcp.values, sma.val
 finals = {}
 for seed in range(1, 11):
     eq, _, _ = br.simulate(seed, 'random', days, dates, C, H, O, ATH, S, rs.values,
-                           tv_prev.values, trig, weak, True, COST, stop=0.08, slots=8)
+                           tv_prev.values, trig, weak, True, COST, stop=0.08,
+                           slots=16, size_pct=0.0625)
     finals[seed] = eq[-1]
 med = min(finals, key=lambda s: abs(finals[s] - np.median(list(finals.values()))))
 print(f'window {START}->{last_day.date()}; median seed {med} (NAV {finals[med]:,.0f}; '
@@ -59,7 +60,8 @@ print(f'window {START}->{last_day.date()}; median seed {med} (NAV {finals[med]:,
 
 # re-run median seed capturing everything; recompute cash/positions by replaying trades
 eq, trades, _ = br.simulate(med, 'random', days, dates, C, H, O, ATH, S, rs.values,
-                            tv_prev.values, trig, weak, True, COST, stop=0.08, slots=8)
+                            tv_prev.values, trig, weak, True, COST, stop=0.08,
+                            slots=16, size_pct=0.0625)
 syms = list(close.columns)
 
 closed, open_pos = [], []
@@ -84,7 +86,7 @@ mtm = 0.0
 for c, ei, buy in open_pos:
     d_entry = dates[ei]
     nav_at = float(nav_curve.loc[:d_entry].iloc[-1]) if len(nav_curve.loc[:d_entry]) else CAPITAL
-    qty = max(1, int(0.1875 * nav_at / buy))
+    qty = max(1, int(0.0625 * nav_at / buy))
     ltp = float(close.iloc[-1][syms[c]])
     positions.append(dict(symbol=syms[c], qty=qty, buy=round(buy, 2),
                           entry_date=str(d_entry.date()),
@@ -94,21 +96,24 @@ for c, ei, buy in open_pos:
 final_nav = float(eq[-1])
 cash = max(0.0, final_nav - mtm)
 
-# pending = last day's gate-permitted signals (they enter live tomorrow)
+# pending = last day's signals (they enter live tomorrow; gate retired)
 pending = []
-if not weak[-1]:
-    row = trig_df.iloc[-1]
-    for s in trig_df.columns[row.values]:
-        pending.append(dict(symbol=s, pivot=round(float(athcp.iloc[-1][s]), 2),
-                            rs=round(float(rs.iloc[-1][s]), 1),
-                            signal_date=str(last_day.date())))
+row = trig_df.iloc[-1]
+for s in trig_df.columns[row.values]:
+    pending.append(dict(symbol=s, pivot=round(float(athcp.iloc[-1][s]), 2),
+                        rs=round(float(rs.iloc[-1][s]), 1),
+                        signal_date=str(last_day.date())))
 
 nav_hist = [dict(date=str(d.date()), nav=round(float(v), 0))
             for d, v in nav_curve.items()]
-prov = (f'History BACKFILLED from the adopted-spec backtest (trail-20, median seed {med}, '
-        f'{START} -> {last_day.date()}, {len(closed)} trades); LIVE paper from 2026-09-02. '
+prov = (f'History BACKFILLED from the adopted-spec backtest (2026-09-03 spec: trail-20, '
+        f'-8% stop, 16 slots @6.25%, NO gate; median seed {med}, '
+        f'{START} -> {last_day.date()}, {len(closed)} trades); LIVE paper from 2026-09-02, '
+        f're-seeded 03-Sep-2026 after the gate audit (research/142 gate bake-off: SMA200 '
+        f'gate refuted + was NaN-dead since Apr-26; 16 slots halves path dependence). '
         f'Backfill uses backtest fills (at-pivot) - live entries use the stricter '
-        f'next-day buy-stop.')
+        f'next-day buy-stop. Rupee scale rebased to the momentum book NAV so the two '
+        f'sleeves stay equal-sized.')
 st = dict(capital=CAPITAL, cash=round(cash, 0), positions=positions, pending=pending,
           nav=nav_hist, trades=closed, missed=[], started=START,
           seeded_from=prov, last_run=None)

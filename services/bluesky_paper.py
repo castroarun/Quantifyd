@@ -9,7 +9,7 @@ Adopted taxable spec (decoded + optimized, see /app/backtest/bluesky-ath-breakou
   signal   : today's close ABOVE the prior ATH-close  ->  buy-stop for TOMORROW at the pivot
   entry    : next day: fill = open if open >= pivot else (pivot if high >= pivot else MISS)
   exits    : close <= buy*0.92 (stop) or close < SMA20 (trail), booked at that close
-  book     : 8 slots, 18.75% of NAV per position, cash-constrained, RS-desc selection,
+  book     : 16 slots, 6.25% of NAV per position, cash-constrained, RS-desc selection,
              25bps/side cost; NIFTYBEES < SMA200 gate blocks NEW signals
 Paper only — no orders are placed anywhere.
 
@@ -38,8 +38,13 @@ LOCK = ROOT / 'backtest_data' / 'bluesky_paper_state.lock'
 UI_JSON = ROOT / 'static' / 'app' / 'bluesky_paper.json'
 
 CAPITAL = 1_000_000
-SLOTS = 8
-SIZE_PCT = 0.1875
+# 2026-09-03 spec change (Arun): 16 slots @ 6.25%, weak-market gate RETIRED.
+# Evidence: research/142 gate bake-off + 30-seed paired test — SMA200 gate refuted
+# (costs CAGR without unique protection; was also NaN-dead since Apr-26), DD10 not
+# adopted (insurance premium −1.6pp/yr, judged not worth it); 16 slots keeps median
+# CAGR (~37.8%) while lifting worst-seed 31.9→33.6% and halving path dependence.
+SLOTS = 16
+SIZE_PCT = 0.0625
 STOP = 0.08
 TRAIL_SMA = 20
 RS_MIN = 70.0
@@ -221,7 +226,8 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
               trades=trades[-80:], n_trades=len(trades),
               win_pct=round(100 * len(wins) / len(trades), 1) if trades else None,
               nav_curve=curve_ui, missed_tail=st['missed'][-20:],
-              spec='trail-20 taxable pick; no mcap floor; gate 200DMA; 25bps; Rs 10L paper',
+              spec='trail-20; -8% stop; 16 slots @6.25%; NO gate (retired 03-Sep-2026); '
+                   'no mcap floor; 25bps',
               study='/app/backtest/bluesky-ath-breakout-research142', log=log)
     def _clean(o):
         if isinstance(o, dict):
@@ -348,20 +354,20 @@ def main():
         st['pending'] = []
 
         # ---- scan today's signals for tomorrow ----
-        if not weak:
-            prev_c = c1.loc[today]
-            piv_row = athc_prev.loc[today]
-            cl_row = close.loc[today]
-            cand = close.columns[(prev_c < piv_row) & (prev_c >= 0.8 * piv_row)
-                                 & eligible.fillna(False) & (rs_row >= RS_MIN)
-                                 & (cl_row > piv_row)]
-            for s in cand:
-                st['pending'].append(dict(symbol=s, pivot=round(float(piv_row[s]), 2),
-                                          rs=round(float(rs_row[s]), 1),
-                                          signal_date=str(today.date())))
-            log.append(f"SCAN {len(cand)} new signals (gate OK)")
-        else:
-            log.append('SCAN skipped — gate weak (NIFTYBEES < SMA200)')
+        # Gate RETIRED 2026-09-03 (Arun): scan runs every day; the NIFTYBEES/SMA200
+        # state is still computed above for DISPLAY only (market-context chip).
+        prev_c = c1.loc[today]
+        piv_row = athc_prev.loc[today]
+        cl_row = close.loc[today]
+        cand = close.columns[(prev_c < piv_row) & (prev_c >= 0.8 * piv_row)
+                             & eligible.fillna(False) & (rs_row >= RS_MIN)
+                             & (cl_row > piv_row)]
+        for s in cand:
+            st['pending'].append(dict(symbol=s, pivot=round(float(piv_row[s]), 2),
+                                      rs=round(float(rs_row[s]), 1),
+                                      signal_date=str(today.date())))
+        log.append(f"SCAN {len(cand)} new signals (gate retired — info-only: "
+                   f"{'weak' if weak else 'ok'})")
 
         # ---- sweep surplus cash into CASHIETF (small float reserve kept) ----
         RESERVE = 5000.0
